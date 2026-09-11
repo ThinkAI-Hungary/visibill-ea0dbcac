@@ -20,7 +20,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn, extractStoragePath } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
+import { getDateFnsLocale } from '@/lib/locale/formatters';
 import { toast } from '@/hooks/use-toast';
 import { Plus, Trash2, FileText, ListOrdered, Loader2 } from 'lucide-react';
 import { reportError } from '@/lib/errorReporter';
@@ -84,6 +85,8 @@ interface InvoiceFullEditDialogProps {
 }
 
 const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, onSave }: InvoiceFullEditDialogProps) => {
+  const { t, i18n } = useTranslation(['invoices', 'common']);
+  const dateLocale = getDateFnsLocale();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isSaving, setIsSaving] = useState(false);
@@ -253,7 +256,7 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
 
       if (invoiceError) {
         if (invoiceError.code === '23505') {
-          throw new Error('Ezzel a bizonylatsorszámmal már létezik számla ennél a cégnél.');
+          throw new Error(t('invoices:dialogs.full_edit.toast_duplicate_number', 'Ezzel a bizonylatsorszámmal már létezik számla ennél a cégnél.'));
         }
         throw invoiceError;
       }
@@ -321,12 +324,12 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
       queryClient.invalidateQueries({ queryKey: ['nav-invoices'] });
       queryClient.invalidateQueries({ queryKey: ['recentInvoices'] });
 
-      toast({ title: 'Számla sikeresen frissítve' });
+      toast({ title: t('invoices:dialogs.full_edit.toast_success', 'Számla sikeresen frissítve') });
       onSave();
       onClose();
     } catch (error) {
       reportError({ type: 'db_query', component: 'InvoiceFullEditDialog', action: 'error', message: 'Error updating invoice:', error: error });
-      toast({ title: 'Nem sikerült menteni a változtatásokat', variant: 'destructive' });
+      toast({ title: t('invoices:dialogs.full_edit.toast_error', 'Nem sikerült menteni a változtatásokat'), variant: 'destructive' });
     } finally {
       setIsSaving(false);
     }
@@ -513,7 +516,7 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
     };
   }, [visibleItems]);
 
-  const formatAmount = (val: number) => val.toLocaleString('hu-HU', { maximumFractionDigits: 2 });
+  const formatAmount = (val: number) => val.toLocaleString(i18n.language === 'hr' ? 'hr-HR' : 'hu-HU', { maximumFractionDigits: 2 });
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -522,9 +525,9 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
         activeTab === 'items' ? 'sm:max-w-5xl' : 'sm:max-w-[600px]'
       )}>
         <DialogHeader>
-          <DialogTitle>Számla szerkesztése</DialogTitle>
+          <DialogTitle>{t('invoices:dialogs.full_edit.title', 'Számla szerkesztése')}</DialogTitle>
           <DialogDescription>
-            Módosítsd a számla adatait az alábbi mezők segítségével.
+            {t('invoices:dialogs.full_edit.description', 'Módosítsd a számla adatait az alábbi mezők segítségével.')}
           </DialogDescription>
         </DialogHeader>
 
@@ -532,11 +535,11 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="details" className="gap-2">
               <FileText className="h-4 w-4" />
-              Számla adatok
+              {t('invoices:dialogs.full_edit.tab_details', 'Számla adatok')}
             </TabsTrigger>
             <TabsTrigger value="items" className="gap-2">
               <ListOrdered className="h-4 w-4" />
-              Számlatételek
+              {t('invoices:dialogs.full_edit.tab_items', 'Számlatételek')}
               {visibleItems.length > 0 && (
                 <span className="ml-1 text-xs bg-primary/20 text-primary rounded-full px-1.5 py-0.5 min-w-[20px] text-center">
                   {visibleItems.length}
@@ -552,47 +555,47 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
               <div className="space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="edit-bizonylatsorszam" className="text-foreground font-medium">
-                    Bizonylatsorszám
+                    {t('invoices:dialogs.full_edit.invoice_number', 'Bizonylatsorszám')}
                   </Label>
                   <Input
                     id="edit-bizonylatsorszam"
                     value={formData.bizonylatsorszam}
                     onChange={(e) => setFormData(prev => ({ ...prev, bizonylatsorszam: e.target.value }))}
-                    placeholder="pl. SZJE-2026-1"
+                    placeholder={t('invoices:dialogs.full_edit.invoice_number_placeholder', 'pl. SZJE-2026-1')}
                     className="font-mono text-sm"
                   />
                   <p className="text-[11px] text-muted-foreground">
-                    A sorszám módosítása automatikusan feloldja a NAV státuszt és összekapcsolja a számlát a NAV tétellel.
+                    {t('invoices:dialogs.full_edit.invoice_number_hint', 'A sorszám módosítása automatikusan feloldja a NAV státuszt és összekapcsolja a számlát a NAV tétellel.')}
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-muted-foreground">Kibocsátás dátuma</Label>
+                  <Label className="text-muted-foreground">{t('invoices:columns.issue_date', 'Kibocsátás dátuma')}</Label>
                   <div className="text-sm py-2 px-3 rounded-md bg-muted/30 border border-border/30">
                     {formData.kibocsatas_datuma
-                      ? format(formData.kibocsatas_datuma, "yyyy. MM. dd.", { locale: hu })
+                      ? format(formData.kibocsatas_datuma, "yyyy. MM. dd.", { locale: dateLocale })
                       : "-"}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-muted-foreground">Teljesítés dátuma</Label>
+                  <Label className="text-muted-foreground">{t('invoices:columns.fulfillment_date', 'Teljesítés dátuma')}</Label>
                   <div className="text-sm py-2 px-3 rounded-md bg-muted/30 border border-border/30">
                     {formData.teljesites_datuma
-                      ? format(formData.teljesites_datuma, "yyyy. MM. dd.", { locale: hu })
+                      ? format(formData.teljesites_datuma, "yyyy. MM. dd.", { locale: dateLocale })
                       : "-"}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-muted-foreground">Eladó neve</Label>
+                  <Label className="text-muted-foreground">{t('invoices:dialogs.full_edit.seller_name', 'Eladó neve')}</Label>
                   <div className="text-sm py-2 px-3 rounded-md bg-muted/30 border border-border/30 truncate">
                     {formData.elado_nev || '-'}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-muted-foreground">Vevő neve</Label>
+                  <Label className="text-muted-foreground">{t('invoices:dialogs.full_edit.buyer_name', 'Vevő neve')}</Label>
                   <div className="text-sm py-2 px-3 rounded-md bg-muted/30 border border-border/30 truncate">
                     {formData.vevo_nev || '-'}
                   </div>
@@ -602,28 +605,28 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
               {/* Right column */}
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label className="text-muted-foreground">Nettó összeg</Label>
+                  <Label className="text-muted-foreground">{t('invoices:columns.net_amount', 'Nettó összeg')}</Label>
                   <div className="text-sm py-2 px-3 rounded-md bg-muted/30 border border-border/30 font-mono">
-                    {formData.adoalap_osszesen?.toLocaleString('hu-HU')} {formData.penznem}
+                    {formData.adoalap_osszesen != null ? formatAmount(formData.adoalap_osszesen) : '0'} {formData.penznem}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-muted-foreground">Bruttó összeg</Label>
+                  <Label className="text-muted-foreground">{t('invoices:columns.gross_amount', 'Bruttó összeg')}</Label>
                   <div className="text-sm py-2 px-3 rounded-md bg-muted/30 border border-border/30 font-mono">
-                    {formData.brutto_vegosszeg?.toLocaleString('hu-HU')} {formData.penznem}
+                    {formData.brutto_vegosszeg != null ? formatAmount(formData.brutto_vegosszeg) : '0'} {formData.penznem}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-muted-foreground">ÁFA összeg</Label>
+                  <Label className="text-muted-foreground">{t('invoices:columns.vat_amount', 'ÁFA összeg')}</Label>
                   <div className="text-sm py-2 px-3 rounded-md bg-muted/30 border border-border/30 font-mono">
-                    {formData.afa_osszeg_osszesen?.toLocaleString('hu-HU')} {formData.penznem}
+                    {formData.afa_osszeg_osszesen != null ? formatAmount(formData.afa_osszeg_osszesen) : '0'} {formData.penznem}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-muted-foreground">Pénznem</Label>
+                  <Label className="text-muted-foreground">{t('invoices:columns.currency', 'Pénznem')}</Label>
                   <div className="text-sm py-2 px-3 rounded-md bg-muted/30 border border-border/30">
                     {formData.penznem}
                   </div>
@@ -631,16 +634,16 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
 
                 {/* Editable: Kategória */}
                 <div className="space-y-2">
-                  <Label>Kategória</Label>
+                  <Label>{t('invoices:columns.category', 'Kategória')}</Label>
                   <Select
                     value={formData.category_id}
                     onValueChange={(value) => setFormData(prev => ({ ...prev, category_id: value }))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Válassz kategóriát" />
+                      <SelectValue placeholder={t('invoices:dialogs.full_edit.select_category', 'Válassz kategóriát')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">Nincs kategória</SelectItem>
+                      <SelectItem value="none">{t('invoices:dialogs.full_edit.no_category', 'Nincs kategória')}</SelectItem>
                       {categories.map((category) => (
                         <SelectItem key={category.id} value={category.id}>
                           {category.name}
@@ -652,16 +655,16 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
 
                 {/* Editable: Projekt */}
                 <div className="space-y-2">
-                  <Label>Projekt</Label>
+                  <Label>{t('invoices:filters.project', 'Projekt')}</Label>
                   <Select
                     value={formData.project_id}
                     onValueChange={(value) => setFormData(prev => ({ ...prev, project_id: value }))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Válassz projektet" />
+                      <SelectValue placeholder={t('invoices:dialogs.full_edit.select_project', 'Válassz projektet')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">Nincs projekt</SelectItem>
+                      <SelectItem value="none">{t('invoices:dialogs.full_edit.no_project', 'Nincs projekt')}</SelectItem>
                       {projects.map((project) => (
                         <SelectItem key={project.id} value={project.id}>
                           {project.name}
@@ -678,7 +681,7 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
           <TabsContent value="items" className="flex-1 overflow-auto mt-4">
             {itemsLoading ? (
               <div className="flex items-center justify-center py-12 text-muted-foreground">
-                Tételek betöltése...
+                {t('invoices:dialogs.full_edit.loading_items', 'Tételek betöltése...')}
               </div>
             ) : (
               <div className="space-y-4">
@@ -687,14 +690,14 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
                     <TableHeader>
                       <TableRow className="bg-muted/30 hover:bg-muted/30">
                         <TableHead className="w-10 font-semibold">#</TableHead>
-                        <TableHead className="min-w-[200px] font-semibold">Megnevezés</TableHead>
-                        <TableHead className="w-[90px] font-semibold text-right">Mennyiség</TableHead>
-                        <TableHead className="w-[80px] font-semibold">Egység</TableHead>
-                        <TableHead className="w-[130px] font-semibold text-right">Egységár</TableHead>
-                        <TableHead className="w-[130px] font-semibold text-right">Nettó</TableHead>
-                        <TableHead className="w-[80px] font-semibold text-center">ÁFA</TableHead>
-                        <TableHead className="w-[130px] font-semibold text-right">ÁFA összeg</TableHead>
-                        <TableHead className="w-[130px] font-semibold text-right">Bruttó</TableHead>
+                        <TableHead className="min-w-[200px] font-semibold">{t('invoices:dialogs.items.table.description', 'Megnevezés')}</TableHead>
+                        <TableHead className="w-[90px] font-semibold text-right">{t('invoices:dialogs.items.table.quantity', 'Mennyiség')}</TableHead>
+                        <TableHead className="w-[80px] font-semibold">{t('invoices:dialogs.items.table.unit', 'Egység')}</TableHead>
+                        <TableHead className="w-[130px] font-semibold text-right">{t('invoices:dialogs.items.table.unit_price', 'Egységár')}</TableHead>
+                        <TableHead className="w-[130px] font-semibold text-right">{t('invoices:dialogs.items.table.net', 'Nettó')}</TableHead>
+                        <TableHead className="w-[80px] font-semibold text-center">{t('invoices:dialogs.items.table.vat', 'ÁFA')}</TableHead>
+                        <TableHead className="w-[130px] font-semibold text-right">{t('invoices:dialogs.items.table.vat_amount', 'ÁFA összeg')}</TableHead>
+                        <TableHead className="w-[130px] font-semibold text-right">{t('invoices:dialogs.items.table.gross', 'Bruttó')}</TableHead>
                         <TableHead className="w-10"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -702,7 +705,7 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
                       {visibleItems.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
-                            Nincsenek tételek. Kattints az "Új tétel" gombra az első tétel hozzáadásához.
+                            {t('invoices:dialogs.full_edit.no_items', 'Nincsenek tételek. Kattints az "Új tétel" gombra az első tétel hozzáadásához.')}
                           </TableCell>
                         </TableRow>
                       ) : (
@@ -723,7 +726,7 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
                                 value={item.line_description || ''}
                                 onChange={(e) => updateItem(item.id, 'line_description', e.target.value)}
                                 className="h-8 text-sm border-transparent bg-transparent hover:border-border focus:border-border"
-                                placeholder="Tétel megnevezése..."
+                                placeholder={t('invoices:dialogs.full_edit.item_description_placeholder', 'Tétel megnevezése...')}
                               />
                             </TableCell>
                             <TableCell>
@@ -740,7 +743,7 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
                                 value={item.unit_of_measure || ''}
                                 onChange={(e) => updateItem(item.id, 'unit_of_measure', e.target.value)}
                                 className="h-8 text-sm border-transparent bg-transparent hover:border-border focus:border-border"
-                                placeholder="db"
+                                placeholder={t('invoices:dialogs.full_edit.unit_placeholder', 'db')}
                               />
                             </TableCell>
                             <TableCell>
@@ -809,23 +812,23 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
                     onClick={addNewItem}
                   >
                     <Plus className="h-4 w-4" />
-                    Új tétel
+                    {t('invoices:dialogs.full_edit.add_item', 'Új tétel')}
                   </Button>
 
                   {visibleItems.length > 0 && (
                     <div className="bg-muted/30 rounded-lg p-4 min-w-[280px]">
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Tételek nettó:</span>
+                          <span className="text-muted-foreground">{t('invoices:dialogs.full_edit.items_net', 'Tételek nettó:')}</span>
                           <span className="font-mono font-medium">{formatAmount(itemTotals.net)} {formData.penznem}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Tételek ÁFA:</span>
+                          <span className="text-muted-foreground">{t('invoices:dialogs.full_edit.items_vat', 'Tételek ÁFA:')}</span>
                           <span className="font-mono font-medium">{formatAmount(itemTotals.vat)} {formData.penznem}</span>
                         </div>
                         <div className="h-px bg-border/50 my-2" />
                         <div className="flex justify-between items-center">
-                          <span className="text-foreground font-medium">Tételek bruttó:</span>
+                          <span className="text-foreground font-medium">{t('invoices:dialogs.full_edit.items_gross', 'Tételek bruttó:')}</span>
                           <span className="font-mono text-lg font-bold text-primary">
                             {formatAmount(itemTotals.gross)} {formData.penznem}
                           </span>
@@ -851,18 +854,18 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
               )}
               onClick={() => setDeleteDialogOpen(true)}
               disabled={!hasImageOrFile || isSaving || isDeletingImage}
-              title={!hasImageOrFile ? "Ehhez a számlához nem tartozik csatolt számlakép vagy fájl" : "Csatolt számlakép vagy fájl törlése"}
+              title={!hasImageOrFile ? t('invoices:dialogs.full_edit.no_image_tooltip', 'Ehhez a számlához nem tartozik csatolt számlakép vagy fájl') : t('invoices:dialogs.full_edit.delete_image_tooltip', 'Csatolt számlakép vagy fájl törlése')}
             >
               <Trash2 className="h-4 w-4" />
-              Számlakép törlése
+              {t('invoices:dialogs.full_edit.delete_image', 'Számlakép törlése')}
             </Button>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={onClose} disabled={isSaving || isDeletingImage}>
-              Mégse
+              {t('common:actions.cancel', 'Mégse')}
             </Button>
             <Button onClick={handleSave} disabled={isSaving || isDeletingImage}>
-              {isSaving ? 'Mentés...' : 'Mentés'}
+              {isSaving ? t('invoices:dialogs.full_edit.saving', 'Mentés...') : t('common:actions.save', 'Mentés')}
             </Button>
           </div>
         </DialogFooter>
@@ -879,12 +882,12 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
           <AlertDialogHeader className="w-full min-w-0">
             <AlertDialogTitle className="flex items-center gap-2 text-destructive">
               <Trash2 className="h-5 w-5" />
-              Számlakép törlése
+              {t('invoices:dialogs.full_edit.delete_image_title', 'Számlakép törlése')}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2 w-full min-w-0">
-                <p className="text-sm text-foreground">Válaszd ki a számlakép törlésének módját:</p>
-                <p className="text-xs text-muted-foreground">Ez a művelet nem vonható vissza.</p>
+                <p className="text-sm text-foreground">{t('invoices:dialogs.full_edit.delete_image_desc', 'Válaszd ki a számlakép törlésének módját:')}</p>
+                <p className="text-xs text-muted-foreground">{t('invoices:dialogs.full_edit.cannot_undo', 'Ez a művelet nem vonható vissza.')}</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -903,10 +906,10 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400">
-                    Csak a számlasor törlése
+                    {t('invoices:dialogs.full_edit.delete_image_opt1_title', 'Csak a számlasor törlése')}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    A számla sora törlődik a nyilvántartásból, de az eredetileg feltöltött dokumentumfájl megmarad az adatbázisban.
+                    {t('invoices:dialogs.full_edit.delete_image_opt1_desc', 'A számla sora törlődik a nyilvántartásból, de az eredetileg feltöltött dokumentumfájl megmarad az adatbázisban.')}
                   </p>
                 </div>
               </div>
@@ -925,10 +928,10 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-destructive">
-                    Számlasor és feltöltött fájl törlése
+                    {t('invoices:dialogs.full_edit.delete_image_opt2_title', 'Számlasor és feltöltött fájl törlése')}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    A számla sora és a hozzá tartozó eredeti feltöltött fájl is véglegesen törlődik a tárhelyről és az adatbázisból.
+                    {t('invoices:dialogs.full_edit.delete_image_opt2_desc', 'A számla sora és a hozzá tartozó eredeti feltöltött fájl is véglegesen törlődik a tárhelyről és az adatbázisból.')}
                   </p>
                 </div>
               </div>
@@ -938,12 +941,12 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
           {isDeletingImage && (
             <div className="flex items-center justify-center py-2">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-sm text-muted-foreground">Törlés folyamatban...</span>
+              <span className="ml-2 text-sm text-muted-foreground">{t('invoices:dialogs.full_edit.deleting', 'Törlés folyamatban...')}</span>
             </div>
           )}
 
           <AlertDialogFooter className="w-full min-w-0 mt-2">
-            <AlertDialogCancel disabled={isDeletingImage}>Mégse</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeletingImage}>{t('common:actions.cancel', 'Mégse')}</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

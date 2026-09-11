@@ -2,5 +2,110 @@
   "title": "Hibajegyek",
   "subtitle_admin": "Összes beérkezett hibajegy és visszajelzés",
   "subtitle_user": "Az Ön által beküldött hibajegyek és visszajelzések",
-  "new_ticket": "Új hibajegy nyitása"
+  "new_ticket": "Új hibajegy nyitása",
+  "search_placeholder": "Keresés jegyszám, üzenet, cég vagy email alapján...",
+  "clear_search": "Keresés törlése",
+  "show_all_tickets": "Összes ticket",
+  "unread": "Olvasatlan",
+  "unassigned": "Nincs",
+  "tabs": {
+    "list": "Jegyek Listája",
+    "console": "Kezelőkonzol",
+    "analytics": "Analitika & SLA",
+    "assignment": "Terhelés & Elosztás"
+  },
+  "kpi": {
+    "open": "Nyitott",
+    "assigned": "Hozzárendelt",
+    "in_progress": "Folyamatban",
+    "resolved": "Megoldva",
+    "critical_sla": "Kritikus SLA"
+  },
+  "status_filter": {
+    "active_count": "Aktív jegyek ({{count}})",
+    "all_count": "Összes státusz ({{count}})",
+    "active": "Aktív jegyek",
+    "default_active": "Alapértelmezett (Aktív jegyek)",
+    "all_statuses": "Összes státusz (Megoldottakkal)"
+  },
+  "status": {
+    "created": "Nyitott",
+    "assigned": "Hozzárendelt",
+    "in_progress": "Folyamatban",
+    "resolved": "Megoldva",
+    "waiting_for_confirmation": "Visszaigazolásra vár"
+  },
+  "priority_filter": {
+    "placeholder": "Prioritás"
+  },
+  "priority": {
+    "all": "Összes prioritás",
+    "low": "Alacsony",
+    "medium": "Közepes",
+    "high": "Magas",
+    "critical": "Kritikus"
+  },
+  "service_filter": {
+    "placeholder": "Szolgáltatás",
+    "all": "Összes platform"
+  },
+  "types": {
+    "bug": "Hibajelentés",
+    "feedback": "Visszajelzés",
+    "question": "Kérdés"
+  },
+  "table": {
+    "col_ticket_number": "Jegyszám",
+    "col_type": "Típus",
+    "col_system": "Rendszer",
+    "col_subject": "Tárgy",
+    "col_user_company": "Bejelentő & Cég",
+    "col_assignee": "Felelős",
+    "col_status": "Státusz",
+    "col_priority": "Prioritás",
+    "col_created_at": "Létrehozva",
+    "empty_state": "Nincs a szűrésnek megfelelő hibajegy"
+  },
+  "console": {
+    "pending_tickets": "Függőben lévő jegyek",
+    "all_tickets": "Összes jegy",
+    "search_placeholder": "Keresés...",
+    "empty_search": "Nincs találat a(z) \"{{query}}\" keresésre",
+    "empty_own": "Nincs saját vagy nyitott függőben lévő hibajegy",
+    "empty_all": "Nincs aktív függőben lévő hibajegy",
+    "console_title": "Kezelőkonzol",
+    "console_desc": "Válasszon ki egy aktív jegyet a bal oldali listából a válaszadáshoz és paraméterezéshez."
+  },
+  "analytics": {
+    "incoming_title": "Beérkező jegyek száma (Elmúlt 7 nap)",
+    "category_title": "Hibajegyek Kategóriák szerint",
+    "category_bug": "Szoftverhiba (Bug)",
+    "category_billing": "Számlázási / NAV szinkron kérdések",
+    "category_feature": "Funkció kérések (Feature Request)",
+    "count_unit": "{{count}} db",
+    "days": {
+      "mon": "Hétfő",
+      "tue": "Kedd",
+      "wed": "Szerda",
+      "thu": "Csütörtök",
+      "fri": "Péntek",
+      "sat": "Szombat",
+      "sun": "Vasárnap"
+    }
+  },
+  "assignment": {
+    "selected_count": "Kijelölve: {{count}} db jegy",
+    "assignee_placeholder": "Felelős hozzárendelése...",
+    "status_placeholder": "Státusz módosítása...",
+    "unassigned": "Nincs hozzárendelve",
+    "apply_button": "Alkalmaz",
+    "col_subject": "Probléma tárgya",
+    "col_current_assignee": "Aktuális Felelős",
+    "col_company": "Cég",
+    "team_workload_title": "Támogató Csapat terheltsége",
+    "unassigned_queue_title": "Gazdátlan Jegyek (Queue)",
+    "unassigned_queue_desc": "Beérkező várakozó jegyek",
+    "tickets_count": "{{count}} jegy",
+    "tickets_ratio": "{{current}} / {{max}} jegy"
+  }
 }

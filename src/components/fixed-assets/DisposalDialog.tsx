@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,7 @@ interface DisposalDialogProps {
 }
 
 export function DisposalDialog({ open, onOpenChange, asset }: DisposalDialogProps) {
+  const { t } = useTranslation('hr');
   const { toast } = useToast();
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
@@ -45,16 +47,16 @@ export function DisposalDialog({ open, onOpenChange, asset }: DisposalDialogProp
       });
 
       toast({
-        title: 'Siker',
+        title: t('fixed_assets.disposal_dialog.toasts.success_title'),
         description: disposalType === 'sold'
-          ? `Eszköz értékesítve: ${asset.name}`
-          : `Eszköz selejtezve: ${asset.name}`,
+          ? t('fixed_assets.disposal_dialog.toasts.success_sold', { name: asset.name })
+          : t('fixed_assets.disposal_dialog.toasts.success_disposed', { name: asset.name }),
       });
       onOpenChange(false);
       setReason('');
       setSaleValue('');
     } catch {
-      toast({ title: 'Hiba', description: 'Nem sikerült a kivezetés.', variant: 'destructive' });
+      toast({ title: t('fixed_assets.disposal_dialog.toasts.error_title'), description: t('fixed_assets.disposal_dialog.toasts.error_desc'), variant: 'destructive' });
     }
   };
 
@@ -64,10 +66,10 @@ export function DisposalDialog({ open, onOpenChange, asset }: DisposalDialogProp
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Trash2 className="h-5 w-5 text-destructive" />
-            Selejtezés / Kivezetés
+            {t('fixed_assets.disposal_dialog.title')}
           </DialogTitle>
           <DialogDescription>
-            <strong>{asset.name}</strong> kivezetése a nyilvántartásból.
+            {t('fixed_assets.disposal_dialog.description', { name: asset.name })}
           </DialogDescription>
         </DialogHeader>
 
@@ -76,58 +78,59 @@ export function DisposalDialog({ open, onOpenChange, asset }: DisposalDialogProp
           <div className="rounded-lg border border-warning/30 bg-warning/5 p-3 flex items-start gap-2 text-sm">
             <AlertTriangle className="h-4 w-4 text-warning mt-0.5 flex-shrink-0" />
             <div>
-              <p className="font-medium text-warning">Figyelem!</p>
+              <p className="font-medium text-warning">{t('fixed_assets.disposal_dialog.warning_title')}</p>
               <p className="text-muted-foreground">
-                A kivezetés után az eszköz nem szerkeszthető. A bekerülési érték:&nbsp;
-                <strong>{formatCurrency(asset.acquisition_value, asset.currency)}</strong>
+                {t('fixed_assets.disposal_dialog.warning_desc', {
+                  value: formatCurrency(asset.acquisition_value, asset.currency)
+                })}
               </p>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Kivezetés típusa *</Label>
+            <Label>{t('fixed_assets.disposal_dialog.type_label')}</Label>
             <Select value={disposalType} onValueChange={(v) => setDisposalType(v as 'disposed' | 'sold')}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="disposed">Selejtezés (megsemmisítés)</SelectItem>
-                <SelectItem value="sold">Értékesítés</SelectItem>
+                <SelectItem value="disposed">{t('fixed_assets.disposal_dialog.type_disposed')}</SelectItem>
+                <SelectItem value="sold">{t('fixed_assets.disposal_dialog.type_sold')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {disposalType === 'sold' && (
             <div className="space-y-2">
-              <Label>Értékesítési ár ({asset.currency})</Label>
+              <Label>{t('fixed_assets.disposal_dialog.sale_value_label', { currency: asset.currency })}</Label>
               <Input
                 type="number"
                 min="0"
                 value={saleValue}
                 onChange={e => setSaleValue(e.target.value)}
-                placeholder="Eladási ár"
+                placeholder={t('fixed_assets.disposal_dialog.sale_value_placeholder')}
               />
             </div>
           )}
 
           <div className="space-y-2">
-            <Label>Kivezetés dátuma *</Label>
+            <Label>{t('fixed_assets.disposal_dialog.date_label')}</Label>
             <Input type="date" value={disposalDate} onChange={e => setDisposalDate(e.target.value)} />
           </div>
 
           <div className="space-y-2">
-            <Label>Indoklás / Megjegyzés</Label>
+            <Label>{t('fixed_assets.disposal_dialog.reason_label')}</Label>
             <Textarea
               value={reason}
               onChange={e => setReason(e.target.value)}
-              placeholder="Pl. Meghibásodás, elavulás, értékesítés..."
+              placeholder={t('fixed_assets.disposal_dialog.reason_placeholder')}
               rows={2}
             />
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Mégse</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{t('fixed_assets.disposal_dialog.cancel')}</Button>
           <Button
             variant="destructive"
             onClick={handleSubmit}
@@ -135,7 +138,7 @@ export function DisposalDialog({ open, onOpenChange, asset }: DisposalDialogProp
             className="gap-2"
           >
             <Trash2 className="h-4 w-4" />
-            {dispose.isPending ? 'Kivezetés...' : 'Kivezetés végrehajtása'}
+            {dispose.isPending ? t('fixed_assets.disposal_dialog.submitting') : t('fixed_assets.disposal_dialog.submit')}
           </Button>
         </DialogFooter>
       </DialogContent>

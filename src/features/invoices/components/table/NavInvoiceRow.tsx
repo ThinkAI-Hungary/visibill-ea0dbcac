@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,7 @@ export function NavInvoiceRow({
   onRowClick,
   onToggleExclude,
 }: NavInvoiceRowProps) {
+  const { t } = useTranslation(['invoices', 'common']);
   const {
     activeTab,
     companyId,
@@ -202,26 +204,26 @@ export function NavInvoiceRow({
           <div className="flex items-center justify-center gap-1.5">
             {isPaid ? (
               <span className="inline-flex items-center justify-center min-w-[72px] px-2 py-0.5 rounded-md text-xs font-medium border border-black/10 dark:border-white/10 bg-success/10 text-success">
-                Kifizetve
+                {t('invoices:filters.paid', 'Kifizetve')}
               </span>
             ) : isPartiallyPaid ? (
               <TooltipProvider delayDuration={200}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span className="inline-flex items-center justify-center min-w-[72px] px-2 py-0.5 rounded-md text-xs font-medium border border-blue-500/30 bg-blue-500/15 text-blue-600 dark:text-blue-400 cursor-help">
-                      Részben fizetve
+                      {t('invoices:filters.partial', 'Részben fizetve')}
                     </span>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="text-xs space-y-1">
-                    <p className="font-semibold text-blue-400">Részben kifizetve</p>
+                    <p className="font-semibold text-blue-400">{t('invoices:filters.partial', 'Részben kifizetve')}</p>
                     <p>
-                      Kifizetve:{' '}
+                      {t('invoices:expanded.paid_label', 'Kifizetve:')}{' '}
                       <span className="font-mono font-medium text-emerald-400">
                         {formatCurrency(invoice.paid_amount || 0, invoice.currency || 'HUF')}
                       </span>
                     </p>
                     <p>
-                      Fennmaradó:{' '}
+                      {t('invoices:expanded.remaining_label', 'Fennmaradó:')}{' '}
                       <span className="font-mono font-medium text-destructive">
                         {formatCurrency(invoice.remaining_amount || 0, invoice.currency || 'HUF')}
                       </span>
@@ -231,7 +233,7 @@ export function NavInvoiceRow({
               </TooltipProvider>
             ) : (
               <span className="inline-flex items-center justify-center min-w-[72px] px-2 py-0.5 rounded-md text-xs font-medium border border-black/10 dark:border-white/10 bg-destructive/10 text-destructive">
-                Nyitott
+                {t('invoices:filters.open', 'Nyitott')}
               </span>
             )}
 
@@ -241,7 +243,7 @@ export function NavInvoiceRow({
                   <TooltipTrigger asChild>
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-orange-500/15 text-orange-600 dark:text-orange-400 border border-orange-400/40 whitespace-nowrap cursor-help">
                       <Scale className="h-3 w-3" />
-                      Kompenzálandó
+                      {t('invoices:expanded.compensation_candidate', 'Kompenzálandó')}
                     </span>
                   </TooltipTrigger>
                   <TooltipContent side="left" className="max-w-[280px]">
@@ -278,7 +280,7 @@ export function NavInvoiceRow({
 
             {invoice.exclude_from_accounting && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-300/40 whitespace-nowrap">
-                Nem könyvelt
+                {t('invoices:expanded.not_booked', 'Nem könyvelt')}
               </span>
             )}
 
@@ -292,10 +294,10 @@ export function NavInvoiceRow({
                   </TooltipTrigger>
                   <TooltipContent side="left" className="max-w-[280px]">
                     <div className="text-xs space-y-1">
-                      <p className="font-semibold">Folyamatos szolgáltatás</p>
+                      <p className="font-semibold">{t('invoices:expanded.continuous_service', 'Folyamatos szolgáltatás')}</p>
                       {invoice.service_period_start && invoice.service_period_end && (
                         <p className="text-muted-foreground">
-                          Szolg. időszak:{' '}
+                          {t('invoices:expanded.service_period', 'Szolg. időszak:')}{' '}
                           {format(new Date(invoice.service_period_start), 'yyyy.MM.dd', { locale: hu })} –{' '}
                           {format(new Date(invoice.service_period_end), 'yyyy.MM.dd', { locale: hu })}
                         </p>
@@ -354,7 +356,7 @@ export function NavInvoiceRow({
                 </div>
               </TooltipTrigger>
               <TooltipContent side="top">
-                <p className="text-xs font-medium">Kikontírozott / Könyvelve jelölés</p>
+                <p className="text-xs font-medium">{t('invoices:expanded.accountant_reviewed_tooltip', 'Kikontírozott / Könyvelve jelölés')}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

@@ -4,7 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Package } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { formatDate } from '@/lib/locale/formatters';
+import { useTranslation } from 'react-i18next';
 import { MatchedCourierReport } from '@/lib/matching/types';
 
 export interface MatchedCourierReportsCardProps {
@@ -14,6 +15,8 @@ export interface MatchedCourierReportsCardProps {
 export const MatchedCourierReportsCard: React.FC<MatchedCourierReportsCardProps> = ({
   courierReports,
 }) => {
+  const { t } = useTranslation(['transactions']);
+
   if (!courierReports || courierReports.length === 0) return null;
 
   return (
@@ -24,10 +27,10 @@ export const MatchedCourierReportsCard: React.FC<MatchedCourierReportsCardProps>
           <CardTitle className="text-xs font-medium flex items-center justify-between">
             <span className="flex items-center gap-1.5">
               <Package className="h-3.5 w-3.5" />
-              Futár riport
+              {t('transactions:dialogs.details.courier.title')}
             </span>
             <Badge variant="outline" className="text-[10px] h-5">
-              {courierReports.length} tétel
+              {t('transactions:dialogs.details.courier.items_count', { count: courierReports.length })}
             </Badge>
           </CardTitle>
         </CardHeader>
@@ -40,7 +43,7 @@ export const MatchedCourierReportsCard: React.FC<MatchedCourierReportsCardProps>
               >
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="font-medium font-mono">
-                    {report.package_number || 'Összesítő sor'}
+                    {report.package_number || t('transactions:dialogs.details.courier.summary_row')}
                   </span>
                   <Badge
                     variant="outline"
@@ -51,7 +54,9 @@ export const MatchedCourierReportsCard: React.FC<MatchedCourierReportsCardProps>
                         : 'border-yellow-500/30 text-yellow-600 bg-yellow-500/10'
                     )}
                   >
-                    {report.match_status === 'auto_matched' ? 'Párosítva' : 'Javasolt'}
+                    {report.match_status === 'auto_matched'
+                      ? t('transactions:dialogs.details.courier.status_matched')
+                      : t('transactions:dialogs.details.courier.status_suggested')}
                     {report.match_confidence != null && (
                       <span className="ml-1 opacity-70">
                         {Math.round(report.match_confidence * 100)}%
@@ -61,22 +66,22 @@ export const MatchedCourierReportsCard: React.FC<MatchedCourierReportsCardProps>
                 </div>
                 <div className="grid grid-cols-2 gap-1.5 text-[11px] text-muted-foreground">
                   <div>
-                    <span>Típus: </span>
+                    <span>{t('transactions:dialogs.details.courier.type')}</span>
                     <span className="font-medium text-foreground capitalize">
                       {report.report_type}
                     </span>
                   </div>
                   {report.delivery_date && (
                     <div>
-                      <span>Kiszállítás: </span>
+                      <span>{t('transactions:dialogs.details.courier.delivery_date')}</span>
                       <span className="font-medium text-foreground">
-                        {format(new Date(report.delivery_date), 'yyyy.MM.dd')}
+                        {formatDate(report.delivery_date)}
                       </span>
                     </div>
                   )}
                   {report.cod_amount != null && (
                     <div>
-                      <span>Utánvét (COD): </span>
+                      <span>{t('transactions:dialogs.details.courier.cod_amount')}</span>
                       <span className="font-medium text-foreground font-mono">
                         {formatCurrency(report.cod_amount, 'HUF')}
                       </span>
@@ -84,7 +89,7 @@ export const MatchedCourierReportsCard: React.FC<MatchedCourierReportsCardProps>
                   )}
                   {report.recipient_name && (
                     <div className="col-span-2">
-                      <span>Címzett: </span>
+                      <span>{t('transactions:dialogs.details.courier.recipient')}</span>
                       <span className="font-medium text-foreground">
                         {report.recipient_name}
                       </span>
@@ -92,7 +97,7 @@ export const MatchedCourierReportsCard: React.FC<MatchedCourierReportsCardProps>
                   )}
                   {report.reference_number && (
                     <div className="col-span-2 font-mono text-[10px]">
-                      <span>Ref: </span>
+                      <span>{t('transactions:dialogs.details.courier.ref')}</span>
                       <span>{report.reference_number}</span>
                     </div>
                   )}

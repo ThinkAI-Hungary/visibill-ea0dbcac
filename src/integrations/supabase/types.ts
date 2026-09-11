@@ -7928,6 +7928,7 @@ export type Database = {
       partners: {
         Row: {
           address: string | null
+          bank_account_number: string | null
           company_id: string | null
           created_at: string
           custom_bg_color: string | null
@@ -7946,6 +7947,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          bank_account_number?: string | null
           company_id?: string | null
           created_at?: string
           custom_bg_color?: string | null
@@ -7964,6 +7966,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          bank_account_number?: string | null
           company_id?: string | null
           created_at?: string
           custom_bg_color?: string | null

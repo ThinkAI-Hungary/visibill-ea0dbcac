@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, Pencil, Trash2 } from 'lucide-react';
 import { resolveIcon } from '@/components/IconPicker';
+import { formatCurrencyLocale } from '@/lib/locale/formatters';
 
 export interface CategoryInvoice {
   id: string;
@@ -36,12 +37,6 @@ interface CategoryAccordionItemProps {
   onDelete: () => void;
 }
 
-/** Format a single currency amount. HUF → "12 000 Ft", others → "45,50 USD" */
-function formatCurrencyAmount(amount: number, currency: string): string {
-  const formatted = new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 2 }).format(amount);
-  return currency === 'HUF' ? `${formatted} Ft` : `${formatted} ${currency}`;
-}
-
 /** Build "X Ft | Y USD | Z EUR" display string from currencyTotals map */
 export function formatCurrencyTotals(currencyTotals: Record<string, number>): string {
   const parts = Object.entries(currencyTotals)
@@ -51,8 +46,8 @@ export function formatCurrencyTotals(currencyTotals: Record<string, number>): st
       if (b === 'HUF') return 1;
       return a.localeCompare(b);
     })
-    .map(([currency, amount]) => formatCurrencyAmount(amount, currency));
-  return parts.length > 0 ? parts.join(' | ') : '0 Ft';
+    .map(([currency, amount]) => formatCurrencyLocale(amount, currency));
+  return parts.length > 0 ? parts.join(' | ') : formatCurrencyLocale(0);
 }
 
 export function CategoryAccordionItem({
@@ -75,7 +70,7 @@ export function CategoryAccordionItem({
   const isEmpty = invoiceCount === 0;
   const pct = totalInvoiceCount > 0 ? Math.round((invoiceCount / totalInvoiceCount) * 100) : 0;
 
-  const amountDisplay = isEmpty ? '0 Ft' : formatCurrencyTotals(currencyTotals);
+  const amountDisplay = isEmpty ? formatCurrencyLocale(0) : formatCurrencyTotals(currencyTotals);
 
   return (
     <div className="border-b border-border last:border-b-0">

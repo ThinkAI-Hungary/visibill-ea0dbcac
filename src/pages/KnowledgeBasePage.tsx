@@ -16,9 +16,11 @@ import { useScopedBasePath } from "@/lib/navigation";
 import { Button } from "@/components/ui/button";
 import { BookOpen, SearchX, LifeBuoy, ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { toast } from "@/hooks/use-toast";
 
 export default function KnowledgeBasePage() {
+  const { t } = useTranslation(['common']);
   const { articleId } = useParams<{ articleId?: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -302,10 +304,10 @@ export default function KnowledgeBasePage() {
                 <SearchX className="h-7 w-7" />
               </div>
               <h3 className="text-lg font-semibold text-foreground">
-                Nem található útmutató a megadott feltételekkel
+                {t('common:knowledge_base.empty_title', 'Nem található útmutató a megadott feltételekkel')}
               </h3>
               <p className="mt-1 text-sm text-muted-foreground max-w-md">
-                Próbáld meg módosítani a keresési kifejezést, vagy válassz másik témakört.
+                {t('common:knowledge_base.empty_desc', 'Próbáld meg módosítani a keresési kifejezést, vagy válassz másik témakört.')}
               </p>
               <div className="mt-5 flex gap-2">
                 <Button
@@ -314,7 +316,7 @@ export default function KnowledgeBasePage() {
                   onClick={handleClearFilters}
                   className="rounded-xl"
                 >
-                  Szűrők törlése
+                  {t('common:knowledge_base.clear_filters', 'Szűrők törlése')}
                 </Button>
               </div>
             </div>
@@ -329,10 +331,10 @@ export default function KnowledgeBasePage() {
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold text-foreground">
-                    Nem találod a megoldást a Tudástárban?
+                    {t('common:knowledge_base.support_title', 'Nem találod a megoldást a Tudástárban?')}
                   </h4>
                   <p className="text-xs text-muted-foreground">
-                    Nyiss hibajegyet a fejlesztőknek, vagy kérj segítséget az ügyfélszolgálattól.
+                    {t('common:knowledge_base.support_desc', 'Nyiss hibajegyet a fejlesztőknek, vagy kérj segítséget az ügyfélszolgálattól.')}
                   </p>
                 </div>
               </div>
@@ -344,10 +346,11 @@ export default function KnowledgeBasePage() {
                 className="rounded-xl border-primary/30 text-primary hover:bg-primary/10 gap-1.5 shrink-0"
               >
                 <Link to={`${basePath}/tickets`}>
-                  <span>Ugrás a Hibajegyekhez</span>
+                  <span>{t('common:knowledge_base.support_button', 'Ugrás a Hibajegyekhez')}</span>
                   <ArrowUpRight className="h-3.5 w-3.5" />
                 </Link>
               </Button>
+
             </div>
           </div>
         </div>

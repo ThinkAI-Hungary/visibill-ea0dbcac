@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { FileText, Trash2, Loader2, CheckCircle2, AlertTriangle, Clock, User, Calendar, Hash } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CustomTooltip } from '@/components/ui/custom-tooltip';
+import { useTranslation } from 'react-i18next';
 
 interface AuditImportHistoryModalProps {
   open: boolean;
@@ -15,6 +16,7 @@ interface AuditImportHistoryModalProps {
 }
 
 export function AuditImportHistoryModal({ open, onOpenChange }: AuditImportHistoryModalProps) {
+  const { t, i18n } = useTranslation(['accounting', 'common']);
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -55,16 +57,20 @@ export function AuditImportHistoryModal({ open, onOpenChange }: AuditImportHisto
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
 
   const handleDelete = async (importId: string, fileName: string) => {
-    if (!confirm(`Biztosan törlöd a(z) "${fileName}" importot?\nEz törli az összes importált könyvelési tételt is.`)) return;
+    if (!confirm(t('accounting:dialogs.audit_import_history.confirm_delete', { fileName }))) return;
     
     setDeletingId(importId);
     try {
       // Use server-side RPC to delete import + all entries (avoids client timeout)
       const { error } = await supabase.rpc('delete_audit_import', { p_import_id: importId });
       if (error) {
-        toast({ title: 'Hiba a törlés során', description: error.message, variant: 'destructive' });
+        toast({ title: t('accounting:dialogs.audit_import_history.toasts.delete_error'), description: error.message, variant: 'destructive' });
       } else {
-        toast({ title: 'Import törölve', description: `${fileName} és az összes tétele törölve.`, className: 'bg-green-50 text-green-900 border-green-200' });
+        toast({
+          title: t('accounting:dialogs.audit_import_history.toasts.delete_success_title'),
+          description: t('accounting:dialogs.audit_import_history.toasts.delete_success_desc', { fileName }),
+          className: 'bg-green-50 text-green-900 border-green-200'
+        });
         queryClient.invalidateQueries({ queryKey: ['auditImports'] });
         queryClient.invalidateQueries({ queryKey: ['glBalances'] });
         queryClient.invalidateQueries({ queryKey: ['glItems'] });
@@ -85,16 +91,18 @@ export function AuditImportHistoryModal({ open, onOpenChange }: AuditImportHisto
 
   const statusLabel = (status: string) => {
     switch (status) {
-      case 'completed': return 'Kész';
-      case 'error': return 'Hiba';
-      case 'processing': return 'Feldolgozás...';
-      default: return 'Várakozik';
+      case 'completed': return t('accounting:dialogs.audit_import_history.status_completed');
+      case 'error': return t('accounting:dialogs.audit_import_history.status_error');
+      case 'processing': return t('accounting:dialogs.audit_import_history.status_processing');
+      default: return t('accounting:dialogs.audit_import_history.status_pending');
     }
   };
 
   const fmtDate = (d: string) => {
-    try { return new Date(d).toLocaleString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }); }
-    catch { return d; }
+    try {
+      const locale = i18n.language === 'hr' ? 'hr-HR' : 'hu-HU';
+      return new Date(d).toLocaleString(locale, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    } catch { return d; }
   };
 
   return (
@@ -103,10 +111,10 @@ export function AuditImportHistoryModal({ open, onOpenChange }: AuditImportHisto
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
             <FileText className="w-5 h-5 text-primary" />
-            Főkönyv XML Feltöltések
+            {t('accounting:dialogs.audit_import_history.title')}
           </DialogTitle>
           <DialogDescription>
-            Az importált audit XML fájlok és feldolgozási státuszuk.
+            {t('accounting:dialogs.audit_import_history.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -137,8 +145,8 @@ export function AuditImportHistoryModal({ open, onOpenChange }: AuditImportHisto
           ) : !imports?.length ? (
             <div className="text-center py-12 text-muted-foreground">
               <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p className="text-sm">Még nincs feltöltött XML.</p>
-              <p className="text-xs mt-1">Használd az "XML Import" gombot a főkönyv oldalon.</p>
+              <p className="text-sm">{t('accounting:dialogs.audit_import_history.empty_title')}</p>
+              <p className="text-xs mt-1">{t('accounting:dialogs.audit_import_history.empty_desc')}</p>
             </div>
           ) : (
             <div className="space-y-3 pb-4">
@@ -164,7 +172,7 @@ export function AuditImportHistoryModal({ open, onOpenChange }: AuditImportHisto
                           </CustomTooltip>
                           {imp.dry_run && (
                             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20 shrink-0">
-                              Előnézet (Dry Run)
+                              {t('accounting:dialogs.audit_import_history.dry_run_badge')}
                             </span>
                           )}
                         </div>
@@ -178,6 +186,7 @@ export function AuditImportHistoryModal({ open, onOpenChange }: AuditImportHisto
                       variant="ghost"
                       size="sm"
                       disabled={deletingId === imp.id}
+                      aria-label={t('accounting:dialogs.audit_import_history.delete_tooltip', { fileName: imp.file_name })}
                       className="h-7 w-7 p-0 text-red-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20 shrink-0"
                       onClick={() => handleDelete(imp.id, imp.file_name)}
                     >
@@ -197,7 +206,7 @@ export function AuditImportHistoryModal({ open, onOpenChange }: AuditImportHisto
                     </div>
                     <div className="flex items-center gap-1.5 text-muted-foreground">
                       <Hash className="w-3 h-3 shrink-0" />
-                      <span>{imp.entry_count?.toLocaleString() || 0} tétel</span>
+                      <span>{t('accounting:dialogs.audit_import_history.entries_count', { count: imp.entry_count || 0 })}</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-muted-foreground">
                       <FileText className="w-3 h-3 shrink-0" />

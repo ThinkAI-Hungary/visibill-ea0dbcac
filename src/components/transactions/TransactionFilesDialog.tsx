@@ -20,7 +20,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Trash2, FileText, Loader2, Search, User, Landmark, Download } from 'lucide-react';
 import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { getDateFnsLocale, formatCurrency } from '@/lib/locale/formatters';
+import { useTranslation } from 'react-i18next';
 import { useToast } from '@/hooks/use-toast';
 
 interface UploadWithTransactions {
@@ -62,6 +63,7 @@ const BANK_CONFIG: Record<string, { label: string }> = {
 };
 
 export function TransactionFilesDialog({ open: externalOpen, onOpenChange: externalOnOpenChange }: TransactionFilesDialogProps = {}) {
+  const { t } = useTranslation(['transactions', 'common']);
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -352,13 +354,21 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
     setDeleting(true);
     try {
       await deleteUploadFileOnly(upload);
-      toast({ title: 'Sikeres törlés', description: 'A fájl törölve lett. A tranzakciók megmaradtak.', duration: 3000 });
+      toast({
+        title: t('transactions:dialogs.files.toasts.file_only_success_title'),
+        description: t('transactions:dialogs.files.toasts.file_only_success_desc'),
+        duration: 3000,
+      });
       queryClient.invalidateQueries({ queryKey: ['transaction_uploads_with_counts', companyId] });
       queryClient.invalidateQueries({ queryKey: ['transaction_upload_page_counts', companyId] });
       queryClient.invalidateQueries({ queryKey: ['bank-uploads-unified', companyId] });
       queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
     } catch (err: any) {
-      toast({ title: 'Hiba', description: err.message || 'A törlés sikertelen.', variant: 'destructive' });
+      toast({
+        title: t('transactions:dialogs.files.toasts.error_title'),
+        description: err.message || t('transactions:dialogs.files.toasts.error_desc'),
+        variant: 'destructive',
+      });
     } finally {
       setDeleting(false);
       setDeleteTarget(null);
@@ -369,7 +379,11 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
     setDeleting(true);
     try {
       await deleteUploadWithTransactions(upload);
-      toast({ title: 'Sikeres törlés', description: 'A dokumentum és a hozzá tartozó tranzakciók törölve lettek.', duration: 3000 });
+      toast({
+        title: t('transactions:dialogs.files.toasts.all_success_title'),
+        description: t('transactions:dialogs.files.toasts.all_success_desc'),
+        duration: 3000,
+      });
       queryClient.invalidateQueries({ queryKey: ['transaction_uploads_with_counts', companyId] });
       queryClient.invalidateQueries({ queryKey: ['transaction_upload_page_counts', companyId] });
       queryClient.invalidateQueries({ queryKey: ['bank-uploads-unified', companyId] });
@@ -377,7 +391,11 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
       queryClient.invalidateQueries({ queryKey: ['tx-kpis'] });
       queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
     } catch (err: any) {
-      toast({ title: 'Hiba', description: err.message || 'A törlés sikertelen.', variant: 'destructive' });
+      toast({
+        title: t('transactions:dialogs.files.toasts.error_title'),
+        description: err.message || t('transactions:dialogs.files.toasts.error_desc'),
+        variant: 'destructive',
+      });
     } finally {
       setDeleting(false);
       setDeleteTarget(null);
@@ -393,14 +411,16 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
 
     if (failed === 0) {
       toast({
-        title: `${succeeded} dokumentum törölve`,
-        description: withTransactions ? 'A fájlok és a kapcsolódó tranzakciók törölve lettek.' : 'A fájlok törölve, a tranzakciók megmaradtak.',
+        title: t('transactions:dialogs.files.toasts.batch_all_success_title', { count: succeeded }),
+        description: withTransactions
+          ? t('transactions:dialogs.files.toasts.batch_all_success_desc_with_tx')
+          : t('transactions:dialogs.files.toasts.batch_all_success_desc_file_only'),
         duration: 3000,
       });
     } else {
       toast({
-        title: `${succeeded}/${results.length} sikeres törlés`,
-        description: `${failed} dokumentum törlése sikertelen volt.`,
+        title: t('transactions:dialogs.files.toasts.batch_partial_title', { succeeded, total: results.length }),
+        description: t('transactions:dialogs.files.toasts.batch_partial_desc', { failed }),
         variant: 'destructive',
       });
     }
@@ -433,16 +453,15 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
           <DialogTrigger asChild>
             <Button variant="outline" size="sm">
               <Landmark className="h-4 w-4 mr-2" />
-              Feltöltött fájlok
+              {t('transactions:dialogs.files.trigger_btn')}
             </Button>
           </DialogTrigger>
         )}
         <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col border-border bg-card">
           <DialogHeader className="shrink-0">
-            <DialogTitle>Feltöltött tranzakció dokumentumok</DialogTitle>
+            <DialogTitle>{t('transactions:dialogs.files.title')}</DialogTitle>
             <DialogDescription>
-              Itt tekintheti meg és törölheti a korábban feltöltött bankkivonatokat.
-              A törlés eltávolítja a fájlból származó összes tranzakciós adatot is.
+              {t('transactions:dialogs.files.description')}
             </DialogDescription>
           </DialogHeader>
 
@@ -453,7 +472,7 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 dark:text-muted-foreground" />
               <Input
-                placeholder="Keresés fájlnév vagy bank alapján..."
+                placeholder={t('transactions:dialogs.files.search_placeholder')}
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-9 h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10 focus:border-primary"
@@ -462,13 +481,13 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
             <Select value={uploaderFilter} onValueChange={handleUploaderChange}>
               <SelectTrigger className="h-9 w-[200px] bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
                 <User className="h-3.5 w-3.5 mr-1.5 text-slate-500 dark:text-muted-foreground" />
-                <SelectValue placeholder="Feltöltő" />
+                <SelectValue placeholder={t('transactions:dialogs.files.uploader_placeholder')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Összes feltöltő</SelectItem>
+                <SelectItem value="all">{t('transactions:dialogs.files.all_uploaders')}</SelectItem>
                 {companyMembers.map(member => (
                   <SelectItem key={member.user_id} value={member.user_id}>
-                    {member.name || 'Névtelen felhasználó'}
+                    {member.name || t('transactions:dialogs.files.anonymous_user')}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -481,13 +500,17 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
             </div>
           ) : filteredUploads.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {uploads.length === 0 ? 'Nincs feltöltött dokumentum.' : 'Nincs találat a megadott szűrőkkel.'}
+              {uploads.length === 0
+                ? t('transactions:dialogs.files.empty_no_uploads')
+                : t('transactions:dialogs.files.empty_no_matches')}
             </div>
           ) : (
             <div className="space-y-4">
               {selectedCount > 0 && (
                 <div className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/20 text-foreground animate-in fade-in duration-200">
-                  <span className="text-sm font-semibold">{selectedCount} kijelölt elem</span>
+                  <span className="text-sm font-semibold">
+                    {t('transactions:dialogs.files.selected_count', { count: selectedCount })}
+                  </span>
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
@@ -501,7 +524,7 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
                       ) : (
                         <Download className="h-4 w-4" />
                       )}
-                      Letöltés
+                      {t('transactions:dialogs.files.download_btn')}
                     </Button>
                     <Button
                       variant="destructive"
@@ -511,7 +534,7 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
                       disabled={downloading}
                     >
                       <Trash2 className="h-4 w-4" />
-                      Törlés
+                      {t('transactions:dialogs.files.delete_btn')}
                     </Button>
                   </div>
                 </div>
@@ -524,16 +547,16 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
                         <Checkbox
                           checked={allVisibleSelected}
                           onCheckedChange={toggleSelectAll}
-                          aria-label="Összes kijelölése az oldalon"
+                          aria-label={t('transactions:dialogs.files.select_all_aria')}
                           className="data-[state=indeterminate]:opacity-70"
                           {...(someVisibleSelected && !allVisibleSelected ? { 'data-state': 'indeterminate' } : {})}
                         />
                       </TableHead>
-                      <TableHead className="w-[35%]">Fájl neve</TableHead>
-                      <TableHead className="w-[20%]">Bank / Tranzakciók</TableHead>
-                      <TableHead className="w-[18%]">Feltöltés dátuma</TableHead>
-                      <TableHead className="w-[17%]">Feltöltötte</TableHead>
-                      <TableHead className="w-[10%] text-right">Művelet</TableHead>
+                      <TableHead className="w-[35%]">{t('transactions:dialogs.files.columns.file_name')}</TableHead>
+                      <TableHead className="w-[20%]">{t('transactions:dialogs.files.columns.bank_tx_count')}</TableHead>
+                      <TableHead className="w-[18%]">{t('transactions:dialogs.files.columns.upload_date')}</TableHead>
+                      <TableHead className="w-[17% his]">{t('transactions:dialogs.files.columns.uploaded_by')}</TableHead>
+                      <TableHead className="w-[10%] text-right">{t('transactions:dialogs.files.columns.actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -547,7 +570,7 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
                           <Checkbox
                             checked={selectedIds.has(upload.id)}
                             onCheckedChange={() => toggleSelect(upload.id)}
-                            aria-label={`Kijelölés: ${upload.file_name}`}
+                            aria-label={t('transactions:dialogs.files.select_item_aria', { fileName: upload.file_name })}
                           />
                         </TableCell>
                         <TableCell className="font-medium text-sm truncate max-w-[280px]">
@@ -562,20 +585,20 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
                             >
                               <span className="font-semibold text-primary">{getBankLabel(upload.detected_bank)}</span>
                               <span className="text-xs text-muted-foreground group-hover:text-primary">
-                                ({upload.transactionCount} db)
+                                {t('transactions:dialogs.files.tx_count_suffix', { count: upload.transactionCount })}
                               </span>
                             </button>
                           ) : (
                             <div className="flex items-center gap-1.5 text-muted-foreground">
                               <span>{getBankLabel(upload.detected_bank)}</span>
                               <span className="text-xs">
-                                ({upload.transactionCount} db)
+                                {t('transactions:dialogs.files.tx_count_suffix', { count: upload.transactionCount })}
                               </span>
                             </div>
                           )}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {format(new Date(upload.created_at), 'yyyy. MMM dd. HH:mm', { locale: hu })}
+                          {format(new Date(upload.created_at), 'yyyy. MMM dd. HH:mm', { locale: getDateFnsLocale() })}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {getUserName(upload.user_id)}
@@ -617,11 +640,11 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
       <AlertDialog open={isOpen && !!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
         <AlertDialogContent className="max-w-md border-border bg-card">
           <AlertDialogHeader className="w-full min-w-0">
-            <AlertDialogTitle>Dokumentum törlése</AlertDialogTitle>
+            <AlertDialogTitle>{t('transactions:dialogs.files.single_delete.title')}</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3 w-full min-w-0">
-                <p>Válaszd ki a törlés módját:</p>
-                <p className="text-xs text-muted-foreground">Ez a művelet nem vonható vissza.</p>
+                <p>{t('transactions:dialogs.files.single_delete.mode_prompt')}</p>
+                <p className="text-xs text-muted-foreground">{t('transactions:dialogs.files.single_delete.irreversible')}</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -637,9 +660,11 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
                   <span className="text-xs font-bold text-amber-600 dark:text-amber-400">A</span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-foreground">Csak a fájl törlése</p>
+                  <p className="text-sm font-medium text-foreground">
+                    {t('transactions:dialogs.files.single_delete.option_file_only_title')}
+                  </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    A <span className="font-medium text-foreground break-all">{deleteTarget?.file_name}</span> fájl törlődik, de a feldolgozott tranzakció adatok megmaradnak.
+                    {t('transactions:dialogs.files.single_delete.option_file_only_desc', { fileName: deleteTarget?.file_name })}
                   </p>
                 </div>
               </div>
@@ -655,13 +680,14 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
                   <span className="text-xs font-bold text-red-600 dark:text-red-400">B</span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-destructive">Fájl és tranzakció adatok törlése</p>
+                  <p className="text-sm font-medium text-destructive">
+                    {t('transactions:dialogs.files.single_delete.option_all_title')}
+                  </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    A <span className="font-medium text-foreground break-all">{deleteTarget?.file_name}</span> fájl és a hozzá tartozó{' '}
-                    <span className="font-medium text-foreground">
-                      {deleteTarget?.transactionCount} db
-                    </span>{' '}
-                    tranzakció is véglegesen törlődik.
+                    {t('transactions:dialogs.files.single_delete.option_all_desc', {
+                      fileName: deleteTarget?.file_name,
+                      count: deleteTarget?.transactionCount,
+                    })}
                   </p>
                 </div>
               </div>
@@ -671,12 +697,16 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
           {deleting && (
             <div className="flex items-center justify-center py-2">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-sm text-muted-foreground">Törlés folyamatban...</span>
+              <span className="ml-2 text-sm text-muted-foreground">
+                {t('transactions:dialogs.files.single_delete.deleting')}
+              </span>
             </div>
           )}
 
           <AlertDialogFooter className="w-full min-w-0">
-            <AlertDialogCancel disabled={deleting}>Mégsem</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>
+              {t('transactions:dialogs.files.single_delete.cancel')}
+            </AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -686,19 +716,19 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
         <AlertDialogContent className="max-w-md border-border bg-card">
           <AlertDialogHeader className="w-full min-w-0">
             <AlertDialogTitle>
-              {selectedCount} dokumentum törlése
+              {t('transactions:dialogs.files.batch_delete.title', { count: selectedCount })}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2 w-full min-w-0">
-                <p>Válaszd ki a törlés módját az összes kijelölt elemre:</p>
+                <p>{t('transactions:dialogs.files.batch_delete.mode_prompt')}</p>
                 <div className="max-h-28 overflow-y-auto rounded-md border border-border/50 bg-muted/30 p-2 space-y-1 w-full min-w-0 overflow-x-hidden">
                   {selectedUploads.map(u => (
                     <div key={u.id} className="text-xs text-muted-foreground truncate w-full min-w-0" title={u.file_name}>
-                      • {u.file_name} ({u.transactionCount} db tranzakció)
+                      {t('transactions:dialogs.files.batch_delete.item_line', { fileName: u.file_name, count: u.transactionCount })}
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-muted-foreground">Ez a művelet nem vonható vissza.</p>
+                <p className="text-xs text-muted-foreground">{t('transactions:dialogs.files.batch_delete.irreversible')}</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -714,9 +744,11 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
                   <span className="text-xs font-bold text-amber-600 dark:text-amber-400">A</span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-foreground">Csak a fájlok törlése</p>
+                  <p className="text-sm font-medium text-foreground">
+                    {t('transactions:dialogs.files.batch_delete.option_files_only_title')}
+                  </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {selectedCount} fájl törlődik, a tranzakció adatok megmaradnak.
+                    {t('transactions:dialogs.files.batch_delete.option_files_only_desc', { count: selectedCount })}
                   </p>
                 </div>
               </div>
@@ -732,9 +764,11 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
                   <span className="text-xs font-bold text-red-600 dark:text-red-400">B</span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-destructive">Fájlok és tranzakció adatok törlése</p>
+                  <p className="text-sm font-medium text-destructive">
+                    {t('transactions:dialogs.files.batch_delete.option_all_title')}
+                  </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {selectedCount} fájl és az összes hozzájuk tartozó tranzakció véglegesen törlődik.
+                    {t('transactions:dialogs.files.batch_delete.option_all_desc', { count: selectedCount })}
                   </p>
                 </div>
               </div>
@@ -744,12 +778,16 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
           {batchDeleting && (
             <div className="flex items-center justify-center py-2 gap-2">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Törlés folyamatban... ({selectedCount} elem)</span>
+              <span className="text-sm text-muted-foreground">
+                {t('transactions:dialogs.files.batch_delete.deleting', { count: selectedCount })}
+              </span>
             </div>
           )}
 
           <AlertDialogFooter className="w-full min-w-0">
-            <AlertDialogCancel disabled={batchDeleting}>Mégsem</AlertDialogCancel>
+            <AlertDialogCancel disabled={batchDeleting}>
+              {t('transactions:dialogs.files.batch_delete.cancel')}
+            </AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -763,10 +801,10 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
           <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-2 truncate">
               <FileText className="h-5 w-5 text-primary" />
-              <span>Tranzakciók: {viewingUpload?.file_name}</span>
+              <span>{t('transactions:dialogs.files.details_modal.title', { fileName: viewingUpload?.file_name })}</span>
             </DialogTitle>
             <DialogDescription>
-              A fájlból kinyert tranzakciós sorok listája ({viewingUpload?.transactionCount} db).
+              {t('transactions:dialogs.files.details_modal.description', { count: viewingUpload?.transactionCount })}
             </DialogDescription>
           </DialogHeader>
 
@@ -777,17 +815,17 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
               </div>
             ) : viewingTransactions.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground text-sm">
-                Nincsenek tranzakciók ehhez a fájlhoz.
+                {t('transactions:dialogs.files.details_modal.empty')}
               </div>
             ) : (
               <div className="rounded-lg border border-border/50 overflow-x-auto">
                 <Table className="compact-table">
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[15%]">Dátum</TableHead>
-                      <TableHead className="w-[50%]">Közlemény</TableHead>
-                      <TableHead className="w-[20%] text-right">Összeg</TableHead>
-                      <TableHead className="w-[15%] text-center">Státusz</TableHead>
+                      <TableHead className="w-[15%]">{t('transactions:dialogs.files.details_modal.col_date')}</TableHead>
+                      <TableHead className="w-[50%]">{t('transactions:dialogs.files.details_modal.col_description')}</TableHead>
+                      <TableHead className="w-[20%] text-right">{t('transactions:dialogs.files.details_modal.col_amount')}</TableHead>
+                      <TableHead className="w-[15%] text-center">{t('transactions:dialogs.files.details_modal.col_status')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -801,14 +839,18 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
                         </TableCell>
                         <TableCell className="text-sm font-semibold text-right whitespace-nowrap">
                           <span className={tx.amount < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}>
-                            {tx.amount.toLocaleString('hu-HU')} {tx.currency}
+                            {formatCurrency(tx.amount, tx.currency || 'HUF')}
                           </span>
                         </TableCell>
                         <TableCell className="text-center">
                           {tx.is_verified ? (
-                            <Badge variant="success" className="text-[10px] px-1.5 py-0.5">Jóváhagyott</Badge>
+                            <Badge variant="success" className="text-[10px] px-1.5 py-0.5">
+                              {t('transactions:dialogs.files.details_modal.status_verified')}
+                            </Badge>
                           ) : (
-                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">Függőben</Badge>
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">
+                              {t('transactions:dialogs.files.details_modal.status_pending')}
+                            </Badge>
                           )}
                         </TableCell>
                       </TableRow>
@@ -820,7 +862,7 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
           </div>
           <div className="flex justify-end pt-3 border-t border-border/30 shrink-0">
             <Button variant="outline" size="sm" onClick={() => setViewingUpload(null)}>
-              Bezárás
+              {t('transactions:dialogs.files.details_modal.close_btn')}
             </Button>
           </div>
         </DialogContent>

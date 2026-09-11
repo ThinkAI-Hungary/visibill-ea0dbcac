@@ -6,7 +6,10 @@
     "profit": "Neto rezultat",
     "unpaid_incoming": "Otvorene obveze prema dobavljačima",
     "unpaid_outgoing": "Otvorena potraživanja od kupaca",
-    "cash_balance": "Stanje na računima"
+    "cash_balance": "Stanje na računima",
+    "vs_previous_month": "u odnosu na prethodni mjesec",
+    "vat_diff_desc": "Ukupno - Odbitno",
+    "unpaid_inbound_desc": "Neplaćeni ulazni računi"
   },
   "sections": {
     "cashflow": "Novčani tok (Cash-flow)",
@@ -24,6 +27,76 @@
     "net": "Neto",
     "gross": "Bruto",
     "activity_log": "Dnevnik aktivnosti"
+  },
+  "profile_summary": {
+    "title": "Informacije o profilu"
+  },
+  "quick_actions": {
+    "title": "Brze radnje",
+    "review_invoices": {
+      "title": "Pregled računa",
+      "desc": "Detaljan popis računa s mogućnostima filtriranja",
+      "button": "Pregledaj račune"
+    },
+    "upload_invoices": {
+      "title": "Prijenos računa",
+      "desc": "Ručni prijenos novih računa",
+      "button": "Prenesi datoteke"
+    },
+    "project_management": {
+      "title": "Upravljanje projektima",
+      "desc": "Uređivanje i organizacija projekata",
+      "button": "Upravljaj projektima"
+    }
+  },
+  "recent_invoices": {
+    "title": "Nedavni računi",
+    "description": "Pregled nedavno obrađenih računa",
+    "view_all": "Prikaži sve",
+    "empty": "Još nema obrađenih računa",
+    "project": "Projekt:",
+    "status": {
+      "processed": "Obrađeno",
+      "processing": "U obradi",
+      "error": "Greška"
+    }
+  },
+  "project_breakdown": {
+    "title": "Pregled projekata",
+    "description": "Raspodjela računa po projektima",
+    "empty": "Još nema računa dodijeljenih projektima",
+    "invoices_count": "{{count}} računa",
+    "total": "Ukupno:",
+    "average": "Prosječno: {{amount}} / račun",
+    "active_project": "Aktivni projekt"
+  },
+  "revenue_expenses_chart": {
+    "title": "Prihodi i rashodi za {{year}}. godinu",
+    "revenue_paid": "Prihod (naplaćeno)",
+    "revenue_unpaid": "Potraživanja",
+    "expenses_paid": "Rashod (plaćeno)",
+    "expenses_unpaid": "Obveze",
+    "salaries": "Plaće",
+    "cash_flow": "Novčani tok",
+    "gross": "bruto",
+    "net": "neto",
+    "year_label": "{{year}}. god.",
+    "result": "Rezultat",
+    "expense_suffix": " (trošak)",
+    "months": {
+      "jan": "sij.",
+      "feb": "velj.",
+      "mar": "ožu.",
+      "apr": "tra.",
+      "may": "svi.",
+      "jun": "lip.",
+      "jul": "srp.",
+      "aug": "kol.",
+      "sep": "ruj.",
+      "oct": "lis.",
+      "nov": "stu.",
+      "dec": "pro."
+    }
   },
   "vat": {
     "title": "Pregled PDV-a",
@@ -49,12 +122,68 @@
     "payable": "Za plaćanje",
     "missing": "Nedostaje",
     "payable_amount": "Iznos za plaćanje:",
-    "missing_amount": "Iznos koji nedostaje:"
+    "missing_amount": "Iznos koji nedostaje:",
+    "empty": "Nema računa za prikaz",
+    "invoice_number": "Broj računa",
+    "issue_date": "Datum izdavanja",
+    "supplier": "Dobavljač",
+    "gross": "Bruto",
+    "more_invoices": "+ još {{count}} računa",
+    "missing_invoices_notice": "{{count}} računa čeka na slanje",
+    "submit": "Pošalji"
   },
   "unmatched_items": {
     "title": "Nepovezane stavke",
     "nav_invoices": "Porezni računi",
     "transactions": "Transakcije",
-    "unmatched_nav_desc": "{{count}} računa nije povezano s transakcijom · Ukupno:"
+    "all_nav_matched": "Svi porezni računi su povezani!",
+    "all_tx_matched": "Sve transakcije su povezane!",
+    "direction": "Smjer",
+    "inbound": "Ul",
+    "outbound": "Iz",
+    "invoice_number": "Broj računa",
+    "issue_date": "Datum izdavanja",
+    "partner": "Partner",
+    "gross": "Bruto",
+    "payment_method": "Način pl.",
+    "date": "Datum",
+    "amount": "Iznos",
+    "description": "Opis",
+    "type": "Vrsta",
+    "more_tx": "+ još {{count}} transakcija",
+    "more_invoices": "+ još {{count}} računa",
+    "unmatched_nav_summary": "{{count}} računa nije povezano s transakcijom · Ukupno: {{total}}",
+    "unmatched_tx_summary": "{{count}} transakcija nije povezano s računom · Ukupno: {{total}}"
+  },
+  "fx_differences": {
+    "title": "Tečajne razlike",
+    "subtitle": "Promjena tečaja deviznih računa između isporuke i naplate",
+    "items_count": "{{count}} stavki",
+    "net_difference": "Neto razlika",
+    "total_gain": "Ukupni dobitak",
+    "total_loss": "Ukupni gubitak",
+    "tax_impact": "Porez na dobit (9%)",
+    "informative": "Informativnog karaktera",
+    "gl_classification": "Knjiženje u glavnu knjigu",
+    "gain_gl_label": "Konto tečajnih dobitaka",
+    "loss_gl_label": "Konto tečajnih gubitaka",
+    "choose_gl": "Odaberite konto...",
+    "gain": "Dobitak",
+    "loss": "Gubitak",
+    "net": "Neto",
+    "default_badge": "(zadano)",
+    "gl_info": "Tečajne razlike u glavnoj knjizi evidentiraju se pod ovim kontima.",
+    "currency_breakdown": "Pregled po valutama",
+    "table": {
+      "month": "Mjesec",
+      "gain": "Dobitak",
+      "loss": "Gubitak",
+      "net": "Neto",
+      "gl_number": "Konto",
+      "items": "Stavke",
+      "total": "Ukupno",
+      "edit_gl_tooltip": "Uređivanje broja konta ({{glNum}})"
+    }
   }
 }
+

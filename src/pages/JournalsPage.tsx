@@ -74,6 +74,18 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   ELVETVE: { label: 'Elvetve', color: 'bg-slate-500/10 text-slate-500 border-slate-500/20' },
 };
 
+const getStatusInfo = (status: string, t?: any) => {
+  const labels: Record<string, { label: string; color: string }> = {
+    GEPI_JAVASLAT: { label: t ? t('accounting:journals.status_labels.GEPI_JAVASLAT', 'Rendszer javaslat') : 'Rendszer javaslat', color: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20' },
+    KEZI_PISZKOZAT: { label: t ? t('accounting:journals.status_labels.KEZI_PISZKOZAT', 'Piszkozat') : 'Piszkozat', color: 'bg-amber-500/10 text-amber-500 border-amber-500/20' },
+    JOVAHAGYASRA_VAR: { label: t ? t('accounting:journals.status_labels.JOVAHAGYASRA_VAR', 'Jóváhagyásra vár') : 'Jóváhagyásra vár', color: 'bg-sky-500/10 text-sky-500 border-sky-500/20' },
+    KONYVELT: { label: t ? t('accounting:journals.status_labels.KONYVELT', 'Könyvelt') : 'Könyvelt', color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' },
+    SZTORNOZOTT: { label: t ? t('accounting:journals.status_labels.SZTORNOZOTT', 'Sztornózott') : 'Sztornózott', color: 'bg-rose-500/10 text-rose-500 border-rose-500/20' },
+    ELVETVE: { label: t ? t('accounting:journals.status_labels.ELVETVE', 'Elvetve') : 'Elvetve', color: 'bg-slate-500/10 text-slate-500 border-slate-500/20' },
+  };
+  return labels[status] || { label: status, color: 'bg-slate-500/10 text-slate-500 border-slate-500/20' };
+};
+
 export const SOURCE_LABELS: Record<string, string> = {
   AUTO_SZAMLA: 'Számla',
   AUTO_BANK: 'Bank',
@@ -82,41 +94,41 @@ export const SOURCE_LABELS: Record<string, string> = {
   KEZI_MODOSITAS: 'Módosítás',
 };
 
-const renderSourceBadge = (source: string) => {
+const renderSourceBadge = (source: string, t?: any) => {
   switch (source) {
     case 'AUTO_SZAMLA':
       return (
         <span className="inline-flex items-center gap-1 text-[10px] font-medium text-sky-600 dark:text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded border border-sky-500/20 whitespace-nowrap">
           <Receipt className="w-3 h-3 text-sky-500 shrink-0" />
-          Számla
+          {t ? t('accounting:journals.source_labels.AUTO_SZAMLA', 'Számla') : 'Számla'}
         </span>
       );
     case 'AUTO_BANK':
       return (
         <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 whitespace-nowrap">
           <Landmark className="w-3 h-3 text-emerald-500 shrink-0" />
-          Bank
+          {t ? t('accounting:journals.source_labels.AUTO_BANK', 'Bank') : 'Bank'}
         </span>
       );
     case 'AUTO_RENDSZER':
       return (
         <span className="inline-flex items-center gap-1 text-[10px] font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20 whitespace-nowrap">
           <Bot className="w-3 h-3 text-indigo-500 shrink-0" />
-          Rendszer
+          {t ? t('accounting:journals.source_labels.AUTO_RENDSZER', 'Rendszer') : 'Rendszer'}
         </span>
       );
     case 'KEZI':
       return (
         <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 whitespace-nowrap">
           <PenTool className="w-3 h-3 text-amber-500 shrink-0" />
-          Kézi
+          {t ? t('accounting:journals.source_labels.KEZI', 'Kézi') : 'Kézi'}
         </span>
       );
     case 'KEZI_MODOSITAS':
       return (
         <span className="inline-flex items-center gap-1 text-[10px] font-medium text-orange-600 dark:text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20 whitespace-nowrap">
           <PenLine className="w-3 h-3 text-orange-500 shrink-0" />
-          Módosítás
+          {t ? t('accounting:journals.source_labels.KEZI_MODOSITAS', 'Módosítás') : 'Módosítás'}
         </span>
       );
     default:
@@ -729,9 +741,9 @@ export default function JournalsPage() {
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-xs text-xs">
-                <p className="font-semibold">Naptári időszakok zárolása (év / hónap)</p>
+                <p className="font-semibold">{t('accounting:journals.period_closing_tooltip_title', 'Naptári időszakok zárolása (év / hónap)')}</p>
                 <p className="text-muted-foreground text-[11px] mt-0.5">
-                  A könyvelési hónapok végleges zárolása. Megakadályozza az új tételek rögzítését a zárt időszakba. Egyedi bizonylatok véglegesítéséhez használd a lekönyvelést.
+                  {t('accounting:journals.period_closing_tooltip_desc', 'A könyvelési hónapok végleges zárolása. Megakadályozza az új tételek rögzítését a zárt időszakba. Egyedi bizonylatok véglegesítéséhez használd a lekönyvelést.')}
                 </p>
               </TooltipContent>
             </Tooltip>
@@ -747,14 +759,14 @@ export default function JournalsPage() {
               ) : (
                 <Bot className="w-4 h-4" />
               )}
-              Javaslatok generálása
+              {t('accounting:journals.generate_drafts', 'Javaslatok generálása')}
             </Button>
             <Button
               size="sm"
               className="gap-1.5 shadow-sm"
               onClick={() => { setEditingEntryId(null); setManualEntryOpen(true); }}
             >
-              <Plus className="w-4 h-4" /> Új vegyes bizonylat
+              <Plus className="w-4 h-4" /> {t('accounting:journals.new_manual_entry', 'Új vegyes bizonylat')}
             </Button>
           </div>
         }
@@ -774,12 +786,16 @@ export default function JournalsPage() {
           <div className="flex items-center gap-1.5 min-w-0 shrink-0">
             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
             <div className="flex flex-col leading-tight min-w-0 pr-1 shrink-0">
-              <span className={cn("font-bold text-[11px] leading-tight whitespace-nowrap", selectedJournalId === 'munkalista' ? "text-primary-foreground" : "text-foreground")}>Munkalista</span>
-              <span className={cn("text-[8px] leading-none whitespace-nowrap", selectedJournalId === 'munkalista' ? "text-primary-foreground/80" : "text-muted-foreground")}>Drafts</span>
+              <span className={cn("font-bold text-[11px] leading-tight whitespace-nowrap", selectedJournalId === 'munkalista' ? "text-primary-foreground" : "text-foreground")}>
+                {t('accounting:journals.worklist', 'Munkalista')}
+              </span>
+              <span className={cn("text-[8px] leading-none whitespace-nowrap", selectedJournalId === 'munkalista' ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                {t('accounting:journals.drafts_sub', 'Drafts')}
+              </span>
             </div>
           </div>
           <Badge variant={selectedJournalId === 'munkalista' ? 'secondary' : 'outline'} className="px-1.5 py-0.5 text-[8px] shrink-0 font-normal mr-1">
-            Függő
+            {t('accounting:journals.pending_badge', 'Függő')}
           </Badge>
         </button>
 
@@ -814,7 +830,9 @@ export default function JournalsPage() {
               </TooltipTrigger>
               <TooltipContent side="bottom" className="p-2 text-xs shadow-md">
                 <p className="font-semibold text-popover-foreground">{j.code} - {j.name}</p>
-                <p className="text-[10px] text-muted-foreground">Pénznem: {j.currency}</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {t('accounting:journals.currency_label', { currency: j.currency, defaultValue: `Pénznem: ${j.currency}` })}
+                </p>
               </TooltipContent>
             </Tooltip>
           ))
@@ -834,18 +852,20 @@ export default function JournalsPage() {
                   </div>
                   <div>
                     <h3 className="font-bold text-sm flex items-center gap-2">
-                      <span>Nyitó Napló (NY) — Sztv. 491. Technikai Nyitómérleg</span>
-                      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">Mérlegfolytonosság</Badge>
+                      <span>{t('accounting:journals.opening.banner_title', 'Nyitó Napló (NY) — Sztv. 491. Technikai Nyitómérleg')}</span>
+                      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
+                        {t('accounting:journals.opening.continuity_badge', 'Mérlegfolytonosság')}
+                      </Badge>
                     </h3>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Az előző évi záró mérleg felvezetése a 491. Nyitómérleg számlával szemben (Kötelező validáció: Σ T = Σ K).
+                      {t('accounting:journals.opening.banner_desc', 'Az előző évi záró mérleg felvezetése a 491. Nyitómérleg számlával szemben (Kötelező validáció: Σ T = Σ K).')}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
                   <Button size="sm" className="gap-1.5 shadow-sm" onClick={() => setOpeningWizardOpen(true)}>
-                    <BookOpen className="w-4 h-4" /> Nyitó Varázsló indítása
+                    <BookOpen className="w-4 h-4" /> {t('accounting:journals.opening.start_wizard', 'Nyitó Varázsló indítása')}
                   </Button>
                 </div>
               </div>
@@ -857,7 +877,7 @@ export default function JournalsPage() {
             <div className="relative flex-1 w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Keresés (partner, bizonylatszám, megnevezés...)"
+                placeholder={t('accounting:journals.filters.search_placeholder', 'Keresés (partner, bizonylatszám, megnevezés...)')}
                 value={search}
                 onChange={e => {
                   setSearch(e.target.value);
@@ -875,7 +895,7 @@ export default function JournalsPage() {
                   stornoFilter === 'all' ? "bg-background text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                Összes tétel
+                {t('accounting:journals.filters.all', 'Összes tétel')}
               </button>
               <button
                 type="button"
@@ -885,7 +905,7 @@ export default function JournalsPage() {
                   stornoFilter === 'active' ? "bg-background text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                Aktív tételek
+                {t('accounting:journals.filters.active', 'Aktív tételek')}
               </button>
               <button
                 type="button"
@@ -896,7 +916,7 @@ export default function JournalsPage() {
                 )}
               >
                 <RotateCcw className="w-3 h-3 text-amber-500" />
-                Sztornó tételek
+                {t('accounting:journals.filters.storno', 'Sztornó tételek')}
               </button>
             </div>
           </div>
@@ -911,14 +931,17 @@ export default function JournalsPage() {
                 <div>
                   <div className="font-semibold text-foreground flex items-center gap-2">
                     <span>
-                      {filteredEntries.filter((e: any) => ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status)).length} db lekönyvelésre váró könyvelési javaslat
+                      {t('accounting:journals.guidance_banner.title', {
+                        count: filteredEntries.filter((e: any) => ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status)).length,
+                        defaultValue: `${filteredEntries.filter((e: any) => ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status)).length} db lekönyvelésre váró könyvelési javaslat`,
+                      })}
                     </span>
                     <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 py-0 font-medium">
-                      Jóváhagyásra vár
+                      {t('accounting:journals.guidance_banner.pending_badge', 'Jóváhagyásra vár')}
                     </Badge>
                   </div>
                   <p className="text-muted-foreground text-[11px] mt-0.5 leading-relaxed">
-                    A rendszerjavaslatok az ellenőrzést és lekönyvelést követően kapnak hivatalos naplósorszámot és válnak zárt, módosításvédett könyvelési tétellé.
+                    {t('accounting:journals.guidance_banner.description', 'A rendszerjavaslatok az ellenőrzést és lekönyvelést követően kapnak hivatalos naplósorszámot és válnak zárt, módosításvédett könyvelési tétellé.')}
                   </p>
                 </div>
               </div>
@@ -936,7 +959,10 @@ export default function JournalsPage() {
                   }}
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  Összes javaslat kijelölése ({filteredEntries.filter((e: any) => ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status)).length})
+                  {t('accounting:journals.guidance_banner.select_all_proposals', {
+                    count: filteredEntries.filter((e: any) => ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status)).length,
+                    defaultValue: `Összes javaslat kijelölése (${filteredEntries.filter((e: any) => ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status)).length})`,
+                  })}
                 </Button>
               </div>
             </div>
@@ -982,21 +1008,21 @@ export default function JournalsPage() {
                               checked={isAllSelected ? true : isSomeSelected ? 'indeterminate' : false}
                               disabled={pageDrafts.length === 0}
                               onCheckedChange={(checked) => handleSelectAll(!!checked, paginatedEntries)}
-                              aria-label="Összes piszkozat kijelölése ezen az oldalon"
+                              aria-label={t('accounting:journals.table.select_all_drafts_aria', 'Összes piszkozat kijelölése ezen az oldalon')}
                             />
                           );
                         })()}
                       </div>
                     </TableHead>
-                    <TableHead className="w-[95px] whitespace-nowrap">Dátum</TableHead>
-                    <TableHead className="w-[110px] whitespace-nowrap">Naplószám</TableHead>
-                    <TableHead className="w-[150px] whitespace-nowrap">Bizonylatszám</TableHead>
-                    <TableHead className="w-[180px] whitespace-nowrap">Partner</TableHead>
-                    <TableHead className="w-auto min-w-[200px]">Megnevezés</TableHead>
-                    <TableHead className="w-[150px] text-right whitespace-nowrap">Összeg</TableHead>
-                    <TableHead className="w-[100px] text-center whitespace-nowrap">Típus</TableHead>
-                    <TableHead className="w-[130px] text-center whitespace-nowrap">Státusz</TableHead>
-                    <TableHead className="w-[135px] text-right whitespace-nowrap">Műveletek</TableHead>
+                    <TableHead className="w-[95px] whitespace-nowrap">{t('accounting:journals.table.col_date', 'Dátum')}</TableHead>
+                    <TableHead className="w-[110px] whitespace-nowrap">{t('accounting:journals.table.col_journal_num', 'Naplószám')}</TableHead>
+                    <TableHead className="w-[150px] whitespace-nowrap">{t('accounting:journals.table.col_doc_num', 'Bizonylatszám')}</TableHead>
+                    <TableHead className="w-[180px] whitespace-nowrap">{t('accounting:journals.table.col_partner', 'Partner')}</TableHead>
+                    <TableHead className="w-auto min-w-[200px]">{t('accounting:journals.table.col_description', 'Megnevezés')}</TableHead>
+                    <TableHead className="w-[150px] text-right whitespace-nowrap">{t('accounting:journals.table.col_amount', 'Összeg')}</TableHead>
+                    <TableHead className="w-[100px] text-center whitespace-nowrap">{t('accounting:journals.table.col_type', 'Típus')}</TableHead>
+                    <TableHead className="w-[130px] text-center whitespace-nowrap">{t('accounting:journals.table.col_status', 'Státusz')}</TableHead>
+                    <TableHead className="w-[135px] text-right whitespace-nowrap">{t('accounting:journals.table.col_actions', 'Műveletek')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-border/20">
@@ -1006,10 +1032,10 @@ export default function JournalsPage() {
                     <TableEmptyState
                       colSpan={10}
                       icon={search ? Search : FileText}
-                      title={search ? "Nincs találat a megadott keresési feltételekre" : "Nincsenek tételek ebben a nézetben"}
-                      description={search ? "Próbáld módosítani a keresési feltételt vagy törölni a szűrőt." : "Ehhez a naplóhoz még nem tartoznak könyvelési tételek a megadott időszakban."}
+                      title={search ? t('accounting:journals.table.empty_search_title', 'Nincs találat a megadott keresési feltételekre') : t('accounting:journals.table.empty_view_title', 'Nincsenek tételek ebben a nézetben')}
+                      description={search ? t('accounting:journals.table.empty_search_desc', 'Próbáld módosítani a keresési feltételt vagy törölni a szűrőt.') : t('accounting:journals.table.empty_view_desc', 'Ehhez a naplóhoz még nem tartoznak könyvelési tételek a megadott időszakban.')}
                       onClearFilters={search ? () => setSearch('') : undefined}
-                      clearLabel="Keresés törlése"
+                      clearLabel={t('accounting:journals.table.clear_search', 'Keresés törlése')}
                     />
                   ) : (
                     <>
@@ -1040,7 +1066,7 @@ export default function JournalsPage() {
                           : 0;
                         const hufAmount = isStornoEntry ? -Math.abs(rawHufAmount) : rawHufAmount;
 
-                        const statusInfo = STATUS_LABELS[e.status] || { label: e.status, color: 'bg-slate-500/10' };
+                        const statusInfo = getStatusInfo(e.status, t);
                         const journalNum = e.journal_number ? `${e.journal?.code}/${e.journal_number}` : '—';
                         const isDraft = ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status);
                         
@@ -1159,7 +1185,7 @@ export default function JournalsPage() {
                                       </span>
                                     </TooltipTrigger>
                                     <TooltipContent side="left" className="text-xs">
-                                      <p className="font-medium">Napi MNB árfolyam ({e.posting_date.replace(/-/g, '.')}):</p>
+                                      <p className="font-medium">{t('accounting:journals.table.daily_rate_tooltip_title', { date: e.posting_date.replace(/-/g, '.'), defaultValue: `Napi MNB árfolyam (${e.posting_date.replace(/-/g, '.')})` })}:</p>
                                       <p className="text-muted-foreground font-mono">1 {e.currency} = {rate.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} Ft</p>
                                     </TooltipContent>
                                   </Tooltip>
@@ -1167,12 +1193,12 @@ export default function JournalsPage() {
                               </div>
                             </TableCell>
                             <TableCell className="w-[100px] text-center">
-                              {renderSourceBadge(e.source)}
+                              {renderSourceBadge(e.source, t)}
                             </TableCell>
                             <TableCell className="w-[130px] text-center whitespace-nowrap">
                               {isStornoEntry ? (
                                 <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 px-2 py-0.5 text-[10px] font-medium border uppercase inline-flex items-center gap-1" variant="outline">
-                                  <RotateCcw className="w-3 h-3 shrink-0" /> Sztornó
+                                  <RotateCcw className="w-3 h-3 shrink-0" /> {t('accounting:journals.table.storno_badge', 'Sztornó')}
                                 </Badge>
                               ) : (
                                 <Badge className={cn("px-2 py-0.5 text-[10px] font-medium border uppercase", statusInfo.color)} variant="outline">
@@ -1182,25 +1208,25 @@ export default function JournalsPage() {
                             </TableCell>
                             <TableCell className="w-[135px] text-right">
                               <div className="flex justify-end gap-1">
-                                <CustomTooltip content="Bizonylat megtekintése">
+                                <CustomTooltip content={t('accounting:journals.actions.view_document', 'Bizonylat megtekintése')}>
                                   <Button
                                     size="icon"
                                     variant="ghost"
                                     className="w-6 h-6 text-muted-foreground hover:text-foreground"
                                     onClick={() => setSelectedEntry(e)}
-                                    aria-label="Bizonylat megtekintése"
+                                    aria-label={t('accounting:journals.actions.view_document', 'Bizonylat megtekintése')}
                                   >
                                     <Eye className="w-3.5 h-3.5" />
                                   </Button>
                                 </CustomTooltip>
 
-                                <CustomTooltip content="Módosítási előzmények">
+                                <CustomTooltip content={t('accounting:journals.actions.edit_history', 'Módosítási előzmények')}>
                                   <Button
                                     size="icon"
                                     variant="ghost"
                                     className="w-6 h-6 text-muted-foreground hover:text-foreground"
                                     onClick={() => setAuditEntryId(e.id)}
-                                    aria-label="Módosítási előzmények"
+                                    aria-label={t('accounting:journals.actions.edit_history', 'Módosítási előzmények')}
                                   >
                                     <History className="w-3.5 h-3.5" />
                                   </Button>
@@ -1208,18 +1234,18 @@ export default function JournalsPage() {
 
                                 {e.status === 'KONYVELT' && (
                                   <>
-                                    <CustomTooltip content="Sztornózás (érvénytelenítés)">
+                                    <CustomTooltip content={t('accounting:journals.actions.storno_cancel', 'Sztornózás (érvénytelenítés)')}>
                                       <Button
                                         size="icon"
                                         variant="ghost"
                                         className="w-6 h-6 text-destructive hover:bg-destructive/10"
                                         onClick={() => handleStorno(e, false)}
-                                        aria-label="Bizonylat sztornózása"
+                                        aria-label={t('accounting:journals.actions.storno_aria', 'Bizonylat sztornózása')}
                                       >
                                         <Trash2 className="w-3.5 h-3.5" />
                                       </Button>
                                     </CustomTooltip>
-                                    <CustomTooltip content={checkEntryLock(e).locked ? "Helyesbítés sztornóval (lezárt időszak)" : "Javítás / Visszanyitás"}>
+                                    <CustomTooltip content={checkEntryLock(e).locked ? t('accounting:journals.actions.correct_closed', 'Helyesbítés sztornóval (lezárt időszak)') : t('accounting:journals.actions.correct_open', 'Javítás / Visszanyitás')}>
                                       <Button
                                         size="icon"
                                         variant="ghost"
@@ -1230,7 +1256,7 @@ export default function JournalsPage() {
                                             : "text-sky-600 hover:bg-sky-500/10 hover:text-sky-700 dark:text-sky-400 dark:hover:bg-sky-950/30"
                                         )}
                                         onClick={() => handleStorno(e, true)}
-                                        aria-label="Javítás vagy helyesbítés"
+                                        aria-label={t('accounting:journals.actions.correct_aria', 'Javítás vagy helyesbítés')}
                                       >
                                         <CornerDownRight className="w-3.5 h-3.5" />
                                       </Button>
@@ -1240,43 +1266,43 @@ export default function JournalsPage() {
 
                                 {(e.status === 'KEZI_PISZKOZAT' || e.status === 'JOVAHAGYASRA_VAR' || e.status === 'GEPI_JAVASLAT') && (
                                   <>
-                                    <CustomTooltip content="Könyvelés">
+                                    <CustomTooltip content={t('accounting:journals.actions.approve_and_post', 'Könyvelés')}>
                                       <Button
                                         size="icon"
                                         variant="ghost"
                                         className="w-6 h-6 text-emerald-600 hover:bg-emerald-500/10 dark:hover:bg-emerald-950/30"
                                         onClick={() => postMutation.mutate(e.id)}
                                         disabled={postMutation.isPending}
-                                        aria-label="Bizonylat végleges könyvelése"
+                                        aria-label={t('accounting:journals.actions.post_entry', 'Bizonylat végleges könyvelése')}
                                       >
                                         <ShieldCheck className="w-3.5 h-3.5" />
                                       </Button>
                                     </CustomTooltip>
-                                    <CustomTooltip content="Szerkesztés">
+                                    <CustomTooltip content={t('accounting:journals.actions.edit_entry', 'Szerkesztés')}>
                                       <Button
                                         size="icon"
                                         variant="ghost"
                                         className="w-6 h-6 text-primary"
                                         onClick={() => { setEditingEntryId(e.id); setManualEntryOpen(true); }}
-                                        aria-label="Bizonylat szerkesztése"
+                                        aria-label={t('accounting:journals.actions.edit_entry_aria', 'Bizonylat szerkesztése')}
                                       >
                                         <FileSpreadsheet className="w-3.5 h-3.5" />
                                       </Button>
                                     </CustomTooltip>
                                     {e.journal_number ? (
-                                      <CustomTooltip content={`A tétel hivatalos bizonylatszámmal rendelkezik (${journalNum}), a bizonylati fegyelem és sorszámfolytonosság védelme miatt nem törölhető. Kérjük könyvelje le vagy sztornózza!`}>
+                                      <CustomTooltip content={t('accounting:journals.actions.delete_disabled_tooltip', { journalNum, defaultValue: `A tétel hivatalos bizonylatszámmal rendelkezik (${journalNum}), a bizonylati fegyelem és sorszámfolytonosság védelme miatt nem törölhető. Kérjük könyvelje le vagy sztornózza!` })}>
                                         <span className="inline-flex items-center justify-center w-6 h-6 text-muted-foreground/30 cursor-not-allowed">
                                           <Trash2 className="w-3.5 h-3.5" />
                                         </span>
                                       </CustomTooltip>
                                     ) : (
-                                      <CustomTooltip content="Piszkozat törlése">
+                                      <CustomTooltip content={t('accounting:journals.actions.delete_draft', 'Piszkozat törlése')}>
                                         <Button
                                           size="icon"
                                           variant="ghost"
                                           className="w-6 h-6 text-destructive hover:bg-destructive/10"
                                           onClick={(ev) => { ev.stopPropagation(); setSingleDeleteTarget({ id: e.id, description: e.description || e.document_id }); }}
-                                          aria-label="Piszkozat törlése"
+                                          aria-label={t('accounting:journals.actions.delete_draft', 'Piszkozat törlése')}
                                         >
                                           <Trash2 className="w-3.5 h-3.5" />
                                         </Button>
@@ -1491,22 +1517,22 @@ export default function JournalsPage() {
                     <DialogHeader>
                       <DialogTitle className="text-base font-bold text-destructive flex items-center gap-2">
                         <Trash2 className="w-4 h-4" />
-                        Bizonylat sztornózása
+                        {t('accounting:journals.storno_modal.cancel_title', 'Bizonylat sztornózása')}
                       </DialogTitle>
                       <DialogDescription className="text-xs text-muted-foreground mt-1">
-                        Kérjük, adja meg a sztornózás indokát. A sztornózás során egy ellentétes előjelű tétel jön létre, amely érvényteleníti az eredeti tételt.
+                        {t('accounting:journals.storno_modal.cancel_desc', 'Kérjük, adja meg a sztornózás indokát. A sztornózás során egy ellentétes előjelű tétel jön létre, amely érvényteleníti az eredeti tételt.')}
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-3">
                       <div className="space-y-1.5">
                         <label htmlFor="storno-reason" className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                          Indoklás <span className="text-destructive">*</span>
+                          {t('accounting:journals.storno_modal.reason_required', 'Indoklás')} <span className="text-destructive">*</span>
                         </label>
                         <Input
                           id="storno-reason"
                           value={stornoReason}
                           onChange={e => setStornoReason(e.target.value)}
-                          placeholder="Pl. Hibás összeg, téves számla..."
+                          placeholder={t('accounting:journals.storno_modal.cancel_reason_placeholder', 'Pl. Hibás összeg, téves számla...')}
                           className="h-9 text-xs"
                           autoFocus
                         />
@@ -1514,7 +1540,7 @@ export default function JournalsPage() {
                     </div>
                     <DialogFooter className="gap-2 sm:gap-0 border-t border-border/10 pt-3">
                       <Button type="button" variant="outline" size="sm" onClick={() => setStornoOpen(false)} className="h-9 text-xs">
-                        Mégse
+                        {t('accounting:journals.storno_modal.cancel_button', 'Mégse')}
                       </Button>
                       <Button
                         type="button"
@@ -1532,7 +1558,7 @@ export default function JournalsPage() {
                         }}
                       >
                         {stornoMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
-                        Sztornózás végrehajtása
+                        {t('accounting:journals.storno_modal.execute_storno', 'Sztornózás végrehajtása')}
                       </Button>
                     </DialogFooter>
                   </>
@@ -1546,23 +1572,22 @@ export default function JournalsPage() {
                     <DialogHeader>
                       <DialogTitle className="text-base font-bold text-amber-600 dark:text-amber-400 flex items-center gap-2">
                         <Lock className="w-4 h-4" />
-                        Bizonylat helyesbítése (Lezárt időszak)
+                        {t('accounting:journals.storno_modal.correct_closed_title', 'Bizonylat helyesbítése (Lezárt időszak)')}
                       </DialogTitle>
                       <DialogDescription className="text-xs text-muted-foreground mt-1">
-                        Az érintett időszak zárt: <span className="font-semibold text-foreground">{lockInfo.reason}</span>.
-                        Számviteli szabályok szerint lezárt időszakban közvetlen módosítás nem lehetséges; a javítás ellentétes előjelű sztornó bizonylattal és új helyesbítő másolattal történik.
+                        {t('accounting:journals.storno_modal.correct_closed_desc', { reason: lockInfo.reason, defaultValue: `Az érintett időszak zárt: ${lockInfo.reason}. Számviteli szabályok szerint lezárt időszakban közvetlen módosítás nem lehetséges; a javítás ellentétes előjelű sztornó bizonylattal és új helyesbítő másolattal történik.` })}
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-3">
                       <div className="space-y-1.5">
                         <label htmlFor="storno-reason" className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                          Helyesbítés indoklása <span className="text-destructive">*</span>
+                          {t('accounting:journals.storno_modal.correction_reason_label', 'Helyesbítés indoklása')} <span className="text-destructive">*</span>
                         </label>
                         <Input
                           id="storno-reason"
                           value={stornoReason}
                           onChange={e => setStornoReason(e.target.value)}
-                          placeholder="Pl. Hibás főkönyvi szám javítása..."
+                          placeholder={t('accounting:journals.storno_modal.correct_reason_placeholder', 'Pl. Hibás főkönyvi szám javítása...')}
                           className="h-9 text-xs"
                           autoFocus
                         />
@@ -1570,7 +1595,7 @@ export default function JournalsPage() {
                     </div>
                     <DialogFooter className="gap-2 sm:gap-0 border-t border-border/10 pt-3">
                       <Button type="button" variant="outline" size="sm" onClick={() => setStornoOpen(false)} className="h-9 text-xs">
-                        Mégse
+                        {t('accounting:journals.storno_modal.cancel_button', 'Mégse')}
                       </Button>
                       <Button
                         type="button"
@@ -1588,7 +1613,7 @@ export default function JournalsPage() {
                         }}
                       >
                         {stornoMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
-                        Helyesbítés indítása sztornóval
+                        {t('accounting:journals.storno_modal.start_correction_storno', 'Helyesbítés indítása sztornóval')}
                       </Button>
                     </DialogFooter>
                   </>
@@ -1601,22 +1626,22 @@ export default function JournalsPage() {
                   <DialogHeader>
                     <DialogTitle className="text-base font-bold text-primary flex items-center gap-2">
                       <Undo2 className="w-4 h-4" />
-                      Könyvelt tétel javítása
+                      {t('accounting:journals.storno_modal.repair_open_title', 'Könyvelt tétel javítása')}
                     </DialogTitle>
                     <DialogDescription className="text-xs text-muted-foreground mt-1">
-                      Az időszak nyitott (nincs lezárva és az ÁFA bevallás sincs véglegesítve). Válassza ki a javítás kívánt módját:
+                      {t('accounting:journals.storno_modal.repair_open_desc', 'Az időszak nyitott (nincs lezárva és az ÁFA bevallás sincs véglegesítve). Válassza ki a javítás kívánt módját:')}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-3 py-2">
                     <div className="space-y-1.5">
                       <label htmlFor="storno-reason" className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                        Megjegyzés / Indoklás (opcionális)
+                        {t('accounting:journals.storno_modal.reason_optional', 'Megjegyzés / Indoklás (opcionális)')}
                       </label>
                       <Input
                         id="storno-reason"
                         value={stornoReason}
                         onChange={e => setStornoReason(e.target.value)}
-                        placeholder="Pl. Kontírozási javítás..."
+                        placeholder={t('accounting:journals.storno_modal.repair_reason_placeholder', 'Pl. Kontírozási javítás...')}
                         className="h-9 text-xs"
                         autoFocus
                       />
@@ -1626,14 +1651,14 @@ export default function JournalsPage() {
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-primary flex items-center gap-1.5">
                           <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
-                          Közvetlen visszanyitás és javítás
+                          {t('accounting:journals.storno_modal.direct_unpost_title', 'Közvetlen visszanyitás és javítás')}
                         </span>
                         <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/30">
-                          Ajánlott
+                          {t('accounting:journals.storno_modal.recommended_badge', 'Ajánlott')}
                         </Badge>
                       </div>
                       <p className="text-[11px] text-muted-foreground leading-relaxed">
-                        A tétel visszanyílik szerkeszthető piszkozattá az eredeti bizonylatszám megőrzésével. Nem jön létre felesleges sztornó bizonylat, és azonnal megnyílik a szerkesztőfelület.
+                        {t('accounting:journals.storno_modal.direct_unpost_desc', 'A tétel visszanyílik szerkeszthető piszkozattá az eredeti bizonylatszám megőrzésével. Nem jön létre felesleges sztornó bizonylat, és azonnal megnyílik a szerkesztőfelület.')}
                       </p>
                       <Button
                         type="button"
@@ -1650,17 +1675,17 @@ export default function JournalsPage() {
                         }}
                       >
                         {unpostMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
-                        Visszanyitás és szerkesztés
+                        {t('accounting:journals.storno_modal.direct_unpost_button', 'Visszanyitás és szerkesztés')}
                       </Button>
                     </div>
 
                     <div className="rounded-lg border border-border bg-muted/20 p-3 space-y-2">
                       <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                         <CornerDownRight className="w-3.5 h-3.5 text-muted-foreground" />
-                        Számviteli sztornózás és új bizonylat
+                        {t('accounting:journals.storno_modal.accounting_storno_title', 'Számviteli sztornózás és új bizonylat')}
                       </span>
                       <p className="text-[11px] text-muted-foreground leading-relaxed">
-                        Külön ellentétes előjelű sztornó bizonylat készül és egy új javító piszkozat jön létre (szigorú számviteli nyomvonal esetén).
+                        {t('accounting:journals.storno_modal.accounting_storno_desc', 'Külön ellentétes előjelű sztornó bizonylat készül és egy új javító piszkozat jön létre (szigorú számviteli nyomvonal esetén).')}
                       </p>
                       <Button
                         type="button"
@@ -1678,18 +1703,18 @@ export default function JournalsPage() {
                         }}
                       >
                         {stornoMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
-                        Sztornózás és javító másolat
+                        {t('accounting:journals.storno_modal.storno_and_copy_button', 'Sztornózás és javító másolat')}
                       </Button>
                       {!stornoReason.trim() && (
                         <p className="text-[10px] text-muted-foreground/70 italic text-center">
-                          (Sztornózáshoz kötelező indoklást megadni a fenti mezőben)
+                          {t('accounting:journals.storno_modal.reason_hint', '(Sztornózáshoz kötelező indoklást megadni a fenti mezőben)')}
                         </p>
                       )}
                     </div>
                   </div>
                   <DialogFooter className="border-t border-border/10 pt-3">
                     <Button type="button" variant="ghost" size="sm" onClick={() => setStornoOpen(false)} className="h-8 text-xs text-muted-foreground">
-                      Mégse
+                      {t('accounting:journals.storno_modal.cancel_button', 'Mégse')}
                     </Button>
                   </DialogFooter>
                 </>
@@ -1705,7 +1730,7 @@ export default function JournalsPage() {
             <span className="bg-primary/10 px-3 py-1 rounded-full text-xs font-bold tabular-nums text-primary">
               {selectedEntryIds.size}
             </span>
-            <span>tétel kijelölve a tömeges műveletekhez</span>
+            <span>{t('accounting:journals.batch_bar.selected_count', 'tétel kijelölve a tömeges műveletekhez')}</span>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <Button
@@ -1720,7 +1745,7 @@ export default function JournalsPage() {
               ) : (
                 <ShieldCheck className="w-3.5 h-3.5" />
               )}
-              Kijelöltek könyvelése
+              {t('accounting:journals.batch_bar.post_selected', 'Kijelöltek könyvelése')}
             </Button>
             <Button
               size="sm"
@@ -1734,7 +1759,7 @@ export default function JournalsPage() {
               ) : (
                 <CheckCircle2 className="w-3.5 h-3.5" />
               )}
-              Jóváhagyásra küldés
+              {t('accounting:journals.batch_bar.submit_for_approval', 'Jóváhagyásra küldés')}
             </Button>
             <Button
               size="sm"
@@ -1748,7 +1773,7 @@ export default function JournalsPage() {
               ) : (
                 <XCircle className="w-3.5 h-3.5" />
               )}
-              Kijelöltek elvetése
+              {t('accounting:journals.batch_bar.reject_selected', 'Kijelöltek elvetése')}
             </Button>
             <Button
               size="sm"
@@ -1765,7 +1790,7 @@ export default function JournalsPage() {
               ) : (
                 <Trash2 className="w-3.5 h-3.5" />
               )}
-              Kijelöltek törlése
+              {t('accounting:journals.batch_bar.delete_selected', 'Kijelöltek törlése')}
             </Button>
             <Button
               size="sm"
@@ -1773,7 +1798,7 @@ export default function JournalsPage() {
               className="h-8 text-xs px-2 text-muted-foreground"
               onClick={() => setSelectedEntryIds(new Set())}
             >
-              Mégse
+              {t('accounting:journals.batch_bar.cancel', 'Mégse')}
             </Button>
           </div>
         </div>
@@ -1806,21 +1831,21 @@ export default function JournalsPage() {
                 <Trash2 className="w-5 h-5" />
               </div>
               <div>
-                <AlertDialogTitle>Kijelölt piszkozatok törlése</AlertDialogTitle>
+                <AlertDialogTitle>{t('accounting:journals.bulk_delete.title', 'Kijelölt piszkozatok törlése')}</AlertDialogTitle>
                 <AlertDialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Visszavonhatatlan művelet. A kiválasztott javaslatok véglegesen törlődnek a rendszerből.
+                  {t('accounting:journals.bulk_delete.description', 'Visszavonhatatlan művelet. A kiválasztott javaslatok véglegesen törlődnek a rendszerből.')}
                 </AlertDialogDescription>
               </div>
             </div>
           </AlertDialogHeader>
           <div className="py-2 text-sm text-foreground">
-            Biztosan törölni szeretné a kijelölt <strong className="text-destructive font-semibold">{selectedEntryIds.size} db</strong> piszkozatot?
+            {t('accounting:journals.bulk_delete.confirm_prefix', 'Biztosan törölni szeretné a kijelölt')} <strong className="text-destructive font-semibold">{selectedEntryIds.size} db</strong> {t('accounting:journals.bulk_delete.confirm_suffix', 'piszkozatot?')}
             <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-              A rendszerjavaslatok és kézi piszkozatok fej- és soradatai törlésre kerülnek. A már hivatalosan lekönyvelt tételeket a rendszer védelme nem engedi törölni.
+              {t('accounting:journals.bulk_delete.note', 'A rendszerjavaslatok és kézi piszkozatok fej- és soradatai törlésre kerülnek. A már hivatalosan lekönyvelt tételeket a rendszer védelme nem engedi törölni.')}
             </p>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={bulkDeleteMutation.isPending}>Mégse</AlertDialogCancel>
+            <AlertDialogCancel disabled={bulkDeleteMutation.isPending}>{t('accounting:journals.bulk_delete.cancel', 'Mégse')}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground gap-1.5"
               disabled={bulkDeleteMutation.isPending}
@@ -1840,12 +1865,12 @@ export default function JournalsPage() {
               {bulkDeleteMutation.isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Törlés folyamatban...
+                  {t('accounting:journals.bulk_delete.deleting', 'Törlés folyamatban...')}
                 </>
               ) : (
                 <>
                   <Trash2 className="w-4 h-4" />
-                  Törlés ({selectedEntryIds.size} db)
+                  {t('accounting:journals.bulk_delete.confirm_button', { count: selectedEntryIds.size, defaultValue: `Törlés (${selectedEntryIds.size} db)` })}
                 </>
               )}
             </AlertDialogAction>
@@ -1862,9 +1887,9 @@ export default function JournalsPage() {
                 <Trash2 className="w-5 h-5" />
               </div>
               <div>
-                <AlertDialogTitle>Piszkozat törlése</AlertDialogTitle>
+                <AlertDialogTitle>{t('accounting:journals.single_delete.title', 'Piszkozat törlése')}</AlertDialogTitle>
                 <AlertDialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Biztosan törölni szeretné ezt a piszkozatot?
+                  {t('accounting:journals.single_delete.description', 'Biztosan törölni szeretné ezt a piszkozatot?')}
                 </AlertDialogDescription>
               </div>
             </div>
@@ -1875,7 +1900,7 @@ export default function JournalsPage() {
             </div>
           )}
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>Mégse</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>{t('accounting:journals.single_delete.cancel', 'Mégse')}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground gap-1.5"
               disabled={deleteMutation.isPending}
@@ -1895,12 +1920,12 @@ export default function JournalsPage() {
               {deleteMutation.isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Törlés...
+                  {t('accounting:journals.single_delete.deleting', 'Törlés...')}
                 </>
               ) : (
                 <>
                   <Trash2 className="w-4 h-4" />
-                  Törlés
+                  {t('accounting:journals.single_delete.confirm_button', 'Törlés')}
                 </>
               )}
             </AlertDialogAction>

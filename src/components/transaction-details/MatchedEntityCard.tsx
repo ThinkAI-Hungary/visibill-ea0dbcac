@@ -12,7 +12,8 @@ import {
   Loader2,
 } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { formatDate } from '@/lib/locale/formatters';
+import { useTranslation } from 'react-i18next';
 import { getPaymentStatusBadge } from '@/hooks/useComputedStatus';
 import {
   MatchedInvoice,
@@ -49,6 +50,8 @@ export const MatchedEntityCard: React.FC<MatchedEntityCardProps> = ({
   onShowAddExtraMatch,
   onUnmatch,
 }) => {
+  const { t } = useTranslation(['transactions']);
+
   return (
     <>
       <Card
@@ -73,25 +76,27 @@ export const MatchedEntityCard: React.FC<MatchedEntityCardProps> = ({
                 <FileText className="h-3.5 w-3.5" />
               )}
               {matchedSalary
-                ? 'Párosított bértétel'
+                ? t('transactions:dialogs.details.matched_entity.title_salary')
                 : matchedNavInvoice
-                ? 'Párosított NAV számla'
-                : 'Párosított számla'}
+                ? t('transactions:dialogs.details.matched_entity.title_nav')
+                : t('transactions:dialogs.details.matched_entity.title_invoice')}
               {matchedNavInvoice && (
                 <Badge className="text-[9px] h-4 px-1.5 bg-indigo-500/15 text-indigo-600 border-indigo-500/30">
-                  NAV
+                  {t('transactions:dialogs.details.matched_entity.badge_nav')}
                 </Badge>
               )}
               {matchedInvoice && !matchedNavInvoice && (
                 <Badge className="text-[9px] h-4 px-1.5 bg-teal-500/15 text-teal-600 border-teal-500/30">
-                  Beküldött
+                  {t('transactions:dialogs.details.matched_entity.badge_submitted')}
                 </Badge>
               )}
             </span>
             {(matchedInvoice || matchedSalary) && (
               <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                 <Eye className="h-3 w-3" />
-                {matchedSalary ? 'Kattints a bérek oldalhoz' : 'Kattints a részletekért'}
+                {matchedSalary
+                  ? t('transactions:dialogs.details.matched_entity.click_salary')
+                  : t('transactions:dialogs.details.matched_entity.click_details')}
               </span>
             )}
           </CardTitle>
@@ -104,29 +109,39 @@ export const MatchedEntityCard: React.FC<MatchedEntityCardProps> = ({
           ) : matchedInvoice ? (
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="col-span-2">
-                <span className="text-muted-foreground">Bizonylatsorszám:</span>
+                <span className="text-muted-foreground">
+                  {t('transactions:dialogs.details.matched_entity.invoice_number')}
+                </span>
                 <span className="ml-1 font-mono font-medium">
                   {matchedInvoice.bizonylatsorszam || '-'}
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground">Eladó:</span>
+                <span className="text-muted-foreground">
+                  {t('transactions:dialogs.details.matched_entity.seller')}
+                </span>
                 <span className="ml-1 font-medium">{matchedInvoice.elado_nev || '-'}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Vevő:</span>
+                <span className="text-muted-foreground">
+                  {t('transactions:dialogs.details.matched_entity.buyer')}
+                </span>
                 <span className="ml-1 font-medium">{matchedInvoice.vevo_nev || '-'}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Kiállítás:</span>
+                <span className="text-muted-foreground">
+                  {t('transactions:dialogs.details.matched_entity.issue_date')}
+                </span>
                 <span className="ml-1">
                   {matchedInvoice.kibocsatas_datuma
-                    ? format(new Date(matchedInvoice.kibocsatas_datuma), 'yyyy.MM.dd')
+                    ? formatDate(matchedInvoice.kibocsatas_datuma)
                     : '-'}
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground">Bruttó:</span>
+                <span className="text-muted-foreground">
+                  {t('transactions:dialogs.details.matched_entity.gross')}
+                </span>
                 <span className="ml-1 font-mono font-medium">
                   {formatCurrency(
                     matchedInvoice.brutto_vegosszeg || 0,
@@ -137,7 +152,9 @@ export const MatchedEntityCard: React.FC<MatchedEntityCardProps> = ({
               <div className="col-span-2 flex gap-1">
                 {matchedInvoice.invoice_direction && (
                   <Badge variant="outline" className="text-[10px] h-5">
-                    {matchedInvoice.invoice_direction === 'INBOUND' ? 'Bejövő' : 'Kimenő'}
+                    {matchedInvoice.invoice_direction === 'INBOUND'
+                      ? t('transactions:dialogs.details.matched_entity.direction_inbound')
+                      : t('transactions:dialogs.details.matched_entity.direction_outbound')}
                   </Badge>
                 )}
                 {(() => {
@@ -156,33 +173,43 @@ export const MatchedEntityCard: React.FC<MatchedEntityCardProps> = ({
           ) : matchedNavInvoice ? (
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="col-span-2">
-                <span className="text-muted-foreground">Számlaszám:</span>
+                <span className="text-muted-foreground">
+                  {t('transactions:dialogs.details.matched_entity.nav_invoice_number')}
+                </span>
                 <span className="ml-1 font-mono font-medium">
                   {matchedNavInvoice.invoice_number}
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground">Szállító:</span>
+                <span className="text-muted-foreground">
+                  {t('transactions:dialogs.details.matched_entity.supplier')}
+                </span>
                 <span className="ml-1 font-medium">
                   {matchedNavInvoice.supplier_name || '-'}
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground">Vevő:</span>
+                <span className="text-muted-foreground">
+                  {t('transactions:dialogs.details.matched_entity.customer')}
+                </span>
                 <span className="ml-1 font-medium">
                   {matchedNavInvoice.customer_name || '-'}
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground">Kiállítás:</span>
+                <span className="text-muted-foreground">
+                  {t('transactions:dialogs.details.matched_entity.issue_date')}
+                </span>
                 <span className="ml-1">
                   {matchedNavInvoice.invoice_issue_date
-                    ? format(new Date(matchedNavInvoice.invoice_issue_date), 'yyyy.MM.dd')
+                    ? formatDate(matchedNavInvoice.invoice_issue_date)
                     : '-'}
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground">Bruttó:</span>
+                <span className="text-muted-foreground">
+                  {t('transactions:dialogs.details.matched_entity.gross')}
+                </span>
                 <span className="ml-1 font-mono font-medium">
                   {formatCurrency(
                     matchedNavInvoice.invoice_gross_amount || 0,
@@ -193,7 +220,9 @@ export const MatchedEntityCard: React.FC<MatchedEntityCardProps> = ({
               <div className="col-span-2 flex gap-1">
                 {matchedNavInvoice.invoice_direction && (
                   <Badge variant="outline" className="text-[10px] h-5">
-                    {matchedNavInvoice.invoice_direction === 'INBOUND' ? 'Bejövő' : 'Kimenő'}
+                    {matchedNavInvoice.invoice_direction === 'INBOUND'
+                      ? t('transactions:dialogs.details.matched_entity.direction_inbound')
+                      : t('transactions:dialogs.details.matched_entity.direction_outbound')}
                   </Badge>
                 )}
                 {(() => {
@@ -209,7 +238,7 @@ export const MatchedEntityCard: React.FC<MatchedEntityCardProps> = ({
                 })()}
                 {matchedNavInvoice.submitted && (
                   <Badge variant="outline" className="text-[10px] h-5">
-                    Beküldve
+                    {t('transactions:dialogs.details.matched_entity.badge_nav_submitted')}
                   </Badge>
                 )}
               </div>
@@ -217,41 +246,55 @@ export const MatchedEntityCard: React.FC<MatchedEntityCardProps> = ({
           ) : matchedSalary ? (
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="col-span-2">
-                <span className="text-muted-foreground">Megnevezés:</span>
+                <span className="text-muted-foreground">
+                  {t('transactions:dialogs.details.matched_entity.salary_title')}
+                </span>
                 <span className="ml-1 font-medium">{matchedSalary.név}</span>
               </div>
               {matchedSalary.munkavallalo_neve && (
                 <div>
-                  <span className="text-muted-foreground">Munkavállaló:</span>
+                  <span className="text-muted-foreground">
+                    {t('transactions:dialogs.details.matched_entity.salary_employee')}
+                  </span>
                   <span className="ml-1 font-medium">
                     {matchedSalary.munkavallalo_neve}
                   </span>
                 </div>
               )}
               <div>
-                <span className="text-muted-foreground">Típus:</span>
+                <span className="text-muted-foreground">
+                  {t('transactions:dialogs.details.matched_entity.salary_type')}
+                </span>
                 <span className="ml-1">{matchedSalary.tipus}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Dátum:</span>
+                <span className="text-muted-foreground">
+                  {t('transactions:dialogs.details.matched_entity.salary_date')}
+                </span>
                 <span className="ml-1">
                   {matchedSalary.dátum
-                    ? format(new Date(matchedSalary.dátum), 'yyyy.MM.dd')
+                    ? formatDate(matchedSalary.dátum)
                     : '-'}
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground">Összeg:</span>
+                <span className="text-muted-foreground">
+                  {t('transactions:dialogs.details.matched_entity.salary_amount')}
+                </span>
                 <span className="ml-1 font-mono font-medium">
                   {formatCurrency(matchedSalary.összeg)}
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground">Fizetési mód:</span>
+                <span className="text-muted-foreground">
+                  {t('transactions:dialogs.details.matched_entity.salary_payment_method')}
+                </span>
                 <span className="ml-1">{matchedSalary.fizetesi_mod}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Státusz:</span>
+                <span className="text-muted-foreground">
+                  {t('transactions:dialogs.details.matched_entity.salary_status')}
+                </span>
                 {(() => {
                   const badge = getPaymentStatusBadge(matchedSalary.transaction_id);
                   return (
@@ -266,7 +309,9 @@ export const MatchedEntityCard: React.FC<MatchedEntityCardProps> = ({
               </div>
               {matchedSalary.megjegyzes && (
                 <div className="col-span-2">
-                  <span className="text-muted-foreground">Megjegyzés:</span>
+                  <span className="text-muted-foreground">
+                    {t('transactions:dialogs.details.matched_entity.salary_notes')}
+                  </span>
                   <span className="ml-1">{matchedSalary.megjegyzes}</span>
                 </div>
               )}
@@ -275,9 +320,11 @@ export const MatchedEntityCard: React.FC<MatchedEntityCardProps> = ({
             <div className="flex items-center gap-2 py-1">
               <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
               <div>
-                <p className="text-xs font-medium text-amber-500">Törölt bizonylat</p>
+                <p className="text-xs font-medium text-amber-500">
+                  {t('transactions:dialogs.details.matched_entity.deleted_entity_title')}
+                </p>
                 <p className="text-[10px] text-muted-foreground">
-                  A párosított bizonylat már nem létezik az adatbázisban (árva hivatkozás).
+                  {t('transactions:dialogs.details.matched_entity.deleted_entity_desc')}
                 </p>
               </div>
             </div>
@@ -294,7 +341,9 @@ export const MatchedEntityCard: React.FC<MatchedEntityCardProps> = ({
             className="text-xs h-10 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex items-center justify-center gap-1.5"
           >
             <Check className="h-3.5 w-3.5" />
-            {isSaving ? 'Mentés...' : 'Elfogadás (Rendben)'}
+            {isSaving
+              ? t('transactions:dialogs.details.matched_entity.saving')
+              : t('transactions:dialogs.details.matched_entity.accept_btn')}
           </Button>
         )}
 
@@ -306,7 +355,7 @@ export const MatchedEntityCard: React.FC<MatchedEntityCardProps> = ({
             className="text-xs h-10 w-full flex items-center justify-center gap-1"
           >
             <Link2 className="h-3.5 w-3.5 text-muted-foreground" />
-            Másik számla
+            {t('transactions:dialogs.details.matched_entity.other_invoice_btn')}
           </Button>
           <Button
             variant="outline"
@@ -315,7 +364,7 @@ export const MatchedEntityCard: React.FC<MatchedEntityCardProps> = ({
             className="text-xs h-10 w-full flex items-center justify-center gap-1"
           >
             <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-            További számla
+            {t('transactions:dialogs.details.matched_entity.additional_invoice_btn')}
           </Button>
         </div>
 
@@ -326,7 +375,7 @@ export const MatchedEntityCard: React.FC<MatchedEntityCardProps> = ({
           disabled={isSaving}
           className="text-xs h-10 w-full text-red-500 hover:text-red-600 border-red-500/30 hover:border-red-500/50 hover:bg-red-500/10 mt-1 flex items-center justify-center"
         >
-          Párosítás bontása
+          {t('transactions:dialogs.details.matched_entity.unmatch_btn')}
         </Button>
       </div>
     </>

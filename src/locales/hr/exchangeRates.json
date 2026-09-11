@@ -1,0 +1,37 @@
+{
+  "title": "Tečajevi",
+  "subtitle": "Tečajevi valuta u odnosu na HUF",
+  "refreshing": "Ažuriranje tečajeva...",
+  "today": "danas",
+  "currencies": {
+    "EUR": "Euro",
+    "USD": "Američki dolar",
+    "GBP": "Britanska funta",
+    "CHF": "Švicarski franak",
+    "JPY": "Japanski jen",
+    "PLN": "Poljski zlot",
+    "CZK": "Češka kruna",
+    "RON": "Rumunjski lej",
+    "AUD": "Australski dolar",
+    "CAD": "Kanadski dolar",
+    "SEK": "Švedska kruna",
+    "NOK": "Norveška kruna",
+    "DKK": "Danska kruna",
+    "HRK": "Hrvatska kuna",
+    "HUF": "Mađarska forinta"
+  },
+  "table": {
+    "title": "Ostali tečajevi",
+    "name": "Naziv",
+    "code": "Kod",
+    "rate": "Tečaj",
+    "change": "Promjena"
+  },
+  "converter": {
+    "title": "Brzi pretvarač",
+    "amount": "Iznos",
+    "target_currency": "Ciljna valuta",
+    "converted_amount": "Preračunati iznos"
+  },
+  "info_note": "Tečajevi su informativnog karaktera. Podaci o dnevnim promjenama su simulirani. Prije izvršenja transakcija provjerite važeće tečajeve u svojoj banci."
+}

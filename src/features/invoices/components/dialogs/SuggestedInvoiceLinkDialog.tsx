@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -15,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { InvoiceImagePreview } from '@/components/InvoiceImagePreview';
 import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { getDateFnsLocale } from '@/lib/locale/formatters';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
@@ -36,6 +37,7 @@ export function SuggestedInvoiceLinkDialog({
   navInvoice,
   suggestedInvoice,
 }: SuggestedInvoiceLinkDialogProps) {
+  const { t } = useTranslation(['invoices', 'common']);
   const { toast } = useToast();
   const { invalidateInvoiceData } = useInvoiceContext();
   const [isLinking, setIsLinking] = useState(false);
@@ -64,8 +66,8 @@ export function SuggestedInvoiceLinkDialog({
       if (error) throw error;
 
       toast({
-        title: 'Számla sikeresen összerendelve!',
-        description: `${navInvoice.invoice_number} bizonylatszám rögzítve és könyvelésre jóváhagyva.`,
+        title: t('invoices:dialogs.suggested_link.toast_success'),
+        description: `${navInvoice.invoice_number} - ${t('invoices:dialogs.suggested_link.explanation')}`,
       });
 
       // Central TanStack Query cache invalidation
@@ -74,8 +76,8 @@ export function SuggestedInvoiceLinkDialog({
     } catch (err: any) {
       console.error('Error linking invoice:', err);
       toast({
-        title: 'Összerendelési hiba',
-        description: err.message || 'Nem sikerült az összerendelés végrehajtása.',
+        title: t('common:status.error', 'Hiba történt'),
+        description: err.message || t('common:errors.unexpected', 'Nem sikerült az összerendelés végrehajtása.'),
         variant: 'destructive',
       });
     } finally {
@@ -96,21 +98,21 @@ export function SuggestedInvoiceLinkDialog({
           <div className="flex items-center gap-2.5 flex-wrap pr-8">
             <DialogTitle className="flex items-center gap-2 text-base font-semibold">
               <Sparkles className="h-5 w-5 text-amber-500 shrink-0" />
-              <span>Javasolt Számla Csatolmány Összerendelése</span>
+              <span>{t('invoices:dialogs.suggested_link.title')}</span>
             </DialogTitle>
             <div className="flex items-center gap-1.5">
               <Badge variant="outline" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 text-xs font-medium">
-                {suggestedInvoice.suggestedScore}% egyezés
+                {t('invoices:dialogs.suggested_link.score_match', { score: suggestedInvoice.suggestedScore })}
               </Badge>
               {suggestedInvoice.isSuffixMatch && (
                 <Badge variant="outline" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30 text-xs font-normal">
-                  Sorszám prefix eltérés
+                  {t('invoices:dialogs.suggested_link.prefix_diff')}
                 </Badge>
               )}
             </div>
           </div>
           <DialogDescription className="text-xs text-muted-foreground">
-            A rendszer az adószám, bruttó összeg és dátum alapján javaslatot tett a NAV számla és a feltöltött bizonylat összekapcsolására.
+            {t('invoices:dialogs.suggested_link.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -122,32 +124,32 @@ export function SuggestedInvoiceLinkDialog({
               <CardHeader className="py-2.5 px-3.5 pb-1">
                 <CardTitle className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-blue-500" />
-                  NAV Online Számla
+                  {t('invoices:dialogs.suggested_link.nav_card_title')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-3.5 pt-1 space-y-1.5 text-xs">
                 <div>
-                  <span className="text-muted-foreground">Sorszám: </span>
+                  <span className="text-muted-foreground">{t('invoices:dialogs.suggested_link.invoice_number')} </span>
                   <span className="font-mono font-bold text-foreground">{navInvoice.invoice_number}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Partner: </span>
+                  <span className="text-muted-foreground">{t('invoices:dialogs.suggested_link.partner')} </span>
                   <span className="font-medium text-foreground">{navPartnerName || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Adószám: </span>
+                  <span className="text-muted-foreground">{t('invoices:dialogs.suggested_link.tax_number')} </span>
                   <span className="font-mono text-muted-foreground">{navPartnerTax || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Kibocsátás: </span>
+                  <span className="text-muted-foreground">{t('invoices:dialogs.suggested_link.issue_date')} </span>
                   <span>
                     {navInvoice.invoice_issue_date
-                      ? format(new Date(navInvoice.invoice_issue_date), 'yyyy.MM.dd', { locale: hu })
+                      ? format(new Date(navInvoice.invoice_issue_date), 'yyyy.MM.dd', { locale: getDateFnsLocale() })
                       : '-'}
                   </span>
                 </div>
                 <div className="pt-1 border-t border-border/20">
-                  <span className="text-muted-foreground">Bruttó összeg: </span>
+                  <span className="text-muted-foreground">{t('invoices:dialogs.suggested_link.gross_amount')} </span>
                   <span className="font-mono font-semibold text-foreground">
                     {formatCurrency(navInvoice.invoice_gross_amount || 0, navInvoice.currency || 'HUF')}
                   </span>
@@ -160,32 +162,32 @@ export function SuggestedInvoiceLinkDialog({
               <CardHeader className="py-2.5 px-3.5 pb-1">
                 <CardTitle className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-amber-500" />
-                  Feltöltött Bizonylat
+                  {t('invoices:dialogs.suggested_link.sub_card_title')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-3.5 pt-1 space-y-1.5 text-xs">
                 <div>
-                  <span className="text-muted-foreground">Kinyert sorszám: </span>
+                  <span className="text-muted-foreground">{t('invoices:dialogs.suggested_link.extracted_number')} </span>
                   <span className="font-mono font-bold text-foreground">{suggestedInvoice.bizonylatsorszam || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Partner: </span>
+                  <span className="text-muted-foreground">{t('invoices:dialogs.suggested_link.partner')} </span>
                   <span className="font-medium text-foreground">{subPartnerName || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Adószám: </span>
+                  <span className="text-muted-foreground">{t('invoices:dialogs.suggested_link.tax_number')} </span>
                   <span className="font-mono text-muted-foreground">{subPartnerTax || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Kibocsátás: </span>
+                  <span className="text-muted-foreground">{t('invoices:dialogs.suggested_link.issue_date')} </span>
                   <span>
                     {suggestedInvoice.kibocsatas_datuma
-                      ? format(new Date(suggestedInvoice.kibocsatas_datuma), 'yyyy.MM.dd', { locale: hu })
+                      ? format(new Date(suggestedInvoice.kibocsatas_datuma), 'yyyy.MM.dd', { locale: getDateFnsLocale() })
                       : '-'}
                   </span>
                 </div>
                 <div className="pt-1 border-t border-border/20">
-                  <span className="text-muted-foreground">Bruttó összeg: </span>
+                  <span className="text-muted-foreground">{t('invoices:dialogs.suggested_link.gross_amount')} </span>
                   <span className="font-mono font-semibold text-foreground">
                     {formatCurrency(suggestedInvoice.brutto_vegosszeg, suggestedInvoice.penznem || 'HUF')}
                   </span>
@@ -198,9 +200,9 @@ export function SuggestedInvoiceLinkDialog({
           <div className="rounded-lg p-2.5 bg-amber-500/10 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-300 flex items-start gap-2">
             <Sparkles className="h-4 w-4 shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold">Egyezési indoklás: {suggestedInvoice.suggestedReason}</p>
+              <p className="font-semibold">{t('invoices:dialogs.suggested_link.match_reason', { reason: suggestedInvoice.suggestedReason })}</p>
               <p className="text-[11px] opacity-90 mt-0.5">
-                Az „Összerendelés és jóváhagyás” gombra kattintva a beküldött számla sorszáma frissül a hivatalos NAV sorszámra (<span className="font-mono font-bold">{navInvoice.invoice_number}</span>), státusza ellenőrzötté válik, a csatolmány pedig azonnal összekapcsolódik a NAV sorral.
+                {t('invoices:dialogs.suggested_link.explanation')}
               </p>
             </div>
           </div>
@@ -211,12 +213,12 @@ export function SuggestedInvoiceLinkDialog({
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1">
                   <FileText className="h-3.5 w-3.5" />
-                  Számlakép előnézet
+                  {t('invoices:dialogs.suggested_link.image_preview')}
                 </Label>
                 <Button variant="ghost" size="sm" className="h-6 text-xs gap-1" asChild>
                   <a href={suggestedInvoice.image_url || suggestedInvoice.melleklet_url || '#'} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-3 w-3" />
-                    Megnyitás új lapon
+                    {t('invoices:dialogs.suggested_link.open_new_tab')}
                   </a>
                 </Button>
               </div>
@@ -236,11 +238,11 @@ export function SuggestedInvoiceLinkDialog({
           {/* Optional Note */}
           <div className="space-y-1">
             <Label htmlFor="link-approval-note" className="text-xs text-muted-foreground">
-              Könyvelői megjegyzés (opcionális audit naplóhoz)
+              {t('invoices:dialogs.suggested_link.approval_note')}
             </Label>
             <Input
               id="link-approval-note"
-              placeholder={`Kézi összerendelés: ${navInvoice.invoice_number}`}
+              placeholder={t('invoices:dialogs.suggested_link.approval_note_placeholder', { invoiceNumber: navInvoice.invoice_number })}
               value={approvalNote}
               onChange={(e) => setApprovalNote(e.target.value)}
               className="h-8 text-xs"
@@ -256,7 +258,7 @@ export function SuggestedInvoiceLinkDialog({
             onClick={() => onOpenChange(false)}
             disabled={isLinking}
           >
-            Mégse
+            {t('common:actions.cancel')}
           </Button>
 
           <Button
@@ -269,12 +271,12 @@ export function SuggestedInvoiceLinkDialog({
             {isLinking ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Összerendelés folyamatban...
+                {t('invoices:dialogs.suggested_link.linking')}
               </>
             ) : (
               <>
                 <CheckCircle2 className="h-4 w-4" />
-                Összerendelés és jóváhagyás
+                {t('invoices:dialogs.suggested_link.confirm_button')}
               </>
             )}
           </Button>

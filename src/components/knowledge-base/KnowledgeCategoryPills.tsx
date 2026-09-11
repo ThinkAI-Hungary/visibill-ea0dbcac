@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { KnowledgeCategory } from "@/types/knowledgeBase";
 import { KnowledgeIcon } from "./KnowledgeIcon";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ export const KnowledgeCategoryPills = React.memo(function KnowledgeCategoryPills
   eaisybillArticlesCount,
   eaisybooksArticlesCount,
 }: KnowledgeCategoryPillsProps) {
+  const { t } = useTranslation(['common']);
   // Filter categories shown in Row 2 based on selected scope in Row 1
   const visibleCategories = useMemo(() => {
     if (selectedScope === "eaisybill") {
@@ -57,10 +59,10 @@ export const KnowledgeCategoryPills = React.memo(function KnowledgeCategoryPills
 
   // Scope pill label and count for "All" in Row 2
   const scopeAllLabel = useMemo(() => {
-    if (selectedScope === "eaisybill") return "Összes eaisyBill téma";
-    if (selectedScope === "eaisybooks") return "Összes eaisyBooks téma";
-    return "Összes téma";
-  }, [selectedScope]);
+    if (selectedScope === "eaisybill") return t('common:knowledge_base.scope_all_eaisybill_topics', 'Összes eaisyBill téma');
+    if (selectedScope === "eaisybooks") return t('common:knowledge_base.scope_all_eaisybooks_topics', 'Összes eaisyBooks téma');
+    return t('common:knowledge_base.scope_all_topics', 'Összes téma');
+  }, [selectedScope, t]);
 
   const scopeAllCount = useMemo(() => {
     if (selectedScope === "eaisybill") return eaisybillArticlesCount;
@@ -85,7 +87,7 @@ export const KnowledgeCategoryPills = React.memo(function KnowledgeCategoryPills
             )}
           >
             <Layers className="h-3.5 w-3.5 shrink-0" />
-            <span>Összes kategória</span>
+            <span>{t('common:knowledge_base.scope_all', 'Összes témakör')}</span>
             <span
               className={cn(
                 "rounded-full px-1.5 py-0.2 text-[10px] font-bold",

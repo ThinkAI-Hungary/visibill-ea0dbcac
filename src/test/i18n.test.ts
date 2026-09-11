@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import i18n from '@/lib/i18n';
+import i18n, { resources } from '@/lib/i18n';
 import { getActiveLocale, formatCurrencyLocale } from '@/lib/locale/formatters';
 import { generateScopedPath, extractPageSegment } from '@/lib/navigation';
 
@@ -98,6 +98,61 @@ describe('i18n and Localization Suite', () => {
       expect(i18n.t('auth:fields.password')).toBe('Jelszó');
       expect(i18n.t('auth:buttons.signin')).toBe('Bejelentkezés');
       expect(i18n.t('auth:forgot.title')).toBe('Elfelejtett jelszó');
+
+      // FX Differences in Hungarian
+      expect(i18n.t('dashboard:fx_differences.title')).toBe('Árfolyam-különbözetek');
+      expect(i18n.t('dashboard:fx_differences.net_difference')).toBe('Nettó különbözet');
+      expect(i18n.t('dashboard:fx_differences.total_gain')).toBe('Össz. nyereség');
+      expect(i18n.t('dashboard:fx_differences.total_loss')).toBe('Össz. veszteség');
+      expect(i18n.t('dashboard:fx_differences.gl_classification')).toBe('Főkönyvi besorolás');
+      expect(i18n.t('dashboard:fx_differences.table.month')).toBe('Hónap');
+      expect(i18n.t('dashboard:fx_differences.table.total')).toBe('Összesen');
+
+      // General Ledger Toolbar in Hungarian
+      expect(i18n.t('accounting:general_ledger.toolbar.active_preset')).toBe('Aktív Számlatükör:');
+      expect(i18n.t('accounting:general_ledger.toolbar.builtin_system_preset')).toBe('Beépített Rendszerszintű Sablon');
+      expect(i18n.t('accounting:general_ledger.toolbar.manage_presets')).toBe('Sablonok kezelése');
+      expect(i18n.t('accounting:general_ledger.toolbar.upload_preset')).toBe('Új sablon feltöltése');
+      expect(i18n.t('accounting:general_ledger.toolbar.manual_entry')).toBe('Vegyes bizonylat');
+      expect(i18n.t('accounting:general_ledger.toolbar.xml_import')).toBe('XML Import');
+      expect(i18n.t('accounting:general_ledger.toolbar.xml_imports')).toBe('XML Importok');
+      expect(i18n.t('accounting:general_ledger.toolbar.ai_classification')).toBe('AI Besorolás');
+      expect(i18n.t('accounting:general_ledger.toolbar.export')).toBe('Export');
+
+      // Profit & Loss in Hungarian
+      expect(i18n.t('accounting:profit_and_loss.card_title')).toBe('Eredménykimutatás');
+      expect(i18n.t('accounting:profit_and_loss.kpi.operating_profit')).toBe('Üzemi eredmény');
+      expect(i18n.t('accounting:profit_and_loss.simulator.title')).toBe('"What-If" Működési Költség és Árbevétel Szimuláció');
+      expect(i18n.t('accounting:profit_and_loss.toggles.official_view')).toBe('Hivatalos nézet (Ezer Ft)');
+      expect(i18n.t('accounting:profit_and_loss.table.row')).toBe('Sor');
+      expect(i18n.t('accounting:profit_and_loss.mapping_tab.match_title')).toBe('Főkönyvi számok párosítása');
+
+      // Balance Sheet in Hungarian
+      expect(i18n.t('accounting:balance_sheet.card_title')).toBe('Mérleg');
+      expect(i18n.t('accounting:balance_sheet.card_subtitle')).toBe('Sztv. szerinti "A" változat');
+      expect(i18n.t('accounting:balance_sheet.widgets.swing.title')).toBe('Mérleg-hinta ⚖️');
+      expect(i18n.t('accounting:balance_sheet.widgets.swing.balanced')).toBe('Egyensúlyban');
+      expect(i18n.t('accounting:balance_sheet.widgets.diagnostics.title')).toBe('Egyezőségi Diagnosztika');
+      expect(i18n.t('accounting:balance_sheet.widgets.liquidity.title')).toBe('Likviditási Mutatók');
+      expect(i18n.t('accounting:balance_sheet.toggles.traditional_view')).toBe('Hagyományos nézet');
+      expect(i18n.t('accounting:balance_sheet.toggles.currency_consolidation')).toBe('DEVIZA KONSZOLIDÁCIÓ:');
+
+      // Annual Report in Hungarian
+      expect(i18n.t('accounting:annual_report.title')).toBe('Éves Beszámoló');
+      expect(i18n.t('accounting:annual_report.step1.header')).toBe('1. Alapadatok');
+      expect(i18n.t('accounting:annual_report.step1.company_info_title')).toBe('CÉGADATOK (A CÉGPROFILBÓL)');
+      expect(i18n.t('accounting:annual_report.step2.header')).toBe('2. Mérleg & Eredménykimutatás Import');
+      expect(i18n.t('accounting:annual_report.step3.header')).toBe('3. Validáció — Az „Őrszem"');
+
+      // Journals in Hungarian
+      expect(i18n.t('accounting:journals.title')).toBe('Naplók');
+      expect(i18n.t('accounting:journals.period_closing')).toBe('Időszakzárás');
+      expect(i18n.t('accounting:journals.new_manual_entry')).toBe('Új vegyes bizonylat');
+      expect(i18n.t('accounting:journals.worklist')).toBe('Munkalista');
+      expect(i18n.t('accounting:journals.opening.banner_title')).toBe('Nyitó Napló (NY) — Számviteli Nyitás Szükséges');
+      expect(i18n.t('accounting:journals.table.col_journal_num')).toBe('Naplószám');
+      expect(i18n.t('accounting:journals.status.kezi_piszkozat')).toBe('Kézi piszkozat');
+      expect(i18n.t('accounting:journals.batch_bar.post_selected')).toBe('Kijelöltek könyvelése');
     });
 
     it('provides valid Croatian translations for demo', async () => {
@@ -137,6 +192,61 @@ describe('i18n and Localization Suite', () => {
       expect(i18n.t('dashboard:inbound_status.payable')).toBe('Za plaćanje');
       expect(i18n.t('settings:integrations.generated_alias')).toBe('Generirani alias');
 
+      // FX Differences in Croatian
+      expect(i18n.t('dashboard:fx_differences.title')).toBe('Tečajne razlike');
+      expect(i18n.t('dashboard:fx_differences.net_difference')).toBe('Neto razlika');
+      expect(i18n.t('dashboard:fx_differences.total_gain')).toBe('Ukupni dobitak');
+      expect(i18n.t('dashboard:fx_differences.total_loss')).toBe('Ukupni gubitak');
+      expect(i18n.t('dashboard:fx_differences.gl_classification')).toBe('Knjiženje u glavnu knjigu');
+      expect(i18n.t('dashboard:fx_differences.table.month')).toBe('Mjesec');
+      expect(i18n.t('dashboard:fx_differences.table.total')).toBe('Ukupno');
+
+      // General Ledger Toolbar in Croatian
+      expect(i18n.t('accounting:general_ledger.toolbar.active_preset')).toBe('Aktivni kontni plan:');
+      expect(i18n.t('accounting:general_ledger.toolbar.builtin_system_preset')).toBe('Ugrađeni sustavni predložak');
+      expect(i18n.t('accounting:general_ledger.toolbar.manage_presets')).toBe('Upravljanje predlošcima');
+      expect(i18n.t('accounting:general_ledger.toolbar.upload_preset')).toBe('Učitaj novi predložak');
+      expect(i18n.t('accounting:general_ledger.toolbar.manual_entry')).toBe('Temeljnica');
+      expect(i18n.t('accounting:general_ledger.toolbar.xml_import')).toBe('XML Uvoz');
+      expect(i18n.t('accounting:general_ledger.toolbar.xml_imports')).toBe('XML Uvozi');
+      expect(i18n.t('accounting:general_ledger.toolbar.ai_classification')).toBe('AI Klasifikacija');
+      expect(i18n.t('accounting:general_ledger.toolbar.export')).toBe('Izvoz');
+
+      // Profit & Loss in Croatian
+      expect(i18n.t('accounting:profit_and_loss.card_title')).toBe('Račun dobiti i gubitka');
+      expect(i18n.t('accounting:profit_and_loss.kpi.operating_profit')).toBe('Poslovni rezultat');
+      expect(i18n.t('accounting:profit_and_loss.simulator.title')).toBe('"What-If" Simulacija operativnih troškova i prihoda');
+      expect(i18n.t('accounting:profit_and_loss.toggles.official_view')).toBe('Službeni prikaz (tisuće Ft)');
+      expect(i18n.t('accounting:profit_and_loss.table.row')).toBe('R.br.');
+      expect(i18n.t('accounting:profit_and_loss.mapping_tab.match_title')).toBe('Uparivanje konta glavne knjige');
+
+      // Balance Sheet in Croatian
+      expect(i18n.t('accounting:balance_sheet.card_title')).toBe('Bilanca');
+      expect(i18n.t('accounting:balance_sheet.card_subtitle')).toBe('Verzija "A" prema računovodstvenim standardima');
+      expect(i18n.t('accounting:balance_sheet.widgets.swing.title')).toBe('Vaga bilance ⚖️');
+      expect(i18n.t('accounting:balance_sheet.widgets.swing.balanced')).toBe('U ravnoteži');
+      expect(i18n.t('accounting:balance_sheet.widgets.diagnostics.title')).toBe('Dijagnostika usklađenosti');
+      expect(i18n.t('accounting:balance_sheet.widgets.liquidity.title')).toBe('Pokazatelji likvidnosti');
+      expect(i18n.t('accounting:balance_sheet.toggles.traditional_view')).toBe('Tradicionalni prikaz');
+      expect(i18n.t('accounting:balance_sheet.toggles.currency_consolidation')).toBe('KONSOLIDACIJA VALUTA:');
+
+      // Annual Report in Croatian
+      expect(i18n.t('accounting:annual_report.title')).toBe('Godišnji financijski izvještaj');
+      expect(i18n.t('accounting:annual_report.step1.header')).toBe('1. Osnovni podaci');
+      expect(i18n.t('accounting:annual_report.step1.company_info_title')).toBe('PODACI O TVRTKI (IZ PROFILA TVRTKE)');
+      expect(i18n.t('accounting:annual_report.step2.header')).toBe('2. Uvoz Bilance i Računa dobiti i gubitka');
+      expect(i18n.t('accounting:annual_report.step3.header')).toBe('3. Validacija — „Stražar"');
+
+      // Journals in Croatian
+      expect(i18n.t('accounting:journals.title')).toBe('Dnevnici');
+      expect(i18n.t('accounting:journals.period_closing')).toBe('Zaključak razdoblja');
+      expect(i18n.t('accounting:journals.new_manual_entry')).toBe('Novi temeljni nalog');
+      expect(i18n.t('accounting:journals.worklist')).toBe('Radna lista');
+      expect(i18n.t('accounting:journals.opening.banner_title')).toBe('Početni dnevnik (NY) — Potrebno računovodstveno otvaranje');
+      expect(i18n.t('accounting:journals.table.col_journal_num')).toBe('Broj dnevnika');
+      expect(i18n.t('accounting:journals.status.kezi_piszkozat')).toBe('Ručni nacrt');
+      expect(i18n.t('accounting:journals.batch_bar.post_selected')).toBe('Knjiženje označenih');
+
       // Auth namespace in Croatian
       expect(i18n.t('auth:tabs.signin')).toBe('Prijava');
       expect(i18n.t('auth:tabs.signup')).toBe('Registracija');
@@ -148,5 +258,37 @@ describe('i18n and Localization Suite', () => {
       expect(i18n.t('auth:verification.in_progress_title')).toBe('Potvrda e-pošte...');
       expect(i18n.t('auth:verification.success_title')).toBe('E-pošta uspješno potvrđena! 🎉');
     });
+
+    it('ensures 100% key parity across all Hungarian and Croatian translation resources', () => {
+      const getDeepKeys = (obj: Record<string, any>, prefix = ''): string[] => {
+        let keys: string[] = [];
+        for (const [k, v] of Object.entries(obj)) {
+          const path = prefix ? `${prefix}.${k}` : k;
+          if (v && typeof v === 'object' && !Array.isArray(v)) {
+            keys = keys.concat(getDeepKeys(v, path));
+          } else {
+            keys.push(path);
+          }
+        }
+        return keys;
+      };
+
+      const huNamespaces = Object.keys(resources.hu);
+      const hrNamespaces = Object.keys(resources.hr);
+
+      expect(hrNamespaces.sort()).toEqual(huNamespaces.sort());
+
+      for (const ns of huNamespaces) {
+        const huKeys = getDeepKeys((resources.hu as any)[ns]).sort();
+        const hrKeys = getDeepKeys((resources.hr as any)[ns]).sort();
+
+        const missingInHr = huKeys.filter(k => !hrKeys.includes(k));
+        const missingInHu = hrKeys.filter(k => !huKeys.includes(k));
+
+        expect(missingInHr, `Missing keys in hr for namespace "${ns}"`).toEqual([]);
+        expect(missingInHu, `Missing keys in hu for namespace "${ns}"`).toEqual([]);
+      }
+    });
   });
 });
+

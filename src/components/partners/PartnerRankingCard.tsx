@@ -1,8 +1,10 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { getAvatarColor, getInitials } from '@/lib/helpers';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTheme } from '@/contexts/ThemeContext';
+import { getActiveLocale } from '@/lib/locale/formatters';
 import { Calendar } from 'lucide-react';
 
 // ── Color palette for treemap cells (light + dark mode aware) ──
@@ -39,15 +41,19 @@ interface PartnerRankingCardProps {
   onPartnerClick?: (taxNumber: string) => void;
 }
 
-/** Format number as compact Hungarian: 4.2M, 850E, 12 */
-function formatCompact(value: number): string {
+/** Format number as compact: 4.2M, 850E / 850k, 12 */
+function formatCompact(value: number, isHr = false): string {
   const abs = Math.abs(value);
   if (abs >= 1_000_000) return (value / 1_000_000).toFixed(1).replace('.0', '') + 'M';
-  if (abs >= 1_000) return (value / 1_000).toFixed(0) + 'E';
+  if (abs >= 1_000) return (value / 1_000).toFixed(0) + (isHr ? 'k' : 'E');
   return Math.round(value).toString();
 }
 
 export function PartnerRankingCard({ title, type, data, totalAll, isLoading, periodLabel, onPartnerClick }: PartnerRankingCardProps) {
+  const { t } = useTranslation('partners');
+  const isHr = getActiveLocale() === 'hr';
+  const currencyUnit = isHr ? '€' : 'Ft';
+
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const isSupplier = type === 'supplier';
@@ -113,7 +119,7 @@ export function PartnerRankingCard({ title, type, data, totalAll, isLoading, per
               ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
               : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
           )}>
-            {isSupplier ? 'Szállítók' : 'Vevők'}
+            {isSupplier ? t('ranking.suppliers', 'Szállítók') : t('ranking.customers', 'Vevők')}
           </span>
         </div>
 
@@ -151,7 +157,7 @@ export function PartnerRankingCard({ title, type, data, totalAll, isLoading, per
                 {/* Name + count */}
                 <div className="flex-1 min-w-0">
                   <p className="text-[11px] font-semibold truncate">{partner.name}</p>
-                  <p className="text-[9px] text-muted-foreground/50">{partner.invoice_count} számla</p>
+                  <p className="text-[9px] text-muted-foreground/50">{partner.invoice_count} {t('ranking.invoices', 'számla')}</p>
                 </div>
 
                 {/* Bar + amount */}
@@ -163,7 +169,7 @@ export function PartnerRankingCard({ title, type, data, totalAll, isLoading, per
                     />
                   </div>
                   <span className="text-[10px] font-semibold tabular-nums whitespace-nowrap" style={{ color: accentColor }}>
-                    {formatCompact(partner.total_gross)}
+                    {formatCompact(partner.total_gross, isHr)}
                   </span>
                 </div>
               </div>
@@ -190,7 +196,7 @@ export function PartnerRankingCard({ title, type, data, totalAll, isLoading, per
                 {/* Name + count placeholder */}
                 <div className="flex-1 min-w-0">
                   <p className="text-[11px] font-normal text-muted-foreground/30 italic truncate">
-                    {data.length === 0 && i === 0 ? 'Nincs partner ebben az időszakban' : '—'}
+                    {data.length === 0 && i === 0 ? t('ranking.no_partners_period', 'Nincs partner ebben az időszakban') : '—'}
                   </p>
                   <p className="text-[9px] text-muted-foreground/15">—</p>
                 </div>
@@ -211,7 +217,7 @@ export function PartnerRankingCard({ title, type, data, totalAll, isLoading, per
         {data.length > 0 ? (
           <div className="mt-3.5 pt-3.5 border-t border-border/40">
             <p className="text-[10px] text-muted-foreground/50 font-medium uppercase tracking-wider mb-2">
-              Top {data.length} arányos áttekintés
+              {t('ranking.treemap_title', { count: data.length, defaultValue: `Top ${data.length} arányos áttekintés` })}
             </p>
             <div className="flex flex-wrap gap-[3px]">
               {data.map((partner, idx) => {
@@ -234,13 +240,13 @@ export function PartnerRankingCard({ title, type, data, totalAll, isLoading, per
                       flexShrink: 0,
                     }}
                     onClick={() => onPartnerClick?.(partner.tax_number)}
-                    title={`${partner.name}: ${formatCompact(partner.total_gross)} Ft (${pct.toFixed(1)}%)`}
+                    title={`${partner.name}: ${formatCompact(partner.total_gross, isHr)} ${currencyUnit} (${pct.toFixed(1)}%)`}
                   >
                     {h >= 40 && (
                       <span className="text-[7px] font-extrabold opacity-40 leading-none">#{idx + 1}</span>
                     )}
                     <span className={`font-bold whitespace-nowrap leading-tight ${h >= 40 ? 'text-[11px]' : 'text-[10px]'}`}>
-                      {formatCompact(partner.total_gross)}
+                      {formatCompact(partner.total_gross, isHr)}
                     </span>
                     <span className="text-[8px] font-medium opacity-60 whitespace-nowrap overflow-hidden text-ellipsis max-w-full text-center leading-none">
                       {partner.name.length > 12 ? partner.name.substring(0, 10) + '…' : partner.name}
@@ -253,10 +259,10 @@ export function PartnerRankingCard({ title, type, data, totalAll, isLoading, per
         ) : (
           <div className="mt-3.5 pt-3.5 border-t border-border/40">
             <p className="text-[10px] text-muted-foreground/50 font-medium uppercase tracking-wider mb-2">
-              Arányos áttekintés
+              {t('ranking.treemap_empty_title', 'Arányos áttekintés')}
             </p>
             <div className="h-[48px] rounded-md border border-dashed border-border/30 bg-muted/5 flex items-center justify-center text-xs text-muted-foreground/30 font-medium">
-              Nincs megjeleníthető adat
+              {t('ranking.no_data', 'Nincs megjeleníthető adat')}
             </div>
           </div>
         )}
@@ -265,25 +271,31 @@ export function PartnerRankingCard({ title, type, data, totalAll, isLoading, per
       {/* Summary row */}
       <div className="mt-3.5 pt-3 border-t border-border/40 grid grid-cols-4 gap-2 text-center">
         <div>
-          <p className="text-[9px] text-muted-foreground/50 font-medium uppercase tracking-wider">Top {data.length} összeg</p>
-          <p className="text-[15px] font-extrabold mt-0.5" style={{ color: accentColor }}>
-            {formatCompact(top10Total)}
+          <p className="text-[9px] text-muted-foreground/50 font-medium uppercase tracking-wider">
+            {t('ranking.top_amount', { count: data.length, defaultValue: `Top ${data.length} összeg` })}
           </p>
-          <p className="text-[9px] text-muted-foreground/40">Ft</p>
+          <p className="text-[15px] font-extrabold mt-0.5" style={{ color: accentColor }}>
+            {formatCompact(top10Total, isHr)}
+          </p>
+          <p className="text-[9px] text-muted-foreground/40">{currencyUnit}</p>
         </div>
         <div>
           <p className="text-[9px] text-muted-foreground/50 font-medium uppercase tracking-wider">
-            Összes {isSupplier ? 'beszerzés' : 'értékesítés'}
+            {isSupplier ? t('ranking.total_purchases', 'Összes beszerzés') : t('ranking.total_sales', 'Összes értékesítés')}
           </p>
-          <p className="text-[15px] font-extrabold mt-0.5">{formatCompact(totalAll)}</p>
-          <p className="text-[9px] text-muted-foreground/40">Ft</p>
+          <p className="text-[15px] font-extrabold mt-0.5">{formatCompact(totalAll, isHr)}</p>
+          <p className="text-[9px] text-muted-foreground/40">{currencyUnit}</p>
         </div>
         <div>
-          <p className="text-[9px] text-muted-foreground/50 font-medium uppercase tracking-wider">Top {data.length} arány</p>
+          <p className="text-[9px] text-muted-foreground/50 font-medium uppercase tracking-wider">
+            {t('ranking.top_ratio', { count: data.length, defaultValue: `Top ${data.length} arány` })}
+          </p>
           <p className="text-[15px] font-extrabold mt-0.5 text-amber-400">{top10Pct}%</p>
         </div>
         <div>
-          <p className="text-[9px] text-muted-foreground/50 font-medium uppercase tracking-wider">Top 3 arány</p>
+          <p className="text-[9px] text-muted-foreground/50 font-medium uppercase tracking-wider">
+            {t('ranking.top_3_ratio', 'Top 3 arány')}
+          </p>
           <p className="text-[15px] font-extrabold mt-0.5 text-primary">{top3Pct}%</p>
         </div>
       </div>

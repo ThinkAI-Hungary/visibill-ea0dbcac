@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -17,6 +18,7 @@ export default function OpeningCSVImportModal({
   onOpenChange,
   onImportGlBalances
 }: OpeningCSVImportModalProps) {
+  const { t } = useTranslation(['accounting', 'common']);
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'gl' | 'invoices'>('gl');
   const [file, setFile] = useState<File | null>(null);
@@ -40,13 +42,13 @@ export default function OpeningCSVImportModal({
           if (Array.isArray(json)) {
             setParsedItems(json);
           } else {
-            throw new Error('A JSON fájlnak tömböt kell tartalmaznia.');
+            throw new Error(t('dialogs.opening_csv_import.errors.json_array_required', { defaultValue: 'A JSON fájlnak tömböt kell tartalmaznia.' }));
           }
         } else {
           // CSV parser (handles comma or semicolon delimiter)
           const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
           if (lines.length < 2) {
-            throw new Error('A CSV fájlnak legalább egy fejlécet és egy adatsort tartalmaznia kell.');
+            throw new Error(t('dialogs.opening_csv_import.errors.csv_header_required', { defaultValue: 'A CSV fájlnak legalább egy fejlécet és egy adatsort tartalmaznia kell.' }));
           }
 
           const delimiter = lines[0].includes(';') ? ';' : ',';
@@ -80,7 +82,7 @@ export default function OpeningCSVImportModal({
           setParsedItems(items);
         }
       } catch (err: any) {
-        setErrorMsg(err.message || 'Hiba történt a fájl beolvasásakor.');
+        setErrorMsg(err.message || t('dialogs.opening_csv_import.errors.file_read_error', { defaultValue: 'Hiba történt a fájl beolvasásakor.' }));
         setParsedItems([]);
       }
     };
@@ -110,13 +112,20 @@ export default function OpeningCSVImportModal({
 
   const handleConfirmImport = () => {
     if (parsedItems.length === 0) {
-      toast({ title: 'Nincs érvényes adat', description: 'A fájl nem tartalmazott feldolgozható sorokat.', variant: 'destructive' });
+      toast({ 
+        title: t('dialogs.opening_csv_import.errors.no_valid_data', { defaultValue: 'Nincs érvényes adat' }), 
+        description: t('dialogs.opening_csv_import.errors.no_rows_desc', { defaultValue: 'A fájl nem tartalmazott feldolgozható sorokat.' }), 
+        variant: 'destructive' 
+      });
       return;
     }
 
     if (activeTab === 'gl') {
       onImportGlBalances(parsedItems);
-      toast({ title: 'Sikeres importálás', description: `${parsedItems.length} db főkönyvi nyitó tétele beimportálva!` });
+      toast({ 
+        title: t('dialogs.opening_csv_import.errors.import_success', { defaultValue: 'Sikeres importálás' }), 
+        description: t('dialogs.opening_csv_import.errors.import_success_desc', { count: parsedItems.length, defaultValue: `${parsedItems.length} db főkönyvi nyitó tétele beimportálva!` }) 
+      });
     }
 
     onOpenChange(false);
@@ -128,10 +137,10 @@ export default function OpeningCSVImportModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UploadCloud className="w-5 h-5 text-primary" />
-            Nyitó adatok tömeges importálása (CSV / JSON)
+            {t('dialogs.opening_csv_import.title', { defaultValue: 'Nyitó adatok tömeges importálása (CSV / JSON)' })}
           </DialogTitle>
           <DialogDescription>
-            Tölts fel CSV vagy JSON fájlt a nyitó egyenlegek és analitikák gyors felviteléhez.
+            {t('dialogs.opening_csv_import.description', { defaultValue: 'Tölts fel CSV vagy JSON fájlt a nyitó egyenlegek és analitikák gyors felviteléhez.' })}
           </DialogDescription>
         </DialogHeader>
 
@@ -139,22 +148,22 @@ export default function OpeningCSVImportModal({
           <TabsList className="grid grid-cols-2 w-full">
             <TabsTrigger value="gl" className="gap-2">
               <FileSpreadsheet className="w-4 h-4" />
-              Főkönyvi Nyitó egyenlegek
+              {t('dialogs.opening_csv_import.tabs.gl', { defaultValue: 'Főkönyvi Nyitó egyenlegek' })}
             </TabsTrigger>
             <TabsTrigger value="invoices" className="gap-2" disabled>
               <FileText className="w-4 h-4" />
-              Nyitó Számlák (Hamarosan)
+              {t('dialogs.opening_csv_import.tabs.invoices', { defaultValue: 'Nyitó Számlák (Hamarosan)' })}
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="gl" className="space-y-4">
             <div className="flex items-center justify-between p-3 bg-muted/40 rounded-lg border text-xs">
               <div>
-                <span className="font-semibold block text-foreground">Elvárt oszlopok:</span>
-                <span className="text-muted-foreground">szamlaszam, irany (T/K), osszeg, megnevezes</span>
+                <span className="font-semibold block text-foreground">{t('dialogs.opening_csv_import.expected_columns', { defaultValue: 'Elvárt oszlopok:' })}</span>
+                <span className="text-muted-foreground">{t('dialogs.opening_csv_import.expected_cols_list', { defaultValue: 'szamlaszam, irany (T/K), osszeg, megnevezes' })}</span>
               </div>
               <Button size="sm" variant="outline" onClick={handleDownloadSampleGl} className="gap-1.5 h-8 text-xs">
-                <Download className="w-3.5 h-3.5" /> Mintafájl
+                <Download className="w-3.5 h-3.5" /> {t('dialogs.opening_csv_import.sample_file', { defaultValue: 'Mintafájl' })}
               </Button>
             </div>
 
@@ -168,8 +177,8 @@ export default function OpeningCSVImportModal({
               />
               <label htmlFor="opening-csv-input" className="cursor-pointer flex flex-col items-center gap-2">
                 <UploadCloud className="w-8 h-8 text-primary opacity-80" />
-                <span className="text-sm font-semibold">Kattints ide a CSV vagy JSON fájl kiválasztásához</span>
-                <span className="text-xs text-muted-foreground">Formátum: UTF-8 kódolású CSV vagy JSON</span>
+                <span className="text-sm font-semibold">{t('dialogs.opening_csv_import.upload_drop_title', { defaultValue: 'Kattints ide a CSV vagy JSON fájl kiválasztásához' })}</span>
+                <span className="text-xs text-muted-foreground">{t('dialogs.opening_csv_import.upload_drop_subtitle', { defaultValue: 'Formátum: UTF-8 kódolású CSV vagy JSON' })}</span>
               </label>
             </div>
 
@@ -177,7 +186,7 @@ export default function OpeningCSVImportModal({
               <div className="flex items-center gap-2 p-2.5 bg-card border rounded-lg text-xs">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                 <span className="font-medium truncate">{file.name}</span>
-                <span className="ml-auto text-muted-foreground shrink-0">{parsedItems.length} beolvasott tétel</span>
+                <span className="ml-auto text-muted-foreground shrink-0">{t('dialogs.opening_csv_import.items_read', { count: parsedItems.length, defaultValue: `${parsedItems.length} beolvasott tétel` })}</span>
               </div>
             )}
 
@@ -191,9 +200,9 @@ export default function OpeningCSVImportModal({
         </Tabs>
 
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Mégse</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{t('dialogs.opening_csv_import.cancel', { defaultValue: 'Mégse' })}</Button>
           <Button onClick={handleConfirmImport} disabled={parsedItems.length === 0}>
-            Importálás alkalmazása ({parsedItems.length})
+            {t('dialogs.opening_csv_import.apply_import', { count: parsedItems.length, defaultValue: `Importálás alkalmazása (${parsedItems.length})` })}
           </Button>
         </DialogFooter>
       </DialogContent>

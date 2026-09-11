@@ -147,9 +147,9 @@ export default function FixedAssetsPage() {
                 <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-muted/30 flex items-center justify-center">
                   <Package2 className="h-10 w-10 opacity-30" />
                 </div>
-                <p className="font-medium">Válassz egy eszközt</p>
+                <p className="font-medium">{t('hr:fixed_assets.select_asset', 'Válassz egy eszközt')}</p>
                 <p className="text-sm mt-1 opacity-75">
-                  Kattints egy eszközre a bal oldali listában a részletek megtekintéséhez.
+                  {t('hr:fixed_assets.select_asset_desc', 'Kattints egy eszközre a bal oldali listában a részletek megtekintéséhez.')}
                 </p>
               </div>
             </div>

@@ -1,3 +1,5 @@
+import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -20,22 +22,24 @@ interface ProjectBreakdownProps {
 }
 
 const ProjectBreakdown = ({ projects, totalAmount }: ProjectBreakdownProps) => {
+  const { t } = useTranslation(['dashboard', 'common']);
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FolderOpen className="h-5 w-5" />
-          Projekt összefoglaló
+          {t('dashboard:project_breakdown.title', 'Projekt összefoglaló')}
         </CardTitle>
         <CardDescription>
-          Számlák megoszlása projektek szerint
+          {t('dashboard:project_breakdown.description', 'Számlák megoszlása projektek szerint')}
         </CardDescription>
       </CardHeader>
       <CardContent>
         {projects.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <FolderOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Még nincsenek projekthez rendelt számlák</p>
+            <p>{t('dashboard:project_breakdown.empty', 'Még nincsenek projekthez rendelt számlák')}</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -50,14 +54,17 @@ const ProjectBreakdown = ({ projects, totalAmount }: ProjectBreakdownProps) => {
                   </div>
                   <div className="flex items-center gap-2 ml-4">
                     <Badge variant="secondary">
-                      {project.invoice_count} számla
+                      {t('dashboard:project_breakdown.invoices_count', {
+                        count: project.invoice_count,
+                        defaultValue: `${project.invoice_count} számla`,
+                      })}
                     </Badge>
                   </div>
                 </div>
                 
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">
-                    Összesen: {formatCurrency(project.total_amount)}
+                    {t('dashboard:project_breakdown.total', 'Összesen:')} {formatCurrency(project.total_amount)}
                   </span>
                   <span className="text-muted-foreground">
                     {project.percentage.toFixed(1)}%
@@ -71,11 +78,14 @@ const ProjectBreakdown = ({ projects, totalAmount }: ProjectBreakdownProps) => {
                 
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>
-                    Átlag: {formatCurrency(project.avg_amount)} / számla
+                    {t('dashboard:project_breakdown.average', {
+                      amount: formatCurrency(project.avg_amount),
+                      defaultValue: `Átlag: ${formatCurrency(project.avg_amount)} / számla`,
+                    })}
                   </span>
                   <div className="flex items-center gap-1">
                     <TrendingUp className="h-3 w-3" />
-                    <span>Aktív projekt</span>
+                    <span>{t('dashboard:project_breakdown.active_project', 'Aktív projekt')}</span>
                   </div>
                 </div>
               </div>
@@ -87,4 +97,4 @@ const ProjectBreakdown = ({ projects, totalAmount }: ProjectBreakdownProps) => {
   );
 };
 
-export default ProjectBreakdown;
+export default ProjectBreakdown;

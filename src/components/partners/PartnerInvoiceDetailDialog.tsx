@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/utils";
@@ -77,6 +78,7 @@ export function PartnerInvoiceDetailDialog({
   open,
   onClose,
 }: PartnerInvoiceDetailDialogProps) {
+  const { t } = useTranslation();
   const isNav = invoice?.source === "nav";
   const currency = invoice?.currency || "HUF";
   const isOutbound = invoice?.invoice_direction === "OUTBOUND";
@@ -176,13 +178,19 @@ export function PartnerInvoiceDetailDialog({
                       : "bg-blue-500/10 text-blue-500 border-blue-500/20"
                   )}
                 >
-                  {isOutbound ? "Kimenő" : "Bejövő"}
+                  {isOutbound
+                    ? t("partners:invoice_detail_dialog.direction_outbound")
+                    : t("partners:invoice_detail_dialog.direction_inbound")
+                  }
                 </Badge>
                 <Badge
                   variant="outline"
                   className="text-[10px] font-semibold bg-muted/50 text-muted-foreground"
                 >
-                  {isNav ? "NAV" : "Beküldött"}
+                  {isNav
+                    ? t("partners:invoice_detail_dialog.source_nav")
+                    : t("partners:invoice_detail_dialog.source_uploaded")
+                  }
                 </Badge>
               </div>
             </div>
@@ -191,21 +199,21 @@ export function PartnerInvoiceDetailDialog({
             <div className="grid grid-cols-3 gap-3 mt-3 text-xs">
               <div>
                 <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
-                  Kiállítás dátuma
+                  {t("partners:invoice_detail_dialog.issue_date")}
                 </p>
                 <p className="font-medium mt-0.5">{formatDate(invoice.invoice_issue_date)}</p>
               </div>
               {invoice.payment_date && (
                 <div>
                   <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
-                    Fizetési határidő
+                    {t("partners:invoice_detail_dialog.payment_date")}
                   </p>
                   <p className="font-medium mt-0.5">{formatDate(invoice.payment_date)}</p>
                 </div>
               )}
               <div>
                 <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
-                  Bruttó összeg
+                  {t("partners:invoice_detail_dialog.gross_amount")}
                 </p>
                 <p className="font-mono font-bold mt-0.5 text-sm">
                   {formatNum(invoice.invoice_gross_amount, currency)}
@@ -214,7 +222,7 @@ export function PartnerInvoiceDetailDialog({
               {invoice.payment_method && (
                 <div>
                   <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
-                    Fizetési mód
+                    {t("partners:invoice_detail_dialog.payment_method")}
                   </p>
                   <p className="font-medium mt-0.5">{invoice.payment_method}</p>
                 </div>
@@ -231,7 +239,7 @@ export function PartnerInvoiceDetailDialog({
                   onClick={handleOpenPreview}
                 >
                   <FileImage className="h-3.5 w-3.5" />
-                  Számlakép megtekintése
+                  {t("partners:invoice_detail_dialog.view_image")}
                 </Button>
               </div>
             )}
@@ -240,7 +248,7 @@ export function PartnerInvoiceDetailDialog({
           {/* Items */}
           <div className="flex-1 overflow-y-auto min-h-0">
             <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-1 py-3 sticky top-0 bg-card/95 backdrop-blur-sm border-b border-border/40">
-              Tételek
+              {t("partners:invoice_detail_dialog.items_title")}
             </h4>
 
             {isLoadingItems ? (
@@ -249,32 +257,32 @@ export function PartnerInvoiceDetailDialog({
               </div>
             ) : !items || items.length === 0 ? (
               <div className="text-center py-10 text-xs text-muted-foreground">
-                Nincsenek tételek ehhez a számlához
+                {t("partners:invoice_detail_dialog.no_items")}
               </div>
             ) : (
               <Table className="text-xs">
                 <TableHeader>
                   <TableRow className="bg-muted/50 hover:bg-muted/50">
                     <TableHead className="text-[10px] font-semibold uppercase tracking-wider w-[32%]">
-                      Megnevezés
+                      {t("partners:invoice_detail_dialog.table.description")}
                     </TableHead>
                     <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-right w-[9%]">
-                      Menny.
+                      {t("partners:invoice_detail_dialog.table.quantity")}
                     </TableHead>
                     <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-right w-[7%]">
-                      Egys.
+                      {t("partners:invoice_detail_dialog.table.unit")}
                     </TableHead>
                     <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-right w-[13%]">
-                      Nettó
+                      {t("partners:invoice_detail_dialog.table.net")}
                     </TableHead>
                     <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-right w-[7%]">
-                      ÁFA
+                      {t("partners:invoice_detail_dialog.table.vat")}
                     </TableHead>
                     <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-right w-[13%]">
-                      Bruttó
+                      {t("partners:invoice_detail_dialog.table.gross")}
                     </TableHead>
                     <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-center w-[13%]">
-                      Főkönyvi
+                      {t("partners:invoice_detail_dialog.table.gl_account")}
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -333,7 +341,7 @@ export function PartnerInvoiceDetailDialog({
           <DialogHeader>
             <DialogTitle className="truncate pr-8 flex items-center gap-2">
               <FileImage className="h-4 w-4 shrink-0" />
-              {invoice?.invoice_number || "Számlakép"}
+              {invoice?.invoice_number || t("partners:invoice_detail_dialog.preview.title")}
             </DialogTitle>
           </DialogHeader>
           <div className="mt-2 overflow-auto max-h-[calc(90vh-120px)]">
@@ -346,10 +354,10 @@ export function PartnerInvoiceDetailDialog({
                 return (
                   <div className="text-center py-12 space-y-4">
                     <AlertCircle className="h-12 w-12 mx-auto text-destructive" />
-                    <p className="text-muted-foreground">Hiba történt a fájl betöltése közben</p>
+                    <p className="text-muted-foreground">{t("partners:invoice_detail_dialog.preview.load_error")}</p>
                     <Button variant="outline" onClick={() => window.open(url, '_blank')}>
                       <ExternalLink className="h-4 w-4 mr-2" />
-                      Megnyitás új ablakban
+                      {t("partners:invoice_detail_dialog.preview.open_new_window")}
                     </Button>
                   </div>
                 );
@@ -360,7 +368,7 @@ export function PartnerInvoiceDetailDialog({
                   {previewLoading && (
                     <div className="text-center py-12 text-muted-foreground">
                       <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
-                      <p>Betöltés...</p>
+                      <p>{t("partners:invoice_detail_dialog.preview.loading")}</p>
                     </div>
                   )}
                   {isPDF ? (
@@ -368,13 +376,13 @@ export function PartnerInvoiceDetailDialog({
                       <div className="flex justify-center">
                         <Button variant="outline" size="sm" onClick={() => window.open(url, '_blank')}>
                           <ExternalLink className="h-4 w-4 mr-2" />
-                          Megnyitás új ablakban
+                          {t("partners:invoice_detail_dialog.preview.open_new_window")}
                         </Button>
                       </div>
                       <iframe
                         src={url}
                         className="w-full h-[60vh] border rounded"
-                        title="Számlakép"
+                        title={t("partners:invoice_detail_dialog.preview.title")}
                         onLoad={() => setPreviewLoading(false)}
                         onError={() => { setPreviewError(true); setPreviewLoading(false); }}
                       />
@@ -384,12 +392,12 @@ export function PartnerInvoiceDetailDialog({
                       <div className="flex justify-center">
                         <Button variant="outline" size="sm" onClick={() => window.open(url, '_blank')}>
                           <ExternalLink className="h-4 w-4 mr-2" />
-                          Megnyitás új ablakban
+                          {t("partners:invoice_detail_dialog.preview.open_new_window")}
                         </Button>
                       </div>
                       <img
                         src={url}
-                        alt="Számlakép"
+                        alt={t("partners:invoice_detail_dialog.preview.title")}
                         className="w-full h-auto rounded"
                         onLoad={() => setPreviewLoading(false)}
                         onError={() => { setPreviewError(true); setPreviewLoading(false); }}
@@ -398,10 +406,10 @@ export function PartnerInvoiceDetailDialog({
                   ) : (
                     <div className="text-center py-12 space-y-4">
                       <FileText className="h-12 w-12 mx-auto text-muted-foreground" />
-                      <p className="text-muted-foreground">Ez a fájltípus nem megjeleníthető előnézetben</p>
+                      <p className="text-muted-foreground">{t("partners:invoice_detail_dialog.preview.unsupported_type")}</p>
                       <Button variant="default" onClick={() => window.open(url, '_blank')}>
                         <ExternalLink className="h-4 w-4 mr-2" />
-                        Megnyitás új ablakban
+                        {t("partners:invoice_detail_dialog.preview.open_new_window")}
                       </Button>
                     </div>
                   )}

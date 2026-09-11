@@ -37,7 +37,7 @@ import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
-export const renderYoYBadge = (curr: number, prev: number, inThousands: boolean, textClass: string = "text-[9px]") => {
+export const renderYoYBadge = (curr: number, prev: number, inThousands: boolean, textClass: string = "text-[9px]", t?: (key: string, def?: string) => string) => {
   // Use the actual values displayed on screen (rounded to integer in thousands, or kept as raw integers)
   const displayCurr = inThousands ? Math.round(curr / 1000) : Math.round(curr);
   const displayPrev = inThousands ? Math.round(prev / 1000) : Math.round(prev);
@@ -47,14 +47,14 @@ export const renderYoYBadge = (curr: number, prev: number, inThousands: boolean,
   if (displayPrev < 0 && displayCurr >= 0) {
     return (
       <span className={cn("ml-1.5 px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 font-bold whitespace-nowrap", textClass)}>
-        Nyereségbe fordult
+        {t ? t('accounting:profit_and_loss.badges.turned_profit', 'Nyereségbe fordult') : 'Nyereségbe fordult'}
       </span>
     );
   }
   if (displayPrev > 0 && displayCurr < 0) {
     return (
       <span className={cn("ml-1.5 px-1.5 py-0.5 rounded bg-red-500/10 text-red-500 font-bold whitespace-nowrap", textClass)}>
-        Veszteségbe fordult
+        {t ? t('accounting:profit_and_loss.badges.turned_loss', 'Veszteségbe fordult') : 'Veszteségbe fordult'}
       </span>
     );
   }
@@ -113,6 +113,7 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
   glAccounts?: any[];       // P5: passed from parent
   isLoadingGlAccounts?: boolean;
 }) {
+  const { t } = useTranslation(['accounting', 'common']);
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -200,14 +201,21 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: 'Sikeres mentés', description: 'A hozzárendelések sikeresen frissítve lettek.' });
+      toast({ 
+        title: t('accounting:profit_and_loss.toasts.save_success_title', 'Sikeres mentés'), 
+        description: t('accounting:profit_and_loss.toasts.save_success', 'A hozzárendelések sikeresen frissítve lettek.') 
+      });
       setHasChanges(false);
       queryClient.invalidateQueries({ queryKey: ['pnl_mapping'] });
       queryClient.invalidateQueries({ queryKey: ['pnl_report'] });
       refetchSuggestions();
     },
     onError: (err: any) => {
-      toast({ title: 'Hiba a mentés során', description: err.message, variant: 'destructive' });
+      toast({ 
+        title: t('accounting:profit_and_loss.toasts.save_error', 'Hiba a mentés során'), 
+        description: err.message, 
+        variant: 'destructive' 
+      });
     }
   });
 
@@ -237,8 +245,8 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
       if (error) throw error;
 
       toast({
-        title: 'Sikeres hozzárendelés',
-        description: `${acceptedList.length} hozzárendelés sikeresen elfogadva és mentve.`,
+        title: t('accounting:profit_and_loss.toasts.save_success_title', 'Sikeres hozzárendelés'),
+        description: t('accounting:profit_and_loss.toasts.suggestions_accepted', { count: acceptedList.length, defaultValue: `${acceptedList.length} hozzárendelés sikeresen elfogadva és mentve.` }),
         className: 'bg-green-50 text-green-900 border-green-200',
       });
       
@@ -247,7 +255,11 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
       queryClient.invalidateQueries({ queryKey: ['pnl_report'] });
       refetchSuggestions();
     } catch (err: any) {
-      toast({ title: 'Hiba a mentés során', description: err.message, variant: 'destructive' });
+      toast({ 
+        title: t('accounting:profit_and_loss.toasts.save_error', 'Hiba a mentés során'), 
+        description: err.message, 
+        variant: 'destructive' 
+      });
     } finally {
       setIsSavingSuggestions(false);
     }
@@ -298,7 +310,10 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
 
     setMappings(newMappings);
     setHasChanges(true);
-    toast({ title: 'Automatikus hozzárendelés kész', description: `${assignedCount} főkönyvi szám hozzárendelve a Sztv. "A" változat szerint. Ellenőrizd és mentsd el!` });
+    toast({ 
+      title: t('accounting:profit_and_loss.toasts.auto_assign_title', 'Automatikus hozzárendelés kész'), 
+      description: t('accounting:profit_and_loss.toasts.auto_assign_done', { count: assignedCount, defaultValue: `${assignedCount} főkönyvi szám hozzárendelve a Sztv. "A" változat szerint. Ellenőrizd és mentsd el!` }) 
+    });
   };
 
   const toggleRow = (id: string, hasChildren: boolean) => {
@@ -349,7 +364,7 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
   }, [treeData, expandedRowIds]);
 
   if (isLoadingStructure || isLoadingGlAccounts || isLoadingMappings) {
-    return <FinancialPageSkeleton title="Hozzárendelések betöltése..." />;
+    return <FinancialPageSkeleton title={t('accounting:profit_and_loss.mapping_tab.loading', 'Hozzárendelések betöltése...')} />;
   }
 
   const assignableRows = pnlStructure?.filter(row => row.type === 'roman') || [];
@@ -362,10 +377,10 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
             <Sparkles className="w-5 h-5 text-indigo-500 shrink-0 animate-pulse" />
             <div>
               <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-300">
-                Intelligens Hozzárendelési Javaslatok ({suggestions.length} db)
+                {t('accounting:profit_and_loss.mapping_tab.suggestions_title', { count: suggestions.length, defaultValue: `Intelligens Hozzárendelési Javaslatok (${suggestions.length} db)` })}
               </p>
               <p className="text-xs text-indigo-700/80 dark:text-indigo-400/80 mt-0.5">
-                Az Sztv. "A" variáns szerinti kódok alapján javaslataink vannak a besorolatlan főkönyvi számokhoz.
+                {t('accounting:profit_and_loss.mapping_tab.suggestions_desc', 'Az Sztv. "A" variáns szerinti kódok alapján javaslataink vannak a besorolatlan főkönyvi számokhoz.')}
               </p>
             </div>
           </div>
@@ -374,15 +389,15 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
             size="sm" 
             className="bg-indigo-600 hover:bg-indigo-700 text-white shrink-0 gap-1.5 font-semibold text-xs"
           >
-            <Sparkles className="w-3.5 h-3.5" /> Javaslatok ellenőrzése
+            <Sparkles className="w-3.5 h-3.5" /> {t('accounting:profit_and_loss.mapping_tab.check_suggestions', 'Javaslatok ellenőrzése')}
           </Button>
         </div>
       )}
 
       <div className="flex justify-between items-center mb-4">
         <div>
-          <h3 className="text-lg font-medium">Főkönyvi számok párosítása</h3>
-          <p className="text-sm text-muted-foreground">Rendeld hozzá az aktuális számlatükör elemeit az Eredménykimutatás hivatalos soraihoz.</p>
+          <h3 className="text-lg font-medium">{t('accounting:profit_and_loss.mapping_tab.match_title', 'Főkönyvi számok párosítása')}</h3>
+          <p className="text-sm text-muted-foreground">{t('accounting:profit_and_loss.mapping_tab.match_desc', 'Rendeld hozzá az aktuális számlatükör elemeit az Eredménykimutatás hivatalos soraihoz.')}</p>
         </div>
         <div className="flex items-center gap-2">
           {isGenericPreset && (
@@ -392,7 +407,7 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
               className="gap-2"
             >
               <Wand2 className="w-4 h-4" />
-              Alapértelmezett hozzárendelés
+              {t('accounting:profit_and_loss.mapping_tab.default_assign', 'Alapértelmezett hozzárendelés')}
             </Button>
           )}
           <Button 
@@ -401,20 +416,20 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
             className="gap-2"
           >
             {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Mentés
+            {t('accounting:profit_and_loss.mapping_tab.save', 'Mentés')}
           </Button>
         </div>
       </div>
 
       <div className="border rounded-md">
         <div className="grid grid-cols-12 gap-4 p-4 border-b bg-muted/50 font-medium text-sm">
-          <div className="col-span-3">Főkönyvi Szám</div>
-          <div className="col-span-4">Megnevezés</div>
-          <div className="col-span-5">Eredménykimutatás Sor</div>
+          <div className="col-span-3">{t('accounting:profit_and_loss.mapping_tab.gl_number', 'Főkönyvi Szám')}</div>
+          <div className="col-span-4">{t('accounting:profit_and_loss.mapping_tab.gl_name', 'Megnevezés')}</div>
+          <div className="col-span-5">{t('accounting:profit_and_loss.mapping_tab.pnl_row', 'Eredménykimutatás Sor')}</div>
         </div>
         <ScrollArea className="h-[600px]">
           {processedAccounts.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">Nincsenek főkönyvi számok a kiválasztott sablonban.</div>
+            <div className="p-8 text-center text-muted-foreground">{t('accounting:profit_and_loss.mapping_tab.empty', 'Nincsenek főkönyvi számok a kiválasztott sablonban.')}</div>
           ) : (
             processedAccounts.map(gl => {
               if (!gl.isVisibleOnScreen) return null;
@@ -445,8 +460,8 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
                   <div className={cn("col-span-4 text-sm truncate flex items-center gap-1.5", gl.isRoot ? "uppercase" : "")} title={gl.short_name}>
                     {!gl.hasChildren && (
                       mappings[gl.id]
-                        ? <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Besorolva" />
-                        : <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" title="Nincs besorolva" />
+                        ? <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title={t('accounting:profit_and_loss.mapping_tab.assigned', 'Besorolva')} />
+                        : <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" title={t('accounting:profit_and_loss.mapping_tab.unassigned', 'Nincs besorolva')} />
                     )}
                     {gl.short_name}
                   </div>
@@ -456,10 +471,10 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
                       onValueChange={(val) => handleSelectChange(gl.id, val)}
                     >
                       <SelectTrigger className="h-8 text-xs">
-                        <SelectValue placeholder="Válassz sort..." />
+                        <SelectValue placeholder={t('accounting:profit_and_loss.mapping_tab.select_row', 'Válassz sort...')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none" className="text-muted-foreground italic">Nincs besorolva</SelectItem>
+                        <SelectItem value="none" className="text-muted-foreground italic">{t('accounting:profit_and_loss.mapping_tab.unassigned', 'Nincs besorolva')}</SelectItem>
                         {assignableRows.map(row => (
                           <SelectItem key={row.id} value={row.id}>
                             {row.row_code} {row.name}
@@ -480,10 +495,10 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-indigo-500 animate-pulse" />
-              Javasolt Hozzárendelések Elfogadása
+              {t('accounting:profit_and_loss.mapping_tab.dialog_title', 'Javasolt Hozzárendelések Elfogadása')}
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Az Sztv. kódolás szerint az alábbi számlákat tudjuk automatikusan besorolni az Eredménykimutatásba.
+              {t('accounting:profit_and_loss.mapping_tab.dialog_desc', 'Az Sztv. kódolás szerint az alábbi számlákat tudjuk automatikusan besorolni az Eredménykimutatásba.')}
             </DialogDescription>
           </DialogHeader>
 
@@ -503,10 +518,10 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
                       }}
                     />
                   </th>
-                  <th className="py-2 px-2">Számlaszám</th>
-                  <th className="py-2 px-2">Megnevezés</th>
-                  <th className="py-2 px-2">Javasolt Sor</th>
-                  <th className="py-2 px-2">Indoklás</th>
+                  <th className="py-2 px-2">{t('accounting:profit_and_loss.mapping_tab.dialog_account_number', 'Számlaszám')}</th>
+                  <th className="py-2 px-2">{t('accounting:profit_and_loss.mapping_tab.gl_name', 'Megnevezés')}</th>
+                  <th className="py-2 px-2">{t('accounting:profit_and_loss.mapping_tab.dialog_suggested_row', 'Javasolt Sor')}</th>
+                  <th className="py-2 px-2">{t('accounting:profit_and_loss.mapping_tab.dialog_reasoning', 'Indoklás')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -539,7 +554,7 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
 
           <DialogFooter className="border-t pt-4">
             <Button variant="outline" onClick={() => setIsSuggestionOpen(false)} disabled={isSavingSuggestions}>
-              Mégse
+              {t('accounting:profit_and_loss.mapping_tab.dialog_cancel', 'Mégse')}
             </Button>
             <Button 
               onClick={handleAcceptSuggestions} 
@@ -547,7 +562,7 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
               className="bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5 font-semibold"
             >
               {isSavingSuggestions ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-              Kijelöltek elfogadása ({selectedSuggestionIds.size} db)
+              {t('accounting:profit_and_loss.mapping_tab.dialog_accept_count', { count: selectedSuggestionIds.size, defaultValue: `Kijelöltek elfogadása (${selectedSuggestionIds.size} db)` })}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -561,6 +576,7 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 function PnlViewTab({ presetId }: { presetId?: string }) {
+  const { t } = useTranslation(['accounting', 'common']);
   const { selectedCompany } = useCompany();
   const { dateFromFormatted: dateFrom, dateToFormatted: dateTo } = useDateRange();
   const [inThousands, setInThousands] = useState(true);
@@ -829,20 +845,31 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
   }, [pnlData, prevYearMap, revenueScale, materialScale, personnelScale, otherScale]);
 
   if (isLoading) {
-    return <FinancialPageSkeleton title="Eredménykimutatás betöltése..." />;
+    return <FinancialPageSkeleton title={t('accounting:profit_and_loss.loading', 'Eredménykimutatás betöltése...')} />;
   }
 
   const handleExport = async () => {
     if (!processedData || processedData.length === 0) {
-      toast({ title: 'Hiba', description: 'Nincs mit exportálni.', variant: 'destructive' });
+      toast({ 
+        title: t('common:status.error', 'Hiba'), 
+        description: t('accounting:profit_and_loss.toasts.export_error_empty', 'Nincs mit exportálni.'), 
+        variant: 'destructive' 
+      });
       return;
     }
 
     try {
       await exportPnlExcel(processedData, dbItems, inThousands, selectedCompany?.name);
-      toast({ title: 'Sikeres exportálás', description: 'Az eredménykimutatás letöltése megkezdődött.' });
+      toast({ 
+        title: t('accounting:profit_and_loss.toasts.export_success_title', 'Sikeres exportálás'), 
+        description: t('accounting:profit_and_loss.toasts.export_success', 'Az eredménykimutatás letöltése megkezdődött.') 
+      });
     } catch (err) {
-      toast({ title: 'Hiba történt', description: 'Nem sikerült legenerálni az Excel fájlt.', variant: 'destructive' });
+      toast({ 
+        title: t('common:status.error', 'Hiba történt'), 
+        description: t('accounting:profit_and_loss.toasts.export_error', 'Nem sikerült legenerálni az Excel fájlt.'), 
+        variant: 'destructive' 
+      });
       reportError({ type: 'db_query', component: 'ProfitAndLoss', action: 'error', message: String(err), error: err });
     }
   };
@@ -857,10 +884,10 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
       {processedData.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 print:hidden">
           {[
-            { code: 'A.', label: 'Üzemi eredmény' },
-            { code: 'B.', label: 'Pénzügyi eredmény' },
-            { code: 'C.', label: 'Adózás előtti eredmény' },
-            { code: 'D.', label: 'Adózott eredmény' },
+            { code: 'A.', label: t('accounting:profit_and_loss.kpi.operating_profit', 'Üzemi eredmény') },
+            { code: 'B.', label: t('accounting:profit_and_loss.kpi.financial_profit', 'Pénzügyi eredmény') },
+            { code: 'C.', label: t('accounting:profit_and_loss.kpi.profit_before_tax', 'Adózás előtti eredmény') },
+            { code: 'D.', label: t('accounting:profit_and_loss.kpi.net_profit', 'Adózott eredmény') },
           ].map(kpi => {
             const row = processedData.find(r => r.row_code === kpi.code);
             const val = row?.displayBalance || 0;
@@ -873,12 +900,14 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                   "text-lg font-bold tabular-nums",
                   isPositive ? "text-emerald-600" : "text-red-500"
                 )}>
-                  {isPositive ? '+' : ''}{formatValue(val)} <span className="text-xs font-normal text-muted-foreground">{inThousands ? 'E Ft' : 'Ft'}</span>
+                  {isPositive ? '+' : ''}{formatValue(val)} <span className="text-xs font-normal text-muted-foreground">{inThousands ? t('accounting:profit_and_loss.units.thousand_huf', 'E Ft') : t('accounting:profit_and_loss.units.huf', 'Ft')}</span>
                   {/* U8: Only show % change badge if previous year data exists */}
-                  {hasPreviousYear && renderYoYBadge(val, prev, inThousands, "text-[10px]")}
+                  {hasPreviousYear && renderYoYBadge(val, prev, inThousands, "text-[10px]", t)}
                 </div>
                 {hasPreviousYear && prev !== 0 && (
-                  <div className="text-[10px] text-muted-foreground mt-0.5">Előző év: {formatValue(prev)}</div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">
+                    {t('accounting:profit_and_loss.kpi.prev_year', { value: formatValue(prev), defaultValue: `Előző év: ${formatValue(prev)}` })}
+                  </div>
                 )}
               </div>
             );
@@ -893,10 +922,10 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
             <div className="space-y-1">
               <h4 className="text-sm font-semibold flex items-center gap-1.5 text-foreground">
                 <Sparkles className="w-4 h-4 text-indigo-500 animate-pulse" />
-                "What-If" Működési Költség és Árbevétel Szimuláció
+                {t('accounting:profit_and_loss.simulator.title', '"What-If" Működési Költség és Árbevétel Szimuláció')}
               </h4>
               <p className="text-[11px] text-muted-foreground">
-                Módosítsa a fő árbevétel és költség kategóriákat a range csúszkákkal, hogy valós időben lássa az adózott eredmény változását.
+                {t('accounting:profit_and_loss.simulator.description', 'Módosítsa a fő árbevétel és költség kategóriákat a range csúszkákkal, hogy valós időben lássa az adózott eredmény változását.')}
               </p>
             </div>
             <Button 
@@ -911,7 +940,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
               }}
               disabled={revenueScale === 100 && materialScale === 100 && personnelScale === 100 && otherScale === 100}
             >
-              Szimuláció visszaállítása
+              {t('accounting:profit_and_loss.simulator.reset', 'Szimuláció visszaállítása')}
             </Button>
           </div>
           
@@ -919,7 +948,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
             {/* Revenue Slider */}
             <div className="space-y-1.5 bg-background/35 p-2.5 rounded-lg border border-border/40">
               <div className="flex justify-between text-xs font-semibold">
-                <span>Értékesítés nettó árbevétele (I.)</span>
+                <span>{t('accounting:profit_and_loss.simulator.revenue', 'Értékesítés nettó árbevétele (I.)')}</span>
                 <span className={cn(
                   "px-1.5 py-0.5 rounded text-[10px] font-bold",
                   revenueScale === 100 ? "bg-muted text-muted-foreground"
@@ -946,7 +975,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
             {/* Material Expenses Slider */}
             <div className="space-y-1.5 bg-background/35 p-2.5 rounded-lg border border-border/40">
               <div className="flex justify-between text-xs font-semibold">
-                <span>Anyagjellegű ráfordítások (IV.)</span>
+                <span>{t('accounting:profit_and_loss.simulator.materials', 'Anyagjellegű ráfordítások (IV.)')}</span>
                 <span className={cn(
                   "px-1.5 py-0.5 rounded text-[10px] font-bold",
                   materialScale === 100 ? "bg-muted text-muted-foreground"
@@ -973,7 +1002,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
             {/* Personnel Expenses Slider */}
             <div className="space-y-1.5 bg-background/35 p-2.5 rounded-lg border border-border/40">
               <div className="flex justify-between text-xs font-semibold">
-                <span>Személyi jellegű ráfordítások (V.)</span>
+                <span>{t('accounting:profit_and_loss.simulator.personnel', 'Személyi jellegű ráfordítások (V.)')}</span>
                 <span className={cn(
                   "px-1.5 py-0.5 rounded text-[10px] font-bold",
                   personnelScale === 100 ? "bg-muted text-muted-foreground"
@@ -1000,7 +1029,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
             {/* Other Expenses Slider */}
             <div className="space-y-1.5 bg-background/35 p-2.5 rounded-lg border border-border/40">
               <div className="flex justify-between text-xs font-semibold">
-                <span>Egyéb ráfordítások (VII.)</span>
+                <span>{t('accounting:profit_and_loss.simulator.other_expenses', 'Egyéb ráfordítások (VII.)')}</span>
                 <span className={cn(
                   "px-1.5 py-0.5 rounded text-[10px] font-bold",
                   otherScale === 100 ? "bg-muted text-muted-foreground"
@@ -1037,7 +1066,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
               <CardHeader className="py-2.5 border-b bg-muted/20 flex flex-row items-center justify-between shrink-0">
                 <div className="flex items-center gap-2">
                   <BarChart3 className="w-4 h-4 text-indigo-500" />
-                  <CardTitle className="text-sm font-semibold">Cash Flow Sankey Folyamatábra</CardTitle>
+                  <CardTitle className="text-sm font-semibold">{t('accounting:profit_and_loss.charts.sankey_title', 'Cash Flow Sankey Folyamatábra')}</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="flex-1 flex items-center justify-center p-3 overflow-hidden">
@@ -1074,20 +1103,20 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
           <div className="flex items-center space-x-2">
             <Switch id="view-mode" checked={inThousands} onCheckedChange={setInThousands} />
             <Label htmlFor="view-mode" className="font-medium cursor-pointer">
-              Hivatalos nézet (Ezer Ft)
+              {t('accounting:profit_and_loss.toggles.official_view', 'Hivatalos nézet (Ezer Ft)')}
             </Label>
           </div>
           <div className="flex items-center space-x-2">
             <Switch id="hide-zero" checked={hideZeroRows} onCheckedChange={setHideZeroRows} />
             <Label htmlFor="hide-zero" className="font-medium cursor-pointer">
-              Nullás sorok elrejtése
+              {t('accounting:profit_and_loss.toggles.hide_zero', 'Nullás sorok elrejtése')}
             </Label>
           </div>
           {/* F9: Chart toggle */}
           <div className="flex items-center space-x-2">
             <Switch id="show-chart" checked={showChart} onCheckedChange={setShowChart} />
             <Label htmlFor="show-chart" className="font-medium cursor-pointer flex items-center gap-1">
-              <BarChart3 className="w-3.5 h-3.5" /> Grafikon
+              <BarChart3 className="w-3.5 h-3.5" /> {t('accounting:profit_and_loss.toggles.chart', 'Grafikon')}
             </Label>
           </div>
         </div>
@@ -1096,18 +1125,18 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-9 gap-2">
                 <Download className="h-4 w-4" />
-                Export
+                {t('accounting:profit_and_loss.export.button', 'Export')}
                 <ChevronDown className="h-4 w-4 ml-1" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem onClick={handlePrintPdf}>
                 <FileText className="h-4 w-4 mr-2" />
-                Export PDF
+                {t('accounting:profit_and_loss.export.pdf', 'Export PDF')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleExport}>
                 <FileText className="h-4 w-4 mr-2" />
-                Export XLSX
+                {t('accounting:profit_and_loss.export.xlsx', 'Export XLSX')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -1118,10 +1147,10 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
         <ContextMenuTrigger asChild>
       <div className="border rounded-md shadow-sm overflow-auto max-h-[70vh] bg-card">
         <div className="grid grid-cols-12 gap-4 p-4 bg-muted/80 backdrop-blur-sm border-b border-border text-sm font-bold tracking-wide uppercase text-muted-foreground select-none sticky top-0 z-10">
-          <div className="col-span-1 text-center">Sor</div>
-          <div className="col-span-7">Megnevezés</div>
+          <div className="col-span-1 text-center">{t('accounting:profit_and_loss.table.row', 'Sor')}</div>
+          <div className="col-span-7">{t('accounting:profit_and_loss.table.name', 'Megnevezés')}</div>
           <div className="col-span-2 text-right flex items-center justify-end gap-1">
-            Előző Év
+            {t('accounting:profit_and_loss.table.previous_year', 'Előző Év')}
             {/* U7: Tooltip if no previous year data */}
             {!hasPreviousYear && (
               <TooltipProvider delayDuration={0}>
@@ -1129,17 +1158,19 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                   <TooltipTrigger asChild>
                     <AlertTriangle className="w-3 h-3 text-amber-500 cursor-help" />
                   </TooltipTrigger>
-                  <TooltipContent>Nincs lezárt {previousFiscalYear}. éves beszámoló</TooltipContent>
+                  <TooltipContent>
+                    {t('accounting:profit_and_loss.table.no_prev_year_tooltip', { year: previousFiscalYear, defaultValue: `Nincs lezárt ${previousFiscalYear}. éves beszámoló` })}
+                  </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             )}
           </div>
-          <div className="col-span-2 text-right text-foreground">Tárgyidőszak</div>
+          <div className="col-span-2 text-right text-foreground">{t('accounting:profit_and_loss.table.current_period', 'Tárgyidőszak')}</div>
         </div>
         
         <div className="divide-y divide-border/40">
           {processedData.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">Nem találhatók P&L adatok.</div>
+            <div className="p-8 text-center text-muted-foreground">{t('accounting:profit_and_loss.table.no_data', 'Nem találhatók P&L adatok.')}</div>
           ) : (
             processedData.map(row => {
               const isRoman = row.type === 'roman';
@@ -1188,7 +1219,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                     )}>
                       {formatValue(row.displayBalance)}
                       {/* U8: Only show ▲/▼ badge if previous year data exists and is non-zero */}
-                      {hasPreviousYear && renderYoYBadge(row.displayBalance, row.previousYear, inThousands, "text-[9px]")}
+                      {hasPreviousYear && renderYoYBadge(row.displayBalance, row.previousYear, inThousands, "text-[9px]", t)}
                     </div>
                   </div>
 
@@ -1244,7 +1275,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                                             e.stopPropagation();
                                             scopedNavigate(`/invoices?search=${encodeURIComponent(item.partner)}`);
                                           }}
-                                          title={`Számlák szűrése: ${item.partner}`}
+                                          title={t('accounting:profit_and_loss.table.filter_invoices', { partner: item.partner, defaultValue: `Számlák szűrése: ${item.partner}` })}
                                         >
                                           {item.partner}
                                           <ExternalLink className="w-2.5 h-2.5 opacity-50" />
@@ -1262,7 +1293,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                                                   setActiveDialogInvoice({
                                                     id: item.item_id,
                                                     image_url: item.document_url || undefined,
-                                                    bizonylatsorszam: item.description || 'Bizonylat',
+                                                    bizonylatsorszam: item.description || t('accounting:profit_and_loss.table.document_fallback', 'Bizonylat'),
                                                     elado_nev: item.invoice_direction === 'OUTBOUND' ? selectedCompany?.name || '-' : item.partner || '-',
                                                     vevo_nev: item.invoice_direction === 'OUTBOUND' ? item.partner || '-' : selectedCompany?.name || '-',
                                                     amount: item.amount,
@@ -1272,26 +1303,26 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                                                   setIsDialogInvoiceOpen(true);
                                                 }} 
                                                 className="ml-auto flex shrink-0 items-center gap-1 px-2 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary transition-colors text-[10px] font-medium cursor-pointer"
-                                                title="Bizonylat megtekintése"
+                                                title={t('accounting:profit_and_loss.table.view_document', 'Bizonylat megtekintése')}
                                               >
                                                 {item.document_url ? <FileText className="w-3 h-3" /> : <ReceiptText className="w-3 h-3" />}
-                                                {item.document_url ? 'PDF' : 'Számla'}
+                                                {item.document_url ? 'PDF' : t('accounting:profit_and_loss.table.invoice', 'Számla')}
                                               </button>
                                             </TooltipTrigger>
                                             <TooltipContent side="left" className="p-1 border border-border/80 bg-popover shadow-xl rounded-lg max-w-[240px] overflow-hidden z-[2000]">
                                               <div className="text-[10px] p-1 font-semibold border-b truncate max-w-full">
-                                                {item.partner || 'Bizonylat'}
+                                                {item.partner || t('accounting:profit_and_loss.table.document_fallback', 'Bizonylat')}
                                               </div>
                                               {item.document_url ? (
                                                 item.document_url.toLowerCase().endsWith('.pdf') ? (
                                                   <div className="flex flex-col items-center justify-center p-4 text-[10px] text-muted-foreground w-[180px] h-[120px] bg-slate-100 dark:bg-slate-900">
                                                     <FileText className="w-8 h-8 text-primary/70 mb-1" />
-                                                    <span>PDF Dokumentum</span>
+                                                    <span>{t('accounting:profit_and_loss.table.pdf_document', 'PDF Dokumentum')}</span>
                                                   </div>
                                                 ) : (
                                                   <img 
                                                     src={item.document_url} 
-                                                    alt="Bizonylat előnézet" 
+                                                    alt={t('accounting:profit_and_loss.table.document_preview', 'Bizonylat előnézet')} 
                                                     className="w-[180px] h-auto max-h-[160px] object-contain rounded"
                                                   />
                                                 )
@@ -1299,15 +1330,15 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                                                 /* Gorgeous mini mock invoice layout in tooltip */
                                                 <div className="p-3 text-[10px] space-y-2 w-[220px] bg-slate-50 dark:bg-slate-950 rounded">
                                                   <div className="flex justify-between border-b pb-1">
-                                                    <span className="font-bold text-primary">e-Bizonylat</span>
+                                                    <span className="font-bold text-primary">{t('accounting:profit_and_loss.table.e_document', 'e-Bizonylat')}</span>
                                                     <span className="text-[8px] px-1 bg-emerald-500/10 text-emerald-600 rounded">NAV Online</span>
                                                   </div>
                                                   <div className="space-y-1">
-                                                    <p className="truncate text-foreground"><span className="text-muted-foreground">Partner:</span> {item.partner}</p>
-                                                    <p className="truncate text-foreground"><span className="text-muted-foreground">Sorszám:</span> {item.description}</p>
-                                                    <p className="text-foreground"><span className="text-muted-foreground">Dátum:</span> {item.item_date?.substring(0, 10).replace(/-/g, '.')}</p>
+                                                    <p className="truncate text-foreground"><span className="text-muted-foreground">{t('common:labels.partner', 'Partner')}:</span> {item.partner}</p>
+                                                    <p className="truncate text-foreground"><span className="text-muted-foreground">{t('accounting:profit_and_loss.table.serial_number', 'Sorszám')}:</span> {item.description}</p>
+                                                    <p className="text-foreground"><span className="text-muted-foreground">{t('common:labels.date', 'Dátum')}:</span> {item.item_date?.substring(0, 10).replace(/-/g, '.')}</p>
                                                     <p className="font-semibold text-right text-foreground mt-1">
-                                                      Nettó: {new Intl.NumberFormat('hu-HU').format(Math.abs(item.amount))} {item.original_currency || 'HUF'}
+                                                      {t('accounting:profit_and_loss.table.net', 'Nettó')}: {new Intl.NumberFormat('hu-HU').format(Math.abs(item.amount))} {item.original_currency || 'HUF'}
                                                     </p>
                                                   </div>
                                                 </div>
@@ -1340,13 +1371,21 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
       </div>
         </ContextMenuTrigger>
         <ContextMenuContent>
-          <ContextMenuItem onClick={expandAllPnl} className="gap-2"><Maximize2 className="w-4 h-4" /> Mind kinyitása</ContextMenuItem>
-          <ContextMenuItem onClick={collapseAllPnl} className="gap-2"><Minimize2 className="w-4 h-4" /> Mind összecsukása</ContextMenuItem>
+          <ContextMenuItem onClick={expandAllPnl} className="gap-2">
+            <Maximize2 className="w-4 h-4" /> {t('accounting:profit_and_loss.context_menu.expand_all', 'Mind kinyitása')}
+          </ContextMenuItem>
+          <ContextMenuItem onClick={collapseAllPnl} className="gap-2">
+            <Minimize2 className="w-4 h-4" /> {t('accounting:profit_and_loss.context_menu.collapse_all', 'Mind összecsukása')}
+          </ContextMenuItem>
           <ContextMenuSeparator />
           <ContextMenuItem className="gap-2" onClick={() => {
-            const csv = 'Sor;Megnevezés;Előző év;Tárgyév\n' + processedData.map(r => `${r.row_code};${r.name};${r.previousYear || 0};${r.displayBalance || 0}`).join('\n');
+            const rowHeader = t('accounting:profit_and_loss.table.row', 'Sor');
+            const nameHeader = t('accounting:profit_and_loss.table.name', 'Megnevezés');
+            const prevHeader = t('accounting:profit_and_loss.table.previous_year', 'Előző év');
+            const currHeader = t('accounting:profit_and_loss.table.current_period', 'Tárgyév');
+            const csv = `${rowHeader};${nameHeader};${prevHeader};${currHeader}\n` + processedData.map(r => `${r.row_code};${r.name};${r.previousYear || 0};${r.displayBalance || 0}`).join('\n');
             navigator.clipboard.writeText(csv);
-          }}><ClipboardCopy className="w-4 h-4" /> Másolás CSV-ként</ContextMenuItem>
+          }}><ClipboardCopy className="w-4 h-4" /> {t('accounting:profit_and_loss.context_menu.copy_csv', 'Másolás CSV-ként')}</ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
 
@@ -1453,7 +1492,7 @@ export default function ProfitAndLoss() {
 
   const toggleActivePresetMutation = useMutation({
     mutationFn: async (presetId: string) => {
-      if (!selectedCompany?.id) throw new Error("Cég nincs kiválasztva.");
+      if (!selectedCompany?.id) throw new Error(t('common:errors.no_company_selected', 'Cég nincs kiválasztva.'));
       
       const isGeneric = presets?.find(p => p.id === presetId)?.type === 'generic';
       
@@ -1475,7 +1514,7 @@ export default function ProfitAndLoss() {
       queryClient.invalidateQueries({ queryKey: ['coaPresets'] });
     },
     onError: (error: any) => {
-      toast({ title: "Hiba", description: error.message, variant: "destructive" });
+      toast({ title: t('common:status.error', 'Hiba'), description: error.message, variant: "destructive" });
     }
   });
 
@@ -1485,7 +1524,7 @@ export default function ProfitAndLoss() {
   };
 
   useKeyboardShortcuts([
-    { combo: { key: 'p', ctrl: true }, handler: () => window.print(), description: 'Nyomtatás' },
+    { combo: { key: 'p', ctrl: true }, handler: () => window.print(), description: t('common:actions.print', 'Nyomtatás') },
   ]);
 
   return (
@@ -1513,9 +1552,9 @@ export default function ProfitAndLoss() {
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-sm">Figyelmeztetés az Eredménykimutatás összeállításában</p>
+              <p className="font-semibold text-sm">{t('accounting:profit_and_loss.warning.title', 'Figyelmeztetés az Eredménykimutatás összeállításában')}</p>
               <p className="text-xs mt-1 opacity-90">
-                Jelenleg {unassignedCount} db nem besorolt eredménykimutatás főkönyvi szám található.
+                {t('accounting:profit_and_loss.warning.description', { count: unassignedCount, defaultValue: `Jelenleg ${unassignedCount} db nem besorolt eredménykimutatás főkönyvi szám található.` })}
               </p>
             </div>
           </div>
@@ -1525,7 +1564,7 @@ export default function ProfitAndLoss() {
             onClick={() => setActiveTab('mapping')}
             className="border-amber-500/30 hover:bg-amber-500/20 text-amber-900 dark:text-amber-300 font-semibold shrink-0 text-xs gap-1.5 h-8 bg-transparent"
           >
-            <span>Hozzárendelési Mátrix megnyitása</span>
+            <span>{t('accounting:profit_and_loss.warning.open_mapping', 'Hozzárendelési Mátrix megnyitása')}</span>
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
@@ -1546,24 +1585,30 @@ export default function ProfitAndLoss() {
             <CardHeader className="pb-4 border-b border-border/40">
               <div className="flex justify-between items-center">
                 <div>
-                  <CardTitle className="text-xl">Eredménykimutatás</CardTitle>
+                  <CardTitle className="text-xl">{t('accounting:profit_and_loss.card_title', 'Eredménykimutatás')}</CardTitle>
                   <CardDescription>
-                    Sztv. szerinti "A" változat (Összköltség eljárás)
+                    {t('accounting:profit_and_loss.card_subtitle', 'Sztv. szerinti "A" változat (Összköltség eljárás)')}
                   </CardDescription>
                 </div>
                 {presets && presets.length > 0 && (
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-muted-foreground">Aktív sablon:</span>
+                    <span className="text-sm font-medium text-muted-foreground">{t('accounting:general_ledger.toolbar.active_preset', 'Aktív sablon:')}</span>
                     <Select value={activePresetId || ''} onValueChange={handleSelectPreset} disabled={toggleActivePresetMutation.isPending}>
                       <SelectTrigger className="w-[200px] h-8 text-xs bg-muted/50 border-0 font-semibold">
-                        <SelectValue placeholder="Sablon kiválasztása" />
+                        <SelectValue placeholder={t('accounting:general_ledger.toolbar.select_preset', 'Sablon kiválasztása')} />
                       </SelectTrigger>
                       <SelectContent>
-                        {presets.map(preset => (
-                          <SelectItem key={preset.id} value={preset.id}>
-                            {preset.name} {preset.type === 'generic' ? '(Beépített)' : ''}
-                          </SelectItem>
-                        ))}
+                        {presets.map(preset => {
+                          const isGeneric = preset.type === 'generic';
+                          const displayName = isGeneric && (preset.name === 'Beépített Rendszerszintű Sablon' || preset.name.toLowerCase().includes('beépített'))
+                            ? t('accounting:general_ledger.toolbar.builtin_system_preset', 'Beépített Rendszerszintű Sablon')
+                            : preset.name;
+                          return (
+                            <SelectItem key={preset.id} value={preset.id}>
+                              {displayName} {isGeneric ? ` ${t('accounting:general_ledger.toolbar.builtin_badge', '(Beépített)')}` : ''}
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1581,24 +1626,30 @@ export default function ProfitAndLoss() {
             <CardHeader className="pb-4 border-b border-border/40">
               <div className="flex justify-between items-center">
                 <div>
-                  <CardTitle className="text-xl">Hozzárendelési Mátrix</CardTitle>
+                  <CardTitle className="text-xl">{t('accounting:profit_and_loss.mapping_title', 'Hozzárendelési Mátrix')}</CardTitle>
                   <CardDescription>
-                    Párosítsd a főkönyvi számlákat az Eredménykimutatás soraihoz.
+                    {t('accounting:profit_and_loss.mapping_description', 'Párosítsd a főkönyvi számlákat az Eredménykimutatás soraihoz.')}
                   </CardDescription>
                 </div>
                 {presets && presets.length > 0 && (
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">Aktív sablon:</span>
+                    <span className="text-sm font-medium">{t('accounting:general_ledger.toolbar.active_preset', 'Aktív sablon:')}</span>
                     <Select value={activePresetId || ''} onValueChange={handleSelectPreset} disabled={toggleActivePresetMutation.isPending}>
                       <SelectTrigger className="w-[200px] h-8 text-xs">
-                        <SelectValue placeholder="Sablon kiválasztása" />
+                        <SelectValue placeholder={t('accounting:general_ledger.toolbar.select_preset', 'Sablon kiválasztása')} />
                       </SelectTrigger>
                       <SelectContent>
-                        {presets.map(preset => (
-                          <SelectItem key={preset.id} value={preset.id}>
-                            {preset.name} {preset.type === 'generic' ? '(Beépített)' : ''}
-                          </SelectItem>
-                        ))}
+                        {presets.map(preset => {
+                          const isGeneric = preset.type === 'generic';
+                          const displayName = isGeneric && (preset.name === 'Beépített Rendszerszintű Sablon' || preset.name.toLowerCase().includes('beépített'))
+                            ? t('accounting:general_ledger.toolbar.builtin_system_preset', 'Beépített Rendszerszintű Sablon')
+                            : preset.name;
+                          return (
+                            <SelectItem key={preset.id} value={preset.id}>
+                              {displayName} {isGeneric ? ` ${t('accounting:general_ledger.toolbar.builtin_badge', '(Beépített)')}` : ''}
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   </div>

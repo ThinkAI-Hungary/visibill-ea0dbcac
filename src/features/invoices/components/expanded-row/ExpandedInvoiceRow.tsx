@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link2, Plus, CreditCard, RotateCcw, XCircle, AlertTriangle, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -70,6 +71,7 @@ export function ExpandedInvoiceRow({
   approvalNote,
   onOpenApprovalDialog,
 }: ExpandedInvoiceRowProps) {
+  const { t } = useTranslation(['invoices', 'common']);
   const queryClient = useQueryClient();
   const [showManualPayment, setShowManualPayment] = useState(false);
   const [showStornoSettle, setShowStornoSettle] = useState(false);
@@ -348,7 +350,7 @@ export function ExpandedInvoiceRow({
                     <div className="flex items-center justify-between mb-4 expand-animate">
                       <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         <Link2 className="h-3.5 w-3.5" />
-                        Kapcsolódó tételek
+                        {t('invoices:expanded.related_items', 'Kapcsolódó tételek')}
                       </div>
                       <div className="flex items-center gap-2">
                         {matchingEnabled && hasAny && (
@@ -363,7 +365,7 @@ export function ExpandedInvoiceRow({
                               className="h-7 text-[11px] gap-1.5 px-2.5"
                             >
                               <Plus className="h-3 w-3" />
-                              Tranzakció
+                              {t('invoices:expanded.add_transaction_short', 'Tranzakció')}
                             </Button>
                             <Button
                               variant="outline"
@@ -375,7 +377,7 @@ export function ExpandedInvoiceRow({
                               className="h-7 text-[11px] gap-1.5 px-2.5 border-dashed"
                             >
                               <CreditCard className="h-3 w-3" />
-                              Kézi fizetés
+                              {t('invoices:expanded.manual_payment', 'Kézi fizetés')}
                             </Button>
                             {isStornoNav && (
                               <Button
@@ -394,11 +396,11 @@ export function ExpandedInvoiceRow({
                               >
                                 {isStornoSettled ? (
                                   <>
-                                    <RotateCcw className="h-3 w-3" /> Lezárás visszavonása
+                                    <RotateCcw className="h-3 w-3" /> {t('invoices:expanded.undo_storno_close', 'Lezárás visszavonása')}
                                   </>
                                 ) : (
                                   <>
-                                    <XCircle className="h-3 w-3" /> Sztornó lezárása
+                                    <XCircle className="h-3 w-3" /> {t('invoices:expanded.storno_close', 'Sztornó lezárása')}
                                   </>
                                 )}
                               </Button>
@@ -445,7 +447,7 @@ export function ExpandedInvoiceRow({
                                 </svg>
                               )}
                             </div>
-                            Nem kerül könyvelésre
+                            {t('invoices:expanded.exclude_from_accounting', 'Nem kerül könyvelésre')}
                           </button>
                         )}
                       </div>
@@ -455,7 +457,7 @@ export function ExpandedInvoiceRow({
                       <Card className="bg-muted/30 border-border/50 expand-stagger-1">
                         <CardContent className="p-4 flex flex-col items-center justify-center gap-3">
                           <p className="text-sm text-muted-foreground italic">
-                            Nincs párosított tétel ehhez a számlához.
+                            {t('invoices:expanded.no_matched_items', 'Nincs párosított tétel ehhez a számlához.')}
                           </p>
                           {matchingEnabled && (
                             <div className="flex items-center gap-1.5">
@@ -469,7 +471,7 @@ export function ExpandedInvoiceRow({
                                 className="h-8 text-xs gap-1.5"
                               >
                                 <Plus className="h-3.5 w-3.5" />
-                                Tranzakció hozzárendelése
+                                {t('invoices:expanded.add_transaction', 'Tranzakció hozzárendelése')}
                               </Button>
                               <Button
                                 variant="outline"
@@ -481,7 +483,7 @@ export function ExpandedInvoiceRow({
                                 className="h-8 text-xs gap-1.5 border-dashed"
                               >
                                 <CreditCard className="h-3.5 w-3.5" />
-                                Kézi fizetés
+                                {t('invoices:expanded.manual_payment', 'Kézi fizetés')}
                               </Button>
                               {isStornoNav && (
                                 <Button
@@ -500,11 +502,11 @@ export function ExpandedInvoiceRow({
                                 >
                                   {isStornoSettled ? (
                                     <>
-                                      <RotateCcw className="h-3.5 w-3.5" /> Lezárás visszavonása
+                                      <RotateCcw className="h-3.5 w-3.5" /> {t('invoices:expanded.undo_storno_close', 'Lezárás visszavonása')}
                                     </>
                                   ) : (
                                     <>
-                                      <XCircle className="h-3.5 w-3.5" /> Sztornó lezárása
+                                      <XCircle className="h-3.5 w-3.5" /> {t('invoices:expanded.storno_close', 'Sztornó lezárása')}
                                     </>
                                   )}
                                 </Button>

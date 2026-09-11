@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import { RefreshCw, Download, ChevronDown, FileText, Package, Truck, Mail, ArrowDownRight, ArrowUpRight, Link2, Link2Off, Loader2, Settings, CreditCard, AlertTriangle, Upload, TrendingUp, TrendingDown, Wallet, Copy, X } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip as ChartTooltip, CartesianGrid, ReferenceArea } from 'recharts';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
@@ -24,7 +24,7 @@ import { useDateRange } from '@/contexts/DateRangeContext';
 import CourierReportTab from '@/components/CourierReportTab';
 import { computeMatchStatus } from '@/hooks/useComputedStatus';
 import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { hu, hr } from 'date-fns/locale';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { Landmark } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -56,12 +56,13 @@ const BANK_CONFIG: Record<string, { label: string; fullName: string; color: stri
 const FIXED_TABS = ['general', 'gls', 'mpl', 'mixpack'] as const;
 const COURIER_TABS = new Set(['gls', 'mpl', 'mixpack']);
 
-const fmtHuf = (val: number) => new Intl.NumberFormat('hu-HU').format(Math.round(val));
-
 type TabValue = string;
 
 const TransactionsPage = () => {
-  const { t } = useTranslation(['transactions', 'common']);
+  const { t, i18n } = useTranslation(['transactions', 'common']);
+  const isHr = i18n.language === 'hr';
+  const localeCode = isHr ? 'hr-HR' : 'hu-HU';
+  const dateLocale = isHr ? hr : hu;
   const { dateFrom, dateTo } = useDateRange();
 
   const [zoomFrom, setZoomFrom] = useState<Date | null>(null);
@@ -234,7 +235,7 @@ const TransactionsPage = () => {
         : format(parsedDate, 'yyyy-MM-dd');
 
       const label = isYearlyOrLongRange
-        ? format(parsedDate, 'yyyy. LLL', { locale: hu })
+        ? format(parsedDate, isHr ? 'LLL yyyy.' : 'yyyy. LLL', { locale: dateLocale })
         : format(parsedDate, 'MM.dd');
 
       const amount = t.amount;
@@ -259,7 +260,7 @@ const TransactionsPage = () => {
       }
     }
     return Object.values(groups).sort((a, b) => a.dateParsed.getTime() - b.dateParsed.getTime());
-  }, [chartTransactions, exchangeRates, filters.amountMin, filters.amountMax, isYearlyOrLongRange]);
+  }, [chartTransactions, exchangeRates, filters.amountMin, filters.amountMax, isYearlyOrLongRange, dateLocale, isHr]);
 
   // ── P1: Unified bank uploads query (consolidates 3 queries into 1) ──
   const { data: bankUploads = [] } = useQuery({
@@ -494,7 +495,7 @@ const TransactionsPage = () => {
   if (!selectedCompany) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
-        <p className="text-muted-foreground">Válassz egy céget a folytatáshoz</p>
+        <p className="text-muted-foreground">{t('common:select_company', 'Válassz egy céget a folytatáshoz')}</p>
       </div>
     );
   }
@@ -579,7 +580,7 @@ const TransactionsPage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 mb-4 print:hidden">
             <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
               <div className="bg-primary/10 text-primary p-2 rounded-lg"><FileText className="w-4 h-4" /></div>
-              <div><div className="text-lg font-bold tabular-nums">{safeKpis.total.toLocaleString('hu-HU')}</div><div className="text-[11px] text-muted-foreground">Összes tranzakció</div></div>
+              <div><div className="text-lg font-bold tabular-nums">{safeKpis.total.toLocaleString(localeCode)}</div><div className="text-[11px] text-muted-foreground">{t('transactions:kpis.total', 'Összes tranzakció')}</div></div>
             </div>
             <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
               <div className="bg-emerald-500/10 text-emerald-600 p-2 rounded-lg"><Link2 className="w-4 h-4" /></div>
@@ -591,20 +592,20 @@ const TransactionsPage = () => {
                   <span className="text-xs font-normal text-muted-foreground"> / </span>
                   <span className="text-red-400 text-sm">{safeKpis.unmatched}</span>
                 </div>
-                <div className="text-[11px] text-muted-foreground">Párosított / Javasolt / Nincs</div>
+                <div className="text-[11px] text-muted-foreground">{t('transactions:kpis.status_summary', 'Párosított / Javasolt / Nincs')}</div>
               </div>
             </div>
             <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
               <div className="bg-blue-500/10 text-blue-500 p-2 rounded-lg"><Settings className="w-4 h-4" /></div>
-              <div><div className="text-lg font-bold tabular-nums text-blue-500">{safeKpis.autoSettled}</div><div className="text-[11px] text-muted-foreground">Rendezett (nincs számla)</div></div>
+              <div><div className="text-lg font-bold tabular-nums text-blue-500">{safeKpis.autoSettled}</div><div className="text-[11px] text-muted-foreground">{t('transactions:kpis.auto_settled', 'Rendezett (nincs számla)')}</div></div>
             </div>
             <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
               <div className="bg-emerald-500/10 text-emerald-600 p-2 rounded-lg"><ArrowUpRight className="w-4 h-4" /></div>
-              <div><div className="text-lg font-bold tabular-nums text-emerald-600">{fmtHuf(safeKpis.inflow)}</div><div className="text-[11px] text-muted-foreground">Bevétel (Ft)</div></div>
+              <div><div className="text-lg font-bold tabular-nums text-emerald-600">{formatCurrency(safeKpis.inflow)}</div><div className="text-[11px] text-muted-foreground">{t('transactions:kpis.inflow', 'Bevétel')}</div></div>
             </div>
             <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
               <div className="bg-red-500/10 text-red-500 p-2 rounded-lg"><ArrowDownRight className="w-4 h-4" /></div>
-              <div><div className="text-lg font-bold tabular-nums text-red-500">{fmtHuf(safeKpis.outflow)}</div><div className="text-[11px] text-muted-foreground">Kiadás (Ft)</div></div>
+              <div><div className="text-lg font-bold tabular-nums text-red-500">{formatCurrency(safeKpis.outflow)}</div><div className="text-[11px] text-muted-foreground">{t('transactions:kpis.outflow', 'Kiadás')}</div></div>
             </div>
           </div>
           )}
@@ -617,9 +618,9 @@ const TransactionsPage = () => {
                   <Copy className="w-4 h-4" />
                 </div>
                 <div>
-                  <p className="font-semibold text-sm">Lehetséges duplikátumok</p>
+                  <p className="font-semibold text-sm">{t('transactions:duplicate_banner.title', 'Lehetséges duplikátumok')}</p>
                   <p className="text-xs opacity-80">
-                    {duplicateCount} tranzakció gyanúsan ismétlődik (azonos dátum és összeg). Ellenőrizd, hogy nem lettek-e duplán feltöltve.
+                    {t('transactions:duplicate_banner.desc', { count: duplicateCount, defaultValue: `${duplicateCount} tranzakció gyanúsan ismétlődik (azonos dátum és összeg). Ellenőrizd, hogy nem lettek-e duplán feltöltve.` })}
                   </p>
                 </div>
               </div>
@@ -629,7 +630,7 @@ const TransactionsPage = () => {
                 className="shrink-0 text-xs border-amber-500/30 hover:bg-amber-500/20 text-amber-900 dark:text-amber-300 bg-transparent h-8"
                 onClick={() => setShowDuplicatesOnly(true)}
               >
-                Átnézem
+                {t('transactions:duplicate_banner.button', 'Átnézem')}
               </Button>
             </div>
           )}
@@ -640,9 +641,9 @@ const TransactionsPage = () => {
               <CardHeader className="py-2.5 flex flex-row items-center justify-between">
                 <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                   <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
-                  Tranzakciós Volumen Idővonal (HUF / Deviza átváltva)
+                  {t('transactions:chart.title', 'Tranzakciós Volumen Idővonal (HUF / Deviza átváltva)')}
                   <span className="text-[10px] lowercase text-muted-foreground/60 italic font-normal ml-2 hidden sm:inline">
-                    (Kattints és húzd a kijelöléshez a nagyításhoz)
+                    {t('transactions:chart.zoom_hint', '(Kattints és húzd a kijelöléshez a nagyításhoz)')}
                   </span>
                 </CardTitle>
                 {isZoomed && (
@@ -652,7 +653,7 @@ const TransactionsPage = () => {
                     onClick={resetZoom}
                     className="h-6 text-xs px-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border-rose-500/20 gap-1 rounded-md transition-colors"
                   >
-                    Szűrés visszaállítása
+                    {t('transactions:chart.reset_zoom', 'Szűrés visszaállítása')}
                   </Button>
                 )}
               </CardHeader>
@@ -725,8 +726,8 @@ const TransactionsPage = () => {
                       labelStyle={{ color: '#f8fafc', fontWeight: 'bold', fontSize: '11px' }}
                       itemStyle={{ fontSize: '11px' }}
                       formatter={(value: any, name: any) => {
-                        const labelName = name === 'inflow' ? 'Bevétel' : 'Kiadás';
-                        return [`${fmtHuf(Number(value))} Ft`, labelName];
+                        const labelName = name === 'inflow' ? t('transactions:chart.inflow', 'Bevétel') : t('transactions:chart.outflow', 'Kiadás');
+                        return [formatCurrency(Number(value)), labelName];
                       }}
                     />
                     <Area type="monotone" dataKey="inflow" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorInflow)" name="inflow" />
@@ -752,9 +753,9 @@ const TransactionsPage = () => {
               <CardHeader>
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div>
-                    <CardTitle className="text-xl font-bold">Banki tranzakciók</CardTitle>
+                    <CardTitle className="text-xl font-bold">{t('transactions:general_tab.title', 'Banki tranzakciók')}</CardTitle>
                     <CardDescription>
-                      Banki tranzakciók és számla párosítások - {totalCount} találat
+                      {t('transactions:general_tab.results_count', { count: totalCount, defaultValue: `Banki tranzakciók és számla párosítások - ${totalCount} találat` })}
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
@@ -768,11 +769,11 @@ const TransactionsPage = () => {
                             disabled={syncing}
                           >
                             <RefreshCw className={cn("h-4 w-4 mr-2", syncing && "animate-spin")} />
-                            {syncing ? 'Szinkronizálás...' : 'Szinkronizálás'}
+                            {syncing ? t('transactions:general_tab.syncing', 'Szinkronizálás...') : t('transactions:general_tab.sync', 'Szinkronizálás')}
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Tranzakciók szinkronizálása és feldolgozása</p>
+                          <p>{t('transactions:general_tab.sync_tooltip', 'Tranzakciók szinkronizálása és feldolgozása')}</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -787,22 +788,22 @@ const TransactionsPage = () => {
                             className="text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
                           >
                             <Link2 className={cn("h-4 w-4 mr-2", rematching && "animate-spin")} />
-                            {rematching ? 'Párosítás...' : 'Újrapárosítás'}
+                            {rematching ? t('transactions:general_tab.rematching', 'Párosítás...') : t('transactions:general_tab.rematch', 'Újrapárosítás')}
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Párosítatlan tranzakciók újrapárosítása a számlákkal</p>
+                          <p>{t('transactions:general_tab.rematch_tooltip', 'Párosítatlan tranzakciók újrapárosítása a számlákkal')}</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                     <Button variant="outline" size="sm" onClick={() => setFilesDialogOpen(true)}>
                       <Landmark className="h-4 w-4 mr-2" />
-                      Feltöltött fájlok
+                      {t('transactions:general_tab.uploaded_files', 'Feltöltött fájlok')}
                     </Button>
                     <TransactionFilesDialog open={filesDialogOpen} onOpenChange={setFilesDialogOpen} />
                     <Button variant="outline" size="sm" onClick={() => setRulesDialogOpen(true)}>
                       <Sliders className="h-4 w-4 mr-2" />
-                      Könyvelési szabályok
+                      {t('transactions:general_tab.accounting_rules', 'Könyvelési szabályok')}
                     </Button>
                     <TransactionRulesDialog open={rulesDialogOpen} onOpenChange={setRulesDialogOpen} />
                     <DropdownMenu>
@@ -813,7 +814,7 @@ const TransactionsPage = () => {
                           ) : (
                             <Download className="h-4 w-4 mr-2" />
                           )}
-                          Export
+                          {t('transactions:general_tab.export', 'Export')}
                           <ChevronDown className="h-4 w-4 ml-2" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -844,51 +845,51 @@ const TransactionsPage = () => {
 
                 {hasActiveFilters && (
                   <div className="flex flex-wrap items-center gap-1.5 -mt-3 mb-2 animate-in fade-in duration-200">
-                    <span className="text-[11px] font-medium text-muted-foreground mr-1">Aktív szűrők:</span>
+                    <span className="text-[11px] font-medium text-muted-foreground mr-1">{t('transactions:filters.active_filters', 'Aktív szűrők:')}</span>
                     {filters.search && (
                       <Badge variant="secondary" className="text-[10px] gap-1 px-1.5 py-0.5 rounded-md bg-muted/80 text-muted-foreground border border-border/40">
-                        Keresés: {filters.search}
+                        {t('transactions:filters.search_prefix', 'Keresés:')} {filters.search}
                         <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setFilters(prev => ({ ...prev, search: '' }))} />
                       </Badge>
                     )}
                     {filters.currency !== 'all' && (
                       <Badge variant="secondary" className="text-[10px] gap-1 px-1.5 py-0.5 rounded-md bg-muted/80 text-muted-foreground border border-border/40">
-                        Pénznem: {filters.currency.toUpperCase()}
+                        {t('transactions:filters.currency_prefix', 'Pénznem:')} {filters.currency.toUpperCase()}
                         <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setFilters(prev => ({ ...prev, currency: 'all' }))} />
                       </Badge>
                     )}
                     {filters.type !== 'all' && (
                       <Badge variant="secondary" className="text-[10px] gap-1 px-1.5 py-0.5 rounded-md bg-muted/80 text-muted-foreground border border-border/40">
-                        Típus: {filters.type}
+                        {t('transactions:filters.type_prefix', 'Típus:')} {filters.type}
                         <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setFilters(prev => ({ ...prev, type: 'all' }))} />
                       </Badge>
                     )}
                     {filters.matchStatus !== 'all' && (
                       <Badge variant="secondary" className="text-[10px] gap-1 px-1.5 py-0.5 rounded-md bg-muted/80 text-muted-foreground border border-border/40">
-                        Státusz: {
-                          filters.matchStatus === 'matched' ? 'Párosított'
-                          : filters.matchStatus === 'suggested' ? 'Javasolt'
-                          : filters.matchStatus === 'auto_settled' ? 'Rendezett'
-                          : filters.matchStatus === 'no_invoice' ? 'Nincs számla'
-                          : 'Számla hiányzik'
+                        {t('transactions:filters.status_prefix', 'Státusz:')} {
+                          filters.matchStatus === 'matched' ? t('transactions:status.matched', 'Párosított')
+                          : filters.matchStatus === 'suggested' ? t('transactions:status.suggested', 'Javasolt')
+                          : filters.matchStatus === 'auto_settled' ? t('transactions:status.auto_settled', 'Rendezett')
+                          : filters.matchStatus === 'no_invoice' ? t('transactions:status.no_invoice', 'Nincs számla')
+                          : t('transactions:status.invoice_missing', 'Számla hiányzik')
                         }
                         <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setFilters(prev => ({ ...prev, matchStatus: 'all' }))} />
                       </Badge>
                     )}
                     {filters.amountMin && (
                       <Badge variant="secondary" className="text-[10px] gap-1 px-1.5 py-0.5 rounded-md bg-muted/80 text-muted-foreground border border-border/40">
-                        Min. összeg: {fmtHuf(Number(filters.amountMin))} Ft
+                        {t('transactions:filters.min_amount', 'Min. összeg:')} {formatCurrency(Number(filters.amountMin))}
                         <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setFilters(prev => ({ ...prev, amountMin: '' }))} />
                       </Badge>
                     )}
                     {filters.amountMax && (
                       <Badge variant="secondary" className="text-[10px] gap-1 px-1.5 py-0.5 rounded-md bg-muted/80 text-muted-foreground border border-border/40">
-                        Max. összeg: {fmtHuf(Number(filters.amountMax))} Ft
+                        {t('transactions:filters.max_amount', 'Max. összeg:')} {formatCurrency(Number(filters.amountMax))}
                         <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setFilters(prev => ({ ...prev, amountMax: '' }))} />
                       </Badge>
                     )}
                     <Button variant="ghost" size="sm" className="h-6 px-1.5 text-[10px] text-muted-foreground hover:text-foreground" onClick={clearFilters}>
-                      Összes törlése
+                      {t('transactions:filters.clear_all', 'Összes törlése')}
                     </Button>
                   </div>
                 )}
@@ -904,26 +905,26 @@ const TransactionsPage = () => {
                 />
 
                 <div className="flex items-center gap-4 mb-2 text-[11px] text-muted-foreground flex-wrap">
-                  <span className="font-medium">Jelmagyarázat:</span>
+                  <span className="font-medium">{t('transactions:legend.title', 'Jelmagyarázat:')}</span>
                   <div className="flex items-center gap-1.5">
                     <div className="w-3 h-3 rounded-sm bg-[var(--row-matched-bg)] border-l-2 border-l-[var(--row-matched-border)]" />
-                    <span>Párosított / Kifizetve</span>
+                    <span>{t('transactions:legend.matched', 'Párosított / Kifizetve')}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-3 h-3 rounded-sm bg-[var(--row-suggested-bg)] border-l-2 border-l-[var(--row-suggested-border)]" />
-                    <span>AI javaslat (jóváhagyásra vár)</span>
+                    <span>{t('transactions:legend.suggested', 'AI javaslat (jóváhagyásra vár)')}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-3 h-3 rounded-sm bg-[var(--row-settled-bg)] border-l-2 border-l-[var(--row-settled-border)]" />
-                    <span>Rendezett (nincs számla)</span>
+                    <span>{t('transactions:legend.auto_settled', 'Rendezett (nincs számla)')}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-3 h-3 rounded-sm bg-[var(--row-noinvoice-bg)] border-l-2 border-l-[var(--row-noinvoice-border)]" />
-                    <span>Nincs számla</span>
+                    <span>{t('transactions:legend.no_invoice', 'Nincs számla')}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-3 h-3 rounded-sm bg-[var(--row-unmatched-bg)] border-l-2 border-l-[var(--row-unmatched-border)]" />
-                    <span>Nincs párosítás</span>
+                    <span>{t('transactions:legend.unmatched', 'Nincs párosítás')}</span>
                   </div>
                 </div>
 
@@ -932,11 +933,11 @@ const TransactionsPage = () => {
                   <div className="flex items-center justify-between bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 mb-3 animate-in fade-in duration-200">
                     <div className="flex items-center gap-2 text-sm text-amber-800 dark:text-amber-300">
                       <Copy className="w-4 h-4" />
-                      <span className="font-medium">Duplikátum szűrő aktív</span>
-                      <span className="text-xs opacity-70">— Csak a gyanús ismétlődések jelennek meg</span>
+                      <span className="font-medium">{t('transactions:duplicate_banner.active_badge', 'Duplikátum szűrő aktív')}</span>
+                      <span className="text-xs opacity-70">{t('transactions:duplicate_banner.active_hint', '— Csak a gyanús ismétlődések jelennek meg')}</span>
                     </div>
                     <Button variant="ghost" size="sm" className="h-6 text-xs text-amber-800 dark:text-amber-300 hover:bg-amber-500/20" onClick={() => setShowDuplicatesOnly(false)}>
-                      Szűrő kikapcsolása
+                      {t('transactions:duplicate_banner.turn_off', 'Szűrő kikapcsolása')}
                     </Button>
                   </div>
                 )}
@@ -1035,6 +1036,9 @@ function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFrom
   dateToStr: string;
   onOpenDetails: (tx: Transaction) => void;
 }) {
+  const { t, i18n } = useTranslation(['transactions', 'common']);
+  const isHr = i18n.language === 'hr';
+  const localeCode = isHr ? 'hr-HR' : 'hu-HU';
   const { data: exchangeRates } = useExchangeRates();
   const scopedNavigate = useScopedNavigate();
 
@@ -1137,15 +1141,15 @@ function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFrom
             <Landmark className="w-8 h-8" />
           </div>
           <div className="text-center flex flex-col items-center">
-            <h3 className="font-semibold text-base">Nincs feldolgozott bankkivonat</h3>
+            <h3 className="font-semibold text-base">{t('transactions:bank_tab.empty_title', 'Nincs feldolgozott bankkivonat')}</h3>
             <p className="text-sm text-muted-foreground mt-1 max-w-md">
-              A(z) <strong>{bankLabel}</strong> bankhoz még nem került feldolgozásra bankkivonat. Tölts fel egy újat a manuális feltöltő felületen.
+              {t('transactions:bank_tab.empty_desc', { bank: bankLabel, defaultValue: `A(z) ${bankLabel} bankhoz még nem került feldolgozásra bankkivonat. Tölts fel egy újat a manuális feltöltő felületen.` })}
             </p>
             <Button
               className="mt-4 gap-2 text-xs font-semibold h-9"
               onClick={() => scopedNavigate('/upload')}
             >
-              <Upload className="w-4 h-4" /> Bankkivonat feltöltése
+              <Upload className="w-4 h-4" /> {t('transactions:bank_tab.upload_btn', 'Bankkivonat feltöltése')}
             </Button>
           </div>
         </CardContent>
@@ -1163,22 +1167,22 @@ function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFrom
               <FileText className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-lg font-bold tabular-nums">{bankKpis.count.toLocaleString('hu-HU')}</div>
-              <div className="text-[11px] text-muted-foreground">Tranzakció</div>
+              <div className="text-lg font-bold tabular-nums">{bankKpis.count.toLocaleString(localeCode)}</div>
+              <div className="text-[11px] text-muted-foreground">{t('transactions:kpis.single_transaction', 'Tranzakció')}</div>
             </div>
           </div>
           <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
             <div className="bg-emerald-500/10 text-emerald-600 p-2 rounded-lg"><TrendingUp className="w-4 h-4" /></div>
             <div>
-              <div className="text-lg font-bold tabular-nums text-emerald-600">{fmtHuf(bankKpis.inflow)}</div>
-              <div className="text-[11px] text-muted-foreground">Bevétel (Ft)</div>
+              <div className="text-lg font-bold tabular-nums text-emerald-600">{formatCurrency(bankKpis.inflow)}</div>
+              <div className="text-[11px] text-muted-foreground">{t('transactions:kpis.inflow', 'Bevétel')}</div>
             </div>
           </div>
           <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
             <div className="bg-red-500/10 text-red-500 p-2 rounded-lg"><TrendingDown className="w-4 h-4" /></div>
             <div>
-              <div className="text-lg font-bold tabular-nums text-red-500">{fmtHuf(bankKpis.outflow)}</div>
-              <div className="text-[11px] text-muted-foreground">Kiadás (Ft)</div>
+              <div className="text-lg font-bold tabular-nums text-red-500">{formatCurrency(bankKpis.outflow)}</div>
+              <div className="text-[11px] text-muted-foreground">{t('transactions:kpis.outflow', 'Kiadás')}</div>
             </div>
           </div>
         </div>
@@ -1192,11 +1196,11 @@ function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFrom
                 <Landmark className="h-5 w-5" />
               </div>
               <div>
-                <CardTitle className="text-xl font-bold">{bankLabel} tranzakciók</CardTitle>
+                <CardTitle className="text-xl font-bold">{t('transactions:bank_tab.transactions_suffix', { bank: bankLabel, defaultValue: `${bankLabel} tranzakciók` })}</CardTitle>
                 <CardDescription>
-                  {isLoading ? 'Betöltés...' : totalCount === 0
-                    ? 'Nincs tranzakció a kiválasztott időszakban — próbáld meg módosítani a dátumszűrőt'
-                    : `${totalCount} tranzakció a kiválasztott időszakban`
+                  {isLoading ? t('transactions:bank_tab.loading', 'Betöltés...') : totalCount === 0
+                    ? t('transactions:bank_tab.empty_period', 'Nincs tranzakció a kiválasztott időszakban — próbáld meg módosítani a dátumszűrőt')
+                    : t('transactions:bank_tab.count_period', { count: totalCount, defaultValue: `${totalCount} tranzakció a kiválasztott időszakban` })
                   }
                 </CardDescription>
               </div>

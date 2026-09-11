@@ -17,8 +17,10 @@ import { toast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { extractPageSegment, generateScopedPath } from '@/lib/navigation';
 import { reportError } from '@/lib/errorReporter';
+import { useTranslation } from 'react-i18next';
 
 const CompanySelector = () => {
+  const { t } = useTranslation('common');
   const queryClient = useQueryClient();
   const { companies, selectedCompany, setSelectedCompany, refreshCompanies, loading } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
@@ -270,7 +272,7 @@ const CompanySelector = () => {
     return (
       <div className="flex items-center gap-2 px-3 py-2">
         <Building2 className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">Betöltés...</span>
+        <span className="text-sm text-muted-foreground">{t('company_selector.loading')}</span>
       </div>
     );
   }
@@ -282,7 +284,7 @@ const CompanySelector = () => {
       <Building2 className="h-4 w-4 text-muted-foreground" />
       {hasNoCompanies ? (
         <div className="flex-1 px-3 py-2 text-sm text-muted-foreground bg-muted/30 rounded-md border border-dashed">
-          NINCS REGISZTRÁLT CÉG
+          {t('company_selector.no_company')}
         </div>
       ) : (
         <Select
@@ -290,7 +292,7 @@ const CompanySelector = () => {
           onValueChange={handleCompanyChange}
         >
           <SelectTrigger className="min-w-[140px] max-w-[220px] h-9 [&>span]:text-left [&>span]:flex-1">
-            <SelectValue placeholder="Válassz céget">
+            <SelectValue placeholder={t('company_selector.choose_company')}>
               {selectedCompany?.name}
             </SelectValue>
           </SelectTrigger>
@@ -305,13 +307,13 @@ const CompanySelector = () => {
       )}
 
       {selectedCompany && (
-        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => openEditDialog(selectedCompany)} title="Cég szerkesztése">
+        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => openEditDialog(selectedCompany)} title={t('company_selector.edit_company')}>
           <Pencil className="h-4 w-4" />
         </Button>
       )}
 
       {selectedCompany && selectedCompany.owner_id === user?.id && (
-        <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive hover:text-destructive" onClick={() => openDeleteDialog(selectedCompany)} title="Cég törlése">
+        <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive hover:text-destructive" onClick={() => openDeleteDialog(selectedCompany)} title={t('company_selector.delete_company')}>
           <Trash2 className="h-4 w-4" />
         </Button>
       )}
@@ -319,59 +321,59 @@ const CompanySelector = () => {
       {/* Create / Join dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-9 w-9" title="Új cég hozzáadása">
+          <Button variant="ghost" size="icon" className="h-9 w-9" title={t('company_selector.add_company')}>
             <Plus className="h-4 w-4" />
           </Button>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Cég hozzáadása</DialogTitle>
-            <DialogDescription>Hozz létre új céget vagy csatlakozz egy meglévőhöz</DialogDescription>
+            <DialogTitle>{t('company_selector.dialog_title')}</DialogTitle>
+            <DialogDescription>{t('company_selector.dialog_desc')}</DialogDescription>
           </DialogHeader>
           <Tabs defaultValue="create" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="create">Új cég létrehozása</TabsTrigger>
-              <TabsTrigger value="join">Csatlakozás</TabsTrigger>
+              <TabsTrigger value="create">{t('company_selector.tab_create')}</TabsTrigger>
+              <TabsTrigger value="join">{t('company_selector.tab_join')}</TabsTrigger>
             </TabsList>
             <TabsContent value="create" className="space-y-4 pt-4">
               <div className="space-y-2">
-                <Label htmlFor="newCompanyName">Cég neve *</Label>
+                <Label htmlFor="newCompanyName">{t('company_selector.name_label')}</Label>
                 <Input id="newCompanyName" value={newCompanyName} onChange={(e) => setNewCompanyName(e.target.value)} placeholder="Pl. Példa Kft." />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="newTaxNumber">Adószám *</Label>
+                <Label htmlFor="newTaxNumber">{t('company_selector.tax_label')}</Label>
                 <Input id="newTaxNumber" value={newCompanyTaxNumber} onChange={(e) => setNewCompanyTaxNumber(e.target.value)} placeholder="Pl. 12345678-2-42" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="newAddress">Székhely</Label>
+                <Label htmlFor="newAddress">{t('company_selector.address_label')}</Label>
                 <Input id="newAddress" value={newCompanyAddress} onChange={(e) => setNewCompanyAddress(e.target.value)} placeholder="Pl. 1234 Budapest, Példa utca 1." />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="newVatRegime">ÁFA rendszer *</Label>
+                <Label htmlFor="newVatRegime">{t('company_selector.vat_regime_label')}</Label>
                 <Select value={newCompanyVatRegime} onValueChange={(v) => setNewCompanyVatRegime(v as VatRegime)}>
                   <SelectTrigger id="newVatRegime">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="normal">Általános ÁFA</SelectItem>
-                    <SelectItem value="penzforgalmi">Pénzforgalmi elszámolás</SelectItem>
-                    <SelectItem value="alanyi_mentes">Alanyi adómentesség</SelectItem>
+                    <SelectItem value="normal">{t('company_selector.vat_regime_normal')}</SelectItem>
+                    <SelectItem value="penzforgalmi">{t('company_selector.vat_regime_cash')}</SelectItem>
+                    <SelectItem value="alanyi_mentes">{t('company_selector.vat_regime_exempt')}</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">Ez az adóévre érvényes beállítás. Később a cég beállításaiban módosítható.</p>
+                <p className="text-xs text-muted-foreground">{t('company_selector.vat_regime_hint')}</p>
               </div>
               <Button onClick={handleCreateCompany} disabled={!newCompanyName.trim() || !newCompanyTaxNumber.trim() || isCreating} className="w-full">
-                {isCreating ? 'Létrehozás...' : 'Cég létrehozása'}
+                {isCreating ? t('company_selector.creating') : t('company_selector.create_button')}
               </Button>
             </TabsContent>
             <TabsContent value="join" className="space-y-4 pt-4">
               <div className="space-y-2">
-                <Label htmlFor="joinCode">Csatlakozási kód</Label>
+                <Label htmlFor="joinCode">{t('company_selector.join_code_label')}</Label>
                 <Input id="joinCode" value={joinCode} onChange={(e) => setJoinCode(e.target.value.toUpperCase())} placeholder="Pl. ABC123" maxLength={6} className="text-center text-lg tracking-widest font-mono" />
-                <p className="text-sm text-muted-foreground">Kérd el a cég tulajdonosától a 6 karakteres csatlakozási kódot.</p>
+                <p className="text-sm text-muted-foreground">{t('company_selector.join_code_hint')}</p>
               </div>
               <Button onClick={handleJoinCompany} disabled={!joinCode.trim() || isJoining} className="w-full">
-                {isJoining ? 'Csatlakozás...' : 'Csatlakozás a céghez'}
+                {isJoining ? t('company_selector.joining') : t('company_selector.join_button')}
               </Button>
             </TabsContent>
           </Tabs>
@@ -382,24 +384,24 @@ const CompanySelector = () => {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Cég szerkesztése</DialogTitle>
-            <DialogDescription>Módosítsd a cég adatait</DialogDescription>
+            <DialogTitle>{t('company_selector.edit_company')}</DialogTitle>
+            <DialogDescription>{t('company_selector.edit_desc')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="editName">Cég neve *</Label>
+              <Label htmlFor="editName">{t('company_selector.name_label')}</Label>
               <Input id="editName" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Pl. Példa Kft." />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="editTaxNumber">Adószám *</Label>
+              <Label htmlFor="editTaxNumber">{t('company_selector.tax_label')}</Label>
               <Input id="editTaxNumber" value={editTaxNumber} onChange={(e) => setEditTaxNumber(e.target.value)} placeholder="Pl. 12345678-2-42" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="editAddress">Székhely</Label>
+              <Label htmlFor="editAddress">{t('company_selector.address_label')}</Label>
               <Input id="editAddress" value={editAddress} onChange={(e) => setEditAddress(e.target.value)} placeholder="Pl. 1234 Budapest, Példa utca 1." />
             </div>
             <Button onClick={handleUpdateCompany} disabled={!editName.trim() || !editTaxNumber.trim() || isUpdating} className="w-full">
-              {isUpdating ? 'Mentés...' : 'Változások mentése'}
+              {isUpdating ? t('company_selector.creating') : t('company_selector.save_changes')}
             </Button>
           </div>
         </DialogContent>
@@ -409,16 +411,15 @@ const CompanySelector = () => {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cég törlése</AlertDialogTitle>
+            <AlertDialogTitle>{t('company_selector.delete_company')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Biztosan törölni szeretnéd a(z) <strong>{deletingCompany?.name}</strong> céget? 
-              Ez a művelet nem visszavonható, és a céghez kapcsolódó összes adat (számlák, projektek, bérek stb.) is törlődik.
+              {t('company_selector.delete_confirm', { name: deletingCompany?.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Mégse</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{t('actions.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteCompany} disabled={isDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              {isDeleting ? 'Törlés...' : 'Törlés'}
+              {isDeleting ? t('company_selector.creating') : t('actions.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

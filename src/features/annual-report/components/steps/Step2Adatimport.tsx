@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Database, CheckCircle2, RefreshCw, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -14,6 +15,7 @@ interface Step2AdatimportProps {
 }
 
 export function Step2Adatimport({ report, freezeData }: Step2AdatimportProps) {
+  const { t, i18n } = useTranslation('accounting');
   const bs = (report.frozen_bs_data as any[]) || [];
   const pnl = (report.frozen_pnl_data as any[]) || [];
   const totalAssets = bs.find((r: any) => r.section === 'assets' && r.type === 'total');
@@ -25,15 +27,19 @@ export function Step2Adatimport({ report, freezeData }: Step2AdatimportProps) {
   const liabVal = Number(totalLiab?.current_balance || 0);
   const diff = assetsVal - liabVal;
   const fmtK = (v: number) => formatHungarianNumber(Math.round(v / 1000));
+  const unitK = t('balance_sheet.units.thousand_huf', 'E Ft');
 
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-bold flex items-center gap-2">
         <Database className="w-5 h-5 text-primary" />
-        2. Mérleg & Eredménykimutatás Import
+        {t('annual_report.step2.header', '2. Mérleg & Eredménykimutatás Import')}
       </h2>
       <p className="text-muted-foreground">
-        A rendszer befagyasztja a {report.fiscal_year}. december 31-i záró állapotot.
+        {t('annual_report.step2.description', {
+          year: report.fiscal_year,
+          defaultValue: `A rendszer befagyasztja a ${report.fiscal_year}. december 31-i záró állapotot.`,
+        })}
       </p>
 
       {report.frozen_at ? (
@@ -41,11 +47,22 @@ export function Step2Adatimport({ report, freezeData }: Step2AdatimportProps) {
           <div className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl flex items-start gap-3">
             <CheckCircle2 className="w-5 h-5 text-emerald-500 mt-0.5" />
             <div className="flex-1">
-              <p className="font-bold text-emerald-700 dark:text-emerald-400">Adatok befagyasztva</p>
+              <p className="font-bold text-emerald-700 dark:text-emerald-400">
+                {t('annual_report.step2.frozen_title', 'Adatok befagyasztva')}
+              </p>
               <p className="text-sm text-muted-foreground mt-1">
-                Időpont: {new Date(report.frozen_at).toLocaleString('hu-HU')}<br />
-                Mérleg sorok: {report.frozen_bs_data?.length || 0}<br />
-                P&L sorok: {report.frozen_pnl_data?.length || 0}
+                {t('annual_report.step2.frozen_timestamp', {
+                  time: new Date(report.frozen_at).toLocaleString(i18n.language === 'hr' ? 'hr-HR' : 'hu-HU'),
+                  defaultValue: `Időpont: ${new Date(report.frozen_at).toLocaleString('hu-HU')}`,
+                })}<br />
+                {t('annual_report.step2.frozen_bs_rows', {
+                  count: report.frozen_bs_data?.length || 0,
+                  defaultValue: `Mérleg sorok: ${report.frozen_bs_data?.length || 0}`,
+                })}<br />
+                {t('annual_report.step2.frozen_pnl_rows', {
+                  count: report.frozen_pnl_data?.length || 0,
+                  defaultValue: `P&L sorok: ${report.frozen_pnl_data?.length || 0}`,
+                })}
               </p>
               <Button
                 variant="outline"
@@ -55,7 +72,7 @@ export function Step2Adatimport({ report, freezeData }: Step2AdatimportProps) {
                 disabled={freezeData.isPending}
               >
                 <RefreshCw className={cn('w-4 h-4', freezeData.isPending && 'animate-spin')} />
-                Újra befagyasztás
+                {t('annual_report.step2.refreeze', 'Újra befagyasztás')}
               </Button>
             </div>
           </div>
@@ -64,21 +81,21 @@ export function Step2Adatimport({ report, freezeData }: Step2AdatimportProps) {
           <div className="bg-muted/20 border border-border/30 rounded-xl overflow-hidden">
             <div className="px-4 py-2.5 bg-muted/40 border-b border-border/30">
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
-                Befagyasztott adatok összefoglalója
+                {t('annual_report.step2.summary_title', 'Befagyasztott adatok összefoglalója')}
               </p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border/20">
               {[
-                { label: 'Eszközök', value: `${fmtK(assetsVal)} E Ft` },
-                { label: 'Források', value: `${fmtK(liabVal)} E Ft` },
+                { label: t('annual_report.step2.assets', 'Eszközök'), value: `${fmtK(assetsVal)} ${unitK}` },
+                { label: t('annual_report.step2.liabilities', 'Források'), value: `${fmtK(liabVal)} ${unitK}` },
                 {
-                  label: 'Eltérés',
-                  value: `${fmtK(diff)} E Ft`,
+                  label: t('annual_report.step2.difference', 'Eltérés'),
+                  value: `${fmtK(diff)} ${unitK}`,
                   color: Math.abs(diff) > 1 ? 'text-red-500' : 'text-emerald-600',
                 },
                 {
-                  label: 'Adózott eredmény',
-                  value: `${fmtK(netIncome)} E Ft`,
+                  label: t('annual_report.step2.net_income', 'Adózott eredmény'),
+                  value: `${fmtK(netIncome)} ${unitK}`,
                   color: netIncome >= 0 ? 'text-emerald-600' : 'text-red-500',
                 },
               ].map((item, i) => (
@@ -103,7 +120,10 @@ export function Step2Adatimport({ report, freezeData }: Step2AdatimportProps) {
           ) : (
             <Database className="w-5 h-5" />
           )}
-          Adatok befagyasztása ({report.fiscal_year}.12.31)
+          {t('annual_report.step2.freeze_button', {
+            year: report.fiscal_year,
+            defaultValue: `Adatok befagyasztása (${report.fiscal_year}.12.31)`,
+          })}
         </Button>
       )}
     </div>

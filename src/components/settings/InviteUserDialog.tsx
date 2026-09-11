@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany, type Company } from '@/contexts/CompanyContext';
 import { Button } from '@/components/ui/button';
@@ -44,24 +45,24 @@ interface PasswordStrength {
   checks: { label: string; passed: boolean }[];
 }
 
-function evaluatePassword(password: string): PasswordStrength {
+function evaluatePassword(password: string, t: (key: any) => string): PasswordStrength {
   const checks = [
-    { label: 'Legalább 8 karakter', passed: password.length >= 8 },
-    { label: 'Nagybetű (A-Z)', passed: /[A-Z]/.test(password) },
-    { label: 'Kisbetű (a-z)', passed: /[a-z]/.test(password) },
-    { label: 'Szám (0-9)', passed: /[0-9]/.test(password) },
-    { label: 'Speciális karakter (!@#$...)', passed: /[^A-Za-z0-9]/.test(password) },
+    { label: t('settings:invite_dialog.strength.check_min_chars'), passed: password.length >= 8 },
+    { label: t('settings:invite_dialog.strength.check_uppercase'), passed: /[A-Z]/.test(password) },
+    { label: t('settings:invite_dialog.strength.check_lowercase'), passed: /[a-z]/.test(password) },
+    { label: t('settings:invite_dialog.strength.check_number'), passed: /[0-9]/.test(password) },
+    { label: t('settings:invite_dialog.strength.check_special'), passed: /[^A-Za-z0-9]/.test(password) },
   ];
 
   const score = checks.filter(c => c.passed).length;
 
   const levels: Record<number, { label: string; color: string }> = {
     0: { label: '', color: '' },
-    1: { label: 'Nagyon gyenge', color: 'bg-red-500' },
-    2: { label: 'Gyenge', color: 'bg-orange-500' },
-    3: { label: 'Közepes', color: 'bg-amber-500' },
-    4: { label: 'Erős', color: 'bg-emerald-500' },
-    5: { label: 'Nagyon erős', color: 'bg-emerald-600' },
+    1: { label: t('settings:invite_dialog.strength.level_very_weak'), color: 'bg-red-500' },
+    2: { label: t('settings:invite_dialog.strength.level_weak'), color: 'bg-orange-500' },
+    3: { label: t('settings:invite_dialog.strength.level_medium'), color: 'bg-amber-500' },
+    4: { label: t('settings:invite_dialog.strength.level_strong'), color: 'bg-emerald-500' },
+    5: { label: t('settings:invite_dialog.strength.level_very_strong'), color: 'bg-emerald-600' },
   };
 
   return { score, ...levels[score], checks };
@@ -79,6 +80,8 @@ export function InviteUserDialog({
   toast,
   isAccounty = false,
 }: InviteUserDialogProps) {
+  const { t } = useTranslation(['settings', 'common']);
+
   // Mode: add existing user or create new
   const [mode, setMode] = useState<InviteMode>('existing');
 
@@ -139,7 +142,7 @@ export function InviteUserDialog({
   );
 
   // Password strength
-  const strength = useMemo(() => evaluatePassword(password), [password]);
+  const strength = useMemo(() => evaluatePassword(password, t), [password, t]);
   const passwordsMatch = confirmPassword.length > 0 && password === confirmPassword;
   const passwordsMismatch = confirmPassword.length > 0 && password !== confirmPassword;
   const isPasswordStrong = strength.score >= 4; // At least 4 of 5 criteria
@@ -233,12 +236,12 @@ export function InviteUserDialog({
 
     if (mode === 'new') {
       if (password !== confirmPassword) {
-        toast({ title: 'A jelszavak nem egyeznek', description: 'Kérlek ellenőrizd a megadott jelszavakat.', variant: 'destructive' });
+        toast({ title: t('settings:invite_dialog.mismatch_toast_title'), description: t('settings:invite_dialog.mismatch_toast_desc'), variant: 'destructive' });
         return;
       }
 
       if (!isPasswordStrong) {
-        toast({ title: 'Gyenge jelszó', description: 'A jelszónak legalább 4 kritériumnak meg kell felelnie.', variant: 'destructive' });
+        toast({ title: t('settings:invite_dialog.weak_toast_title'), description: t('settings:invite_dialog.weak_toast_desc'), variant: 'destructive' });
         return;
       }
     }
@@ -247,7 +250,7 @@ export function InviteUserDialog({
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error('Nincs aktív munkamenet.');
+      if (!session?.access_token) throw new Error(t('settings:invite_dialog.no_session'));
 
       if (mode === 'existing') {
         // ── Existing user: add to company/companies directly ──
@@ -268,7 +271,7 @@ export function InviteUserDialog({
           });
 
           if (response.error) {
-            errors.push(response.error.message || 'Ismeretlen hiba');
+            errors.push(response.error.message || t('settings:invite_dialog.unknown_error'));
             continue;
           }
 
@@ -276,13 +279,13 @@ export function InviteUserDialog({
 
           if (!result?.success) {
             const errorMessages: Record<string, string> = {
-              valid_email_required: 'Érvényes email cím szükséges.',
-              name_required: 'A név megadása kötelező.',
-              not_admin: 'Nincs jogosultságod felhasználót hozzáadni ehhez a céghez.',
-              already_member: 'Ez a felhasználó már tagja a cégnek.',
-              member_insert_failed: 'Nem sikerült hozzárendelni a felhasználót a céghez.',
+              valid_email_required: t('settings:invite_dialog.errors.valid_email_required'),
+              name_required: t('settings:invite_dialog.errors.name_required'),
+              not_admin: t('settings:invite_dialog.errors.not_admin_add'),
+              already_member: t('settings:invite_dialog.errors.already_member'),
+              member_insert_failed: t('settings:invite_dialog.errors.member_insert_failed'),
             };
-            const msg = errorMessages[result?.error] || result?.error || 'Ismeretlen hiba történt.';
+            const msg = errorMessages[result?.error] || result?.error || t('settings:invite_dialog.unknown_error');
             const cName = companies.find(c => c.id === cId)?.name || '';
             errors.push(cName ? `${cName}: ${msg}` : msg);
           } else {
@@ -291,15 +294,17 @@ export function InviteUserDialog({
         }
 
         if (errors.length > 0 && successCount === 0) {
-          toast({ title: 'Hiba', description: errors.join('\n'), variant: 'destructive' });
+          toast({ title: t('common:status.error'), description: errors.join('\n'), variant: 'destructive' });
           setLoading(false);
           return;
         }
 
-        const companyCountText = successCount > 1 ? `${successCount} céghez` : 'a céghez';
+        const companyCountText = successCount > 1
+          ? t('settings:invite_dialog.companies_count_plural', { count: successCount })
+          : t('settings:invite_dialog.companies_count_single');
         toast({
-          title: 'Felhasználó hozzáadva',
-          description: `${foundUserName || email.trim()} sikeresen hozzáadva ${companyCountText}.${errors.length > 0 ? ` (${errors.length} hiba)` : ''}`,
+          title: t('settings:invite_dialog.user_added_title'),
+          description: `${t('settings:invite_dialog.user_added_desc', { user: foundUserName || email.trim(), target: companyCountText })}${errors.length > 0 ? ` (${errors.length} error)` : ''}`,
         });
       } else {
         // ── New user: create + add to first company, then add remaining ──
@@ -317,23 +322,23 @@ export function InviteUserDialog({
           },
         });
 
-        if (response.error) throw new Error(response.error.message || 'Ismeretlen hiba');
+        if (response.error) throw new Error(response.error.message || t('settings:invite_dialog.unknown_error'));
 
         const result = response.data;
 
         if (!result?.success) {
           const errorMessages: Record<string, string> = {
-            valid_email_required: 'Érvényes email cím szükséges.',
-            name_required: 'A név megadása kötelező.',
-            password_min_6: 'A jelszónak legalább 6 karakter hosszúnak kell lennie.',
-            not_admin: 'Nincs jogosultságod felhasználót meghívni ehhez a céghez.',
-            already_member: 'Ez a felhasználó már tagja a cégnek.',
-            email_exists: 'Ez az email cím már regisztrálva van. Használd a „Meglévő felhasználó" fület.',
-            user_create_failed: 'Nem sikerült létrehozni a felhasználót.',
-            member_insert_failed: 'Nem sikerült hozzárendelni a felhasználót a céghez.',
+            valid_email_required: t('settings:invite_dialog.errors.valid_email_required'),
+            name_required: t('settings:invite_dialog.errors.name_required'),
+            password_min_6: t('settings:invite_dialog.errors.password_min_6'),
+            not_admin: t('settings:invite_dialog.errors.not_admin_invite'),
+            already_member: t('settings:invite_dialog.errors.already_member'),
+            email_exists: t('settings:invite_dialog.errors.email_exists'),
+            user_create_failed: t('settings:invite_dialog.errors.user_create_failed'),
+            member_insert_failed: t('settings:invite_dialog.errors.member_insert_failed'),
           };
-          const msg = errorMessages[result?.error] || result?.error || 'Ismeretlen hiba történt.';
-          toast({ title: 'Hiba', description: msg, variant: 'destructive' });
+          const msg = errorMessages[result?.error] || result?.error || t('settings:invite_dialog.unknown_error');
+          toast({ title: t('common:status.error'), description: msg, variant: 'destructive' });
           setLoading(false);
           return;
         }
@@ -355,17 +360,19 @@ export function InviteUserDialog({
         }
 
         const totalAssigned = 1 + extraSuccess;
-        const companyText = totalAssigned > 1 ? `${totalAssigned} céghez` : 'a céghez';
+        const companyText = totalAssigned > 1
+          ? t('settings:invite_dialog.companies_count_plural', { count: totalAssigned })
+          : t('settings:invite_dialog.companies_count_single');
 
         if (result.existing_user) {
           toast({
-            title: 'Felhasználó hozzáadva',
-            description: `${name.trim()} már regisztrált felhasználó — hozzáadva ${companyText}.`,
+            title: t('settings:invite_dialog.user_added_title'),
+            description: t('settings:invite_dialog.user_existing_added_desc', { name: name.trim(), target: companyText }),
           });
         } else {
           toast({
-            title: 'Felhasználó meghívva',
-            description: `${name.trim()} (${email.trim()}) sikeresen létrehozva és hozzáadva ${companyText}.`,
+            title: t('settings:invite_dialog.user_invited_title'),
+            description: t('settings:invite_dialog.user_invited_desc', { name: name.trim(), email: email.trim(), target: companyText }),
           });
         }
       }
@@ -376,8 +383,8 @@ export function InviteUserDialog({
     } catch (err: any) {
       reportError({ type: 'db_query', component: 'InviteUserDialog', action: 'error', message: 'Invite error:', error: err });
       toast({
-        title: mode === 'existing' ? 'Hozzáadás sikertelen' : 'Meghívás sikertelen',
-        description: err.message || 'Ismeretlen hiba történt.',
+        title: mode === 'existing' ? t('settings:invite_dialog.add_failed_title') : t('settings:invite_dialog.invite_failed_title'),
+        description: err.message || t('settings:invite_dialog.unknown_error'),
         variant: 'destructive',
       });
     } finally {
@@ -391,12 +398,12 @@ export function InviteUserDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-primary" />
-            Tag hozzáadása
+            {t('settings:invite_dialog.title')}
           </DialogTitle>
           <DialogDescription>
             {isAccounty
-              ? 'Munkatárs hozzáadása az irodához vagy új felhasználó létrehozása.'
-              : 'Meglévő eaisybill felhasználó hozzáadása vagy új felhasználó létrehozása.'}
+              ? t('settings:invite_dialog.desc_accounty')
+              : t('settings:invite_dialog.desc_default')}
           </DialogDescription>
         </DialogHeader>
 
@@ -413,7 +420,7 @@ export function InviteUserDialog({
             )}
           >
             <UserCheck className="h-4 w-4" />
-            Meglévő felhasználó
+            {t('settings:invite_dialog.tab_existing')}
           </button>
           <button
             type="button"
@@ -426,7 +433,7 @@ export function InviteUserDialog({
             )}
           >
             <UserRoundPlus className="h-4 w-4" />
-            Új felhasználó
+            {t('settings:invite_dialog.tab_new')}
           </button>
         </div>
 
@@ -438,7 +445,7 @@ export function InviteUserDialog({
             <>
               {/* ── Email Search ── */}
               <div className="space-y-2">
-                <Label htmlFor="invite-email-existing">Email cím *</Label>
+                <Label htmlFor="invite-email-existing">{t('settings:invite_dialog.email_label')}</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -446,7 +453,7 @@ export function InviteUserDialog({
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="felhasznalo@example.com"
+                    placeholder={t('settings:invite_dialog.email_placeholder')}
                     autoComplete="off"
                     className="pl-10"
                   />
@@ -467,7 +474,7 @@ export function InviteUserDialog({
                     <UserCheck className="h-4 w-4 text-emerald-500 shrink-0" />
                     <div className="text-sm">
                       <span className="font-medium text-emerald-600 dark:text-emerald-400">{foundUserName}</span>
-                      <span className="text-muted-foreground"> — regisztrált felhasználó</span>
+                      <span className="text-muted-foreground"> {t('settings:invite_dialog.registered_user')}</span>
                     </div>
                   </div>
                 )}
@@ -475,13 +482,13 @@ export function InviteUserDialog({
                   <div className="flex items-center gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
                     <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />
                     <div className="text-sm text-muted-foreground">
-                      Ez az email cím nincs regisztrálva. 
+                      {t('settings:invite_dialog.email_not_registered')} 
                       <button
                         type="button"
                         className="text-primary font-medium hover:underline ml-1"
                         onClick={() => setMode('new')}
                       >
-                        Új felhasználó létrehozása →
+                        {t('settings:invite_dialog.create_new_user_action')}
                       </button>
                     </div>
                   </div>
@@ -495,39 +502,39 @@ export function InviteUserDialog({
             <>
               {/* ── Name ── */}
               <div className="space-y-2">
-                <Label htmlFor="invite-name">Teljes név *</Label>
+                <Label htmlFor="invite-name">{t('settings:invite_dialog.name_label')}</Label>
                 <Input
                   id="invite-name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Vezetéknév Keresztnév"
+                  placeholder={t('settings:invite_dialog.name_placeholder')}
                   autoComplete="off"
                 />
               </div>
 
               {/* ── Email ── */}
               <div className="space-y-2">
-                <Label htmlFor="invite-email">Email cím *</Label>
+                <Label htmlFor="invite-email">{t('settings:invite_dialog.email_label')}</Label>
                 <Input
                   id="invite-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="felhasznalo@example.com"
+                  placeholder={t('settings:invite_dialog.email_placeholder')}
                   autoComplete="off"
                 />
               </div>
 
               {/* ── Password ── */}
               <div className="space-y-2">
-                <Label htmlFor="invite-password">Jelszó *</Label>
+                <Label htmlFor="invite-password">{t('settings:invite_dialog.password_label')}</Label>
                 <div className="relative">
                   <Input
                     id="invite-password"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Erős jelszó"
+                    placeholder={t('settings:invite_dialog.password_placeholder')}
                     autoComplete="new-password"
                     className="pr-10"
                   />
@@ -580,14 +587,14 @@ export function InviteUserDialog({
 
               {/* ── Confirm Password ── */}
               <div className="space-y-2">
-                <Label htmlFor="invite-confirm-password">Jelszó megerősítése *</Label>
+                <Label htmlFor="invite-confirm-password">{t('settings:invite_dialog.confirm_password_label')}</Label>
                 <div className="relative">
                   <Input
                     id="invite-confirm-password"
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Jelszó újra"
+                    placeholder={t('settings:invite_dialog.confirm_password_placeholder')}
                     autoComplete="new-password"
                     className={cn(
                       'pr-10',
@@ -606,13 +613,13 @@ export function InviteUserDialog({
                 {passwordsMismatch && (
                   <p className="text-xs text-red-500 flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" />
-                    A jelszavak nem egyeznek
+                    {t('settings:invite_dialog.passwords_mismatch')}
                   </p>
                 )}
                 {passwordsMatch && (
                   <p className="text-xs text-emerald-500 flex items-center gap-1">
                     <Check className="h-3 w-3" />
-                    A jelszavak egyeznek
+                    {t('settings:invite_dialog.passwords_match')}
                   </p>
                 )}
               </div>
@@ -629,7 +636,7 @@ export function InviteUserDialog({
               />
               <Label htmlFor="assign-company" className="flex items-center gap-2 cursor-pointer font-normal">
                 <Building2 className="h-4 w-4 text-muted-foreground" />
-                Hozzárendelés céghez
+                {t('settings:invite_dialog.assign_company_label')}
               </Label>
             </div>
 
@@ -639,15 +646,15 @@ export function InviteUserDialog({
                 {companies.length > 1 ? (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label>Cégek kiválasztása</Label>
+                      <Label>{t('settings:invite_dialog.select_companies_label')}</Label>
                       <button
                         type="button"
                         className="text-xs text-primary hover:underline font-medium"
                         onClick={selectAllFiltered}
                       >
                         {filteredCompanies.every(c => selectedCompanyIds.includes(c.id))
-                          ? 'Mind törlése'
-                          : 'Mind kijelölése'}
+                          ? t('settings:invite_dialog.deselect_all')
+                          : t('settings:invite_dialog.select_all')}
                       </button>
                     </div>
 
@@ -656,13 +663,13 @@ export function InviteUserDialog({
                       <Input
                         value={companySearch}
                         onChange={(e) => setCompanySearch(e.target.value)}
-                        placeholder="Cég keresése..."
+                        placeholder={t('settings:invite_dialog.company_search_placeholder')}
                         className="pl-9 h-9"
                       />
                     </div>
                     <div className="max-h-[160px] overflow-y-auto rounded-md border border-border">
                       {filteredCompanies.length === 0 ? (
-                        <div className="p-2 text-xs text-muted-foreground text-center">Nincs találat</div>
+                        <div className="p-2 text-xs text-muted-foreground text-center">{t('settings:invite_dialog.no_company_results')}</div>
                       ) : (
                         filteredCompanies.map(c => (
                           <button
@@ -683,7 +690,7 @@ export function InviteUserDialog({
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {selectedCompanyIds.length} cég kiválasztva
+                      {t('settings:invite_dialog.companies_selected_count', { count: selectedCompanyIds.length })}
                     </p>
                   </div>
                 ) : (
@@ -692,7 +699,7 @@ export function InviteUserDialog({
 
                 {/* Role */}
                 <div className="space-y-2">
-                  <Label htmlFor="invite-role">Szerepkör</Label>
+                  <Label htmlFor="invite-role">{t('settings:invite_dialog.role_label')}</Label>
                   <Select value={role} onValueChange={(v) => setRole(v)}>
                     <SelectTrigger id="invite-role">
                       <SelectValue />
@@ -700,18 +707,18 @@ export function InviteUserDialog({
                     <SelectContent>
                       {isAccounty ? (
                         <>
-                          <SelectItem value="iroda_admin">Iroda Admin</SelectItem>
-                          <SelectItem value="senior_könyvelő">Senior Könyvelő</SelectItem>
-                          <SelectItem value="könyvelő">Könyvelő</SelectItem>
-                          <SelectItem value="asszisztens">Asszisztens</SelectItem>
+                          <SelectItem value="iroda_admin">{t('settings:invite_dialog.roles.iroda_admin')}</SelectItem>
+                          <SelectItem value="senior_könyvelő">{t('settings:invite_dialog.roles.senior_könyvelő')}</SelectItem>
+                          <SelectItem value="könyvelő">{t('settings:invite_dialog.roles.könyvelő')}</SelectItem>
+                          <SelectItem value="asszisztens">{t('settings:invite_dialog.roles.asszisztens')}</SelectItem>
                         </>
                       ) : (
                         <>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="member">Pénzügyes</SelectItem>
-                          <SelectItem value="assistant">Pénzügyi asszisztens</SelectItem>
-                          <SelectItem value="viewer">Betekintő</SelectItem>
-                          <SelectItem value="employee">Munkavállaló</SelectItem>
+                          <SelectItem value="admin">{t('settings:invite_dialog.roles.admin')}</SelectItem>
+                          <SelectItem value="member">{t('settings:invite_dialog.roles.member')}</SelectItem>
+                          <SelectItem value="assistant">{t('settings:invite_dialog.roles.assistant')}</SelectItem>
+                          <SelectItem value="viewer">{t('settings:invite_dialog.roles.viewer')}</SelectItem>
+                          <SelectItem value="employee">{t('settings:invite_dialog.roles.employee')}</SelectItem>
                         </>
                       )}
                     </SelectContent>
@@ -719,18 +726,18 @@ export function InviteUserDialog({
                   <p className="text-xs text-muted-foreground">
                     {isAccounty ? (
                       <>
-                        {role === 'iroda_admin' && 'Teljes hozzáférés, iroda kezelés, felhasználókat is kezelhet.'}
-                        {role === 'senior_könyvelő' && 'Könyvelési feladatok és felügyelet.'}
-                        {role === 'könyvelő' && 'Könyvelési feladatok ellátása.'}
-                        {role === 'asszisztens' && 'Adminisztrációs feladatok.'}
+                        {role === 'iroda_admin' && t('settings:invite_dialog.role_descriptions.iroda_admin')}
+                        {role === 'senior_könyvelő' && t('settings:invite_dialog.role_descriptions.senior_könyvelő')}
+                        {role === 'könyvelő' && t('settings:invite_dialog.role_descriptions.könyvelő')}
+                        {role === 'asszisztens' && t('settings:invite_dialog.role_descriptions.asszisztens')}
                       </>
                     ) : (
                       <>
-                        {role === 'admin' && 'Teljes hozzáférés a céghez, felhasználókat is kezelhet.'}
-                        {role === 'member' && 'Pénzügyi adatok olvasás/írás, könyvelési hozzáférés.'}
-                        {role === 'assistant' && 'Számlák, tranzakciók, kintlévőségek kezelése. Nem lát béreket, könyvelést.'}
-                        {role === 'viewer' && 'Csak olvasási hozzáférés a pénzügyi adatokhoz.'}
-                        {role === 'employee' && 'Csak a saját munkaidő-nyilvántartásához fér hozzá.'}
+                        {role === 'admin' && t('settings:invite_dialog.role_descriptions.admin')}
+                        {role === 'member' && t('settings:invite_dialog.role_descriptions.member')}
+                        {role === 'assistant' && t('settings:invite_dialog.role_descriptions.assistant')}
+                        {role === 'viewer' && t('settings:invite_dialog.role_descriptions.viewer')}
+                        {role === 'employee' && t('settings:invite_dialog.role_descriptions.employee')}
                       </>
                     )}
                   </p>
@@ -742,25 +749,25 @@ export function InviteUserDialog({
           {/* ── Footer ── */}
           <DialogFooter className="pt-2">
             <Button type="button" variant="outline" onClick={() => { onOpenChange(false); resetForm(); }} disabled={loading}>
-              Mégse
+              {t('settings:invite_dialog.cancel')}
             </Button>
             <Button type="submit" disabled={!canSubmit}>
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {mode === 'existing' ? 'Hozzáadás...' : 'Létrehozás...'}
+                  {mode === 'existing' ? t('settings:invite_dialog.adding') : t('settings:invite_dialog.creating')}
                 </>
               ) : (
                 <>
                   {mode === 'existing' ? (
                     <>
                       <UserCheck className="h-4 w-4 mr-2" />
-                      Hozzáadás
+                      {t('settings:invite_dialog.add_button')}
                     </>
                   ) : (
                     <>
                       <UserPlus className="h-4 w-4 mr-2" />
-                      Meghívás
+                      {t('settings:invite_dialog.invite_button')}
                     </>
                   )}
                 </>

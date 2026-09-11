@@ -5,6 +5,7 @@ import { Separator } from '@/components/ui/separator';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ClipboardCheck, Pencil, Undo2, Check, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 import { TransactionItem, BookTransactionGlPayload } from '@/lib/matching/types';
 
 export interface GlAccountItem {
@@ -40,6 +41,7 @@ export const TransactionGlAccountSelector: React.FC<TransactionGlAccountSelector
   onBookGl,
   onUnbookGl,
 }) => {
+  const { t } = useTranslation(['transactions']);
   const [selectedGlId, setSelectedGlId] = useState(transaction.gl_account_id || '');
   const [isEditingGl, setIsEditingGl] = useState(false);
   const [glSearchQuery, setGlSearchQuery] = useState('');
@@ -83,7 +85,7 @@ export const TransactionGlAccountSelector: React.FC<TransactionGlAccountSelector
         <CardHeader className="py-2 px-3">
           <CardTitle className="text-xs font-semibold flex items-center gap-1.5 text-foreground">
             <ClipboardCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-            Közvetlen könyvelés (Számla nélkül)
+            {t('transactions:dialogs.details.gl_selector.title')}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-3 pt-0 space-y-3">
@@ -92,7 +94,7 @@ export const TransactionGlAccountSelector: React.FC<TransactionGlAccountSelector
               <div className="bg-emerald-500/10 dark:bg-emerald-950/20 border border-emerald-500/20 rounded-md p-2.5 flex items-center justify-between gap-2">
                 <div className="min-w-0">
                   <p className="text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
-                    Lekönyvelt számlaosztály:
+                    {t('transactions:dialogs.details.gl_selector.booked_class')}
                   </p>
                   <p className="text-xs font-mono font-bold mt-1 truncate">
                     {(() => {
@@ -125,14 +127,13 @@ export const TransactionGlAccountSelector: React.FC<TransactionGlAccountSelector
                   className="text-xs w-full text-red-500 hover:text-red-600 border-red-500/30 hover:bg-red-500/10 h-8"
                 >
                   <Undo2 className="h-3.5 w-3.5 mr-1" />
-                  Könyvelés törlése
+                  {t('transactions:dialogs.details.gl_selector.remove_booking')}
                 </Button>
               )}
             </div>
           ) : (
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Ha a tételhez nem tartozik bizonylat (pl. biztosítási díj, banki jutalék),
-              közvetlenül kontírozhatod egy főkönyvi számra.
+              {t('transactions:dialogs.details.gl_selector.hint')}
             </p>
           )}
 
@@ -144,14 +145,14 @@ export const TransactionGlAccountSelector: React.FC<TransactionGlAccountSelector
                   shouldFilter={false}
                 >
                   <CommandInput
-                    placeholder="Keresés főkönyvi szám vagy név alapján..."
+                    placeholder={t('transactions:dialogs.details.gl_selector.search_placeholder')}
                     value={glSearchQuery}
                     onValueChange={setGlSearchQuery}
                     className="h-8 text-xs w-full border-none focus:ring-0"
                   />
                   <CommandList className="h-[140px] max-h-[140px] overflow-y-auto w-full overflow-x-hidden">
                     <CommandEmpty className="py-2 text-xs text-center text-muted-foreground">
-                      Nincs találat.
+                      {t('transactions:dialogs.details.gl_selector.no_results')}
                     </CommandEmpty>
                     <CommandGroup>
                       {glAccounts
@@ -212,7 +213,7 @@ export const TransactionGlAccountSelector: React.FC<TransactionGlAccountSelector
                     }}
                     className="text-xs flex-1 h-8"
                   >
-                    Mégse
+                    {t('transactions:dialogs.details.gl_selector.cancel')}
                   </Button>
                 )}
                 <Button
@@ -231,8 +232,8 @@ export const TransactionGlAccountSelector: React.FC<TransactionGlAccountSelector
                     <Check className="h-3.5 w-3.5 mr-1" />
                   )}
                   {transaction.gl_account_id
-                    ? 'Módosítás mentése'
-                    : 'Kontírozás közvetlenül'}
+                    ? t('transactions:dialogs.details.gl_selector.save_changes')
+                    : t('transactions:dialogs.details.gl_selector.book_direct')}
                 </Button>
               </div>
             </div>

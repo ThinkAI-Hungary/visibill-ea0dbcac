@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/CompanyContext";
 import { reportError } from '@/lib/errorReporter';
+import { useTranslation } from "react-i18next";
 
 // Helper to load PDF.js dynamically from CDN
 const loadPdfJs = async (): Promise<any> => {
@@ -116,6 +117,7 @@ interface UploadModalProps {
 }
 
 export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: UploadModalProps) {
+  const { t } = useTranslation(['accounting', 'common']);
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   
@@ -161,18 +163,30 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
     if (validExensions.some(ext => nameLower.endsWith(ext))) {
       setFile(selectedFile);
     } else {
-      toast({ title: "Hibás formátum", description: "Kérlek CSV, Excel (XLSX, XLS), PDF vagy TXT fájlt tölts fel.", variant: "destructive" });
+      toast({
+        title: t('accounting:dialogs.upload_coa.toasts.invalid_format_title'),
+        description: t('accounting:dialogs.upload_coa.toasts.invalid_format_desc'),
+        variant: "destructive"
+      });
     }
   };
 
   const handleSubmit = async () => {
     if (!selectedCompany) return;
     if (!name.trim()) {
-      toast({ title: "Hiányzó név", description: "Kérlek adj meg egy nevet a sablonnak.", variant: "destructive" });
+      toast({
+        title: t('accounting:dialogs.upload_coa.toasts.missing_name_title'),
+        description: t('accounting:dialogs.upload_coa.toasts.missing_name_desc'),
+        variant: "destructive"
+      });
       return;
     }
     if (!file) {
-      toast({ title: "Hiányzó fájl", description: "Kérlek tölts fel egy CSV vagy Excel fájlt.", variant: "destructive" });
+      toast({
+        title: t('accounting:dialogs.upload_coa.toasts.missing_file_title'),
+        description: t('accounting:dialogs.upload_coa.toasts.missing_file_desc'),
+        variant: "destructive"
+      });
       return;
     }
 
@@ -180,7 +194,7 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
 
     const processRows = async (rows: any[]) => {
       try {
-        if (!rows || rows.length === 0) throw new Error("A fájl üres vagy nem megfelelő formátumú.");
+        if (!rows || rows.length === 0) throw new Error(t('accounting:dialogs.upload_coa.toasts.empty_file'));
 
         // 1. Create preset
         const newPresetRow = {
@@ -251,7 +265,7 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
           return true;
         });
 
-        if (insertData.length === 0) throw new Error("Nem találtunk érvényes sorkódokat a fájlban. Ellenőrizd a fejlécet/adatokat!");
+        if (insertData.length === 0) throw new Error(t('accounting:dialogs.upload_coa.toasts.no_valid_rows'));
 
         // 4. Chunk insert (Supabase typically handles bulk well up to a few thousands, but chunking is safer)
         const chunkSize = 1000;
@@ -260,16 +274,23 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
           const { error: insertError } = await supabase.from('gl_accounts').insert(chunk);
           if (insertError) {
             reportError({ type: 'upload', component: 'UploadChartOfAccountsModal', action: 'error', message: String(insertError), error: insertError });
-            throw new Error("Hiba a főkönyvi tételek mentésekor.");
+            throw new Error(t('accounting:dialogs.upload_coa.toasts.save_gl_error'));
           }
         }
 
-        toast({ title: "Sikeres feltöltés", description: `${insertData.length} főkönyvi tétel sikeresen betöltve.` });
+        toast({
+          title: t('accounting:dialogs.upload_coa.toasts.success_title'),
+          description: t('accounting:dialogs.upload_coa.toasts.success_desc', { count: insertData.length })
+        });
         onSuccess(presetId);
         handleOpenChange(false);
         
       } catch (error: any) {
-        toast({ title: "Feltöltési hiba", description: error.message || "A mentés megszakadt.", variant: "destructive" });
+        toast({
+          title: t('accounting:dialogs.upload_coa.toasts.upload_error_title'),
+          description: error.message || "A mentés megszakadt.",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }
@@ -282,7 +303,11 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
         const pdfRows = await parsePdfChartOfAccounts(file);
         await processRows(pdfRows);
       } catch (error: any) {
-        toast({ title: "PDF feldolgozási hiba", description: error.message || "Hibás PDF fájl formátum.", variant: "destructive" });
+        toast({
+          title: t('accounting:dialogs.upload_coa.toasts.pdf_error_title'),
+          description: error.message || "Hibás PDF fájl formátum.",
+          variant: "destructive"
+        });
         setLoading(false);
       }
     } else if (nameLower.endsWith('.csv') || nameLower.endsWith('.txt')) {
@@ -291,7 +316,11 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
         skipEmptyLines: true,
         complete: (results) => processRows(results.data),
         error: (error) => {
-           toast({ title: "Fájlfeldolgozási hiba", description: error.message, variant: "destructive" });
+           toast({
+             title: t('accounting:dialogs.upload_coa.toasts.file_error_title'),
+             description: error.message,
+             variant: "destructive"
+           });
            setLoading(false);
         }
       });
@@ -305,7 +334,11 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
         const rows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
         await processRows(rows);
       } catch (error: any) {
-        toast({ title: "Excel feldolgozási hiba", description: error.message || "Hibás Excel fájl formátum.", variant: "destructive" });
+        toast({
+          title: t('accounting:dialogs.upload_coa.toasts.excel_error_title'),
+          description: error.message || "Hibás Excel fájl formátum.",
+          variant: "destructive"
+        });
         setLoading(false);
       }
     }
@@ -315,18 +348,18 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Új Számlatükör Feltöltése</DialogTitle>
+          <DialogTitle>{t('accounting:dialogs.upload_coa.title')}</DialogTitle>
           <DialogDescription>
-            Importálj egyéni számlatükröt CSV, Excel vagy PDF fájlból. Az adatok Oszlopai sorrendje: Főkönyvi szám, Név, (Leírás opcionális).
+            {t('accounting:dialogs.upload_coa.description')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
           <div className="space-y-2">
-            <Label htmlFor="preset-name">Sablon neve *</Label>
+            <Label htmlFor="preset-name">{t('accounting:dialogs.upload_coa.preset_name')}</Label>
             <Input 
               id="preset-name" 
-              placeholder="pl. Ügyfél Egyedi Számlatükör 2024" 
+              placeholder={t('accounting:dialogs.upload_coa.preset_name_placeholder')} 
               value={name} 
               onChange={(e) => setName(e.target.value)} 
               disabled={loading}
@@ -334,7 +367,7 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
           </div>
 
           <div className="space-y-2">
-            <Label>Fájl forrása *</Label>
+            <Label>{t('accounting:dialogs.upload_coa.file_source')}</Label>
             {!file ? (
               <div 
                 className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${loading ? 'opacity-50 pointer-events-none' : 'hover:bg-muted/50 border-primary/30'}`}
@@ -344,8 +377,8 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
               >
                 <div className="flex flex-col items-center justify-center space-y-2 text-muted-foreground">
                   <UploadCloud className="h-8 w-8 text-primary/60" />
-                  <p className="text-sm font-medium">Kattints, vagy húzd ide a CSV/Excel/PDF fájlt</p>
-                  <p className="text-xs">Támogatott: .csv, .xlsx, .xls, .pdf (max. 10MB)</p>
+                  <p className="text-sm font-medium">{t('accounting:dialogs.upload_coa.drag_drop_text')}</p>
+                  <p className="text-xs">{t('accounting:dialogs.upload_coa.supported_formats')}</p>
                 </div>
               </div>
             ) : (
@@ -370,10 +403,12 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={loading}>Mégsem</Button>
+          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={loading}>
+            {t('accounting:dialogs.upload_coa.cancel')}
+          </Button>
           <Button onClick={handleSubmit} disabled={loading || !file || !name}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Feltöltés és Mentés
+            {t('accounting:dialogs.upload_coa.upload_save')}
           </Button>
         </DialogFooter>
       </DialogContent>

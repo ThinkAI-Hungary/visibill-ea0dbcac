@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface CategoryStat {
   name: string;
@@ -39,6 +40,7 @@ export function CategoryDonutChart({
   onSegmentClick,
   activeIndex,
 }: CategoryDonutChartProps) {
+  const { t } = useTranslation(['categories']);
   const radius = 50;
   const circumference = 2 * Math.PI * radius;
 
@@ -121,7 +123,7 @@ export function CategoryDonutChart({
           {/* Center text */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-xl font-bold text-foreground">{totalInvoices}</span>
-            <span className="text-[10px] text-muted-foreground">számla</span>
+            <span className="text-[10px] text-muted-foreground">{t('categories:invoice_label', 'számla')}</span>
           </div>
         </div>
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,16 +30,18 @@ export function VatXmlValidationDialog({
   isValidatingXml,
   runXmlValidationLocal,
 }: VatXmlValidationDialogProps) {
+  const { t } = useTranslation(['accounting', 'common']);
+
   return (
     <Card className="border-border/60">
       <CardContent className="p-4 space-y-3">
         <div className="flex items-center justify-between mb-1">
-          <div className="text-sm font-medium">NAV XML Validátor</div>
+          <div className="text-sm font-medium">{t('accounting:vat_return.cards.xml_validator.title', 'NAV XML Validátor')}</div>
           <Badge
             variant="outline"
             className="text-[10px] bg-indigo-500/10 text-indigo-600 border-indigo-500/20"
           >
-            ÁNYK sémateszt
+            {t('accounting:vat_return.cards.xml_validator.badge', 'ÁNYK sémateszt')}
           </Badge>
         </div>
 
@@ -62,7 +65,9 @@ export function VatXmlValidationDialog({
             disabled={isValidatingXml}
             className="flex-1 text-[10px] h-7 bg-primary/5 text-primary border-primary/10 hover:bg-primary/10"
           >
-            {isValidatingXml ? 'Validálás...' : 'Aktuális validálása'}
+            {isValidatingXml
+              ? t('accounting:vat_return.cards.xml_validator.validating', 'Validálás...')
+              : t('accounting:vat_return.cards.xml_validator.validate_current', 'Aktuális validálása')}
           </Button>
 
           <div className="relative flex-1">
@@ -88,7 +93,7 @@ export function VatXmlValidationDialog({
               className="w-full text-[10px] h-7"
               onClick={() => document.getElementById('xml-file-upload')?.click()}
             >
-              XML Feltöltés
+              {t('accounting:vat_return.cards.xml_validator.upload_xml', 'XML Feltöltés')}
             </Button>
           </div>
         </div>

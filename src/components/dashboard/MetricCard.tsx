@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface MetricCardProps {
   title: string;
@@ -24,6 +25,7 @@ const MetricCard = ({
   variant = 'default',
   onClick,
 }: MetricCardProps) => {
+  const { t } = useTranslation('dashboard');
   const variantStyles = {
     default: 'border-border',
     success: 'border-success/20 bg-success/5',
@@ -59,7 +61,7 @@ const MetricCard = ({
             )}>
               {trend.isPositive ? '+' : ''}{trend.value}%
             </span>
-            <span className="text-xs text-muted-foreground ml-1">az előző hónaphoz képest</span>
+            <span className="text-xs text-muted-foreground ml-1">{t('kpis.vs_previous_month', { defaultValue: 'az előző hónaphoz képest' })}</span>
           </div>
         )}
       </CardContent>

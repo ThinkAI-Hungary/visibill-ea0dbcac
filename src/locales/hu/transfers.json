@@ -17,5 +17,60 @@
     "due_today": "Mai esedékes",
     "group_by_partner": "Partnerenkénti összevonás"
   },
-  "search_placeholder": "Keresés partnerre vagy számlára..."
+  "search_placeholder": "Keresés partnerre vagy számlára...",
+  "table": {
+    "partner": "Partner",
+    "invoice_numbers": "Számlaszám(ok)",
+    "due_date": "Határidő",
+    "amount": "Összeg",
+    "partner_bank_account": "Partner Bankszámlaszáma",
+    "no_number": "Sorszám nélkül",
+    "narrative_prefix": "Közlemény: Szamlak:",
+    "all_settled_title": "Minden számla rendezve!",
+    "all_settled_desc": "Nincs lejárt vagy ma esedékes kifizetetlen számlád."
+  },
+  "calendar": {
+    "title": "Fizetési határidők naptári bontásban",
+    "desc": "Válaszd ki a napot a naptárban az arra a napra esedékes bejövő számlák megtekintéséhez.",
+    "due_on_day": "Esedékes számlák ezen a napon:",
+    "select_all": "Összes kijelölése utalásra",
+    "click_day_hint": "Kattints egy napra a naptárban a részletek megtekintéséhez.",
+    "items_count": "{{count}} db",
+    "no_bank_account": "Nincs rögzítve!"
+  },
+  "history": {
+    "title": "Korábbi utalási állományok és párosítási státusz",
+    "desc": "Az eddig kiexportált utalási tételek és a hozzájuk tartozó banki tranzakció-párosítások nyomon követése.",
+    "delete_selected": "Kijelöltek törlése",
+    "refresh": "Frissítés",
+    "empty": "Még nem történt utalási fájl exportálás.",
+    "date": "Dátum",
+    "partner": "Partner",
+    "partner_account": "Partner bankszámla",
+    "amount": "Összeg",
+    "narrative": "Közlemény",
+    "status": "Státusz",
+    "actions": "Művelet",
+    "status_pending": "Párosításra vár",
+    "status_sent": "Elküldve",
+    "status_matched": "Párosítva",
+    "delete": "Törlés"
+  },
+  "dialog": {
+    "title": "Átutalási állomány generálása",
+    "desc": "Válaszd ki a küldő céges számlát és a kívánt netbank fájlformátumot.",
+    "sender_account": "Indító céges bankszámla",
+    "add_own": "Saját hozzáadása",
+    "sample_account_warning": "Minta bankszámlát használunk a fájl kipróbálásához. Valódi utaláshoz rögzítsd saját bankszámládat a Beállításokban!",
+    "select_sender_placeholder": "Válassz indító számlát",
+    "file_format": "Fájlformátum",
+    "cancel": "Mégse",
+    "generating": "Fájl generálása...",
+    "download_save": "Fájl letöltése és mentése"
+  },
+  "floating_bar": {
+    "selected_items": "Kijelölt tételek:",
+    "total": "Összesen:",
+    "download_button": "Utalási lista letöltése"
+  }
 }

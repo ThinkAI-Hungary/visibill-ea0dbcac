@@ -7,10 +7,15 @@ import { Calendar } from '@/components/ui/calendar';
 import { Search, CalendarIcon, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
+import { getDateFnsLocale, getActiveLocale } from '@/lib/locale/formatters';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 
 export function InvoiceFilterBar() {
+  const { t } = useTranslation(['invoices', 'common']);
+  const isHr = getActiveLocale() === 'hr';
+  const dateFormat = isHr ? 'dd.MM.yyyy.' : 'yyyy. MMM dd.';
+
   const {
     filters,
     setFilters,
@@ -33,7 +38,7 @@ export function InvoiceFilterBar() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 dark:text-muted-foreground h-4 w-4" />
         <Input
-          placeholder="Keresés (partner, bizonylat, összeg...)"
+          placeholder={t('invoices:filters.search_placeholder', { defaultValue: 'Keresés (partner, bizonylat, összeg...)' })}
           value={filters.search}
           onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
           className="pl-9"
@@ -42,7 +47,7 @@ export function InvoiceFilterBar() {
 
       {/* Date Range Popovers */}
       <div className="flex items-center gap-1.5">
-        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Kibocsátás:</span>
+        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">{t('invoices:filters.issue_date', { defaultValue: 'Kibocsátás:' })}</span>
         <Popover open={issueDateFromOpen} onOpenChange={setIssueDateFromOpen}>
           <PopoverTrigger asChild>
             <Button
@@ -56,8 +61,8 @@ export function InvoiceFilterBar() {
             >
               <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
               {filters.issueDateFrom
-                ? format(new Date(filters.issueDateFrom), 'yyyy. MMM dd.', { locale: hu })
-                : 'Dátum -tól'}
+                ? format(new Date(filters.issueDateFrom), dateFormat, { locale: getDateFnsLocale() })
+                : t('invoices:filters.date_from', { defaultValue: 'Dátum -tól' })}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
@@ -95,8 +100,8 @@ export function InvoiceFilterBar() {
             >
               <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
               {filters.issueDateTo
-                ? format(new Date(filters.issueDateTo), 'yyyy. MMM dd.', { locale: hu })
-                : 'Dátum -ig'}
+                ? format(new Date(filters.issueDateTo), dateFormat, { locale: getDateFnsLocale() })
+                : t('invoices:filters.date_to', { defaultValue: 'Dátum -ig' })}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
@@ -129,10 +134,10 @@ export function InvoiceFilterBar() {
       {/* Currency Select */}
       <Select value={filters.currency} onValueChange={(value) => setFilters(prev => ({ ...prev, currency: value }))}>
         <SelectTrigger className="h-9 w-[180px]">
-          <span className="truncate">{filters.currency === 'all' ? 'Pénznem' : filters.currency}</span>
+          <span className="truncate">{filters.currency === 'all' ? t('invoices:filters.currency', { defaultValue: 'Pénznem' }) : filters.currency}</span>
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Minden pénznem</SelectItem>
+          <SelectItem value="all">{t('invoices:filters.all_currencies', { defaultValue: 'Minden pénznem' })}</SelectItem>
           {isSubmittedTab
             ? Array.from(new Set(submittedInvoices.map(inv => inv.penznem).filter(Boolean)))
                 .sort()
@@ -155,19 +160,19 @@ export function InvoiceFilterBar() {
           <SelectTrigger className="h-9 w-[150px]">
             <span className="truncate">
               {filters.paid === 'all'
-                ? 'Állapot'
+                ? t('invoices:filters.status', { defaultValue: 'Állapot' })
                 : filters.paid === 'yes'
-                  ? 'Kifizetve'
+                  ? t('invoices:filters.paid', { defaultValue: 'Kifizetve' })
                   : filters.paid === 'partial'
-                    ? 'Részben fizetve'
-                    : 'Nyitott'}
+                    ? t('invoices:filters.partial', { defaultValue: 'Részben fizetve' })
+                    : t('invoices:filters.open', { defaultValue: 'Nyitott' })}
             </span>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Összes állapot</SelectItem>
-            <SelectItem value="yes">Kifizetve</SelectItem>
-            <SelectItem value="partial">Részben fizetve</SelectItem>
-            <SelectItem value="no">Nyitott</SelectItem>
+            <SelectItem value="all">{t('invoices:filters.all_statuses', { defaultValue: 'Összes állapot' })}</SelectItem>
+            <SelectItem value="yes">{t('invoices:filters.paid', { defaultValue: 'Kifizetve' })}</SelectItem>
+            <SelectItem value="partial">{t('invoices:filters.partial', { defaultValue: 'Részben fizetve' })}</SelectItem>
+            <SelectItem value="no">{t('invoices:filters.open', { defaultValue: 'Nyitott' })}</SelectItem>
           </SelectContent>
         </Select>
       )}
@@ -187,16 +192,16 @@ export function InvoiceFilterBar() {
           >
             <span className="truncate">
               {filters.submitted === 'all'
-                ? 'Számlakép: Mind'
+                ? t('invoices:filters.submitted_all', { defaultValue: 'Számlakép: Mind' })
                 : filters.submitted === 'yes'
-                  ? 'Számlakép: Van'
-                  : 'Számlakép: Hiányzik'}
+                  ? t('invoices:filters.submitted_has', { defaultValue: 'Számlakép: Van' })
+                  : t('invoices:filters.submitted_missing', { defaultValue: 'Számlakép: Hiányzik' })}
             </span>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Számlakép: Mind</SelectItem>
-            <SelectItem value="yes">Számlakép: Van</SelectItem>
-            <SelectItem value="no">Számlakép: Hiányzik</SelectItem>
+            <SelectItem value="all">{t('invoices:filters.submitted_all', { defaultValue: 'Számlakép: Mind' })}</SelectItem>
+            <SelectItem value="yes">{t('invoices:filters.submitted_has', { defaultValue: 'Számlakép: Van' })}</SelectItem>
+            <SelectItem value="no">{t('invoices:filters.submitted_missing', { defaultValue: 'Számlakép: Hiányzik' })}</SelectItem>
           </SelectContent>
         </Select>
       )}
@@ -210,19 +215,19 @@ export function InvoiceFilterBar() {
           <SelectTrigger className="h-9 w-[180px]">
             <span className="truncate">
               {filters.navStatus === 'all'
-                ? 'NAV státusz'
+                ? t('invoices:filters.nav_status', { defaultValue: 'NAV státusz' })
                 : filters.navStatus === 'verified'
-                  ? 'NAV megerősítve'
+                  ? t('invoices:filters.nav_verified', { defaultValue: 'NAV megerősítve' })
                   : filters.navStatus === 'missing_nav'
-                    ? 'NAV hiányzik'
-                    : 'Nem alkalmazandó'}
+                    ? t('invoices:filters.nav_missing', { defaultValue: 'NAV hiányzik' })
+                    : t('invoices:filters.nav_not_applicable', { defaultValue: 'Nem alkalmazandó' })}
             </span>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">NAV státusz: Mind</SelectItem>
-            <SelectItem value="verified">NAV megerősítve</SelectItem>
-            <SelectItem value="missing_nav">NAV hiányzik</SelectItem>
-            <SelectItem value="not_applicable">Nem alkalmazandó (külföldi)</SelectItem>
+            <SelectItem value="all">{t('invoices:filters.nav_all', { defaultValue: 'NAV státusz: Mind' })}</SelectItem>
+            <SelectItem value="verified">{t('invoices:filters.nav_verified', { defaultValue: 'NAV megerősítve' })}</SelectItem>
+            <SelectItem value="missing_nav">{t('invoices:filters.nav_missing', { defaultValue: 'NAV hiányzik' })}</SelectItem>
+            <SelectItem value="not_applicable">{t('invoices:filters.nav_not_applicable', { defaultValue: 'Nem alkalmazandó (külföldi)' })}</SelectItem>
           </SelectContent>
         </Select>
       )}
@@ -233,15 +238,15 @@ export function InvoiceFilterBar() {
           <SelectTrigger className="h-9 w-[180px]">
             <span className="truncate">
               {filters.category === 'all'
-                ? 'Kategória'
+                ? t('invoices:filters.category', { defaultValue: 'Kategória' })
                 : filters.category === 'none'
-                  ? 'Nincs kategória'
-                  : categories.find(c => c.id === filters.category)?.name || 'Kategória'}
+                  ? t('invoices:filters.no_category', { defaultValue: 'Nincs kategória' })
+                  : categories.find(c => c.id === filters.category)?.name || t('invoices:filters.category', { defaultValue: 'Kategória' })}
             </span>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Minden kategória</SelectItem>
-            <SelectItem value="none">Nincs kategória</SelectItem>
+            <SelectItem value="all">{t('invoices:filters.all_categories', { defaultValue: 'Minden kategória' })}</SelectItem>
+            <SelectItem value="none">{t('invoices:filters.no_category', { defaultValue: 'Nincs kategória' })}</SelectItem>
             {categories.map((category) => (
               <SelectItem key={category.id} value={category.id}>
                 {category.name}
@@ -257,15 +262,15 @@ export function InvoiceFilterBar() {
           <SelectTrigger className="h-9 w-[180px]">
             <span className="truncate">
               {filters.project === 'all'
-                ? 'Projekt'
+                ? t('invoices:filters.project', { defaultValue: 'Projekt' })
                 : filters.project === 'none'
-                  ? 'Nincs projekt'
-                  : projects.find(p => p.id === filters.project)?.name || 'Projekt'}
+                  ? t('invoices:filters.no_project', { defaultValue: 'Nincs projekt' })
+                  : projects.find(p => p.id === filters.project)?.name || t('invoices:filters.project', { defaultValue: 'Projekt' })}
             </span>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Minden projekt</SelectItem>
-            <SelectItem value="none">Nincs projekt</SelectItem>
+            <SelectItem value="all">{t('invoices:filters.all_projects', { defaultValue: 'Minden projekt' })}</SelectItem>
+            <SelectItem value="none">{t('invoices:filters.no_project', { defaultValue: 'Nincs projekt' })}</SelectItem>
             {projects.map((project) => (
               <SelectItem key={project.id} value={project.id}>
                 {project.name}
@@ -283,17 +288,17 @@ export function InvoiceFilterBar() {
         <SelectTrigger className="h-9 w-[180px]">
           <span className="truncate">
             {filters.paymentMethod === 'all'
-              ? 'Fiz. mód'
+              ? t('invoices:filters.payment_method', { defaultValue: 'Fiz. mód' })
               : filters.paymentMethod === 'none'
-                ? 'Nem megadott'
+                ? t('invoices:filters.not_specified', { defaultValue: 'Nem megadott' })
                 : isSubmittedTab
                   ? filters.paymentMethod
                   : getPaymentMethodLabel(filters.paymentMethod)}
           </span>
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Minden fiz. mód</SelectItem>
-          <SelectItem value="none">Nem megadott</SelectItem>
+          <SelectItem value="all">{t('invoices:filters.all_payment_methods', { defaultValue: 'Minden fiz. mód' })}</SelectItem>
+          <SelectItem value="none">{t('invoices:filters.not_specified', { defaultValue: 'Nem megadott' })}</SelectItem>
           {isSubmittedTab ? (
             <>
               <SelectItem value="Átutalás">Átutalás</SelectItem>
@@ -323,16 +328,16 @@ export function InvoiceFilterBar() {
           <SelectTrigger className="h-9 w-[160px]">
             <span className="truncate">
               {filters.continuous === 'all'
-                ? 'Foly. szolg.'
+                ? t('invoices:filters.continuous', { defaultValue: 'Foly. szolg.' })
                 : filters.continuous === 'yes'
-                  ? '🔄 Igen'
-                  : 'Nem'}
+                  ? t('invoices:filters.continuous_yes', { defaultValue: '🔄 Igen' })
+                  : t('invoices:filters.continuous_no', { defaultValue: 'Nem' })}
             </span>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Foly. szolg. (mind)</SelectItem>
-            <SelectItem value="yes">🔄 Folyamatos</SelectItem>
-            <SelectItem value="no">Nem folyamatos</SelectItem>
+            <SelectItem value="all">{t('invoices:filters.continuous_all', { defaultValue: 'Foly. szolg. (mind)' })}</SelectItem>
+            <SelectItem value="yes">{t('invoices:filters.continuous_yes', { defaultValue: '🔄 Folyamatos' })}</SelectItem>
+            <SelectItem value="no">{t('invoices:filters.continuous_no', { defaultValue: 'Nem folyamatos' })}</SelectItem>
           </SelectContent>
         </Select>
       )}
@@ -341,7 +346,7 @@ export function InvoiceFilterBar() {
       {hasAnyActiveFilter && (
         <Button variant="ghost" size="sm" onClick={clearAllFilters}>
           <X className="h-4 w-4 mr-1" />
-          Szűrők törlése
+          {t('invoices:filters.clear_filters', { defaultValue: 'Szűrők törlése' })}
         </Button>
       )}
     </div>

@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FilePreviewModal, useFilePreview } from '@/components/ui/FilePreviewModal';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { extractStoragePath } from '@/lib/utils';
+import { getDateFnsLocale } from '@/lib/locale/formatters';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -20,7 +22,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Trash2, FileText, Loader2, Search, User } from 'lucide-react';
 import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 
 interface UploadWithInvoices {
@@ -43,6 +44,7 @@ interface InvoiceFilesDialogProps {
 }
 
 export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalOnOpenChange }: InvoiceFilesDialogProps = {}) {
+  const { t } = useTranslation(['invoices', 'common']);
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -248,11 +250,11 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
     setDeleting(true);
     try {
       await deleteUploadFileOnly(upload);
-      toast({ title: 'Sikeres törlés', description: 'A fájl törölve lett. A számla adatok megmaradtak.', duration: 3000 });
+      toast({ title: t('invoices:dialogs.files.toast_file_deleted'), description: t('invoices:dialogs.files.toast_file_deleted'), duration: 3000 });
       queryClient.invalidateQueries({ queryKey: ['invoice_uploads_with_invoices', companyId] });
       queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
     } catch (err: any) {
-      toast({ title: 'Hiba', description: err.message || 'A törlés sikertelen.', variant: 'destructive' });
+      toast({ title: t('common:status.error'), description: err.message || t('invoices:dialogs.files.toast_delete_error'), variant: 'destructive' });
     } finally {
       setDeleting(false);
       setDeleteTarget(null);
@@ -263,14 +265,14 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
     setDeleting(true);
     try {
       await deleteUploadWithInvoices(upload);
-      toast({ title: 'Sikeres törlés', description: 'A dokumentum és a hozzá tartozó számlák törölve lettek.', duration: 3000 });
+      toast({ title: t('invoices:dialogs.files.toast_file_and_invoices_deleted'), description: t('invoices:dialogs.files.toast_file_and_invoices_deleted'), duration: 3000 });
       queryClient.invalidateQueries({ queryKey: ['invoice_uploads_with_invoices', companyId] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['submittedInvoices'] });
       queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices'] });
       queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
     } catch (err: any) {
-      toast({ title: 'Hiba', description: err.message || 'A törlés sikertelen.', variant: 'destructive' });
+      toast({ title: t('common:status.error'), description: err.message || t('invoices:dialogs.files.toast_delete_error'), variant: 'destructive' });
     } finally {
       setDeleting(false);
       setDeleteTarget(null);
@@ -287,14 +289,14 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
 
     if (failed === 0) {
       toast({
-        title: `${succeeded} dokumentum törölve`,
-        description: withInvoices ? 'A fájlok és a kapcsolódó számlák törölve lettek.' : 'A fájlok törölve, a számla adatok megmaradtak.',
+        title: t('invoices:dialogs.files.toast_batch_deleted_title', { count: succeeded }),
+        description: withInvoices ? t('invoices:dialogs.files.toast_batch_deleted_invoices') : t('invoices:dialogs.files.toast_batch_deleted_files_only'),
         duration: 3000,
       });
     } else {
       toast({
-        title: `${succeeded}/${results.length} sikeres törlés`,
-        description: `${failed} dokumentum törlése sikertelen volt.`,
+        title: t('invoices:dialogs.files.toast_batch_partial_title', { succeeded, total: results.length }),
+        description: t('invoices:dialogs.files.toast_batch_partial_desc', { failed }),
         variant: 'destructive',
       });
     }
@@ -327,16 +329,15 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
           <DialogTrigger asChild>
             <Button variant="outline" size="sm">
               <FileText className="h-4 w-4 mr-2" />
-              Feltöltött fájlok
+              {t('invoices:dialogs.files.trigger_button')}
             </Button>
           </DialogTrigger>
         )}
         <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col border-border bg-card">
           <DialogHeader className="shrink-0">
-            <DialogTitle>Feltöltött számla dokumentumok</DialogTitle>
+            <DialogTitle>{t('invoices:dialogs.files.title')}</DialogTitle>
             <DialogDescription>
-              Itt tekintheti meg és törölheti a korábban feltöltött dokumentumokat.
-              A törlés eltávolítja a fájlból származó összes számla adatot is.
+              {t('invoices:dialogs.files.description')}
             </DialogDescription>
           </DialogHeader>
 
@@ -347,7 +348,7 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 dark:text-muted-foreground" />
               <Input
-                placeholder="Keresés fájlnév vagy bizonylatszám alapján..."
+                placeholder={t('invoices:dialogs.files.search_placeholder')}
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-9 h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10 focus:border-primary"
@@ -356,13 +357,13 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
             <Select value={uploaderFilter} onValueChange={handleUploaderChange}>
               <SelectTrigger className="h-9 w-[200px] bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
                 <User className="h-3.5 w-3.5 mr-1.5 text-slate-500 dark:text-muted-foreground" />
-                <SelectValue placeholder="Feltöltő" />
+                <SelectValue placeholder={t('invoices:dialogs.files.uploader')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Összes feltöltő</SelectItem>
+                <SelectItem value="all">{t('invoices:dialogs.files.all_uploaders')}</SelectItem>
                 {companyMembers.map(member => (
                   <SelectItem key={member.user_id} value={member.user_id}>
-                    {member.name || 'Névtelen felhasználó'}
+                    {member.name || t('invoices:dialogs.files.unknown_uploader')}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -377,7 +378,7 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
                 onClick={() => setBatchDeleteOpen(true)}
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                {selectedCount} törlése
+                {t('invoices:dialogs.files.delete_selected', { count: selectedCount })}
               </Button>
             )}
           </div>
@@ -388,7 +389,7 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
             </div>
           ) : filteredUploads.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {uploads.length === 0 ? 'Nincs feltöltött dokumentum.' : 'Nincs találat a megadott szűrőkkel.'}
+              {uploads.length === 0 ? t('invoices:dialogs.files.no_files') : t('invoices:dialogs.files.no_results')}
             </div>
           ) : (
             <div className="space-y-4">
@@ -401,16 +402,16 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
                         <Checkbox
                           checked={allVisibleSelected}
                           onCheckedChange={toggleSelectAll}
-                          aria-label="Összes kijelölése az oldalon"
+                          aria-label={t('invoices:dialogs.files.select_all_page')}
                           className="data-[state=indeterminate]:opacity-70"
                           {...(someVisibleSelected && !allVisibleSelected ? { 'data-state': 'indeterminate' } : {})}
                         />
                       </TableHead>
-                      <TableHead className="w-[28%]">Fájl neve</TableHead>
-                      <TableHead className="w-[22%]">Bizonylatszám</TableHead>
-                      <TableHead className="w-[18%] whitespace-nowrap">Feltöltés dátuma</TableHead>
-                      <TableHead className="w-[16%]">Feltöltötte</TableHead>
-                      <TableHead className="w-[10%] text-right">Művelet</TableHead>
+                      <TableHead className="w-[28%]">{t('invoices:dialogs.files.filename')}</TableHead>
+                      <TableHead className="w-[22%]">{t('invoices:dialogs.files.invoice_number')}</TableHead>
+                      <TableHead className="w-[18%] whitespace-nowrap">{t('invoices:dialogs.files.uploaded_at')}</TableHead>
+                      <TableHead className="w-[16%]">{t('invoices:dialogs.files.uploader')}</TableHead>
+                      <TableHead className="w-[10%] text-right">{t('invoices:dialogs.files.actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -457,7 +458,7 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
                           })()}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                          {format(new Date(upload.created_at), 'yyyy. MMM dd. HH:mm', { locale: hu })}
+                          {format(new Date(upload.created_at), 'yyyy. MMM dd. HH:mm', { locale: getDateFnsLocale() })}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {getUserName(upload.user_id)}
@@ -506,11 +507,11 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
       <AlertDialog open={isOpen && !!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
         <AlertDialogContent className="max-w-md border-border bg-card">
           <AlertDialogHeader className="w-full min-w-0">
-            <AlertDialogTitle>Dokumentum törlése</AlertDialogTitle>
+            <AlertDialogTitle>{t('invoices:dialogs.files.delete_single_title')}</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3 w-full min-w-0">
-                <p>Válaszd ki a törlés módját:</p>
-                <p className="text-xs text-muted-foreground">Ez a művelet nem vonható vissza.</p>
+                <p>{t('invoices:dialogs.files.delete_choose_mode')}</p>
+                <p className="text-xs text-muted-foreground">{t('invoices:dialogs.files.delete_cannot_undo')}</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -526,9 +527,9 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
                   <span className="text-xs font-bold text-amber-600 dark:text-amber-400">A</span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-foreground">Csak a fájl törlése</p>
+                  <p className="text-sm font-medium text-foreground">{t('invoices:dialogs.files.opt_a_single_title')}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    A <span className="font-medium text-foreground break-all">{deleteTarget?.file_name}</span> fájl törlődik, de a feldolgozott számla adatok megmaradnak.
+                    {t('invoices:dialogs.files.opt_a_single_desc', { fileName: deleteTarget?.file_name })}
                   </p>
                 </div>
               </div>
@@ -544,13 +545,9 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
                   <span className="text-xs font-bold text-red-600 dark:text-red-400">B</span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-destructive">Fájl és számla adatok törlése</p>
+                  <p className="text-sm font-medium text-destructive">{t('invoices:dialogs.files.opt_b_single_title')}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    A <span className="font-medium text-foreground break-all">{deleteTarget?.file_name}</span> fájl és a hozzátartozó{' '}
-                    <span className="font-medium text-foreground">
-                      {deleteTarget?.invoiceNumbers.join(', ')}
-                    </span>{' '}
-                    számla(ák) is véglegesen törlődnek.
+                    {t('invoices:dialogs.files.opt_b_single_desc', { fileName: deleteTarget?.file_name, invoices: deleteTarget?.invoiceNumbers.join(', ') || '' })}
                   </p>
                 </div>
               </div>
@@ -560,12 +557,12 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
           {deleting && (
             <div className="flex items-center justify-center py-2">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-sm text-muted-foreground">Törlés folyamatban...</span>
+              <span className="ml-2 text-sm text-muted-foreground">{t('invoices:dialogs.files.deleting')}</span>
             </div>
           )}
 
           <AlertDialogFooter className="w-full min-w-0">
-            <AlertDialogCancel disabled={deleting}>Mégsem</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>{t('common:actions.cancel')}</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -575,11 +572,11 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
         <AlertDialogContent className="max-w-md border-border bg-card">
           <AlertDialogHeader className="w-full min-w-0">
             <AlertDialogTitle>
-              {selectedCount} dokumentum törlése
+              {t('invoices:dialogs.files.delete_batch_title', { count: selectedCount })}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2 w-full min-w-0">
-                <p>Válaszd ki a törlés módját az összes kijelölt elemre:</p>
+                <p>{t('invoices:dialogs.files.delete_batch_choose')}</p>
                 {/* Selected files preview */}
                 <div className="max-h-28 overflow-y-auto rounded-md border border-border/50 bg-muted/30 p-2 space-y-1 w-full min-w-0 overflow-x-hidden">
                   {selectedUploads.map(u => (
@@ -587,13 +584,13 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
                       • {u.file_name}
                       {u.invoiceNumbers.length > 0 && (
                         <span className="text-foreground/60 ml-1">
-                          ({u.invoiceNumbers.length} számla)
+                          ({u.invoiceNumbers.length})
                         </span>
                       )}
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-muted-foreground">Ez a művelet nem vonható vissza.</p>
+                <p className="text-xs text-muted-foreground">{t('invoices:dialogs.files.delete_cannot_undo')}</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -610,9 +607,9 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
                   <span className="text-xs font-bold text-amber-600 dark:text-amber-400">A</span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-foreground">Csak a fájlok törlése</p>
+                  <p className="text-sm font-medium text-foreground">{t('invoices:dialogs.files.opt_a_batch_title')}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {selectedCount} fájl törlődik, a feldolgozott számla adatok megmaradnak.
+                    {t('invoices:dialogs.files.opt_a_batch_desc', { count: selectedCount })}
                   </p>
                 </div>
               </div>
@@ -629,9 +626,9 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
                   <span className="text-xs font-bold text-red-600 dark:text-red-400">B</span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-destructive">Fájlok és számla adatok törlése</p>
+                  <p className="text-sm font-medium text-destructive">{t('invoices:dialogs.files.opt_b_batch_title')}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {selectedCount} fájl és az összes hozzájuk tartozó számla véglegesen törlődik.
+                    {t('invoices:dialogs.files.opt_b_batch_desc', { count: selectedCount })}
                   </p>
                 </div>
               </div>
@@ -641,12 +638,12 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
           {batchDeleting && (
             <div className="flex items-center justify-center py-2 gap-2">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Törlés folyamatban... ({selectedCount} elem)</span>
+              <span className="text-sm text-muted-foreground">{t('invoices:dialogs.files.deleting_batch', { count: selectedCount })}</span>
             </div>
           )}
 
           <AlertDialogFooter className="w-full min-w-0">
-            <AlertDialogCancel disabled={batchDeleting}>Mégsem</AlertDialogCancel>
+            <AlertDialogCancel disabled={batchDeleting}>{t('common:actions.cancel')}</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

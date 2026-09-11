@@ -34,12 +34,11 @@ export function InvoiceHeader() {
                 <TooltipTrigger asChild>
                   <Info className="h-5 w-5 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  <p>
-                    Itt láthatod a NAV-ból szinkronizált és a beküldött számláidat. Szűrj irány, dátum, összeg vagy
-                    állapot szerint. Exportálhatod CSV vagy Excel formátumban.
-                  </p>
-                </TooltipContent>
+                  <TooltipContent className="max-w-xs">
+                    <p>
+                      {t('invoices:tooltip_desc')}
+                    </p>
+                  </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>

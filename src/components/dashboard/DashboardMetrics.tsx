@@ -58,6 +58,10 @@ const DashboardMetrics = React.memo(function DashboardMetrics({
       .join(' | ');
   };
 
+  const grossNetLabel = showBrutto
+    ? t('dashboard:welcome.gross', { defaultValue: isHr ? 'bruto' : 'bruttó' })
+    : t('dashboard:welcome.net', { defaultValue: isHr ? 'neto' : 'nettó' });
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 items-stretch">
       <MetricCard
@@ -68,14 +72,14 @@ const DashboardMetrics = React.memo(function DashboardMetrics({
         variant="default"
       />
       <MetricCard
-        title={`${t('dashboard:kpis.income', { defaultValue: 'Bevétel' })} (${showBrutto ? 'bruto' : 'neto'})`}
+        title={`${t('dashboard:kpis.income', { defaultValue: 'Bevétel' })} (${grossNetLabel})`}
         value={formatMultiCurrency(revenueData)}
         description="OUTBOUND"
         icon={ArrowUpRight}
         variant="success"
       />
       <MetricCard
-        title={`${t('navigation:items.kintlevo', { defaultValue: 'Kintlévőség' })} (${showBrutto ? 'bruto' : 'neto'})`}
+        title={`${t('navigation:items.kintlevo', { defaultValue: 'Kintlévőség' })} (${grossNetLabel})`}
         value={formatMultiCurrency(unpaidOutboundData)}
         description={t('dashboard:kpis.unpaid_outgoing', { defaultValue: 'Kifizetetlen kimenő számlák' })}
         icon={TrendingUp}
@@ -93,7 +97,7 @@ const DashboardMetrics = React.memo(function DashboardMetrics({
         variant={pettyCashBalances.length > 0 && pettyCashBalances.every(b => b.balance >= 0) ? 'success' : pettyCashBalances.length === 0 ? 'default' : 'destructive'}
       />
       <MetricCard
-        title={`${t('dashboard:kpis.expenses', { defaultValue: 'Kiadás' })} (${showBrutto ? 'bruto' : 'neto'})`}
+        title={`${t('dashboard:kpis.expenses', { defaultValue: 'Kiadás' })} (${grossNetLabel})`}
         value={formatMultiCurrency(expensesData)}
         description="INBOUND"
         icon={ArrowDownLeft}
@@ -102,14 +106,14 @@ const DashboardMetrics = React.memo(function DashboardMetrics({
       <MetricCard
         title={t('invoices:columns.vat_amount', { defaultValue: 'Fizetendő ÁFA' })}
         value={formatCurrency(payableVat, selectedCurrency)}
-        description={isHr ? "Ukupno - Odbitno" : "Összes - Levonható"}
+        description={t('dashboard:kpis.vat_diff_desc', { defaultValue: isHr ? "Ukupno - Odbitno" : "Összes - Levonható" })}
         icon={Euro}
         variant={payableVat >= 0 ? 'destructive' : 'success'}
       />
       <MetricCard
-        title={`${t('dashboard:kpis.unpaid_incoming', { defaultValue: 'Szállítói köt.' })} (${showBrutto ? 'bruto' : 'neto'})`}
+        title={`${t('dashboard:kpis.unpaid_incoming', { defaultValue: 'Szállítói köt.' })} (${grossNetLabel})`}
         value={formatMultiCurrency(unpaidInboundData)}
-        description={isHr ? "Neplaćeni ulazni računi" : "Kifizetetlen bejövő számlák"}
+        description={t('dashboard:kpis.unpaid_inbound_desc', { defaultValue: isHr ? "Neplaćeni ulazni računi" : "Kifizetetlen bejövő számlák" })}
         icon={Wallet}
         variant="destructive"
       />

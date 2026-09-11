@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import type { FixedAsset } from '@/types/fixed-assets';
 import { ASSET_STATUS_LABELS, ASSET_STATUS_COLORS } from '@/types/fixed-assets';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { useTranslation } from 'react-i18next';
 
 interface AssetListTableProps {
   assets: FixedAsset[];
@@ -15,6 +16,7 @@ interface AssetListTableProps {
 }
 
 export function AssetListTable({ assets, loading, selectedAssetId, onSelectAsset }: AssetListTableProps) {
+  const { t } = useTranslation(['hr', 'common']);
   const [search, setSearch] = useState('');
 
   const filtered = assets.filter((a) => {
@@ -37,7 +39,7 @@ export function AssetListTable({ assets, loading, selectedAssetId, onSelectAsset
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Keresés eszközök, projektek, helyszínek között..."
+            placeholder={t('hr:fixed_assets.search_placeholder', 'Keresés eszközök, projektek, helyszínek között...')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9 h-9 bg-secondary/50 border-border/30"
@@ -56,9 +58,11 @@ export function AssetListTable({ assets, loading, selectedAssetId, onSelectAsset
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
               <Package2 className="h-8 w-8 opacity-50" />
             </div>
-            <p className="font-medium">Nincsenek eszközök</p>
+            <p className="font-medium">{t('hr:fixed_assets.no_assets', 'Nincsenek eszközök')}</p>
             <p className="text-sm mt-1 opacity-75">
-              {search ? 'Próbáld módosítani a keresést.' : 'Aktiválj eszközöket a Számlatételek menüből.'}
+              {search
+                ? t('hr:fixed_assets.no_assets_search', 'Próbáld módosítani a keresést.')
+                : t('hr:fixed_assets.no_assets_empty', 'Aktiválj eszközöket a Számlatételek menüből.')}
             </p>
           </div>
         ) : (
@@ -66,12 +70,12 @@ export function AssetListTable({ assets, loading, selectedAssetId, onSelectAsset
             <TableHeader>
               <TableRow className="bg-muted/30 hover:bg-muted/30">
                 <TableHead className="w-[30px] font-semibold">#</TableHead>
-                <TableHead className="w-[16%] font-semibold">Leltári Szám</TableHead>
-                <TableHead className="w-[28%] font-semibold">Megnevezés</TableHead>
-                <TableHead className="w-[65px] font-semibold text-center">Státusz</TableHead>
-                <TableHead className="w-[18%] font-semibold">Projekt</TableHead>
-                <TableHead className="w-[18%] font-semibold">Helyszín</TableHead>
-                <TableHead className="w-[14%] font-semibold">Felelős</TableHead>
+                <TableHead className="w-[16%] font-semibold">{t('hr:fixed_assets.table.inventory_number', 'Leltári Szám')}</TableHead>
+                <TableHead className="w-[28%] font-semibold">{t('hr:fixed_assets.table.name', 'Megnevezés')}</TableHead>
+                <TableHead className="w-[65px] font-semibold text-center">{t('hr:fixed_assets.table.status', 'Státusz')}</TableHead>
+                <TableHead className="w-[18%] font-semibold">{t('hr:fixed_assets.table.project', 'Projekt')}</TableHead>
+                <TableHead className="w-[18%] font-semibold">{t('hr:fixed_assets.table.location', 'Helyszín')}</TableHead>
+                <TableHead className="w-[14%] font-semibold">{t('hr:fixed_assets.table.responsible', 'Felelős')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -91,7 +95,7 @@ export function AssetListTable({ assets, loading, selectedAssetId, onSelectAsset
                   <TableCell className="font-medium max-w-[240px] truncate" title={asset.name}>{asset.name}</TableCell>
                   <TableCell className="text-center">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ASSET_STATUS_COLORS[asset.status]}`}>
-                      {ASSET_STATUS_LABELS[asset.status]}
+                      {t(`hr:fixed_assets.status.${asset.status}`, { defaultValue: ASSET_STATUS_LABELS[asset.status] })}
                     </span>
                   </TableCell>
                   <TableCell className="text-sm">

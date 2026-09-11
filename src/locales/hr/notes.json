@@ -1,0 +1,49 @@
+{
+  "title": "Bilješke",
+  "tabs": {
+    "all": "Sve",
+    "private": "Privatno",
+    "shared": "Zajedničko",
+    "invoice": "Račun"
+  },
+  "list": {
+    "loading": "Učitavanje bilješki...",
+    "no_results": "Nema rezultata",
+    "untitled": "Bez naslova",
+    "private_badge": "Privatno",
+    "shared_badge": "Zajedničko",
+    "invoice_single": "Račun: {{number}}",
+    "invoice_multi": "{{count}} računa priloženo",
+    "tx_single": "Transakcija: {{desc}}",
+    "tx_multi": "{{count}} transakcija priloženo",
+    "no_invoice_number": "Nema broja",
+    "no_tx_description": "Nema opisa"
+  },
+  "detail": {
+    "private_note": "Privatna bilješka",
+    "shared_note": "Zajednička bilješka tvrtke",
+    "updated": "Ažurirano: {{date}}",
+    "content": "Sadržaj",
+    "related_invoices": "Povezani računi ({{count}})",
+    "related_transactions": "Povezane transakcije ({{count}})",
+    "invoice_number": "Broj računa",
+    "partner": "Partner",
+    "amount": "Iznos",
+    "invoice_date": "Datum računa",
+    "description_partner": "Opis / Partner",
+    "date": "Datum",
+    "open_invoice": "Otvori račun",
+    "open_transaction": "Otvori transakciju",
+    "line_item_note_hint": "Vrsta: Bilješka stavke računa (može se mijenjati u pojedinostima računa)",
+    "recorded_by": "Zabilježio/la: {{name}}",
+    "unknown": "Nepoznato",
+    "no_note_selected": "Nema odabrane bilješke",
+    "create_one_now": "Stvori novu sada"
+  },
+  "toast": {
+    "deleted_title": "Bilješka izbrisana",
+    "delete_failed": "Brisanje bilješke nije uspjelo",
+    "saved_title": "Bilješka spremljena",
+    "save_failed": "Spremanje bilješke nije uspjelo"
+  }
+}

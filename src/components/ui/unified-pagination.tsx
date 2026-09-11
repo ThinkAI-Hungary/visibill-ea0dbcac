@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -33,6 +34,9 @@ export function UnifiedPagination({
   className,
   disableScrollToTop = true,
 }: UnifiedPaginationProps) {
+  const { t, i18n } = useTranslation(['common']);
+  const locale = i18n.language?.startsWith('hr') ? 'hr-HR' : 'hu-HU';
+  const formattedCount = totalItems > 10000 ? '10000+' : totalItems.toLocaleString(locale);
 
   const isFirstPage = currentPage === 1;
   const isLastPage = currentPage >= totalPages || totalPages <= 1;
@@ -68,7 +72,7 @@ export function UnifiedPagination({
     <div className={cn("flex items-center justify-between gap-4 py-2", className)}>
       {/* Left: Total count */}
       <div className="text-sm text-muted-foreground whitespace-nowrap">
-        Találatok ({totalItems > 10000 ? '10000+' : totalItems.toLocaleString('hu-HU')})
+        {t('common:pagination.results', { count: formattedCount, defaultValue: `Találatok (${formattedCount})` })}
       </div>
 
       {/* Center: Page navigation */}
@@ -80,7 +84,7 @@ export function UnifiedPagination({
           onClick={() => onPageChange(1)}
           disabled={isFirstPage}
           className="h-8 w-8 p-0"
-          aria-label="Első oldal"
+          aria-label={t('common:pagination.first_page', 'Első oldal')}
         >
           <ChevronsLeft className="h-4 w-4" />
         </Button>
@@ -92,7 +96,7 @@ export function UnifiedPagination({
           onClick={() => onPageChange(currentPage - 1)}
           disabled={isFirstPage}
           className="h-8 w-8 p-0"
-          aria-label="Előző oldal"
+          aria-label={t('common:pagination.prev_page', 'Előző oldal')}
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
@@ -120,7 +124,7 @@ export function UnifiedPagination({
           onClick={() => onPageChange(currentPage + 1)}
           disabled={isLastPage}
           className="h-8 w-8 p-0"
-          aria-label="Következő oldal"
+          aria-label={t('common:pagination.next_page', 'Következő oldal')}
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
@@ -132,7 +136,7 @@ export function UnifiedPagination({
           onClick={() => onPageChange(totalPages)}
           disabled={isLastPage}
           className="h-8 w-8 p-0"
-          aria-label="Utolsó oldal"
+          aria-label={t('common:pagination.last_page', 'Utolsó oldal')}
         >
           <ChevronsRight className="h-4 w-4" />
         </Button>
@@ -140,7 +144,9 @@ export function UnifiedPagination({
 
       {/* Right: Page size selector */}
       <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground whitespace-nowrap">Oldalméret</span>
+        <span className="text-sm text-muted-foreground whitespace-nowrap">
+          {t('common:pagination.page_size', 'Oldalméret')}
+        </span>
         <Select
           value={pageSize.toString()}
           onValueChange={(value) => onPageSizeChange(Number(value))}

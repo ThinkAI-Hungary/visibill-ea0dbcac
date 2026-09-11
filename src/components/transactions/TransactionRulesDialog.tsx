@@ -16,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Trash2, Edit2, Plus, Play, Check, ChevronsUpDown, Loader2, Sparkles, Sliders, AlertCircle, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency, cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface TransactionRule {
   id: string;
@@ -35,6 +36,7 @@ interface TransactionRulesDialogProps {
 }
 
 export function TransactionRulesDialog({ open: externalOpen, onOpenChange: externalOnOpenChange }: TransactionRulesDialogProps = {}) {
+  const { t } = useTranslation(['transactions', 'common']);
   const { selectedCompany } = useCompany();
   const { activePresetId } = useActivePreset(selectedCompany?.id);
   const queryClient = useQueryClient();
@@ -103,9 +105,9 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
 
   // Get GL account display label
   const getGlLabel = (id: string | null) => {
-    if (!id) return 'Válassz főkönyvi számot...';
+    if (!id) return t('transactions:dialogs.rules.form.select_gl_placeholder');
     const acc = glAccountMap.get(id);
-    return acc ? `${acc.gl_number} ${acc.short_name}` : 'Nincs besorolva';
+    return acc ? `${acc.gl_number} ${acc.short_name}` : t('transactions:dialogs.rules.form.unassigned_gl');
   };
 
   // Open creation form
@@ -141,7 +143,11 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
   // Save rule
   const handleSaveRule = async () => {
     if (!formName || !formPattern || !companyId) {
-      toast({ title: 'Hiba', description: 'A név és a minta megadása kötelező!', variant: 'destructive' });
+      toast({
+        title: t('transactions:dialogs.rules.toasts.save_error_title'),
+        description: t('transactions:dialogs.rules.toasts.save_error_desc'),
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -168,18 +174,30 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
           .update(payload)
           .eq('id', editingRule.id);
         if (error) throw error;
-        toast({ title: 'Szabály frissítve', description: 'A szabály sikeresen mentésre került.', className: 'bg-green-50 text-green-900 border-green-200' });
+        toast({
+          title: t('transactions:dialogs.rules.toasts.updated_title'),
+          description: t('transactions:dialogs.rules.toasts.updated_desc'),
+          className: 'bg-green-50 text-green-900 border-green-200',
+        });
       } else {
         const { error } = await supabase
           .from('transaction_rules' as any)
           .insert([payload]);
         if (error) throw error;
-        toast({ title: 'Szabály létrehozva', description: 'Az új szabály sikeresen rögzítve lett.', className: 'bg-green-50 text-green-900 border-green-200' });
+        toast({
+          title: t('transactions:dialogs.rules.toasts.created_title'),
+          description: t('transactions:dialogs.rules.toasts.created_desc'),
+          className: 'bg-green-50 text-green-900 border-green-200',
+        });
       }
       queryClient.invalidateQueries({ queryKey: ['transaction_rules', companyId] });
       setViewMode('list');
     } catch (err: any) {
-      toast({ title: 'Mentési hiba', description: err.message || 'Hiba történt a mentés során.', variant: 'destructive' });
+      toast({
+        title: t('transactions:dialogs.rules.toasts.save_error_title'),
+        description: err.message || t('transactions:dialogs.rules.toasts.save_error_desc'),
+        variant: 'destructive',
+      });
     } finally {
       setSaving(false);
     }
@@ -187,17 +205,24 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
 
   // Delete rule
   const handleDeleteRule = async (id: string) => {
-    if (!confirm('Biztosan törlöd ezt a szabályt?')) return;
+    if (!confirm(t('transactions:dialogs.rules.confirm_delete'))) return;
     try {
       const { error } = await supabase
         .from('transaction_rules' as any)
         .delete()
         .eq('id', id);
       if (error) throw error;
-      toast({ title: 'Szabály törölve', description: 'A szabály véglegesen törlésre került.' });
+      toast({
+        title: t('transactions:dialogs.rules.toasts.deleted_title'),
+        description: t('transactions:dialogs.rules.toasts.deleted_desc'),
+      });
       queryClient.invalidateQueries({ queryKey: ['transaction_rules', companyId] });
     } catch (err: any) {
-      toast({ title: 'Hiba', description: err.message || 'Hiba történt a törlés során.', variant: 'destructive' });
+      toast({
+        title: t('transactions:dialogs.rules.toasts.delete_error_title'),
+        description: err.message || t('transactions:dialogs.rules.toasts.delete_error_desc'),
+        variant: 'destructive',
+      });
     }
   };
 
@@ -255,7 +280,11 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
         try {
           regex = new RegExp(formPattern, 'i');
         } catch (e) {
-          toast({ title: 'Érvénytelen Regex', description: 'A megadott minta hibás reguláris kifejezés.', variant: 'destructive' });
+          toast({
+            title: t('transactions:dialogs.rules.toasts.invalid_regex_title'),
+            description: t('transactions:dialogs.rules.toasts.invalid_regex_desc'),
+            variant: 'destructive',
+          });
           setTesting(false);
           return;
         }
@@ -289,7 +318,11 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
         samples: matches.slice(0, 15),
       });
     } catch (err: any) {
-      toast({ title: 'Tesztelési hiba', description: err.message, variant: 'destructive' });
+      toast({
+        title: t('transactions:dialogs.rules.toasts.test_error_title'),
+        description: err.message,
+        variant: 'destructive',
+      });
     } finally {
       setTesting(false);
     }
@@ -301,7 +334,7 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
         <DialogTrigger asChild>
           <Button variant="outline" size="sm">
             <Sliders className="h-4 w-4 mr-2" />
-            Könyvelési szabályok
+            {t('transactions:dialogs.rules.trigger_btn')}
           </Button>
         </DialogTrigger>
       )}
@@ -309,10 +342,10 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sliders className="h-5 w-5 text-primary" />
-            Automatikus könyvelési szabályok
+            {t('transactions:dialogs.rules.title')}
           </DialogTitle>
           <DialogDescription>
-            Definiáljon szabályokat, amelyek automatikusan besorolják a banki tranzakciókat a leírás vagy összeg alapján.
+            {t('transactions:dialogs.rules.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -320,11 +353,11 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">
-                Aktív szabályok száma: {rules.length} db
+                {t('transactions:dialogs.rules.active_rules_count', { count: rules.length })}
               </span>
               <Button size="sm" onClick={handleOpenCreate} className="gap-1">
                 <Plus className="h-4 w-4" />
-                Új szabály
+                {t('transactions:dialogs.rules.new_rule_btn')}
               </Button>
             </div>
 
@@ -335,20 +368,20 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
             ) : rules.length === 0 ? (
               <div className="text-center py-12 border border-dashed rounded-lg bg-muted/20">
                 <AlertCircle className="h-8 w-8 mx-auto mb-2 text-muted-foreground/60" />
-                <p className="font-semibold text-muted-foreground">Nincsenek létrehozott szabályok.</p>
-                <p className="text-xs text-muted-foreground/75 mt-1">Hozzon létre egyet a bankbizonylatok automata feldolgozásához.</p>
+                <p className="font-semibold text-muted-foreground">{t('transactions:dialogs.rules.empty_title')}</p>
+                <p className="text-xs text-muted-foreground/75 mt-1">{t('transactions:dialogs.rules.empty_desc')}</p>
               </div>
             ) : (
               <div className="rounded-lg border border-border/50 overflow-x-auto">
                 <Table className="compact-table">
                   <TableHeader>
                     <TableRow className="bg-muted/30">
-                      <TableHead>Név</TableHead>
-                      <TableHead>Minta</TableHead>
-                      <TableHead>Irány / Összeg</TableHead>
-                      <TableHead>Cél főkönyvi szám</TableHead>
-                      <TableHead className="text-center">Azonnali jóváhagyás</TableHead>
-                      <TableHead className="text-right">Műveletek</TableHead>
+                      <TableHead>{t('transactions:dialogs.rules.table.col_name')}</TableHead>
+                      <TableHead>{t('transactions:dialogs.rules.table.col_pattern')}</TableHead>
+                      <TableHead>{t('transactions:dialogs.rules.table.col_direction_amount')}</TableHead>
+                      <TableHead>{t('transactions:dialogs.rules.table.col_target_gl')}</TableHead>
+                      <TableHead className="text-center">{t('transactions:dialogs.rules.table.col_auto_verify')}</TableHead>
+                      <TableHead className="text-right">{t('transactions:dialogs.rules.table.col_actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -361,19 +394,25 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
                               {rule.description_pattern}
                             </span>
                             <span className="text-[10px] text-muted-foreground uppercase border px-1 rounded">
-                              {rule.pattern_type === 'regex' ? 'regex' : 'tartalmaz'}
+                              {rule.pattern_type === 'regex'
+                                ? t('transactions:dialogs.rules.table.pattern_regex')
+                                : t('transactions:dialogs.rules.table.pattern_contains')}
                             </span>
                           </div>
                         </TableCell>
                         <TableCell className="text-sm">
                           <div className="space-y-0.5">
                             <p className="font-medium text-xs">
-                              {rule.direction === 'ALL' ? 'Minden tranzakció' : (rule.direction === 'INFLOW' ? 'Csak bevételek' : 'Csak kiadások')}
+                              {rule.direction === 'ALL'
+                                ? t('transactions:dialogs.rules.table.dir_all')
+                                : rule.direction === 'INFLOW'
+                                ? t('transactions:dialogs.rules.table.dir_inflow')
+                                : t('transactions:dialogs.rules.table.dir_outflow')}
                             </p>
                             {(rule.amount_min !== null || rule.amount_max !== null) && (
                               <p className="text-[11px] text-muted-foreground font-mono">
-                                {rule.amount_min !== null && `Min: ${formatCurrency(rule.amount_min, 'HUF')}`}
-                                {rule.amount_max !== null && ` Max: ${formatCurrency(rule.amount_max, 'HUF')}`}
+                                {rule.amount_min !== null && t('transactions:dialogs.rules.table.amount_min', { amount: formatCurrency(rule.amount_min, 'HUF') })}
+                                {rule.amount_max !== null && ' ' + t('transactions:dialogs.rules.table.amount_max', { amount: formatCurrency(rule.amount_max, 'HUF') })}
                               </p>
                             )}
                           </div>
@@ -384,7 +423,7 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
                               {getGlLabel(rule.target_gl_account_id)}
                             </span>
                           ) : (
-                            <span className="text-muted-foreground italic">Nincs megadva</span>
+                            <span className="text-muted-foreground italic">{t('transactions:dialogs.rules.table.no_gl')}</span>
                           )}
                         </TableCell>
                         <TableCell className="text-center">
@@ -392,7 +431,7 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
                             "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold",
                             rule.auto_verify ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" : "bg-muted text-muted-foreground"
                           )}>
-                            {rule.auto_verify ? 'Igen' : 'Nem'}
+                            {rule.auto_verify ? t('transactions:dialogs.rules.table.yes') : t('transactions:dialogs.rules.table.no')}
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
@@ -428,9 +467,9 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
               {/* Form panel */}
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold">Szabály neve</label>
+                  <label className="text-sm font-semibold">{t('transactions:dialogs.rules.form.field_name')}</label>
                   <Input
-                    placeholder="pl. MVM Automata, Kártyás Vásárlás..."
+                    placeholder={t('transactions:dialogs.rules.form.field_name_placeholder')}
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
                   />
@@ -438,36 +477,38 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold">Illeszkedés típusa</label>
+                    <label className="text-sm font-semibold">{t('transactions:dialogs.rules.form.field_pattern_type')}</label>
                     <Select value={formPatternType} onValueChange={(v: 'regex' | 'contains') => setFormPatternType(v)}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="contains">Szöveg tartalmazás</SelectItem>
-                        <SelectItem value="regex">Reguláris kifejezés (Regex)</SelectItem>
+                        <SelectItem value="contains">{t('transactions:dialogs.rules.form.pattern_contains')}</SelectItem>
+                        <SelectItem value="regex">{t('transactions:dialogs.rules.form.pattern_regex')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold">Tranzakció iránya</label>
+                    <label className="text-sm font-semibold">{t('transactions:dialogs.rules.form.field_direction')}</label>
                     <Select value={formDirection} onValueChange={(v: 'INFLOW' | 'OUTFLOW' | 'ALL') => setFormDirection(v)}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="ALL">Összes irány</SelectItem>
-                        <SelectItem value="INFLOW">Csak bevételek (+)</SelectItem>
-                        <SelectItem value="OUTFLOW">Csak kiadások (-)</SelectItem>
+                        <SelectItem value="ALL">{t('transactions:dialogs.rules.form.dir_all')}</SelectItem>
+                        <SelectItem value="INFLOW">{t('transactions:dialogs.rules.form.dir_inflow')}</SelectItem>
+                        <SelectItem value="OUTFLOW">{t('transactions:dialogs.rules.form.dir_outflow')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold">Tranzakció leírásában keresendő minta</label>
+                  <label className="text-sm font-semibold">{t('transactions:dialogs.rules.form.field_pattern')}</label>
                   <Input
-                    placeholder={formPatternType === 'contains' ? "pl. MVM, Raiffeisen bank, NAV..." : "pl. ^MVM.*Zrt$"}
+                    placeholder={formPatternType === 'contains'
+                      ? t('transactions:dialogs.rules.form.pattern_placeholder_contains')
+                      : t('transactions:dialogs.rules.form.pattern_placeholder_regex')}
                     value={formPattern}
                     onChange={(e) => setFormPattern(e.target.value)}
                     className="font-mono"
@@ -476,19 +517,19 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold">Minimum összeg (opcionális)</label>
+                    <label className="text-sm font-semibold">{t('transactions:dialogs.rules.form.field_min_amount')}</label>
                     <Input
                       type="number"
-                      placeholder="Min Ft"
+                      placeholder={t('transactions:dialogs.rules.form.field_min_amount_placeholder')}
                       value={formAmountMin}
                       onChange={(e) => setFormAmountMin(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold">Maximum összeg (opcionális)</label>
+                    <label className="text-sm font-semibold">{t('transactions:dialogs.rules.form.field_max_amount')}</label>
                     <Input
                       type="number"
-                      placeholder="Max Ft"
+                      placeholder={t('transactions:dialogs.rules.form.field_max_amount_placeholder')}
                       value={formAmountMax}
                       onChange={(e) => setFormAmountMax(e.target.value)}
                     />
@@ -496,7 +537,7 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
                 </div>
 
                 <div className="space-y-2 flex flex-col">
-                  <label className="text-sm font-semibold mb-1">Cél főkönyvi szám</label>
+                  <label className="text-sm font-semibold mb-1">{t('transactions:dialogs.rules.form.field_target_gl')}</label>
                   <Popover open={glComboOpen} onOpenChange={setGlComboOpen}>
                     <PopoverTrigger asChild>
                       <Button
@@ -512,12 +553,12 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
                     <PopoverContent className="w-[400px] p-0 z-[1100]">
                       <Command shouldFilter={false}>
                         <CommandInput
-                          placeholder="Főkönyvi szám keresése..."
+                          placeholder={t('transactions:dialogs.rules.form.search_gl_placeholder')}
                           value={glSearchQuery}
                           onValueChange={setGlSearchQuery}
                         />
                         <CommandList>
-                          <CommandEmpty>Nincs találat.</CommandEmpty>
+                          <CommandEmpty>{t('transactions:dialogs.rules.form.no_gl_found')}</CommandEmpty>
                           <CommandGroup>
                             {glAccounts
                               ?.filter(gl => !glSearchQuery || `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(glSearchQuery.toLowerCase()))
@@ -555,8 +596,8 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
 
                 <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/20">
                   <div className="space-y-0.5">
-                    <p className="text-sm font-semibold">Azonnali jóváhagyás (Auto-verify)</p>
-                    <p className="text-xs text-muted-foreground">A szabály illeszkedésekor a rendszer lezártként és könyveltként rögzíti a tranzakciót.</p>
+                    <p className="text-sm font-semibold">{t('transactions:dialogs.rules.form.auto_verify_title')}</p>
+                    <p className="text-xs text-muted-foreground">{t('transactions:dialogs.rules.form.auto_verify_desc')}</p>
                   </div>
                   <Switch
                     checked={formAutoVerify}
@@ -570,10 +611,10 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-primary">
                     <Sparkles className="h-5 w-5 animate-pulse" />
-                    <h3 className="font-bold text-sm">Interaktív szabályszimuláció</h3>
+                    <h3 className="font-bold text-sm">{t('transactions:dialogs.rules.simulator.title')}</h3>
                   </div>
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    Szimulálja a szabály működését valós időben a jelenlegi lekönyveletlen tranzakciókon.
+                    {t('transactions:dialogs.rules.simulator.desc')}
                   </p>
 
                   {testResults !== null && (
@@ -583,23 +624,33 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
                           <Check className="h-4 w-4" />
                         </div>
                         <div>
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Szimulált találatok:</p>
-                          <p className="text-lg font-bold text-foreground tabular-nums">{testResults.matchedCount} tranzakció</p>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+                            {t('transactions:dialogs.rules.simulator.results_label')}
+                          </p>
+                          <p className="text-lg font-bold text-foreground tabular-nums">
+                            {t('transactions:dialogs.rules.simulator.results_count', { count: testResults.matchedCount })}
+                          </p>
                         </div>
                       </div>
 
                       {testResults.matchedCount > 0 && (
                         <div className="space-y-2">
-                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Szimulált illeszkedések:</p>
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                            {t('transactions:dialogs.rules.simulator.samples_label')}
+                          </p>
                           <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                             {testResults.samples.map((sample, idx) => (
                               <div key={idx} className="p-2.5 bg-muted/40 hover:bg-muted/60 dark:bg-secondary/20 dark:hover:bg-secondary/35 rounded-lg border border-border/40 text-xs transition-all">
                                 <div className="flex justify-between items-start gap-1">
                                   <div className="flex items-center gap-1.5 min-w-0">
                                     {sample.amount > 0 ? (
-                                      <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded shrink-0">BE</span>
+                                      <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded shrink-0">
+                                        {t('transactions:dialogs.rules.simulator.badge_inflow')}
+                                      </span>
                                     ) : (
-                                      <span className="text-[9px] font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-1 py-0.5 rounded shrink-0">KI</span>
+                                      <span className="text-[9px] font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-1 py-0.5 rounded shrink-0">
+                                        {t('transactions:dialogs.rules.simulator.badge_outflow')}
+                                      </span>
                                     )}
                                     <span className="text-[10px] text-muted-foreground font-mono shrink-0">
                                       {sample.transaction_date ? sample.transaction_date.slice(5).replace('-', '.') : ''}
@@ -614,12 +665,12 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
                                 </div>
                                 <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-border/10">
                                   <div className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                                    <span className="opacity-60">Cél GL:</span>
-                                    <strong>{formGlAccountId ? getGlLabel(formGlAccountId) : 'Nincs rendelve'}</strong>
+                                    <span className="opacity-60">{t('transactions:dialogs.rules.simulator.target_gl_prefix')}</span>
+                                    <strong>{formGlAccountId ? getGlLabel(formGlAccountId) : t('transactions:dialogs.rules.simulator.no_gl_assigned')}</strong>
                                   </div>
                                   {formAutoVerify && (
                                     <span className="text-[9px] font-bold bg-green-500/10 text-green-700 dark:text-green-400 px-1.5 py-0.5 rounded">
-                                      Auto-verify
+                                      {t('transactions:dialogs.rules.simulator.auto_verify_badge')}
                                     </span>
                                   )}
                                 </div>
@@ -641,17 +692,19 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
                     disabled={!formPattern || testing}
                   >
                     {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                    Szabály tesztelése a tranzakciókon
+                    {t('transactions:dialogs.rules.simulator.test_btn')}
                   </Button>
                 </div>
               </div>
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button variant="outline" onClick={() => setViewMode('list')} disabled={saving}>Mégse</Button>
+              <Button variant="outline" onClick={() => setViewMode('list')} disabled={saving}>
+                {t('transactions:dialogs.rules.form.cancel_btn')}
+              </Button>
               <Button onClick={handleSaveRule} disabled={saving} className="gap-2">
                 {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-                Mentés
+                {t('transactions:dialogs.rules.form.save_btn')}
               </Button>
             </div>
           </div>

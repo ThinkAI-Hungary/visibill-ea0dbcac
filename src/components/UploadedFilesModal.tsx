@@ -1,5 +1,6 @@
 // v2 - batch delete enabled
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,7 +8,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { useToast } from '@/hooks/use-toast';
 import { formatFileSize, extractStoragePath } from '@/lib/utils';
 import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { getDateFnsLocale } from '@/lib/locale/formatters';
 import {
   Dialog,
   DialogContent,
@@ -65,6 +66,7 @@ const TAB_CONFIG = {
     table: 'invoice_uploads',
     bucket: 'invoice-uploads',
     uploadType: 'invoice',
+    labelKey: 'invoices:title',
     label: 'Számlák',
     icon: FileText,
     filter: (q: any) => q.not('document_category', 'in', '("payroll","penztarbizonylat")'),
@@ -73,6 +75,7 @@ const TAB_CONFIG = {
     table: 'invoice_uploads',
     bucket: 'invoice-uploads',
     uploadType: 'invoice',
+    labelKey: 'vouchers',
     label: 'Pénztárbizonylatok',
     icon: Coins,
     filter: (q: any) => q.eq('document_category', 'penztarbizonylat'),
@@ -81,6 +84,7 @@ const TAB_CONFIG = {
     table: 'bank_statement_uploads',
     bucket: 'bank-statements',
     uploadType: 'bank',
+    labelKey: 'bank',
     label: 'Bankkivonatok',
     icon: Landmark,
     filter: null,
@@ -89,6 +93,7 @@ const TAB_CONFIG = {
     table: 'transaction_uploads',
     bucket: 'transactions',
     uploadType: 'transaction',
+    labelKey: 'transactions',
     label: 'Tranzakciók',
     icon: Landmark,
     filter: null,
@@ -97,6 +102,7 @@ const TAB_CONFIG = {
     table: 'invoice_uploads',
     bucket: 'invoice-uploads',
     uploadType: 'invoice',
+    labelKey: 'salaries',
     label: 'Bérek/Járulékok',
     icon: Wallet,
     filter: (q: any) => q.eq('document_category', 'payroll'),
@@ -105,6 +111,7 @@ const TAB_CONFIG = {
     table: 'report_uploads',
     bucket: 'report-uploads',
     uploadType: 'report',
+    labelKey: 'reports',
     label: 'Riportok',
     icon: Package,
     filter: null,
@@ -114,6 +121,7 @@ const TAB_CONFIG = {
 const PAGE_SIZE = 15;
 
 export default function UploadedFilesModal({ open, onOpenChange, activeTab }: UploadedFilesModalProps) {
+  const { t } = useTranslation(['invoices', 'common']);
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -202,80 +210,68 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
   };
 
   const selectedCount = selectedIds.size;
-  const selectedUploads = uploads.filter(u => selectedIds.has(u.id));
+  const selectedUploads = useMemo(
+    () => uploads.filter(u => selectedIds.has(u.id)),
+    [uploads, selectedIds]
+  );
 
-  // ── Core delete fns ──
-
-  /** Option A: only remove storage file + upload record. Associated data (invoices, txns) stays. */
-  const deleteFileOnly = async (record: UploadRecord) => {
-    const storagePath = extractStoragePath(record.file_url, config.bucket);
-    if (storagePath) {
-      await supabase.storage.from(config.bucket).remove([storagePath]);
+  // ── Delete actions ──
+  const deleteSingleRecord = async (record: UploadRecord, withData: boolean) => {
+    if (config.bucket && record.file_url) {
+      const path = extractStoragePath(record.file_url, config.bucket);
+      if (path) {
+        await supabase.storage.from(config.bucket).remove([path]);
+      }
     }
-    const { error } = await supabase.from(config.table as any).delete().eq('id', record.id);
+    if (withData && config.table === 'invoice_uploads') {
+      await supabase.from('invoices').delete().eq('invoice_uploads_id', record.id);
+    }
+    const { error } = await (supabase as any).from(config.table).delete().eq('id', record.id);
     if (error) throw error;
   };
 
-  /** Option B: full cascade via RPC (invoices / transactions / transport_docs / matches / costs). */
-  const deleteFileWithData = async (record: UploadRecord): Promise<any> => {
-    const { data, error } = await supabase.rpc('delete_upload_with_data', {
-      p_upload_id: record.id,
-      p_upload_type: config.uploadType,
-    });
-    if (error) throw error;
-
-    const storagePath = extractStoragePath(record.file_url, config.bucket);
-    if (storagePath) {
-      await supabase.storage.from(config.bucket).remove([storagePath]);
-    }
-    return data;
-  };
-
-  // ── Single delete handlers ──
   const handleSingleDelete = async (withData: boolean) => {
     if (!deleteTarget) return;
     setSingleDeleting(true);
     try {
-      if (withData) {
-        const data = await deleteFileWithData(deleteTarget);
-        const parts: string[] = [`${deleteTarget.file_name} törölve.`];
-        if (data?.deleted_invoices > 0) parts.push(`${data.deleted_invoices} számla törölve.`);
-        if (data?.deleted_transactions > 0) parts.push(`${data.deleted_transactions} tranzakció törölve.`);
-        if (data?.deleted_transport_docs > 0) parts.push(`${data.deleted_transport_docs} dokumentum törölve.`);
-        toast({ title: 'Törlés sikeres', description: parts.join(' '), duration: 4000 });
-      } else {
-        await deleteFileOnly(deleteTarget);
-        toast({ title: 'Fájl törölve', description: 'A kapcsolódó adatok megmaradtak.', duration: 3000 });
-      }
-      invalidateCaches();
-      setDeleteTarget(null);
+      await deleteSingleRecord(deleteTarget, withData);
+      toast({
+        title: withData ? t('invoices:dialogs.files.toast_file_and_invoices_deleted') : t('invoices:dialogs.files.toast_file_deleted'),
+        description: deleteTarget.file_name,
+        duration: 3000,
+      });
+      setSelectedIds(prev => { const n = new Set(prev); n.delete(deleteTarget.id); return n; });
     } catch (err: any) {
-      toast({ variant: 'destructive', title: 'Törlés sikertelen', description: err.message || 'Ismeretlen hiba.' });
+      toast({
+        title: t('common:status.error'),
+        description: err.message || t('invoices:dialogs.files.toast_delete_error'),
+        variant: 'destructive',
+      });
     } finally {
       setSingleDeleting(false);
+      setDeleteTarget(null);
+      invalidateAfterDelete();
     }
   };
 
-  // ── Batch delete handler ──
   const handleBatchDelete = async (withData: boolean) => {
     setBatchDeleting(true);
-    const fn = withData ? deleteFileWithData : deleteFileOnly;
-    const results = await Promise.allSettled(selectedUploads.map(fn));
+    const results = await Promise.allSettled(
+      selectedUploads.map(rec => deleteSingleRecord(rec, withData))
+    );
     const failed = results.filter(r => r.status === 'rejected').length;
     const succeeded = results.length - failed;
 
     if (failed === 0) {
       toast({
-        title: `${succeeded} fájl törölve`,
-        description: withData
-          ? 'A fájlok és a kapcsolódó adatok törölve lettek.'
-          : 'A fájlok törölve, a kapcsolódó adatok megmaradtak.',
-        duration: 4000,
+        title: t('invoices:dialogs.files.toast_batch_deleted_title', { count: succeeded }),
+        description: withData ? t('invoices:dialogs.files.toast_batch_deleted_invoices') : t('invoices:dialogs.files.toast_batch_deleted_files_only'),
+        duration: 3000,
       });
     } else {
       toast({
-        title: `${succeeded}/${results.length} sikeres`,
-        description: `${failed} elem törlése sikertelen volt.`,
+        title: t('invoices:dialogs.files.toast_batch_partial_title', { succeeded, total: results.length }),
+        description: t('invoices:dialogs.files.toast_batch_partial_desc', { failed }),
         variant: 'destructive',
       });
     }
@@ -283,10 +279,10 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
     setSelectedIds(new Set());
     setBatchDeleting(false);
     setBatchDeleteOpen(false);
-    invalidateCaches();
+    invalidateAfterDelete();
   };
 
-  const invalidateCaches = () => {
+  const invalidateAfterDelete = () => {
     queryClient.invalidateQueries({ queryKey: ['uploaded-files'] });
     queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
     queryClient.invalidateQueries({ queryKey: ['submittedInvoices'] });
@@ -298,24 +294,24 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
     switch (status) {
       case 'processed':
       case 'completed':
-        return <Badge className="bg-success/10 text-success border-success/20 text-[10px]">Feldolgozva</Badge>;
+        return <Badge className="bg-success/10 text-success border-success/20 text-[10px]">{t('invoices:status.processed', 'Feldolgozva')}</Badge>;
       case 'processing':
       case 'webhook_sent':
-        return <Badge variant="outline" className="text-[10px]">Folyamatban</Badge>;
+        return <Badge variant="outline" className="text-[10px]">{t('invoices:status.processing', 'Folyamatban')}</Badge>;
       case 'error':
       case 'failed':
       case 'webhook_failed':
-        return <Badge variant="destructive" className="text-[10px]">Hiba</Badge>;
+        return <Badge variant="destructive" className="text-[10px]">{t('common:status.error', 'Hiba')}</Badge>;
       case 'ignored':
-        return <Badge variant="secondary" className="text-[10px]">Mellőzve</Badge>;
+        return <Badge variant="secondary" className="text-[10px]">{t('common:status.ignored', 'Mellőzve')}</Badge>;
       case 'cmr_attached':
-        return <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20 text-[10px]">Dok. párosítva</Badge>;
+        return <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20 text-[10px]">{t('invoices:status.cmr_attached', 'Dok. párosítva')}</Badge>;
       case 'cmr_orphaned':
-        return <Badge variant="secondary" className="text-[10px]">Vár a számlára</Badge>;
+        return <Badge variant="secondary" className="text-[10px]">{t('invoices:status.cmr_orphaned', 'Vár a számlára')}</Badge>;
       case 'cmr_escalated':
-        return <Badge className="bg-warning/10 text-warning border-warning/20 text-[10px]">Eszkaláció</Badge>;
+        return <Badge className="bg-warning/10 text-warning border-warning/20 text-[10px]">{t('invoices:status.cmr_escalated', 'Eszkaláció')}</Badge>;
       default:
-        return <Badge variant="outline" className="text-muted-foreground text-[10px]">Függőben</Badge>;
+        return <Badge variant="outline" className="text-muted-foreground text-[10px]">{t('invoices:status.pending', 'Függőben')}</Badge>;
     }
   };
 
@@ -348,12 +344,12 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-foreground">
-              {isMulti ? `Csak a ${count} fájl törlése` : 'Csak a fájl törlése'}
+              {isMulti ? t('invoices:dialogs.files.opt_a_batch_title') : t('invoices:dialogs.files.opt_a_single_title')}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
               {isMulti
-                ? 'A fájlok eltávolításra kerülnek, de a feldolgozott adatok (számlák, tranzakciók) megmaradnak.'
-                : <>A <span className="font-medium text-foreground break-all">{fileName}</span> fájl törlődik, a feldolgozott adatok megmaradnak.</>
+                ? t('invoices:dialogs.files.opt_a_batch_desc', { count })
+                : t('invoices:dialogs.files.opt_a_single_desc', { fileName })
               }
             </p>
           </div>
@@ -372,12 +368,12 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-destructive">
-              {isMulti ? `Fájlok és összes kapcsolódó adat törlése` : 'Fájl és kapcsolódó adatok törlése'}
+              {isMulti ? t('invoices:dialogs.files.opt_b_batch_title') : t('invoices:dialogs.files.opt_b_single_title')}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
               {isMulti
-                ? `${count} fájl és az összes hozzájuk tartozó számla, tranzakció, dokumentum véglegesen törlődik.`
-                : <>A <span className="font-medium text-foreground break-all">{fileName}</span> fájl és az összes hozzá tartozó adat (számlák, tranzakciók, dokumentumok) véglegesen törlődik.</>
+                ? t('invoices:dialogs.files.opt_b_batch_desc', { count })
+                : t('invoices:dialogs.files.opt_b_single_desc', { fileName, invoices: '' })
               }
             </p>
           </div>
@@ -402,10 +398,10 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
           <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-2 text-xl font-bold">
               <Icon className="h-5 w-5 text-primary" />
-              Feltöltött fájlok — {config.label}
+              {t('invoices:dialogs.files.trigger_button')} — {config.label}
             </DialogTitle>
             <DialogDescription>
-              {uploads.length} feltöltött fájl · Válaszd ki a törlendő fájlokat
+              {uploads.length} · {t('invoices:dialogs.files.delete_choose_mode')}
             </DialogDescription>
           </DialogHeader>
 
@@ -415,14 +411,14 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
             <Checkbox
               checked={allVisibleSelected}
               onCheckedChange={toggleSelectAll}
-              aria-label="Összes kijelölése az oldalon"
+              aria-label={t('invoices:dialogs.files.select_all_page')}
               {...(someVisibleSelected && !allVisibleSelected ? { 'data-state': 'indeterminate' } : {})}
               className="shrink-0"
             />
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Keresés fájlnév alapján..."
+                placeholder={t('invoices:dialogs.files.search_placeholder')}
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 className="pl-9 bg-muted/30 border-border/50"
@@ -436,7 +432,7 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
                 onClick={() => setBatchDeleteOpen(true)}
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                {selectedCount} törlése
+                {t('invoices:dialogs.files.delete_selected', { count: selectedCount })}
               </Button>
             )}
           </div>
@@ -449,7 +445,7 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
               ))
             ) : paged.length === 0 ? (
               <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
-                {searchQuery ? 'Nincs találat a keresésre.' : 'Nincs feltöltött fájl.'}
+                {searchQuery ? t('invoices:dialogs.files.no_results') : t('invoices:dialogs.files.no_files')}
               </div>
             ) : (
               paged.map(record => (
@@ -473,7 +469,7 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
                       {getStatusBadge(record.processing_status)}
                     </div>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
-                      {formatFileSize(record.file_size)} · {format(new Date(record.created_at), 'yyyy. MM. dd. HH:mm', { locale: hu })}
+                      {formatFileSize(record.file_size)} · {format(new Date(record.created_at), 'yyyy. MM. dd. HH:mm', { locale: getDateFnsLocale() })}
                     </p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
@@ -503,7 +499,7 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
           {filtered.length > PAGE_SIZE && (
             <div className="flex items-center justify-between shrink-0 pt-2 border-t border-border/50">
               <p className="text-xs text-muted-foreground">
-                {filtered.length} fájlból {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)}
+                {filtered.length} / {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)}
               </p>
               <div className="flex items-center gap-1">
                 <Button
@@ -531,11 +527,11 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
       <AlertDialog open={open && !!deleteTarget} onOpenChange={o => !o && setDeleteTarget(null)}>
         <AlertDialogContent className="max-w-md border-border bg-card">
           <AlertDialogHeader className="w-full min-w-0">
-            <AlertDialogTitle>Dokumentum törlése</AlertDialogTitle>
+            <AlertDialogTitle>{t('invoices:dialogs.files.delete_single_title')}</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-1 w-full min-w-0">
-                <p>Válaszd ki a törlés módját:</p>
-                <p className="text-xs text-muted-foreground">Ez a művelet nem vonható vissza.</p>
+                <p>{t('invoices:dialogs.files.delete_choose_mode')}</p>
+                <p className="text-xs text-muted-foreground">{t('invoices:dialogs.files.delete_cannot_undo')}</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -550,12 +546,12 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
           {singleDeleting && (
             <div className="flex items-center justify-center py-2 gap-2">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Törlés folyamatban...</span>
+              <span className="text-sm text-muted-foreground">{t('invoices:dialogs.files.deleting')}</span>
             </div>
           )}
 
           <AlertDialogFooter className="w-full min-w-0">
-            <AlertDialogCancel disabled={singleDeleting}>Mégsem</AlertDialogCancel>
+            <AlertDialogCancel disabled={singleDeleting}>{t('common:actions.cancel')}</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -564,10 +560,10 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
       <AlertDialog open={open && batchDeleteOpen} onOpenChange={o => { if (!o && !batchDeleting) setBatchDeleteOpen(false); }}>
         <AlertDialogContent className="max-w-md border-border bg-card">
           <AlertDialogHeader className="w-full min-w-0">
-            <AlertDialogTitle>{selectedCount} dokumentum törlése</AlertDialogTitle>
+            <AlertDialogTitle>{t('invoices:dialogs.files.delete_batch_title', { count: selectedCount })}</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2 w-full min-w-0">
-                <p>Válaszd ki a törlés módját az összes kijelölt elemre:</p>
+                <p>{t('invoices:dialogs.files.delete_batch_choose')}</p>
                 <div className="max-h-28 overflow-y-auto rounded-md border border-border/50 bg-muted/30 p-2 space-y-1 w-full min-w-0 overflow-x-hidden">
                   {selectedUploads.map(u => (
                     <div key={u.id} className="text-xs text-muted-foreground truncate w-full min-w-0" title={u.file_name}>
@@ -575,7 +571,7 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-muted-foreground">Ez a művelet nem vonható vissza.</p>
+                <p className="text-xs text-muted-foreground">{t('invoices:dialogs.files.delete_cannot_undo')}</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -591,12 +587,12 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
           {batchDeleting && (
             <div className="flex items-center justify-center py-2 gap-2">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Törlés... ({selectedCount} elem)</span>
+              <span className="text-sm text-muted-foreground">{t('invoices:dialogs.files.deleting_batch', { count: selectedCount })}</span>
             </div>
           )}
 
           <AlertDialogFooter className="w-full min-w-0">
-            <AlertDialogCancel disabled={batchDeleting}>Mégsem</AlertDialogCancel>
+            <AlertDialogCancel disabled={batchDeleting}>{t('common:actions.cancel')}</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

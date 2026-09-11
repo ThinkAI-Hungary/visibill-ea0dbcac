@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -31,6 +32,7 @@ interface InvoiceEditDialogProps {
 }
 
 const InvoiceEditDialog = ({ invoice, categories, projects, open, onClose, onSave }: InvoiceEditDialogProps) => {
+  const { t } = useTranslation(['invoices', 'common']);
   const { user } = useAuth();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
@@ -59,12 +61,12 @@ const InvoiceEditDialog = ({ invoice, categories, projects, open, onClose, onSav
 
       if (error) throw error;
 
-      toast({ title: 'Számla sikeresen frissítve' });
+      toast({ title: t('invoices:dialogs.full_edit.toast_success', 'Számla sikeresen frissítve') });
       onSave();
       onClose();
     } catch (error) {
       reportError({ type: 'db_query', component: 'InvoiceEditDialog', action: 'error', message: 'Error updating invoice:', error: error });
-      toast({ title: 'Nem sikerült menteni a változtatásokat', variant: 'destructive' });
+      toast({ title: t('invoices:dialogs.full_edit.toast_error', 'Nem sikerült menteni a változtatásokat'), variant: 'destructive' });
     } finally {
       setIsSaving(false);
     }
@@ -76,24 +78,24 @@ const InvoiceEditDialog = ({ invoice, categories, projects, open, onClose, onSav
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Számla szerkesztése</DialogTitle>
+          <DialogTitle>{t('invoices:dialogs.full_edit.title', 'Számla szerkesztése')}</DialogTitle>
           <DialogDescription>
-            Módosítsd a számla kategóriáját vagy projektjét.
+            {t('invoices:dialogs.edit_desc', 'Módosítsd a számla kategóriáját vagy projektjét.')}
           </DialogDescription>
         </DialogHeader>
         
         <div className="grid gap-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="category">Kategória</Label>
+            <Label htmlFor="category">{t('invoices:columns.category', 'Kategória')}</Label>
             <Select
               value={selectedCategoryId}
               onValueChange={setSelectedCategoryId}
             >
               <SelectTrigger id="category">
-                <SelectValue placeholder="Válassz kategóriát" />
+                <SelectValue placeholder={t('invoices:dialogs.full_edit.select_category', 'Válassz kategóriát')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Nincs kategória</SelectItem>
+                <SelectItem value="none">{t('invoices:dialogs.full_edit.no_category', 'Nincs kategória')}</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
@@ -104,16 +106,16 @@ const InvoiceEditDialog = ({ invoice, categories, projects, open, onClose, onSav
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="project">Projekt</Label>
+            <Label htmlFor="project">{t('invoices:filters.project', 'Projekt')}</Label>
             <Select
               value={selectedProjectId}
               onValueChange={setSelectedProjectId}
             >
               <SelectTrigger id="project">
-                <SelectValue placeholder="Válassz projektet" />
+                <SelectValue placeholder={t('invoices:dialogs.full_edit.select_project', 'Válassz projektet')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Nincs projekt</SelectItem>
+                <SelectItem value="none">{t('invoices:dialogs.full_edit.no_project', 'Nincs projekt')}</SelectItem>
                 {projects.map((project) => (
                   <SelectItem key={project.id} value={project.id}>
                     {project.name}
@@ -124,7 +126,7 @@ const InvoiceEditDialog = ({ invoice, categories, projects, open, onClose, onSav
           </div>
 
           <div className="space-y-2">
-            <Label>Fizetési státusz</Label>
+            <Label>{t('invoices:columns.payment_status', 'Fizetési státusz')}</Label>
             <div>
               {paymentBadge && (
                 <Badge variant="outline" className={paymentBadge.className}>
@@ -137,10 +139,10 @@ const InvoiceEditDialog = ({ invoice, categories, projects, open, onClose, onSav
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isSaving}>
-            Mégse
+            {t('common:actions.cancel', 'Mégse')}
           </Button>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Mentés...' : 'Mentés'}
+            {isSaving ? t('invoices:dialogs.full_edit.saving', 'Mentés...') : t('common:actions.save', 'Mentés')}
           </Button>
         </DialogFooter>
       </DialogContent>

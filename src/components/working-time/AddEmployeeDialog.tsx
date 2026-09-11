@@ -1,8 +1,10 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useProjectList } from '@/hooks/useProjectList';
+import { getActiveLocale } from '@/lib/locale/formatters';
 import {
   Dialog,
   DialogContent,
@@ -20,7 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { UserPlus, UserCheck, UserRoundPlus, Users, Check } from 'lucide-react';
+import { UserPlus, UserRoundPlus, Users, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AddEmployeeDialogProps {
@@ -54,6 +56,8 @@ export function AddEmployeeDialog({
   isSaving,
   existingEmployeeNames = [],
 }: AddEmployeeDialogProps) {
+  const { t } = useTranslation(['hr', 'common']);
+  const currency = getActiveLocale() === 'hr' ? 'EUR' : 'HUF';
   const { selectedCompany } = useCompany();
   const { projects = [] } = useProjectList();
   const [mode, setMode] = useState<AddMode>('member');
@@ -99,15 +103,15 @@ export function AddEmployeeDialog({
     enabled: !!selectedCompany?.id && open,
   });
 
-  // Filter out members that are already in employee_rates
+  // Filter out members who are already employees
   const availableMembers = useMemo(() => {
-    const lowerNames = new Set(existingEmployeeNames.map(n => n.toLowerCase()));
-    return companyMembers.filter(m => !lowerNames.has(m.name.toLowerCase()));
+    const existingSet = new Set(existingEmployeeNames.map(n => n.toLowerCase()));
+    return companyMembers.filter(m => !existingSet.has(m.name.toLowerCase()));
   }, [companyMembers, existingEmployeeNames]);
 
-  // Selected member info
+  // Selected member object
   const selectedMember = useMemo(
-    () => companyMembers.find(m => m.user_id === selectedMemberId) || null,
+    () => companyMembers.find(m => m.user_id === selectedMemberId),
     [companyMembers, selectedMemberId]
   );
 
@@ -157,14 +161,7 @@ export function AddEmployeeDialog({
     : !!form.employee_name.trim() && !isSaving;
 
   const roleLabel = (role: string) => {
-    const labels: Record<string, string> = {
-      admin: 'Admin',
-      member: 'Tag',
-      viewer: 'Betekintő',
-      employee: 'Munkavállaló',
-      owner: 'Tulajdonos',
-    };
-    return labels[role] || role;
+    return t(`hr:working_time.add_employee_dialog.roles.${role}`, role);
   };
 
   return (
@@ -179,7 +176,7 @@ export function AddEmployeeDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-primary" />
-            Dolgozó hozzáadása
+            {t('hr:working_time.add_employee_dialog.title')}
           </DialogTitle>
         </DialogHeader>
 
@@ -196,7 +193,7 @@ export function AddEmployeeDialog({
             )}
           >
             <Users className="h-4 w-4" />
-            Céges tag
+            {t('hr:working_time.add_employee_dialog.mode_member')}
           </button>
           <button
             type="button"
@@ -209,7 +206,7 @@ export function AddEmployeeDialog({
             )}
           >
             <UserRoundPlus className="h-4 w-4" />
-            Kézi megadás
+            {t('hr:working_time.add_employee_dialog.mode_manual')}
           </button>
         </div>
 
@@ -219,16 +216,16 @@ export function AddEmployeeDialog({
                MODE: SELECT FROM COMPANY MEMBERS
                ══════════════════════════════ */
             <div className="space-y-2">
-              <Label>Céges tag kiválasztása *</Label>
+              <Label>{t('hr:working_time.add_employee_dialog.member_select_label')}</Label>
               {membersLoading ? (
-                <div className="p-4 text-sm text-muted-foreground text-center">Betöltés...</div>
+                <div className="p-4 text-sm text-muted-foreground text-center">{t('hr:working_time.add_employee_dialog.loading')}</div>
               ) : availableMembers.length === 0 ? (
                 <div className="p-4 rounded-lg border border-border bg-muted/20 text-center space-y-2">
                   <p className="text-sm text-muted-foreground">
-                    Nincs hozzáadható céges tag.
+                    {t('hr:working_time.add_employee_dialog.no_members')}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Minden cégtag már szerepel a dolgozók között, vagy nincs tag a cégnél.
+                    {t('hr:working_time.add_employee_dialog.no_members_desc')}
                   </p>
                   <Button
                     type="button"
@@ -238,7 +235,7 @@ export function AddEmployeeDialog({
                     className="mt-2"
                   >
                     <UserRoundPlus className="h-3.5 w-3.5 mr-1.5" />
-                    Kézi megadás
+                    {t('hr:working_time.add_employee_dialog.mode_manual')}
                   </Button>
                 </div>
               ) : (
@@ -288,21 +285,21 @@ export function AddEmployeeDialog({
                ══════════════════════════════ */
             <>
               <div className="space-y-2">
-                <Label htmlFor="emp-name">Név *</Label>
+                <Label htmlFor="emp-name">{t('hr:working_time.add_employee_dialog.name_label')}</Label>
                 <Input
                   id="emp-name"
                   value={form.employee_name}
                   onChange={(e) =>
                     setForm({ ...form, employee_name: e.target.value })
                   }
-                  placeholder="Teljes név"
+                  placeholder={t('hr:working_time.add_employee_dialog.name_placeholder')}
                   required
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="emp-email">E-mail</Label>
+                  <Label htmlFor="emp-email">{t('hr:working_time.add_employee_dialog.email_label')}</Label>
                   <Input
                     id="emp-email"
                     type="email"
@@ -312,13 +309,13 @@ export function AddEmployeeDialog({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="emp-phone">Telefonszám</Label>
+                  <Label htmlFor="emp-phone">{t('hr:working_time.add_employee_dialog.phone_label')}</Label>
                   <Input
                     id="emp-phone"
                     type="tel"
                     value={form.phone}
                     onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    placeholder="+36..."
+                    placeholder={t('hr:working_time.add_employee_dialog.phone_placeholder')}
                   />
                 </div>
               </div>
@@ -327,7 +324,7 @@ export function AddEmployeeDialog({
 
           {/* ── Shared fields for both modes ── */}
           <div className="space-y-2">
-            <Label htmlFor="emp-type">Típus</Label>
+            <Label htmlFor="emp-type">{t('hr:working_time.add_employee_dialog.type_label')}</Label>
             <Select
               value={form.employee_type}
               onValueChange={(v: 'employee' | 'contractor') =>
@@ -338,14 +335,14 @@ export function AddEmployeeDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="employee">Bejelentett dolgozó</SelectItem>
-                <SelectItem value="contractor">Alvállalkozó</SelectItem>
+                <SelectItem value="employee">{t('hr:working_time.add_employee_dialog.type_employee')}</SelectItem>
+                <SelectItem value="contractor">{t('hr:working_time.add_employee_dialog.type_contractor')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="emp-project">Projekt (opcionális)</Label>
+            <Label htmlFor="emp-project">{t('hr:working_time.add_employee_dialog.project_label')}</Label>
             <Select
               value={form.project_id}
               onValueChange={(v) =>
@@ -353,11 +350,11 @@ export function AddEmployeeDialog({
               }
             >
               <SelectTrigger id="emp-project">
-                <SelectValue placeholder="Válassz projektet..." />
+                <SelectValue placeholder={t('hr:working_time.add_employee_dialog.project_placeholder')} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__none__">
-                  <span className="text-muted-foreground">Nincs projekthez rendelve</span>
+                  <span className="text-muted-foreground">{t('hr:working_time.add_employee_dialog.no_project')}</span>
                 </SelectItem>
                 {projects.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
@@ -369,7 +366,7 @@ export function AddEmployeeDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="emp-rate">Óradíj (Ft/óra)</Label>
+            <Label htmlFor="emp-rate">{t('hr:working_time.add_employee_dialog.rate_label', { currency })}</Label>
             <Input
               id="emp-rate"
               type="number"
@@ -379,11 +376,10 @@ export function AddEmployeeDialog({
               onChange={(e) =>
                 setForm({ ...form, hourly_rate: e.target.value })
               }
-              placeholder="Pl. 3500"
+              placeholder={t('hr:working_time.add_employee_dialog.rate_placeholder')}
             />
             <p className="text-xs text-muted-foreground">
-              Bejelentett dolgozóknál a bérlistából automatikusan számítódik.
-              Alvállalkozóknál itt adható meg manuálisan.
+              {t('hr:working_time.add_employee_dialog.rate_hint')}
             </p>
           </div>
 
@@ -396,10 +392,10 @@ export function AddEmployeeDialog({
                 reset();
               }}
             >
-              Mégse
+              {t('hr:working_time.add_employee_dialog.cancel')}
             </Button>
             <Button type="submit" disabled={!canSubmit}>
-              {isSaving ? 'Mentés...' : 'Hozzáadás'}
+              {isSaving ? t('hr:working_time.add_employee_dialog.saving') : t('hr:working_time.add_employee_dialog.submit')}
             </Button>
           </DialogFooter>
         </form>

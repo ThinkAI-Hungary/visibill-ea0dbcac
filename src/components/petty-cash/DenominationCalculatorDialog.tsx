@@ -9,6 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import { Calculator, RefreshCw, X, Coins, CheckCircle, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fmtBalance } from './types';
+import { useTranslation } from 'react-i18next';
 
 interface Denomination {
   value: number;
@@ -79,6 +80,7 @@ export default function DenominationCalculatorDialog({
   currency,
   theoreticalBalance,
 }: DenominationCalculatorDialogProps) {
+  const { t } = useTranslation(['pettyCash', 'common']);
   // Use HUF as fallback if currency is not HUF/EUR/USD
   const activeCurrency = useMemo(() => {
     const upper = (currency || 'HUF').toUpperCase();
@@ -278,11 +280,11 @@ export default function DenominationCalculatorDialog({
         <DialogHeader className="border-b border-border/20 pb-3 shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Calculator className="h-5 w-5 text-primary" />
-            Címletszámoló
+            {t('pettyCash:calculator.title', 'Címletszámoló')}
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Pénztár: <strong className="text-foreground">{registerName}</strong> | 
-            Könyv szerinti egyenleg: <strong className="text-foreground font-mono">{fmtBalance(theoreticalBalance, currency)}</strong>
+            {t('pettyCash:calculator.register', 'Pénztár')}: <strong className="text-foreground">{registerName}</strong> | 
+            {' '}{t('pettyCash:calculator.theoretical_balance', 'Könyv szerinti egyenleg')}: <strong className="text-foreground font-mono">{fmtBalance(theoreticalBalance, currency)}</strong>
           </DialogDescription>
         </DialogHeader>
 
@@ -294,7 +296,7 @@ export default function DenominationCalculatorDialog({
             <div className="space-y-2">
               <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 pl-1.5">
                 <Coins className="h-3 w-3 text-primary" />
-                Papírpénzek (Bankjegyek)
+                {t('pettyCash:calculator.notes', 'Papírpénzek (Bankjegyek)')}
               </div>
               <div className="rounded-lg border border-border/40 p-2 bg-muted/5">
                 {notes.map(renderDenomRow)}
@@ -305,13 +307,13 @@ export default function DenominationCalculatorDialog({
             <div className="space-y-2">
               <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 pl-1.5">
                 <Coins className="h-3 w-3 text-amber-500" />
-                Fémpénzek (Érmék)
+                {t('pettyCash:calculator.coins', 'Fémpénzek (Érmék)')}
               </div>
               <div className="rounded-lg border border-border/40 p-2 bg-muted/5">
                 {coins.length > 0 ? (
                   coins.map(renderDenomRow)
                 ) : (
-                  <p className="text-xs text-muted-foreground italic text-center py-4">Nincsenek érmék ehhez a devizához.</p>
+                  <p className="text-xs text-muted-foreground italic text-center py-4">{t('pettyCash:calculator.no_coins', 'Nincsenek érmék ehhez a devizához.')}</p>
                 )}
               </div>
             </div>
@@ -325,7 +327,7 @@ export default function DenominationCalculatorDialog({
             
             {/* Theoretical balance */}
             <div className="space-y-0.5">
-              <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider block">Könyv szerinti</span>
+              <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider block">{t('pettyCash:calculator.theoretical', 'Könyv szerinti')}</span>
               <span className="text-sm font-bold font-mono text-foreground leading-none tabular-nums">
                 {fmtBalance(theoreticalBalance, currency)}
               </span>
@@ -333,7 +335,7 @@ export default function DenominationCalculatorDialog({
 
             {/* Calculated physical total */}
             <div className="space-y-0.5 border-l border-border/40 pl-3">
-              <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider block">Számolt fizikai</span>
+              <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider block">{t('pettyCash:calculator.calculated', 'Számolt fizikai')}</span>
               <span className="text-sm font-bold font-mono text-primary leading-none tabular-nums">
                 {fmtBalance(calculatedTotal, currency)}
               </span>
@@ -342,7 +344,7 @@ export default function DenominationCalculatorDialog({
             {/* Difference / Discrepancy */}
             <div className="space-y-0.5 border-l border-border/40 pl-3">
               <div className="flex items-center gap-1">
-                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider block">Eltérés</span>
+                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider block">{t('pettyCash:calculator.discrepancy', 'Eltérés')}</span>
                 {difference === 0 && <CheckCircle className="h-3.5 w-3.5 text-emerald-500 shrink-0" />}
                 {difference !== 0 && <AlertTriangle className={cn("h-3.5 w-3.5 shrink-0", difference < 0 ? "text-destructive" : "text-amber-500")} />}
               </div>
@@ -368,7 +370,7 @@ export default function DenominationCalculatorDialog({
             onClick={handleClear}
             className="text-xs text-muted-foreground hover:text-foreground hover:bg-muted"
           >
-            Minden törlése
+            {t('pettyCash:calculator.clear_all', 'Minden törlése')}
           </Button>
           <div className="flex gap-2">
             <Button
@@ -378,7 +380,7 @@ export default function DenominationCalculatorDialog({
               onClick={() => onOpenChange(false)}
               className="h-9"
             >
-              Bezárás
+              {t('pettyCash:calculator.close', 'Bezárás')}
             </Button>
           </div>
         </DialogFooter>

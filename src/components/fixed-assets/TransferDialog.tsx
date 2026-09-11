@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,7 @@ interface TransferDialogProps {
 }
 
 export function TransferDialog({ open, onOpenChange, asset }: TransferDialogProps) {
+  const { t } = useTranslation('hr');
   const { toast } = useToast();
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
@@ -54,6 +56,7 @@ export function TransferDialog({ open, onOpenChange, asset }: TransferDialogProp
 
     const newLocation = newLocationId !== '_none' ? locations.find(l => l.id === newLocationId) : null;
     const newProject = newProjectId !== '_none' ? projects.find(p => p.id === newProjectId) : null;
+    const noneText = t('fixed_assets.transfer_dialog.toasts.none');
 
     try {
       await transfer.mutateAsync({
@@ -62,30 +65,30 @@ export function TransferDialog({ open, onOpenChange, asset }: TransferDialogProp
         userId: user.id,
         ...(hasLocationChange ? {
           newLocationId: newLocationId === '_none' ? null : newLocationId,
-          newLocationName: newLocation ? (newLocation.name || newLocation.address) : 'Nincs',
-          oldLocationName: asset.location?.name || asset.location?.address || 'Nincs',
+          newLocationName: newLocation ? (newLocation.name || newLocation.address) : noneText,
+          oldLocationName: asset.location?.name || asset.location?.address || noneText,
         } : {}),
         ...(hasProjectChange ? {
           newProjectId: newProjectId === '_none' ? null : newProjectId,
-          newProjectName: newProject ? newProject.name : 'Nincs',
-          oldProjectName: asset.project?.name || 'Nincs',
+          newProjectName: newProject ? newProject.name : noneText,
+          oldProjectName: asset.project?.name || noneText,
         } : {}),
         eventDate,
         description: description.trim() || undefined,
       });
 
       toast({
-        title: 'Siker',
+        title: t('fixed_assets.transfer_dialog.toasts.success_title'),
         description: hasLocationChange && hasProjectChange
-          ? 'Telephely és projekt sikeresen módosítva.'
+          ? t('fixed_assets.transfer_dialog.toasts.success_both')
           : hasProjectChange
-          ? `Projekt hozzárendelés mentve: ${newProject ? newProject.name : 'Nincs'}`
-          : `Eszköz áthelyezve: ${newLocation ? (newLocation.name || newLocation.address) : 'Nincs'}`,
+          ? t('fixed_assets.transfer_dialog.toasts.success_project', { project: newProject ? newProject.name : noneText })
+          : t('fixed_assets.transfer_dialog.toasts.success_location', { location: newLocation ? (newLocation.name || newLocation.address) : noneText }),
       });
 
       onOpenChange(false);
     } catch {
-      toast({ title: 'Hiba', description: 'Nem sikerült az áthelyezés / módosítás.', variant: 'destructive' });
+      toast({ title: t('fixed_assets.transfer_dialog.toasts.error_title'), description: t('fixed_assets.transfer_dialog.toasts.error_desc'), variant: 'destructive' });
     }
   };
 
@@ -95,26 +98,26 @@ export function TransferDialog({ open, onOpenChange, asset }: TransferDialogProp
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ArrowRightLeft className="h-5 w-5 text-primary" />
-            Áthelyezés & Projekt hozzárendelés
+            {t('fixed_assets.transfer_dialog.title')}
           </DialogTitle>
           <DialogDescription>
-            <strong>{asset.name}</strong> telephelyének vagy projektjének módosítása.
+            {t('fixed_assets.transfer_dialog.description', { name: asset.name })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label>Telephely</Label>
+            <Label>{t('fixed_assets.transfer_dialog.location_label')}</Label>
             <Select value={newLocationId} onValueChange={setNewLocationId}>
               <SelectTrigger>
-                <SelectValue placeholder="Válassz telephelyet..." />
+                <SelectValue placeholder={t('fixed_assets.transfer_dialog.location_placeholder')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="_none">Nincs telephely kijelölve</SelectItem>
+                <SelectItem value="_none">{t('fixed_assets.transfer_dialog.no_location')}</SelectItem>
                 {locations.map(l => (
                   <SelectItem key={l.id} value={l.id}>
                     {l.name ? `${l.name} (${l.address})` : l.address}
-                    {l.location_type === 'headquarters' ? ' — Székhely' : ''}
+                    {l.location_type === 'headquarters' ? t('fixed_assets.transfer_dialog.headquarters_suffix') : ''}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -124,14 +127,14 @@ export function TransferDialog({ open, onOpenChange, asset }: TransferDialogProp
           <div className="space-y-2">
             <Label className="flex items-center gap-1.5">
               <FolderKanban className="h-4 w-4 text-primary" />
-              Hozzárendelt Projekt
+              {t('fixed_assets.transfer_dialog.project_label')}
             </Label>
             <Select value={newProjectId} onValueChange={setNewProjectId}>
               <SelectTrigger>
-                <SelectValue placeholder="Válassz projektet..." />
+                <SelectValue placeholder={t('fixed_assets.transfer_dialog.project_placeholder')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="_none">Nincs projekt hozzárendelve</SelectItem>
+                <SelectItem value="_none">{t('fixed_assets.transfer_dialog.no_project')}</SelectItem>
                 {projects.map(p => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.name} {p.project_code ? `(${p.project_code})` : ''}
@@ -142,30 +145,30 @@ export function TransferDialog({ open, onOpenChange, asset }: TransferDialogProp
           </div>
 
           <div className="space-y-2">
-            <Label>Változás dátuma</Label>
+            <Label>{t('fixed_assets.transfer_dialog.date_label')}</Label>
             <Input type="date" value={eventDate} onChange={e => setEventDate(e.target.value)} />
           </div>
 
           <div className="space-y-2">
-            <Label>Megjegyzés</Label>
+            <Label>{t('fixed_assets.transfer_dialog.notes_label')}</Label>
             <Textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
-              placeholder="Opcionális megjegyzés a naplóhoz..."
+              placeholder={t('fixed_assets.transfer_dialog.notes_placeholder')}
               rows={2}
             />
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Mégse</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{t('fixed_assets.transfer_dialog.cancel')}</Button>
           <Button
             onClick={handleSubmit}
             disabled={!hasChanges || transfer.isPending}
             className="gap-2"
           >
             <ArrowRightLeft className="h-4 w-4" />
-            {transfer.isPending ? 'Mentés...' : 'Változtatások mentése'}
+            {transfer.isPending ? t('fixed_assets.transfer_dialog.saving') : t('fixed_assets.transfer_dialog.save')}
           </Button>
         </DialogFooter>
       </DialogContent>

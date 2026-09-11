@@ -12,32 +12,30 @@ describe('JournalsPage Action Buttons Tooltips & Accessibility', () => {
 
   it('has CustomTooltip for all journal action buttons', () => {
     // 1. View details
-    expect(fileContent).toContain('content="Bizonylat megtekintése"');
-    expect(fileContent).toContain('aria-label="Bizonylat megtekintése"');
+    expect(fileContent).toContain('view_document');
+    expect(fileContent).toContain('Bizonylat megtekintése');
 
     // 2. Audit history
-    expect(fileContent).toContain('content="Módosítási előzmények"');
-    expect(fileContent).toContain('aria-label="Módosítási előzmények"');
+    expect(fileContent).toContain('edit_history');
+    expect(fileContent).toContain('Módosítási előzmények');
 
     // 3. Storno
-    expect(fileContent).toContain('content="Sztornózás"');
-    expect(fileContent).toContain('aria-label="Bizonylat sztornózása"');
+    expect(fileContent).toContain('storno_cancel');
+    expect(fileContent).toContain('storno_aria');
 
     // 4. Correction
-    expect(fileContent).toContain('content="Javítás / Helyesbítés"');
-    expect(fileContent).toContain('aria-label="Javítás vagy helyesbítés"');
+    expect(fileContent).toContain('correct_aria');
 
     // 5. Post/Approve draft
-    expect(fileContent).toContain('content="Könyvelés"');
-    expect(fileContent).toContain('aria-label="Bizonylat végleges könyvelése"');
+    expect(fileContent).toContain('approve_and_post');
+    expect(fileContent).toContain('post_entry');
 
     // 6. Edit draft
-    expect(fileContent).toContain('content="Szerkesztés"');
-    expect(fileContent).toContain('aria-label="Bizonylat szerkesztése"');
+    expect(fileContent).toContain('edit_entry');
+    expect(fileContent).toContain('edit_entry_aria');
 
     // 7. Delete draft
-    expect(fileContent).toContain('content="Piszkozat törlése"');
-    expect(fileContent).toContain('aria-label="Piszkozat törlése"');
+    expect(fileContent).toContain('delete_draft');
   });
 
   it('does not have native title attributes on action buttons (prevents double tooltip bug)', () => {
@@ -50,12 +48,13 @@ describe('JournalsPage Action Buttons Tooltips & Accessibility', () => {
   });
 
   it('sets Műveletek column width to 135px to prevent wrapping of 5 action icons', () => {
-    expect(fileContent).toContain('<TableHead className="w-[135px] text-right whitespace-nowrap">Műveletek</TableHead>');
+    expect(fileContent).toContain('<TableHead className="w-[135px] text-right whitespace-nowrap">');
+    expect(fileContent).toContain("'Műveletek'");
     expect(fileContent).toContain('<TableCell className="w-[135px] text-right">');
   });
 
   it('renders Lock icon with explanatory tooltip on closed/posted non-draft items', () => {
-    expect(fileContent).toContain('Lekönyvelt zárt tétel (hivatalos naplószámmal ellátva)');
+    expect(fileContent).toContain('Lekönyvelt zárt tétel (${lock.reason})');
     expect(fileContent).toContain('Sztornózott tétel (lezárt, nem jelölhető ki tömeges műveletre)');
     expect(fileContent).toContain('<Lock className="w-3.5 h-3.5" />');
   });

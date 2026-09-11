@@ -2,5 +2,110 @@
   "title": "Korisnički zahtjevi",
   "subtitle_admin": "Svi pristigli zahtjevi i povratne informacije",
   "subtitle_user": "Vaši poslani zahtjevi i povratne informacije",
-  "new_ticket": "Otvori novi zahtjev"
+  "new_ticket": "Otvori novi zahtjev",
+  "search_placeholder": "Pretraži po broju zahtjeva, poruci, tvrtki ili e-mailu...",
+  "clear_search": "Očisti pretragu",
+  "show_all_tickets": "Svi zahtjevi",
+  "unread": "Nepročitano",
+  "unassigned": "Nema",
+  "tabs": {
+    "list": "Popis zahtjeva",
+    "console": "Konzola za rješavanje",
+    "analytics": "Analitika i SLA",
+    "assignment": "Opterećenje i dodjela"
+  },
+  "kpi": {
+    "open": "Otvoreno",
+    "assigned": "Dodijeljeno",
+    "in_progress": "U tijeku",
+    "resolved": "Riješeno",
+    "critical_sla": "Kritični SLA"
+  },
+  "status_filter": {
+    "active_count": "Aktivni zahtjevi ({{count}})",
+    "all_count": "Svi statusi ({{count}})",
+    "active": "Aktivni zahtjevi",
+    "default_active": "Zadano (Aktivni zahtjevi)",
+    "all_statuses": "Svi statusi (Uključujući riješene)"
+  },
+  "status": {
+    "created": "Otvoreno",
+    "assigned": "Dodijeljeno",
+    "in_progress": "U tijeku",
+    "resolved": "Riješeno",
+    "waiting_for_confirmation": "Čeka potvrdu"
+  },
+  "priority_filter": {
+    "placeholder": "Prioritet"
+  },
+  "priority": {
+    "all": "Svi prioriteti",
+    "low": "Nizak",
+    "medium": "Srednji",
+    "high": "Visok",
+    "critical": "Kritičan"
+  },
+  "service_filter": {
+    "placeholder": "Usluga",
+    "all": "Sve platforme"
+  },
+  "types": {
+    "bug": "Prijava greške",
+    "feedback": "Povratna informacija",
+    "question": "Pitanje"
+  },
+  "table": {
+    "col_ticket_number": "Broj zahtjeva",
+    "col_type": "Tip",
+    "col_system": "Sustav",
+    "col_subject": "Predmet",
+    "col_user_company": "Podnositelj i tvrtka",
+    "col_assignee": "Zadužena osoba",
+    "col_status": "Status",
+    "col_priority": "Prioritet",
+    "col_created_at": "Kreirano",
+    "empty_state": "Nema zahtjeva koji odgovaraju filterima"
+  },
+  "console": {
+    "pending_tickets": "Zahtjevi na čekanju",
+    "all_tickets": "Svi zahtjevi",
+    "search_placeholder": "Pretraži...",
+    "empty_search": "Nema rezultata za pretragu \"{{query}}\"",
+    "empty_own": "Nema vaših ili otvorenih zahtjeva na čekanju",
+    "empty_all": "Nema aktivnih zahtjeva na čekanju",
+    "console_title": "Konzola za rješavanje",
+    "console_desc": "Odaberite aktivni zahtjev s popisa s lijeve strane za odgovor i postavljanje parametara."
+  },
+  "analytics": {
+    "incoming_title": "Broj pristiglih zahtjeva (Zadnjih 7 dana)",
+    "category_title": "Zahtjevi prema kategorijama",
+    "category_bug": "Softverska greška (Bug)",
+    "category_billing": "Pitanja o računima / poreznoj sinkronizaciji",
+    "category_feature": "Zahtjevi za funkcijama (Feature Request)",
+    "count_unit": "{{count}} kom",
+    "days": {
+      "mon": "Ponedjeljak",
+      "tue": "Utorak",
+      "wed": "Srijeda",
+      "thu": "Četvrtak",
+      "fri": "Petak",
+      "sat": "Subota",
+      "sun": "Nedjelja"
+    }
+  },
+  "assignment": {
+    "selected_count": "Označeno: {{count}} zahtjeva",
+    "assignee_placeholder": "Dodijeli zaduženu osobu...",
+    "status_placeholder": "Promijeni status...",
+    "unassigned": "Nije dodijeljeno",
+    "apply_button": "Primijeni",
+    "col_subject": "Predmet problema",
+    "col_current_assignee": "Trenutno zadužena osoba",
+    "col_company": "Tvrtka",
+    "team_workload_title": "Opterećenje tima za podršku",
+    "unassigned_queue_title": "Nedodijeljeni zahtjevi (Red čekanja)",
+    "unassigned_queue_desc": "Pristigli zahtjevi na čekanju",
+    "tickets_count": "{{count}} zahtjeva",
+    "tickets_ratio": "{{current}} / {{max}} zahtjeva"
+  }
 }

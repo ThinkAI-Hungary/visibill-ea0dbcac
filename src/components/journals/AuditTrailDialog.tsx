@@ -1,9 +1,11 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2, History, User, ArrowRight } from 'lucide-react';
+import { getActiveLocale } from '@/lib/locale/formatters';
 
 interface AuditTrailDialogProps {
   open: boolean;
@@ -11,23 +13,9 @@ interface AuditTrailDialogProps {
   entryId: string;
 }
 
-const FIELD_LABELS: Record<string, string> = {
-  status: 'Státusz',
-  description: 'Megnevezés',
-  posting_date: 'Teljesítés dátuma',
-  document_id: 'Bizonylatszám',
-};
-
-const STATUS_NAMES: Record<string, string> = {
-  GEPI_JAVASLAT: 'Rendszer javaslat',
-  KEZI_PISZKOZAT: 'Piszkozat',
-  JOVAHAGYASRA_VAR: 'Jóváhagyásra vár',
-  KONYVELT: 'Könyvelt',
-  SZTORNOZOTT: 'Sztornózott',
-  ELVETVE: 'Elvetve',
-};
-
 export default function AuditTrailDialog({ open, onOpenChange, entryId }: AuditTrailDialogProps) {
+  const { t } = useTranslation(['accounting', 'common']);
+
   // Query logs
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ['acc-journal-audit', entryId],
@@ -46,16 +34,24 @@ export default function AuditTrailDialog({ open, onOpenChange, entryId }: AuditT
 
   const formatValue = (field: string, val: any) => {
     if (val === null || val === undefined) return '—';
-    if (field === 'status') return STATUS_NAMES[val] || val;
+    if (field === 'status') {
+      return t(`accounting:dialogs.audit_trail.statuses.${val}` as any, { defaultValue: val });
+    }
     return String(val);
   };
+
+  const getFieldLabel = (field: string) => {
+    return t(`accounting:dialogs.audit_trail.fields.${field}` as any, { defaultValue: field });
+  };
+
+  const activeLocaleCode = getActiveLocale() === 'hr' ? 'hr-HR' : 'hu-HU';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <History className="w-5 h-5 text-primary" /> Módosítások története (Audit Trail)
+            <History className="w-5 h-5 text-primary" /> {t('accounting:dialogs.audit_trail.title')}
           </DialogTitle>
         </DialogHeader>
 
@@ -64,12 +60,12 @@ export default function AuditTrailDialog({ open, onOpenChange, entryId }: AuditT
             <div className="py-12 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
           ) : logs.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground text-xs">
-              Nincs elérhető audit napló ehhez a bizonylathoz.
+              {t('accounting:dialogs.audit_trail.no_logs')}
             </div>
           ) : (
             <div className="relative border-l border-border ml-3.5 space-y-6">
               {logs.map((log: any) => {
-                const dateStr = new Date(log.timestamp).toLocaleString('hu-HU', {
+                const dateStr = new Date(log.timestamp).toLocaleString(activeLocaleCode, {
                   year: 'numeric',
                   month: '2-digit',
                   day: '2-digit',
@@ -91,20 +87,24 @@ export default function AuditTrailDialog({ open, onOpenChange, entryId }: AuditT
                         <span className="font-mono">{dateStr}</span>
                         <span className="flex items-center gap-1">
                           <User className="w-3 h-3" />
-                          {log.user_id ? 'Könyvelő' : 'Rendszer'}
+                          {log.user_id ? t('accounting:dialogs.audit_trail.accountant') : t('accounting:dialogs.audit_trail.system')}
                         </span>
                       </div>
 
                       {/* Event description */}
                       <div className="font-medium text-foreground text-sm">
                         {log.event === 'INSERT' && (
-                          <span className="text-emerald-600">Bizonylat létrehozva ({STATUS_NAMES[log.new_status] || log.new_status})</span>
+                          <span className="text-emerald-600">
+                            {t('accounting:dialogs.audit_trail.event_created', { status: formatValue('status', log.new_status) })}
+                          </span>
                         )}
                         {log.event === 'DELETE' && (
-                          <span className="text-destructive font-semibold">Bizonylat törölve</span>
+                          <span className="text-destructive font-semibold">
+                            {t('accounting:dialogs.audit_trail.event_deleted')}
+                          </span>
                         )}
                         {log.event === 'UPDATE' && (
-                          <span>Módosítás végrehajtva</span>
+                          <span>{t('accounting:dialogs.audit_trail.event_updated')}</span>
                         )}
                       </div>
 
@@ -113,7 +113,7 @@ export default function AuditTrailDialog({ open, onOpenChange, entryId }: AuditT
                         <div className="bg-muted/40 p-2.5 rounded-lg border space-y-1 mt-1 text-[11px]">
                           {Object.entries(log.changes).map(([field, delta]: [string, any]) => (
                             <div key={field} className="flex flex-col gap-0.5 border-b border-border/10 pb-1 last:border-0 last:pb-0">
-                              <span className="font-semibold text-muted-foreground">{FIELD_LABELS[field] || field}:</span>
+                              <span className="font-semibold text-muted-foreground">{getFieldLabel(field)}:</span>
                               <div className="flex items-center gap-1.5 font-medium text-foreground">
                                 <span className="line-through text-muted-foreground">{formatValue(field, delta.old)}</span>
                                 <ArrowRight className="w-3 h-3 text-muted-foreground" />
@@ -133,7 +133,7 @@ export default function AuditTrailDialog({ open, onOpenChange, entryId }: AuditT
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} size="sm">
-            Bezárás
+            {t('accounting:dialogs.audit_trail.close')}
           </Button>
         </DialogFooter>
       </DialogContent>

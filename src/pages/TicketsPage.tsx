@@ -75,7 +75,8 @@ import {
 import { useScopedBasePath } from "@/lib/navigation";
 import { stripHtml, getTicketSummary } from "@/lib/utils";
 import { format } from "date-fns";
-import { hu } from "date-fns/locale";
+import { hu, hr } from "date-fns/locale";
+import { getActiveLocale } from "@/lib/locale/formatters";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -326,7 +327,8 @@ export default function TicketsPage({
   };
 
   const formatDate = (date: string) => {
-    return format(new Date(date), "MMM d. HH:mm", { locale: hu });
+    const dateLocale = getActiveLocale() === 'hr' ? hr : hu;
+    return format(new Date(date), "MMM d. HH:mm", { locale: dateLocale });
   };
 
   const truncate = (str: string | null | undefined, len: number) => {
@@ -434,7 +436,7 @@ export default function TicketsPage({
             }`}
           >
             <Layers className="h-3.5 w-3.5" />
-            Jegyek Listája
+            {t('tickets:tabs.list', 'Jegyek Listája')}
           </button>
           <button
             onClick={() => setSubTab('console')}
@@ -443,7 +445,7 @@ export default function TicketsPage({
             }`}
           >
             <MessageSquare className="h-3.5 w-3.5" />
-            Kezelőkonzol
+            {t('tickets:tabs.console', 'Kezelőkonzol')}
           </button>
           <button
             onClick={() => setSubTab('analytics')}
@@ -452,7 +454,7 @@ export default function TicketsPage({
             }`}
           >
             <BarChart3 className="h-3.5 w-3.5" />
-            Analitika & SLA
+            {t('tickets:tabs.analytics', 'Analitika & SLA')}
           </button>
           <button
             onClick={() => setSubTab('assignment')}
@@ -461,7 +463,7 @@ export default function TicketsPage({
             }`}
           >
             <UserCheck className="h-3.5 w-3.5" />
-            Terhelés & Elosztás
+            {t('tickets:tabs.assignment', 'Terhelés & Elosztás')}
           </button>
         </div>
 
@@ -502,7 +504,7 @@ export default function TicketsPage({
                 </div>
                 <div>
                   <p className="text-2xl font-bold leading-none tabular-nums text-sky-600 dark:text-sky-400">{kpis.created}</p>
-                  <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">Nyitott</p>
+                  <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">{t('tickets:kpi.open', 'Nyitott')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -524,7 +526,7 @@ export default function TicketsPage({
                 </div>
                 <div>
                   <p className="text-2xl font-bold leading-none tabular-nums text-blue-600 dark:text-blue-400">{kpis.assigned}</p>
-                  <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">Hozzárendelt</p>
+                  <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">{t('tickets:kpi.assigned', 'Hozzárendelt')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -546,7 +548,7 @@ export default function TicketsPage({
                 </div>
                 <div>
                   <p className="text-2xl font-bold leading-none tabular-nums text-teal-600 dark:text-teal-400">{kpis.inProgress}</p>
-                  <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">Folyamatban</p>
+                  <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">{t('tickets:kpi.in_progress', 'Folyamatban')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -568,7 +570,7 @@ export default function TicketsPage({
                 </div>
                 <div>
                   <p className="text-2xl font-bold leading-none tabular-nums text-emerald-600 dark:text-emerald-400">{kpis.closed}</p>
-                  <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">Megoldva</p>
+                  <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">{t('tickets:kpi.resolved', 'Megoldva')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -586,7 +588,7 @@ export default function TicketsPage({
                 </div>
                 <div>
                   <p className="text-2xl font-bold leading-none tabular-nums text-destructive">{kpis.critical}</p>
-                  <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">Kritikus SLA</p>
+                  <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">{t('tickets:kpi.critical_sla', 'Kritikus SLA')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -600,7 +602,7 @@ export default function TicketsPage({
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Keresés jegyszám, üzenet, cég vagy email alapján..."
+                  placeholder={t('tickets:search_placeholder', 'Keresés jegyszám, üzenet, cég vagy email alapján...')}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className={`pl-9 ${search ? 'pr-9' : ''} h-10`}
@@ -610,7 +612,7 @@ export default function TicketsPage({
                     type="button"
                     onClick={() => setSearch('')}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label="Keresés törlése"
+                    aria-label={t('tickets:clear_search', 'Keresés törlése')}
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -622,17 +624,17 @@ export default function TicketsPage({
                     <Button variant="outline" className="w-[195px] h-10 justify-between text-left font-normal">
                       <span className="truncate">
                         {selectedStatuses.length === 3 && ACTIVE_TICKET_STATUSES.every(s => selectedStatuses.includes(s))
-                          ? "Aktív jegyek (3)"
+                          ? t('tickets:status_filter.active_count', { count: 3, defaultValue: 'Aktív jegyek (3)' })
                           : selectedStatuses.length === 4
-                          ? "Összes státusz (4)"
+                          ? t('tickets:status_filter.all_count', { count: 4, defaultValue: 'Összes státusz (4)' })
                           : selectedStatuses.length === 0
-                          ? "Aktív jegyek"
+                          ? t('tickets:status_filter.active', 'Aktív jegyek')
                           : selectedStatuses
                               .map((s) => {
-                                if (s === "created") return "Nyitott";
-                                if (s === "assigned") return "Hozzárendelt";
-                                if (s === "in_progress") return "Folyamatban";
-                                return "Megoldva";
+                                if (s === "created") return t('tickets:status.created', 'Nyitott');
+                                if (s === "assigned") return t('tickets:status.assigned', 'Hozzárendelt');
+                                if (s === "in_progress") return t('tickets:status.in_progress', 'Folyamatban');
+                                return t('tickets:status.resolved', 'Megoldva');
                               })
                               .join(", ")}
                       </span>
@@ -642,10 +644,10 @@ export default function TicketsPage({
                   <PopoverContent className="w-[220px] p-2" align="start">
                     <div className="space-y-1">
                       {[
-                        { value: "created" as TicketStatus, label: "Nyitott" },
-                        { value: "assigned" as TicketStatus, label: "Hozzárendelt" },
-                        { value: "in_progress" as TicketStatus, label: "Folyamatban" },
-                        { value: "resolved" as TicketStatus, label: "Megoldva" },
+                        { value: "created" as TicketStatus, label: t('tickets:status.created', 'Nyitott') },
+                        { value: "assigned" as TicketStatus, label: t('tickets:status.assigned', 'Hozzárendelt') },
+                        { value: "in_progress" as TicketStatus, label: t('tickets:status.in_progress', 'Folyamatban') },
+                        { value: "resolved" as TicketStatus, label: t('tickets:status.resolved', 'Megoldva') },
                       ].map((opt) => (
                         <label
                           key={opt.value}
@@ -672,7 +674,7 @@ export default function TicketsPage({
                           className="w-full justify-start text-xs h-7 px-2 font-normal"
                           onClick={() => setSelectedStatuses(ACTIVE_TICKET_STATUSES)}
                         >
-                          Alapértelmezett (Aktív jegyek)
+                          {t('tickets:status_filter.default_active', 'Alapértelmezett (Aktív jegyek)')}
                         </Button>
                         <Button
                           variant="ghost"
@@ -680,7 +682,7 @@ export default function TicketsPage({
                           className="w-full justify-start text-xs h-7 px-2 font-normal text-muted-foreground"
                           onClick={() => setSelectedStatuses(["created", "assigned", "in_progress", "resolved"])}
                         >
-                          Összes státusz (Megoldottakkal)
+                          {t('tickets:status_filter.all_statuses', 'Összes státusz (Megoldottakkal)')}
                         </Button>
                       </div>
                     </div>
@@ -689,23 +691,23 @@ export default function TicketsPage({
 
                 <Select value={priorityFilter} onValueChange={setPriorityFilter}>
                   <SelectTrigger className="w-[150px] h-10">
-                    <SelectValue placeholder="Prioritás" />
+                    <SelectValue placeholder={t('tickets:priority_filter.placeholder', 'Prioritás')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Összes prioritás</SelectItem>
-                    <SelectItem value="low">Alacsony</SelectItem>
-                    <SelectItem value="medium">Közepes</SelectItem>
-                    <SelectItem value="high">Magas</SelectItem>
-                    <SelectItem value="critical">Kritikus</SelectItem>
+                    <SelectItem value="all">{t('tickets:priority.all', 'Összes prioritás')}</SelectItem>
+                    <SelectItem value="low">{t('tickets:priority.low', 'Alacsony')}</SelectItem>
+                    <SelectItem value="medium">{t('tickets:priority.medium', 'Közepes')}</SelectItem>
+                    <SelectItem value="high">{t('tickets:priority.high', 'Magas')}</SelectItem>
+                    <SelectItem value="critical">{t('tickets:priority.critical', 'Kritikus')}</SelectItem>
                   </SelectContent>
                 </Select>
 
                 <Select value={serviceFilter} onValueChange={setServiceFilter}>
                   <SelectTrigger className="w-[150px] h-10">
-                    <SelectValue placeholder="Szolgáltatás" />
+                    <SelectValue placeholder={t('tickets:service_filter.placeholder', 'Szolgáltatás')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Összes platform</SelectItem>
+                    <SelectItem value="all">{t('tickets:service_filter.all', 'Összes platform')}</SelectItem>
                     <SelectItem value="eaisybill">eaisybill</SelectItem>
                     <SelectItem value="accounty">eaisyBooks</SelectItem>
                   </SelectContent>
@@ -721,7 +723,7 @@ export default function TicketsPage({
                       htmlFor="show-all-tickets"
                       className="text-xs font-semibold leading-none cursor-pointer select-none text-foreground/80"
                     >
-                      Összes ticket
+                      {t('tickets:show_all_tickets', 'Összes ticket')}
                     </label>
                   </div>
                 )}
@@ -734,19 +736,19 @@ export default function TicketsPage({
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 px-1 text-[11px] text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <Bug className="h-3.5 w-3.5 text-red-500" />
-            Hibajelentés
+            {t('tickets:types.bug', 'Hibajelentés')}
           </span>
           <span className="flex items-center gap-1.5">
             <Lightbulb className="h-3.5 w-3.5 text-amber-500" />
-            Visszajelzés
+            {t('tickets:types.feedback', 'Visszajelzés')}
           </span>
           <span className="flex items-center gap-1.5">
             <HelpCircle className="h-3.5 w-3.5 text-sky-500" />
-            Kérdés
+            {t('tickets:types.question', 'Kérdés')}
           </span>
           <span className="border-l pl-5 flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-primary inline-block" />
-            Olvasatlan
+            {t('tickets:unread', 'Olvasatlan')}
           </span>
         </div>
 
@@ -756,15 +758,15 @@ export default function TicketsPage({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[120px]">Jegyszám</TableHead>
-                  <TableHead className="w-[60px]">Típus</TableHead>
-                  <TableHead className="w-[110px]">Rendszer</TableHead>
-                  <TableHead>Tárgy</TableHead>
-                  {isAdmin && <TableHead className="w-[180px]">Bejelentő & Cég</TableHead>}
-                  {isAdmin && <TableHead className="w-[180px] min-w-[170px]">Felelős</TableHead>}
-                  <TableHead className="w-[170px] min-w-[165px] text-center">Státusz</TableHead>
-                  <TableHead className="w-[130px] min-w-[125px] text-center">Prioritás</TableHead>
-                  <TableHead className="w-[110px] text-center">Létrehozva</TableHead>
+                  <TableHead className="w-[120px]">{t('tickets:table.col_ticket_number', 'Jegyszám')}</TableHead>
+                  <TableHead className="w-[60px]">{t('tickets:table.col_type', 'Típus')}</TableHead>
+                  <TableHead className="w-[110px]">{t('tickets:table.col_system', 'Rendszer')}</TableHead>
+                  <TableHead>{t('tickets:table.col_subject', 'Tárgy')}</TableHead>
+                  {isAdmin && <TableHead className="w-[180px]">{t('tickets:table.col_user_company', 'Bejelentő & Cég')}</TableHead>}
+                  {isAdmin && <TableHead className="w-[180px] min-w-[170px]">{t('tickets:table.col_assignee', 'Felelős')}</TableHead>}
+                  <TableHead className="w-[170px] min-w-[165px] text-center">{t('tickets:table.col_status', 'Státusz')}</TableHead>
+                  <TableHead className="w-[130px] min-w-[125px] text-center">{t('tickets:table.col_priority', 'Prioritás')}</TableHead>
+                  <TableHead className="w-[110px] text-center">{t('tickets:table.col_created_at', 'Létrehozva')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -775,7 +777,7 @@ export default function TicketsPage({
                     <TableCell colSpan={isAdmin ? 9 : 7} className="text-center py-16 text-muted-foreground">
                       <div className="flex flex-col items-center justify-center gap-3">
                         <Inbox className="h-12 w-12 opacity-40" />
-                        <p className="text-sm">Nincs a szűrésnek megfelelő hibajegy</p>
+                        <p className="text-sm">{t('tickets:table.empty_state', 'Nincs a szűrésnek megfelelő hibajegy')}</p>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -845,7 +847,7 @@ export default function TicketsPage({
                       {isAdmin && (
                         <TableCell className="whitespace-nowrap">
                           <span className="text-xs font-medium text-foreground/80 whitespace-nowrap">
-                            {ticket.assigned_to_name || <span className="text-muted-foreground/60 italic">Nincs</span>}
+                            {ticket.assigned_to_name || <span className="text-muted-foreground/60 italic">{t('tickets:unassigned', 'Nincs')}</span>}
                           </span>
                         </TableCell>
                       )}
@@ -898,7 +900,7 @@ export default function TicketsPage({
         <div className="w-full lg:w-72 xl:w-80 shrink-0 border border-border bg-card/40 backdrop-blur-md rounded-xl overflow-hidden flex flex-col lg:sticky lg:top-[3.75rem] max-h-[calc(100vh-12rem)]">
           <div className="p-3 border-b border-border bg-muted/10 shrink-0">
             <div className="flex items-center justify-between gap-2 mb-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Függőben lévő jegyek</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('tickets:console.pending_tickets', 'Függőben lévő jegyek')}</h3>
               {isAdmin && (
                 <div className="flex items-center gap-1.5 shrink-0">
                   <Checkbox
@@ -910,7 +912,7 @@ export default function TicketsPage({
                     htmlFor="console-show-all-tickets"
                     className="text-[11px] font-medium leading-none cursor-pointer select-none text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    Összes jegy
+                    {t('tickets:console.all_tickets', 'Összes jegy')}
                   </label>
                 </div>
               )}
@@ -918,7 +920,7 @@ export default function TicketsPage({
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
-                placeholder="Keresés..."
+                placeholder={t('tickets:console.search_placeholder', 'Keresés...')}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 className={`pl-8 ${search ? 'pr-8' : ''} h-8 text-xs bg-background`}
@@ -928,7 +930,7 @@ export default function TicketsPage({
                   type="button"
                   onClick={() => setSearch('')}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label="Keresés törlése"
+                  aria-label={t('tickets:clear_search', 'Keresés törlése')}
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -936,61 +938,61 @@ export default function TicketsPage({
             </div>
           </div>
           <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-border/40">
-            {consoleTickets.map(t => {
-              const active = t.id === ticketId;
+            {consoleTickets.map(t_item => {
+              const active = t_item.id === ticketId;
               return (
                 <button
-                  key={t.id}
-                  onClick={() => updateParams({ subView: "console", id: t.id })}
+                  key={t_item.id}
+                  onClick={() => updateParams({ subView: "console", id: t_item.id })}
                   className={`w-full text-left p-3 flex flex-col gap-1.5 transition-colors border-l-2 first:border-t-0 ${
                     active
                       ? 'bg-primary/10 border-l-primary'
-                      : t.has_unread
+                      : t_item.has_unread
                         ? 'bg-primary/[0.06] border-l-primary/60 hover:bg-primary/[0.10]'
                         : 'border-l-transparent hover:bg-accent/40'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-1.5 w-full">
                     <div className="flex items-center gap-1.5">
-                      {t.has_unread && (
+                      {t_item.has_unread && (
                         <span className="relative flex h-1.5 w-1.5 shrink-0">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/85 opacity-75" />
                           <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
                         </span>
                       )}
                       <span className="font-mono text-[10px] font-bold text-primary">
-                        #{t.ticket_number || t.id.slice(0, 8)}
+                        #{t_item.ticket_number || t_item.id.slice(0, 8)}
                       </span>
-                      {t.waiting_for_user_confirmation ? (
+                      {t_item.waiting_for_user_confirmation ? (
                         <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/25">
-                          Visszaigazolásra vár
+                          {t('tickets:status.waiting_for_confirmation', 'Visszaigazolásra vár')}
                         </span>
-                      ) : (t.status === "created" || t.status === "new" || t.status === "open") ? (
+                      ) : (t_item.status === "created" || t_item.status === "new" || t_item.status === "open") ? (
                         <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/25">
-                          Nyitott
+                          {t('tickets:status.created', 'Nyitott')}
                         </span>
-                      ) : t.status === "assigned" ? (
+                      ) : t_item.status === "assigned" ? (
                         <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-blue-600/15 text-blue-600 dark:text-blue-400 border border-blue-500/30">
-                          Hozzárendelt
+                          {t('tickets:status.assigned', 'Hozzárendelt')}
                         </span>
-                      ) : t.status === "in_progress" ? (
+                      ) : t_item.status === "in_progress" ? (
                         <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/30">
-                          Folyamatban
+                          {t('tickets:status.in_progress', 'Folyamatban')}
                         </span>
                       ) : null}
                     </div>
                     <span className="text-[10px] text-muted-foreground">
-                      {formatDate(t.created_at)}
+                      {formatDate(t_item.created_at)}
                     </span>
                   </div>
                   <p className="text-xs font-semibold text-foreground truncate max-w-[220px]">
-                    {truncate(stripHtml(t.message), 32)}
+                    {truncate(stripHtml(t_item.message), 32)}
                   </p>
                   <div className="flex items-center justify-between w-full">
                     <span className="text-[10px] text-muted-foreground truncate max-w-[120px]">
-                      {t.company_name}
+                      {t_item.company_name}
                     </span>
-                    <TicketPriorityBadge priority={t.priority} />
+                    <TicketPriorityBadge priority={t_item.priority} />
                   </div>
                 </button>
               );
@@ -998,10 +1000,10 @@ export default function TicketsPage({
             {consoleTickets.length === 0 && (
               <div className="p-6 text-center text-xs text-muted-foreground italic">
                 {search.trim()
-                  ? `Nincs találat a(z) "${search}" keresésre`
+                  ? t('tickets:console.empty_search', { query: search, defaultValue: `Nincs találat a(z) "${search}" keresésre` })
                   : !showAllTickets
-                    ? "Nincs saját vagy nyitott függőben lévő hibajegy"
-                    : "Nincs aktív függőben lévő hibajegy"}
+                    ? t('tickets:console.empty_own', "Nincs saját vagy nyitott függőben lévő hibajegy")
+                    : t('tickets:console.empty_all', "Nincs aktív függőben lévő hibajegy")}
               </div>
             )}
           </div>
@@ -1021,8 +1023,8 @@ export default function TicketsPage({
             <div className="min-h-[400px] border border-border border-dashed rounded-xl flex flex-col items-center justify-center gap-3 text-muted-foreground bg-card/10 p-12">
               <TicketCheck className="h-16 w-16 opacity-25 animate-pulse" />
               <div className="text-center">
-                <p className="text-sm font-semibold text-foreground">Kezelőkonzol</p>
-                <p className="text-xs mt-1">Válasszon ki egy aktív jegyet a bal oldali listából a válaszadáshoz és paraméterezéshez.</p>
+                <p className="text-sm font-semibold text-foreground">{t('tickets:console.console_title', 'Kezelőkonzol')}</p>
+                <p className="text-xs mt-1">{t('tickets:console.console_desc', 'Válasszon ki egy aktív jegyet a bal oldali listából a válaszadáshoz és paraméterezéshez.')}</p>
               </div>
             </div>
           )}
@@ -1043,23 +1045,23 @@ export default function TicketsPage({
             <CardHeader>
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <BarChart3 className="h-4 w-4 text-primary" />
-                Beérkező jegyek száma (Elmúlt 7 nap)
+                {t('tickets:analytics.incoming_title', 'Beérkező jegyek száma (Elmúlt 7 nap)')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-64 flex items-end gap-5 pt-6 pb-2 border-b border-border/40 px-4">
                 {[
-                  { label: "Hétfő", h: "120px", count: 12 },
-                  { label: "Kedd", h: "80px", count: 8 },
-                  { label: "Szerda", h: "160px", count: 16 },
-                  { label: "Csütörtök", h: "190px", count: 19 },
-                  { label: "Péntek", h: "90px", count: 9 },
-                  { label: "Szombat", h: "40px", count: 4 },
-                  { label: "Vasárnap", h: "30px", count: 3 }
+                  { label: t('tickets:analytics.days.mon', 'Hétfő'), h: "120px", count: 12 },
+                  { label: t('tickets:analytics.days.tue', 'Kedd'), h: "80px", count: 8 },
+                  { label: t('tickets:analytics.days.wed', 'Szerda'), h: "160px", count: 16 },
+                  { label: t('tickets:analytics.days.thu', 'Csütörtök'), h: "190px", count: 19 },
+                  { label: t('tickets:analytics.days.fri', 'Péntek'), h: "90px", count: 9 },
+                  { label: t('tickets:analytics.days.sat', 'Szombat'), h: "40px", count: 4 },
+                  { label: t('tickets:analytics.days.sun', 'Vasárnap'), h: "30px", count: 3 }
                 ].map((item, i) => (
                   <div key={i} className="flex-1 flex flex-col items-center gap-2 group cursor-pointer">
                     <span className="text-[10px] font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                      {item.count} db
+                      {t('tickets:analytics.count_unit', { count: item.count, defaultValue: `${item.count} db` })}
                     </span>
                     <div 
                       className="w-full bg-gradient-to-t from-primary/30 to-primary rounded-t-md hover:from-primary/50 hover:to-primary/90 transition-all duration-300"
@@ -1075,18 +1077,18 @@ export default function TicketsPage({
           {/* Chart Right: Category Breakdown */}
           <Card className="border border-border/80 bg-card/50 backdrop-blur-md">
             <CardHeader>
-              <CardTitle className="text-sm font-semibold">Hibajegyek Kategóriák szerint</CardTitle>
+              <CardTitle className="text-sm font-semibold">{t('tickets:analytics.category_title', 'Hibajegyek Kategóriák szerint')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
               {[
-                { label: "Szoftverhiba (Bug)", pct: 58, count: 72, color: "bg-red-500" },
-                { label: "Számlázási / NAV szinkron kérdések", pct: 24, count: 30, color: "bg-amber-500" },
-                { label: "Funkció kérések (Feature Request)", pct: 18, count: 22, color: "bg-primary" }
+                { label: t('tickets:analytics.category_bug', 'Szoftverhiba (Bug)'), pct: 58, count: 72, color: "bg-red-500" },
+                { label: t('tickets:analytics.category_billing', 'Számlázási / NAV szinkron kérdések'), pct: 24, count: 30, color: "bg-amber-500" },
+                { label: t('tickets:analytics.category_feature', 'Funkció kérések (Feature Request)'), pct: 18, count: 22, color: "bg-primary" }
               ].map((item, i) => (
                 <div key={i} className="space-y-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-medium">{item.label}</span>
-                    <span className="text-muted-foreground font-semibold">{item.pct}% ({item.count} db)</span>
+                    <span className="text-muted-foreground font-semibold">{item.pct}% ({t('tickets:analytics.count_unit', { count: item.count, defaultValue: `${item.count} db` })})</span>
                   </div>
                   <div className="h-2 bg-muted/30 rounded-full overflow-hidden">
                     <div className={`h-full rounded-full ${item.color}`} style={{ width: `${item.pct}%` }} />
@@ -1111,15 +1113,15 @@ export default function TicketsPage({
           {/* Batch Actions console */}
           <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl flex flex-wrap items-center gap-3">
             <span className="text-xs font-semibold">
-              Kijelölve: <strong className="text-primary tabular-nums">{selectedTicketIds.size} db jegy</strong>
+              {t('tickets:assignment.selected_count', { count: selectedTicketIds.size, defaultValue: `Kijelölve: ${selectedTicketIds.size} db jegy` })}
             </span>
             
             <Select value={batchAssignee} onValueChange={setBatchAssignee}>
               <SelectTrigger className="h-8 text-xs w-[180px]">
-                <SelectValue placeholder="Felelős hozzárendelése..." />
+                <SelectValue placeholder={t('tickets:assignment.assignee_placeholder', "Felelős hozzárendelése...")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="unassigned">Nincs hozzárendelve</SelectItem>
+                <SelectItem value="unassigned">{t('tickets:assignment.unassigned', "Nincs hozzárendelve")}</SelectItem>
                 {supportAgents.map(a => (
                   <SelectItem key={a.user_id} value={a.user_id}>{a.name}</SelectItem>
                 ))}
@@ -1128,13 +1130,13 @@ export default function TicketsPage({
 
             <Select value={batchStatus} onValueChange={setBatchStatus}>
               <SelectTrigger className="h-8 text-xs w-[160px]">
-                <SelectValue placeholder="Státusz módosítása..." />
+                <SelectValue placeholder={t('tickets:assignment.status_placeholder', "Státusz módosítása...")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="created">Nyitott</SelectItem>
-                <SelectItem value="assigned">Hozzárendelt</SelectItem>
-                <SelectItem value="in_progress">Folyamatban</SelectItem>
-                <SelectItem value="resolved">Megoldva</SelectItem>
+                <SelectItem value="created">{t('tickets:status.created', 'Nyitott')}</SelectItem>
+                <SelectItem value="assigned">{t('tickets:status.assigned', 'Hozzárendelt')}</SelectItem>
+                <SelectItem value="in_progress">{t('tickets:status.in_progress', 'Folyamatban')}</SelectItem>
+                <SelectItem value="resolved">{t('tickets:status.resolved', 'Megoldva')}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -1149,7 +1151,7 @@ export default function TicketsPage({
               ) : (
                 <UserCheck className="h-3.5 w-3.5" />
               )}
-              Alkalmaz
+              {t('tickets:assignment.apply_button', 'Alkalmaz')}
             </Button>
           </div>
 
@@ -1172,35 +1174,35 @@ export default function TicketsPage({
                         }}
                       />
                     </TableHead>
-                    <TableHead className="w-[120px]">Jegyszám</TableHead>
-                    <TableHead className="w-[180px]">Cég</TableHead>
-                    <TableHead>Probléma tárgya</TableHead>
-                    <TableHead className="w-[180px] min-w-[170px]">Aktuális Felelős</TableHead>
+                    <TableHead className="w-[120px]">{t('tickets:table.col_ticket_number', 'Jegyszám')}</TableHead>
+                    <TableHead className="w-[180px]">{t('tickets:assignment.col_company', 'Cég')}</TableHead>
+                    <TableHead>{t('tickets:assignment.col_subject', 'Probléma tárgya')}</TableHead>
+                    <TableHead className="w-[180px] min-w-[170px]">{t('tickets:assignment.col_current_assignee', 'Aktuális Felelős')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedAssignmentTickets.map(t => (
-                    <TableRow key={t.id} className="hover:bg-muted/30">
+                  {paginatedAssignmentTickets.map(t_item => (
+                    <TableRow key={t_item.id} className="hover:bg-muted/30">
                       <TableCell className="text-center">
                         <Checkbox
-                          checked={selectedTicketIds.has(t.id)}
-                          onCheckedChange={() => toggleSelectTicket(t.id)}
+                          checked={selectedTicketIds.has(t_item.id)}
+                          onCheckedChange={() => toggleSelectTicket(t_item.id)}
                         />
                       </TableCell>
                       <TableCell className="font-mono text-xs font-semibold text-primary">
-                        #{t.ticket_number || t.id.slice(0, 8)}
+                        #{t_item.ticket_number || t_item.id.slice(0, 8)}
                       </TableCell>
-                      <TableCell className="text-xs font-medium">{t.company_name}</TableCell>
-                      <TableCell className="text-xs text-foreground/80">{truncate(stripHtml(t.message), 60)}</TableCell>
+                      <TableCell className="text-xs font-medium">{t_item.company_name}</TableCell>
+                      <TableCell className="text-xs text-foreground/80">{truncate(stripHtml(t_item.message), 60)}</TableCell>
                       <TableCell className="text-xs font-medium text-foreground/70 whitespace-nowrap">
-                        {t.assigned_to_name || <span className="text-muted-foreground/60 italic">Nincs hozzárendelve</span>}
+                        {t_item.assigned_to_name || <span className="text-muted-foreground/60 italic">{t('tickets:assignment.unassigned', 'Nincs hozzárendelve')}</span>}
                       </TableCell>
                     </TableRow>
                   ))}
                   {paginatedAssignmentTickets.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center py-8 text-muted-foreground text-xs">
-                        Nincs a szűrésnek megfelelő hibajegy
+                        {t('tickets:table.empty_state', 'Nincs a szűrésnek megfelelő hibajegy')}
                       </TableCell>
                     </TableRow>
                   )}
@@ -1241,7 +1243,7 @@ export default function TicketsPage({
             <CardHeader className="pb-3 border-b border-border/40 bg-muted/5">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <Users className="h-4 w-4 text-primary" />
-                Támogató Csapat terheltsége
+                {t('tickets:assignment.team_workload_title', 'Támogató Csapat terheltsége')}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-5 space-y-4">
@@ -1255,7 +1257,9 @@ export default function TicketsPage({
                         <span className="font-bold text-foreground">{agent.name}</span>
                         <span className="text-[10px] text-muted-foreground block">Support Agent</span>
                       </div>
-                      <strong className="tabular-nums font-bold">{agent.count} / {agent.max} jegy</strong>
+                      <strong className="tabular-nums font-bold">
+                        {t('tickets:assignment.tickets_ratio', { current: agent.count, max: agent.max, defaultValue: `${agent.count} / ${agent.max} jegy` })}
+                      </strong>
                     </div>
                     <div className="h-2 bg-muted/30 rounded-full overflow-hidden">
                       <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${pct}%` }} />
@@ -1267,10 +1271,12 @@ export default function TicketsPage({
               <div className="space-y-1.5 p-3 rounded-lg border border-dashed border-destructive/30 bg-destructive/5">
                 <div className="flex items-center justify-between text-xs">
                   <div>
-                    <span className="font-bold text-destructive">Gazdátlan Jegyek (Queue)</span>
-                    <span className="text-[10px] text-muted-foreground block">Beérkező várakozó jegyek</span>
+                    <span className="font-bold text-destructive">{t('tickets:assignment.unassigned_queue_title', 'Gazdátlan Jegyek (Queue)')}</span>
+                    <span className="text-[10px] text-muted-foreground block">{t('tickets:assignment.unassigned_queue_desc', 'Beérkező várakozó jegyek')}</span>
                   </div>
-                  <strong className="text-destructive font-bold tabular-nums">{agentWorkload.unassigned} jegy</strong>
+                  <strong className="text-destructive font-bold tabular-nums">
+                    {t('tickets:assignment.tickets_count', { count: agentWorkload.unassigned, defaultValue: `${agentWorkload.unassigned} jegy` })}
+                  </strong>
                 </div>
                 <div className="h-2 bg-muted/30 rounded-full overflow-hidden">
                   <div 

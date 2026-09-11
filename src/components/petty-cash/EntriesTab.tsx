@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
@@ -42,6 +43,7 @@ const DISPLAY_SOURCE_LABELS: Record<string, string> = {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 export default function EntriesTab() {
+  const { t } = useTranslation(['pettyCash', 'common']);
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange(); // U4: date range filtering
@@ -474,31 +476,35 @@ export default function EntriesTab() {
         <div className="flex items-center gap-2 flex-wrap flex-1 max-w-2xl">
           <Filter className="w-4 h-4 text-muted-foreground" />
           <Select value={filterRegister} onValueChange={v => { setFilterRegister(v); setCurrentPage(1); }}>
-            <SelectTrigger className="w-32 h-8 text-xs"><SelectValue placeholder="Pénztár" /></SelectTrigger>
+            <SelectTrigger className="w-32 h-8 text-xs"><SelectValue placeholder={t('pettyCash:entries.filter_register', 'Pénztár')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Összes pénztár</SelectItem>
+              <SelectItem value="all">{t('pettyCash:entries.all_registers', 'Összes pénztár')}</SelectItem>
               {registers.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={filterCurrency} onValueChange={v => { setFilterCurrency(v); setCurrentPage(1); }}>
-            <SelectTrigger className="w-24 h-8 text-xs"><SelectValue placeholder="Valuta" /></SelectTrigger>
+            <SelectTrigger className="w-24 h-8 text-xs"><SelectValue placeholder={t('pettyCash:entries.filter_currency', 'Valuta')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Összes</SelectItem>
+              <SelectItem value="all">{t('pettyCash:entries.all_currencies', 'Összes')}</SelectItem>
               {allCurrencies.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={filterType} onValueChange={v => { setFilterType(v); setCurrentPage(1); }}>
-            <SelectTrigger className="w-32 h-8 text-xs"><SelectValue placeholder="Típus" /></SelectTrigger>
+            <SelectTrigger className="w-32 h-8 text-xs"><SelectValue placeholder={t('pettyCash:entries.filter_type', 'Típus')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Összes típus</SelectItem>
-              {allSourceTypes.map(t => <SelectItem key={t} value={t}>{DISPLAY_SOURCE_LABELS[t] || t}</SelectItem>)}
+              <SelectItem value="all">{t('pettyCash:entries.all_types', 'Összes típus')}</SelectItem>
+              {allSourceTypes.map(tType => (
+                <SelectItem key={tType} value={tType}>
+                  {t(`pettyCash:entries.source_types.${tType}`, { defaultValue: DISPLAY_SOURCE_LABELS[tType] || tType })}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <div className="relative flex-1 min-w-[180px] max-w-xs">
             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Keresés..."
+              placeholder={t('pettyCash:entries.search_placeholder', 'Keresés...')}
               value={searchTerm}
               onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               className="pl-8 h-8 text-xs bg-background w-full"
@@ -508,14 +514,14 @@ export default function EntriesTab() {
         <div className="flex gap-2">
           {/* F4: Cash closing button */}
           <Button size="sm" variant="outline" onClick={() => setShowClosingDialog(true)} disabled={entries.length === 0} className="border-indigo-500/20 hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
-            <BookOpen className="w-4 h-4 mr-1 text-indigo-500" /> Pénztárzárás
+            <BookOpen className="w-4 h-4 mr-1 text-indigo-500" /> {t('pettyCash:entries.cash_closing', 'Pénztárzárás')}
           </Button>
           <Button size="sm" variant="outline" onClick={() => syncEntries.mutate()} disabled={syncEntries.isPending} className="border-emerald-500/20 hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
             {syncEntries.isPending ? <Loader2 className="w-4 h-4 mr-1 animate-spin text-emerald-500" /> : <ArrowRightLeft className="w-4 h-4 mr-1 text-emerald-500" />}
-            Szinkronizálás
+            {t('pettyCash:entries.sync', 'Szinkronizálás')}
           </Button>
           <Button size="sm" onClick={() => { setEditingEntry(null); setShowManualDialog(true); }} disabled={!writable} className="bg-primary hover:bg-primary/95 text-primary-foreground shadow-sm">
-            <Plus className="w-4 h-4 mr-1" /> Manuális tétel
+            <Plus className="w-4 h-4 mr-1" /> {t('pettyCash:entries.manual_entry', 'Manuális tétel')}
           </Button>
         </div>
       </div>
@@ -528,13 +534,13 @@ export default function EntriesTab() {
               <TableRow>
                 <TableHead className="w-10" />
                 {/* F5: Receipt number column */}
-                <TableHead className="w-20">Sorszám</TableHead>
-                <TableHead className="w-28">Dátum</TableHead>
-                <TableHead className="w-28">Pénztár</TableHead>
-                <TableHead className="w-24">Típus</TableHead>
-                <TableHead>Leírás</TableHead>
-                <TableHead className="text-right w-36">Összeg</TableHead>
-                <TableHead className="text-right w-36">Egyenleg</TableHead>
+                <TableHead className="w-20">{t('pettyCash:entries.columns.sequence', 'Sorszám')}</TableHead>
+                <TableHead className="w-28">{t('pettyCash:entries.columns.date', 'Dátum')}</TableHead>
+                <TableHead className="w-28">{t('pettyCash:entries.columns.register', 'Pénztár')}</TableHead>
+                <TableHead className="w-24">{t('pettyCash:entries.columns.type', 'Típus')}</TableHead>
+                <TableHead>{t('pettyCash:entries.columns.description', 'Leírás')}</TableHead>
+                <TableHead className="text-right w-36">{t('pettyCash:entries.columns.amount', 'Összeg')}</TableHead>
+                <TableHead className="text-right w-36">{t('pettyCash:entries.columns.balance', 'Egyenleg')}</TableHead>
                 <TableHead className="w-20" />
               </TableRow>
             </TableHeader>
@@ -542,7 +548,7 @@ export default function EntriesTab() {
               {isLoading ? (
                 <TableRow><TableCell colSpan={9} className="text-center py-8"><Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" /></TableCell></TableRow>
               ) : paginated.length === 0 ? (
-                <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Nincs tétel a kiválasztott időszakban</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">{t('pettyCash:entries.empty_period', 'Nincs tétel a kiválasztott időszakban')}</TableCell></TableRow>
               ) : (
                 paginated.flatMap(entry => {
                   const regName = registerMap[entry.register_id]?.name || '?';
@@ -571,11 +577,11 @@ export default function EntriesTab() {
                       <TableCell>
                         {isOpening ? (
                           <Badge variant="secondary" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 text-[10px]">
-                            NYITÓ
+                            {t('pettyCash:entries.badges.opening', 'NYITÓ')}
                           </Badge>
                         ) : isPending ? (
                           <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[9px] font-semibold tracking-wider uppercase animate-pulse whitespace-nowrap">
-                            Jóváhagyásra vár
+                            {t('pettyCash:entries.badges.pending_approval', 'Jóváhagyásra vár')}
                           </Badge>
                         ) : (
                           <Badge variant="outline" className={cn(
@@ -596,7 +602,7 @@ export default function EntriesTab() {
                         <span className={cn('px-2 py-0.5 rounded text-[10px] font-medium', 
                           isPending ? 'bg-amber-500/10 text-amber-500' : (SOURCE_COLORS[entry.source_type] || 'bg-muted text-muted-foreground')
                         )}>
-                          {isPending ? 'Pénztárbizonylat' : (DISPLAY_SOURCE_LABELS[entry.source_type] || entry.source_type)}
+                          {isPending ? t('pettyCash:entries.badges.cash_receipt', 'Pénztárbizonylat') : t(`pettyCash:entries.source_types.${entry.source_type}`, { defaultValue: DISPLAY_SOURCE_LABELS[entry.source_type] || entry.source_type })}
                         </span>
                       </TableCell>
                       <TableCell className="max-w-[250px] truncate text-sm">
@@ -611,7 +617,7 @@ export default function EntriesTab() {
                               <span className="truncate" title={entry.description || '—'}>{entry.description || '—'}</span>
                               {isEntryRelated && (
                                 <Badge variant="outline" className="text-[8px] h-3.5 px-1 bg-amber-500/10 text-amber-600 border-amber-500/20 font-semibold shrink-0">
-                                  Kapcsolt
+                                  {t('pettyCash:entries.badges.related_party', 'Kapcsolt')}
                                 </Badge>
                               )}
                             </div>
@@ -637,7 +643,7 @@ export default function EntriesTab() {
                                 size="icon"
                                 className="h-7 w-7 text-primary hover:bg-primary/10"
                                 onClick={() => setPreviewInvoicePending((entry as any).raw_invoice)}
-                                title="Bizonylat megtekintése"
+                                title={t('pettyCash:entries.actions.view_receipt', 'Bizonylat megtekintése')}
                               >
                                 <Eye className="w-3.5 h-3.5" />
                               </Button>
@@ -647,7 +653,7 @@ export default function EntriesTab() {
                               size="icon"
                               className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted"
                               onClick={() => handleStartEditPending((entry as any).raw_invoice)}
-                              title="Módosítás és Jóváhagyás"
+                              title={t('pettyCash:entries.actions.edit_and_approve', 'Módosítás és Jóváhagyás')}
                             >
                               <Edit2 className="w-3.5 h-3.5" />
                             </Button>
@@ -658,7 +664,7 @@ export default function EntriesTab() {
                                 className="h-7 w-7 text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10"
                                 disabled={approveMutation.isPending}
                                 onClick={() => approveMutation.mutate((entry as any).real_invoice_id)}
-                                title="Jóváhagyás"
+                                title={t('pettyCash:entries.actions.approve_and_book', 'Jóváhagyás')}
                               >
                                 <Check className="h-4 w-4" />
                               </Button>

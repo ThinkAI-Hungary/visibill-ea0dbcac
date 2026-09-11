@@ -11,7 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2, Loader2, AlertCircle, ChevronsUpDown, Check } from 'lucide-react';
-import { cn, formatCurrency } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
+import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/lib/locale/formatters';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -36,6 +38,7 @@ interface JournalLineInput {
 }
 
 export default function AddManualJournalEntryModal({ open, onOpenChange, entryId, onOpenOpeningWizard }: AddManualJournalEntryModalProps) {
+  const { t } = useTranslation(['accounting', 'common']);
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -189,8 +192,8 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
   // Partner selection helper
   const selectedPartner = partners.find((p: any) => p.id === partnerId);
   const selectedPartnerLabel = partnerId === 'none' || !partnerId
-    ? '— Nincs partner —'
-    : (selectedPartner?.name || 'Válasszon partnert...');
+    ? t('accounting:dialogs.manual_journal.no_partner')
+    : (selectedPartner?.name || t('accounting:dialogs.manual_journal.choose_partner'));
 
   const normalizeSearchText = (text: string) =>
     (text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -248,7 +251,10 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
   // Remove line
   const handleRemoveLine = (index: number) => {
     if (lines.length <= 2) {
-      toast({ title: "Figyelmeztetés", description: "Egy bizonylatnak legalább két sorból kell állnia." });
+      toast({
+        title: t('accounting:dialogs.manual_journal.validation.warning_title'),
+        description: t('accounting:dialogs.manual_journal.validation.min_two_rows_required'),
+      });
       return;
     }
     setOpenDropdownIndex(null);
@@ -266,7 +272,7 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
   const saveMutation = useMutation({
     mutationFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Bejelentkezés szükséges");
+      if (!user) throw new Error(t('accounting:dialogs.manual_journal.validation.login_required'));
 
       const headerData = {
         company_id: selectedCompany!.id,
@@ -293,7 +299,7 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
           .maybeSingle();
         if (checkErr) throw checkErr;
         if (currentHeader && (currentHeader.status === 'POSTED' || currentHeader.status === 'LEKONYVELVE')) {
-          throw new Error("Ez a bizonylat időközben lekönyvelésre került, módosítása már nem lehetséges!");
+          throw new Error(t('accounting:dialogs.manual_journal.validation.already_posted_error'));
         }
 
         // Update header
@@ -339,42 +345,78 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
       onOpenChange(false);
-      toast({ title: entryId ? "Tétel sikeresen frissítve" : "Kézi bizonylat sikeresen elmentve" });
+      toast({
+        title: entryId
+          ? t('accounting:dialogs.manual_journal.validation.save_success_edit')
+          : t('accounting:dialogs.manual_journal.validation.save_success_new'),
+      });
     },
     onError: (err) => {
-      toast({ title: "Mentési hiba", description: err.message, variant: "destructive" });
+      toast({
+        title: t('accounting:dialogs.manual_journal.validation.save_error'),
+        description: err.message,
+        variant: "destructive",
+      });
     }
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!journalId) {
-      toast({ title: "Figyelmeztetés", description: "Válasszon naplót!", variant: "destructive" });
+      toast({
+        title: t('accounting:dialogs.manual_journal.validation.warning_title'),
+        description: t('accounting:dialogs.manual_journal.validation.select_journal'),
+        variant: "destructive",
+      });
       return;
     }
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!postingDate?.trim() || !dateRegex.test(postingDate.trim())) {
-      toast({ title: "Figyelmeztetés", description: "Érvényes könyvelési dátum megadása kötelező (ÉÉÉÉ-HH-NN formátumban)!", variant: "destructive" });
+      toast({
+        title: t('accounting:dialogs.manual_journal.validation.warning_title'),
+        description: t('accounting:dialogs.manual_journal.validation.valid_posting_date'),
+        variant: "destructive",
+      });
       return;
     }
     if (!documentDate?.trim() || !dateRegex.test(documentDate.trim())) {
-      toast({ title: "Figyelmeztetés", description: "Érvényes bizonylat kelte megadása kötelező (ÉÉÉÉ-HH-NN formátumban)!", variant: "destructive" });
+      toast({
+        title: t('accounting:dialogs.manual_journal.validation.warning_title'),
+        description: t('accounting:dialogs.manual_journal.validation.valid_document_date'),
+        variant: "destructive",
+      });
       return;
     }
     if (!documentId.trim()) {
-      toast({ title: "Figyelmeztetés", description: "A bizonylatszám kitöltése kötelező!", variant: "destructive" });
+      toast({
+        title: t('accounting:dialogs.manual_journal.validation.warning_title'),
+        description: t('accounting:dialogs.manual_journal.validation.doc_id_required'),
+        variant: "destructive",
+      });
       return;
     }
     if (!description.trim()) {
-      toast({ title: "Figyelmeztetés", description: "A megnevezés kitöltése kötelező!", variant: "destructive" });
+      toast({
+        title: t('accounting:dialogs.manual_journal.validation.warning_title'),
+        description: t('accounting:dialogs.manual_journal.validation.desc_required'),
+        variant: "destructive",
+      });
       return;
     }
     if (lines.some(l => !l.gl_account_id || l.gl_account_id === '00000000-0000-0000-0000-000000000000')) {
-      toast({ title: "Figyelmeztetés", description: "Minden sorban kötelező főkönyvi számot választani!", variant: "destructive" });
+      toast({
+        title: t('accounting:dialogs.manual_journal.validation.warning_title'),
+        description: t('accounting:dialogs.manual_journal.validation.gl_account_required'),
+        variant: "destructive",
+      });
       return;
     }
     if (lines.some(l => l.amount <= 0)) {
-      toast({ title: "Figyelmeztetés", description: "Az összeg csak pozitív szám lehet!", variant: "destructive" });
+      toast({
+        title: t('accounting:dialogs.manual_journal.validation.warning_title'),
+        description: t('accounting:dialogs.manual_journal.validation.positive_amount_required'),
+        variant: "destructive",
+      });
       return;
     }
     const parentAccountLine = lines.find(l => l.gl_account_id && parentAccountIds.has(l.gl_account_id));
@@ -394,7 +436,7 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-5xl lg:max-w-6xl w-[95vw] max-h-[88vh] flex flex-col p-6 overflow-hidden">
         <DialogHeader className="shrink-0">
-          <DialogTitle>{entryId ? 'Vegyes bizonylat szerkesztése' : 'Új vegyes bizonylat rögzítése'}</DialogTitle>
+          <DialogTitle>{entryId ? t('accounting:dialogs.manual_journal.title_edit') : t('accounting:dialogs.manual_journal.title_new')}</DialogTitle>
         </DialogHeader>
 
         {entryId && loadingEntry ? (
@@ -412,7 +454,7 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
             {/* Header Fields */}
             <div className="grid grid-cols-3 gap-3.5 shrink-0">
               <div className="space-y-1.5">
-                <Label htmlFor="journal">Napló</Label>
+                <Label htmlFor="journal">{t('accounting:dialogs.manual_journal.journal')}</Label>
                 <Select value={journalId} onValueChange={(val) => {
                   const selectedJ = journals.find((j: any) => j.id === val);
                   if (selectedJ?.code === 'NY' && onOpenOpeningWizard) {
@@ -423,7 +465,7 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                   setJournalId(val);
                 }}>
                   <SelectTrigger id="journal">
-                    <SelectValue placeholder="Válasszon naplót..." />
+                    <SelectValue placeholder={t('accounting:dialogs.manual_journal.choose_journal')} />
                   </SelectTrigger>
                   <SelectContent>
                     {journals.map((j: any) => (
@@ -434,17 +476,17 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="documentId">Bizonylatszám</Label>
+                <Label htmlFor="documentId">{t('accounting:dialogs.manual_journal.document_id')}</Label>
                 <Input
                   id="documentId"
                   value={documentId}
                   onChange={e => setDocumentId(e.target.value)}
-                  placeholder="pl. VE-2026/001"
+                  placeholder={t('accounting:dialogs.manual_journal.document_id_placeholder')}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="partner">Partner</Label>
+                <Label htmlFor="partner">{t('accounting:dialogs.manual_journal.partner')}</Label>
                 <Popover 
                   open={partnerComboOpen} 
                   onOpenChange={(open) => {
@@ -475,12 +517,12 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                   >
                     <Command shouldFilter={false}>
                       <CommandInput
-                        placeholder="Keresés név vagy adószám alapján..."
+                        placeholder={t('accounting:dialogs.manual_journal.partner_search_placeholder')}
                         value={partnerSearchQuery}
                         onValueChange={setPartnerSearchQuery}
                       />
                       <CommandList className="max-h-[260px] overflow-y-auto">
-                        <CommandEmpty>Nincs találat.</CommandEmpty>
+                        <CommandEmpty>{t('accounting:dialogs.manual_journal.no_match')}</CommandEmpty>
                         <CommandGroup>
                           {showNoPartnerOption && (
                             <CommandItem
@@ -491,7 +533,7 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                               }}
                               className="cursor-pointer flex items-center justify-between py-2"
                             >
-                              <span className="italic text-muted-foreground">— Nincs partner —</span>
+                              <span className="italic text-muted-foreground">{t('accounting:dialogs.manual_journal.no_partner')}</span>
                               {partnerId === 'none' && <Check className="h-4 w-4 text-primary shrink-0" />}
                             </CommandItem>
                           )}
@@ -522,42 +564,42 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="postingDate">Teljesítés dátuma</Label>
+                <Label htmlFor="postingDate">{t('accounting:dialogs.manual_journal.posting_date')}</Label>
                 <DatePicker
                   id="postingDate"
                   value={postingDate}
                   onChange={(val) => setPostingDate(val || new Date().toISOString().substring(0, 10))}
-                  placeholder="Válassz dátumot"
+                  placeholder={t('accounting:dialogs.manual_journal.choose_date')}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="documentDate">Kelt (Bizonylat kelte)</Label>
+                <Label htmlFor="documentDate">{t('accounting:dialogs.manual_journal.document_date')}</Label>
                 <DatePicker
                   id="documentDate"
                   value={documentDate}
                   onChange={(val) => setDocumentDate(val || new Date().toISOString().substring(0, 10))}
-                  placeholder="Válassz dátumot"
+                  placeholder={t('accounting:dialogs.manual_journal.choose_date')}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="description">Megnevezés / Fej leírás</Label>
+                <Label htmlFor="description">{t('accounting:dialogs.manual_journal.description')}</Label>
                 <Input
                   id="description"
                   value={description}
                   onChange={e => setDescription(e.target.value)}
-                  placeholder="pl. Bérfeladás 2026. augusztus"
+                  placeholder={t('accounting:dialogs.manual_journal.description_placeholder')}
                 />
               </div>
 
               <div className="col-span-3 space-y-1.5">
-                <Label htmlFor="justification">Indoklás / Helyesbítés megjegyzés</Label>
+                <Label htmlFor="justification">{t('accounting:dialogs.manual_journal.justification')}</Label>
                 <Input
                   id="justification"
                   value={justification}
                   onChange={e => setJustification(e.target.value)}
-                  placeholder="pl. Stornó ok / Helyesbítő hivatkozás leírása..."
+                  placeholder={t('accounting:dialogs.manual_journal.justification_placeholder')}
                 />
               </div>
             </div>
@@ -565,9 +607,9 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
             {/* Lines Editor */}
             <div className="space-y-2 flex-1 min-h-0 flex flex-col overflow-hidden">
               <div className="flex justify-between items-center shrink-0">
-                <h4 className="text-sm font-semibold text-foreground">Bizonylat tételek</h4>
+                <h4 className="text-sm font-semibold text-foreground">{t('accounting:dialogs.manual_journal.items_title')}</h4>
                 <Button type="button" variant="outline" size="sm" onClick={handleAddLine} className="gap-1">
-                  <Plus className="w-3.5 h-3.5" /> Új sor
+                  <Plus className="w-3.5 h-3.5" /> {t('accounting:dialogs.manual_journal.add_row')}
                 </Button>
               </div>
 
@@ -586,11 +628,11 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                   </colgroup>
                   <thead className="sticky top-0 z-10 bg-muted shadow-sm">
                     <tr className="border-b border-border/40 font-semibold text-muted-foreground uppercase text-[10px]">
-                      <th className="p-2.5 w-[300px] bg-muted">Főkönyvi számlaszám</th>
-                      <th className="p-2.5 w-[115px] text-center bg-muted">Jelleg (T/K)</th>
-                      <th className="p-2.5 w-[155px] text-right bg-muted">Összeg (HUF)</th>
-                      <th className="p-2.5 w-[150px] bg-muted">Projekt</th>
-                      <th className="p-2.5 min-w-[160px] bg-muted">Megjegyzés sor</th>
+                      <th className="p-2.5 w-[300px] bg-muted">{t('accounting:dialogs.manual_journal.table_headers.gl_account')}</th>
+                      <th className="p-2.5 w-[115px] text-center bg-muted">{t('accounting:dialogs.manual_journal.table_headers.dc_type')}</th>
+                      <th className="p-2.5 w-[155px] text-right bg-muted">{t('accounting:dialogs.manual_journal.table_headers.amount')}</th>
+                      <th className="p-2.5 w-[150px] bg-muted">{t('accounting:dialogs.manual_journal.table_headers.project')}</th>
+                      <th className="p-2.5 min-w-[160px] bg-muted">{t('accounting:dialogs.manual_journal.table_headers.comment')}</th>
                       <th className="p-2.5 w-[45px] text-center bg-muted"></th>
                     </tr>
                   </thead>
@@ -629,13 +671,13 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                                   {line.gl_account_id
                                     ? (() => {
                                         const gl = glAccounts.find((g: any) => g.id === line.gl_account_id);
-                                        if (!gl) return 'Válasszon főkönyvet...';
+                                        if (!gl) return t('accounting:dialogs.manual_journal.choose_gl');
                                         const isParent = parentAccountIds.has(gl.id);
                                         return isParent
-                                          ? `${gl.gl_number} - ${gl.short_name} ⚠️ (Gyűjtő)`
+                                          ? `${gl.gl_number} - ${gl.short_name} ⚠️ (${t('accounting:dialogs.manual_journal.parent_badge', 'Gyűjtő')})`
                                           : `${gl.gl_number} - ${gl.short_name}`;
                                       })()
-                                    : 'Válasszon főkönyvet...'}
+                                    : t('accounting:dialogs.manual_journal.choose_gl')}
                                 </span>
                                 <span className="text-[10px] text-muted-foreground ml-1 shrink-0">▼</span>
                               </Button>
@@ -648,13 +690,13 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                             >
                               <Command shouldFilter={false}>
                                 <CommandInput
-                                  placeholder="Keresés (pl. 111, anyag)..."
+                                  placeholder={t('accounting:dialogs.manual_journal.search_gl_placeholder')}
                                   value={searchQuery}
                                   onValueChange={setSearchQuery}
                                   autoFocus
                                 />
                                 <CommandList className="max-h-[250px] overflow-y-auto">
-                                  <CommandEmpty>Nincs találat.</CommandEmpty>
+                                  <CommandEmpty>{t('accounting:dialogs.manual_journal.no_match')}</CommandEmpty>
                                   <CommandGroup>
                                     {glAccounts
                                       ?.filter((gl: any) => 
@@ -719,8 +761,8 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="T">T - Tartozik</SelectItem>
-                              <SelectItem value="K">K - Követel</SelectItem>
+                              <SelectItem value="T">{t('accounting:dialogs.manual_journal.debit_label')}</SelectItem>
+                              <SelectItem value="K">{t('accounting:dialogs.manual_journal.credit_label')}</SelectItem>
                             </SelectContent>
                           </Select>
                         </td>
@@ -750,10 +792,10 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                             onValueChange={v => handleUpdateLine(index, 'project_id', v === 'none' ? null : v)}
                           >
                             <SelectTrigger id={`project-trigger-${index}`} className="h-8 text-xs w-full">
-                              <SelectValue placeholder="Nincs projekt" />
+                              <SelectValue placeholder={t('accounting:dialogs.manual_journal.no_project')} />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="none">Nincs projekt</SelectItem>
+                              <SelectItem value="none">{t('accounting:dialogs.manual_journal.no_project')}</SelectItem>
                               {projects.map((p: any) => (
                                 <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                               ))}
@@ -783,20 +825,20 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                                 }
                               }
                             }}
-                            placeholder="Tétel megnevezése..."
+                            placeholder={t('accounting:dialogs.manual_journal.item_desc_placeholder')}
                             className="h-8 text-xs w-full"
                           />
                         </td>
 
                         {/* Delete Row */}
                         <td className="p-2 w-[45px] text-center">
-                          <CustomTooltip content={`Sor törlése (${index + 1}. tétel)`}>
+                          <CustomTooltip content={t('accounting:dialogs.manual_journal.delete_row_tooltip', { index: index + 1 })}>
                             <Button
                               type="button"
                               size="icon"
                               variant="ghost"
                               tabIndex={-1}
-                              aria-label={`Sor törlése (${index + 1}. tétel)`}
+                              aria-label={t('accounting:dialogs.manual_journal.delete_row_tooltip', { index: index + 1 })}
                               className="w-8 h-8 text-destructive hover:bg-destructive/10"
                               onClick={() => handleRemoveLine(index)}
                             >
@@ -815,15 +857,15 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
             <div className="flex items-center justify-between bg-muted/40 p-3.5 rounded-lg border text-xs shrink-0">
               <div className="flex gap-4">
                 <div>
-                  <span className="text-muted-foreground block">Összes Tartozik (T)</span>
+                  <span className="text-muted-foreground block">{t('accounting:dialogs.manual_journal.total_debit')}</span>
                   <span className="font-bold text-emerald-600 text-sm">{formatCurrency(totalDebit)}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground block">Összes Követel (K)</span>
+                  <span className="text-muted-foreground block">{t('accounting:dialogs.manual_journal.total_credit')}</span>
                   <span className="font-bold text-rose-600 text-sm">{formatCurrency(totalCredit)}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground block">Különbözet</span>
+                  <span className="text-muted-foreground block">{t('accounting:dialogs.manual_journal.difference')}</span>
                   <span className={cn("font-bold text-sm", isBalanced ? "text-foreground" : "text-destructive")}>
                     {formatCurrency(difference)}
                   </span>
@@ -832,18 +874,18 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
               
               {!isBalanced && (
                 <div className="flex items-center gap-1.5 text-destructive font-medium">
-                  <AlertCircle className="w-4 h-4" /> A könyvelési bizonylat egyenlege nem egyezik (T ≠ K)!
+                  <AlertCircle className="w-4 h-4" /> {t('accounting:dialogs.manual_journal.imbalance_warning')}
                 </div>
               )}
             </div>
 
             <DialogFooter className="shrink-0 pt-1">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Mégse
+                {t('accounting:dialogs.manual_journal.cancel')}
               </Button>
               <Button type="submit" className="bg-emerald-600 hover:bg-emerald-500" disabled={!isBalanced || saveMutation.isPending}>
                 {saveMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-1.5" />}
-                Piszkozat mentése
+                {t('accounting:dialogs.manual_journal.save_draft')}
               </Button>
             </DialogFooter>
           </form>

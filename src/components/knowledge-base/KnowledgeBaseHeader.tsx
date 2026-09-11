@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Search, X, BookOpen, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,8 @@ export const KnowledgeBaseHeader = React.memo(function KnowledgeBaseHeader({
   totalArticles,
   filteredArticles,
 }: KnowledgeBaseHeaderProps) {
+  const { t } = useTranslation(['common']);
+
   return (
     <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-primary/10 via-background to-secondary/15 p-6 sm:p-8 shadow-sm backdrop-blur-sm">
       {/* Decorative background glow */}
@@ -27,14 +30,14 @@ export const KnowledgeBaseHeader = React.memo(function KnowledgeBaseHeader({
           <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary/20 text-primary">
             <BookOpen className="h-3.5 w-3.5" />
           </span>
-          <span>Egységes Tudástár & Felhasználói Kézikönyv</span>
+          <span>{t('common:knowledge_base.header_badge', 'Egységes Tudástár & Felhasználói Kézikönyv')}</span>
         </div>
 
         <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          Miben segíthetünk ma?
+          {t('common:knowledge_base.header_title', 'Miben segíthetünk ma?')}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground sm:text-base">
-          Keress az eaisyBill és eaisyBooks funkciói, könyvelési folyamatai, jogszabályi szabályai és útmutatói között.
+          {t('common:knowledge_base.header_subtitle', 'Keress az eaisyBill és eaisyBooks funkciói, könyvelési folyamatai, jogszabályi szabályai és útmutatói között.')}
         </p>
 
         {/* Search Input */}
@@ -42,7 +45,7 @@ export const KnowledgeBaseHeader = React.memo(function KnowledgeBaseHeader({
           <Search className="pointer-events-none absolute left-3.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Keresés kulcsszavak, funkciók vagy modulok alapján... (pl. számla, bank, áfa, nav)"
+            placeholder={t('common:knowledge_base.search_placeholder', 'Keresés kulcsszavak, funkciók vagy modulok alapján... (pl. számla, bank, áfa, nav)')}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             className="h-11 pl-10 pr-10 text-sm bg-background/90 border-border/80 shadow-sm focus-visible:ring-primary focus-visible:border-primary rounded-xl"

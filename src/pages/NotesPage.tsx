@@ -27,9 +27,12 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
+import { formatCurrency } from '@/lib/utils';
 
 export default function NotesPage() {
-  const { t } = useTranslation(['navigation', 'common']);
+  const { t, i18n } = useTranslation(['notes', 'navigation', 'common']);
+  const isHr = i18n.language === 'hr';
+  const localeCode = isHr ? 'hr-HR' : 'hu-HU';
   const { companyId } = useParams<{ companyId: string }>();
   const { notes, isLoading, addNote, updateNote, deleteNote } = useNotesData(companyId);
   const { toast } = useToast();
@@ -172,7 +175,7 @@ export default function NotesPage() {
           </div>
           <Button onClick={handleCreateNote} size="sm" className="h-9 gap-1">
             <Plus className="h-4 w-4" />
-            {t('common:actions.edit', { defaultValue: 'Új jegyzet' })}
+            {t('common:actions.new_note', { defaultValue: 'Új jegyzet' })}
           </Button>
         </div>
       </div>
@@ -191,7 +194,7 @@ export default function NotesPage() {
                   : 'bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground'
               }`}
             >
-              {t('common:status.all', { defaultValue: 'Összes' })}
+              {t('notes:tabs.all', { defaultValue: 'Összes' })}
             </button>
             <button
               onClick={() => { setActiveTab('private'); setSelectedNoteId(null); }}
@@ -201,7 +204,7 @@ export default function NotesPage() {
                   : 'bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground'
               }`}
             >
-              Privát
+              {t('notes:tabs.private', { defaultValue: 'Privát' })}
             </button>
             <button
               onClick={() => { setActiveTab('shared'); setSelectedNoteId(null); }}
@@ -211,7 +214,7 @@ export default function NotesPage() {
                   : 'bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground'
               }`}
             >
-              Közös
+              {t('notes:tabs.shared', { defaultValue: 'Közös' })}
             </button>
             <button
               onClick={() => { setActiveTab('invoice'); setSelectedNoteId(null); }}
@@ -221,7 +224,7 @@ export default function NotesPage() {
                   : 'bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground'
               }`}
             >
-              Számla
+              {t('notes:tabs.invoice', { defaultValue: 'Számla' })}
             </button>
           </div>
 
@@ -229,12 +232,12 @@ export default function NotesPage() {
           <div className="flex-1 overflow-y-auto divide-y divide-border/30">
             {isLoading ? (
               <div className="p-8 text-center text-muted-foreground text-sm">
-                Jegyzetek betöltése...
+                {t('notes:list.loading', { defaultValue: 'Jegyzetek betöltése...' })}
               </div>
             ) : filteredNotes.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground text-sm flex flex-col items-center gap-2">
                 <AlertCircle className="h-6 w-6 text-muted-foreground/60" />
-                <span>Nincs találat</span>
+                <span>{t('notes:list.no_results', { defaultValue: 'Nincs találat' })}</span>
               </div>
             ) : (
               filteredNotes.map((note) => {
@@ -260,10 +263,10 @@ export default function NotesPage() {
                         ) : (
                           <Users className="h-2.5 w-2.5" />
                         )}
-                        {note.is_private ? 'Privát' : 'Közös'}
+                        {note.is_private ? t('notes:list.private_badge', { defaultValue: 'Privát' }) : t('notes:list.shared_badge', { defaultValue: 'Közös' })}
                       </span>
                       <span className="text-[10px] text-muted-foreground">
-                        {new Date(note.created_at).toLocaleDateString('hu-HU', {
+                        {new Date(note.created_at).toLocaleDateString(localeCode, {
                           month: 'short',
                           day: 'numeric',
                         })}
@@ -271,7 +274,7 @@ export default function NotesPage() {
                     </div>
 
                     <h4 className="font-medium text-sm text-foreground truncate mb-1">
-                      {note.title || 'Cím nélküli'}
+                      {note.title || t('notes:list.untitled', { defaultValue: 'Cím nélküli' })}
                     </h4>
                     
                     <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
@@ -283,8 +286,8 @@ export default function NotesPage() {
                         <FileText className="h-3 w-3" />
                         <span>
                           {note.invoices.length === 1
-                            ? `Számla: ${note.invoices[0].invoice_number || 'Nincs sorszám'}`
-                            : `${note.invoices.length} db számla csatolva`}
+                            ? t('notes:list.invoice_single', { number: note.invoices[0].invoice_number || t('notes:list.no_invoice_number', { defaultValue: 'Nincs sorszám' }), defaultValue: `Számla: ${note.invoices[0].invoice_number || 'Nincs sorszám'}` })
+                            : t('notes:list.invoice_multi', { count: note.invoices.length, defaultValue: `${note.invoices.length} db számla csatolva` })}
                         </span>
                       </div>
                     )}
@@ -294,8 +297,8 @@ export default function NotesPage() {
                         <Wallet className="h-3 w-3" />
                         <span>
                           {note.transactions.length === 1
-                            ? `Tranzakció: ${note.transactions[0].description || 'Nincs leírás'}`
-                            : `${note.transactions.length} db tranzakció csatolva`}
+                            ? t('notes:list.tx_single', { desc: note.transactions[0].description || t('notes:list.no_tx_description', { defaultValue: 'Nincs leírás' }), defaultValue: `Tranzakció: ${note.transactions[0].description || 'Nincs leírás'}` })
+                            : t('notes:list.tx_multi', { count: note.transactions.length, defaultValue: `${note.transactions.length} db tranzakció csatolva` })}
                         </span>
                       </div>
                     )}
@@ -324,11 +327,14 @@ export default function NotesPage() {
                       ) : (
                         <Users className="h-3 w-3" />
                       )}
-                      {selectedNote.is_private ? 'Privát jegyzet' : 'Közös cégjegyzet'}
+                      {selectedNote.is_private ? t('notes:detail.private_note', { defaultValue: 'Privát jegyzet' }) : t('notes:detail.shared_note', { defaultValue: 'Közös cégjegyzet' })}
                     </span>
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <Calendar className="h-3.5 w-3.5" />
-                      Frissítve: {new Date(selectedNote.updated_at).toLocaleString('hu-HU')}
+                      {t('notes:detail.updated', {
+                        date: new Date(selectedNote.updated_at).toLocaleString(localeCode),
+                        defaultValue: `Frissítve: ${new Date(selectedNote.updated_at).toLocaleString(localeCode)}`
+                      })}
                     </span>
                   </div>
                   <h2 className="text-2xl font-semibold text-foreground tracking-tight">
@@ -346,7 +352,7 @@ export default function NotesPage() {
                       className="h-8 gap-1 text-xs"
                     >
                       <Edit3 className="h-3.5 w-3.5" />
-                      Szerkesztés
+                      {t('common:actions.edit', { defaultValue: 'Szerkesztés' })}
                     </Button>
                     <Button
                       onClick={() => handleDeleteNote(selectedNote.id)}
@@ -355,7 +361,7 @@ export default function NotesPage() {
                       className="h-8 gap-1 text-xs text-destructive hover:text-destructive hover:bg-destructive/5"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
-                      Törlés
+                      {t('common:actions.delete', { defaultValue: 'Törlés' })}
                     </Button>
                   </div>
                 )}
@@ -363,7 +369,9 @@ export default function NotesPage() {
 
               {/* Note Content */}
               <div className="py-2">
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Tartalom</h4>
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                  {t('notes:detail.content', { defaultValue: 'Tartalom' })}
+                </h4>
                 <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap bg-card/30 p-4 rounded-lg border border-border/30">
                   {selectedNote.content}
                 </p>
@@ -373,7 +381,7 @@ export default function NotesPage() {
               {selectedNote.invoices && selectedNote.invoices.length > 0 && (
                 <div className="space-y-3">
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Kapcsolódó számlák ({selectedNote.invoices.length})
+                    {t('notes:detail.related_invoices', { count: selectedNote.invoices.length, defaultValue: `Kapcsolódó számlák (${selectedNote.invoices.length})` })}
                   </h4>
                   <div className="grid grid-cols-1 gap-2.5">
                     {selectedNote.invoices.map((inv: any) => (
@@ -386,26 +394,25 @@ export default function NotesPage() {
                         </div>
                         <div className="flex-1 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
                           <div>
-                            <span className="text-muted-foreground block text-[10px]">Számlaszám</span>
+                            <span className="text-muted-foreground block text-[10px]">{t('notes:detail.invoice_number', { defaultValue: 'Számlaszám' })}</span>
                             <span className="font-semibold text-foreground font-mono">
                               {inv.invoice_number || '—'}
                             </span>
                           </div>
                           <div>
-                            <span className="text-muted-foreground block text-[10px]">Partner</span>
+                            <span className="text-muted-foreground block text-[10px]">{t('notes:detail.partner', { defaultValue: 'Partner' })}</span>
                             <span className="font-semibold text-foreground">
                               {inv.supplier_name || '—'}
                             </span>
                           </div>
                           <div>
-                            <span className="text-muted-foreground block text-[10px]">Összeg</span>
+                            <span className="text-muted-foreground block text-[10px]">{t('notes:detail.amount', { defaultValue: 'Összeg' })}</span>
                             <span className="font-semibold text-foreground font-mono">
-                              {inv.net_amount?.toLocaleString('hu-HU') || '—'}{' '}
-                              {inv.currency || 'HUF'}
+                              {inv.net_amount != null ? formatCurrency(inv.net_amount, inv.currency) : '—'}
                             </span>
                           </div>
                           <div>
-                            <span className="text-muted-foreground block text-[10px]">Számla kelte</span>
+                            <span className="text-muted-foreground block text-[10px]">{t('notes:detail.invoice_date', { defaultValue: 'Számla kelte' })}</span>
                             <span className="font-semibold text-foreground">
                               {inv.invoice_date || '—'}
                             </span>
@@ -416,7 +423,7 @@ export default function NotesPage() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 shrink-0 self-center"
-                          title="Számla megnyitása"
+                          title={t('notes:detail.open_invoice', { defaultValue: 'Számla megnyitása' })}
                         >
                           <ExternalLink className="h-4 w-4" />
                         </Button>
@@ -430,7 +437,7 @@ export default function NotesPage() {
               {selectedNote.transactions && selectedNote.transactions.length > 0 && (
                 <div className="space-y-3">
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Kapcsolódó tranzakciók ({selectedNote.transactions.length})
+                    {t('notes:detail.related_transactions', { count: selectedNote.transactions.length, defaultValue: `Kapcsolódó tranzakciók (${selectedNote.transactions.length})` })}
                   </h4>
                   <div className="grid grid-cols-1 gap-2.5">
                     {selectedNote.transactions.map((tx: any) => (
@@ -443,20 +450,19 @@ export default function NotesPage() {
                         </div>
                         <div className="flex-1 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
                           <div className="col-span-2">
-                            <span className="text-muted-foreground block text-[10px]">Leírás / Partner</span>
+                            <span className="text-muted-foreground block text-[10px]">{t('notes:detail.description_partner', { defaultValue: 'Leírás / Partner' })}</span>
                             <span className="font-semibold text-foreground truncate block">
                               {tx.description || '—'}
                             </span>
                           </div>
                           <div>
-                            <span className="text-muted-foreground block text-[10px]">Összeg</span>
+                            <span className="text-muted-foreground block text-[10px]">{t('notes:detail.amount', { defaultValue: 'Összeg' })}</span>
                             <span className="font-semibold text-foreground font-mono">
-                              {tx.amount?.toLocaleString('hu-HU') || '—'}{' '}
-                              {tx.currency || 'HUF'}
+                              {tx.amount != null ? formatCurrency(tx.amount, tx.currency) : '—'}
                             </span>
                           </div>
                           <div>
-                            <span className="text-muted-foreground block text-[10px]">Dátum</span>
+                            <span className="text-muted-foreground block text-[10px]">{t('notes:detail.date', { defaultValue: 'Dátum' })}</span>
                             <span className="font-semibold text-foreground">
                               {tx.transaction_date || '—'}
                             </span>
@@ -470,7 +476,7 @@ export default function NotesPage() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 shrink-0 self-center"
-                          title="Tranzakció megnyitása"
+                          title={t('notes:detail.open_transaction', { defaultValue: 'Tranzakció megnyitása' })}
                         >
                           <ExternalLink className="h-4 w-4" />
                         </Button>
@@ -485,9 +491,9 @@ export default function NotesPage() {
                 <span className="flex items-center gap-1">
                   <User className="h-3.5 w-3.5" />
                   {selectedNote.is_line_item_note ? (
-                    <span>Típus: Számlatétel jegyzet (a számla részleteinél módosítható)</span>
+                    <span>{t('notes:detail.line_item_note_hint', { defaultValue: 'Típus: Számlatétel jegyzet (a számla részleteinél módosítható)' })}</span>
                   ) : (
-                    <span>Rögzítette: {selectedNote.profiles?.full_name || 'Ismeretlen'}</span>
+                    <span>{t('notes:detail.recorded_by', { name: selectedNote.profiles?.full_name || t('notes:detail.unknown', { defaultValue: 'Ismeretlen' }), defaultValue: `Rögzítette: ${selectedNote.profiles?.full_name || 'Ismeretlen'}` })}</span>
                   )}
                 </span>
               </div>
@@ -495,9 +501,9 @@ export default function NotesPage() {
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
               <ClipboardCheck className="h-12 w-12 text-muted-foreground/30" />
-              <p className="text-sm">Nincs kiválasztott jegyzet</p>
+              <p className="text-sm">{t('notes:detail.no_note_selected', { defaultValue: 'Nincs kiválasztott jegyzet' })}</p>
               <Button onClick={handleCreateNote} variant="outline" size="sm" className="mt-2">
-                Hozz létre egyet most
+                {t('notes:detail.create_one_now', { defaultValue: 'Hozz létre egyet most' })}
               </Button>
             </div>
           )}

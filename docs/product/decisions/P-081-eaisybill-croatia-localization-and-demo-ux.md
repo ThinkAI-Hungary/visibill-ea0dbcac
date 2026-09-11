@@ -20,6 +20,8 @@
 - A `src/routes/authRoutes.tsx` a `/hr/auth` és `/hr/auth/callback` útvonalakat `<LanguageRouteWrapper language="hr">` burokban futtatja.
 - Az `AppSidebar.tsx` minden csoportneve és menüpontja többnyelvű kulcsokból táplálkozik.
 - A `VatSection.tsx` automatikusan számolja ki a fizetendő / visszaigényelhető ÁFA pozíciót és jeleníti meg a kiválasztott devizában.
+- A **Mérleg (`/balance-sheet`)** nézetben a widgetek (Mérleg-hinta, Egyezőségi Diagnosztika, Likviditási Mutatók), nézetvezérlő sáv (Hivatalos nézet, Nullás sorok elrejtése, Hagyományos nézet, Deviza konszolidáció, Exportok), táblázatfejlécek és a Hozzárendelés (mapping) fül 100%-ban lokalizáltak (`accounting:balance_sheet.*`).
+- Az **Éves Beszámoló Varázsló (`/annual-report`)** 6 lépéskapszulája, előrehaladás-kijelzője és léptetőgombjai, valamint az 1. lépés (alapadatok, képviselő űrlap), a 2. lépés (dinamikus zárási dátumú adatbefagyasztás és pénzügyi összefoglaló kártyák) és a 3. lépés (validáció) tisztán horvát/magyar nyelven jelennek meg az aktív útvonalnak megfelelően (`accounting:annual_report.*`).
 
 **Rationale:**
 A nemzetközi értékesítéshez kulcsfontosságú az autentikus helyi nyelvű és pénznemű demonstráció. Ugyanakkor a termelésben lévő magyar ügyfelek zavartalan élménye és a technikai stabilitás (ne ragadjon be a felület horvát nyelven) elsődleges prioritás. A tiszta útvonal-vezérelt megoldás mindkét feltételt maximálisan teljesíti.

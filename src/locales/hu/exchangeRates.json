@@ -1,0 +1,37 @@
+{
+  "title": "Árfolyamok",
+  "subtitle": "Élő devizaárfolyamok HUF-hoz viszonyítva",
+  "refreshing": "Árfolyamok frissítése...",
+  "today": "ma",
+  "currencies": {
+    "EUR": "Euró",
+    "USD": "USA Dollár",
+    "GBP": "Font Sterling",
+    "CHF": "Svájci Frank",
+    "JPY": "Japán Yen",
+    "PLN": "Lengyel Zloty",
+    "CZK": "Cseh Korona",
+    "RON": "Román Lej",
+    "AUD": "Ausztrál Dollár",
+    "CAD": "Kanadai Dollár",
+    "SEK": "Svéd Korona",
+    "NOK": "Norvég Korona",
+    "DKK": "Dán Korona",
+    "HRK": "Horvát Kuna",
+    "HUF": "Magyar Forint"
+  },
+  "table": {
+    "title": "További árfolyamok",
+    "name": "Név",
+    "code": "Kód",
+    "rate": "Árfolyam",
+    "change": "Változás"
+  },
+  "converter": {
+    "title": "Gyorsváltó",
+    "amount": "Összeg",
+    "target_currency": "Célvaluta",
+    "converted_amount": "Átváltott összeg"
+  },
+  "info_note": "Az árfolyamok tájékoztató jellegűek. A napi változás adatok szimuláltak. Tranzakciók előtt mindig ellenőrizze a bankjánál az aktuális árfolyamokat."
+}

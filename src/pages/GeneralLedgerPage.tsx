@@ -154,7 +154,7 @@ export default function GeneralLedgerPage() {
 
   const renderDateBasisToggle = () => (
     <div className="inline-flex h-9 items-center rounded-lg border border-border/80 bg-muted/40 p-1 shadow-2xs text-xs select-none">
-      <CustomTooltip content="Számla kibocsátásának kelte alapján gyűjti az adatokat" side="bottom">
+      <CustomTooltip content={t('accounting:general_ledger.date_basis.issue_tooltip', 'Számla kibocsátásának kelte alapján gyűjti az adatokat')} side="bottom">
         <button
           type="button"
           onClick={() => handleDateBasisChange('kibocsatas')}
@@ -166,10 +166,10 @@ export default function GeneralLedgerPage() {
           )}
         >
           <Calendar className="w-3.5 h-3.5 shrink-0" />
-          <span>Kibocsátás</span>
+          <span>{t('accounting:general_ledger.date_basis.issue', 'Kibocsátás')}</span>
         </button>
       </CustomTooltip>
-      <CustomTooltip content="Számla / tétel gazdasági teljesítésének dátuma alapján gyűjti az adatokat" side="bottom">
+      <CustomTooltip content={t('accounting:general_ledger.date_basis.fulfillment_tooltip', 'Számla / tétel gazdasági teljesítésének dátuma alapján gyűjti az adatokat')} side="bottom">
         <button
           type="button"
           onClick={() => handleDateBasisChange('teljesites')}
@@ -181,7 +181,7 @@ export default function GeneralLedgerPage() {
           )}
         >
           <CalendarCheck className="w-3.5 h-3.5 shrink-0" />
-          <span>Teljesítés</span>
+          <span>{t('accounting:general_ledger.date_basis.fulfillment', 'Teljesítés')}</span>
         </button>
       </CustomTooltip>
     </div>
@@ -189,7 +189,7 @@ export default function GeneralLedgerPage() {
 
   const renderPostingStatusToggle = () => (
     <div className="inline-flex h-9 items-center rounded-lg border border-border/80 bg-muted/40 p-1 shadow-2xs text-xs select-none">
-      <CustomTooltip content="Minden tétel megjelenítése (operatív számlák és lekönyvelt bizonylatok együtt)" side="bottom">
+      <CustomTooltip content={t('accounting:general_ledger.posting_status.all_tooltip', 'Minden tétel megjelenítése (operatív számlák és lekönyvelt bizonylatok együtt)')} side="bottom">
         <button
           type="button"
           onClick={() => handlePostingStatusChange('all')}
@@ -201,10 +201,10 @@ export default function GeneralLedgerPage() {
           )}
         >
           <Layers className="w-3.5 h-3.5 shrink-0" />
-          <span>Összes tétel</span>
+          <span>{t('accounting:general_ledger.posting_status.all', 'Összes tétel')}</span>
         </button>
       </CustomTooltip>
-      <CustomTooltip content="Kizárólag a hivatalosan naplózott és lezárt bizonylatok megjelenítése (Sztv. szerinti zárt könyvelés)" side="bottom">
+      <CustomTooltip content={t('accounting:general_ledger.posting_status.posted_tooltip', 'Kizárólag a hivatalosan naplózott és lezárt bizonylatok megjelenítése (Sztv. szerinti zárt könyvelés)')} side="bottom">
         <button
           type="button"
           onClick={() => handlePostingStatusChange('posted_only')}
@@ -216,7 +216,7 @@ export default function GeneralLedgerPage() {
           )}
         >
           <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-          <span>Csak lekönyvelt</span>
+          <span>{t('accounting:general_ledger.posting_status.posted', 'Csak lekönyvelt')}</span>
         </button>
       </CustomTooltip>
     </div>
@@ -264,11 +264,11 @@ export default function GeneralLedgerPage() {
         queryClient.invalidateQueries({ queryKey: ['glJournalItems'] });
         
         if (row.processing_status === 'error') {
-          toast({ title: 'Hiba történt', description: row.message || 'Az AI feldolgozás sikertelen.', variant: 'destructive' });
+          toast({ title: t('common:status.error', 'Hiba történt'), description: row.message || t('accounting:general_ledger.toasts.ai_error', 'Az AI feldolgozás sikertelen.'), variant: 'destructive' });
         } else {
-          toast({ 
-            title: 'Kész!', 
-            description: row.message || 'Az AI feldolgozás sikeresen befejeződött.',
+          toast({
+            title: t('common:status.ready', 'Kész!'),
+            description: row.message || t('accounting:general_ledger.toasts.ai_success', 'Az AI feldolgozás sikeresen befejeződött.'),
             className: "bg-green-50 text-green-900 border-green-200"
           });
         }
@@ -278,11 +278,11 @@ export default function GeneralLedgerPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [selectedCompany?.id, toast]);
+  }, [selectedCompany?.id, toast, t]);
 
   const toggleActivePresetMutation = useMutation({
     mutationFn: async (presetId: string) => {
-      if (!selectedCompany?.id) throw new Error("Cég nincs kiválasztva.");
+      if (!selectedCompany?.id) throw new Error(t('accounting:general_ledger.toasts.company_not_selected', 'Cég nincs kiválasztva.'));
       
       const isGeneric = presets?.find(p => p.id === presetId)?.type === 'generic';
       
@@ -306,9 +306,16 @@ export default function GeneralLedgerPage() {
       queryClient.invalidateQueries({ queryKey: ['coaPresets'] });
     },
     onError: (error: any) => {
-      toast({ title: "Hiba", description: error.message, variant: "destructive" });
+      toast({ title: t('common:status.error', 'Hiba'), description: error.message, variant: "destructive" });
     }
   });
+
+  const getPresetDisplayName = useCallback((preset: { name: string; type?: string }) => {
+    if (preset.type === 'generic' || preset.name === 'Beépített Rendszerszintű Sablon' || preset.name.toLowerCase().includes('beépített')) {
+      return t('accounting:general_ledger.toolbar.builtin_system_preset', 'Beépített Rendszerszintű Sablon');
+    }
+    return preset.name;
+  }, [t]);
 
   const handleSelectPreset = (val: string) => {
     setActivePresetId(val);
@@ -341,9 +348,12 @@ export default function GeneralLedgerPage() {
         });
 
       if (error) throw new Error(error.message);
-      toast({ title: 'Sikeres indítás', description: 'Az AI besorolás elindult a paramétereknek megfelelően.' });
+      toast({
+        title: t('accounting:general_ledger.toasts.ai_started_title', 'Sikeres indítás'),
+        description: t('accounting:general_ledger.toasts.ai_started', 'Az AI besorolás elindult a paramétereknek megfelelően.')
+      });
     } catch (error: any) {
-      toast({ title: 'Hiba történt', description: error.message, variant: 'destructive' });
+      toast({ title: t('common:status.error', 'Hiba történt'), description: error.message, variant: 'destructive' });
       setIsAIRunning(false);
     }
   };
@@ -384,43 +394,43 @@ export default function GeneralLedgerPage() {
               <Database className="w-10 h-10" />
             </div>
             <div>
-              <h2 className="text-xl font-bold">Üdvözlünk a Főkönyvben!</h2>
+              <h2 className="text-xl font-bold">{t('accounting:general_ledger.onboarding.welcome', 'Üdvözlünk a Főkönyvben!')}</h2>
               <p className="text-muted-foreground mt-1 max-w-md">
-                Az induláshoz kövesd az alábbi lépéseket:
+                {t('accounting:general_ledger.onboarding.steps_intro', 'Az induláshoz kövesd az alábbi lépéseket:')}
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-2xl mt-2">
               {/* Step 1 */}
               <div className="flex flex-col items-center gap-2 p-4 rounded-xl border bg-card hover:shadow-md transition-shadow">
                 <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">1</div>
-                <h3 className="font-semibold text-sm">Számlatükör feltöltése</h3>
-                <p className="text-xs text-muted-foreground">Válassz egy beépített sablont, vagy töltsd fel a sajátodat</p>
+                <h3 className="font-semibold text-sm">{t('accounting:general_ledger.onboarding.step1_title', 'Számlatükör feltöltése')}</h3>
+                <p className="text-xs text-muted-foreground">{t('accounting:general_ledger.onboarding.step1_desc', 'Válassz egy beépített sablont, vagy töltsd fel a sajátodat')}</p>
                 <Button size="sm" onClick={handleOpenUpload} className="mt-auto gap-1.5">
-                  <UploadCloud className="w-4 h-4" /> Feltöltés
+                  <UploadCloud className="w-4 h-4" /> {t('accounting:general_ledger.onboarding.step1_btn', 'Feltöltés')}
                 </Button>
               </div>
               {/* Step 2 */}
               <div className="flex flex-col items-center gap-2 p-4 rounded-xl border bg-card hover:shadow-md transition-shadow">
                 <div className="w-8 h-8 rounded-full bg-primary/70 text-primary-foreground flex items-center justify-center text-sm font-bold">2</div>
-                <h3 className="font-semibold text-sm">Adat importálás</h3>
-                <p className="text-xs text-muted-foreground">XML auditfájl vagy számlák/tranzakciók importálása</p>
+                <h3 className="font-semibold text-sm">{t('accounting:general_ledger.onboarding.step2_title', 'Adat importálás')}</h3>
+                <p className="text-xs text-muted-foreground">{t('accounting:general_ledger.onboarding.step2_desc', 'XML auditfájl vagy számlák/tranzakciók importálása')}</p>
                 <Button size="sm" variant="outline" onClick={() => setAuditXmlModalOpen(true)} className="mt-auto gap-1.5">
-                  <FileUp className="w-4 h-4" /> XML Import
+                  <FileUp className="w-4 h-4" /> {t('accounting:general_ledger.onboarding.step2_btn', 'XML Import')}
                 </Button>
               </div>
               {/* Step 3 */}
               <div className="flex flex-col items-center gap-2 p-4 rounded-xl border bg-card hover:shadow-md transition-shadow">
                 <div className="w-8 h-8 rounded-full bg-primary/40 text-primary-foreground flex items-center justify-center text-sm font-bold">3</div>
-                <h3 className="font-semibold text-sm">AI besorolás</h3>
-                <p className="text-xs text-muted-foreground">Az AI automatikusan kategorizálja a tételeket a számlatükör alapján</p>
+                <h3 className="font-semibold text-sm">{t('accounting:general_ledger.onboarding.step3_title', 'AI besorolás')}</h3>
+                <p className="text-xs text-muted-foreground">{t('accounting:general_ledger.onboarding.step3_desc', 'Az AI automatikusan kategorizálja a tételeket a számlatükör alapján')}</p>
                 <Button size="sm" variant="secondary" disabled className="mt-auto gap-1.5">
-                  <Bot className="w-4 h-4" /> Később elérhető
+                  <Bot className="w-4 h-4" /> {t('accounting:general_ledger.onboarding.step3_btn', 'Később elérhető')}
                 </Button>
               </div>
             </div>
             {hasPresets && (
               <p className="text-xs text-muted-foreground mt-4">
-                Vagy válassz egy meglévő számlatükröt a fenti sávban a kezdéshez.
+                {t('accounting:general_ledger.onboarding.or_choose_existing', 'Vagy válassz egy meglévő számlatükröt a fenti sávban a kezdéshez.')}
               </p>
             )}
           </CardContent>
@@ -433,17 +443,23 @@ export default function GeneralLedgerPage() {
           <div className="flex items-center justify-end gap-3 bg-card p-3 rounded-xl border border-border shadow-sm">
             <div className="flex items-center gap-2">
               <Database className="w-4 h-4 text-primary" />
-              <Label className="whitespace-nowrap font-medium text-xs">Aktív Számlatükör:</Label>
+              <Label className="whitespace-nowrap font-medium text-xs">
+                {t('accounting:general_ledger.toolbar.active_preset', 'Aktív Számlatükör:')}
+              </Label>
               <Select value={activePresetId || ''} onValueChange={handleSelectPreset} disabled={toggleActivePresetMutation.isPending}>
                 <SelectTrigger className="w-[200px] h-9 text-sm">
-                  <SelectValue placeholder="Sablon kiválasztása" />
+                  <SelectValue placeholder={t('accounting:general_ledger.toolbar.select_preset', 'Sablon kiválasztása')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {presets?.map(preset => (
-                    <SelectItem key={preset.id} value={preset.id}>
-                      {preset.name} {preset.type === 'generic' ? '(Beépített)' : ''}
-                    </SelectItem>
-                  ))}
+                  {presets?.map(preset => {
+                    const isGeneric = preset.type === 'generic';
+                    const displayName = getPresetDisplayName(preset);
+                    return (
+                      <SelectItem key={preset.id} value={preset.id}>
+                        {displayName} {isGeneric ? ` ${t('accounting:general_ledger.toolbar.builtin_badge', '(Beépített)')}` : ''}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
               <Button 
@@ -453,7 +469,7 @@ export default function GeneralLedgerPage() {
                 onClick={handleOpenManage}
               >
                 <Settings2 className="w-4 h-4" />
-                <span>Sablonok kezelése</span>
+                <span>{t('accounting:general_ledger.toolbar.manage_presets', 'Sablonok kezelése')}</span>
               </Button>
             </div>
             <div className="border-l pl-3 border-border/60 flex items-center gap-2">
@@ -463,19 +479,19 @@ export default function GeneralLedgerPage() {
               </Button>
               <Button onClick={handleOpenUpload} size="sm" className="h-9 gap-2">
                 <UploadCloud className="w-4 h-4" />
-                <span>Új sablon feltöltése</span>
+                <span>{t('accounting:general_ledger.toolbar.upload_preset', 'Új sablon feltöltése')}</span>
               </Button>
               <Button onClick={() => setManualEntryOpen(true)} size="sm" variant="outline" className="h-9 gap-2 bg-primary/5 hover:bg-primary/10 text-primary border-primary/20">
                 <BookOpen className="w-4 h-4" />
-                <span>Vegyes bizonylat</span>
+                <span>{t('accounting:general_ledger.toolbar.manual_entry', 'Vegyes bizonylat')}</span>
               </Button>
               <Button onClick={() => setAuditXmlModalOpen(true)} size="sm" variant="outline" className="h-9 gap-2">
                 <FileUp className="w-4 h-4" />
-                <span>XML Import</span>
+                <span>{t('accounting:general_ledger.toolbar.xml_import', 'XML Import')}</span>
               </Button>
               <Button onClick={() => setAuditHistoryOpen(true)} size="sm" variant="outline" className="h-9 gap-2">
                 <FileText className="w-4 h-4" />
-                <span>XML Importok</span>
+                <span>{t('accounting:general_ledger.toolbar.xml_imports', 'XML Importok')}</span>
               </Button>
               <Button 
                 onClick={handleRunAI} 
@@ -485,25 +501,25 @@ export default function GeneralLedgerPage() {
                 className="h-9 gap-2"
               >
                 {isAIRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bot className="w-4 h-4" />}
-                <span>AI Besorolás</span>
+                <span>{t('accounting:general_ledger.toolbar.ai_classification', 'AI Besorolás')}</span>
               </Button>
               <div className="border-l pl-3 border-border/60 ml-1">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" className="h-9 gap-2">
                       <Download className="h-4 w-4" />
-                      Export
+                      {t('accounting:general_ledger.toolbar.export', 'Export')}
                       <ChevronDown className="h-4 w-4 ml-1" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
                     <DropdownMenuItem onClick={() => setShowPrintPreview(true)}>
                       <Eye className="h-4 w-4 mr-2" />
-                      Nyomtatási előnézet
+                      {t('accounting:general_ledger.toolbar.print_preview', 'Nyomtatási előnézet')}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handlePrint}>
                       <Printer className="h-4 w-4 mr-2" />
-                      <span className="flex-1">Nyomtatás / PDF</span>
+                      <span className="flex-1">{t('accounting:general_ledger.toolbar.print_pdf', 'Nyomtatás / PDF')}</span>
                       <kbd className="ml-2 pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
                         Ctrl+P
                       </kbd>
@@ -511,12 +527,12 @@ export default function GeneralLedgerPage() {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => tableRef.current?.exportExcel(selectedCompany?.name)}>
                       <Download className="h-4 w-4 mr-2" />
-                      Kivonat (Excel)
+                      {t('accounting:general_ledger.toolbar.export_excel', 'Kivonat (Excel)')}
                     </DropdownMenuItem>
                     {/* F6: Analytical export */}
                     <DropdownMenuItem onClick={() => tableRef.current?.exportAnalyticalExcel(selectedCompany?.name)}>
                       <Table2 className="h-4 w-4 mr-2" />
-                      Analitikus kivonat (Excel)
+                      {t('accounting:general_ledger.toolbar.export_analytical_excel', 'Analitikus kivonat (Excel)')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -533,19 +549,31 @@ export default function GeneralLedgerPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 print:hidden">
             <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
               <div className="bg-primary/10 text-primary p-2 rounded-lg"><Database className="w-4 h-4" /></div>
-              <div><div className="text-lg font-bold tabular-nums">{glStats.accountCount}</div><div className="text-[11px] text-muted-foreground">Főkönyvi számok</div></div>
+              <div>
+                <div className="text-lg font-bold tabular-nums">{glStats.accountCount}</div>
+                <div className="text-[11px] text-muted-foreground">{t('accounting:general_ledger.kpi.accounts', 'Főkönyvi számok')}</div>
+              </div>
             </div>
             <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
               <div className="bg-blue-500/10 text-blue-600 p-2 rounded-lg"><FileText className="w-4 h-4" /></div>
-              <div><div className="text-lg font-bold tabular-nums">{glStats.leafCount}</div><div className="text-[11px] text-muted-foreground">Analitikus számlák</div></div>
+              <div>
+                <div className="text-lg font-bold tabular-nums">{glStats.leafCount}</div>
+                <div className="text-[11px] text-muted-foreground">{t('accounting:general_ledger.kpi.leaf_accounts', 'Analitikus számlák')}</div>
+              </div>
             </div>
             <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
               <div className="bg-orange-500/10 text-orange-500 p-2 rounded-lg"><Download className="w-4 h-4 rotate-180" /></div>
-              <div><div className="text-lg font-bold tabular-nums">{fmtHuf(glStats.totalDebit)}</div><div className="text-[11px] text-muted-foreground">Tartozik (Ft)</div></div>
+              <div>
+                <div className="text-lg font-bold tabular-nums">{fmtHuf(glStats.totalDebit)}</div>
+                <div className="text-[11px] text-muted-foreground">{t('accounting:general_ledger.kpi.debit', 'Tartozik (Ft)')}</div>
+              </div>
             </div>
             <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
               <div className="bg-sky-500/10 text-sky-500 p-2 rounded-lg"><Download className="w-4 h-4" /></div>
-              <div><div className="text-lg font-bold tabular-nums">{fmtHuf(glStats.totalCredit)}</div><div className="text-[11px] text-muted-foreground">Követel (Ft)</div></div>
+              <div>
+                <div className="text-lg font-bold tabular-nums">{fmtHuf(glStats.totalCredit)}</div>
+                <div className="text-[11px] text-muted-foreground">{t('accounting:general_ledger.kpi.credit', 'Követel (Ft)')}</div>
+              </div>
             </div>
           </div>
           {/* ── Classification Progress Bar / Reserved Space (F2) ── */}
@@ -555,7 +583,13 @@ export default function GeneralLedgerPage() {
               return (
                 <div>
                   <div className="flex justify-between text-[10px] text-muted-foreground mb-1 leading-none">
-                    <span>Besorolás: {glStats.classifiedItems}/{glStats.totalItems} tétel</span>
+                    <span>
+                      {t('accounting:general_ledger.kpi.classification_progress', {
+                        classified: glStats.classifiedItems,
+                        total: glStats.totalItems,
+                        defaultValue: `Besorolás: ${glStats.classifiedItems}/${glStats.totalItems} tétel`
+                      })}
+                    </span>
                     <span className={pct === 100 ? 'text-emerald-600 font-semibold' : ''}>{pct}%</span>
                   </div>
                   <div className="h-1.5 bg-muted rounded-full overflow-hidden">
@@ -636,11 +670,12 @@ export default function GeneralLedgerPage() {
               <div className="bg-primary/10 text-primary p-2 rounded-lg">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
               </div>
-              Főkönyvi Kivonat
+              {t('accounting:general_ledger.extract_title', 'Főkönyvi Kivonat')}
               <div className="ml-auto flex items-center gap-3">
                 <GlSearchAutocomplete
                   companyId={selectedCompany?.id}
                   presetId={activePresetId}
+                  placeholder={t('accounting:general_ledger.search_placeholder', 'Keresés a főkönyvben (szám, név, partner)...')}
                   onQueryChange={setGlSearchQuery}
                   onSearchResultsChange={setGlSearchResults}
                   onSelect={(result) => {
@@ -692,8 +727,8 @@ export default function GeneralLedgerPage() {
                   <CreditCard className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold">Főkönyvi & Analitikus Kartonok</h2>
-                  <p className="text-xs text-muted-foreground font-normal">Tételes forgalmi kimutatások, göngyölt egyenlegek és analitikai egyeztető</p>
+                  <h2 className="text-xl font-bold">{t('accounting:general_ledger.cards_view.title', 'Főkönyvi & Analitikus Kartonok')}</h2>
+                  <p className="text-xs text-muted-foreground font-normal">{t('accounting:general_ledger.cards_view.subtitle', 'Tételes forgalmi kimutatások, göngyölt egyenlegek és analitikai egyeztető')}</p>
                 </div>
               </div>
 
@@ -705,7 +740,7 @@ export default function GeneralLedgerPage() {
                   className="h-7 text-xs gap-1.5"
                   onClick={() => setCardSubTab('account')}
                 >
-                  <CreditCard className="w-3.5 h-3.5" /> Főkönyvi Karton
+                  <CreditCard className="w-3.5 h-3.5" /> {t('accounting:general_ledger.cards_view.account_card', 'Főkönyvi Karton')}
                 </Button>
                 <Button
                   variant={cardSubTab === 'partner' ? 'default' : 'ghost'}
@@ -713,7 +748,7 @@ export default function GeneralLedgerPage() {
                   className="h-7 text-xs gap-1.5"
                   onClick={() => setCardSubTab('partner')}
                 >
-                  <UserCheck className="w-3.5 h-3.5" /> Partner Kartonok
+                  <UserCheck className="w-3.5 h-3.5" /> {t('accounting:general_ledger.cards_view.partner_card', 'Partner Kartonok')}
                 </Button>
                 <Button
                   variant={cardSubTab === 'reconciliation' ? 'default' : 'ghost'}
@@ -721,7 +756,7 @@ export default function GeneralLedgerPage() {
                   className="h-7 text-xs gap-1.5"
                   onClick={() => setCardSubTab('reconciliation')}
                 >
-                  <ShieldAlert className="w-3.5 h-3.5" /> Főkönyv ↔ Analitika
+                  <ShieldAlert className="w-3.5 h-3.5" /> {t('accounting:general_ledger.cards_view.reconciliation', 'Főkönyv ↔ Analitika')}
                 </Button>
               </div>
             </CardTitle>
@@ -767,7 +802,7 @@ export default function GeneralLedgerPage() {
               <div className="bg-primary/10 text-primary p-2 rounded-lg">
                 <BookOpen className="w-5 h-5" />
               </div>
-              Naplófőkönyv
+              {t('accounting:general_ledger.journal_view.title', 'Naplófőkönyv')}
               <div className="ml-auto flex items-center gap-3">
                 {/* Dátum alap kapcsoló Naplófőkönyvhöz */}
                 {renderDateBasisToggle()}
@@ -800,13 +835,13 @@ export default function GeneralLedgerPage() {
               <div className="bg-primary/10 text-primary p-2 rounded-lg">
                 <Table2 className="w-5 h-5" />
               </div>
-              Többéves Összehasonlítás (Előző év vs Tárgyév)
+              {t('accounting:general_ledger.comparison_view.title', 'Többéves Összehasonlítás (Előző év vs Tárgyév)')}
               <div className="ml-auto flex items-center gap-3">
                 {renderDateBasisToggle()}
                 {renderPostingStatusToggle()}
                 <span className="text-xs font-semibold text-muted-foreground bg-background px-3 py-1.5 rounded-full border border-border flex items-center gap-2 shadow-sm">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-                  Összehasonlított időszakok
+                  {t('accounting:general_ledger.comparison_view.compared_periods', 'Összehasonlított időszakok')}
                 </span>
               </div>
             </CardTitle>
@@ -876,17 +911,17 @@ export default function GeneralLedgerPage() {
           <DialogHeader className="px-6 py-4 border-b border-border/40 bg-muted/30 shrink-0 flex flex-row items-center justify-between gap-4">
             <DialogTitle className="flex items-center gap-2 text-lg">
               <Eye className="w-5 h-5 text-primary" />
-              Főkönyv nyomtatási előnézet
+              {t('accounting:general_ledger.print_preview_modal.title', 'Főkönyv nyomtatási előnézet')}
             </DialogTitle>
             <div className="flex items-center gap-2 shrink-0 mr-4">
-              <Label className="text-xs font-semibold whitespace-nowrap">Elrendezés:</Label>
+              <Label className="text-xs font-semibold whitespace-nowrap">{t('accounting:general_ledger.print_preview_modal.layout', 'Elrendezés:')}</Label>
               <Select value={printLayoutMode} onValueChange={(v: any) => setPrintLayoutMode(v)}>
                 <SelectTrigger className="w-[150px] h-8 text-xs bg-background">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="analytical">Analitikus (Tételek)</SelectItem>
-                  <SelectItem value="synthetic">Szintetikus (Összesített)</SelectItem>
+                  <SelectItem value="analytical">{t('accounting:general_ledger.print_preview_modal.analytical', 'Analitikus (Tételek)')}</SelectItem>
+                  <SelectItem value="synthetic">{t('accounting:general_ledger.print_preview_modal.synthetic', 'Szintetikus (Összesített)')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -894,7 +929,7 @@ export default function GeneralLedgerPage() {
           <div className="flex-1 overflow-auto p-6 bg-white dark:bg-background">
             <div className="text-center mb-6 border-b-2 border-primary/20 pb-4">
               <h1 className="text-2xl font-bold text-foreground">{selectedCompany?.name || 'Vállalkozás'}</h1>
-              <p className="text-sm text-muted-foreground mt-1">Főkönyvi kivonat — Nyomtatási előnézet</p>
+              <p className="text-sm text-muted-foreground mt-1">{t('accounting:general_ledger.print_preview_modal.subtitle', 'Főkönyvi kivonat — Nyomtatási előnézet')}</p>
             </div>
             <div className="border rounded-md shadow-sm bg-card">
               <GeneralLedgerTable
@@ -906,9 +941,9 @@ export default function GeneralLedgerPage() {
             </div>
           </div>
           <DialogFooter className="px-6 py-3 border-t border-border/40 bg-muted/30 shrink-0 gap-2">
-            <Button variant="outline" onClick={() => setShowPrintPreview(false)}>Bezárás</Button>
+            <Button variant="outline" onClick={() => setShowPrintPreview(false)}>{t('accounting:general_ledger.print_preview_modal.close', 'Bezárás')}</Button>
             <Button className="gap-2" onClick={() => { setShowPrintPreview(false); handlePrint(); }}>
-              <Printer className="w-4 h-4" /> Nyomtatás
+              <Printer className="w-4 h-4" /> {t('accounting:general_ledger.print_preview_modal.print', 'Nyomtatás')}
             </Button>
           </DialogFooter>
         </DialogContent>

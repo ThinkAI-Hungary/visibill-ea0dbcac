@@ -18,6 +18,7 @@ import { UnsavedChangesDialog } from '@/components/UnsavedChangesDialog';
 import { reportError } from '@/lib/errorReporter';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import { useTranslation } from 'react-i18next';
+import { formatCurrencyLocale, formatDateLocale } from '@/lib/locale/formatters';
 import { CategoryDonutChart } from '@/components/CategoryDonutChart';
 import { CategoryAmountSummary } from '@/components/CategoryAmountSummary';
 import { CategoryAccordionItem, formatCurrencyTotals, type CategoryInvoice } from '@/components/CategoryAccordionItem';
@@ -420,9 +421,9 @@ const Onboarding = () => {
         // Invalidate React Query cache so InvoicesPage badges and Categories page update immediately
         queryClient.invalidateQueries({ queryKey: queryKeys.categories(selectedCompany.id) });
         queryClient.invalidateQueries({ queryKey: queryKeys.categoriesPageData(selectedCompany.id) });
-        toast({ title: 'Kategória mentve!' });
+        toast({ title: t('categories:toast_saved', 'Kategória mentve!') });
       } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Mentés sikertelen', description: error.message });
+        toast({ variant: 'destructive', title: t('categories:toast_save_failed', 'Mentés sikertelen'), description: error.message });
         return;
       }
     }
@@ -523,9 +524,9 @@ const Onboarding = () => {
         return stats;
       });
       
-      toast({ title: 'Számla eltávolítva a kategóriából' });
+      toast({ title: t('categories:toast_invoice_removed', 'Számla eltávolítva a kategóriából') });
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Hiba', description: error.message });
+      toast({ variant: 'destructive', title: t('common:error', 'Hiba'), description: error.message });
     }
   };
 
@@ -680,9 +681,9 @@ const Onboarding = () => {
       setSearchResults(prev => ({ ...prev, [categoryId]: [] }));
       setBulkSelected(new Set());
       setModalSearchQuery('');
-      toast({ title: `${toAdd.length} számla hozzárendelve a kategóriához` });
+      toast({ title: t('categories:toast_invoices_assigned', { count: toAdd.length, defaultValue: `${toAdd.length} számla hozzárendelve a kategóriához` }) });
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Hiba', description: error.message });
+      toast({ variant: 'destructive', title: t('common:error', 'Hiba'), description: error.message });
     }
   };
 
@@ -720,9 +721,9 @@ const Onboarding = () => {
           queryClient.invalidateQueries({ queryKey: queryKeys.categoriesPageData(selectedCompany.id) });
         }
         
-        toast({ title: 'Kategória törölve' });
+        toast({ title: t('categories:toast_deleted', 'Kategória törölve') });
       } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Törlés sikertelen', description: error.message });
+        toast({ variant: 'destructive', title: t('categories:toast_delete_failed', 'Törlés sikertelen'), description: error.message });
         return;
       }
     }
@@ -797,7 +798,7 @@ const Onboarding = () => {
         queryClient.invalidateQueries({ queryKey: queryKeys.categoriesPageData(selectedCompany.id) });
       }
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Létrehozás sikertelen', description: error.message });
+      toast({ variant: 'destructive', title: t('categories:toast_create_failed', 'Létrehozás sikertelen'), description: error.message });
     }
   };
 
@@ -817,7 +818,11 @@ const Onboarding = () => {
 
   const handleExportCategoryInvoices = async (format: 'csv' | 'xlsx' | 'pdf', categoryName: string, invoices: CategoryInvoice[]) => {
     if (invoices.length === 0) {
-      toast({ title: 'Nincs exportálható számla', description: 'Ez a kategória jelenleg nem tartalmaz számlákat.', variant: 'destructive' });
+      toast({
+        title: t('categories:export_no_invoices', 'Nincs exportálható számla'),
+        description: t('categories:export_no_invoices_desc', 'Ez a kategória jelenleg nem tartalmaz számlákat.'),
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -825,10 +830,18 @@ const Onboarding = () => {
     const safeCatName = categoryName.replace(/[^a-zA-Z0-9áéíóöőúüűÁÉÍÓÖŐÚÜŰ]/g, '_');
     const filename = `Kategoria_${safeCatName}_szamlai_${timestamp}`;
 
-    const headers = ['Számlaszám', 'Irány', 'Partner', 'Dátum', 'Összeg', 'Deviza', 'Forrás'];
+    const headers = [
+      t('categories:modal.col_number', 'Számlaszám'),
+      t('categories:modal.col_direction', 'Irány'),
+      t('categories:modal.col_partner', 'Partner'),
+      t('categories:modal.col_date', 'Dátum'),
+      t('categories:modal.col_amount', 'Összeg'),
+      t('categories:export_currency', 'Deviza'),
+      t('categories:export_source', 'Forrás'),
+    ];
     const rows = invoices.map(inv => [
       inv.invoice_number || '',
-      inv.invoice_direction === 'INBOUND' ? 'Bejövő' : 'Kimenő',
+      inv.invoice_direction === 'INBOUND' ? t('categories:modal.direction_in', 'Bejövő') : t('categories:modal.direction_out', 'Kimenő'),
       inv.supplier_name || '',
       inv.invoice_issue_date || '',
       inv.invoice_gross_amount ?? 0,
@@ -839,32 +852,43 @@ const Onboarding = () => {
     try {
       if (format === 'pdf') {
         await exportPdf(filename, {
-          title: `Kategória: ${categoryName}`,
-          subtitle: `${invoices.length} db hozzárendelt számla`,
+          title: `${t('categories:title', 'Kategória')}: ${categoryName}`,
+          subtitle: t('categories:modal.assigned_invoices', { count: invoices.length, defaultValue: `${invoices.length} db hozzárendelt számla` }),
           companyName: selectedCompany?.name,
-          period: new Date().toLocaleDateString('hu-HU'),
-          headers: ['Számlaszám', 'Irány', 'Partner', 'Dátum', 'Összeg', 'Deviza'],
+          period: formatDateLocale(new Date()),
+          headers: [
+            t('categories:modal.col_number', 'Számlaszám'),
+            t('categories:modal.col_direction', 'Irány'),
+            t('categories:modal.col_partner', 'Partner'),
+            t('categories:modal.col_date', 'Dátum'),
+            t('categories:modal.col_amount', 'Összeg'),
+            t('categories:export_currency', 'Deviza'),
+          ],
           rows: invoices.map(inv => [
             inv.invoice_number || '',
-            inv.invoice_direction === 'INBOUND' ? 'Bejövő' : 'Kimenő',
+            inv.invoice_direction === 'INBOUND' ? t('categories:modal.direction_in', 'Bejövő') : t('categories:modal.direction_out', 'Kimenő'),
             inv.supplier_name || '',
             inv.invoice_issue_date || '',
             inv.invoice_gross_amount != null
-              ? new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 2 }).format(inv.invoice_gross_amount)
-              : '0',
+              ? formatCurrencyLocale(inv.invoice_gross_amount, inv.penznem || undefined)
+              : formatCurrencyLocale(0, inv.penznem || undefined),
             inv.penznem || 'HUF',
           ]),
           footer: {
-            label: `Összesen ${invoices.length} db számla`,
-            value: `Exportálva: ${new Date().toLocaleDateString('hu-HU')}`,
+            label: t('categories:invoices_count', { count: invoices.length, defaultValue: `Összesen ${invoices.length} db számla` }),
+            value: `${t('categories:modal.export', 'Exportálva')}: ${formatDateLocale(new Date())}`,
           },
         });
       } else {
         await exportData(filename, headers, rows, format);
       }
       toast({
-        title: 'Exportálás sikeres',
-        description: `A(z) "${categoryName}" kategória számlái kiexportálva ${format.toUpperCase()} formátumban.`,
+        title: t('categories:export_success', 'Exportálás sikeres'),
+        description: t('categories:export_success_desc', {
+          name: categoryName,
+          format: format.toUpperCase(),
+          defaultValue: `A(z) "${categoryName}" kategória számlái kiexportálva ${format.toUpperCase()} formátumban.`,
+        }),
       });
     } catch (error: any) {
       toast({
@@ -993,7 +1017,7 @@ const Onboarding = () => {
                     onChange={setEditIcon}
                     color={editColor}
                   />
-                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Ikon</span>
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t('categories:icon', 'Ikon')}</span>
                 </div>
                 {/* Color picker */}
                 <div className="flex flex-col items-center gap-1.5">
@@ -1001,26 +1025,26 @@ const Onboarding = () => {
                     value={editColor}
                     onChange={setEditColor}
                   />
-                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Szín</span>
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t('categories:color', 'Szín')}</span>
                 </div>
                 {/* Name input */}
                 <div className="flex flex-col gap-1.5 flex-1">
                   <Input
                     id="edit-cat-name"
-                    placeholder="pl. Marketing, Irodai kellékek"
+                    placeholder={t('categories:name_placeholder', 'pl. Marketing, Irodai kellékek')}
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
                     className="bg-background/50 h-12 text-base font-medium"
                   />
-                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Kategória neve</span>
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t('categories:name', 'Kategória neve')}</span>
                 </div>
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Címkék (számla típusok)</Label>
+              <Label>{t('categories:tags_label', 'Címkék (számla típusok)')}</Label>
               <div className="flex gap-2">
                 <Input
-                  placeholder="Új címke hozzáadása..."
+                  placeholder={t('categories:add_tag_placeholder', 'Új címke hozzáadása...')}
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddEditTag(); } }}
@@ -1041,7 +1065,7 @@ const Onboarding = () => {
                     </Badge>
                   ))
                 ) : (
-                  <span className="text-xs text-muted-foreground italic p-1">Még nincs címke hozzáadva</span>
+                  <span className="text-xs text-muted-foreground italic p-1">{t('categories:no_tags', 'Még nincs címke hozzáadva')}</span>
                 )}
               </div>
             </div>
@@ -1051,11 +1075,11 @@ const Onboarding = () => {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label className="text-sm font-semibold flex items-center gap-1.5">
-                    <span>Hozzárendelési Mátrix</span>
-                    <Badge variant="outline" className="text-[10px] font-mono text-primary bg-primary/5">Főkönyv</Badge>
+                    <span>{t('categories:mapping_matrix', 'Hozzárendelési Mátrix')}</span>
+                    <Badge variant="outline" className="text-[10px] font-mono text-primary bg-primary/5">{t('categories:gl_badge', 'Főkönyv')}</Badge>
                   </Label>
                   <p className="text-[11px] text-muted-foreground">
-                    Főkönyvi számlaosztályok és alosztályok hozzárendelése a rezsikategóriához.
+                    {t('categories:gl_desc_edit', 'Főkönyvi számlaosztályok és alosztályok hozzárendelése a rezsikategóriához.')}
                   </p>
                 </div>
                 <Button
@@ -1065,7 +1089,7 @@ const Onboarding = () => {
                   className="h-7 text-xs gap-1"
                   onClick={() => setEditGlAccounts([...editGlAccounts, '521'])}
                 >
-                  <Plus className="h-3 w-3" /> Új számlaosztály
+                  <Plus className="h-3 w-3" /> {t('categories:new_gl_account', 'Új számlaosztály')}
                 </Button>
               </div>
 
@@ -1089,11 +1113,11 @@ const Onboarding = () => {
                         {STANDARD_GL_OPTIONS.map(opt => (
                           <option key={opt.code} value={opt.code}>{opt.label}</option>
                         ))}
-                        <option value="custom">Egyedi számlaszám...</option>
+                        <option value="custom">{t('categories:custom_gl_option', 'Egyedi számlaszám...')}</option>
                       </select>
                       <Input
                         value={glCode}
-                        placeholder="számlaszám"
+                        placeholder={t('categories:account_number_placeholder', 'számlaszám')}
                         onChange={(e) => {
                           const next = [...editGlAccounts];
                           next[idx] = e.target.value.trim();
@@ -1114,15 +1138,15 @@ const Onboarding = () => {
                   ))
                 ) : (
                   <div className="text-center py-4 border border-dashed rounded-md bg-muted/10 text-xs text-muted-foreground">
-                    Nincsenek főkönyvi számlaosztályok hozzárendelve. Kattints az „Új számlaosztály” gombra.
+                    {t('categories:no_gl_accounts', 'Nincsenek főkönyvi számlaosztályok hozzárendelve. Kattints az „Új számlaosztály” gombra.')}
                   </div>
                 )}
               </div>
             </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button type="button" variant="ghost" onClick={() => setEditingCategory(null)}>Mégse</Button>
-            <Button type="button" onClick={handleEditSave}>Mentés</Button>
+            <Button type="button" variant="ghost" onClick={() => setEditingCategory(null)}>{t('categories:cancel', 'Mégse')}</Button>
+            <Button type="button" onClick={handleEditSave}>{t('categories:save', 'Mentés')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1137,7 +1161,7 @@ const Onboarding = () => {
           }}
         >
           <DialogHeader>
-            <DialogTitle>Új kategória</DialogTitle>
+            <DialogTitle>{t('categories:new_category', 'Új kategória')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-5 py-4">
             {/* Category identity header */}
@@ -1150,7 +1174,7 @@ const Onboarding = () => {
                     onChange={setNewIcon}
                     color={newColor}
                   />
-                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Ikon</span>
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t('categories:icon', 'Ikon')}</span>
                 </div>
                 {/* Color picker */}
                 <div className="flex flex-col items-center gap-1.5">
@@ -1158,26 +1182,26 @@ const Onboarding = () => {
                     value={newColor}
                     onChange={setNewColor}
                   />
-                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Szín</span>
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t('categories:color', 'Szín')}</span>
                 </div>
                 {/* Name input */}
                 <div className="flex flex-col gap-1.5 flex-1">
                   <Input
                     id="new-cat-name"
-                    placeholder="pl. Marketing, Irodai kellékek"
+                    placeholder={t('categories:name_placeholder', 'pl. Marketing, Irodai kellékek')}
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
                     className="bg-background/50 h-12 text-base font-medium"
                   />
-                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Kategória neve</span>
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t('categories:name', 'Kategória neve')}</span>
                 </div>
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Címkék (számla típusok)</Label>
+              <Label>{t('categories:tags_label', 'Címkék (számla típusok)')}</Label>
               <div className="flex gap-2">
                 <Input
-                  placeholder="Új címke hozzáadása..."
+                  placeholder={t('categories:add_tag_placeholder', 'Új címke hozzáadása...')}
                   value={newTagInput}
                   onChange={(e) => setNewTagInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddNewTag(); } }}
@@ -1198,7 +1222,7 @@ const Onboarding = () => {
                     </Badge>
                   ))
                 ) : (
-                  <span className="text-xs text-muted-foreground italic p-1">Még nincs címke hozzáadva</span>
+                  <span className="text-xs text-muted-foreground italic p-1">{t('categories:no_tags', 'Még nincs címke hozzáadva')}</span>
                 )}
               </div>
             </div>
@@ -1208,11 +1232,11 @@ const Onboarding = () => {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label className="text-sm font-semibold flex items-center gap-1.5">
-                    <span>Hozzárendelési Mátrix</span>
-                    <Badge variant="outline" className="text-[10px] font-mono text-primary bg-primary/5">Főkönyv</Badge>
+                    <span>{t('categories:mapping_matrix', 'Hozzárendelési Mátrix')}</span>
+                    <Badge variant="outline" className="text-[10px] font-mono text-primary bg-primary/5">{t('categories:gl_badge', 'Főkönyv')}</Badge>
                   </Label>
                   <p className="text-[11px] text-muted-foreground">
-                    Főkönyvi számlaosztályok és alosztályok hozzárendelése az új kategóriához.
+                    {t('categories:gl_desc_new', 'Főkönyvi számlaosztályok és alosztályok hozzárendelése az új kategóriához.')}
                   </p>
                 </div>
                 <Button
@@ -1222,7 +1246,7 @@ const Onboarding = () => {
                   className="h-7 text-xs gap-1"
                   onClick={() => setNewGlAccounts([...newGlAccounts, '521'])}
                 >
-                  <Plus className="h-3 w-3" /> Új számlaosztály
+                  <Plus className="h-3 w-3" /> {t('categories:new_gl_account', 'Új számlaosztály')}
                 </Button>
               </div>
 
@@ -1246,11 +1270,11 @@ const Onboarding = () => {
                         {STANDARD_GL_OPTIONS.map(opt => (
                           <option key={opt.code} value={opt.code}>{opt.label}</option>
                         ))}
-                        <option value="custom">Egyedi számlaszám...</option>
+                        <option value="custom">{t('categories:custom_gl_option', 'Egyedi számlaszám...')}</option>
                       </select>
                       <Input
                         value={glCode}
-                        placeholder="számlaszám"
+                        placeholder={t('categories:account_number_placeholder', 'számlaszám')}
                         onChange={(e) => {
                           const next = [...newGlAccounts];
                           next[idx] = e.target.value.trim();
@@ -1271,15 +1295,15 @@ const Onboarding = () => {
                   ))
                 ) : (
                   <div className="text-center py-4 border border-dashed rounded-md bg-muted/10 text-xs text-muted-foreground">
-                    Nincsenek főkönyvi számlaosztályok hozzárendelve. Kattints az „Új számlaosztály” gombra.
+                    {t('categories:no_gl_accounts', 'Nincsenek főkönyvi számlaosztályok hozzárendelve. Kattints az „Új számlaosztály” gombra.')}
                   </div>
                 )}
               </div>
             </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button type="button" variant="ghost" onClick={() => { setShowNewDialog(false); setNewName(''); setNewIcon('FolderOpen'); setNewColor(DEFAULT_CATEGORY_COLOR); setNewTags([]); }}>Mégse</Button>
-            <Button type="button" onClick={handleNewCategorySave} disabled={!newName.trim()}>Létrehozás</Button>
+            <Button type="button" variant="ghost" onClick={() => { setShowNewDialog(false); setNewName(''); setNewIcon('FolderOpen'); setNewColor(DEFAULT_CATEGORY_COLOR); setNewTags([]); }}>{t('categories:cancel', 'Mégse')}</Button>
+            <Button type="button" onClick={handleNewCategorySave} disabled={!newName.trim()}>{t('categories:create_button', 'Létrehozás')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1288,22 +1312,21 @@ const Onboarding = () => {
       <AlertDialog open={deletingIndex !== null} onOpenChange={(open) => !open && setDeletingIndex(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Kategória törlése</AlertDialogTitle>
+            <AlertDialogTitle>{t('categories:delete_confirm', 'Kategória törlése')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Biztosan törölni szeretnéd a{' '}
-              <span className="font-semibold text-foreground">
-                „{deletingIndex !== null ? categories[deletingIndex]?.name : ''}"
-              </span>{' '}
-              kategóriát? A hozzárendelt számlák kategorizálatlanná válnak. Ez a művelet nem vonható vissza.
+              {t('categories:delete_dialog_description', {
+                name: deletingIndex !== null ? categories[deletingIndex]?.name : '',
+                defaultValue: `Biztosan törölni szeretnéd a „${deletingIndex !== null ? categories[deletingIndex]?.name : ''}" kategóriát? A hozzárendelt számlák kategorizálatlanná válnak. Ez a művelet nem vonható vissza.`
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Mégse</AlertDialogCancel>
+            <AlertDialogCancel>{t('categories:cancel', 'Mégse')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteCategory}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Törlés
+              {t('categories:delete', 'Törlés')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1336,10 +1359,8 @@ const Onboarding = () => {
         const emptyRowsNeeded = ITEMS_PER_PAGE - displayCount;
 
         const formatAmount = (amount: number | null, currency?: string | null) => {
-          if (amount === null || amount === undefined) return '0 Ft';
-          const cur = currency || 'HUF';
-          const formatted = new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 2 }).format(amount);
-          return cur === 'HUF' ? `${formatted} Ft` : `${formatted} ${cur}`;
+          if (amount === null || amount === undefined) return formatCurrencyLocale(0, currency || undefined);
+          return formatCurrencyLocale(amount, currency || undefined);
         };
 
         return (
@@ -1374,7 +1395,7 @@ const Onboarding = () => {
               <div className="flex-1 overflow-y-auto py-4 min-h-[200px] flex flex-col">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                    Hozzárendelt számlák ({invoices.length})
+                    {t('categories:modal.assigned_invoices', { count: invoices.length, defaultValue: `Hozzárendelt számlák (${invoices.length})` })}
                   </h3>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -1385,7 +1406,7 @@ const Onboarding = () => {
                         disabled={invoices.length === 0}
                       >
                         <Download className="h-3.5 w-3.5" />
-                        <span>Exportálás</span>
+                        <span>{t('categories:modal.export', 'Exportálás')}</span>
                         <ChevronDown className="h-3 w-3 opacity-50" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -1395,21 +1416,21 @@ const Onboarding = () => {
                         className="gap-2 cursor-pointer"
                       >
                         <FileText className="h-4 w-4 text-blue-500" />
-                        <span>CSV fájl (.csv)</span>
+                        <span>{t('categories:modal.export_csv', 'CSV fájl (.csv)')}</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => handleExportCategoryInvoices('xlsx', activeModalCategory.name, invoices)}
                         className="gap-2 cursor-pointer"
                       >
                         <FileSpreadsheet className="h-4 w-4 text-emerald-500" />
-                        <span>Excel fájl (.xlsx)</span>
+                        <span>{t('categories:modal.export_xlsx', 'Excel fájl (.xlsx)')}</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => handleExportCategoryInvoices('pdf', activeModalCategory.name, invoices)}
                         className="gap-2 cursor-pointer"
                       >
                         <File className="h-4 w-4 text-rose-500" />
-                        <span>PDF dokumentum (.pdf)</span>
+                        <span>{t('categories:modal.export_pdf', 'PDF dokumentum (.pdf)')}</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -1418,12 +1439,12 @@ const Onboarding = () => {
                   <Table>
                     <TableHeader>
                       <TableRow className="hover:bg-transparent bg-muted/20">
-                        <TableHead className="w-32">Szám</TableHead>
-                        <TableHead className="w-20">Irány</TableHead>
-                        <TableHead>Partner</TableHead>
-                        <TableHead className="w-28">Dátum</TableHead>
-                        <TableHead className="text-right w-32">Összeg</TableHead>
-                        <TableHead className="text-right w-28">Műveletek</TableHead>
+                        <TableHead className="w-32">{t('categories:modal.col_number', 'Szám')}</TableHead>
+                        <TableHead className="w-20">{t('categories:modal.col_direction', 'Irány')}</TableHead>
+                        <TableHead>{t('categories:modal.col_partner', 'Partner')}</TableHead>
+                        <TableHead className="w-28">{t('categories:modal.col_date', 'Dátum')}</TableHead>
+                        <TableHead className="text-right w-32">{t('categories:modal.col_amount', 'Összeg')}</TableHead>
+                        <TableHead className="text-right w-28">{t('categories:modal.col_actions', 'Műveletek')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1440,7 +1461,7 @@ const Onboarding = () => {
                                     : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                                   }`}
                               >
-                                {inv.invoice_direction === 'INBOUND' ? 'BE' : 'KI'}
+                                {inv.invoice_direction === 'INBOUND' ? t('categories:modal.direction_in', 'BE') : t('categories:modal.direction_out', 'KI')}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-xs truncate max-w-[150px] h-12 py-0 align-middle" title={inv.supplier_name || '–'}>
@@ -1457,7 +1478,7 @@ const Onboarding = () => {
                                   variant="ghost"
                                   size="icon"
                                   className="h-7 w-7 text-muted-foreground hover:text-primary"
-                                  title="Bizonylatkép megtekintése"
+                                  title={t('categories:modal.view_invoice', 'Bizonylatkép megtekintése')}
                                   onClick={() => {
                                     const mapped = {
                                       id: inv.id,
@@ -1482,7 +1503,7 @@ const Onboarding = () => {
                                   variant="ghost"
                                   size="icon"
                                   className="h-7 w-7 text-muted-foreground hover:text-primary"
-                                  title="Számlatételek megtekintése"
+                                  title={t('categories:modal.view_items', 'Számlatételek megtekintése')}
                                   onClick={() => {
                                     setItemsInvoice(inv);
                                     setItemsOpen(true);
@@ -1495,7 +1516,7 @@ const Onboarding = () => {
                                   variant="ghost"
                                   size="icon"
                                   className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                  title="Eltávolítás a kategóriából"
+                                  title={t('categories:modal.remove_from_category', 'Eltávolítás a kategóriából')}
                                   onClick={() => handleRemoveInvoice(inv.id, selectedCategoryForModal)}
                                 >
                                   <X className="h-4 w-4" />
@@ -1507,7 +1528,7 @@ const Onboarding = () => {
                       ) : (
                         <TableRow>
                           <TableCell colSpan={6} className="text-center text-muted-foreground text-sm h-12 py-0 align-middle">
-                            Nincsenek számlák rendelve ehhez a kategóriához
+                            {t('categories:modal.no_invoices', 'Nincsenek számlák rendelve ehhez a kategóriához')}
                           </TableCell>
                         </TableRow>
                       )}
@@ -1523,7 +1544,12 @@ const Onboarding = () => {
                 {/* Pagination Controls */}
                 <div className="flex items-center justify-between px-2 py-3 border-t border-border bg-muted/5 mt-2 rounded-lg">
                   <span className="text-xs text-muted-foreground font-medium">
-                    Összesen {invoices.length} számla • {currentPage}. / {totalPages} oldal
+                    {t('categories:modal.pagination_info', {
+                      total: invoices.length,
+                      current: currentPage,
+                      pages: totalPages,
+                      defaultValue: `Összesen ${invoices.length} számla • ${currentPage}. / ${totalPages} oldal`
+                    })}
                   </span>
                   <div className="flex items-center gap-1">
                     <Button
@@ -1553,13 +1579,13 @@ const Onboarding = () => {
               {/* Bottom search section for assignment */}
               <div className="border-t border-border pt-4 mt-auto">
                 <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wider">
-                  Számlák hozzárendelése
+                  {t('categories:modal.assign_invoices_section', 'Számlák hozzárendelése')}
                 </h3>
                 <div className="relative">
                   <div className="relative">
                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Keresés számlaszám, partner alapán a kategorizálatlan számlák között..."
+                      placeholder={t('categories:modal.search_placeholder', 'Keresés számlaszám, partner alapján a kategorizálatlan számlák között...')}
                       value={modalSearchQuery}
                       onChange={(e) => {
                         setModalSearchQuery(e.target.value);
@@ -1589,10 +1615,13 @@ const Onboarding = () => {
                           {searchResults[selectedCategoryForModal].every(inv => bulkSelected.has(inv.id))
                             ? <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
                             : <Circle className="h-3.5 w-3.5" />}
-                          Mindet kijelöl
+                          {t('categories:modal.select_all', 'Mindet kijelöl')}
                         </button>
                         <span className="text-[10px] text-muted-foreground">
-                          {searchResults[selectedCategoryForModal].length} találat
+                          {t('categories:modal.results_count', {
+                            count: searchResults[selectedCategoryForModal].length,
+                            defaultValue: `${searchResults[selectedCategoryForModal].length} találat`
+                          })}
                         </span>
                       </div>
                       {/* Invoice rows */}
@@ -1625,7 +1654,7 @@ const Onboarding = () => {
                                   : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                               }`}
                             >
-                              {inv.invoice_direction === 'INBOUND' ? 'BE' : 'KI'}
+                              {inv.invoice_direction === 'INBOUND' ? t('categories:modal.direction_in', 'BE') : t('categories:modal.direction_out', 'KI')}
                             </Badge>
                             <span className="text-muted-foreground flex-1 truncate">
                               {inv.supplier_name || '–'}
@@ -1638,7 +1667,10 @@ const Onboarding = () => {
                       {bulkSelected.size > 0 && (
                         <div className="sticky bottom-0 border-t border-border bg-card px-3 py-2 flex items-center justify-between">
                           <span className="text-xs text-muted-foreground">
-                            <span className="font-semibold text-foreground">{bulkSelected.size} db</span> kijelölve
+                            {t('categories:modal.selected_count', {
+                              count: bulkSelected.size,
+                              defaultValue: `${bulkSelected.size} db kijelölve`
+                            })}
                           </span>
                           <Button
                             type="button"
@@ -1647,7 +1679,10 @@ const Onboarding = () => {
                             onClick={() => handleBulkAddInvoices(selectedCategoryForModal)}
                           >
                             <Plus className="h-3.5 w-3.5" />
-                            Hozzárendelés ({bulkSelected.size} db)
+                            {t('categories:modal.assign_button', {
+                              count: bulkSelected.size,
+                              defaultValue: `Hozzárendelés (${bulkSelected.size} db)`
+                            })}
                           </Button>
                         </div>
                       )}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Shield, CheckCircle2, XCircle, AlertTriangle, Loader2, ExternalLink, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -24,27 +25,28 @@ export function Step3Validacio({
   validateReport,
   setCurrentStep,
 }: Step3ValidacioProps) {
+  const { t } = useTranslation('accounting');
   const scopedNavigate = useScopedNavigate();
 
   const ruleNavMap: Record<string, { type: 'step' | 'page'; target: number | string; label: string }[]> = {
-    V1: [{ type: 'page', target: '/balance-sheet?tab=mapping', label: 'Mérleg hozzárendelések' }],
+    V1: [{ type: 'page', target: '/balance-sheet?tab=mapping', label: t('annual_report.step3.actions.bs_mapping', 'Mérleg hozzárendelések') }],
     V2: [
-      { type: 'page', target: '/profit-and-loss?tab=mapping', label: 'Eredménykimutatás hozzárendelések' },
-      { type: 'page', target: '/balance-sheet?tab=mapping', label: 'Mérleg hozzárendelések' },
+      { type: 'page', target: '/profit-and-loss?tab=mapping', label: t('annual_report.step3.actions.pnl_mapping', 'Eredménykimutatás hozzárendelések') },
+      { type: 'page', target: '/balance-sheet?tab=mapping', label: t('annual_report.step3.actions.bs_mapping', 'Mérleg hozzárendelések') },
     ],
-    V3: [{ type: 'step', target: 1, label: 'Ugrás az 1. lépésre' }],
-    V4: [{ type: 'step', target: 5, label: 'Ugrás az 5. lépésre' }],
-    V5: [{ type: 'step', target: 2, label: 'Ugrás a 2. lépésre' }],
-    V6: [{ type: 'page', target: '/balance-sheet', label: 'Mérleg megtekintése' }],
-    V7: [{ type: 'step', target: 2, label: 'Adatok újrabefagyasztása' }],
-    V8: [{ type: 'step', target: 4, label: 'Ugrás a 4. lépésre' }],
+    V3: [{ type: 'step', target: 1, label: t('annual_report.step3.actions.step1', 'Ugrás az 1. lépésre') }],
+    V4: [{ type: 'step', target: 5, label: t('annual_report.step3.actions.step5', 'Ugrás az 5. lépésre') }],
+    V5: [{ type: 'step', target: 2, label: t('annual_report.step3.actions.step2', 'Ugrás a 2. lépésre') }],
+    V6: [{ type: 'page', target: '/balance-sheet', label: t('annual_report.step3.actions.view_bs', 'Mérleg megtekintése') }],
+    V7: [{ type: 'step', target: 2, label: t('annual_report.step3.actions.refreeze_data', 'Adatok újrabefagyasztása') }],
+    V8: [{ type: 'step', target: 4, label: t('annual_report.step3.actions.step4', 'Ugrás a 4. lépésre') }],
   };
 
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-bold flex items-center gap-2">
         <Shield className="w-5 h-5 text-primary" />
-        3. Validáció — Az „Őrszem"
+        {t('annual_report.step3.header', '3. Validáció — Az „Őrszem"')}
       </h2>
 
       <div className="flex items-center gap-3">
@@ -61,17 +63,24 @@ export function Step3Validacio({
           ) : (
             <Shield className="w-4 h-4" />
           )}
-          {validationResults.length > 0 ? 'Újra ellenőrzés' : 'Ellenőrzések futtatása'}
+          {validationResults.length > 0
+            ? t('annual_report.step3.recheck', 'Újra ellenőrzés')
+            : t('annual_report.step3.run_checks', 'Ellenőrzések futtatása')}
         </Button>
         {validateReport.isError && (
           <p className="text-sm text-red-500">
-            Hiba: {(validateReport.error as any)?.message || 'Ismeretlen hiba'}
+            {t('annual_report.step3.error_prefix', {
+              message: (validateReport.error as any)?.message || 'Ismeretlen hiba',
+              defaultValue: `Hiba: ${(validateReport.error as any)?.message || 'Ismeretlen hiba'}`,
+            })}
           </p>
         )}
       </div>
 
       {!report.frozen_at && (
-        <p className="text-amber-600 text-sm">⚠️ Először fagyaszd be az adatokat a 2. lépésben!</p>
+        <p className="text-amber-600 text-sm">
+          {t('annual_report.step3.freeze_required', '⚠️ Először fagyaszd be az adatokat a 2. lépésben!')}
+        </p>
       )}
 
       {validationResults.length > 0 && (

@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface BalanceSheetWidgetsProps {
   totalAssets: number;
@@ -36,6 +37,7 @@ export function BalanceSheetWidgets({
   onAutoFixMappings,
   conversionFactor,
 }: BalanceSheetWidgetsProps) {
+  const { t } = useTranslation(['accounting', 'common']);
   const [isDiagnosticOpen, setIsDiagnosticOpen] = useState(false);
   const [isRatiosOpen, setIsRatiosOpen] = useState(false);
 
@@ -61,9 +63,9 @@ export function BalanceSheetWidgets({
 
   // Health evaluations
   const getRatioStatus = (val: number, min: number, target: number) => {
-    if (val >= target) return { label: 'Kiváló', color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' };
-    if (val >= min) return { label: 'Megfelelő', color: 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20' };
-    return { label: 'Alacsony', color: 'text-rose-500 bg-rose-500/10 border-rose-500/20' };
+    if (val >= target) return { label: t('accounting:balance_sheet.widgets.liquidity.status_excellent', 'Kiváló'), color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' };
+    if (val >= min) return { label: t('accounting:balance_sheet.widgets.liquidity.status_adequate', 'Megfelelő'), color: 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20' };
+    return { label: t('accounting:balance_sheet.widgets.liquidity.status_low', 'Alacsony'), color: 'text-rose-500 bg-rose-500/10 border-rose-500/20' };
   };
 
   const statusRata = getRatioStatus(lRata, 1.2, 1.8);
@@ -77,7 +79,9 @@ export function BalanceSheetWidgets({
         <div className="flex items-center justify-between z-10">
           <div className="flex items-center gap-1.5">
             <Scale className={cn("w-4 h-4", isBalanced ? "text-emerald-500" : "text-amber-500")} />
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mérleg-hinta ⚖️</h4>
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              {t('accounting:balance_sheet.widgets.swing.title', 'Mérleg-hinta ⚖️')}
+            </h4>
           </div>
           <span className={cn(
             "text-[10px] font-bold px-2 py-0.5 rounded border",
@@ -85,7 +89,9 @@ export function BalanceSheetWidgets({
               ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" 
               : "bg-rose-500/10 text-rose-500 border-rose-500/20"
           )}>
-            {isBalanced ? 'Egyensúlyban' : 'Eltérés!'}
+            {isBalanced 
+              ? t('accounting:balance_sheet.widgets.swing.balanced', 'Egyensúlyban')
+              : t('accounting:balance_sheet.widgets.swing.diff_badge', 'Eltérés!')}
           </span>
         </div>
 
@@ -111,15 +117,19 @@ export function BalanceSheetWidgets({
               <path d="M 165 60 Q 185 68 205 60 Z" fill="#4f46e5" fillOpacity="0.25" stroke="#4f46e5" strokeWidth="1.5" />
               
               {/* Text indicator labels */}
-              <text x="35" y="32" textAnchor="middle" fontSize="9" fontWeight="bold" fill="#10b981">Eszközök</text>
-              <text x="185" y="32" textAnchor="middle" fontSize="9" fontWeight="bold" fill="#4f46e5">Források</text>
+              <text x="35" y="32" textAnchor="middle" fontSize="9" fontWeight="bold" fill="#10b981">
+                {t('accounting:balance_sheet.widgets.swing.assets', 'Eszközök')}
+              </text>
+              <text x="185" y="32" textAnchor="middle" fontSize="9" fontWeight="bold" fill="#4f46e5">
+                {t('accounting:balance_sheet.widgets.swing.liabilities', 'Források')}
+              </text>
             </g>
           </svg>
         </div>
 
         <div className="flex justify-between items-center z-10 text-[10px] text-muted-foreground border-t pt-2 mt-1">
-          <span>Eszköz: {formatHuf(totalAssets)}</span>
-          <span>Forrás: {formatHuf(totalLiabilities)}</span>
+          <span>{t('accounting:balance_sheet.widgets.swing.asset_label', { amount: formatHuf(totalAssets), defaultValue: `Eszköz: ${formatHuf(totalAssets)}` })}</span>
+          <span>{t('accounting:balance_sheet.widgets.swing.liability_label', { amount: formatHuf(totalLiabilities), defaultValue: `Forrás: ${formatHuf(totalLiabilities)}` })}</span>
         </div>
       </Card>
 
@@ -127,24 +137,26 @@ export function BalanceSheetWidgets({
       <Card className="border border-border/60 bg-card/60 backdrop-blur-sm p-4 flex flex-col justify-between rounded-xl h-[180px]">
         <div className="flex items-center gap-1.5">
           <AlertTriangle className={cn("w-4 h-4", !isBalanced ? "text-rose-500 animate-bounce" : "text-emerald-500")} />
-          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Egyezőségi Diagnosztika</h4>
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            {t('accounting:balance_sheet.widgets.diagnostics.title', 'Egyezőségi Diagnosztika')}
+          </h4>
         </div>
         
         <div className="flex-1 flex flex-col justify-center text-xs space-y-1.5 py-1">
           {isBalanced ? (
             <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-500 font-medium">
               <CheckCircle2 className="w-5 h-5 shrink-0" />
-              <span>A mérleg egyenlege egyezik. Nincs szükség beavatkozásra.</span>
+              <span>{t('accounting:balance_sheet.widgets.diagnostics.balanced_msg', 'A mérleg egyenlege egyezik. Nincs szükség beavatkozásra.')}</span>
             </div>
           ) : (
             <div className="space-y-1">
               <p className="text-rose-500 font-bold flex items-center gap-1">
-                Eltérés: {formatHuf(difference)}
+                {t('accounting:balance_sheet.widgets.diagnostics.diff_msg', { diff: formatHuf(difference), defaultValue: `Eltérés: ${formatHuf(difference)}` })}
               </p>
               <p className="text-[10px] text-muted-foreground leading-snug">
                 {unmappedAccountsCount > 0 
-                  ? `Találtunk ${unmappedAccountsCount} db besorolatlan főkönyvi számlát, ami egyensúlyhiányt okozhat.`
-                  : 'Minden számla besorolva, de az egyenlegek nem egyeznek. Nyissa meg a részletes diagnosztikát.'}
+                  ? t('accounting:balance_sheet.widgets.diagnostics.unmapped_count_msg', { count: unmappedAccountsCount, defaultValue: `Találtunk ${unmappedAccountsCount} db besorolatlan főkönyvi számlát, ami egyensúlyhiányt okozhat.` })
+                  : t('accounting:balance_sheet.widgets.diagnostics.all_mapped_diff_msg', 'Minden számla besorolva, de az egyenlegek nem egyeznek. Nyissa meg a részletes diagnosztikát.')}
               </p>
             </div>
           )}
@@ -153,11 +165,11 @@ export function BalanceSheetWidgets({
         <div className="border-t pt-2 mt-1 flex justify-end">
           <Button 
             variant="outline" 
-            size="xs" 
+            size="sm" 
             onClick={() => setIsDiagnosticOpen(true)}
             className="h-6 text-[10px] gap-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 border-indigo-500/20"
           >
-            Diagnosztikai Jelentés
+            {t('accounting:balance_sheet.widgets.diagnostics.report_button', 'Diagnosztikai Jelentés')}
           </Button>
         </div>
       </Card>
@@ -167,19 +179,21 @@ export function BalanceSheetWidgets({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <Activity className="w-4 h-4 text-indigo-500" />
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Likviditási Mutatók</h4>
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              {t('accounting:balance_sheet.widgets.liquidity.title', 'Likviditási Mutatók')}
+            </h4>
           </div>
         </div>
 
         <div className="flex-1 flex flex-col justify-center space-y-2 py-1">
           <div className="flex justify-between items-center text-xs">
-            <span className="text-muted-foreground">Likviditási ráta:</span>
+            <span className="text-muted-foreground">{t('accounting:balance_sheet.widgets.liquidity.current_ratio', 'Likviditási ráta:')}</span>
             <span className={cn("font-bold tabular-nums", lRata >= 1.5 ? "text-emerald-500" : lRata >= 1.0 ? "text-yellow-500" : "text-rose-500")}>
               {lRata.toFixed(2)}
             </span>
           </div>
           <div className="flex justify-between items-center text-xs">
-            <span className="text-muted-foreground">Györsráta:</span>
+            <span className="text-muted-foreground">{t('accounting:balance_sheet.widgets.liquidity.quick_ratio', 'Gyorsráta:')}</span>
             <span className={cn("font-bold tabular-nums", lGyors >= 1.0 ? "text-emerald-500" : lGyors >= 0.7 ? "text-yellow-500" : "text-rose-500")}>
               {lGyors.toFixed(2)}
             </span>
@@ -187,14 +201,14 @@ export function BalanceSheetWidgets({
         </div>
 
         <div className="border-t pt-2 mt-1 flex justify-between items-center">
-          <span className="text-[10px] text-muted-foreground italic">Target: Ráta &gt; 1.5</span>
+          <span className="text-[10px] text-muted-foreground italic">{t('accounting:balance_sheet.widgets.liquidity.target_label', 'Target: Ráta > 1.5')}</span>
           <Button 
             variant="ghost" 
-            size="xs" 
+            size="sm" 
             onClick={() => setIsRatiosOpen(true)}
             className="h-6 text-[10px] text-indigo-500 hover:text-indigo-600 hover:bg-transparent p-0 flex items-center gap-0.5"
           >
-            Részletek <ArrowRight className="w-3 h-3" />
+            {t('accounting:balance_sheet.widgets.liquidity.details', 'Részletek')} <ArrowRight className="w-3 h-3" />
           </Button>
         </div>
       </Card>
@@ -205,10 +219,10 @@ export function BalanceSheetWidgets({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-1.5 text-foreground text-sm font-bold uppercase tracking-wider">
               <AlertTriangle className="w-4.5 h-4.5 text-amber-500" />
-              Mérleg Diagnosztikai Jelentés
+              {t('accounting:balance_sheet.widgets.diagnostics.dialog_title', 'Mérleg Diagnosztikai Jelentés')}
             </DialogTitle>
             <DialogDescription className="text-[11px] text-muted-foreground">
-              Rendszerünk megvizsgálta a főkönyvi egyenlegeket és az Sztv. mérleg-feltérképezést.
+              {t('accounting:balance_sheet.widgets.diagnostics.dialog_desc', 'Rendszerünk megvizsgálta a főkönyvi egyenlegeket és az Sztv. mérleg-feltérképezést.')}
             </DialogDescription>
           </DialogHeader>
 
@@ -219,10 +233,12 @@ export function BalanceSheetWidgets({
               isBalanced ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-700" : "bg-rose-500/10 border-rose-500/20 text-rose-600"
             )}>
               <div className="font-bold flex items-center gap-1">
-                {isBalanced ? '✓ Mérleg egyensúly rendben' : '⚠️ Eszközök és Források egyenlege eltér'}
+                {isBalanced 
+                  ? t('accounting:balance_sheet.widgets.diagnostics.balance_ok', '✓ Mérleg egyensúly rendben')
+                  : t('accounting:balance_sheet.widgets.diagnostics.balance_mismatch', '⚠️ Eszközök és Források egyenlege eltér')}
               </div>
               <div className="text-[10px] mt-0.5">
-                Eszközök összesen: {formatHuf(totalAssets)} | Források összesen: {formatHuf(totalLiabilities)}
+                {t('accounting:balance_sheet.widgets.diagnostics.assets_total', { amount: formatHuf(totalAssets), defaultValue: `Eszközök összesen: ${formatHuf(totalAssets)}` })} | {t('accounting:balance_sheet.widgets.diagnostics.liabilities_total', { amount: formatHuf(totalLiabilities), defaultValue: `Források összesen: ${formatHuf(totalLiabilities)}` })}
               </div>
             </div>
 
@@ -235,11 +251,11 @@ export function BalanceSheetWidgets({
                   <CheckCircle2 className="w-4.5 h-4.5 text-emerald-500 shrink-0 mt-0.5" />
                 )}
                 <div>
-                  <div className="font-semibold">Besorolatlan főkönyvi számlák</div>
+                  <div className="font-semibold">{t('accounting:balance_sheet.widgets.diagnostics.unmapped_title', 'Besorolatlan főkönyvi számlák')}</div>
                   <div className="text-[10px] text-muted-foreground leading-snug">
                     {unmappedAccountsCount > 0 
-                      ? `Jelenleg ${unmappedAccountsCount} db aktív főkönyvi számlához nem tartozik mérleg-hozzárendelés. Ez megbontja a mérleg egyensúlyát.`
-                      : 'Minden aktív főkönyvi számla megfelelően be van sorolva a mérlegstruktúrába.'}
+                      ? t('accounting:balance_sheet.widgets.diagnostics.unmapped_desc', { count: unmappedAccountsCount, defaultValue: `Jelenleg ${unmappedAccountsCount} db aktív főkönyvi számlához nem tartozik mérleg-hozzárendelés. Ez megbontja a mérleg egyensúlyát.` })
+                      : t('accounting:balance_sheet.widgets.diagnostics.all_mapped_desc', 'Minden aktív főkönyvi számla megfelelően be van sorolva a mérlegstruktúrába.')}
                   </div>
                 </div>
               </div>
@@ -247,9 +263,9 @@ export function BalanceSheetWidgets({
               <div className="flex items-start gap-2 border-t pt-2.5">
                 <CheckCircle2 className="w-4.5 h-4.5 text-emerald-500 shrink-0 mt-0.5" />
                 <div>
-                  <div className="font-semibold">Eredménykimutatás lezárás ellenőrzés</div>
+                  <div className="font-semibold">{t('accounting:balance_sheet.widgets.diagnostics.pnl_check_title', 'Eredménykimutatás lezárás ellenőrzés')}</div>
                   <div className="text-[10px] text-muted-foreground leading-snug">
-                    Az adózott eredmény megfelelően integrálva lett a Saját tőke "D. Mérleg szerinti eredmény" sorába a tárgyévi profit lefutások alapján.
+                    {t('accounting:balance_sheet.widgets.diagnostics.pnl_check_desc', 'Az adózott eredmény megfelelően integrálva lett a Saját tőke "D. Mérleg szerinti eredmény" sorába a tárgyévi profit lefutások alapján.')}
                   </div>
                 </div>
               </div>
@@ -257,7 +273,9 @@ export function BalanceSheetWidgets({
           </div>
 
           <DialogFooter className="border-t pt-3 flex justify-between sm:justify-between">
-            <Button variant="outline" size="sm" onClick={() => setIsDiagnosticOpen(false)}>Bezárás</Button>
+            <Button variant="outline" size="sm" onClick={() => setIsDiagnosticOpen(false)}>
+              {t('accounting:balance_sheet.widgets.diagnostics.close_button', 'Bezárás')}
+            </Button>
             {unmappedAccountsCount > 0 && onAutoFixMappings && (
               <Button 
                 onClick={() => {
@@ -266,7 +284,7 @@ export function BalanceSheetWidgets({
                 }} 
                 className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs"
               >
-                Automatikus besorolás javítása
+                {t('accounting:balance_sheet.widgets.diagnostics.auto_fix_button', 'Automatikus besorolás javítása')}
               </Button>
             )}
           </DialogFooter>
@@ -279,10 +297,10 @@ export function BalanceSheetWidgets({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-1.5 text-foreground text-sm font-bold uppercase tracking-wider">
               <TrendingUp className="w-4.5 h-4.5 text-indigo-500" />
-              Likviditási Ráták Részletes Vizsgálata
+              {t('accounting:balance_sheet.widgets.liquidity.dialog_title', 'Likviditási Ráták Részletes Vizsgálata')}
             </DialogTitle>
             <DialogDescription className="text-[11px] text-muted-foreground">
-              A fizetőképesség és a rövid távú adósság-visszafizetési képesség kulcsmutatói.
+              {t('accounting:balance_sheet.widgets.liquidity.dialog_desc', 'A fizetőképesség és a rövid távú adósság-visszafizetési képesség kulcsmutatói.')}
             </DialogDescription>
           </DialogHeader>
 
@@ -290,63 +308,66 @@ export function BalanceSheetWidgets({
             {/* Current Ratio Details */}
             <div className="p-3 rounded-lg border bg-background/50 space-y-1">
               <div className="flex justify-between items-center">
-                <span className="font-bold text-sm">1. Likviditási Ráta (Current Ratio)</span>
+                <span className="font-bold text-sm">{t('accounting:balance_sheet.widgets.liquidity.cr_title', '1. Likviditási Ráta (Current Ratio)')}</span>
                 <span className={cn("px-2 py-0.5 rounded font-bold border text-[10px]", statusRata.color)}>
                   {statusRata.label}
                 </span>
               </div>
-              <p className="text-[10px] text-muted-foreground italic">Képlet: Forgóeszközök / Rövid távú kötelezettségek</p>
+              <p className="text-[10px] text-muted-foreground italic">{t('accounting:balance_sheet.widgets.liquidity.cr_formula', 'Képlet: Forgóeszközök / Rövid távú kötelezettségek')}</p>
               <div className="flex justify-between items-center text-sm pt-1 border-t">
-                <span>Számított érték:</span>
+                <span>{t('accounting:balance_sheet.widgets.liquidity.calc_value', 'Számított érték:')}</span>
                 <span className="font-bold tabular-nums text-foreground">{lRata.toFixed(2)}</span>
               </div>
               <p className="text-[10px] text-muted-foreground leading-snug pt-1">
-                Azt méri, hogy a cég forgóeszközei hányszorosan fedezik a rövid távú tartozásait. Az 1,5 feletti érték tekinthető stabilnak.
+                {t('accounting:balance_sheet.widgets.liquidity.cr_desc', 'Azt méri, hogy a cég forgóeszközei hányszorosan fedezik a rövid távú tartozásait. Az 1,5 feletti érték tekinthető stabilnak.')}
               </p>
             </div>
 
             {/* Quick Ratio Details */}
             <div className="p-3 rounded-lg border bg-background/50 space-y-1">
               <div className="flex justify-between items-center">
-                <span className="font-bold text-sm">2. Likviditási Gyorsráta (Quick Ratio)</span>
+                <span className="font-bold text-sm">{t('accounting:balance_sheet.widgets.liquidity.qr_title', '2. Likviditási Gyorsráta (Quick Ratio)')}</span>
                 <span className={cn("px-2 py-0.5 rounded font-bold border text-[10px]", statusGyors.color)}>
                   {statusGyors.label}
                 </span>
               </div>
-              <p className="text-[10px] text-muted-foreground italic">Képlet: (Forgóeszközök - Készletek) / Rövid távú kötelezettségek</p>
+              <p className="text-[10px] text-muted-foreground italic">{t('accounting:balance_sheet.widgets.liquidity.qr_formula', 'Képlet: (Forgóeszközök - Készletek) / Rövid távú kötelezettségek')}</p>
               <div className="flex justify-between items-center text-sm pt-1 border-t">
-                <span>Számított érték:</span>
+                <span>{t('accounting:balance_sheet.widgets.liquidity.calc_value', 'Számított érték:')}</span>
                 <span className="font-bold tabular-nums text-foreground">{lGyors.toFixed(2)}</span>
               </div>
               <p className="text-[10px] text-muted-foreground leading-snug pt-1">
-                Kiszűri a kevésbé likvid készleteket a forgóeszközök közül, így szigorúbb képet ad a fizetőképességről. Az 1,0 feletti érték ideális.
+                {t('accounting:balance_sheet.widgets.liquidity.qr_desc', 'Kiszűri a kevésbé likvid készleteket a forgóeszközök közül, így szigorúbb képet ad a fizetőképességről. Az 1,0 feletti érték ideális.')}
               </p>
             </div>
 
             {/* Cash Ratio Details */}
             <div className="p-3 rounded-lg border bg-background/50 space-y-1">
               <div className="flex justify-between items-center">
-                <span className="font-bold text-sm">3. Pénzeszköz-Likviditás (Cash Ratio)</span>
+                <span className="font-bold text-sm">{t('accounting:balance_sheet.widgets.liquidity.cash_title', '3. Pénzeszköz-Likviditás (Cash Ratio)')}</span>
                 <span className={cn("px-2 py-0.5 rounded font-bold border text-[10px]", statusKesz.color)}>
                   {statusKesz.label}
                 </span>
               </div>
-              <p className="text-[10px] text-muted-foreground italic">Képlet: Pénzeszközök / Rövid távú kötelezettségek</p>
+              <p className="text-[10px] text-muted-foreground italic">{t('accounting:balance_sheet.widgets.liquidity.cash_formula', 'Képlet: Pénzeszközök / Rövid távú kötelezettségek')}</p>
               <div className="flex justify-between items-center text-sm pt-1 border-t">
-                <span>Számított érték:</span>
+                <span>{t('accounting:balance_sheet.widgets.liquidity.calc_value', 'Számított érték:')}</span>
                 <span className="font-bold tabular-nums text-foreground">{lKeszpenz.toFixed(2)}</span>
               </div>
               <p className="text-[10px] text-muted-foreground leading-snug pt-1">
-                Azt mutatja meg, hogy az azonnal rendelkezésre álló készpénz mekkora részt fedez a rövid távú kötelezettségekből. A 0,2 feletti érték biztonságos.
+                {t('accounting:balance_sheet.widgets.liquidity.cash_desc', 'Azt mutatja meg, hogy az azonnal rendelkezésre álló készpénz mekkora részt fedez a rövid távú kötelezettségekből. A 0,2 feletti érték biztonságos.')}
               </p>
             </div>
           </div>
 
           <DialogFooter className="border-t pt-3">
-            <Button variant="outline" size="sm" onClick={() => setIsRatiosOpen(false)} className="w-full">Bezárás</Button>
+            <Button variant="outline" size="sm" onClick={() => setIsRatiosOpen(false)} className="w-full">
+              {t('accounting:balance_sheet.widgets.diagnostics.close_button', 'Bezárás')}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   );
 }
+

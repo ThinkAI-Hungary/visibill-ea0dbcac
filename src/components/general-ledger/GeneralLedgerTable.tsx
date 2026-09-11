@@ -1,4 +1,5 @@
 import React, { useState, useMemo, forwardRef, useImperativeHandle, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -171,6 +172,7 @@ function LoadMoreSentinelRow({ row, hiddenClass, indentPadding, onLoadMore }: Lo
 }
 
 function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.ForwardedRef<GeneralLedgerTableRef>) {
+  const { t } = useTranslation(['accounting', 'common']);
   const {
     presetId,
     dateFrom,
@@ -1370,9 +1372,9 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         {/* Header */}
         <div className="bg-muted/80 border-b border-border text-sm font-semibold sticky top-0 z-20 hidden md:block select-none">
           <div className="grid grid-cols-12 divide-x divide-border/50">
-            <div className="col-span-2 p-3 text-center text-xs text-foreground uppercase tracking-wider">Fők. szám</div>
-            <div className="col-span-8 p-3 text-xs text-foreground uppercase tracking-wider">Megnevezés</div>
-            <div className="col-span-2 p-3 text-right text-xs bg-indigo-500/5 text-foreground uppercase tracking-wider">Összesített Egyenleg</div>
+            <div className="col-span-2 p-3 text-center text-xs text-foreground uppercase tracking-wider">{t('accounting:general_ledger.table.gl_account', 'Fők. szám')}</div>
+            <div className="col-span-8 p-3 text-xs text-foreground uppercase tracking-wider">{t('accounting:general_ledger.table.name', 'Megnevezés')}</div>
+            <div className="col-span-2 p-3 text-right text-xs bg-indigo-500/5 text-foreground uppercase tracking-wider">{t('accounting:general_ledger.table.total_balance', 'Összesített Egyenleg')}</div>
           </div>
         </div>
         {/* Skeleton Body */}
@@ -1398,7 +1400,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         </div>
         {/* Skeleton Footer */}
         <div className="shrink-0 grid grid-cols-12 border-t border-border/60 bg-muted/95 backdrop-blur font-bold text-sm">
-          <div className="col-span-10 p-3 text-right uppercase tracking-wider text-muted-foreground text-xs">Összesen:</div>
+          <div className="col-span-10 p-3 text-right uppercase tracking-wider text-muted-foreground text-xs">{t('accounting:general_ledger.table.total', 'Összesen:')}</div>
           <div className="col-span-2 p-3 flex items-center justify-end gap-2 pr-4">
             <Skeleton className="h-4 w-24 bg-muted/50 rounded" />
             <Skeleton className="h-6 w-6 rounded-full bg-muted/50" />
@@ -1470,9 +1472,9 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
               {/* Header */}
               <div className="bg-muted/80 backdrop-blur-md border-b border-border text-sm font-semibold sticky top-0 z-20 hidden md:block select-none shadow-sm">
                 <div className="grid grid-cols-12 divide-x divide-border/50">
-                  <div className="col-span-2 p-3 text-center text-xs text-foreground uppercase tracking-wider">Fők. szám</div>
-                  <div className="col-span-8 p-3 text-xs text-foreground uppercase tracking-wider">Megnevezés</div>
-                  <div className="col-span-2 p-3 text-right text-xs bg-indigo-500/5 text-foreground uppercase tracking-wider">Összesített Egyenleg</div>
+                  <div className="col-span-2 p-3 text-center text-xs text-foreground uppercase tracking-wider">{t('accounting:general_ledger.table.gl_account', 'Fők. szám')}</div>
+                  <div className="col-span-8 p-3 text-xs text-foreground uppercase tracking-wider">{t('accounting:general_ledger.table.name', 'Megnevezés')}</div>
+                  <div className="col-span-2 p-3 text-right text-xs bg-indigo-500/5 text-foreground uppercase tracking-wider">{t('accounting:general_ledger.table.total_balance', 'Összesített Egyenleg')}</div>
                 </div>
               </div>
 
@@ -1490,7 +1492,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                        </div>
                      </div>
                    ) : (
-                     <div className="p-8 text-center text-muted-foreground">Nem találhatók adatok ehhez a könyvelési sablonhoz.</div>
+                     <div className="p-8 text-center text-muted-foreground">{t('accounting:general_ledger.table.no_data', 'Nem találhatók adatok ehhez a könyvelési sablonhoz.')}</div>
                    )
                 ) : processedRows.map((row) => {
                   const shouldRender = isPrinting ? (row as any).isVisibleDuringPrint : row.isVisibleOnScreen;

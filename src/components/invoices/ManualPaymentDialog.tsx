@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { getDateFnsLocale } from '@/lib/locale/formatters';
 import { CalendarIcon, CreditCard, Banknote, MessageSquare, Loader2, CheckCircle2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,7 @@ export function ManualPaymentDialog({
   invoiceCurrency,
   onSuccess
 }: ManualPaymentDialogProps) {
+  const { t } = useTranslation(['invoices', 'common']);
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [date, setDate] = useState<Date>(new Date());
@@ -51,8 +53,8 @@ export function ManualPaymentDialog({
       if (error) throw error;
 
       toast({
-        title: 'Sikeres rögzítés',
-        description: 'A manuális kifizetést sikeresen rögzítettük és párosítottuk a számlával.',
+        title: t('invoices:dialogs.manual_payment.toast_success'),
+        description: t('invoices:dialogs.manual_payment.toast_success_desc'),
         variant: 'success',
       });
 
@@ -61,8 +63,8 @@ export function ManualPaymentDialog({
     } catch (err: any) {
       console.error('Error recording manual payment:', err);
       toast({
-        title: 'Hiba történt',
-        description: err.message || 'Nem sikerült rögzíteni a kifizetést.',
+        title: t('common:status.error', 'Hiba történt'),
+        description: err.message || t('common:errors.unexpected', 'Nem sikerült rögzíteni a kifizetést.'),
         variant: 'destructive',
       });
     } finally {
@@ -76,16 +78,16 @@ export function ManualPaymentDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5 text-primary" />
-            Manuális kifizetés rögzítése
+            {t('invoices:dialogs.manual_payment.title')}
           </DialogTitle>
           <DialogDescription>
-            Rögzítse a számla kifizetését, ha az nem a céges bankszámláról történt. Ez egy virtuális tranzakciót hoz létre.
+            {t('invoices:dialogs.manual_payment.description')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5 py-4">
           <div className="bg-muted/50 p-3 rounded-lg border border-border/50 flex justify-between items-center">
-            <span className="text-sm text-muted-foreground font-medium">Kifizetendő összeg:</span>
+            <span className="text-sm text-muted-foreground font-medium">{t('invoices:dialogs.manual_payment.amount_to_pay')}</span>
             <span className="text-lg font-bold font-mono">
               {formatCurrency(invoiceAmount, invoiceCurrency)}
             </span>
@@ -94,7 +96,7 @@ export function ManualPaymentDialog({
           <div className="grid gap-4">
             {/* Dátum választó */}
             <div className="grid gap-2">
-              <Label htmlFor="date">Kifizetés dátuma</Label>
+              <Label htmlFor="date">{t('invoices:dialogs.manual_payment.payment_date')}</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -105,7 +107,7 @@ export function ManualPaymentDialog({
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, "yyyy. MMMM d.", { locale: hu }) : <span>Válasszon dátumot</span>}
+                    {date ? format(date, "yyyy. MMMM d.", { locale: getDateFnsLocale() }) : <span>{t('invoices:dialogs.manual_payment.select_date')}</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -121,26 +123,26 @@ export function ManualPaymentDialog({
 
             {/* Típus választó */}
             <div className="grid gap-2">
-              <Label htmlFor="type">Fizetés módja</Label>
+              <Label htmlFor="type">{t('invoices:dialogs.manual_payment.payment_method')}</Label>
               <Select value={paymentType} onValueChange={setPaymentType}>
                 <SelectTrigger id="type">
-                  <SelectValue placeholder="Válasszon módot" />
+                  <SelectValue placeholder={t('invoices:dialogs.manual_payment.select_method')} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="private_card">
                     <div className="flex items-center gap-2">
                       <CreditCard className="h-4 w-4" />
-                      <span>Privát kártya / Tagi hitel</span>
+                      <span>{t('invoices:dialogs.manual_payment.methods.private_card')}</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="cash">
                     <div className="flex items-center gap-2">
                       <Banknote className="h-4 w-4" />
-                      <span>Készpénz</span>
+                      <span>{t('invoices:dialogs.manual_payment.methods.cash')}</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="other">
-                    <span>Egyéb</span>
+                    <span>{t('invoices:dialogs.manual_payment.methods.other')}</span>
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -148,12 +150,12 @@ export function ManualPaymentDialog({
 
             {/* Megjegyzés */}
             <div className="grid gap-2">
-              <Label htmlFor="note">Megjegyzés</Label>
+              <Label htmlFor="note">{t('invoices:dialogs.manual_payment.note')}</Label>
               <div className="relative">
                 <MessageSquare className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Textarea
                   id="note"
-                  placeholder="Pl. Az irodában felejtettem a céges kártyát..."
+                  placeholder={t('invoices:dialogs.manual_payment.note_placeholder')}
                   className="pl-9 min-h-[80px]"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
@@ -165,11 +167,11 @@ export function ManualPaymentDialog({
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={loading}>
-            Mégse
+            {t('common:actions.cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={loading} className="gap-2">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-            Fizetés rögzítése
+            {t('invoices:dialogs.manual_payment.confirm_button')}
           </Button>
         </DialogFooter>
       </DialogContent>

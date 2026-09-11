@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -23,6 +24,7 @@ function formatTime(totalSeconds: number): string {
 }
 
 export function IdleWarningModal({ open, secondsLeft, onStay, onLogout }: IdleWarningModalProps) {
+  const { t } = useTranslation();
   const isUrgent = secondsLeft <= 30;
 
   return (
@@ -40,16 +42,16 @@ export function IdleWarningModal({ open, secondsLeft, onStay, onLogout }: IdleWa
             <ShieldAlert className={`h-7 w-7 text-amber-500 ${isUrgent ? 'animate-pulse' : ''}`} />
           </div>
           <DialogTitle className="text-xl font-bold">
-            Inaktivitás észlelve
+            {t('idle_warning.title')}
           </DialogTitle>
           <DialogDescription className="mt-2 text-base leading-relaxed">
-            A munkameneted hamarosan{' '}
+            {t('idle_warning.description_prefix')}{' '}
             <span
               className="inline-block w-[4.5rem] text-center font-mono tabular-nums font-semibold text-foreground"
             >
               {formatTime(secondsLeft)}
             </span>{' '}
-            múlva lejár inaktivitás miatt.
+            {t('idle_warning.description_suffix')}
           </DialogDescription>
         </DialogHeader>
 
@@ -69,14 +71,14 @@ export function IdleWarningModal({ open, secondsLeft, onStay, onLogout }: IdleWa
             onClick={onLogout}
             className="text-muted-foreground"
           >
-            Kijelentkezés
+            {t('idle_warning.logout')}
           </Button>
           <Button
             onClick={onStay}
             className="bg-primary hover:bg-primary/90 font-semibold"
             autoFocus
           >
-            Igen, maradok
+            {t('idle_warning.stay')}
           </Button>
         </DialogFooter>
       </DialogContent>

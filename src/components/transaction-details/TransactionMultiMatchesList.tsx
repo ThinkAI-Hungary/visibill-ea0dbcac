@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 import { ExtraMatchItem } from '@/lib/matching/types';
 
 export interface TransactionMultiMatchesListProps {
@@ -19,12 +20,14 @@ export const TransactionMultiMatchesList: React.FC<TransactionMultiMatchesListPr
   onRemoveExtraMatch,
   onOpenInvoiceDetails,
 }) => {
+  const { t } = useTranslation(['transactions']);
+
   if (!extraMatches || extraMatches.length === 0) return null;
 
   return (
     <div className="space-y-1.5 mt-2">
       <h4 className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-        További párosított számlák
+        {t('transactions:dialogs.details.extra_matches.title')}
       </h4>
       {extraMatches.map(em => (
         <Card key={em.id} className="bg-muted/20 border-border/40">
@@ -52,7 +55,7 @@ export const TransactionMultiMatchesList: React.FC<TransactionMultiMatchesListPr
                     )}
                   </span>
                   <Badge className="ml-1.5 text-[8px] h-3.5 px-1 bg-teal-500/15 text-teal-600 border-teal-500/30">
-                    Beküldött
+                    {t('transactions:dialogs.details.extra_matches.badge_submitted')}
                   </Badge>
                 </>
               ) : em.navInvoice ? (
@@ -72,11 +75,13 @@ export const TransactionMultiMatchesList: React.FC<TransactionMultiMatchesListPr
                     )}
                   </span>
                   <Badge className="ml-1.5 text-[8px] h-3.5 px-1 bg-indigo-500/15 text-indigo-600 border-indigo-500/30">
-                    NAV
+                    {t('transactions:dialogs.details.extra_matches.badge_nav')}
                   </Badge>
                 </>
               ) : (
-                <span className="text-muted-foreground">Törölt bizonylat</span>
+                <span className="text-muted-foreground">
+                  {t('transactions:dialogs.details.extra_matches.deleted_entity')}
+                </span>
               )}
             </div>
             <Button

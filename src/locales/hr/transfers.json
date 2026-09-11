@@ -17,5 +17,60 @@
     "due_today": "Dospijeva danas",
     "group_by_partner": "Grupiraj po partnerima"
   },
-  "search_placeholder": "Traži partnera ili račun..."
+  "search_placeholder": "Traži partnera ili račun...",
+  "table": {
+    "partner": "Partner",
+    "invoice_numbers": "Broj(evi) računa",
+    "due_date": "Rok dospijeća",
+    "amount": "Iznos",
+    "partner_bank_account": "Broj bankovnog računa partnera",
+    "no_number": "Bez broja",
+    "narrative_prefix": "Opis: Računi:",
+    "all_settled_title": "Svi računi su podmireni!",
+    "all_settled_desc": "Nemate dospjelih ili neplaćenih računa za danas."
+  },
+  "calendar": {
+    "title": "Rokovi plaćanja po kalendaru",
+    "desc": "Odaberite dan u kalendaru za pregled ulaznih računa koji dospijevaju na taj dan.",
+    "due_on_day": "Dospjeli računi na ovaj dan:",
+    "select_all": "Označi sve za plaćanje",
+    "click_day_hint": "Kliknite na dan u kalendaru za pregled detalja.",
+    "items_count": "{{count}} kom",
+    "no_bank_account": "Nije uneseno!"
+  },
+  "history": {
+    "title": "Prethodni nalozi za plaćanje i status uparivanja",
+    "desc": "Praćenje izvezenih stavki naloga i njihovog uparivanja s bankovnim transakcijama.",
+    "delete_selected": "Obriši označene",
+    "refresh": "Osvježi",
+    "empty": "Još nema izvezenih datoteka za plaćanje.",
+    "date": "Datum",
+    "partner": "Partner",
+    "partner_account": "Bankovni račun partnera",
+    "amount": "Iznos",
+    "narrative": "Opis",
+    "status": "Status",
+    "actions": "Radnja",
+    "status_pending": "Čeka uparivanje",
+    "status_sent": "Poslano",
+    "status_matched": "Upareno",
+    "delete": "Obriši"
+  },
+  "dialog": {
+    "title": "Generiranje datoteke za plaćanje",
+    "desc": "Odaberite račun platitelja i željeni format datoteke za internet bankarstvo.",
+    "sender_account": "Račun platitelja (tvrtke)",
+    "add_own": "Dodaj vlastiti",
+    "sample_account_warning": "Koristi se ogledni bankovni račun za testiranje. Za stvarna plaćanja unesite svoj račun u Postavkama!",
+    "select_sender_placeholder": "Odaberite račun platitelja",
+    "file_format": "Format datoteke",
+    "cancel": "Odustani",
+    "generating": "Generiranje datoteke...",
+    "download_save": "Preuzmi i spremi datoteku"
+  },
+  "floating_bar": {
+    "selected_items": "Označene stavke:",
+    "total": "Ukupno:",
+    "download_button": "Preuzmi listu za plaćanje"
+  }
 }

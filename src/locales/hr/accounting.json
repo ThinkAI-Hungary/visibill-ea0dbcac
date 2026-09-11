@@ -5,11 +5,100 @@
     "description": "Hijerarhijski izvadak glavne knjige i konta",
     "tax_year": "Porezna godina",
     "period": "Razdoblje",
+    "extract_title": "Izvadak glavne knjige",
+    "search_placeholder": "Pretraži glavnu knjigu (broj, naziv, partner)...",
     "tabs": {
       "extract": "Izvadak",
       "cards": "Kartice",
       "journal": "Dnevnik knjiženja",
       "comparison": "Usporedba"
+    },
+    "date_basis": {
+      "issue": "Izdavanje",
+      "issue_tooltip": "Prikuplja podatke na temelju datuma izdavanja računa",
+      "fulfillment": "Isporuka",
+      "fulfillment_tooltip": "Prikuplja podatke na temelju datuma ekonomske isporuke računa / stavke"
+    },
+    "posting_status": {
+      "all": "Sve stavke",
+      "all_tooltip": "Prikaz svih stavki (operativni računi i proknjiženi dokumenti zajedno)",
+      "posted": "Samo proknjiženo",
+      "posted_tooltip": "Prikaz isključivo službeno evidentiranih i zatvorenih dokumenata (zatvoreno knjiženje)"
+    },
+    "table": {
+      "gl_account": "Konto",
+      "name": "Naziv",
+      "total_balance": "Ukupni saldo",
+      "total": "Ukupno:",
+      "no_data": "Nisu pronađeni podaci za ovaj računovodstveni predložak."
+    },
+    "toolbar": {
+      "active_preset": "Aktivni kontni plan:",
+      "select_preset": "Odaberite predložak",
+      "builtin_system_preset": "Ugrađeni sustavni predložak",
+      "builtin_badge": "(Ugrađeni)",
+      "manage_presets": "Upravljanje predlošcima",
+      "upload_preset": "Učitaj novi predložak",
+      "manual_entry": "Temeljnica",
+      "xml_import": "XML Uvoz",
+      "xml_imports": "XML Uvozi",
+      "ai_classification": "AI Klasifikacija",
+      "export": "Izvoz",
+      "print_preview": "Pretpregled ispisa",
+      "print_pdf": "Ispis / PDF",
+      "export_excel": "Izvadak (Excel)",
+      "export_analytical_excel": "Analitički izvadak (Excel)"
+    },
+    "kpi": {
+      "accounts": "Konta glavne knjige",
+      "leaf_accounts": "Analitička konta",
+      "debit": "Duguje (Ft)",
+      "credit": "Potražuje (Ft)",
+      "classification_progress": "Klasifikacija: {{classified}}/{{total}} stavki"
+    },
+    "cards_view": {
+      "title": "Kartice glavne knjige i analitike",
+      "subtitle": "Stavke prometa, kumulativni saldi i usklađivanje analitike",
+      "account_card": "Konto kartica",
+      "partner_card": "Kartice partnera",
+      "reconciliation": "Glavna knjiga ↔ Analitika"
+    },
+    "journal_view": {
+      "title": "Dnevnik knjiženja"
+    },
+    "comparison_view": {
+      "title": "Višegodišnja usporedba (Prethodna godina vs Tekuća godina)",
+      "compared_periods": "Uspoređena razdoblja"
+    },
+    "onboarding": {
+      "welcome": "Dobrodošli u Glavnu knjigu!",
+      "steps_intro": "Za početak slijedite korake u nastavku:",
+      "step1_title": "Učitavanje kontnog plana",
+      "step1_desc": "Odaberite ugrađeni predložak ili učitajte vlastiti",
+      "step1_btn": "Učitaj",
+      "step2_title": "Uvoz podataka",
+      "step2_desc": "Uvoz XML revizijske datoteke ili računa/transakcija",
+      "step2_btn": "XML Uvoz",
+      "step3_title": "AI klasifikacija",
+      "step3_desc": "AI automatski kategorizira stavke na temelju kontnog plana",
+      "step3_btn": "Dostupno uskoro",
+      "or_choose_existing": "Ili odaberite postojeći kontni plan u gornjoj traci za početak."
+    },
+    "print_preview_modal": {
+      "title": "Pretpregled ispisa glavne knjige",
+      "layout": "Izgled:",
+      "analytical": "Analitički (Stavke)",
+      "synthetic": "Sintetički (Zbirno)",
+      "subtitle": "Izvadak glavne knjige — Pretpregled ispisa",
+      "close": "Zatvori",
+      "print": "Ispis"
+    },
+    "toasts": {
+      "ai_error": "AI obrada nije uspjela.",
+      "ai_success": "AI obrada uspješno je završena.",
+      "ai_started": "AI klasifikacija je pokrenuta prema parametrima.",
+      "ai_started_title": "Uspješno pokretanje",
+      "company_not_selected": "Nije odabrana tvrtka."
     }
   },
   "profit_and_loss": {
@@ -26,6 +115,112 @@
       "quarter": "Kvartal",
       "month": "Mjesec",
       "custom": "Prilagođeno"
+    },
+    "card_title": "Račun dobiti i gubitka",
+    "card_subtitle": "Verzija \"A\" prema zakonu o računovodstvu (metoda ukupnih troškova)",
+    "loading": "Učitavanje računa dobiti i gubitka...",
+    "mapping_title": "Matrica mapiranja",
+    "mapping_description": "Povežite konta glavne knjige sa stavkama Računa dobiti i gubitka.",
+    "warning": {
+      "title": "Upozorenje pri sastavljanju Računa dobiti i gubitka",
+      "description": "Trenutačno postoji {{count}} neraspoređenih konta glavne knjige za račun dobiti i gubitka.",
+      "open_mapping": "Otvori matricu mapiranja"
+    },
+    "kpi": {
+      "operating_profit": "Poslovni rezultat",
+      "financial_profit": "Financijski rezultat",
+      "profit_before_tax": "Dobit prije oporezivanja",
+      "net_profit": "Neto dobit",
+      "prev_year": "Prethodna godina: {{value}}"
+    },
+    "simulator": {
+      "title": "\"What-If\" Simulacija operativnih troškova i prihoda",
+      "description": "Prilagodite glavne kategorije prihoda i troškova klizačima kako biste u stvarnom vremenu vidjeli promjenu neto dobiti.",
+      "reset": "Poništi simulaciju",
+      "revenue": "Neto prihod od prodaje (I.)",
+      "materials": "Materijalni troškovi (IV.)",
+      "personnel": "Troškovi osoblja (V.)",
+      "other_expenses": "Ostali troškovi (VII.)"
+    },
+    "toggles": {
+      "official_view": "Službeni prikaz (tisuće Ft)",
+      "hide_zero": "Sakrij nulte retke",
+      "chart": "Grafikon"
+    },
+    "export": {
+      "button": "Izvoz",
+      "pdf": "Izvoz PDF",
+      "xlsx": "Izvoz XLSX"
+    },
+    "table": {
+      "row": "R.br.",
+      "name": "Naziv",
+      "previous_year": "Prethodna godina",
+      "current_period": "Tekuće razdoblje",
+      "no_data": "Nisu pronađeni podaci za račun dobiti i gubitka.",
+      "no_prev_year_tooltip": "Nema zaključenog godišnjeg izvještaja za {{year}}.",
+      "filter_invoices": "Filtriraj račune: {{partner}}",
+      "document_fallback": "Dokument",
+      "view_document": "Pregled dokumenta",
+      "invoice": "Račun",
+      "document_preview": "Pretpregled dokumenta",
+      "pdf_document": "PDF dokument",
+      "e_document": "e-Dokument",
+      "serial_number": "Broj",
+      "net": "Neto"
+    },
+    "charts": {
+      "sankey_title": "Sankey dijagram novčanog toka"
+    },
+    "units": {
+      "thousand_huf": "tis. Ft",
+      "huf": "Ft"
+    },
+    "badges": {
+      "turned_profit": "Prešlo u dobit",
+      "turned_loss": "Prešlo u gubitak"
+    },
+    "context_menu": {
+      "expand_all": "Otvori sve",
+      "collapse_all": "Zatvori sve",
+      "copy_csv": "Kopiraj kao CSV"
+    },
+    "mapping_tab": {
+      "loading": "Učitavanje mapiranja...",
+      "suggestions_title": "Inteligentni prijedlozi mapiranja ({{count}})",
+      "suggestions_desc": "Na temelju propisanih oznaka imamo prijedloge za neraspoređena konta glavne knjige.",
+      "check_suggestions": "Pregledaj prijedloge",
+      "match_title": "Uparivanje konta glavne knjige",
+      "match_desc": "Dodijelite stavke aktivnog kontnog plana službenim stavkama Računa dobiti i gubitka.",
+      "default_assign": "Zadano dodjeljivanje",
+      "save": "Spremi",
+      "gl_number": "Konto",
+      "gl_name": "Naziv",
+      "pnl_row": "Stavka računa dobiti i gubitka",
+      "empty": "Nema konta glavne knjige u odabranom predlošku.",
+      "assigned": "Raspoređeno",
+      "unassigned": "Nije raspoređeno",
+      "select_row": "Odaberite stavku...",
+      "dialog_title": "Prihvati predložena mapiranja",
+      "dialog_desc": "Prema propisanoj shemi, sljedeća se konta mogu automatski rasporediti u Račun dobiti i gubitka.",
+      "dialog_accept": "Spremi odabrano",
+      "dialog_cancel": "Odustani",
+      "dialog_accept_count": "Prihvati odabrano ({{count}})",
+      "dialog_account_number": "Broj računa",
+      "dialog_suggested_row": "Predloženi redak",
+      "dialog_reasoning": "Obrazloženje"
+    },
+    "toasts": {
+      "export_error_empty": "Nema podataka za izvoz.",
+      "export_success": "Preuzimanje računa dobiti i gubitka je započelo.",
+      "export_success_title": "Uspješan izvoz",
+      "export_error": "Generiranje Excel datoteke nije uspjelo.",
+      "save_success_title": "Uspješno spremanje",
+      "save_success": "Mapiranja su uspješno ažurirana.",
+      "save_error": "Pogreška pri spremanju",
+      "suggestions_accepted": "{{count}} mapiranja je uspješno prihvaćeno i spremljeno.",
+      "auto_assign_done": "{{count}} konta je dodijeljeno prema verziji \"A\". Provjerite i spremite!",
+      "auto_assign_title": "Automatsko dodjeljivanje završeno"
     }
   },
   "balance_sheet": {
@@ -33,34 +228,900 @@
     "title": "Bilanca",
     "description": "Bilanca stanja prema propisanoj shemi i postavke",
     "reporting_date": "Datum bilance",
+    "card_title": "Bilanca",
+    "card_subtitle": "Verzija \"A\" prema računovodstvenim standardima",
     "tabs": {
       "view": "Bilanca",
       "mapping": "Matrica mapiranja"
+    },
+    "warning": {
+      "title": "Upozorenje pri sastavljanju bilance",
+      "not_balanced": "Bilanca nije usklađena (Aktiva ≠ Pasiva).",
+      "unassigned_count": "Trenutno postoji {{count}} neraspoređenih konta glavne knjige u razredima 1-4.",
+      "recon_diff": "{{name}} razlika usklađenja: {{diff}} HUF (Sustav: {{system}} vs Glavna knjiga: {{ledger}})",
+      "open_mapping": "Otvori matricu mapiranja"
+    },
+    "widgets": {
+      "swing": {
+        "title": "Vaga bilance ⚖️",
+        "balanced": "U ravnoteži",
+        "diff_badge": "Razlika!",
+        "assets": "Aktiva",
+        "liabilities": "Pasiva",
+        "asset_label": "Aktiva: {{amount}}",
+        "liability_label": "Pasiva: {{amount}}"
+      },
+      "diagnostics": {
+        "title": "Dijagnostika usklađenosti",
+        "balanced_msg": "Stanje bilance je usklađeno. Nije potrebna intervencija.",
+        "diff_msg": "Razlika: {{diff}}",
+        "unmapped_count_msg": "Pronašli smo {{count}} neraspoređenih konta glavne knjige što može uzrokovati neravnotežu.",
+        "all_mapped_diff_msg": "Sva konta su raspoređena, ali stanja se ne podudaraju. Otvorite detaljnu dijagnostiku.",
+        "report_button": "Dijagnostički izvještaj",
+        "dialog_title": "Dijagnostički izvještaj bilance",
+        "dialog_desc": "Naš sustav je provjerio stanja glavne knjige i mapiranje bilance.",
+        "balance_ok": "✓ Ravnoteža bilance je u redu",
+        "balance_mismatch": "⚠️ Stanja aktive i pasive se razlikuju",
+        "assets_total": "Aktiva ukupno: {{amount}}",
+        "liabilities_total": "Pasiva ukupno: {{amount}}",
+        "unmapped_title": "Neraspoređena konta glavne knjige",
+        "unmapped_desc": "Trenutno za {{count}} aktivnih konta glavne knjige nema mapiranja u bilanci. To narušava ravnotežu bilance.",
+        "all_mapped_desc": "Sva aktivna konta glavne knjige su ispravno raspoređena u strukturu bilance.",
+        "pnl_check_title": "Provjera zaključka računa dobiti i gubitka",
+        "pnl_check_desc": "Neto dobit je ispravno integrirana u stavku kapitala i rezervi prema rezultatima tekuće godine.",
+        "close_button": "Zatvori",
+        "auto_fix_button": "Ispravi automatsko raspoređivanje"
+      },
+      "liquidity": {
+        "title": "Pokazatelji likvidnosti",
+        "current_ratio": "Koeficijent tekuće likvidnosti:",
+        "quick_ratio": "Koeficijent ubrzane likvidnosti:",
+        "cash_ratio": "Koeficijent trenutne likvidnosti:",
+        "target_label": "Cilj: Koeficijent > 1.5",
+        "details": "Detalji",
+        "status_excellent": "Izvrsno",
+        "status_adequate": "Zadovoljavajuće",
+        "status_low": "Nisko",
+        "dialog_title": "Detaljna analiza pokazatelja likvidnosti",
+        "dialog_desc": "Ključni pokazatelji solventnosti i sposobnosti otplate kratkoročnih obveza.",
+        "cr_title": "1. Koeficijent tekuće likvidnosti (Current Ratio)",
+        "cr_formula": "Formula: Kratkotrajna imovina / Kratkoročne obveze",
+        "calc_value": "Izračunata vrijednost:",
+        "cr_desc": "Mjeri koliko puta kratkotrajna imovina poduzeća pokriva kratkoročne obveze. Vrijednost iznad 1,5 smatra se stabilnom.",
+        "qr_title": "2. Koeficijent ubrzane likvidnosti (Quick Ratio)",
+        "qr_formula": "Formula: (Kratkotrajna imovina - Zalihe) / Kratkoročne obveze",
+        "qr_desc": "Isključuje manje likvidne zalihe iz kratkotrajne imovine i pruža stroži uvid u solventnost. Vrijednost iznad 1,0 je idealna.",
+        "cash_title": "3. Koeficijent trenutne likvidnosti (Cash Ratio)",
+        "cash_formula": "Formula: Novčana sredstva / Kratkoročne obveze",
+        "cash_desc": "Pokazuje koliki dio kratkoročnih obveza pokriva odmah dostupan novac. Vrijednost iznad 0,2 smatra se sigurnom."
+      }
+    },
+    "toggles": {
+      "official_view": "Službeni prikaz (tisuće {{currency}})",
+      "hide_zero": "Sakrij retke s nulom",
+      "traditional_view": "Tradicionalni prikaz",
+      "currency_consolidation": "KONSOLIDACIJA VALUTA:",
+      "currency_placeholder": "Valuta"
+    },
+    "table": {
+      "row": "R.br.",
+      "name": "Naziv",
+      "previous_year": "Prethodna godina",
+      "modifications": "Izmjene",
+      "current_year": "Tekuća godina",
+      "assets_section": "Aktiva",
+      "liabilities_section": "Pasiva",
+      "original_doc_view": "Pregled izvornog dokumenta",
+      "pdf_badge": "PDF"
+    },
+    "context_menu": {
+      "expand_all": "Otvori sve",
+      "collapse_all": "Zatvori sve",
+      "copy_csv": "Kopiraj kao CSV"
+    },
+    "mapping_tab": {
+      "loading": "Učitavanje mapiranja...",
+      "suggestions_title": "Inteligentni prijedlozi mapiranja ({{count}})",
+      "suggestions_desc": "Na temelju kontnog plana imamo prijedloge za neraspoređena konta glavne knjige.",
+      "check_suggestions": "Pregledaj prijedloge",
+      "default_assign": "Zadano mapiranje",
+      "save": "Spremi",
+      "col_gl_number": "Konto glavne knjige",
+      "col_name": "Naziv",
+      "col_bs_row": "Stavka bilance",
+      "empty_accounts": "Nema konta glavne knjige u razredima 1-4.",
+      "select_row": "Odaberite stavku...",
+      "unmapped": "Nije raspoređeno",
+      "dialog_title": "Prihvaćanje predloženih mapiranja",
+      "dialog_desc": "Prema šifriranju možemo automatski rasporediti sljedeća konta u bilancu.",
+      "dialog_col_number": "Broj konta",
+      "dialog_col_name": "Naziv",
+      "dialog_col_suggested": "Predložena stavka",
+      "dialog_col_reason": "Obrazloženje",
+      "dialog_cancel": "Odustani",
+      "dialog_accept": "Prihvati odabrano ({{count}})"
+    },
+    "toasts": {
+      "save_success_title": "Uspješno spremljeno",
+      "save_success_desc": "Mapiranja bilance su ažurirana.",
+      "save_error_title": "Pogreška",
+      "export_success_title": "Uspješan izvoz",
+      "export_success_desc": "Preuzimanje bilance je započelo.",
+      "auto_assign_title": "Automatsko mapiranje dovršeno",
+      "auto_assign_desc": "{{count}} konta glavne knjige mapirano je prema predlošku. Provjerite i spremite!"
     }
   },
-  "journals": {
-    "breadcrumb": "Temeljnica",
-    "title": "Dnevnici knjiženja",
-    "description": "Kronološka i analitička evidencija knjiženja dvojnog knjigovodstva.",
-    "period_closing": "Zaključavanje razdoblja"
-  },
   "vat_return": {
-    "breadcrumb": "PDV prijava",
-    "title": "PDV prijava & Analitika",
-    "description": "Generiranje PDV obrasca i analitički izvještaji",
+    "breadcrumb": "Prijava PDV-a",
+    "title": "Prijava PDV-a i Analitika zbirnih kodova",
+    "description": "Obrazac 2665 — Generiranje prijave PDV-a i analitički izvještaji zbirnih kodova",
+    "select_company": "Odaberite tvrtku za nastavak",
     "tabs": {
       "return": "Prijava",
-      "analytics": "Analitika",
+      "analytics": "Analitika zbirnih kodova",
       "config": "Postavke"
+    },
+    "error_boundary": {
+      "title": "Došlo je do pogreške prilikom renderiranja",
+      "retry": "Pokušaj ponovno"
+    },
+    "period": {
+      "monthly": "Mjesečno",
+      "quarterly": "Tromjesečno",
+      "yearly": "Godišnje",
+      "q1": "Q1 (sij–ožu)",
+      "q2": "Q2 (tra–lip)",
+      "q3": "Q3 (srp–ruj)",
+      "q4": "Q4 (lis–pro)",
+      "calculate": "Izračun",
+      "finalized": "Konačno",
+      "calculating": "Izračunavanje...",
+      "export": "Izvoz",
+      "pdf_print": "Ispis PDF-a",
+      "xml_download": "Preuzmi ÁNYK XML"
+    },
+    "deadlines": {
+      "label": "Rok za podnošenje:",
+      "days_left": "(preostalo još {{days}} dana)",
+      "expired": "(ISTEKLO!)",
+      "badge_days_left": "Još {{days}} dana",
+      "badge_expired": "Isteklo prije {{days}} dana"
+    },
+    "posting_status": {
+      "closed_audited_title": "Status knjiženja: Zatvoreno i provjereno.",
+      "closed_audited_desc": "Svi dokumenti razdoblja ({{count}} stavki) su proknjiženi u dnevnicima.",
+      "in_progress_title": "Status knjiženja: U tijeku.",
+      "in_progress_desc": "U razdoblju je proknjiženo {{posted}} / {{total}} dokumenata ({{pending}} prijedloga sustava na čekanju u dnevnicima).",
+      "no_entries_title": "Status knjiženja: Nema stavki u dnevniku.",
+      "no_entries_desc": "Za ovo razdoblje još nema proknjiženih stavki u dnevnicima.",
+      "badge_posted": "{{percent}}% Proknjiženo"
+    },
+    "subtabs": {
+      "calculator": "Kalkulator i M-obrasci",
+      "replica": "Replika obrasca NAV 65"
+    },
+    "status": {
+      "label": "Status:",
+      "draft": "Nacrt",
+      "validated": "Provjereno",
+      "finalized": "Konačno",
+      "pro_rata_button": "Pro-rata PDV",
+      "check_done": "Provjera dovršena",
+      "finalize_button": "Zaključi",
+      "reopen_button": "Ponovno otvori",
+      "finalize_dialog_title": "Zaključavanje prijave",
+      "finalize_dialog_desc": "Nakon zaključavanja stavke prijave se ne mogu mijenjati. Ponovno otvaranje moguće je samo tipkom „Ponovno otvori”.",
+      "finalize_dialog_confirm": "Jeste li sigurni da želite zaključati prijavu za razdoblje {{period}}?",
+      "cancel": "Odustani"
+    },
+    "banners": {
+      "cash_accounting": "Ova tvrtka primjenjuje obračun PDV-a prema naplaćenim naknadama — obveza PDV-a i pravo na odbitak nastaju tek nakon stvarne uplate.",
+      "tax_exempt": "Ova tvrtka primjenjuje oslobođenje od PDV-a za male porezne obveznike — nema obveze obračuna ni podnošenja prijave PDV-a.",
+      "reverse_charge_title": "Provjera prijenosa porezne obveze (Reverse Charge) ({{count}})",
+      "reverse_charge_desc": "Sljedeći partneri imaju obračunat PDV, ali naziv ili djelatnost upućuju na sumnju na građevinske/metalurške djelatnosti. Provjerite treba li primijeniti prijenos porezne obveze:",
+      "reverse_charge_net": "Neto: {{net}} eFt — PDV: {{vat}} eFt"
+    },
+    "kpi": {
+      "payable_tax": "Obveza PDV-a (36.)",
+      "unpaid_hint": "od toga potraživanja: {{amount}}",
+      "deductible_tax": "Pretporez / Odbitni PDV (76.)",
+      "balance": "Saldo (83.)",
+      "balance_unpaid_hint": "bez potraživanja: {{amount}}",
+      "payable_net": "Za uplatu (84.)",
+      "reclaimable_net": "Za povrat (85.)",
+      "saving_calculation": "Spremanje izračuna..."
+    },
+    "chart": {
+      "title": "Trend PDV-a",
+      "months_count": "{{count}} mjeseci",
+      "payable": "Za uplatu",
+      "deductible": "Pretporez",
+      "balance": "Saldo"
+    },
+    "cards": {
+      "carryforward": {
+        "title": "Prijenos iz prethodnog razdoblja (redak 82)",
+        "badge": "ručno uredivo",
+        "auto_desc": "Automatski (prethodni mj. redak 86): {{amount}}",
+        "load_button": "← Učitaj",
+        "unit": "tisuća HUF"
+      },
+      "audit_points": {
+        "title": "Kontrolne točke",
+        "no_tax": "Nema obveze ni pretporeza u razdoblju",
+        "summary": "Za uplatu: {{pay}}, Pretporez: {{ded}}",
+        "m_sheet_empty_warning": "M-obrazac je prazan, ali postoji pretporez — provjerite OIB partnera",
+        "m_sheet_summary": "Sažetak M-obrasca: {{total}} ({{count}} partnera)",
+        "next_month_carryforward": "Prijenos u sljedeći mjesec: {{amount}}"
+      },
+      "xml_validator": {
+        "title": "NAV XML Validator",
+        "badge": "ÁNYK provjera sheme",
+        "validate_current": "Validiraj trenutno",
+        "validating": "Validacija...",
+        "upload_xml": "Učitaj XML"
+      }
+    },
+    "pro_rata": {
+      "title": "Parametri pro-rata PDV-a (čl. 123. Zakona o PDV-u)",
+      "year_badge": "{{year}}. godina",
+      "description": "Unos koeficijenta odbitka L(H) i metodologije izračuna tijekom godine (Dodatak 5).",
+      "save": "Spremi",
+      "saving": "Spremanje...",
+      "method_label": "Metodologija izračuna tijekom godine",
+      "cumulative_method": "9. b) Kumulativna metoda (Iz kumulativnih prihoda između razdoblja)",
+      "previous_year_method": "9. a) Konačni koeficijent iz prethodne godine (Usklađeno na kraju godine u 12. mj.)",
+      "cumulative_desc": "Pretporez se ponovno izračunava u svakom poreznom razdoblju iz kumulativnih prihoda od početka godine.",
+      "previous_year_desc": "Tijekom godine računa se s prošlogodišnjim konačnim koeficijentom, a usklađuje se u zadnjoj prijavi godine iz konačnih prihoda.",
+      "ratio_label": "Konačni koeficijent odbitka L(H) iz prethodne godine",
+      "ratio_desc": "Apsolutni broj između 0.00 i 1.00 (npr. 0.84 = 84% odbitka). Zaokruženo naviše sukladno Zakonu o PDV-u.",
+      "rounding_rule_label": "Pravilo zaokruživanja (Dodatak 5 Zakona o PDV-u):",
+      "rounding_rule_text": "Izračunati koeficijent odbitka mora se zaokružiti na 2 decimale, uvijek naviše. Modulator Worker i kalkulator PDV-a automatski primjenjuju ovo zakonsko pravilo.",
+      "toast_success_title": "Postavke spremljene",
+      "toast_success_desc": "Parametri pro-rata PDV-a uspješno su ažurirani.",
+      "toast_error_title": "Pogreška pri spremanju"
+    },
+    "toasts": {
+      "pdf_started_title": "Ispis PDF-a pokrenut",
+      "pdf_started_desc": "Pregled za ispis prijave PDV-a je otvoren.",
+      "missing_tax_num_title": "Nedostaje OIB / porezni broj",
+      "missing_tax_num_desc": "Porezni broj tvrtke nedostaje u postavkama, molimo provjerite!",
+      "xml_downloaded_title": "Preuzet ÁNYK XML",
+      "xml_downloaded_desc": "{{formCode}} XML datoteka kompatibilna s ÁNYK sustavom je pripremljena i preuzeta."
     }
   },
   "annual_report": {
     "title": "Godišnji financijski izvještaj",
     "subtitle": "Čarobnjak za izradu godišnjeg izvještaja u 6 koraka",
+    "select_company": "Odaberite tvrtku",
+    "preview": "Pretpregled",
+    "preview_title": "Pretpregled izvještaja — {{year}}. poslovna godina",
+    "preview_error": "Pretpregled nije moguće generirati.",
+    "year_option": "{{year}}. godina",
+    "previous_years": "Prethodne godine:",
+    "loading": "Učitavanje izvještaja...",
+    "empty_title": "Još nema izvještaja za {{year}}. godinu",
+    "empty_desc": "Kliknite na gumb u nastavku za pokretanje čarobnjaka za novi izvještaj. Postupak vas vodi korak po korak.",
+    "start_report": "Pokreni izvještaj za {{year}}. godinu",
     "status": {
       "finalized": "Zaključano",
-      "draft": "Nacrt"
+      "draft": "Nacrt",
+      "finalized_short": "✓ zaključano",
+      "draft_short": "nacrt"
     },
-    "preview": "Pretpregled"
+    "navigation": {
+      "previous": "Prethodno",
+      "next": "Sljedeće",
+      "progress": "{{current}} / {{total}} koraka ({{percent}}% dovršeno)"
+    },
+    "steps": {
+      "step1": {
+        "title": "Osnovni podaci",
+        "description": "Podaci o tvrtki i zastupniku"
+      },
+      "step2": {
+        "title": "Uvoz podataka",
+        "description": "Bilanca i Račun dobiti i gubitka"
+      },
+      "step3": {
+        "title": "Validacija",
+        "description": "Provjera usklađenosti"
+      },
+      "step4": {
+        "title": "Bilješke uz izvještaj",
+        "description": "Tekstualne dopune"
+      },
+      "step5": {
+        "title": "Dobit i dividenda",
+        "description": "Raspodjela rezultata i odluka"
+      },
+      "step6": {
+        "title": "Izvoz",
+        "description": "PDF i zaključavanje"
+      }
+    },
+    "step1": {
+      "header": "1. Osnovni podaci",
+      "company_info_title": "PODACI O TVRTKI (IZ PROFILA TVRTKE)",
+      "company_name": "Naziv tvrtke",
+      "company_address": "Sjedište",
+      "tax_number": "OIB / Porezni broj",
+      "fiscal_year": "Poslovna godina",
+      "report_status": "Status izvještaja",
+      "representative_name": "Ime i prezime zastupnika *",
+      "representative_placeholder": "npr. Ivan Horvat",
+      "representative_role": "Funkcija",
+      "default_role": "direktor",
+      "report_date": "Datum izvještaja *",
+      "select_date": "Odaberite datum",
+      "accounting_method": "Računovodstvena metoda",
+      "default_method": "dvojno knjigovodstvo"
+    },
+    "step2": {
+      "header": "2. Uvoz Bilance i Računa dobiti i gubitka",
+      "description": "Sustav zamrzava završno stanje na dan 31. prosinca {{year}}.",
+      "frozen_title": "Podaci su zamrznuti",
+      "frozen_timestamp": "Vrijeme: {{time}}",
+      "frozen_bs_rows": "Stavke bilance: {{count}}",
+      "frozen_pnl_rows": "Stavke RDG: {{count}}",
+      "refreeze": "Ponovno zamrzni",
+      "summary_title": "Sažetak zamrznutih podataka",
+      "assets": "Aktiva",
+      "liabilities": "Pasiva",
+      "difference": "Razlika",
+      "net_income": "Neto dobit",
+      "freeze_button": "Zamrzni podatke (31.12.{{year}}.)"
+    },
+    "step3": {
+      "header": "3. Validacija — „Stražar\"",
+      "run_checks": "Pokreni provjere",
+      "recheck": "Ponovno provjeri",
+      "error_prefix": "Pogreška: {{message}}",
+      "freeze_required": "⚠️ Najprije zamrznite podatke u 2. koraku!",
+      "actions": {
+        "bs_mapping": "Mapiranja bilance",
+        "pnl_mapping": "Mapiranja računa dobiti i gubitka",
+        "step1": "Idi na 1. korak",
+        "step2": "Idi na 2. korak",
+        "step4": "Idi na 4. korak",
+        "step5": "Idi na 5. korak",
+        "view_bs": "Pregledaj bilancu",
+        "refreeze_data": "Ponovno zamrzni podatke"
+      }
+    }
+  },
+  "dialogs": {
+    "opening_wizard": {
+      "title": "Evidencija početnih stavki & Čarobnjak",
+      "badge": "ZOR 491",
+      "description": "Otvaranje poslovne godine i kontinuitet bilance nasuprot tehničkog konta 491. Početna bilanca",
+      "steps": {
+        "step1": "Osnovni podaci",
+        "step2": "Glavna knjiga & 491",
+        "step3": "Analitika",
+        "step4": "Usklađenje",
+        "step_n": "{{index}}. korak"
+      },
+      "step1": {
+        "methodology_title": "Metodologija otvaranja & Zakonski kontinuitet bilance",
+        "methodology_desc": "Otvaranje je prijenos zaključne bilance prethodne poslovne godine na prvi dan nove godine. Otvaranje imovine D Imovina – P 491, otvaranje obveza i kapitala D 491 – P Obveze/Kapital. Nakon otvaranja konto 491 mora imati saldo 0 EUR.",
+        "existing_warning_title": "Već postoji početna temeljnica za ovu poslovnu godinu ({{year}})",
+        "existing_warning_desc": "Za {{year}}. godinu već je evidentirana početna temeljnica br. {{docId}} (Datum knjiženja: {{date}}, Status: {{status}}).",
+        "rule_warning": "Prema pravilima kontinuiteta bilance, otvaranje godine u pravilu se provodi jednom godišnje. Ponovni unos može udvostručiti početna stanja nasuprot konta 491!",
+        "tax_year": "Porezna godina",
+        "business_year": "{{year}}. poslovna godina",
+        "opening_date": "Datum otvaranja (obvezno)",
+        "opening_date_placeholder": "Datum otvaranja",
+        "document_number": "Broj temeljnice",
+        "transition_type": "Vrsta prijelaza",
+        "transition_yearly": "Godišnji prijelaz (1. siječnja)",
+        "transition_interim": "Prijelaz tijekom godine (Prijelazno razdoblje)",
+        "source_doc": "Naziv izvornog dokumenta / Referenca",
+        "default_justification": "Na temelju zaključne bilance i početnog izvatka glavne knjige prethodne godine",
+        "next_gl": "Nastavi na Glavnu knjigu"
+      },
+      "step2": {
+        "csv_import": "CSV / JSON Uvoz",
+        "add_row": "Dodaj redak",
+        "total_debit": "Ukupno D:",
+        "total_credit": "Ukupno P:",
+        "imbalance_label": "Razlika konta 491 Početna bilanca:",
+        "table_headers": {
+          "gl_account": "Konto glavne knjige (1–4)",
+          "sign": "Oznaka",
+          "amount": "Početni iznos",
+          "comment": "Napomena"
+        },
+        "choose_account": "Odaberite konto bilance...",
+        "search_account_placeholder": "Pretraži broj konta ili naziv...",
+        "no_account_found": "Nema rezultata.",
+        "debit_label": "D (Imovina)",
+        "credit_label": "P (Izvori)",
+        "comment_placeholder": "Napomena...",
+        "delete_row_tooltip": "Obriši redak",
+        "validation_error": "Greška validacije: Početna temeljnica ne može se proknjižiti jer se Dugovna i Potražna strana ne podudaraju (saldo tehničkog konta 491 razlikuje se od nule).",
+        "next_subledger": "Nastavi na Analitiku"
+      },
+      "step3": {
+        "reconciliation_title": "Kontrola usklađenja: Analitika vs. Glavna knjiga",
+        "reconciliation_desc": "Prema računovodstvenim standardima pojedinačne početne stavke kupaca i dobavljača moraju u lipu odgovarati početnim stanjima konta 311 i 454.",
+        "customer_subledger": "Kupci (311) Analitika",
+        "supplier_subledger": "Dobavljači (454) Analitika",
+        "itemized_opening": "Pojedinačne početne stavke:",
+        "gl_opening_311": "Početno stanje konta 311:",
+        "gl_opening_454": "Početno stanje konta 454:",
+        "difference": "Razlika:",
+        "post_opening_action": "Knjiženje početne temeljnice"
+      },
+      "step4": {
+        "success_title": "Početna temeljnica je uspješno proknjižena!",
+        "success_desc": "Razredi konta 1–4 uspješno su otvoreni nasuprot tehničkog konta 491.",
+        "reconciliations_title": "Pokretanje usklađenja nakon otvaranja",
+        "reconciliations_item1": "Prijenos 419 Neto dobiti na konto 413. Zadržana dobit",
+        "reconciliations_item2": "Prijeboj PDV konta (zatvaranje pretporeza i obveze za PDV)",
+        "generate_reconciliations": "Generiraj stavke usklađenja u Dnevnik",
+        "finish_action": "Dovrši / Završi"
+      },
+      "navigation": {
+        "back": "Natrag",
+        "close": "Zatvori"
+      },
+      "toasts": {
+        "success_title": "Uspješno otvaranje!",
+        "success_desc": "Početne stavke su uspješno proknjižene!",
+        "error_title": "Greška pri knjiženju",
+        "login_required": "Potrebna je prijava.",
+        "reconcile_success": "Stavke usklađenja su izvršene",
+        "reconcile_error": "Greška pri stavkama usklađenja"
+      }
+    },
+    "opening_csv_import": {
+      "title": "Skupni uvoz početnih podataka (CSV / JSON)",
+      "description": "Učitajte CSV ili JSON datoteku za brzi unos početnih stanja i analitike.",
+      "tabs": {
+        "gl": "Početna stanja glavne knjige",
+        "invoices": "Početni računi (Uskoro)"
+      },
+      "expected_columns": "Očekivani stupci:",
+      "expected_cols_list": "szamlaszam, irany (T/K), osszeg, megnevezes",
+      "sample_file": "Primjer datoteke",
+      "upload_drop_title": "Kliknite ovdje za odabir CSV ili JSON datoteke",
+      "upload_drop_subtitle": "Format: UTF-8 kodiran CSV ili JSON",
+      "items_read": "{{count}} učitanih stavki",
+      "apply_import": "Primijeni uvoz ({{count}})",
+      "cancel": "Odustani",
+      "errors": {
+        "json_array_required": "JSON datoteka mora sadržavati niz.",
+        "csv_header_required": "CSV datoteka mora sadržavati barem zaglavlje i jedan redak podataka.",
+        "file_read_error": "Došlo je do greške prilikom čitanja datoteke.",
+        "no_valid_data": "Nema valjanih podataka",
+        "no_rows_desc": "Datoteka ne sadrži obradive retke.",
+        "import_success": "Uspješan uvoz",
+        "import_success_desc": "Uspješno uvezeno {{count}} početnih stavki glavne knjige!"
+      }
+    },
+    "manual_journal": {
+      "title_edit": "Uređivanje temeljnice",
+      "title_new": "Evidencija nove temeljnice",
+      "journal": "Dnevnik knjiženja",
+      "choose_journal": "Odaberite dnevnik...",
+      "document_id": "Broj temeljnice",
+      "document_id_placeholder": "npr. VE-2026/001",
+      "partner": "Partner",
+      "choose_partner": "Odaberite partnera...",
+      "partner_search_placeholder": "Pretraži po nazivu ili OIB-u...",
+      "no_partner": "— Nema partnera —",
+      "no_match": "Nema rezultata.",
+      "posting_date": "Datum knjiženja",
+      "document_date": "Datum dokumenta",
+      "choose_date": "Odaberite datum",
+      "description": "Opis / Opis zaglavlja",
+      "description_placeholder": "npr. Obračun plaća kolovoz 2026.",
+      "justification": "Obrazloženje / Ispravak napomena",
+      "justification_placeholder": "npr. Razlog storna / Opis ispravka...",
+      "items_title": "Stavke temeljnice",
+      "add_row": "Novi redak",
+      "table_headers": {
+        "gl_account": "Konto glavne knjige",
+        "dc_type": "Vrsta (D/P)",
+        "amount": "Iznos",
+        "project": "Projekt",
+        "comment": "Opis stavke"
+      },
+      "choose_gl": "Odaberite konto...",
+      "parent_badge": "Sintetika",
+      "search_gl_placeholder": "Pretraživanje (npr. 111, materijal)...",
+      "debit_label": "D - Duguje",
+      "credit_label": "P - Potražuje",
+      "no_project": "Nema projekta",
+      "item_desc_placeholder": "Naziv stavke...",
+      "delete_row_tooltip": "Obriši redak ({{index}}. stavka)",
+      "total_debit": "Ukupno Duguje (D)",
+      "total_credit": "Ukupno Potražuje (P)",
+      "difference": "Razlika",
+      "imbalance_warning": "Temeljnica nije u ravnoteži (D ≠ P)!",
+      "cancel": "Odustani",
+      "save_draft": "Spremi nacrt",
+      "validation": {
+        "login_required": "Potrebna je prijava",
+        "already_posted_error": "Ova temeljnica je u međuvremenu proknjižena i više se ne može mijenjati!",
+        "save_success_edit": "Stavka je uspješno ažurirana",
+        "save_success_new": "Temeljnica je uspješno spremljena",
+        "save_error": "Greška pri spremanju",
+        "warning_title": "Upozorenje",
+        "min_two_rows_required": "Temeljnica mora sadržavati najmanje dva retka.",
+        "select_journal": "Odaberite dnevnik!",
+        "valid_posting_date": "Obvezan je valjani datum knjiženja (GGGG-MM-DD format)!",
+        "valid_document_date": "Obvezan je valjani datum dokumenta (GGGG-MM-DD format)!",
+        "doc_id_required": "Broj temeljnice je obvezan!",
+        "desc_required": "Opis je obvezan!",
+        "gl_account_required": "Za svaki redak potrebno je odabrati konto!",
+        "positive_amount_required": "Iznos mora biti pozitivan broj!"
+      }
+    },
+    "manual_journal_gl": {
+      "title": "Evidencija ručne temeljnice",
+      "description": "Ručno evidentirajte knjiženje izravno u strukturu glavne knjige.",
+      "date": "Datum",
+      "voucher_number": "Broj temeljnice",
+      "voucher_placeholder": "npr. V-2026-0001",
+      "debit_account": "Dugovni konto (Duguje)",
+      "credit_account": "Potražni konto (Potražuje)",
+      "search_debit": "Pretraži dugovni konto...",
+      "search_credit": "Pretraži potražni konto...",
+      "choose_account": "Odabir konta glavne knjige...",
+      "no_match": "Nema rezultata.",
+      "amount": "Iznos",
+      "currency": "Valuta",
+      "comment": "Napomena / Tekst",
+      "comment_placeholder": "Unesite razlog knjiženja...",
+      "cancel": "Odustani",
+      "book": "Knjiži",
+      "validation": {
+        "error_title": "Greška",
+        "fill_required": "Molimo ispunite sva obvezna polja!",
+        "accounts_cannot_match": "Dugovni i potražni konto ne mogu biti isti!",
+        "amount_positive": "Iznos mora biti veći od nule!",
+        "success_title": "Uspješno evidentirano",
+        "success_desc": "Temeljnica je uspješno evidentirana.",
+        "save_error": "Greška pri spremanju"
+      }
+    },
+    "audit_trail": {
+      "title": "Povijest izmjena (Revizijski trag)",
+      "no_logs": "Nema dostupnog revizijskog traga za ovu temeljnicu.",
+      "accountant": "Knjigovođa",
+      "system": "Sustav",
+      "event_created": "Temeljnica kreirana ({{status}})",
+      "event_deleted": "Temeljnica obrisana",
+      "event_updated": "Izmjena izvršena",
+      "close": "Zatvori",
+      "fields": {
+        "status": "Status",
+        "description": "Opis",
+        "posting_date": "Datum knjiženja",
+        "document_id": "Broj temeljnice"
+      },
+      "statuses": {
+        "GEPI_JAVASLAT": "Prijedlog sustava",
+        "KEZI_PISZKOZAT": "Nacrt",
+        "JOVAHAGYASRA_VAR": "Čeka odobrenje",
+        "KONYVELT": "Proknjiženo",
+        "SZTORNOZOTT": "Stornirano",
+        "ELVETVE": "Odbačeno"
+      }
+    },
+    "manage_presets": {
+      "title": "Upravljanje prilagođenim kontnim planovima",
+      "description": "Pregledajte, preimenujte ili izbrišite vlastite predloške kontnog plana.",
+      "empty": "Još niste učitali vlastiti kontni plan.",
+      "active_badge": "Aktivirano",
+      "rename_tooltip": "Preimenuj predložak: {{name}}",
+      "active_cannot_delete_tooltip": "Aktivni kontni plan se ne može obrisati. Prvo aktivirajte drugi predložak!",
+      "active_cannot_delete_aria": "Aktivni kontni plan se ne može obrisati: {{name}}",
+      "delete_tooltip": "Obriši predložak: {{name}}",
+      "close": "Zatvori",
+      "delete_dialog_title": "Brisanje predloška kontnog plana",
+      "delete_confirm_question": "Jeste li sigurni da želite obrisati predložak \"{{name}}\"?",
+      "delete_no_refs": "{{count}} konta ovog predloška bit će trajno obrisano. Na ovaj predložak trenutno nema računovodstvenih veza.",
+      "usage_in_use_warning": "Ovaj kontni plan se trenutno koristi:",
+      "usage_journal_lines": "{{count}} knjiženih stavki dnevnika",
+      "usage_transactions": "{{count}} bankovnih transakcija",
+      "usage_invoices": "{{count}} računa",
+      "usage_nav_invoices": "{{count}} poreznih računa",
+      "usage_fixed_assets": "{{count}} dugotrajne imovine",
+      "usage_annual_reports": "{{count}} godišnjih izvještaja",
+      "usage_accrual_entries": "{{count}} vremenskih razgraničenja",
+      "cannot_delete_no_target": "Brisanje nije moguće jer ne postoji drugi kontni plan na koji bi se stavke mogle preusmjeriti. Najprije stvorite ili aktivirajte drugi predložak!",
+      "remap_target_label": "Kamo preusmjeriti veze prije brisanja?",
+      "remap_target_placeholder": "Odaberite ciljni kontni plan...",
+      "remap_target_active": "(Aktivno)",
+      "remap_target_help": "Sustav automatski povezuje stavke s računima s istim brojem konta u odabranom predlošku.",
+      "cancel": "Odustani",
+      "deleting_progress": "Brisanje u tijeku...",
+      "remap_and_delete_action": "Preusmjeri i obriši",
+      "final_delete_action": "Trajno obriši",
+      "toasts": {
+        "remapped_success_title": "Predložak obrisan i stavke preusmjerene",
+        "remapped_success_desc": "Predložak \"{{name}}\" je obrisan. {{count}} veza uspješno je preusmjereno u novi kontni plan.",
+        "delete_success_title": "Predložak obrisan",
+        "delete_success_desc": "Predložak kontnog plana uspješno je uklonjen.",
+        "delete_error_title": "Greška pri brisanju",
+        "name_empty_error": "Naziv ne može biti prazan.",
+        "rename_success_title": "Uspješno preimenovano",
+        "rename_success_desc": "Naziv predloška je ažuriran.",
+        "rename_error_title": "Došlo je do greške",
+        "active_cannot_delete_title": "Aktivni predložak ne može se obrisati",
+        "active_cannot_delete_desc": "Ovaj kontni plan je trenutno aktivan. Najprije aktivirajte drugi predložak!",
+        "check_usage_error_title": "Greška pri provjeri",
+        "check_usage_error_desc": "Nije uspjela provjera upotrebe kontnog plana."
+      }
+    },
+    "upload_coa": {
+      "title": "Učitavanje novog kontnog plana",
+      "description": "Uvezite prilagođeni kontni plan iz CSV, Excel ili PDF datoteke. Redoslijed stupaca: Broj konta, Naziv, (Opis opcionalno).",
+      "preset_name": "Naziv predloška *",
+      "preset_name_placeholder": "npr. Prilagođeni kontni plan klijenta 2024",
+      "file_source": "Izvor datoteke *",
+      "drag_drop_text": "Kliknite ili povucite CSV/Excel/PDF datoteku ovdje",
+      "supported_formats": "Podržano: .csv, .xlsx, .xls, .pdf (maks. 10MB)",
+      "cancel": "Odustani",
+      "upload_save": "Učitaj i spremi",
+      "toasts": {
+        "success_title": "Uspješno učitavanje",
+        "success_desc": "Uspješno učitano {{count}} konta glavne knjige.",
+        "upload_error_title": "Greška pri učitavanju",
+        "pdf_error_title": "Greška pri obradi PDF-a",
+        "excel_error_title": "Greška pri obradi Excela",
+        "file_error_title": "Greška pri obradi datoteke",
+        "missing_name_title": "Nedostaje naziv",
+        "missing_name_desc": "Molimo unesite naziv predloška.",
+        "missing_file_title": "Nedostaje datoteka",
+        "missing_file_desc": "Molimo prenesite datoteku.",
+        "invalid_format_title": "Neispravan format",
+        "invalid_format_desc": "Molimo prenesite CSV, Excel (XLSX, XLS), PDF ili TXT datoteku.",
+        "empty_file": "Datoteka je prazna ili neispravnog formata.",
+        "no_valid_rows": "Nisu pronađene valjane stavke u datoteci. Provjerite zaglavlje/podatke!",
+        "save_gl_error": "Greška pri spremanju stavki glavne knjige."
+      }
+    },
+    "upload_audit_xml": {
+      "title": "Učitavanje revizijskog XML-a glavne knjige",
+      "description": "Učitajte revizijski XML za automatski unos knjiženja i kontnog plana.",
+      "drag_drop_xml": "Povucite XML datoteku ovdje",
+      "or_browse": "ili kliknite za odabir",
+      "only_xml_toast": "Možete učitati samo XML datoteke",
+      "preset_template": "Predložak kontnog plana",
+      "preset_original": "Izvorni predložak (iz XML-a)",
+      "preset_existing": "Upotrijebi postojeći predložak",
+      "preset_original_desc": "Kontni plan pronađen u XML datoteci automatski će se kreirati kao novi predložak.",
+      "select_preset_placeholder": "Odaberite predložak...",
+      "builtin_badge": "(Ugrađeno)",
+      "dry_run_label": "Dry run (Samo pretpregled)",
+      "dry_run_desc": "Provjerava format datoteke i čita brojače bez trajnog spremanja transakcija.",
+      "upload_success": "Učitavanje uspješno! Obrada se nastavlja u pozadini...",
+      "cancel": "Odustani",
+      "close": "Zatvori",
+      "new_upload": "Novo učitavanje",
+      "upload_action": "Uvezi",
+      "dry_run_action": "Pokreni provjeru",
+      "uploading_progress": "Učitavanje...",
+      "checking_progress": "Provjera...",
+      "preview_done_desc": "Analiza datoteke uspješno je završena. Provjerite podatke pretpregleda.",
+      "dry_run_success_title": "Uspješna provjera (Dry Run)",
+      "dry_run_success_desc": "Format datoteke je ispravan, podaci nisu uneseni.",
+      "period": "Razdoblje",
+      "source_program": "Izvorni program",
+      "unknown": "Nepoznato",
+      "accounts_count": "Brojevi konta",
+      "entries_count": "Stavke knjiženja",
+      "vouchers_count": "Dokumenti",
+      "partners_count": "Partneri",
+      "count_unit": "kom",
+      "upload_success_toast_title": "XML učitan!",
+      "upload_success_toast_desc": "Obrada je započela. Podaci glavne knjige uskoro će biti prikazani.",
+      "upload_error_toast_title": "Greška pri učitavanju",
+      "dry_run_error": "Došlo je do greške tijekom probnog pokretanja.",
+      "timeout_error": "Isteklo je vrijeme obrade pretpregleda.",
+      "dry_run_completed_toast_title": "Provjera završena!",
+      "dry_run_completed_toast_desc": "Analiza XML datoteke uspješno je dovršena.",
+      "status_check_error": "Nije uspjela provjera statusa.",
+      "unknown_error": "Nepoznata greška"
+    },
+    "audit_import_history": {
+      "title": "Povijest uvoza XML-a glavne knjige",
+      "description": "Uvezeni revizijski XML-ovi i status njihove obrade.",
+      "confirm_delete": "Jeste li sigurni da želite obrisati uvoz \"{{fileName}}\"?\nTo će obrisati i sva uvezena knjiženja.",
+      "status_completed": "Završeno",
+      "status_error": "Greška",
+      "status_processing": "Obrada...",
+      "status_pending": "Čeka",
+      "empty_title": "Još nema učitanog XML-a.",
+      "empty_desc": "Koristite gumb \"XML uvoz\" na stranici glavne knjige.",
+      "dry_run_badge": "Pretpregled (Dry Run)",
+      "entries_count": "{{count}} stavaka",
+      "delete_tooltip": "Obriši uvoz: {{fileName}}",
+      "toasts": {
+        "delete_error": "Greška pri brisanju",
+        "delete_success_title": "Uvoz obrisan",
+        "delete_success_desc": "{{fileName}} i sve povezane stavke su obrisane."
+      }
+    },
+    "pro_rata_modal": {
+      "title": "PDV Kalkulator & Simulator Proporcije (Zakon o PDV-u čl. 123)",
+      "description": "Zakonski izračun koeficijenta odbitka K(O) i iznosa odbitnog PDV-a na temelju Priloga 5.",
+      "taxable_revenue_label": "1. Oporezivi prihod (Neto {{currency}})",
+      "taxable_revenue_badge": "Brojnik i nazivnik",
+      "exempt_revenue_label": "2. Prihod oslobođen PDV-a (Neto {{currency}})",
+      "exempt_revenue_badge": "Samo nazivnik",
+      "subsidies_label": "3. Izravne subvencije (Neto {{currency}})",
+      "subsidies_badge": "Samo nazivnik (Smanjuje)",
+      "pro_rata_vat_label": "4. Pretporez za raspodjelu ({{currency}})",
+      "pro_rata_vat_badge": "Mješoviti računi",
+      "raw_ratio_label": "Izvorni koeficijent",
+      "raw_ratio_desc": "Točna razlomačka vrijednost",
+      "legal_ratio_label": "Zakonski koeficijent K(O)",
+      "legal_ratio_desc": "Zaokruženo naviše (Zakon o PDV-u)",
+      "deductible_vat_label": "Odbitni iznos PDV-a",
+      "non_deductible_vat_desc": "Neodbitni dio (Trošak): {{amount}}",
+      "formula_breakdown_title": "Rastav formule izračuna:",
+      "close_button": "Zatvori"
+    }
+  },
+  "journals": {
+    "breadcrumb": "Dnevnici knjiženja",
+    "title": "Dnevnici",
+    "description": "Upravljanje glavnim dnevnicima i stavkama knjiženja",
+    "period_closing": "Zaključak razdoblja",
+    "period_closing_tooltip_title": "Postavke zaključka razdoblja",
+    "period_closing_tooltip_desc": "Zaključavanje mjesečnih i kvartalnih razdoblja radi sprječavanja retroaktivnih knjiženja.",
+    "generate_drafts": "Generiraj prijedloge",
+    "new_manual_entry": "Novi temeljni nalog",
+    "worklist": "Radna lista",
+    "drafts_sub": "Nacrti i stavke koje čekaju obradu",
+    "pending_badge": "{{count}} stavaka čeka odobrenje",
+    "currency_label": "Valuta:",
+    "opening": {
+      "banner_title": "Početni dnevnik (NY) — Potrebno računovodstveno otvaranje",
+      "continuity_badge": "Kontinuitet bilance",
+      "banner_desc": "Još nema proknjiženih početnih stanja za ovu poslovnu godinu. Prema zakonu o računovodstvu i načelu kontinuiteta bilance, nova godina mora započeti s podacima odobrene zaključne bilance prethodne godine.",
+      "start_wizard": "Evidentiraj početni nalog (Čarobnjak)"
+    },
+    "filters": {
+      "search_placeholder": "Pretraži po broju dokumenta, partneru ili napomeni...",
+      "all": "Sve stavke",
+      "active": "Aktivne stavke",
+      "storno": "Stornirane / Poništene stavke"
+    },
+    "guidance_banner": {
+      "title": "Radna lista: Sustavom predložene stavke i pripremljeni nacrti",
+      "pending_badge": "{{count}} prijedloga koji čekaju odobrenje",
+      "description": "Sljedeće stavke su prijedlozi kontiranja automatski generirani iz računa i bankovnih transakcija ili ručno uneseni nacrti. Provjerite ih, a zatim ih proknjižite pojedinačno ili masovno.",
+      "select_all_proposals": "Označi sve prijedloge na ovoj stranici"
+    },
+    "table": {
+      "select_all_drafts_aria": "Označi sve nacrte na ovoj stranici",
+      "select_item_aria": "Označi stavku: {{id}}",
+      "col_date": "Datum",
+      "col_journal_num": "Broj dnevnika",
+      "col_doc_num": "Broj dokumenta",
+      "col_partner": "Partner / Napomena",
+      "col_description": "Opis transakcije",
+      "col_amount": "Iznos",
+      "col_type": "Tip",
+      "col_status": "Status",
+      "col_actions": "Radnje",
+      "empty_search_title": "Nema rezultata za kriterije pretrage",
+      "empty_view_title": "Nema stavaka knjiženja u ovom prikazu",
+      "empty_search_desc": "Pokušajte promijeniti pojam za pretraživanje ili odabrane filtere.",
+      "empty_view_desc": "Generirajte prijedloge klikom na gumb ili unesite novu ručnu stavku.",
+      "clear_search": "Očisti pretragu",
+      "daily_rate_tooltip_title": "Dnevni srednji tečaj HNB-a:",
+      "storno_badge": "STORNO",
+      "storno_original_ref": "izvorno",
+      "storno_stornoed_ref": "stornirano"
+    },
+    "status_labels": {
+      "GEPI_JAVASLAT": "Prijedlog sustava",
+      "KEZI_PISZKOZAT": "Nacrt",
+      "JOVAHAGYASRA_VAR": "Čeka odobrenje",
+      "KONYVELT": "Proknjiženo",
+      "SZTORNOZOTT": "Stornirano",
+      "ELVETVE": "Odbačeno"
+    },
+    "actions": {
+      "view_document": "Pregled izvornog dokumenta",
+      "edit_history": "Povijest izmjena (Audit Trail)",
+      "storno_cancel": "Poništavanje / storniranje dokumenta",
+      "storno_aria": "Storno",
+      "correct_closed": "Ispravak dokumenta (zaključano razdoblje)",
+      "correct_open": "Ispravak dokumenta / izravno ponovno otvaranje",
+      "correct_aria": "Ispravak",
+      "approve_and_post": "Odobri prijedlog i odmah proknjiži",
+      "post_entry": "Knjiženje",
+      "edit_entry": "Uredi nacrt",
+      "edit_entry_aria": "Uredi",
+      "delete_disabled_tooltip": "Numerirani dokumenti ne mogu se obrisati radi zaštite kontinuiteta numeriranja!",
+      "delete_draft": "Obriši nacrt"
+    },
+    "batch_bar": {
+      "selected_count": "stavaka označeno za masovne radnje",
+      "post_selected": "Knjiženje označenih",
+      "submit_for_approval": "Pošalji na odobrenje",
+      "reject_selected": "Odbaci označene",
+      "delete_selected": "Obriši označene",
+      "cancel": "Odustani"
+    },
+    "status": {
+      "kezi_piszkozat": "Ručni nacrt",
+      "jovahagyasra_var": "Čeka odobrenje",
+      "gepi_javaslat": "Strojni prijedlog",
+      "konyvelt": "Proknjiženo",
+      "lezart": "Zaključano",
+      "elvetve": "Odbačeno",
+      "stornozott": "Stornirano"
+    },
+    "sources": {
+      "bank": "Banka",
+      "szamla": "Račun",
+      "manualis": "Ručno",
+      "nyito": "Početno",
+      "zaro": "Zaključno",
+      "penztar": "Blagajna"
+    },
+    "source_labels": {
+      "AUTO_SZAMLA": "Račun",
+      "AUTO_BANK": "Banka",
+      "AUTO_RENDSZER": "Sustav",
+      "KEZI": "Ručno",
+      "AI_PAROSITAS": "AI Usklađivanje",
+      "KEZI_KONYVELES": "Ručno",
+      "BANKI_KIVONAT": "Bankovni izvod",
+      "SZAMLA_IMPORT": "Račun",
+      "XML_AUDIT": "XML Audit",
+      "KEZI_MODOSITAS": "Izmjena"
+    },
+    "bulk_delete": {
+      "title": "Brisanje označenih nacrta",
+      "description": "Nepovratna radnja. Odabrani prijedlozi bit će trajno obrisani iz sustava.",
+      "confirm_prefix": "Jeste li sigurni da želite obrisati označenih",
+      "confirm_suffix": "nacrta?",
+      "note": "Podaci zaglavlja i stavaka prijedloga i ručnih nacrta bit će obrisani. Službeno proknjižene stavke sustav štiti od brisanja.",
+      "cancel": "Odustani",
+      "deleting": "Brisanje u tijeku...",
+      "confirm_button": "Obriši ({{count}} kom)"
+    },
+    "single_delete": {
+      "title": "Brisanje nacrta",
+      "description": "Jeste li sigurni da želite obrisati ovaj nacrt?",
+      "cancel": "Odustani",
+      "deleting": "Brisanje...",
+      "confirm_button": "Obriši"
+    },
+    "storno_modal": {
+      "cancel_title": "Storniranje dokumenta",
+      "cancel_desc": "Molimo navedite razlog storniranja. Tijekom storniranja stvara se stavka sa suprotnim predznakom koja poništava izvornu stavku.",
+      "reason_required": "Obrazloženje",
+      "cancel_reason_placeholder": "Npr. Pogrešan iznos, krivi račun...",
+      "cancel_button": "Odustani",
+      "execute_storno": "Izvrši storniranje",
+      "correct_closed_title": "Ispravak dokumenta (Zaključano razdoblje)",
+      "correct_closed_desc": "Pogođeno razdoblje je zaključano: {{reason}}. Prema računovodstvenim pravilima, izravna izmjena u zaključanom razdoblju nije moguća; ispravak se vrši storno dokumentom sa suprotnim predznakom i novim ispravnim primjerkom.",
+      "correction_reason_label": "Razlog ispravka",
+      "correct_reason_placeholder": "Npr. Ispravak pogrešnog konta glavne knjige...",
+      "start_correction_storno": "Pokreni ispravak sa stornom",
+      "repair_open_title": "Ispravak proknjižene stavke",
+      "repair_open_desc": "Razdoblje je otvoreno (nije zaključano i PDV prijava nije finalizirana). Odaberite željeni način ispravka:",
+      "reason_optional": "Napomena / Obrazloženje (opcionalno)",
+      "repair_reason_placeholder": "Npr. Ispravak kontiranja...",
+      "direct_unpost_title": "Izravno ponovno otvaranje i ispravak",
+      "recommended_badge": "Preporučeno",
+      "direct_unpost_desc": "Stavka se ponovno otvara kao nacrt koji se može uređivati uz očuvanje izvornog broja dokumenta. Ne stvara se nepotreban storno dokument i odmah se otvara sučelje za uređivanje.",
+      "direct_unpost_button": "Ponovno otvori i uredi",
+      "accounting_storno_title": "Računovodstveni storno i novi dokument",
+      "accounting_storno_desc": "Kreira se poseban storno dokument sa suprotnim predznakom i stvara se novi nacrt za ispravak (u slučaju strogog revizijskog traga).",
+      "storno_and_copy_button": "Storno i ispravna kopija",
+      "reason_hint": "(Za storniranje je obvezno unijeti obrazloženje u gornje polje)"
+    }
   }
 }

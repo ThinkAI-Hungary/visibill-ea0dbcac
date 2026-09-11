@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Card,
   CardHeader,
@@ -59,6 +60,7 @@ interface VatCalculatorViewProps {
 }
 
 export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
+  const { t } = useTranslation(['accounting', 'common']);
   const [proRataCalculatorOpen, setProRataCalculatorOpen] = React.useState(false);
   const {
 
@@ -119,18 +121,18 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
 
   const DeltaBadge = ({ current, prev }: { current: number; prev: number }) => {
     if (!hasPrevData || prev === 0) return null;
-    const delta = current - prev;
-    const pct = Math.round((delta / Math.abs(prev)) * 100);
-    if (delta === 0) return null;
+    const diff = current - prev;
+    if (diff === 0) return null;
+    const pct = Math.round((diff / Math.abs(prev)) * 100);
+    const isIncrease = diff > 0;
     return (
       <span
         className={cn(
-          'text-[10px] ml-1.5 tabular-nums',
-          delta > 0 ? 'text-red-400' : 'text-emerald-500'
+          'text-[10px] font-normal font-mono px-1 py-0.2 rounded ml-1.5 inline-flex items-center',
+          isIncrease ? 'text-red-500 bg-red-500/10' : 'text-emerald-600 bg-emerald-500/10'
         )}
       >
-        {delta > 0 ? '↑' : '↓'}
-        {Math.abs(pct)}%
+        {isIncrease ? `+${pct}%` : `${pct}%`}
       </span>
     );
   };
@@ -159,7 +161,7 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
       {/* Status Bar */}
       {vatReturn && (
         <div className="flex items-center gap-3 bg-card px-4 py-2.5 rounded-xl border border-border shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
-          <span className="text-xs text-muted-foreground">Státusz:</span>
+          <span className="text-xs text-muted-foreground">{t('accounting:vat_return.status.label', 'Státusz:')}</span>
           <Badge
             className={cn('text-xs', {
               'bg-amber-500/10 text-amber-600 border-amber-500/20':
@@ -171,10 +173,10 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
             })}
           >
             {(vatReturn as any).status === 'draft'
-              ? 'Piszkozat'
+              ? t('accounting:vat_return.status.draft', 'Piszkozat')
               : (vatReturn as any).status === 'validated'
-              ? 'Ellenőrzött'
-              : 'Véglegesítve'}
+              ? t('accounting:vat_return.status.validated', 'Ellenőrzött')
+              : t('accounting:vat_return.status.finalized', 'Véglegesítve')}
           </Badge>
           <div className="ml-auto flex gap-2">
             <Button
@@ -184,7 +186,7 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
               className="gap-1.5"
             >
               <Calculator className="w-3.5 h-3.5" />
-              ÁFA Arányosítás
+              {t('accounting:vat_return.status.pro_rata_button', 'ÁFA Arányosítás')}
             </Button>
             {(vatReturn as any).status === 'draft' && (
               <Button
@@ -198,7 +200,7 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                 ) : (
                   <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
                 )}
-                Ellenőrzés kész
+                {t('accounting:vat_return.status.check_done', 'Ellenőrzés kész')}
               </Button>
             )}
             {(vatReturn as any).status === 'validated' && (
@@ -210,25 +212,26 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                     ) : (
                       <Shield className="w-3.5 h-3.5 mr-1.5" />
                     )}
-                    Véglegesítés
+                    {t('accounting:vat_return.status.finalize_button', 'Véglegesítés')}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Bevallás véglegesítése</AlertDialogTitle>
+                    <AlertDialogTitle>{t('accounting:vat_return.status.finalize_dialog_title', 'Bevallás véglegesítése')}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      A véglegesítés után a bevallás sorai nem módosíthatók. Visszanyitás csak a
-                      „Visszanyitás" gombbal lehetséges.
+                      {t('accounting:vat_return.status.finalize_dialog_desc', 'A véglegesítés után a bevallás sorai nem módosíthatók. Visszanyitás csak a „Visszanyitás" gombbal lehetséges.')}
                       <br />
                       <br />
-                      Biztosan véglegesíted a <strong>{year}/{String(month).padStart(2, '0')}</strong>{' '}
-                      időszak bevallását?
+                      {t('accounting:vat_return.status.finalize_dialog_confirm', {
+                        period: `${year}/${String(month).padStart(2, '0')}`,
+                        defaultValue: `Biztosan véglegesíted a ${year}/${String(month).padStart(2, '0')} időszak bevallását?`,
+                      })}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Mégse</AlertDialogCancel>
+                    <AlertDialogCancel>{t('accounting:vat_return.status.cancel', 'Mégse')}</AlertDialogCancel>
                     <AlertDialogAction onClick={() => finalizeReturn.mutate()}>
-                      Véglegesítés
+                      {t('accounting:vat_return.status.finalize_button', 'Véglegesítés')}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -244,7 +247,7 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                 {reopenReturn.isPending && (
                   <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
                 )}
-                Visszanyitás
+                {t('accounting:vat_return.status.reopen_button', 'Visszanyitás')}
               </Button>
             )}
           </div>
@@ -256,8 +259,7 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
         <div className="flex items-center gap-2.5 bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20 px-4 py-2.5 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           <span className="text-sm font-medium">
-            Ez a cég pénzforgalmi ÁFA elszámolást alkalmaz (Áfa tv. XIII/A. fejezet) — az ÁFA fizetési
-            kötelezettség és levonási jog csak a tényleges kifizetéskor keletkezik.
+            {t('accounting:vat_return.banners.cash_accounting', 'Ez a cég pénzforgalmi ÁFA elszámolást alkalmaz (Áfa tv. XIII/A. fejezet) — az ÁFA fizetési kötelezettség és levonási jog csak a tényleges kifizetéskor keletkezik.')}
           </span>
         </div>
       )}
@@ -267,8 +269,7 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
         <div className="flex items-center gap-2.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-4 py-2.5 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           <span className="text-sm font-medium">
-            Ez a cég alanyi adómentességet alkalmaz (Áfa tv. XIII. fejezet) — ÁFA felszámítási és
-            bevallási kötelezettség nem áll fenn.
+            {t('accounting:vat_return.banners.tax_exempt', 'Ez a cég alanyi adómentességet alkalmaz (Áfa tv. XIII. fejezet) — ÁFA felszámítási és bevallási kötelezettség nem áll fenn.')}
           </span>
         </div>
       )}
@@ -280,12 +281,13 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
             <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
             <div className="space-y-1 w-full">
               <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-400">
-                Fordított adózás (Reverse Charge) ellenőrzés ({reverseChargeSuspiciousInvoices.length})
+                {t('accounting:vat_return.banners.reverse_charge_title', {
+                  count: reverseChargeSuspiciousInvoices.length,
+                  defaultValue: `Fordított adózás (Reverse Charge) ellenőrzés (${reverseChargeSuspiciousInvoices.length})`,
+                })}
               </h4>
               <p className="text-xs text-muted-foreground leading-normal">
-                Az alábbi partnereknél felszámított ÁFA szerepel, de a cég/partner neve vagy tevékenysége
-                alapján építőipari/fémkereskedelmi tevékenység gyanúja merül fel. Ellenőrizd, hogy nem
-                fordított adózást (Áfa tv. 142. §) kellene-e alkalmazni:
+                {t('accounting:vat_return.banners.reverse_charge_desc', 'Az alábbi partnereknél felszámított ÁFA szerepel, de a cég/partner neve vagy tevékenysége alapján építőipari/fémkereskedelmi tevékenység gyanúja merül fel. Ellenőrizd, hogy nem fordított adózást (Áfa tv. 142. §) kellene-e alkalmazni:')}
               </p>
               <div className="pt-2 space-y-1.5 max-h-32 overflow-y-auto w-full">
                 {reverseChargeSuspiciousInvoices.map((inv, idx) => (
@@ -297,8 +299,11 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                       {inv.partnerName} ({inv.invoiceNumber})
                     </span>
                     <span className="text-muted-foreground font-mono">
-                      Nettó: {Math.round(inv.net / 1000).toLocaleString('hu-HU')} eFt — ÁFA:{' '}
-                      {Math.round(inv.vat / 1000).toLocaleString('hu-HU')} eFt
+                      {t('accounting:vat_return.banners.reverse_charge_net', {
+                        net: Math.round(inv.net / 1000).toLocaleString('hu-HU'),
+                        vat: Math.round(inv.vat / 1000).toLocaleString('hu-HU'),
+                        defaultValue: `Nettó: ${Math.round(inv.net / 1000).toLocaleString('hu-HU')} eFt — ÁFA: ${Math.round(inv.vat / 1000).toLocaleString('hu-HU')} eFt`,
+                      })}
                     </span>
                   </div>
                 ))}
@@ -319,17 +324,22 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
         >
           {[
             {
-              label: 'Fizetendő ÁFA (36.)',
+              label: t('accounting:vat_return.kpi.payable_tax', 'Fizetendő ÁFA (36.)'),
               value: getVal('36', 'tax'),
               prev: getPrevVal('36', 'tax'),
               color: 'text-red-500',
               bg: 'bg-red-500/10',
               borderColor: 'border-red-500/20',
               unpaidHint:
-                unpaidVatEft > 0 ? `ebből kintlévőség: ${fmtEft(unpaidVatEft)}` : null,
+                unpaidVatEft > 0
+                  ? t('accounting:vat_return.kpi.unpaid_hint', {
+                      amount: fmtEft(unpaidVatEft),
+                      defaultValue: `ebből kintlévőség: ${fmtEft(unpaidVatEft)}`,
+                    })
+                  : null,
             },
             {
-              label: 'Levonható ÁFA (76.)',
+              label: t('accounting:vat_return.kpi.deductible_tax', 'Levonható ÁFA (76.)'),
               value: getVal('76', 'tax'),
               prev: getPrevVal('76', 'tax'),
               color: 'text-emerald-600',
@@ -338,7 +348,7 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
               unpaidHint: null,
             },
             {
-              label: 'Egyenleg (83.)',
+              label: t('accounting:vat_return.kpi.balance', 'Egyenleg (83.)'),
               value: getVal('83', 'tax'),
               prev: getPrevVal('83', 'tax'),
               color: getVal('83', 'tax') > 0 ? 'text-red-500' : 'text-emerald-600',
@@ -346,11 +356,16 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
               borderColor: getVal('83', 'tax') > 0 ? 'border-red-500/20' : 'border-emerald-500/20',
               unpaidHint:
                 unpaidVatEft > 0
-                  ? `kintlévőség nélkül: ${fmtEft(getVal('83', 'tax') - unpaidVatEft)}`
+                  ? t('accounting:vat_return.kpi.balance_unpaid_hint', {
+                      amount: fmtEft(getVal('83', 'tax') - unpaidVatEft),
+                      defaultValue: `kintlévőség nélkül: ${fmtEft(getVal('83', 'tax') - unpaidVatEft)}`,
+                    })
                   : null,
             },
             {
-              label: getVal('84', 'tax') ? 'Befizetendő (84.)' : 'Visszaigénylés (85.)',
+              label: getVal('84', 'tax')
+                ? t('accounting:vat_return.kpi.payable_net', 'Befizetendő (84.)')
+                : t('accounting:vat_return.kpi.reclaimable_net', 'Visszaigénylés (85.)'),
               value: getVal('84', 'tax') || getVal('85', 'tax'),
               prev: getPrevVal('84', 'tax') || getPrevVal('85', 'tax'),
               color: getVal('84', 'tax') ? 'text-red-500' : 'text-emerald-600',
@@ -392,7 +407,7 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
           <div className="absolute inset-0 flex items-center justify-center bg-background/10 backdrop-blur-[1px] rounded-xl z-20">
             <div className="flex items-center gap-2 bg-card border px-4 py-2 rounded-lg shadow-md animate-in zoom-in-95 duration-150">
               <Loader2 className="w-4 h-4 animate-spin text-primary" />
-              <span className="text-xs font-semibold text-foreground/80">Kalkuláció mentése...</span>
+              <span className="text-xs font-semibold text-foreground/80">{t('accounting:vat_return.kpi.saving_calculation', 'Kalkuláció mentése...')}</span>
             </div>
           </div>
         )}
@@ -408,15 +423,18 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
           <Card className="border-border/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <div className="text-sm font-medium">Előző időszak áthozat (82. sor)</div>
+                <div className="text-sm font-medium">{t('accounting:vat_return.cards.carryforward.title', 'Előző időszak áthozat (82. sor)')}</div>
                 <Badge variant="outline" className="text-[10px]">
-                  manuálisan szerkeszthető
+                  {t('accounting:vat_return.cards.carryforward.badge', 'manuálisan szerkeszthető')}
                 </Badge>
               </div>
               <div className="flex items-center gap-3">
                 <div className="flex-1">
                   <div className="text-xs text-muted-foreground mb-1">
-                    Automatikus (előző hó 86. sor): {fmtEft(prevLineMap['86']?.tax_amount_rounded ?? 0)}
+                    {t('accounting:vat_return.cards.carryforward.auto_desc', {
+                      amount: fmtEft(prevLineMap['86']?.tax_amount_rounded ?? 0),
+                      defaultValue: `Automatikus (előző hó 86. sor): ${fmtEft(prevLineMap['86']?.tax_amount_rounded ?? 0)}`,
+                    })}
                     {prevLineMap['86']?.tax_amount_rounded != null &&
                       prevLineMap['86']?.tax_amount_rounded !== Number(carryforwardValue || 0) && (
                         <Button
@@ -428,7 +446,7 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                             setCarryforwardValue(String(prevVal));
                           }}
                         >
-                          ← Betöltés
+                          {t('accounting:vat_return.cards.carryforward.load_button', '← Betöltés')}
                         </Button>
                       )}
                   </div>
@@ -436,12 +454,12 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                     <Input
                       type="number"
                       className="w-40 h-8 text-sm tabular-nums"
-                      placeholder="eFt"
+                      placeholder={t('accounting:vat_return.cards.carryforward.unit', 'eFt')}
                       value={carryforwardValue}
                       onChange={(e) => setCarryforwardValue(e.target.value)}
                       disabled={isFinalized}
                     />
-                    <span className="text-xs text-muted-foreground">eFt</span>
+                    <span className="text-xs text-muted-foreground">{t('accounting:vat_return.cards.carryforward.unit', 'eFt')}</span>
                     <Button
                       variant="outline"
                       size="sm"
@@ -464,7 +482,7 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
           {/* Validation Warnings */}
           <Card className="border-border/60">
             <CardContent className="p-4">
-              <div className="text-sm font-medium mb-2">Ellenőrzési pontok</div>
+              <div className="text-sm font-medium mb-2">{t('accounting:vat_return.cards.audit_points.title', 'Ellenőrzési pontok')}</div>
               <div className="space-y-1.5">
                 {(() => {
                   const warnings: { msg: string; type: 'ok' | 'warn' | 'error' }[] = [];
@@ -473,12 +491,16 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
 
                   if (payTax === 0 && dedTax === 0) {
                     warnings.push({
-                      msg: 'Nincs fizetendő és levonható ÁFA az időszakban',
+                      msg: t('accounting:vat_return.cards.audit_points.no_tax', 'Nincs fizetendő és levonható ÁFA az időszakban'),
                       type: 'warn',
                     });
                   } else {
                     warnings.push({
-                      msg: `Fizetendő: ${fmtEft(payTax)}, Levonható: ${fmtEft(dedTax)}`,
+                      msg: t('accounting:vat_return.cards.audit_points.summary', {
+                        pay: fmtEft(payTax),
+                        ded: fmtEft(dedTax),
+                        defaultValue: `Fizetendő: ${fmtEft(payTax)}, Levonható: ${fmtEft(dedTax)}`,
+                      }),
                       type: 'ok',
                     });
                   }
@@ -486,19 +508,29 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                   const mTotal = getVal('105', 'tax');
                   if (dedTax > 0 && mTotal === 0) {
                     warnings.push({
-                      msg: 'M-lap üres, de van levonható ÁFA — ellenőrizd a partner adószámokat',
+                      msg: t('accounting:vat_return.cards.audit_points.m_sheet_empty_warning', 'M-lap üres, de van levonható ÁFA — ellenőrizd a partner adószámokat'),
                       type: 'warn',
                     });
                   } else if (mTotal > 0) {
                     warnings.push({
-                      msg: `M-lap összesítő: ${fmtEft(mTotal)} (${mLines.length} partner)`,
+                      msg: t('accounting:vat_return.cards.audit_points.m_sheet_summary', {
+                        total: fmtEft(mTotal),
+                        count: mLines.length,
+                        defaultValue: `M-lap összesítő: ${fmtEft(mTotal)} (${mLines.length} partner)`,
+                      }),
                       type: 'ok',
                     });
                   }
 
                   const carry = getVal('86', 'tax');
                   if (carry > 0) {
-                    warnings.push({ msg: `Következő hónapra átvihető: ${fmtEft(carry)}`, type: 'ok' });
+                    warnings.push({
+                      msg: t('accounting:vat_return.cards.audit_points.next_month_carryforward', {
+                        amount: fmtEft(carry),
+                        defaultValue: `Következő hónapra átvihető: ${fmtEft(carry)}`,
+                      }),
+                      type: 'ok',
+                    });
                   }
 
                   return warnings.map((w, i) => (

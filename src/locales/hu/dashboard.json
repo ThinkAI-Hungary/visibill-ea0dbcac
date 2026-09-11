@@ -4,9 +4,12 @@
     "income": "Összes bevétel",
     "expenses": "Összes kiadás",
     "profit": "Eredmény",
-    "unpaid_incoming": "Nyitott szállítói kötelezettség",
-    "unpaid_outgoing": "Nyitott vevői követelés",
-    "cash_balance": "Banki egyenleg"
+    "unpaid_incoming": "Kifizetetlen bejövő számlák",
+    "unpaid_outgoing": "Kifizetetlen kimenő számlák",
+    "cash_balance": "Pénztár egyenleg",
+    "vs_previous_month": "az előző hónaphoz képest",
+    "vat_diff_desc": "Összes - Levonható",
+    "unpaid_inbound_desc": "Kifizetetlen bejövő számlák"
   },
   "sections": {
     "cashflow": "Pénzforgalom (Cash-flow)",
@@ -24,6 +27,76 @@
     "net": "Nettó",
     "gross": "Bruttó",
     "activity_log": "Műveleti napló"
+  },
+  "profile_summary": {
+    "title": "Profil információk"
+  },
+  "quick_actions": {
+    "title": "Gyorsműveletek",
+    "review_invoices": {
+      "title": "Számlák áttekintése",
+      "desc": "Részletes számla lista szűrési lehetőségekkel",
+      "button": "Számlák megtekintése"
+    },
+    "upload_invoices": {
+      "title": "Számlák feltöltése",
+      "desc": "Új számlák kézi feltöltése",
+      "button": "Fájlok feltöltése"
+    },
+    "project_management": {
+      "title": "Projekt Kezelés",
+      "desc": "Projektek szerkesztése és rendszerezése",
+      "button": "Projektek kezelése"
+    }
+  },
+  "recent_invoices": {
+    "title": "Legutóbbi számlák",
+    "description": "Az utoljára feldolgozott számlák áttekintése",
+    "view_all": "Összes megtekintése",
+    "empty": "Még nincsenek feldolgozott számlák",
+    "project": "Projekt:",
+    "status": {
+      "processed": "Feldolgozva",
+      "processing": "Feldolgozás alatt",
+      "error": "Hiba"
+    }
+  },
+  "project_breakdown": {
+    "title": "Projekt összefoglaló",
+    "description": "Számlák megoszlása projektek szerint",
+    "empty": "Még nincsenek projekthez rendelt számlák",
+    "invoices_count": "{{count}} számla",
+    "total": "Összesen:",
+    "average": "Átlag: {{amount}} / számla",
+    "active_project": "Aktív projekt"
+  },
+  "revenue_expenses_chart": {
+    "title": "Kiadások és bevételek a {{year}}. időszakra",
+    "revenue_paid": "Bevétel (fizetett)",
+    "revenue_unpaid": "Kintlévőségek",
+    "expenses_paid": "Kiadás (fizetett)",
+    "expenses_unpaid": "Követelések",
+    "salaries": "Bérek",
+    "cash_flow": "Cash-flow",
+    "gross": "bruttó",
+    "net": "nettó",
+    "year_label": "{{year}}. év",
+    "result": "Eredmény",
+    "expense_suffix": " (kiadás)",
+    "months": {
+      "jan": "jan.",
+      "feb": "febr.",
+      "mar": "márc.",
+      "apr": "ápr.",
+      "may": "máj.",
+      "jun": "jún.",
+      "jul": "júl.",
+      "aug": "aug.",
+      "sep": "szept.",
+      "oct": "okt.",
+      "nov": "nov.",
+      "dec": "dec."
+    }
   },
   "vat": {
     "title": "ÁFA kimutatás",
@@ -49,12 +122,68 @@
     "payable": "Fizetendő",
     "missing": "Hiányzó",
     "payable_amount": "Fizetendő összeg:",
-    "missing_amount": "Hiányzó összeg:"
+    "missing_amount": "Hiányzó összeg:",
+    "empty": "Nincs megjeleníthető számla",
+    "invoice_number": "Bizonylatsorszám",
+    "issue_date": "Kibocsátás",
+    "supplier": "Szállító",
+    "gross": "Bruttó",
+    "more_invoices": "+ {{count}} további számla",
+    "missing_invoices_notice": "{{count}} számla vár beküldésre",
+    "submit": "Beküldés"
   },
   "unmatched_items": {
     "title": "Nem párosított tételek",
     "nav_invoices": "NAV számlák",
     "transactions": "Tranzakciók",
-    "unmatched_nav_desc": "{{count}} számla nincs tranzakcióhoz párosítva · Összesen:"
+    "all_nav_matched": "Minden NAV számla párosítva van!",
+    "all_tx_matched": "Minden tranzakció párosítva van!",
+    "direction": "Irány",
+    "inbound": "Be",
+    "outbound": "Ki",
+    "invoice_number": "Bizonylatsorszám",
+    "issue_date": "Kibocsátás",
+    "partner": "Partner",
+    "gross": "Bruttó",
+    "payment_method": "Fiz. mód",
+    "date": "Dátum",
+    "amount": "Összeg",
+    "description": "Leírás",
+    "type": "Típus",
+    "more_tx": "+ {{count}} további tranzakció",
+    "more_invoices": "+ {{count}} további számla",
+    "unmatched_nav_summary": "{{count}} számla nincs tranzakcióhoz párosítva · Összesen: {{total}}",
+    "unmatched_tx_summary": "{{count}} tranzakció nincs számlához párosítva · Összesen: {{total}}"
+  },
+  "fx_differences": {
+    "title": "Árfolyam-különbözetek",
+    "subtitle": "Devizás számlák teljesítés vs. befolyás közötti árfolyamváltozás",
+    "items_count": "{{count}} tétel",
+    "net_difference": "Nettó különbözet",
+    "total_gain": "Össz. nyereség",
+    "total_loss": "Össz. veszteség",
+    "tax_impact": "TAO hatás (9%)",
+    "informative": "Tájékoztató jellegű",
+    "gl_classification": "Főkönyvi besorolás",
+    "gain_gl_label": "Árfolyamnyereség GL szám",
+    "loss_gl_label": "Árfolyamveszteség GL szám",
+    "choose_gl": "Válassz GL számot...",
+    "gain": "Nyereség",
+    "loss": "Veszteség",
+    "net": "Nettó",
+    "default_badge": "(alap)",
+    "gl_info": "Az árfolyamkülönbözetek a főkönyvben ezen számlák alatt jelennek meg.",
+    "currency_breakdown": "Devizánkénti bontás",
+    "table": {
+      "month": "Hónap",
+      "gain": "Nyereség",
+      "loss": "Veszteség",
+      "net": "Nettó",
+      "gl_number": "FK szám",
+      "items": "Tételek",
+      "total": "Összesen",
+      "edit_gl_tooltip": "Főkönyvi szám szerkesztése ({{glNum}})"
+    }
   }
 }
+

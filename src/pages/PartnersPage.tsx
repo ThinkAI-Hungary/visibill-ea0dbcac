@@ -48,7 +48,7 @@ import { Search, Plus, Pencil, Trash2, Info, RotateCcw, ChevronDown, BarChart3, 
 import { format } from "date-fns";
 import { hu } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
-import { getDateFnsLocale } from "@/lib/locale/formatters";
+import { getDateFnsLocale, formatDateLocale, getActiveLocale } from "@/lib/locale/formatters";
 import { useDateRange } from "@/contexts/DateRangeContext";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { PartnerRankingCard, type RankedPartner } from "@/components/partners/PartnerRankingCard";
@@ -505,22 +505,22 @@ export default function PartnersPage() {
         invalidatePartnerQueries(queryClient, selectedCompany.id);
       }
       toast({
-        title: editingPartner ? "Partner frissítve" : "Partner létrehozva",
-        description: "A partner sikeresen mentve.",
+        title: editingPartner ? t('partners:toasts.partner_updated', "Partner frissítve") : t('partners:toasts.partner_created', "Partner létrehozva"),
+        description: t('partners:toasts.partner_saved_desc', "A partner sikeresen mentve."),
       });
       handleCloseDialog();
     },
     onError: (error: any) => {
-      let description = error?.message || "Nem sikerült menteni a partnert.";
+      let description = error?.message || t('partners:toasts.save_error', "Nem sikerült menteni a partnert.");
       if (
         error?.code === "23505" ||
         error?.message?.includes("partners_company_id_tax_number_key") ||
         error?.message?.includes("duplicate key")
       ) {
-        description = "Ez az adószám már létezik a cég partnertörzsében.";
+        description = t('partners:toasts.tax_exists_error', "Ez az adószám már létezik a cég partnertörzsében.");
       }
       toast({
-        title: "Hiba",
+        title: t('common:status.error', "Hiba"),
         description,
         variant: "destructive",
       });
@@ -541,8 +541,8 @@ export default function PartnersPage() {
         invalidatePartnerQueries(queryClient, selectedCompany.id);
       }
       toast({
-        title: "Partner törölve",
-        description: "A partner sikeresen törölve.",
+        title: t('partners:toasts.partner_deleted', "Partner törölve"),
+        description: t('partners:toasts.partner_deleted_desc', "A partner sikeresen törölve."),
         duration: 3000,
       });
       if (selectedPartnerId === editingPartner?.id || selectedPartnerId === deleteMutation.variables) {
@@ -552,8 +552,8 @@ export default function PartnersPage() {
     },
     onError: (error: any) => {
       toast({
-        title: "Hiba",
-        description: error.message || "Nem sikerült törölni a partnert.",
+        title: t('common:status.error', "Hiba"),
+        description: error.message || t('partners:toasts.delete_error', "Nem sikerült törölni a partnert."),
         variant: "destructive",
       });
     },
@@ -684,14 +684,14 @@ export default function PartnersPage() {
     const isEditingForeign = editingPartner && isForeignPartner(editingPartner.tax_number);
     if (!formData.name.trim() || (!isEditingForeign && !formData.tax_number.trim())) {
       toast({
-        title: "Hiányzó adatok",
-        description: isEditingForeign ? "A név megadása kötelező." : "A név és adószám megadása kötelező.",
+        title: t('partners:toasts.missing_data', "Hiányzó adatok"),
+        description: isEditingForeign ? t('partners:toasts.name_required', "A név megadása kötelező.") : t('partners:toasts.name_and_tax_required', "A név és adószám megadása kötelező."),
         variant: "destructive",
       });
       return;
     }
     if (formData.email && !validateEmail(formData.email)) {
-      setEmailError("Érvénytelen email-cím formátum");
+      setEmailError(t('partners:toasts.invalid_email', "Érvénytelen email-cím formátum"));
       return;
     }
     setEmailError("");
@@ -715,8 +715,11 @@ export default function PartnersPage() {
       });
       if (existing) {
         toast({
-          title: "Már létező partner",
-          description: `Ezzel az adószámmal már létezik partner (${decodeHtmlEntities(existing.name)}) a partnertörzsben.`,
+          title: t('partners:toasts.partner_exists', "Már létező partner"),
+          description: t('partners:toasts.partner_exists_desc', {
+            defaultValue: `Ezzel az adószámmal már létezik partner (${decodeHtmlEntities(existing.name)}) a partnertörzsben.`,
+            name: decodeHtmlEntities(existing.name),
+          }),
           variant: "destructive",
         });
         return;
@@ -731,7 +734,10 @@ export default function PartnersPage() {
   };
 
   const handleDelete = (partner: Partner) => {
-    if (confirm(`Biztosan törölni szeretnéd a "${decodeHtmlEntities(partner.name)}" partnert?`)) {
+    if (confirm(t('partners:toasts.delete_confirm', {
+      defaultValue: `Biztosan törölni szeretnéd a "${decodeHtmlEntities(partner.name)}" partnert?`,
+      name: decodeHtmlEntities(partner.name),
+    }))) {
       deleteMutation.mutate(partner.id);
     }
   };
@@ -745,7 +751,7 @@ export default function PartnersPage() {
       .update({ exclude_from_accounting: newValue })
       .eq('id', partner.id);
     if (error) {
-      toast({ title: 'Hiba', description: error.message, variant: 'destructive' });
+      toast({ title: t('common:status.error', 'Hiba'), description: error.message, variant: 'destructive' });
       return;
     }
     // 2. Batch-update all NAV invoices from this partner (by tax_number)
@@ -758,8 +764,10 @@ export default function PartnersPage() {
     }
     queryClient.invalidateQueries({ queryKey: queryKeys.partnersFull(selectedCompany?.id || '') });
     toast({
-      title: newValue ? 'Partner kizárva a könyvelésből' : 'Partner visszaállítva a könyvelésbe',
-      description: `${decodeHtmlEntities(partner.name)} összes számlája ${newValue ? 'nem kerül' : 'újra bekerül a'} könyvelésre.`,
+      title: newValue ? t('partners:toasts.partner_excluded_title', 'Partner kizárva a könyvelésből') : t('partners:toasts.partner_restored_title', 'Partner visszaállítva a könyvelésbe'),
+      description: newValue
+        ? t('partners:toasts.partner_excluded_desc', { defaultValue: `${decodeHtmlEntities(partner.name)} összes számlája nem kerül könyvelésre.`, name: decodeHtmlEntities(partner.name) })
+        : t('partners:toasts.partner_restored_desc', { defaultValue: `${decodeHtmlEntities(partner.name)} összes számlája újra bekerül a könyvelésre.`, name: decodeHtmlEntities(partner.name) }),
       className: newValue ? 'bg-amber-50 text-amber-900 border-amber-200' : 'bg-green-50 text-green-900 border-green-200',
     });
   };
@@ -899,8 +907,8 @@ export default function PartnersPage() {
                   ) : paginatedPartners.length === 0 ? (
                     <TableEmptyState
                       colSpan={4}
-                      title={searchQuery || typeFilter !== 'all' ? 'Nincs találat a szűrésre' : 'Még nincsenek partnerek'}
-                      description={searchQuery || typeFilter !== 'all' ? 'Próbáld módosítani a szűrőket.' : 'Küldj be egy számlát, hogy automatikusan megjelenjen a partner.'}
+                      title={searchQuery || typeFilter !== 'all' ? t('partners:empty.no_search_results', 'Nincs találat a szűrésre') : t('partners:empty.no_partners', 'Még nincsenek partnerek')}
+                      description={searchQuery || typeFilter !== 'all' ? t('partners:empty.adjust_filters', 'Próbáld módosítani a szűrőket.') : t('partners:empty.upload_invoice_hint', 'Küldj be egy számlát, hogy automatikusan megjelenjen a partner.')}
                       onClearFilters={searchQuery || typeFilter !== 'all' ? () => { setSearchQuery(''); setTypeFilter('all'); } : undefined}
                     />
                   ) : (
@@ -943,7 +951,7 @@ export default function PartnersPage() {
                                     </p>
                                     {partner.related_party && (
                                       <Badge variant="outline" className="text-[9px] h-4 px-1 gap-0.5 bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400 font-semibold shrink-0">
-                                        Kapcsolt
+                                        {t('partners:badges.related_party', 'Kapcsolt')}
                                       </Badge>
                                     )}
                                   </div>
@@ -958,7 +966,7 @@ export default function PartnersPage() {
                             <TableCell className="font-mono text-xs text-muted-foreground py-2">
                               {isForeignPartner(partner.tax_number) ? (
                                 <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 font-sans">
-                                  Külföldi
+                                  {t('partners:badges.foreign', 'Külföldi')}
                                 </span>
                               ) : (
                                 partner.tax_number
@@ -967,22 +975,22 @@ export default function PartnersPage() {
                             <TableCell className="py-2">
                               {partner.partner_type === 'customer' && (
                                 <span className="inline-flex items-center justify-center w-[65px] px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                                  Vevő
+                                  {t('partners:types.customer', 'Vevő')}
                                 </span>
                               )}
                               {partner.partner_type === 'supplier' && (
                                 <span className="inline-flex items-center justify-center w-[65px] px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-blue-500/10 text-blue-500 border border-blue-500/20">
-                                  Szállító
+                                  {t('partners:types.supplier', 'Szállító')}
                                 </span>
                               )}
                               {partner.partner_type === 'both' && (
                                 <span className="inline-flex items-center justify-center w-[65px] px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-muted text-muted-foreground border border-border/50">
-                                  Mindkettő
+                                  {t('partners:types.both', 'Mindkettő')}
                                 </span>
                               )}
                             </TableCell>
                             <TableCell className="text-right font-mono text-xs py-2 pr-4 text-muted-foreground font-semibold">
-                              {(partner as any).invoice_count || 0} db
+                              {(partner as any).invoice_count || 0} {t('partners:units.pcs', 'db')}
                             </TableCell>
                           </TableRow>
                         );
@@ -1041,23 +1049,23 @@ export default function PartnersPage() {
                     <div className="mt-1 flex items-center gap-2">
                       {selectedPartner.partner_type === 'customer' && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                          Vevő
+                          {t('partners:types.customer', 'Vevő')}
                         </span>
                       )}
                       {selectedPartner.partner_type === 'supplier' && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-blue-500/10 text-blue-500 border border-blue-500/20">
-                          Szállító
+                          {t('partners:types.supplier', 'Szállító')}
                         </span>
                       )}
                       {selectedPartner.partner_type === 'both' && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-muted text-muted-foreground border border-border/50">
-                          Mindkettő
+                          {t('partners:types.both', 'Mindkettő')}
                         </span>
                       )}
                       
                       {partnerInvoices && partnerInvoices.some(inv => inv.source === 'nav') && (
                         <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-500 bg-emerald-500/5 px-2 py-0.5 rounded-md border border-emerald-500/10">
-                          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> NAV szinkronizált
+                          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> {t('partners:details.nav_synced', 'NAV szinkronizált')}
                         </span>
                       )}
                     </div>
@@ -1070,6 +1078,8 @@ export default function PartnersPage() {
                     onClick={() => handleOpenDialog(selectedPartner)}
                     className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
                     disabled={!writable}
+                    title={t('partners:actions.edit_partner', 'Partner szerkesztése')}
+                    aria-label={t('partners:actions.edit_partner', 'Partner szerkesztése')}
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -1079,6 +1089,8 @@ export default function PartnersPage() {
                     onClick={() => handleDelete(selectedPartner)}
                     className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
                     disabled={!writable}
+                    title={t('common:actions.delete', 'Törlés')}
+                    aria-label={t('common:actions.delete', 'Törlés')}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -1087,27 +1099,27 @@ export default function PartnersPage() {
 
               {/* General details */}
               <div className="space-y-3">
-                <h4 className="font-bold text-xs text-muted-foreground uppercase tracking-wider">Cégadatok</h4>
+                <h4 className="font-bold text-xs text-muted-foreground uppercase tracking-wider">{t('partners:details.company_details', 'Cégadatok')}</h4>
                 <div className="grid grid-cols-2 gap-y-3 border border-border/30 rounded-xl p-4 bg-muted/10">
                   <div>
-                    <p className="text-[10px] text-muted-foreground font-semibold">Adószám</p>
+                    <p className="text-[10px] text-muted-foreground font-semibold">{t('partners:fields.tax_number', 'Adószám')}</p>
                     {selectedPartner.tax_number && !isForeignPartner(selectedPartner.tax_number) ? (
                       <CopyableCell
                         value={selectedPartner.tax_number}
                         className="font-mono text-xs font-semibold mt-0.5"
-                        ariaLabel="Adószám másolása"
+                        ariaLabel={t('partners:details.copy_tax_number', 'Adószám másolása')}
                       />
                     ) : (
-                      <span className="text-xs text-muted-foreground/50">{isForeignPartner(selectedPartner.tax_number) ? 'Külföldi partner' : '—'}</span>
+                      <span className="text-xs text-muted-foreground/50">{isForeignPartner(selectedPartner.tax_number) ? t('partners:details.foreign_partner', 'Külföldi partner') : '—'}</span>
                     )}
                   </div>
                   <div className="col-span-2">
-                    <p className="text-[10px] text-muted-foreground font-semibold">Székhely</p>
+                    <p className="text-[10px] text-muted-foreground font-semibold">{t('partners:details.registered_office', 'Székhely')}</p>
                     {selectedPartner.address ? (
                       <CopyableCell
                         value={decodeHtmlEntities(selectedPartner.address)}
                         className="text-xs mt-0.5"
-                        ariaLabel="Székhely másolása"
+                        ariaLabel={t('partners:details.copy_address', 'Székhely másolása')}
                       />
                     ) : (
                       <span className="text-xs text-muted-foreground/50">—</span>
@@ -1115,11 +1127,11 @@ export default function PartnersPage() {
                   </div>
                   {selectedPartner.email && (
                     <div className="col-span-2">
-                      <p className="text-[10px] text-muted-foreground font-semibold">Email-cím</p>
+                      <p className="text-[10px] text-muted-foreground font-semibold">{t('partners:fields.email', 'Email-cím')}</p>
                       <CopyableCell
                         value={selectedPartner.email}
                         className="text-xs mt-0.5"
-                        ariaLabel="Email másolása"
+                        ariaLabel={t('partners:details.copy_email', 'Email másolása')}
                       />
                     </div>
                   )}
@@ -1128,16 +1140,16 @@ export default function PartnersPage() {
 
               {/* Accounting exclusions */}
               <div className="space-y-3">
-                <h4 className="font-bold text-xs text-muted-foreground uppercase tracking-wider">Könyvelési beállítás</h4>
+                <h4 className="font-bold text-xs text-muted-foreground uppercase tracking-wider">{t('partners:details.accounting_setting', 'Könyvelési beállítás')}</h4>
                 <div className="flex items-center justify-between border border-border/30 rounded-xl p-4 bg-muted/10">
                   <div className="space-y-0.5">
-                    <p className="text-xs font-semibold">Bekerüljön a könyvelésbe?</p>
-                    <p className="text-[11px] text-muted-foreground">Kizárható a partner minden számlája a könyvelésből</p>
+                    <p className="text-xs font-semibold">{t('partners:details.include_in_accounting', 'Bekerüljön a könyvelésbe?')}</p>
+                    <p className="text-[11px] text-muted-foreground">{t('partners:details.exclude_hint', 'Kizárható a partner minden számlája a könyvelésből')}</p>
                   </div>
                   <Checkbox
                     checked={!selectedPartner.exclude_from_accounting}
                     onCheckedChange={() => handleTogglePartnerExclude(selectedPartner)}
-                    aria-label={selectedPartner.exclude_from_accounting ? 'Könyvelésbe visszaállítás' : 'Könyvelésből kizárás'}
+                    aria-label={selectedPartner.exclude_from_accounting ? t('partners:details.restore_to_accounting', 'Könyvelésbe visszaállítás') : t('partners:details.exclude_from_accounting', 'Könyvelésből kizárás')}
                     className="h-5 w-5"
                     disabled={!writable}
                   />
@@ -1151,7 +1163,7 @@ export default function PartnersPage() {
                   <div className="flex items-center gap-1 bg-muted/40 rounded-lg p-0.5">
                     {(['nav', 'uploaded'] as const).map((tab) => {
                       const count = partnerInvoices?.filter(inv => inv.source === tab).length ?? 0;
-                      const label = tab === 'nav' ? 'NAV' : 'Beküldött';
+                      const label = tab === 'nav' ? t('partners:details.tab_nav', 'NAV') : t('partners:details.tab_uploaded', 'Beküldött');
                       return (
                         <button
                           key={tab}
@@ -1185,7 +1197,7 @@ export default function PartnersPage() {
                 <div className="relative">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
-                    placeholder="Számlaszám keresése..."
+                    placeholder={t('partners:details.search_invoice_placeholder', 'Számlaszám keresése...')}
                     value={invoiceSearch}
                     onChange={(e) => { setInvoiceSearch(e.target.value); setInvoicePage(1); }}
                     className="pl-8 h-8 text-xs bg-background/50"
@@ -1207,7 +1219,7 @@ export default function PartnersPage() {
                       if (filtered.length === 0) {
                         return (
                           <div className="text-center py-10 text-xs text-muted-foreground">
-                            {invoiceTab === 'nav' ? 'Nincsenek NAV számlák' : 'Nincsenek beküldött számlák'}
+                            {invoiceTab === 'nav' ? t('partners:details.no_nav_invoices', 'Nincsenek NAV számlák') : t('partners:details.no_uploaded_invoices', 'Nincsenek beküldött számlák')}
                           </div>
                         );
                       }
@@ -1234,11 +1246,7 @@ export default function PartnersPage() {
                               </div>
                               {invoice.invoice_issue_date && (
                                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                                  {new Date(invoice.invoice_issue_date).toLocaleDateString('hu-HU', {
-                                    year: 'numeric',
-                                    month: '2-digit',
-                                    day: '2-digit'
-                                  })}
+                                  {formatDateLocale(invoice.invoice_issue_date, getActiveLocale() === 'hr' ? 'dd.MM.yyyy.' : 'yyyy. MM. dd.')}
                                 </p>
                               )}
                             </div>
@@ -1247,7 +1255,7 @@ export default function PartnersPage() {
                                 {formatCurrency(invoice.invoice_gross_amount || 0, cur)}
                               </p>
                               <span className="text-[9px] text-muted-foreground uppercase font-bold">
-                                {isOutbound ? 'Kimenő' : 'Bejövő'}
+                                {isOutbound ? t('partners:invoice_detail_dialog.direction_outbound', 'Kimenő') : t('partners:invoice_detail_dialog.direction_inbound', 'Bejövő')}
                               </span>
                             </div>
                           </button>
@@ -1286,7 +1294,7 @@ export default function PartnersPage() {
               <div className="flex gap-2.5 p-3 rounded-lg bg-blue-500/5 text-blue-600 border border-blue-500/10 text-xs mt-auto shrink-0">
                 <Info className="h-4 w-4 shrink-0" />
                 <p className="leading-normal">
-                  A partnerek és cégadatok szinkronizálása a NAV Online Számla rendszeréből automatikusan történik az adószám alapján.
+                  {t('partners:details.nav_sync_info', 'A partnerek és cégadatok szinkronizálása a NAV Online Számla rendszeréből automatikusan történik az adószám alapján.')}
                 </p>
               </div>
             </div>
@@ -1295,9 +1303,9 @@ export default function PartnersPage() {
               <Avatar className="h-16 w-16 bg-muted border border-border/50 flex items-center justify-center text-muted-foreground mb-4">
                 <Info className="h-6 w-6" />
               </Avatar>
-              <h3 className="font-bold text-sm text-foreground">Nincs kijelölt partner</h3>
+              <h3 className="font-bold text-sm text-foreground">{t('partners:details.no_partner_selected', 'Nincs kijelölt partner')}</h3>
               <p className="text-xs max-w-[240px] mt-1">
-                Kattints a bal oldali listában egy partnerre az adatok megtekintéséhez.
+                {t('partners:details.click_partner_hint', 'Kattints a bal oldali listában egy partnerre az adatok megtekintéséhez.')}
               </p>
             </div>
           )}
@@ -1329,7 +1337,7 @@ export default function PartnersPage() {
                 value={formData.tax_number}
                 onChange={(e) => setFormData({ ...formData, tax_number: e.target.value })}
                 placeholder={editingPartner && isForeignPartner(editingPartner.tax_number)
-                  ? 'Külföldi partner – írd be az adószámot ha ismert'
+                  ? t('partners:modal.foreign_tax_number_placeholder', 'Külföldi partner – írd be az adószámot ha ismert')
                   : '12345678-1-23'}
               />
             </div>
@@ -1339,11 +1347,11 @@ export default function PartnersPage() {
                 id="address"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                placeholder={t('partners:fields.address', 'Partner címe')}
+                placeholder={t('partners:modal.address_placeholder', 'Partner címe')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">{t('partners:fields.email', 'Email-cím')} <span className="text-muted-foreground text-xs">(felszólítólevélhez)</span></Label>
+              <Label htmlFor="email">{t('partners:fields.email', 'Email-cím')} <span className="text-muted-foreground text-xs">{t('partners:modal.reminder_email_note', '(felszólítólevélhez)')}</span></Label>
               <Input
                 id="email"
                 type="email"
@@ -1371,10 +1379,10 @@ export default function PartnersPage() {
                   htmlFor="related_party"
                   className="text-xs font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                 >
-                  Kapcsolt vállalkozás
+                  {t('partners:modal.related_party_label', 'Kapcsolt vállalkozás')}
                 </Label>
                 <p className="text-[10px] text-muted-foreground">
-                  A céggel kapcsolt vállalkozási viszonyban álló partner (limit ellenőrzéshez).
+                  {t('partners:modal.related_party_hint', 'A céggel kapcsolt vállalkozási viszonyban álló partner (limit ellenőrzéshez).')}
                 </p>
               </div>
             </div>
@@ -1382,7 +1390,7 @@ export default function PartnersPage() {
             {/* ── Avatar customization ── */}
             <div className="space-y-3 pt-2 border-t border-border/40">
               <div className="flex items-center justify-between">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Megjelenés testreszabása</Label>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('partners:modal.appearance_title', 'Megjelenés testreszabása')}</Label>
                 {(formData.custom_monogram || formData.custom_color || formData.custom_bg_color) && (
                   <button
                     type="button"
@@ -1390,7 +1398,7 @@ export default function PartnersPage() {
                     className="text-[10px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
                   >
                     <RotateCcw className="h-3 w-3" />
-                    Visszaállítás
+                    {t('partners:modal.reset_appearance', 'Visszaállítás')}
                   </button>
                 )}
               </div>
@@ -1416,7 +1424,7 @@ export default function PartnersPage() {
                 <div className="flex-1 space-y-2">
                   {/* Monogram input */}
                   <div className="space-y-1">
-                    <Label htmlFor="custom_monogram" className="text-xs">Monogram</Label>
+                    <Label htmlFor="custom_monogram" className="text-xs">{t('partners:modal.monogram', 'Monogram')}</Label>
                     <Input
                       id="custom_monogram"
                       value={formData.custom_monogram}
@@ -1430,7 +1438,7 @@ export default function PartnersPage() {
               </div>
               {/* Text color palette */}
               <div className="space-y-1.5">
-                <Label className="text-xs">Betűszín</Label>
+                <Label className="text-xs">{t('partners:modal.text_color', 'Betűszín')}</Label>
                 <div className="grid grid-cols-10 gap-1.5">
                   {COLOR_PALETTE.map((c) => (
                     <button
@@ -1454,7 +1462,7 @@ export default function PartnersPage() {
               </div>
               {/* Background color palette */}
               <div className="space-y-1.5">
-                <Label className="text-xs">Háttérszín</Label>
+                <Label className="text-xs">{t('partners:modal.bg_color', 'Háttérszín')}</Label>
                 <div className="grid grid-cols-10 gap-1.5">
                   {COLOR_PALETTE.map((c) => (
                     <button

@@ -49,6 +49,7 @@ import {
   Eye,
   Trash2,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const MAX_ATTACHMENTS = 5;
 
@@ -58,6 +59,7 @@ interface FeedbackDialogProps {
 }
 
 export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
+  const { t } = useTranslation(['common']);
   const { user } = useAuth();
   const { companies, selectedCompany } = useCompany();
   const { toast } = useToast();
@@ -113,16 +115,16 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
       if (!isAllowedTicketFile(file)) {
         toast({
           variant: "destructive",
-          title: "Nem támogatott fájltípus",
-          description: `${file.name}: Csak kép (JPEG, PNG, GIF, WebP), PDF, CSV, Excel és XML fájlok engedélyezettek.`,
+          title: t('feedback.toasts.unsupported_type_title'),
+          description: t('feedback.toasts.unsupported_type_desc', { name: file.name }),
         });
         continue;
       }
       if (file.size > MAX_FILE_SIZE) {
         toast({
           variant: "destructive",
-          title: "Túl nagy fájl",
-          description: `${file.name}: Maximum 10 MB engedélyezett.`,
+          title: t('feedback.toasts.file_too_large_title'),
+          description: t('feedback.toasts.file_too_large_desc', { name: file.name }),
         });
         continue;
       }
@@ -133,14 +135,14 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
       if (total.length > MAX_ATTACHMENTS) {
         toast({
           variant: "destructive",
-          title: "Túl sok csatolmány",
-          description: `Maximum ${MAX_ATTACHMENTS} kép csatolható.`,
+          title: t('feedback.toasts.too_many_attachments_title'),
+          description: t('feedback.toasts.too_many_attachments_desc', { max: MAX_ATTACHMENTS }),
         });
         return total.slice(0, MAX_ATTACHMENTS);
       }
       return total;
     });
-  }, [toast]);
+  }, [toast, t]);
 
   const removeAttachment = useCallback((index: number) => {
     setAttachments(prev => prev.filter((_, i) => i !== index));
@@ -213,16 +215,16 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
 
       setSubmitted(true);
       toast({
-        title: "Visszajelzés elküldve",
-        description: "Köszönjük a visszajelzést! Csapatunk hamarosan áttekinti.",
+        title: t('feedback.toasts.submit_success_title'),
+        description: t('feedback.toasts.submit_success_desc'),
       });
     } catch (err: any) {
       reportError({ type: 'db_query', component: 'FeedbackDialog', action: 'error', message: 'Feedback submit error:', error: err });
       const errorMsg = err?.message || err?.error_description || "Ismeretlen hiba";
       toast({
         variant: "destructive",
-        title: "Hiba történt",
-        description: `A visszajelzés küldése sikertelen: ${errorMsg}`,
+        title: t('feedback.toasts.error_title'),
+        description: t('feedback.toasts.submit_error_desc', { error: errorMsg }),
       });
     } finally {
       setSubmitting(false);
@@ -235,11 +237,10 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <MessageSquareText className="h-5 w-5 text-primary" />
-            Visszajelzés küldése
+            {t('feedback.dialog_title')}
           </DialogTitle>
           <DialogDescription>
-            Segítsen nekünk jobbá tenni a eaisybill-t! Jelezzen hibákat vagy ossza meg
-            véleményét.
+            {t('feedback.dialog_description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -250,18 +251,18 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
               <CheckCircle2 className="h-8 w-8 text-emerald-500" />
             </div>
             <div className="text-center space-y-1">
-              <p className="text-lg font-semibold">Köszönjük!</p>
+              <p className="text-lg font-semibold">{t('feedback.success_title')}</p>
               <p className="text-sm text-muted-foreground">
-                A visszajelzése sikeresen elküldve. Csapatunk hamarosan áttekinti.
+                {t('feedback.success_desc')}
               </p>
             </div>
             <div className="flex items-center gap-3 mt-2">
               <Button variant="outline" onClick={() => handleOpenChange(false)}>
-                Bezárás
+                {t('feedback.close')}
               </Button>
               <Button onClick={resetForm} className="gap-1.5">
                 <Plus className="h-4 w-4" />
-                Újabb visszajelzés
+                {t('feedback.new_feedback')}
               </Button>
             </div>
           </div>
@@ -273,11 +274,11 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
               {/* Company selector */}
               <div className="space-y-2">
                 <Label htmlFor="feedback-company" className="text-sm font-medium">
-                  Cég
+                  {t('feedback.company_label')}
                 </Label>
                 <Select value={companyId} onValueChange={setCompanyId}>
                   <SelectTrigger id="feedback-company">
-                    <SelectValue placeholder="Válasszon céget..." />
+                    <SelectValue placeholder={t('feedback.select_company')} />
                   </SelectTrigger>
                   <SelectContent>
                     {companies.map((c) => (
@@ -292,11 +293,11 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
               {/* Service selector */}
               <div className="space-y-2">
                 <Label htmlFor="feedback-service" className="text-sm font-medium">
-                  Szolgáltatás
+                  {t('feedback.service_label')}
                 </Label>
                 <Select value={service} onValueChange={setService}>
                   <SelectTrigger id="feedback-service">
-                    <SelectValue placeholder="Válasszon szolgáltatást..." />
+                    <SelectValue placeholder={t('feedback.select_service')} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="eaisybill">
@@ -326,29 +327,29 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
               {/* Type selector */}
               <div className="space-y-2">
                 <Label htmlFor="feedback-type" className="text-sm font-medium">
-                  Típus
+                  {t('feedback.type_label')}
                 </Label>
                 <Select value={type} onValueChange={setType}>
                   <SelectTrigger id="feedback-type">
-                    <SelectValue placeholder="Válasszon típust..." />
+                    <SelectValue placeholder={t('feedback.select_type')} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="bug">
                       <span className="flex items-center gap-2">
                         <Bug className="h-4 w-4 text-red-500" />
-                        Hibajelentés
+                        {t('feedback.type_bug')}
                       </span>
                     </SelectItem>
                     <SelectItem value="feedback">
                       <span className="flex items-center gap-2">
                         <Lightbulb className="h-4 w-4 text-amber-500" />
-                        Visszajelzés / Javaslat
+                        {t('feedback.type_feedback')}
                       </span>
                     </SelectItem>
                     <SelectItem value="question">
                       <span className="flex items-center gap-2">
                         <HelpCircle className="h-4 w-4 text-sky-500" />
-                        Kérdés
+                        {t('feedback.type_question')}
                       </span>
                     </SelectItem>
                   </SelectContent>
@@ -358,17 +359,17 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
               {/* Priority selector */}
               <div className="space-y-2">
                 <Label htmlFor="feedback-priority" className="text-sm font-medium">
-                  Prioritás
+                  {t('feedback.priority_label')}
                 </Label>
                 <Select value={priority} onValueChange={setPriority}>
                   <SelectTrigger id="feedback-priority">
-                    <SelectValue placeholder="Válasszon prioritást..." />
+                    <SelectValue placeholder={t('feedback.select_priority')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="low">Alacsony</SelectItem>
-                    <SelectItem value="medium">Közepes</SelectItem>
-                    <SelectItem value="high">Magas</SelectItem>
-                    <SelectItem value="critical">Kritikus</SelectItem>
+                    <SelectItem value="low">{t('feedback.priority_low')}</SelectItem>
+                    <SelectItem value="medium">{t('feedback.priority_medium')}</SelectItem>
+                    <SelectItem value="high">{t('feedback.priority_high')}</SelectItem>
+                    <SelectItem value="critical">{t('feedback.priority_critical')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -378,7 +379,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-medium">
-                  Üzenet / Részletes leírás
+                  {t('feedback.message_label')}
                 </Label>
               </div>
               <RichTextEditor
@@ -387,8 +388,8 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                 onChange={(html) => setMessage(html)}
                 placeholder={
                   type === "bug"
-                    ? "Írja le a hibát minél részletesebben (pl. hol tapasztalta, mi történt)..."
-                    : "Ossza meg véleményét vagy javaslatát..."
+                    ? t('feedback.placeholder_bug')
+                    : t('feedback.placeholder_feedback')
                 }
                 minHeight="120px"
                 toolbarVariant="ticket"
@@ -400,8 +401,8 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-medium flex items-center gap-1.5">
                   <Paperclip className="h-3.5 w-3.5" />
-                  Csatolmányok
-                  <span className="text-xs text-muted-foreground font-normal">(opcionális)</span>
+                  {t('feedback.attachments_label')}
+                  <span className="text-xs text-muted-foreground font-normal">{t('feedback.optional')}</span>
                 </Label>
                 {attachments.length > 0 && (
                   <span className="text-xs text-muted-foreground">
@@ -438,13 +439,13 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                   <ImagePlus className={`h-6 w-6 transition-colors ${isDragOver ? "text-primary" : "text-muted-foreground"}`} />
                   <div className="text-center">
                     <p className={`text-sm font-medium transition-colors ${isDragOver ? "text-primary" : "text-muted-foreground"}`}>
-                      {isDragOver ? "Engedd el a fájlokat" : "Húzz ide képeket vagy dokumentumokat"}
+                      {isDragOver ? t('feedback.drag_drop_active') : t('feedback.drag_drop_idle')}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      vagy <span className="text-primary underline underline-offset-2">kattints a tallózáshoz</span>
+                      {t('feedback.or_browse')} <span className="text-primary underline underline-offset-2">{t('feedback.browse_link')}</span>
                     </p>
                     <p className="text-[11px] text-muted-foreground/60 mt-1">
-                      Kép, PDF, CSV, Excel, XML • max. 10 MB/fájl
+                      {t('feedback.supported_formats')}
                     </p>
                   </div>
                 </div>
@@ -484,7 +485,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                                   </button>
                                 </TooltipTrigger>
                                 <TooltipContent side="top" className="text-xs">
-                                  Megtekintés új lapon
+                                  {t('feedback.view_new_tab')}
                                 </TooltipContent>
                               </Tooltip>
                               <Tooltip>
@@ -501,7 +502,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                                   </button>
                                 </TooltipTrigger>
                                 <TooltipContent side="top" className="text-xs">
-                                  Törlés
+                                  {t('feedback.delete_attachment')}
                                 </TooltipContent>
                               </Tooltip>
                             </div>
@@ -530,7 +531,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                                   </button>
                                 </TooltipTrigger>
                                 <TooltipContent side="top" className="text-xs">
-                                  Törlés
+                                  {t('feedback.delete_attachment')}
                                 </TooltipContent>
                               </Tooltip>
                             </div>
@@ -560,7 +561,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
             <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
               <div className="flex items-center gap-2 text-sm font-medium text-primary">
                 <Info className="h-4 w-4" />
-                Hogyan írjunk jó visszajelzést?
+                {t('feedback.guidelines_title')}
               </div>
               <div className="grid gap-2 text-xs text-muted-foreground">
                 {type === "bug" ? (
@@ -568,22 +569,19 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                     <div className="flex items-start gap-2">
                       <AlertTriangle className="h-3.5 w-3.5 mt-0.5 text-red-400 shrink-0" />
                       <span>
-                        <strong>Probléma leírása:</strong> Mi történt pontosan? Mi volt az
-                        elvárt viselkedés?
+                        <strong>{t('feedback.guidelines_bug_problem_title')}</strong> {t('feedback.guidelines_bug_problem_desc')}
                       </span>
                     </div>
                     <div className="flex items-start gap-2">
                       <AlertTriangle className="h-3.5 w-3.5 mt-0.5 text-red-400 shrink-0" />
                       <span>
-                        <strong>Lépések:</strong> Milyen lépések után jelentkezett a hiba?
-                        (pl. „Rákattintottam a Mentés gombra a számla szerkesztésnél")
+                        <strong>{t('feedback.guidelines_bug_steps_title')}</strong> {t('feedback.guidelines_bug_steps_desc')}
                       </span>
                     </div>
                     <div className="flex items-start gap-2">
                       <AlertTriangle className="h-3.5 w-3.5 mt-0.5 text-red-400 shrink-0" />
                       <span>
-                        <strong>Környezet:</strong> Melyik böngészőt használja? (Chrome,
-                        Firefox, Edge stb.)
+                        <strong>{t('feedback.guidelines_bug_env_title')}</strong> {t('feedback.guidelines_bug_env_desc')}
                       </span>
                     </div>
                   </>
@@ -592,22 +590,19 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                     <div className="flex items-start gap-2">
                       <Lightbulb className="h-3.5 w-3.5 mt-0.5 text-amber-400 shrink-0" />
                       <span>
-                        <strong>Funkció leírása:</strong> Milyen új funkciót szeretne? Hogyan
-                        segítené a munkáját?
+                        <strong>{t('feedback.guidelines_idea_feature_title')}</strong> {t('feedback.guidelines_idea_feature_desc')}
                       </span>
                     </div>
                     <div className="flex items-start gap-2">
                       <Lightbulb className="h-3.5 w-3.5 mt-0.5 text-amber-400 shrink-0" />
                       <span>
-                        <strong>Felhasználási eset:</strong> Milyen helyzetben használná a
-                        javasolt funkciót?
+                        <strong>{t('feedback.guidelines_idea_usecase_title')}</strong> {t('feedback.guidelines_idea_usecase_desc')}
                       </span>
                     </div>
                     <div className="flex items-start gap-2">
                       <Lightbulb className="h-3.5 w-3.5 mt-0.5 text-amber-400 shrink-0" />
                       <span>
-                        <strong>Prioritás:</strong> Mennyire fontos ez a fejlesztés az Ön
-                        számára?
+                        <strong>{t('feedback.guidelines_idea_priority_title')}</strong> {t('feedback.guidelines_idea_priority_desc')}
                       </span>
                     </div>
                   </>
@@ -622,7 +617,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                 onClick={() => handleOpenChange(false)}
                 disabled={submitting}
               >
-                Mégse
+                {t('feedback.cancel')}
               </Button>
               <Button
                 onClick={handleSubmit}
@@ -634,7 +629,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                 ) : (
                   <Send className="h-4 w-4" />
                 )}
-                Küldés
+                {t('feedback.send')}
               </Button>
             </DialogFooter>
           </div>

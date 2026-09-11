@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchAllGlAccountsByPreset } from '@/lib/glData';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -36,22 +37,23 @@ interface OpeningLineInput {
   description: string;
 }
 
-const WIZARD_STEPS = [
-  { id: 1 as const, title: 'Alapadatok' },
-  { id: 2 as const, title: 'Főkönyv & 491' },
-  { id: 3 as const, title: 'Analitika' },
-  { id: 4 as const, title: 'Rendező' },
-];
-
 export default function OpeningJournalWizardModal({
   open,
   onOpenChange,
   headerId
 }: OpeningJournalWizardModalProps) {
+  const { t } = useTranslation(['accounting', 'common']);
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { activePresetId } = useActivePreset(selectedCompany?.id);
+
+  const wizardSteps = [
+    { id: 1 as const, title: t('dialogs.opening_wizard.steps.step1', { defaultValue: 'Alapadatok' }) },
+    { id: 2 as const, title: t('dialogs.opening_wizard.steps.step2', { defaultValue: 'Főkönyv & 491' }) },
+    { id: 3 as const, title: t('dialogs.opening_wizard.steps.step3', { defaultValue: 'Analitika' }) },
+    { id: 4 as const, title: t('dialogs.opening_wizard.steps.step4', { defaultValue: 'Rendező' }) },
+  ];
 
   // Wizard Step (1: Params, 2: GL Opening + 491 Check, 3: Sub-ledger Match, 4: Reconcile)
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
@@ -61,7 +63,7 @@ export default function OpeningJournalWizardModal({
   const [accountingYear, setAccountingYear] = useState<number>(currentYear);
   const [postingDate, setPostingDate] = useState<string>(`${currentYear}-01-01`);
   const [documentId, setDocumentId] = useState<string>('NYITO-' + currentYear);
-  const [justification, setJustification] = useState<string>('Előző évi záró mérleg és nyitó főkönyvi kivonat alapján');
+  const [justification, setJustification] = useState<string>(t('dialogs.opening_wizard.step1.default_justification', { defaultValue: 'Előző évi záró mérleg és nyitó főkönyvi kivonat alapján' }));
   const [transitionType, setTransitionType] = useState<'EVFORDULOS' | 'EVKOZBENI'>('EVFORDULOS');
   
   const [lines, setLines] = useState<OpeningLineInput[]>([
@@ -80,7 +82,7 @@ export default function OpeningJournalWizardModal({
     setAccountingYear(currentYear);
     setPostingDate(`${currentYear}-01-01`);
     setDocumentId(`NYITO-${currentYear}`);
-    setJustification('Előző évi záró mérleg és nyitó főkönyvi kivonat alapján');
+    setJustification(t('dialogs.opening_wizard.step1.default_justification', { defaultValue: 'Előző évi záró mérleg és nyitó főkönyvi kivonat alapján' }));
     setTransitionType('EVFORDULOS');
     setLines([
       { gl_account_id: '', dc_type: 'T', amount: 0, description: 'Eszköz nyitó tétel' },
@@ -90,7 +92,7 @@ export default function OpeningJournalWizardModal({
     setSearchQuery('');
     setCsvImportOpen(false);
     setReconcileResult(null);
-  }, [currentYear]);
+  }, [currentYear, t]);
 
   // Handle modal closing with state reset
   const handleClose = useCallback(() => {
@@ -313,11 +315,18 @@ export default function OpeningJournalWizardModal({
       queryClient.invalidateQueries({ queryKey: ['glItems'] });
       queryClient.invalidateQueries({ queryKey: ['subledger-reconciliation'] });
       queryClient.invalidateQueries({ queryKey: ['existing-opening-entry'] });
-      toast({ title: 'Sikeres nyitás!', description: 'A Nyitó tételek lekönyvelése sikeresen megtörtént!' });
+      toast({ 
+        title: t('dialogs.opening_wizard.toasts.success_title', { defaultValue: 'Sikeres nyitás!' }), 
+        description: t('dialogs.opening_wizard.toasts.success_desc', { defaultValue: 'A Nyitó tételek lekönyvelése sikeresen megtörtént!' }) 
+      });
       setStep(4);
     },
     onError: (err: any) => {
-      toast({ title: 'Könyvelési hiba', description: err.message, variant: 'destructive' });
+      toast({ 
+        title: t('dialogs.opening_wizard.toasts.error_title', { defaultValue: 'Könyvelési hiba' }), 
+        description: err.message, 
+        variant: 'destructive' 
+      });
     }
   });
 
@@ -326,7 +335,7 @@ export default function OpeningJournalWizardModal({
     mutationFn: async () => {
       if (!selectedCompany?.id) return;
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Bejelentkezés szükséges.');
+      if (!user) throw new Error(t('dialogs.opening_wizard.toasts.login_required', { defaultValue: 'Bejelentkezés szükséges.' }));
 
       const { data, error } = await supabase.rpc('acc_generate_post_opening_reconciliations' as any, {
         p_company_id: selectedCompany.id,
@@ -340,10 +349,17 @@ export default function OpeningJournalWizardModal({
     onSuccess: (data: any) => {
       setReconcileResult(data);
       queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
-      toast({ title: 'Rendező tételek lefuttatva', description: data?.message });
+      toast({ 
+        title: t('dialogs.opening_wizard.toasts.reconcile_success', { defaultValue: 'Rendező tételek lefuttatva' }), 
+        description: data?.message 
+      });
     },
     onError: (err: any) => {
-      toast({ title: 'Hiba a rendező tételeknél', description: err.message, variant: 'destructive' });
+      toast({ 
+        title: t('dialogs.opening_wizard.toasts.reconcile_error', { defaultValue: 'Hiba a rendező tételeknél' }), 
+        description: err.message, 
+        variant: 'destructive' 
+      });
     }
   });
 
@@ -426,14 +442,14 @@ export default function OpeningJournalWizardModal({
                 <div>
                   <div className="flex items-center gap-2">
                     <DialogTitle className="text-lg font-bold tracking-tight text-foreground">
-                      Nyitó tételek rögzítése & Varázsló
+                      {t('dialogs.opening_wizard.title', { defaultValue: 'Nyitó tételek rögzítése & Varázsló' })}
                     </DialogTitle>
                     <Badge variant="outline" className="text-[10px] font-semibold bg-primary/10 text-primary border-primary/30 px-2 py-0.5 uppercase tracking-wide">
-                      Sztv. 491
+                      {t('dialogs.opening_wizard.badge', { defaultValue: 'Sztv. 491' })}
                     </Badge>
                   </div>
                   <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                    Évnyitás és mérlegfolytonosság felvezetése a 491. Nyitómérleg technikai számlával szemben
+                    {t('dialogs.opening_wizard.description', { defaultValue: 'Évnyitás és mérlegfolytonosság felvezetése a 491. Nyitómérleg technikai számlával szemben' })}
                   </DialogDescription>
                 </div>
               </div>
@@ -441,7 +457,7 @@ export default function OpeningJournalWizardModal({
 
             {/* Stepper Progress Navigation Cards */}
             <div className="grid grid-cols-4 gap-2.5">
-              {WIZARD_STEPS.map((s, idx) => {
+              {wizardSteps.map((s, idx) => {
                 const isCurrent = step === s.id;
                 const isPassed = step > s.id;
                 return (
@@ -472,7 +488,7 @@ export default function OpeningJournalWizardModal({
                         "text-[9px] uppercase tracking-wider font-semibold",
                         isCurrent ? "text-primary-foreground/80" : isPassed ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/80"
                       )}>
-                        {idx + 1}. lépés
+                        {t('dialogs.opening_wizard.steps.step_n', { index: idx + 1, defaultValue: `${idx + 1}. lépés` })}
                       </span>
                       <span className={cn(
                         "text-xs truncate mt-0.5",
@@ -495,10 +511,10 @@ export default function OpeningJournalWizardModal({
               <div className="space-y-5 max-w-xl mx-auto py-4">
                 <div className="bg-primary/5 border border-primary/20 p-4 rounded-xl space-y-2">
                   <h3 className="font-semibold text-sm flex items-center gap-2 text-primary">
-                    <ShieldCheck className="w-4 h-4" /> Nyitás metodikája & Sztv. mérlegfolytonosság
+                    <ShieldCheck className="w-4 h-4" /> {t('dialogs.opening_wizard.step1.methodology_title', { defaultValue: 'Nyitás metodikája & Sztv. mérlegfolytonosság' })}
                   </h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    A nyitás az előző üzleti év záró mérlegének felvezetése az új év 1. napjára. Az eszközök nyitása <span className="font-semibold text-foreground">T Eszköz – K 491</span>, a források nyitása <span className="font-semibold text-foreground">T 491 – K Forrás</span>. A nyitás után a 491-nek **0 Ft** egyenleggel kell rendelkeznie.
+                    {t('dialogs.opening_wizard.step1.methodology_desc', { defaultValue: 'A nyitás az előző üzleti év záró mérlegének felvezetése az új év 1. napjára. Az eszközök nyitása T Eszköz – K 491, a források nyitása T 491 – K Forrás. A nyitás után a 491-nek 0 Ft egyenleggel kell rendelkeznie.' })}
                   </p>
                 </div>
 
@@ -507,25 +523,26 @@ export default function OpeningJournalWizardModal({
                   <div className="bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 p-4 rounded-xl space-y-2">
                     <div className="flex items-center gap-2 font-semibold text-sm text-amber-700 dark:text-amber-400">
                       <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                      <span>Már létezik nyitó bizonylat erre az üzleti évre ({accountingYear})</span>
+                      <span>{t('dialogs.opening_wizard.step1.existing_warning_title', { year: accountingYear, defaultValue: `Már létezik nyitó bizonylat erre az üzleti évre (${accountingYear})` })}</span>
                     </div>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      A(z) <span className="font-semibold text-foreground">{accountingYear}</span>. évhez már rögzítésre került a(z){' '}
-                      <span className="font-mono font-semibold text-foreground bg-background/60 px-1.5 py-0.5 rounded border border-border/40">
-                        {existingOpeningEntry.document_id || 'NYITÓ'}
-                      </span>{' '}
-                      számú nyitó bizonylat (Könyvelési dátum: {existingOpeningEntry.posting_date}, Státusz:{' '}
-                      <span className="font-semibold text-foreground">{existingOpeningEntry.status}</span>).
+                      {t('dialogs.opening_wizard.step1.existing_warning_desc', {
+                        year: accountingYear,
+                        docId: existingOpeningEntry.document_id || 'NYITÓ',
+                        date: existingOpeningEntry.posting_date,
+                        status: existingOpeningEntry.status,
+                        defaultValue: `A(z) ${accountingYear}. évhez már rögzítésre került a(z) ${existingOpeningEntry.document_id || 'NYITÓ'} számú nyitó bizonylat (Könyvelési dátum: ${existingOpeningEntry.posting_date}, Státusz: ${existingOpeningEntry.status}).`
+                      })}
                     </p>
                     <p className="text-[11px] text-amber-700/90 dark:text-amber-400/90 leading-normal">
-                      Az Sztv. mérlegfolytonossági szabályai szerint az évnyitás normál esetben évente egyszer történik. Újabb nyitás rögzítése megduplázhatja a nyitó egyenlegeket a 491-es számlával szemben!
+                      {t('dialogs.opening_wizard.step1.rule_warning', { defaultValue: 'Az Sztv. mérlegfolytonossági szabályai szerint az évnyitás normál esetben évente egyszer történik. Újabb nyitás rögzítése megduplázhatja a nyitó egyenlegeket a 491-es számlával szemben!' })}
                     </p>
                   </div>
                 )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Könyvelési Adóév</Label>
+                    <Label className="text-xs font-semibold">{t('dialogs.opening_wizard.step1.tax_year', { defaultValue: 'Könyvelési Adóév' })}</Label>
                     <Select value={accountingYear.toString()} onValueChange={(v) => setAccountingYear(parseInt(v))}>
                       <SelectTrigger className="h-9 focus:border-primary focus-visible:border-primary">
                         <SelectValue />
@@ -533,26 +550,26 @@ export default function OpeningJournalWizardModal({
                       <SelectContent>
                         {Array.from({ length: 5 }).map((_, i) => {
                           const y = currentYear - 2 + i;
-                          return <SelectItem key={y} value={y.toString()}>{y}. üzleti év</SelectItem>;
+                          return <SelectItem key={y} value={y.toString()}>{t('dialogs.opening_wizard.step1.business_year', { year: y, defaultValue: `${y}. üzleti év` })}</SelectItem>;
                         })}
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Nyitás Dátuma (Sztv. kötelező)</Label>
+                    <Label className="text-xs font-semibold">{t('dialogs.opening_wizard.step1.opening_date', { defaultValue: 'Nyitás Dátuma (Sztv. kötelező)' })}</Label>
                     <DatePicker
                       value={postingDate}
                       onChange={(date) => date && setPostingDate(date)}
                       disabled={transitionType === 'EVFORDULOS'}
-                      placeholder="Nyitás dátuma"
+                      placeholder={t('dialogs.opening_wizard.step1.opening_date_placeholder', { defaultValue: 'Nyitás dátuma' })}
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Bizonylatszám</Label>
+                    <Label className="text-xs font-semibold">{t('dialogs.opening_wizard.step1.document_number', { defaultValue: 'Bizonylatszám' })}</Label>
                     <Input
                       value={documentId}
                       onChange={e => setDocumentId(e.target.value)}
@@ -561,21 +578,21 @@ export default function OpeningJournalWizardModal({
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Átállás típusa</Label>
+                    <Label className="text-xs font-semibold">{t('dialogs.opening_wizard.step1.transition_type', { defaultValue: 'Átállás típusa' })}</Label>
                     <Select value={transitionType} onValueChange={(v: any) => setTransitionType(v)}>
                       <SelectTrigger className="h-9 focus:border-primary focus-visible:border-primary">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="EVFORDULOS">Évfordulós átállás (Január 1.)</SelectItem>
-                        <SelectItem value="EVKOZBENI">Év közbeni átállás (Tört időszak)</SelectItem>
+                        <SelectItem value="EVFORDULOS">{t('dialogs.opening_wizard.step1.transition_yearly', { defaultValue: 'Évfordulós átállás (Január 1.)' })}</SelectItem>
+                        <SelectItem value="EVKOZBENI">{t('dialogs.opening_wizard.step1.transition_interim', { defaultValue: 'Év közbeni átállás (Tört időszak)' })}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Forrásdokumentum megnevezése / Hivatkozás</Label>
+                  <Label className="text-xs font-semibold">{t('dialogs.opening_wizard.step1.source_doc', { defaultValue: 'Forrásdokumentum megnevezése / Hivatkozás' })}</Label>
                   <Input
                     value={justification}
                     onChange={e => setJustification(e.target.value)}
@@ -592,17 +609,17 @@ export default function OpeningJournalWizardModal({
                 <div className="flex items-center justify-between bg-muted/40 p-3 rounded-xl border">
                   <div className="flex items-center gap-2">
                     <Button size="sm" variant="outline" onClick={() => setCsvImportOpen(true)} className="gap-1.5 h-8 text-xs">
-                      <UploadCloud className="w-4 h-4" /> CSV / JSON Import
+                      <UploadCloud className="w-4 h-4" /> {t('dialogs.opening_wizard.step2.csv_import', { defaultValue: 'CSV / JSON Import' })}
                     </Button>
                     <Button size="sm" variant="outline" onClick={handleAddLine} className="gap-1.5 h-8 text-xs">
-                      <Plus className="w-4 h-4" /> Sor hozzáadása
+                      <Plus className="w-4 h-4" /> {t('dialogs.opening_wizard.step2.add_row', { defaultValue: 'Sor hozzáadása' })}
                     </Button>
                   </div>
 
                   {/* Live 491 KPI indicator */}
                   <div className="flex items-center gap-4 text-xs font-medium">
-                    <div>Össz T: <span className="font-bold tabular-nums text-blue-600">{formatCurrency(totalDebit)}</span></div>
-                    <div>Össz K: <span className="font-bold tabular-nums text-emerald-600">{formatCurrency(totalCredit)}</span></div>
+                    <div>{t('dialogs.opening_wizard.step2.total_debit', { defaultValue: 'Össz T:' })} <span className="font-bold tabular-nums text-blue-600">{formatCurrency(totalDebit)}</span></div>
+                    <div>{t('dialogs.opening_wizard.step2.total_credit', { defaultValue: 'Össz K:' })} <span className="font-bold tabular-nums text-emerald-600">{formatCurrency(totalCredit)}</span></div>
                     <div className={cn(
                       "px-3 py-1 rounded-full font-bold border flex items-center gap-1.5 tabular-nums transition-colors",
                       is491Balanced 
@@ -610,7 +627,7 @@ export default function OpeningJournalWizardModal({
                         : "bg-rose-500/10 text-rose-600 border-rose-500/30"
                     )}>
                       {is491Balanced ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
-                      <span>491 Nyitómérleg Eltérés: {formatCurrency(totalImbalance)}</span>
+                      <span>{t('dialogs.opening_wizard.step2.imbalance_label', { defaultValue: '491 Nyitómérleg Eltérés:' })} {formatCurrency(totalImbalance)}</span>
                     </div>
                   </div>
                 </div>
@@ -622,10 +639,10 @@ export default function OpeningJournalWizardModal({
                       <thead className="sticky top-0 bg-muted/95 backdrop-blur-xs z-10 shadow-xs border-b border-border/60">
                         <tr className="text-muted-foreground font-semibold uppercase text-[10px] tracking-wider">
                           <th className="py-2.5 px-3 text-left w-10">#</th>
-                          <th className="py-2.5 px-3 text-left w-[320px]">Főkönyvi Számla (1–4)</th>
-                          <th className="py-2.5 px-3 text-center w-24">Jel</th>
-                          <th className="py-2.5 px-3 text-right w-40">Nyitó Összeg (Ft)</th>
-                          <th className="py-2.5 px-3 text-left">Megjegyzés</th>
+                          <th className="py-2.5 px-3 text-left w-[320px]">{t('dialogs.opening_wizard.step2.table_headers.gl_account', { defaultValue: 'Főkönyvi Számla (1–4)' })}</th>
+                          <th className="py-2.5 px-3 text-center w-24">{t('dialogs.opening_wizard.step2.table_headers.sign', { defaultValue: 'Jel' })}</th>
+                          <th className="py-2.5 px-3 text-right w-40">{t('dialogs.opening_wizard.step2.table_headers.amount', { defaultValue: 'Nyitó Összeg (Ft)' })}</th>
+                          <th className="py-2.5 px-3 text-left">{t('dialogs.opening_wizard.step2.table_headers.comment', { defaultValue: 'Megjegyzés' })}</th>
                           <th className="py-2.5 px-3 text-center w-12"></th>
                         </tr>
                       </thead>
@@ -665,20 +682,20 @@ export default function OpeningJournalWizardModal({
                                         <strong className="text-primary mr-1">{line.gl_number}</strong> {line.gl_name}
                                       </span>
                                     ) : (
-                                      <span className="text-muted-foreground">Válassz mérlegszámlát...</span>
+                                      <span className="text-muted-foreground">{t('dialogs.opening_wizard.step2.choose_account', { defaultValue: 'Válassz mérlegszámlát...' })}</span>
                                     )}
                                   </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-[360px] p-0" align="start">
                                   <Command shouldFilter={false}>
                                     <CommandInput
-                                      placeholder="Számlaszám v. név keresése..."
+                                      placeholder={t('dialogs.opening_wizard.step2.search_account_placeholder', { defaultValue: 'Számlaszám v. név keresése...' })}
                                       value={searchQuery}
                                       onValueChange={setSearchQuery}
                                       autoFocus
                                     />
                                     <CommandList className="max-h-60 overflow-y-auto">
-                                      <CommandEmpty>Nincs találat.</CommandEmpty>
+                                      <CommandEmpty>{t('dialogs.opening_wizard.step2.no_account_found', { defaultValue: 'Nincs találat.' })}</CommandEmpty>
                                       <CommandGroup>
                                         {glAccounts
                                           .filter(account => !searchQuery || `${account.gl_number} ${account.short_name}`.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -712,8 +729,8 @@ export default function OpeningJournalWizardModal({
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="T" className="text-blue-600 font-bold">T (Eszköz)</SelectItem>
-                                  <SelectItem value="K" className="text-emerald-600 font-bold">K (Forrás)</SelectItem>
+                                  <SelectItem value="T" className="text-blue-600 font-bold">{t('dialogs.opening_wizard.step2.debit_label', { defaultValue: 'T (Eszköz)' })}</SelectItem>
+                                  <SelectItem value="K" className="text-emerald-600 font-bold">{t('dialogs.opening_wizard.step2.credit_label', { defaultValue: 'K (Forrás)' })}</SelectItem>
                                 </SelectContent>
                               </Select>
                             </td>
@@ -755,11 +772,11 @@ export default function OpeningJournalWizardModal({
                                   }
                                 }}
                                 className="h-8 text-xs focus:border-primary focus-visible:border-primary"
-                                placeholder="Megjegyzés..."
+                                placeholder={t('dialogs.opening_wizard.step2.comment_placeholder', { defaultValue: 'Megjegyzés...' })}
                               />
                             </td>
                             <td className="py-2 px-3 text-center">
-                              <CustomTooltip content="Sor törlése">
+                              <CustomTooltip content={t('dialogs.opening_wizard.step2.delete_row_tooltip', { defaultValue: 'Sor törlése' })}>
                                 <Button
                                   type="button"
                                   size="icon"
@@ -767,7 +784,7 @@ export default function OpeningJournalWizardModal({
                                   tabIndex={-1}
                                   className="h-7 w-7 text-muted-foreground hover:text-rose-500"
                                   onClick={() => handleRemoveLine(idx)}
-                                  aria-label="Sor törlése"
+                                  aria-label={t('dialogs.opening_wizard.step2.delete_row_tooltip', { defaultValue: 'Sor törlése' })}
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </Button>
@@ -784,7 +801,7 @@ export default function OpeningJournalWizardModal({
                   <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-600 rounded-xl text-xs flex items-center gap-2">
                     <AlertCircle className="w-4 h-4 shrink-0" />
                     <span>
-                      <strong>Sztv. validációs hiba:</strong> A nyitó bizonylat nem könyvelhető le, mert a Tartozik és Követel oldal nem egyezik meg (491-es technikai számla egyenlege eltér a nullától).
+                      {t('dialogs.opening_wizard.step2.validation_error', { defaultValue: 'Sztv. validációs hiba: A nyitó bizonylat nem könyvelhető le, mert a Tartozik és Követel oldal nem egyezik meg (491-es technikai számla egyenlege eltér a nullától).' })}
                     </span>
                   </div>
                 )}
@@ -796,31 +813,31 @@ export default function OpeningJournalWizardModal({
               <div className="space-y-4 max-w-xl mx-auto py-2">
                 <div className="bg-muted/40 p-4 rounded-xl border space-y-3">
                   <h3 className="font-semibold text-sm flex items-center gap-2">
-                    <Scale className="w-4 h-4 text-primary" /> Analitika vs. Főkönyv egyeztetési kontroll
+                    <Scale className="w-4 h-4 text-primary" /> {t('dialogs.opening_wizard.step3.reconciliation_title', { defaultValue: 'Analitika vs. Főkönyv egyeztetési kontroll' })}
                   </h3>
                   <p className="text-xs text-muted-foreground">
-                    A szakmai specifikáció alapján a tételes vevő/szállító nyitó számláknak fillérre egyezniük kell a 311 és 454 főkönyvi nyitó egyenleggel.
+                    {t('dialogs.opening_wizard.step3.reconciliation_desc', { defaultValue: 'A szakmai specifikáció alapján a tételes vevő/szállító nyitó számláknak fillérre egyezniük kell a 311 és 454 főkönyvi nyitó egyenleggel.' })}
                   </p>
                 </div>
 
                 {subledgerData && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="p-4 border rounded-xl bg-card space-y-2">
-                      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Vevő (311) Folyószámla</div>
-                      <div className="flex justify-between text-xs"><span>Tételes Nyitó Számlák:</span> <span className="font-bold">{formatCurrency(subledgerData.open_ar_subledger)}</span></div>
-                      <div className="flex justify-between text-xs"><span>Főkönyvi 311 Nyitó:</span> <span className="font-bold">{formatCurrency(subledgerData.gl_311_opening)}</span></div>
+                      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('dialogs.opening_wizard.step3.customer_subledger', { defaultValue: 'Vevő (311) Folyószámla' })}</div>
+                      <div className="flex justify-between text-xs"><span>{t('dialogs.opening_wizard.step3.itemized_opening', { defaultValue: 'Tételes Nyitó Számlák:' })}</span> <span className="font-bold">{formatCurrency(subledgerData.open_ar_subledger)}</span></div>
+                      <div className="flex justify-between text-xs"><span>{t('dialogs.opening_wizard.step3.gl_opening_311', { defaultValue: 'Főkönyvi 311 Nyitó:' })}</span> <span className="font-bold">{formatCurrency(subledgerData.gl_311_opening)}</span></div>
                       <div className={cn("text-xs font-bold pt-2 border-t flex items-center justify-between", subledgerData.ar_diff === 0 ? "text-emerald-600" : "text-rose-500")}>
-                        <span>Eltérés:</span>
+                        <span>{t('dialogs.opening_wizard.step3.difference', { defaultValue: 'Eltérés:' })}</span>
                         <span>{formatCurrency(subledgerData.ar_diff)}</span>
                       </div>
                     </div>
 
                     <div className="p-4 border rounded-xl bg-card space-y-2">
-                      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Szállító (454) Folyószámla</div>
-                      <div className="flex justify-between text-xs"><span>Tételes Nyitó Számlák:</span> <span className="font-bold">{formatCurrency(subledgerData.open_ap_subledger)}</span></div>
-                      <div className="flex justify-between text-xs"><span>Főkönyvi 454 Nyitó:</span> <span className="font-bold">{formatCurrency(subledgerData.gl_454_opening)}</span></div>
+                      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('dialogs.opening_wizard.step3.supplier_subledger', { defaultValue: 'Szállító (454) Folyószámla' })}</div>
+                      <div className="flex justify-between text-xs"><span>{t('dialogs.opening_wizard.step3.itemized_opening', { defaultValue: 'Tételes Nyitó Számlák:' })}</span> <span className="font-bold">{formatCurrency(subledgerData.open_ap_subledger)}</span></div>
+                      <div className="flex justify-between text-xs"><span>{t('dialogs.opening_wizard.step3.gl_opening_454', { defaultValue: 'Főkönyvi 454 Nyitó:' })}</span> <span className="font-bold">{formatCurrency(subledgerData.gl_454_opening)}</span></div>
                       <div className={cn("text-xs font-bold pt-2 border-t flex items-center justify-between", subledgerData.ap_diff === 0 ? "text-emerald-600" : "text-rose-500")}>
-                        <span>Eltérés:</span>
+                        <span>{t('dialogs.opening_wizard.step3.difference', { defaultValue: 'Eltérés:' })}</span>
                         <span>{formatCurrency(subledgerData.ap_diff)}</span>
                       </div>
                     </div>
@@ -834,19 +851,19 @@ export default function OpeningJournalWizardModal({
               <div className="space-y-6 max-w-xl mx-auto py-4 text-center">
                 <div className="bg-emerald-500/10 border border-emerald-500/30 p-6 rounded-2xl space-y-3">
                   <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto" />
-                  <h3 className="text-lg font-bold text-emerald-600">A Nyitó bizonylat sikeresen lekönyvelve!</h3>
+                  <h3 className="text-lg font-bold text-emerald-600">{t('dialogs.opening_wizard.step4.success_title', { defaultValue: 'A Nyitó bizonylat sikeresen lekönyvelve!' })}</h3>
                   <p className="text-xs text-muted-foreground">
-                    Az 1–4. számlaosztályok megnyitásra kerültek a 491-es technikai számlával szemben.
+                    {t('dialogs.opening_wizard.step4.success_desc', { defaultValue: 'Az 1–4. számlaosztályok megnyitásra kerültek a 491-es technikai számlával szemben.' })}
                   </p>
                 </div>
 
                 <div className="bg-card border rounded-xl p-5 text-left space-y-3 shadow-sm">
                   <h4 className="font-semibold text-sm flex items-center gap-2 text-primary">
-                    <Sparkles className="w-4 h-4" /> Nyitás utáni rendező tételek indítása (Sztv.)
+                    <Sparkles className="w-4 h-4" /> {t('dialogs.opening_wizard.step4.reconciliations_title', { defaultValue: 'Nyitás utáni rendező tételek indítása (Sztv.)' })}
                   </h4>
                   <ul className="text-xs space-y-1.5 text-muted-foreground list-disc pl-4">
-                    <li><strong className="text-foreground">419 Adózott eredmény átvezetése</strong> a 413. Eredménytartalék számlára</li>
-                    <li><strong className="text-foreground">ÁFA számlák összevezetése</strong> (466 Előzetes és 467 Fizetendő kivezetése a 468-ra)</li>
+                    <li>{t('dialogs.opening_wizard.step4.reconciliations_item1', { defaultValue: '419 Adózott eredmény átvezetése a 413. Eredménytartalék számlára' })}</li>
+                    <li>{t('dialogs.opening_wizard.step4.reconciliations_item2', { defaultValue: 'ÁFA számlák összevezetése (466 Előzetes és 467 Fizetendő kivezetése a 468-ra)' })}</li>
                   </ul>
 
                   <Button
@@ -855,7 +872,7 @@ export default function OpeningJournalWizardModal({
                     className="w-full mt-2 gap-2"
                   >
                     {postOpeningReconciliateMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-                    <span>Rendező Tételek Generálása a VE Naplóba</span>
+                    <span>{t('dialogs.opening_wizard.step4.generate_reconciliations', { defaultValue: 'Rendező Tételek Generálása a VE Naplóba' })}</span>
                   </Button>
                 </div>
 
@@ -875,36 +892,36 @@ export default function OpeningJournalWizardModal({
             <div>
               {step > 1 && step < 4 && (
                 <Button variant="outline" size="sm" onClick={() => setStep((step - 1) as any)} className="gap-1 text-xs">
-                  <ArrowLeft className="w-3.5 h-3.5" /> Vissza
+                  <ArrowLeft className="w-3.5 h-3.5" /> {t('dialogs.opening_wizard.navigation.back', { defaultValue: 'Vissza' })}
                 </Button>
               )}
             </div>
 
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleClose}>Bezárás</Button>
+              <Button variant="outline" size="sm" onClick={handleClose}>{t('dialogs.opening_wizard.navigation.close', { defaultValue: 'Bezárás' })}</Button>
 
               {step === 1 && (
                 <Button size="sm" onClick={() => setStep(2)} className="gap-1 text-xs">
-                  Tovább a Főkönyvhöz <ArrowRight className="w-3.5 h-3.5" />
+                  {t('dialogs.opening_wizard.step1.next_gl', { defaultValue: 'Tovább a Főkönyvhöz' })} <ArrowRight className="w-3.5 h-3.5" />
                 </Button>
               )}
 
               {step === 2 && (
                 <Button size="sm" onClick={() => setStep(3)} disabled={!is491Balanced} className="gap-1 text-xs">
-                  Tovább az Analitikához <ArrowRight className="w-3.5 h-3.5" />
+                  {t('dialogs.opening_wizard.step2.next_subledger', { defaultValue: 'Tovább az Analitikához' })} <ArrowRight className="w-3.5 h-3.5" />
                 </Button>
               )}
 
               {step === 3 && (
                 <Button size="sm" onClick={() => saveAndPostMutation.mutate()} disabled={saveAndPostMutation.isPending} className="gap-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white">
                   {saveAndPostMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-                  <span>Nyitó Bizonylat Lekönyvelése</span>
+                  <span>{t('dialogs.opening_wizard.step3.post_opening_action', { defaultValue: 'Nyitó Bizonylat Lekönyvelése' })}</span>
                 </Button>
               )}
 
               {step === 4 && (
                 <Button size="sm" onClick={handleClose} className="gap-1 text-xs">
-                  Kész / Befejezés
+                  {t('dialogs.opening_wizard.step4.finish_action', { defaultValue: 'Kész / Befejezés' })}
                 </Button>
               )}
             </div>

@@ -4,7 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, AlertTriangle, HelpCircle, Ban, UploadCloud, Undo2 } from 'lucide-react';
 import { formatCurrency, cn, fixCharacterEncoding } from '@/lib/utils';
-import { format } from 'date-fns';
+import { formatDate } from '@/lib/locale/formatters';
+import { useTranslation } from 'react-i18next';
 import { computeMatchStatus } from '@/hooks/useComputedStatus';
 import { TransactionItem } from '@/lib/matching/types';
 
@@ -19,6 +20,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
   isSaving,
   onRevertStatus,
 }) => {
+  const { t } = useTranslation(['transactions', 'common']);
   const matchStatus = computeMatchStatus(transaction);
 
   return (
@@ -26,35 +28,35 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
       <Card className="bg-muted/30 border-border/50">
         <CardHeader className="py-2 px-3">
           <CardTitle className="text-xs font-medium flex items-center justify-between">
-            <span>Tranzakció</span>
+            <span>{t('transactions:dialogs.details.card.title')}</span>
             {matchStatus === 'matched' && (
               <Badge variant="success" className="gap-1 text-[10px] h-5">
                 <CheckCircle2 className="h-2.5 w-2.5" />
-                Párosított
+                {t('transactions:dialogs.details.card.status_matched')}
               </Badge>
             )}
             {matchStatus === 'suggested' && (
               <Badge className="gap-1 text-[10px] h-5 bg-yellow-500/15 text-yellow-600 border-yellow-500/30 hover:bg-yellow-500/15">
                 <AlertTriangle className="h-2.5 w-2.5" />
-                Javasolt
+                {t('transactions:dialogs.details.card.status_suggested')}
               </Badge>
             )}
             {matchStatus === 'unmatched' && (
               <Badge variant="destructive" className="gap-1 text-[10px] h-5">
                 <HelpCircle className="h-2.5 w-2.5" />
-                Párosítatlan
+                {t('transactions:dialogs.details.card.status_unmatched')}
               </Badge>
             )}
             {matchStatus === 'no_invoice' && (
               <Badge className="gap-1 text-[10px] h-5 bg-purple-500/15 text-purple-600 border-purple-500/30 hover:bg-purple-500/15">
                 <Ban className="h-2.5 w-2.5" />
-                Nincs hozzá számla
+                {t('transactions:dialogs.details.card.status_no_invoice')}
               </Badge>
             )}
             {matchStatus === 'invoice_missing' && (
               <Badge className="gap-1 text-[10px] h-5 bg-sky-500/15 text-sky-600 border-sky-500/30 hover:bg-sky-500/15">
                 <UploadCloud className="h-2.5 w-2.5" />
-                Számla nincs feltöltve
+                {t('transactions:dialogs.details.card.status_invoice_missing')}
               </Badge>
             )}
           </CardTitle>
@@ -62,13 +64,13 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
         <CardContent className="p-3 pt-0">
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div>
-              <span className="text-muted-foreground">Dátum:</span>
+              <span className="text-muted-foreground">{t('transactions:dialogs.details.card.date')}</span>
               <span className="ml-1 font-medium">
-                {format(new Date(transaction.transaction_date), 'yyyy.MM.dd')}
+                {formatDate(transaction.transaction_date)}
               </span>
             </div>
             <div>
-              <span className="text-muted-foreground">Összeg:</span>
+              <span className="text-muted-foreground">{t('transactions:dialogs.details.card.amount')}</span>
               <span
                 className={cn(
                   'ml-1 font-medium font-mono',
@@ -79,12 +81,12 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
               </span>
             </div>
             <div className="col-span-2">
-              <span className="text-muted-foreground">Leírás:</span>
+              <span className="text-muted-foreground">{t('transactions:dialogs.details.card.description')}</span>
               <span className="ml-1">{fixCharacterEncoding(transaction.description) || '-'}</span>
             </div>
             {transaction.reason && (
               <div className="col-span-2">
-                <span className="text-muted-foreground">AI indoklás:</span>
+                <span className="text-muted-foreground">{t('transactions:dialogs.details.card.ai_reason')}</span>
                 <p className="mt-1 text-[10px] bg-background/50 p-1.5 rounded border border-border/30 max-h-[80px] overflow-y-auto">
                   {transaction.reason}
                 </p>
@@ -99,8 +101,8 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
         <div className="flex items-center justify-between px-1">
           <p className="text-[11px] text-muted-foreground">
             {matchStatus === 'no_invoice'
-              ? 'Megjelölve: nincs hozzá számla — könyvelő feladata'
-              : 'Megjelölve: számla nincs feltöltve — fel kell tölteni'}
+              ? t('transactions:dialogs.details.card.marked_no_invoice')
+              : t('transactions:dialogs.details.card.marked_invoice_missing')}
           </p>
           <Button
             variant="ghost"
@@ -110,7 +112,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
             className="text-xs h-7 gap-1 text-muted-foreground hover:text-foreground"
           >
             <Undo2 className="h-3 w-3" />
-            Visszavonás
+            {t('transactions:dialogs.details.card.undo')}
           </Button>
         </div>
       )}

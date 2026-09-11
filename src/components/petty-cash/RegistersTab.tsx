@@ -16,12 +16,14 @@ import { toast } from '@/hooks/use-toast';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import type { PettyCashRegister, OpeningBalance } from './types';
 import { COMMON_CURRENCIES, roundHuf } from './types';
+import { useTranslation } from 'react-i18next';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  REGISTER MANAGEMENT TAB
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 export default function RegistersTab() {
+  const { t } = useTranslation(['pettyCash', 'common']);
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const qc = useQueryClient();
@@ -149,11 +151,11 @@ export default function RegistersTab() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Pénztárak</h2>
-          <p className="text-sm text-muted-foreground">Házipénztárak kezelése, valuták és helyszínek</p>
+          <h2 className="text-lg font-semibold">{t('pettyCash:registers.title', 'Pénztárak')}</h2>
+          <p className="text-sm text-muted-foreground">{t('pettyCash:registers.subtitle', 'Házipénztárak kezelése, valuták és helyszínek')}</p>
         </div>
         <Button onClick={() => { setEditing(null); setShowDialog(true); }} disabled={!writable}>
-          <Plus className="w-4 h-4 mr-2" /> Új pénztár
+          <Plus className="w-4 h-4 mr-2" /> {t('pettyCash:registers.new_register', 'Új pénztár')}
         </Button>
       </div>
 
@@ -161,9 +163,9 @@ export default function RegistersTab() {
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-12 gap-3">
             <Banknote className="w-10 h-10 text-muted-foreground/40" />
-            <p className="text-muted-foreground">Nincs még pénztár létrehozva</p>
+            <p className="text-muted-foreground">{t('pettyCash:registers.no_registers', 'Nincs még pénztár létrehozva')}</p>
             <Button onClick={() => { setEditing(null); setShowDialog(true); }} disabled={!writable}>
-              <Plus className="w-4 h-4 mr-2" /> Első pénztár létrehozása
+              <Plus className="w-4 h-4 mr-2" /> {t('pettyCash:registers.first_register', 'Első pénztár létrehozása')}
             </Button>
           </CardContent>
         </Card>
@@ -177,7 +179,7 @@ export default function RegistersTab() {
               {reg.is_default && (
                 <div className="absolute -top-2.5 left-4">
                   <Badge className="bg-primary text-primary-foreground text-[10px] gap-1">
-                    <Star className="w-3 h-3" /> Alapértelmezett
+                    <Star className="w-3 h-3" /> {t('pettyCash:default_badge', 'Alapértelmezett')}
                   </Badge>
                 </div>
               )}
@@ -212,12 +214,12 @@ export default function RegistersTab() {
                 <div className="flex gap-2">
                   {!reg.is_default && (
                     <Button variant="outline" size="sm" className="text-xs" onClick={() => setDefault.mutate(reg.id)}>
-                      <Star className="w-3 h-3 mr-1" /> Alapértelmezetté
+                      <Star className="w-3 h-3 mr-1" /> {t('pettyCash:registers.make_default', 'Alapértelmezetté')}
                     </Button>
                   )}
                   {/* U3: Green badge if opening balances are set */}
                   <Button variant="outline" size="sm" className="text-xs" onClick={() => setEditingBalances(editingBalances === reg.id ? null : reg.id)}>
-                    <Settings2 className="w-3 h-3 mr-1" /> Nyitó egyenlegek
+                    <Settings2 className="w-3 h-3 mr-1" /> {t('pettyCash:registers.opening_balances', 'Nyitó egyenlegek')}
                     {registersWithBalances.has(reg.id) && (
                       <CheckCircle2 className="w-3 h-3 ml-1 text-emerald-500" />
                     )}

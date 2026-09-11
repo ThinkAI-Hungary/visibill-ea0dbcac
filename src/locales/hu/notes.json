@@ -1,0 +1,49 @@
+{
+  "title": "Jegyzetek",
+  "tabs": {
+    "all": "Összes",
+    "private": "Privát",
+    "shared": "Közös",
+    "invoice": "Számla"
+  },
+  "list": {
+    "loading": "Jegyzetek betöltése...",
+    "no_results": "Nincs találat",
+    "untitled": "Cím nélküli",
+    "private_badge": "Privát",
+    "shared_badge": "Közös",
+    "invoice_single": "Számla: {{number}}",
+    "invoice_multi": "{{count}} db számla csatolva",
+    "tx_single": "Tranzakció: {{desc}}",
+    "tx_multi": "{{count}} db tranzakció csatolva",
+    "no_invoice_number": "Nincs sorszám",
+    "no_tx_description": "Nincs leírás"
+  },
+  "detail": {
+    "private_note": "Privát jegyzet",
+    "shared_note": "Közös cégjegyzet",
+    "updated": "Frissítve: {{date}}",
+    "content": "Tartalom",
+    "related_invoices": "Kapcsolódó számlák ({{count}})",
+    "related_transactions": "Kapcsolódó tranzakciók ({{count}})",
+    "invoice_number": "Számlaszám",
+    "partner": "Partner",
+    "amount": "Összeg",
+    "invoice_date": "Számla kelte",
+    "description_partner": "Leírás / Partner",
+    "date": "Dátum",
+    "open_invoice": "Számla megnyitása",
+    "open_transaction": "Tranzakció megnyitása",
+    "line_item_note_hint": "Típus: Számlatétel jegyzet (a számla részleteinél módosítható)",
+    "recorded_by": "Rögzítette: {{name}}",
+    "unknown": "Ismeretlen",
+    "no_note_selected": "Nincs kiválasztott jegyzet",
+    "create_one_now": "Hozz létre egyet most"
+  },
+  "toast": {
+    "deleted_title": "Jegyzet törölve",
+    "delete_failed": "Nem sikerült törölni a jegyzetet",
+    "saved_title": "Jegyzet mentve",
+    "save_failed": "Nem sikerült menteni a jegyzetet"
+  }
+}

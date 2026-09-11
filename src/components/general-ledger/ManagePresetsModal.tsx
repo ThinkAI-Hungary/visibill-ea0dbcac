@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, Trash2, Edit2, Check, X, Database, AlertTriangle, ArrowRight, ShieldAlert, CheckCircle2, Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { CustomTooltip } from '@/components/ui/custom-tooltip';
 import { invalidateGlQueries } from '@/lib/cache';
 import { AddGlAccountModal } from '@/components/general-ledger/AddGlAccountModal';
@@ -55,6 +56,7 @@ interface PresetUsage {
 }
 
 export function ManagePresetsModal({ open, onOpenChange, presets, companyId }: ManagePresetsModalProps) {
+  const { t } = useTranslation(['accounting', 'common']);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -107,21 +109,24 @@ export function ManagePresetsModal({ open, onOpenChange, presets, companyId }: M
 
       if (remappedTotal > 0) {
         toast({
-          title: 'Sablon törölve és tételek átkötve',
-          description: `A(z) "${data?.deleted_preset_name}" sablon törölve. ${remappedTotal} db hivatkozás sikeresen átkötve az új számlatükörbe.`,
+          title: t('accounting:dialogs.manage_presets.toasts.remapped_success_title'),
+          description: t('accounting:dialogs.manage_presets.toasts.remapped_success_desc', {
+            name: data?.deleted_preset_name,
+            count: remappedTotal,
+          }),
           className: 'bg-green-50 dark:bg-green-950/50 border-green-200 dark:border-green-800 text-green-900 dark:text-green-100',
         });
       } else {
         toast({
-          title: 'Sablon törölve',
-          description: 'A számlatükör sablon sikeresen eltávolításra került.',
+          title: t('accounting:dialogs.manage_presets.toasts.delete_success_title'),
+          description: t('accounting:dialogs.manage_presets.toasts.delete_success_desc'),
         });
       }
     },
     onError: (error: any) => {
       toast({
-        title: 'Törlési hiba',
-        description: error.message || 'Nem sikerült a sablon törlése.',
+        title: t('accounting:dialogs.manage_presets.toasts.delete_error_title'),
+        description: error.message || t('accounting:dialogs.manage_presets.toasts.delete_error_title'),
         variant: 'destructive',
       });
     }
@@ -130,7 +135,7 @@ export function ManagePresetsModal({ open, onOpenChange, presets, companyId }: M
   const renameMutation = useMutation({
     mutationKey: ['renamePreset', companyId],
     mutationFn: async ({ id, newName }: { id: string; newName: string }) => {
-      if (!newName.trim()) throw new Error("A név nem lehet üres.");
+      if (!newName.trim()) throw new Error(t('accounting:dialogs.manage_presets.toasts.name_empty_error'));
       const { error } = await supabase
         .from('chart_of_accounts_presets')
         .update({ name: newName.trim() })
@@ -141,18 +146,25 @@ export function ManagePresetsModal({ open, onOpenChange, presets, companyId }: M
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['coaPresets', companyId] });
       setEditingId(null);
-      toast({ title: 'Sikeres átnevezés', description: 'A sablon neve frissítésre került.' });
+      toast({
+        title: t('accounting:dialogs.manage_presets.toasts.rename_success_title'),
+        description: t('accounting:dialogs.manage_presets.toasts.rename_success_desc'),
+      });
     },
     onError: (error: any) => {
-      toast({ title: 'Hiba történt', description: error.message, variant: 'destructive' });
+      toast({
+        title: t('accounting:dialogs.manage_presets.toasts.rename_error_title'),
+        description: error.message,
+        variant: 'destructive',
+      });
     }
   });
 
   const handleStartDelete = async (preset: Preset) => {
     if (preset.is_active) {
       toast({
-        title: 'Aktív sablon nem törölhető',
-        description: 'Ez a számlatükör jelenleg az aktív sablon a cégnél. Kérjük, előbb aktiválj egy másik sablont!',
+        title: t('accounting:dialogs.manage_presets.toasts.active_cannot_delete_title'),
+        description: t('accounting:dialogs.manage_presets.toasts.active_cannot_delete_desc'),
         variant: 'destructive',
       });
       return;
@@ -177,8 +189,8 @@ export function ManagePresetsModal({ open, onOpenChange, presets, companyId }: M
       });
     } catch (err: any) {
       toast({
-        title: 'Hiba az ellenőrzéskor',
-        description: err.message || 'Nem sikerült ellenőrizni a számlatükör használatát.',
+        title: t('accounting:dialogs.manage_presets.toasts.check_usage_error_title'),
+        description: err.message || t('accounting:dialogs.manage_presets.toasts.check_usage_error_desc'),
         variant: 'destructive',
       });
     } finally {
@@ -210,17 +222,17 @@ export function ManagePresetsModal({ open, onOpenChange, presets, companyId }: M
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl font-bold">
               <Database className="w-5 h-5 text-primary" />
-              Egyéni Sablonok Kezelése
+              {t('accounting:dialogs.manage_presets.title')}
             </DialogTitle>
             <DialogDescription>
-              Tekintsd meg, nevezd át vagy töröld az általad feltöltött egyéni számlatükör sablonokat.
+              {t('accounting:dialogs.manage_presets.description')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="mt-4 space-y-3 max-h-[300px] overflow-y-auto pr-2">
             {customPresets.length === 0 ? (
               <div className="text-center p-6 bg-muted/30 rounded-lg border border-dashed border-border/60">
-                <p className="text-muted-foreground text-sm">Még nem töltöttél fel saját számlatükröt.</p>
+                <p className="text-muted-foreground text-sm">{t('accounting:dialogs.manage_presets.empty')}</p>
               </div>
             ) : (
               customPresets.map((preset) => {
@@ -250,7 +262,7 @@ export function ManagePresetsModal({ open, onOpenChange, presets, companyId }: M
                           <span className="font-medium text-sm truncate">{preset.name}</span>
                           {preset.is_active && (
                             <span className="text-[10px] font-semibold text-primary uppercase tracking-wider mt-0.5">
-                              Aktiválva
+                              {t('accounting:dialogs.manage_presets.active_badge')}
                             </span>
                           )}
                         </div>
@@ -295,7 +307,7 @@ export function ManagePresetsModal({ open, onOpenChange, presets, companyId }: M
                           <Button
                             variant="ghost"
                             size="icon"
-                            aria-label={`Sablon átnevezése: ${preset.name}`}
+                            aria-label={t('accounting:dialogs.manage_presets.rename_tooltip', { name: preset.name })}
                             className="h-8 w-8 text-muted-foreground hover:text-foreground"
                             onClick={() => startEditing(preset)}
                           >
@@ -303,12 +315,12 @@ export function ManagePresetsModal({ open, onOpenChange, presets, companyId }: M
                           </Button>
                           
                           {preset.is_active ? (
-                            <CustomTooltip content="Az aktív számlatükör sablon nem törölhető. Előbb aktiválj egy másik sablont!">
+                            <CustomTooltip content={t('accounting:dialogs.manage_presets.active_cannot_delete_tooltip')}>
                               <span>
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  aria-label={`Aktív sablon nem törölhető: ${preset.name}`}
+                                  aria-label={t('accounting:dialogs.manage_presets.active_cannot_delete_aria', { name: preset.name })}
                                   className="h-8 w-8 text-muted-foreground/40 cursor-not-allowed"
                                   disabled
                                 >
@@ -320,7 +332,7 @@ export function ManagePresetsModal({ open, onOpenChange, presets, companyId }: M
                             <Button
                               variant="ghost"
                               size="icon"
-                              aria-label={`Sablon törlése: ${preset.name}`}
+                              aria-label={t('accounting:dialogs.manage_presets.delete_tooltip', { name: preset.name })}
                               className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-950/40"
                               onClick={() => handleStartDelete(preset)}
                               disabled={isChecking || isDeleting}
@@ -343,7 +355,7 @@ export function ManagePresetsModal({ open, onOpenChange, presets, companyId }: M
 
           <div className="flex justify-end mt-4 pt-4 border-t border-border/40">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Bezárás
+              {t('accounting:dialogs.manage_presets.close')}
             </Button>
           </div>
         </DialogContent>
@@ -355,23 +367,23 @@ export function ManagePresetsModal({ open, onOpenChange, presets, companyId }: M
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-destructive">
               <AlertTriangle className="w-5 h-5 text-destructive" />
-              Számlatükör Sablon Törlése
+              {t('accounting:dialogs.manage_presets.delete_dialog_title')}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3 text-sm text-foreground/90 mt-2">
                 <p>
-                  Biztosan törölni szeretnéd a(z) <strong className="font-semibold text-foreground">"{confirmDialogState?.preset.name}"</strong> sablont?
+                  {t('accounting:dialogs.manage_presets.delete_confirm_question', { name: confirmDialogState?.preset.name })}
                 </p>
 
                 {confirmDialogState?.usage.total_references === 0 ? (
                   <div className="p-3 bg-muted/40 rounded-lg border text-xs text-muted-foreground">
-                    A sablonhoz tartozó {confirmDialogState?.usage.accounts_count} db főkönyvi számla véglegesen törlődik. A sablonra jelenleg nem hivatkozik könyvelési adat.
+                    {t('accounting:dialogs.manage_presets.delete_no_refs', { count: confirmDialogState?.usage.accounts_count })}
                   </div>
                 ) : (
                   <div className="space-y-3 p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-lg">
                     <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-medium text-xs">
                       <ShieldAlert className="w-4 h-4 shrink-0" />
-                      Ez a számlatükör jelenleg használatban van:
+                      {t('accounting:dialogs.manage_presets.usage_in_use_warning')}
                     </div>
                     <ul className="list-disc list-inside text-xs space-y-1 text-muted-foreground pl-1">
                       {confirmDialogState?.usage.journal_lines_count ? (
@@ -399,31 +411,31 @@ export function ManagePresetsModal({ open, onOpenChange, presets, companyId }: M
 
                     {availableTargetPresets.length === 0 ? (
                       <p className="text-xs text-destructive font-medium">
-                        Nem törölhető, mert nincs másik számlatükör sablon, amibe a hivatkozott tételeket átköthetnénk. Előbb hozz létre vagy aktiválj egy másik sablont!
+                        {t('accounting:dialogs.manage_presets.cannot_delete_no_target')}
                       </p>
                     ) : (
                       <div className="space-y-1.5 pt-1">
                         <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                           <ArrowRight className="w-3.5 h-3.5 text-primary" />
-                          Hová kössük át a hivatkozásokat a törlés előtt?
+                          {t('accounting:dialogs.manage_presets.remap_target_label')}
                         </label>
                         <Select
                           value={confirmDialogState?.targetPresetId || ''}
                           onValueChange={(val) => setConfirmDialogState(prev => prev ? { ...prev, targetPresetId: val } : null)}
                         >
                           <SelectTrigger className="h-9 text-xs">
-                            <SelectValue placeholder="Válassz célszámlatükröt..." />
+                            <SelectValue placeholder={t('accounting:dialogs.manage_presets.remap_target_placeholder')} />
                           </SelectTrigger>
                           <SelectContent>
                             {availableTargetPresets.map(target => (
                               <SelectItem key={target.id} value={target.id} className="text-xs">
-                                {target.name} {target.is_active ? '(Aktív)' : ''}
+                                {target.name} {target.is_active ? t('accounting:dialogs.manage_presets.remap_target_active') : ''}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                         <p className="text-[11px] text-muted-foreground leading-relaxed">
-                          A rendszer automatikusan átköti a tételeket az azonos főkönyvi számú számlákra a kiválasztott sablonban.
+                          {t('accounting:dialogs.manage_presets.remap_target_help')}
                         </p>
                       </div>
                     )}
@@ -435,7 +447,7 @@ export function ManagePresetsModal({ open, onOpenChange, presets, companyId }: M
 
           <AlertDialogFooter className="mt-4">
             <AlertDialogCancel disabled={deleteMutation.isPending}>
-              Mégse
+              {t('accounting:dialogs.manage_presets.cancel')}
             </AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
@@ -451,12 +463,12 @@ export function ManagePresetsModal({ open, onOpenChange, presets, companyId }: M
               {deleteMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Törlés folyamatban...
+                  {t('accounting:dialogs.manage_presets.deleting_progress')}
                 </>
               ) : confirmDialogState?.usage.total_references ? (
-                'Átkötés és törlés'
+                t('accounting:dialogs.manage_presets.remap_and_delete_action')
               ) : (
-                'Végleges törlés'
+                t('accounting:dialogs.manage_presets.final_delete_action')
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

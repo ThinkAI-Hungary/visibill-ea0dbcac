@@ -10,6 +10,8 @@
   "total_receivables": "Ukupna potraživanja",
   "companies_count": "{{count}} tvrtki",
   "invoices_count": "{{count}} računa",
+  "empty_title": "Nema potraživanja",
+  "empty_desc": "Svi računi su podmireni!",
   "aging": {
     "not_due": "Nije dospjelo",
     "days_1_30": "1–30 dana",
@@ -22,5 +24,45 @@
   "date_filter_basis": "Osnova filtriranja razdoblja",
   "filtered_period": "Filtrirano: {{period}}",
   "view_all_open": "Prikaži sva otvorena potraživanja",
-  "no_open_in_period": "Nema otvorenih računa u odabranom razdoblju"
+  "no_open_in_period": "Nema otvorenih računa u odabranom razdoblju",
+  "table": {
+    "invoice_number": "Broj računa",
+    "issue_date": "Izdano",
+    "due_date": "Dospijeće",
+    "overdue": "Kašnjenje",
+    "amount": "Iznos",
+    "source": "Izvor",
+    "category": "Kategorija",
+    "not_overdue": "Nije dospjelo",
+    "days": "{{count}} dana",
+    "source_nav": "Porezna",
+    "source_uploaded": "Učitano",
+    "last_dunning": "Zadnja opomena: {{date}}",
+    "today": "Danas",
+    "days_ago": "prije {{count}} dana"
+  },
+  "chart": {
+    "title": "Struktura duga po dospijeću",
+    "description": "Raspodjela otvorenih potraživanja po vremenskim razdobljima — dobi ({{mode}})"
+  },
+  "dialog": {
+    "title": "Slanje opomena",
+    "description": "Svakoj odabranoj tvrtki šaljemo jednu opomenu sa svim otvorenim računima.",
+    "category_filter": "Filtar kategorija:",
+    "companies_selected": "Tvrtke (odabrano: {{count}}):",
+    "invoices_unit": "{{count}} kom",
+    "no_email_warning": "⚠️ Nema spremljene e-pošte — ako je unesete, spremit ćemo je u Partnere",
+    "info_note_1": "📧 Poruke se šalju iz sustava eaisybill — partner može odgovoriti izravno vama.",
+    "info_note_2": "📎 Za ručno učitane račune u poruku se prilaže PDF privitak.",
+    "cancel": "Odustani",
+    "send_button": "Pošalji opomenu ({{count}})",
+    "sending": "Slanje...",
+    "error_no_company": "Nijedna tvrtka nije odabrana",
+    "error_email_required": "Unos e-pošte je obavezan",
+    "error_email_invalid": "Nevažeća e-adresa",
+    "error_no_session": "Nema aktivne sesije",
+    "success_toast": "{{count}} opomena uspješno poslana!",
+    "partial_error_toast": "Slanje {{count}} opomena nije uspjelo",
+    "error_toast": "Pogreška: {{message}}"
+  }
 }

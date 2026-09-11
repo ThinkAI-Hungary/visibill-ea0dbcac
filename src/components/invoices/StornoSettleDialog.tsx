@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { XCircle, RotateCcw, Loader2, AlertTriangle } from 'lucide-react';
 import {
   AlertDialog,
@@ -32,6 +33,7 @@ export function StornoSettleDialog({
   stornoNumber,
   onSuccess,
 }: StornoSettleDialogProps) {
+  const { t } = useTranslation(['invoices', 'common']);
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
@@ -56,17 +58,17 @@ export function StornoSettleDialog({
       onOpenChange(false);
 
       toast({
-        title: isSettle ? 'Sztornó lezárva' : 'Lezárás visszavonva',
+        title: isSettle ? t('invoices:dialogs.storno_settle.toast_settled') : t('invoices:dialogs.storno_settle.toast_unsettled'),
         description: isSettle
-          ? `A ${stornoNumber} sztornó számla és kapcsolódó bizonylatok lezárt állapotba kerültek.`
-          : `A ${stornoNumber} lezárása visszavonva. A számlák ismét páratlan állapotban várják a tranzakciót.`,
+          ? t('invoices:dialogs.storno_settle.toast_settled_desc', { stornoNumber })
+          : t('invoices:dialogs.storno_settle.toast_unsettled_desc', { stornoNumber }),
         variant: 'success',
       });
     } catch (err: any) {
       console.error('[StornoSettleDialog] RPC error:', err);
       toast({
-        title: 'Hiba történt',
-        description: err.message || 'A művelet nem sikerült. Kérjük próbálja újra.',
+        title: t('common:status.error', 'Hiba történt'),
+        description: err.message || t('common:errors.unexpected', 'A művelet nem sikerült. Kérjük próbálja újra.'),
         variant: 'destructive',
       });
     } finally {
@@ -82,12 +84,12 @@ export function StornoSettleDialog({
             {isSettle ? (
               <>
                 <XCircle className="h-5 w-5 text-orange-500" />
-                Sztornó lezárása
+                {t('invoices:dialogs.storno_settle.settle_title')}
               </>
             ) : (
               <>
                 <RotateCcw className="h-5 w-5 text-muted-foreground" />
-                Lezárás visszavonása
+                {t('invoices:dialogs.storno_settle.unsettle_title')}
               </>
             )}
           </AlertDialogTitle>
@@ -96,30 +98,28 @@ export function StornoSettleDialog({
               {isSettle ? (
                 <>
                   <p>
-                    A <span className="font-mono font-medium text-foreground">{stornoNumber}</span> sztornó
-                    számla és minden hozzá kapcsolt bizonylat lezárásra, kifizetett státuszra kerül.
+                    {t('invoices:dialogs.storno_settle.settle_desc', { stornoNumber })}
                   </p>
                   <div className="rounded-md bg-muted/50 border border-border/50 p-3 space-y-1 text-xs">
                     <p className="font-medium text-foreground mb-1.5 flex items-center gap-1.5">
                       <AlertTriangle className="h-3.5 w-3.5 text-orange-500" />
-                      Az alábbi bizonylatok kerülnek lezárásra:
+                      {t('invoices:dialogs.storno_settle.settled_items_title')}
                     </p>
-                    <p>• Sztornó NAV számla: <span className="font-mono">{stornoNumber}</span></p>
-                    <p>• Kapcsolódó beküldött számlakép (ha van)</p>
-                    <p>• Hivatkozott eredeti számla (ha azonosítható)</p>
+                    <p>{t('invoices:dialogs.storno_settle.item_nav', { stornoNumber })}</p>
+                    <p>{t('invoices:dialogs.storno_settle.item_image')}</p>
+                    <p>{t('invoices:dialogs.storno_settle.item_original')}</p>
                   </div>
                   <p className="text-xs">
-                    A lezárás visszavonható, ha szükséges.
+                    {t('invoices:dialogs.storno_settle.settle_can_undo')}
                   </p>
                 </>
               ) : (
                 <>
                   <p>
-                    Visszavonja a <span className="font-mono font-medium text-foreground">{stornoNumber}</span> sztornó
-                    számla lezárást.
+                    {t('invoices:dialogs.storno_settle.unsettle_desc', { stornoNumber })}
                   </p>
                   <p className="text-xs">
-                    A számlák ismét páratlan állapotba kerülnek és várhatják a bejövő tranzakciót.
+                    {t('invoices:dialogs.storno_settle.unsettle_result')}
                   </p>
                 </>
               )}
@@ -127,7 +127,7 @@ export function StornoSettleDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading}>Mégse</AlertDialogCancel>
+          <AlertDialogCancel disabled={loading}>{t('common:actions.cancel')}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
             disabled={loading}
@@ -141,12 +141,12 @@ export function StornoSettleDialog({
             ) : isSettle ? (
               <>
                 <XCircle className="h-4 w-4 mr-1.5" />
-                Lezárás megerősítése
+                {t('invoices:dialogs.storno_settle.confirm_settle')}
               </>
             ) : (
               <>
                 <RotateCcw className="h-4 w-4 mr-1.5" />
-                Visszavonás megerősítése
+                {t('invoices:dialogs.storno_settle.confirm_unsettle')}
               </>
             )}
           </AlertDialogAction>

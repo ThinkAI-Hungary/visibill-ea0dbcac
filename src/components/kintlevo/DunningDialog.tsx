@@ -1,4 +1,5 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -8,7 +9,7 @@ import { Mail, Send } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { CAT, fmt, validateEmail } from '@/lib/kintlevo-helpers';
+import { CAT, fmt, validateEmail, getAgingCategoryLabel } from '@/lib/kintlevo-helpers';
 import type { AgingCategory, CompanyGroup } from '@/lib/kintlevo-helpers';
 import type { QueryClient } from '@tanstack/react-query';
 import { reportError } from '@/lib/errorReporter';
@@ -27,6 +28,7 @@ export function DunningDialog({
   open, onOpenChange, companyGroups, selectedCompanyId, selectedCompanyName,
   queryClient, updatePartnerEmail,
 }: Props) {
+  const { t } = useTranslation(['receivables', 'common']);
   const [selectedCats, setSelectedCats] = useState<Set<AgingCategory>>(
     new Set(['yellow', 'red', 'purple'])
   );
@@ -76,13 +78,19 @@ export function DunningDialog({
 
   const handleSend = async () => {
     const targets = companyGroups.filter(g => selectedCompanies.has(g.companyName));
-    if (targets.length === 0) { toast({ title: 'Nincs kiválasztott cég', variant: 'destructive' }); return; }
+    if (targets.length === 0) {
+      toast({ title: t('receivables:dialog.error_no_company', 'Nincs kiválasztott cég'), variant: 'destructive' });
+      return;
+    }
 
     const errors: Record<string, string> = {};
-    for (const t of targets) {
-      const email = (emailMap[t.companyName] ?? '').trim();
-      if (!email) errors[t.companyName] = 'Email-cím megadása kötelező';
-      else if (!validateEmail(email)) errors[t.companyName] = 'Érvénytelen email-cím';
+    for (const item of targets) {
+      const email = (emailMap[item.companyName] ?? '').trim();
+      if (!email) {
+        errors[item.companyName] = t('receivables:dialog.error_email_required', 'Email-cím megadása kötelező');
+      } else if (!validateEmail(email)) {
+        errors[item.companyName] = t('receivables:dialog.error_email_invalid', 'Érvénytelen email-cím');
+      }
     }
     if (Object.keys(errors).length > 0) { setEmailErrors(errors); return; }
 
@@ -92,7 +100,7 @@ export function DunningDialog({
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Nincs munkamenet');
+      if (!session) throw new Error(t('receivables:dialog.error_no_session', 'Nincs munkamenet'));
 
       for (const target of targets) {
         const email = emailMap[target.companyName].trim();
@@ -122,18 +130,20 @@ export function DunningDialog({
           if (error) throw error;
           successCount++;
         } catch (err: any) {
-          reportError({ type: 'db_query', component: 'DunningDialog', action: 'error', message: 'Dunning send error for', error: target.companyName, err });
+          reportError({ type: 'db_query', component: 'DunningDialog', action: 'error', message: `Dunning send error for ${target.companyName}`, error: err });
           errorCount++;
         }
       }
       if (successCount > 0) {
-        toast({ title: `${successCount} felszólítás sikeresen elküldve!` });
+        toast({ title: t('receivables:dialog.success_toast', '{{count}} felszólítás sikeresen elküldve!', { count: successCount }) });
         queryClient.invalidateQueries({ queryKey: ['dunning-sends'] });
       }
-      if (errorCount > 0) toast({ title: `${errorCount} levél küldése sikertelen`, variant: 'destructive' });
+      if (errorCount > 0) {
+        toast({ title: t('receivables:dialog.partial_error_toast', '{{count}} levél küldése sikertelen', { count: errorCount }), variant: 'destructive' });
+      }
       if (successCount > 0) onOpenChange(false);
     } catch (err: any) {
-      toast({ title: 'Hiba: ' + err.message, variant: 'destructive' });
+      toast({ title: t('receivables:dialog.error_toast', 'Hiba: {{message}}', { message: err.message }), variant: 'destructive' });
     } finally {
       setSending(false);
     }
@@ -145,17 +155,17 @@ export function DunningDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5 text-primary" />
-            Felszólítólevelek küldése
+            {t('receivables:dialog.title', 'Felszólítólevelek küldése')}
           </DialogTitle>
           <DialogDescription>
-            Minden kijelölt cégnek <strong>egyetlen levelet</strong> küldünk az összes tartozó számlájával.
+            {t('receivables:dialog.description', 'Minden kijelölt cégnek egyetlen levelet küldünk az összes tartozó számlájával.')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5 py-1">
           {/* Category toggles */}
           <div>
-            <p className="text-sm font-medium mb-2">Kategória szűrő:</p>
+            <p className="text-sm font-medium mb-2">{t('receivables:dialog.category_filter', 'Kategória szűrő:')}</p>
             <div className="flex flex-wrap gap-2">
               {(Object.keys(CAT) as AgingCategory[]).map(cat => {
                 const c = CAT[cat];
@@ -171,7 +181,7 @@ export function DunningDialog({
                     )}
                   >
                     <Icon className="h-3 w-3" />
-                    {c.label}
+                    {getAgingCategoryLabel(cat, t)}
                   </button>
                 );
               })}
@@ -181,7 +191,7 @@ export function DunningDialog({
           {/* Company list with email */}
           <div>
             <p className="text-sm font-medium mb-2">
-              Cégek ({selectedCompanies.size} kijelölve):
+              {t('receivables:dialog.companies_selected', 'Cégek ({{count}} kijelölve):', { count: selectedCompanies.size })}
             </p>
             <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
               {companyGroups.map(g => {
@@ -212,7 +222,7 @@ export function DunningDialog({
                         {g.companyName}
                       </Label>
                       <span className="text-xs text-muted-foreground shrink-0">
-                        {fmt(g.totalAmount)} · {g.invoices.length} db
+                        {fmt(g.totalAmount)} · {t('receivables:dialog.invoices_unit', '{{count}} db', { count: g.invoices.length })}
                       </span>
                     </div>
                     {isSel && (
@@ -232,7 +242,7 @@ export function DunningDialog({
                         {emailErr && <p className="text-xs text-destructive mt-1">{emailErr}</p>}
                         {!g.partnerEmail && (
                           <p className="text-xs text-amber-400 mt-1">
-                            ⚠️ Nincs mentett email — ha megad egyet, elmentjük a Partnertörzsbe
+                            {t('receivables:dialog.no_email_warning', '⚠️ Nincs mentett email — ha megad egyet, elmentjük a Partnertörzsbe')}
                           </p>
                         )}
                       </div>
@@ -244,18 +254,18 @@ export function DunningDialog({
           </div>
 
           <div className="rounded-lg bg-muted/30 border p-3 text-xs text-muted-foreground space-y-1">
-            <p>📧 A levelek a <strong>eaisybill rendszeréből</strong> mennek ki — a partner Önnek tud visszaírni.</p>
-            <p>📎 Manuálisan feltöltött számlákhoz PDF melléklet is kerül a levélbe.</p>
+            <p>{t('receivables:dialog.info_note_1', '📧 A levelek a eaisybill rendszeréből mennek ki — a partner Önnek tud visszaírni.')}</p>
+            <p>{t('receivables:dialog.info_note_2', '📎 Manuálisan feltöltött számlákhoz PDF melléklet is kerül a levélbe.')}</p>
           </div>
         </div>
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
-            Mégse
+            {t('receivables:dialog.cancel', { defaultValue: t('common:actions.cancel', 'Mégse') })}
           </Button>
           <Button onClick={handleSend} disabled={sending || selectedCompanies.size === 0} className="gap-2">
-            {sending ? 'Küldés...' : (
-              <><Send className="h-4 w-4" />{selectedCompanies.size} felszólítás küldése</>
+            {sending ? t('receivables:dialog.sending', 'Küldés...') : (
+              <><Send className="h-4 w-4" />{t('receivables:dialog.send_button', '{{count}} felszólítás küldése', { count: selectedCompanies.size })}</>
             )}
           </Button>
         </DialogFooter>

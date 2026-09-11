@@ -1,15 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { CAT, fmt } from '@/lib/kintlevo-helpers';
+import { fmt, getAgingCategoryLabel } from '@/lib/kintlevo-helpers';
+import { formatCurrency } from '@/lib/utils';
 import type { AgingCategory, UnifiedInvoice } from '@/lib/kintlevo-helpers';
 
-// Bucket configuration — single source of truth (shared with getCategory in kintlevo-helpers)
-const BUCKETS: { key: AgingCategory; label: string; color: string }[] = [
-  { key: 'green',  label: 'Nem lejárt',   color: '#34D399' },
-  { key: 'yellow', label: '1–30 napos',   color: '#F5B544' },
-  { key: 'red',    label: '31–180 napos', color: '#F26D6D' },
-  { key: 'purple', label: '180+ napos',   color: '#A78BFA' },
+// Bucket configuration — colors and keys
+const BUCKETS: { key: AgingCategory; color: string }[] = [
+  { key: 'green',  color: '#34D399' },
+  { key: 'yellow', color: '#F5B544' },
+  { key: 'red',    color: '#F26D6D' },
+  { key: 'purple', color: '#A78BFA' },
 ];
 
 interface Props {
@@ -19,49 +21,47 @@ interface Props {
   activeBucket?: AgingCategory | null;
 }
 
-function formatMillions(value: number): string {
-  if (value === 0) return '0 Ft';
-  if (Math.abs(value) >= 1_000_000) {
-    return (value / 1_000_000).toLocaleString('hu-HU', { maximumFractionDigits: 1 }) + ' M Ft';
-  }
-  return new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 0 }).format(value) + ' Ft';
-}
-
-const CustomTooltip = ({ active, payload }: any) => {
+const CustomTooltip = ({ active, payload, t }: any) => {
   if (!active || !payload?.[0]) return null;
   const data = payload[0].payload;
   return (
     <div className="bg-popover border rounded-lg shadow-lg px-3 py-2 text-sm">
       <p className="font-semibold" style={{ color: data.color }}>{data.label}</p>
       <p className="text-foreground">{fmt(data.amount)}</p>
-      <p className="text-muted-foreground text-xs">{data.invoiceCount} számla</p>
+      <p className="text-muted-foreground text-xs">
+        {t('receivables:invoices_count', '{{count}} számla', { count: data.invoiceCount })}
+      </p>
     </div>
   );
 };
 
 export function KintlevoAgingChart({ allInvoices, showBrutto, onBucketClick, activeBucket }: Props) {
+  const { t } = useTranslation(['receivables', 'common']);
+
   const chartData = useMemo(() => {
     return BUCKETS.map(bucket => {
       const matching = allInvoices.filter(inv => inv.category === bucket.key);
       const amount = matching.reduce((s, inv) => s + (showBrutto ? inv.amount : inv.netAmount), 0);
       return {
         key: bucket.key,
-        label: bucket.label,
+        label: getAgingCategoryLabel(bucket.key, t),
         amount,
         invoiceCount: matching.length,
         color: bucket.color,
       };
     });
-  }, [allInvoices, showBrutto]);
+  }, [allInvoices, showBrutto, t]);
 
-  const maxAmount = Math.max(...chartData.map(d => d.amount), 1);
+  const modeText = (showBrutto
+    ? String(t('receivables:gross', { defaultValue: 'bruttó' }))
+    : String(t('receivables:net', { defaultValue: 'nettó' }))).toLowerCase();
 
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">Tartozásállomány kor szerint</CardTitle>
+        <CardTitle className="text-base">{t('receivables:chart.title', 'Tartozásállomány kor szerint')}</CardTitle>
         <CardDescription>
-          A nyitott kintlévőség megoszlása korosított sávonként — korfa ({showBrutto ? 'bruttó' : 'nettó'})
+          {t('receivables:chart.description', 'A nyitott kintlévőség megoszlása korosított sávonként — korfa ({{mode}})', { mode: modeText })}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -77,13 +77,13 @@ export function KintlevoAgingChart({ allInvoices, showBrutto, onBucketClick, act
               tickLine={false}
             />
             <YAxis
-              tickFormatter={(v: number) => formatMillions(v)}
+              tickFormatter={(v: number) => formatCurrency(v, undefined, true)}
               tick={{ fontSize: 11 }}
               axisLine={false}
               tickLine={false}
               width={80}
             />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted) / 0.3)' }} />
+            <Tooltip content={<CustomTooltip t={t} />} cursor={{ fill: 'hsl(var(--muted) / 0.3)' }} />
             <Bar
               dataKey="amount"
               radius={[6, 6, 0, 0]}
@@ -103,7 +103,7 @@ export function KintlevoAgingChart({ allInvoices, showBrutto, onBucketClick, act
                   fill="currentColor"
                   className="fill-foreground"
                 >
-                  {formatMillions(value)}
+                  {formatCurrency(value, undefined, true)}
                 </text>
               )}
             >

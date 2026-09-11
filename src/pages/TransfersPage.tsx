@@ -61,7 +61,8 @@ import {
 } from '@/components/ui/tooltip';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
+import { getActiveLocale } from '@/lib/locale/formatters';
 import {
   Table,
   TableHeader,
@@ -76,6 +77,16 @@ import { TableSkeleton } from '@/components/ui/table-skeleton';
 import { InvoiceItemsDialog } from '@/components/InvoiceItemsDialog';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 
+const MONTH_NAMES_HU = [
+  'Január', 'Február', 'Március', 'Április', 'Május', 'Június',
+  'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'
+];
+const MONTH_NAMES_HR = [
+  'Siječanj', 'Veljača', 'Ožujak', 'Travanj', 'Svibanj', 'Lipanj',
+  'Srpanj', 'Kolovoz', 'Rujan', 'Listopad', 'Studeni', 'Prosinac'
+];
+const WEEKDAYS_HU = ['H', 'K', 'Sz', 'Cs', 'P', 'Sz', 'V'];
+const WEEKDAYS_HR = ['P', 'U', 'S', 'Č', 'P', 'S', 'N'];
 
 interface TransferInvoice {
   id: string;
@@ -100,6 +111,8 @@ interface CompanyBankAccount {
 
 export default function TransfersPage() {
   const { t } = useTranslation(['transfers', 'common']);
+  const isHr = getActiveLocale() === 'hr';
+  const localeCode = isHr ? 'hr-HR' : 'hu-HU';
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
@@ -1499,12 +1512,12 @@ export default function TransfersPage() {
                     <TableHeader>
                       <TableRow className="bg-muted/40 text-muted-foreground font-medium text-xs select-none hover:bg-muted/40">
                         <TableHead className="w-12 text-center" />
-                        <TableHead>Partner</TableHead>
-                        <TableHead className="min-w-[220px] whitespace-nowrap">Számlaszám(ok)</TableHead>
-                        <TableHead className="w-32 whitespace-nowrap">Határidő</TableHead>
-                        <TableHead className="w-40 text-right whitespace-nowrap">Összeg</TableHead>
-                        <TableHead className="w-72">Partner Bankszámlaszáma</TableHead>
-                        <TableHead className="w-28 text-center whitespace-nowrap">Művelet</TableHead>
+                        <TableHead>{t('transfers:table.partner', 'Partner')}</TableHead>
+                        <TableHead className="min-w-[220px] whitespace-nowrap">{t('transfers:table.invoice_numbers', 'Számlaszám(ok)')}</TableHead>
+                        <TableHead className="w-32 whitespace-nowrap">{t('transfers:table.due_date', 'Határidő')}</TableHead>
+                        <TableHead className="w-40 text-right whitespace-nowrap">{t('transfers:table.amount', 'Összeg')}</TableHead>
+                        <TableHead className="w-72">{t('transfers:table.partner_bank_account', 'Partner Bankszámlaszáma')}</TableHead>
+                        <TableHead className="w-28 text-center whitespace-nowrap">{t('transfers:history.actions', 'Művelet')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1515,8 +1528,8 @@ export default function TransfersPage() {
               ) : displayItems.length === 0 ? (
                 <div className="py-16 text-center border-t border-border/40">
                   <CheckCircle2 className="h-10 w-10 text-emerald-500 mx-auto mb-2" />
-                  <p className="text-sm font-semibold">Minden számla rendezve!</p>
-                  <p className="text-xs text-muted-foreground mt-1">Nincs lejárt vagy ma esedékes kifizetetlen számlád.</p>
+                  <p className="text-sm font-semibold">{t('transfers:table.all_settled_title', 'Minden számla rendezve!')}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('transfers:table.all_settled_desc', 'Nincs lejárt vagy ma esedékes kifizetetlen számlád.')}</p>
                 </div>
               ) : (
                 <>
@@ -1530,12 +1543,12 @@ export default function TransfersPage() {
                               onCheckedChange={handleSelectAll}
                             />
                           </TableHead>
-                          <TableHead>Partner</TableHead>
-                          <TableHead className="min-w-[220px] whitespace-nowrap">Számlaszám(ok)</TableHead>
-                          <TableHead className="w-32 whitespace-nowrap">Határidő</TableHead>
-                          <TableHead className="w-40 text-right whitespace-nowrap">Összeg</TableHead>
-                          <TableHead className="w-72">Partner Bankszámlaszáma</TableHead>
-                          <TableHead className="w-28 text-center whitespace-nowrap">Művelet</TableHead>
+                          <TableHead>{t('transfers:table.partner', 'Partner')}</TableHead>
+                          <TableHead className="min-w-[220px] whitespace-nowrap">{t('transfers:table.invoice_numbers', 'Számlaszám(ok)')}</TableHead>
+                          <TableHead className="w-32 whitespace-nowrap">{t('transfers:table.due_date', 'Határidő')}</TableHead>
+                          <TableHead className="w-40 text-right whitespace-nowrap">{t('transfers:table.amount', 'Összeg')}</TableHead>
+                          <TableHead className="w-72">{t('transfers:table.partner_bank_account', 'Partner Bankszámlaszáma')}</TableHead>
+                          <TableHead className="w-28 text-center whitespace-nowrap">{t('transfers:history.actions', 'Művelet')}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1568,7 +1581,7 @@ export default function TransfersPage() {
                                   />
                                 </div>
                                 <div className="text-[10px] text-muted-foreground font-mono mt-1 max-w-[200px] truncate" title={`Szamlak: ${item.invoice_numbers.join(', ')}`}>
-                                  Közlemény: {`Szamlak: ${item.invoice_numbers.join(', ')}`.slice(0, 140)}
+                                  {t('transfers:table.narrative_prefix', 'Közlemény: Szamlak:')} {item.invoice_numbers.join(', ').slice(0, 140)}
                                 </div>
                               </TableCell>
                               <TableCell className="min-w-[220px] whitespace-nowrap">
@@ -1580,7 +1593,7 @@ export default function TransfersPage() {
                                         className="inline-flex items-center gap-1.5 bg-muted/80 hover:bg-muted border border-border/50 px-2 py-1 rounded-md text-xs text-foreground font-mono transition-colors shadow-xs"
                                       >
                                         <FileText className="h-3 w-3 text-muted-foreground shrink-0" />
-                                        <span className="font-semibold">{inv.invoice_number || 'Sorszám nélkül'}</span>
+                                        <span className="font-semibold">{inv.invoice_number || t('transfers:table.no_number', 'Sorszám nélkül')}</span>
                                         
                                         <div className="flex items-center gap-0.5 ml-1 pl-1 border-l border-border/60">
                                           {/* View Items */}
@@ -1643,11 +1656,11 @@ export default function TransfersPage() {
                               <TableCell className="whitespace-nowrap">
                                 <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-semibold ${isOverdue ? 'bg-destructive/10 text-destructive' : 'bg-amber-500/10 text-amber-700'}`}>
                                   <Calendar className="h-3.5 w-3.5" />
-                                  {new Date(item.due_date).toLocaleDateString('hu-HU')}
+                                  {new Date(item.due_date).toLocaleDateString(localeCode)}
                                 </span>
                               </TableCell>
                               <TableCell className="font-mono tabular-nums text-right whitespace-nowrap font-bold text-foreground">
-                                {item.amount.toLocaleString('hu-HU')} {item.currency}
+                                {formatCurrency(item.amount, item.currency)}
                               </TableCell>
                               <TableCell>
                                 <div className="flex flex-col gap-1 w-full max-w-[240px]">
@@ -1729,10 +1742,10 @@ export default function TransfersPage() {
                 <div>
                   <CardTitle className="text-lg font-bold flex items-center gap-2">
                     <CalendarDays className="h-5 w-5 text-primary" />
-                    Fizetési határidők naptári bontásban
+                    {t('transfers:calendar.title', 'Fizetési határidők naptári bontásban')}
                   </CardTitle>
                   <CardDescription className="text-xs">
-                    Válaszd ki a napot a naptárban az arra a napra esedékes bejövő számlák megtekintéséhez.
+                    {t('transfers:calendar.desc', 'Válaszd ki a napot a naptárban az arra a napra esedékes bejövő számlák megtekintéséhez.')}
                   </CardDescription>
                 </div>
                 {/* Month navigation */}
@@ -1741,10 +1754,9 @@ export default function TransfersPage() {
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
                   <span className="text-sm font-bold min-w-[120px] text-center">
-                    {calendarDate.getFullYear()}. {[
-                      'Január', 'Február', 'Március', 'Április', 'Május', 'Június',
-                      'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'
-                    ][calendarDate.getMonth()]}
+                    {isHr
+                      ? `${MONTH_NAMES_HR[calendarDate.getMonth()]} ${calendarDate.getFullYear()}.`
+                      : `${calendarDate.getFullYear()}. ${MONTH_NAMES_HU[calendarDate.getMonth()]}`}
                   </span>
                   <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleNextMonth}>
                     <ChevronRight className="h-4 w-4" />
@@ -1755,7 +1767,7 @@ export default function TransfersPage() {
             <CardContent className="p-4 pt-0 space-y-4">
               {/* Calendar Grid */}
               <div className="grid grid-cols-7 gap-1 text-center font-medium text-xs mb-2">
-                {['H', 'K', 'Sz', 'Cs', 'P', 'Sz', 'V'].map((d, idx) => (
+                {(isHr ? WEEKDAYS_HR : WEEKDAYS_HU).map((d, idx) => (
                   <div key={idx} className="py-2 text-muted-foreground/80 font-bold border-b">
                     {d}
                   </div>
@@ -1803,8 +1815,8 @@ export default function TransfersPage() {
                       </div>
                       {dayInvoices.length > 0 && (
                         <div className="text-[9px] text-right font-mono font-bold leading-tight truncate">
-                          <span className="block text-primary">{dayInvoices.length} db</span>
-                          <span className="block text-muted-foreground">{Math.round(daySum / 1000).toLocaleString('hu-HU')} E Ft</span>
+                          <span className="block text-primary">{t('transfers:calendar.items_count', { count: dayInvoices.length, defaultValue: `${dayInvoices.length} db` })}</span>
+                          <span className="block text-muted-foreground">{formatCurrency(daySum, isHr ? 'EUR' : 'HUF', true)}</span>
                         </div>
                       )}
                     </div>
@@ -1817,7 +1829,7 @@ export default function TransfersPage() {
                 <div className="border border-border/40 rounded-xl p-4 bg-muted/5 space-y-3 animate-in fade-in duration-200">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-bold text-foreground">
-                      Esedékes számlák ezen a napon: <span className="font-mono text-primary">{selectedCalendarDay.replace(/-/g, '. ') + '.'}</span>
+                      {t('transfers:calendar.due_on_day', 'Esedékes számlák ezen a napon:')} <span className="font-mono text-primary">{selectedCalendarDay.replace(/-/g, '. ') + '.'}</span>
                     </h4>
                     <Button 
                       size="sm" 
@@ -1830,7 +1842,7 @@ export default function TransfersPage() {
                       }}
                       className="h-8 text-xs font-semibold"
                     >
-                      Összes kijelölése utalásra
+                      {t('transfers:calendar.select_all', 'Összes kijelölése utalásra')}
                     </Button>
                   </div>
 
@@ -1838,10 +1850,10 @@ export default function TransfersPage() {
                     <Table className="compact-table">
                       <TableHeader>
                         <TableRow className="bg-muted/30">
-                          <TableHead>Partner</TableHead>
-                          <TableHead>Számlaszám</TableHead>
-                          <TableHead className="text-right">Összeg</TableHead>
-                          <TableHead>Bankszámlaszám</TableHead>
+                          <TableHead>{t('transfers:table.partner', 'Partner')}</TableHead>
+                          <TableHead>{t('transfers:table.invoice_numbers', 'Számlaszám')}</TableHead>
+                          <TableHead className="text-right">{t('transfers:table.amount', 'Összeg')}</TableHead>
+                          <TableHead>{t('transfers:table.partner_bank_account', 'Bankszámlaszám')}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1851,10 +1863,10 @@ export default function TransfersPage() {
                             <TableRow key={inv.id}>
                               <TableCell className="font-semibold text-xs">{inv.partner_name}</TableCell>
                               <TableCell className="font-mono text-xs text-muted-foreground">{inv.invoice_number}</TableCell>
-                              <TableCell className="font-mono text-xs text-right font-bold">{inv.amount.toLocaleString('hu-HU')} {inv.currency}</TableCell>
+                              <TableCell className="font-mono text-xs text-right font-bold">{formatCurrency(inv.amount, inv.currency)}</TableCell>
                               <TableCell className="font-mono text-xs">
                                 <span className={hasErr ? "text-destructive font-bold" : "text-muted-foreground"}>
-                                  {inv.partner_bank_account || 'Nincs rögzítve!'}
+                                  {inv.partner_bank_account || t('transfers:calendar.no_bank_account', 'Nincs rögzítve!')}
                                 </span>
                               </TableCell>
                             </TableRow>
@@ -1866,7 +1878,7 @@ export default function TransfersPage() {
                 </div>
               ) : (
                 <div className="p-8 text-center text-xs text-muted-foreground italic border border-dashed rounded-xl">
-                  Kattints egy napra a naptárban a részletek megtekintéséhez.
+                  {t('transfers:calendar.click_day_hint', 'Kattints egy napra a naptárban a részletek megtekintéséhez.')}
                 </div>
               )}
             </CardContent>
@@ -1880,10 +1892,10 @@ export default function TransfersPage() {
           <div>
             <CardTitle className="text-lg font-bold flex items-center gap-2">
               <History className="h-5 w-5 text-primary" />
-              Korábbi utalási állományok és párosítási státusz
+              {t('transfers:history.title', 'Korábbi utalási állományok és párosítási státusz')}
             </CardTitle>
             <CardDescription className="text-xs">
-              Az eddig kiexportált utalási tételek és a hozzájuk tartozó banki tranzakció-párosítások nyomon követése.
+              {t('transfers:history.desc', 'Az eddig kiexportált utalási tételek és a hozzájuk tartozó banki tranzakció-párosítások nyomon követése.')}
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -1895,18 +1907,18 @@ export default function TransfersPage() {
                 onClick={handleBulkDeleteTransfers}
               >
                 <Trash2 className="h-4 w-4" />
-                Kijelöltek törlése ({selectedHistoryIds.length})
+                {t('transfers:history.delete_selected', 'Kijelöltek törlése')} ({selectedHistoryIds.length})
               </Button>
             )}
             <Button variant="outline" size="sm" onClick={() => refetchTransferHistory()} className="h-8 text-xs gap-1.5">
-              Frissítés
+              {t('transfers:history.refresh', 'Frissítés')}
             </Button>
           </div>
         </CardHeader>
         <CardContent className="p-0">
           {transferHistory.length === 0 ? (
             <div className="py-12 text-center text-sm text-muted-foreground border-t border-border/40">
-              Még nem történt utalási fájl exportálás.
+              {t('transfers:history.empty', 'Még nem történt utalási fájl exportálás.')}
             </div>
           ) : (
             <>
@@ -1926,28 +1938,28 @@ export default function TransfersPage() {
                           }}
                         />
                       </TableHead>
-                      <TableHead className="whitespace-nowrap">Dátum</TableHead>
-                      <TableHead>Partner</TableHead>
-                      <TableHead className="whitespace-nowrap">Partner bankszámla</TableHead>
-                      <TableHead className="text-right whitespace-nowrap">Összeg</TableHead>
-                      <TableHead>Közlemény</TableHead>
-                      <TableHead className="text-center whitespace-nowrap">Státusz</TableHead>
-                      <TableHead className="text-center w-20 whitespace-nowrap">Művelet</TableHead>
+                      <TableHead className="whitespace-nowrap">{t('transfers:history.date', 'Dátum')}</TableHead>
+                      <TableHead>{t('transfers:history.partner', 'Partner')}</TableHead>
+                      <TableHead className="whitespace-nowrap">{t('transfers:history.partner_account', 'Partner bankszámla')}</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">{t('transfers:history.amount', 'Összeg')}</TableHead>
+                      <TableHead>{t('transfers:history.narrative', 'Közlemény')}</TableHead>
+                      <TableHead className="text-center whitespace-nowrap">{t('transfers:history.status', 'Státusz')}</TableHead>
+                      <TableHead className="text-center w-20 whitespace-nowrap">{t('transfers:history.actions', 'Művelet')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {paginatedHistoryItems.map((item: any) => {
                       const statusConfig = {
                         pending: {
-                          label: 'Párosításra vár',
+                          label: t('transfers:history.status_pending', 'Párosításra vár'),
                           className: 'bg-amber-500/10 text-amber-500 border-amber-500/20 animate-pulse'
                         },
                         sent: {
-                          label: 'Elküldve',
+                          label: t('transfers:history.status_sent', 'Elküldve'),
                           className: 'bg-blue-500/10 text-blue-500 border-blue-500/20'
                         },
                         matched: {
-                          label: 'Párosítva',
+                          label: t('transfers:history.status_matched', 'Párosítva'),
                           className: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                         }
                       }[item.status as 'pending' | 'sent' | 'matched'] || {
@@ -1970,7 +1982,7 @@ export default function TransfersPage() {
                             />
                           </TableCell>
                           <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">
-                            {new Date(item.created_at).toLocaleString('hu-HU')}
+                            {new Date(item.created_at).toLocaleString(localeCode)}
                           </TableCell>
                           <TableCell>
                             <CopyableCell
@@ -1986,7 +1998,7 @@ export default function TransfersPage() {
                             {item.partner_account}
                           </TableCell>
                           <TableCell className="font-mono tabular-nums text-right whitespace-nowrap font-bold text-foreground">
-                            {item.amount.toLocaleString('hu-HU')} {item.currency}
+                            {formatCurrency(item.amount, item.currency)}
                           </TableCell>
                           <TableCell className="text-xs max-w-xs truncate" title={item.narrative}>
                             {item.narrative}
@@ -2002,7 +2014,7 @@ export default function TransfersPage() {
                               size="icon"
                               className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
                               onClick={() => handleDeleteTransfer(item.id)}
-                              title="Törlés"
+                              title={t('transfers:history.delete', 'Törlés')}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -2036,10 +2048,10 @@ export default function TransfersPage() {
           <DialogHeader>
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
               <Landmark className="h-5 w-5 text-primary" />
-              Átutalási állomány generálása
+              {t('transfers:dialog.title', 'Átutalási állomány generálása')}
             </DialogTitle>
             <DialogDescription>
-              Válaszd ki a küldő céges számlát és a kívánt netbank fájlformátumot.
+              {t('transfers:dialog.desc', 'Válaszd ki a küldő céges számlát és a kívánt netbank fájlformátumot.')}
             </DialogDescription>
           </DialogHeader>
 
@@ -2047,7 +2059,7 @@ export default function TransfersPage() {
             {/* Sender Account */}
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <Label className="text-sm font-semibold">Indító céges bankszámla</Label>
+                <Label className="text-sm font-semibold">{t('transfers:dialog.sender_account', 'Indító céges bankszámla')}</Label>
                 {bankAccounts.length === 0 && (
                   <button
                     onClick={() => {
@@ -2056,7 +2068,7 @@ export default function TransfersPage() {
                     }}
                     className="text-xs text-primary hover:underline font-semibold"
                   >
-                    Saját hozzáadása
+                    {t('transfers:dialog.add_own', 'Saját hozzáadása')}
                   </button>
                 )}
               </div>
@@ -2064,13 +2076,13 @@ export default function TransfersPage() {
                 <div className="p-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl text-[11px] leading-relaxed font-medium flex items-start gap-2 shadow-sm">
                   <Info className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
                   <div>
-                    Minta bankszámlát használunk a fájl kipróbálásához. Valódi utaláshoz rögzítsd saját bankszámládat a Beállításokban!
+                    {t('transfers:dialog.sample_account_warning', 'Minta bankszámlát használunk a fájl kipróbálásához. Valódi utaláshoz rögzítsd saját bankszámládat a Beállításokban!')}
                   </div>
                 </div>
               )}
               <Select value={senderAccountId} onValueChange={setSenderAccountId}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Válassz indító számlát" />
+                  <SelectValue placeholder={t('transfers:dialog.select_sender_placeholder', 'Válassz indító számlát')} />
                 </SelectTrigger>
                 <SelectContent>
                   {displayBankAccounts.map(acc => (
@@ -2084,7 +2096,7 @@ export default function TransfersPage() {
 
             {/* Format Selection Card Grid */}
             <div className="space-y-2">
-              <Label className="text-sm font-semibold">Fájlformátum</Label>
+              <Label className="text-sm font-semibold">{t('transfers:dialog.file_format', 'Fájlformátum')}</Label>
               <div className="grid grid-cols-2 gap-3">
                 {[
                   { id: 'otp', name: 'OTP Bank', desc: 'Giro CSV' },
@@ -2114,14 +2126,14 @@ export default function TransfersPage() {
 
           <DialogFooter className="gap-2">
             <Button variant="ghost" onClick={() => setExportDialogOpen(false)} disabled={exporting}>
-              Mégse
+              {t('transfers:dialog.cancel', 'Mégse')}
             </Button>
             <Button
               onClick={() => handleGenerateFile()}
               disabled={exporting || displayBankAccounts.length === 0 || !senderAccountId}
               className="gap-1.5"
             >
-              {exporting ? 'Fájl generálása...' : 'Fájl letöltése és mentése'}
+              {exporting ? t('transfers:dialog.generating', 'Fájl generálása...') : t('transfers:dialog.download_save', 'Fájl letöltése és mentése')}
               <Download className="h-4 w-4" />
             </Button>
           </DialogFooter>
@@ -2134,16 +2146,16 @@ export default function TransfersPage() {
           <div className="flex items-center gap-3">
             <div className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
             <p className="text-sm font-semibold text-foreground">
-              Kijelölt tételek: <span className="font-extrabold text-primary">{selectedIds.length} db</span>
+              {t('transfers:floating_bar.selected_items', 'Kijelölt tételek:')} <span className="font-extrabold text-primary">{selectedIds.length} db</span>
             </p>
             <span className="text-muted-foreground/30 text-xs">|</span>
             <p className="text-xs text-muted-foreground font-medium">
-              Összesen: <span className="font-bold text-foreground">{stats.selectedSumHuf.toLocaleString('hu-HU')} Ft</span>
+              {t('transfers:floating_bar.total', 'Összesen:')} <span className="font-bold text-foreground">{formatCurrency(stats.selectedSumHuf, isHr ? 'EUR' : 'HUF')}</span>
             </p>
           </div>
           <Button onClick={triggerFileExport} className="gap-2 shadow-lg hover:shadow-primary/20 transition-all font-semibold h-9 text-xs rounded-xl">
             <Download className="h-4 w-4" />
-            Utalási lista letöltése
+            {t('transfers:floating_bar.download_button', 'Utalási lista letöltése')}
           </Button>
         </div>,
         document.body

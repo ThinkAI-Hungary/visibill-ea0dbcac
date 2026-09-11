@@ -1,4 +1,5 @@
 import { formatCurrencyTotals } from '@/components/CategoryAccordionItem';
+import { useTranslation } from 'react-i18next';
 
 interface CategoryAmountStat {
   name: string;
@@ -13,6 +14,7 @@ interface CategoryAmountSummaryProps {
 }
 
 export function CategoryAmountSummary({ stats }: CategoryAmountSummaryProps) {
+  const { t } = useTranslation(['categories']);
   // Find max HUF-equivalent for bar scaling
   const maxAmount = Math.max(...stats.map(s => s.totalAmount), 1);
 
@@ -24,7 +26,7 @@ export function CategoryAmountSummary({ stats }: CategoryAmountSummaryProps) {
   return (
     <div className="p-5 bg-card border border-border rounded-lg">
       <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-        Összeg kategóriánként
+        {t('categories:amount_by_category', 'Összeg kategóriánként')}
       </h3>
       <div className="space-y-2.5">
         {activeStats

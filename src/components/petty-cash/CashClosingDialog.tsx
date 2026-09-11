@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,8 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { FileDown, BookOpen, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
 import { useDateRange } from '@/contexts/DateRangeContext';
+import { getActiveLocale } from '@/lib/locale/formatters';
 import type { PettyCashEntry, PettyCashRegister } from './types';
 import { fmtBalance, fmtAmount, SOURCE_LABELS, roundHuf } from './types';
 
@@ -29,6 +30,7 @@ interface CashClosingDialogProps {
 export default function CashClosingDialog({
   open, onOpenChange, entries, registers, registerMap,
 }: CashClosingDialogProps) {
+  const { t } = useTranslation();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
   const [selectedRegister, setSelectedRegister] = useState<string>('all');
 
@@ -57,7 +59,7 @@ export default function CashClosingDialog({
   }, [filteredEntries]);
 
   const registerName = selectedRegister === 'all'
-    ? 'Összes pénztár'
+    ? t('pettyCash:closing_dialog.all_registers')
     : (registerMap[selectedRegister]?.name || '?');
 
   // F4: PDF export — generate a printable cash book
@@ -65,13 +67,15 @@ export default function CashClosingDialog({
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
+    const numLocale = getActiveLocale() === 'hr' ? 'hr-HR' : 'hu-HU';
+
     const rows = filteredEntries.map((e, idx) => {
       const regName = registerMap[e.register_id]?.name || '';
       const dateStr = e.entry_date ? format(new Date(e.entry_date), 'yyyy.MM.dd.') : '';
       const receiptType = e.amount >= 0 ? 'B' : 'K';
       const receiptNo = `${receiptType}-${String(idx + 1).padStart(3, '0')}`;
-      const income = e.amount >= 0 ? roundHuf(e.amount, e.currency).toLocaleString('hu-HU') : '';
-      const expense = e.amount < 0 ? roundHuf(Math.abs(e.amount), e.currency).toLocaleString('hu-HU') : '';
+      const income = e.amount >= 0 ? roundHuf(e.amount, e.currency).toLocaleString(numLocale) : '';
+      const expense = e.amount < 0 ? roundHuf(Math.abs(e.amount), e.currency).toLocaleString(numLocale) : '';
 
       return `<tr>
         <td class="mono">${receiptNo}</td>
@@ -89,15 +93,15 @@ export default function CashClosingDialog({
       const net = roundHuf(s.income + s.expense, cur);
       return `<tr>
         <td><strong>${cur}</strong></td>
-        <td class="right">${s.count} tétel</td>
-        <td class="right green">${roundHuf(s.income, cur).toLocaleString('hu-HU')}</td>
-        <td class="right red">${roundHuf(Math.abs(s.expense), cur).toLocaleString('hu-HU')}</td>
-        <td class="right" style="font-weight:700">${net.toLocaleString('hu-HU')}</td>
+        <td class="right">${t('pettyCash:closing_dialog.items_count', { count: s.count })}</td>
+        <td class="right green">${roundHuf(s.income, cur).toLocaleString(numLocale)}</td>
+        <td class="right red">${roundHuf(Math.abs(s.expense), cur).toLocaleString(numLocale)}</td>
+        <td class="right" style="font-weight:700">${net.toLocaleString(numLocale)}</td>
       </tr>`;
     }).join('');
 
     const html = `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Pénztárzárás — ${registerName}</title>
+<html><head><meta charset="utf-8"><title>${t('pettyCash:closing_dialog.pdf.page_title', { register: registerName })}</title>
 <style>
   body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; margin: 20px; color: #1a1a1a; }
   h1 { font-size: 18px; margin-bottom: 4px; }
@@ -113,21 +117,33 @@ export default function CashClosingDialog({
   .summary h2 { font-size: 13px; margin: 0 0 8px 0; }
   @media print { body { margin: 10mm; } }
 </style></head><body>
-  <h1>📋 Pénztárzárás — ${registerName}</h1>
-  <div class="meta">Időszak: ${dateFromFormatted} – ${dateToFormatted} | Generálva: ${format(new Date(), 'yyyy.MM.dd. HH:mm')}</div>
+  <h1>📋 ${t('pettyCash:closing_dialog.pdf.page_title', { register: registerName })}</h1>
+  <div class="meta">${t('pettyCash:closing_dialog.pdf.period', { from: dateFromFormatted, to: dateToFormatted })} | ${t('pettyCash:closing_dialog.pdf.generated_at', { date: format(new Date(), 'yyyy.MM.dd. HH:mm') })}</div>
 
   <table>
     <thead><tr>
-      <th>Sorszám</th><th>Dátum</th><th>Pénztár</th><th>Típus</th><th>Leírás</th>
-      <th class="right">Bevétel</th><th class="right">Kiadás</th><th class="right">Valuta</th>
+      <th>${t('pettyCash:closing_dialog.pdf.table.sequence')}</th>
+      <th>${t('pettyCash:closing_dialog.pdf.table.date')}</th>
+      <th>${t('pettyCash:closing_dialog.pdf.table.register')}</th>
+      <th>${t('pettyCash:closing_dialog.pdf.table.type')}</th>
+      <th>${t('pettyCash:closing_dialog.pdf.table.description')}</th>
+      <th class="right">${t('pettyCash:closing_dialog.pdf.table.income')}</th>
+      <th class="right">${t('pettyCash:closing_dialog.pdf.table.expense')}</th>
+      <th class="right">${t('pettyCash:closing_dialog.pdf.table.currency')}</th>
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>
 
   <div class="summary">
-    <h2>Összesítés</h2>
+    <h2>${t('pettyCash:closing_dialog.pdf.summary.title')}</h2>
     <table>
-      <thead><tr><th>Valuta</th><th class="right">Tételek</th><th class="right">Bevétel</th><th class="right">Kiadás</th><th class="right">Nettó</th></tr></thead>
+      <thead><tr>
+        <th>${t('pettyCash:closing_dialog.pdf.summary.currency')}</th>
+        <th class="right">${t('pettyCash:closing_dialog.pdf.summary.items')}</th>
+        <th class="right">${t('pettyCash:closing_dialog.pdf.summary.income')}</th>
+        <th class="right">${t('pettyCash:closing_dialog.pdf.summary.expense')}</th>
+        <th class="right">${t('pettyCash:closing_dialog.pdf.summary.net')}</th>
+      </tr></thead>
       <tbody>${summaryRows}</tbody>
     </table>
   </div>
@@ -144,23 +160,23 @@ export default function CashClosingDialog({
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-primary" /> Pénztárzárás
+            <BookOpen className="w-5 h-5 text-primary" /> {t('pettyCash:closing_dialog.title')}
           </DialogTitle>
           <DialogDescription>
-            Összesítő az aktuális időszakban ({dateFromFormatted} – {dateToFormatted})
+            {t('pettyCash:closing_dialog.description', { from: dateFromFormatted, to: dateToFormatted })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           {/* Register filter */}
           <div className="flex items-center gap-3">
-            <Label className="text-sm shrink-0">Pénztár:</Label>
+            <Label className="text-sm shrink-0">{t('pettyCash:closing_dialog.register_label')}</Label>
             <Select value={selectedRegister} onValueChange={setSelectedRegister}>
               <SelectTrigger className="w-48 h-8 text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Összes pénztár</SelectItem>
+                <SelectItem value="all">{t('pettyCash:closing_dialog.all_registers')}</SelectItem>
                 {registers.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -178,7 +194,7 @@ export default function CashClosingDialog({
                   <CardContent className="p-3 space-y-1">
                     <div className="flex items-center justify-between">
                       <Badge variant="outline" className="text-xs">{cur}</Badge>
-                      <span className="text-xs text-muted-foreground">{s.count} tétel</span>
+                      <span className="text-xs text-muted-foreground">{t('pettyCash:closing_dialog.items_count', { count: s.count })}</span>
                     </div>
                     <div className="flex items-center gap-1 text-sm">
                       <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
@@ -206,7 +222,7 @@ export default function CashClosingDialog({
 
           {currencySummary.length === 0 && (
             <div className="text-center text-muted-foreground py-8">
-              Nincs tétel az aktuális időszakban
+              {t('pettyCash:closing_dialog.empty')}
             </div>
           )}
 
@@ -216,11 +232,11 @@ export default function CashClosingDialog({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-16 text-xs">#</TableHead>
-                    <TableHead className="text-xs">Dátum</TableHead>
-                    <TableHead className="text-xs">Típus</TableHead>
-                    <TableHead className="text-xs">Leírás</TableHead>
-                    <TableHead className="text-right text-xs">Összeg</TableHead>
+                    <TableHead className="w-16 text-xs">{t('pettyCash:closing_dialog.table.index')}</TableHead>
+                    <TableHead className="text-xs">{t('pettyCash:closing_dialog.table.date')}</TableHead>
+                    <TableHead className="text-xs">{t('pettyCash:closing_dialog.table.type')}</TableHead>
+                    <TableHead className="text-xs">{t('pettyCash:closing_dialog.table.description')}</TableHead>
+                    <TableHead className="text-right text-xs">{t('pettyCash:closing_dialog.table.amount')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -249,9 +265,9 @@ export default function CashClosingDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Bezárás</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{t('pettyCash:closing_dialog.close')}</Button>
           <Button onClick={handleExportPdf} disabled={filteredEntries.length === 0}>
-            <FileDown className="w-4 h-4 mr-2" /> PDF nyomtatás
+            <FileDown className="w-4 h-4 mr-2" /> {t('pettyCash:closing_dialog.print_pdf')}
           </Button>
         </DialogFooter>
       </DialogContent>

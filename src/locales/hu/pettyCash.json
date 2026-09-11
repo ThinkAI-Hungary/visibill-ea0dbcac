@@ -10,6 +10,124 @@
   "default_badge": "Alapértelmezett",
   "denomination_calc": "Címletszámoló",
   "limit_warning_title": "Pénztári limit figyelmeztetés",
+  "limit_warning_desc": "Az alábbi házipénztárak egyenlege meghaladja a megengedett {{limit}} napi készpénzállományt:",
   "settings_title": "Házipénztár Beállítások",
-  "settings_desc": "Készpénzállomány limit értékének testreszabása cég szinten."
+  "settings_desc": "Készpénzállomány limit értékének testreszabása cég szinten.",
+  "limit_setting_label": "Készpénz limit figyelmeztetés",
+  "limit_utilization": "Limit kihasználtság",
+  "registers": {
+    "title": "Pénztárak",
+    "subtitle": "Házipénztárak kezelése, valuták és helyszínek",
+    "new_register": "Új pénztár",
+    "first_register": "Első pénztár létrehozása",
+    "no_registers": "Nincs még pénztár létrehozva",
+    "make_default": "Alapértelmezetté",
+    "opening_balances": "Nyitó egyenlegek"
+  },
+  "calculator": {
+    "title": "Címletszámoló",
+    "register": "Pénztár",
+    "theoretical_balance": "Könyv szerinti egyenleg",
+    "notes": "Papírpénzek (Bankjegyek)",
+    "coins": "Fémpénzek (Érmék)",
+    "no_coins": "Nincsenek érmék ehhez a devizához.",
+    "theoretical": "Könyv szerinti",
+    "calculated": "Számolt fizikai",
+    "discrepancy": "Eltérés",
+    "clear_all": "Minden törlése",
+    "close": "Bezárás"
+  },
+  "closing_dialog": {
+    "title": "Pénztárzárás",
+    "description": "Összesítő az aktuális időszakban ({{from}} – {{to}})",
+    "register_label": "Pénztár:",
+    "all_registers": "Összes pénztár",
+    "items_count": "{{count}} tétel",
+    "empty": "Nincs tétel az aktuális időszakban",
+    "table": {
+      "index": "#",
+      "date": "Dátum",
+      "type": "Típus",
+      "description": "Leírás",
+      "amount": "Összeg"
+    },
+    "close": "Bezárás",
+    "print_pdf": "PDF nyomtatás",
+    "pdf": {
+      "page_title": "Pénztárzárás — {{register}}",
+      "period": "Időszak: {{from}} – {{to}}",
+      "generated_at": "Generálva: {{date}}",
+      "table": {
+        "sequence": "Sorszám",
+        "date": "Dátum",
+        "register": "Pénztár",
+        "type": "Típus",
+        "description": "Leírás",
+        "income": "Bevétel",
+        "expense": "Kiadás",
+        "currency": "Valuta"
+      },
+      "summary": {
+        "title": "Összesítés",
+        "currency": "Valuta",
+        "items": "Tételek",
+        "income": "Bevétel",
+        "expense": "Kiadás",
+        "net": "Nettó"
+      }
+    }
+  },
+  "signature_dialog": {
+    "title": "Digitális Aláírás a Bizonylathoz",
+    "description": "Rajzold le a kifizető és átvevő aláírását a lenti paneleken. Az aláírások bekerülnek a generált PDF bizonylatba.",
+    "payer_expense": "Kifizető / Pénztáros",
+    "payer_income": "Befizető / Pénztáros",
+    "recipient_expense": "Kedvezményezett / Átvevő",
+    "recipient_income": "Átvevő / Munkatárs",
+    "cancel": "Mégse",
+    "generate_pdf": "PDF Generálása"
+  },
+  "entries": {
+    "filter_register": "Pénztár",
+    "all_registers": "Összes pénztár",
+    "filter_currency": "Valuta",
+    "all_currencies": "Összes",
+    "filter_type": "Típus",
+    "all_types": "Összes típus",
+    "search_placeholder": "Keresés...",
+    "cash_closing": "Pénztárzárás",
+    "sync": "Szinkronizálás",
+    "manual_entry": "Manuális tétel",
+    "empty_period": "Nincs tétel a kiválasztott időszakban",
+    "columns": {
+      "sequence": "Sorszám",
+      "date": "Dátum",
+      "register": "Pénztár",
+      "type": "Típus",
+      "description": "Leírás",
+      "amount": "Összeg",
+      "balance": "Egyenleg"
+    },
+    "badges": {
+      "opening": "NYITÓ",
+      "pending_approval": "Jóváhagyásra vár",
+      "cash_receipt": "Pénztárbizonylat",
+      "related_party": "Kapcsolt"
+    },
+    "source_types": {
+      "withdrawal": "KP felvétel",
+      "cash_deposit": "KP befizetés",
+      "cash_sale": "KP értékesítés",
+      "cash_expense": "KP kiadás",
+      "manual": "Manuális",
+      "transfer": "Átvezetés",
+      "invoice_settlement": "Számla rendezés",
+      "opening_balance": "Nyitó egyenleg"
+    },
+    "actions": {
+      "view_receipt": "Bizonylat megtekintése",
+      "edit_and_approve": "Módosítás és Jóváhagyás",
+      "approve_and_book": "Jóváhagyás és Könyvelés"
+    }
+  }
 }

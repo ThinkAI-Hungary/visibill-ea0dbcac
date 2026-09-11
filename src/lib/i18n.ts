@@ -20,6 +20,8 @@ import huAccounting from '@/locales/hu/accounting.json';
 import huHr from '@/locales/hu/hr.json';
 import huTickets from '@/locales/hu/tickets.json';
 import huAuth from '@/locales/hu/auth.json';
+import huNotes from '@/locales/hu/notes.json';
+import huExchangeRates from '@/locales/hu/exchangeRates.json';
 
 // Croatian resources
 import hrCommon from '@/locales/hr/common.json';
@@ -39,6 +41,8 @@ import hrAccounting from '@/locales/hr/accounting.json';
 import hrHr from '@/locales/hr/hr.json';
 import hrTickets from '@/locales/hr/tickets.json';
 import hrAuth from '@/locales/hr/auth.json';
+import hrNotes from '@/locales/hr/notes.json';
+import hrExchangeRates from '@/locales/hr/exchangeRates.json';
 
 export const defaultNS = 'common';
 
@@ -61,6 +65,8 @@ export const resources = {
     hr: huHr,
     tickets: huTickets,
     auth: huAuth,
+    notes: huNotes,
+    exchangeRates: huExchangeRates,
   },
   hr: {
     common: hrCommon,
@@ -80,6 +86,8 @@ export const resources = {
     hr: hrHr,
     tickets: hrTickets,
     auth: hrAuth,
+    notes: hrNotes,
+    exchangeRates: hrExchangeRates,
   },
 } as const;
 
@@ -117,7 +125,7 @@ i18n
     fallbackLng: 'hu',
     supportedLngs: ['hu', 'hr'],
     defaultNS,
-    ns: ['common', 'navigation', 'dashboard', 'invoices', 'transactions', 'partners', 'upload', 'settings', 'receivables', 'categories', 'projects', 'pettyCash', 'transfers', 'accounting', 'hr', 'tickets', 'auth'],
+    ns: ['common', 'navigation', 'dashboard', 'invoices', 'transactions', 'partners', 'upload', 'settings', 'receivables', 'categories', 'projects', 'pettyCash', 'transfers', 'accounting', 'hr', 'tickets', 'auth', 'notes', 'exchangeRates'],
     detection: {
       order: ['pathPrefix'],
       caches: [],

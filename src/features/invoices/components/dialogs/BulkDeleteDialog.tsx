@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -12,6 +13,7 @@ import { useInvoiceContext } from '../../context/useInvoiceContext';
 import { Trash2, Loader2 } from 'lucide-react';
 
 export function BulkDeleteDialog() {
+  const { t } = useTranslation(['invoices', 'common']);
   const {
     bulkDeleteDialogOpen,
     setBulkDeleteDialogOpen,
@@ -54,14 +56,16 @@ export function BulkDeleteDialog() {
         <AlertDialogHeader className="w-full min-w-0">
           <AlertDialogTitle className="flex items-center gap-2 text-destructive">
             <Trash2 className="h-5 w-5" />
-            Kijelölt bizonylatok törlése
+            {t('invoices:dialogs.bulk_delete.title', 'Kijelölt bizonylatok törlése')}
           </AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div className="space-y-1.5 w-full min-w-0">
               <p className="text-sm text-foreground">
-                Válaszd ki a kijelölt <span className="font-semibold text-primary">{count} db</span> számla törlésének módját:
+                {t('invoices:dialogs.bulk_delete.description_prefix', 'Válaszd ki a kijelölt')}{' '}
+                <span className="font-semibold text-primary">{count} {t('invoices:dialogs.bulk_delete.pieces', 'db')}</span>{' '}
+                {t('invoices:dialogs.bulk_delete.description_suffix', 'számla törlésének módját:')}
               </p>
-              <p className="text-xs text-muted-foreground">Ez a művelet nem vonható vissza.</p>
+              <p className="text-xs text-muted-foreground">{t('invoices:dialogs.bulk_delete.cannot_undo', 'Ez a művelet nem vonható vissza.')}</p>
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -80,10 +84,10 @@ export function BulkDeleteDialog() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400">
-                  Csak a számlasorok törlése
+                  {t('invoices:dialogs.bulk_delete.option_row_only_title', 'Csak a számlasorok törlése')}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  A kijelölt számlák sorai törlődnek a nyilvántartásból, de az eredetileg feltöltött dokumentumfájlok megmaradnak az adatbázisban.
+                  {t('invoices:dialogs.bulk_delete.option_row_only_desc', 'A kijelölt számlák sorai törlődnek a nyilvántartásból, de az eredetileg feltöltött dokumentumfájlok megmaradnak az adatbázisban.')}
                 </p>
               </div>
             </div>
@@ -102,10 +106,10 @@ export function BulkDeleteDialog() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-destructive">
-                  Számlasorok és feltöltött fájlok törlése
+                  {t('invoices:dialogs.bulk_delete.option_row_and_file_title', 'Számlasorok és feltöltött fájlok törlése')}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  A kijelölt számlák sorai és a hozzájuk tartozó eredeti feltöltött fájlok is véglegesen törlődnek a tárhelyről és az adatbázisból.
+                  {t('invoices:dialogs.bulk_delete.option_row_and_file_desc', 'A kijelölt számlák sorai és a hozzájuk tartozó eredeti feltöltött fájlok is véglegesen törlődnek a tárhelyről és az adatbázisból.')}
                 </p>
               </div>
             </div>
@@ -115,12 +119,12 @@ export function BulkDeleteDialog() {
         {isDeleting && (
           <div className="flex items-center justify-center py-2">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            <span className="ml-2 text-sm text-muted-foreground">Törlés folyamatban...</span>
+            <span className="ml-2 text-sm text-muted-foreground">{t('invoices:dialogs.bulk_delete.deleting', 'Törlés folyamatban...')}</span>
           </div>
         )}
 
         <AlertDialogFooter className="w-full min-w-0 mt-2">
-          <AlertDialogCancel disabled={isDeleting}>Mégse</AlertDialogCancel>
+          <AlertDialogCancel disabled={isDeleting}>{t('common:actions.cancel', 'Mégse')}</AlertDialogCancel>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

@@ -11,6 +11,7 @@ import { useActivePreset } from '@/hooks/useActivePreset';
 import { UploadCloud, FileText, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { CustomTooltip } from '@/components/ui/custom-tooltip';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface UploadAuditXmlModalProps {
   open: boolean;
@@ -19,6 +20,7 @@ interface UploadAuditXmlModalProps {
 }
 
 export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAuditXmlModalProps) {
+  const { t } = useTranslation(['accounting', 'common']);
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const { presets } = useActivePreset(selectedCompany?.id);
@@ -42,9 +44,9 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
       setFile(droppedFile);
       setStatus('idle');
     } else {
-      toast({ title: 'Csak XML fájlokat tölthetsz fel', variant: 'destructive' });
+      toast({ title: t('accounting:dialogs.upload_audit_xml.only_xml_toast'), variant: 'destructive' });
     }
-  }, [toast]);
+  }, [toast, t]);
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
@@ -74,7 +76,7 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
         .from('gl_uploads')
         .upload(storagePath, file, { upsert: true });
 
-      if (storageError) throw new Error(`Storage hiba: ${storageError.message}`);
+      if (storageError) throw new Error(`Storage: ${storageError.message}`);
 
       setStatus('processing');
 
@@ -97,7 +99,7 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
         .select('id')
         .single();
 
-      if (insertError || !insertedData) throw new Error(`Import hiba: ${insertError?.message || 'Nem sikerült elmenteni az import rekordot'}`);
+      if (insertError || !insertedData) throw new Error(`Import: ${insertError?.message || t('accounting:dialogs.upload_audit_xml.status_check_error')}`);
 
       if (dryRun) {
         let attempts = 0;
@@ -112,7 +114,7 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
           if (queryError || !rowData) {
             clearInterval(checkStatus);
             setStatus('error');
-            setErrorMsg('Nem sikerült ellenőrizni a státuszt.');
+            setErrorMsg(t('accounting:dialogs.upload_audit_xml.status_check_error'));
             setUploading(false);
             return;
           }
@@ -123,27 +125,27 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
             setStatus('done');
             setUploading(false);
             toast({
-              title: 'Ellenőrzés kész!',
-              description: 'Az XML fájl elemzése sikeresen lefutott.',
+              title: t('accounting:dialogs.upload_audit_xml.dry_run_completed_toast_title'),
+              description: t('accounting:dialogs.upload_audit_xml.dry_run_completed_toast_desc'),
               className: 'bg-green-50 text-green-900 border-green-200',
             });
           } else if (rowData.processing_status === 'error') {
             clearInterval(checkStatus);
             setStatus('error');
-            setErrorMsg(rowData.error_message || 'Hiba történt a száraz futás során.');
+            setErrorMsg(rowData.error_message || t('accounting:dialogs.upload_audit_xml.dry_run_error'));
             setUploading(false);
           } else if (attempts > 40) {
             clearInterval(checkStatus);
             setStatus('error');
-            setErrorMsg('Időtúllépés az előnézet feldolgozása közben.');
+            setErrorMsg(t('accounting:dialogs.upload_audit_xml.timeout_error'));
             setUploading(false);
           }
         }, 1500);
       } else {
         setStatus('done');
         toast({
-          title: 'XML feltöltve!',
-          description: 'A feldolgozás megkezdődött. A főkönyvi adatok hamarosan megjelennek.',
+          title: t('accounting:dialogs.upload_audit_xml.upload_success_toast_title'),
+          description: t('accounting:dialogs.upload_audit_xml.upload_success_toast_desc'),
           className: 'bg-green-50 text-green-900 border-green-200',
         });
 
@@ -158,8 +160,8 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
 
     } catch (err: any) {
       setStatus('error');
-      setErrorMsg(err.message || 'Ismeretlen hiba');
-      toast({ title: 'Hiba a feltöltés során', description: err.message, variant: 'destructive' });
+      setErrorMsg(err.message || t('accounting:dialogs.upload_audit_xml.unknown_error'));
+      toast({ title: t('accounting:dialogs.upload_audit_xml.upload_error_toast_title'), description: err.message, variant: 'destructive' });
       setUploading(false);
     }
   };
@@ -182,12 +184,12 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
             <FileText className="w-5 h-5 text-primary" />
-            Audit XML Import
+            {t('accounting:dialogs.upload_audit_xml.title')}
           </DialogTitle>
           <DialogDescription>
             {isPreviewDone 
-              ? 'A fájl parszolása sikeresen befejeződött. Ellenőrizd az előnézeti adatokat.'
-              : 'Importálj könyvelőprogramból exportált audit XML fájlt a főkönyvi kivonat megtekintéséhez.'
+              ? t('accounting:dialogs.upload_audit_xml.preview_done_desc')
+              : t('accounting:dialogs.upload_audit_xml.description')
             }
           </DialogDescription>
         </DialogHeader>
@@ -198,48 +200,48 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
               <div className="flex items-center gap-3 p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-600">
                 <CheckCircle2 className="w-5 h-5 shrink-0" />
                 <div>
-                  <p className="font-bold text-sm">Sikeres ellenőrzés (Dry Run)</p>
-                  <p className="text-xs opacity-90">A fájl formailag helyes, nem történt adat-beszúrás.</p>
+                  <p className="font-bold text-sm">{t('accounting:dialogs.upload_audit_xml.dry_run_success_title')}</p>
+                  <p className="text-xs opacity-90">{t('accounting:dialogs.upload_audit_xml.dry_run_success_desc')}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-card border p-3 rounded-xl">
-                  <div className="text-[10px] text-muted-foreground">Időszak</div>
+                  <div className="text-[10px] text-muted-foreground">{t('accounting:dialogs.upload_audit_xml.period')}</div>
                   <div className="text-xs font-semibold mt-0.5">
                     {previewData.period_start?.replace(/-/g, '.')} – {previewData.period_end?.replace(/-/g, '.')}
                   </div>
                 </div>
                 <div className="bg-card border p-3 rounded-xl">
-                  <div className="text-[10px] text-muted-foreground">Forrásprogram</div>
+                  <div className="text-[10px] text-muted-foreground">{t('accounting:dialogs.upload_audit_xml.source_program')}</div>
                   <CustomTooltip content={`${previewData.source_program} ${previewData.source_version || ''}`} side="top">
                     <div className="text-xs font-semibold mt-0.5 truncate">
-                      {previewData.source_program || 'Ismeretlen'}
+                      {previewData.source_program || t('accounting:dialogs.upload_audit_xml.unknown')}
                     </div>
                   </CustomTooltip>
                 </div>
                 <div className="bg-card border p-3 rounded-xl">
-                  <div className="text-[10px] text-muted-foreground">Főkönyvi számok</div>
+                  <div className="text-[10px] text-muted-foreground">{t('accounting:dialogs.upload_audit_xml.accounts_count')}</div>
                   <div className="text-sm font-bold mt-0.5 tabular-nums text-foreground">
-                    {previewData.account_count?.toLocaleString()} db
+                    {previewData.account_count?.toLocaleString()} {t('accounting:dialogs.upload_audit_xml.count_unit')}
                   </div>
                 </div>
                 <div className="bg-card border p-3 rounded-xl">
-                  <div className="text-[10px] text-muted-foreground">Könyvelési tételek</div>
+                  <div className="text-[10px] text-muted-foreground">{t('accounting:dialogs.upload_audit_xml.entries_count')}</div>
                   <div className="text-sm font-bold mt-0.5 tabular-nums text-foreground">
-                    {previewData.entry_count?.toLocaleString()} db
+                    {previewData.entry_count?.toLocaleString()} {t('accounting:dialogs.upload_audit_xml.count_unit')}
                   </div>
                 </div>
                 <div className="bg-card border p-3 rounded-xl">
-                  <div className="text-[10px] text-muted-foreground">Bizonylatok</div>
+                  <div className="text-[10px] text-muted-foreground">{t('accounting:dialogs.upload_audit_xml.vouchers_count')}</div>
                   <div className="text-sm font-bold mt-0.5 tabular-nums text-foreground">
-                    {previewData.voucher_count?.toLocaleString()} db
+                    {previewData.voucher_count?.toLocaleString()} {t('accounting:dialogs.upload_audit_xml.count_unit')}
                   </div>
                 </div>
                 <div className="bg-card border p-3 rounded-xl">
-                  <div className="text-[10px] text-muted-foreground">Partnerek</div>
+                  <div className="text-[10px] text-muted-foreground">{t('accounting:dialogs.upload_audit_xml.partners_count')}</div>
                   <div className="text-sm font-bold mt-0.5 tabular-nums text-foreground">
-                    {previewData.partner_count?.toLocaleString()} db
+                    {previewData.partner_count?.toLocaleString()} {t('accounting:dialogs.upload_audit_xml.count_unit')}
                   </div>
                 </div>
               </div>
@@ -274,15 +276,15 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
                 ) : (
                   <div className="flex flex-col items-center gap-2">
                     <UploadCloud className="w-8 h-8 text-muted-foreground/60" />
-                    <p className="text-sm font-medium">Húzd ide az XML fájlt</p>
-                    <p className="text-xs text-muted-foreground">vagy kattints a tallózáshoz</p>
+                    <p className="text-sm font-medium">{t('accounting:dialogs.upload_audit_xml.drag_drop_xml')}</p>
+                    <p className="text-xs text-muted-foreground">{t('accounting:dialogs.upload_audit_xml.or_browse')}</p>
                   </div>
                 )}
               </div>
 
               {/* Preset selection */}
               <div className="space-y-3">
-                <Label className="text-sm font-medium">Számlatükör sablon</Label>
+                <Label className="text-sm font-medium">{t('accounting:dialogs.upload_audit_xml.preset_template')}</Label>
                 <Select value={presetMode} onValueChange={(v: 'original' | 'existing') => setPresetMode(v)}>
                   <SelectTrigger className="h-10">
                     <SelectValue />
@@ -291,13 +293,13 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
                     <SelectItem value="original">
                       <span className="flex items-center gap-2">
                         <FileText className="w-3.5 h-3.5 text-primary" />
-                        Eredeti sablon (XML-ből)
+                        {t('accounting:dialogs.upload_audit_xml.preset_original')}
                       </span>
                     </SelectItem>
                     <SelectItem value="existing">
                       <span className="flex items-center gap-2">
                         <FileText className="w-3.5 h-3.5 text-amber-500" />
-                        Meglévő sablon használata
+                        {t('accounting:dialogs.upload_audit_xml.preset_existing')}
                       </span>
                     </SelectItem>
                   </SelectContent>
@@ -305,19 +307,19 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
 
                 {presetMode === 'original' && (
                   <p className="text-xs text-muted-foreground px-1">
-                    Az XML fájlban található számlatükör automatikusan létrehozásra kerül új sablonként.
+                    {t('accounting:dialogs.upload_audit_xml.preset_original_desc')}
                   </p>
                 )}
 
                 {presetMode === 'existing' && (
                   <Select value={selectedPresetId} onValueChange={setSelectedPresetId}>
                     <SelectTrigger className="h-10">
-                      <SelectValue placeholder="Válassz sablont..." />
+                      <SelectValue placeholder={t('accounting:dialogs.upload_audit_xml.select_preset_placeholder')} />
                     </SelectTrigger>
                     <SelectContent>
                       {presets?.map(p => (
                         <SelectItem key={p.id} value={p.id}>
-                          {p.name} {p.type === 'generic' ? '(Beépített)' : ''}
+                          {p.name} {p.type === 'generic' ? ` ${t('accounting:dialogs.upload_audit_xml.builtin_badge')}` : ''}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -337,10 +339,10 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
                     htmlFor="dry_run"
                     className="text-xs font-semibold leading-none cursor-pointer"
                   >
-                    Dry run (Csak előnézet)
+                    {t('accounting:dialogs.upload_audit_xml.dry_run_label')}
                   </Label>
                   <p className="text-[10px] text-muted-foreground">
-                    Ellenőrzi a fájl formátumát és beolvassa a darabszámokat tranzakciós mentés nélkül.
+                    {t('accounting:dialogs.upload_audit_xml.dry_run_desc')}
                   </p>
                 </div>
               </div>
@@ -358,7 +360,7 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
           {status === 'done' && !dryRun && (
             <div className="flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 dark:text-emerald-400 p-3 rounded-lg">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>Feltöltés sikeres! A feldolgozás a háttérben folytatódik...</span>
+              <span>{t('accounting:dialogs.upload_audit_xml.upload_success')}</span>
             </div>
           )}
         </div>
@@ -367,16 +369,16 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
           {isPreviewDone ? (
             <>
               <Button variant="outline" onClick={() => { onOpenChange(false); resetState(); }} className="w-full">
-                Bezárás
+                {t('accounting:dialogs.upload_audit_xml.close')}
               </Button>
               <Button variant="secondary" onClick={resetState} className="w-full">
-                Új feltöltés
+                {t('accounting:dialogs.upload_audit_xml.new_upload')}
               </Button>
             </>
           ) : (
             <>
               <Button variant="outline" onClick={() => { onOpenChange(false); resetState(); }} disabled={uploading}>
-                Mégse
+                {t('accounting:dialogs.upload_audit_xml.cancel')}
               </Button>
               <Button
                 onClick={handleUpload}
@@ -386,12 +388,12 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
                 {uploading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    {status === 'uploading' ? 'Feltöltés...' : 'Ellenőrzés...'}
+                    {status === 'uploading' ? t('accounting:dialogs.upload_audit_xml.uploading_progress') : t('accounting:dialogs.upload_audit_xml.checking_progress')}
                   </>
                 ) : (
                   <>
                     <UploadCloud className="w-4 h-4" />
-                    {dryRun ? 'Ellenőrzés indítása' : 'Importálás'}
+                    {dryRun ? t('accounting:dialogs.upload_audit_xml.dry_run_action') : t('accounting:dialogs.upload_audit_xml.upload_action')}
                   </>
                 )}
               </Button>

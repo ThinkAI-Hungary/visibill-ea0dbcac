@@ -1,4 +1,5 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchAllGlAccountsByPreset } from '@/lib/glData';
@@ -90,6 +91,7 @@ export function InvoiceItemsDialog({
   projectId,
   invoiceDirection,
 }: InvoiceItemsDialogProps) {
+  const { t } = useTranslation(['invoices', 'common']);
   const { selectedCompany } = useCompany();
   const { session } = useAuth();
   const { activePresetId } = useActivePreset(selectedCompany?.id);
@@ -171,7 +173,7 @@ export function InvoiceItemsDialog({
 
     if (error) {
       toast({
-        title: 'Hiba a projekt frissítésekor',
+        title: t('invoices:dialogs.items.toast_project_error'),
         description: error.message,
         variant: 'destructive',
       });
@@ -192,8 +194,8 @@ export function InvoiceItemsDialog({
 
     queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
     toast({
-      title: 'Projekt frissítve',
-      description: 'A tétel projekt-hozzárendelése sikeresen módosult.',
+      title: t('invoices:dialogs.items.toast_project_updated'),
+      description: t('invoices:dialogs.items.toast_project_updated_desc'),
     });
   };
 
@@ -212,20 +214,20 @@ export function InvoiceItemsDialog({
 
       if (error) {
         toast({
-          title: 'Hiba a szabály mentésekor',
+          title: t('invoices:dialogs.items.toast_rule_error'),
           description: error.message,
           variant: 'destructive',
         });
       } else {
         toast({
-          title: 'Szabály sikeresen elmentve',
-          description: `A(z) "${projectName}" projektszabály rögzítve lett és alkalmazva az azonos tételekre.`,
+          title: t('invoices:dialogs.items.toast_rule_saved'),
+          description: t('invoices:dialogs.items.toast_rule_saved_desc', { name: projectName }),
         });
         queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
       }
     } catch (e: any) {
       toast({
-        title: 'Hiba a szabály mentésekor',
+        title: t('invoices:dialogs.items.toast_rule_error'),
         description: e.message,
         variant: 'destructive',
       });
@@ -243,7 +245,7 @@ export function InvoiceItemsDialog({
 
     if (error) {
       toast({
-        title: 'Hiba a jegyzet mentésekor',
+        title: t('invoices:dialogs.items.toast_note_error'),
         description: error.message,
         variant: 'destructive',
       });
@@ -264,8 +266,8 @@ export function InvoiceItemsDialog({
 
     queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
     toast({
-      title: 'Jegyzet mentve',
-      description: 'A tétel jegyzete sikeresen frissült.',
+      title: t('invoices:dialogs.items.toast_note_saved'),
+      description: t('invoices:dialogs.items.toast_note_saved_desc'),
     });
   };
 
@@ -450,7 +452,7 @@ export function InvoiceItemsDialog({
 
       if (error) {
         toast({
-          title: 'Hiba a levonhatóság mentésekor',
+          title: t('invoices:dialogs.items.toast_deductible_error'),
           description: error.message,
           variant: 'destructive',
         });
@@ -482,19 +484,19 @@ export function InvoiceItemsDialog({
       const isPosted = postedItemIds.has(item.id);
       if (isPosted) {
         toast({
-          title: 'Figyelem: lekönyvelt tétel',
-          description: `A számlatétel levonhatósága ${percentage}%-ra módosult, de a hozzá tartozó naplóbejegyzés már le van könyvelve (lezárt tétel). A zárt könyvelést a rendszer nem írja felül automatikusan; szükség esetén számviteli helyesbítés szükséges.`,
+          title: t('invoices:dialogs.items.toast_deductible_posted_warn'),
+          description: t('invoices:dialogs.items.toast_deductible_posted_warn_desc', { percentage }),
         });
       } else {
         toast({
-          title: 'Levonhatóság beállítva',
-          description: `A tétel levonhatósága ${percentage}%-ra módosult, a tervezet naplóbejegyzések automatikusan frissültek.`,
+          title: t('invoices:dialogs.items.toast_deductible_success'),
+          description: t('invoices:dialogs.items.toast_deductible_success_desc', { percentage }),
         });
       }
     } finally {
       setUpdatingDeductibleId(null);
     }
-  }, [source, invoiceId, queryClient, toast, findTwinItems, postedItemIds]);
+  }, [source, invoiceId, queryClient, toast, findTwinItems, postedItemIds, t]);
 
   // Apply 70/30 telephone rule to 27% items
   const handleApply7030TelephoneRule = useCallback(async () => {
@@ -502,8 +504,8 @@ export function InvoiceItemsDialog({
     const targetItems = items.filter(it => it.vat_rate === '0.27' || it.vat_rate === '27' || it.vat_rate === '27.0' || it.vat_rate === '27.00');
     if (targetItems.length === 0) {
       toast({
-        title: 'Nincs 27%-os tétel',
-        description: 'A számlán nem található 27%-os ÁFA kulcsú tétel a 70/30 szabály alkalmazásához.',
+        title: t('invoices:dialogs.items.toast_7030_no_items'),
+        description: t('invoices:dialogs.items.toast_7030_no_items_desc'),
       });
       return;
     }
@@ -518,7 +520,7 @@ export function InvoiceItemsDialog({
 
       if (error) {
         toast({
-          title: 'Hiba a 70/30 szabály alkalmazásakor',
+          title: t('invoices:dialogs.items.toast_7030_error'),
           description: error.message,
           variant: 'destructive',
         });
@@ -538,19 +540,19 @@ export function InvoiceItemsDialog({
       const hasPosted = targetItems.some(it => postedItemIds.has(it.id));
       if (hasPosted) {
         toast({
-          title: '70/30 Szabály alkalmazva (figyelmeztetéssel)',
-          description: `${ids.length} db tétel módosult. Figyelem: egy vagy több érintett tétel már le van könyvelve a naplóban, ezek végleges könyvelését a rendszer nem módosította automatikusan.`,
+          title: t('invoices:dialogs.items.toast_7030_posted_warn'),
+          description: t('invoices:dialogs.items.toast_7030_posted_warn_desc', { count: ids.length }),
         });
       } else {
         toast({
-          title: '70/30 Szabály sikeresen alkalmazva',
-          description: `${ids.length} db 27%-os tétel levonhatósága 70%-ra állítva. (Az 5%-os internet tételek 100%-on maradtak).`,
+          title: t('invoices:dialogs.items.toast_7030_success'),
+          description: t('invoices:dialogs.items.toast_7030_success_desc', { count: ids.length }),
         });
       }
     } finally {
       setIsApplying7030(false);
     }
-  }, [items, source, invoiceId, queryClient, toast, postedItemIds]);
+  }, [items, source, invoiceId, queryClient, toast, postedItemIds, t]);
 
   // Bulk update deductible percentage
   const handleBulkUpdateDeductible = useCallback(async (percentage: number) => {
@@ -564,7 +566,7 @@ export function InvoiceItemsDialog({
 
     if (error) {
       toast({
-        title: 'Hiba a tömeges levonhatóság mentésekor',
+        title: t('invoices:dialogs.items.toast_bulk_deductible_error'),
         description: error.message,
         variant: 'destructive',
       });
@@ -585,16 +587,16 @@ export function InvoiceItemsDialog({
     const hasPosted = ids.some(id => postedItemIds.has(id));
     if (hasPosted) {
       toast({
-        title: 'Tömeges levonhatóság frissítve (figyelmeztetéssel)',
-        description: `${ids.length} db tétel módosult. Figyelem: a kiválasztott tételek között van már lekönyvelt tétel, amelynek végleges könyvelését a rendszer nem módosította automatikusan.`,
+        title: t('invoices:dialogs.items.toast_bulk_deductible_posted_warn'),
+        description: t('invoices:dialogs.items.toast_bulk_deductible_posted_warn_desc', { count: ids.length }),
       });
     } else {
       toast({
-        title: 'Levonhatóság frissítve',
-        description: `${ids.length} tétel levonhatósága ${percentage}%-ra lett állítva.`,
+        title: t('invoices:dialogs.items.toast_bulk_deductible_success'),
+        description: t('invoices:dialogs.items.toast_bulk_deductible_success_desc', { count: ids.length, percentage }),
       });
     }
-  }, [selectedIds, source, invoiceId, queryClient, toast, postedItemIds]);
+  }, [selectedIds, source, invoiceId, queryClient, toast, postedItemIds, t]);
 
   // Fetch GL accounts for the picker combobox (paginated)
   const { data: glAccounts = [] } = useQuery({
@@ -704,10 +706,10 @@ export function InvoiceItemsDialog({
     setIsGlSubmitting(false);
 
     if (error || data === false) {
-      toast({ title: 'Hiba a mentés során', description: error?.message || 'Ismeretlen hiba', variant: 'destructive' });
+      toast({ title: t('invoices:dialogs.items.toast_gl_error'), description: error?.message || '', variant: 'destructive' });
     } else {
       const count = isBulkGlEdit ? selectedIds.size : 1;
-      toast({ title: 'Sikeres módosítás', description: `${count} tétel főkönyvi besorolása frissítve.` });
+      toast({ title: t('invoices:dialogs.items.toast_bulk_gl_success'), description: t('invoices:dialogs.items.toast_bulk_gl_success_desc', { count }) });
       setGlEditOpen(false);
       setGlEditItem(null);
       setIsBulkGlEdit(false);
@@ -844,7 +846,7 @@ export function InvoiceItemsDialog({
     
     if (error) {
       toast({
-        title: 'Hiba a könyvelési státusz módosításakor',
+        title: t('invoices:dialogs.items.toast_exclude_error'),
         description: error.message,
         variant: 'destructive',
       });
@@ -887,15 +889,15 @@ export function InvoiceItemsDialog({
         
         if (!deleteError) {
           toast({
-            title: 'Házipénztár bejegyzés törölve',
-            description: 'A tétel visszakerült a könyvelésbe, a hozzá kapcsolódó pénztári bejegyzés törlésre került.',
+            title: t('invoices:dialogs.items.toast_petty_cash_deleted'),
+            description: t('invoices:dialogs.items.toast_petty_cash_deleted_desc'),
           });
         }
       } catch (err) {
         console.error('Failed to delete linked petty cash entry:', err);
       }
     }
-  }, [source, invoiceId, queryClient, selectedCompany, toast]);
+  }, [source, invoiceId, queryClient, selectedCompany, toast, t]);
 
   // Confirm petty cash write-off
   const handleConfirmPettyCashWriteOff = async () => {
@@ -938,12 +940,12 @@ export function InvoiceItemsDialog({
       if (error) throw error;
 
       toast({
-        title: 'Sikeres kiírás házipénztárra',
-        description: `A tétel kiírása megtörtént a(z) "${pettyCashRegisters.find(r => r.id === selectedRegisterId)?.name || 'Pénztár'}" kasszába.`,
+        title: t('invoices:dialogs.items.toast_petty_cash_success'),
+        description: t('invoices:dialogs.items.toast_petty_cash_success_desc', { name: pettyCashRegisters.find(r => r.id === selectedRegisterId)?.name || '' }),
       });
     } catch (err: any) {
       toast({
-        title: 'Hiba a házipénztári kiíráskor',
+        title: t('invoices:dialogs.items.toast_petty_cash_error'),
         description: err.message,
         variant: 'destructive',
       });
@@ -968,21 +970,21 @@ export function InvoiceItemsDialog({
 
     if (error) {
       toast({
-        title: 'Hiba a tömeges módosítás során',
+        title: t('invoices:dialogs.items.toast_bulk_exclude_error'),
         description: error.message,
         variant: 'destructive',
       });
     } else {
       toast({
-        title: 'Sikeres tömeges módosítás',
+        title: t('invoices:dialogs.items.toast_bulk_exclude_success'),
         description: exclude
-          ? `${selectedIds.size} tétel kizárva a könyvelésből.`
-          : `${selectedIds.size} tétel beemelve a könyvelésbe.`,
+          ? t('invoices:dialogs.items.toast_bulk_excluded_desc', { count: selectedIds.size })
+          : t('invoices:dialogs.items.toast_bulk_included_desc', { count: selectedIds.size }),
       });
       setSelectedIds(new Set());
       queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
     }
-  }, [selectedIds, source, invoiceId, queryClient, toast]);
+  }, [selectedIds, source, invoiceId, queryClient, toast, t]);
 
   const formatAmount = (amount: number | null) => {
     if (amount === null || amount === undefined) return '-';
@@ -1067,7 +1069,7 @@ export function InvoiceItemsDialog({
                   <Package className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <span className="text-muted-foreground text-sm font-normal">Számlatételek</span>
+                  <span className="text-muted-foreground text-sm font-normal">{t('invoices:dialogs.items.title')}</span>
                   <p className="font-mono text-xl font-bold tracking-tight">{invoiceNumber}</p>
                 </div>
               </DialogTitle>
@@ -1079,7 +1081,7 @@ export function InvoiceItemsDialog({
                   <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
                     <Sparkles className="h-4 w-4 text-amber-500 shrink-0" />
                     <span>
-                      <strong>Távközlési számla észlelve:</strong> Az Áfa tv. 124. § (2) bek. b) alapján a 27%-os telefon tételek 70%-ban levonhatók, míg az 5%-os internet tételek 100%-ban levonhatók.
+                      <strong>{t('invoices:dialogs.items.telecom_banner_title')}</strong> {t('invoices:dialogs.items.telecom_banner_desc')}
                     </span>
                   </div>
                   <Button
@@ -1091,7 +1093,7 @@ export function InvoiceItemsDialog({
                     className="h-7 text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-900 dark:text-amber-100 border-amber-500/40 shrink-0 ml-3 font-medium cursor-pointer"
                   >
                     {isApplying7030 ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Sparkles className="w-3.5 h-3.5 text-amber-500 mr-1.5" />}
-                    70/30 szabály alkalmazása (27%-os tételekre)
+                    {t('invoices:dialogs.items.apply_70_30_btn')}
                   </Button>
                 </div>
               )}
@@ -1105,9 +1107,9 @@ export function InvoiceItemsDialog({
                   <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
                     <Package className="h-8 w-8 opacity-50" />
                   </div>
-                  <p className="font-medium">Nincsenek elérhető tételek</p>
+                  <p className="font-medium">{t('invoices:dialogs.items.no_items')}</p>
                   <p className="text-sm mt-1 opacity-75">
-                    A tételek automatikusan lekérésre kerülnek a következő szinkronizáláskor.
+                    {t('invoices:dialogs.items.no_items_desc')}
                   </p>
                 </div>
               ) : items.length === 0 ? null : (
@@ -1120,30 +1122,30 @@ export function InvoiceItemsDialog({
                             checked={allSelected}
                             onCheckedChange={toggleAll}
                             disabled={selectableItems.length === 0}
-                            aria-label="Összes kijelölése"
+                            aria-label={t('invoices:dialogs.items.select_all')}
                           />
                         </TableHead>
-                        {renderSortableHeader('line_number', '#', 'left', 'w-16')}
-                        {renderSortableHeader('line_description', 'Megnevezés', 'left')}
-                        {renderSortableHeader('quantity', 'Mennyiség', 'right', 'text-right')}
-                        {renderSortableHeader('unit_price', 'Egységár', 'right', 'text-right')}
-                        {renderSortableHeader('net_amount', 'Nettó', 'right', 'text-right')}
-                        {renderSortableHeader('vat_rate', 'ÁFA', 'center', 'text-center w-[90px]')}
-                        {renderSortableHeader('vat_amount', 'ÁFA összeg', 'right', 'text-right')}
-                        {!isOutbound && renderSortableHeader('deductible_percentage', 'Levonhatóság', 'center', 'text-center w-[140px]')}
-                        {renderSortableHeader('gross_amount', 'Bruttó', 'right', 'text-right')}
-                        {renderSortableHeader('gl_classifications', 'Főkönyv', 'center', 'text-center')}
-                        <TableHead className="font-semibold w-[200px]">Projekt</TableHead>
-                        <TableHead className="font-semibold text-center w-12">Jegyzet</TableHead>
+                        {renderSortableHeader('line_number', t('invoices:dialogs.items.table.line_number'), 'left', 'w-16')}
+                        {renderSortableHeader('line_description', t('invoices:dialogs.items.table.description'), 'left')}
+                        {renderSortableHeader('quantity', t('invoices:dialogs.items.table.quantity'), 'right', 'text-right')}
+                        {renderSortableHeader('unit_price', t('invoices:dialogs.items.table.unit_price'), 'right', 'text-right')}
+                        {renderSortableHeader('net_amount', t('invoices:dialogs.items.table.net'), 'right', 'text-right')}
+                        {renderSortableHeader('vat_rate', t('invoices:dialogs.items.table.vat'), 'center', 'text-center w-[90px]')}
+                        {renderSortableHeader('vat_amount', t('invoices:dialogs.items.table.vat_amount'), 'right', 'text-right')}
+                        {!isOutbound && renderSortableHeader('deductible_percentage', t('invoices:dialogs.items.table.deductibility'), 'center', 'text-center w-[140px]')}
+                        {renderSortableHeader('gross_amount', t('invoices:dialogs.items.table.gross'), 'right', 'text-right')}
+                        {renderSortableHeader('gl_classifications', t('invoices:dialogs.items.table.gl'), 'center', 'text-center')}
+                        <TableHead className="font-semibold w-[200px]">{t('invoices:dialogs.items.table.project')}</TableHead>
+                        <TableHead className="font-semibold text-center w-12">{t('invoices:dialogs.items.table.note')}</TableHead>
                         <TableHead className="text-center font-semibold w-[75px]">
                           <div className="flex items-center justify-center gap-1">
-                            Könyv.
+                            {t('invoices:dialogs.items.table.accounting')}
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
                               </TooltipTrigger>
                               <TooltipContent side="top" align="end" sideOffset={8} className="max-w-[240px] z-[100]">
-                                <p className="text-xs font-normal normal-case tracking-normal leading-relaxed">Ha be van jelölve, a tétel bekerül a könyvelésbe. Kattints a jelölőnégyzetre a módosításhoz.</p>
+                                <p className="text-xs font-normal normal-case tracking-normal leading-relaxed">{t('invoices:dialogs.items.table.accounting_tooltip')}</p>
                               </TooltipContent>
                             </Tooltip>
                           </div>
@@ -1174,7 +1176,7 @@ export function InvoiceItemsDialog({
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent side="right">
-                                <p>Ez a tétel már aktiválva van a TÉNY-ben</p>
+                                <p>{t('invoices:dialogs.items.already_activated')}</p>
                               </TooltipContent>
                             </Tooltip>
                           ) : (
@@ -1201,7 +1203,7 @@ export function InvoiceItemsDialog({
                             {alreadyActivated && (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success/10 text-success whitespace-nowrap">
                                 <CheckCircle2 className="h-3 w-3" />
-                                Már aktiválva
+                                {t('invoices:dialogs.items.already_activated')}
                               </span>
                             )}
                           </div>
@@ -1238,7 +1240,7 @@ export function InvoiceItemsDialog({
                                   </span>
                                 </TooltipTrigger>
                                 <TooltipContent side="top" className="text-xs z-[120]">
-                                  ÁFA Gyűjtőkód: <strong className="font-mono">{code}</strong> (Alapértelmezett kód 27%-os tételekre: 25)
+                                  {t('invoices:dialogs.items.vat_collector_tooltip', { code })}
                                 </TooltipContent>
                               </Tooltip>
                             );
@@ -1281,24 +1283,24 @@ export function InvoiceItemsDialog({
                                     </DropdownMenuTrigger>
                                   </TooltipTrigger>
                                   <TooltipContent side="top" className="text-xs z-[120]">
-                                    ÁFA levonhatósági arány módosítása
+                                    {t('invoices:dialogs.items.change_deductible_tooltip')}
                                   </TooltipContent>
                                   <DropdownMenuContent align="center" className="w-56 z-[110]">
                                     <DropdownMenuItem onClick={() => handleUpdateItemDeductible(item, 100)} className="cursor-pointer">
                                       <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 mr-2" />
-                                      <span className="font-medium">100% — Teljes levonhatóság</span>
+                                      <span className="font-medium">{t('invoices:dialogs.items.deductible_100')}</span>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleUpdateItemDeductible(item, 70)} className="cursor-pointer">
                                       <Sparkles className="h-3.5 w-3.5 text-amber-500 mr-2" />
-                                      <span className="font-medium text-amber-600 dark:text-amber-400">70% — Telefon (70/30)</span>
+                                      <span className="font-medium text-amber-600 dark:text-amber-400">{t('invoices:dialogs.items.deductible_70')}</span>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleUpdateItemDeductible(item, 50)} className="cursor-pointer">
                                       <Info className="h-3.5 w-3.5 text-blue-500 mr-2" />
-                                      <span>50% — Részleges levonhatóság</span>
+                                      <span>{t('invoices:dialogs.items.deductible_50')}</span>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleUpdateItemDeductible(item, 0)} className="cursor-pointer">
                                       <X className="h-3.5 w-3.5 text-red-500 mr-2" />
-                                      <span className="text-destructive font-medium">0% — Nem levonható</span>
+                                      <span className="text-destructive font-medium">{t('invoices:dialogs.items.deductible_0')}</span>
                                     </DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
@@ -1311,7 +1313,7 @@ export function InvoiceItemsDialog({
                                     </span>
                                   </TooltipTrigger>
                                   <TooltipContent side="top" className="text-xs max-w-[240px] z-[130]">
-                                    Ez a tétel már le van könyvelve a naplóban (lezárt tétel). Az áfa módosítás a számlán érvényesül, de a zárt könyvelést nem írja felül automatikusan.
+                                    {t('invoices:dialogs.items.locked_item_tooltip')}
                                   </TooltipContent>
                                 </Tooltip>
                               )}
@@ -1348,7 +1350,7 @@ export function InvoiceItemsDialog({
                                   </button>
                                 </TooltipTrigger>
                                 <TooltipContent side="top" className="text-xs z-[120]">
-                                  {classification?.gl_number ? "Kattints a módosításhoz" : "Kattints a besoroláshoz"}
+                                  {classification?.gl_number ? t('invoices:dialogs.items.click_to_modify_gl') : t('invoices:dialogs.items.click_to_classify_gl')}
                                 </TooltipContent>
                               </Tooltip>
                             );
@@ -1368,7 +1370,7 @@ export function InvoiceItemsDialog({
                               <SelectContent className="max-w-[200px]">
                                 <SelectItem value="INHERITED" className="text-xs text-muted-foreground italic">
                                   {parentInvoice?.project_id ? (
-                                    <span>Örökölt ({projectList.find(p => p.id === parentInvoice.project_id)?.name || 'Projekt'})</span>
+                                    <span>{t('invoices:dialogs.items.inherited_project', { name: projectList.find(p => p.id === parentInvoice.project_id)?.name || t('invoices:dialogs.items.table.project') })}</span>
                                   ) : (
                                     '-'
                                   )}
@@ -1411,7 +1413,7 @@ export function InvoiceItemsDialog({
                               checked={!item.exclude_from_accounting}
                               onCheckedChange={() => handleToggleItemExclude(item)}
                               onClick={(e) => e.stopPropagation()}
-                              aria-label={item.exclude_from_accounting ? 'Könyvelésbe visszaállítás' : 'Könyvelésből kizárás'}
+                              aria-label={item.exclude_from_accounting ? t('invoices:dialogs.items.include_in_accounting') : t('invoices:dialogs.items.exclude_from_accounting')}
                             />
                           ) : (
                             <span className="text-xs text-muted-foreground">-</span>
@@ -1436,7 +1438,7 @@ export function InvoiceItemsDialog({
                     onClick={() => setActivationDialogOpen(true)}
                   >
                     <Package2 className="h-4 w-4" />
-                    Aktiválás ({selectedIds.size || 0} tétel)
+                    {t('invoices:dialogs.items.action_activate', { count: selectedIds.size || 0 })}
                   </Button>
                   <Button
                     variant="outline"
@@ -1444,7 +1446,7 @@ export function InvoiceItemsDialog({
                     onClick={openBulkGlEdit}
                   >
                     <Pencil className="h-4 w-4 text-primary" />
-                    Főkönyv módosítása ({selectedIds.size || 0} tétel)
+                    {t('invoices:dialogs.items.action_change_gl', { count: selectedIds.size || 0 })}
                   </Button>
                   {!isOutbound && (
                     <div className={cn(!someSelected && "invisible pointer-events-none")}>
@@ -1452,25 +1454,25 @@ export function InvoiceItemsDialog({
                         <DropdownMenuTrigger asChild>
                           <Button variant="outline" className="gap-2">
                             <Sparkles className="h-4 w-4 text-amber-500" />
-                            Levonhatóság ({selectedIds.size || 0} tétel)
+                            {t('invoices:dialogs.items.action_deductibility', { count: selectedIds.size || 0 })}
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start" className="w-56">
                           <DropdownMenuItem onClick={() => handleBulkUpdateDeductible(100)} className="cursor-pointer">
                             <CheckCircle2 className="h-4 w-4 text-emerald-500 mr-2" />
-                            100% — Teljes levonhatóság
+                            {t('invoices:dialogs.items.deductible_100')}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleBulkUpdateDeductible(70)} className="cursor-pointer">
                             <Sparkles className="h-4 w-4 text-amber-500 mr-2" />
-                            70% — Telefon (70/30 szabály)
+                            {t('invoices:dialogs.items.deductible_70_long')}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleBulkUpdateDeductible(50)} className="cursor-pointer">
                             <Info className="h-4 w-4 text-blue-500 mr-2" />
-                            50% — Részleges levonhatóság
+                            {t('invoices:dialogs.items.deductible_50')}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleBulkUpdateDeductible(0)} className="cursor-pointer">
                             <X className="h-4 w-4 text-red-500 mr-2" />
-                            0% — Nem levonható
+                            {t('invoices:dialogs.items.deductible_0')}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -1481,17 +1483,17 @@ export function InvoiceItemsDialog({
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline" className="gap-2">
                           <FileSpreadsheet className="h-4 w-4" />
-                          Könyvelés Ki/Be ({selectedIds.size || 0} tétel)
+                          {t('invoices:dialogs.items.action_accounting_toggle', { count: selectedIds.size || 0 })}
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start">
                         <DropdownMenuItem onClick={() => handleBulkToggleExclude(false)} className="cursor-pointer">
                           <CheckCircle2 className="h-4 w-4 text-green-500 mr-2" />
-                          Beemelés a könyvelésbe
+                          {t('invoices:dialogs.items.include_in_accounting')}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleBulkToggleExclude(true)} className="cursor-pointer">
                           <X className="h-4 w-4 text-red-500 mr-2" />
-                          Kizárás a könyvelésből
+                          {t('invoices:dialogs.items.exclude_from_accounting')}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -1502,16 +1504,16 @@ export function InvoiceItemsDialog({
                 <div className="bg-muted/30 rounded-lg p-4 min-w-[320px]">
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Összesen nettó:</span>
+                      <span className="text-muted-foreground">{t('invoices:dialogs.items.totals_net')}</span>
                       <span className="font-mono font-medium">{formatAmount(totals.net)}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Összesen ÁFA:</span>
+                      <span className="text-muted-foreground">{t('invoices:dialogs.items.totals_vat')}</span>
                       <span className="font-mono font-medium">{formatAmount(totals.vat)}</span>
                     </div>
                     <div className="h-px bg-border/50 my-3" />
                     <div className="flex justify-between items-center">
-                      <span className="text-foreground font-medium">Összesen bruttó:</span>
+                      <span className="text-foreground font-medium">{t('invoices:dialogs.items.totals_gross')}</span>
                       <span className="font-mono text-xl font-bold text-primary">
                         {formatAmount(totals.gross)}
                       </span>
@@ -1530,38 +1532,38 @@ export function InvoiceItemsDialog({
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>
-              {isBulkGlEdit ? `Főkönyvi besorolás tömeges módosítása (${selectedIds.size} tétel)` : 'Kategória módosítása'}
+              {isBulkGlEdit ? t('invoices:dialogs.items.gl_dialog_title_bulk', { count: selectedIds.size }) : t('invoices:dialogs.items.gl_dialog_title_single')}
             </DialogTitle>
             <DialogDescription>
               {isBulkGlEdit
-                ? `${selectedIds.size} db kijelölt számlatétel főkönyvi számának tömeges módosítása`
-                : `${glEditItem?.line_description || 'Számlatétel'} — főkönyvi besorolás módosítása`
+                ? t('invoices:dialogs.items.gl_dialog_desc_bulk', { count: selectedIds.size })
+                : t('invoices:dialogs.items.gl_dialog_desc_single', { name: glEditItem?.line_description || t('invoices:columns.item', 'Számlatétel') })
               }
             </DialogDescription>
           </DialogHeader>
           <div className="py-2 flex flex-col gap-4 w-full overflow-hidden">
             <div className="bg-muted p-3 rounded-md border text-sm flex items-center justify-between w-full overflow-hidden gap-2">
-              <span className="font-medium text-muted-foreground whitespace-nowrap">Új kategória:</span>
+              <span className="font-medium text-muted-foreground whitespace-nowrap">{t('invoices:dialogs.items.gl_new_category')}</span>
               <span className="font-bold text-foreground bg-background px-3 py-1.5 rounded border border-border shadow-sm truncate max-w-full">
-                {selectedNewGL === 'UNCLASSIFIED' ? <span className="text-muted-foreground italic">Besorolatlan tétel (Kategória eltávolítva)</span> :
+                {selectedNewGL === 'UNCLASSIFIED' ? <span className="text-muted-foreground italic">{t('invoices:dialogs.items.gl_unclassified_item')}</span> :
                   (selectedNewGL && glAccounts.length > 0
                   ? (() => {
                       const gl = glAccounts.find(g => g.id === selectedNewGL);
-                      return gl ? `${gl.gl_number} ${gl.short_name}` : "Válassz a listából...";
+                      return gl ? `${gl.gl_number} ${gl.short_name}` : t('invoices:dialogs.items.gl_select_placeholder');
                     })()
-                  : "Válassz a listából...")}
+                  : t('invoices:dialogs.items.gl_select_placeholder'))}
               </span>
             </div>
 
             <Command className="rounded-lg border shadow-sm w-full overflow-hidden h-[350px]" shouldFilter={false}>
               <CommandInput 
-                placeholder="Keresés főkönyvi szám vagy név alapján..." 
+                placeholder={t('invoices:dialogs.items.gl_search_placeholder')} 
                 value={glSearchQuery}
                 onValueChange={setGlSearchQuery}
                 className="w-full"
               />
               <CommandList className="h-[300px] max-h-[300px] overflow-y-auto w-full overflow-x-hidden">
-                <CommandEmpty>Nincs találat.</CommandEmpty>
+                <CommandEmpty>{t('invoices:dialogs.items.gl_no_results')}</CommandEmpty>
                 <CommandGroup>
                   <CommandItem
                     key="unclassified"
@@ -1576,7 +1578,7 @@ export function InvoiceItemsDialog({
                       )}
                     />
                     <span className={cn("truncate block w-full", selectedNewGL === 'UNCLASSIFIED' ? "font-bold text-foreground" : "font-medium")}>
-                      Besorolatlan (Kategória eltávolítása)
+                      {t('invoices:dialogs.items.gl_unclassified_option')}
                     </span>
                   </CommandItem>
                   {glAccounts
@@ -1612,10 +1614,10 @@ export function InvoiceItemsDialog({
             </Command>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setGlEditOpen(false)} disabled={isGlSubmitting}>Mégse</Button>
+            <Button variant="outline" onClick={() => setGlEditOpen(false)} disabled={isGlSubmitting}>{t('common:actions.cancel')}</Button>
             <Button onClick={handleSaveGlOverride} disabled={!selectedNewGL || isGlSubmitting || (!isBulkGlEdit && glEditItem && selectedNewGL === (glEditItem.gl_classifications?.[activePresetId || '']?.gl_account_id || 'UNCLASSIFIED'))}>
               {isGlSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              Mentés
+              {t('common:actions.save')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1653,28 +1655,28 @@ export function InvoiceItemsDialog({
           <DialogHeader className="space-y-2">
             <DialogTitle className="flex items-center gap-2 text-lg">
               <Wallet className="h-5 w-5 text-primary" />
-              Kiírás házipénztárra
+              {t('invoices:dialogs.items.petty_cash_dialog_title')}
             </DialogTitle>
             <DialogDescription className="text-sm">
-              Könyvelésből kizárt tétel: <strong className="text-foreground">"{pendingOmitItem?.line_description}"</strong>
+              {t('invoices:dialogs.items.petty_cash_dialog_desc', { name: pendingOmitItem?.line_description || '' })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-3">
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Szeretné kiírni az adott tételt ({pendingOmitItem ? formatAmount(getGrossAmount(pendingOmitItem)) : ''}) házipénztárra?
+              {t('invoices:dialogs.items.petty_cash_dialog_question', { amount: pendingOmitItem ? formatAmount(getGrossAmount(pendingOmitItem)) : '' })}
             </p>
 
             {pettyCashRegisters.length > 1 && (
               <div className="space-y-2 bg-muted/30 p-3 rounded-lg border border-border/50">
                 <Label htmlFor="petty-cash-select" className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">
-                  Válassz házipénztárt:
+                  {t('invoices:dialogs.items.petty_cash_select_label')}
                 </Label>
                 <Select
                   value={selectedRegisterId}
                   onValueChange={setSelectedRegisterId}
                 >
                   <SelectTrigger id="petty-cash-select" className="w-full bg-background border-border/80 h-10">
-                    <SelectValue placeholder="Pénztár kiválasztása..." />
+                    <SelectValue placeholder={t('invoices:dialogs.items.petty_cash_select_placeholder')} />
                   </SelectTrigger>
                   <SelectContent>
                     {pettyCashRegisters.map((reg) => (
@@ -1697,13 +1699,13 @@ export function InvoiceItemsDialog({
                 setSelectedRegisterId('');
               }}
             >
-              Nem
+              {t('invoices:dialogs.items.petty_cash_btn_no')}
             </Button>
             <Button
               onClick={handleConfirmPettyCashWriteOff}
               disabled={!selectedRegisterId}
             >
-              Igen, kiírás
+              {t('invoices:dialogs.items.petty_cash_btn_yes')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1726,6 +1728,7 @@ function ItemProjectRuleButton({
   projectName,
   onSaveRule,
 }: ItemProjectRuleButtonProps) {
+  const { t } = useTranslation(['invoices', 'common']);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -1750,7 +1753,7 @@ function ItemProjectRuleButton({
         </TooltipTrigger>
         {!open && (
           <TooltipContent side="top" className="text-xs z-[120]">
-            Automata szabály beállítása
+            {t('invoices:dialogs.items.auto_rule_tooltip')}
           </TooltipContent>
         )}
       </Tooltip>
@@ -1758,13 +1761,13 @@ function ItemProjectRuleButton({
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
-            <h4 className="font-semibold text-sm">Automatikus szabály beállítása</h4>
+            <h4 className="font-semibold text-sm">{t('invoices:dialogs.items.auto_rule_title')}</h4>
           </div>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Szeretné beállítani, hogy a jövőben minden <strong>"{item.line_description}"</strong> megnevezésű és <strong>"{classificationGlNumber}"</strong> kontírszámú tétel automatikusan a(z) <strong>"{projectName}"</strong> projekthez sorolódjon?
+            {t('invoices:dialogs.items.auto_rule_question', { desc: item.line_description, gl: classificationGlNumber, project: projectName })}
           </p>
           <p className="text-[10px] text-primary/80 italic leading-snug bg-primary/5 p-2 rounded border border-primary/10">
-            Ez a szabály visszamenőleg is érvényesül a még projekt nélküli azonos tételekre!
+            {t('invoices:dialogs.items.auto_rule_retroactive')}
           </p>
           <div className="flex justify-end gap-2 pt-2">
             <Button
@@ -1775,7 +1778,7 @@ function ItemProjectRuleButton({
               onClick={() => setOpen(false)}
               disabled={saving}
             >
-              Mégse
+              {t('common:actions.cancel')}
             </Button>
             <Button
               type="button"
@@ -1797,7 +1800,7 @@ function ItemProjectRuleButton({
                 }
               }}
             >
-              {saving ? 'Mentés...' : 'Szabály mentése'}
+              {saving ? t('common:actions.saving') : t('invoices:dialogs.items.auto_rule_save_btn')}
             </Button>
           </div>
         </div>
@@ -1813,6 +1816,7 @@ interface ItemNoteCellProps {
 }
 
 function ItemNoteCell({ item, onSaveNotes }: ItemNoteCellProps) {
+  const { t } = useTranslation(['invoices', 'common']);
   const [open, setOpen] = useState(false);
   const [text, setText] = useState(item.notes || '');
   const [saving, setSaving] = useState(false);
@@ -1875,14 +1879,14 @@ function ItemNoteCell({ item, onSaveNotes }: ItemNoteCellProps) {
               {hasNote ? (
                 <div className="space-y-1">
                   <p className="font-semibold text-emerald-400 text-xs flex items-center gap-1.5">
-                    <MessageSquare className="h-3.5 w-3.5" /> Tétel jegyzet:
+                    <MessageSquare className="h-3.5 w-3.5" /> {t('invoices:dialogs.items.item_note_tooltip')}
                   </p>
                   <p className="text-xs text-foreground/90 whitespace-pre-wrap leading-relaxed font-normal">
                     {item.notes}
                   </p>
                 </div>
               ) : (
-                <p className="text-xs leading-normal">Jegyzet hozzáadása</p>
+                <p className="text-xs leading-normal">{t('invoices:dialogs.items.item_note_add_tooltip')}</p>
               )}
             </TooltipContent>
           )}
@@ -1897,17 +1901,17 @@ function ItemNoteCell({ item, onSaveNotes }: ItemNoteCellProps) {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4 text-emerald-500" />
-                <h4 className="font-semibold text-sm">Tétel jegyzet</h4>
+                <h4 className="font-semibold text-sm">{t('invoices:dialogs.items.item_note_title')}</h4>
               </div>
               {hasNote && (
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-medium">
-                  Rögzítve
+                  {t('invoices:dialogs.items.item_note_saved_badge')}
                 </span>
               )}
             </div>
             <textarea
               className="w-full min-h-[90px] p-2.5 text-xs bg-background border border-border/80 rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary resize-y text-foreground placeholder:text-muted-foreground/60 leading-relaxed"
-              placeholder="Írj jegyzetet ehhez a tételhez..."
+              placeholder={t('invoices:dialogs.items.item_note_placeholder')}
               value={text}
               onChange={(e) => setText(e.target.value)}
               autoFocus
@@ -1921,7 +1925,7 @@ function ItemNoteCell({ item, onSaveNotes }: ItemNoteCellProps) {
                 onClick={handleCancel}
                 disabled={saving}
               >
-                Mégse
+                {t('common:actions.cancel')}
               </Button>
               <Button
                 type="button"
@@ -1930,7 +1934,7 @@ function ItemNoteCell({ item, onSaveNotes }: ItemNoteCellProps) {
                 onClick={handleSave}
                 disabled={saving}
               >
-                {saving ? 'Mentés...' : 'Mentés'}
+                {saving ? t('common:actions.saving') : t('common:actions.save')}
               </Button>
             </div>
           </div>

@@ -159,6 +159,7 @@ const DEFAULT_BS_RULES: Array<{ prefix: string; bsId: string; label: string }> =
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGenericPreset?: boolean }) {
+  const { t } = useTranslation(['accounting', 'common']);
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -239,13 +240,22 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: 'Sikeres mentés', description: 'A mérleg hozzárendelések frissítve.' });
+      toast({ 
+        title: t('accounting:balance_sheet.toasts.save_success_title', 'Sikeres mentés'), 
+        description: t('accounting:balance_sheet.toasts.save_success_desc', 'A mérleg hozzárendelések frissítve.') 
+      });
       setHasChanges(false);
       queryClient.invalidateQueries({ queryKey: ['bs_mapping'] });
       queryClient.invalidateQueries({ queryKey: ['bs_report'] });
       refetchSuggestions();
     },
-    onError: (err: any) => { toast({ title: 'Hiba', description: err.message, variant: 'destructive' }); }
+    onError: (err: any) => { 
+      toast({ 
+        title: t('accounting:balance_sheet.toasts.save_error_title', 'Hiba'), 
+        description: err.message, 
+        variant: 'destructive' 
+      }); 
+    }
   });
 
   const handleAcceptSuggestions = async () => {
@@ -260,9 +270,9 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
         updatedMappings[s.gl_account_id] = s.bs_structure_id;
       });
 
-      const payload = Object.entries(updatedMappings).map(([gl_account_id, bs_structure_id]) => ({
-        gl_account_id,
-        bs_structure_id
+      const payload = acceptedList.map(s => ({
+        gl_account_id: s.gl_account_id,
+        bs_structure_id: s.bs_structure_id
       }));
 
       const { error } = await supabase.rpc('save_bs_mappings', {
@@ -273,10 +283,10 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
 
       if (error) throw error;
 
+      setMappings(updatedMappings);
       toast({
-        title: 'Sikeres hozzárendelés',
-        description: `${acceptedList.length} hozzárendelés sikeresen elfogadva és mentve.`,
-        className: 'bg-green-50 text-green-900 border-green-200',
+        title: t('accounting:balance_sheet.toasts.save_success_title', 'Sikeres mentés'),
+        description: t('accounting:profit_and_loss.toasts.suggestions_accepted', { count: acceptedList.length, defaultValue: `${acceptedList.length} hozzárendelés sikeresen elfogadva és mentve.` }),
       });
       
       setIsSuggestionOpen(false);
@@ -284,18 +294,15 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
       queryClient.invalidateQueries({ queryKey: ['bs_report'] });
       refetchSuggestions();
     } catch (err: any) {
-      toast({ title: 'Hiba a mentés során', description: err.message, variant: 'destructive' });
+      toast({ title: t('accounting:balance_sheet.toasts.save_error_title', 'Hiba'), description: err.message, variant: 'destructive' });
     } finally {
       setIsSavingSuggestions(false);
     }
   };
 
-  const handleSelectChange = (glAccountId: string, structureId: string) => {
-    setMappings(prev => {
-      const next = { ...prev };
-      if (structureId === 'none') delete next[glAccountId]; else next[glAccountId] = structureId;
-      return next;
-    });
+  const handleSelectChange = (glId: string, bsStructureId: string) => {
+    const nextVal = bsStructureId === 'none' ? '' : bsStructureId;
+    setMappings(prev => ({ ...prev, [glId]: nextVal }));
     setHasChanges(true);
   };
 
@@ -329,7 +336,10 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
 
     setMappings(newMappings);
     setHasChanges(true);
-    toast({ title: 'Automatikus hozzárendelés kész', description: `${assignedCount} főkönyvi szám hozzárendelve a Sztv. "A" változat szerint. Ellenőrizd és mentsd el!` });
+    toast({ 
+      title: t('accounting:balance_sheet.toasts.auto_assign_title', 'Automatikus hozzárendelés kész'), 
+      description: t('accounting:balance_sheet.toasts.auto_assign_desc', { count: assignedCount, defaultValue: `${assignedCount} főkönyvi szám hozzárendelve a Sztv. "A" változat szerint. Ellenőrizd és mentsd el!` }) 
+    });
   };
 
   const toggleRow = (id: string, hasChildren: boolean) => {
@@ -391,7 +401,7 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
 
   // P8: FinancialPageSkeleton instead of blank page
   if (isLoadingStructure || isLoadingGlAccounts || isLoadingMappings) {
-    return <FinancialPageSkeleton title="Hozzárendelések betöltése..." />;
+    return <FinancialPageSkeleton title={t('accounting:balance_sheet.mapping_tab.loading', 'Hozzárendelések betöltése...')} />;
   }
 
   return (
@@ -402,10 +412,10 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
             <Sparkles className="w-5 h-5 text-indigo-500 shrink-0 animate-pulse" />
             <div>
               <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-300">
-                Intelligens Hozzárendelési Javaslatok ({suggestions.length} db)
+                {t('accounting:balance_sheet.mapping_tab.suggestions_title', { count: suggestions.length, defaultValue: `Intelligens Hozzárendelési Javaslatok (${suggestions.length} db)` })}
               </p>
               <p className="text-xs text-indigo-700/80 dark:text-indigo-400/80 mt-0.5">
-                Az Sztv. "A" variáns szerinti kódok alapján javaslataink vannak a besorolatlan főkönyvi számokhoz.
+                {t('accounting:balance_sheet.mapping_tab.suggestions_desc', 'Az Sztv. "A" variáns szerinti kódok alapján javaslataink vannak a besorolatlan főkönyvi számokhoz.')}
               </p>
             </div>
           </div>
@@ -414,7 +424,7 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
             size="sm" 
             className="bg-indigo-600 hover:bg-indigo-700 text-white shrink-0 gap-1.5 font-semibold text-xs"
           >
-            <Sparkles className="w-3.5 h-3.5" /> Javaslatok ellenőrzése
+            <Sparkles className="w-3.5 h-3.5" /> {t('accounting:balance_sheet.mapping_tab.check_suggestions', 'Javaslatok ellenőrzése')}
           </Button>
         </div>
       )}
@@ -423,25 +433,25 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
         {isGenericPreset && (
           <Button variant="outline" onClick={handleAutoAssign} className="gap-2">
             <Wand2 className="w-4 h-4" />
-            Alapértelmezett hozzárendelés
+            {t('accounting:balance_sheet.mapping_tab.default_assign', 'Alapértelmezett hozzárendelés')}
           </Button>
         )}
         <Button onClick={() => saveMutation.mutate()} disabled={!hasChanges || saveMutation.isPending} className="gap-2">
           {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          Mentés
+          {t('accounting:balance_sheet.mapping_tab.save', 'Mentés')}
         </Button>
       </div>
       <ContextMenu>
         <ContextMenuTrigger asChild>
       <div className="border rounded-md">
         <div className="grid grid-cols-12 gap-4 p-4 border-b bg-muted/50 font-medium text-sm">
-          <div className="col-span-3">Főkönyvi Szám</div>
-          <div className="col-span-4">Megnevezés</div>
-          <div className="col-span-5">Mérleg Sor</div>
+          <div className="col-span-3">{t('accounting:balance_sheet.mapping_tab.col_gl_number', 'Főkönyvi Szám')}</div>
+          <div className="col-span-4">{t('accounting:balance_sheet.mapping_tab.col_name', 'Megnevezés')}</div>
+          <div className="col-span-5">{t('accounting:balance_sheet.mapping_tab.col_bs_row', 'Mérleg Sor')}</div>
         </div>
         <ScrollArea className="h-[600px]">
           {processedAccounts.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">Nincsenek 1-4. számlaosztályú főkönyvi számok.</div>
+            <div className="p-8 text-center text-muted-foreground">{t('accounting:balance_sheet.mapping_tab.empty_accounts', 'Nincsenek 1-4. számlaosztályú főkönyvi számok.')}</div>
           ) : (
             processedAccounts.map(gl => {
               if (!gl.isVisibleOnScreen) return null;
@@ -458,9 +468,9 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
                   <div className={cn("col-span-4 text-sm truncate", gl.isRoot ? "uppercase" : "")} title={gl.short_name}>{gl.short_name}</div>
                   <div className="col-span-5" onClick={e => e.stopPropagation()}>
                     <Select value={mappings[gl.id] || 'none'} onValueChange={(val) => handleSelectChange(gl.id, val)}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Válassz sort..." /></SelectTrigger>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder={t('accounting:balance_sheet.mapping_tab.select_row', 'Válassz sort...')} /></SelectTrigger>
                       <SelectContent className="max-h-[400px]">
-                        <SelectItem value="none" className="text-muted-foreground italic">Nincs besorolva</SelectItem>
+                        <SelectItem value="none" className="text-muted-foreground italic">{t('accounting:balance_sheet.mapping_tab.unmapped', 'Nincs besorolva')}</SelectItem>
                         {dropdownGroups.assets.map(group => (
                           <React.Fragment key={group.letter.id}>
                             <SelectItem disabled value={`__h_${group.letter.id}`} className="font-bold text-xs uppercase tracking-wide text-emerald-500 dark:text-emerald-400 mt-1">
@@ -496,8 +506,8 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
       </div>
         </ContextMenuTrigger>
         <ContextMenuContent>
-          <ContextMenuItem onClick={expandAll} className="gap-2"><Maximize2 className="w-4 h-4" /> Mind kinyitása</ContextMenuItem>
-          <ContextMenuItem onClick={collapseAll} className="gap-2"><Minimize2 className="w-4 h-4" /> Mind összecsukása</ContextMenuItem>
+          <ContextMenuItem onClick={expandAll} className="gap-2"><Maximize2 className="w-4 h-4" /> {t('accounting:balance_sheet.context_menu.expand_all', 'Mind kinyitása')}</ContextMenuItem>
+          <ContextMenuItem onClick={collapseAll} className="gap-2"><Minimize2 className="w-4 h-4" /> {t('accounting:balance_sheet.context_menu.collapse_all', 'Mind összecsukása')}</ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
 
@@ -506,10 +516,10 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-indigo-500 animate-pulse" />
-              Javasolt Hozzárendelések Elfogadása
+              {t('accounting:balance_sheet.mapping_tab.dialog_title', 'Javasolt Hozzárendelések Elfogadása')}
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Az Sztv. kódolás szerint az alábbi számlákat tudjuk automatikusan besorolni a Mérlegbe.
+              {t('accounting:balance_sheet.mapping_tab.dialog_desc', 'Az Sztv. kódolás szerint az alábbi számlákat tudjuk automatikusan besorolni a Mérlegbe.')}
             </DialogDescription>
           </DialogHeader>
 
@@ -529,10 +539,10 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
                       }}
                     />
                   </th>
-                  <th className="py-2 px-2">Számlaszám</th>
-                  <th className="py-2 px-2">Megnevezés</th>
-                  <th className="py-2 px-2">Javasolt Sor</th>
-                  <th className="py-2 px-2">Indoklás</th>
+                  <th className="py-2 px-2">{t('accounting:balance_sheet.mapping_tab.dialog_col_number', 'Számlaszám')}</th>
+                  <th className="py-2 px-2">{t('accounting:balance_sheet.mapping_tab.dialog_col_name', 'Megnevezés')}</th>
+                  <th className="py-2 px-2">{t('accounting:balance_sheet.mapping_tab.dialog_col_suggested', 'Javasolt Sor')}</th>
+                  <th className="py-2 px-2">{t('accounting:balance_sheet.mapping_tab.dialog_col_reason', 'Indoklás')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -565,7 +575,7 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
 
           <DialogFooter className="border-t pt-4">
             <Button variant="outline" onClick={() => setIsSuggestionOpen(false)} disabled={isSavingSuggestions}>
-              Mégse
+              {t('accounting:balance_sheet.mapping_tab.dialog_cancel', 'Mégse')}
             </Button>
             <Button 
               onClick={handleAcceptSuggestions} 
@@ -573,7 +583,7 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
               className="bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5 font-semibold"
             >
               {isSavingSuggestions ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-              Kijelöltek elfogadása ({selectedSuggestionIds.size} db)
+              {t('accounting:balance_sheet.mapping_tab.dialog_accept', { count: selectedSuggestionIds.size, defaultValue: `Kijelöltek elfogadása (${selectedSuggestionIds.size} db)` })}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -597,6 +607,7 @@ function BsViewTab({
   unassignedCount?: number; 
   onAutoFixMappings?: () => void; 
 }) {
+  const { t } = useTranslation(['accounting', 'common']);
   const { selectedCompany } = useCompany();
   const { dateToFormatted: dateTo } = useDateRange();
   const { toast } = useToast();
@@ -983,10 +994,10 @@ function BsViewTab({
                                   setIsDialogInvoiceOpen(true);
                                 }} 
                                 className="ml-auto flex shrink-0 items-center gap-1 px-2 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary transition-colors text-[10px] font-medium cursor-pointer"
-                                title="Eredeti bizonylat megtekintése"
+                                title={t('accounting:balance_sheet.table.original_doc_view', 'Eredeti bizonylat megtekintése')}
                               >
                                 <FileText className="w-3 h-3" />
-                                PDF
+                                {t('accounting:balance_sheet.table.pdf_badge', 'PDF')}
                               </button>
                             )}
                           </div>
@@ -1010,11 +1021,11 @@ function BsViewTab({
   // F11: Side-by-side table header (used in both single and side-by-side)
   const tableHeader = (
     <div className="grid grid-cols-12 gap-4 p-4 bg-muted/80 border-b text-sm font-bold uppercase text-muted-foreground select-none sticky top-0 z-10 backdrop-blur-sm">
-      <div className="col-span-1 text-center">Sor</div>
-      <div className="col-span-5">Megnevezés</div>
-      <div className="col-span-2 text-right">Előző év</div>
-      <div className="col-span-2 text-right">Módosítások</div>
-      <div className="col-span-2 text-right text-foreground">Tárgyév</div>
+      <div className="col-span-1 text-center">{t('accounting:balance_sheet.table.row', 'Sor')}</div>
+      <div className="col-span-5">{t('accounting:balance_sheet.table.name', 'Megnevezés')}</div>
+      <div className="col-span-2 text-right">{t('accounting:balance_sheet.table.previous_year', 'Előző év')}</div>
+      <div className="col-span-2 text-right">{t('accounting:balance_sheet.table.modifications', 'Módosítások')}</div>
+      <div className="col-span-2 text-right text-foreground">{t('accounting:balance_sheet.table.current_year', 'Tárgyév')}</div>
     </div>
   );
 
@@ -1044,24 +1055,30 @@ function BsViewTab({
           <div className="flex items-center space-x-2">
             <Switch id="bs-view-mode" checked={inThousands} onCheckedChange={setInThousands} />
             <Label htmlFor="bs-view-mode" className="font-medium cursor-pointer">
-              Hivatalos nézet (Ezer {selectedCurrency === 'HUF' ? 'Ft' : selectedCurrency})
+              {t('accounting:balance_sheet.toggles.official_view', { currency: selectedCurrency === 'HUF' ? 'Ft' : selectedCurrency, defaultValue: `Hivatalos nézet (Ezer ${selectedCurrency === 'HUF' ? 'Ft' : selectedCurrency})` })}
             </Label>
           </div>
           <div className="flex items-center space-x-2">
             <Switch id="bs-hide-zero" checked={hideZeroRows} onCheckedChange={setHideZeroRows} />
-            <Label htmlFor="bs-hide-zero" className="font-medium cursor-pointer">Nullás sorok elrejtése</Label>
+            <Label htmlFor="bs-hide-zero" className="font-medium cursor-pointer">
+              {t('accounting:balance_sheet.toggles.hide_zero', 'Nullás sorok elrejtése')}
+            </Label>
           </div>
           {/* F11: Side-by-side toggle */}
           <div className="flex items-center space-x-2">
             <Switch id="bs-side-by-side" checked={sideBySide} onCheckedChange={setSideBySide} />
             <Label htmlFor="bs-side-by-side" className="font-medium cursor-pointer flex items-center gap-1">
-              <Columns className="w-3.5 h-3.5" /> Hagyományos nézet
+              <Columns className="w-3.5 h-3.5" /> {t('accounting:balance_sheet.toggles.traditional_view', 'Hagyományos nézet')}
             </Label>
           </div>
           <div className="flex items-center space-x-2 border-l pl-4 border-border/60">
-            <Label htmlFor="bs-currency-select" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Deviza Konszolidáció:</Label>
+            <Label htmlFor="bs-currency-select" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              {t('accounting:balance_sheet.toggles.currency_consolidation', 'DEVIZA KONSZOLIDÁCIÓ:')}
+            </Label>
             <Select value={selectedCurrency} onValueChange={(val: any) => setSelectedCurrency(val)}>
-              <SelectTrigger className="w-[85px] h-8 text-xs bg-muted border-0 font-bold"><SelectValue placeholder="Deviza" /></SelectTrigger>
+              <SelectTrigger className="w-[85px] h-8 text-xs bg-muted border-0 font-bold">
+                <SelectValue placeholder={t('accounting:balance_sheet.toggles.currency_placeholder', 'Deviza')} />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="HUF">HUF</SelectItem>
                 <SelectItem value="EUR">EUR</SelectItem>
@@ -1075,25 +1092,28 @@ function BsViewTab({
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-9 gap-2">
                 <Download className="h-4 w-4" />
-                Export
+                {t('accounting:profit_and_loss.export.button', 'Export')}
                 <ChevronDown className="h-4 w-4 ml-1" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem onClick={() => window.print()}>
                 <FileText className="h-4 w-4 mr-2" />
-                Export PDF
+                {t('accounting:profit_and_loss.export.pdf', 'Export PDF')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={async () => {
                 try {
                   await exportBsExcel(assets, liabilities, totalAssets, totalLiabilities, inThousands, selectedCompany?.name || 'Vallalkozas');
-                  toast({ title: 'Sikeres exportálás', description: 'A mérleg letöltése megkezdődött.' });
+                  toast({ 
+                    title: t('accounting:balance_sheet.toasts.export_success_title', 'Sikeres exportálás'), 
+                    description: t('accounting:balance_sheet.toasts.export_success_desc', 'A mérleg letöltése megkezdődött.') 
+                  });
                 } catch (err: any) {
-                  toast({ title: 'Hiba', description: err.message, variant: 'destructive' });
+                  toast({ title: t('accounting:balance_sheet.toasts.save_error_title', 'Hiba'), description: err.message, variant: 'destructive' });
                 }
               }}>
                 <FileText className="h-4 w-4 mr-2" />
-                Export XLSX
+                {t('accounting:profit_and_loss.export.xlsx', 'Export XLSX')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -1108,7 +1128,7 @@ function BsViewTab({
             <ContextMenuTrigger asChild>
               <div className="border rounded-md shadow-sm overflow-auto max-h-[70vh] bg-card">
                 <div className="p-3 bg-emerald-500/10 border-b font-bold text-sm uppercase tracking-wide text-emerald-700 dark:text-emerald-400 text-center sticky top-0 z-10">
-                  Eszközök (Aktívák)
+                  {t('accounting:balance_sheet.table.assets_section', 'Eszközök (Aktívák)')}
                 </div>
                 {tableHeader}
                 <div className="divide-y divide-border/40">
@@ -1117,8 +1137,8 @@ function BsViewTab({
               </div>
             </ContextMenuTrigger>
             <ContextMenuContent>
-              <ContextMenuItem onClick={expandAllView} className="gap-2"><Maximize2 className="w-4 h-4" /> Mind kinyitása</ContextMenuItem>
-              <ContextMenuItem onClick={collapseAllView} className="gap-2"><Minimize2 className="w-4 h-4" /> Mind összecsukása</ContextMenuItem>
+              <ContextMenuItem onClick={expandAllView} className="gap-2"><Maximize2 className="w-4 h-4" /> {t('accounting:balance_sheet.context_menu.expand_all', 'Mind kinyitása')}</ContextMenuItem>
+              <ContextMenuItem onClick={collapseAllView} className="gap-2"><Minimize2 className="w-4 h-4" /> {t('accounting:balance_sheet.context_menu.collapse_all', 'Mind összecsukása')}</ContextMenuItem>
             </ContextMenuContent>
           </ContextMenu>
 
@@ -1126,7 +1146,7 @@ function BsViewTab({
             <ContextMenuTrigger asChild>
               <div className="border rounded-md shadow-sm overflow-auto max-h-[70vh] bg-card">
                 <div className="p-3 bg-blue-500/10 border-b font-bold text-sm uppercase tracking-wide text-blue-700 dark:text-blue-400 text-center sticky top-0 z-10">
-                  Források (Passzívák)
+                  {t('accounting:balance_sheet.table.liabilities_section', 'Források (Passzívák)')}
                 </div>
                 {tableHeader}
                 <div className="divide-y divide-border/40">
@@ -1135,8 +1155,8 @@ function BsViewTab({
               </div>
             </ContextMenuTrigger>
             <ContextMenuContent>
-              <ContextMenuItem onClick={expandAllView} className="gap-2"><Maximize2 className="w-4 h-4" /> Mind kinyitása</ContextMenuItem>
-              <ContextMenuItem onClick={collapseAllView} className="gap-2"><Minimize2 className="w-4 h-4" /> Mind összecsukása</ContextMenuItem>
+              <ContextMenuItem onClick={expandAllView} className="gap-2"><Maximize2 className="w-4 h-4" /> {t('accounting:balance_sheet.context_menu.expand_all', 'Mind kinyitása')}</ContextMenuItem>
+              <ContextMenuItem onClick={collapseAllView} className="gap-2"><Minimize2 className="w-4 h-4" /> {t('accounting:balance_sheet.context_menu.collapse_all', 'Mind összecsukása')}</ContextMenuItem>
             </ContextMenuContent>
           </ContextMenu>
         </div>
@@ -1154,14 +1174,14 @@ function BsViewTab({
             </div>
           </ContextMenuTrigger>
           <ContextMenuContent>
-            <ContextMenuItem onClick={expandAllView} className="gap-2"><Maximize2 className="w-4 h-4" /> Mind kinyitása</ContextMenuItem>
-            <ContextMenuItem onClick={collapseAllView} className="gap-2"><Minimize2 className="w-4 h-4" /> Mind összecsukása</ContextMenuItem>
+            <ContextMenuItem onClick={expandAllView} className="gap-2"><Maximize2 className="w-4 h-4" /> {t('accounting:balance_sheet.context_menu.expand_all', 'Mind kinyitása')}</ContextMenuItem>
+            <ContextMenuItem onClick={collapseAllView} className="gap-2"><Minimize2 className="w-4 h-4" /> {t('accounting:balance_sheet.context_menu.collapse_all', 'Mind összecsukása')}</ContextMenuItem>
             <ContextMenuSeparator />
             <ContextMenuItem className="gap-2" onClick={() => {
               const rows = [...assets, ...liabilities];
               const csv = 'Sor;Megnevezés;Tárgyév\n' + rows.map(r => `${r.row_code};${r.name};${r.current_year_balance || 0}`).join('\n');
               navigator.clipboard.writeText(csv);
-            }}><ClipboardCopy className="w-4 h-4" /> Másolás CSV-ként</ContextMenuItem>
+            }}><ClipboardCopy className="w-4 h-4" /> {t('accounting:balance_sheet.context_menu.copy_csv', 'Másolás CSV-ként')}</ContextMenuItem>
           </ContextMenuContent>
         </ContextMenu>
       )}
@@ -1286,17 +1306,22 @@ export default function BalanceSheet() {
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-sm">Figyelmeztetés a Mérleg összeállításában</p>
+              <p className="font-semibold text-sm">{t('accounting:balance_sheet.warning.title', 'Figyelmeztetés a Mérleg összeállításában')}</p>
               <div className="text-xs mt-1 opacity-90 space-y-1">
-                {!isBalanced && <p>• A mérleg nem egyezik (Eszközök ≠ Források).</p>}
-                {unassignedCount > 0 && <p>• Jelenleg {unassignedCount} db nem besorolt főkönyvi szám található az 1-4. számlaosztályban.</p>}
+                {!isBalanced && <p>• {t('accounting:balance_sheet.warning.not_balanced', 'A mérleg nem egyezik (Eszközök ≠ Források).')}</p>}
+                {unassignedCount > 0 && <p>• {t('accounting:balance_sheet.warning.unassigned_count', { count: unassignedCount, defaultValue: `Jelenleg ${unassignedCount} db nem besorolt főkönyvi szám található az 1-4. számlaosztályban.` })}</p>}
                 {reconStatus?.map(r => {
                   const diff = Number(r.difference) || 0;
                   if (Math.abs(diff) <= 0.01) return null;
                   return (
                     <p key={r.account_type} className="text-red-700 dark:text-red-400 font-medium flex items-center gap-1">
-                      • {r.account_name} egyeztetési eltérés: {new Intl.NumberFormat('hu-HU').format(diff)} HUF 
-                      <span className="opacity-80 font-normal"> (Rendszer: {new Intl.NumberFormat('hu-HU').format(Number(r.system_balance))} vs Főkönyv: {new Intl.NumberFormat('hu-HU').format(Number(r.ledger_balance))})</span>
+                      • {t('accounting:balance_sheet.warning.recon_diff', {
+                        name: r.account_name,
+                        diff: new Intl.NumberFormat('hu-HU').format(diff),
+                        system: new Intl.NumberFormat('hu-HU').format(Number(r.system_balance)),
+                        ledger: new Intl.NumberFormat('hu-HU').format(Number(r.ledger_balance)),
+                        defaultValue: `${r.account_name} egyeztetési eltérés: ${new Intl.NumberFormat('hu-HU').format(diff)} HUF (Rendszer: ${new Intl.NumberFormat('hu-HU').format(Number(r.system_balance))} vs Főkönyv: ${new Intl.NumberFormat('hu-HU').format(Number(r.ledger_balance))})`
+                      })}
                     </p>
                   );
                 })}
@@ -1309,7 +1334,7 @@ export default function BalanceSheet() {
             onClick={() => setActiveTab('mapping')}
             className="border-amber-500/30 hover:bg-amber-500/20 text-amber-900 dark:text-amber-300 font-semibold shrink-0 text-xs gap-1.5 h-8 bg-transparent"
           >
-            <span>Hozzárendelési Mátrix megnyitása</span>
+            <span>{t('accounting:balance_sheet.warning.open_mapping', 'Hozzárendelési Mátrix megnyitása')}</span>
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
@@ -1334,13 +1359,28 @@ export default function BalanceSheet() {
           <Card className="border-border/60 shadow-md">
             <CardHeader className="pb-4 border-b border-border/40">
               <div className="flex justify-between items-center">
-                <div><CardTitle className="text-xl">Mérleg</CardTitle><CardDescription>Sztv. szerinti "A" változat</CardDescription></div>
+                <div>
+                  <CardTitle className="text-xl">{t('accounting:balance_sheet.card_title', 'Mérleg')}</CardTitle>
+                  <CardDescription>{t('accounting:balance_sheet.card_subtitle', 'Sztv. szerinti "A" változat')}</CardDescription>
+                </div>
                 {presets && presets.length > 0 && (
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-muted-foreground">Aktív sablon:</span>
+                    <span className="text-sm font-medium text-muted-foreground">{t('accounting:general_ledger.toolbar.active_preset', 'Aktív sablon:')}</span>
                     <Select value={activePresetId || ''} onValueChange={setActivePresetId}>
-                      <SelectTrigger className="w-[200px] h-8 text-xs bg-muted/50 border-0 font-semibold"><SelectValue placeholder="Sablon" /></SelectTrigger>
-                      <SelectContent>{presets.map(p => (<SelectItem key={p.id} value={p.id}>{p.name} {p.type === 'generic' ? '(Beépített)' : ''}</SelectItem>))}</SelectContent>
+                      <SelectTrigger className="w-[200px] h-8 text-xs bg-muted/50 border-0 font-semibold"><SelectValue placeholder={t('accounting:general_ledger.toolbar.select_preset', 'Sablon')} /></SelectTrigger>
+                      <SelectContent>
+                        {presets.map(p => {
+                          const isGeneric = p.type === 'generic';
+                          const displayName = isGeneric && (p.name === 'Beépített Rendszerszintű Sablon' || p.name.toLowerCase().includes('beépített'))
+                            ? t('accounting:general_ledger.toolbar.builtin_system_preset', 'Beépített Rendszerszintű Sablon')
+                            : p.name;
+                          return (
+                            <SelectItem key={p.id} value={p.id}>
+                              {displayName} {isGeneric ? ` ${t('accounting:general_ledger.toolbar.builtin_badge', '(Beépített)')}` : ''}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
                     </Select>
                   </div>
                 )}
@@ -1364,10 +1404,22 @@ export default function BalanceSheet() {
                 <div><CardTitle className="text-xl">Hozzárendelési Mátrix</CardTitle><CardDescription>Párosítsd az 1-4. számlaosztály főkönyvi számait a Mérleg soraihoz.</CardDescription></div>
                 {presets && presets.length > 0 && (
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">Aktív sablon:</span>
+                    <span className="text-sm font-medium">{t('accounting:general_ledger.toolbar.active_preset', 'Aktív sablon:')}</span>
                     <Select value={activePresetId || ''} onValueChange={setActivePresetId}>
-                      <SelectTrigger className="w-[200px] h-8 text-xs"><SelectValue placeholder="Sablon" /></SelectTrigger>
-                      <SelectContent>{presets.map(p => (<SelectItem key={p.id} value={p.id}>{p.name} {p.type === 'generic' ? '(Beépített)' : ''}</SelectItem>))}</SelectContent>
+                      <SelectTrigger className="w-[200px] h-8 text-xs"><SelectValue placeholder={t('accounting:general_ledger.toolbar.select_preset', 'Sablon')} /></SelectTrigger>
+                      <SelectContent>
+                        {presets.map(p => {
+                          const isGeneric = p.type === 'generic';
+                          const displayName = isGeneric && (p.name === 'Beépített Rendszerszintű Sablon' || p.name.toLowerCase().includes('beépített'))
+                            ? t('accounting:general_ledger.toolbar.builtin_system_preset', 'Beépített Rendszerszintű Sablon')
+                            : p.name;
+                          return (
+                            <SelectItem key={p.id} value={p.id}>
+                              {displayName} {isGeneric ? ` ${t('accounting:general_ledger.toolbar.builtin_badge', '(Beépített)')}` : ''}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
                     </Select>
                   </div>
                 )}

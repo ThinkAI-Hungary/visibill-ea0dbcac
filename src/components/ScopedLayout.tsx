@@ -7,6 +7,7 @@ import { useEaisybillPermissions, URL_TO_MODULE } from '@/hooks/useEaisybillPerm
 import { parseDateRange, generateScopedPath, extractPageSegment } from '@/lib/navigation';
 import { ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 /**
  * ScopedLayout — URL ↔ Context Synchronization Layer.
@@ -22,6 +23,7 @@ import { Button } from '@/components/ui/button';
  * Renders <Outlet /> so child routes render inside it.
  */
 export function ScopedLayout() {
+  const { t } = useTranslation('common');
   const { companyId: urlCompanyId, dateRange: urlDateRange } = useParams<{
     companyId: string;
     dateRange: string;
@@ -139,10 +141,10 @@ export function ScopedLayout() {
           </div>
           <div className="space-y-2">
             <h1 className="text-2xl font-bold text-foreground">
-              Hozzáférés megtagadva
+              {t('access_denied.title')}
             </h1>
             <p className="text-muted-foreground leading-relaxed">
-              A keresett oldal nem található, vagy nincs a megtekintéshez szükséges jogosultsága.
+              {t('access_denied.desc')}
             </p>
           </div>
           <Button
@@ -153,7 +155,7 @@ export function ScopedLayout() {
             }}
             className="px-6"
           >
-            Vissza a főoldalra
+            {t('access_denied.back_to_home')}
           </Button>
         </div>
       </div>

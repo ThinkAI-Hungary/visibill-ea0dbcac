@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { ClipboardCheck, Lock, Users, Plus, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { formatDate } from '@/lib/locale/formatters';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -32,6 +33,7 @@ export const TransactionNotesSection: React.FC<TransactionNotesSectionProps> = (
   companyId,
   isOpen,
 }) => {
+  const { t } = useTranslation(['transactions']);
   const queryClient = useQueryClient();
   const [notes, setNotes] = useState<NoteItem[]>([]);
   const [loadingNotes, setLoadingNotes] = useState(false);
@@ -61,12 +63,12 @@ export const TransactionNotesSection: React.FC<TransactionNotesSectionProps> = (
 
         const profileMap = new Map<string, string>();
         if (profiles) {
-          profiles.forEach(p => profileMap.set(p.user_id, p.name || 'Névtelen'));
+          profiles.forEach(p => profileMap.set(p.user_id, p.name || t('transactions:dialogs.details.notes.anonymous')));
         }
 
         const enriched = data.map(n => ({
           ...n,
-          profile_name: profileMap.get(n.user_id) || 'Ismeretlen',
+          profile_name: profileMap.get(n.user_id) || t('transactions:dialogs.details.notes.unknown'),
         }));
         setNotes(enriched);
       } else {
@@ -77,7 +79,7 @@ export const TransactionNotesSection: React.FC<TransactionNotesSectionProps> = (
     } finally {
       setLoadingNotes(false);
     }
-  }, [transactionId]);
+  }, [transactionId, t]);
 
   useEffect(() => {
     if (isOpen && transactionId) {
@@ -97,7 +99,7 @@ export const TransactionNotesSection: React.FC<TransactionNotesSectionProps> = (
       const { error } = await supabase.from('notes').insert({
         company_id: companyId,
         user_id: userId,
-        title: newNoteTitle.trim() || 'Tranzakció feljegyzés',
+        title: newNoteTitle.trim() || t('transactions:dialogs.details.notes.default_title'),
         content: newNoteText.trim(),
         is_private: newNotePrivate,
         transaction_id: transactionId,
@@ -122,7 +124,7 @@ export const TransactionNotesSection: React.FC<TransactionNotesSectionProps> = (
       <div className="space-y-3">
         <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           <ClipboardCheck className="h-3.5 w-3.5 text-primary" />
-          Kapcsolódó feljegyzések
+          {t('transactions:dialogs.details.notes.title')}
         </div>
 
         {loadingNotes ? (
@@ -136,7 +138,7 @@ export const TransactionNotesSection: React.FC<TransactionNotesSectionProps> = (
                 <CardHeader className="py-2 px-3 border-b border-border/10">
                   <CardTitle className="text-xs font-semibold flex items-center justify-between text-foreground">
                     <span className="truncate max-w-[200px]">
-                      {note.title || 'Névtelen jegyzet'}
+                      {note.title || t('transactions:dialogs.details.notes.no_title')}
                     </span>
                     <div className="flex items-center gap-2 shrink-0">
                       {note.is_private ? (
@@ -145,7 +147,7 @@ export const TransactionNotesSection: React.FC<TransactionNotesSectionProps> = (
                           className="text-[9px] h-4.5 px-1.5 gap-1 bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400"
                         >
                           <Lock className="h-2.5 w-2.5" />
-                          Privát
+                          {t('transactions:dialogs.details.notes.badge_private')}
                         </Badge>
                       ) : (
                         <Badge
@@ -153,11 +155,11 @@ export const TransactionNotesSection: React.FC<TransactionNotesSectionProps> = (
                           className="text-[9px] h-4.5 px-1.5 gap-1 bg-primary/10 text-primary border-primary/20"
                         >
                           <Users className="h-2.5 w-2.5" />
-                          Közös
+                          {t('transactions:dialogs.details.notes.badge_shared')}
                         </Badge>
                       )}
                       <span className="text-[9px] text-muted-foreground font-mono">
-                        {format(new Date(note.created_at), 'yyyy.MM.dd')}
+                        {formatDate(note.created_at)}
                       </span>
                     </div>
                   </CardTitle>
@@ -167,7 +169,7 @@ export const TransactionNotesSection: React.FC<TransactionNotesSectionProps> = (
                     {note.content}
                   </p>
                   <div className="text-[9px] text-muted-foreground/80 pt-1">
-                    Rögzítette: {note.profile_name}
+                    {t('transactions:dialogs.details.notes.recorded_by', { name: note.profile_name })}
                   </div>
                 </CardContent>
               </Card>
@@ -175,7 +177,7 @@ export const TransactionNotesSection: React.FC<TransactionNotesSectionProps> = (
           </div>
         ) : (
           <p className="text-xs text-muted-foreground italic pl-1">
-            Nincs kapcsolódó feljegyzés ehhez a tranzakcióhoz.
+            {t('transactions:dialogs.details.notes.empty')}
           </p>
         )}
 
@@ -183,10 +185,10 @@ export const TransactionNotesSection: React.FC<TransactionNotesSectionProps> = (
         <form onSubmit={handleAddNote} className="space-y-3 pt-3 border-t border-border/10">
           <div className="space-y-1">
             <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-              Jegyzet címe
+              {t('transactions:dialogs.details.notes.field_title')}
             </span>
             <Input
-              placeholder="pl. Határidő, Megjegyzés..."
+              placeholder={t('transactions:dialogs.details.notes.field_title_placeholder')}
               value={newNoteTitle}
               onChange={e => setNewNoteTitle(e.target.value)}
               className="h-8 text-xs bg-background/30 border-border/50"
@@ -195,10 +197,10 @@ export const TransactionNotesSection: React.FC<TransactionNotesSectionProps> = (
 
           <div className="space-y-1">
             <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-              Tartalom
+              {t('transactions:dialogs.details.notes.field_content')}
             </span>
             <Textarea
-              placeholder="Írd ide a jegyzet szöveges tartalmát..."
+              placeholder={t('transactions:dialogs.details.notes.field_content_placeholder')}
               value={newNoteText}
               onChange={e => setNewNoteText(e.target.value)}
               required
@@ -209,7 +211,7 @@ export const TransactionNotesSection: React.FC<TransactionNotesSectionProps> = (
 
           <div className="space-y-1.5">
             <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-              Láthatóság
+              {t('transactions:dialogs.details.notes.field_visibility')}
             </span>
             <div className="grid grid-cols-2 gap-2.5">
               {/* Private Card Button */}
@@ -230,8 +232,12 @@ export const TransactionNotesSection: React.FC<TransactionNotesSectionProps> = (
                   )}
                 />
                 <div>
-                  <p className="text-[11px] font-semibold">Privát</p>
-                  <p className="text-[9px] text-muted-foreground">Csak te látod</p>
+                  <p className="text-[11px] font-semibold">
+                    {t('transactions:dialogs.details.notes.visibility_private')}
+                  </p>
+                  <p className="text-[9px] text-muted-foreground">
+                    {t('transactions:dialogs.details.notes.visibility_private_desc')}
+                  </p>
                 </div>
               </button>
 
@@ -253,8 +259,12 @@ export const TransactionNotesSection: React.FC<TransactionNotesSectionProps> = (
                   )}
                 />
                 <div>
-                  <p className="text-[11px] font-semibold">Közös</p>
-                  <p className="text-[9px] text-muted-foreground">Cégtagok látják</p>
+                  <p className="text-[11px] font-semibold">
+                    {t('transactions:dialogs.details.notes.visibility_shared')}
+                  </p>
+                  <p className="text-[9px] text-muted-foreground">
+                    {t('transactions:dialogs.details.notes.visibility_shared_desc')}
+                  </p>
                 </div>
               </button>
             </div>
@@ -272,7 +282,7 @@ export const TransactionNotesSection: React.FC<TransactionNotesSectionProps> = (
               ) : (
                 <Plus className="h-3.5 w-3.5" />
               )}
-              Mentés
+              {t('transactions:dialogs.details.notes.save_btn')}
             </Button>
           </div>
         </form>

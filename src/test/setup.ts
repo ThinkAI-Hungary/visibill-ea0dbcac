@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom";
+import "@/lib/i18n";
 import fs from "fs";
 import path from "path";
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -11,12 +12,14 @@ interface ProfileSummaryProps {
 }
 
 const ProfileSummary = React.memo(function ProfileSummary({ profile, email }: ProfileSummaryProps) {
+  const { t } = useTranslation(['dashboard', 'common']);
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <User className="h-5 w-5" />
-          Profil információk
+          {t('dashboard:profile_summary.title', 'Profil információk')}
         </CardTitle>
       </CardHeader>
       <CardContent>

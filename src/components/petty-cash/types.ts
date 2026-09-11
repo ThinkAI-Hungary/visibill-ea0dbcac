@@ -97,14 +97,18 @@ export const roundHuf = (amount: number, currency: string): number => {
   return Math.round(amount / 5) * 5;
 };
 
+import { getActiveLocale } from '@/lib/locale/formatters';
+
 export const fmtAmount = (amount: number, currency: string): string => {
   const rounded = roundHuf(amount, currency);
-  const formatted = Math.abs(rounded).toLocaleString('hu-HU', { maximumFractionDigits: currency === 'HUF' ? 0 : 2 });
+  const locale = getActiveLocale() === 'hr' ? 'hr-HR' : 'hu-HU';
+  const formatted = Math.abs(rounded).toLocaleString(locale, { maximumFractionDigits: currency === 'HUF' ? 0 : 2 });
   const sign = rounded >= 0 ? '+' : '-';
   return `${sign}${formatted} ${currency}`;
 };
 
 export const fmtBalance = (amount: number, currency: string): string => {
   const rounded = roundHuf(amount, currency);
-  return `${rounded.toLocaleString('hu-HU', { maximumFractionDigits: currency === 'HUF' ? 0 : 2 })} ${currency}`;
+  const locale = getActiveLocale() === 'hr' ? 'hr-HR' : 'hu-HU';
+  return `${rounded.toLocaleString(locale, { maximumFractionDigits: currency === 'HUF' ? 0 : 2 })} ${currency}`;
 };

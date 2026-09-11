@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { FileSpreadsheet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -11,13 +12,14 @@ export function GeneralLedgerBadgeSection({
   glNumbers,
   hasSubmittedMatch = false,
 }: GeneralLedgerBadgeSectionProps) {
+  const { t } = useTranslation(['invoices', 'common']);
   if (!glNumbers) return null;
 
   return (
     <div className="mb-4 expand-animate bg-card border border-border/40 p-3 rounded-lg flex flex-col gap-2 max-w-lg">
       <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
         <FileSpreadsheet className="h-3.5 w-3.5 text-primary" />
-        Hozzárendelt főkönyvi számok
+        {t('invoices:expanded.gl_numbers_title', 'Hozzárendelt főkönyvi számok')}
       </div>
       <div className="flex flex-wrap gap-1.5 font-mono">
         {glNumbers.split(', ').map((num) => (
@@ -30,7 +32,7 @@ export function GeneralLedgerBadgeSection({
                 : "bg-orange-500/10 text-orange-500 border-orange-500/20 dark:text-orange-400"
             )}
           >
-            {num} ({hasSubmittedMatch ? 'Végleges' : 'Ideiglenes'})
+            {num} ({hasSubmittedMatch ? t('invoices:expanded.gl_final', 'Végleges') : t('invoices:expanded.gl_temporary', 'Ideiglenes')})
           </span>
         ))}
       </div>

@@ -33,6 +33,115 @@
   "ranking": {
     "title": "Rangiranje i izvještaji",
     "top_suppliers": "Top 10 dobavljača",
-    "top_customers": "Top 10 kupaca"
+    "top_customers": "Top 10 kupaca",
+    "suppliers": "Dobavljači",
+    "customers": "Kupci",
+    "invoices": "računa",
+    "no_partners_period": "Nema partnera u ovom razdoblju",
+    "treemap_title": "Top {{count}} proporcionalni pregled",
+    "treemap_empty_title": "Proporcionalni pregled",
+    "no_data": "Nema podataka za prikaz",
+    "top_amount": "Top {{count}} iznos",
+    "total_purchases": "Ukupna nabava",
+    "total_sales": "Ukupna prodaja",
+    "top_ratio": "Top {{count}} udio",
+    "top_3_ratio": "Top 3 udio"
+  },
+  "invoice_detail_dialog": {
+    "direction_outbound": "Izlazni",
+    "direction_inbound": "Ulazni",
+    "source_nav": "Porezna",
+    "source_uploaded": "Učitano",
+    "issue_date": "Datum izdavanja",
+    "payment_date": "Datum dospijeća",
+    "gross_amount": "Bruto iznos",
+    "payment_method": "Način plaćanja",
+    "view_image": "Pregled slike računa",
+    "items_title": "Stavke",
+    "no_items": "Nema stavki za ovaj račun",
+    "table": {
+      "description": "Naziv",
+      "quantity": "Kol.",
+      "unit": "Jed.",
+      "net": "Neto",
+      "vat": "PDV",
+      "gross": "Bruto",
+      "gl_account": "Konto"
+    },
+    "preview": {
+      "title": "Slika računa",
+      "load_error": "Došlo je do greške prilikom učitavanja datoteke",
+      "open_new_window": "Otvori u novom prozoru",
+      "loading": "Učitavanje...",
+      "unsupported_type": "Ova vrsta datoteke ne može se prikazati u pretpregledu"
+    }
+  },
+  "details": {
+    "nav_synced": "Sinkronizirano s poreznom",
+    "company_details": "Podaci o tvrtki",
+    "copy_tax_number": "Kopiraj OIB / porezni broj",
+    "copy_address": "Kopiraj sjedište",
+    "copy_email": "Kopiraj e-poštu",
+    "foreign_partner": "Inozemni partner",
+    "registered_office": "Sjedište",
+    "accounting_setting": "Postavke knjiženja",
+    "include_in_accounting": "Uključi u knjiženje?",
+    "exclude_hint": "Moguće je isključiti sve račune ovog partnera iz knjiženja",
+    "restore_to_accounting": "Vrati u knjiženje",
+    "exclude_from_accounting": "Isključi iz knjiženja",
+    "tab_nav": "Porezna",
+    "tab_uploaded": "Učitano",
+    "search_invoice_placeholder": "Pretraži broj računa...",
+    "no_nav_invoices": "Nema računa iz porezne",
+    "no_uploaded_invoices": "Nema učitanih računa",
+    "nav_sync_info": "Sinkronizacija partnera i podataka o tvrtki iz sustava Porezne uprave odvija se automatski na temelju OIB-a.",
+    "no_partner_selected": "Nijedan partner nije odabran",
+    "click_partner_hint": "Kliknite na partnera na popisu s lijeve strane za pregled podataka."
+  },
+  "empty": {
+    "no_search_results": "Nema rezultata za filtriranje",
+    "no_partners": "Još nema partnera",
+    "adjust_filters": "Pokušajte promijeniti filtre.",
+    "upload_invoice_hint": "Učitajte račun kako bi se partner automatski pojavio."
+  },
+  "badges": {
+    "related_party": "Povezano",
+    "foreign": "Inozemni"
+  },
+  "units": {
+    "pcs": "kom"
+  },
+  "modal": {
+    "related_party_label": "Povezano društvo",
+    "related_party_hint": "Partner u odnosu povezanog društva s tvrtkom (za provjeru limita).",
+    "appearance_title": "Prilagodba izgleda",
+    "reset_appearance": "Vrati na zadano",
+    "monogram": "Monogram",
+    "text_color": "Boja teksta",
+    "bg_color": "Boja pozadine",
+    "foreign_tax_number_placeholder": "Inozemni partner – unesite porezni broj ako je poznat",
+    "reminder_email_note": "(za opomenu)",
+    "address_placeholder": "Adresa partnera"
+  },
+  "toasts": {
+    "missing_data": "Nedostaju podaci",
+    "name_required": "Naziv je obavezan.",
+    "name_and_tax_required": "Naziv i porezni broj su obavezni.",
+    "invalid_email": "Neispravan format adrese e-pošte",
+    "partner_exists": "Partner već postoji",
+    "partner_exists_desc": "Partner s ovim poreznim brojem već postoji ({{name}}) u evidenciji partnera.",
+    "delete_confirm": "Jeste li sigurni da želite obrisati partnera \"{{name}}\"?",
+    "partner_updated": "Partner ažuriran",
+    "partner_created": "Partner stvoren",
+    "partner_saved_desc": "Partner je uspješno spremljen.",
+    "partner_deleted": "Partner obrisan",
+    "partner_deleted_desc": "Partner je uspješno obrisan.",
+    "tax_exists_error": "Ovaj porezni broj već postoji u evidenciji partnera.",
+    "save_error": "Spremanje partnera nije uspjelo.",
+    "delete_error": "Brisanje partnera nije uspjelo.",
+    "partner_excluded_title": "Partner isključen iz knjiženja",
+    "partner_restored_title": "Partner vraćen u knjiženje",
+    "partner_excluded_desc": "Svi računi partnera {{name}} neće se knjižiti.",
+    "partner_restored_desc": "Svi računi partnera {{name}} ponovno će se knjižiti."
   }
 }

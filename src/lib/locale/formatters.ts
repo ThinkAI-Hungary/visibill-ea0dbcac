@@ -68,6 +68,16 @@ export function formatDateLocale(
 }
 
 /**
+ * Alias for formatDateLocale.
+ */
+export const formatDate = formatDateLocale;
+
+/**
+ * Alias for formatCurrencyLocale.
+ */
+export const formatCurrency = formatCurrencyLocale;
+
+/**
  * Format numbers with localized decimal and thousands separators.
  */
 export function formatNumberLocale(

@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -7,11 +8,11 @@ import { ChevronUp, Loader2 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { formatCurrency, cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { getDateFnsLocale } from '@/lib/locale/formatters';
 import type { MonthlyData } from '@/hooks/useDashboardData';
 import type { ChartLineFlags } from '@/hooks/useDashboardPreferences';
 
-const MONTH_NAMES = ["január", "február", "március", "április", "május", "június", "július", "augusztus", "szeptember", "október", "november", "december"];
+const MONTH_KEYS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'] as const;
 
 interface RevenueExpensesChartProps {
   monthlyData: MonthlyData[];
@@ -36,13 +37,23 @@ const RevenueExpensesChart = React.memo(function RevenueExpensesChart({
   onSetChartLine,
   onSetShowBrutto,
 }: RevenueExpensesChartProps) {
+  const { t } = useTranslation(['dashboard', 'common']);
+
+  const currentYear = new Date().getFullYear();
+  const dateLocale = getDateFnsLocale();
+
   return (
     <Collapsible open={revenueSectionOpen} onOpenChange={onRevenueSectionOpenChange}>
       <Card>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-lg font-medium">Kiadások és bevételek a {new Date().getFullYear()}. időszakra</span>
+              <span className="text-lg font-medium">
+                {t('dashboard:revenue_expenses_chart.title', {
+                  year: currentYear,
+                  defaultValue: `Kiadások és bevételek a ${currentYear}. időszakra`,
+                })}
+              </span>
             </div>
             <CollapsibleTrigger asChild>
               <Button variant="ghost" size="sm">
@@ -63,7 +74,9 @@ const RevenueExpensesChart = React.memo(function RevenueExpensesChart({
                     onCheckedChange={(checked) => onSetChartLine('revenuePaid', !!checked)}
                     className="border-green-600 data-[state=checked]:bg-green-600"
                   />
-                  <span className="text-sm text-green-600">Bevétel (fizetett)</span>
+                  <span className="text-sm text-green-600">
+                    {t('dashboard:revenue_expenses_chart.revenue_paid', 'Bevétel (fizetett)')}
+                  </span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <Checkbox
@@ -71,7 +84,9 @@ const RevenueExpensesChart = React.memo(function RevenueExpensesChart({
                     onCheckedChange={(checked) => onSetChartLine('revenueUnpaid', !!checked)}
                     className="border-cyan-500 data-[state=checked]:bg-cyan-500"
                   />
-                  <span className="text-sm text-cyan-500">Kintlévőségek</span>
+                  <span className="text-sm text-cyan-500">
+                    {t('dashboard:revenue_expenses_chart.revenue_unpaid', 'Kintlévőségek')}
+                  </span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <Checkbox
@@ -79,7 +94,9 @@ const RevenueExpensesChart = React.memo(function RevenueExpensesChart({
                     onCheckedChange={(checked) => onSetChartLine('expensesPaid', !!checked)}
                     className="border-red-600 data-[state=checked]:bg-red-600"
                   />
-                  <span className="text-sm text-red-600">Kiadás (fizetett)</span>
+                  <span className="text-sm text-red-600">
+                    {t('dashboard:revenue_expenses_chart.expenses_paid', 'Kiadás (fizetett)')}
+                  </span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <Checkbox
@@ -87,7 +104,9 @@ const RevenueExpensesChart = React.memo(function RevenueExpensesChart({
                     onCheckedChange={(checked) => onSetChartLine('expensesUnpaid', !!checked)}
                     className="border-amber-500 data-[state=checked]:bg-amber-500"
                   />
-                  <span className="text-sm text-amber-500">Követelések</span>
+                  <span className="text-sm text-amber-500">
+                    {t('dashboard:revenue_expenses_chart.expenses_unpaid', 'Követelések')}
+                  </span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <Checkbox
@@ -95,7 +114,9 @@ const RevenueExpensesChart = React.memo(function RevenueExpensesChart({
                     onCheckedChange={(checked) => onSetChartLine('salaries', !!checked)}
                     className="border-purple-500 data-[state=checked]:bg-purple-500"
                   />
-                  <span className="text-sm text-purple-500">Bérek</span>
+                  <span className="text-sm text-purple-500">
+                    {t('dashboard:revenue_expenses_chart.salaries', 'Bérek')}
+                  </span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <Checkbox
@@ -103,7 +124,9 @@ const RevenueExpensesChart = React.memo(function RevenueExpensesChart({
                     onCheckedChange={(checked) => onSetChartLine('cashFlow', !!checked)}
                     className="border-indigo-500 data-[state=checked]:bg-indigo-500"
                   />
-                  <span className="text-sm text-indigo-500">Cash-flow</span>
+                  <span className="text-sm text-indigo-500">
+                    {t('dashboard:revenue_expenses_chart.cash_flow', 'Cash-flow')}
+                  </span>
                 </label>
               </div>
               <div className="flex items-center gap-4">
@@ -115,7 +138,7 @@ const RevenueExpensesChart = React.memo(function RevenueExpensesChart({
                     className={`transition-all duration-300 ease-out ${showBrutto ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' : ''}`}
                   >
                     {showBrutto && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2" />}
-                    bruttó
+                    {t('dashboard:revenue_expenses_chart.gross', 'bruttó')}
                   </Button>
                   <Button
                     variant="ghost"
@@ -124,7 +147,7 @@ const RevenueExpensesChart = React.memo(function RevenueExpensesChart({
                     className={`transition-all duration-300 ease-out ${!showBrutto ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' : ''}`}
                   >
                     {!showBrutto && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2" />}
-                    nettó
+                    {t('dashboard:revenue_expenses_chart.net', 'nettó')}
                   </Button>
                 </div>
               </div>
@@ -132,18 +155,27 @@ const RevenueExpensesChart = React.memo(function RevenueExpensesChart({
 
             {/* Monthly summary row */}
             <div className="grid gap-2 mb-2 text-center" style={{ gridTemplateColumns: 'minmax(80px, auto) repeat(12, 1fr)' }}>
-              <div className="font-semibold text-left">{format(dateFrom, 'yyyy', { locale: hu })}. év</div>
-              {MONTH_NAMES.map((month) => (
-                <div key={month} className="text-sm font-medium">{month.slice(0, 3)}.</div>
+              <div className="font-semibold text-left">
+                {t('dashboard:revenue_expenses_chart.year_label', {
+                  year: format(dateFrom, 'yyyy', { locale: dateLocale }),
+                  defaultValue: `${format(dateFrom, 'yyyy', { locale: dateLocale })}. év`,
+                })}
+              </div>
+              {MONTH_KEYS.map((monthKey) => (
+                <div key={monthKey} className="text-sm font-medium">
+                  {t(`dashboard:revenue_expenses_chart.months.${monthKey}`, { defaultValue: `${monthKey}.` })}
+                </div>
               ))}
             </div>
             <div className="grid gap-2 mb-6 text-center" style={{ gridTemplateColumns: 'minmax(80px, auto) repeat(12, 1fr)' }}>
-              <div className="text-orange-500 font-medium text-left">Eredmény</div>
+              <div className="text-orange-500 font-medium text-left">
+                {t('dashboard:revenue_expenses_chart.result', 'Eredmény')}
+              </div>
               {monthlyData.map((data, i) => {
                 const result = data.revenuePaid + data.revenueUnpaid + data.expensesPaid + data.expensesUnpaid + data.salaries;
                 return (
                   <div key={i} className={cn("text-sm font-medium", result >= 0 ? "text-green-600" : "text-red-600")}>
-                    {result === 0 ? "0 Ft" : formatCurrency(result, 'HUF', true)}
+                    {result === 0 ? "0" : formatCurrency(result, undefined, true)}
                   </div>
                 );
               })}
@@ -196,7 +228,10 @@ const RevenueExpensesChart = React.memo(function RevenueExpensesChart({
                     tickLine={false}
                   />
                   <RechartsTooltip
-                    formatter={(value: number, name: string) => [formatCurrency(Math.abs(value)) + (value < 0 ? ' (kiadás)' : ''), name]}
+                    formatter={(value: number, name: string) => [
+                      formatCurrency(Math.abs(value)) + (value < 0 ? t('dashboard:revenue_expenses_chart.expense_suffix', ' (kiadás)') : ''),
+                      name
+                    ]}
                     contentStyle={{
                       backgroundColor: 'hsl(var(--background))',
                       border: '1px solid hsl(var(--border))',
@@ -204,22 +239,70 @@ const RevenueExpensesChart = React.memo(function RevenueExpensesChart({
                     }}
                   />
                   {chartLines.revenuePaid && (
-                    <Area type="monotone" dataKey="revenuePaid" name="Bevétel (fizetett)" stroke="#16A34A" strokeWidth={2} fill="url(#revenuePaidGradient)" stackId="positive" />
+                    <Area
+                      type="monotone"
+                      dataKey="revenuePaid"
+                      name={t('dashboard:revenue_expenses_chart.revenue_paid', 'Bevétel (fizetett)')}
+                      stroke="#16A34A"
+                      strokeWidth={2}
+                      fill="url(#revenuePaidGradient)"
+                      stackId="positive"
+                    />
                   )}
                   {chartLines.revenueUnpaid && (
-                    <Area type="monotone" dataKey="revenueUnpaid" name="Kintlévőségek" stroke="#06b6d4" strokeWidth={2} fill="url(#revenueUnpaidGradient)" stackId="positive" />
+                    <Area
+                      type="monotone"
+                      dataKey="revenueUnpaid"
+                      name={t('dashboard:revenue_expenses_chart.revenue_unpaid', 'Kintlévőségek')}
+                      stroke="#06b6d4"
+                      strokeWidth={2}
+                      fill="url(#revenueUnpaidGradient)"
+                      stackId="positive"
+                    />
                   )}
                   {chartLines.expensesPaid && (
-                    <Area type="monotone" dataKey="expensesPaid" name="Kiadás (fizetett)" stroke="#DC2626" strokeWidth={2} fill="url(#expensesPaidGradient)" stackId="negative" />
+                    <Area
+                      type="monotone"
+                      dataKey="expensesPaid"
+                      name={t('dashboard:revenue_expenses_chart.expenses_paid', 'Kiadás (fizetett)')}
+                      stroke="#DC2626"
+                      strokeWidth={2}
+                      fill="url(#expensesPaidGradient)"
+                      stackId="negative"
+                    />
                   )}
                   {chartLines.expensesUnpaid && (
-                    <Area type="monotone" dataKey="expensesUnpaid" name="Követelések" stroke="#f59e0b" strokeWidth={2} fill="url(#expensesUnpaidGradient)" stackId="negative" />
+                    <Area
+                      type="monotone"
+                      dataKey="expensesUnpaid"
+                      name={t('dashboard:revenue_expenses_chart.expenses_unpaid', 'Követelések')}
+                      stroke="#f59e0b"
+                      strokeWidth={2}
+                      fill="url(#expensesUnpaidGradient)"
+                      stackId="negative"
+                    />
                   )}
                   {chartLines.salaries && (
-                    <Area type="monotone" dataKey="salaries" name="Bérek" stroke="#8B5CF6" strokeWidth={2} fill="url(#salariesGradient)" stackId="salaries" />
+                    <Area
+                      type="monotone"
+                      dataKey="salaries"
+                      name={t('dashboard:revenue_expenses_chart.salaries', 'Bérek')}
+                      stroke="#8B5CF6"
+                      strokeWidth={2}
+                      fill="url(#salariesGradient)"
+                      stackId="salaries"
+                    />
                   )}
                   {chartLines.cashFlow && (
-                    <Area type="monotone" dataKey="cashFlow" name="Cash-flow" stroke="#6366f1" strokeWidth={2} strokeDasharray="5 5" fill="none" />
+                    <Area
+                      type="monotone"
+                      dataKey="cashFlow"
+                      name={t('dashboard:revenue_expenses_chart.cash_flow', 'Cash-flow')}
+                      stroke="#6366f1"
+                      strokeWidth={2}
+                      strokeDasharray="5 5"
+                      fill="none"
+                    />
                   )}
                 </AreaChart>
               </ResponsiveContainer>
@@ -232,3 +315,4 @@ const RevenueExpensesChart = React.memo(function RevenueExpensesChart({
 });
 
 export default RevenueExpensesChart;
+

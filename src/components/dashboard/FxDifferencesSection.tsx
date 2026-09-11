@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { TrendingUp, TrendingDown, ArrowUpDown, ChevronDown, ChevronRight, CandlestickChart, Info, BookOpen, Pencil, Check, X } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
+import { useTranslation } from 'react-i18next';
+import { getActiveLocale } from '@/lib/locale/formatters';
 
 interface FxMonthlySummary {
   month: string;
@@ -56,55 +58,80 @@ interface FxDifferencesSectionProps {
   onSaveFxGl?: (gainGl: string, lossGl: string) => void;
 }
 
-const monthLabels: Record<string, string> = {
+const monthLabelsHu: Record<string, string> = {
   '01': 'Jan', '02': 'Feb', '03': 'Már', '04': 'Ápr', '05': 'Máj', '06': 'Jún',
   '07': 'Júl', '08': 'Aug', '09': 'Szep', '10': 'Okt', '11': 'Nov', '12': 'Dec',
 };
 
-const fmtMonth = (m: string) => {
-  const [year, month] = m.split('-');
-  return `${year}. ${monthLabels[month] || month}`;
+const monthLabelsHr: Record<string, string> = {
+  '01': 'Sij', '02': 'Velj', '03': 'Ožu', '04': 'Tra', '05': 'Svi', '06': 'Lip',
+  '07': 'Srp', '08': 'Kol', '09': 'Ruj', '10': 'Lis', '11': 'Stu', '12': 'Pro',
 };
 
-const fmtHuf = (v: number) => {
-  const sign = v >= 0 ? '+' : '';
-  return `${sign}${Math.round(v).toLocaleString('hu-HU')} Ft`;
+const fmtMonth = (m: string, isHr: boolean) => {
+  const [year, month] = m.split('-');
+  const labels = isHr ? monthLabelsHr : monthLabelsHu;
+  return `${year}. ${labels[month] || month}`;
+};
+
+const fmtCurrencySigned = (v: number) => {
+  const sign = v > 0 ? '+' : '';
+  return `${sign}${formatCurrency(v)}`;
 };
 
 const fmtRate = (v: number) => v.toFixed(2);
 
-const CustomTooltip = ({ active, payload }: any) => {
+const CustomTooltip = ({ active, payload, isHr, t }: any) => {
   if (!active || !payload?.[0]) return null;
   const d = payload[0].payload;
   return (
     <div className="bg-card/95 backdrop-blur-sm border border-border rounded-lg p-3 shadow-xl text-sm">
-      <div className="font-semibold mb-1.5">{fmtMonth(d.month)}</div>
+      <div className="font-semibold mb-1.5">{fmtMonth(d.month, isHr)}</div>
       <div className="space-y-1">
         <div className="flex justify-between gap-6">
-          <span className="text-muted-foreground">Nyereség:</span>
-          <span className="text-emerald-500 font-medium tabular-nums">{fmtHuf(d.gain)}</span>
+          <span className="text-muted-foreground">{t('dashboard:fx_differences.gain', 'Nyereség')}:</span>
+          <span className="text-emerald-500 font-medium tabular-nums">{fmtCurrencySigned(d.gain)}</span>
         </div>
         <div className="flex justify-between gap-6">
-          <span className="text-muted-foreground">Veszteség:</span>
-          <span className="text-destructive font-medium tabular-nums">{fmtHuf(d.loss)}</span>
+          <span className="text-muted-foreground">{t('dashboard:fx_differences.loss', 'Veszteség')}:</span>
+          <span className="text-destructive font-medium tabular-nums">{fmtCurrencySigned(d.loss)}</span>
         </div>
         <div className="border-t border-border pt-1 flex justify-between gap-6">
-          <span className="text-muted-foreground font-medium">Nettó:</span>
+          <span className="text-muted-foreground font-medium">{t('dashboard:fx_differences.net', 'Nettó')}:</span>
           <span className={`font-bold tabular-nums ${d.net >= 0 ? 'text-emerald-500' : 'text-destructive'}`}>
-            {fmtHuf(d.net)}
+            {fmtCurrencySigned(d.net)}
           </span>
         </div>
-        <div className="text-[10px] text-muted-foreground">{d.count} tétel</div>
+        <div className="text-[10px] text-muted-foreground">
+          {t('dashboard:fx_differences.items_count', { count: d.count, defaultValue: `${d.count} tétel` })}
+        </div>
       </div>
     </div>
   );
 };
 
-function MonthDetail({ month, rows, fxGlSettings, onEditGl }: { month: string; rows: FxDifferenceRow[]; fxGlSettings?: FxGlSettings | null; onEditGl?: () => void }) {
+function MonthDetail({
+  month,
+  rows,
+  fxGlSettings,
+  onEditGl,
+  isHr,
+}: {
+  month: string;
+  rows: FxDifferenceRow[];
+  fxGlSettings?: FxGlSettings | null;
+  onEditGl?: () => void;
+  isHr: boolean;
+}) {
+  const { t } = useTranslation(['dashboard', 'common']);
   const [open, setOpen] = useState(false);
 
   const gainGl = fxGlSettings?.fx_gain_gl_number || '976';
   const lossGl = fxGlSettings?.fx_loss_gl_number || '876';
+
+  const monthGain = rows.reduce((s, r) => s + (r.fx_difference > 0 ? r.fx_difference : 0), 0);
+  const monthLoss = rows.reduce((s, r) => s + (r.fx_difference < 0 ? r.fx_difference : 0), 0);
+  const monthNet = rows.reduce((s, r) => s + r.fx_difference, 0);
 
   return (
     <>
@@ -115,17 +142,17 @@ function MonthDetail({ month, rows, fxGlSettings, onEditGl }: { month: string; r
         <TableCell className="font-medium">
           <div className="flex items-center gap-1.5">
             {open ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
-            {fmtMonth(month)}
+            {fmtMonth(month, isHr)}
           </div>
         </TableCell>
         <TableCell className="text-right text-emerald-500 tabular-nums font-medium">
-          {fmtHuf(rows.reduce((s, r) => s + (r.fx_difference > 0 ? r.fx_difference : 0), 0))}
+          {fmtCurrencySigned(monthGain)}
         </TableCell>
         <TableCell className="text-right text-destructive tabular-nums font-medium">
-          {fmtHuf(rows.reduce((s, r) => s + (r.fx_difference < 0 ? r.fx_difference : 0), 0))}
+          {fmtCurrencySigned(monthLoss)}
         </TableCell>
-        <TableCell className={`text-right font-bold tabular-nums ${rows.reduce((s, r) => s + r.fx_difference, 0) >= 0 ? 'text-emerald-500' : 'text-destructive'}`}>
-          {fmtHuf(rows.reduce((s, r) => s + r.fx_difference, 0))}
+        <TableCell className={`text-right font-bold tabular-nums ${monthNet >= 0 ? 'text-emerald-500' : 'text-destructive'}`}>
+          {fmtCurrencySigned(monthNet)}
         </TableCell>
         <TableCell />
         <TableCell className="text-right text-muted-foreground tabular-nums">{rows.length}</TableCell>
@@ -144,21 +171,21 @@ function MonthDetail({ month, rows, fxGlSettings, onEditGl }: { month: string; r
             <div className="text-muted-foreground text-[10px] mt-0.5">{row.partner_name || '—'}</div>
           </TableCell>
           <TableCell className="text-right">
-            <div className="tabular-nums">{Math.abs(row.foreign_amount).toLocaleString('hu-HU')} {row.currency}</div>
+            <div className="tabular-nums">{Math.abs(row.foreign_amount).toLocaleString(isHr ? 'hr-HR' : 'hu-HU')} {row.currency}</div>
             <div className="text-muted-foreground text-[10px]">{row.delivery_date} · {fmtRate(row.delivery_rate)}</div>
           </TableCell>
           <TableCell className="text-right">
-            <div className="tabular-nums">{Math.round(row.delivery_huf).toLocaleString('hu-HU')} Ft</div>
+            <div className="tabular-nums">{formatCurrency(row.delivery_huf)}</div>
             <div className="text-muted-foreground text-[10px]">{row.settlement_date} · {fmtRate(row.settlement_rate)}</div>
           </TableCell>
           <TableCell className={`text-right font-medium tabular-nums ${isGain ? 'text-emerald-500' : 'text-destructive'}`}>
-            {fmtHuf(row.fx_difference)}
+            {fmtCurrencySigned(row.fx_difference)}
           </TableCell>
           <TableCell className="text-center">
             <button
               onClick={(e) => { e.stopPropagation(); onEditGl?.(); }}
               className="inline-flex items-center gap-1 rounded-md border border-border/50 bg-muted/40 px-1.5 py-0.5 text-[9px] font-mono tabular-nums hover:bg-muted/80 transition-colors cursor-pointer group"
-              title={`Főkönyvi szám szerkesztése (${glNum})`}
+              title={t('dashboard:fx_differences.table.edit_gl_tooltip', { glNum, defaultValue: `Főkönyvi szám szerkesztése (${glNum})` })}
             >
               <BookOpen className="w-2.5 h-2.5 text-muted-foreground group-hover:text-foreground" />
               {glNum}
@@ -167,7 +194,7 @@ function MonthDetail({ month, rows, fxGlSettings, onEditGl }: { month: string; r
           </TableCell>
           <TableCell className="text-right">
             <Badge variant={isGain ? 'default' : 'destructive'} className="text-[9px]">
-              {isGain ? 'Nyereség' : 'Veszteség'}
+              {isGain ? t('dashboard:fx_differences.gain', 'Nyereség') : t('dashboard:fx_differences.loss', 'Veszteség')}
             </Badge>
           </TableCell>
         </TableRow>
@@ -187,6 +214,7 @@ function FxGlMappingBlock({
   glAccounts?: GlAccount[];
   onSaveFxGl?: (gainGl: string, lossGl: string) => void;
 }) {
+  const { t } = useTranslation(['dashboard', 'common']);
   const [editing, setEditing] = useState(false);
   const [gainGl, setGainGl] = useState('');
   const [lossGl, setLossGl] = useState('');
@@ -232,12 +260,12 @@ function FxGlMappingBlock({
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <BookOpen className="w-4 h-4 text-muted-foreground" />
-          <h4 className="text-sm font-medium">Főkönyvi besorolás</h4>
+          <h4 className="text-sm font-medium">{t('dashboard:fx_differences.gl_classification', 'Főkönyvi besorolás')}</h4>
         </div>
         {!editing && onSaveFxGl && (
           <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={startEdit}>
             <Pencil className="w-3 h-3" />
-            Szerkesztés
+            {t('common:buttons.edit', 'Szerkesztés')}
           </Button>
         )}
       </div>
@@ -247,12 +275,12 @@ function FxGlMappingBlock({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 block">
-                Árfolyamnyereség GL szám
+                {t('dashboard:fx_differences.gain_gl_label', 'Árfolyamnyereség GL szám')}
               </label>
               {sortedAccounts.length > 0 ? (
                 <Select value={gainGl} onValueChange={setGainGl}>
                   <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder="Válassz GL számot..." />
+                    <SelectValue placeholder={t('dashboard:fx_differences.choose_gl', 'Válassz GL számot...')} />
                   </SelectTrigger>
                   <SelectContent className="max-h-[200px]">
                     {sortedAccounts.map(g => (
@@ -274,12 +302,12 @@ function FxGlMappingBlock({
             </div>
             <div>
               <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 block">
-                Árfolyamveszteség GL szám
+                {t('dashboard:fx_differences.loss_gl_label', 'Árfolyamveszteség GL szám')}
               </label>
               {sortedAccounts.length > 0 ? (
                 <Select value={lossGl} onValueChange={setLossGl}>
                   <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder="Válassz GL számot..." />
+                    <SelectValue placeholder={t('dashboard:fx_differences.choose_gl', 'Válassz GL számot...')} />
                   </SelectTrigger>
                   <SelectContent className="max-h-[200px]">
                     {sortedAccounts.map(g => (
@@ -303,22 +331,24 @@ function FxGlMappingBlock({
           <div className="flex items-center gap-2 justify-end">
             <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={handleCancel}>
               <X className="w-3 h-3" />
-              Mégse
+              {t('common:buttons.cancel', 'Mégse')}
             </Button>
             <Button size="sm" className="h-7 text-xs gap-1" onClick={handleSave}>
               <Check className="w-3 h-3" />
-              Mentés
+              {t('common:buttons.save', 'Mentés')}
             </Button>
           </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="rounded-md bg-muted/30 px-3 py-2">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Nyereség</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">
+              {t('dashboard:fx_differences.gain', 'Nyereség')}
+            </div>
             <div className="flex items-center gap-2">
               <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
               <span className="text-sm font-medium tabular-nums">
-                {currentGain || <span className="text-muted-foreground italic">{defaultGain} (alap)</span>}
+                {currentGain || <span className="text-muted-foreground italic">{defaultGain} {t('dashboard:fx_differences.default_badge', '(alap)')}</span>}
               </span>
             </div>
             {findGlLabel(currentGain || defaultGain) && (
@@ -326,11 +356,13 @@ function FxGlMappingBlock({
             )}
           </div>
           <div className="rounded-md bg-muted/30 px-3 py-2">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Veszteség</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">
+              {t('dashboard:fx_differences.loss', 'Veszteség')}
+            </div>
             <div className="flex items-center gap-2">
               <TrendingDown className="w-3.5 h-3.5 text-destructive" />
               <span className="text-sm font-medium tabular-nums">
-                {currentLoss || <span className="text-muted-foreground italic">{defaultLoss} (alap)</span>}
+                {currentLoss || <span className="text-muted-foreground italic">{defaultLoss} {t('dashboard:fx_differences.default_badge', '(alap)')}</span>}
               </span>
             </div>
             {findGlLabel(currentLoss || defaultLoss) && (
@@ -342,7 +374,7 @@ function FxGlMappingBlock({
 
       <p className="text-[10px] text-muted-foreground mt-2 flex items-center gap-1">
         <Info className="w-3 h-3 shrink-0" />
-        Az árfolyamkülönbözetek a főkönyvben ezen számlák alatt jelennek meg.
+        {t('dashboard:fx_differences.gl_info', 'Az árfolyamkülönbözetek a főkönyvben ezen számlák alatt jelennek meg.')}
       </p>
     </div>
   );
@@ -358,6 +390,9 @@ const FxDifferencesSection = React.memo(function FxDifferencesSection({
   glAccounts = [],
   onSaveFxGl,
 }: FxDifferencesSectionProps) {
+  const { t } = useTranslation(['dashboard', 'common']);
+  const isHr = getActiveLocale() === 'hr';
+
   // Total annual summary
   const annualNet = useMemo(() => fxMonthlySummary.reduce((s, m) => s + m.net, 0), [fxMonthlySummary]);
   const annualGain = useMemo(() => fxMonthlySummary.reduce((s, m) => s + m.gain, 0), [fxMonthlySummary]);
@@ -368,9 +403,9 @@ const FxDifferencesSection = React.memo(function FxDifferencesSection({
   const chartData = useMemo(() =>
     fxMonthlySummary.map(m => ({
       ...m,
-      label: fmtMonth(m.month),
+      label: fmtMonth(m.month, isHr),
     })),
-    [fxMonthlySummary]
+    [fxMonthlySummary, isHr]
   );
 
   // Group items by month
@@ -409,22 +444,28 @@ const FxDifferencesSection = React.memo(function FxDifferencesSection({
                   <CandlestickChart className="w-5 h-5 text-amber-500" />
                 </div>
                 <div>
-                  <CardTitle className="text-lg">Árfolyam-különbözetek</CardTitle>
-                  <p className="text-xs text-muted-foreground mt-0.5">Devizás számlák teljesítés vs. befolyás közötti árfolyamváltozás</p>
+                  <CardTitle className="text-lg">
+                    {t('dashboard:fx_differences.title', 'Árfolyam-különbözetek')}
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {t('dashboard:fx_differences.subtitle', 'Devizás számlák teljesítés vs. befolyás közötti árfolyamváltozás')}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
                 {/* Quick summary badges */}
                 <div className="hidden md:flex items-center gap-2">
                   {totalCount > 0 && (
-                    <Badge variant="outline" className="text-xs tabular-nums">{totalCount} tétel</Badge>
+                    <Badge variant="outline" className="text-xs tabular-nums">
+                      {t('dashboard:fx_differences.items_count', { count: totalCount, defaultValue: `${totalCount} tétel` })}
+                    </Badge>
                   )}
                   {currencyBreakdown.map(c => (
                     <Badge key={c.currency} variant="secondary" className="text-[10px]">{c.currency}: {c.count}</Badge>
                   ))}
                 </div>
                 <div className={`text-xl font-bold tabular-nums ${annualNet >= 0 ? 'text-emerald-500' : 'text-destructive'}`}>
-                  {fmtHuf(annualNet)}
+                  {fmtCurrencySigned(annualNet)}
                 </div>
                 <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
               </div>
@@ -437,30 +478,38 @@ const FxDifferencesSection = React.memo(function FxDifferencesSection({
             {/* KPI row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="rounded-lg bg-muted/30 p-3">
-                <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Nettó különbözet</div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">
+                  {t('dashboard:fx_differences.net_difference', 'Nettó különbözet')}
+                </div>
                 <div className={`text-lg font-bold tabular-nums ${annualNet >= 0 ? 'text-emerald-500' : 'text-destructive'}`}>
-                  {fmtHuf(annualNet)}
+                  {fmtCurrencySigned(annualNet)}
                 </div>
               </div>
               <div className="rounded-lg bg-muted/30 p-3">
-                <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Össz. nyereség</div>
-                <div className="text-lg font-bold tabular-nums text-emerald-500">{fmtHuf(annualGain)}</div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">
+                  {t('dashboard:fx_differences.total_gain', 'Össz. nyereség')}
+                </div>
+                <div className="text-lg font-bold tabular-nums text-emerald-500">{fmtCurrencySigned(annualGain)}</div>
               </div>
               <div className="rounded-lg bg-muted/30 p-3">
-                <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Össz. veszteség</div>
-                <div className="text-lg font-bold tabular-nums text-destructive">{fmtHuf(annualLoss)}</div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">
+                  {t('dashboard:fx_differences.total_loss', 'Össz. veszteség')}
+                </div>
+                <div className="text-lg font-bold tabular-nums text-destructive">{fmtCurrencySigned(annualLoss)}</div>
               </div>
               <div className="rounded-lg bg-muted/30 p-3">
                 <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
-                  TAO hatás (9%)
+                  {t('dashboard:fx_differences.tax_impact', 'TAO hatás (9%)')}
                   <Info className="w-3 h-3" />
                 </div>
                 <div className={`text-lg font-bold tabular-nums ${annualNet >= 0 ? 'text-destructive' : 'text-emerald-500'}`}>
                   {annualNet >= 0
-                    ? `+${Math.round(annualNet * 0.09).toLocaleString('hu-HU')} Ft`
-                    : `${Math.round(annualNet * 0.09).toLocaleString('hu-HU')} Ft`}
+                    ? `+${formatCurrency(Math.round(annualNet * 0.09))}`
+                    : formatCurrency(Math.round(annualNet * 0.09))}
                 </div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">Tájékoztató jellegű</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">
+                  {t('dashboard:fx_differences.informative', 'Tájékoztató jellegű')}
+                </div>
               </div>
             </div>
 
@@ -482,7 +531,7 @@ const FxDifferencesSection = React.memo(function FxDifferencesSection({
                       tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
                       tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}e`}
                     />
-                    <RechartsTooltip content={<CustomTooltip />} />
+                    <RechartsTooltip content={<CustomTooltip isHr={isHr} t={t} />} />
                     <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" />
                     <Bar dataKey="net" radius={[4, 4, 0, 0]} maxBarSize={40}>
                       {chartData.map((entry, i) => (
@@ -503,12 +552,12 @@ const FxDifferencesSection = React.memo(function FxDifferencesSection({
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30 hover:bg-muted/30">
-                    <TableHead>Hónap</TableHead>
-                    <TableHead className="text-right">Nyereség</TableHead>
-                    <TableHead className="text-right">Veszteség</TableHead>
-                    <TableHead className="text-right">Nettó</TableHead>
-                    <TableHead className="text-center w-16">FK szám</TableHead>
-                    <TableHead className="text-right w-20">Tételek</TableHead>
+                    <TableHead>{t('dashboard:fx_differences.table.month', 'Hónap')}</TableHead>
+                    <TableHead className="text-right">{t('dashboard:fx_differences.table.gain', 'Nyereség')}</TableHead>
+                    <TableHead className="text-right">{t('dashboard:fx_differences.table.loss', 'Veszteség')}</TableHead>
+                    <TableHead className="text-right">{t('dashboard:fx_differences.table.net', 'Nettó')}</TableHead>
+                    <TableHead className="text-center w-16">{t('dashboard:fx_differences.table.gl_number', 'FK szám')}</TableHead>
+                    <TableHead className="text-right w-20">{t('dashboard:fx_differences.table.items', 'Tételek')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -518,6 +567,7 @@ const FxDifferencesSection = React.memo(function FxDifferencesSection({
                       month={m.month}
                       rows={rowsByMonth[m.month] || []}
                       fxGlSettings={fxGlSettings}
+                      isHr={isHr}
                       onEditGl={() => {
                         // Scroll to the GL mapping block and trigger edit
                         const glBlock = document.querySelector('[data-fx-gl-mapping]');
@@ -534,10 +584,10 @@ const FxDifferencesSection = React.memo(function FxDifferencesSection({
                   ))}
                   {/* Footer totals */}
                   <TableRow className="bg-muted/20 font-bold border-t-2">
-                    <TableCell>Összesen</TableCell>
-                    <TableCell className="text-right text-emerald-500 tabular-nums">{fmtHuf(annualGain)}</TableCell>
-                    <TableCell className="text-right text-destructive tabular-nums">{fmtHuf(annualLoss)}</TableCell>
-                    <TableCell className={`text-right tabular-nums ${annualNet >= 0 ? 'text-emerald-500' : 'text-destructive'}`}>{fmtHuf(annualNet)}</TableCell>
+                    <TableCell>{t('dashboard:fx_differences.table.total', 'Összesen')}</TableCell>
+                    <TableCell className="text-right text-emerald-500 tabular-nums">{fmtCurrencySigned(annualGain)}</TableCell>
+                    <TableCell className="text-right text-destructive tabular-nums">{fmtCurrencySigned(annualLoss)}</TableCell>
+                    <TableCell className={`text-right tabular-nums ${annualNet >= 0 ? 'text-emerald-500' : 'text-destructive'}`}>{fmtCurrencySigned(annualNet)}</TableCell>
                     <TableCell />
                     <TableCell className="text-right tabular-nums">{totalCount}</TableCell>
                   </TableRow>
@@ -548,15 +598,19 @@ const FxDifferencesSection = React.memo(function FxDifferencesSection({
             {/* Currency breakdown if multiple */}
             {currencyBreakdown.length > 1 && (
               <div>
-                <h4 className="text-sm font-medium text-muted-foreground mb-2">Devizánkénti bontás</h4>
+                <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                  {t('dashboard:fx_differences.currency_breakdown', 'Devizánkénti bontás')}
+                </h4>
                 <div className="flex flex-wrap gap-3">
                   {currencyBreakdown.map(c => (
                     <div key={c.currency} className="rounded-lg bg-muted/30 px-4 py-2.5 min-w-[120px]">
                       <div className="text-xs text-muted-foreground font-medium">{c.currency}</div>
                       <div className={`text-base font-bold tabular-nums ${c.net >= 0 ? 'text-emerald-500' : 'text-destructive'}`}>
-                        {fmtHuf(c.net)}
+                        {fmtCurrencySigned(c.net)}
                       </div>
-                      <div className="text-[10px] text-muted-foreground">{c.count} tétel</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {t('dashboard:fx_differences.items_count', { count: c.count, defaultValue: `${c.count} tétel` })}
+                      </div>
                     </div>
                   ))}
                 </div>

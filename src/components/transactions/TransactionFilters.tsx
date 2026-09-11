@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,13 +23,15 @@ const TransactionFilters = React.memo(function TransactionFilters({
   uniqueCurrencies,
   uniqueTypes,
 }: TransactionFiltersProps) {
+  const { t } = useTranslation(['transactions', 'common']);
+
   return (
     <div className="flex flex-wrap items-center gap-3">
       {/* Search */}
       <div className="relative flex-1 min-w-[200px]">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Keresés (leírás, partner, összeg...)"
+          placeholder={t('transactions:filters.search_placeholder', 'Keresés (leírás, partner, összeg...)')}
           value={filters.search}
           onChange={(e) => onFilterChange(prev => ({ ...prev, search: e.target.value }))}
           className="pl-9"
@@ -41,10 +44,10 @@ const TransactionFilters = React.memo(function TransactionFilters({
         onValueChange={(value) => onFilterChange(prev => ({ ...prev, currency: value }))}
       >
         <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Pénznem" />
+          <SelectValue placeholder={t('transactions:filters.currency_placeholder', 'Pénznem')} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Minden pénznem</SelectItem>
+          <SelectItem value="all">{t('transactions:filters.all_currencies', 'Minden pénznem')}</SelectItem>
           {uniqueCurrencies.map(currency => (
             <SelectItem key={currency} value={currency}>{currency}</SelectItem>
           ))}
@@ -57,16 +60,16 @@ const TransactionFilters = React.memo(function TransactionFilters({
         onValueChange={(value) => onFilterChange(prev => ({ ...prev, matchStatus: value }))}
       >
         <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Státusz" />
+          <SelectValue placeholder={t('transactions:filters.status_placeholder', 'Státusz')} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Összes státusz</SelectItem>
-          <SelectItem value="matched">Párosított</SelectItem>
-          <SelectItem value="suggested">Javasolt</SelectItem>
-          <SelectItem value="auto_settled">Rendezett (nincs számla)</SelectItem>
-          <SelectItem value="unmatched">Párosítatlan</SelectItem>
-          <SelectItem value="no_invoice">Nincs hozzá számla</SelectItem>
-          <SelectItem value="invoice_missing">Számla nincs feltöltve</SelectItem>
+          <SelectItem value="all">{t('transactions:filters.all_statuses', 'Összes státusz')}</SelectItem>
+          <SelectItem value="matched">{t('transactions:status.matched', 'Párosított')}</SelectItem>
+          <SelectItem value="suggested">{t('transactions:status.suggested', 'Javasolt')}</SelectItem>
+          <SelectItem value="auto_settled">{t('transactions:status.auto_settled', 'Rendezett (nincs számla)')}</SelectItem>
+          <SelectItem value="unmatched">{t('transactions:status.unmatched', 'Párosítatlan')}</SelectItem>
+          <SelectItem value="no_invoice">{t('transactions:status.no_invoice', 'Nincs hozzá számla')}</SelectItem>
+          <SelectItem value="invoice_missing">{t('transactions:status.invoice_missing', 'Számla nincs feltöltve')}</SelectItem>
         </SelectContent>
       </Select>
 
@@ -76,10 +79,10 @@ const TransactionFilters = React.memo(function TransactionFilters({
         onValueChange={(value) => onFilterChange(prev => ({ ...prev, type: value }))}
       >
         <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Típus" />
+          <SelectValue placeholder={t('transactions:filters.type_placeholder', 'Típus')} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Minden típus</SelectItem>
+          <SelectItem value="all">{t('transactions:filters.all_types', 'Minden típus')}</SelectItem>
           {uniqueTypes.map(type => (
             <SelectItem key={type} value={type}>{type}</SelectItem>
           ))}
@@ -89,7 +92,7 @@ const TransactionFilters = React.memo(function TransactionFilters({
       {/* Clear button */}
       {hasActiveFilters && (
         <Button variant="ghost" size="sm" onClick={onClearFilters}>
-          <X className="h-4 w-4 mr-1" /> Szűrők törlése
+          <X className="h-4 w-4 mr-1" /> {t('transactions:filters.clear_filters', 'Szűrők törlése')}
         </Button>
       )}
     </div>

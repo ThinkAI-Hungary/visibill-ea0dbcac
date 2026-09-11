@@ -7,6 +7,7 @@ import { TableSkeleton } from '@/components/ui/table-skeleton';
 import { TableEmptyState } from '@/components/ui/table-empty-state';
 import { TablePlaceholderRows } from '@/components/ui/table-placeholder-rows';
 import { ArrowUpDown, ChevronsUpDown, ChevronsDownUp } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { SubmittedInvoiceRow } from './SubmittedInvoiceRow';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 import type { NavInvoice, TransactionRecord } from '../../types';
@@ -24,6 +25,7 @@ export function SubmittedInvoiceTable({
   onRowClick,
   onToggleExclude,
 }: SubmittedInvoiceTableProps) {
+  const { t } = useTranslation(['invoices', 'common']);
   const {
     activeTab,
     loading,
@@ -59,22 +61,22 @@ export function SubmittedInvoiceTable({
       />
 
       <div className="flex items-center gap-4 mb-2 text-[11px] text-muted-foreground flex-wrap">
-        <span className="font-medium">Jelmagyarázat:</span>
+        <span className="font-medium">{t('invoices:table.legend', { defaultValue: 'Jelmagyarázat:' })}</span>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm bg-[var(--row-matched-bg)] border-l-2 border-l-[var(--row-matched-border)]" />
-          <span>Párosított / Kifizetve</span>
+          <span>{t('invoices:table.matched_paid', { defaultValue: 'Párosított / Kifizetve' })}</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm bg-blue-500/15 border-l-2 border-l-blue-500" />
-          <span>Részben fizetve</span>
+          <span>{t('invoices:table.partially_paid', { defaultValue: 'Részben fizetve' })}</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm bg-[var(--row-suggested-bg)] border-l-2 border-l-[var(--row-suggested-border)]" />
-          <span>AI javaslat (jóváhagyásra vár)</span>
+          <span>{t('invoices:table.ai_suggested', { defaultValue: 'AI javaslat (jóváhagyásra vár)' })}</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm bg-destructive/10 border-l-2 border-l-destructive" />
-          <span>Nem kifizetve</span>
+          <span>{t('invoices:table.unpaid', { defaultValue: 'Nem kifizetve' })}</span>
         </div>
       </div>
 
@@ -91,7 +93,7 @@ export function SubmittedInvoiceTable({
                       <Checkbox
                         checked={isAllSelected}
                         onCheckedChange={() => toggleSelectAll()}
-                        aria-label="Összes kijelölése"
+                        aria-label={t('invoices:table.select_all', { defaultValue: 'Összes kijelölése' })}
                       />
                     </div>
                   </TableHead>
@@ -101,7 +103,7 @@ export function SubmittedInvoiceTable({
                     onClick={() => handleSort(activeTab === 'SUBMITTED_INBOUND' ? 'elado_nev' : 'vevo_nev')}
                   >
                     <div className="flex items-center gap-1">
-                      Partner
+                      {t('invoices:columns.partner', { defaultValue: 'Partner' })}
                       <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
                     </div>
                   </TableHead>
@@ -111,7 +113,7 @@ export function SubmittedInvoiceTable({
                     onClick={() => handleSort('kibocsatas_datuma')}
                   >
                     <div className="flex items-center justify-center gap-1">
-                      Kiáll.
+                      {t('invoices:columns.issue_date', { defaultValue: 'Kiáll.' })}
                       <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
                     </div>
                   </TableHead>
@@ -121,7 +123,7 @@ export function SubmittedInvoiceTable({
                     onClick={() => handleSort('teljesites_datuma')}
                   >
                     <div className="flex items-center justify-center gap-1">
-                      Telj.
+                      {t('invoices:columns.fulfillment_date', { defaultValue: 'Telj.' })}
                       <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
                     </div>
                   </TableHead>
@@ -131,7 +133,7 @@ export function SubmittedInvoiceTable({
                     onClick={() => handleSort('bizonylatsorszam')}
                   >
                     <div className="flex items-center gap-1">
-                      Biz.szám
+                      {t('invoices:columns.invoice_number', { defaultValue: 'Biz.szám' })}
                       <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
                     </div>
                   </TableHead>
@@ -142,7 +144,7 @@ export function SubmittedInvoiceTable({
                   >
                     <div className="flex items-center justify-end gap-1">
                       <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
-                      Nettó
+                      {t('invoices:columns.net_amount', { defaultValue: 'Nettó' })}
                     </div>
                   </TableHead>
 
@@ -152,7 +154,7 @@ export function SubmittedInvoiceTable({
                   >
                     <div className="flex items-center justify-end gap-1">
                       <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
-                      Bruttó
+                      {t('invoices:columns.gross_amount', { defaultValue: 'Bruttó' })}
                     </div>
                   </TableHead>
 
@@ -162,18 +164,18 @@ export function SubmittedInvoiceTable({
                   >
                     <div className="flex items-center justify-end gap-1">
                       <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
-                      ÁFA
+                      {t('invoices:columns.vat_amount', { defaultValue: 'ÁFA' })}
                     </div>
                   </TableHead>
 
                   <TableHead className="font-semibold text-center whitespace-nowrap text-emerald-600 dark:text-emerald-400">
-                    Kikontírozva
+                    {t('invoices:table.booked', { defaultValue: 'Kikontírozva' })}
                   </TableHead>
 
-                  <TableHead className="font-semibold text-center whitespace-nowrap">Fiz. mód</TableHead>
-                  <TableHead className="font-semibold text-center whitespace-nowrap">Tételek</TableHead>
-                  <TableHead className="font-semibold text-center whitespace-nowrap">Számla kép</TableHead>
-                  <TableHead className="text-center font-semibold whitespace-nowrap">Műveletek</TableHead>
+                  <TableHead className="font-semibold text-center whitespace-nowrap">{t('invoices:table.payment_method', { defaultValue: 'Fiz. mód' })}</TableHead>
+                  <TableHead className="font-semibold text-center whitespace-nowrap">{t('invoices:table.items', { defaultValue: 'Tételek' })}</TableHead>
+                  <TableHead className="font-semibold text-center whitespace-nowrap">{t('invoices:table.invoice_image', { defaultValue: 'Számla kép' })}</TableHead>
+                  <TableHead className="text-center font-semibold whitespace-nowrap">{t('common:labels.actions', { defaultValue: 'Műveletek' })}</TableHead>
                 </TableRow>
               </TableHeader>
 
@@ -185,13 +187,13 @@ export function SubmittedInvoiceTable({
                     colSpan={13}
                     title={
                       kpiFilter !== 'all'
-                        ? 'Nincs ilyen státuszú számla ezen az oldalon'
-                        : 'Nincs megjeleníthető számla'
+                        ? t('invoices:table.no_matching_status', { defaultValue: 'Nincs ilyen státuszú számla ezen az oldalon' })
+                        : t('invoices:table.no_invoices', { defaultValue: 'Nincs megjeleníthető számla' })
                     }
                     description={
                       kpiFilter !== 'all'
-                        ? 'Kattints az "Összes találat" KPI kártyára a szűrő törléséhez.'
-                        : 'Próbáld módosítani a szűrőket vagy keresési feltételeket.'
+                        ? t('invoices:table.click_kpi_to_clear', { defaultValue: 'Kattints az "Összes találat" KPI kártyára a szűrő törléséhez.' })
+                        : t('invoices:table.try_adjust_filters', { defaultValue: 'Próbáld módosítani a szűrőket vagy keresési feltételeket.' })
                     }
                   />
                 ) : (
@@ -219,11 +221,11 @@ export function SubmittedInvoiceTable({
         <ContextMenuContent>
           <ContextMenuItem onClick={() => expandAllRows(paginatedSubmittedInvoices.map(i => i.id))}>
             <ChevronsUpDown className="h-3.5 w-3.5 mr-2" />
-            Összes lenyitás
+            {t('invoices:table.expand_all', { defaultValue: 'Összes lenyitás' })}
           </ContextMenuItem>
           <ContextMenuItem onClick={() => collapseAllRows()}>
             <ChevronsDownUp className="h-3.5 w-3.5 mr-2" />
-            Összes bezárás
+            {t('invoices:table.collapse_all', { defaultValue: 'Összes bezárás' })}
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>

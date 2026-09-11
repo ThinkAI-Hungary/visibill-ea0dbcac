@@ -113,7 +113,7 @@ export function AnnualReportContainer() {
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            {selectedCompany?.name || 'Válassz céget'} • {t('accounting:annual_report.subtitle', '6 lépéses beszámoló varázsló')}
+            {selectedCompany?.name || t('accounting:annual_report.select_company', 'Válassz céget')} • {t('accounting:annual_report.subtitle', '6 lépéses beszámoló varázsló')}
           </p>
         </div>
 
@@ -134,10 +134,10 @@ export function AnnualReportContainer() {
                 const rep = allReports?.find((r) => r.fiscal_year === y);
                 return (
                   <SelectItem key={y} value={String(y)} className="text-xs">
-                    <span className="font-bold">{y}. év</span>
+                    <span className="font-bold">{t('accounting:annual_report.year_option', { year: y, defaultValue: `${y}. év` })}</span>
                     {rep && (
                       <span className="ml-1.5 text-[10px] text-muted-foreground">
-                        ({rep.status === 'finalized' ? '✓ lezárt' : 'vázlat'})
+                        ({rep.status === 'finalized' ? t('accounting:annual_report.status.finalized_short', '✓ lezárt') : t('accounting:annual_report.status.draft_short', 'vázlat')})
                       </span>
                     )}
                   </SelectItem>
@@ -158,8 +158,8 @@ export function AnnualReportContainer() {
                   setHeaderPreviewUrl(url);
                 } catch (err) {
                   toast({
-                    title: 'Hiba',
-                    description: 'Előnézet nem hozható létre.',
+                    title: t('accounting:balance_sheet.toasts.save_error_title', 'Hiba'),
+                    description: t('accounting:annual_report.preview_error', 'Előnézet nem hozható létre.'),
                     variant: 'destructive',
                   });
                 }
@@ -175,7 +175,7 @@ export function AnnualReportContainer() {
       {/* Archive / History pill bar */}
       {allReports && allReports.length > 1 && (
         <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs text-muted-foreground">
-          <span className="font-medium shrink-0">Korábbi évek:</span>
+          <span className="font-medium shrink-0">{t('accounting:annual_report.previous_years', 'Korábbi évek:')}</span>
           {allReports.map((r) => (
             <button
               key={r.id}
@@ -200,7 +200,7 @@ export function AnnualReportContainer() {
       {/* Loading state */}
       {isLoadingReport && (
         <div className="flex flex-col items-center justify-center p-12 text-muted-foreground">
-          <p className="text-sm">Beszámoló betöltése...</p>
+          <p className="text-sm">{t('accounting:annual_report.loading', 'Beszámoló betöltése...')}</p>
         </div>
       )}
 
@@ -212,10 +212,11 @@ export function AnnualReportContainer() {
               <FileText className="w-8 h-8" />
             </div>
             <div>
-              <h2 className="text-lg font-bold">Még nincs beszámoló a {selectedYear}. évhez</h2>
+              <h2 className="text-lg font-bold">
+                {t('accounting:annual_report.empty_title', { year: selectedYear, defaultValue: `Még nincs beszámoló a ${selectedYear}. évhez` })}
+              </h2>
               <p className="text-sm text-muted-foreground mt-1 max-w-md">
-                Kattints az alábbi gombra az új beszámoló varázsló elindításához. A folyamat lépésről
-                lépésre vezet végig.
+                {t('accounting:annual_report.empty_desc', 'Kattints az alábbi gombra az új beszámoló varázsló elindításához. A folyamat lépésről lépésre vezet végig.')}
               </p>
             </div>
             <Button
@@ -224,7 +225,7 @@ export function AnnualReportContainer() {
               className="gap-2"
             >
               <Plus className="w-4 h-4" />
-              {selectedYear}. évi beszámoló indítása
+              {t('accounting:annual_report.start_report', { year: selectedYear, defaultValue: `${selectedYear}. évi beszámoló indítása` })}
             </Button>
           </CardContent>
         </Card>
@@ -258,10 +259,10 @@ export function AnnualReportContainer() {
                     {isDone && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
                   </div>
                   <span className="text-xs font-bold leading-tight">
-                    {s.id}. {s.title}
+                    {s.id}. {t(`accounting:annual_report.steps.step${s.id}.title`, s.title)}
                   </span>
                   <span className="text-[10px] text-muted-foreground truncate w-full mt-0.5">
-                    {s.description}
+                    {t(`accounting:annual_report.steps.step${s.id}.description`, s.description)}
                   </span>
                   {isCurrent && (
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
@@ -345,17 +346,17 @@ export function AnnualReportContainer() {
               disabled={currentStep === 1}
               className="gap-2"
             >
-              <ChevronLeft className="w-4 h-4" /> Előző
+              <ChevronLeft className="w-4 h-4" /> {t('accounting:annual_report.navigation.previous', 'Előző')}
             </Button>
             <div className="text-xs text-muted-foreground font-mono">
-              {currentStep} / {STEPS.length} lépés ({progressPercent}% kész)
+              {t('accounting:annual_report.navigation.progress', { current: currentStep, total: STEPS.length, percent: progressPercent, defaultValue: `${currentStep} / ${STEPS.length} lépés (${progressPercent}% kész)` })}
             </div>
             <Button
               onClick={() => setCurrentStep((s) => Math.min(6, s + 1))}
               disabled={currentStep === 6}
               className="gap-2"
             >
-              Következő <ChevronRight className="w-4 h-4" />
+              {t('accounting:annual_report.navigation.next', 'Következő')} <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
         </div>
@@ -375,7 +376,7 @@ export function AnnualReportContainer() {
           <DialogHeader className="px-6 py-4 border-b border-border/40 bg-muted/30 shrink-0">
             <DialogTitle className="flex items-center gap-2 text-lg">
               <Eye className="w-5 h-5 text-primary" />
-              Beszámoló előnézet — {selectedYear}. üzleti év
+              {t('accounting:annual_report.preview_title', { year: selectedYear, defaultValue: `Beszámoló előnézet — ${selectedYear}. üzleti év` })}
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-hidden">

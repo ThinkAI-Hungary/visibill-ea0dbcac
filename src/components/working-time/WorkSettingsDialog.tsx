@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -36,6 +37,7 @@ export function WorkSettingsDialog({
   onSave,
   isSaving,
 }: WorkSettingsDialogProps) {
+  const { t } = useTranslation(['hr', 'common']);
   const [form, setForm] = useState(currentSettings);
 
   const handleOpen = (v: boolean) => {
@@ -54,18 +56,18 @@ export function WorkSettingsDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5 text-primary" />
-            Munkaidő beállítások
+            {t('hr:working_time.settings_dialog.title')}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Work hours */}
           <div className="space-y-3">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Standard munkaidő
+              {t('hr:working_time.settings_dialog.section_standard')}
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="ws-start">Munkaidő kezdete</Label>
+                <Label htmlFor="ws-start">{t('hr:working_time.settings_dialog.start_label')}</Label>
                 <Input
                   id="ws-start"
                   type="time"
@@ -76,7 +78,7 @@ export function WorkSettingsDialog({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="ws-end">Munkaidő vége</Label>
+                <Label htmlFor="ws-end">{t('hr:working_time.settings_dialog.end_label')}</Label>
                 <Input
                   id="ws-end"
                   type="time"
@@ -91,7 +93,7 @@ export function WorkSettingsDialog({
 
           {/* Admin deadline */}
           <div className="space-y-2">
-            <Label htmlFor="ws-deadline">Adminisztrációs határidő</Label>
+            <Label htmlFor="ws-deadline">{t('hr:working_time.settings_dialog.deadline_label')}</Label>
             <Input
               id="ws-deadline"
               type="time"
@@ -101,13 +103,13 @@ export function WorkSettingsDialog({
               }
             />
             <p className="text-xs text-muted-foreground">
-              Az időpont, ameddig a dolgozó rögzítheti a napi óráit.
+              {t('hr:working_time.settings_dialog.deadline_hint')}
             </p>
           </div>
 
           {/* Monthly working hours */}
           <div className="space-y-2">
-            <Label htmlFor="ws-hours">Havi munkaórák</Label>
+            <Label htmlFor="ws-hours">{t('hr:working_time.settings_dialog.hours_label')}</Label>
             <Input
               id="ws-hours"
               type="number"
@@ -123,7 +125,7 @@ export function WorkSettingsDialog({
               }
             />
             <p className="text-xs text-muted-foreground">
-              Az óradíj számításhoz használt havi munkaórák száma (alap: 168).
+              {t('hr:working_time.settings_dialog.hours_hint')}
             </p>
           </div>
 
@@ -133,11 +135,11 @@ export function WorkSettingsDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Mégse
+              {t('hr:working_time.settings_dialog.cancel')}
             </Button>
             <Button type="submit" disabled={isSaving}>
               <Save className="h-4 w-4 mr-2" />
-              {isSaving ? 'Mentés...' : 'Mentés'}
+              {isSaving ? t('hr:working_time.settings_dialog.saving') : t('hr:working_time.settings_dialog.save')}
             </Button>
           </DialogFooter>
         </form>

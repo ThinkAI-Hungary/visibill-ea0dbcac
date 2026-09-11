@@ -109,7 +109,7 @@ const PettyCashPage = () => {
   if (!selectedCompany) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
-        <p className="text-muted-foreground">Válassz egy céget a folytatáshoz</p>
+        <p className="text-muted-foreground">{t('common:select_company_continue', 'Válassz egy céget a folytatáshoz')}</p>
       </div>
     );
   }
@@ -137,7 +137,7 @@ const PettyCashPage = () => {
                       <h4 className="font-medium leading-none">{t('pettyCash:settings_title', 'Házipénztár Beállítások')}</h4>
                       <p className="text-xs text-muted-foreground">{t('pettyCash:settings_desc', 'Készpénzállomány limit értékének testreszabása cég szinten.')}</p>
                       <div className="space-y-2">
-                        <Label htmlFor="custom-limit-input">HUF készpénz limit figyelmeztetés (Ft)</Label>
+                        <Label htmlFor="custom-limit-input">{t('pettyCash:limit_setting_label', 'Készpénz limit figyelmeztetés')}</Label>
                         <Input
                           id="custom-limit-input"
                           type="number"
@@ -161,7 +161,7 @@ const PettyCashPage = () => {
             <div>
               <p className="font-semibold text-sm text-amber-900 dark:text-amber-300">{t('pettyCash:limit_warning_title', 'Pénztári limit figyelmeztetés')}</p>
               <div className="text-xs opacity-90 mt-1 space-y-1">
-                <p>Az alábbi házipénztárak egyenlege meghaladja a megengedett {fmtBalance(customLimit, 'HUF')} napi készpénzállományt:</p>
+                <p>{t('pettyCash:limit_warning_desc', { limit: fmtBalance(customLimit, 'HUF'), defaultValue: `Az alábbi házipénztárak egyenlege meghaladja a megengedett ${fmtBalance(customLimit, 'HUF')} napi készpénzállományt:` })}</p>
                 {registersExceedingLimit.map(r => (
                   <div key={r.register_id} className="font-semibold pl-2 border-l border-amber-500/30">
                     {r.register_name}: {fmtBalance(r.current_balance, 'HUF')}
@@ -227,7 +227,7 @@ const PettyCashPage = () => {
                     return (
                       <div key={c.currency} className="space-y-1">
                         <div className="flex justify-between text-[10px] text-muted-foreground">
-                          <span>Limit kihasználtság ({c.currency})</span>
+                          <span>{t('pettyCash:limit_utilization', 'Limit kihasználtság')} ({c.currency})</span>
                           <span className={cn("font-medium", isHigh && "text-amber-500 font-bold")}>{Math.round(pct)}%</span>
                         </div>
                         <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">

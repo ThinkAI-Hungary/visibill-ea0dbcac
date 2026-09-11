@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, FileX2, ArrowDownLeft, ArrowUpRight, Unlink } from 'lucide-react';
 import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { getDateFnsLocale, getActiveLocale } from '@/lib/locale/formatters';
 import { formatCurrency } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 
@@ -68,6 +68,9 @@ const UnmatchedSection = () => {
   const [visibleNavCount, setVisibleNavCount] = useState(20);
   const [visibleTxCount, setVisibleTxCount] = useState(20);
 
+  const isHr = getActiveLocale() === 'hr';
+  const dateFormatPattern = isHr ? 'dd.MM.yyyy.' : 'yyyy. MM. dd.';
+
   // Fetch unmatched NAV invoices
   const { data: unmatchedNav = [], isLoading: navLoading } = useQuery({
     queryKey: ['unmatchedNavInvoices', companyId, dateFromFormatted, dateToFormatted],
@@ -120,7 +123,7 @@ const UnmatchedSection = () => {
       return (
         <div className="text-center py-8 text-muted-foreground">
           <FileX2 className="h-8 w-8 mx-auto mb-2 opacity-30" />
-          Minden NAV számla párosítva van!
+          {t('dashboard:unmatched_items.all_nav_matched', 'Minden NAV számla párosítva van!')}
         </div>
       );
     }
@@ -130,12 +133,24 @@ const UnmatchedSection = () => {
         <Table className="compact-table">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[50px]">Irány</TableHead>
-              <TableHead className="min-w-[130px]">Bizonylatsorszám</TableHead>
-              <TableHead>Kibocsátás</TableHead>
-              <TableHead>Partner</TableHead>
-              <TableHead className="text-right">Bruttó</TableHead>
-              <TableHead className="text-center w-[80px]">Fiz. mód</TableHead>
+              <TableHead className="w-[50px]">
+                {t('dashboard:unmatched_items.direction', 'Irány')}
+              </TableHead>
+              <TableHead className="min-w-[130px]">
+                {t('dashboard:unmatched_items.invoice_number', 'Bizonylatsorszám')}
+              </TableHead>
+              <TableHead>
+                {t('dashboard:unmatched_items.issue_date', 'Kibocsátás')}
+              </TableHead>
+              <TableHead>
+                {t('dashboard:unmatched_items.partner', 'Partner')}
+              </TableHead>
+              <TableHead className="text-right">
+                {t('dashboard:unmatched_items.gross', 'Bruttó')}
+              </TableHead>
+              <TableHead className="text-center w-[80px]">
+                {t('dashboard:unmatched_items.payment_method', 'Fiz. mód')}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -147,11 +162,13 @@ const UnmatchedSection = () => {
                   <TableCell>
                     {isInbound ? (
                       <Badge variant="outline" className="gap-0.5 text-destructive border-destructive/30 bg-destructive/5 text-[10px] px-1 py-0">
-                        <ArrowDownLeft className="h-3 w-3" />Be
+                        <ArrowDownLeft className="h-3 w-3" />
+                        {t('dashboard:unmatched_items.inbound', 'Be')}
                       </Badge>
                     ) : (
                       <Badge variant="outline" className="gap-0.5 text-success border-success/30 bg-success/5 text-[10px] px-1 py-0">
-                        <ArrowUpRight className="h-3 w-3" />Ki
+                        <ArrowUpRight className="h-3 w-3" />
+                        {t('dashboard:unmatched_items.outbound', 'Ki')}
                       </Badge>
                     )}
                   </TableCell>
@@ -171,14 +188,14 @@ const UnmatchedSection = () => {
                   </TableCell>
                   <TableCell>
                     {inv.invoice_issue_date
-                      ? format(new Date(inv.invoice_issue_date), 'yyyy. MM. dd.', { locale: hu })
+                      ? format(new Date(inv.invoice_issue_date), dateFormatPattern, { locale: getDateFnsLocale() })
                       : '-'}
                   </TableCell>
                   <TableCell>
                     <span className="block truncate max-w-[200px]">{partnerName || '-'}</span>
                   </TableCell>
                   <TableCell className={`text-right tabular-nums font-medium ${isInbound ? 'text-destructive' : 'text-success'}`}>
-                    {formatCurrency(inv.invoice_gross_amount || 0, inv.currency || 'HUF')}
+                    {formatCurrency(inv.invoice_gross_amount || 0, inv.currency || undefined)}
                   </TableCell>
                   <TableCell className="text-center text-xs text-muted-foreground">
                     {inv.payment_method || '-'}
@@ -196,7 +213,10 @@ const UnmatchedSection = () => {
               className="text-sm text-muted-foreground hover:text-foreground"
               onClick={() => setVisibleNavCount(prev => prev + 20)}
             >
-              + {unmatchedNav.length - visibleNavCount} további számla
+              {t('dashboard:unmatched_items.more_invoices', {
+                count: unmatchedNav.length - visibleNavCount,
+                defaultValue: `+ ${unmatchedNav.length - visibleNavCount} további számla`,
+              })}
             </Button>
           </div>
         )}
@@ -217,7 +237,7 @@ const UnmatchedSection = () => {
       return (
         <div className="text-center py-8 text-muted-foreground">
           <Unlink className="h-8 w-8 mx-auto mb-2 opacity-30" />
-          Minden tranzakció párosítva van!
+          {t('dashboard:unmatched_items.all_tx_matched', 'Minden tranzakció párosítva van!')}
         </div>
       );
     }
@@ -227,20 +247,28 @@ const UnmatchedSection = () => {
         <Table className="compact-table">
           <TableHeader>
             <TableRow>
-              <TableHead>Dátum</TableHead>
-              <TableHead className="text-right">Összeg</TableHead>
-              <TableHead>Leírás</TableHead>
-              <TableHead className="text-center w-[80px]">Típus</TableHead>
+              <TableHead>
+                {t('dashboard:unmatched_items.date', 'Dátum')}
+              </TableHead>
+              <TableHead className="text-right">
+                {t('dashboard:unmatched_items.amount', 'Összeg')}
+              </TableHead>
+              <TableHead>
+                {t('dashboard:unmatched_items.description', 'Leírás')}
+              </TableHead>
+              <TableHead className="text-center w-[80px]">
+                {t('dashboard:unmatched_items.type', 'Típus')}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {unmatchedTx.slice(0, visibleTxCount).map(tx => (
               <TableRow key={tx.id}>
                 <TableCell>
-                  {format(new Date(tx.transaction_date), 'yyyy. MM. dd.', { locale: hu })}
+                  {format(new Date(tx.transaction_date), dateFormatPattern, { locale: getDateFnsLocale() })}
                 </TableCell>
                 <TableCell className={`text-right tabular-nums font-medium ${tx.amount >= 0 ? 'text-success' : 'text-destructive'}`}>
-                  {formatCurrency(tx.amount, tx.currency || 'HUF')}
+                  {formatCurrency(tx.amount, tx.currency || undefined)}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   <TooltipProvider>
@@ -273,7 +301,10 @@ const UnmatchedSection = () => {
               className="text-sm text-muted-foreground hover:text-foreground"
               onClick={() => setVisibleTxCount(prev => prev + 20)}
             >
-              + {unmatchedTx.length - visibleTxCount} további tranzakció
+              {t('dashboard:unmatched_items.more_tx', {
+                count: unmatchedTx.length - visibleTxCount,
+                defaultValue: `+ ${unmatchedTx.length - visibleTxCount} további tranzakció`,
+              })}
             </Button>
           </div>
         )}
@@ -305,7 +336,11 @@ const UnmatchedSection = () => {
             {unmatchedNav.length > 0 && (
               <div className="mb-4 px-4 h-12 flex items-center justify-between rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/40">
                 <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
-                  {unmatchedNav.length} számla nincs tranzakcióhoz párosítva · Összesen: {formatCurrency(navTotal, 'HUF')}
+                  {t('dashboard:unmatched_items.unmatched_nav_summary', {
+                    count: unmatchedNav.length,
+                    total: formatCurrency(navTotal),
+                    defaultValue: `${unmatchedNav.length} számla nincs tranzakcióhoz párosítva · Összesen: ${formatCurrency(navTotal)}`,
+                  })}
                 </p>
               </div>
             )}
@@ -316,7 +351,11 @@ const UnmatchedSection = () => {
             {unmatchedTx.length > 0 && (
               <div className="mb-4 px-4 h-12 flex items-center justify-between rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/40">
                 <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
-                  {unmatchedTx.length} tranzakció nincs számlához párosítva · Összesen: {formatCurrency(txTotal, 'HUF')}
+                  {t('dashboard:unmatched_items.unmatched_tx_summary', {
+                    count: unmatchedTx.length,
+                    total: formatCurrency(txTotal),
+                    defaultValue: `${unmatchedTx.length} tranzakció nincs számlához párosítva · Összesen: ${formatCurrency(txTotal)}`,
+                  })}
                 </p>
               </div>
             )}

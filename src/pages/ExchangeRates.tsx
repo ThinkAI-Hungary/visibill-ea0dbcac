@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ContentSkeleton } from "@/components/ui/content-skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
+import { getActiveLocale, formatDateLocale } from "@/lib/locale/formatters";
 
 interface ExchangeRate {
   currency: string;
@@ -39,7 +40,8 @@ const currencyData = [
 ];
 
 export default function ExchangeRates() {
-  const { t } = useTranslation(['navigation', 'common']);
+  const { t } = useTranslation(['exchangeRates', 'common']);
+  const isHr = getActiveLocale() === 'hr';
   const [isRefreshing, setIsRefreshing] = useState(false);
   
   // Converter state
@@ -117,18 +119,18 @@ export default function ExchangeRates() {
         };
       });
 
-      const latestDateStr = dbRates?.[0]?.rate_date
-        ? new Date(dbRates[0].rate_date).toLocaleDateString('hu-HU')
-        : new Date().toLocaleDateString('hu-HU');
+      const rawLatestDate = dbRates?.[0]?.rate_date || new Date().toISOString();
 
-      return { rates: formattedRates, lastUpdate: latestDateStr };
+      return { rates: formattedRates, rawLatestDate };
     },
     staleTime: 60 * 60 * 1000, // 1 hour
     placeholderData: keepPreviousData,
   });
 
   const rates = ratesData?.rates || [];
-  const lastUpdate = ratesData?.lastUpdate || '';
+  const lastUpdate = ratesData?.rawLatestDate
+    ? formatDateLocale(ratesData.rawLatestDate)
+    : formatDateLocale(new Date());
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -155,13 +157,20 @@ export default function ExchangeRates() {
     return (1 / rate).toFixed(2);
   };
 
+  const localizedRates = useMemo(() => {
+    return rates.map(r => ({
+      ...r,
+      currencyName: t(`exchangeRates:currencies.${r.currency}`, { defaultValue: r.currencyName }),
+    }));
+  }, [rates, t]);
+
   const heroRates = useMemo(() => {
-    return heroCurrencies.map(code => rates.find(r => r.currency === code)).filter(Boolean) as ExchangeRate[];
-  }, [rates, heroCurrencies]);
+    return heroCurrencies.map(code => localizedRates.find(r => r.currency === code)).filter(Boolean) as ExchangeRate[];
+  }, [localizedRates, heroCurrencies]);
 
   const tableRates = useMemo(() => {
-    return rates.filter(r => !heroCurrencies.includes(r.currency));
-  }, [rates, heroCurrencies]);
+    return localizedRates.filter(r => !heroCurrencies.includes(r.currency));
+  }, [localizedRates, heroCurrencies]);
 
   const updateHeroCurrency = (index: number, newCurrency: string) => {
     setHeroCurrencies(prev => {
@@ -203,13 +212,22 @@ export default function ExchangeRates() {
   };
 
   const allCurrencies = useMemo(() => {
-    return [{ currency: "HUF", currencyName: "Magyar Forint", flag: "🇭🇺", rate: 1, mockChange: 0 }, ...rates];
-  }, [rates]);
+    return [
+      {
+        currency: "HUF",
+        currencyName: t("exchangeRates:currencies.HUF", { defaultValue: "Magyar Forint" }),
+        flag: "🇭🇺",
+        rate: 1,
+        mockChange: 0,
+      },
+      ...localizedRates,
+    ];
+  }, [localizedRates, t]);
 
   const formatHuf = (value: string) => {
     const num = parseFloat(value);
     if (isNaN(num)) return "0";
-    return num.toLocaleString('hu-HU');
+    return num.toLocaleString(isHr ? 'hr-HR' : 'hu-HU');
   };
 
   if (initialLoading) {
@@ -221,9 +239,9 @@ export default function ExchangeRates() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t('items.exchange_rates', { defaultValue: 'Árfolyamok' })}</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('exchangeRates:title', 'Árfolyamok')}</h1>
           <p className="text-muted-foreground mt-1">
-            {t('exchange_rates.subtitle', { defaultValue: 'Élő devizaárfolyamok HUF-hoz viszonyítva' })}
+            {t('exchangeRates:subtitle', 'Élő devizaárfolyamok HUF-hoz viszonyítva')}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -243,7 +261,7 @@ export default function ExchangeRates() {
         <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg">
           <div className="flex flex-col items-center gap-3">
             <RefreshCw className="h-10 w-10 animate-spin text-primary" />
-            <p className="text-muted-foreground">{t('exchange_rates.refreshing', { defaultValue: 'Árfolyamok frissítése...' })}</p>
+            <p className="text-muted-foreground">{t('exchangeRates:refreshing', 'Árfolyamok frissítése...')}</p>
           </div>
         </div>
       )}
@@ -272,7 +290,7 @@ export default function ExchangeRates() {
                       </div>
                     </SelectTrigger>
                     <SelectContent>
-                      {rates.map((r) => (
+                      {localizedRates.map((r) => (
                         <SelectItem key={r.currency} value={r.currency} disabled={heroCurrencies.includes(r.currency)}>
                           <div className="flex items-center gap-2">
                             <span>{r.flag}</span>
@@ -298,7 +316,7 @@ export default function ExchangeRates() {
                     <span className="font-medium tabular-nums">
                       {isPositive ? '+' : ''}{rate.mockChange.toFixed(2)} Ft
                     </span>
-                    <span className="text-muted-foreground ml-1">ma</span>
+                    <span className="text-muted-foreground ml-1">{t('exchangeRates:today', 'ma')}</span>
                   </div>
                 </div>
               </CardContent>
@@ -312,17 +330,17 @@ export default function ExchangeRates() {
         {/* Left Side - Exchange Rate Table */}
         <Card className="lg:col-span-2 border-border/50">
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg">További árfolyamok</CardTitle>
+            <CardTitle className="text-lg">{t('exchangeRates:table.title', 'További árfolyamok')}</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/30 hover:bg-muted/30">
                   <TableHead className="w-[60px] pl-6"></TableHead>
-                  <TableHead>Név</TableHead>
-                  <TableHead className="w-[80px]">Kód</TableHead>
-                  <TableHead className="text-right pr-6">Árfolyam</TableHead>
-                  <TableHead className="text-right pr-6 w-[100px]">Változás</TableHead>
+                  <TableHead>{t('exchangeRates:table.name', 'Név')}</TableHead>
+                  <TableHead className="w-[80px]">{t('exchangeRates:table.code', 'Kód')}</TableHead>
+                  <TableHead className="text-right pr-6">{t('exchangeRates:table.rate', 'Árfolyam')}</TableHead>
+                  <TableHead className="text-right pr-6 w-[100px]">{t('exchangeRates:table.change', 'Változás')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -368,13 +386,13 @@ export default function ExchangeRates() {
             <CardHeader className="pb-4">
               <CardTitle className="text-lg flex items-center gap-2">
                 <ArrowRightLeft className="h-5 w-5 text-primary" />
-                Gyorsváltó
+                {t('exchangeRates:converter.title', 'Gyorsváltó')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="amount" className="text-sm text-muted-foreground">
-                  Összeg
+                  {t('exchangeRates:converter.amount', 'Összeg')}
                 </Label>
                 <div className="flex gap-2">
                   <Input
@@ -411,7 +429,7 @@ export default function ExchangeRates() {
               
               <div className="space-y-2">
                 <Label htmlFor="target-currency" className="text-sm text-muted-foreground">
-                  Célvaluta
+                  {t('exchangeRates:converter.target_currency', 'Célvaluta')}
                 </Label>
                 <Select value={targetCurrency} onValueChange={setTargetCurrency}>
                   <SelectTrigger id="target-currency" className="h-12">
@@ -432,10 +450,10 @@ export default function ExchangeRates() {
               </div>
 
               <div className="pt-4 border-t border-border/50">
-                <p className="text-sm text-muted-foreground mb-1">Átváltott összeg</p>
+                <p className="text-sm text-muted-foreground mb-1">{t('exchangeRates:converter.converted_amount', 'Átváltott összeg')}</p>
                 <div className="flex items-baseline gap-2">
                   <span className="text-3xl font-bold tabular-nums text-primary">
-                    {parseFloat(convertedAmount).toLocaleString('hu-HU', { minimumFractionDigits: 2 })}
+                    {parseFloat(convertedAmount).toLocaleString(isHr ? 'hr-HR' : 'hu-HU', { minimumFractionDigits: 2 })}
                   </span>
                   <span className="text-lg text-muted-foreground">{targetCurrency}</span>
                 </div>
@@ -447,8 +465,7 @@ export default function ExchangeRates() {
           <Card className="bg-muted/20 border-border/30">
             <CardContent className="p-4">
               <p className="text-sm text-muted-foreground">
-                Az árfolyamok tájékoztató jellegűek. A napi változás adatok szimuláltak.
-                Tranzakciók előtt mindig ellenőrizze a bankjánál az aktuális árfolyamokat.
+                {t('exchangeRates:info_note', 'Az árfolyamok tájékoztató jellegűek. A napi változás adatok szimuláltak. Tranzakciók előtt mindig ellenőrizze a bankjánál az aktuális árfolyamokat.')}
               </p>
             </CardContent>
           </Card>

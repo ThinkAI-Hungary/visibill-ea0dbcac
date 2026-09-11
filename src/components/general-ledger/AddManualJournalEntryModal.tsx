@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useTranslation } from 'react-i18next';
 import { Loader2, Plus, Sparkles, BookOpen } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -43,6 +44,7 @@ export function AddManualJournalEntryModal({
   presetId,
   onSuccess,
 }: AddManualJournalEntryModalProps) {
+  const { t } = useTranslation(['accounting', 'common']);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -89,18 +91,30 @@ export function AddManualJournalEntryModal({
     if (!companyId || !presetId) return;
 
     if (!voucherNumber || !debitAccount || !creditAccount || !amount) {
-      toast({ title: 'Hiba', description: 'Kérjük, töltsön ki minden kötelező mezőt!', variant: 'destructive' });
+      toast({
+        title: t('accounting:dialogs.manual_journal_gl.validation.error_title'),
+        description: t('accounting:dialogs.manual_journal_gl.validation.fill_required'),
+        variant: 'destructive',
+      });
       return;
     }
 
     if (debitAccount === creditAccount) {
-      toast({ title: 'Hiba', description: 'A tartozik és követel főkönyvi szám nem egyezhet meg!', variant: 'destructive' });
+      toast({
+        title: t('accounting:dialogs.manual_journal_gl.validation.error_title'),
+        description: t('accounting:dialogs.manual_journal_gl.validation.accounts_cannot_match'),
+        variant: 'destructive',
+      });
       return;
     }
 
     const numericAmount = parseFloat(amount);
     if (isNaN(numericAmount) || numericAmount <= 0) {
-      toast({ title: 'Hiba', description: 'Az összegnek nullánál nagyobbnak kell lennie!', variant: 'destructive' });
+      toast({
+        title: t('accounting:dialogs.manual_journal_gl.validation.error_title'),
+        description: t('accounting:dialogs.manual_journal_gl.validation.amount_positive'),
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -164,8 +178,8 @@ export function AddManualJournalEntryModal({
       if (entryError) throw entryError;
 
       toast({
-        title: 'Sikeres rögzítés',
-        description: 'A vegyes bizonylat sikeresen rögzítve lett.',
+        title: t('accounting:dialogs.manual_journal_gl.validation.success_title'),
+        description: t('accounting:dialogs.manual_journal_gl.validation.success_desc'),
         className: 'bg-green-50 text-green-900 border-green-200',
       });
 
@@ -192,7 +206,11 @@ export function AddManualJournalEntryModal({
       onSuccess?.();
       onOpenChange(false);
     } catch (err: any) {
-      toast({ title: 'Mentési hiba', description: err.message || 'Hiba történt a mentés során.', variant: 'destructive' });
+      toast({
+        title: t('accounting:dialogs.manual_journal_gl.validation.save_error'),
+        description: err.message || t('accounting:dialogs.manual_journal_gl.validation.save_error'),
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -200,7 +218,7 @@ export function AddManualJournalEntryModal({
 
   const getGlLabel = (code: string) => {
     const acc = leafAccounts.find(gl => gl.gl_number === code);
-    return acc ? `${acc.gl_number} ${acc.short_name}` : code || 'Főkönyvi szám kiválasztása...';
+    return acc ? `${acc.gl_number} ${acc.short_name}` : code || t('accounting:dialogs.manual_journal_gl.choose_account');
   };
 
   return (
@@ -210,17 +228,17 @@ export function AddManualJournalEntryModal({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <BookOpen className="w-5 h-5 text-primary" />
-              Vegyes Manuális Bizonylat Rögzítése
+              {t('accounting:dialogs.manual_journal_gl.title')}
             </DialogTitle>
             <DialogDescription>
-              Rögzítsen kézzel vegyes könyvelési tételt közvetlenül a főkönyvi struktúrába.
+              {t('accounting:dialogs.manual_journal_gl.description')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="date" className="font-semibold">Kelt / Dátum</Label>
+                <Label htmlFor="date" className="font-semibold">{t('accounting:dialogs.manual_journal_gl.date')}</Label>
                 <Input
                   id="date"
                   type="date"
@@ -230,10 +248,10 @@ export function AddManualJournalEntryModal({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="voucherNumber" className="font-semibold">Bizonylatszám</Label>
+                <Label htmlFor="voucherNumber" className="font-semibold">{t('accounting:dialogs.manual_journal_gl.voucher_number')}</Label>
                 <Input
                   id="voucherNumber"
-                  placeholder="pl. V-2026-0001"
+                  placeholder={t('accounting:dialogs.manual_journal_gl.voucher_placeholder')}
                   value={voucherNumber}
                   onChange={(e) => setVoucherNumber(e.target.value)}
                   required
@@ -242,7 +260,7 @@ export function AddManualJournalEntryModal({
             </div>
 
             <div className="space-y-2">
-              <Label className="font-semibold">Tartozik számla (Debit)</Label>
+              <Label className="font-semibold">{t('accounting:dialogs.manual_journal_gl.debit_account')}</Label>
               <Popover open={debitComboOpen} onOpenChange={setDebitComboOpen} modal={true}>
                 <PopoverTrigger asChild>
                   <Button
@@ -262,7 +280,7 @@ export function AddManualJournalEntryModal({
                 >
                   <Command shouldFilter={false}>
                     <CommandInput
-                      placeholder="Tartozik főkönyvi szám keresése..."
+                      placeholder={t('accounting:dialogs.manual_journal_gl.search_debit')}
                       value={debitSearch}
                       onValueChange={setDebitSearch}
                     />
@@ -271,7 +289,7 @@ export function AddManualJournalEntryModal({
                       onWheel={(e) => e.stopPropagation()}
                       onTouchMove={(e) => e.stopPropagation()}
                     >
-                      <CommandEmpty>Nincs találat.</CommandEmpty>
+                      <CommandEmpty>{t('accounting:dialogs.manual_journal_gl.no_match')}</CommandEmpty>
                       <CommandGroup>
                         {leafAccounts
                           ?.filter(gl => !debitSearch || `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(debitSearch.toLowerCase()))
@@ -295,7 +313,7 @@ export function AddManualJournalEntryModal({
             </div>
 
             <div className="space-y-2">
-              <Label className="font-semibold">Követel számla (Credit)</Label>
+              <Label className="font-semibold">{t('accounting:dialogs.manual_journal_gl.credit_account')}</Label>
               <Popover open={creditComboOpen} onOpenChange={setCreditComboOpen} modal={true}>
                 <PopoverTrigger asChild>
                   <Button
@@ -315,7 +333,7 @@ export function AddManualJournalEntryModal({
                 >
                   <Command shouldFilter={false}>
                     <CommandInput
-                      placeholder="Követel főkönyvi szám keresése..."
+                      placeholder={t('accounting:dialogs.manual_journal_gl.search_credit')}
                       value={creditSearch}
                       onValueChange={setCreditSearch}
                     />
@@ -324,7 +342,7 @@ export function AddManualJournalEntryModal({
                       onWheel={(e) => e.stopPropagation()}
                       onTouchMove={(e) => e.stopPropagation()}
                     >
-                      <CommandEmpty>Nincs találat.</CommandEmpty>
+                      <CommandEmpty>{t('accounting:dialogs.manual_journal_gl.no_match')}</CommandEmpty>
                       <CommandGroup>
                         {leafAccounts
                           ?.filter(gl => !creditSearch || `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(creditSearch.toLowerCase()))
@@ -349,7 +367,7 @@ export function AddManualJournalEntryModal({
 
             <div className="grid grid-cols-3 gap-4">
               <div className="col-span-2 space-y-2">
-                <Label htmlFor="amount" className="font-semibold">Összeg</Label>
+                <Label htmlFor="amount" className="font-semibold">{t('accounting:dialogs.manual_journal_gl.amount')}</Label>
                 <Input
                   id="amount"
                   type="number"
@@ -360,7 +378,7 @@ export function AddManualJournalEntryModal({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="currency" className="font-semibold">Pénznem</Label>
+                <Label htmlFor="currency" className="font-semibold">{t('accounting:dialogs.manual_journal_gl.currency')}</Label>
                 <Select value={currency} onValueChange={setCurrency}>
                   <SelectTrigger id="currency">
                     <SelectValue />
@@ -375,10 +393,10 @@ export function AddManualJournalEntryModal({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description" className="font-semibold">Megjegyzés / Szöveg</Label>
+              <Label htmlFor="description" className="font-semibold">{t('accounting:dialogs.manual_journal_gl.comment')}</Label>
               <Textarea
                 id="description"
-                placeholder="Írja le a tétel okát..."
+                placeholder={t('accounting:dialogs.manual_journal_gl.comment_placeholder')}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={2}
@@ -393,7 +411,7 @@ export function AddManualJournalEntryModal({
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
             >
-              Mégse
+              {t('accounting:dialogs.manual_journal_gl.cancel')}
             </Button>
             <Button type="submit" disabled={isSubmitting} className="gap-1.5">
               {isSubmitting ? (
@@ -401,7 +419,7 @@ export function AddManualJournalEntryModal({
               ) : (
                 <Plus className="w-4 h-4" />
               )}
-              Könyvelés
+              {t('accounting:dialogs.manual_journal_gl.book')}
             </Button>
           </DialogFooter>
         </form>

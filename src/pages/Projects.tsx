@@ -712,13 +712,7 @@ const Projects = () => {
   };
 
   const getStatusLabel = (status: string) => {
-    const labels = {
-      active: 'Aktív',
-      completed: 'Befejezett',
-      on_hold: 'Szünetel',
-      cancelled: 'Törölve'
-    };
-    return labels[status as keyof typeof labels] || status;
+    return t(`projects:status.${status}`, { defaultValue: status });
   };
 
   const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
@@ -732,7 +726,9 @@ const Projects = () => {
   };
 
   const getProjectTypeLabel = (type: string) => {
-    return type === 'recurring' ? 'Ismétlődő' : 'Egyszeri';
+    return type === 'recurring'
+      ? t('projects:types.recurring', { defaultValue: 'Ismétlődő' })
+      : t('projects:types.one_time', { defaultValue: 'Egyszeri' });
   };
 
   const getStripeColorClass = (status: string) => {
@@ -833,7 +829,7 @@ const Projects = () => {
               // Calculate duration percentage
               let durationDaysTotal = 0;
               let elapsedPercent = 0;
-              let durationText = 'Nincs megadva';
+              let durationText = t('projects:financials.not_specified', { defaultValue: 'Nincs megadva' });
               if (project.start_date && project.end_date) {
                 const start = new Date(project.start_date);
                 const end = new Date(project.end_date);
@@ -843,7 +839,9 @@ const Projects = () => {
                 elapsedPercent = durationDaysTotal > 0 ? Math.round((elapsedDays / durationDaysTotal) * 100) : 0;
                 
                 const months = Math.round(durationDaysTotal / 30.4);
-                durationText = months > 0 ? `${months} hónap` : `${durationDaysTotal} nap`;
+                durationText = months > 0
+                  ? t('projects:financials.months_count', { count: months, defaultValue: `${months} hónap` })
+                  : t('projects:financials.days_count', { count: durationDaysTotal, defaultValue: `${durationDaysTotal} nap` });
               }
 
               // Is this card currently inline editing?
@@ -908,13 +906,13 @@ const Projects = () => {
                         {/* Inline financials row */}
                         <div className="flex flex-wrap gap-1.5 mt-3 text-xs font-semibold">
                           <span className="py-0.5 px-2 rounded-full bg-green-500/10 text-green-700">
-                            ↑ {formatCurrency(financials?.outboundTotal || 0, 'HUF')}
+                            ↑ {formatCurrency(financials?.outboundTotal || 0)}
                           </span>
                           <span className="py-0.5 px-2 rounded-full bg-red-500/10 text-red-700">
-                            ↓ {formatCurrency(financials?.inboundTotal || 0, 'HUF')}
+                            ↓ {formatCurrency(financials?.inboundTotal || 0)}
                           </span>
                           <span className="py-0.5 px-2 rounded-full bg-muted text-foreground font-bold border">
-                            = {formatCurrency(financials?.profit || 0, 'HUF')}
+                            = {formatCurrency(financials?.profit || 0)}
                           </span>
                         </div>
                       </div>
@@ -930,7 +928,7 @@ const Projects = () => {
                           }`}
                         >
                           <BarChart3 className="h-3.5 w-3.5" />
-                          Áttekintés
+                          {t('projects:tabs.overview', { defaultValue: 'Áttekintés' })}
                         </button>
                         <button
                           onClick={() => setActiveTabs(prev => ({ ...prev, [project.id!]: 'invoices' }))}
@@ -941,7 +939,7 @@ const Projects = () => {
                           }`}
                         >
                           <FileText className="h-3.5 w-3.5" />
-                          Számlák ({projectInvoices.length})
+                          {t('projects:tabs.invoices', { defaultValue: 'Számlák' })} ({projectInvoices.length})
                         </button>
                         <button
                           onClick={() => setActiveTabs(prev => ({ ...prev, [project.id!]: 'assets' }))}
@@ -952,7 +950,7 @@ const Projects = () => {
                           }`}
                         >
                           <Package2 className="h-3.5 w-3.5" />
-                          Eszközök ({currentProjectAssets.length})
+                          {t('projects:tabs.assets', { defaultValue: 'Eszközök' })} ({currentProjectAssets.length})
                         </button>
                         <button
                           onClick={() => {
@@ -961,7 +959,7 @@ const Projects = () => {
                           className="flex-1 py-2 text-center border-b-2 transition-all flex items-center justify-center gap-1.5 text-muted-foreground border-transparent hover:text-foreground hover:bg-muted/50"
                         >
                           <Settings className="h-3.5 w-3.5" />
-                          Beállítások
+                          {t('projects:tabs.settings', { defaultValue: 'Beállítások' })}
                         </button>
                       </div>
 
@@ -972,9 +970,9 @@ const Projects = () => {
                             <div className="grid grid-cols-2 gap-3 text-left">
                               {/* Budget progress card */}
                               <div className="bg-muted/40 p-3 rounded-lg border">
-                                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Költségvetés</div>
+                                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('projects:financials.budget', { defaultValue: 'Költségvetés' })}</div>
                                 <div className="text-base font-bold mt-1 text-foreground">
-                                  {project.budget ? formatCurrency(project.budget, 'HUF') : 'Nincs megadva'}
+                                  {project.budget ? formatCurrency(project.budget) : t('projects:financials.not_specified', { defaultValue: 'Nincs megadva' })}
                                 </div>
                                 {project.budget ? (
                                   <>
@@ -987,17 +985,17 @@ const Projects = () => {
                                       />
                                     </div>
                                     <div className="text-[10px] text-muted-foreground mt-1.5 font-medium">
-                                      {budgetPercent}% felhasználva
+                                      {budgetPercent}% {t('projects:financials.used', { defaultValue: 'felhasználva' })}
                                     </div>
                                   </>
                                 ) : (
-                                  <div className="text-[10px] text-muted-foreground mt-2 font-medium">Nincs megadva limit</div>
+                                  <div className="text-[10px] text-muted-foreground mt-2 font-medium">{t('projects:financials.no_limit', { defaultValue: 'Nincs megadva limit' })}</div>
                                 )}
                               </div>
 
                               {/* Duration progress card */}
                               <div className="bg-muted/40 p-3 rounded-lg border">
-                                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Időtartam</div>
+                                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('projects:financials.duration', { defaultValue: 'Időtartam' })}</div>
                                 <div className="text-base font-bold mt-1 text-foreground">{durationText}</div>
                                 {project.start_date && project.end_date ? (
                                   <>
@@ -1008,18 +1006,18 @@ const Projects = () => {
                                       />
                                     </div>
                                     <div className="text-[10px] text-muted-foreground mt-1.5 font-medium flex flex-wrap justify-between items-center gap-1">
-                                      <span>{elapsedPercent}% eltelt</span>
+                                      <span>{elapsedPercent}% {t('projects:financials.elapsed', { defaultValue: 'eltelt' })}</span>
                                       <span className="text-[9px] font-semibold bg-muted px-1.5 py-0.5 rounded border">
-                                        Határidő: {format(new Date(project.end_date), 'yyyy.MM.dd')}
+                                        {t('projects:financials.deadline', { defaultValue: 'Határidő' })}: {format(new Date(project.end_date), 'yyyy.MM.dd')}
                                       </span>
                                     </div>
                                   </>
                                 ) : project.end_date ? (
                                   <div className="text-[10px] text-muted-foreground mt-2 font-medium">
-                                    Határidő: {format(new Date(project.end_date), 'yyyy.MM.dd')}
+                                    {t('projects:financials.deadline', { defaultValue: 'Határidő' })}: {format(new Date(project.end_date), 'yyyy.MM.dd')}
                                   </div>
                                 ) : (
-                                  <div className="text-[10px] text-muted-foreground mt-2 font-medium">Nincs határidő megadva</div>
+                                  <div className="text-[10px] text-muted-foreground mt-2 font-medium">{t('projects:financials.no_deadline', { defaultValue: 'Nincs határidő megadva' })}</div>
                                 )}
                               </div>
                             </div>
@@ -1032,12 +1030,12 @@ const Projects = () => {
                                 <div className="flex items-center justify-between text-xs p-2.5 rounded-lg bg-purple-500/5 border border-purple-500/10 text-purple-900 font-semibold mt-1">
                                   <span className="flex items-center gap-1">
                                     <Users className="h-3.5 w-3.5 text-purple-600" />
-                                    Munkadíj / Bérköltség:
+                                    {t('projects:financials.labor_cost', { defaultValue: 'Munkadíj / Bérköltség' })}:
                                   </span>
                                   <span>
-                                    {formatCurrency(labor.total_labor_cost, 'HUF')}
+                                    {formatCurrency(labor.total_labor_cost)}
                                     <span className="text-[10px] text-purple-700/80 font-normal ml-1">
-                                      ({labor.total_hours} óra)
+                                      ({labor.total_hours} {t('projects:financials.hours', { defaultValue: 'óra' })})
                                     </span>
                                   </span>
                                 </div>
@@ -1049,16 +1047,16 @@ const Projects = () => {
                               <div
                                 onClick={() => setActiveTabs(prev => ({ ...prev, [project.id!]: 'assets' }))}
                                 className="flex items-center justify-between text-xs p-2.5 rounded-lg bg-blue-500/5 border border-blue-500/10 text-blue-900 font-semibold mt-1 cursor-pointer hover:bg-blue-500/10 transition-colors"
-                                title="Kattints a tárgyi eszközök megtekintéséhez"
+                                title={t('projects:assets.open_in_teny', { defaultValue: 'Kattints a tárgyi eszközök megtekintéséhez' })}
                               >
                                 <span className="flex items-center gap-1">
                                   <Package2 className="h-3.5 w-3.5 text-blue-600" />
-                                  Hozzárendelt eszközök:
+                                  {t('projects:tabs.assigned_assets', { defaultValue: 'Hozzárendelt eszközök:' })}
                                 </span>
                                 <span>
-                                  {formatCurrency(totalAssetValue, 'HUF')}
+                                  {formatCurrency(totalAssetValue)}
                                   <span className="text-[10px] text-blue-700/80 font-normal ml-1">
-                                    ({currentProjectAssets.length} db)
+                                    ({currentProjectAssets.length} {t('projects:financials.items_count', { defaultValue: 'db' })})
                                   </span>
                                 </span>
                               </div>
@@ -1080,7 +1078,7 @@ const Projects = () => {
                                       className="text-[10px] text-primary/70 hover:text-primary font-semibold mt-1 flex items-center gap-0.5 transition-colors"
                                     >
                                       <ChevronDown className={cn("h-3 w-3 transition-transform", isExpanded && "rotate-180")} />
-                                      {isExpanded ? 'Kevesebb' : 'Továbbiak'}
+                                      {isExpanded ? t('common:actions.show_less', { defaultValue: 'Kevesebb' }) : t('common:actions.show_more', { defaultValue: 'Továbbiak' })}
                                     </button>
                                   )}
                                 </div>
@@ -1095,7 +1093,7 @@ const Projects = () => {
                             <div className="relative mb-2 shrink-0">
                               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                               <Input
-                                placeholder="Keresés a hozzárendelt számlák között..."
+                                placeholder={t('projects:invoices.search_placeholder', { defaultValue: 'Keresés a hozzárendelt számlák között...' })}
                                 value={assignedInvoicesSearch[project.id!] || ''}
                                 onChange={(e) => setAssignedInvoicesSearch(prev => ({ ...prev, [project.id!]: e.target.value }))}
                                 className="pl-8 h-8 text-xs bg-background/50"
@@ -1116,8 +1114,8 @@ const Projects = () => {
                                   return (
                                     <div className="text-center py-8 text-xs text-muted-foreground font-medium">
                                       {projectInvoices.length === 0 
-                                        ? 'Még nincs számla hozzárendelve ehhez a projekthez.'
-                                        : 'Nincs a keresésnek megfelelő számla.'}
+                                        ? t('projects:invoices.no_assigned', { defaultValue: 'Még nincs számla hozzárendelve ehhez a projekthez.' })
+                                        : t('projects:invoices.no_matching', { defaultValue: 'Nincs a keresésnek megfelelő számla.' })}
                                     </div>
                                   );
                                 }
@@ -1134,7 +1132,7 @@ const Projects = () => {
                                             <button
                                               onClick={() => toggleInvoiceExpand(invoice.id)}
                                               className="text-muted-foreground hover:text-foreground p-0.5 rounded hover:bg-muted transition-all shrink-0"
-                                              title="Tételek részletezése"
+                                              title={t('projects:invoices.assigned_items', { defaultValue: 'Tételek részletezése' })}
                                             >
                                               <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", isExpanded && "rotate-180")} />
                                             </button>
@@ -1154,30 +1152,30 @@ const Projects = () => {
                                                   ? 'bg-blue-100 text-blue-700'
                                                   : 'bg-green-100 text-green-700'
                                               }`}>
-                                                {invoice.invoice_direction === 'INBOUND' ? 'Bejövő' : 'Kimenő'}
+                                                {invoice.invoice_direction === 'INBOUND' ? t('common:labels.inbound', { defaultValue: 'Bejövő' }) : t('common:labels.outbound', { defaultValue: 'Kimenő' })}
                                               </span>
                                             </div>
                                             <div className="text-[10px] text-muted-foreground truncate">
                                               {invoice.invoice_direction === 'INBOUND'
-                                                ? (invoice.supplier_name || 'Szállító')
-                                                : (invoice.customer_name || 'Ügyfél')}
+                                                ? (invoice.supplier_name || t('invoices:columns.supplier', { defaultValue: 'Szállító' }))
+                                                : (invoice.customer_name || t('invoices:columns.customer', { defaultValue: 'Ügyfél' }))}
                                             </div>
                                           </div>
                                         </div>
 
                                         <div className="flex items-center gap-1.5 shrink-0">
                                           <span className="font-semibold text-foreground flex items-center gap-1">
-                                            {formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || 'HUF')}
+                                            {formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency)}
                                             {invoice.is_partial && (
-                                              <span className="text-[10px] font-normal text-muted-foreground animate-pulse" title="Ez a számla csak részben tartozik ehhez a projekthez.">
-                                                (részösszeg)
+                                              <span className="text-[10px] font-normal text-muted-foreground animate-pulse" title={t('projects:invoices.partial_tooltip', { defaultValue: 'Ez a számla csak részben tartozik ehhez a projekthez.' })}>
+                                                ({t('projects:invoices.partial_sum', { defaultValue: 'részösszeg' })})
                                               </span>
                                             )}
                                           </span>
                                           <button
                                             onClick={() => handleUnassignInvoice(invoice.id)}
                                             className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 p-1 rounded transition-all md:opacity-0 md:group-hover:opacity-100"
-                                            title="Hozzárendelés törlése"
+                                            title={t('projects:invoices.remove_tooltip', { defaultValue: 'Hozzárendelés törlése' })}
                                           >
                                             <X className="h-3.5 w-3.5" />
                                           </button>
@@ -1187,16 +1185,16 @@ const Projects = () => {
                                       {isExpanded && invoice.assigned_items && invoice.assigned_items.length > 0 && (
                                         <div className="ml-4 pl-3 pr-1 py-1.5 border-l-2 border-primary/30 space-y-1 bg-muted/10 rounded-r-md animate-in slide-in-from-top-1 duration-150">
                                           <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                                            Hozzárendelt számlatételek:
+                                            {t('projects:invoices.assigned_items', { defaultValue: 'Hozzárendelt számlatételek:' })}
                                           </div>
                                           {invoice.assigned_items.map((item: any, idx: number) => (
                                             <div key={idx} className="flex justify-between items-center text-[10px] text-muted-foreground bg-background/40 border border-border/40 p-1.5 rounded">
                                               <span className="truncate pr-2">
                                                 <span className="font-mono font-bold text-foreground mr-1">#{item.line_number}</span>
-                                                {item.line_description || 'Névtelen tétel'}
+                                                {item.line_description || t('projects:invoices.unnamed_item', { defaultValue: 'Névtelen tétel' })}
                                               </span>
                                               <span className="font-semibold text-foreground shrink-0">
-                                                {formatCurrency(item.gross_amount || 0, invoice.currency || 'HUF')}
+                                                {formatCurrency(item.gross_amount || 0, invoice.currency)}
                                               </span>
                                             </div>
                                           ))}
@@ -1218,7 +1216,7 @@ const Projects = () => {
                                 onClick={() => setAssigningProject(project)}
                               >
                                 <Plus className="h-3.5 w-3.5" />
-                                Számla hozzárendelése
+                                {t('projects:invoices.assign_invoice', { defaultValue: 'Számla hozzárendelése' })}
                               </Button>
                             </div>
                           </div>
@@ -1230,7 +1228,7 @@ const Projects = () => {
                             <div className="relative mb-2 shrink-0">
                               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                               <Input
-                                placeholder="Keresés a hozzárendelt eszközök között..."
+                                placeholder={t('projects:assets.search_placeholder', { defaultValue: 'Keresés a hozzárendelt eszközök között...' })}
                                 value={assignedAssetsSearch[project.id!] || ''}
                                 onChange={(e) => setAssignedAssetsSearch(prev => ({ ...prev, [project.id!]: e.target.value }))}
                                 className="pl-8 h-8 text-xs bg-background/50"
@@ -1250,8 +1248,8 @@ const Projects = () => {
                                   return (
                                     <div className="text-center py-8 text-xs text-muted-foreground font-medium">
                                       {currentProjectAssets.length === 0 
-                                        ? 'Még nincs tárgyi eszköz hozzárendelve ehhez a projekthez.'
-                                        : 'Nincs a keresésnek megfelelő eszköz.'}
+                                        ? t('projects:assets.no_assigned', { defaultValue: 'Még nincs tárgyi eszköz hozzárendelve ehhez a projekthez.' })
+                                        : t('projects:assets.no_matching', { defaultValue: 'Nincs a keresésnek megfelelő eszköz.' })}
                                     </div>
                                   );
                                 }
@@ -1261,7 +1259,7 @@ const Projects = () => {
                                     key={asset.id}
                                     onClick={() => navigate(`${basePath}/teny?asset=${asset.id}`)}
                                     className="group flex items-center justify-between p-2 rounded-lg bg-muted/30 border text-xs transition-colors hover:bg-muted/60 cursor-pointer"
-                                    title="Megnyitás a Tárgyi Eszközök modulban"
+                                    title={t('projects:assets.open_in_teny', { defaultValue: 'Megnyitás a Tárgyi Eszközök modulban' })}
                                   >
                                     <div className="min-w-0 mr-2 flex-1">
                                       <div className="flex items-center gap-1.5">
@@ -1269,7 +1267,7 @@ const Projects = () => {
                                           {asset.inventory_number}
                                         </span>
                                         <Badge variant="outline" className="text-[9px] py-0 px-1 font-normal">
-                                          {asset.status === 'active' ? 'Aktív' : asset.status}
+                                          {asset.status === 'active' ? t('projects:status.active', { defaultValue: 'Aktív' }) : asset.status}
                                         </Badge>
                                       </div>
                                       <div className="text-[11px] text-foreground font-medium truncate mt-0.5">
@@ -1278,7 +1276,7 @@ const Projects = () => {
                                     </div>
                                     <div className="text-right shrink-0">
                                       <span className="font-semibold text-foreground">
-                                        {formatCurrency(asset.acquisition_value, asset.currency || 'HUF')}
+                                        {formatCurrency(asset.acquisition_value, asset.currency)}
                                       </span>
                                     </div>
                                   </div>
@@ -1289,7 +1287,7 @@ const Projects = () => {
                             {/* Assets footer summary and link to TENY */}
                             <div className="border-t pt-2.5 mt-2.5 flex items-center justify-between text-xs shrink-0">
                               <span className="text-muted-foreground">
-                                Összesen: <strong className="text-foreground">{formatCurrency(totalAssetValue, 'HUF')}</strong>
+                                {t('common:labels.total', { defaultValue: 'Összesen' })}: <strong className="text-foreground">{formatCurrency(totalAssetValue)}</strong>
                               </span>
                               <Button
                                 type="button"
@@ -1298,7 +1296,7 @@ const Projects = () => {
                                 className="text-xs h-7 px-2 text-primary hover:text-primary/80"
                                 onClick={() => navigate(`${basePath}/teny`)}
                               >
-                                Tárgyi Eszközök megnyitása →
+                                {t('projects:assets.view_assets', { defaultValue: 'Tárgyi Eszközök megnyitása →' })}
                               </Button>
                             </div>
                           </div>
@@ -1323,21 +1321,21 @@ const Projects = () => {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {editingProject?.id ? 'Projekt szerkesztése' : 'Új projekt létrehozása'}
+              {editingProject?.id ? t('projects:dialog.edit_title', { defaultValue: 'Projekt szerkesztése' }) : t('projects:dialog.new_title', { defaultValue: 'Új projekt létrehozása' })}
             </DialogTitle>
             <DialogDescription>
               {editingProject?.id 
-                ? 'Módosítsd a projekt adatait és mentsd el a változtatásokat.' 
-                : 'Adj meg részleteket az új ügyfélprojektről.'}
+                ? t('projects:dialog.edit_desc', { defaultValue: 'Módosítsd a projekt adatait és mentsd el a változtatásokat.' })
+                : t('projects:dialog.new_desc', { defaultValue: 'Adj meg részleteket az új ügyfélprojektről.' })}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="edit-name">Projekt neve *</Label>
+              <Label htmlFor="edit-name">{t('projects:dialog.name_label', { defaultValue: 'Projekt neve *' })}</Label>
               <Input
                 id="edit-name"
-                placeholder="pl. Weboldal fejlesztés"
+                placeholder={t('projects:dialog.name_placeholder', { defaultValue: 'pl. Weboldal fejlesztés' })}
                 value={editingProject?.name || ''}
                 onChange={(e) => setEditingProject(prev => prev ? { ...prev, name: e.target.value } : null)}
               />
@@ -1345,7 +1343,7 @@ const Projects = () => {
 
             <div className="space-y-2">
               <div className="flex items-center gap-1.5">
-                <Label htmlFor="edit-code">Projekt kód (opcionális)</Label>
+                <Label htmlFor="edit-code">{t('projects:dialog.code_label', { defaultValue: 'Projekt kód (opcionális)' })}</Label>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -1353,7 +1351,7 @@ const Projects = () => {
                     </TooltipTrigger>
                     <TooltipContent className="max-w-[280px]">
                       <p className="text-xs">
-                        Ha üresen hagyod, a rendszer automatikusan legenerál egy egyedi kódot (pl. PRJ-202606-0022). Kitöltve megadhatod a saját belső projektazonosítódat.
+                        {t('projects:dialog.code_tooltip', { defaultValue: 'Ha üresen hagyod, a rendszer automatikusan legenerál egy egyedi kódot (pl. PRJ-202606-0022). Kitöltve megadhatod a saját belső projektazonosítódat.' })}
                       </p>
                     </TooltipContent>
                   </Tooltip>
@@ -1361,7 +1359,7 @@ const Projects = () => {
               </div>
               <Input
                 id="edit-code"
-                placeholder="pl. PRJ-2026-001 (üresen hagyva automatikus)"
+                placeholder={t('projects:dialog.code_placeholder', { defaultValue: 'pl. PRJ-2026-001 (üresen hagyva automatikus)' })}
                 value={editingProject?.project_code || ''}
                 onChange={(e) => setEditingProject(prev => prev ? { ...prev, project_code: e.target.value } : null)}
                 disabled={!!editingProject?.id}
@@ -1370,42 +1368,42 @@ const Projects = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Ikon</Label>
+                <Label>{t('projects:dialog.icon_label', { defaultValue: 'Ikon' })}</Label>
                 <div className="flex items-center gap-3">
                   <IconPicker
                     value={editingProject?.icon || 'FolderOpen'}
                     onChange={(icon) => setEditingProject(prev => prev ? { ...prev, icon } : null)}
                     color={editingProject?.color || 'hsl(217, 91%, 60%)'}
                   />
-                  <span className="text-xs text-muted-foreground">Ikon választás</span>
+                  <span className="text-xs text-muted-foreground">{t('projects:dialog.icon_select', { defaultValue: 'Ikon választás' })}</span>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Szín</Label>
+                <Label>{t('projects:dialog.color_label', { defaultValue: 'Szín' })}</Label>
                 <div className="flex items-center gap-3">
                   <ColorPicker
                     value={editingProject?.color || 'hsl(217, 91%, 60%)'}
                     onChange={(color) => setEditingProject(prev => prev ? { ...prev, color } : null)}
                   />
-                  <span className="text-xs text-muted-foreground">Kártya szegély színe</span>
+                  <span className="text-xs text-muted-foreground">{t('projects:dialog.color_hint', { defaultValue: 'Kártya szegély színe' })}</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-client">Partner / Ügyfél</Label>
+              <Label htmlFor="edit-client">{t('projects:dialog.partner_label', { defaultValue: 'Partner / Ügyfél' })}</Label>
               <PartnerCombobox
                 value={editingProject?.client_name || ''}
                 onChange={(name) => setEditingProject(prev => prev ? { ...prev, client_name: name } : null)}
                 companyId={selectedCompany?.id}
-                placeholder="Partner keresése..."
+                placeholder={t('projects:dialog.partner_placeholder', { defaultValue: 'Partner keresése...' })}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-project_type">Típus</Label>
+                <Label htmlFor="edit-project_type">{t('projects:dialog.type_label', { defaultValue: 'Típus' })}</Label>
                 <Select
                   value={editingProject?.project_type || 'one_time'}
                   onValueChange={(value: 'one_time' | 'recurring') => 
@@ -1416,14 +1414,14 @@ const Projects = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="one_time">Egyszeri</SelectItem>
-                    <SelectItem value="recurring">Ismétlődő</SelectItem>
+                    <SelectItem value="one_time">{t('projects:types.one_time', { defaultValue: 'Egyszeri' })}</SelectItem>
+                    <SelectItem value="recurring">{t('projects:types.recurring', { defaultValue: 'Ismétlődő' })}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="edit-status">Státusz</Label>
+                <Label htmlFor="edit-status">{t('projects:dialog.status_label', { defaultValue: 'Státusz' })}</Label>
                 <Select
                   value={editingProject?.status || 'active'}
                   onValueChange={(value: any) => setEditingProject(prev => prev ? { ...prev, status: value } : null)}
@@ -1432,10 +1430,10 @@ const Projects = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Aktív</SelectItem>
-                    <SelectItem value="completed">Befejezett</SelectItem>
-                    <SelectItem value="on_hold">Szünetel</SelectItem>
-                    <SelectItem value="cancelled">Törölve</SelectItem>
+                    <SelectItem value="active">{t('projects:status.active', { defaultValue: 'Aktív' })}</SelectItem>
+                    <SelectItem value="completed">{t('projects:status.completed', { defaultValue: 'Befejezett' })}</SelectItem>
+                    <SelectItem value="on_hold">{t('projects:status.on_hold', { defaultValue: 'Szünetel' })}</SelectItem>
+                    <SelectItem value="cancelled">{t('projects:status.cancelled', { defaultValue: 'Törölve' })}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1443,7 +1441,7 @@ const Projects = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-budget">Költségvetés (HUF)</Label>
+                <Label htmlFor="edit-budget">{t('projects:dialog.budget_label', { defaultValue: 'Költségvetés' })}</Label>
                 <Input
                   id="edit-budget"
                   type="number"
@@ -1454,7 +1452,7 @@ const Projects = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="edit-start_date">Kezdő dátum</Label>
+                <Label htmlFor="edit-start_date">{t('projects:dialog.start_date_label', { defaultValue: 'Kezdő dátum' })}</Label>
                 <Input
                   id="edit-start_date"
                   type="date"
@@ -1464,7 +1462,7 @@ const Projects = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="edit-end_date">Befejezés dátuma</Label>
+                <Label htmlFor="edit-end_date">{t('projects:dialog.end_date_label', { defaultValue: 'Befejezés dátuma' })}</Label>
                 <Input
                   id="edit-end_date"
                   type="date"
@@ -1475,10 +1473,10 @@ const Projects = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-description">Leírás</Label>
+              <Label htmlFor="edit-description">{t('projects:dialog.description_label', { defaultValue: 'Leírás' })}</Label>
               <Textarea
                 id="edit-description"
-                placeholder="Projekt részletei..."
+                placeholder={t('projects:dialog.description_placeholder', { defaultValue: 'Projekt részletei...' })}
                 rows={3}
                 value={editingProject?.description || ''}
                 onChange={(e) => setEditingProject(prev => prev ? { ...prev, description: e.target.value } : null)}
@@ -1496,7 +1494,7 @@ const Projects = () => {
                 }}
                 disabled={loading}
               >
-                Törlés
+                {t('common:actions.delete', { defaultValue: 'Törlés' })}
               </Button>
             ) : (
               <div />
@@ -1510,10 +1508,10 @@ const Projects = () => {
                 }}
                 disabled={loading}
               >
-                Mégse
+                {t('common:actions.cancel', { defaultValue: 'Mégse' })}
               </Button>
               <Button onClick={() => handleSaveProject()} disabled={loading}>
-                {loading ? 'Mentés...' : 'Mentés'}
+                {loading ? t('common:actions.saving', { defaultValue: 'Mentés...' }) : t('common:actions.save', { defaultValue: 'Mentés' })}
               </Button>
             </div>
           </div>
@@ -1529,9 +1527,12 @@ const Projects = () => {
       }}>
         <DialogContent className="max-w-3xl min-w-[320px] sm:min-w-[650px] md:min-w-[800px]">
           <DialogHeader>
-            <DialogTitle>Számlák hozzárendelése</DialogTitle>
+            <DialogTitle>{t('projects:assign_modal.title', { defaultValue: 'Számlák hozzárendelése' })}</DialogTitle>
             <DialogDescription>
-              Válassz ki számlákat a(z) "{assigningProject?.name}" projekthez való hozzárendeléshez.
+              {t('projects:assign_modal.desc', {
+                name: assigningProject?.name,
+                defaultValue: `Válassz ki számlákat a(z) "${assigningProject?.name}" projekthez való hozzárendeléshez.`
+              })}
             </DialogDescription>
           </DialogHeader>
 
@@ -1539,7 +1540,7 @@ const Projects = () => {
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Számlaszám vagy partner keresése..."
+                placeholder={t('projects:assign_modal.search_placeholder', { defaultValue: 'Számlaszám vagy partner keresése...' })}
                 value={invoiceSearchQuery}
                 onChange={(e) => setInvoiceSearchQuery(e.target.value)}
                 className="pl-9 h-10"
@@ -1559,7 +1560,10 @@ const Projects = () => {
                     onCheckedChange={handleToggleSelectAllModalInvoices}
                   />
                   <label htmlFor="select-all-modal" className="cursor-pointer select-none font-semibold text-foreground">
-                    Összes kijelölése ezen a listán ({modalFilteredUnassigned.length} db)
+                    {t('projects:assign_modal.select_all_list', {
+                      count: modalFilteredUnassigned.length,
+                      defaultValue: `Összes kijelölése ezen a listán (${modalFilteredUnassigned.length} db)`
+                    })}
                   </label>
                 </div>
                 {modalSelectedInvoices.size > 0 && (
@@ -1573,7 +1577,10 @@ const Projects = () => {
                     }}
                   >
                     <Check className="h-3.5 w-3.5" />
-                    Kijelöltek hozzárendelése ({modalSelectedInvoices.size} db)
+                    {t('projects:assign_modal.assign_selected', {
+                      count: modalSelectedInvoices.size,
+                      defaultValue: `Kijelöltek hozzárendelése (${modalSelectedInvoices.size} db)`
+                    })}
                   </Button>
                 )}
               </div>
@@ -1582,7 +1589,7 @@ const Projects = () => {
             <div className="max-h-[300px] overflow-y-auto overflow-x-hidden w-full border rounded-lg p-1 divide-y bg-background/50">
               {modalFilteredUnassigned.length === 0 ? (
                 <div className="text-center py-8 text-sm text-muted-foreground">
-                  Nincs hozzárendelhető (projekt nélküli) számla.
+                  {t('projects:assign_modal.no_unassigned', { defaultValue: 'Nincs hozzárendelhető (projekt nélküli) számla.' })}
                 </div>
               ) : (
                 modalFilteredUnassigned.map((invoice) => {
@@ -1615,19 +1622,19 @@ const Projects = () => {
                                   : 'bg-green-100 text-green-700'
                               }`}
                             >
-                              {invoice.invoice_direction === 'INBOUND' ? 'BE' : 'KI'}
+                              {invoice.invoice_direction === 'INBOUND' ? t('projects:assign_modal.badge_in', { defaultValue: 'BE' }) : t('projects:assign_modal.badge_out', { defaultValue: 'KI' })}
                             </Badge>
                           </div>
                           <div className="text-[10px] text-muted-foreground truncate mt-0.5">
                             {invoice.invoice_direction === 'INBOUND'
-                              ? (invoice.supplier_name || 'Szállító')
-                              : (invoice.customer_name || 'Ügyfél')}
+                              ? (invoice.supplier_name || t('invoices:columns.supplier', { defaultValue: 'Szállító' }))
+                              : (invoice.customer_name || t('invoices:columns.customer', { defaultValue: 'Ügyfél' }))}
                           </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
                         <span className="font-semibold text-foreground">
-                          {formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || 'HUF')}
+                          {formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency)}
                         </span>
                         <Button
                           size="sm"
@@ -1640,7 +1647,7 @@ const Projects = () => {
                           }}
                         >
                           <Plus className="h-3.5 w-3.5" />
-                          Hozzáad
+                          {t('common:actions.add', { defaultValue: 'Hozzáad' })}
                         </Button>
                       </div>
                     </div>
@@ -1659,7 +1666,7 @@ const Projects = () => {
                 setModalSelectedInvoices(new Set());
               }}
             >
-              Bezárás
+              {t('common:actions.close', { defaultValue: 'Bezárás' })}
             </Button>
           </div>
         </DialogContent>

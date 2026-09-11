@@ -10,6 +10,124 @@
   "default_badge": "Zadano",
   "denomination_calc": "Kalkulator apoena",
   "limit_warning_title": "Upozorenje o limitu blagajne",
+  "limit_warning_desc": "Saldo sljedećih blagajni premašuje dopušteni dnevni limit gotovine od {{limit}}:",
   "settings_title": "Postavke blagajne",
-  "settings_desc": "Prilagodba limita gotovine na razini tvrtke."
+  "settings_desc": "Prilagodba limita gotovine na razini tvrtke.",
+  "limit_setting_label": "Upozorenje o limitu gotovine",
+  "limit_utilization": "Iskorištenost limita",
+  "registers": {
+    "title": "Blagajne",
+    "subtitle": "Upravljanje blagajnama, valutama i lokacijama",
+    "new_register": "Nova blagajna",
+    "first_register": "Kreiraj prvu blagajnu",
+    "no_registers": "Još nema kreiranih blagajni",
+    "make_default": "Postavi kao zadano",
+    "opening_balances": "Početna stanja"
+  },
+  "calculator": {
+    "title": "Kalkulator apoena",
+    "register": "Blagajna",
+    "theoretical_balance": "Knjigovodstveno stanje",
+    "notes": "Novčanice",
+    "coins": "Kovanice",
+    "no_coins": "Nema kovanica za ovu valutu.",
+    "theoretical": "Knjigovodstveno",
+    "calculated": "Prebrojano fizički",
+    "discrepancy": "Razlika",
+    "clear_all": "Obriši sve",
+    "close": "Zatvori"
+  },
+  "closing_dialog": {
+    "title": "Zaključak blagajne",
+    "description": "Pregled za tekuće razdoblje ({{from}} – {{to}})",
+    "register_label": "Blagajna:",
+    "all_registers": "Sve blagajne",
+    "items_count": "{{count}} stavki",
+    "empty": "Nema stavki u tekućem razdoblju",
+    "table": {
+      "index": "#",
+      "date": "Datum",
+      "type": "Vrsta",
+      "description": "Opis",
+      "amount": "Iznos"
+    },
+    "close": "Zatvori",
+    "print_pdf": "Ispis u PDF",
+    "pdf": {
+      "page_title": "Zaključak blagajne — {{register}}",
+      "period": "Razdoblje: {{from}} – {{to}}",
+      "generated_at": "Generirano: {{date}}",
+      "table": {
+        "sequence": "Red. br.",
+        "date": "Datum",
+        "register": "Blagajna",
+        "type": "Vrsta",
+        "description": "Opis",
+        "income": "Uplata",
+        "expense": "Isplata",
+        "currency": "Valuta"
+      },
+      "summary": {
+        "title": "Ukupno",
+        "currency": "Valuta",
+        "items": "Stavke",
+        "income": "Uplata",
+        "expense": "Isplata",
+        "net": "Neto"
+      }
+    }
+  },
+  "signature_dialog": {
+    "title": "Digitalni potpis za blagajnički dokument",
+    "description": "Nacrtajte potpis isplatitelja i primatelja na donjim panelima. Potpisi se dodaju u generirani PDF dokument.",
+    "payer_expense": "Isplatitelj / Blagajnik",
+    "payer_income": "Uplatitelj / Blagajnik",
+    "recipient_expense": "Korisnik / Primatelj",
+    "recipient_income": "Primatelj / Djelatnik",
+    "cancel": "Odustani",
+    "generate_pdf": "Generiraj PDF"
+  },
+  "entries": {
+    "filter_register": "Blagajna",
+    "all_registers": "Sve blagajne",
+    "filter_currency": "Valuta",
+    "all_currencies": "Sve",
+    "filter_type": "Vrsta",
+    "all_types": "Sve vrste",
+    "search_placeholder": "Pretraži...",
+    "cash_closing": "Zaključak blagajne",
+    "sync": "Sinkronizacija",
+    "manual_entry": "Ručni unos",
+    "empty_period": "Nema stavki u odabranom razdoblju",
+    "columns": {
+      "sequence": "Redni broj",
+      "date": "Datum",
+      "register": "Blagajna",
+      "type": "Vrsta",
+      "description": "Opis",
+      "amount": "Iznos",
+      "balance": "Stanje"
+    },
+    "badges": {
+      "opening": "POČETNO",
+      "pending_approval": "Čeka odobrenje",
+      "cash_receipt": "Blagajnički dokument",
+      "related_party": "Povezano"
+    },
+    "source_types": {
+      "withdrawal": "Isplata gotovine",
+      "cash_deposit": "Uplata gotovine",
+      "cash_sale": "Gotovinska prodaja",
+      "cash_expense": "Gotovinski izdatak",
+      "manual": "Ručno",
+      "transfer": "Prijenos",
+      "invoice_settlement": "Namirenje računa",
+      "opening_balance": "Početno stanje"
+    },
+    "actions": {
+      "view_receipt": "Pregledaj dokument",
+      "edit_and_approve": "Izmijeni i odobri",
+      "approve_and_book": "Odobri i proknjiži"
+    }
+  }
 }

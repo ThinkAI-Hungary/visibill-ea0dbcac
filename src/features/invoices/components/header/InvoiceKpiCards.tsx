@@ -1,9 +1,11 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { FileText, Link2, Lightbulb, Link2Off } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 
 export function InvoiceKpiCards() {
+  const { t } = useTranslation(['invoices', 'common']);
   const { invoiceKpis, kpiFilter, toggleKpiFilter } = useInvoiceContext();
 
   if (!invoiceKpis) return null;
@@ -21,8 +23,8 @@ export function InvoiceKpiCards() {
           <FileText className="w-4 h-4" />
         </div>
         <div>
-          <div className="text-lg font-bold tabular-nums">{invoiceKpis.total.toLocaleString('hu-HU')}</div>
-          <div className="text-[11px] text-muted-foreground">Összes találat</div>
+          <div className="text-lg font-bold tabular-nums">{invoiceKpis.total.toLocaleString()}</div>
+          <div className="text-[11px] text-muted-foreground">{t('invoices:kpis.total_results', { defaultValue: 'Összes találat' })}</div>
         </div>
       </div>
 
@@ -38,7 +40,7 @@ export function InvoiceKpiCards() {
         </div>
         <div>
           <div className="text-lg font-bold tabular-nums text-emerald-600">{invoiceKpis.matched}</div>
-          <div className="text-[11px] text-muted-foreground">Párosított</div>
+          <div className="text-[11px] text-muted-foreground">{t('invoices:kpis.matched', { defaultValue: 'Párosított' })}</div>
         </div>
       </div>
 
@@ -54,7 +56,7 @@ export function InvoiceKpiCards() {
         </div>
         <div>
           <div className="text-lg font-bold tabular-nums text-amber-500">{invoiceKpis.suggested}</div>
-          <div className="text-[11px] text-muted-foreground">Javasolt (jóváhagyásra vár)</div>
+          <div className="text-[11px] text-muted-foreground">{t('invoices:kpis.suggested', { defaultValue: 'Javasolt (jóváhagyásra vár)' })}</div>
         </div>
       </div>
 
@@ -70,7 +72,7 @@ export function InvoiceKpiCards() {
         </div>
         <div>
           <div className="text-lg font-bold tabular-nums text-red-500">{invoiceKpis.unmatched}</div>
-          <div className="text-[11px] text-muted-foreground">Nincs párosítás</div>
+          <div className="text-[11px] text-muted-foreground">{t('invoices:kpis.unmatched', { defaultValue: 'Nincs párosítás' })}</div>
         </div>
       </div>
     </div>

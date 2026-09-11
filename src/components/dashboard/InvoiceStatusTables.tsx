@@ -10,7 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Button } from '@/components/ui/button';
 import { Loader2, CreditCard, FileQuestion, Upload } from 'lucide-react';
 import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { getDateFnsLocale, getActiveLocale } from '@/lib/locale/formatters';
 import { formatCurrency } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 
@@ -108,6 +108,9 @@ const InvoiceStatusTables = () => {
     return partner?.name || taxNumber;
   };
 
+  const isHr = getActiveLocale() === 'hr';
+  const dateFormatPattern = isHr ? 'dd.MM.yyyy.' : 'yyyy. MM. dd.';
+
   const renderInvoiceTable = (invoices: NavInvoice[]) => {
     if (loading) {
       return (
@@ -120,7 +123,7 @@ const InvoiceStatusTables = () => {
     if (invoices.length === 0) {
       return (
         <div className="text-center py-8 text-muted-foreground">
-          Nincs megjeleníthető számla
+          {t('dashboard:inbound_status.empty', 'Nincs megjeleníthető számla')}
         </div>
       );
     }
@@ -130,10 +133,18 @@ const InvoiceStatusTables = () => {
         <Table className="compact-table">
           <TableHeader>
             <TableRow>
-              <TableHead className="min-w-[130px]">Bizonylatsorszám</TableHead>
-              <TableHead>Kibocsátás</TableHead>
-              <TableHead>Szállító</TableHead>
-              <TableHead className="text-right">Bruttó</TableHead>
+              <TableHead className="min-w-[130px]">
+                {t('dashboard:inbound_status.invoice_number', 'Bizonylatsorszám')}
+              </TableHead>
+              <TableHead>
+                {t('dashboard:inbound_status.issue_date', 'Kibocsátás')}
+              </TableHead>
+              <TableHead>
+                {t('dashboard:inbound_status.supplier', 'Szállító')}
+              </TableHead>
+              <TableHead className="text-right">
+                {t('dashboard:inbound_status.gross', 'Bruttó')}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -155,14 +166,14 @@ const InvoiceStatusTables = () => {
                 </TableCell>
                 <TableCell>
                   {invoice.invoice_issue_date 
-                    ? format(new Date(invoice.invoice_issue_date), 'yyyy. MM. dd.', { locale: hu })
+                    ? format(new Date(invoice.invoice_issue_date), dateFormatPattern, { locale: getDateFnsLocale() })
                     : '-'}
                 </TableCell>
                 <TableCell>
                   {getPartnerName(invoice.supplier_tax_number)}
                 </TableCell>
                 <TableCell className="text-right">
-                  {formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || 'HUF')}
+                  {formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || undefined)}
                 </TableCell>
               </TableRow>
             ))}
@@ -176,7 +187,10 @@ const InvoiceStatusTables = () => {
               className="text-sm text-muted-foreground hover:text-foreground"
               onClick={() => setVisibleCount(prev => prev + 20)}
             >
-              + {invoices.length - visibleCount} további számla
+              {t('dashboard:inbound_status.more_invoices', {
+                count: invoices.length - visibleCount,
+                defaultValue: `+ ${invoices.length - visibleCount} további számla`,
+              })}
             </Button>
           </div>
         )}
@@ -211,7 +225,7 @@ const InvoiceStatusTables = () => {
             {payableInvoices.length > 0 && (
               <div className="mb-4 px-4 h-12 flex items-center justify-between rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/40">
                 <p className="text-sm font-medium text-red-700 dark:text-red-400">
-                  {t('dashboard:inbound_status.payable_amount', 'Fizetendő összeg:')} {formatCurrency(payableTotal, 'HUF')}
+                  {t('dashboard:inbound_status.payable_amount', 'Fizetendő összeg:')} {formatCurrency(payableTotal)}
                 </p>
               </div>
             )}
@@ -222,7 +236,10 @@ const InvoiceStatusTables = () => {
             {missingInvoices.length > 0 && (
               <div className="mb-4 px-4 h-12 flex items-center justify-between rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/40">
                 <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
-                  {missingCount} számla vár beküldésre
+                  {t('dashboard:inbound_status.missing_invoices_notice', {
+                    count: missingCount,
+                    defaultValue: `${missingCount} számla vár beküldésre`,
+                  })}
                 </p>
                 <Button 
                   size="sm" 
@@ -231,7 +248,7 @@ const InvoiceStatusTables = () => {
                   className="h-7 gap-1.5 text-xs border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40"
                 >
                   <Upload className="h-3.5 w-3.5" />
-                  Beküldés
+                  {t('dashboard:inbound_status.submit', 'Beküldés')}
                 </Button>
               </div>
             )}
@@ -242,5 +259,4 @@ const InvoiceStatusTables = () => {
     </Card>
   );
 };
-
 export default InvoiceStatusTables;

@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -12,6 +13,7 @@ interface SignatureDialogProps {
 }
 
 export default function SignatureDialog({ open, onOpenChange, onConfirm, isExpense }: SignatureDialogProps) {
+  const { t } = useTranslation(['pettyCash', 'common']);
   const payerCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const recipientCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [payerDrawn, setPayerDrawn] = useState(false);
@@ -67,7 +69,7 @@ export default function SignatureDialog({ open, onOpenChange, onConfirm, isExpen
     e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>, 
     canvasRef: React.RefObject<HTMLCanvasElement>, 
     isDrawingRef: React.MutableRefObject<boolean>, 
-    setDrawn: (d: boolean) => void
+    setDrawn: React.Dispatch<React.SetStateAction<boolean>>
   ) => {
     if (!isDrawingRef.current) return;
     const canvas = canvasRef.current;
@@ -96,7 +98,7 @@ export default function SignatureDialog({ open, onOpenChange, onConfirm, isExpen
     isDrawingRef.current = false;
   };
 
-  const clearCanvas = (canvasRef: React.RefObject<HTMLCanvasElement>, setDrawn: (d: boolean) => void) => {
+  const clearCanvas = (canvasRef: React.RefObject<HTMLCanvasElement>, setDrawn: React.Dispatch<React.SetStateAction<boolean>>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -105,7 +107,7 @@ export default function SignatureDialog({ open, onOpenChange, onConfirm, isExpen
     setDrawn(false);
   };
 
-  const handleGenerate = () => {
+  const handleConfirm = () => {
     const payerSig = payerDrawn && payerCanvasRef.current ? payerCanvasRef.current.toDataURL('image/png') : null;
     const recipientSig = recipientDrawn && recipientCanvasRef.current ? recipientCanvasRef.current.toDataURL('image/png') : null;
     onConfirm({ payerSig, recipientSig });
@@ -118,10 +120,10 @@ export default function SignatureDialog({ open, onOpenChange, onConfirm, isExpen
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Pencil className="h-5 w-5 text-primary" />
-            Digitális Aláírás a Bizonylathoz
+            {t('pettyCash:signature_dialog.title')}
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Rajzold le a kifizető és átvevő aláírását a lenti paneleken. Az aláírások bekerülnek a generált PDF bizonylatba.
+            {t('pettyCash:signature_dialog.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -130,31 +132,31 @@ export default function SignatureDialog({ open, onOpenChange, onConfirm, isExpen
           <div className="space-y-1.5 flex flex-col">
             <div className="flex justify-between items-center">
               <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
-                {isExpense ? 'Kifizető / Pénztáros' : 'Befizető / Pénztáros'}
+                {isExpense ? t('pettyCash:signature_dialog.payer_expense') : t('pettyCash:signature_dialog.payer_income')}
               </Label>
               {payerDrawn && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-5 w-5 text-destructive hover:bg-destructive/10"
+                  className="h-6 w-6 text-muted-foreground hover:text-destructive"
                   onClick={() => clearCanvas(payerCanvasRef, setPayerDrawn)}
                 >
-                  <Trash2 className="h-3 w-3" />
+                  <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               )}
             </div>
-            <div className="border border-border/60 rounded-lg overflow-hidden bg-muted/15 flex items-center justify-center">
+            <div className="border border-border/80 rounded-lg p-1 bg-background shadow-inner">
               <canvas
                 ref={payerCanvasRef}
-                width={250}
-                height={120}
-                className="w-full bg-transparent cursor-crosshair touch-none"
-                onMouseDown={(e) => startDrawing(e, payerCanvasRef, isDrawingPayer)}
-                onMouseMove={(e) => draw(e, payerCanvasRef, isDrawingPayer, setPayerDrawn)}
+                width={280}
+                height={140}
+                className="w-full h-32 bg-slate-50 dark:bg-slate-900/50 rounded border border-dashed border-border/60 touch-none cursor-crosshair"
+                onMouseDown={e => startDrawing(e, payerCanvasRef, isDrawingPayer)}
+                onMouseMove={e => draw(e, payerCanvasRef, isDrawingPayer, setPayerDrawn)}
                 onMouseUp={() => stopDrawing(isDrawingPayer)}
                 onMouseLeave={() => stopDrawing(isDrawingPayer)}
-                onTouchStart={(e) => startDrawing(e, payerCanvasRef, isDrawingPayer)}
-                onTouchMove={(e) => draw(e, payerCanvasRef, isDrawingPayer, setPayerDrawn)}
+                onTouchStart={e => startDrawing(e, payerCanvasRef, isDrawingPayer)}
+                onTouchMove={e => draw(e, payerCanvasRef, isDrawingPayer, setPayerDrawn)}
                 onTouchEnd={() => stopDrawing(isDrawingPayer)}
               />
             </div>
@@ -164,44 +166,44 @@ export default function SignatureDialog({ open, onOpenChange, onConfirm, isExpen
           <div className="space-y-1.5 flex flex-col">
             <div className="flex justify-between items-center">
               <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
-                {isExpense ? 'Kedvezményezett / Átvevő' : 'Átvevő / Munkatárs'}
+                {isExpense ? t('pettyCash:signature_dialog.recipient_expense') : t('pettyCash:signature_dialog.recipient_income')}
               </Label>
               {recipientDrawn && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-5 w-5 text-destructive hover:bg-destructive/10"
+                  className="h-6 w-6 text-muted-foreground hover:text-destructive"
                   onClick={() => clearCanvas(recipientCanvasRef, setRecipientDrawn)}
                 >
-                  <Trash2 className="h-3 w-3" />
+                  <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               )}
             </div>
-            <div className="border border-border/60 rounded-lg overflow-hidden bg-muted/15 flex items-center justify-center">
+            <div className="border border-border/80 rounded-lg p-1 bg-background shadow-inner">
               <canvas
                 ref={recipientCanvasRef}
-                width={250}
-                height={120}
-                className="w-full bg-transparent cursor-crosshair touch-none"
-                onMouseDown={(e) => startDrawing(e, recipientCanvasRef, isDrawingRecipient)}
-                onMouseMove={(e) => draw(e, recipientCanvasRef, isDrawingRecipient, setRecipientDrawn)}
+                width={280}
+                height={140}
+                className="w-full h-32 bg-slate-50 dark:bg-slate-900/50 rounded border border-dashed border-border/60 touch-none cursor-crosshair"
+                onMouseDown={e => startDrawing(e, recipientCanvasRef, isDrawingRecipient)}
+                onMouseMove={e => draw(e, recipientCanvasRef, isDrawingRecipient, setRecipientDrawn)}
                 onMouseUp={() => stopDrawing(isDrawingRecipient)}
                 onMouseLeave={() => stopDrawing(isDrawingRecipient)}
-                onTouchStart={(e) => startDrawing(e, recipientCanvasRef, isDrawingRecipient)}
-                onTouchMove={(e) => draw(e, recipientCanvasRef, isDrawingRecipient, setRecipientDrawn)}
+                onTouchStart={e => startDrawing(e, recipientCanvasRef, isDrawingRecipient)}
+                onTouchMove={e => draw(e, recipientCanvasRef, isDrawingRecipient, setRecipientDrawn)}
                 onTouchEnd={() => stopDrawing(isDrawingRecipient)}
               />
             </div>
           </div>
         </div>
 
-        <DialogFooter className="border-t border-border/20 pt-3">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Mégse</Button>
-          <Button 
-            onClick={handleGenerate}
-            className="bg-primary hover:bg-primary/95 text-primary-foreground gap-1.5 font-semibold"
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{t('pettyCash:signature_dialog.cancel')}</Button>
+          <Button
+            onClick={handleConfirm}
+            className="gap-1.5"
           >
-            <Check className="h-4 w-4" /> PDF Generálása
+            <Check className="h-4 w-4" /> {t('pettyCash:signature_dialog.generate_pdf')}
           </Button>
         </DialogFooter>
       </DialogContent>

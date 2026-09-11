@@ -33,6 +33,115 @@
   "ranking": {
     "title": "Rangsor & Kimutatás",
     "top_suppliers": "Top 10 beszállító",
-    "top_customers": "Top 10 vevő"
+    "top_customers": "Top 10 vevő",
+    "suppliers": "Szállítók",
+    "customers": "Vevők",
+    "invoices": "számla",
+    "no_partners_period": "Nincs partner ebben az időszakban",
+    "treemap_title": "Top {{count}} arányos áttekintés",
+    "treemap_empty_title": "Arányos áttekintés",
+    "no_data": "Nincs megjeleníthető adat",
+    "top_amount": "Top {{count}} összeg",
+    "total_purchases": "Összes beszerzés",
+    "total_sales": "Összes értékesítés",
+    "top_ratio": "Top {{count}} arány",
+    "top_3_ratio": "Top 3 arány"
+  },
+  "invoice_detail_dialog": {
+    "direction_outbound": "Kimenő",
+    "direction_inbound": "Bejövő",
+    "source_nav": "NAV",
+    "source_uploaded": "Beküldött",
+    "issue_date": "Kiállítás dátuma",
+    "payment_date": "Fizetési határidő",
+    "gross_amount": "Bruttó összeg",
+    "payment_method": "Fizetési mód",
+    "view_image": "Számlakép megtekintése",
+    "items_title": "Tételek",
+    "no_items": "Nincsenek tételek ehhez a számlához",
+    "table": {
+      "description": "Megnevezés",
+      "quantity": "Menny.",
+      "unit": "Egys.",
+      "net": "Nettó",
+      "vat": "ÁFA",
+      "gross": "Bruttó",
+      "gl_account": "Főkönyvi"
+    },
+    "preview": {
+      "title": "Számlakép",
+      "load_error": "Hiba történt a fájl betöltése közben",
+      "open_new_window": "Megnyitás új ablakban",
+      "loading": "Betöltés...",
+      "unsupported_type": "Ez a fájltípus nem megjeleníthető előnézetben"
+    }
+  },
+  "details": {
+    "nav_synced": "NAV szinkronizált",
+    "company_details": "Cégadatok",
+    "copy_tax_number": "Adószám másolása",
+    "copy_address": "Székhely másolása",
+    "copy_email": "Email másolása",
+    "foreign_partner": "Külföldi partner",
+    "registered_office": "Székhely",
+    "accounting_setting": "Könyvelési beállítás",
+    "include_in_accounting": "Bekerüljön a könyvelésbe?",
+    "exclude_hint": "Kizárható a partner minden számlája a könyvelésből",
+    "restore_to_accounting": "Könyvelésbe visszaállítás",
+    "exclude_from_accounting": "Könyvelésből kizárás",
+    "tab_nav": "NAV",
+    "tab_uploaded": "Beküldött",
+    "search_invoice_placeholder": "Számlaszám keresése...",
+    "no_nav_invoices": "Nincsenek NAV számlák",
+    "no_uploaded_invoices": "Nincsenek beküldött számlák",
+    "nav_sync_info": "A partnerek és cégadatok szinkronizálása a NAV Online Számla rendszeréből automatikusan történik az adószám alapján.",
+    "no_partner_selected": "Nincs kijelölt partner",
+    "click_partner_hint": "Kattints a bal oldali listában egy partnerre az adatok megtekintéséhez."
+  },
+  "empty": {
+    "no_search_results": "Nincs találat a szűrésre",
+    "no_partners": "Még nincsenek partnerek",
+    "adjust_filters": "Próbáld módosítani a szűrőket.",
+    "upload_invoice_hint": "Küldj be egy számlát, hogy automatikusan megjelenjen a partner."
+  },
+  "badges": {
+    "related_party": "Kapcsolt",
+    "foreign": "Külföldi"
+  },
+  "units": {
+    "pcs": "db"
+  },
+  "modal": {
+    "related_party_label": "Kapcsolt vállalkozás",
+    "related_party_hint": "A céggel kapcsolt vállalkozási viszonyban álló partner (limit ellenőrzéshez).",
+    "appearance_title": "Megjelenés testreszabása",
+    "reset_appearance": "Visszaállítás",
+    "monogram": "Monogram",
+    "text_color": "Betűszín",
+    "bg_color": "Háttérszín",
+    "foreign_tax_number_placeholder": "Külföldi partner – írd be az adószámot ha ismert",
+    "reminder_email_note": "(felszólítólevélhez)",
+    "address_placeholder": "Partner címe"
+  },
+  "toasts": {
+    "missing_data": "Hiányzó adatok",
+    "name_required": "A név megadása kötelező.",
+    "name_and_tax_required": "A név és adószám megadása kötelező.",
+    "invalid_email": "Érvénytelen email-cím formátum",
+    "partner_exists": "Már létező partner",
+    "partner_exists_desc": "Ezzel az adószámmal már létezik partner ({{name}}) a partnertörzsben.",
+    "delete_confirm": "Biztosan törölni szeretnéd a \"{{name}}\" partnert?",
+    "partner_updated": "Partner frissítve",
+    "partner_created": "Partner létrehozva",
+    "partner_saved_desc": "A partner sikeresen mentve.",
+    "partner_deleted": "Partner törölve",
+    "partner_deleted_desc": "A partner sikeresen törölve.",
+    "tax_exists_error": "Ez az adószám már létezik a cég partnertörzsében.",
+    "save_error": "Nem sikerült menteni a partnert.",
+    "delete_error": "Nem sikerült törölni a partnert.",
+    "partner_excluded_title": "Partner kizárva a könyvelésből",
+    "partner_restored_title": "Partner visszaállítva a könyvelésbe",
+    "partner_excluded_desc": "{{name}} összes számlája nem kerül könyvelésre.",
+    "partner_restored_desc": "{{name}} összes számlája újra bekerül a könyvelésre."
   }
 }

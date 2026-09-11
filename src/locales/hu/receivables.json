@@ -10,6 +10,8 @@
   "total_receivables": "Összes kintlévőség",
   "companies_count": "{{count}} cég",
   "invoices_count": "{{count}} számla",
+  "empty_title": "Nincs kintlévőség",
+  "empty_desc": "Minden számla ki van egyenlítve!",
   "aging": {
     "not_due": "Nem lejárt",
     "days_1_30": "1–30 napos",
@@ -22,5 +24,45 @@
   "date_filter_basis": "Időszak szűrés alapja",
   "filtered_period": "Szűrve: {{period}}",
   "view_all_open": "Teljes nyitott állomány megtekintése",
-  "no_open_in_period": "Nincs nyitott számla a kiválasztott időszakban"
+  "no_open_in_period": "Nincs nyitott számla a kiválasztott időszakban",
+  "table": {
+    "invoice_number": "Számlaszám",
+    "issue_date": "Kiállítva",
+    "due_date": "Lejárat",
+    "overdue": "Késés",
+    "amount": "Összeg",
+    "source": "Forrás",
+    "category": "Kategória",
+    "not_overdue": "Nem lejárt",
+    "days": "{{count}} nap",
+    "source_nav": "NAV",
+    "source_uploaded": "Feltöltött",
+    "last_dunning": "Utolsó felszólítás: {{date}}",
+    "today": "Ma",
+    "days_ago": "{{count}} napja"
+  },
+  "chart": {
+    "title": "Tartozásállomány kor szerint",
+    "description": "A nyitott kintlévőség megoszlása korosított sávonként — korfa ({{mode}})"
+  },
+  "dialog": {
+    "title": "Felszólítólevelek küldése",
+    "description": "Minden kijelölt cégnek egyetlen levelet küldünk az összes tartozó számlájával.",
+    "category_filter": "Kategória szűrő:",
+    "companies_selected": "Cégek ({{count}} kijelölve):",
+    "invoices_unit": "{{count}} db",
+    "no_email_warning": "⚠️ Nincs mentett email — ha megad egyet, elmentjük a Partnertörzsbe",
+    "info_note_1": "📧 A levelek a eaisybill rendszeréből mennek ki — a partner Önnek tud visszaírni.",
+    "info_note_2": "📎 Manuálisan feltöltött számlákhoz PDF melléklet is kerül a levélbe.",
+    "cancel": "Mégse",
+    "send_button": "{{count}} felszólítás küldése",
+    "sending": "Küldés...",
+    "error_no_company": "Nincs kiválasztott cég",
+    "error_email_required": "Email-cím megadása kötelező",
+    "error_email_invalid": "Érvénytelen email-cím",
+    "error_no_session": "Nincs munkamenet",
+    "success_toast": "{{count}} felszólítás sikeresen elküldve!",
+    "partial_error_toast": "{{count}} levél küldése sikertelen",
+    "error_toast": "Hiba: {{message}}"
+  }
 }

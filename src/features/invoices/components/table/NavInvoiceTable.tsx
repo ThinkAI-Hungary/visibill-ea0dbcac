@@ -70,26 +70,26 @@ export function NavInvoiceTable({
       />
 
       <div className="flex items-center gap-4 mb-2 text-[11px] text-muted-foreground flex-wrap">
-        <span className="font-medium">Jelmagyarázat:</span>
+        <span className="font-medium">{t('invoices:table.legend', { defaultValue: 'Jelmagyarázat:' })}</span>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm bg-[var(--row-matched-bg)] border-l-2 border-l-[var(--row-matched-border)]" />
-          <span>Párosított / Kifizetve</span>
+          <span>{t('invoices:table.matched_paid', { defaultValue: 'Párosított / Kifizetve' })}</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm bg-blue-500/15 border-l-2 border-l-blue-500" />
-          <span>Részben fizetve</span>
+          <span>{t('invoices:table.partially_paid', { defaultValue: 'Részben fizetve' })}</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm bg-[var(--row-suggested-bg)] border-l-2 border-l-[var(--row-suggested-border)]" />
-          <span>AI javaslat (jóváhagyásra vár)</span>
+          <span>{t('invoices:table.ai_suggested', { defaultValue: 'AI javaslat (jóváhagyásra vár)' })}</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm bg-destructive/10 border-l-2 border-l-destructive" />
-          <span>Nem kifizetve</span>
+          <span>{t('invoices:table.unpaid', { defaultValue: 'Nem kifizetve' })}</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm bg-orange-500/10 border-l-2 border-l-orange-400" />
-          <span>Kompenzálandó</span>
+          <span>{t('invoices:table.compensation', { defaultValue: 'Kompenzálandó' })}</span>
         </div>
       </div>
 
@@ -106,7 +106,7 @@ export function NavInvoiceTable({
                       <Checkbox
                         checked={isAllSelected}
                         onCheckedChange={() => toggleSelectAll()}
-                        aria-label="Összes kijelölése"
+                        aria-label={t('invoices:table.select_all', { defaultValue: 'Összes kijelölése' })}
                       />
                     </div>
                   </TableHead>
@@ -191,8 +191,9 @@ export function NavInvoiceTable({
                           </TooltipTrigger>
                           <TooltipContent side="top" align="end" sideOffset={8} className="max-w-[280px] whitespace-normal">
                             <p className="text-xs font-normal normal-case tracking-normal leading-relaxed whitespace-normal">
-                              A számla fizetési állapota automatikusan változik: „Kifizetve" lesz, ha a számlához tartozó
-                              tranzakció párosítva van.
+                              {t('invoices:table.status_tooltip', {
+                                defaultValue: 'A számla fizetési állapota automatikusan változik: „Kifizetve" lesz, ha a számlához tartozó tranzakció párosítva van.'
+                              })}
                             </p>
                           </TooltipContent>
                         </Tooltip>
@@ -201,16 +202,16 @@ export function NavInvoiceTable({
                   </TableHead>
 
                   <TableHead className="font-semibold text-center whitespace-nowrap text-emerald-600 dark:text-emerald-400">
-                    Kikontírozva
+                    {t('invoices:table.booked', { defaultValue: 'Kikontírozva' })}
                   </TableHead>
                   {activeTab === 'INBOUND' && (
                     <TableHead className="font-semibold text-center whitespace-nowrap">{t('invoices:columns.category', { defaultValue: 'Kategória' })}</TableHead>
                   )}
 
                   <TableHead className="font-semibold text-center whitespace-nowrap">{t('navigation:items.projects', { defaultValue: 'Projekt' })}</TableHead>
-                  <TableHead className="font-semibold text-center whitespace-nowrap">Fiz. mód</TableHead>
-                  <TableHead className="font-semibold text-center whitespace-nowrap">Számla kép</TableHead>
-                  <TableHead className="font-semibold text-center whitespace-nowrap">Tételek</TableHead>
+                  <TableHead className="font-semibold text-center whitespace-nowrap">{t('invoices:table.payment_method', { defaultValue: 'Fiz. mód' })}</TableHead>
+                  <TableHead className="font-semibold text-center whitespace-nowrap">{t('invoices:table.invoice_image', { defaultValue: 'Számla kép' })}</TableHead>
+                  <TableHead className="font-semibold text-center whitespace-nowrap">{t('invoices:table.items', { defaultValue: 'Tételek' })}</TableHead>
                 </TableRow>
               </TableHeader>
 
@@ -222,13 +223,13 @@ export function NavInvoiceTable({
                     colSpan={colSpan}
                     title={
                       kpiFilter !== 'all'
-                        ? 'Nincs ilyen státuszú számla ezen az oldalon'
-                        : 'Nincs megjeleníthető számla'
+                        ? t('invoices:table.no_matching_status', { defaultValue: 'Nincs ilyen státuszú számla ezen az oldalon' })
+                        : t('invoices:table.no_invoices', { defaultValue: 'Nincs megjeleníthető számla' })
                     }
                     description={
                       kpiFilter !== 'all'
-                        ? 'Kattints az "Összes találat" KPI kártyára a szűrő törléséhez.'
-                        : 'Próbáld módosítani a szűrőket vagy keresési feltételeket.'
+                        ? t('invoices:table.click_kpi_to_clear', { defaultValue: 'Kattints az "Összes találat" KPI kártyára a szűrő törléséhez.' })
+                        : t('invoices:table.try_adjust_filters', { defaultValue: 'Próbáld módosítani a szűrőket vagy keresési feltételeket.' })
                     }
                     onClearFilters={kpiFilter !== 'all' ? () => setKpiFilter('all') : clearFilters}
                   />
@@ -258,11 +259,11 @@ export function NavInvoiceTable({
         <ContextMenuContent>
           <ContextMenuItem onClick={() => expandAllRows(paginatedNavInvoices.map(i => i.id))}>
             <ChevronsUpDown className="h-3.5 w-3.5 mr-2" />
-            Összes lenyitás
+            {t('invoices:table.expand_all', { defaultValue: 'Összes lenyitás' })}
           </ContextMenuItem>
           <ContextMenuItem onClick={() => collapseAllRows()}>
             <ChevronsDownUp className="h-3.5 w-3.5 mr-2" />
-            Összes bezárás
+            {t('invoices:table.collapse_all', { defaultValue: 'Összes bezárás' })}
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>

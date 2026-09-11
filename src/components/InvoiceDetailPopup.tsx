@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -6,6 +7,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatCurrency, cn } from '@/lib/utils';
+import { getDateFnsLocale } from '@/lib/locale/formatters';
 import { getPaymentStatusBadge } from '@/hooks/useComputedStatus';
 import { format } from 'date-fns';
 import { FileText, ExternalLink, Lock, Users, Plus, Loader2, Pencil, Check, X } from 'lucide-react';
@@ -73,7 +75,7 @@ const statusLabels: Record<string, string> = {
 const formatDate = (dateStr: string | null) => {
   if (!dateStr) return '-';
   try {
-    return format(new Date(dateStr), 'yyyy.MM.dd');
+    return format(new Date(dateStr), 'yyyy.MM.dd', { locale: getDateFnsLocale() });
   } catch {
     return dateStr;
   }
@@ -82,7 +84,7 @@ const formatDate = (dateStr: string | null) => {
 const formatDateTime = (dateStr: string | null) => {
   if (!dateStr) return '-';
   try {
-    return format(new Date(dateStr), 'yyyy.MM.dd HH:mm');
+    return format(new Date(dateStr), 'yyyy.MM.dd HH:mm', { locale: getDateFnsLocale() });
   } catch {
     return dateStr;
   }
@@ -96,6 +98,7 @@ const DetailRow = ({ label, value, mono }: { label: string; value: React.ReactNo
 );
 
 export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDetailPopupProps) => {
+  const { t } = useTranslation(['invoices', 'common']);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [invoice, setInvoice] = useState<FullInvoice | null>(null);
@@ -128,7 +131,7 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
 
       if (error) {
         if (error.code === '23505') {
-          throw new Error('Ezzel a bizonylatsorszámmal már létezik számla ennél a cégnél.');
+          throw new Error(t('invoices:dialogs.detail.toast_number_exists'));
         }
         throw error;
       }
@@ -140,13 +143,13 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
       queryClient.invalidateQueries({ queryKey: ['nav-invoices'] });
       queryClient.invalidateQueries({ queryKey: ['recentInvoices'] });
       toast({
-        title: 'Bizonylatsorszám sikeresen frissítve',
-        description: `Új sorszám: ${trimmed}`,
+        title: t('invoices:dialogs.detail.toast_number_updated'),
+        description: t('invoices:dialogs.detail.toast_number_updated_desc', { number: trimmed }),
       });
     } catch (err: any) {
       toast({
-        title: 'Hiba a bizonylatsorszám mentésekor',
-        description: err.message || 'Nem sikerült menteni a sorszámot.',
+        title: t('invoices:dialogs.detail.toast_number_error'),
+        description: err.message || t('invoices:dialogs.detail.toast_number_error'),
         variant: 'destructive',
       });
     } finally {
@@ -219,7 +222,7 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
         .insert({
           company_id: invoice.company_id,
           user_id: userId,
-          title: newNoteTitle.trim() || 'Számla feljegyzés',
+          title: newNoteTitle.trim() || t('invoices:dialogs.detail.default_note_title'),
           content: newNoteText.trim(),
           is_private: newNotePrivate,
           invoice_id: invoiceId,
@@ -264,10 +267,10 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
         <DialogHeader className="pb-2">
           <DialogTitle className="flex items-center gap-2 text-base">
             <FileText className="h-4 w-4" />
-            Számla részletei
+            {t('invoices:dialogs.detail.title')}
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Az invoices táblában tárolt összes adat
+            {t('invoices:dialogs.detail.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -276,14 +279,14 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
             <LoadingSpinner />
           </div>
         ) : !invoice ? (
-          <p className="text-muted-foreground text-sm text-center py-8">Számla nem található</p>
+          <p className="text-muted-foreground text-sm text-center py-8">{t('invoices:dialogs.detail.not_found')}</p>
         ) : (
           <div className="space-y-4">
             {/* Header badges */}
             <div className="flex flex-wrap gap-2">
-              <Badge variant="outline">{invoiceTypeLabels[invoice.invoice_type] || invoice.invoice_type}</Badge>
+              <Badge variant="outline">{t(`invoices:types.${invoice.invoice_type}`, invoiceTypeLabels[invoice.invoice_type] || invoice.invoice_type)}</Badge>
               <Badge variant={invoice.statusz === 'feldolgozott' ? 'success' : 'secondary'}>
-                {statusLabels[invoice.statusz || ''] || invoice.statusz || 'Ismeretlen'}
+                {t(`invoices:status.${invoice.statusz}`, statusLabels[invoice.statusz || ''] || invoice.statusz || 'Ismeretlen')}
               </Badge>
               {(() => {
                 if (!invoice.transaction_id && !(invoice as any).match_status) return null;
@@ -294,17 +297,17 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
                   </Badge>
                 );
               })()}
-              {invoice.forditott_adozas && <Badge variant="outline">Fordított adózás</Badge>}
-              {invoice.onszamlazas && <Badge variant="outline">Önszámlázás</Badge>}
-              {invoice.penzforgalmi_elszamolas && <Badge variant="outline">Pénzforgalmi</Badge>}
+              {invoice.forditott_adozas && <Badge variant="outline">{t('invoices:dialogs.detail.reverse_charge')}</Badge>}
+              {invoice.onszamlazas && <Badge variant="outline">{t('invoices:dialogs.detail.self_billing')}</Badge>}
+              {invoice.penzforgalmi_elszamolas && <Badge variant="outline">{t('invoices:dialogs.detail.cash_accounting')}</Badge>}
             </div>
 
             {/* Alapadatok */}
             <div>
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Alapadatok</h4>
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{t('invoices:dialogs.detail.basic_info')}</h4>
               <div className="bg-muted/30 rounded-md p-3 border border-border/30">
                 <DetailRow
-                  label="Bizonylatsorszám"
+                  label={t('invoices:dialogs.detail.invoice_number')}
                   value={
                     editingBizonylat ? (
                       <div className="flex items-center gap-1">
@@ -345,7 +348,7 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
                           variant="ghost"
                           size="sm"
                           className="h-5 w-5 p-0 opacity-60 hover:opacity-100 text-muted-foreground"
-                          title="Bizonylatsorszám módosítása"
+                          title={t('invoices:dialogs.detail.edit_invoice_number')}
                           onClick={() => {
                             setNewBizonylatValue(invoice.bizonylatsorszam || '');
                             setEditingBizonylat(true);
@@ -358,12 +361,12 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
                   }
                   mono
                 />
-                <DetailRow label="Dokumentum azonosító" value={invoice.dokumentum_azonosito} mono />
-                <DetailRow label="Kibocsátás dátuma" value={formatDate(invoice.kibocsatas_datuma)} />
-                <DetailRow label="Teljesítés dátuma" value={formatDate(invoice.teljesites_datuma)} />
-                <DetailRow label="Fizetési határidő" value={formatDate(invoice.fizetesi_hatarido)} />
-                <DetailRow label="Fizetési mód" value={invoice.fizetesi_mod} />
-                <DetailRow label="Termék/szolgáltatás típusa" value={invoice.termek_szolgaltatas_tipusa} />
+                <DetailRow label={t('invoices:dialogs.detail.document_id')} value={invoice.dokumentum_azonosito} mono />
+                <DetailRow label={t('invoices:dialogs.detail.issue_date')} value={formatDate(invoice.kibocsatas_datuma)} />
+                <DetailRow label={t('invoices:dialogs.detail.fulfillment_date')} value={formatDate(invoice.teljesites_datuma)} />
+                <DetailRow label={t('invoices:dialogs.detail.due_date')} value={formatDate(invoice.fizetesi_hatarido)} />
+                <DetailRow label={t('invoices:dialogs.detail.payment_method')} value={invoice.fizetesi_mod} />
+                <DetailRow label={t('invoices:dialogs.detail.product_service_type')} value={invoice.termek_szolgaltatas_tipusa} />
               </div>
             </div>
 
@@ -371,21 +374,21 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
 
             {/* Eladó */}
             <div>
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Eladó</h4>
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{t('invoices:dialogs.detail.seller')}</h4>
               <div className="bg-muted/30 rounded-md p-3 border border-border/30">
-                <DetailRow label="Név" value={invoice.elado_nev} />
-                <DetailRow label="Cím" value={invoice.elado_cim} />
-                <DetailRow label="Adószám" value={invoice.elado_vat_id} mono />
+                <DetailRow label={t('invoices:dialogs.detail.name')} value={invoice.elado_nev} />
+                <DetailRow label={t('invoices:dialogs.detail.address')} value={invoice.elado_cim} />
+                <DetailRow label={t('invoices:dialogs.detail.tax_number')} value={invoice.elado_vat_id} mono />
               </div>
             </div>
 
             {/* Vevő */}
             <div>
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Vevő</h4>
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{t('invoices:dialogs.detail.buyer')}</h4>
               <div className="bg-muted/30 rounded-md p-3 border border-border/30">
-                <DetailRow label="Név" value={invoice.vevo_nev} />
-                <DetailRow label="Cím" value={invoice.vevo_cim} />
-                <DetailRow label="Adószám" value={invoice.vevo_vat_id} mono />
+                <DetailRow label={t('invoices:dialogs.detail.name')} value={invoice.vevo_nev} />
+                <DetailRow label={t('invoices:dialogs.detail.address')} value={invoice.vevo_cim} />
+                <DetailRow label={t('invoices:dialogs.detail.tax_number')} value={invoice.vevo_vat_id} mono />
               </div>
             </div>
 
@@ -393,22 +396,22 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
 
             {/* Összegek */}
             <div>
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Összegek</h4>
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{t('invoices:dialogs.detail.amounts')}</h4>
               <div className="bg-muted/30 rounded-md p-3 border border-border/30">
-                <DetailRow label="Pénznem" value={invoice.penznem || 'HUF'} />
-                <DetailRow label="Adóalap (nettó)" value={formatCurrency(invoice.adoalap_osszesen, invoice.penznem || 'HUF')} mono />
-                <DetailRow label="ÁFA összeg" value={formatCurrency(invoice.afa_osszeg_osszesen, invoice.penznem || 'HUF')} mono />
-                <DetailRow label="Bruttó végösszeg" value={
+                <DetailRow label={t('invoices:dialogs.detail.currency')} value={invoice.penznem || 'HUF'} />
+                <DetailRow label={t('invoices:dialogs.detail.tax_base_net')} value={formatCurrency(invoice.adoalap_osszesen, invoice.penznem || 'HUF')} mono />
+                <DetailRow label={t('invoices:dialogs.detail.vat_amount')} value={formatCurrency(invoice.afa_osszeg_osszesen, invoice.penznem || 'HUF')} mono />
+                <DetailRow label={t('invoices:dialogs.detail.gross_amount')} value={
                   <span className="font-semibold">{formatCurrency(invoice.brutto_vegosszeg, invoice.penznem || 'HUF')}</span>
                 } mono />
                 {invoice.fizetendo_osszeg != null && (
-                  <DetailRow label="Fizetendő összeg" value={formatCurrency(invoice.fizetendo_osszeg, invoice.penznem || 'HUF')} mono />
+                  <DetailRow label={t('invoices:dialogs.detail.payable_amount')} value={formatCurrency(invoice.fizetendo_osszeg, invoice.penznem || 'HUF')} mono />
                 )}
                 {invoice.elszamolt_eloleg_osszeg != null && (
-                  <DetailRow label="Elszámolt előleg" value={formatCurrency(invoice.elszamolt_eloleg_osszeg, invoice.penznem || 'HUF')} mono />
+                  <DetailRow label={t('invoices:dialogs.detail.advance_settled')} value={formatCurrency(invoice.elszamolt_eloleg_osszeg, invoice.penznem || 'HUF')} mono />
                 )}
                 {invoice.afa_kulcsok_bontasban && (
-                  <DetailRow label="ÁFA kulcsok bontásban" value={invoice.afa_kulcsok_bontasban} />
+                  <DetailRow label={t('invoices:dialogs.detail.vat_rates_breakdown')} value={invoice.afa_kulcsok_bontasban} />
                 )}
               </div>
             </div>
@@ -418,12 +421,12 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
               <>
                 <Separator />
                 <div>
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Egyéb</h4>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{t('invoices:dialogs.detail.other')}</h4>
                   <div className="bg-muted/30 rounded-md p-3 border border-border/30">
-                    {invoice.bankszamlaszam_iban && <DetailRow label="Bankszámlaszám / IBAN" value={invoice.bankszamlaszam_iban} mono />}
-                    {invoice.elolegszamla_hivatkozas && <DetailRow label="Előlegszámla hivatkozás" value={invoice.elolegszamla_hivatkozas} />}
-                    {invoice.adomentesseg_hivatkozas && <DetailRow label="Adómentesség hivatkozás" value={invoice.adomentesseg_hivatkozas} />}
-                    {invoice.adojogi_megjegyzes && <DetailRow label="Adójogi megjegyzés" value={invoice.adojogi_megjegyzes} />}
+                    {invoice.bankszamlaszam_iban && <DetailRow label={t('invoices:dialogs.detail.iban')} value={invoice.bankszamlaszam_iban} mono />}
+                    {invoice.elolegszamla_hivatkozas && <DetailRow label={t('invoices:dialogs.detail.advance_invoice_ref')} value={invoice.elolegszamla_hivatkozas} />}
+                    {invoice.adomentesseg_hivatkozas && <DetailRow label={t('invoices:dialogs.detail.tax_exemption_ref')} value={invoice.adomentesseg_hivatkozas} />}
+                    {invoice.adojogi_megjegyzes && <DetailRow label={t('invoices:dialogs.detail.tax_legal_note')} value={invoice.adojogi_megjegyzes} />}
                   </div>
                 </div>
               </>
@@ -432,12 +435,12 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
             {/* Rendszer adatok */}
             <Separator />
             <div>
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Rendszer</h4>
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{t('invoices:dialogs.detail.system')}</h4>
               <div className="bg-muted/30 rounded-md p-3 border border-border/30">
-                <DetailRow label="Létrehozva" value={formatDateTime(invoice.letrehozva)} />
-                <DetailRow label="Frissítve" value={formatDateTime(invoice.frissitve)} />
-                <DetailRow label="Feldolgozva" value={formatDateTime(invoice.feldolgozva)} />
-                <DetailRow label="ID" value={invoice.id} mono />
+                <DetailRow label={t('invoices:dialogs.detail.created_at')} value={formatDateTime(invoice.letrehozva)} />
+                <DetailRow label={t('invoices:dialogs.detail.updated_at')} value={formatDateTime(invoice.frissitve)} />
+                <DetailRow label={t('invoices:dialogs.detail.processed_at')} value={formatDateTime(invoice.feldolgozva)} />
+                <DetailRow label={t('invoices:dialogs.detail.id')} value={invoice.id} mono />
               </div>
             </div>
 
@@ -448,7 +451,7 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
                   <Button variant="outline" size="sm" className="text-xs h-7" asChild>
                     <a href={invoice.image_url} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="h-3 w-3 mr-1" />
-                      Számla kép
+                      {t('invoices:dialogs.detail.invoice_image')}
                     </a>
                   </Button>
                 )}
@@ -456,7 +459,7 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
                   <Button variant="outline" size="sm" className="text-xs h-7" asChild>
                     <a href={invoice.melleklet_url} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="h-3 w-3 mr-1" />
-                      Melléklet
+                      {t('invoices:dialogs.detail.attachment')}
                     </a>
                   </Button>
                 )}
@@ -468,7 +471,7 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Jegyzetek / Megjegyzések ({notes.length})
+                  {t('invoices:dialogs.detail.notes_count', { count: notes.length })}
                 </h4>
               </div>
 
@@ -489,7 +492,7 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
                             ) : (
                               <Users className="h-2.5 w-2.5 text-primary" />
                             )}
-                            {note.is_private ? 'Privát' : 'Közös'}
+                            {note.is_private ? t('invoices:dialogs.detail.private') : t('invoices:dialogs.detail.shared')}
                           </span>
                           <span>•</span>
                           <span>{formatDateTime(note.created_at)}</span>
@@ -499,20 +502,20 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
                         {note.content}
                       </p>
                       <div className="text-[10px] text-muted-foreground/80 flex items-center gap-1 pt-1 border-t border-border/10">
-                        <span>Szerző: {note.profile_name}</span>
+                        <span>{t('invoices:dialogs.detail.author', { name: note.profile_name })}</span>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground italic">Nincs még feljegyzés ehhez a számlához.</p>
+                <p className="text-xs text-muted-foreground italic">{t('invoices:dialogs.detail.no_notes')}</p>
               )}
 
               {/* Add Note Form */}
               <form onSubmit={handleAddNote} className="space-y-2 pt-2 border-t border-border/20">
                 <div className="grid grid-cols-2 gap-2">
                   <Input
-                    placeholder="Jegyzet címe (opcionális)..."
+                    placeholder={t('invoices:dialogs.detail.note_title_placeholder')}
                     value={newNoteTitle}
                     onChange={(e) => setNewNoteTitle(e.target.value)}
                     className="h-8 text-xs bg-background/50"
@@ -529,13 +532,13 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
                       htmlFor="popup-note-private"
                       className="text-xs text-muted-foreground select-none cursor-pointer"
                     >
-                      Közös jegyzet (cégtagok látják)
+                      {t('invoices:dialogs.detail.shared_note_checkbox')}
                     </label>
                   </div>
                 </div>
                 <div className="flex gap-2">
                   <Textarea
-                    placeholder="Írd ide a megjegyzésedet..."
+                    placeholder={t('invoices:dialogs.detail.note_content_placeholder')}
                     value={newNoteText}
                     onChange={(e) => setNewNoteText(e.target.value)}
                     required
@@ -553,7 +556,7 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
                     ) : (
                       <Plus className="h-3.5 w-3.5" />
                     )}
-                    Hozzáadás
+                    {t('common:actions.add')}
                   </Button>
                 </div>
               </form>

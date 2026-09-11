@@ -13,7 +13,8 @@ import {
   Check,
 } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { formatDate } from '@/lib/locale/formatters';
+import { useTranslation } from 'react-i18next';
 import { toHuf, isSameCurrency } from '@/lib/matching/candidateFinder';
 import { AvailableInvoice, TransactionItem } from '@/lib/matching/types';
 
@@ -52,6 +53,7 @@ export const ManualMatchSearchSection: React.FC<ManualMatchSearchSectionProps> =
   onMarkNoInvoice,
   onMarkInvoiceMissing,
 }) => {
+  const { t } = useTranslation(['transactions']);
   const transactionAmount = transaction.amount || 0;
   const isExtra = mode === 'extra';
 
@@ -67,15 +69,15 @@ export const ManualMatchSearchSection: React.FC<ManualMatchSearchSectionProps> =
                 <Link2 className="h-3.5 w-3.5 text-primary" />
               )}
               {isExtra
-                ? 'További számla hozzáadása'
+                ? t('transactions:dialogs.details.search.title_extra')
                 : transaction.matched_invoice_id
-                ? 'Másik számla választása'
-                : 'Manuális párosítás'}
+                ? t('transactions:dialogs.details.search.title_change')
+                : t('transactions:dialogs.details.search.title_manual')}
             </h4>
             <p className="text-[10px] text-muted-foreground mt-0.5">
               {isExtra
-                ? 'A kiválasztott számla kiegészítő párosításként kerül a tranzakcióhoz'
-                : `Összeg alapján rendezve · keresett: `}
+                ? t('transactions:dialogs.details.search.desc_extra')
+                : t('transactions:dialogs.details.search.desc_sort')}
               {!isExtra && (
                 <span className="font-mono font-medium">
                   {formatCurrency(transactionAmount, transaction.currency || 'HUF')}
@@ -85,7 +87,7 @@ export const ManualMatchSearchSection: React.FC<ManualMatchSearchSectionProps> =
           </div>
           {onBack && (
             <Button variant="ghost" size="sm" onClick={onBack} className="h-6 text-xs">
-              Vissza
+              {t('transactions:dialogs.details.search.back')}
             </Button>
           )}
         </div>
@@ -93,7 +95,7 @@ export const ManualMatchSearchSection: React.FC<ManualMatchSearchSectionProps> =
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
           <Input
-            placeholder="Keresés számlaszám, partner vagy összeg alapján..."
+            placeholder={t('transactions:dialogs.details.search.input_placeholder')}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="pl-8 pr-8 h-8 text-xs"
@@ -110,8 +112,8 @@ export const ManualMatchSearchSection: React.FC<ManualMatchSearchSectionProps> =
           <div className="flex items-center justify-between text-[10px] text-muted-foreground px-0.5">
             <span>
               {search
-                ? `${candidateInvoices.length} találat`
-                : `${candidateInvoices.length} számla az időszakban (±180 nap)`}
+                ? t('transactions:dialogs.details.search.results_count', { count: candidateInvoices.length })
+                : t('transactions:dialogs.details.search.period_count', { count: candidateInvoices.length })}
             </span>
           </div>
         )}
@@ -131,13 +133,15 @@ export const ManualMatchSearchSection: React.FC<ManualMatchSearchSectionProps> =
               {isSearchingServer ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                  <p className="text-xs mt-2">Keresés a számlák között...</p>
+                  <p className="text-xs mt-2">{t('transactions:dialogs.details.search.searching_server')}</p>
                 </>
               ) : (
                 <>
                   <FileText className="h-5 w-5 mb-1" />
                   <p className="text-xs">
-                    {search ? 'Nincs találat a keresésre' : 'Nincs elérhető számla az időszakban'}
+                    {search
+                      ? t('transactions:dialogs.details.search.no_results_search')
+                      : t('transactions:dialogs.details.search.no_results_period')}
                   </p>
                 </>
               )}
@@ -211,26 +215,28 @@ export const ManualMatchSearchSection: React.FC<ManualMatchSearchSectionProps> =
                           <span className="truncate">{invoice.elado_nev || '-'}</span>
                           {hasPartnerMatch && (
                             <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[8px] h-3.5 px-1 font-semibold leading-none shrink-0 hover:bg-emerald-500/10">
-                              Partner egyezik
+                              {t('transactions:dialogs.details.search.badge_partner_match')}
                             </Badge>
                           )}
                         </p>
                         <p className="text-[10px] text-muted-foreground/70 mt-0.5">
                           {invoice.kibocsatas_datuma
-                            ? format(new Date(invoice.kibocsatas_datuma), 'yyyy.MM.dd')
+                            ? formatDate(invoice.kibocsatas_datuma)
                             : ''}
                         </p>
                         {paid >= brutto && brutto > 0 ? (
                           <Badge className="text-[8px] h-3.5 px-1 mt-0.5 bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/10">
-                            Kifizetve
+                            {t('transactions:dialogs.details.search.badge_paid')}
                           </Badge>
                         ) : paid > 0 ? (
                           <Badge className="text-[8px] h-3.5 px-1 mt-0.5 bg-blue-500/10 text-blue-600 border-blue-500/20 hover:bg-blue-500/10">
-                            Részben fizetve, fennmaradó: {formatCurrency(rem, invoice.penznem || 'HUF')}
+                            {t('transactions:dialogs.details.search.badge_partial_paid', {
+                              amount: formatCurrency(rem, invoice.penznem || 'HUF'),
+                            })}
                           </Badge>
                         ) : (
                           <Badge className="text-[8px] h-3.5 px-1 mt-0.5 bg-rose-500/10 text-rose-500 border-rose-500/20 hover:bg-rose-500/10">
-                            Nincs fizetve
+                            {t('transactions:dialogs.details.search.badge_unpaid')}
                           </Badge>
                         )}
                       </div>
@@ -240,11 +246,13 @@ export const ManualMatchSearchSection: React.FC<ManualMatchSearchSectionProps> =
                         </p>
                         {isExact ? (
                           <Badge variant="success" className="text-[9px] h-4 mt-0.5">
-                            ✓ Egyező
+                            {t('transactions:dialogs.details.search.badge_exact')}
                           </Badge>
                         ) : isNear ? (
                           <Badge className="text-[9px] h-4 mt-0.5 bg-amber-500/20 text-amber-600 border-amber-500/30 hover:bg-amber-500/20">
-                            ~{pctDiff.toFixed(0)}% elt.
+                            {t('transactions:dialogs.details.search.badge_near', {
+                              percent: pctDiff.toFixed(0),
+                            })}
                           </Badge>
                         ) : (
                           <span className="text-[10px] text-muted-foreground/60 mt-0.5 block">
@@ -276,7 +284,7 @@ export const ManualMatchSearchSection: React.FC<ManualMatchSearchSectionProps> =
               )}
             >
               <Ban className="h-3 w-3 mr-1 text-purple-500" />
-              Nincs hozzá számla
+              {t('transactions:dialogs.details.search.btn_no_invoice')}
             </Button>
             <Button
               variant="outline"
@@ -289,7 +297,7 @@ export const ManualMatchSearchSection: React.FC<ManualMatchSearchSectionProps> =
               )}
             >
               <UploadCloud className="h-3 w-3 mr-1 text-sky-500" />
-              Számla nincs feltöltve
+              {t('transactions:dialogs.details.search.btn_invoice_missing')}
             </Button>
           </div>
         )}
@@ -302,7 +310,11 @@ export const ManualMatchSearchSection: React.FC<ManualMatchSearchSectionProps> =
             className="text-xs h-10 w-full"
           >
             <Check className="h-3 w-3 mr-1" />
-            {isSaving ? 'Mentés...' : isExtra ? 'Hozzáadás' : 'Párosítás mentése'}
+            {isSaving
+              ? t('transactions:dialogs.details.search.saving')
+              : isExtra
+              ? t('transactions:dialogs.details.search.btn_add_extra')
+              : t('transactions:dialogs.details.search.btn_save_match')}
           </Button>
         </div>
       </div>

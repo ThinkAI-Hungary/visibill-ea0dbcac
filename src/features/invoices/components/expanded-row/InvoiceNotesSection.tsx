@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ClipboardCheck,
   Lock,
@@ -42,6 +43,7 @@ export function InvoiceNotesSection({
   matchedSubmittedInvoices,
   matchedNavInvoices,
 }: InvoiceNotesSectionProps) {
+  const { t } = useTranslation(['invoices', 'common']);
   const queryClient = useQueryClient();
   const [showAddNote, setShowAddNote] = useState(false);
   const [newNoteTitle, setNewNoteTitle] = useState('');
@@ -157,7 +159,7 @@ export function InvoiceNotesSection({
       <div className="flex items-center justify-between mb-4 expand-animate">
         <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           <ClipboardCheck className="h-3.5 w-3.5" />
-          Kapcsolódó feljegyzések
+          {t('invoices:expanded.related_notes', 'Kapcsolódó feljegyzések')}
         </div>
       </div>
 
@@ -168,7 +170,7 @@ export function InvoiceNotesSection({
               <CardHeader className="py-2.5 px-3 border-b border-border/10">
                 <CardTitle className="text-xs font-semibold flex items-center justify-between text-foreground">
                   <span className="font-semibold text-foreground truncate max-w-[200px]">
-                    {note.title || 'Névtelen jegyzet'}
+                    {note.title || t('invoices:expanded.untitled_note', 'Névtelen jegyzet')}
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
                     {note.is_private ? (
@@ -177,7 +179,7 @@ export function InvoiceNotesSection({
                         className="text-[9px] h-4.5 px-1.5 gap-1 bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400"
                       >
                         <Lock className="h-2.5 w-2.5" />
-                        Privát
+                        {t('invoices:expanded.private_badge', 'Privát')}
                       </Badge>
                     ) : (
                       <Badge
@@ -185,7 +187,7 @@ export function InvoiceNotesSection({
                         className="text-[9px] h-4.5 px-1.5 gap-1 bg-primary/10 text-primary border-primary/20"
                       >
                         <Users className="h-2.5 w-2.5" />
-                        Közös cégjegyzet
+                        {t('invoices:expanded.company_badge', 'Közös cégjegyzet')}
                       </Badge>
                     )}
                     <span className="text-[9px] text-muted-foreground font-mono">
@@ -199,7 +201,7 @@ export function InvoiceNotesSection({
                   {note.content}
                 </p>
                 <div className="text-[9px] text-muted-foreground/80 pl-0.5 pt-1">
-                  Rögzítette: {note.profile_name}
+                  {t('invoices:expanded.created_by', { name: note.profile_name, defaultValue: 'Rögzítette: {{name}}' })}
                 </div>
               </CardContent>
             </Card>
@@ -212,7 +214,7 @@ export function InvoiceNotesSection({
         <div className="flex flex-col items-center justify-center gap-3 py-6 rounded-lg border border-dashed border-border/50">
           <ClipboardCheck className="h-5 w-5 text-muted-foreground/50" />
           <p className="text-xs text-muted-foreground">
-            Nincs feljegyezve megjegyzés ehhez a számlához.
+            {t('invoices:expanded.no_notes', 'Nincs feljegyezve megjegyzés ehhez a számlához.')}
           </p>
           <Button
             variant="outline"
@@ -221,7 +223,7 @@ export function InvoiceNotesSection({
             className="h-7 text-[11px] gap-1.5 border-dashed"
           >
             <Plus className="h-3 w-3" />
-            Feljegyzés létrehozása
+            {t('invoices:expanded.create_note', 'Feljegyzés létrehozása')}
           </Button>
         </div>
       )}
@@ -236,7 +238,7 @@ export function InvoiceNotesSection({
             className="h-7 text-[11px] gap-1.5 border-dashed"
           >
             <Plus className="h-3 w-3" />
-            Új feljegyzés
+            {t('invoices:expanded.new_note', 'Új feljegyzés')}
           </Button>
         </div>
       )}
@@ -257,7 +259,7 @@ export function InvoiceNotesSection({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
               <ClipboardCheck className="h-4 w-4 text-primary" />
-              Új feljegyzés
+              {t('invoices:expanded.new_note', 'Új feljegyzés')}
             </DialogTitle>
           </DialogHeader>
           <form
@@ -269,10 +271,10 @@ export function InvoiceNotesSection({
           >
             <div className="space-y-1">
               <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                Jegyzet címe
+                {t('invoices:expanded.note_title_label', 'Jegyzet címe')}
               </span>
               <Input
-                placeholder="pl. Határidő, Hiányzó papír..."
+                placeholder={t('invoices:expanded.note_title_placeholder', 'pl. Határidő, Hiányzó papír...')}
                 value={newNoteTitle}
                 onChange={(e) => setNewNoteTitle(e.target.value)}
                 className="h-9 text-xs bg-background/30 border-border/50"
@@ -280,10 +282,10 @@ export function InvoiceNotesSection({
             </div>
             <div className="space-y-1">
               <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                Tartalom
+                {t('invoices:expanded.note_content_label', 'Tartalom')}
               </span>
               <Textarea
-                placeholder="Írd ide a jegyzet szöveges tartalmát..."
+                placeholder={t('invoices:expanded.note_content_placeholder', 'Írd ide a jegyzet szöveges tartalmát...')}
                 value={newNoteText}
                 onChange={(e) => setNewNoteText(e.target.value)}
                 required
@@ -293,7 +295,7 @@ export function InvoiceNotesSection({
             </div>
             <div className="space-y-1.5">
               <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                Láthatóság
+                {t('invoices:expanded.note_visibility_label', 'Láthatóság')}
               </span>
               <div className="grid grid-cols-2 gap-2.5">
                 <button
@@ -313,8 +315,8 @@ export function InvoiceNotesSection({
                     )}
                   />
                   <div>
-                    <p className="text-[11px] font-semibold">Privát</p>
-                    <p className="text-[9px] text-muted-foreground">Csak te látod</p>
+                    <p className="text-[11px] font-semibold">{t('invoices:expanded.private_badge', 'Privát')}</p>
+                    <p className="text-[9px] text-muted-foreground">{t('invoices:expanded.private_desc', 'Csak te látod')}</p>
                   </div>
                 </button>
                 <button
@@ -334,8 +336,8 @@ export function InvoiceNotesSection({
                     )}
                   />
                   <div>
-                    <p className="text-[11px] font-semibold">Közös</p>
-                    <p className="text-[9px] text-muted-foreground">Cégtagok látják</p>
+                    <p className="text-[11px] font-semibold">{t('invoices:expanded.company_badge_short', 'Közös')}</p>
+                    <p className="text-[9px] text-muted-foreground">{t('invoices:expanded.company_desc', 'Cégtagok látják')}</p>
                   </div>
                 </button>
               </div>
@@ -347,7 +349,7 @@ export function InvoiceNotesSection({
                 size="sm"
                 onClick={() => setShowAddNote(false)}
               >
-                Mégse
+                {t('common:cancel', 'Mégse')}
               </Button>
               <Button
                 type="submit"
@@ -360,7 +362,7 @@ export function InvoiceNotesSection({
                 ) : (
                   <Plus className="h-3.5 w-3.5" />
                 )}
-                Mentés
+                {t('common:save', 'Mentés')}
               </Button>
             </div>
           </form>

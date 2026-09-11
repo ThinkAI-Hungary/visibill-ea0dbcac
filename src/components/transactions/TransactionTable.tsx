@@ -27,7 +27,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { fetchAllGlAccountsByPreset } from '@/lib/glData';
 import { Separator } from '@/components/ui/separator';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { hu } from 'date-fns/locale';
+import { hu, hr } from 'date-fns/locale';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useAuth } from '@/contexts/AuthContext';
@@ -104,6 +104,9 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
   onOpenDetails: (transaction: Transaction) => void;
   colSpan: number;
 }) {
+  const { t, i18n } = useTranslation(['transactions', 'common']);
+  const isHr = i18n.language === 'hr';
+  const dateLocale = isHr ? hr : hu;
   const queryClient = useQueryClient();
   const { session } = useAuth();
   const [matchedSubmitted, setMatchedSubmitted] = useState<any[]>([]);
@@ -457,7 +460,7 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
         <TableCell colSpan={colSpan} className="bg-muted/20 py-3">
           <div className="flex items-center justify-center py-2">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            <span className="ml-2 text-xs text-muted-foreground">Számla betöltése...</span>
+            <span className="ml-2 text-xs text-muted-foreground">{t('transactions:expanded.loading_invoice', 'Számla betöltése...')}</span>
           </div>
         </TableCell>
       </TableRow>
@@ -481,11 +484,11 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
                   {/* Header */}
                   <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     <Link2Off className="h-3.5 w-3.5" />
-                    Kapcsolódó tételek
+                    {t('transactions:expanded.related_items', 'Kapcsolódó tételek')}
                   </div>
                   <Card className="bg-muted/30 border-border/50">
                     <CardContent className="p-4 flex flex-col items-center justify-center gap-3">
-                      <p className="text-sm text-muted-foreground italic">Nincs párosított tétel ehhez a tranzakcióhoz.</p>
+                      <p className="text-sm text-muted-foreground italic">{t('transactions:expanded.no_matched_item', 'Nincs párosított tétel ehhez a tranzakcióhoz.')}</p>
                       <Button
                         variant="outline"
                         size="sm"
@@ -493,7 +496,7 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
                         className="h-8 text-xs gap-1.5"
                       >
                         <Link2 className="h-3.5 w-3.5" />
-                        Számla hozzárendelése
+                        {t('transactions:expanded.assign_invoice', 'Számla hozzárendelése')}
                       </Button>
                     </CardContent>
                   </Card>
@@ -503,7 +506,7 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     <ClipboardCheck className="h-3.5 w-3.5 text-primary" />
-                    Közvetlen könyvelés (Számla nélkül)
+                    {t('transactions:expanded.direct_gl', 'Közvetlen könyvelés (Számla nélkül)')}
                   </div>
                   <Card className="bg-muted/30 border-border/50">
                     <CardContent className="p-4 space-y-3">
@@ -512,7 +515,7 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
                           <div className="bg-emerald-500/10 dark:bg-emerald-950/20 border border-emerald-500/20 rounded-md p-2.5 flex items-center justify-between gap-2">
                             <div className="min-w-0">
                               <p className="text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
-                                Lekönyvelt számlaosztály:
+                                {t('transactions:expanded.booked_gl', 'Lekönyvelt számlaosztály:')}
                               </p>
                               <p className="text-xs font-mono font-bold mt-1 truncate">
                                 {(() => {
@@ -544,13 +547,13 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
                               className="text-xs w-full text-red-500 hover:text-red-600 border-red-500/30 hover:bg-red-500/10 h-8"
                             >
                               <Undo2 className="h-3.5 w-3.5 mr-1" />
-                              Könyvelés törlése
+                              {t('transactions:expanded.delete_booking', 'Könyvelés törlése')}
                             </Button>
                           )}
                         </div>
                       ) : (
                         <p className="text-[11px] text-muted-foreground leading-relaxed">
-                          Ha a tételhez nem tartozik bizonylat, közvetlenül kontírozhatod egy főkönyvi számra.
+                          {t('transactions:expanded.direct_gl_hint', 'Ha a tételhez nem tartozik bizonylat, közvetlenül kontírozhatod egy főkönyvi számra.')}
                         </p>
                       )}
 
@@ -559,13 +562,13 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
                           <div className="relative">
                             <Command className="rounded-lg border shadow-sm w-full overflow-hidden h-[180px]" shouldFilter={false}>
                               <CommandInput 
-                                placeholder="Keresés főkönyvi szám vagy név alapján..." 
+                                placeholder={t('transactions:expanded.search_gl', 'Keresés főkönyvi szám vagy név alapján...')}
                                 value={glSearchQuery}
                                 onValueChange={setGlSearchQuery}
                                 className="h-8 text-xs w-full border-none focus:ring-0"
                               />
                               <CommandList className="h-[140px] max-h-[140px] overflow-y-auto w-full overflow-x-hidden">
-                                <CommandEmpty className="py-2 text-xs text-center text-muted-foreground">Nincs találat.</CommandEmpty>
+                                <CommandEmpty className="py-2 text-xs text-center text-muted-foreground">{t('transactions:expanded.no_gl_results', 'Nincs találat.')}</CommandEmpty>
                                 <CommandGroup>
                                   {glAccounts
                                     ?.filter(gl => !glSearchQuery || `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(glSearchQuery.toLowerCase()))
@@ -605,7 +608,7 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
                                 }}
                                 className="text-xs flex-1 h-8"
                               >
-                                Mégse
+                                {t('transactions:expanded.cancel', 'Mégse')}
                               </Button>
                             )}
                             <Button
@@ -615,7 +618,7 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
                               className="text-xs flex-1 h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
                             >
                               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Check className="h-3.5 w-3.5 mr-1" />}
-                              {transaction.gl_account_id ? 'Módosítás mentése' : 'Kontírozás'}
+                              {transaction.gl_account_id ? t('transactions:expanded.save_modification', 'Módosítás mentése') : t('transactions:expanded.book', 'Kontírozás')}
                             </Button>
                           </div>
                         </div>
@@ -628,7 +631,7 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
                 <div className="space-y-4 max-w-md">
                   <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     <ClipboardCheck className="h-3.5 w-3.5 text-primary" />
-                    Kapcsolódó feljegyzések
+                    {t('transactions:expanded.related_notes', 'Kapcsolódó feljegyzések')}
                   </div>
 
                   {notes && notes.length > 0 ? (
@@ -637,21 +640,21 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
                         <Card key={note.id} className="bg-primary/[0.02] border-primary/20">
                           <CardHeader className="py-1.5 px-2.5 border-b border-border/10">
                             <CardTitle className="text-[11px] font-semibold flex items-center justify-between text-foreground">
-                              <span className="truncate max-w-[150px]">{note.title || 'Névtelen jegyzet'}</span>
+                              <span className="truncate max-w-[150px]">{note.title || t('transactions:expanded.no_title_note', 'Névtelen jegyzet')}</span>
                               <div className="flex items-center gap-1.5 shrink-0">
                                 {note.is_private ? (
                                   <Badge variant="outline" className="text-[8px] h-4 px-1 gap-0.5 bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400">
                                     <Lock className="h-2 w-2" />
-                                    Privát
+                                    {t('transactions:expanded.private', 'Privát')}
                                   </Badge>
                                 ) : (
                                   <Badge variant="outline" className="text-[8px] h-4 px-1 gap-0.5 bg-primary/10 text-primary border-primary/20">
                                     <Users className="h-2 w-2" />
-                                    Közös
+                                    {t('transactions:expanded.shared', 'Közös')}
                                   </Badge>
                                 )}
                                 <span className="text-[8px] text-muted-foreground font-mono">
-                                  {format(new Date(note.created_at), 'yyyy.MM.dd', { locale: hu })}
+                                  {format(new Date(note.created_at), isHr ? 'dd.MM.yyyy.' : 'yyyy.MM.dd', { locale: dateLocale })}
                                 </span>
                               </div>
                             </CardTitle>
@@ -659,22 +662,22 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
                           <CardContent className="p-2.5 space-y-1">
                             <p className="text-muted-foreground text-xs whitespace-pre-wrap leading-normal font-sans pl-0.5">{note.content}</p>
                             <div className="text-[9px] text-muted-foreground/80 pl-0.5 pt-0.5">
-                              Rögzítette: {note.profile_name}
+                              {t('transactions:expanded.recorded_by', { name: note.profile_name, defaultValue: `Rögzítette: ${note.profile_name}` })}
                             </div>
                           </CardContent>
                         </Card>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-xs text-muted-foreground italic pl-1">Nincs kapcsolódó feljegyzés ehhez a tranzakcióhoz.</p>
+                    <p className="text-xs text-muted-foreground italic pl-1">{t('transactions:expanded.no_notes', 'Nincs kapcsolódó feljegyzés ehhez a tranzakcióhoz.')}</p>
                   )}
 
                   {/* Add Note Form */}
                   <form onSubmit={handleAddNote} className="space-y-3 pt-3 border-t border-border/20">
                     <div className="space-y-1">
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Jegyzet címe</span>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t('transactions:expanded.note_title', 'Jegyzet címe')}</span>
                       <Input
-                        placeholder="pl. Emlékeztető..."
+                        placeholder={t('transactions:expanded.note_title_placeholder', 'pl. Emlékeztető...')}
                         value={newNoteTitle}
                         onChange={(e) => setNewNoteTitle(e.target.value)}
                         className="h-8 text-xs bg-background/30 border-border/50"
@@ -682,9 +685,9 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
                     </div>
 
                     <div className="space-y-1">
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Tartalom</span>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t('transactions:expanded.note_content', 'Tartalom')}</span>
                       <Textarea
-                        placeholder="Írd ide a jegyzet szöveges tartalmát..."
+                        placeholder={t('transactions:expanded.note_content_placeholder', 'Írd ide a jegyzet szöveges tartalmát...')}
                         value={newNoteText}
                         onChange={(e) => setNewNoteText(e.target.value)}
                         required
@@ -694,7 +697,7 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
                     </div>
 
                     <div className="space-y-1.5">
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Láthatóság</span>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t('transactions:expanded.visibility', 'Láthatóság')}</span>
                       <div className="grid grid-cols-2 gap-2.5">
                         {/* Private Card Button */}
                         <button
@@ -709,8 +712,8 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
                         >
                           <Lock className={cn("h-3.5 w-3.5 mt-0.5 shrink-0", newNotePrivate ? "text-primary" : "text-muted-foreground")} />
                           <div>
-                            <p className="text-[10px] font-semibold">Privát</p>
-                            <p className="text-[8px] text-muted-foreground">Csak te látod</p>
+                            <p className="text-[10px] font-semibold">{t('transactions:expanded.private', 'Privát')}</p>
+                            <p className="text-[8px] text-muted-foreground">{t('transactions:expanded.private_desc', 'Csak te látod')}</p>
                           </div>
                         </button>
 
@@ -727,8 +730,8 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
                         >
                           <Users className={cn("h-3.5 w-3.5 mt-0.5 shrink-0", !newNotePrivate ? "text-primary" : "text-muted-foreground")} />
                           <div>
-                            <p className="text-[10px] font-semibold">Közös</p>
-                            <p className="text-[8px] text-muted-foreground">Cégtagok látják</p>
+                            <p className="text-[10px] font-semibold">{t('transactions:expanded.shared', 'Közös')}</p>
+                            <p className="text-[8px] text-muted-foreground">{t('transactions:expanded.shared_desc', 'Cégtagok látják')}</p>
                           </div>
                         </button>
                       </div>
@@ -746,7 +749,7 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
                         ) : (
                           <Plus className="h-3.5 w-3.5" />
                         )}
-                        Mentés
+                        {t('transactions:expanded.save', 'Mentés')}
                       </Button>
                     </div>
                   </form>
@@ -794,6 +797,8 @@ interface TransactionRowProps {
 }
 
 const TransactionRow = React.memo(function TransactionRow({ transaction, exchangeRates, isExpanded, onToggleExpand, onOpenDetails, bankLabel, bankFullName, bankBgClass, isDuplicate, isSelected, onSelect, showCheckbox }: TransactionRowProps) {
+  const { t, i18n } = useTranslation(['transactions', 'common']);
+  const isHr = i18n.language === 'hr';
   const matchStatus = computeMatchStatus(transaction);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -880,7 +885,7 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
               isExpanded && "rotate-180"
             )} />
           {transaction.transaction_date
-            ? format(new Date(transaction.transaction_date), 'yyyy.MM.dd')
+            ? format(new Date(transaction.transaction_date), isHr ? 'dd.MM.yyyy.' : 'yyyy.MM.dd')
             : '-'}
           {/* F2: Duplicate warning icon */}
           {isDuplicate && (
@@ -889,7 +894,7 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
                 <TooltipTrigger asChild>
                   <Copy className="h-3 w-3 text-amber-500 shrink-0" />
                 </TooltipTrigger>
-                <TooltipContent>Lehetséges duplikátum — azonos dátum és összeg</TooltipContent>
+                <TooltipContent>{t('transactions:duplicate_banner.tooltip', 'Lehetséges duplikátum — azonos dátum és összeg')}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           )}
@@ -931,10 +936,10 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
         transaction.amount >= 0 ? "text-success" : "text-destructive"
       )}>
         <div className="flex flex-col items-end">
-          <span className="font-medium">{formatCurrency(transaction.amount, transaction.currency || 'HUF')}</span>
+          <span className="font-medium">{formatCurrency(transaction.amount, transaction.currency || undefined)}</span>
           {transaction.currency && transaction.currency !== 'HUF' && exchangeRates && (
             <span className="text-[10px] text-muted-foreground font-normal leading-tight">
-              ({formatCurrency(transaction.amount * (exchangeRates[transaction.currency] || 1), 'HUF')})
+              ({formatCurrency(transaction.amount * (exchangeRates[transaction.currency] || 1))})
             </span>
           )}
         </div>
@@ -985,7 +990,7 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
               <div className="flex items-center justify-center">
                 {matchStatus === 'matched' && (
                   <span className="inline-flex items-center gap-1 w-[5.5rem] justify-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-600/15 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-400 border border-black/10 dark:border-white/10">
-                    <CheckCircle2 className="h-3 w-3" />Párosított
+                    <CheckCircle2 className="h-3 w-3" />{t('transactions:status.matched', 'Párosított')}
                   </span>
                 )}
                 {matchStatus === 'suggested' && (() => {
@@ -994,57 +999,57 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
                   if (norm >= 0.8) {
                     return (
                       <span className="inline-flex items-center gap-1 w-[5.5rem] justify-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/15 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-400 border border-emerald-500/20">
-                        <CheckCircle2 className="h-3 w-3 text-emerald-600" />Javasolt ({Math.round(norm * 100)}%)
+                        <CheckCircle2 className="h-3 w-3 text-emerald-600" />{t('transactions:status.suggested', 'Javasolt')} ({Math.round(norm * 100)}%)
                       </span>
                     );
                   }
                   if (norm >= 0.5) {
                     return (
                       <span className="inline-flex items-center gap-1 w-[5.5rem] justify-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-800 dark:bg-yellow-500/15 dark:text-yellow-400 border border-amber-500/20">
-                        <AlertCircle className="h-3 w-3 text-amber-600" />Javasolt ({Math.round(norm * 100)}%)
+                        <AlertCircle className="h-3 w-3 text-amber-600" />{t('transactions:status.suggested', 'Javasolt')} ({Math.round(norm * 100)}%)
                       </span>
                     );
                   }
                   return (
                     <span className="inline-flex items-center gap-1 w-[5.5rem] justify-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-rose-500/15 text-rose-800 dark:bg-rose-500/15 dark:text-rose-400 border border-rose-500/20">
-                      <HelpCircle className="h-3 w-3 text-rose-600" />Javasolt ({Math.round(norm * 100)}%)
+                      <HelpCircle className="h-3 w-3 text-rose-600" />{t('transactions:status.suggested', 'Javasolt')} ({Math.round(norm * 100)}%)
                     </span>
                   );
                 })()}
                 {matchStatus === 'auto_settled' && (
                   <span className="inline-flex items-center gap-1 w-[5.5rem] justify-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-blue-500/15 text-blue-800 dark:bg-blue-500/15 dark:text-blue-400 border border-black/10 dark:border-white/10">
-                    <Settings className="h-3 w-3" />Rendezett
+                    <Settings className="h-3 w-3" />{t('transactions:status.auto_settled', 'Rendezett')}
                   </span>
                 )}
                 {matchStatus === 'unmatched' && (
                   <span className="inline-flex items-center gap-1 w-[5.5rem] justify-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-rose-500/15 text-rose-800 dark:bg-rose-500/15 dark:text-rose-400 border border-black/10 dark:border-white/10">
-                    <HelpCircle className="h-3 w-3" />Nincs
+                    <HelpCircle className="h-3 w-3" />{t('transactions:status.none', 'Nincs')}
                   </span>
                 )}
                 {matchStatus === 'no_invoice' && (
                   <span className="inline-flex items-center gap-1 w-[5.5rem] justify-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-purple-500/15 text-purple-800 dark:bg-purple-500/15 dark:text-purple-400 border border-black/10 dark:border-white/10">
-                    <Ban className="h-3 w-3" />Nincs számla
+                    <Ban className="h-3 w-3" />{t('transactions:status.no_invoice', 'Nincs számla')}
                   </span>
                 )}
                 {matchStatus === 'invoice_missing' && (
                   <span className="inline-flex items-center gap-1 w-[5.5rem] justify-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-sky-500/15 text-sky-800 dark:bg-sky-500/15 dark:text-sky-400 border border-black/10 dark:border-white/10">
-                    <UploadCloud className="h-3 w-3" />Feltöltendő
+                    <UploadCloud className="h-3 w-3" />{t('transactions:status.invoice_missing', 'Feltöltendő')}
                   </span>
                 )}
               </div>
             </TooltipTrigger>
             <TooltipContent className="max-w-xs space-y-1">
               <p className="font-semibold text-xs">
-                {matchStatus === 'matched' && 'Párosított és jóváhagyott'}
-                {matchStatus === 'suggested' && `Javasolt párosítás ${transaction.confidence_score ? `(${Math.round(transaction.confidence_score * 100)}%)` : ''}`}
-                {matchStatus === 'auto_settled' && 'Rendezett — nem igényel számlát (bankköltség, ATM, stb.)'}
-                {matchStatus === 'unmatched' && 'Nincs párosítva'}
-                {matchStatus === 'no_invoice' && 'Nincs hozzá számla — könyvelő feladata'}
-                {matchStatus === 'invoice_missing' && 'Számla nincs feltöltve — fel kell tölteni'}
+                {matchStatus === 'matched' && t('transactions:status_tooltip.matched', 'Párosított és jóváhagyott')}
+                {matchStatus === 'suggested' && `${t('transactions:status_tooltip.suggested', 'Javasolt párosítás')} ${transaction.confidence_score ? `(${Math.round(transaction.confidence_score * 100)}%)` : ''}`}
+                {matchStatus === 'auto_settled' && t('transactions:status_tooltip.auto_settled', 'Rendezett — nem igényel számlát (bankköltség, ATM, stb.)')}
+                {matchStatus === 'unmatched' && t('transactions:status_tooltip.unmatched', 'Nincs párosítva')}
+                {matchStatus === 'no_invoice' && t('transactions:status_tooltip.no_invoice', 'Nincs hozzá számla — könyvelő feladata')}
+                {matchStatus === 'invoice_missing' && t('transactions:status_tooltip.invoice_missing', 'Számla nincs feltöltve — fel kell tölteni')}
               </p>
               {transaction.reason && (
                 <p className="text-[11px] text-muted-foreground border-t border-border/30 pt-1 mt-1 font-normal leading-normal">
-                  Indok: {transaction.reason}
+                  {t('transactions:status_tooltip.reason', 'Indok:')} {transaction.reason}
                 </p>
               )}
             </TooltipContent>
@@ -1067,7 +1072,7 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
                 <Eye className="h-3.5 w-3.5 text-muted-foreground" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Tranzakció és számla részletei</TooltipContent>
+            <TooltipContent>{t('transactions:table.details_tooltip', 'Tranzakció és számla részletei')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </TableCell>
@@ -1188,7 +1193,7 @@ const TransactionTable = React.memo(function TransactionTable({
           <div className="flex flex-wrap items-center gap-3 justify-center md:justify-start">
             <div className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse shrink-0" />
             <p className="text-sm font-semibold text-foreground whitespace-nowrap">
-              Kijelölt tranzakciók: <span className="font-extrabold text-primary">{selectedIds.size} db</span>
+              {t('transactions:bulk.selected_count', 'Kijelölt tranzakciók:')} <span className="font-extrabold text-primary">{selectedIds.size} db</span>
             </p>
             {(() => {
               const selectedTxs = transactions.filter(t => selectedIds.has(t.id));
@@ -1209,11 +1214,11 @@ const TransactionTable = React.memo(function TransactionTable({
                   <span className="text-muted-foreground/30 text-xs hidden sm:inline">|</span>
                   <p className="text-xs text-muted-foreground font-medium flex items-center gap-3">
                     {inflow > 0 && (
-                      <span>Bevétel: <span className="font-bold text-success">+{formatCurrency(inflow, 'HUF')}</span></span>
+                      <span>{t('transactions:bulk.inflow', 'Bevétel:')} <span className="font-bold text-success">+{formatCurrency(inflow)}</span></span>
                     )}
                     {inflow > 0 && outflow > 0 && <span className="text-muted-foreground/30 text-[10px]">|</span>}
                     {outflow > 0 && (
-                      <span>Kiadás: <span className="font-bold text-destructive">-{formatCurrency(outflow, 'HUF')}</span></span>
+                      <span>{t('transactions:bulk.outflow', 'Kiadás:')} <span className="font-bold text-destructive">-{formatCurrency(outflow)}</span></span>
                     )}
                   </p>
                 </>
@@ -1229,7 +1234,7 @@ const TransactionTable = React.memo(function TransactionTable({
                     variant="outline"
                     className="h-9 text-xs gap-1.5 rounded-xl border-border/60 hover:bg-muted"
                   >
-                    <Download className="w-3.5 h-3.5" /> Exportálás <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                    <Download className="w-3.5 h-3.5" /> {t('transactions:bulk.export', 'Exportálás')} <ChevronDown className="w-3 h-3 text-muted-foreground" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -1251,7 +1256,7 @@ const TransactionTable = React.memo(function TransactionTable({
                   className="h-9 text-xs gap-1.5 rounded-xl border-border/60 hover:bg-muted"
                   onClick={() => onBulkStatusChange(Array.from(selectedIds), 'no_match_category')}
                 >
-                  <Settings className="w-3.5 h-3.5" /> Rendezett
+                  <Settings className="w-3.5 h-3.5" /> {t('transactions:bulk.settled', 'Rendezett')}
                 </Button>
                 <Button
                   size="sm"
@@ -1259,7 +1264,7 @@ const TransactionTable = React.memo(function TransactionTable({
                   className="h-9 text-xs gap-1.5 rounded-xl border-border/60 hover:bg-muted"
                   onClick={() => onBulkStatusChange(Array.from(selectedIds), 'no_invoice')}
                 >
-                  <Ban className="w-3.5 h-3.5" /> Nincs számla
+                  <Ban className="w-3.5 h-3.5" /> {t('transactions:bulk.no_invoice', 'Nincs számla')}
                 </Button>
               </>
             )}
@@ -1272,7 +1277,7 @@ const TransactionTable = React.memo(function TransactionTable({
                   className="h-9 text-xs gap-1.5 rounded-xl font-semibold"
                   onClick={() => { setDeleteConfirmInput(''); setDeleteConfirmOpen(true); }}
                 >
-                  <Trash2 className="w-3.5 h-3.5" /> Törlés
+                  <Trash2 className="w-3.5 h-3.5" /> {t('transactions:bulk.delete', 'Törlés')}
                 </Button>
               </>
             )}
@@ -1283,7 +1288,7 @@ const TransactionTable = React.memo(function TransactionTable({
               className="h-9 text-xs text-muted-foreground hover:text-foreground rounded-xl"
               onClick={clearSelection}
             >
-              Mégse
+              {t('transactions:bulk.cancel', 'Mégse')}
             </Button>
           </div>
         </div>,
@@ -1296,15 +1301,15 @@ const TransactionTable = React.memo(function TransactionTable({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
               <Trash2 className="w-5 h-5" />
-              Tranzakciók végleges törlése
+              {t('transactions:bulk.delete_dialog_title', 'Tranzakciók végleges törlése')}
             </DialogTitle>
             <DialogDescription>
-              <strong className="text-destructive">{selectedIds.size}</strong> tranzakció véglegesen törlődik. Ez a művelet nem vonható vissza.
+              {t('transactions:bulk.delete_dialog_desc', { count: selectedIds.size, defaultValue: `${selectedIds.size} tranzakció véglegesen törlődik. Ez a művelet nem vonható vissza.` })}
             </DialogDescription>
           </DialogHeader>
           <div className="py-3">
             <label className="text-sm font-medium text-foreground">
-              A megerősítéshez írd be a kijelölt tranzakciók számát: <strong>{selectedIds.size}</strong>
+              {t('transactions:bulk.delete_dialog_prompt', { count: selectedIds.size, defaultValue: `A megerősítéshez írd be a kijelölt tranzakciók számát: ${selectedIds.size}` })}
             </label>
             <Input
               className="mt-2"
@@ -1315,7 +1320,7 @@ const TransactionTable = React.memo(function TransactionTable({
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>Mégse</Button>
+            <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>{t('transactions:bulk.cancel', 'Mégse')}</Button>
             <Button
               variant="destructive"
               disabled={deleteConfirmInput !== String(selectedIds.size)}
@@ -1326,7 +1331,7 @@ const TransactionTable = React.memo(function TransactionTable({
               }}
             >
               <Trash2 className="w-4 h-4 mr-1.5" />
-              Törlés ({selectedIds.size} db)
+              {t('transactions:bulk.delete_confirm_btn', { count: selectedIds.size, defaultValue: `Törlés (${selectedIds.size} db)` })}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1354,7 +1359,7 @@ const TransactionTable = React.memo(function TransactionTable({
                   <Checkbox
                     checked={transactions.length > 0 && selectedIds.size === transactions.length}
                     onCheckedChange={handleSelectAll}
-                    aria-label="Összes kijelölése"
+                    aria-label={t('transactions:table.select_all', 'Összes kijelölése')}
                     className="translate-y-[1px]"
                   />
                 </TableHead>
@@ -1392,8 +1397,8 @@ const TransactionTable = React.memo(function TransactionTable({
             ) : transactions.length === 0 ? (
               <TableEmptyState
                 colSpan={colCount}
-                title="Nincs tranzakció"
-                description="Tölts fel bankkivonatot a Feltöltés oldalon, vagy módosítsd a szűrőket."
+                title={t('transactions:table.empty_title', 'Nincs tranzakció')}
+                description={t('transactions:table.empty_desc', 'Tölts fel bankkivonatot a Feltöltés oldalon, vagy módosítsd a szűrőket.')}
                 onClearFilters={hasActiveFilters ? onClearFilters : undefined}
               />
             ) : (

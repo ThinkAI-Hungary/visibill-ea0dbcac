@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   Dialog,
@@ -25,47 +26,48 @@ interface InvoiceApprovalDialogProps {
   onSuccess?: () => void;
 }
 
-const PRESET_REASONS = [
-  {
-    id: 'paper_invoice',
-    label: 'Papíralapú / kézi számlatömbös számla',
-    description: 'Nem számítógépes számla, nincs rá kötelező online NAV adatszolgáltatás.',
-  },
-  {
-    id: 'nav_delay',
-    label: 'NAV adatszolgáltatási késés / technikai hiba',
-    description: 'A kiállító még nem továbbította a NAV-hoz vagy a NAV még nem dolgozta fel.',
-  },
-  {
-    id: 'foreign_or_exempt',
-    label: 'Külföldi vagy mentesített ügylet',
-    description: 'Belföldi adószámmal rendelkező, de nem NAV-köteles jogcím.',
-  },
-  {
-    id: 'other',
-    label: 'Egyéb indoklás (saját felelősségre)',
-    description: 'Egyedi könyvelői mérlegelés és engedélyezés alapján.',
-  },
-];
-
 export function InvoiceApprovalDialog({
   open,
   onOpenChange,
   invoice,
   onSuccess,
 }: InvoiceApprovalDialogProps) {
+  const { t } = useTranslation(['invoices', 'common']);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [selectedPreset, setSelectedPreset] = useState<string>('paper_invoice');
   const [customNote, setCustomNote] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const presetReasons = [
+    {
+      id: 'paper_invoice',
+      label: t('invoices:dialogs.approval.reasons.paper_invoice'),
+      description: t('invoices:dialogs.approval.reasons.paper_invoice_desc'),
+    },
+    {
+      id: 'nav_delay',
+      label: t('invoices:dialogs.approval.reasons.nav_delay'),
+      description: t('invoices:dialogs.approval.reasons.nav_delay_desc'),
+    },
+    {
+      id: 'foreign_or_exempt',
+      label: t('invoices:dialogs.approval.reasons.foreign_or_exempt'),
+      description: t('invoices:dialogs.approval.reasons.foreign_or_exempt_desc'),
+    },
+    {
+      id: 'other',
+      label: t('invoices:dialogs.approval.reasons.other'),
+      description: t('invoices:dialogs.approval.reasons.other_desc'),
+    },
+  ];
+
   if (!invoice) return null;
 
   const handleApprove = async () => {
     setIsSubmitting(true);
     try {
-      const presetObj = PRESET_REASONS.find(p => p.id === selectedPreset);
+      const presetObj = presetReasons.find(p => p.id === selectedPreset);
       const noteParts: string[] = [];
       if (presetObj) {
         noteParts.push(presetObj.label);
@@ -73,7 +75,7 @@ export function InvoiceApprovalDialog({
       if (customNote.trim()) {
         noteParts.push(customNote.trim());
       }
-      const finalNote = noteParts.join(' - ') || 'Könyvelői jóváhagyás (NAV adatszolgáltatás nélkül)';
+      const finalNote = noteParts.join(' - ') || 'Könyvelői jóváhagyás';
 
       const { data, error } = await supabase.rpc('approve_invoice_for_accounting', {
         p_invoice_id: invoice.id,
@@ -85,8 +87,8 @@ export function InvoiceApprovalDialog({
       }
 
       toast({
-        title: 'Számla sikeresen jóváhagyva a könyveléshez!',
-        description: `Bizonylat: ${invoice.bizonylatsorszam || '-'} engedélyezve lett az automatikus könyvelési modulokban.`,
+        title: t('invoices:dialogs.approval.toast_success'),
+        description: `${invoice.bizonylatsorszam || '-'}`,
       });
 
       // Invalidate relevant queries
@@ -106,8 +108,8 @@ export function InvoiceApprovalDialog({
       console.error('Error approving invoice:', err);
       toast({
         variant: 'destructive',
-        title: 'Hiba történt a jóváhagyás során',
-        description: err.message || 'Kérjük próbálja újra.',
+        title: t('common:status.error', 'Hiba történt'),
+        description: err.message || t('common:errors.unexpected', 'Kérjük próbálja újra.'),
       });
     } finally {
       setIsSubmitting(false);
@@ -122,10 +124,10 @@ export function InvoiceApprovalDialog({
         <DialogHeader>
           <div className="flex items-center gap-2 text-amber-600 dark:text-amber-500">
             <ShieldAlert className="h-5 w-5" />
-            <DialogTitle className="text-foreground">NAV Jóváhagyási Kapu</DialogTitle>
+            <DialogTitle className="text-foreground">{t('invoices:dialogs.approval.title')}</DialogTitle>
           </div>
           <DialogDescription>
-            Könyvelői ellenőrzés és jóváhagyás hiányzó NAV online számla adatszolgáltatás esetén.
+            {t('invoices:dialogs.approval.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -133,19 +135,19 @@ export function InvoiceApprovalDialog({
           {/* Invoice Summary Box */}
           <div className="rounded-lg border bg-muted/40 p-3 text-sm space-y-1.5">
             <div className="flex justify-between items-center font-medium">
-              <span className="text-muted-foreground">Bizonylatszám:</span>
+              <span className="text-muted-foreground">{t('invoices:dialogs.approval.invoice_number')}</span>
               <span className="font-mono">{invoice.bizonylatsorszam || '-'}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Partner:</span>
+              <span className="text-muted-foreground">{t('invoices:dialogs.approval.partner')}</span>
               <span className="font-medium truncate max-w-[240px]">{partnerName || '-'}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Kibocsátás dátuma:</span>
+              <span className="text-muted-foreground">{t('invoices:dialogs.approval.issue_date')}</span>
               <span>{invoice.kibocsatas_datuma || '-'}</span>
             </div>
             <div className="flex justify-between items-center font-semibold text-base pt-1 border-t">
-              <span>Bruttó végösszeg:</span>
+              <span>{t('invoices:dialogs.approval.gross_total')}</span>
               <span className="font-mono">
                 {formatCurrency(invoice.brutto_vegosszeg || 0, invoice.penznem || 'HUF')}
               </span>
@@ -156,9 +158,9 @@ export function InvoiceApprovalDialog({
           <div className="rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 p-3 flex gap-2.5 text-xs text-amber-800 dark:text-amber-300">
             <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
             <div>
-              <p className="font-semibold mb-0.5">Nincs NAV Online Számla adatszolgáltatás!</p>
+              <p className="font-semibold mb-0.5">{t('invoices:dialogs.approval.warning_title')}</p>
               <p>
-                A rendszer a kettős ellenőrzés védelmében zárolta az automatikus könyvelést. A jóváhagyással igazolja a bizonylat hitelességét, és feloldja a főkönyvi és napló tételek generálását.
+                {t('invoices:dialogs.approval.warning_desc')}
               </p>
             </div>
           </div>
@@ -166,14 +168,14 @@ export function InvoiceApprovalDialog({
           {/* Preset Justifications */}
           <div className="space-y-2">
             <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Jóváhagyás jogcíme
+              {t('invoices:dialogs.approval.justification_title')}
             </Label>
             <RadioGroup
               value={selectedPreset}
               onValueChange={setSelectedPreset}
               className="space-y-2"
             >
-              {PRESET_REASONS.map(reason => (
+              {presetReasons.map(reason => (
                 <label
                   key={reason.id}
                   htmlFor={reason.id}
@@ -196,11 +198,11 @@ export function InvoiceApprovalDialog({
           {/* Custom Note */}
           <div className="space-y-1.5">
             <Label htmlFor="approval-note" className="text-xs">
-              Kiegészítő könyvelői megjegyzés (opcionális)
+              {t('invoices:dialogs.approval.custom_note')}
             </Label>
             <Textarea
               id="approval-note"
-              placeholder="pl. Ügyféllel egyeztetve, kézi számlatömb másolata csatolva..."
+              placeholder={t('invoices:dialogs.approval.custom_note_placeholder')}
               value={customNote}
               onChange={e => setCustomNote(e.target.value)}
               className="h-16 text-xs resize-none"
@@ -215,7 +217,7 @@ export function InvoiceApprovalDialog({
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
           >
-            Mégse
+            {t('common:actions.cancel')}
           </Button>
           <Button
             type="button"
@@ -226,12 +228,12 @@ export function InvoiceApprovalDialog({
             {isSubmitting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Jóváhagyás folyamatban...
+                {t('invoices:dialogs.approval.approving')}
               </>
             ) : (
               <>
                 <CheckCircle2 className="h-4 w-4" />
-                Jóváhagyás könyvelésre
+                {t('invoices:dialogs.approval.confirm_button')}
               </>
             )}
           </Button>

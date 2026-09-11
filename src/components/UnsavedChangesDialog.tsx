@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,20 +17,21 @@ interface UnsavedChangesDialogProps {
 }
 
 export function UnsavedChangesDialog({ open, onConfirm, onCancel }: UnsavedChangesDialogProps) {
+  const { t } = useTranslation('common');
+
   return (
     <AlertDialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Elmentetlen változtatások</AlertDialogTitle>
+          <AlertDialogTitle>{t('unsaved_changes.title')}</AlertDialogTitle>
           <AlertDialogDescription>
-            Vannak elmentetlen változtatásaid. Ha most elhagyod az oldalt, a módosítások elvesznek.
-            Biztosan folytatod?
+            {t('unsaved_changes.description')}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>Maradok</AlertDialogCancel>
+          <AlertDialogCancel onClick={onCancel}>{t('unsaved_changes.stay')}</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-            Elvetem a változtatásokat
+            {t('unsaved_changes.discard')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

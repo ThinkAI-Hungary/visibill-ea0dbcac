@@ -1,5 +1,6 @@
 import React from 'react';
 import { CheckCircle2, Clock, AlertTriangle, Skull } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
 
 export type AgingCategory = 'green' | 'yellow' | 'red' | 'purple';
 
@@ -92,8 +93,17 @@ export function worstOf(invoices: UnifiedInvoice[]): AgingCategory {
   return worst;
 }
 
+export function getAgingCategoryLabel(cat: AgingCategory, t: any): string {
+  switch (cat) {
+    case 'green': return t('receivables:aging.not_due', { defaultValue: 'Nem lejárt' });
+    case 'yellow': return t('receivables:aging.days_1_30', { defaultValue: '1–30 napos' });
+    case 'red': return t('receivables:aging.days_31_180', { defaultValue: '31–180 napos' });
+    case 'purple': return t('receivables:aging.days_180_plus', { defaultValue: '180+ napos' });
+  }
+}
+
 export function fmt(n: number): string {
-  return new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 0 }).format(n) + ' Ft';
+  return formatCurrency(n);
 }
 
 export function validateEmail(email: string): boolean {

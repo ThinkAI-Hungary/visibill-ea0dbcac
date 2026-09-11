@@ -1,13 +1,13 @@
+import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Mail, ChevronDown, ChevronUp, CheckCircle2, Clock } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
-import { hu } from 'date-fns/locale';
-import { useTranslation } from 'react-i18next';
+import { getDateFnsLocale } from '@/lib/locale/formatters';
 import { cn } from '@/lib/utils';
-import { CAT, fmt } from '@/lib/kintlevo-helpers';
+import { CAT, fmt, getAgingCategoryLabel } from '@/lib/kintlevo-helpers';
 import type { CompanyGroup } from '@/lib/kintlevo-helpers';
 
 interface Props {
@@ -52,8 +52,8 @@ export function KintlevoCompanyTable({
     return (
       <div className="text-center py-20 text-muted-foreground">
         <CheckCircle2 className="h-12 w-12 mx-auto mb-3 text-emerald-500/30" />
-        <p className="text-lg font-medium">Nincs kintlévőség</p>
-        <p className="text-sm">Minden számla ki van egyenlítve!</p>
+        <p className="text-lg font-medium">{t('receivables:empty_title', 'Nincs kintlévőség')}</p>
+        <p className="text-sm">{t('receivables:empty_desc', 'Minden számla ki van egyenlítve!')}</p>
       </div>
     );
   }
@@ -98,7 +98,7 @@ export function KintlevoCompanyTable({
                       <span key={cat} className={cn('inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-md font-medium', catStyle.badge)}>
                         {count}
                         <span className="hidden sm:inline">×</span>
-                        <span className="hidden sm:inline">{catStyle.label}</span>
+                        <span className="hidden sm:inline">{getAgingCategoryLabel(cat, t)}</span>
                       </span>
                     );
                   })}
@@ -110,11 +110,13 @@ export function KintlevoCompanyTable({
                     <TooltipTrigger asChild>
                       <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-full">
                         <Mail className="h-3 w-3" />
-                        <span>{daysSince === 0 ? 'Ma' : `${daysSince} napja`}</span>
+                        <span>{daysSince === 0 ? t('receivables:table.today', 'Ma') : t('receivables:table.days_ago', '{{count}} napja', { count: daysSince })}</span>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>
-                      Utolsó felszólítás: {format(parseISO(group.lastSent!), 'yyyy. MMM d.', { locale: hu })}
+                      {t('receivables:table.last_dunning', 'Utolsó felszólítás: {{date}}', {
+                        date: format(parseISO(group.lastSent!), 'yyyy. MMM d.', { locale: getDateFnsLocale() })
+                      })}
                     </TooltipContent>
                   </Tooltip>
                 )}
@@ -129,13 +131,13 @@ export function KintlevoCompanyTable({
                 <Table>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent border-current/10">
-                      <TableHead className="pl-4 text-xs w-[25%]">Számlaszám</TableHead>
-                      <TableHead className="text-xs w-[15%]">Kiállítva</TableHead>
-                      <TableHead className="text-xs w-[15%]">Lejárat</TableHead>
-                      <TableHead className="text-xs w-[12%]">Késés</TableHead>
-                      <TableHead className="text-right text-xs w-[18%]">Összeg</TableHead>
-                      <TableHead className="text-xs w-[10%]">Forrás</TableHead>
-                      <TableHead className="text-xs w-[15%]">Kategória</TableHead>
+                      <TableHead className="pl-4 text-xs w-[25%]">{t('receivables:table.invoice_number', 'Számlaszám')}</TableHead>
+                      <TableHead className="text-xs w-[15%]">{t('receivables:table.issue_date', 'Kiállítva')}</TableHead>
+                      <TableHead className="text-xs w-[15%]">{t('receivables:table.due_date', 'Lejárat')}</TableHead>
+                      <TableHead className="text-xs w-[12%]">{t('receivables:table.overdue', 'Késés')}</TableHead>
+                      <TableHead className="text-right text-xs w-[18%]">{t('receivables:table.amount', 'Összeg')}</TableHead>
+                      <TableHead className="text-xs w-[10%]">{t('receivables:table.source', 'Forrás')}</TableHead>
+                      <TableHead className="text-xs w-[15%]">{t('receivables:table.category', 'Kategória')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -151,8 +153,8 @@ export function KintlevoCompanyTable({
                           <TableCell className="text-xs">{inv.dueDate.replace(/-/g, '.')}</TableCell>
                           <TableCell className="text-xs">
                             {inv.daysOverdue <= 0
-                              ? <span className="text-emerald-700 dark:text-emerald-400">Nem lejárt</span>
-                              : <span className={ic.text}>{inv.daysOverdue} nap</span>
+                              ? <span className="text-emerald-700 dark:text-emerald-400">{t('receivables:table.not_overdue', 'Nem lejárt')}</span>
+                              : <span className={ic.text}>{t('receivables:table.days', '{{count}} nap', { count: inv.daysOverdue })}</span>
                             }
                           </TableCell>
                           <TableCell className="text-right text-sm font-medium">
@@ -160,13 +162,13 @@ export function KintlevoCompanyTable({
                           </TableCell>
                           <TableCell>
                             <span className="text-xs text-muted-foreground">
-                              {inv.source === 'nav' ? 'NAV' : 'Feltöltött'}
+                              {inv.source === 'nav' ? t('receivables:table.source_nav', 'NAV') : t('receivables:table.source_uploaded', 'Feltöltött')}
                             </span>
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className={cn('text-xs gap-1', ic.badge)}>
                               <IIcon className="h-3 w-3" />
-                              {ic.label}
+                              {getAgingCategoryLabel(inv.category, t)}
                             </Badge>
                           </TableCell>
                         </TableRow>
