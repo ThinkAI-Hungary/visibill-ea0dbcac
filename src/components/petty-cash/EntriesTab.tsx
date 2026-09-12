@@ -25,9 +25,10 @@ import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
-import type { PettyCashRegister, PettyCashEntry, OpenOutboundInvoice } from './types';
+import type { PettyCashRegister, PettyCashEntry, OpenOutboundInvoice, SummaryRow } from './types';
 import { SOURCE_LABELS, SOURCE_COLORS, fmtAmount, fmtBalance, roundHuf } from './types';
 import CashClosingDialog from './CashClosingDialog';
+import TransferDialog from './TransferDialog';
 import { getLocalizedRegisterName, getLocalizedEntryDescription } from '@/lib/pettyCashUtils';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import SignatureDialog from './SignatureDialog';
@@ -75,6 +76,7 @@ export default function EntriesTab() {
   const [pageSize, setPageSize] = useState(50);
   const [searchTerm, setSearchTerm] = useState('');
   const [showManualDialog, setShowManualDialog] = useState(false);
+  const [showTransferDialog, setShowTransferDialog] = useState(false);
   const [showClosingDialog, setShowClosingDialog] = useState(false); // F4
   const [moveEntry, setMoveEntry] = useState<PettyCashEntry | null>(null);
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
@@ -82,6 +84,18 @@ export default function EntriesTab() {
   const [previewInvoicePending, setPreviewInvoicePending] = useState<any | null>(null);
   const [printingEntry, setPrintingEntry] = useState<PettyCashEntry | null>(null);
   const [signatureOpen, setSignatureOpen] = useState(false);
+
+  // Summary for transfer dialog balances
+  const { data: summary = [] } = useQuery({
+    queryKey: queryKeys.pettyCashSummary(companyId),
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_petty_cash_summary', { p_company_id: companyId });
+      if (error) throw error;
+      return (data || []) as SummaryRow[];
+    },
+    enabled: !!companyId,
+    staleTime: 30_000,
+  });
 
   const handlePrintClick = (entry: PettyCashEntry) => {
     setPrintingEntry(entry);
@@ -521,6 +535,18 @@ export default function EntriesTab() {
             {syncEntries.isPending ? <Loader2 className="w-4 h-4 mr-1 animate-spin text-emerald-500" /> : <ArrowRightLeft className="w-4 h-4 mr-1 text-emerald-500" />}
             {t('pettyCash:entries.sync', 'Szinkronizálás')}
           </Button>
+          {registers.length > 1 && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowTransferDialog(true)}
+              disabled={!writable}
+              className="border-sky-500/30 hover:bg-sky-500/10 text-sky-600 dark:text-sky-400"
+            >
+              <ArrowRightLeft className="w-4 h-4 mr-1 text-sky-500" />
+              {t('pettyCash:entries.transfer', 'Pénztárközi átvezetés')}
+            </Button>
+          )}
           <Button size="sm" onClick={() => { setEditingEntry(null); setShowManualDialog(true); }} disabled={!writable} className="bg-primary hover:bg-primary/95 text-primary-foreground shadow-sm">
             <Plus className="w-4 h-4 mr-1" /> {t('pettyCash:entries.manual_entry', 'Manuális tétel')}
           </Button>
@@ -674,7 +700,7 @@ export default function EntriesTab() {
                           </div>
                         ) : (
                           <div className="flex items-center gap-1 justify-end">
-                            {entry.source_type === 'manual' && writable && (
+                            {(entry.source_type === 'manual' || entry.source_type === 'transfer') && writable && (
                               <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
                                 onClick={() => { setEditingEntry(entry); setShowManualDialog(true); }} title="Szerkesztés">
                                 <Edit2 className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
@@ -744,6 +770,15 @@ export default function EntriesTab() {
         entries={entries}
         registers={registers}
         registerMap={registerMap}
+      />
+
+      {/* Inter-register Transfer Dialog */}
+      <TransferDialog
+        open={showTransferDialog}
+        onOpenChange={setShowTransferDialog}
+        registers={registers}
+        companyId={companyId}
+        summary={summary}
       />
 
       {/* Move Entry Dialog */}
@@ -1078,7 +1113,7 @@ function ExpandedEntryRow({ entry, colSpan }: { entry: PettyCashEntry; colSpan: 
         <div className="max-w-2xl bg-card border border-border/40 p-4 rounded-lg shadow-sm space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
           <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             <ArrowRightLeft className="h-3.5 w-3.5 text-primary" />
-            Kapcsolódó bizonylat részletei ({sourceTable === 'invoices' ? 'Számla' : sourceTable === 'nav_invoices' ? 'NAV számla' : 'Banki tranzakció'})
+            Kapcsolódó bizonylat részletei ({sourceTable === 'invoices' ? 'Számla' : sourceTable === 'nav_invoices' ? 'NAV számla' : sourceTable === 'petty_cash_entries' ? 'Pénztárközi átvezetés ellenoldala' : 'Banki tranzakció'})
           </div>
 
           {isLoading ? (
@@ -1186,6 +1221,27 @@ function ExpandedEntryRow({ entry, colSpan }: { entry: PettyCashEntry; colSpan: 
                       <span className="ml-1 font-medium">{sourceData.partner_name}</span>
                     </div>
                   )}
+                </>
+              )}
+
+              {sourceTable === 'petty_cash_entries' && (
+                <>
+                  <div className="col-span-2">
+                    <span className="text-muted-foreground">Átvezetés ellenláb:</span>
+                    <span className="ml-1 font-medium text-sky-600 dark:text-sky-400">Pénztárközi átvezetés</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Összeg:</span>
+                    <span className="ml-1 font-mono font-medium">{fmtAmount(sourceData.amount, sourceData.currency || 'HUF')}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Dátum:</span>
+                    <span className="ml-1">{sourceData.entry_date ? format(new Date(sourceData.entry_date), 'yyyy. MM. dd.') : '-'}</span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-muted-foreground">Leírás:</span>
+                    <span className="ml-1 font-mono">{sourceData.description || '-'}</span>
+                  </div>
                 </>
               )}
             </div>
@@ -1423,10 +1479,17 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
   const deleteEntry = useMutation({
     mutationFn: async () => {
       if (!editingEntry) return;
-      const { error } = await supabase.from('petty_cash_entries')
-        .delete()
-        .eq('id', editingEntry.id);
-      if (error) throw error;
+      if (editingEntry.source_type === 'transfer') {
+        const { error } = await supabase.rpc('delete_petty_cash_transfer', {
+          p_entry_id: editingEntry.id,
+        });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('petty_cash_entries')
+          .delete()
+          .eq('id', editingEntry.id);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashEntries(companyId) });

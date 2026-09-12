@@ -29,7 +29,9 @@
     "narrative_prefix": "Opis: Računi:",
     "all_settled_title": "Svi računi su podmireni!",
     "all_settled_desc": "Nemate dospjelih ili neplaćenih računa za danas.",
-    "no_future_invoices": "Nema neplaćenih računa s budućim dospijećem."
+    "no_future_invoices": "Nema neplaćenih računa s budućim dospijećem.",
+    "manual_settle": "Ručno podmirenje",
+    "manual_settle_tooltip": "Evidentiraj plaćanje gotovinom / privatnim računom / blagajnom"
   },
   "calendar": {
     "title": "Rokovi plaćanja po kalendaru",

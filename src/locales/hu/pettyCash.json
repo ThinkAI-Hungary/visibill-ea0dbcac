@@ -88,6 +88,20 @@
     "cancel": "Mégse",
     "generate_pdf": "PDF Generálása"
   },
+  "transfer_dialog": {
+    "title": "Pénztárközi átvezetés",
+    "description": "Készpénz átvezetése két házipénztár között egyidejű kiadás és bevétel könyveléssel.",
+    "from_label": "Forrás (Kiadás)",
+    "to_label": "Cél (Bevétel)",
+    "date_label": "Átvezetés dátuma",
+    "currency_label": "Pénznem",
+    "amount_label": "Átvezetendő összeg",
+    "desc_label": "Megjegyzés / Bizonylat szám (opcionális)",
+    "submit_btn": "Átvezetés rögzítése",
+    "success_title": "Pénztárközi átvezetés rögzítve",
+    "success_desc": "{{amount}} sikeresen átvezetve ({{from}} ➔ {{to}})",
+    "error_title": "Hiba az átvezetés során"
+  },
   "entries": {
     "filter_register": "Pénztár",
     "all_registers": "Összes pénztár",
@@ -98,6 +112,7 @@
     "search_placeholder": "Keresés...",
     "cash_closing": "Pénztárzárás",
     "sync": "Szinkronizálás",
+    "transfer": "Pénztárközi átvezetés",
     "manual_entry": "Manuális tétel",
     "empty_period": "Nincs tétel a kiválasztott időszakban",
     "columns": {

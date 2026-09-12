@@ -88,6 +88,20 @@
     "cancel": "Odustani",
     "generate_pdf": "Generiraj PDF"
   },
+  "transfer_dialog": {
+    "title": "Prijenos između blagajni",
+    "description": "Prijenos gotovine između dvije blagajne uz istovremeno knjiženje isplate i uplate.",
+    "from_label": "Izvor (Isplata)",
+    "to_label": "Cilj (Uplata)",
+    "date_label": "Datum prijenosa",
+    "currency_label": "Valuta",
+    "amount_label": "Iznos za prijenos",
+    "desc_label": "Napomena / Broj dokumenta (neobavezno)",
+    "submit_btn": "Evidentiraj prijenos",
+    "success_title": "Prijenos između blagajni evidentiran",
+    "success_desc": "{{amount}} uspješno preneseno ({{from}} ➔ {{to}})",
+    "error_title": "Greška pri prijenosu"
+  },
   "entries": {
     "filter_register": "Blagajna",
     "all_registers": "Sve blagajne",
@@ -98,6 +112,7 @@
     "search_placeholder": "Pretraži...",
     "cash_closing": "Zaključak blagajne",
     "sync": "Sinkronizacija",
+    "transfer": "Prijenos između blagajni",
     "manual_entry": "Ručni unos",
     "empty_period": "Nema stavki u odabranom razdoblju",
     "columns": {
