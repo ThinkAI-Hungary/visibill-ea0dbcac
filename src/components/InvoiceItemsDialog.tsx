@@ -1009,10 +1009,33 @@ export function InvoiceItemsDialog({
     return rate;
   };
 
-  const getGrossAmount = (item: InvoiceLineItem) => {
-    if (item.gross_amount !== null) return item.gross_amount;
-    if (item.net_amount !== null && item.vat_amount !== null) {
-      return item.net_amount + item.vat_amount;
+  const getVatAmount = (item: InvoiceLineItem): number | null => {
+    if (item.vat_amount !== null && item.vat_amount !== undefined && item.vat_amount !== 0) {
+      return item.vat_amount;
+    }
+    // Fallback if missing or 0 but net_amount > 0 and numeric vat_rate > 0 (e.g. NAV utility invoices like MVM)
+    if ((item.vat_amount === null || item.vat_amount === 0 || item.vat_amount === undefined) &&
+        (item.gross_amount === null || item.gross_amount === 0 || item.gross_amount === undefined) &&
+        item.net_amount && item.net_amount > 0 && item.vat_rate) {
+      const num = parseFloat(item.vat_rate);
+      if (!isNaN(num) && num > 0) {
+        const rate = num >= 1 ? num / 100 : num;
+        return Math.round(item.net_amount * rate);
+      }
+    }
+    return item.vat_amount ?? null;
+  };
+
+  const getGrossAmount = (item: InvoiceLineItem): number | null => {
+    if (item.gross_amount !== null && item.gross_amount !== undefined && item.gross_amount !== 0) {
+      return item.gross_amount;
+    }
+    const computedVat = getVatAmount(item);
+    if (item.net_amount !== null && computedVat !== null) {
+      return item.net_amount + computedVat;
+    }
+    if (item.gross_amount !== null && item.gross_amount !== undefined) {
+      return item.gross_amount;
     }
     if (item.net_amount !== null) return item.net_amount;
     return null;
@@ -1020,7 +1043,7 @@ export function InvoiceItemsDialog({
 
   const totals = useMemo(() => ({
     net: items.reduce((sum, item) => sum + (item.net_amount || 0), 0),
-    vat: items.reduce((sum, item) => sum + (item.vat_amount || 0), 0),
+    vat: items.reduce((sum, item) => sum + (getVatAmount(item) || 0), 0),
     gross: items.reduce((sum, item) => sum + (getGrossAmount(item) || 0), 0),
   }), [items]);
 
@@ -1247,7 +1270,7 @@ export function InvoiceItemsDialog({
                           })()}
                         </TableCell>
                         <TableCell className="text-right font-mono">
-                          {formatAmount(item.vat_amount)}
+                          {formatAmount(getVatAmount(item))}
                         </TableCell>
                         {!isOutbound && (
                           <TableCell className="text-center">

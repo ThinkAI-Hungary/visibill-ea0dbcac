@@ -78,6 +78,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-038 | IMAP/SMTP Hitelesítő Adatok és Vault Integráció | ⛔ Superseded | [A-038](./A-038-imap-smtp-credentials-vault-integration.md) |
 | A-041 | Mailgun Webhook Concurrent Dedup — Háromrétegű Idempotency | ✅ Decided | [A-041](./A-041-mailgun-concurrent-dedup.md) |
 | A-052 | Multi-Profile IMAP/SMTP Levelező Fiókok és Vault Integráció | ✅ Decided | [A-052](./A-052-multi-profile-email-accounts-vault-integration.md) |
+| A-113 | NAV Számlatételek ÁFA és Bruttó Összeg Automatikus Kalkulációja (Közműszámlák) | ✅ Decided | [A-113](./A-113-nav-invoice-items-vat-gross-auto-calculation.md) |
 
 ## 🗄️ Adatbázis & Pénzügy
 

@@ -228,8 +228,22 @@ export function parseInvoiceDataXml(xmlResponse: string): InvoiceDetails {
       else vatRate = String(vatContent);
     }
 
-    if (isNaN(grossAmount) && !isNaN(netAmount) && !isNaN(vatAmount)) {
+    // If vatAmount and grossAmount are omitted by NAV Online Számla (e.g. MVM, utility invoices),
+    // calculate them from netAmount and numeric vatPercentage if available
+    if (isNaN(vatAmount) && isNaN(grossAmount) && !isNaN(netAmount) && netAmount > 0 && vatRate) {
+      const rateNum = parseFloat(vatRate);
+      if (!isNaN(rateNum) && rateNum > 0) {
+        const normalizedRate = rateNum >= 1 ? rateNum / 100 : rateNum;
+        vatAmount = Math.round(netAmount * normalizedRate);
+        grossAmount = netAmount + vatAmount;
+      } else if (!isNaN(rateNum) && rateNum === 0) {
+        vatAmount = 0;
+        grossAmount = netAmount;
+      }
+    } else if (isNaN(grossAmount) && !isNaN(netAmount) && !isNaN(vatAmount)) {
       grossAmount = netAmount + vatAmount;
+    } else if (isNaN(vatAmount) && !isNaN(grossAmount) && !isNaN(netAmount)) {
+      vatAmount = grossAmount - netAmount;
     }
 
     lineItems.push({
