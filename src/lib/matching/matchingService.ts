@@ -212,11 +212,22 @@ export async function fetchMatchedCourierReports(transactionId: string): Promise
   try {
     const { data, error } = await supabase
       .from('courier_reports')
-      .select('id, report_type, package_number, reference_number, delivery_date, cod_amount, recipient_name, match_status, match_confidence')
+      .select('id, report_type, package_number, reference_number, delivery_date, cod_amount, recipient_name, match_status, match_confidence, row_type, matched_nav_invoice_id, nav_invoices(invoice_number)')
       .eq('matched_transaction_id', transactionId);
 
-    if (error) throw error;
-    return data || [];
+    if (error) {
+      const { data: fallbackData, error: fallbackErr } = await supabase
+        .from('courier_reports')
+        .select('id, report_type, package_number, reference_number, delivery_date, cod_amount, recipient_name, match_status, match_confidence, row_type, matched_nav_invoice_id')
+        .eq('matched_transaction_id', transactionId);
+      if (fallbackErr) throw fallbackErr;
+      return fallbackData || [];
+    }
+
+    return (data || []).map((row: any) => ({
+      ...row,
+      invoice_number: row.nav_invoices?.invoice_number || null,
+    }));
   } catch (error) {
     reportError({
       type: 'db_query',
@@ -647,4 +658,48 @@ export async function unbookTransactionDirect(params: {
     .eq('id', params.transactionId);
 
   if (error) throw error;
+}
+
+/**
+ * Links all courier report invoices to a transaction as multi-matches.
+ */
+export async function batchLinkCourierInvoices(
+  transactionId: string,
+  invoiceIds: string[]
+): Promise<void> {
+  if (!transactionId || !invoiceIds || invoiceIds.length === 0) return;
+
+  // 1. Insert into transaction_invoice_matches
+  const records = invoiceIds.map(id => ({
+    transaction_id: transactionId,
+    invoice_id: id,
+    invoice_source: 'nav',
+    created_by: 'courier_auto',
+  }));
+
+  const { error: matchErr } = await supabase
+    .from('transaction_invoice_matches')
+    .upsert(records, { onConflict: 'transaction_id,invoice_id' });
+
+  if (matchErr) throw matchErr;
+
+  // 2. Update nav_invoices to paid = true, transaction_id = transactionId
+  const { error: invErr } = await supabase
+    .from('nav_invoices')
+    .update({ paid: true, transaction_id: transactionId })
+    .in('id', invoiceIds);
+
+  if (invErr) throw invErr;
+
+  // 3. Mark transaction as verified multi-match
+  const { error: txErr } = await supabase
+    .from('transactions')
+    .update({
+      is_verified: true,
+      match_type: 'multi_invoice_number',
+      confidence_score: 1.0,
+    })
+    .eq('id', transactionId);
+
+  if (txErr) throw txErr;
 }

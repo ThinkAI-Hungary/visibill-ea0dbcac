@@ -56,6 +56,9 @@ export interface MatchedCourierReport {
   recipient_name: string | null;
   match_status: string;
   match_confidence: number | null;
+  row_type?: string | null;
+  matched_nav_invoice_id?: string | null;
+  invoice_number?: string | null;
 }
 
 export interface AvailableInvoice {

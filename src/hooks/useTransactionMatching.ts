@@ -17,6 +17,7 @@ import {
   removeExtraMatch,
   bookTransactionDirect,
   unbookTransactionDirect,
+  batchLinkCourierInvoices,
 } from '@/lib/matching/matchingService';
 import { invalidateMatchingQueries, MATCHING_QUERY_KEYS } from '@/lib/matching/matchingKeys';
 import { filterAndSortInvoiceCandidates } from '@/lib/matching/candidateFinder';
@@ -375,6 +376,23 @@ export function useTransactionMatching({
     },
   });
 
+  // Batch Link Courier Invoices Mutation
+  const batchLinkCourierMutation = useMutation({
+    mutationFn: async (invoiceIds: string[]) => {
+      await batchLinkCourierInvoices(transactionId!, invoiceIds);
+    },
+    onSuccess: async () => {
+      toast({ title: 'Futár tételek sikeresen összerendelve a tranzakcióval!' });
+      await invalidateMatchingQueries(queryClient, companyId);
+      queryClient.invalidateQueries({ queryKey: ['transaction-extra-matches', transactionId] });
+      queryClient.invalidateQueries({ queryKey: ['matched-courier-reports', transactionId] });
+      onUpdate?.();
+    },
+    onError: () => {
+      toast({ title: 'Hiba a futár tételek összerendelésekor', variant: 'destructive' });
+    },
+  });
+
   const isSaving =
     matchMutation.isPending ||
     unmatchMutation.isPending ||
@@ -385,7 +403,8 @@ export function useTransactionMatching({
     addExtraMatchMutation.isPending ||
     removeExtraMatchMutation.isPending ||
     bookGlMutation.isPending ||
-    unbookGlMutation.isPending;
+    unbookGlMutation.isPending ||
+    batchLinkCourierMutation.isPending;
 
   return {
     // Entities
@@ -431,5 +450,6 @@ export function useTransactionMatching({
       presetId: string;
       originalGlAccountId?: string | null;
     }) => unbookGlMutation.mutate(payload),
+    handleBatchLinkCourierInvoices: (invoiceIds: string[]) => batchLinkCourierMutation.mutate(invoiceIds),
   };
 }

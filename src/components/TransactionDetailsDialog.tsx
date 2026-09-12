@@ -86,6 +86,10 @@ export const TransactionDetailsDialog = ({
             {/* Matched Courier Reports */}
             <MatchedCourierReportsCard
               courierReports={matching.matchedCourierReports}
+              extraMatches={matching.extraMatches}
+              matchedInvoiceId={transaction.matched_invoice_id}
+              onLinkCourierInvoices={matching.handleBatchLinkCourierInvoices}
+              isSaving={matching.isSaving}
             />
 
             {/* Matched Entity (Invoice / NAV / Salary) */}
