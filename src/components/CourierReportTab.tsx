@@ -331,6 +331,7 @@ function CourierInvoiceDialog({
   };
 
   if (!report) return null;
+  const isCompensation = report.row_type === 'compensation' || (!!report.match_reason && report.match_reason.toLowerCase().includes('kompenzáció'));
   const statusCfg = STATUS_CONFIG[report.match_status] || STATUS_CONFIG.unmatched;
   const codAmount = Math.abs(report.cod_amount ?? 0);
 
@@ -340,29 +341,45 @@ function CourierInvoiceDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Eye className="h-5 w-5" />
-            Riport sor részletei
+            {isCompensation ? 'Kompenzációs értesítő részletei' : 'Riport sor részletei'}
           </DialogTitle>
           <DialogDescription>
-            Csomagszám: {report.package_number || '-'} — {formatDate(report.delivery_date)}
+            {isCompensation ? `Számlaszám: ${report.package_number || '-'}` : `Csomagszám: ${report.package_number || '-'}`} — {formatDate(report.delivery_date)}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 mt-2">
+          {isCompensation && details.navInvoice && (
+            <div className="rounded-lg bg-purple-500/10 border border-purple-500/30 p-3 text-xs text-purple-900 dark:text-purple-200 flex items-start gap-2.5">
+              <Info className="h-4 w-4 shrink-0 mt-0.5 text-purple-600 dark:text-purple-400" />
+              <div className="space-y-1 leading-relaxed">
+                <p className="font-semibold text-purple-950 dark:text-purple-100">
+                  GLS Utánvét-kompenzáció (Beszámítás)
+                </p>
+                <p>
+                  A futárcég a beszedett utánvétekből kompenzálta ezt a kiállított fuvardíjszámlát ({details.navInvoice.invoice_number}, {formatAmount(details.navInvoice.invoice_gross_amount, details.navInvoice.currency)}). A számla a számlalistában automatikusan kiegyenlítettként szerepel.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Report row info */}
           <div className="rounded-lg border p-3 space-y-2">
             <div className="flex items-center gap-2 mb-2">
               <FileText className="h-4 w-4 text-muted-foreground" />
-              <h4 className="font-semibold text-sm">Riport adatok</h4>
+              <h4 className="font-semibold text-sm">
+                {isCompensation ? 'Kompenzációs értesítő adatai' : 'Riport adatok'}
+              </h4>
               <Badge variant="outline" className={cn('text-xs ml-auto', statusCfg.color)}>
                 {statusCfg.label}
               </Badge>
             </div>
             <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
-              <div className="text-muted-foreground">Címzett</div>
+              <div className="text-muted-foreground">{isCompensation ? 'Érintett cég' : 'Címzett'}</div>
               <div className="font-medium">{report.recipient_name || '-'}</div>
-              <div className="text-muted-foreground">Hivatkozás</div>
-              <div className="font-mono text-xs">{report.reference_number || '-'}</div>
-              <div className="text-muted-foreground">Utánvét összeg</div>
+              <div className="text-muted-foreground">{isCompensation ? 'Kompenzált számla' : 'Hivatkozás'}</div>
+              <div className="font-mono text-xs font-semibold">{report.package_number || report.reference_number || '-'}</div>
+              <div className="text-muted-foreground">{isCompensation ? 'Kompenzációs keretösszeg' : 'Utánvét összeg'}</div>
               <div className="font-semibold">{formatAmount(report.cod_amount)}</div>
             </div>
             {/* AI match reason */}
@@ -1007,7 +1024,7 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                       )}
                     </span>
                   </th>
-                  <th className="px-3 py-2 text-left font-medium">Csomagszám</th>
+                  <th className="px-3 py-2 text-left font-medium">Csomagszám / Bizonylat</th>
                   <th className="px-3 py-2 text-left font-medium">Hivatkozás</th>
                   <th className="px-3 py-2 text-right font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('cod_amount')}>
                     <span className="inline-flex items-center justify-end gap-1 w-full">
@@ -1019,7 +1036,7 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                       )}
                     </span>
                   </th>
-                  <th className="px-3 py-2 text-left font-medium">Címzett</th>
+                  <th className="px-3 py-2 text-left font-medium">Címzett / Partner</th>
                   <th className="px-3 py-2 text-center font-medium">Tranzakció</th>
                   <th className="px-3 py-2 text-center font-medium">NAV Számla</th>
                   <th className="px-3 py-2 text-center font-medium">Státusz</th>
@@ -1046,6 +1063,7 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                 ) : (
                   filteredReports.map(row => {
                     const isTotal = row.row_type === 'total' || row.match_status === 'total';
+                    const isCompensation = row.row_type === 'compensation' || (!!row.match_reason && row.match_reason.toLowerCase().includes('kompenzáció'));
                     const statusCfg = STATUS_CONFIG[row.match_status] || STATUS_CONFIG.unmatched;
                     const StatusIcon = statusCfg.icon;
                     return (
@@ -1053,7 +1071,8 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                         key={row.id}
                         className={cn(
                           'border-b hover:bg-muted/30 transition-colors',
-                          isTotal ? 'bg-blue-50/50 dark:bg-blue-950/20 font-bold' : statusCfg.rowBg,
+                          isTotal ? 'bg-blue-50/50 dark:bg-blue-950/20 font-bold' : 
+                          isCompensation ? 'bg-purple-50/35 dark:bg-purple-950/20' : statusCfg.rowBg,
                         )}
                       >
                       <td className="px-2 py-2 text-center">
@@ -1063,15 +1082,60 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                             />
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap">{formatDate(row.delivery_date)}</td>
-                        <td className="px-3 py-2 font-mono text-xs">{row.package_number || '-'}</td>
+                        <td className="px-3 py-2">
+                          {isCompensation ? (
+                            <div className="flex flex-col gap-1 items-start">
+                              <Badge 
+                                variant="outline" 
+                                className="text-[10px] px-1.5 py-0 h-4 bg-purple-100/90 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300 border-purple-300 dark:border-purple-700 font-medium"
+                              >
+                                Kompenzáció
+                              </Badge>
+                              <span className="font-mono text-xs font-semibold text-foreground flex items-center gap-1" title="Kompenzált számlaszám">
+                                <FileText className="h-3 w-3 text-purple-600 dark:text-purple-400 shrink-0" />
+                                {row.package_number || '-'}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="font-mono text-xs">{row.package_number || '-'}</span>
+                          )}
+                        </td>
                         <td className="px-3 py-2 font-mono text-xs max-w-[180px] truncate" title={row.reference_number || ''}>
-                          {row.reference_number || '-'}
+                          {isCompensation && (!row.reference_number || row.reference_number === row.package_number) ? (
+                            <span className="text-muted-foreground text-[11px] italic">Beszámított számla</span>
+                          ) : (
+                            row.reference_number || '-'
+                          )}
                         </td>
                         <td className="px-3 py-2 text-right font-medium whitespace-nowrap">
-                          {formatAmount(row.cod_amount)}
+                          {isCompensation && row.matched_nav_invoice?.invoice_gross_amount ? (
+                            <div className="flex flex-col items-end">
+                              <span className="text-sm font-semibold text-foreground">
+                                {formatAmount(row.matched_nav_invoice.invoice_gross_amount, row.matched_nav_invoice.currency || 'HUF')}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground" title={`A futárcég által beszedett ${formatAmount(row.cod_amount)} utánvét-keretből beszámítva`}>
+                                keretből: {formatAmount(row.cod_amount)}
+                              </span>
+                            </div>
+                          ) : (
+                            formatAmount(row.cod_amount)
+                          )}
                         </td>
-                        <td className="px-3 py-2 max-w-[200px] truncate" title={row.recipient_address || ''}>
-                          {isTotal ? <span className="text-blue-600 font-bold">Összesítő (Total COD)</span> : (row.recipient_name || row.recipient_address || '-')}
+                        <td className="px-3 py-2 max-w-[200px] truncate" title={row.recipient_address || row.recipient_name || ''}>
+                          {isTotal ? (
+                            <span className="text-blue-600 font-bold">Összesítő (Total COD)</span>
+                          ) : isCompensation ? (
+                            <div className="flex flex-col">
+                              <span className="text-xs font-medium truncate">
+                                {row.matched_nav_invoice?.supplier_name || 'GLS General Logistics'}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground truncate">
+                                {row.recipient_name ? `Beszámítás: ${row.recipient_name}` : 'Beszámítás (Kompenzálás)'}
+                              </span>
+                            </div>
+                          ) : (
+                            row.recipient_name || row.recipient_address || '-'
+                          )}
                         </td>
                         <td className="px-3 py-2 text-center">
                           {row.matched_transaction_id ? (

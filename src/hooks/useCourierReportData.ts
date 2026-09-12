@@ -27,6 +27,13 @@ export interface CourierReport {
   row_type: string | null;
   raw_data: Record<string, unknown> | null;
   created_at: string;
+  matched_nav_invoice?: {
+    id: string;
+    invoice_number: string;
+    invoice_gross_amount: number | null;
+    supplier_name: string | null;
+    currency: string | null;
+  } | null;
 }
 
 export interface CourierReportFilters {
@@ -81,7 +88,7 @@ export function useCourierReportData(
 
       let query = supabase
         .from('courier_reports')
-        .select('*', { count: 'exact' })
+        .select('*, matched_nav_invoice:nav_invoices(id, invoice_number, invoice_gross_amount, supplier_name, currency)', { count: 'exact' })
         .eq('company_id', selectedCompany!.id)
         .eq('report_type', reportType)
         .neq('row_type', 'total')
