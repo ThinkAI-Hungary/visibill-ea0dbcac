@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Info } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils';
@@ -9,10 +9,12 @@ import type { MatchedCourierReport } from './types';
 
 interface MatchedCourierReportsSectionProps {
   courierReports: MatchedCourierReport[];
+  isInvoiceSettled?: boolean;
 }
 
 export function MatchedCourierReportsSection({
   courierReports,
+  isInvoiceSettled = false,
 }: MatchedCourierReportsSectionProps) {
   if (!courierReports || courierReports.length === 0) return null;
 
@@ -31,10 +33,28 @@ export function MatchedCourierReportsSection({
                 </Badge>
                 Futárjelentés tétel
               </span>
-              <Badge variant="success" className="gap-1 text-[10px] h-5">
-                <CheckCircle2 className="h-2.5 w-2.5" />
-                Párosított
-              </Badge>
+              {isInvoiceSettled ? (
+                <Badge variant="success" className="gap-1 text-[10px] h-5">
+                  <CheckCircle2 className="h-2.5 w-2.5" />
+                  Csomag párosítva · Kiegyenlítve
+                </Badge>
+              ) : (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <Badge
+                    variant="outline"
+                    className="gap-1 text-[10px] h-5 border-emerald-500/40 text-emerald-600 bg-emerald-500/10"
+                  >
+                    <CheckCircle2 className="h-2.5 w-2.5" />
+                    Csomag párosítva
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className="text-[9px] h-5 border-amber-500/40 text-amber-600 bg-amber-500/10 font-normal"
+                  >
+                    Banki jóváírásra vár
+                  </Badge>
+                </div>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-3 pt-0">
@@ -65,6 +85,14 @@ export function MatchedCourierReportsSection({
                 <div className="col-span-2">
                   <span className="text-muted-foreground">Hivatkozási szám:</span>
                   <span className="ml-1 font-mono">{cr.reference_number}</span>
+                </div>
+              )}
+              {!isInvoiceSettled && (
+                <div className="col-span-2 mt-1 pt-1.5 border-t border-border/40 flex items-start gap-1.5 text-[11px] text-muted-foreground">
+                  <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-amber-500" />
+                  <span>
+                    A csomagtétel a számlához van rendelve. A számla kifizetettségéhez a futárcég banki jóváírása (vagy a fenti <strong>„Kézi fizetés”</strong> gomb) szükséges.
+                  </span>
                 </div>
               )}
             </div>

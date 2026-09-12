@@ -248,6 +248,14 @@ export function ExpandedInvoiceRow({
     matchedCourierReports.length > 0 ||
     hasBrokenChain;
 
+  const isInvoiceSettled =
+    !!isManualPayment ||
+    !!transactionId ||
+    effectiveMatchedTransactions.length > 0 ||
+    statusz === 'Fizetve' ||
+    statusz === 'paid' ||
+    navStatus === 'paid';
+
   return (
     <>
       {/* Top spacer row */}
@@ -571,7 +579,10 @@ export function ExpandedInvoiceRow({
                       matchedCourierReports.length > 0 && <Separator className="my-1" />}
 
                     {/* Matched Courier Reports */}
-                    <MatchedCourierReportsSection courierReports={matchedCourierReports} />
+                    <MatchedCourierReportsSection
+                      courierReports={matchedCourierReports}
+                      isInvoiceSettled={isInvoiceSettled}
+                    />
                   </div>
 
                   {/* Section: Notes */}

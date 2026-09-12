@@ -106,6 +106,28 @@ describe('Expanded Invoice Row Subcomponents', () => {
       expect(screen.getByText('GLS')).toBeDefined();
       expect(screen.getByText('PKG-123456')).toBeDefined();
       expect(screen.getByText('Teszt Vevő')).toBeDefined();
+      expect(screen.getByText(/Csomag párosítva/i)).toBeDefined();
+      expect(screen.getByText(/Banki jóváírásra vár/i)).toBeDefined();
+    });
+
+    it('renders settled badge when isInvoiceSettled is true', () => {
+      const mockReports = [
+        {
+          id: 'cr-2',
+          report_type: 'GLS',
+          package_number: 'PKG-789012',
+          reference_number: 'REF-888',
+          delivery_date: '2026-02-02',
+          cod_amount: 22000,
+          recipient_name: 'Fizetett Vevő',
+          matched_nav_invoice_id: null,
+          matched_transaction_id: null,
+        },
+      ];
+
+      render(<MatchedCourierReportsSection courierReports={mockReports} isInvoiceSettled={true} />);
+      expect(screen.getByText(/Csomag párosítva · Kiegyenlítve/i)).toBeDefined();
     });
   });
 });
+

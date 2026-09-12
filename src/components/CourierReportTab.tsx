@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { RefreshCw, Search, X, CheckCircle2, AlertCircle, MinusCircle, Eye, FileText, Landmark, RotateCcw, Link2, Check, Sparkles, CalendarDays, ArrowUpDown, ArrowUp, ArrowDown, Trash2, TrendingUp, Loader2 } from 'lucide-react';
+import { RefreshCw, Search, X, CheckCircle2, AlertCircle, MinusCircle, Eye, FileText, Landmark, RotateCcw, Link2, Check, Sparkles, CalendarDays, ArrowUpDown, ArrowUp, ArrowDown, Trash2, TrendingUp, Loader2, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
@@ -392,6 +392,37 @@ function CourierInvoiceDialog({
             )}
           </div>
 
+          {/* Status explanation notice for partial matches */}
+          {report.match_status === 'partial_nav' && (
+            <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 p-3 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2.5">
+              <Info className="h-4 w-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+              <div className="space-y-1 leading-relaxed">
+                <p className="font-semibold text-amber-900 dark:text-amber-200">
+                  NAV számla párosítva · Banki tranzakcióra vár
+                </p>
+                <p>
+                  A csomag sikeresen össze van kötve a kiállított NAV számlával. A tétel teljes (zöld) státuszához a futárcég banki gyűjtőjóváírása szükséges.
+                </p>
+                <p className="text-[11px] opacity-90">
+                  Tipp: Ha a számlát banki kivonattól függetlenül szeretnéd lezárni, a Számlák menüpontban a számlát lenyitva a <strong>„Kézi fizetés”</strong> gombbal rögzítheted a kiegyenlítést.
+                </p>
+              </div>
+            </div>
+          )}
+          {report.match_status === 'partial_trx' && (
+            <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 p-3 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2.5">
+              <Info className="h-4 w-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+              <div className="space-y-1 leading-relaxed">
+                <p className="font-semibold text-amber-900 dark:text-amber-200">
+                  Banki tranzakció párosítva · NAV számlára vár
+                </p>
+                <p>
+                  A banki utalás párosítva van a csomaghoz. A teljes (zöld) lezáráshoz válaszd ki a hozzá tartozó kiállított NAV számlát a <strong>„Számla párosítása”</strong> gombra kattintva.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Matched transaction */}
           <div className="rounded-lg border p-3 space-y-2">
             <div className="flex items-center gap-2 mb-2">
@@ -607,7 +638,7 @@ function CourierInvoiceDialog({
                     onClick={() => { fetchAvailableInvoices(); setShowManualMatch(true); }}
                   >
                     <Link2 className="h-3.5 w-3.5 mr-1.5" />
-                    {report.matched_nav_invoice_id ? 'Másik számla' : 'Manuális párosítás'}
+                    {report.matched_nav_invoice_id ? 'Másik számla választása' : 'Számla párosítása'}
                   </Button>
                 )}
                 <Button
@@ -1075,10 +1106,10 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                                   onClick={() => handleOpenDetails(row)}
                                 >
                                   <Eye className="h-3 w-3 mr-1" />
-                                  Számlák
+                                  Részletek
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent>Párosított számlák és tranzakciók</TooltipContent>
+                              <TooltipContent>Párosított számlák és tranzakciók megtekintése, szerkesztése</TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         </td>
