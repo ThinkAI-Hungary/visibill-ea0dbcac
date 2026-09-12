@@ -30,6 +30,8 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { reportError } from '@/lib/errorReporter';
 import { fetchAllGlCategorizedItems, fetchAllGlAccountsByPreset } from '@/lib/glData';
+import { getLocalizedPnlRowName } from '@/lib/pnlUtils';
+import { getActiveLocale } from '@/lib/locale/formatters';
 import PnlChart from '@/components/pnl/PnlChart'; // F9
 import { PnlSankeyChart } from '@/components/pnl/PnlSankeyChart';
 import { PnlAiAssistant } from '@/components/pnl/PnlAiAssistant';
@@ -37,7 +39,13 @@ import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
-export const renderYoYBadge = (curr: number, prev: number, inThousands: boolean, textClass: string = "text-[9px]", t?: (key: string, def?: string) => string) => {
+export const renderYoYBadge = (
+  curr: number,
+  prev: number,
+  inThousands: boolean,
+  textClass: string = "text-[9px]",
+  t?: (key: any, ...args: any[]) => any
+) => {
   // Use the actual values displayed on screen (rounded to integer in thousands, or kept as raw integers)
   const displayCurr = inThousands ? Math.round(curr / 1000) : Math.round(curr);
   const displayPrev = inThousands ? Math.round(prev / 1000) : Math.round(prev);
@@ -477,7 +485,7 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
                         <SelectItem value="none" className="text-muted-foreground italic">{t('accounting:profit_and_loss.mapping_tab.unassigned', 'Nincs besorolva')}</SelectItem>
                         {assignableRows.map(row => (
                           <SelectItem key={row.id} value={row.id}>
-                            {row.row_code} {row.name}
+                            {row.row_code} {getLocalizedPnlRowName(row.row_code, row.name, t)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -543,7 +551,7 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
                     <td className="py-2.5 px-2 font-mono font-semibold">{s.gl_number}</td>
                     <td className="py-2.5 px-2 font-medium" title={s.short_name}>{s.short_name}</td>
                     <td className="py-2.5 px-2 text-indigo-600 dark:text-indigo-400 font-semibold" title={s.pnl_row_name}>
-                      {s.pnl_row_code} {s.pnl_row_name}
+                      {s.pnl_row_code} {getLocalizedPnlRowName(s.pnl_row_code, s.pnl_row_name, t)}
                     </td>
                     <td className="py-2.5 px-2 text-[10px] text-muted-foreground">{s.reasoning}</td>
                   </tr>
@@ -656,7 +664,8 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
         const nextMonth = new Date(current.getFullYear(), current.getMonth() + 1, 1);
         const periodEnd = new Date(Math.min(end.getTime(), nextMonth.getTime() - 86400000));
         
-        const monthLabel = periodStart.toLocaleDateString('hu-HU', { year: 'numeric', month: 'short' });
+        const localeCode = getActiveLocale() === 'hr' ? 'hr-HR' : 'hu-HU';
+        const monthLabel = periodStart.toLocaleDateString(localeCode, { year: 'numeric', month: 'short' });
         periods.push({
           label: monthLabel,
           start: periodStart.toISOString().substring(0, 10),
@@ -770,7 +779,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
   const formatValue = (val: number) => {
     const finalVal = inThousands ? Math.round(val / 1000) : val;
     if (finalVal === 0) return '0';
-    return new Intl.NumberFormat('hu-HU').format(finalVal);
+    return new Intl.NumberFormat(getActiveLocale() === 'hr' ? 'hr-HR' : 'hu-HU').format(finalVal);
   };
 
   // Calculate totals
@@ -839,10 +848,11 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
 
       // F10: Previous year value from frozen data
       const previousYear = prevYearMap[row.row_code] || 0;
+      const localizedName = getLocalizedPnlRowName(row.row_code, row.name, t);
 
-      return { ...row, displayBalance, previousYear };
+      return { ...row, name: localizedName, displayBalance, previousYear };
     });
-  }, [pnlData, prevYearMap, revenueScale, materialScale, personnelScale, otherScale]);
+  }, [pnlData, prevYearMap, revenueScale, materialScale, personnelScale, otherScale, t]);
 
   if (isLoading) {
     return <FinancialPageSkeleton title={t('accounting:profit_and_loss.loading', 'Eredménykimutatás betöltése...')} />;
@@ -1338,7 +1348,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                                                     <p className="truncate text-foreground"><span className="text-muted-foreground">{t('accounting:profit_and_loss.table.serial_number', 'Sorszám')}:</span> {item.description}</p>
                                                     <p className="text-foreground"><span className="text-muted-foreground">{t('common:labels.date', 'Dátum')}:</span> {item.item_date?.substring(0, 10).replace(/-/g, '.')}</p>
                                                     <p className="font-semibold text-right text-foreground mt-1">
-                                                      {t('accounting:profit_and_loss.table.net', 'Nettó')}: {new Intl.NumberFormat('hu-HU').format(Math.abs(item.amount))} {item.original_currency || 'HUF'}
+                                                      {t('accounting:profit_and_loss.table.net', 'Nettó')}: {new Intl.NumberFormat(getActiveLocale() === 'hr' ? 'hr-HR' : 'hu-HU').format(Math.abs(item.amount))} {item.original_currency || 'HUF'}
                                                     </p>
                                                   </div>
                                                 </div>

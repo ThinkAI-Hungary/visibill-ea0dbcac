@@ -210,3 +210,24 @@ export function extractAccountyPageSegment(pathname: string): string {
   }
   return pathname;
 }
+
+/**
+ * Resolves the destination path after authentication, preserving the /hr route
+ * if the user signed in from /hr/auth or has Croatian locale active.
+ */
+export function resolveAuthTarget(
+  returnTo: string | null | undefined,
+  isEaisybooks: boolean = false,
+  isHr: boolean = false,
+): string {
+  if (returnTo && returnTo !== '/' && returnTo !== '/hr') {
+    if (isHr && !returnTo.startsWith('/hr') && !returnTo.startsWith('http')) {
+      return `/hr${returnTo.startsWith('/') ? returnTo : `/${returnTo}`}`;
+    }
+    return returnTo;
+  }
+  if (isEaisybooks) {
+    return isHr ? '/hr/eaisybooks' : '/eaisybooks';
+  }
+  return isHr ? '/hr' : '/';
+}

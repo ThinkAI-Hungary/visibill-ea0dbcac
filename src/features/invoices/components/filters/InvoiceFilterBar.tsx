@@ -291,9 +291,7 @@ export function InvoiceFilterBar() {
               ? t('invoices:filters.payment_method', { defaultValue: 'Fiz. mód' })
               : filters.paymentMethod === 'none'
                 ? t('invoices:filters.not_specified', { defaultValue: 'Nem megadott' })
-                : isSubmittedTab
-                  ? filters.paymentMethod
-                  : getPaymentMethodLabel(filters.paymentMethod)}
+                : getPaymentMethodLabel(filters.paymentMethod)}
           </span>
         </SelectTrigger>
         <SelectContent>
@@ -301,19 +299,19 @@ export function InvoiceFilterBar() {
           <SelectItem value="none">{t('invoices:filters.not_specified', { defaultValue: 'Nem megadott' })}</SelectItem>
           {isSubmittedTab ? (
             <>
-              <SelectItem value="Átutalás">Átutalás</SelectItem>
-              <SelectItem value="Készpénz">Készpénz</SelectItem>
-              <SelectItem value="Bankkártya">Bankkártya</SelectItem>
-              <SelectItem value="Utalvány">Utalvány</SelectItem>
-              <SelectItem value="Egyéb">Egyéb</SelectItem>
+              <SelectItem value="Átutalás">{getPaymentMethodLabel('Átutalás')}</SelectItem>
+              <SelectItem value="Készpénz">{getPaymentMethodLabel('Készpénz')}</SelectItem>
+              <SelectItem value="Bankkártya">{getPaymentMethodLabel('Bankkártya')}</SelectItem>
+              <SelectItem value="Utalvány">{getPaymentMethodLabel('Utalvány')}</SelectItem>
+              <SelectItem value="Egyéb">{getPaymentMethodLabel('Egyéb')}</SelectItem>
             </>
           ) : (
             <>
-              <SelectItem value="TRANSFER">Átutalás</SelectItem>
-              <SelectItem value="CASH">Készpénz</SelectItem>
-              <SelectItem value="CARD">Bankkártya</SelectItem>
-              <SelectItem value="VOUCHER">Utalvány</SelectItem>
-              <SelectItem value="OTHER">Egyéb</SelectItem>
+              <SelectItem value="TRANSFER">{getPaymentMethodLabel('TRANSFER')}</SelectItem>
+              <SelectItem value="CASH">{getPaymentMethodLabel('CASH')}</SelectItem>
+              <SelectItem value="CARD">{getPaymentMethodLabel('CARD')}</SelectItem>
+              <SelectItem value="VOUCHER">{getPaymentMethodLabel('VOUCHER')}</SelectItem>
+              <SelectItem value="OTHER">{getPaymentMethodLabel('OTHER')}</SelectItem>
             </>
           )}
         </SelectContent>

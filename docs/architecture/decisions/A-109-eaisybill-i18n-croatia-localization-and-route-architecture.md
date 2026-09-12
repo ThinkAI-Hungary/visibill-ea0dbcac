@@ -59,9 +59,15 @@ A nyelvi állapotot 100%-ban az URL útvonala határozza meg, kizárva a böngé
   - Lokalizált komponensek: Mérleg-hinta widget (egyensúly és eltérés állapotok, összegzők), Egyezőségi Diagnosztika (besorolatlan számlák dinamikus riasztása, diagnosztikai jelentés dialógus), Likviditási Mutatók (arányok, minősítési skálák, célértékek), nézetvezérlő eszköztár (hivatalos nézet, nullás sorok, hagyományos nézet, deviza konszolidáció, export menü), táblázatfejlécek és hozzárendelés (mapping) fül.
 - **Éves Beszámoló Varázsló (`AnnualReportContainer.tsx`, `Step1Alapadatok.tsx`, `Step2Adatimport.tsx`, `Step3Validacio.tsx`):**
   - Az `accounting:annual_report.*` névtérbe kerültek a lépéskapszulák (1–6. lépés címek és leírások), az előrehaladás-számláló, az 1. lépés cég- és képviselő űrlapjai, a 2. lépés dinamikus zárási dátumú adatbefagyasztó felülete és befagyasztott pénzügyi kártyái, valamint a 3. lépés validációs őrszem vezérlői.
+- **Autentikáció & Útvonal Megőrzés (`resolveAuthTarget`, `Auth.tsx`, `AuthCallback.tsx`, `redirects.tsx`, `ProtectedLayout.tsx`):**
+  - A `/hr/auth` bejelentkezés után a felhasználó megőrzi a `/hr` útvonalat a `resolveAuthTarget` segédfüggvényen keresztül, amely biztosítja, hogy mind az alapértelmezett, mind a scoped útvonalak (`returnTo`) megkapják a `/hr` előtagot horvát nyelvű munkamenetben.
+  - A Google OAuth visszatérési útvonala dinamikusan `/hr/auth/callback`-ra irányul horvát nyelv esetén.
+- **Moduláris Segédfüggvények & Teljes Körű Lokalizáció (Batches 1–7):**
+  - Létrehoztuk a funkcionálisan izolált lokalizációs segédfüggvényeket: `journalUtils.ts` (Dnevnici knjiženja), `bsUtils.ts` (Bilanca stanja), `pnlUtils.ts` (Račun dobiti i gubitka), `glUtils.ts` (Izvadak glavne knjige), `pettyCashUtils.ts` (Blagajna), `transactionUtils.ts` (Bankovne transakcije).
+  - 100%-os kétirányú kulcsparitás biztosított minden névtérben (`accounting`, `hr`, `invoices`, `pettyCash`, `settings`, `transactions`, `upload`).
 - **Automatizált Kulcsparitás és Regresszióvédelem (`src/test/i18n.test.ts`):**
   - Vitest tesztcsomag bővítve: rekurzív `findMissingKeys` motor ellenőrzi a `hu` és `hr` szótárak közötti 100%-os mélységi egyezést minden névtérre.
-  - Dedikált regressziós tesztek futnak az `accounting:balance_sheet` és `accounting:annual_report` kulcsaira, meggátolva a fordítási kulcsok elcsúszását vagy hiányát a jövőbeli fejlesztések során.
+  - Dedikált regressziós tesztek futnak az `accounting:balance_sheet`, `accounting:annual_report`, `journalUtils`, `bsUtils`, `glUtils`, `pnlUtils`, `pettyCashUtils`, `transactionUtils` és `resolveAuthTarget` logikákra, meggátolva a fordítási kulcsok és útvonalak elcsúszását vagy hiányát a jövőbeli fejlesztések során.
 
 ---
 

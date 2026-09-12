@@ -531,5 +531,21 @@
     "service_period": "Szolg. időszak:",
     "accountant_reviewed_tooltip": "Kikontírozott / Könyvelve jelölés",
     "select_placeholder": "Válassz..."
+  },
+  "nav_sync": {
+    "sync": "Szinkronizálás",
+    "syncing": "Szinkronizálás...",
+    "wait_cooldown": "Várj {{time}}",
+    "no_credentials": "Állítsd be a NAV integrációt az Integrációk oldalon",
+    "cooldown": "Legközelebb {{time}} múlva szinkronizálhatsz",
+    "sync_tooltip": "NAV számlák szinkronizálása"
+  },
+  "payment_methods": {
+    "transfer": "Átutalás",
+    "cash": "Készpénz",
+    "card": "Bankkártya",
+    "voucher": "Utalvány",
+    "other": "Egyéb",
+    "not_specified": "Nem megadott"
   }
 }

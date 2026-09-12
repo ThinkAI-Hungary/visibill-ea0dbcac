@@ -29,7 +29,7 @@ export function UploadHeader({ onOpenFilesModal }: UploadHeaderProps) {
           className="gap-2"
         >
           <FolderOpen className="h-4 w-4" />
-          {t('invoices:uploaded_files', 'Feltöltött fájlok')}
+          {t('invoices:actions.uploaded_files', 'Feltöltött fájlok')}
         </Button>
       </div>
     </div>

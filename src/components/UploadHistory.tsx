@@ -12,12 +12,13 @@ import { queryKeys } from '@/lib/queryKeys';
 import { supabase } from '@/integrations/supabase/client';
 import { History, FileText, Landmark, Banknote, CreditCard, Loader2, Package, ExternalLink, AlertCircle, Coins } from 'lucide-react';
 import { format, subDays } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { getDateFnsLocale } from '@/lib/locale/formatters';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRef, useEffect, useState } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { isUploadNotified } from '@/components/LiveNotificationProvider';
 import { lazy, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const CMREscalationDialog = lazy(() => import('@/components/CMREscalationDialog'));
 
@@ -43,7 +44,7 @@ interface UploadRecord {
 }
 
 interface UploadHistoryProps {
-  activeTab: string;
+  activeTab: 'invoices' | 'vouchers' | 'transactions' | 'salaries' | 'bank' | 'bank-statements' | 'reports';
 }
 
 // Feldolgozási hibák — a feltöltés sikerült, de a worker nem tudta feldolgozni
@@ -60,19 +61,31 @@ const cmrStatuses = new Set(['cmr_attached', 'cmr_orphaned', 'cmr_escalated']);
 
 // formatFileSize is now imported from @/lib/utils
 
-function getStatus(record: UploadRecord, processedIds: Set<string>): { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; multiProgress?: string } {
+function getStatus(
+  record: UploadRecord,
+  processedIds: Set<string>,
+  t?: (key: any, ...args: any[]) => any
+): { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; multiProgress?: string } {
   const meta = record.metadata;
   const isMulti = meta?.multi_invoice === true;
   const total = meta?.invoice_count_total || 0;
   const processed = meta?.invoice_count_processed || 0;
   const errors = meta?.invoice_count_errors || 0;
 
+  const translate = (key: string, options?: any, fallback?: string) => {
+    return t ? t(key, options) : (fallback || key);
+  };
+
   if (uploadErrorStatuses.has(record.processing_status)) {
-    return { label: 'A feltöltés sikertelen', variant: 'destructive' };
+    return { label: translate('upload:status.upload_failed', undefined, 'A feltöltés sikertelen'), variant: 'destructive' };
   }
   if (processingErrorStatuses.has(record.processing_status)) {
-    const label = isMulti ? `Feldolgozási hiba ${processed}/${total}` : 'Feldolgozási hiba';
-    const multiInfo = isMulti && errors > 0 ? `${errors} hiba` : undefined;
+    const label = isMulti
+      ? translate('upload:status.processing_error_progress', { processed, total }, `Feldolgozási hiba ${processed}/${total}`)
+      : translate('upload:status.processing_error', undefined, 'Feldolgozási hiba');
+    const multiInfo = isMulti && errors > 0
+      ? translate('upload:status.errors_count', { count: errors }, `${errors} hiba`)
+      : undefined;
     return { label, variant: 'destructive', multiProgress: multiInfo };
   }
   // Check processing_status FIRST — worker sets this to 'processing' while
@@ -80,34 +93,39 @@ function getStatus(record: UploadRecord, processedIds: Set<string>): { label: st
   // Transactions may already be inserted in DB before matching completes,
   // so processedIds check must come AFTER this.
   if (activeStatuses.has(record.processing_status)) {
-    const label = isMulti ? `Feldolgozás alatt ${processed}/${total}` : 'Feldolgozás alatt';
+    const label = isMulti
+      ? translate('upload:status.processing_progress', { processed, total }, `Feldolgozás alatt ${processed}/${total}`)
+      : translate('upload:status.processing', undefined, 'Feldolgozás alatt');
     return { label, variant: 'outline' };
   }
   // Transport document statuses (CMR, nalog, etc.)
   if (cmrStatuses.has(record.processing_status)) {
     if (record.processing_status === 'cmr_attached') {
-      return { label: 'Dokumentum párosítva', variant: 'default' };
+      return { label: translate('upload:status.doc_matched', undefined, 'Dokumentum párosítva'), variant: 'default' };
     }
     if (record.processing_status === 'cmr_escalated') {
-      return { label: '⚠️ Eszkaláció', variant: 'outline' };
+      return { label: translate('upload:status.escalation', undefined, '⚠️ Eszkaláció'), variant: 'outline' };
     }
-    return { label: 'Vár a számlára', variant: 'secondary' };
+    return { label: translate('upload:status.waiting_for_invoice', undefined, 'Vár a számlára'), variant: 'secondary' };
   }
   // Ignored documents — classified as unidentifiable
   if (record.processing_status === 'ignored') {
-    return { label: 'Nem beazonosítható', variant: 'secondary' };
+    return { label: translate('upload:status.unidentified', undefined, 'Nem beazonosítható'), variant: 'secondary' };
   }
   if (record.processing_status === 'dismissed') {
-    return { label: 'Elutasítva', variant: 'secondary' };
+    return { label: translate('upload:status.dismissed', undefined, 'Elutasítva'), variant: 'secondary' };
   }
   if (doneStatuses.has(record.processing_status) || processedIds.has(record.id)) {
-    const label = isMulti ? `Feldolgozva ${total}/${total}` : 'Feldolgozva';
+    const label = isMulti
+      ? translate('upload:status.processed_progress', { total }, `Feldolgozva ${total}/${total}`)
+      : translate('upload:status.processed', undefined, 'Feldolgozva');
     return { label, variant: 'default' };
   }
-  return { label: 'Feltöltve', variant: 'secondary' };
+  return { label: translate('upload:status.uploaded', undefined, 'Feltöltve'), variant: 'secondary' };
 }
 
 export default function UploadHistory({ activeTab }: UploadHistoryProps) {
+  const { t } = useTranslation(['upload', 'common']);
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
@@ -139,12 +157,12 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
     : (activeTab === 'bank' || activeTab === 'bank-statements') ? <CreditCard className="h-5 w-5" />
     : activeTab === 'reports' ? <Package className="h-5 w-5" />
     : <Landmark className="h-5 w-5" />;
-  const title = activeTab === 'invoices' ? 'Számla feltöltési'
-    : activeTab === 'vouchers' ? 'Pénztárbizonylat feltöltési'
-    : activeTab === 'salaries' ? 'Bér/járulék feltöltési'
-    : (activeTab === 'bank' || activeTab === 'bank-statements') ? 'Bankkivonat feltöltési'
-    : activeTab === 'reports' ? 'Riport feltöltési'
-    : 'Tranzakció feltöltési';
+  const title = activeTab === 'invoices' ? t('upload:history_table.title_invoices')
+    : activeTab === 'vouchers' ? t('upload:history_table.title_vouchers')
+    : activeTab === 'salaries' ? t('upload:history_table.title_salaries')
+    : (activeTab === 'bank' || activeTab === 'bank-statements') ? t('upload:history_table.title_bank')
+    : activeTab === 'reports' ? t('upload:history_table.title_reports')
+    : t('upload:history_table.title_transactions');
 
   const isValidTab = activeTab === 'invoices' || activeTab === 'vouchers' || activeTab === 'transactions' || activeTab === 'salaries' || activeTab === 'bank' || activeTab === 'bank-statements' || activeTab === 'reports';
 
@@ -381,7 +399,7 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <History className="h-5 w-5" />
-          {title} előzmények
+          {title}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -392,23 +410,23 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
         ) : records.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
             {icon}
-            <p className="mt-2 text-sm">Még nincs feltöltési előzmény</p>
+            <p className="mt-2 text-sm">{t('upload:history_table.empty')}</p>
           </div>
         ) : (
           <div className="relative w-full overflow-auto max-h-[400px]">
             <Table>
               <TableHeader className="sticky top-0 z-10 bg-card">
                 <TableRow>
-                  <TableHead>Fájlnév</TableHead>
-                  <TableHead>Méret</TableHead>
-                  <TableHead>Feltöltötte</TableHead>
-                  <TableHead>Dátum</TableHead>
-                  <TableHead>Státusz</TableHead>
+                  <TableHead>{t('upload:history_table.col_filename')}</TableHead>
+                  <TableHead>{t('upload:history_table.col_size')}</TableHead>
+                  <TableHead>{t('upload:history_table.col_uploaded_by')}</TableHead>
+                  <TableHead>{t('upload:history_table.col_date')}</TableHead>
+                  <TableHead>{t('upload:history_table.col_status')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {records.map((record) => {
-                  const status = getStatus(record, processedUrls);
+                  const status = getStatus(record, processedUrls, t);
                   return (
                     <TableRow key={record.id}>
                        <TableCell className="font-medium text-sm max-w-[250px]" title={record.file_name}>
@@ -434,11 +452,11 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                         {record.metadata?.source?.startsWith('email')
-                          ? 'E-mail'
-                          : userNames[record.user_id] || 'Ismeretlen felhasználó'}
+                          ? t('upload:history_table.email_source')
+                          : userNames[record.user_id] || t('upload:history_table.unknown_user')}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                        {format(new Date(record.created_at), 'yyyy.MM.dd HH:mm', { locale: hu })}
+                        {format(new Date(record.created_at), 'yyyy.MM.dd HH:mm', { locale: getDateFnsLocale() })}
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1">
@@ -482,31 +500,31 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
         )}
         {records.length > 0 && (
           <div className="mt-4 pt-3 border-t border-border">
-            <p className="text-xs text-muted-foreground mb-2 font-medium">Jelmagyarázat:</p>
+            <p className="text-xs text-muted-foreground mb-2 font-medium">{t('upload:legend.title')}</p>
             <div className="flex flex-wrap gap-3">
               <div className="flex items-center gap-1.5">
-                <Badge variant="secondary" className="text-xs">Feltöltve</Badge>
-                <span className="text-xs text-muted-foreground">— A fájl feltöltésre került</span>
+                <Badge variant="secondary" className="text-xs">{t('upload:status.uploaded')}</Badge>
+                <span className="text-xs text-muted-foreground">— {t('upload:legend.uploaded_desc')}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <Badge variant="outline" className="text-xs">Feldolgozás alatt</Badge>
-                <span className="text-xs text-muted-foreground">— A feldolgozás folyamatban van</span>
+                <Badge variant="outline" className="text-xs">{t('upload:status.processing')}</Badge>
+                <span className="text-xs text-muted-foreground">— {t('upload:legend.processing_desc')}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <Badge variant="default" className="text-xs">Feldolgozva</Badge>
-                <span className="text-xs text-muted-foreground">— Sikeresen feldolgozva és rögzítve</span>
+                <Badge variant="default" className="text-xs">{t('upload:status.processed')}</Badge>
+                <span className="text-xs text-muted-foreground">— {t('upload:legend.processed_desc')}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <Badge variant="destructive" className="text-xs">Feldolgozási hiba</Badge>
-                <span className="text-xs text-muted-foreground">— A feltöltés sikerült, de a feldolgozás hibára futott</span>
+                <Badge variant="destructive" className="text-xs">{t('upload:status.processing_error')}</Badge>
+                <span className="text-xs text-muted-foreground">— {t('upload:legend.processing_error_desc')}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <Badge variant="secondary" className="text-xs">Nem beazonosítható</Badge>
-                <span className="text-xs text-muted-foreground">— A dokumentum nem volt felismerhető számlaként</span>
+                <Badge variant="secondary" className="text-xs">{t('upload:status.unidentified')}</Badge>
+                <span className="text-xs text-muted-foreground">— {t('upload:legend.unidentified_desc')}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <Badge variant="secondary" className="text-xs">Elutasítva</Badge>
-                <span className="text-xs text-muted-foreground">— A dokumentum manuálisan el lett utasítva</span>
+                <Badge variant="secondary" className="text-xs">{t('upload:status.dismissed')}</Badge>
+                <span className="text-xs text-muted-foreground">— {t('upload:legend.dismissed_desc')}</span>
               </div>
             </div>
           </div>

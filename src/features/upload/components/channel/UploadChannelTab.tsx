@@ -5,6 +5,7 @@ import { UploadFileList } from '../file-list/UploadFileList';
 import { BankHintSelector } from './BankHintSelector';
 import { CourierTypeSelector } from './CourierTypeSelector';
 import type { useDocumentUpload } from '../../hooks/useDocumentUpload';
+import { useTranslation } from 'react-i18next';
 
 interface UploadChannelTabProps {
   uploadState: ReturnType<typeof useDocumentUpload>;
@@ -12,6 +13,7 @@ interface UploadChannelTabProps {
 }
 
 export function UploadChannelTab({ uploadState, writable }: UploadChannelTabProps) {
+  const { t } = useTranslation(['upload']);
   const { config } = uploadState;
   const Icon = config.icon;
 
@@ -20,10 +22,10 @@ export function UploadChannelTab({ uploadState, writable }: UploadChannelTabProp
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Icon className="h-5 w-5 text-primary" />
-          {config.cardTitle}
+          {t(`upload:channels_config.${config.id}.card_title`, config.cardTitle)}
         </CardTitle>
         <CardDescription>
-          {config.cardDescription}
+          {t(`upload:channels_config.${config.id}.card_description`, config.cardDescription)}
         </CardDescription>
       </CardHeader>
 

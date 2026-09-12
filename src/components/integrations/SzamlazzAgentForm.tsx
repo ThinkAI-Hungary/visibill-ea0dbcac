@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle, CheckCircle, Key, RefreshCw, Trash2, Eye, EyeOff, Shield, ExternalLink, Zap, Info, FileText } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
@@ -11,8 +12,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useTranslation } from 'react-i18next';
 
 export const SzamlazzAgentForm: React.FC = () => {
+  const { t } = useTranslation(['settings', 'common']);
   const { toast } = useToast();
   const { selectedCompany } = useCompany();
   const { user } = useAuth();
@@ -38,7 +41,7 @@ export const SzamlazzAgentForm: React.FC = () => {
     setInitialLoading(true);
     try {
       // 1. Try dedicated RPC
-      const { data: rpcData, error: rpcErr } = await supabase.rpc('get_szamlazz_agent_key', {
+      const { data: rpcData, error: rpcErr } = await (supabase.rpc as any)('get_szamlazz_agent_key', {
         p_company_id: selectedCompany.id,
       });
 
@@ -91,7 +94,7 @@ export const SzamlazzAgentForm: React.FC = () => {
     setLoading(true);
     try {
       // 1. Call dedicated SECURITY DEFINER RPC
-      const { error: rpcErr } = await supabase.rpc('save_szamlazz_agent_key', {
+      const { error: rpcErr } = await (supabase.rpc as any)('save_szamlazz_agent_key', {
         p_company_id: selectedCompany!.id,
         p_agent_key: trimmed,
       });
@@ -109,12 +112,12 @@ export const SzamlazzAgentForm: React.FC = () => {
       setSavedKey('••••••••••••••••••••••••••••••••••••••••••');
       setAgentKey('');
       toast({
-        title: 'Sikeres mentés!',
-        description: 'A Számlázz.hu Számla Agent kulcs eltárolásra került.',
+        title: t('settings:integrations.szamlazz.toast_save_success_title', 'Sikeres mentés!'),
+        description: t('settings:integrations.szamlazz.toast_save_success_desc', 'A Számlázz.hu Számla Agent kulcs eltárolásra került.'),
       });
     } catch (err: any) {
       toast({
-        title: 'Mentési hiba',
+        title: t('common:status.error', 'Mentési hiba'),
         description: err.message || 'Nem sikerült elmenteni az API kulcsot.',
         variant: 'destructive',
       });
@@ -124,11 +127,11 @@ export const SzamlazzAgentForm: React.FC = () => {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Biztosan törölni szeretnéd a mentett Számlázz.hu Agent kulcsot?')) return;
+    if (!confirm(t('settings:integrations.szamlazz.disconnect_confirm', 'Biztosan törölni szeretnéd a mentett Számlázz.hu Agent kulcsot?'))) return;
 
     setLoading(true);
     try {
-      const { error: rpcErr } = await supabase.rpc('delete_szamlazz_agent_key', {
+      const { error: rpcErr } = await (supabase.rpc as any)('delete_szamlazz_agent_key', {
         p_company_id: selectedCompany!.id,
       });
 
@@ -144,13 +147,13 @@ export const SzamlazzAgentForm: React.FC = () => {
       setSavedKey(null);
       setAgentKey('');
       toast({
-        title: 'Kulcs törölve',
-        description: 'A Számlázz.hu Agent kulcs eltávolításra került.',
+        title: t('common:status.success', 'Sikeres művelet'),
+        description: t('settings:integrations.szamlazz.disconnect', 'Leválasztás'),
       });
     } catch (err: any) {
       toast({
-        title: 'Törlési hiba',
-        description: err.message,
+        title: t('common:status.error', 'Hiba'),
+        description: err.message || 'Nem sikerült törölni a kulcsot.',
         variant: 'destructive',
       });
     } finally {
@@ -161,9 +164,18 @@ export const SzamlazzAgentForm: React.FC = () => {
   if (initialLoading) {
     return (
       <Card className="border-primary/10">
-        <CardContent className="p-8 text-center text-sm text-muted-foreground">
-          <RefreshCw className="h-4 w-4 animate-spin inline mr-2" />
-          Számlázz.hu integráció betöltése...
+        <CardHeader>
+          <div className="flex items-center gap-4">
+            <Skeleton className="w-12 h-12 rounded-xl" />
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-5 w-48" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Skeleton className="h-16 w-full rounded-lg" />
+          <Skeleton className="h-10 w-full" />
         </CardContent>
       </Card>
     );
@@ -179,15 +191,15 @@ export const SzamlazzAgentForm: React.FC = () => {
             </div>
             <div className="space-y-1.5 flex-1">
               <div className="flex items-center gap-2">
-                <CardTitle className="text-lg">Számlázz.hu Számla Agent</CardTitle>
+                <CardTitle className="text-lg">{t('settings:integrations.szamlazz.title', 'Számlázz.hu Számla Agent')}</CardTitle>
                 {savedKey ? (
                   <Badge variant="default" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
                     <CheckCircle className="w-3 h-3 mr-1" />
-                    Aktív
+                    {t('common:status.active', 'Aktív')}
                   </Badge>
                 ) : (
                   <Badge variant="secondary" className="text-xs">
-                    Nincs beállítva
+                    {t('settings:integrations.szamlazz.not_configured', 'Nincs beállítva')}
                   </Badge>
                 )}
                 <Tooltip>
@@ -195,22 +207,22 @@ export const SzamlazzAgentForm: React.FC = () => {
                     <Info className="h-4 w-4 text-muted-foreground cursor-help ml-auto" />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
-                    <p>A Számlázz.hu fiókvédett számlák PDF számlaképének letöltéséhez szükséges API kulcs (0 Ft felár).</p>
+                    <p>{t('settings:integrations.szamlazz.tooltip', 'A Számlázz.hu fiókvédett számlák PDF számlaképének letöltéséhez szükséges API kulcs (0 Ft felár).')}</p>
                   </TooltipContent>
                 </Tooltip>
               </div>
               <CardDescription className="text-sm">
-                Automatikus PDF letöltés értesítőkből
+                {t('settings:integrations.szamlazz.subtitle', 'Automatikus PDF letöltés értesítőkből')}
               </CardDescription>
               {/* Feature Pills */}
               <div className="flex flex-wrap gap-2 pt-1">
                 <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-medium">
                   <Zap className="h-3 w-3" />
-                  0 Ft / Díjmentes
+                  {t('settings:integrations.szamlazz.badge_free', '0 Ft / Díjmentes')}
                 </div>
                 <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400 text-xs font-medium">
                   <Key className="h-3 w-3" />
-                  42 Karakteres API
+                  {t('settings:integrations.szamlazz.badge_api_length', '42 Karakteres API')}
                 </div>
               </div>
             </div>
@@ -221,7 +233,7 @@ export const SzamlazzAgentForm: React.FC = () => {
           <Alert className="bg-muted/40 border-muted">
             <AlertCircle className="h-4 w-4 text-primary" />
             <AlertDescription className="text-xs text-muted-foreground leading-relaxed">
-              A Számlázz.hu-n beállított fiókvédett számlák PDF letöltéséhez adja meg a 42 karakteres <strong>Számla Agent kulcsot</strong>. A lekérés teljesen <strong>díjmentes</strong> (0 Ft).
+              {t('settings:integrations.szamlazz.alert_desc', 'A Számlázz.hu-n beállított fiókvédett számlák PDF letöltéséhez adja meg a 42 karakteres Számla Agent kulcsot. A lekérés teljesen díjmentes (0 Ft).')}
             </AlertDescription>
           </Alert>
 
@@ -243,7 +255,7 @@ export const SzamlazzAgentForm: React.FC = () => {
                     className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 px-2 text-xs"
                   >
                     <Trash2 className="h-4 w-4 mr-1" />
-                    Leválasztás
+                    {t('settings:integrations.szamlazz.disconnect', 'Leválasztás')}
                   </Button>
                 )}
               </div>
@@ -253,7 +265,7 @@ export const SzamlazzAgentForm: React.FC = () => {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="szamlazz-agent-key" className="text-xs font-semibold">
-                    Számla Agent API Kulcs (42 karakter)
+                    {t('settings:integrations.szamlazz.api_key_label', 'Számla Agent API Kulcs (42 karakter)')}
                   </Label>
                   <a
                     href="https://www.szamlazz.hu"
@@ -261,7 +273,7 @@ export const SzamlazzAgentForm: React.FC = () => {
                     rel="noreferrer"
                     className="text-[11px] text-primary hover:underline flex items-center gap-1"
                   >
-                    Hol találom? <ExternalLink className="h-3 w-3" />
+                    {t('settings:integrations.szamlazz.where_to_find', 'Hol találom?')} <ExternalLink className="h-3 w-3" />
                   </a>
                 </div>
                 <div className="relative">
@@ -291,11 +303,11 @@ export const SzamlazzAgentForm: React.FC = () => {
                   className="w-full h-9 text-xs font-medium gap-2"
                 >
                   {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}
-                  Számlázz.hu Agent Kulcs Mentése
+                  {t('settings:integrations.szamlazz.save_button', 'Számlázz.hu Agent Kulcs Mentése')}
                 </Button>
               ) : (
                 <p className="text-xs text-muted-foreground italic">
-                  Csak a cég tulajdonosa rögzítheti az API kulcsot.
+                  {t('settings:integrations.szamlazz.owner_only', 'Csak a cég tulajdonosa rögzítheti az API kulcsot.')}
                 </p>
               )}
             </div>
@@ -304,14 +316,14 @@ export const SzamlazzAgentForm: React.FC = () => {
       </div>
 
       <div className="p-4 pt-0 text-[11px] text-muted-foreground flex items-center justify-between border-t border-border/40 mt-4">
-        <span>API Végpont: szamlazz.hu/szamla</span>
+        <span>{t('settings:integrations.szamlazz.api_endpoint', 'API Végpont: szamlazz.hu/szamla')}</span>
         <a
           href="https://www.szamlazz.hu/szamla/docs/szamla_agent/"
           target="_blank"
           rel="noreferrer"
           className="text-primary hover:underline inline-flex items-center gap-1"
         >
-          API Dokumentáció <ExternalLink className="w-3 h-3" />
+          {t('settings:integrations.szamlazz.api_docs', 'API Dokumentáció')} <ExternalLink className="w-3 h-3" />
         </a>
       </div>
     </Card>

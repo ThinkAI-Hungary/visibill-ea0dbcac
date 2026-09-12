@@ -22,7 +22,8 @@
     "first_register": "Első pénztár létrehozása",
     "no_registers": "Nincs még pénztár létrehozva",
     "make_default": "Alapértelmezetté",
-    "opening_balances": "Nyitó egyenlegek"
+    "opening_balances": "Nyitó egyenlegek",
+    "default_name": "Központi pénztár"
   },
   "calculator": {
     "title": "Címletszámoló",
@@ -128,6 +129,9 @@
       "view_receipt": "Bizonylat megtekintése",
       "edit_and_approve": "Módosítás és Jóváhagyás",
       "approve_and_book": "Jóváhagyás és Könyvelés"
-    }
+    },
+    "auto_desc_inbound": "Pénztári kiadás - {{partner}}",
+    "auto_desc_outbound": "Pénztári bevétel - {{partner}}",
+    "unknown_partner": "Ismeretlen"
   }
 }

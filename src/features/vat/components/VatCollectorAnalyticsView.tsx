@@ -11,6 +11,7 @@ import { FileSpreadsheet, ChevronDown, ChevronRight, ChevronLeft, Layers, FileTe
 import { formatCurrency, cn } from '@/lib/utils';
 import { exportVatCollectorAnalyticsExcel, VatCollectorGroup } from '@/lib/glExport';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 
 interface VatCollectorAnalyticsViewProps {
   year?: number;
@@ -18,6 +19,7 @@ interface VatCollectorAnalyticsViewProps {
 }
 
 export function VatCollectorAnalyticsView({ year = new Date().getFullYear(), periodMonth }: VatCollectorAnalyticsViewProps) {
+  const { t } = useTranslation(['accounting', 'common']);
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const [expandedCodes, setExpandedCodes] = useState<Set<string>>(new Set(['25', '05', 'FAD']));
@@ -122,13 +124,13 @@ export function VatCollectorAnalyticsView({ year = new Date().getFullYear(), per
 
     const getLabel = (c: string) => {
       switch (c) {
-        case '25': return 'Normál belföldi 27% (Alapértelmezett NAV Gyűjtőkód 25)';
-        case '05': return 'Kedvezményes belföldi 5%';
-        case '18': return 'Kedvezményes belföldi 18%';
-        case 'FAD': return 'Fordított adózás (FAD vas/acél, építőipar, mezőgazdaság)';
-        case 'AAM': return 'Alanyi adómentes (AAM)';
-        case 'TAM': return 'Tárgyi adómentes (TAM)';
-        default: return `Különleges gyűjtőkód (${c})`;
+        case '25': return t('accounting:vat_return.analytics_view.codes.25', 'Normál belföldi 27% (Alapértelmezett NAV Gyűjtőkód 25)');
+        case '05': return t('accounting:vat_return.analytics_view.codes.05', 'Kedvezményes belföldi 5%');
+        case '18': return t('accounting:vat_return.analytics_view.codes.18', 'Kedvezményes belföldi 18%');
+        case 'FAD': return t('accounting:vat_return.analytics_view.codes.FAD', 'Fordított adózás (FAD vas/acél, építőipar, mezőgazdaság)');
+        case 'AAM': return t('accounting:vat_return.analytics_view.codes.AAM', 'Alanyi adómentes (AAM)');
+        case 'TAM': return t('accounting:vat_return.analytics_view.codes.TAM', 'Tárgyi adómentes (TAM)');
+        default: return t('accounting:vat_return.analytics_view.codes.custom', { code: c, defaultValue: `Különleges gyűjtőkód (${c})` });
       }
     };
 
@@ -152,7 +154,7 @@ export function VatCollectorAnalyticsView({ year = new Date().getFullYear(), per
     });
 
     return Array.from(map.values()).sort((a, b) => a.code.localeCompare(b.code));
-  }, [rawItems]);
+  }, [rawItems, t]);
 
   const toggleExpand = (code: string) => {
     setExpandedCodes(prev => {
@@ -168,9 +170,12 @@ export function VatCollectorAnalyticsView({ year = new Date().getFullYear(), per
     setIsExporting(true);
     try {
       await exportVatCollectorAnalyticsExcel(groups, selectedCompany?.name || 'Cég');
-      toast({ title: 'Sikeres exportálás', description: 'Az ÁFA Gyűjtőkódos Analitika Excel fájl elkészült.' });
+      toast({
+        title: t('accounting:vat_return.analytics_view.toast_export_success_title', 'Sikeres exportálás'),
+        description: t('accounting:vat_return.analytics_view.toast_export_success_desc', 'Az ÁFA Gyűjtőkódos Analitika Excel fájl elkészült.')
+      });
     } catch (e: any) {
-      toast({ title: 'Export hiba', description: e.message, variant: 'destructive' });
+      toast({ title: t('common:status.error', 'Export hiba'), description: e.message, variant: 'destructive' });
     } finally {
       setIsExporting(false);
     }
@@ -190,26 +195,26 @@ export function VatCollectorAnalyticsView({ year = new Date().getFullYear(), per
         <div>
           <CardTitle className="text-lg font-bold flex items-center gap-2">
             <Layers className="h-5 w-5 text-primary" />
-            ÁFA Gyűjtőkód Szerinti Analitikus Kimutatás
+            {t('accounting:vat_return.analytics_view.card_title', 'ÁFA Gyűjtőkód Szerinti Analitikus Kimutatás')}
           </CardTitle>
           <CardDescription>
-            NAV adóhatósági ellenőrzéseknek megfelelő bizonylat-analitika ÁFA gyűjtőkódonként csoportosítva (Fakov Kft. elvárás).
+            {t('accounting:vat_return.analytics_view.card_description', 'NAV adóhatósági ellenőrzéseknek megfelelő bizonylat-analitika ÁFA gyűjtőkódonként csoportosítva (Fakov Kft. elvárás).')}
           </CardDescription>
         </div>
 
         <div className="flex items-center gap-3 self-end sm:self-auto">
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-muted-foreground font-medium">Tétel / oldal:</span>
+            <span className="text-muted-foreground font-medium">{t('accounting:vat_return.analytics_view.items_per_page', 'Tétel / oldal:')}</span>
             <Select value={String(pageSize)} onValueChange={(val) => setPageSize(Number(val))}>
               <SelectTrigger className="w-[110px] h-8 text-xs bg-background">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="10">10 tétel</SelectItem>
-                <SelectItem value="20">20 tétel</SelectItem>
-                <SelectItem value="50">50 tétel</SelectItem>
-                <SelectItem value="100">100 tétel</SelectItem>
-                <SelectItem value="-1">Összes tétel</SelectItem>
+                <SelectItem value="10">{t('accounting:vat_return.analytics_view.items_count', { count: 10, defaultValue: '10 tétel' })}</SelectItem>
+                <SelectItem value="20">{t('accounting:vat_return.analytics_view.items_count', { count: 20, defaultValue: '20 tétel' })}</SelectItem>
+                <SelectItem value="50">{t('accounting:vat_return.analytics_view.items_count', { count: 50, defaultValue: '50 tétel' })}</SelectItem>
+                <SelectItem value="100">{t('accounting:vat_return.analytics_view.items_count', { count: 100, defaultValue: '100 tétel' })}</SelectItem>
+                <SelectItem value="-1">{t('accounting:vat_return.analytics_view.all_items', 'Összes tétel')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -221,7 +226,7 @@ export function VatCollectorAnalyticsView({ year = new Date().getFullYear(), per
             className="gap-2 border-primary/30 text-primary hover:bg-primary/10 cursor-pointer h-8 text-xs"
           >
             {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4 text-emerald-600" />}
-            Export (Excel)
+            {t('accounting:vat_return.analytics_view.export_excel', 'Export (Excel)')}
           </Button>
         </div>
       </CardHeader>
@@ -234,20 +239,20 @@ export function VatCollectorAnalyticsView({ year = new Date().getFullYear(), per
         ) : groups.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <FileText className="h-10 w-10 mx-auto mb-2 opacity-40" />
-            <p className="font-medium">Nincsenek ÁFA gyűjtőkódos bizonylatok az adott időszakban.</p>
+            <p className="font-medium">{t('accounting:vat_return.analytics_view.empty', 'Nincsenek ÁFA gyűjtőkódos bizonylatok az adott időszakban.')}</p>
           </div>
         ) : (
           <div className="rounded-lg border border-border/50 overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/40 hover:bg-muted/40">
-                  <TableHead className="w-12 text-center">Bontás</TableHead>
-                  <TableHead className="font-semibold">ÁFA Gyűjtőkód / Bizonylatszám</TableHead>
-                  <TableHead className="font-semibold">Partner neve</TableHead>
-                  <TableHead className="text-center font-semibold">Teljesítés dátuma</TableHead>
-                  <TableHead className="text-right font-semibold">Nettó alap</TableHead>
-                  <TableHead className="text-right font-semibold">ÁFA összeg</TableHead>
-                  <TableHead className="text-right font-semibold">Bruttó érték</TableHead>
+                  <TableHead className="w-12 text-center">{t('accounting:vat_return.analytics_view.col_breakdown', 'Bontás')}</TableHead>
+                  <TableHead className="font-semibold">{t('accounting:vat_return.analytics_view.col_code_doc', 'ÁFA Gyűjtőkód / Bizonylatszám')}</TableHead>
+                  <TableHead className="font-semibold">{t('accounting:vat_return.analytics_view.col_partner_name', 'Partner neve')}</TableHead>
+                  <TableHead className="text-center font-semibold">{t('accounting:vat_return.analytics_view.col_fulfillment_date', 'Teljesítés dátuma')}</TableHead>
+                  <TableHead className="text-right font-semibold">{t('accounting:vat_return.analytics_view.col_net_amount', 'Nettó alap')}</TableHead>
+                  <TableHead className="text-right font-semibold">{t('accounting:vat_return.analytics_view.col_vat_amount', 'ÁFA összeg')}</TableHead>
+                  <TableHead className="text-right font-semibold">{t('accounting:vat_return.analytics_view.col_gross_amount', 'Bruttó érték')}</TableHead>
                 </TableRow>
               </TableHeader>
 
@@ -272,10 +277,12 @@ export function VatCollectorAnalyticsView({ year = new Date().getFullYear(), per
                         <TableCell colSpan={2} className="py-3">
                           <div className="flex items-center gap-2">
                             <Badge variant="outline" className="font-mono bg-primary/10 text-primary border-primary/30">
-                              Gyűjtőkód {group.code}
+                              {t('accounting:vat_return.analytics_view.code_badge', { code: group.code, defaultValue: `Gyűjtőkód ${group.code}` })}
                             </Badge>
                             <span>{group.label}</span>
-                            <span className="text-xs text-muted-foreground font-normal">({totalGroupItems} bizonylat)</span>
+                            <span className="text-xs text-muted-foreground font-normal">
+                              {t('accounting:vat_return.analytics_view.doc_count', { count: totalGroupItems, defaultValue: `(${totalGroupItems} bizonylat)` })}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell className="text-center text-xs text-muted-foreground">-</TableCell>
@@ -321,7 +328,12 @@ export function VatCollectorAnalyticsView({ year = new Date().getFullYear(), per
                           <TableCell colSpan={7} className="py-2 px-6">
                             <div className="flex items-center justify-between text-xs text-muted-foreground">
                               <div>
-                                Megjelenítve: <strong className="text-foreground">{(page - 1) * pageSize + 1} - {Math.min(page * pageSize, totalGroupItems)}</strong> / <strong className="text-foreground">{totalGroupItems}</strong> tétel
+                                {t('accounting:vat_return.analytics_view.pagination_info', {
+                                  from: (page - 1) * pageSize + 1,
+                                  to: Math.min(page * pageSize, totalGroupItems),
+                                  total: totalGroupItems,
+                                  defaultValue: `Megjelenítve: ${(page - 1) * pageSize + 1} - ${Math.min(page * pageSize, totalGroupItems)} / ${totalGroupItems} tétel`
+                                })}
                               </div>
                               <div className="flex items-center gap-1.5">
                                 <Button
@@ -334,10 +346,10 @@ export function VatCollectorAnalyticsView({ year = new Date().getFullYear(), per
                                   }}
                                   className="h-7 px-2 text-xs bg-background"
                                 >
-                                  <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Előző
+                                  <ChevronLeft className="h-3.5 w-3.5 mr-1" /> {t('common:actions.previous', 'Előző')}
                                 </Button>
                                 <span className="px-2 font-mono text-foreground">
-                                  {page} / {totalPages} oldal
+                                  {t('accounting:vat_return.analytics_view.page_info', { page, total: totalPages, defaultValue: `${page} / ${totalPages} oldal` })}
                                 </span>
                                 <Button
                                   size="sm"
@@ -349,7 +361,7 @@ export function VatCollectorAnalyticsView({ year = new Date().getFullYear(), per
                                   }}
                                   className="h-7 px-2 text-xs bg-background"
                                 >
-                                  Következő <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                                  {t('common:actions.next', 'Következő')} <ChevronRight className="h-3.5 w-3.5 ml-1" />
                                 </Button>
                               </div>
                             </div>
@@ -363,7 +375,7 @@ export function VatCollectorAnalyticsView({ year = new Date().getFullYear(), per
                 {/* Grand Total Row */}
                 <TableRow className="bg-muted/80 font-bold border-t-2 border-border">
                   <TableCell colSpan={4} className="py-3 text-right">
-                    ÖSSZESEN (NAV ÁFA Analitika):
+                    {t('accounting:vat_return.analytics_view.grand_total', 'ÖSSZESEN (NAV ÁFA Analitika):')}
                   </TableCell>
                   <TableCell className="text-right font-mono tabular-nums py-3 text-base">
                     {formatCurrency(totals.net, 'HUF')}

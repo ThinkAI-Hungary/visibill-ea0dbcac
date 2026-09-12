@@ -28,6 +28,7 @@ import { fetchAllGlAccountsByPreset } from '@/lib/glData';
 import { Separator } from '@/components/ui/separator';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { hu, hr } from 'date-fns/locale';
+import { getTransactionTypeLabel } from '@/lib/transactionUtils';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useAuth } from '@/contexts/AuthContext';
@@ -70,20 +71,19 @@ const getTypeBgClass = (type: string | null): string => {
   if (!type) return '';
   const t = type.toLowerCase().trim();
 
-  if (t === 'szállítói tranzakció') return 'bg-[hsl(var(--tr-supplier-bg)/0.6)] text-[hsl(var(--tr-supplier-text))]';
-  if (t === 'vevői tranzakció') return 'bg-[hsl(var(--tr-customer-bg)/0.6)] text-[hsl(var(--tr-customer-text))]';
-  if (t === 'számlák közötti átvezetés') return 'bg-[hsl(var(--tr-transfer-bg)/0.6)] text-[hsl(var(--tr-transfer-text))]';
-  if (t === 'banki számlavezetési díj') return 'bg-[hsl(var(--tr-bankfee-bg)/0.6)] text-[hsl(var(--tr-bankfee-text))]';
-  if (t === 'kártyadíj') return 'bg-[hsl(var(--tr-cardfee-bg)/0.6)] text-[hsl(var(--tr-cardfee-text))]';
-  if (t === 'hiteltörlesztés' || t === 'tranzakciós illeték' || t === 'kamat') return 'bg-[hsl(var(--tr-loan-bg)/0.6)] text-[hsl(var(--tr-loan-text))]';
-  if (t === 'atm pénzfelvét') return 'bg-[hsl(var(--tr-atm-bg)/0.6)] text-[hsl(var(--tr-atm-text))]';
-  if (t === 'pénztári kp felvét') return 'bg-[hsl(var(--tr-cashout-bg)/0.6)] text-[hsl(var(--tr-cashout-text))]';
-  if (t === 'pénztári kp befizetés' || t === 'kp befizetés atm-en keresztül') return 'bg-[hsl(var(--tr-cashin-bg)/0.6)] text-[hsl(var(--tr-cashin-text))]';
-  if (t === 'bérek') return 'bg-[hsl(var(--tr-salary-bg)/0.6)] text-[hsl(var(--tr-salary-text))]';
-  if (t === 'járulékok/adók') return 'bg-[hsl(var(--tr-tax-bg)/0.6)] text-[hsl(var(--tr-tax-text))]';
-  if (t === 'bankköltség') return 'bg-[hsl(var(--tr-bankcost-bg)/0.6)] text-[hsl(var(--tr-bankcost-text))]';
-  if (t === 'kamatjóváírás') return 'bg-[hsl(var(--tr-interest-bg)/0.6)] text-[hsl(var(--tr-interest-text))]';
-  if (t === 'atm készpénzfelvét') return 'bg-[hsl(var(--tr-atmcash-bg)/0.6)] text-[hsl(var(--tr-atmcash-text))]';
+  if (t === 'szállítói tranzakció' || t === 'szállító' || t === 'supplier') return 'bg-[hsl(var(--tr-supplier-bg)/0.6)] text-[hsl(var(--tr-supplier-text))]';
+  if (t === 'vevői tranzakció' || t === 'vevő' || t === 'customer') return 'bg-[hsl(var(--tr-customer-bg)/0.6)] text-[hsl(var(--tr-customer-text))]';
+  if (t === 'számlák közötti átvezetés' || t === 'transfer') return 'bg-[hsl(var(--tr-transfer-bg)/0.6)] text-[hsl(var(--tr-transfer-text))]';
+  if (t === 'banki számlavezetési díj' || t === 'bank_fee') return 'bg-[hsl(var(--tr-bankfee-bg)/0.6)] text-[hsl(var(--tr-bankfee-text))]';
+  if (t === 'kártyadíj' || t === 'card_fee') return 'bg-[hsl(var(--tr-cardfee-bg)/0.6)] text-[hsl(var(--tr-cardfee-text))]';
+  if (t === 'hiteltörlesztés' || t === 'tranzakciós illeték' || t === 'kamat' || t === 'loan') return 'bg-[hsl(var(--tr-loan-bg)/0.6)] text-[hsl(var(--tr-loan-text))]';
+  if (t === 'atm pénzfelvét' || t === 'atm készpénzfelvét' || t === 'atm_withdrawal') return 'bg-[hsl(var(--tr-atm-bg)/0.6)] text-[hsl(var(--tr-atm-text))]';
+  if (t === 'pénztári kp felvét' || t === 'cash_withdrawal') return 'bg-[hsl(var(--tr-cashout-bg)/0.6)] text-[hsl(var(--tr-cashout-text))]';
+  if (t === 'pénztári kp befizetés' || t === 'kp befizetés atm-en keresztül' || t === 'cash_deposit' || t === 'atm_cash_deposit') return 'bg-[hsl(var(--tr-cashin-bg)/0.6)] text-[hsl(var(--tr-cashin-text))]';
+  if (t === 'bérek' || t === 'bér' || t === 'salary') return 'bg-[hsl(var(--tr-salary-bg)/0.6)] text-[hsl(var(--tr-salary-text))]';
+  if (t === 'járulékok/adók' || t === 'járulékkiadások' || t === 'tax_expense' || t === 'taxes') return 'bg-[hsl(var(--tr-tax-bg)/0.6)] text-[hsl(var(--tr-tax-text))]';
+  if (t === 'bankköltség' || t === 'bank_cost') return 'bg-[hsl(var(--tr-bankcost-bg)/0.6)] text-[hsl(var(--tr-bankcost-text))]';
+  if (t === 'kamatjóváírás' || t === 'kamatjövedelem' || t === 'interest_credit' || t === 'interest_income') return 'bg-[hsl(var(--tr-interest-bg)/0.6)] text-[hsl(var(--tr-interest-text))]';
 
   return '';
 };
@@ -960,7 +960,7 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
             "text-[11px] font-semibold px-1.5 py-0.5 rounded-md inline-block w-[10.5rem] text-center whitespace-nowrap overflow-hidden text-ellipsis border border-black/10 dark:border-white/10",
             getTypeBgClass(transaction.type) || "text-muted-foreground"
           )}>
-            {transaction.type}
+            {getTransactionTypeLabel(transaction.type, t)}
           </span>
         ) : (
           <span className="text-xs text-muted-foreground">-</span>

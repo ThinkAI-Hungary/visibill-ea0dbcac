@@ -17,6 +17,8 @@ import {
 import { formatCurrency } from '@/lib/utils';
 import { generateGlAccountCardPdf, GlAccountCardPdfData } from '@/lib/ledgerCardPdfs';
 import { GlDateBasis, GlPostingStatus } from '@/lib/glData';
+import { useTranslation } from 'react-i18next';
+import { getLocalizedJournalName } from '@/lib/journalUtils';
 import * as XLSX from 'xlsx';
 
 interface GlAccountCardViewProps {
@@ -38,6 +40,7 @@ export function GlAccountCardView({
   postingStatus,
   companyName = 'Cég',
 }: GlAccountCardViewProps) {
+  const { t } = useTranslation(['accounting', 'common']);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -111,7 +114,7 @@ export function GlAccountCardView({
       const cleanGlPrefix = selectedGlNumber.replace(/\.$/, '');
 
       // 1. Try RPC first
-      const { data: rpcData, error: rpcErr } = await supabase.rpc('get_gl_account_card_items', {
+      const { data: rpcData, error: rpcErr } = await (supabase.rpc as any)('get_gl_account_card_items', {
         p_company_id: companyId,
         p_preset_id: presetId || null,
         p_gl_account_id: null,
@@ -415,19 +418,19 @@ export function GlAccountCardView({
 
           {/* Journal Filter */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">Napló szűrő</Label>
+            <Label className="text-xs font-semibold">{t('accounting:journals.filter_label', 'Napló szűrő')}</Label>
             <Select value={journalFilter} onValueChange={setJournalFilter}>
               <SelectTrigger className="h-9 text-xs">
-                <SelectValue placeholder="Összes napló" />
+                <SelectValue placeholder={t('accounting:journals.journal_names.all', 'Összes napló')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Összes napló</SelectItem>
-                <SelectItem value="B1">Bank (B1)</SelectItem>
-                <SelectItem value="P1">Pénztár (P1)</SelectItem>
-                <SelectItem value="V">Vevő (V)</SelectItem>
-                <SelectItem value="SZ">Szállító (SZ)</SelectItem>
-                <SelectItem value="VE">Vegyes (VE)</SelectItem>
-                <SelectItem value="NY">Nyitó (NY)</SelectItem>
+                <SelectItem value="all">{t('accounting:journals.journal_names.all', 'Összes napló')}</SelectItem>
+                <SelectItem value="B1">{getLocalizedJournalName('B1', 'Bank', t, { short: true })} (B1)</SelectItem>
+                <SelectItem value="P1">{getLocalizedJournalName('P1', 'Pénztár', t, { short: true })} (P1)</SelectItem>
+                <SelectItem value="V">{getLocalizedJournalName('V', 'Vevő', t, { short: true })} (V)</SelectItem>
+                <SelectItem value="SZ">{getLocalizedJournalName('SZ', 'Szállító', t, { short: true })} (SZ)</SelectItem>
+                <SelectItem value="VE">{getLocalizedJournalName('VE', 'Vegyes', t, { short: true })} (VE)</SelectItem>
+                <SelectItem value="NY">{getLocalizedJournalName('NY', 'Nyitó', t, { short: true })} (NY)</SelectItem>
               </SelectContent>
             </Select>
           </div>

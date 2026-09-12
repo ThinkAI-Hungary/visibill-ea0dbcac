@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { NavSyncDialog } from '@/components/nav/NavSyncDialog';
@@ -7,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 
 export function NavSyncButton() {
+  const { t } = useTranslation(['invoices', 'common']);
   const {
     syncDialogOpen,
     setSyncDialogOpen,
@@ -31,15 +33,19 @@ export function NavSyncButton() {
               disabled={syncing || !credentialsExist || !canSync || !writable}
             >
               <RefreshCw className={cn('h-4 w-4 mr-2', syncing && 'animate-spin')} />
-              {syncing ? 'Szinkronizálás...' : !canSync ? `Várj ${formatCooldown(cooldownSeconds)}` : 'Szinkronizálás'}
+              {syncing
+                ? t('invoices:nav_sync.syncing', 'Szinkronizálás...')
+                : !canSync
+                  ? t('invoices:nav_sync.wait_cooldown', { time: formatCooldown(cooldownSeconds), defaultValue: `Várj ${formatCooldown(cooldownSeconds)}` })
+                  : t('invoices:nav_sync.sync', 'Szinkronizálás')}
             </Button>
           </TooltipTrigger>
           <TooltipContent>
             {!credentialsExist
-              ? 'Állítsd be a NAV integrációt az Integrációk oldalon'
+              ? t('invoices:nav_sync.no_credentials', 'Állítsd be a NAV integrációt az Integrációk oldalon')
               : !canSync
-                ? `Legközelebb ${formatCooldown(cooldownSeconds)} múlva szinkronizálhatsz`
-                : 'NAV számlák szinkronizálása'}
+                ? t('invoices:nav_sync.cooldown', { time: formatCooldown(cooldownSeconds), defaultValue: `Legközelebb ${formatCooldown(cooldownSeconds)} múlva szinkronizálhatsz` })
+                : t('invoices:nav_sync.sync_tooltip', 'NAV számlák szinkronizálása')}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

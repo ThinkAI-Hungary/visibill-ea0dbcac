@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
+import { getActiveLocale } from '@/lib/locale/formatters';
 
 interface SankeyNode {
   id: string;
@@ -40,10 +42,14 @@ export function PnlSankeyChart({
   netProfit,
   inThousands,
 }: PnlSankeyChartProps) {
+  const { t } = useTranslation(['accounting', 'common']);
+  const localeCode = getActiveLocale() === 'hr' ? 'hr-HR' : 'hu-HU';
+  const unit = inThousands ? t('accounting:profit_and_loss.units.thousand_huf', 'E Ft') : t('accounting:profit_and_loss.units.huf', 'Ft');
+
   const formatVal = (v: number) => {
-    return new Intl.NumberFormat('hu-HU', {
+    return new Intl.NumberFormat(localeCode, {
       maximumFractionDigits: 0,
-    }).format(Math.round(v)) + (inThousands ? ' E Ft' : ' Ft');
+    }).format(Math.round(v)) + ` ${unit}`;
   };
 
   const chartData = useMemo(() => {
@@ -71,16 +77,16 @@ export function PnlSankeyChart({
     // Node definitions
     const nodes: SankeyNode[] = [
       // Column 0: Sources
-      { id: 'revenue', label: 'Árbevétel', value: safeRev, col: 0, color: '#10b981' },
-      { id: 'othIncome', label: 'Egyéb bevételek', value: safeOthInc, col: 0, color: '#34d399' },
+      { id: 'revenue', label: t('accounting:profit_and_loss.charts.sankey.revenue', 'Árbevétel'), value: safeRev, col: 0, color: '#10b981' },
+      { id: 'othIncome', label: t('accounting:profit_and_loss.charts.sankey.other_income', 'Egyéb bevételek'), value: safeOthInc, col: 0, color: '#34d399' },
       // Column 1: Middle
-      { id: 'totalInflow', label: 'Összes Bevétel', value: totalInflow, col: 1, color: '#6366f1' },
+      { id: 'totalInflow', label: t('accounting:profit_and_loss.charts.sankey.total_inflow', 'Összes Bevétel'), value: totalInflow, col: 1, color: '#6366f1' },
       // Column 2: Destinations
-      { id: 'materials', label: 'Anyagjellegű', value: safeMat, col: 2, color: '#f59e0b' },
-      { id: 'personnel', label: 'Személyi jellegű', value: safePers, col: 2, color: '#f97316' },
-      { id: 'overhead', label: 'Költségek & ÉCS', value: safeDepr + safeOthExp, col: 2, color: '#ef4444' },
-      { id: 'taxes', label: 'Adók', value: safeTax, col: 2, color: '#ec4899' },
-      { id: 'profit', label: 'Adózott eredmény', value: safeProfit, col: 2, color: '#3b82f6' },
+      { id: 'materials', label: t('accounting:profit_and_loss.charts.sankey.materials', 'Anyagjellegű'), value: safeMat, col: 2, color: '#f59e0b' },
+      { id: 'personnel', label: t('accounting:profit_and_loss.charts.sankey.personnel', 'Személyi jellegű'), value: safePers, col: 2, color: '#f97316' },
+      { id: 'overhead', label: t('accounting:profit_and_loss.charts.sankey.overhead', 'Költségek & ÉCS'), value: safeDepr + safeOthExp, col: 2, color: '#ef4444' },
+      { id: 'taxes', label: t('accounting:profit_and_loss.charts.sankey.taxes', 'Adók'), value: safeTax, col: 2, color: '#ec4899' },
+      { id: 'profit', label: t('accounting:profit_and_loss.charts.sankey.profit', 'Adózott eredmény'), value: safeProfit, col: 2, color: '#3b82f6' },
     ];
 
     // Compute Y positions for each column
@@ -277,10 +283,10 @@ export function PnlSankeyChart({
         </svg>
       </div>
       <div className="flex gap-4 mt-2 justify-center flex-wrap text-[10px] text-muted-foreground font-medium">
-        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded bg-[#10b981]"></span>Bevételek</span>
-        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded bg-[#f97316]"></span>Működési költségek</span>
-        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded bg-[#ef4444]"></span>Egyéb overhead</span>
-        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded bg-[#3b82f6]"></span>Adózott eredmény</span>
+        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded bg-[#10b981]"></span>{t('accounting:profit_and_loss.charts.sankey.legend_revenues', 'Bevételek')}</span>
+        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded bg-[#f97316]"></span>{t('accounting:profit_and_loss.charts.sankey.legend_operating_costs', 'Működési költségek')}</span>
+        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded bg-[#ef4444]"></span>{t('accounting:profit_and_loss.charts.sankey.legend_other_overhead', 'Egyéb overhead')}</span>
+        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded bg-[#3b82f6]"></span>{t('accounting:profit_and_loss.charts.sankey.legend_net_profit', 'Adózott eredmény')}</span>
       </div>
     </div>
   );

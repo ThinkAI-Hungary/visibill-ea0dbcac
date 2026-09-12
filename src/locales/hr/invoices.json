@@ -531,5 +531,21 @@
     "service_period": "Razdoblje usluge:",
     "accountant_reviewed_tooltip": "Oznaka kontirano / proknjiženo",
     "select_placeholder": "Odaberite..."
+  },
+  "nav_sync": {
+    "sync": "Sinkronizacija",
+    "syncing": "Sinkronizacija...",
+    "wait_cooldown": "Pričekajte {{time}}",
+    "no_credentials": "Postavite poreznu integraciju na stranici Integracije",
+    "cooldown": "Ponovno možete sinkronizirati za {{time}}",
+    "sync_tooltip": "Sinkronizacija računa"
+  },
+  "payment_methods": {
+    "transfer": "Virman",
+    "cash": "Gotovina",
+    "card": "Kartica",
+    "voucher": "Vaučer",
+    "other": "Ostalo",
+    "not_specified": "Nije navedeno"
   }
 }

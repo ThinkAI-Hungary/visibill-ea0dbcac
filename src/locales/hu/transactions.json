@@ -446,5 +446,28 @@
         "delete_error_desc": "Hiba történt a törlés során."
       }
     }
+  },
+  "types": {
+    "supplier": "Szállítói tranzakció",
+    "customer": "Vevői tranzakció",
+    "bank_cost": "Bankköltség",
+    "bank_fee": "Banki számlavezetési díj",
+    "card_fee": "Kártyadíj",
+    "transfer": "Számlák közötti átvezetés",
+    "interest_income": "Kamatjövedelem",
+    "interest_credit": "Kamatjóváírás",
+    "interest": "Kamat",
+    "tax_expense": "Járulékkiadások",
+    "taxes": "Járulékok/adók",
+    "salary": "Bérek",
+    "loan": "Hiteltörlesztés",
+    "transaction_tax": "Tranzakciós illeték",
+    "atm_withdrawal": "ATM pénzfelvét",
+    "atm_cash_withdrawal": "ATM készpénzfelvét",
+    "cash_withdrawal": "Pénztári kp felvét",
+    "cash_deposit": "Pénztári kp befizetés",
+    "atm_cash_deposit": "KP befizetés ATM-en keresztül",
+    "payment": "Fizetés",
+    "manual_expense": "Kézi kiadás"
   }
 }

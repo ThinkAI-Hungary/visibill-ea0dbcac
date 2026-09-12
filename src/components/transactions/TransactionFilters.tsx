@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, X } from 'lucide-react';
 import type { TransactionFilters as Filters } from '@/hooks/useTransactionData';
+import { getTransactionTypeLabel } from '@/lib/transactionUtils';
 
 interface TransactionFiltersProps {
   filters: Filters;
@@ -84,7 +85,7 @@ const TransactionFilters = React.memo(function TransactionFilters({
         <SelectContent>
           <SelectItem value="all">{t('transactions:filters.all_types', 'Minden típus')}</SelectItem>
           {uniqueTypes.map(type => (
-            <SelectItem key={type} value={type}>{type}</SelectItem>
+            <SelectItem key={type} value={type}>{getTransactionTypeLabel(type, t)}</SelectItem>
           ))}
         </SelectContent>
       </Select>

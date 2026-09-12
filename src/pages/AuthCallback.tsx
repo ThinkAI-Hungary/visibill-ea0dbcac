@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import i18n from '@/lib/i18n';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -17,6 +18,8 @@ const SESSION_KEY = 'visibill_email_change_confirmed';
  */
 export default function AuthCallback() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isHr = location.pathname.startsWith('/hr') || (i18n.language || '').startsWith('hr');
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [emailChanged, setEmailChanged] = useState(false);
@@ -127,7 +130,7 @@ export default function AuthCallback() {
           }
         }
 
-        navigate('/', { replace: true });
+        navigate(isHr ? '/hr' : '/', { replace: true });
 
       } catch (err: any) {
         reportAuthError('AuthCallback', 'callback', err.message || 'Auth callback error', err);
@@ -136,7 +139,7 @@ export default function AuthCallback() {
     };
 
     handleCallback();
-  }, [navigate]);
+  }, [navigate, isHr]);
 
   // ── Email change confirmation screen ───────────────────────────────────────
   if (emailChanged) {
@@ -158,9 +161,9 @@ export default function AuthCallback() {
           </div>
           <Button
             className="w-full"
-            onClick={() => navigate('/auth', { replace: true })}
+            onClick={() => navigate(isHr ? '/hr/auth' : '/auth', { replace: true })}
           >
-            Bejelentkezés
+            {isHr ? 'Prijava' : 'Bejelentkezés'}
           </Button>
         </div>
       </div>
@@ -179,15 +182,15 @@ export default function AuthCallback() {
           <p className="text-sm text-muted-foreground mb-6">{error}</p>
           <Button
             variant="outline"
-            onClick={() => navigate('/auth', { replace: true })}
+            onClick={() => navigate(isHr ? '/hr/auth' : '/auth', { replace: true })}
             className="w-full"
           >
-            Vissza a bejelentkezéshez
+            {isHr ? 'Povratak na prijavu' : 'Vissza a bejelentkezéshez'}
           </Button>
         </div>
       </div>
     );
   }
 
-  return <LoadingSpinner message="Bejelentkezés..." />;
+  return <LoadingSpinner message={isHr ? "Prijava..." : "Bejelentkezés..."} />;
 }

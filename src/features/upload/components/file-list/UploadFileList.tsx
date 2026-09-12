@@ -3,6 +3,7 @@ import { Upload, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UploadFileItem } from './UploadFileItem';
 import type { ChannelConfig, SelectedFileItem } from '../../types';
+import { useTranslation } from 'react-i18next';
 
 interface UploadFileListProps {
   files: SelectedFileItem[];
@@ -23,13 +24,14 @@ export function UploadFileList({
   onClearFiles,
   onStartUpload,
 }: UploadFileListProps) {
+  const { t } = useTranslation(['upload']);
   if (files.length === 0) return null;
 
   return (
     <div className="space-y-4 pt-2">
       <div className="flex items-center justify-between">
         <h3 className="font-medium text-sm text-foreground">
-          Kiválasztott fájlok ({files.length})
+          {t('upload:file_list.selected_files', { count: files.length, defaultValue: `Kiválasztott fájlok (${files.length})` })}
         </h3>
         <Button
           variant="ghost"
@@ -39,7 +41,7 @@ export function UploadFileList({
           className="text-xs text-muted-foreground hover:text-destructive gap-1 h-7 px-2"
         >
           <Trash2 className="h-3.5 w-3.5" />
-          Összes törlése
+          {t('upload:file_list.clear_all', 'Összes törlése')}
         </Button>
       </div>
 
@@ -64,7 +66,7 @@ export function UploadFileList({
         {uploading ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            Feldolgozás folyamatban...
+            {t('upload:uploading', 'Feltöltés folyamatban...')}
           </>
         ) : (
           <>

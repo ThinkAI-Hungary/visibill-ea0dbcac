@@ -41,6 +41,7 @@ import AddManualJournalEntryModal from '@/components/journals/AddManualJournalEn
 import OpeningJournalWizardModal from '@/components/journals/OpeningJournalWizardModal';
 import PeriodClosingSettings from '@/components/journals/PeriodClosingSettings';
 import AuditTrailDialog from '@/components/journals/AuditTrailDialog';
+import { getLocalizedJournalName } from '@/lib/journalUtils';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
@@ -263,10 +264,10 @@ export default function JournalsPage() {
     },
     onSuccess: () => {
       refetchJournals();
-      toast({ title: "Naplók sikeresen inicializálva" });
+      toast({ title: t('accounting:journals.init_success', 'Naplók sikeresen inicializálva') });
     },
     onError: (err) => {
-      toast({ title: "Sikertelen inicializálás", description: err.message, variant: "destructive" });
+      toast({ title: t('accounting:journals.init_error', 'Sikertelen inicializálás'), description: err.message, variant: "destructive" });
     }
   });
 
@@ -821,7 +822,7 @@ export default function JournalsPage() {
                 >
                   <div className="flex flex-col min-w-0 pr-1 leading-tight flex-1">
                     <span className={cn("font-bold text-[11px] leading-tight truncate", selectedJournalId === j.id ? "text-primary-foreground" : "text-foreground")}>{j.code}</span>
-                    <span className={cn("text-[8px] leading-none truncate", selectedJournalId === j.id ? "text-primary-foreground/80" : "text-muted-foreground")}>{j.name}</span>
+                    <span className={cn("text-[8px] leading-none truncate", selectedJournalId === j.id ? "text-primary-foreground/80" : "text-muted-foreground")}>{getLocalizedJournalName(j, j.name, t)}</span>
                   </div>
                   <Badge variant={selectedJournalId === j.id ? 'secondary' : 'outline'} className="px-1.5 py-0.5 text-[8px] shrink-0 font-normal mr-1">
                     {j.currency}
@@ -829,7 +830,7 @@ export default function JournalsPage() {
                 </button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="p-2 text-xs shadow-md">
-                <p className="font-semibold text-popover-foreground">{j.code} - {j.name}</p>
+                <p className="font-semibold text-popover-foreground">{j.code} - {getLocalizedJournalName(j, j.name, t)}</p>
                 <p className="text-[10px] text-muted-foreground">
                   {t('accounting:journals.currency_label', { currency: j.currency, defaultValue: `Pénznem: ${j.currency}` })}
                 </p>

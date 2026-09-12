@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getLocalizedRegisterName } from '@/lib/pettyCashUtils';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  MAIN PAGE
@@ -164,7 +165,7 @@ const PettyCashPage = () => {
                 <p>{t('pettyCash:limit_warning_desc', { limit: fmtBalance(customLimit, 'HUF'), defaultValue: `Az alábbi házipénztárak egyenlege meghaladja a megengedett ${fmtBalance(customLimit, 'HUF')} napi készpénzállományt:` })}</p>
                 {registersExceedingLimit.map(r => (
                   <div key={r.register_id} className="font-semibold pl-2 border-l border-amber-500/30">
-                    {r.register_name}: {fmtBalance(r.current_balance, 'HUF')}
+                    {getLocalizedRegisterName(r.register_name, t)}: {fmtBalance(r.current_balance, 'HUF')}
                   </div>
                 ))}
               </div>
@@ -202,7 +203,7 @@ const PettyCashPage = () => {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-1.5 min-w-0">
                     {reg.is_default && <Star className="w-3.5 h-3.5 text-primary fill-primary shrink-0" />}
-                    <span className="text-xs font-semibold text-muted-foreground truncate" title={reg.name}>{reg.name}</span>
+                    <span className="text-xs font-semibold text-muted-foreground truncate" title={getLocalizedRegisterName(reg.name, t)}>{getLocalizedRegisterName(reg.name, t)}</span>
                   </div>
                   {reg.is_default && (
                     <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-primary/20 text-primary bg-primary/5 font-semibold shrink-0">

@@ -6,6 +6,7 @@ import { formatCurrency } from '@/lib/utils';
 import { Edit, User } from 'lucide-react';
 import { getTypeBadge, getStatusBadge, isSalaryItemPaid } from '@/lib/salary-helpers';
 import type { SalaryItem } from '@/lib/salary-helpers';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   employeeGroups: [string, SalaryItem[]][];
@@ -15,6 +16,8 @@ interface Props {
 }
 
 export function EmployeeAccordion({ employeeGroups, onEdit, isSingleMonth, periodLabel }: Props) {
+  const { t } = useTranslation(['hr', 'common']);
+
   const getSubtotal = (items: SalaryItem[]) =>
     items.filter(item => item.tipus !== 'bruttó_bér').reduce((sum, item) => sum + Number(item.összeg), 0);
 
@@ -30,8 +33,10 @@ export function EmployeeAccordion({ employeeGroups, onEdit, isSingleMonth, perio
         <div className="flex items-center gap-2 mb-4">
           <User className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-semibold">
-            Dolgozói bontás{' '}
-            <span className="text-muted-foreground font-normal">({employeeGroups.length} fő)</span>
+            {t('hr:salaries.breakdown.title', 'Dolgozói bontás')}{' '}
+            <span className="text-muted-foreground font-normal">
+              {t('hr:salaries.breakdown.employee_count', { count: employeeGroups.length, defaultValue: `(${employeeGroups.length} fő)` })}
+            </span>
             {!isSingleMonth && (
               <span className="text-muted-foreground font-normal"> — {periodLabel}</span>
             )}
@@ -39,10 +44,10 @@ export function EmployeeAccordion({ employeeGroups, onEdit, isSingleMonth, perio
         </div>
 
         <div className="grid grid-cols-[1fr_120px_140px_140px_40px] items-center px-4 py-2 mb-1 border-b border-border/30">
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Megnevezés</span>
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">Státusz</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('hr:salaries.breakdown.col_name', 'Megnevezés')}</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">{t('hr:salaries.breakdown.col_status', 'Státusz')}</span>
           <span />
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">Összeg</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">{t('hr:salaries.breakdown.col_amount', 'Összeg')}</span>
           <span />
         </div>
 
@@ -60,8 +65,8 @@ export function EmployeeAccordion({ employeeGroups, onEdit, isSingleMonth, perio
                     <div className="text-center">
                       {(() => {
                         const badge = allPaid
-                          ? { label: 'Fizetve', className: 'bg-emerald-500/15 text-emerald-500 border-emerald-500/20' }
-                          : { label: 'Nyitott', className: 'bg-amber-500/15 text-amber-500 border-amber-500/20' };
+                          ? { label: t('hr:salaries.status.paid', 'Fizetve'), className: 'bg-emerald-500/15 text-emerald-500 border-emerald-500/20' }
+                          : { label: t('hr:salaries.status.open', 'Nyitott'), className: 'bg-amber-500/15 text-amber-500 border-amber-500/20' };
                         return (
                           <Badge variant="outline" className={`text-xs ${badge.className}`}>
                             {badge.label}
@@ -69,7 +74,9 @@ export function EmployeeAccordion({ employeeGroups, onEdit, isSingleMonth, perio
                         );
                       })()}
                     </div>
-                    <span className="text-xs text-muted-foreground text-center">{items.length} tétel</span>
+                    <span className="text-xs text-muted-foreground text-center">
+                      {t('hr:salaries.breakdown.items_count', { count: items.length, defaultValue: `${items.length} tétel` })}
+                    </span>
                     <span className="font-mono font-semibold tabular-nums text-right">
                       {formatCurrency(netTotal)}
                     </span>
@@ -80,14 +87,14 @@ export function EmployeeAccordion({ employeeGroups, onEdit, isSingleMonth, perio
                 <AccordionContent className="px-0">
                   <div className="rounded-lg border border-border/50 overflow-hidden mx-4">
                     <div className="grid grid-cols-[1fr_120px_140px_140px_40px] items-center bg-muted/30 px-4 py-2.5">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Megnevezés</span>
-                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">Típus</span>
+                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('hr:salaries.breakdown.col_name', 'Megnevezés')}</span>
+                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">{t('hr:salaries.breakdown.col_type', 'Típus')}</span>
                       <span />
-                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">Összeg</span>
+                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">{t('hr:salaries.breakdown.col_amount', 'Összeg')}</span>
                       <span />
                     </div>
                     {items.map(item => {
-                      const typeBadge = getTypeBadge(item.tipus);
+                      const typeBadge = getTypeBadge(item.tipus, t);
                       return (
                         <div
                           key={item.id}
@@ -117,7 +124,7 @@ export function EmployeeAccordion({ employeeGroups, onEdit, isSingleMonth, perio
                       );
                     })}
                     <div className="grid grid-cols-[1fr_120px_140px_140px_40px] items-center px-4 py-3 bg-muted/20 border-t-2 border-border/60">
-                      <span className="font-semibold text-muted-foreground text-sm">Összesen</span>
+                      <span className="font-semibold text-muted-foreground text-sm">{t('hr:salaries.breakdown.total', 'Összesen')}</span>
                       <span />
                       <span />
                       <span className="font-mono font-bold tabular-nums text-right">
@@ -135,7 +142,7 @@ export function EmployeeAccordion({ employeeGroups, onEdit, isSingleMonth, perio
         {employeeGroups.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
             <User className="h-8 w-8 mx-auto mb-2 opacity-40" />
-            <p className="text-sm">Nincs dolgozói adat a kiválasztott időszakban</p>
+            <p className="text-sm">{t('hr:salaries.breakdown.empty', 'Nincs dolgozói adat a kiválasztott időszakban')}</p>
           </div>
         )}
       </CardContent>

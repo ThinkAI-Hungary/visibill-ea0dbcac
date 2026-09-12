@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
@@ -51,7 +52,9 @@ export function SubmittedInvoiceRow({
     invalidateInvoiceData,
     setApprovalDialogOpen,
     setSelectedInvoiceForApproval,
+    getPaymentMethodLabel,
   } = useInvoiceContext();
+  const { t } = useTranslation(['invoices', 'common']);
 
   const isExpanded = expandedRowIds.has(invoice.id);
   const isSelected = selectedSubmittedIds.has(invoice.id);
@@ -265,11 +268,11 @@ export function SubmittedInvoiceRow({
         <TableCell className="text-center">
           <div className="flex items-center justify-center gap-1.5">
             <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted/50 text-muted-foreground border border-black/10 dark:border-white/10">
-              {invoice.fizetesi_mod || 'Nem megadott'}
+              {getPaymentMethodLabel(invoice.fizetesi_mod)}
             </span>
             {invoice.exclude_from_accounting && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-300/40 whitespace-nowrap">
-                Nem könyvelt
+                {t('invoices:expanded.not_booked', 'Nem könyvelt')}
               </span>
             )}
           </div>

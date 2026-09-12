@@ -200,8 +200,8 @@
     "semantic_hash": "3b9bb36b16818801b4d70dc995de0607"
   },
   "src/components/ProtectedLayout.tsx": {
-    "mtime": 1789171579.5009656,
-    "ast_hash": "b445e2b1657c3344af2d1f675f466fe4",
+    "mtime": 1789080097.85243,
+    "ast_hash": "08f995412055ac477690f5d9d660ad16",
     "semantic_hash": ""
   },
   "src/components/ProtectedRoute.test.tsx": {
@@ -1130,8 +1130,8 @@
     "semantic_hash": ""
   },
   "src/lib/navigation.ts": {
-    "mtime": 1789171494.282193,
-    "ast_hash": "2533fb603418c9f5e15d3491e854222b",
+    "mtime": 1789080097.8637083,
+    "ast_hash": "c9888604d52a116f68152ecea3c5d560",
     "semantic_hash": ""
   },
   "src/lib/payrollUtils.test.ts": {
@@ -1450,13 +1450,13 @@
     "semantic_hash": ""
   },
   "src/pages/Auth.tsx": {
-    "mtime": 1789171508.4182603,
-    "ast_hash": "9ca849e0f31e05460fae0216489290c7",
+    "mtime": 1789080097.865713,
+    "ast_hash": "2f28dd7c69b61f3810cc4daa398072e1",
     "semantic_hash": ""
   },
   "src/pages/AuthCallback.tsx": {
-    "mtime": 1789171542.9589195,
-    "ast_hash": "cd9acb37a1ebca8df9f678a04a7a8752",
+    "mtime": 1782361114.219324,
+    "ast_hash": "4aad656b6cc1e0aa80bcfff4a7b48293",
     "semantic_hash": ""
   },
   "src/pages/BalanceSheet.tsx": {
@@ -7590,8 +7590,8 @@
     "semantic_hash": ""
   },
   "src/routes/redirects.tsx": {
-    "mtime": 1789171554.6662164,
-    "ast_hash": "24e987e9185bf015faeac8cc537a7218",
+    "mtime": 1789080097.876731,
+    "ast_hash": "985a51dcc3c8a65b5d129b56452a71e8",
     "semantic_hash": ""
   },
   "src/routes/shellComponents.tsx": {
@@ -10215,8 +10215,8 @@
     "semantic_hash": ""
   },
   "src/test/i18n.test.ts": {
-    "mtime": 1789171596.7145169,
-    "ast_hash": "6734501334b3c7eb16e7bb0491a6b654",
+    "mtime": 1789171066.3570933,
+    "ast_hash": "7d9a70a2f89df7de32613aea8e4b6412",
     "semantic_hash": ""
   },
   "src/types/i18next.d.ts": {

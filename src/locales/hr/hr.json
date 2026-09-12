@@ -29,6 +29,42 @@
       "date_summary_label": "Datum:",
       "employee_summary_label": "Djelatnik:",
       "submit_edit": "Spremi"
+    },
+    "breakdown": {
+      "title": "Raščlamba po zaposlenicima",
+      "employee_count": "({{count}} djelatnika)",
+      "col_name": "Naziv",
+      "col_status": "Status",
+      "col_type": "Vrsta",
+      "col_amount": "Iznos",
+      "items_count": "{{count}} stavki",
+      "total": "Ukupno"
+    },
+    "nav_payments": {
+      "title_single": "Uplate poreznoj upravi",
+      "title_next_period": "Uplate poreznoj upravi za sljedeće razdoblje:",
+      "col_payment_date": "Vrijeme plaćanja",
+      "total": "Ukupno uplate poreznoj upravi",
+      "empty": "Nema uplata poreznoj upravi u odabranom razdoblju"
+    },
+    "status": {
+      "paid": "Plaćeno",
+      "open": "Otvoreno"
+    },
+    "types": {
+      "salary": "Plaća",
+      "gross_salary": "Bruto plaća",
+      "vat": "PDV",
+      "tax": "Porez",
+      "contribution": "Doprinos"
+    },
+    "tax_items": {
+      "szja": "Porez na dohodak ustegnut od fizičkih osoba",
+      "kiva": "Iznos KIVA poreza na temelju osnovice doprinosa",
+      "simple_emp": "Doprinos iz jednostavnog zapošljavanja",
+      "social_security": "Doprinos za socijalno osiguranje (ustegnut od osiguranika)",
+      "social_tax": "Socijalni doprinos",
+      "vocational": "Doprinos za strukovno obrazovanje"
     }
   },
   "working_time": {

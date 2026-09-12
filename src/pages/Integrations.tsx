@@ -282,14 +282,14 @@ const Integrations = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{t('items.integrations', { defaultValue: 'Integrációk' })}</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t('settings:integrations.title', 'Integrációk')}</h1>
             <p className="text-muted-foreground text-sm mt-1">
-              {t('integrations.subtitle', { defaultValue: 'Csatlakoztasd szolgáltatásaidat és felületeidet a számlák automatikus szinkronizálásához' })}
+              {t('settings:integrations.subtitle', 'Csatlakoztasd szolgáltatásaidat és felületeidet a számlák automatikus szinkronizálásához')}
             </p>
           </div>
           <Badge variant="secondary" className="flex items-center gap-2 bg-primary/10 text-primary border-primary/20 px-3 py-1 text-xs">
             <Zap className="h-4 w-4" />
-            Automatizáció
+            {t('settings:integrations.badge_automation', 'Automatizáció')}
           </Badge>
         </div>
 
@@ -305,28 +305,28 @@ const Integrations = () => {
                   </div>
                   <div className="space-y-1.5 flex-1">
                     <div className="flex items-center gap-2">
-                      <CardTitle className="text-lg">E-mail Integráció</CardTitle>
+                      <CardTitle className="text-lg">{t('settings:integrations.email.title', 'E-mail Integráció')}</CardTitle>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Info className="h-4 w-4 text-muted-foreground cursor-help ml-auto" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
-                          <p>Fogadj számlákat a Visibill által generált e-mail aliasszal, vagy kapcsold össze saját levelező szerveredet (IMAP/SMTP).</p>
+                          <p>{t('settings:integrations.email.tooltip', 'Fogadj számlákat a Visibill által generált e-mail aliasszal, vagy kapcsold össze saját levelező szerveredet (IMAP/SMTP).')}</p>
                         </TooltipContent>
                       </Tooltip>
                     </div>
                     <CardDescription className="text-sm">
-                      Automatikus számlafogadás és kézbesítés
+                      {t('settings:integrations.email.subtitle', 'Automatikus számlafogadás és kézbesítés')}
                     </CardDescription>
                     {/* Feature Pills */}
                     <div className="flex flex-wrap gap-2 pt-1">
                       <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-medium">
                         <Mail className="h-3 w-3" />
-                        Dedikált címek
+                        {t('settings:integrations.email.dedicated_addresses', 'Dedikált címek')}
                       </div>
                       <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 text-xs font-medium">
                         <Zap className="h-3 w-3" />
-                        Azonnali feldolgozás
+                        {t('settings:integrations.email.instant_processing', 'Azonnali feldolgozás')}
                       </div>
                     </div>
                   </div>
@@ -362,28 +362,28 @@ const Integrations = () => {
               </div>
               <div className="space-y-1.5 flex-1">
                 <div className="flex items-center gap-2">
-                  <CardTitle className="text-lg">NAV Online Számla</CardTitle>
+                  <CardTitle className="text-lg">{t('settings:integrations.nav.title', 'NAV Online Számla')}</CardTitle>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Info className="h-4 w-4 text-muted-foreground cursor-help ml-auto" />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
-                      <p>Csatlakoztasd a NAV Online Számla rendszert a kimenő és bejövő számlák automatikus szinkronizálásához.</p>
+                      <p>{t('settings:integrations.nav.tooltip', 'Csatlakoztasd a NAV Online Számla rendszert a kimenő és bejövő számlák automatikus szinkronizálásához.')}</p>
                     </TooltipContent>
                   </Tooltip>
                 </div>
                 <CardDescription className="text-sm">
-                  Hivatalos magyar NAV API integráció
+                  {t('settings:integrations.nav.subtitle', 'Hivatalos magyar NAV API integráció')}
                 </CardDescription>
                 {/* Feature Pills */}
                 <div className="flex flex-wrap gap-2 pt-1">
                   <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
                     <Shield className="h-3 w-3" />
-                    Biztonságos
+                    {t('settings:integrations.nav.badge_secure', 'Biztonságos')}
                   </div>
                   <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
                     <Zap className="h-3 w-3" />
-                    Automatikus sync
+                    {t('settings:integrations.nav.badge_autosync', 'Automatikus sync')}
                   </div>
                 </div>
               </div>
@@ -402,8 +402,8 @@ const Integrations = () => {
                   isOwner={isOwner}
                   onCredentialsSaved={() => {
                     toast({
-                      title: 'Hitelesítő adatok frissítve',
-                      description: 'A NAV API hitelesítő adatok sikeresen frissítve',
+                      title: t('settings:integrations.nav.toast_credentials_updated_title', 'Hitelesítő adatok frissítve'),
+                      description: t('settings:integrations.nav.toast_credentials_updated_desc', 'A NAV API hitelesítő adatok sikeresen frissítve'),
                     });
                   }} 
                 />
@@ -414,7 +414,7 @@ const Integrations = () => {
                   <div className="p-4 border-b">
                     <div className="flex items-center gap-2">
                       <Activity className="w-4 h-4 text-primary" />
-                      <span className="font-medium text-sm">Szinkronizálási Logok</span>
+                      <span className="font-medium text-sm">{t('settings:integrations.sync_logs', 'Szinkronizálási Logok')}</span>
                       {logsLoading && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
                     </div>
                   </div>
@@ -424,7 +424,7 @@ const Integrations = () => {
                       <LogsSkeleton />
                     ) : syncLogs.length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground text-sm">
-                        Még nincsenek szinkronizálási logok.
+                        {t('settings:integrations.nav.logs_empty', 'Még nincsenek szinkronizálási logok.')}
                       </div>
                     ) : (
                       <div className="space-y-2">
@@ -433,12 +433,12 @@ const Integrations = () => {
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
                                 <Badge variant={log.invoice_direction === 'OUTBOUND' ? 'default' : 'secondary'} className="text-xs">
-                                  {log.invoice_direction === 'OUTBOUND' ? 'Kimenő' : 'Bejövő'}
+                                  {log.invoice_direction === 'OUTBOUND' ? t('settings:integrations.nav.direction_outbound', 'Kimenő') : t('settings:integrations.nav.direction_inbound', 'Bejövő')}
                                 </Badge>
                                 {getStatusBadge(log.status)}
                               </div>
                               <span className="text-xs text-muted-foreground">
-                                {log.invoices_fetched} számla
+                                {t('settings:integrations.nav.invoices_count', { count: log.invoices_fetched, defaultValue: `${log.invoices_fetched} számla` })}
                               </span>
                             </div>
                             <div className="flex items-center justify-between text-xs text-muted-foreground">

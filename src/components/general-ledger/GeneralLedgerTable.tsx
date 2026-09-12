@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { cn, fixCharacterEncoding } from '@/lib/utils';
+import { getLocalizedGlAccountName } from '@/lib/glUtils';
 import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw, Edit2, X, Check, ChevronsUpDown, FileText, Search } from 'lucide-react';
 import { exportGlExcel, exportGlAnalyticalExcel } from '@/lib/glExport';
 import { fetchAllGlBalances, fetchAllGlCategorizedItems, fetchGlItemsForAccount, GlDateBasis, GlPostingStatus, GlSearchResult } from '@/lib/glData';
@@ -124,6 +125,7 @@ interface LoadMoreSentinelRowProps {
 }
 
 function LoadMoreSentinelRow({ row, hiddenClass, indentPadding, onLoadMore }: LoadMoreSentinelRowProps) {
+  const { t } = useTranslation(['accounting', 'common']);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const targetCid = row.targetCid!;
   const isLoadingMore = !!row.isLoadingMore;
@@ -162,10 +164,10 @@ function LoadMoreSentinelRow({ row, hiddenClass, indentPadding, onLoadMore }: Lo
         )}
       </div>
       <div className="col-span-7 py-1 pr-3 text-xs flex items-center gap-2 font-medium text-primary" style={{ paddingLeft: indentPadding }}>
-        <span>{isLoadingMore ? 'Következő 100 tétel betöltése...' : row.name}</span>
+        <span>{isLoadingMore ? t('accounting:general_ledger.load_more.loading_more', 'Következő 100 tétel betöltése...') : row.name}</span>
       </div>
       <div className="col-span-3 p-2 flex justify-end items-center text-[11px] text-muted-foreground pr-4 font-mono">
-        {isLoadingMore ? 'Betöltés...' : 'Görgess vagy kattints'}
+        {isLoadingMore ? t('accounting:general_ledger.load_more.loading', 'Betöltés...') : t('accounting:general_ledger.load_more.scroll_or_click', 'Görgess vagy kattints')}
       </div>
     </div>
   );
@@ -438,7 +440,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         
         return {
           id: String(dbItem.gl_number),
-          name: fixCharacterEncoding(dbItem.short_name),
+          name: getLocalizedGlAccountName(dbItem.gl_number, fixCharacterEncoding(dbItem.short_name), t),
           glAccountId: dbItem.gl_account_id,
           balance: Number(dbItem.total_balance) || 0,
           directFinalBalance: Number(dbItem.final_balance) || 0,
@@ -701,7 +703,11 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                 const totalItemCount = node.directItemCount || 0;
                 combinedData.push({
                   id: `loadmore_${node.cid}`,
-                  name: `További 100 tétel betöltése (${directItems.length} / ${totalItemCount > 0 ? totalItemCount : 'több'} megjelenítve)`,
+                  name: t('accounting:general_ledger.load_more.label', {
+                    current: directItems.length,
+                    total: totalItemCount > 0 ? totalItemCount : t('accounting:general_ledger.load_more.more', 'több'),
+                    defaultValue: `További 100 tétel betöltése (${directItems.length} / ${totalItemCount > 0 ? totalItemCount : 'több'} megjelenítve)`
+                  }),
                   balance: 0,
                   hasChildren: false,
                   cid: `${node.cid}_loadmore`,
@@ -729,7 +735,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       return combinedData;
     }
     return [];
-  }, [dbData, loadedAccountItems, loadingAccountCids, hasMoreAccountCids, loadingMoreAccountCids, expandedRowIds, searchQuery, searchResults, normalizeText]);
+  }, [dbData, loadedAccountItems, loadingAccountCids, hasMoreAccountCids, loadingMoreAccountCids, expandedRowIds, searchQuery, searchResults, normalizeText, t]);
 
   const orphanItem = dbData?.find(d => d.gl_number === 'UNCLASSIFIED');
   const orphanCount = orphanItem ? Number(orphanItem.item_count || 0) : 0;
@@ -916,7 +922,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
           );
           return {
             id: String(dbItem.gl_number),
-            name: fixCharacterEncoding(dbItem.short_name),
+            name: getLocalizedGlAccountName(dbItem.gl_number, fixCharacterEncoding(dbItem.short_name), t),
             balance: Number(dbItem.total_balance) || 0,
             hasChildren: hasAccountChildren || itemsByGL.has(cid),
             hasAccountChildren,
@@ -1418,7 +1424,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
           {isBannerVisible && (
             <div className="px-5 py-3.5 bg-indigo-500/10 border-b border-indigo-500/20 flex flex-col sm:flex-row items-center justify-between gap-4 relative">
               <div className="text-sm text-indigo-700 dark:text-indigo-400 font-medium pr-6 flex-1">
-                Új számlatükröt választottál. Szeretnéd, hogy az AI automatikusan besorolja a "Besorolatlan" tételeidet ebbe az új struktúrába is?
+                {t('accounting:general_ledger.reclassify_banner.title', 'Új számlatükröt választottál. Szeretnéd, hogy az AI automatikusan besorolja a "Besorolatlan" tételeidet ebbe az új struktúrába is?')}
               </div>
               <div className="flex items-center gap-4 shrink-0 flex-wrap sm:flex-nowrap justify-end w-full sm:w-auto">
                 <label className="flex items-center gap-2 text-xs text-indigo-600/80 cursor-pointer print:hidden">
@@ -1427,12 +1433,12 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                     onCheckedChange={(checked) => setHideBannerNextTime(!!checked)} 
                     className="w-3.5 h-3.5 border-indigo-400 data-[state=checked]:bg-indigo-500 data-[state=checked]:text-white"
                   />
-                  Ne mutasd újra amíg nincs új tétel
+                  {t('accounting:general_ledger.reclassify_banner.hide_checkbox', 'Ne mutasd újra amíg nincs új tétel')}
                 </label>
                 <div className="flex items-center gap-2">
                   <Button onClick={handleAiReclassification} disabled={isAiReclassifying} size="sm" className="whitespace-nowrap">
                     {isAiReclassifying ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                    {isAiReclassifying ? "AI átsorolás folyamatban..." : "Igen, besorolom"}
+                    {isAiReclassifying ? t('accounting:general_ledger.reclassify_banner.in_progress', 'AI átsorolás folyamatban...') : t('accounting:general_ledger.reclassify_banner.confirm_btn', 'Igen, besorolom')}
                   </Button>
                   <Button 
                     variant="ghost" 
@@ -1449,7 +1455,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
           {selectedItemIds.size > 0 && (
             <div className="px-5 py-3.5 bg-primary/10 border-b border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10 animate-in slide-in-from-top-2 print:hidden">
               <div className="text-sm font-medium text-foreground">
-                <span className="font-bold text-primary">{selectedItemIds.size}</span> tétel kijelölve
+                <span className="font-bold text-primary">{selectedItemIds.size}</span> {t('accounting:general_ledger.bulk.selected_count', { count: selectedItemIds.size, defaultValue: `${selectedItemIds.size} tétel kijelölve` }).replace(new RegExp(`^${selectedItemIds.size}\\s*`), '')}
               </div>
               <div className="flex items-center gap-2">
                 <Button onClick={() => {
@@ -1458,10 +1464,10 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                   setDialogSearchQuery('');
                   setIsEditOpen(true);
                 }} size="sm">
-                  Kijelöltek átsorolása
+                  {t('accounting:general_ledger.bulk.reclassify_btn', 'Kijelöltek átsorolása')}
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => setSelectedItemIds(new Set())}>
-                  Mégse
+                  {t('common:actions.cancel', 'Mégse')}
                 </Button>
               </div>
             </div>
@@ -1486,9 +1492,9 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                        <Search className="w-8 h-8 opacity-40 text-muted-foreground" />
                        <div>
                          <p className="text-sm font-medium text-foreground">
-                           Nincs találat a(z) &ldquo;<span className="font-semibold text-primary">{searchQuery}</span>&rdquo; keresési kifejezésre a főkönyvben.
+                           {t('accounting:general_ledger.search_no_results.title', { query: searchQuery, defaultValue: `Nincs találat a(z) „${searchQuery}” keresési kifejezésre a főkönyvben.` })}
                          </p>
-                         <p className="text-xs text-muted-foreground mt-1">Próbálj más számlaszámra, névre vagy partnerre keresni.</p>
+                         <p className="text-xs text-muted-foreground mt-1">{t('accounting:general_ledger.search_no_results.hint', 'Próbálj más számlaszámra, névre vagy partnerre keresni.')}</p>
                        </div>
                      </div>
                    ) : (
@@ -1625,12 +1631,12 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                         )}
                         {row.isItem && row.isTemporary && (
                           <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300 font-semibold whitespace-nowrap">
-                            Ideiglenes
+                            {t('accounting:general_ledger.status.temporary', 'Ideiglenes')}
                           </span>
                         )}
                         {row.isItem && !row.isTemporary && (
                           <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 font-semibold whitespace-nowrap">
-                            Végleges
+                            {t('accounting:general_ledger.status.final', 'Végleges')}
                           </span>
                         )}
                       </div>
@@ -1653,7 +1659,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                            ) : (
                              <div className="flex flex-col items-end gap-0.5">
                                {row.finalBalance !== 0 && (
-                                 <CustomTooltip content="Végleges egyenleg" side="top">
+                                 <CustomTooltip content={t('accounting:general_ledger.tooltips.final_balance', 'Végleges egyenleg')} side="top">
                                    <span 
                                      className={cn(
                                        "font-semibold",
@@ -1665,9 +1671,9 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                                  </CustomTooltip>
                                )}
                                {row.tempBalance !== 0 && (
-                                 <CustomTooltip content="Ideiglenes egyenleg" side="top">
+                                 <CustomTooltip content={t('accounting:general_ledger.tooltips.temp_balance', 'Ideiglenes egyenleg')} side="top">
                                    <span className="text-orange-500 dark:text-orange-400 font-semibold text-xs">
-                                     {formatCurrency(row.tempBalance || 0)} <span className="text-[10px] opacity-80">(Ideigl.)</span>
+                                     {formatCurrency(row.tempBalance || 0)} <span className="text-[10px] opacity-80">{t('accounting:general_ledger.status.temp_badge', '(Ideigl.)')}</span>
                                    </span>
                                  </CustomTooltip>
                                )}
@@ -1688,7 +1694,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                           )}
                         </div>
                         {row.isItem && row.sourceTable !== 'acc_journal_lines' && row.sourceTable !== 'journal_entry' ? (
-                          <CustomTooltip content="Főkönyvi szám módosítása" side="left">
+                          <CustomTooltip content={t('accounting:general_ledger.tooltips.edit_gl', 'Főkönyvi szám módosítása')} side="left">
                             <Button
                               variant="ghost" 
                               size="icon" 
@@ -1729,7 +1735,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                     className="w-full px-5 py-2.5 flex items-center gap-2 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:bg-amber-500/10 transition-colors"
                   >
                     <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", expandedRowIds.has('__excluded__') && "rotate-180")} />
-                    <span>Nem könyvelt tételek ({excludedItems.length})</span>
+                    <span>{t('accounting:general_ledger.table.unposted_items', { count: excludedItems.length, defaultValue: `Nem könyvelt tételek (${excludedItems.length})` })}</span>
                     <span className="ml-auto font-mono tabular-nums">
                       {formatCurrency(excludedItems.reduce((s, i) => s + i.amount, 0))}
                     </span>
@@ -1763,14 +1769,14 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
           {/* Fixed Footer at the bottom of the table card */}
           <div className="shrink-0 grid grid-cols-12 border-t border-border/60 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] bg-muted/95 backdrop-blur font-bold text-sm z-20 print:border-t-2">
-             <div className="col-span-10 p-3 text-right uppercase tracking-wider text-muted-foreground">Összesen:</div>
+             <div className="col-span-10 p-3 text-right uppercase tracking-wider text-muted-foreground">{t('accounting:general_ledger.table.total', 'Összesen:')}</div>
              <div className="col-span-2 p-3 text-right tabular-nums text-foreground flex items-center justify-end gap-2 pr-4">
                 {isDataLoading ? (
                   <div className="h-4 w-20 animate-pulse bg-muted rounded" />
                 ) : (
                   <>
                     {formatCurrency(footerTotals)}
-                    <CustomTooltip content="Adatok frissítése" side="top">
+                    <CustomTooltip content={t('accounting:general_ledger.tooltips.refresh', 'Adatok frissítése')} side="top">
                       <Button 
                         variant="ghost" 
                         size="icon" 

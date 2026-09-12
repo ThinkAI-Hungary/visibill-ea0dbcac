@@ -22,6 +22,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { exportBsExcel } from '@/lib/bsExport';
+import { getLocalizedBsRowName } from '@/lib/bsUtils';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { reportError } from '@/lib/errorReporter';
 import { fetchAllGlCategorizedItems, fetchAllGlAccountsByPreset } from '@/lib/glData';
@@ -386,18 +387,18 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
         romanRows.forEach(roman => {
           const arabicChildren = bsStructure.filter(r => r.parent_id === roman.id && r.type === 'arabic');
           if (arabicChildren.length > 0) {
-            arabicChildren.forEach(a => leafRows.push({ ...a, label: `${roman.row_code}/${a.row_code} ${a.name}` }));
+            arabicChildren.forEach(a => leafRows.push({ ...a, label: `${roman.row_code}/${a.row_code} ${getLocalizedBsRowName(a, a.name, t)}` }));
           } else {
-            leafRows.push({ ...roman, label: `${roman.row_code} ${roman.name}` });
+            leafRows.push({ ...roman, label: `${roman.row_code} ${getLocalizedBsRowName(roman, roman.name, t)}` });
           }
         });
         const directArabic = bsStructure.filter(r => r.parent_id === letter.id && r.type === 'arabic');
-        directArabic.forEach(a => leafRows.push({ ...a, label: `${a.row_code} ${a.name}` }));
+        directArabic.forEach(a => leafRows.push({ ...a, label: `${a.row_code} ${getLocalizedBsRowName(a, a.name, t)}` }));
         return { letter, leafRows };
       });
     };
     return { assets: buildGroup('assets'), liabilities: buildGroup('liabilities') };
-  }, [bsStructure]);
+  }, [bsStructure, t]);
 
   // P8: FinancialPageSkeleton instead of blank page
   if (isLoadingStructure || isLoadingGlAccounts || isLoadingMappings) {
@@ -474,7 +475,7 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
                         {dropdownGroups.assets.map(group => (
                           <React.Fragment key={group.letter.id}>
                             <SelectItem disabled value={`__h_${group.letter.id}`} className="font-bold text-xs uppercase tracking-wide text-emerald-500 dark:text-emerald-400 mt-1">
-                              {group.letter.row_code} {group.letter.name}
+                              {group.letter.row_code} {getLocalizedBsRowName(group.letter, group.letter.name, t)}
                             </SelectItem>
                             {group.leafRows.map((row: any) => (
                               <SelectItem key={row.id} value={row.id} className="pl-6 text-xs">
@@ -486,7 +487,7 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
                         {dropdownGroups.liabilities.map(group => (
                           <React.Fragment key={group.letter.id}>
                             <SelectItem disabled value={`__h_${group.letter.id}`} className="font-bold text-xs uppercase tracking-wide text-blue-500 dark:text-blue-400 mt-1">
-                              {group.letter.row_code} {group.letter.name}
+                              {group.letter.row_code} {getLocalizedBsRowName(group.letter, group.letter.name, t)}
                             </SelectItem>
                             {group.leafRows.map((row: any) => (
                               <SelectItem key={row.id} value={row.id} className="pl-6 text-xs" disabled={row.is_pnl_bridge}>
@@ -563,8 +564,8 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
                     </td>
                     <td className="py-2.5 px-2 font-mono font-semibold">{s.gl_number}</td>
                     <td className="py-2.5 px-2 truncate max-w-[150px]" title={s.short_name}>{s.short_name}</td>
-                    <td className="py-2.5 px-2 text-indigo-600 dark:text-indigo-400 font-semibold truncate max-w-[180px]" title={s.bs_row_name}>
-                      {s.bs_row_code} {s.bs_row_name}
+                    <td className="py-2.5 px-2 text-indigo-600 dark:text-indigo-400 font-semibold truncate max-w-[180px]" title={getLocalizedBsRowName(s.bs_row_name, s.bs_row_name, t)}>
+                      {s.bs_row_code} {getLocalizedBsRowName(s.bs_row_name, s.bs_row_name, t)}
                     </td>
                     <td className="py-2.5 px-2 text-[10px] text-muted-foreground">{s.reasoning}</td>
                   </tr>
@@ -782,7 +783,7 @@ function BsViewTab({
     return map;
   }, [bsData]);
 
-  if (isLoading) return <FinancialPageSkeleton title="Mérleg betöltése..." />;
+  if (isLoading) return <FinancialPageSkeleton title={t('accounting:balance_sheet.mapping_tab.loading', 'Mérleg betöltése...')} />;
 
   // U10: Error state with retry button
   if (isError) return (
@@ -790,8 +791,8 @@ function BsViewTab({
       <div className="flex items-center gap-3 p-4 rounded-xl border-2 bg-red-500/10 border-red-500/40 text-red-700 dark:text-red-400">
         <AlertTriangle className="w-5 h-5 shrink-0" />
         <div className="flex-1">
-          <p className="font-bold">Hiba a mérleg betöltésekor</p>
-          <p className="text-sm mt-1 opacity-80">{(queryError as any)?.message || 'Ismeretlen hiba. Ellenőrizd, hogy a get_bs_report RPC funkció le van-e futtatva a Supabase-ben.'}</p>
+          <p className="font-bold">{t('accounting:balance_sheet.errors.load_title', 'Hiba a mérleg betöltésekor')}</p>
+          <p className="text-sm mt-1 opacity-80">{(queryError as any)?.message || t('accounting:balance_sheet.errors.unknown', 'Ismeretlen hiba. Ellenőrizd, hogy a get_bs_report RPC funkció le van-e futtatva a Supabase-ben.')}</p>
         </div>
         <Button
           variant="outline"
@@ -799,7 +800,7 @@ function BsViewTab({
           className="shrink-0 gap-1.5 border-red-500/30 hover:bg-red-500/10"
           onClick={() => refetch()}
         >
-          <RefreshCw className="w-3.5 h-3.5" /> Újrapróbálás
+          <RefreshCw className="w-3.5 h-3.5" /> {t('accounting:balance_sheet.errors.retry', 'Újrapróbálás')}
         </Button>
       </div>
     </div>
@@ -896,9 +897,9 @@ function BsViewTab({
               </div>
             )}
             <span className={cn(isTotal && "uppercase tracking-wide text-sm sm:text-base", isLetter && "uppercase font-bold text-xs sm:text-sm")}>
-              {row.name}
+              {getLocalizedBsRowName(row, row.name, t)}
             </span>
-            {row.is_pnl_bridge && <span title="Automatikusan az Eredménykimutatásból"><Lock className="w-3.5 h-3.5 text-amber-500 ml-1" /></span>}
+            {row.is_pnl_bridge && <span title={t('accounting:balance_sheet.table.pnl_bridge_tooltip', 'Automatikusan az Eredménykimutatásból')}><Lock className="w-3.5 h-3.5 text-amber-500 ml-1" /></span>}
             {/* F12: tooltip for significant change */}
             {hasSignificantChange && (
               <TooltipProvider delayDuration={0}>
@@ -906,7 +907,7 @@ function BsViewTab({
                   <TooltipTrigger asChild>
                     <TrendingUp className="w-3.5 h-3.5 text-blue-500 shrink-0" />
                   </TooltipTrigger>
-                  <TooltipContent>Előző évhez képest &gt;50% változás</TooltipContent>
+                  <TooltipContent>{t('accounting:balance_sheet.table.significant_change_tooltip', 'Előző évhez képest >50% változás')}</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             )}
@@ -1103,7 +1104,7 @@ function BsViewTab({
               </DropdownMenuItem>
               <DropdownMenuItem onClick={async () => {
                 try {
-                  await exportBsExcel(assets, liabilities, totalAssets, totalLiabilities, inThousands, selectedCompany?.name || 'Vallalkozas');
+                  await exportBsExcel(assets, liabilities, totalAssets, totalLiabilities, inThousands, selectedCompany?.name || 'Vallalkozas', t);
                   toast({ 
                     title: t('accounting:balance_sheet.toasts.export_success_title', 'Sikeres exportálás'), 
                     description: t('accounting:balance_sheet.toasts.export_success_desc', 'A mérleg letöltése megkezdődött.') 
@@ -1179,7 +1180,7 @@ function BsViewTab({
             <ContextMenuSeparator />
             <ContextMenuItem className="gap-2" onClick={() => {
               const rows = [...assets, ...liabilities];
-              const csv = 'Sor;Megnevezés;Tárgyév\n' + rows.map(r => `${r.row_code};${r.name};${r.current_year_balance || 0}`).join('\n');
+              const csv = `${t('accounting:balance_sheet.table.row', 'Sor')};${t('accounting:balance_sheet.table.name', 'Megnevezés')};${t('accounting:balance_sheet.table.current_year', 'Tárgyév')}\n` + rows.map(r => `${r.row_code};${getLocalizedBsRowName(r, r.name, t)};${r.current_year_balance || 0}`).join('\n');
               navigator.clipboard.writeText(csv);
             }}><ClipboardCopy className="w-4 h-4" /> {t('accounting:balance_sheet.context_menu.copy_csv', 'Másolás CSV-ként')}</ContextMenuItem>
           </ContextMenuContent>
@@ -1277,7 +1278,7 @@ export default function BalanceSheet() {
   }, [glAccounts, existingMappings]);
 
   useKeyboardShortcuts([
-    { combo: { key: 'p', ctrl: true }, handler: () => window.print(), description: 'Nyomtatás' },
+    { combo: { key: 'p', ctrl: true }, handler: () => window.print(), description: t('accounting:balance_sheet.print_shortcut', 'Nyomtatás') },
   ]);
 
   return (
@@ -1285,12 +1286,12 @@ export default function BalanceSheet() {
       {/* Print-only header */}
       <div className="hidden print:flex flex-col items-center justify-center mb-8 w-full border-b-2 border-primary/20 pb-6">
         <h1 className="text-5xl font-semibold text-primary tracking-tight print:text-black mb-2">eaisybill</h1>
-        <h2 className="text-2xl font-bold uppercase tracking-widest text-foreground mt-2">Mérleg</h2>
-        <p className="text-sm text-muted-foreground mt-1">Sztv. "A" változat szerinti mérleg</p>
+        <h2 className="text-2xl font-bold uppercase tracking-widest text-foreground mt-2">{t('accounting:balance_sheet.title', 'Mérleg')}</h2>
+        <p className="text-sm text-muted-foreground mt-1">{t('accounting:balance_sheet.description', 'Sztv. "A" változat szerinti mérleg')}</p>
         <div className="mt-4 flex items-center gap-4 text-sm font-medium text-muted-foreground">
           <span>{selectedCompany?.name}</span>
           <span>•</span>
-          <span>Fordulónap: {new Date().toISOString().slice(0, 10).replace(/-/g, '.')}</span>
+          <span>{t('accounting:balance_sheet.reporting_date', 'Fordulónap')}: {new Date().toISOString().slice(0, 10).replace(/-/g, '.')}</span>
         </div>
       </div>
 
@@ -1401,7 +1402,7 @@ export default function BalanceSheet() {
           <Card className="border-border/60 shadow-md">
             <CardHeader className="pb-4 border-b border-border/40">
               <div className="flex justify-between items-center">
-                <div><CardTitle className="text-xl">Hozzárendelési Mátrix</CardTitle><CardDescription>Párosítsd az 1-4. számlaosztály főkönyvi számait a Mérleg soraihoz.</CardDescription></div>
+                <div><CardTitle className="text-xl">{t('accounting:balance_sheet.tabs.mapping', 'Hozzárendelési Mátrix')}</CardTitle><CardDescription>{t('accounting:balance_sheet.mapping_tab.desc', 'Párosítsd az 1-4. számlaosztály főkönyvi számait a Mérleg soraihoz.')}</CardDescription></div>
                 {presets && presets.length > 0 && (
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">{t('accounting:general_ledger.toolbar.active_preset', 'Aktív sablon:')}</span>

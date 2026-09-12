@@ -15,5 +15,72 @@
     "transactions": "Tranzakciók",
     "salaries": "Béradatok",
     "reports": "Futár riportok"
+  },
+  "channels_config": {
+    "invoices": {
+      "card_title": "Számlafájlok feltöltése",
+      "card_description": "Válassz PDF vagy kép fájlokat, amelyek számlákat tartalmaznak. A rendszer automatikusan kinyeri az adatokat és rögzíti a számlákat."
+    },
+    "vouchers": {
+      "card_title": "Pénztárbizonylat fájlok feltöltése",
+      "card_description": "Válassz PDF vagy kép fájlokat, amelyek kiadási vagy bevételi pénztárbizonylatokat tartalmaznak. Támogatott formátumok: PDF, JPG, PNG, WebP"
+    },
+    "transactions": {
+      "card_title": "Tranzakciós fájlok feltöltése",
+      "card_description": "Válassz PDF, CSV vagy Excel fájlokat, amelyek banki vagy egyéb pénzügyi tranzakciókat tartalmaznak. A rendszer automatikusan kinyeri az adatokat és rögzíti a tranzakciókat."
+    },
+    "salaries": {
+      "card_title": "Bérek és járulékok feltöltése",
+      "card_description": "Tölts fel bérlistát, bérszámfejtési összesítőt, járulékbevallást vagy NAV határozatot PDF, CSV vagy Excel formátumban. A rendszer automatikusan feldolgozza és kategóriába rendezi."
+    },
+    "reports": {
+      "card_title": "Futár riportok feltöltése",
+      "card_description": "Válassz futár riport fájlokat (GLS, MPL, Mixpack). A rendszer automatikusan párosítja a csomagokat a kiállított számlákkal."
+    }
+  },
+  "file_list": {
+    "selected_files": "Kiválasztott fájlok ({{count}})",
+    "clear_all": "Összes törlése"
+  },
+  "history_table": {
+    "title_invoices": "Számla feltöltési előzmények",
+    "title_vouchers": "Pénztárbizonylat feltöltési előzmények",
+    "title_salaries": "Bér/járulék feltöltési előzmények",
+    "title_bank": "Bankkivonat feltöltési előzmények",
+    "title_reports": "Riport feltöltési előzmények",
+    "title_transactions": "Tranzakció feltöltési előzmények",
+    "empty": "Még nincs feltöltési előzmény",
+    "col_filename": "Fájlnév",
+    "col_size": "Méret",
+    "col_uploaded_by": "Feltöltötte",
+    "col_date": "Dátum",
+    "col_status": "Státusz",
+    "unknown_user": "Ismeretlen felhasználó",
+    "email_source": "E-mail"
+  },
+  "status": {
+    "upload_failed": "A feltöltés sikertelen",
+    "processing_error": "Feldolgozási hiba",
+    "processing_error_progress": "Feldolgozási hiba {{processed}}/{{total}}",
+    "errors_count": "{{count}} hiba",
+    "processing": "Feldolgozás alatt",
+    "processing_progress": "Feldolgozás alatt {{processed}}/{{total}}",
+    "doc_matched": "Dokumentum párosítva",
+    "escalation": "⚠️ Eszkaláció",
+    "waiting_for_invoice": "Vár a számlára",
+    "unidentified": "Nem beazonosítható",
+    "dismissed": "Elutasítva",
+    "processed": "Feldolgozva",
+    "processed_progress": "Feldolgozva {{total}}/{{total}}",
+    "uploaded": "Feltöltve"
+  },
+  "legend": {
+    "title": "Jelmagyarázat:",
+    "uploaded_desc": "A fájl feltöltésre került",
+    "processing_desc": "A feldolgozás folyamatban van",
+    "processed_desc": "Sikeresen feldolgozva és rögzítve",
+    "processing_error_desc": "A feltöltés sikerült, de a feldolgozás hibára futott",
+    "unidentified_desc": "A dokumentum nem volt felismerhető számlaként",
+    "dismissed_desc": "A dokumentum manuálisan el lett utasítva"
   }
 }

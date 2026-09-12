@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Copy, CheckCircle, Loader2, Plus } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { reportError } from '@/lib/errorReporter';
+import { useTranslation } from 'react-i18next';
 
 interface EmailAlias {
   id: string;
@@ -19,6 +20,7 @@ interface EmailAlias {
 }
 
 const EmailAliasManager = () => {
+  const { t } = useTranslation(['settings', 'common']);
   const [alias, setAlias] = useState<EmailAlias | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -147,7 +149,7 @@ const EmailAliasManager = () => {
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">Betöltés...</span>
+          <span className="text-sm text-muted-foreground">{t('common:status.loading', 'Betöltés...')}</span>
         </div>
         <Skeleton className="h-10 w-full rounded-md" />
       </div>
@@ -157,7 +159,7 @@ const EmailAliasManager = () => {
   if (!selectedCompany) {
     return (
       <p className="text-sm text-muted-foreground">
-        Válassz ki egy céget az email alias megtekintéséhez.
+        {t('settings:integrations.email.select_company', 'Válassz ki egy céget az email alias megtekintéséhez.')}
       </p>
     );
   }
@@ -166,7 +168,7 @@ const EmailAliasManager = () => {
     <div className="space-y-4">
       {/* Instruction text */}
       <p className="text-sm text-muted-foreground">
-        Állítsa be minden mailfiókjában, hogy az e-mailjei ide is továbbításra kerüljenek, az alább megadott e-mail címre.
+        {t('settings:integrations.email.instruction', 'Állítsa be minden mailfiókjában, hogy az e-mailjei ide is továbbításra kerüljenek, az alább megadott e-mail címre.')}
       </p>
 
       {/* Read-only email alias input with copy button, or generate button */}
@@ -194,7 +196,7 @@ const EmailAliasManager = () => {
       ) : (
         <div className="space-y-3">
           <Input
-            value="Nincs elérhető alias"
+            value={t('settings:integrations.email.no_alias', 'Nincs elérhető alias')}
             readOnly
             disabled
             className="bg-muted text-muted-foreground cursor-default"
@@ -208,12 +210,12 @@ const EmailAliasManager = () => {
             {generating ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Generálás...
+                {t('settings:integrations.email.generating', 'Generálás...')}
               </>
             ) : (
               <>
                 <Plus className="h-4 w-4 mr-2" />
-                Email alias generálása
+                {t('settings:integrations.email.generate_alias', 'Email alias generálása')}
               </>
             )}
           </Button>

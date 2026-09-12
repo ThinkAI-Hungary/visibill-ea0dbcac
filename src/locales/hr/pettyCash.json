@@ -22,7 +22,8 @@
     "first_register": "Kreiraj prvu blagajnu",
     "no_registers": "Još nema kreiranih blagajni",
     "make_default": "Postavi kao zadano",
-    "opening_balances": "Početna stanja"
+    "opening_balances": "Početna stanja",
+    "default_name": "Glavna blagajna"
   },
   "calculator": {
     "title": "Kalkulator apoena",
@@ -128,6 +129,9 @@
       "view_receipt": "Pregledaj dokument",
       "edit_and_approve": "Izmijeni i odobri",
       "approve_and_book": "Odobri i proknjiži"
-    }
+    },
+    "auto_desc_inbound": "Isplata iz blagajne - {{partner}}",
+    "auto_desc_outbound": "Uplata u blagajnu - {{partner}}",
+    "unknown_partner": "Nepoznati partner"
   }
 }

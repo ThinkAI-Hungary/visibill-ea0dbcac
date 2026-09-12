@@ -1,17 +1,21 @@
+import { getLocalizedBsRowName } from './bsUtils';
+
 export const exportBsExcel = async (
   assets: any[],
   liabilities: any[],
   totalAssets: number,
   totalLiabilities: number,
   inThousands: boolean,
-  companyName: string = 'Vállalkozás'
+  companyName: string = 'Vállalkozás',
+  t?: (key: any, ...args: any[]) => any
 ) => {
   const { default: ExcelJS } = await import('exceljs');
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'eaisybill';
   workbook.created = new Date();
 
-  const worksheet = workbook.addWorksheet('Mérleg', {
+  const worksheetTitle = t ? t('accounting:balance_sheet.card_title', 'Mérleg') : 'Mérleg';
+  const worksheet = workbook.addWorksheet(worksheetTitle, {
     views: [{ showGridLines: false }],
     properties: {
       outlineProperties: {
@@ -23,11 +27,11 @@ export const exportBsExcel = async (
 
   // Set Columns
   worksheet.columns = [
-    { header: 'Sor', key: 'sor', width: 10 },
-    { header: 'Megnevezés', key: 'nev', width: 55 },
-    { header: 'Előző év', key: 'elozo', width: 15 },
-    { header: 'Módosítások', key: 'modositas', width: 15 },
-    { header: `Tárgyév (${inThousands ? 'Ezer Ft' : 'Ft'})`, key: 'targy', width: 18 },
+    { header: t ? t('accounting:balance_sheet.table.row', 'Sor') : 'Sor', key: 'sor', width: 10 },
+    { header: t ? t('accounting:balance_sheet.table.name', 'Megnevezés') : 'Megnevezés', key: 'nev', width: 55 },
+    { header: t ? t('accounting:balance_sheet.table.previous_year', 'Előző év') : 'Előző év', key: 'elozo', width: 15 },
+    { header: t ? t('accounting:balance_sheet.table.modifications', 'Módosítások') : 'Módosítások', key: 'modositas', width: 15 },
+    { header: `${t ? t('accounting:balance_sheet.table.current_year', 'Tárgyév') : 'Tárgyév'} (${inThousands ? 'E Ft' : 'Ft'})`, key: 'targy', width: 18 },
   ];
 
   // Style header
@@ -54,10 +58,11 @@ export const exportBsExcel = async (
     const isTotal = row.type === 'total';
 
     const indent = isRoman ? '   ' : isArabic ? '      ' : '';
+    const localizedName = t ? getLocalizedBsRowName(row, row.name, t) : row.name;
 
     const excelRow = worksheet.addRow({
       sor: row.row_code || '',
-      nev: `${indent}${row.name}`,
+      nev: `${indent}${localizedName}`,
       elozo: formatValue(Number(row.prior_year_balance) || 0),
       modositas: formatValue(Number(row.prior_year_adjustment) || 0),
       targy: formatValue(row.computedBalance || 0),
@@ -157,7 +162,8 @@ export const exportBsExcel = async (
   const url = URL.createObjectURL(blob);
 
   const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-  const filename = `Merleg_${companyName.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.xlsx`;
+  const prefix = t ? t('accounting:balance_sheet.breadcrumb', 'Merleg') : 'Merleg';
+  const filename = `${prefix}_${companyName.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.xlsx`;
 
   const link = document.createElement('a');
   link.href = url;

@@ -20,6 +20,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { NumberInput } from '@/components/ui/number-input';
 import { CustomTooltip } from '@/components/ui/custom-tooltip';
 import { Badge } from '@/components/ui/badge';
+import { getLocalizedJournalName } from '@/lib/journalUtils';
 
 interface AddManualJournalEntryModalProps {
   open: boolean;
@@ -469,7 +470,7 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                   </SelectTrigger>
                   <SelectContent>
                     {journals.map((j: any) => (
-                      <SelectItem key={j.id} value={j.id}>{j.code} - {j.name}</SelectItem>
+                      <SelectItem key={j.id} value={j.id}>{j.code} - {getLocalizedJournalName(j, j.name, t)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { reportError } from '@/lib/errorReporter';
+import { useTranslation } from 'react-i18next';
 
 interface NavCredentialsFormProps {
   companyId?: string;
@@ -18,6 +19,7 @@ interface NavCredentialsFormProps {
 }
 
 const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOwner = true, onCredentialsSaved }) => {
+  const { t } = useTranslation(['settings', 'common']);
   const { toast } = useToast();
   const [initialLoading, setInitialLoading] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -571,12 +573,12 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
                 {loading ? (
                   <>
                     <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                    Leválasztás...
+                    {t('settings:integrations.nav.disconnecting', 'Leválasztás...')}
                   </>
                 ) : (
                   <>
                     <AlertCircle className="mr-2 h-4 w-4" />
-                    Leválasztás
+                    {t('settings:integrations.nav.disconnect', 'Leválasztás')}
                   </>
                 )}
               </Button>
@@ -586,7 +588,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
           <Alert>
             <Shield className="h-4 w-4" />
             <AlertDescription>
-              Csak a cég tulajdonosa kezelheti a NAV integrációt.
+              {t('settings:integrations.nav.owner_only', 'Csak a cég tulajdonosa kezelheti a NAV integrációt.')}
             </AlertDescription>
           </Alert>
         )}
@@ -602,7 +604,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
         <Alert>
           <Shield className="h-4 w-4" />
           <AlertDescription>
-            Csak a cég tulajdonosa kezelheti a NAV integrációt.
+            {t('settings:integrations.nav.owner_only', 'Csak a cég tulajdonosa kezelheti a NAV integrációt.')}
           </AlertDescription>
         </Alert>
       </div>
@@ -618,10 +620,10 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
       <CardHeader>
         <div className="flex items-center gap-2">
           <Shield className="w-5 h-5 text-primary" />
-          <CardTitle>NAV API Hitelesítő Adatok</CardTitle>
+          <CardTitle>{t('settings:integrations.nav.credentials_title', 'NAV API Hitelesítő Adatok')}</CardTitle>
         </div>
         <CardDescription>
-          Adja meg a NAV online számla rendszer API hozzáférési adatait
+          {t('settings:integrations.nav.credentials_desc', 'Adja meg a NAV online számla rendszer API hozzáférési adatait')}
         </CardDescription>
       </CardHeader>
       
@@ -630,10 +632,10 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
           <AlertCircle className="h-4 w-4" />
           <AlertDescription className="space-y-1">
             <p>
-              Éles NAV API környezet használatához valós NAV technikai felhasználó adatok szükségesek.
+              {t('settings:integrations.nav.alert_env', 'Éles NAV API környezet használatához valós NAV technikai felhasználó adatok szükségesek.')}
             </p>
             <p className="text-sm text-muted-foreground">
-              ⚠️ A technikai felhasználóhoz tartozó adószámnak egyeznie kell a NAV-ban regisztrált adatokkal
+              {t('settings:integrations.nav.alert_tax_match', '⚠️ A technikai felhasználóhoz tartozó adószámnak egyeznie kell a NAV-ban regisztrált adatokkal')}
             </p>
           </AlertDescription>
         </Alert>
@@ -641,18 +643,18 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
         {/* Basic Credentials */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="username">NAV Felhasználónév</Label>
+            <Label htmlFor="username">{t('settings:integrations.nav.username_label', 'NAV Felhasználónév')}</Label>
             <Input
               id="username"
               type="text"
               value={formData.nav_username}
               onChange={(e) => handleInputChange('nav_username', e.target.value)}
-              placeholder="NAV felhasználónév"
+              placeholder={t('settings:integrations.nav.username_placeholder', 'NAV felhasználónév')}
             />
           </div>
           
           <div>
-            <Label htmlFor="taxNumber">Adószám</Label>
+            <Label htmlFor="taxNumber">{t('settings:integrations.nav.tax_number_label', 'Adószám')}</Label>
             <Input
               id="taxNumber"
               type="text"
@@ -663,19 +665,19 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
               className={formData.nav_tax_number && !/^\d{8}$/.test(formData.nav_tax_number) ? 'border-destructive' : ''}
             />
             {formData.nav_tax_number && !/^\d{8}$/.test(formData.nav_tax_number) && (
-              <p className="text-xs text-destructive mt-1">Pontosan 8 számjegy szükséges</p>
+              <p className="text-xs text-destructive mt-1">{t('settings:integrations.nav.tax_number_hint', 'Pontosan 8 számjegy szükséges')}</p>
             )}
           </div>
         </div>
 
         <div>
-          <Label htmlFor="password">NAV Jelszó</Label>
+          <Label htmlFor="password">{t('settings:integrations.nav.password_label', 'NAV Jelszó')}</Label>
           <Input
             id="password"
             type="password"
             value={formData.nav_password}
             onChange={(e) => handleInputChange('nav_password', e.target.value)}
-            placeholder="NAV jelszó"
+            placeholder={t('settings:integrations.nav.password_placeholder', 'NAV jelszó')}
           />
         </div>
 
@@ -683,11 +685,11 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <Key className="w-4 h-4" />
-            <Label className="text-sm font-medium">API Kulcsok</Label>
+            <Label className="text-sm font-medium">{t('settings:integrations.nav.api_keys_label', 'API Kulcsok')}</Label>
           </div>
           
           <div>
-            <Label htmlFor="signKey">Aláíró Kulcs</Label>
+            <Label htmlFor="signKey">{t('settings:integrations.nav.sign_key_label', 'Aláíró Kulcs')}</Label>
             <Input
               id="signKey"
               type="password"
@@ -698,7 +700,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
           </div>
           
           <div>
-            <Label htmlFor="exchangeKey">Csere Kulcs</Label>
+            <Label htmlFor="exchangeKey">{t('settings:integrations.nav.exchange_key_label', 'Csere Kulcs')}</Label>
             <Input
               id="exchangeKey"
               type="password"
@@ -712,7 +714,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
         {/* Optional Developer Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="devName">Fejlesztő Név (opcionális)</Label>
+            <Label htmlFor="devName">{t('settings:integrations.nav.dev_name_label', 'Fejlesztő Név (opcionális)')}</Label>
             <Input
               id="devName"
               type="text"

@@ -1,7 +1,8 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { resolveAuthTarget } from '@/lib/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
@@ -405,7 +406,8 @@ const getBooksCarouselSlides = (t: any, isHr: boolean): CarouselSlide[] => [
 
 const Auth = () => {
   const { t, i18n } = useTranslation('auth');
-  const isHr = (i18n.language || '').startsWith('hr');
+  const location = useLocation();
+  const isHr = (i18n.language || '').startsWith('hr') || location.pathname.startsWith('/hr');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -646,13 +648,11 @@ const Auth = () => {
     }
 
     if (user && !isRecoverySession && hasEaisybillAccess !== undefined) {
-      // Respect the eaisybooks toggle for routing
-      const target = returnTo && returnTo !== '/'
-        ? returnTo
-        : isEaisybooks ? '/eaisybooks' : '/';
+      // Respect the eaisybooks toggle and language route
+      const target = resolveAuthTarget(returnTo, isEaisybooks, isHr);
       navigate(target);
     }
-  }, [user, navigate, signUpSuccess, isUnverified, isEaisybooks, returnTo, hasEaisybillAccess, authSearchParams, isRecoverySession]);
+  }, [user, navigate, signUpSuccess, isUnverified, isEaisybooks, returnTo, hasEaisybillAccess, authSearchParams, isRecoverySession, isHr]);
 
   // Non-passive wheel listener — adds to scroll velocity for smooth momentum
   useEffect(() => {
@@ -920,10 +920,8 @@ const Auth = () => {
     if (!error) {
       const { data: { user: sessionUser } } = await supabase.auth.getUser();
       // If user logged in with the eaisybooks toggle, send them to /accounty.
-      // Otherwise navigate to '/' (or returnTo) — RootRedirect handles the rest.
-      const target = returnTo && returnTo !== '/'
-        ? returnTo
-        : isEaisybooks ? '/eaisybooks' : '/';
+      // Otherwise navigate to '/' or '/hr' (or returnTo) — RootRedirect handles the rest.
+      const target = resolveAuthTarget(returnTo, isEaisybooks, isHr);
       navigate(target);
     }
 
@@ -949,10 +947,11 @@ const Auth = () => {
   };
 
   const handleGoogleSignIn = async () => {
+    const callbackPath = isHr ? '/hr/auth/callback' : '/auth/callback';
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}${callbackPath}`,
       },
     });
 

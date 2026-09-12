@@ -32,6 +32,7 @@ import { reportError } from '@/lib/errorReporter';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import { useScopedNavigate } from '@/lib/navigation';
 import { toast } from '@/hooks/use-toast';
+import { getTransactionTypeLabel } from '@/lib/transactionUtils';
 
 
 // ── Bank display config ──
@@ -860,7 +861,7 @@ const TransactionsPage = () => {
                     )}
                     {filters.type !== 'all' && (
                       <Badge variant="secondary" className="text-[10px] gap-1 px-1.5 py-0.5 rounded-md bg-muted/80 text-muted-foreground border border-border/40">
-                        {t('transactions:filters.type_prefix', 'Típus:')} {filters.type}
+                        {t('transactions:filters.type_prefix', 'Típus:')} {getTransactionTypeLabel(filters.type, t)}
                         <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setFilters(prev => ({ ...prev, type: 'all' }))} />
                       </Badge>
                     )}

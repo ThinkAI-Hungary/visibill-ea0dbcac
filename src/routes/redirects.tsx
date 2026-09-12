@@ -139,7 +139,7 @@ export function RootRedirect() {
     }
   }
 
-  const isHr = location.pathname === '/hr' || location.pathname.startsWith('/hr/');
+  const isHr = location.pathname === '/hr' || location.pathname.startsWith('/hr/') || i18n.language === 'hr';
   if (isHr && i18n.language !== 'hr') {
     i18n.changeLanguage('hr');
   }
@@ -199,9 +199,11 @@ export function AccountyRootRedirect() {
 export function LegacyRedirect({ page }: { page: string }) {
   const { selectedCompany } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
+  const location = useLocation();
 
   if (!selectedCompany) return null;
-  const target = generateScopedPath(selectedCompany.id, dateFromFormatted, dateToFormatted, page);
+  const isHr = location.pathname === '/hr' || location.pathname.startsWith('/hr/') || i18n.language === 'hr';
+  const target = generateScopedPath(selectedCompany.id, dateFromFormatted, dateToFormatted, page, isHr);
   return <Navigate to={target} replace />;
 }
 

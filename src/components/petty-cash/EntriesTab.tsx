@@ -28,6 +28,7 @@ import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import type { PettyCashRegister, PettyCashEntry, OpenOutboundInvoice } from './types';
 import { SOURCE_LABELS, SOURCE_COLORS, fmtAmount, fmtBalance, roundHuf } from './types';
 import CashClosingDialog from './CashClosingDialog';
+import { getLocalizedRegisterName, getLocalizedEntryDescription } from '@/lib/pettyCashUtils';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import SignatureDialog from './SignatureDialog';
 import { generateCashReceiptPdf } from '@/lib/cashReceiptPdf';
@@ -327,8 +328,8 @@ export default function EntriesTab() {
       register_id: registers.find(r => r.is_default)?.id || registers[0]?.id || '',
       entry_date: inv.kibocsatas_datuma,
       description: inv.invoice_direction === 'OUTBOUND' 
-        ? `Pénztári bevétel - ${inv.vevo_nev || 'Ismeretlen'}`
-        : `Pénztári kiadás - ${inv.elado_nev || 'Ismeretlen'}`,
+        ? t('pettyCash:entries.auto_desc_outbound', { partner: inv.vevo_nev || t('pettyCash:entries.unknown_partner', { defaultValue: 'Ismeretlen' }), defaultValue: `Pénztári bevétel - ${inv.vevo_nev || 'Ismeretlen'}` })
+        : t('pettyCash:entries.auto_desc_inbound', { partner: inv.elado_nev || t('pettyCash:entries.unknown_partner', { defaultValue: 'Ismeretlen' }), defaultValue: `Pénztári kiadás - ${inv.elado_nev || 'Ismeretlen'}` }),
       amount: inv.invoice_direction === 'OUTBOUND' ? inv.brutto_vegosszeg : -inv.brutto_vegosszeg,
       currency: inv.penznem || 'HUF',
       source_type: inv.invoice_direction === 'OUTBOUND' ? 'cash_sale' : 'cash_expense',
@@ -479,7 +480,7 @@ export default function EntriesTab() {
             <SelectTrigger className="w-32 h-8 text-xs"><SelectValue placeholder={t('pettyCash:entries.filter_register', 'Pénztár')} /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t('pettyCash:entries.all_registers', 'Összes pénztár')}</SelectItem>
-              {registers.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+              {registers.map(r => <SelectItem key={r.id} value={r.id}>{getLocalizedRegisterName(r.name, t)}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={filterCurrency} onValueChange={v => { setFilterCurrency(v); setCurrentPage(1); }}>
@@ -596,7 +597,7 @@ export default function EntriesTab() {
                         {entry.entry_date ? format(new Date(entry.entry_date), 'yyyy. MM. dd.') : '—'}
                       </TableCell>
                       <TableCell>
-                        <span className="text-xs font-medium">{regName}</span>
+                        <span className="text-xs font-medium">{getLocalizedRegisterName(regName, t)}</span>
                       </TableCell>
                       <TableCell>
                         <span className={cn('px-2 py-0.5 rounded text-[10px] font-medium', 
@@ -612,9 +613,10 @@ export default function EntriesTab() {
                             : (entry.description || '').toLowerCase().includes('kapcsolt') ||
                               partners.some(p => p.related_party && (entry.description || '').toLowerCase().includes(p.name.toLowerCase().trim()));
                           
+                          const localizedDesc = getLocalizedEntryDescription(entry.description, t);
                           return (
                             <div className="flex items-center gap-1.5 min-w-0">
-                              <span className="truncate" title={entry.description || '—'}>{entry.description || '—'}</span>
+                              <span className="truncate" title={localizedDesc}>{localizedDesc}</span>
                               {isEntryRelated && (
                                 <Badge variant="outline" className="text-[8px] h-3.5 px-1 bg-amber-500/10 text-amber-600 border-amber-500/20 font-semibold shrink-0">
                                   {t('pettyCash:entries.badges.related_party', 'Kapcsolt')}

@@ -3,8 +3,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import { Edit, Building2 } from 'lucide-react';
-import { getStatusBadge, formatPaymentDate } from '@/lib/salary-helpers';
+import { getStatusBadge, formatPaymentDate, getLocalizedSalaryTaxName } from '@/lib/salary-helpers';
 import type { SalaryItem } from '@/lib/salary-helpers';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   navItems: SalaryItem[];
@@ -14,6 +15,8 @@ interface Props {
 }
 
 export function NavSummaryTable({ navItems, onEdit, isSingleMonth, periodLabel }: Props) {
+  const { t } = useTranslation(['hr', 'common']);
+
   return (
     <Card className="rounded-xl border-border/50 bg-card/50 backdrop-blur-sm">
       <CardContent className="p-6">
@@ -21,28 +24,28 @@ export function NavSummaryTable({ navItems, onEdit, isSingleMonth, periodLabel }
           <Building2 className="h-5 w-5 text-amber-500" />
           <h2 className="text-lg font-semibold">
             {isSingleMonth
-              ? 'NAV utalások'
-              : <>NAV utalások a következő periódusra: <span className="text-muted-foreground font-normal">{periodLabel}</span></>}
+              ? t('hr:salaries.nav_payments.title_single', 'NAV utalások')
+              : <>{t('hr:salaries.nav_payments.title_next_period', 'NAV utalások a következő periódusra:')} <span className="text-muted-foreground font-normal">{periodLabel}</span></>}
           </h2>
         </div>
 
         {navItems.length > 0 ? (
           <div className="rounded-lg border border-border/50 overflow-hidden">
             <div className="grid grid-cols-[1fr_120px_140px_140px_40px] items-center bg-muted/30 px-4 py-2.5">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Megnevezés</span>
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">Státusz</span>
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">Kifizetés ideje</span>
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">Összeg</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('hr:salaries.breakdown.col_name', 'Megnevezés')}</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">{t('hr:salaries.breakdown.col_status', 'Státusz')}</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">{t('hr:salaries.nav_payments.col_payment_date', 'Kifizetés ideje')}</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">{t('hr:salaries.breakdown.col_amount', 'Összeg')}</span>
               <span />
             </div>
             {navItems.map(item => {
-              const statusBadge = getStatusBadge(item);
+              const statusBadge = getStatusBadge(item, t);
               return (
                 <div
                   key={item.id}
                   className="grid grid-cols-[1fr_120px_140px_140px_40px] items-center px-4 py-3 border-t border-border/30 hover:bg-muted/40 transition-colors"
                 >
-                  <span className="font-medium">{item.név}</span>
+                  <span className="font-medium">{getLocalizedSalaryTaxName(item.név, t)}</span>
                   <div className="text-center">
                     <Badge variant="outline" className={`text-xs ${statusBadge.className}`}>
                       {statusBadge.label}
@@ -68,7 +71,7 @@ export function NavSummaryTable({ navItems, onEdit, isSingleMonth, periodLabel }
               );
             })}
             <div className="grid grid-cols-[1fr_120px_140px_140px_40px] items-center px-4 py-3 bg-muted/20 border-t-2 border-border/60">
-              <span className="font-semibold text-muted-foreground text-sm">NAV utalások összesen</span>
+              <span className="font-semibold text-muted-foreground text-sm">{t('hr:salaries.nav_payments.total', 'NAV utalások összesen')}</span>
               <span />
               <span />
               <span className="font-mono font-bold tabular-nums text-right">
@@ -80,7 +83,7 @@ export function NavSummaryTable({ navItems, onEdit, isSingleMonth, periodLabel }
         ) : (
           <div className="text-center py-8 text-muted-foreground">
             <Building2 className="h-8 w-8 mx-auto mb-2 opacity-40" />
-            <p className="text-sm">Nincs NAV utalás a kiválasztott időszakban</p>
+            <p className="text-sm">{t('hr:salaries.nav_payments.empty', 'Nincs NAV utalás a kiválasztott időszakban')}</p>
           </div>
         )}
       </CardContent>

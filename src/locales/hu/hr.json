@@ -29,6 +29,42 @@
       "date_summary_label": "Dátum:",
       "employee_summary_label": "Dolgozó:",
       "submit_edit": "Mentés"
+    },
+    "breakdown": {
+      "title": "Dolgozói bontás",
+      "employee_count": "({{count}} fő)",
+      "col_name": "Megnevezés",
+      "col_status": "Státusz",
+      "col_type": "Típus",
+      "col_amount": "Összeg",
+      "items_count": "{{count}} tétel",
+      "total": "Összesen"
+    },
+    "nav_payments": {
+      "title_single": "NAV utalások",
+      "title_next_period": "NAV utalások a következő periódusra:",
+      "col_payment_date": "Kifizetés ideje",
+      "total": "NAV utalások összesen",
+      "empty": "Nincs NAV utalás a kiválasztott időszakban"
+    },
+    "status": {
+      "paid": "Fizetve",
+      "open": "Nyitott"
+    },
+    "types": {
+      "salary": "Bér",
+      "gross_salary": "Bruttó Bér",
+      "vat": "ÁFA",
+      "tax": "Adó",
+      "contribution": "Járulék"
+    },
+    "tax_items": {
+      "szja": "Magánszemélytől levont SZJA",
+      "kiva": "KIVA összege a Tbj. járulékalap alapján",
+      "simple_emp": "Egysz. foglalkoztatásból eredő szociális hj. adó bes.",
+      "social_security": "Társ.bizt. járulék (biztosítottaktól levont)",
+      "social_tax": "Szociális hozzájárulási adó",
+      "vocational": "Szakképzési hozzájárulás"
     }
   },
   "working_time": {

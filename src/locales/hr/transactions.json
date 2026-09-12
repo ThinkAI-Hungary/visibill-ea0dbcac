@@ -446,5 +446,28 @@
         "delete_error_desc": "Došlo je do pogreške prilikom brisanja."
       }
     }
+  },
+  "types": {
+    "supplier": "Transakcija dobavljača",
+    "customer": "Transakcija kupca",
+    "bank_cost": "Bankovni trošak",
+    "bank_fee": "Naknada za vođenje računa",
+    "card_fee": "Naknada za karticu",
+    "transfer": "Prijenos između računa",
+    "interest_income": "Prihod od kamata",
+    "interest_credit": "Pripis kamata",
+    "interest": "Kamata",
+    "tax_expense": "Troškovi doprinosa",
+    "taxes": "Doprinosi i porezi",
+    "salary": "Plaće",
+    "loan": "Otplata kredita",
+    "transaction_tax": "Porez na financijske transakcije",
+    "atm_withdrawal": "Podizanje gotovine na bankomatu",
+    "atm_cash_withdrawal": "Podizanje gotovine na bankomatu",
+    "cash_withdrawal": "Isplata gotovine iz blagajne",
+    "cash_deposit": "Uplata gotovine u blagajnu",
+    "atm_cash_deposit": "Uplata gotovine putem bankomata",
+    "payment": "Plaćanje",
+    "manual_expense": "Ručni trošak"
   }
 }

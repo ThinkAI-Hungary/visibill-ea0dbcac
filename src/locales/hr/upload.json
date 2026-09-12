@@ -15,5 +15,72 @@
     "transactions": "Transakcije",
     "salaries": "Podaci o plaćama",
     "reports": "Izvještaji dostavljača"
+  },
+  "channels_config": {
+    "invoices": {
+      "card_title": "Učitavanje datoteka računa",
+      "card_description": "Odaberite PDF ili slikovne datoteke koje sadrže račune. Sustav automatski izdvaja podatke i evidentira račune."
+    },
+    "vouchers": {
+      "card_title": "Učitavanje blagajničkih dokumenata",
+      "card_description": "Odaberite PDF ili slikovne datoteke koje sadrže izdatnice ili uplatnice. Podržani formati: PDF, JPG, PNG, WebP"
+    },
+    "transactions": {
+      "card_title": "Učitavanje datoteka transakcija",
+      "card_description": "Odaberite PDF, CSV ili Excel datoteke koje sadrže bankovne ili druge financijske transakcije. Sustav automatski izdvaja podatke i evidentira transakcije."
+    },
+    "salaries": {
+      "card_title": "Učitavanje plaća i doprinosa",
+      "card_description": "Učitajte platne liste, sažetke obračuna plaća, prijave doprinosa ili porezna rješenja u PDF, CSV ili Excel formatu. Sustav ih automatski obrađuje i kategorizira."
+    },
+    "reports": {
+      "card_title": "Učitavanje izvještaja dostavljača",
+      "card_description": "Odaberite datoteke izvještaja dostavljača (GLS, Pošta, Mixpack). Sustav automatski uparuje pakete s izdanim računima."
+    }
+  },
+  "file_list": {
+    "selected_files": "Odabrane datoteke ({{count}})",
+    "clear_all": "Obriši sve"
+  },
+  "history_table": {
+    "title_invoices": "Povijest učitavanja računa",
+    "title_vouchers": "Povijest učitavanja blagajničkih dokumenata",
+    "title_salaries": "Povijest učitavanja plaća i doprinosa",
+    "title_bank": "Povijest učitavanja bankovnih izvoda",
+    "title_reports": "Povijest učitavanja izvještaja",
+    "title_transactions": "Povijest učitavanja transakcija",
+    "empty": "Još nema povijesti učitavanja",
+    "col_filename": "Naziv datoteke",
+    "col_size": "Veličina",
+    "col_uploaded_by": "Učitao/la",
+    "col_date": "Datum",
+    "col_status": "Status",
+    "unknown_user": "Nepoznati korisnik",
+    "email_source": "E-pošta"
+  },
+  "status": {
+    "upload_failed": "Učitavanje nije uspjelo",
+    "processing_error": "Pogreška u obradi",
+    "processing_error_progress": "Pogreška u obradi {{processed}}/{{total}}",
+    "errors_count": "{{count}} pogrešaka",
+    "processing": "U obradi",
+    "processing_progress": "U obradi {{processed}}/{{total}}",
+    "doc_matched": "Dokument uparen",
+    "escalation": "⚠️ Eskalacija",
+    "waiting_for_invoice": "Čeka na račun",
+    "unidentified": "Neidentificirano",
+    "dismissed": "Odbijeno",
+    "processed": "Obrađeno",
+    "processed_progress": "Obrađeno {{total}}/{{total}}",
+    "uploaded": "Učitano"
+  },
+  "legend": {
+    "title": "Tumač:",
+    "uploaded_desc": "Datoteka je učitana",
+    "processing_desc": "Obrada je u tijeku",
+    "processed_desc": "Uspješno obrađeno i evidentirano",
+    "processing_error_desc": "Učitavanje je uspjelo, ali je obrada naišla na pogrešku",
+    "unidentified_desc": "Dokument nije prepoznat kao račun",
+    "dismissed_desc": "Dokument je ručno odbijen"
   }
 }

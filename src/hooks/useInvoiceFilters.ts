@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useDeferredValue, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -77,6 +78,7 @@ export function useInvoiceFilters(
 ) {
   const [searchParams, setSearchParams] = useSearchParams();
   const { activePresetId } = useActivePreset(companyId);
+  const { t } = useTranslation(['invoices', 'common']);
 
   // Initialize all state from URL searchParams (enables link sharing)
   const [filters, setFilters] = useState<InvoiceFilters>(() => {
@@ -414,16 +416,16 @@ export function useInvoiceFilters(
     return projects.find(p => p.id === projectId)?.name || 'Nincs projekt';
   };
 
-  const getPaymentMethodLabel = (method: string | null) => {
-    switch (method) {
-      case 'TRANSFER': return 'Átutalás';
-      case 'CASH': return 'Készpénz';
-      case 'CARD': return 'Bankkártya';
-      case 'VOUCHER': return 'Utalvány';
-      case 'OTHER': return 'Egyéb';
-      default: return 'Nem megadott';
-    }
-  };
+  const getPaymentMethodLabel = useCallback((method: string | null) => {
+    if (!method) return t('invoices:payment_methods.not_specified', 'Nem megadott');
+    const m = method.toUpperCase().trim();
+    if (m === 'TRANSFER' || m === 'ÁTUTALÁS') return t('invoices:payment_methods.transfer', 'Átutalás');
+    if (m === 'CASH' || m === 'KÉSZPÉNZ') return t('invoices:payment_methods.cash', 'Készpénz');
+    if (m === 'CARD' || m === 'BANKKÁRTYA') return t('invoices:payment_methods.card', 'Bankkártya');
+    if (m === 'VOUCHER' || m === 'UTALVÁNY') return t('invoices:payment_methods.voucher', 'Utalvány');
+    if (m === 'OTHER' || m === 'EGYÉB') return t('invoices:payment_methods.other', 'Egyéb');
+    return method;
+  }, [t]);
 
   // ── Sort handler ──
 

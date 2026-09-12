@@ -8,6 +8,7 @@ import { Suspense } from 'react';
 import { ContentSkeleton } from '@/components/ui/content-skeleton';
 import { LiveNotificationProvider } from '@/components/LiveNotificationProvider';
 import { FeedbackFab } from '@/components/FeedbackFab';
+import i18n from '@/lib/i18n';
 
 /**
  * ProtectedLayout — Single root gate for all protected routes.
@@ -60,7 +61,7 @@ export function ProtectedLayout() {
 
     const returnTo = location.pathname + location.search;
     const isEaisybooks = returnTo && (returnTo.startsWith('/eaisybooks') || returnTo.includes('/eaisybooks'));
-    const isHr = location.pathname === '/hr' || location.pathname.startsWith('/hr/');
+    const isHr = location.pathname === '/hr' || location.pathname.startsWith('/hr/') || i18n.language === 'hr';
     const baseAuth = isHr ? '/hr/auth' : '/auth';
     
     let authUrl = baseAuth;
@@ -83,7 +84,7 @@ export function ProtectedLayout() {
     // Email not verified — send back to auth page with the confirmation screen
     const loader = document.getElementById('initial-loader');
     if (loader) loader.remove();
-    const isHr = location.pathname === '/hr' || location.pathname.startsWith('/hr/');
+    const isHr = location.pathname === '/hr' || location.pathname.startsWith('/hr/') || i18n.language === 'hr';
     return <Navigate to={isHr ? "/hr/auth?unverified=true" : "/auth?unverified=true"} replace />;
   }
 
