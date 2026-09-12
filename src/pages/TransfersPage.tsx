@@ -119,7 +119,7 @@ export default function TransfersPage() {
   const navigate = useNavigate();
 
   const [search, setSearch] = useState('');
-  const [filterTab, setFilterTab] = useState<'all' | 'overdue' | 'due_today'>('all');
+  const [filterTab, setFilterTab] = useState<'all' | 'overdue' | 'due_today' | 'future'>('all');
   const [groupByPartner, setGroupByPartner] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [editingBankAccounts, setEditingBankAccounts] = useState<Record<string, string>>({});
@@ -597,9 +597,7 @@ export default function TransfersPage() {
         }
       });
 
-      // Filter only due today or overdue
-      const allTransfers = [...manualTransfers, ...navTransfers];
-      return deduplicatedTransfers.filter(t => t.due_date <= today);
+      return deduplicatedTransfers;
     },
     enabled: !!selectedCompany
   });
@@ -933,16 +931,26 @@ export default function TransfersPage() {
 
       if (!matchSearch) return false;
 
-      // Tab filter
+      // Tab filter: if explicitly selected (e.g. from the calendar view), always include
+      if (selectedIds.includes(inv.id)) {
+        return true;
+      }
+
       if (filterTab === 'overdue') {
         return inv.due_date < today;
       }
       if (filterTab === 'due_today') {
         return inv.due_date === today;
       }
+      if (filterTab === 'future') {
+        return inv.due_date > today;
+      }
+      if (filterTab === 'all') {
+        return inv.due_date <= today;
+      }
       return true;
     });
-  }, [invoices, search, filterTab]);
+  }, [invoices, search, filterTab, selectedIds]);
 
   // 4. Compute grouped invoices if checked
   const displayItems = useMemo(() => {
@@ -1486,6 +1494,12 @@ export default function TransfersPage() {
                     >
                       {t('transfers:filters.due_today', 'Mai esedékes')}
                     </button>
+                    <button
+                      onClick={() => setFilterTab('future')}
+                      className={`px-3 py-1.5 rounded-md font-medium transition-all ${filterTab === 'future' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                    >
+                      {t('transfers:filters.future', 'Jövőbeli')}
+                    </button>
                   </div>
                 </div>
 
@@ -1529,7 +1543,11 @@ export default function TransfersPage() {
                 <div className="py-16 text-center border-t border-border/40">
                   <CheckCircle2 className="h-10 w-10 text-emerald-500 mx-auto mb-2" />
                   <p className="text-sm font-semibold">{t('transfers:table.all_settled_title', 'Minden számla rendezve!')}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{t('transfers:table.all_settled_desc', 'Nincs lejárt vagy ma esedékes kifizetetlen számlád.')}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {filterTab === 'future'
+                      ? t('transfers:table.no_future_invoices', 'Nincs jövőbeli esedékességű kifizetetlen számlád.')
+                      : t('transfers:table.all_settled_desc', 'Nincs lejárt vagy ma esedékes kifizetetlen számlád.')}
+                  </p>
                 </div>
               ) : (
                 <>
@@ -1704,11 +1722,11 @@ export default function TransfersPage() {
                                         }}
                                       >
                                         <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                                        Rendezve
+                                        {t('transfers:table.manual_settle', 'Kézi rendezés')}
                                       </Button>
                                     </TooltipTrigger>
                                     <TooltipContent side="left" className="text-xs">
-                                      Készpénz / Magánszámla / Pénztári kifizetés rögzítése
+                                      {t('transfers:table.manual_settle_tooltip', 'Készpénz / Magánszámla / Pénztári kifizetés rögzítése')}
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
@@ -1837,6 +1855,10 @@ export default function TransfersPage() {
                         const dayInvoices = calendarMonthData.invoicesByDate[selectedCalendarDay] || [];
                         const keys = dayInvoices.map(inv => inv.id);
                         setSelectedIds(prev => Array.from(new Set([...prev, ...keys])));
+                        const todayStr = new Date().toISOString().split('T')[0];
+                        if (selectedCalendarDay > todayStr) {
+                          setFilterTab('future');
+                        }
                         setActiveTab('list');
                         toast({ title: 'Tételek kijelölve!', description: `${keys.length} tétel hozzáadva az utalandókhoz.` });
                       }}

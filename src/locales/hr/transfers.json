@@ -15,6 +15,7 @@
     "all": "Sve dospjelo",
     "overdue": "Samo dospjelo",
     "due_today": "Dospijeva danas",
+    "future": "Buduće",
     "group_by_partner": "Grupiraj po partnerima"
   },
   "search_placeholder": "Traži partnera ili račun...",
@@ -27,7 +28,8 @@
     "no_number": "Bez broja",
     "narrative_prefix": "Opis: Računi:",
     "all_settled_title": "Svi računi su podmireni!",
-    "all_settled_desc": "Nemate dospjelih ili neplaćenih računa za danas."
+    "all_settled_desc": "Nemate dospjelih ili neplaćenih računa za danas.",
+    "no_future_invoices": "Nema neplaćenih računa s budućim dospijećem."
   },
   "calendar": {
     "title": "Rokovi plaćanja po kalendaru",

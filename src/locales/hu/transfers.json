@@ -15,6 +15,7 @@
     "all": "Összes esedékes",
     "overdue": "Csak lejárt",
     "due_today": "Mai esedékes",
+    "future": "Jövőbeli",
     "group_by_partner": "Partnerenkénti összevonás"
   },
   "search_placeholder": "Keresés partnerre vagy számlára...",
@@ -27,7 +28,10 @@
     "no_number": "Sorszám nélkül",
     "narrative_prefix": "Közlemény: Szamlak:",
     "all_settled_title": "Minden számla rendezve!",
-    "all_settled_desc": "Nincs lejárt vagy ma esedékes kifizetetlen számlád."
+    "all_settled_desc": "Nincs lejárt vagy ma esedékes kifizetetlen számlád.",
+    "no_future_invoices": "Nincs jövőbeli esedékességű kifizetetlen számlád.",
+    "manual_settle": "Kézi rendezés",
+    "manual_settle_tooltip": "Készpénz / Magánszámla / Pénztári kifizetés rögzítése"
   },
   "calendar": {
     "title": "Fizetési határidők naptári bontásban",
