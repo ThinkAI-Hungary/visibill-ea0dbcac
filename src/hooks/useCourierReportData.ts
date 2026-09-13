@@ -196,6 +196,32 @@ export function useCourierReportData(
     }
   }, [refetch]);
 
+  const [rematchingAll, setRematchingAll] = useState(false);
+
+  // Batch rematch trigger — calls server-side company rematch function
+  const handleRematchAll = useCallback(async () => {
+    if (!selectedCompany?.id) return;
+    setRematchingAll(true);
+    try {
+      const { data, error } = await supabase.rpc('rematch_courier_reports_for_company', {
+        p_company_id: selectedCompany.id,
+        p_report_type: reportType,
+      });
+      if (error) throw error;
+
+      const result = data as any;
+      toast({
+        title: '✅ Újrapárosítás kész',
+        description: `Összesen ${result?.total_full_matched ?? 0} tétel párosítva (${result?.item_rows_rematched ?? 0} tétel vizsgálva).`,
+      });
+      refetch();
+    } catch (error: any) {
+      toast({ title: 'Újrapárosítás sikertelen', description: error.message, variant: 'destructive' });
+    } finally {
+      setRematchingAll(false);
+    }
+  }, [selectedCompany?.id, reportType, refetch]);
+
   // Delete courier reports by IDs
   const handleDelete = useCallback(async (ids: string[]) => {
     if (!ids.length) return;
@@ -231,6 +257,8 @@ export function useCourierReportData(
     handlePageSizeChange,
     handleSync,
     handleRematch,
+    handleRematchAll,
+    rematchingAll,
     handleDelete,
     queryClient,
   };

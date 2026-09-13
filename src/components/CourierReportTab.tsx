@@ -703,6 +703,8 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
     handlePageSizeChange,
     handleSync,
     handleRematch,
+    handleRematchAll,
+    rematchingAll,
     handleDelete,
   } = useCourierReportData(reportType, localDateFrom, localDateTo);
 
@@ -764,9 +766,9 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
     );
   }
 
-  const formatAmount = (amount: number | null) => {
+  const formatAmount = (amount: number | null, currency = 'HUF') => {
     if (amount == null) return '-';
-    return new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(amount);
+    return new Intl.NumberFormat('hu-HU', { style: 'currency', currency: currency || 'HUF', maximumFractionDigits: 0 }).format(amount);
   };
 
   const formatDate = (date: string | null) => {
@@ -847,6 +849,23 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Riport adatok frissítése</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRematchAll}
+                      disabled={rematchingAll}
+                      className="border-emerald-500/40 hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                    >
+                      <Sparkles className={cn("h-4 w-4 mr-2", rematchingAll && "animate-spin")} />
+                      {rematchingAll ? 'Párosítás...' : 'Újrapárosítás'}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Összes nyitott tétel automatikus újrapárosítása banki tranzakciókkal és NAV számlákkal</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
               <ReportFilesDialog reportType={reportType} />

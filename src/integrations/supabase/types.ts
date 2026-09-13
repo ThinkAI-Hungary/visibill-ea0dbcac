@@ -11489,6 +11489,10 @@ export type Database = {
         Returns: undefined
       }
       rematch_courier_report: { Args: { p_report_id: string }; Returns: Json }
+      rematch_courier_reports_for_company: {
+        Args: { p_company_id: string; p_report_type?: string | null }
+        Returns: Json
+      }
       reset_monthly_usage: { Args: never; Returns: number }
       reverse_accrual_entry: { Args: { p_accrual_id: string }; Returns: Json }
       revoke_api_key: { Args: { p_key_id: string }; Returns: Json }
