@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-13  
-> **Összesen:** 120 döntés | ✅ Decided: 118 | ⛔ Superseded: 2
+> **Összesen:** 121 döntés | ✅ Decided: 119 | ⛔ Superseded: 2
 
 ---
 
@@ -49,6 +49,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-047 | Robust PDF Export Pipeline, Paired Image Resolution & eaisybill Brand Kontírozó Lap | ✅ Decided | [A-047](./A-047-pdf-export-enhancements-and-posting-slips.md) |
 | A-059 | Tranzakció Párosítási Mag & Moduláris UI Architektúra (TransactionMatchingCore) | ✅ Decided | [A-059](./A-059-transaction-matching-core-and-modular-ui.md) |
 | A-096 | Hivatalos NAV Tételsor Védőháló, Sorszám Szinkronizáció és 23505 Ütközésvédelem | ✅ Decided | [A-096](./A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md) |
+| A-116 | K&H Bankkivonatok (.xls / .csv) Robusztus Feldolgozása, Tabulátor Detektálás és Tranzakció Pipeline Intercept Védelem | ✅ Decided | [A-116](./A-116-kh-bank-statement-parsing-and-pipeline-routing-safeguards.md) |
 
 ## 🔒 Biztonság & Auth
 
@@ -156,7 +157,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-109 | Eaisybill Horvát Lokalizáció, /hr/ Scoped Route Architektúra és Helyi Tároló Mentes Nyelvkezelés | ✅ Decided | [A-109](./A-109-eaisybill-i18n-croatia-localization-and-route-architecture.md) |
 | A-110 | Bérszámfejtési Számlatükör Sablon Lapozás és Leképezés Perzisztencia | ✅ Decided | [A-110](./A-110-payroll-gl-preset-pagination-and-mapping-persistence.md) |
 | A-111 | Közvetlen Bizonylat-visszanyitás (Unpost), Főkönyvi Sztornó Kioltás és Sorszámfolytonossági Védelem | ✅ Decided | [A-111](./A-111-accounting-journal-unpost-gl-storno-and-numbering-integrity.md) |
-| A-112 | Futárszolgálati Kompenzációs Értesítők Automatikus Bejövő Számla Rendezése (GLS / Courier Compensation Auto-Settlement) | ✅ Decided | [A-112](./A-112-courier-compensation-inbound-invoice-auto-settlement.md) |
+| A-112 | Futárszolgálati Kompenzációs Értesítők Kétirányú Automatikus Számlarendezése és Futárriport UI Párosítás | ✅ Decided | [A-112](./A-112-courier-compensation-inbound-invoice-auto-settlement.md) |
 | A-114 | eaisyBooks Kettős Működési Módú Navigációs Héj Összevonása (Collapse Dual-Mode Navigation Shell) és Seam Hardening | ✅ Decided | [A-114](./A-114-collapse-dual-mode-navigation-shell.md) |
 | A-115 | eaisyBooks ↔ eaisyBill Szimmetrikus Hideg/Meleg (Cold/Warm) Hibrid Életciklus Átmenet és Szinkron Útvonal Feloldás | ✅ Decided | [A-115](./A-115-eaisybooks-eaisybill-cold-warm-hybrid-transition-and-route-resolution.md) |
 
