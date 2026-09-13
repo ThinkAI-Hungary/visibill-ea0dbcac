@@ -1,14 +1,11 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { cn } from '@/lib/utils';
-import { AccountyRoleProvider, useAccountyRole } from './AccountyRoleContext';
+import { AccountyRoleProvider } from './AccountyRoleContext';
+import { AccountyShellProvider, useAccountyShell } from '@/pages/Accounty/AccountyShellContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/contexts/ThemeContext';
 import { FeedbackFab } from '@/components/FeedbackFab';
-import { useAccountyKpis, useAccountyClients } from '@/hooks/accounty';
-import { useAccountyPermissions, PATH_TO_MODULE } from '@/hooks/useAccountyPermissions';
-import { useHasEaisybillAccess } from '@/hooks/useHasEaisybillAccess';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { 
@@ -17,88 +14,91 @@ import {
   Calendar, 
   BarChart2, 
   Settings, 
-  HelpCircle,
-  AlertTriangle,
-  Clock,
-  MailCheck,
-  Calculator,
-  FileText,
-  TrendingUp,
-  Building2,
-  Users,
-  X,
-  TicketCheck,
-  ShieldCheck,
-  BookOpen,
-  Scale,
-  Bot,
-  Rocket,
-  Landmark,
-  Shield,
-  WifiOff,
-  User,
-  PiggyBank,
-  Coins,
-  ClipboardList
+  HelpCircle, 
+  Building2, 
+  X, 
+  Rocket, 
+  Landmark, 
+  Shield, 
+  WifiOff, 
+  Coins, 
+  Calculator, 
+  ClipboardList 
 } from 'lucide-react';
-import { useUnreadTicketCount } from '@/hooks/useTickets';
 import CookieConsentBanner from '@/components/accounty/CookieConsentBanner';
 import { AccountyErrorBoundary } from '@/components/accounty/AccountyErrorBoundary';
 import { useAccountyRealtime } from '@/hooks/useAccountyRealtime';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
 
 import AccountySidebar from '@/components/accounty/layout/AccountySidebar';
 import AccountyHeader from '@/components/accounty/layout/AccountyHeader';
 import AccountyCommandPalette from '@/components/accounty/layout/AccountyCommandPalette';
 import AccountyTour from '@/components/accounty/layout/AccountyTour';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
-function CrashTester() {
-  const [shouldCrash, setShouldCrash] = React.useState(false);
-  React.useEffect(() => {
-    (window as any).__testCrash = () => setShouldCrash(true);
-    return () => { delete (window as any).__testCrash; };
-  }, []);
-  if (shouldCrash) throw new Error('🧪 Error Boundary teszt — ez egy szándékos hiba!');
-  return null;
-}
+// Track whether eaisyBooks has mounted and initialized in the current browser session.
+// Resets to false on page refresh (F5).
+let hasAccountyInitialized = false;
 
 export default function AccountyLayout() {
   return (
     <AccountyRoleProvider>
-      <AccountyLayoutInner />
+      <AccountyShellProvider>
+        <AccountyLayoutInner />
+      </AccountyShellProvider>
     </AccountyRoleProvider>
   );
 }
 
 function AccountyLayoutInner() {
-  const { user, signOut } = useAuth();
-  const { hasAccess: hasEaisybillAccess } = useHasEaisybillAccess();
+  const { user } = useAuth();
   const isOnline = useOnlineStatus();
+  const location = useLocation();
   useAccountyRealtime();
 
-  const [runTour, setRunTour] = useState(false);
-  const [helpDrawerOpen, setHelpDrawerOpen] = useState(false);
-  const [hoveredHelpSection, setHoveredHelpSection] = useState<string | null>(null);
+  const {
+    sidebarOpen,
+    setSidebarOpen,
+    runTour,
+    setRunTour,
+    helpDrawerOpen,
+    setHelpDrawerOpen,
+    setHoveredHelpSection,
+    isCollapsed,
+    toggleSidebarCollapse,
+    allClients,
+    isClientsLoading,
+  } = useAccountyShell();
 
-  const { theme, setTheme } = useTheme();
-  const location = useLocation();
-  const pathname = location.pathname;
-  const navigate = useNavigate();
+  const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
+  const [gdprBannerDismissed, setGdprBannerDismissed] = useState(() => sessionStorage.getItem('gdpr_banner_dismissed') === '1');
 
-  const [switchPending, setSwitchPending] = useState<string | null>(() => localStorage.getItem('visibill_switch_pending'));
+  // Cold vs Warm initialization state:
+  // - Cold (first visit after F5): initialLoading = true, shows LoadingSpinner until clients load
+  // - Warm (subsequent visits/switches): initialLoading = false, instant SPA switch without spinner
+  const [initialLoading, setInitialLoading] = useState(() => !hasAccountyInitialized);
 
+  // Complete cold start when all clients are ready, plus a short 400ms grace period for clean mount
   useEffect(() => {
-    if (switchPending) {
+    if (initialLoading && !isClientsLoading && allClients) {
       const timer = setTimeout(() => {
-        try {
-          localStorage.removeItem('visibill_switch_pending');
-        } catch {}
-        setSwitchPending(null);
-      }, 5000);
+        hasAccountyInitialized = true;
+        setInitialLoading(false);
+      }, 400);
       return () => clearTimeout(timer);
     }
-  }, [switchPending]);
+  }, [initialLoading, isClientsLoading, allClients]);
+
+  // Fallback safety timeout (4s)
+  useEffect(() => {
+    if (initialLoading) {
+      const timer = setTimeout(() => {
+        hasAccountyInitialized = true;
+        setInitialLoading(false);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [initialLoading]);
 
   // Eager background prefetch of primary eaisybooks page chunks
   useEffect(() => {
@@ -113,10 +113,7 @@ function AccountyLayoutInner() {
     return () => clearTimeout(timer);
   }, []);
 
-  const { data: kpis } = useAccountyKpis();
-  const { data: unreadTicketCount = 0 } = useUnreadTicketCount();
-  const { canAccess } = useAccountyPermissions();
-
+  // Profile role for impersonation checks and tour auto-start
   const { data: profileRole } = useQuery({
     queryKey: ['profile-role-accounty', user?.id],
     queryFn: async () => {
@@ -139,117 +136,7 @@ function AccountyLayoutInner() {
         return () => clearTimeout(timer);
       }
     }
-  }, [user, profileRole]);
-
-  useEffect(() => {
-    if (runTour) {
-      setIsCollapsed(false);
-    }
-  }, [runTour]);
-
-  useEffect(() => {
-    const count = kpis?.missingItems ?? 0;
-    document.title = count > 0 ? `(${count}) eaisybooks` : 'eaisybooks';
-    return () => { document.title = 'eaisybill'; };
-  }, [kpis?.missingItems]);
-
-  const isActive = (path: string) => {
-    if (path === '/eaisybooks') {
-      return pathname === '/eaisybooks' || pathname.startsWith('/eaisybooks/client');
-    }
-    if (path === '/eaisybooks/tao') {
-      return pathname === '/eaisybooks/tao';
-    }
-    if (path === '/eaisybooks/ev') {
-      return pathname === '/eaisybooks/ev';
-    }
-    return pathname.startsWith(path);
-  };
-
-  const [cmdOpen, setCmdOpen] = useState(false);
-  const [cmdQuery, setCmdQuery] = useState('');
-  const { data: allClients } = useAccountyClients();
-  const [expandedPayroll, setExpandedPayroll] = useState<Set<string>>(new Set());
-  const [payrollInitialized, setPayrollInitialized] = useState(false);
-  const [payrollSearch, setPayrollSearch] = useState('');
-  const [showAllPayroll, setShowAllPayroll] = useState(false);
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(() => new Set(['portfolio']));
-  const toggleSection = (key: string) => {
-    setExpandedSections(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  };
-  const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
-  const [notifDismissed, setNotifDismissed] = useState(false);
-  const [gdprBannerDismissed, setGdprBannerDismissed] = useState(() => sessionStorage.getItem('gdpr_banner_dismissed') === '1');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    try {
-      if (typeof document !== 'undefined') {
-        const cookies = document.cookie.split(';');
-        const sidebarCookie = cookies.find(c => c.trim().startsWith('sidebar:state='));
-        if (sidebarCookie) {
-          return sidebarCookie.split('=')[1]?.trim() === 'false';
-        }
-      }
-      return localStorage.getItem('visibill:sidebar-collapsed') === 'true' || 
-             localStorage.getItem('visibill:accounty-sidebar-collapsed') === 'true';
-    } catch {
-      return false;
-    }
-  });
-
-  const toggleSidebarCollapse = useCallback(() => {
-    setIsCollapsed(prev => {
-      const next = !prev;
-      try {
-        const maxAge = 60 * 60 * 24 * 7;
-        document.cookie = `sidebar:state=${!next}; path=/; max-age=${maxAge}`;
-        localStorage.setItem('visibill:accounty-sidebar-collapsed', String(next));
-        localStorage.setItem('visibill:sidebar-collapsed', String(next));
-      } catch { /* ignore */ }
-      return next;
-    });
-  }, []);
-
-  useEffect(() => {
-    if (payrollInitialized || !allClients) return;
-    const activeClient = allClients.find(c => location.pathname.startsWith(`/eaisybooks/payroll/${c.companyId}`));
-    if (activeClient) {
-      setExpandedPayroll(new Set([activeClient.companyId]));
-    }
-    setPayrollInitialized(true);
-  }, [allClients, location.pathname, payrollInitialized]);
-
-  const togglePayrollClient = (companyId: string) => {
-    setExpandedPayroll(prev => {
-      const next = new Set(prev);
-      if (next.has(companyId)) {
-        next.delete(companyId);
-      } else {
-        next.add(companyId);
-      }
-      return next;
-    });
-  };
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        setCmdOpen(v => !v);
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, []);
-
-  const handleHelpClick = useCallback(() => setHelpDrawerOpen(true), []);
-  const handleSidebarOpen = useCallback((v: boolean) => setSidebarOpen(v), []);
-  const handleNotifDismissed = useCallback((v: boolean) => setNotifDismissed(v), []);
+  }, [user, profileRole, setRunTour]);
 
   // Check for active impersonation (support_admin role in company_members)
   const { data: hasImpersonation, isPending: impersonationLoading } = useQuery({
@@ -266,41 +153,17 @@ function AccountyLayoutInner() {
     staleTime: 30_000,
   });
 
-  // Redirect if management/thinkai role user does not have active impersonation (only after loading finishes)
+  // Redirect if management/thinkai role user does not have active impersonation
   if ((profileRole === 'management' || profileRole === 'thinkai') && !impersonationLoading && !hasImpersonation) {
     return <Navigate to="/management" replace />;
   }
 
-  const cmdPages = [
-    { name: 'Portfólió', path: '/eaisybooks', icon: Briefcase },
-    { name: 'Hiányzó számlák', path: '/eaisybooks/missing-invoices', icon: FileWarning },
-    { name: 'Adó naptár', path: '/eaisybooks/tax-calendar', icon: Calendar },
-    { name: 'Riportok', path: '/eaisybooks/reports', icon: BarChart2 },
-    { name: 'Jóváhagyó rendszer', path: '/eaisybooks/approval-queue', icon: MailCheck },
-    { name: 'Riasztások', path: '/eaisybooks/alerts', icon: AlertTriangle },
-    { name: 'NAV határidők', path: '/eaisybooks/nav-deadlines', icon: Clock },
-    { name: 'Bérszámfejtés portfólió', path: '/eaisybooks?tab=payroll', icon: Calculator },
-    { name: 'Onboarding', path: '/eaisybooks/onboarding', icon: Rocket },
-    { name: 'Beállítások', path: '/eaisybooks/settings', icon: Settings },
-    { name: 'Felhasználói beállítások', path: '/eaisybooks/profile/settings', icon: User },
-    { name: 'Segítség', path: '/eaisybooks/help', icon: HelpCircle },
-    { name: 'AI Asszisztens', path: '/eaisybooks/ai-assistant', icon: Bot },
-    { name: 'Audit napló', path: '/eaisybooks/admin/audit', icon: ShieldCheck },
-    { name: 'GDPR', path: '/eaisybooks/admin/gdpr', icon: ShieldCheck },
-    { name: 'Sablonok', path: '/eaisybooks/admin/templates', icon: FileText },
-    { name: 'Jogviszonykódok', path: '/eaisybooks/admin/job-codes', icon: BookOpen },
-    { name: 'Adómértékek', path: '/eaisybooks/admin/tax-parameters', icon: Calculator },
-    { name: 'Jogszabály-frissítések', path: '/eaisybooks/admin/legal-updates', icon: Scale },
-    { name: 'TAO Portfólió', path: '/eaisybooks?tab=tao', icon: Landmark },
-    { name: 'TAO Naptár', path: '/eaisybooks/tao/calendar', icon: Calendar },
-    { name: 'TAO Adózói Körök', path: '/eaisybooks/tao/taxpayer-types', icon: Users },
-    { name: 'EV Portfólió', path: '/eaisybooks?tab=ev', icon: PiggyBank },
-  ];
-
-  const filteredPages = cmdQuery ? cmdPages.filter(p => p.name.toLowerCase().includes(cmdQuery.toLowerCase())) : cmdPages;
-  const filteredClients = cmdQuery && allClients ? allClients.filter(c => c.name.toLowerCase().includes(cmdQuery.toLowerCase())).slice(0, 5) : [];
-
-  const isSwitchingModule = switchPending === 'eaisybooks';
+  // Cold start: render loading spinner until clients are loaded.
+  // Warm switch: instant rendering without fullPage spinner.
+  const shouldShowSpinner = !hasAccountyInitialized && (initialLoading || (!allClients && isClientsLoading));
+  if (shouldShowSpinner) {
+    return <LoadingSpinner fullPage={true} message="eaisyBooks betöltése..." />;
+  }
 
   return (
     <>
@@ -309,43 +172,12 @@ function AccountyLayoutInner() {
           <div className="fixed inset-0 bg-black/40 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
         )}
         
-        <AccountySidebar
-          isCollapsed={isCollapsed}
-          toggleSidebarCollapse={toggleSidebarCollapse}
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={handleSidebarOpen}
-          hasEaisybillAccess={hasEaisybillAccess || false}
-          kpis={kpis}
-          unreadTicketCount={unreadTicketCount}
-          canAccess={canAccess}
-          pathname={pathname}
-          user={user}
-          signOut={signOut}
-          setCmdOpen={setCmdOpen}
-          theme={theme}
-          setTheme={setTheme}
-          allClients={allClients || null}
-          expandedPayroll={expandedPayroll}
-          togglePayrollClient={togglePayrollClient}
-          payrollSearch={payrollSearch}
-          setPayrollSearch={setPayrollSearch}
-          showAllPayroll={showAllPayroll}
-          setShowAllPayroll={setShowAllPayroll}
-          expandedSections={expandedSections}
-          toggleSection={toggleSection}
-          isActive={isActive}
-          navigate={navigate}
-          hoveredHelpSection={hoveredHelpSection}
-        />
+        {/* Zero-prop compound sidebar */}
+        <AccountySidebar />
 
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          <AccountyHeader
-            setSidebarOpen={handleSidebarOpen}
-            kpis={kpis}
-            notifDismissed={notifDismissed}
-            setNotifDismissed={handleNotifDismissed}
-            onHelpClick={handleHelpClick}
-          />
+          {/* Zero-prop header */}
+          <AccountyHeader />
 
           <div id="accounty-main-scroll" className="flex-1 overflow-y-auto p-8 relative" style={{ scrollbarGutter: 'stable' }}>
             {!isOnline && (
@@ -359,8 +191,7 @@ function AccountyLayoutInner() {
             )}
 
             {(() => {
-              const dismissed = gdprBannerDismissed;
-              if (dismissed) return null;
+              if (gdprBannerDismissed) return null;
 
               let cookieOk = false;
               let privacyOk = false;
@@ -557,15 +388,8 @@ function AccountyLayoutInner() {
         </main>
       </div>
 
-      <AccountyCommandPalette
-        cmdOpen={cmdOpen}
-        setCmdOpen={setCmdOpen}
-        cmdQuery={cmdQuery}
-        setCmdQuery={setCmdQuery}
-        filteredPages={filteredPages}
-        filteredClients={filteredClients}
-        navigate={navigate}
-      />
+      {/* Zero-prop Command Palette */}
+      <AccountyCommandPalette />
 
       <FeedbackFab onAiOpen={() => setAiDrawerOpen(true)} aiDrawerOpen={aiDrawerOpen} onAiClose={() => setAiDrawerOpen(false)} />
       <CookieConsentBanner />

@@ -4,23 +4,25 @@ import { Menu, Bell, AlertTriangle, Clock, FileWarning, Calendar, HelpCircle } f
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CompanySwitcher } from '@/components/accounty/CompanySwitcher';
 import { GlobalDatePicker } from '@/components/GlobalDatePicker';
+import { useAccountyShellOptional } from '@/pages/Accounty/AccountyShellContext';
 
-interface AccountyHeaderProps {
-  setSidebarOpen: (v: boolean) => void;
-  kpis: any;
-  notifDismissed: boolean;
-  setNotifDismissed: (v: boolean) => void;
-  onHelpClick: () => void;
+export interface AccountyHeaderProps {
+  setSidebarOpen?: (v: boolean) => void;
+  kpis?: any;
+  notifDismissed?: boolean;
+  setNotifDismissed?: (v: boolean) => void;
+  onHelpClick?: () => void;
 }
 
-function AccountyHeaderComponent({
-  setSidebarOpen,
-  kpis,
-  notifDismissed,
-  setNotifDismissed,
-  onHelpClick,
-}: AccountyHeaderProps) {
+function AccountyHeaderComponent(props: AccountyHeaderProps) {
   const navigate = useNavigate();
+  const shell = useAccountyShellOptional();
+
+  const setSidebarOpen = props.setSidebarOpen ?? shell?.setSidebarOpen ?? (() => {});
+  const kpis = props.kpis ?? shell?.kpis ?? {};
+  const notifDismissed = props.notifDismissed ?? shell?.notifDismissed ?? false;
+  const setNotifDismissed = props.setNotifDismissed ?? shell?.setNotifDismissed ?? (() => {});
+  const onHelpClick = props.onHelpClick ?? (() => shell?.setHelpDrawerOpen(true));
 
   return (
     <div className="flex items-center border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 relative z-10">
@@ -126,14 +128,4 @@ function AccountyHeaderComponent({
   );
 }
 
-function areAccountyHeaderPropsEqual(prevProps: AccountyHeaderProps, nextProps: AccountyHeaderProps) {
-  return (
-    prevProps.notifDismissed === nextProps.notifDismissed &&
-    prevProps.kpis?.criticalClients === nextProps.kpis?.criticalClients &&
-    prevProps.kpis?.missingItems === nextProps.kpis?.missingItems &&
-    prevProps.kpis?.todayDeadlines === nextProps.kpis?.todayDeadlines &&
-    prevProps.kpis?.upcomingDeadlines === nextProps.kpis?.upcomingDeadlines
-  );
-}
-
-export default React.memo(AccountyHeaderComponent, areAccountyHeaderPropsEqual);
+export default React.memo(AccountyHeaderComponent);

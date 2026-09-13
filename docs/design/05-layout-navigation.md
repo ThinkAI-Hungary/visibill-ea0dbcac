@@ -39,13 +39,56 @@
 | **`src/routes/shipmentRoutes.tsx`** | HRTSPED fuvarozási és eszkalációs útvonalak |
 | **`src/routes/redirects.tsx`** | `RootRedirect`, `AccountyRootRedirect`, `LegacyRedirect` egységes motor |
 | **`src/routes/shellComponents.tsx`** | `ProtectedPage`, `RemoveInitialLoader`, `ScrollToTop` segédkomponensek |
-| **`ProtectedLayout`** | Auth gate — semmi nem renderelődik amíg auth+company+role nem kész |
+| **`ProtectedLayout`** | Auth & Lifecycle gate — hidegindításkor LoadingSpinner, meleg váltáskor instant SPA (ADR A-115) |
 | **`AppLayout`** | Shell layout — Sidebar + TopBar + Content. Stabil, nem mount-ol újra |
 | **`ScopedLayout`** | URL ↔ Context szinkronizáció layer |
 | **`LanguageRouteSync`** | Reaktív i18n szinkronizáció: URL útvonal alapján azonnal vált `hu` és `hr` között (ADR A-109) |
 | **`LanguageRouteWrapper`** | Dedikált nyelvi környezetet biztosító route wrapper komponens |
+| **`AccountyShellProvider`** | Központi 0-prop provider az eaisyBooks moduláris héjához (`useAccountyShell()`, ADR A-114) |
+| **`AppModeSwitcher`** | Szimmetrikus alkalmazásváltó eaisyBill és eaisyBooks között (PRD P-083, ADR A-115) |
 
 ---
+
+## eaisyBooks Kettős Működési Módú Héj (ADR A-114)
+
+Az eaisyBooks felületének navigációja a `AccountyShellContext` központi állapotkezelő köré épül, felszámolva a korábbi 26-prop drilling láncolatot és monolitikus szerkezetet.
+
+### Moduláris Dekompozíció (Vercel Composition Patterns)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ AccountyLayout (AccountyShellProvider)                      │
+│  ├── AccountySidebar (Karcsú keret ~280 sor)               │
+│  │    ├── AppModeSwitcher (eaisyBill ↔ eaisyBooks)          │
+│  │    ├── mode === 'portfolio'  ──► <PortfolioNav />        │
+│  │    │                             (Portfólió, Naptár,     │
+│  │    │                              Riportok, Bérszámfejtés)│
+│  │    └── mode === 'client'     ──► <ClientNav />           │
+│  │                                  (← Vissza gomb, Profil, │
+│  │                                   Számlák, EV, TAO, Bér) │
+│  ├── AccountyHeader (0-prop, parancspaletta & súgó trigger) │
+│  └── AccountyErrorBoundary + <Outlet />                    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Alkalmazásváltó (AppModeSwitcher) és Hideg/Meleg Hibrid Átmenet (ADR A-115, PRD P-083)
+
+Az `eaisyBill` és `eaisyBooks` közötti zökkenőmentes és azonnali átjárást hibrid lifecycle modell biztosítja:
+
+### 1. Hidegindítás (Cold Start – F5 újratöltés vagy munkamenetbeli első belépés)
+- A modul-szintű session flag-ek (`hasEaisybillInitialized`, `hasAccountyInitialized`) kezdetben `false` értékűek.
+- A gyökér layout (`ProtectedLayout` vagy `AccountyLayout`) teljes képernyős `LoadingSpinner`-t renderel (`"eaisyBill betöltése..."` vagy `"eaisyBooks betöltése..."`), amely elfedi a lazy chunk betöltéseket, a cégek aszinkron feloldását és az RBAC jogosultság-ellenőrzést.
+- 400ms-os grace buffer védi a felületet a mikro-villanásoktól, míg egy 4 másodperces biztonsági timeout kizárja a beragadást.
+
+### 2. Meleg Váltás (Warm Switch – további navigációk az appok között)
+- Az inicializálási flagek értéke `true`.
+- A váltás **0ms késleltetésű, azonnali SPA navigáció** teljes képernyős spinner nélkül. Az esetleges belső adatkérések idején a kártyák és táblázatok belső lokális skeletonjai jelennek meg.
+
+### 3. Cégválasztó & Útvonal Szinkronizáció
+- A `CompanySelector` az `effectiveCompany` származtatott állapot segítségével szinkron módon kiolvassa a pillanatnyi URL route paramétert (`:companyId`). Így az átmenet első renderelési fázisában sem jelenik meg üres mező vagy placeholder (Zero Blank Frame).
+- Az `AppModeSwitcher` a cél útvonalakat közvetlenül generálja (`/:companyId/:dateRange/` és `/eaisybooks/:companyId/:dateRange/overview`), megszüntetve a redundáns gyökér átirányításokat és a perzisztens `localStorage` jelzőket.
 
 ## Sidebar
 

@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-09-11  
-> **Összesen:** 118 döntés | ✅ Decided: 116 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-09-13  
+> **Összesen:** 120 döntés | ✅ Decided: 118 | ⛔ Superseded: 2
 
 ---
 
@@ -157,6 +157,8 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-110 | Bérszámfejtési Számlatükör Sablon Lapozás és Leképezés Perzisztencia | ✅ Decided | [A-110](./A-110-payroll-gl-preset-pagination-and-mapping-persistence.md) |
 | A-111 | Közvetlen Bizonylat-visszanyitás (Unpost), Főkönyvi Sztornó Kioltás és Sorszámfolytonossági Védelem | ✅ Decided | [A-111](./A-111-accounting-journal-unpost-gl-storno-and-numbering-integrity.md) |
 | A-112 | Futárszolgálati Kompenzációs Értesítők Automatikus Bejövő Számla Rendezése (GLS / Courier Compensation Auto-Settlement) | ✅ Decided | [A-112](./A-112-courier-compensation-inbound-invoice-auto-settlement.md) |
+| A-114 | eaisyBooks Kettős Működési Módú Navigációs Héj Összevonása (Collapse Dual-Mode Navigation Shell) és Seam Hardening | ✅ Decided | [A-114](./A-114-collapse-dual-mode-navigation-shell.md) |
+| A-115 | eaisyBooks ↔ eaisyBill Szimmetrikus Hideg/Meleg (Cold/Warm) Hibrid Életciklus Átmenet és Szinkron Útvonal Feloldás | ✅ Decided | [A-115](./A-115-eaisybooks-eaisybill-cold-warm-hybrid-transition-and-route-resolution.md) |
 
 ## 💳 Fizetés
 

@@ -1,8 +1,17 @@
 import React, { useMemo } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { useAccountyClients, AccountyClient } from '@/hooks/accounty';
+import { useCompany } from '@/contexts/CompanyContext';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Building2, ChevronDown, Check, Search } from 'lucide-react';
+
+function useSafeCompany() {
+  try {
+    return useCompany();
+  } catch {
+    return null;
+  }
+}
 
 /**
  * CompanySwitcher — Dropdown in the Accounty header that lets
@@ -14,6 +23,7 @@ import { Building2, ChevronDown, Check, Search } from 'lucide-react';
 export function CompanySwitcher() {
   const navigate = useNavigate();
   const location = useLocation();
+  const companyContext = useSafeCompany();
   const { data: clients, isLoading } = useAccountyClients();
   const [open, setOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -38,11 +48,30 @@ export function CompanySwitcher() {
     return match?.[1] ?? null;
   }, [location.pathname]);
 
-  // Find current company details
+  const fallbackCompany = useMemo(() => {
+    if (!currentCompanyId || !companyContext) return null;
+    if (companyContext.selectedCompany?.id === currentCompanyId) {
+      return companyContext.selectedCompany;
+    }
+    return companyContext.companies?.find(c => c.id === currentCompanyId) || null;
+  }, [currentCompanyId, companyContext]);
+
+  // Find current company details (with immediate fallback to global CompanyContext during transitions)
   const currentCompany = useMemo(() => {
-    if (!currentCompanyId || !clients) return null;
-    return clients.find(c => c.id === currentCompanyId) ?? null;
-  }, [currentCompanyId, clients]);
+    if (!currentCompanyId) return null;
+    if (clients) {
+      const found = clients.find(c => c.id === currentCompanyId);
+      if (found) return found;
+    }
+    if (fallbackCompany) {
+      return {
+        id: fallbackCompany.id,
+        name: fallbackCompany.name,
+        taxNumber: fallbackCompany.tax_number,
+      } as any;
+    }
+    return null;
+  }, [currentCompanyId, clients, fallbackCompany]);
 
   // Filter companies by search
   const filteredClients = useMemo(() => {
@@ -90,7 +119,7 @@ export function CompanySwitcher() {
         >
           <Building2 className="w-4 h-4 shrink-0 text-primary" />
           <span className="truncate">
-            {isLoading ? '...' : (currentCompany?.name ?? 'Cég kiválasztása')}
+            {currentCompany?.name ?? (isLoading ? '...' : 'Cég kiválasztása')}
           </span>
           <ChevronDown className="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover:text-foreground transition-transform duration-200" style={{ transform: open ? 'rotate(180deg)' : undefined }} />
         </button>

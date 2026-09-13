@@ -91,19 +91,6 @@ export function AppLayout({ children }: AppLayoutProps) {
   useIdleRoutePrefetch();
   usePdfExportNotifications();
 
-  const [switchPending, setSwitchPending] = useState<string | null>(() => localStorage.getItem('visibill_switch_pending'));
-
-  useEffect(() => {
-    if (switchPending) {
-      const timer = setTimeout(() => {
-        try {
-          localStorage.removeItem('visibill_switch_pending');
-        } catch {}
-        setSwitchPending(null);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [switchPending]);
   return (
     <SidebarProvider
       className="h-screen w-full overflow-hidden flex !min-h-0 print:h-auto print:overflow-visible"

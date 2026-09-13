@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1789265584.9071448,
-    "ast_hash": "caebc50a753cc96ee9bc8aff8691833a",
+    "mtime": 1789262283.6474748,
+    "ast_hash": "c0211f01db2563df04b083161282eadf",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3360,8 +3360,8 @@
     "semantic_hash": ""
   },
   "docs/design/05-layout-navigation.md": {
-    "mtime": 1789265612.8602824,
-    "ast_hash": "ae540cf14f0482ae4629f27989922778",
+    "mtime": 1789082264.256693,
+    "ast_hash": "2a79fd07dd894ba5bc1abcd0e509859c",
     "semantic_hash": ""
   },
   "docs/design/07-loading-patterns.md": {
@@ -3570,13 +3570,13 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1789265600.0423124,
-    "ast_hash": "9decb2c5e2613344a251b14774d55957",
+    "mtime": 1789088272.500848,
+    "ast_hash": "8aa1c01c6f6b52b0350aa2ce9b588977",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
-    "mtime": 1789265625.2085283,
-    "ast_hash": "d4a8be713fab18b3a501b2ec2a8f4396",
+    "mtime": 1789080532.3967373,
+    "ast_hash": "1367c48461ce6742063f7607b7a9c612",
     "semantic_hash": ""
   },
   "docs/product/prd.md": {
@@ -10645,23 +10645,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-114-collapse-dual-mode-navigation-shell.md": {
-    "mtime": 1789265631.944777,
-    "ast_hash": "cdab2910a268c6d490a3d7802154d8f7",
+    "mtime": 1789262275.4971895,
+    "ast_hash": "ca9d9b523af0979cc0ccde447825c934",
     "semantic_hash": ""
   },
   "src/test/navigation/eaisybooksTransition.test.tsx": {
     "mtime": 1789264264.5443363,
     "ast_hash": "3a54df478a948283013ad3984e30f9a7",
-    "semantic_hash": ""
-  },
-  "docs/architecture/decisions/A-115-eaisybooks-eaisybill-cold-warm-hybrid-transition-and-route-resolution.md": {
-    "mtime": 1789265564.9325488,
-    "ast_hash": "bd68776ec831c730d6172b03bc592454",
-    "semantic_hash": ""
-  },
-  "docs/product/decisions/P-083-eaisybooks-eaisybill-app-mode-switcher-and-cold-warm-transition-ux.md": {
-    "mtime": 1789265573.65368,
-    "ast_hash": "80627a54983dea007d12f1af0979516f",
     "semantic_hash": ""
   }
 }

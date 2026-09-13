@@ -1,8 +1,8 @@
 # Visibill — Information Architecture & Navigation
 
-> **Verzió:** 1.5 | **Dátum:** 2026-09-11  
-> **Forrás:** [AppSidebar.tsx](../../src/components/AppSidebar.tsx) · [App.tsx](../../src/App.tsx)  
-> **Kapcsolódó döntés:** [P-006 Sidebar Structure](./decisions/P-006-sidebar-structure.md) · [A-109 Horvát Lokalizáció & Route Architektúra](../architecture/decisions/A-109-eaisybill-i18n-croatia-localization-and-route-architecture.md) · [P-081 Horvát Demó UX](./decisions/P-081-eaisybill-croatia-localization-and-demo-ux.md)
+> **Verzió:** 1.6 | **Dátum:** 2026-09-13  
+> **Forrás:** [AppSidebar.tsx](../../src/components/AppSidebar.tsx) · [App.tsx](../../src/App.tsx) · [AppModeSwitcher.tsx](../../src/components/AppModeSwitcher.tsx)  
+> **Kapcsolódó döntés:** [P-006 Sidebar Structure](./decisions/P-006-sidebar-structure.md) · [A-109 Horvát Lokalizáció & Route Architektúra](../architecture/decisions/A-109-eaisybill-i18n-croatia-localization-and-route-architecture.md) · [P-081 Horvát Demó UX](./decisions/P-081-eaisybill-croatia-localization-and-demo-ux.md) · [A-114 eaisyBooks Shell Collapse](../architecture/decisions/A-114-collapse-dual-mode-navigation-shell.md) · [A-115 Cold/Warm Hibrid Navigáció](../architecture/decisions/A-115-eaisybooks-eaisybill-cold-warm-hybrid-transition-and-route-resolution.md) · [P-083 AppModeSwitcher UX](./decisions/P-083-eaisybooks-eaisybill-app-mode-switcher-and-cold-warm-transition-ux.md)
 
 ---
 
@@ -20,6 +20,12 @@ Az alkalmazás scoped URL pattern-t használ:
 | `dateRange` | Dátum szűrő | `2026-01-01_2026-12-31` |
 | `page` | Oldal neve | `invoices` |
 | `tab?` | Opcionális tab | `all`, `incoming` |
+
+**Kereszt-alkalmazás Útvonalváltás (`eaisyBill` ↔ `eaisyBooks`):**
+Az `AppModeSwitcher` közvetlen célzott útvonalakat képez az aktív cég megőrzésével:
+- **eaisyBill-ből eaisyBooks-ba:** `/eaisybooks/:companyId/:dateRange/overview` (ha a cég jogosult az eaisyBooks modulra) vagy `/eaisybooks` (ha portfólió szinten lép be).
+- **eaisyBooks-ból eaisyBill-be:** `/:companyId/:dateRange/` (a könyvelő felületen aktív céget kiemelve).
+- A navigációt memória-alapú életciklus kapuk vezérlik: hidegindításkor (F5) `LoadingSpinner` védi a felületet, meleg váltáskor 0ms-os azonnali SPA átmenet történik (ADR A-115, PRD P-083).
 
 **Query paraméterek (Számlák oldal):**
 

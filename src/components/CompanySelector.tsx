@@ -3,8 +3,8 @@ import { useDateRange } from '@/contexts/DateRangeContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Building2, Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useState, useMemo } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { invalidateAccountyCache } from '@/hooks/accounty/useAccountyHelpers';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
@@ -27,6 +27,27 @@ const CompanySelector = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Resolve effective company: during transitions or before ScopedLayout syncs,
+  // resolve directly from URL parameter so CompanySelector is never blank or out of sync.
+  const { companyId: routeCompanyId } = useParams<{ companyId?: string }>();
+  const urlCompanyId = useMemo(() => {
+    if (routeCompanyId) return routeCompanyId;
+    const clean = location.pathname.startsWith('/hr') ? location.pathname.replace(/^\/hr/, '') : location.pathname;
+    const parts = clean.split('/').filter(Boolean);
+    if (parts.length >= 2 && parts[1].includes('_')) {
+      return parts[0];
+    }
+    return null;
+  }, [routeCompanyId, location.pathname]);
+
+  const effectiveCompany = useMemo(() => {
+    if (urlCompanyId && selectedCompany?.id !== urlCompanyId) {
+      const match = companies.find(c => c.id === urlCompanyId);
+      if (match) return match;
+    }
+    return selectedCompany;
+  }, [urlCompanyId, selectedCompany, companies]);
   
   // Create dialog state
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -288,12 +309,12 @@ const CompanySelector = () => {
         </div>
       ) : (
         <Select
-          value={selectedCompany?.id || ''}
+          value={effectiveCompany?.id || ''}
           onValueChange={handleCompanyChange}
         >
           <SelectTrigger className="min-w-[140px] max-w-[220px] h-9 [&>span]:text-left [&>span]:flex-1">
             <SelectValue placeholder={t('company_selector.choose_company')}>
-              {selectedCompany?.name}
+              {effectiveCompany?.name}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
@@ -306,14 +327,14 @@ const CompanySelector = () => {
         </Select>
       )}
 
-      {selectedCompany && (
-        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => openEditDialog(selectedCompany)} title={t('company_selector.edit_company')}>
+      {effectiveCompany && (
+        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => openEditDialog(effectiveCompany)} title={t('company_selector.edit_company')}>
           <Pencil className="h-4 w-4" />
         </Button>
       )}
 
-      {selectedCompany && selectedCompany.owner_id === user?.id && (
-        <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive hover:text-destructive" onClick={() => openDeleteDialog(selectedCompany)} title={t('company_selector.delete_company')}>
+      {effectiveCompany && effectiveCompany.owner_id === user?.id && (
+        <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive hover:text-destructive" onClick={() => openDeleteDialog(effectiveCompany)} title={t('company_selector.delete_company')}>
           <Trash2 className="h-4 w-4" />
         </Button>
       )}

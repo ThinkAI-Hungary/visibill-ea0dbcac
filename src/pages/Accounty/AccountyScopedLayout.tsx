@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { Outlet, useParams, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { Outlet, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAccountyClients } from '@/hooks/accounty';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { parseDateRange, generateAccountyScopedPath, extractAccountyPageSegment } from '@/lib/navigation';
 import { ShieldAlert, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAccountyShell } from '@/pages/Accounty/AccountyShellContext';
 
 export default function AccountyScopedLayout() {
   const { companyId: urlCompanyId, dateRange: urlDateRange } = useParams<{
@@ -17,6 +18,7 @@ export default function AccountyScopedLayout() {
 
   const { data: clients, isLoading: clientsLoading } = useAccountyClients();
   const { dateFromFormatted, dateToFormatted, setDateFrom, setDateTo } = useDateRange();
+  const { setSelectedClientId } = useAccountyShell();
   const parsedUrlDateRange = urlDateRange ? parseDateRange(urlDateRange) : null;
 
   // Sync guard lock to prevent infinite redirect loops
@@ -29,6 +31,16 @@ export default function AccountyScopedLayout() {
   }, []);
 
   const isLegacyKeyword = ['payroll', 'client', 'missing-invoices'].includes(urlCompanyId || '');
+
+  // Inform the AccountyShellContext about the active scoped client
+  useEffect(() => {
+    if (urlCompanyId && !isLegacyKeyword && !accessDenied) {
+      setSelectedClientId(urlCompanyId);
+    }
+    return () => {
+      setSelectedClientId(null);
+    };
+  }, [urlCompanyId, isLegacyKeyword, accessDenied, setSelectedClientId]);
 
   // 1. URL ➔ Context Sync & Legacy Redirect
   useEffect(() => {

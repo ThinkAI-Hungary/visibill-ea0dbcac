@@ -1,39 +1,12 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useMemo } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { 
-  Briefcase, 
-  FileWarning, 
-  Calendar, 
-  BarChart2, 
+  Building2, 
+  Search, 
+  Sun, 
+  Moon, 
   Settings, 
-  HelpCircle,
-  Search,
-  Sun,
-  Moon,
-  User,
-  LogOut,
-  ChevronRight,
-  AlertTriangle,
-  Clock,
-  MailCheck,
-  Calculator,
-  FileText,
-  TrendingUp,
-  Building2,
-  Users,
-  PanelLeft,
-  TicketCheck,
-  ShieldCheck,
-  BookOpen,
-  Scale,
-  Bot,
-  Rocket,
-  Landmark,
-  Shield,
-  Coins,
-  ArrowLeft,
-  ClipboardList,
-  Brain
+  LogOut 
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -41,262 +14,186 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import AppModeSwitcher from '@/components/AppModeSwitcher';
-import { PATH_TO_MODULE } from '@/hooks/useAccountyPermissions';
-import { useEvClientSettings } from '@/hooks/useEvData';
-import { useDateRange } from '@/contexts/DateRangeContext';
 import AccountyNavSkeleton from './AccountyNavSkeleton';
+import PortfolioNav from './PortfolioNav';
+import ClientNav from './ClientNav';
+import { 
+  AccountyShellContext, 
+  extractCompanyIdFromPath, 
+  useAccountyShellOptional, 
+  type AccountyShellContextType 
+} from '@/pages/Accounty/AccountyShellContext';
 
-
-interface AccountySidebarProps {
-  isCollapsed: boolean;
-  toggleSidebarCollapse: () => void;
-  sidebarOpen: boolean;
-  setSidebarOpen: (v: boolean) => void;
-  hasEaisybillAccess: boolean;
-  kpis: any;
-  unreadTicketCount: number;
-  canAccess: (module: string) => boolean;
-  pathname: string;
-  user: any;
-  signOut: () => Promise<void>;
-  setCmdOpen: (v: boolean) => void;
-  theme: string;
-  setTheme: (t: string) => void;
-  allClients: any[] | null;
-  expandedPayroll: Set<string>;
-  togglePayrollClient: (id: string) => void;
-  payrollSearch: string;
-  setPayrollSearch: (s: string) => void;
-  showAllPayroll: boolean;
-  setShowAllPayroll: (v: boolean) => void;
-  expandedSections: Set<string>;
-  toggleSection: (key: string) => void;
-  isActive: (path: string) => boolean;
-  navigate: (path: string) => void;
+export interface AccountySidebarProps {
+  isCollapsed?: boolean;
+  toggleSidebarCollapse?: () => void;
+  sidebarOpen?: boolean;
+  setSidebarOpen?: (v: boolean) => void;
+  hasEaisybillAccess?: boolean;
+  kpis?: any;
+  unreadTicketCount?: number;
+  canAccess?: (module: string) => boolean;
+  pathname?: string;
+  user?: any;
+  signOut?: () => Promise<void>;
+  setCmdOpen?: (v: boolean) => void;
+  theme?: string;
+  setTheme?: (t: string) => void;
+  allClients?: any[] | null;
+  expandedPayroll?: Set<string>;
+  togglePayrollClient?: (id: string) => void;
+  payrollSearch?: string;
+  setPayrollSearch?: (s: string) => void;
+  showAllPayroll?: boolean;
+  setShowAllPayroll?: (v: boolean) => void;
+  expandedSections?: Set<string>;
+  toggleSection?: (key: string) => void;
+  isActive?: (path: string) => boolean;
+  navigate?: (path: string) => void;
   hoveredHelpSection?: string | null;
 }
 
-const accountyPrefetchMap: Record<string, () => Promise<unknown>> = {
-  "/eaisybooks": () => import("@/pages/Accounty/AccountyLayout"),
-  "/eaisybooks/missing-invoices": () => import("@/pages/Accounty/MissingInvoicesPage"),
-  "/eaisybooks/tax-calendar": () => import("@/pages/Accounty/TaxCalendarPage"),
-  "/eaisybooks/reports": () => import("@/pages/Accounty/ReportsPage"),
-  "/eaisybooks/approval-queue": () => import("@/pages/Accounty/ApprovalQueuePage"),
-  "/eaisybooks/alerts": () => import("@/pages/Accounty/AlertsCenterPage"),
-  "/eaisybooks/onboarding": () => import("@/pages/Accounty/OnboardingPage"),
-  "/eaisybooks/settings": () => import("@/pages/Accounty/SettingsPage"),
-  "/eaisybooks/profile/settings": () => import("@/pages/Accounty/ProfileSettingsPage"),
-  "/eaisybooks/tickets": () => import("@/pages/TicketsPage"),
-  "/eaisybooks/help": () => import("@/pages/Accounty/HelpPage"),
-  "/eaisybooks/ai-assistant": () => import("@/pages/Accounty/AiAssistantPage"),
-  "/eaisybooks/admin/permissions": () => import("@/pages/Accounty/PermissionMatrixPage"),
-  "/eaisybooks/admin/accountants": () => import("@/pages/Accounty/AccountantManagementPage"),
-  "/eaisybooks/admin/templates": () => import("@/pages/Accounty/TemplatesPage"),
-  "/eaisybooks/admin/job-codes": () => import("@/pages/Accounty/JobCodesPage"),
-  "/eaisybooks/admin/tax-parameters": () => import("@/pages/Accounty/AdminTaxParametersPage"),
-  "/eaisybooks/admin/legal-updates": () => import("@/pages/Accounty/LegalUpdatesPage"),
-  "/eaisybooks/admin/audit": () => import("@/pages/Accounty/AuditLogPage"),
-  "/eaisybooks/admin/gdpr": () => import("@/pages/Accounty/GdprPage"),
-  "overview": () => import("@/pages/Accounty/ClientDetailsPage"),
-  "profile": () => import("@/pages/Accounty/ClientDetailsPage"),
-  "invoices": () => import("@/pages/Accounty/ClientInvoicesPage"),
-  "ev": () => import("@/pages/Accounty/Ev/ClientEvMainPage"),
-  "tao": () => import("@/pages/Accounty/Tao/ClientTaoMainPage"),
-  "payroll": () => import("@/pages/Accounty/PayrollDashboardPage"),
-  "payroll/filings": () => import("@/pages/Accounty/FilingsPage"),
-  "prompts": () => import("@/pages/Accounty/PromptsPage"),
-};
+export default function AccountySidebar(props: AccountySidebarProps) {
+  const shell = useAccountyShellOptional();
 
-export default function AccountySidebar({
-  isCollapsed,
-  toggleSidebarCollapse,
-  sidebarOpen,
-  setSidebarOpen,
-  hasEaisybillAccess,
-  kpis,
-  unreadTicketCount,
-  canAccess,
-  pathname,
-  user,
-  signOut,
-  setCmdOpen,
-  theme,
-  setTheme,
-  allClients,
-  expandedPayroll,
-  togglePayrollClient,
-  payrollSearch,
-  setPayrollSearch,
-  showAllPayroll,
-  setShowAllPayroll,
-  expandedSections,
-  toggleSection,
-  isActive,
-  navigate,
-  hoveredHelpSection = null,
-}: AccountySidebarProps) {
-  const [expandedSubSections, setExpandedSubSections] = React.useState<Set<string>>(new Set());
-  const { dateFromFormatted, dateToFormatted } = useDateRange();
-  const currentDateRange = `${dateFromFormatted}_${dateToFormatted}`;
+  if (!shell) {
+    return <AccountySidebarStandalone {...props} />;
+  }
 
-  const handlePrefetch = React.useCallback((to: string) => {
-    const cleanTo = to.split('?')[0].split('#')[0];
-    const loader = accountyPrefetchMap[cleanTo];
-    if (loader) {
-      void loader();
-    } else {
-      const parts = cleanTo.split('/');
-      const lastPart = parts[parts.length - 1];
-      const clientLoader = accountyPrefetchMap[lastPart];
-      if (clientLoader) void clientLoader();
-    }
-  }, []);
+  return <AccountySidebarInner shell={shell} props={props} />;
+}
 
+function AccountySidebarStandalone(props: AccountySidebarProps) {
+  let locationPathname = '';
+  try {
+    const location = useLocation();
+    locationPathname = location?.pathname || '';
+  } catch {
+    // Router not mounted
+  }
+  const effectivePathname = props.pathname ?? locationPathname;
+  const derivedClientId = extractCompanyIdFromPath(effectivePathname);
+  const selectedClientId = derivedClientId;
+  const mode: 'portfolio' | 'client' = selectedClientId ? 'client' : 'portfolio';
 
-  const isPathActive = React.useCallback((to: string, exact?: boolean) => {
-    const cleanTo = to.split('?')[0];
-    const itemParams = new URLSearchParams(to.split('?')[1] || '');
-    const itemTab = itemParams.get('tab');
-    
-    const queryParams = new URLSearchParams(window.location.search);
-    const currentTab = queryParams.get('tab');
-    
-    if (itemTab) {
-      return pathname.startsWith(cleanTo) && currentTab === itemTab;
-    }
-    if (to === '/eaisybooks') {
-      return pathname === '/eaisybooks' && !currentTab;
-    }
-    return exact ? pathname === cleanTo : isActive(cleanTo);
-  }, [pathname, isActive]);
+  const selectedClient = useMemo(() => {
+    if (!selectedClientId || !props.allClients) return null;
+    return props.allClients.find(c => c.companyId === selectedClientId || (c as any).id === selectedClientId) || null;
+  }, [selectedClientId, props.allClients]);
 
-  const toggleSubSection = (key: string) => {
-    setExpandedSubSections(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
+  const [isCollapsed, setIsCollapsed] = useState(props.isCollapsed ?? false);
+  const [sidebarOpen, setSidebarOpen] = useState(props.sidebarOpen ?? false);
+  const [cmdOpen, setCmdOpen] = useState(false);
+  const [cmdQuery, setCmdQuery] = useState('');
+  const [helpDrawerOpen, setHelpDrawerOpen] = useState(false);
+  const [hoveredHelpSection, setHoveredHelpSection] = useState<string | null>(props.hoveredHelpSection ?? null);
+  const [runTour, setRunTour] = useState(false);
+  const [notifDismissed, setNotifDismissed] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(props.expandedSections ?? new Set(['portfolio']));
+  const [expandedSubSections, setExpandedSubSections] = useState<Set<string>>(new Set());
+  const [expandedPayroll, setExpandedPayroll] = useState<Set<string>>(props.expandedPayroll ?? new Set());
+  const [payrollSearch, setPayrollSearch] = useState(props.payrollSearch ?? '');
+  const [showAllPayroll, setShowAllPayroll] = useState(props.showAllPayroll ?? false);
+
+  const fallbackValue: AccountyShellContextType = {
+    mode,
+    selectedClientId,
+    selectedClient,
+    setSelectedClientId: () => {},
+    currentDateRange: '2026-01-01_2026-12-31',
+    pathname: effectivePathname,
+    isActive: props.isActive ?? ((p: string) => effectivePathname.startsWith(p)),
+    isPathActive: (to: string, exact?: boolean) => exact ? effectivePathname === to : effectivePathname.startsWith(to),
+    handlePrefetch: () => {},
+    handleBackToPortfolio: () => props.navigate?.('/eaisybooks/dashboard'),
+    navigate: props.navigate ?? (() => {}),
+    isCollapsed: props.isCollapsed ?? isCollapsed,
+    toggleSidebarCollapse: props.toggleSidebarCollapse ?? (() => setIsCollapsed(p => !p)),
+    sidebarOpen: props.sidebarOpen ?? sidebarOpen,
+    setSidebarOpen: props.setSidebarOpen ?? setSidebarOpen,
+    isNavigatingToPortfolio: false,
+    cmdOpen,
+    setCmdOpen,
+    cmdQuery,
+    setCmdQuery,
+    helpDrawerOpen,
+    setHelpDrawerOpen,
+    hoveredHelpSection,
+    setHoveredHelpSection,
+    runTour,
+    setRunTour,
+    notifDismissed,
+    setNotifDismissed,
+    canAccess: props.canAccess ?? (() => true),
+    hasEaisybillAccess: props.hasEaisybillAccess ?? true,
+    allClients: props.allClients ?? null,
+    kpis: props.kpis ?? {},
+    unreadTicketCount: props.unreadTicketCount ?? 0,
+    user: props.user ?? null,
+    signOut: props.signOut ?? (async () => {}),
+    theme: props.theme ?? 'light',
+    setTheme: props.setTheme ?? (() => {}),
+    getUserInitials: () => {
+      if (props.user?.user_metadata?.full_name) {
+        return props.user.user_metadata.full_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
       }
-      return next;
-    });
+      return props.user?.email ? props.user.email.slice(0, 2).toUpperCase() : 'U';
+    },
+    expandedSections: props.expandedSections ?? expandedSections,
+    toggleSection: props.toggleSection ?? ((k: string) => setExpandedSections(prev => {
+      const n = new Set(prev);
+      n.has(k) ? n.delete(k) : n.add(k);
+      return n;
+    })),
+    expandedSubSections,
+    toggleSubSection: (k: string) => setExpandedSubSections(prev => {
+      const n = new Set(prev);
+      n.has(k) ? n.delete(k) : n.add(k);
+      return n;
+    }),
+    expandedPayroll: props.expandedPayroll ?? expandedPayroll,
+    togglePayrollClient: props.togglePayrollClient ?? ((id: string) => setExpandedPayroll(prev => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    })),
+    payrollSearch: props.payrollSearch ?? payrollSearch,
+    setPayrollSearch: props.setPayrollSearch ?? setPayrollSearch,
+    showAllPayroll: props.showAllPayroll ?? showAllPayroll,
+    setShowAllPayroll: props.setShowAllPayroll ?? setShowAllPayroll,
+    subGroups: [],
   };
 
-  const subGroups = React.useMemo(() => [
-    {
-      id: 'office',
-      label: 'Iroda & Beállítások',
-      icon: Settings,
-      items: [
-        { to: '/eaisybooks/settings', icon: Settings, label: 'Beállítások', id: 'settings' },
-        { to: '/eaisybooks/profile/settings', icon: User, label: 'Profilbeállítások' },
-        { to: '/eaisybooks/admin/permissions', icon: Shield, label: 'Jogosultságkezelő' },
-        { to: '/eaisybooks/admin/accountants', icon: Users, label: 'Könyvelők kezelése' },
-      ].filter(item => {
-        const module = PATH_TO_MODULE[item.to];
-        return !module || canAccess(module);
-      })
-    },
-    {
-      id: 'professional',
-      label: 'Szakmai Törzsadatok',
-      icon: BookOpen,
-      items: [
-        { to: '/eaisybooks/admin/templates', icon: FileText, label: 'Sablonok' },
-        { to: '/eaisybooks/admin/job-codes', icon: BookOpen, label: 'Jogviszonykódok' },
-        { to: '/eaisybooks/admin/tax-parameters', icon: Calculator, label: 'Adómértékek' },
-        { to: '/eaisybooks/admin/legal-updates', icon: Scale, label: 'Jogszabály-frissítések' },
-      ].filter(item => {
-        const module = PATH_TO_MODULE[item.to];
-        return !module || canAccess(module);
-      })
-    },
-    {
-      id: 'security',
-      label: 'Biztonság & GDPR',
-      icon: ShieldCheck,
-      items: [
-        { to: '/eaisybooks/admin/audit', icon: ShieldCheck, label: 'Audit napló' },
-        { to: '/eaisybooks/admin/gdpr', icon: ShieldCheck, label: 'GDPR' },
-      ].filter(item => {
-        const module = PATH_TO_MODULE[item.to];
-        return !module || canAccess(module);
-      })
-    },
-    {
-      id: 'support',
-      label: 'Támogatás & AI',
-      icon: HelpCircle,
-      items: [
-        { to: '/eaisybooks/ai-assistant', icon: Bot, label: 'AI Asszisztens' },
-        { to: '/eaisybooks/tickets', icon: TicketCheck, label: 'Hibajegyek', badge: unreadTicketCount },
-        { to: '/eaisybooks/help', icon: HelpCircle, label: 'Segítség' },
-      ].filter(item => {
-        const module = PATH_TO_MODULE[item.to];
-        return !module || canAccess(module);
-      })
-    }
-  ], [unreadTicketCount, canAccess]);
+  return (
+    <AccountyShellContext.Provider value={fallbackValue}>
+      <AccountySidebarInner shell={fallbackValue} props={props} />
+    </AccountyShellContext.Provider>
+  );
+}
 
-  React.useEffect(() => {
-    const activeSubGroup = subGroups.find(g => g.items.some(i => isActive(i.to)));
-    if (activeSubGroup) {
-      setExpandedSubSections(prev => {
-        if (prev.has(activeSubGroup.id)) return prev;
-        const next = new Set(prev);
-        next.add(activeSubGroup.id);
-        return next;
-      });
-    }
-  }, [pathname, subGroups]);
+function AccountySidebarInner({ shell, props }: { shell: AccountyShellContextType; props: AccountySidebarProps }) {
 
-  const getUserInitials = () => {
-    if (user?.user_metadata?.name) {
-      return user.user_metadata.name
-        .split(' ')
-        .map((n: string) => n[0])
-        .join('')
-        .toUpperCase();
-    }
-    return user?.email?.substring(0, 2).toUpperCase() || 'U';
-  };
+  // Prefer context values with optional prop fallbacks for backwards compatibility
+  const isCollapsed = props.isCollapsed ?? shell.isCollapsed;
+  const sidebarOpen = props.sidebarOpen ?? shell.sidebarOpen;
+  const setCmdOpen = props.setCmdOpen ?? shell.setCmdOpen;
+  const hasEaisybillAccess = props.hasEaisybillAccess ?? shell.hasEaisybillAccess;
+  const allClients = props.allClients ?? shell.allClients;
+  const user = props.user ?? shell.user;
+  const theme = props.theme ?? shell.theme;
+  const setTheme = props.setTheme ?? shell.setTheme;
+  const signOut = props.signOut ?? shell.signOut;
+  const navigate = props.navigate ?? shell.navigate;
 
-  const clientMatch = pathname.match(/\/eaisybooks\/(?:(?:client|payroll|missing-invoices)\/)?([a-f0-9-]{36})/i);
-  const selectedClientId = clientMatch ? clientMatch[1] : null;
-  const selectedClient = allClients?.find(c => c.companyId === selectedClientId);
-  const { data: evSettings } = useEvClientSettings(selectedClientId || undefined);
-  const isEv = pathname.split('/').includes('ev') || 
-               !!evSettings || 
-               (selectedClient?.name ? (
-                 selectedClient.name.toUpperCase().includes('EV') || 
-                 selectedClient.name.toUpperCase().includes('E.V.') ||
-                 selectedClient.name.toLowerCase().includes('egyéni vállalkozó')
-               ) : false);
-
-  const [isNavigatingToPortfolio, setIsNavigatingToPortfolio] = React.useState(false);
-  const prevSelectedClientIdRef = React.useRef<string | null>(selectedClientId);
-
-  React.useEffect(() => {
-    if (selectedClientId) {
-      // If on a client route, never get stuck in portfolio navigating state
-      setIsNavigatingToPortfolio(false);
-    } else if (prevSelectedClientIdRef.current && !selectedClientId) {
-      setIsNavigatingToPortfolio(true);
-      const timer = setTimeout(() => {
-        setIsNavigatingToPortfolio(false);
-      }, 250);
-      return () => clearTimeout(timer);
-    }
-    prevSelectedClientIdRef.current = selectedClientId;
-  }, [selectedClientId]);
-
-  const handleBackToPortfolio = React.useCallback(() => {
-    setIsNavigatingToPortfolio(true);
-    navigate('/eaisybooks');
-    const timer = setTimeout(() => {
-      setIsNavigatingToPortfolio(false);
-    }, 250);
-  }, [navigate]);
+  const {
+    mode,
+    selectedClientId,
+    selectedClient,
+    currentDateRange,
+    isNavigatingToPortfolio,
+    handleBackToPortfolio,
+    getUserInitials,
+  } = shell;
 
   return (
     <aside className={cn(
@@ -336,13 +233,18 @@ export default function AccountySidebar({
           >
             <SelectTrigger className="flex-1 h-9 text-sm font-medium bg-transparent border-border hover:bg-sidebar-foreground/5 text-sidebar-foreground [&>span]:text-left [&>span]:flex-1 focus:ring-1 focus:ring-primary/30">
               <SelectValue placeholder="Válassz céget">
-                {selectedClientId ? selectedClient?.name : 'Teljes Portfólió'}
+                {selectedClientId ? (selectedClient?.name || 'Ügyfél betöltése...') : 'Teljes Portfólió'}
               </SelectValue>
             </SelectTrigger>
             <SelectContent className="max-h-64 overflow-y-auto">
               <SelectItem value="_portfolio" className="text-xs font-bold text-primary">
                 Teljes Portfólió
               </SelectItem>
+              {selectedClientId && selectedClient && !allClients?.some(c => c.companyId === selectedClientId) && (
+                <SelectItem value={selectedClientId} className="text-xs">
+                  {selectedClient.name}
+                </SelectItem>
+              )}
               {(allClients || []).map((client) => (
                 <SelectItem key={client.companyId} value={client.companyId} className="text-xs">
                   {client.name}
@@ -353,7 +255,7 @@ export default function AccountySidebar({
         </div>
       )}
 
-      {/* Navigation — Collapsible groups */}
+      {/* Navigation Area */}
       <nav className="flex-1 p-2 overflow-y-auto" data-sidebar-nav>
         {/* Search trigger */}
         {isCollapsed ? (
@@ -381,324 +283,13 @@ export default function AccountySidebar({
           </button>
         )}
 
-
-
+        {/* Dynamic Nav Branch based on Mode */}
         {isNavigatingToPortfolio && !selectedClientId ? (
           <AccountyNavSkeleton isCollapsed={isCollapsed} count={isCollapsed ? 8 : 6} />
-        ) : isCollapsed ? (
-          selectedClientId ? (
-            /* Client Context Collapsed Mode */
-            <ul className="flex w-full min-w-0 flex-col gap-1 animate-in fade-in duration-300">
-              {[
-                { path: '/eaisybooks', name: 'Vissza a portfólióhoz', icon: ArrowLeft },
-                { type: 'divider' as const },
-                { path: `/eaisybooks/${selectedClientId}/${currentDateRange}/overview`, name: 'Áttekintés', icon: Briefcase, exact: true },
-                { path: `/eaisybooks/${selectedClientId}/${currentDateRange}/profile`, name: 'Profil', icon: User },
-                { path: `/eaisybooks/${selectedClientId}/${currentDateRange}/invoices`, name: 'Számlák', icon: FileText },
-                { path: `/eaisybooks/${selectedClientId}/${currentDateRange}/missing-invoices`, name: 'Hiányzó számlák', icon: FileWarning },
-                { path: `/eaisybooks/${selectedClientId}/${currentDateRange}/ev`, name: 'Egyéni Vállalkozás', icon: Coins },
-                { path: `/eaisybooks/${selectedClientId}/${currentDateRange}/tao`, name: 'Társasági Adó', icon: Landmark },
-                { path: `/eaisybooks/${selectedClientId}/${currentDateRange}/payroll`, name: 'Bérszámfejtés', icon: Calculator },
-                { path: `/eaisybooks/${selectedClientId}/${currentDateRange}/payroll/filings`, name: 'NAV bevallások', icon: ClipboardList },
-                { path: `/eaisybooks/${selectedClientId}/${currentDateRange}/prompts`, name: 'Könyvelési Szabályok', icon: Brain },
-                { path: `/eaisybooks/${selectedClientId}/${currentDateRange}/settings#notifications`, name: 'Beállítások / Cégkapu', icon: Settings },
-              ].map((item, idx) => {
-                if ('type' in item) return <li key={`div-${idx}`} className="my-1 mx-2 h-px bg-border/50" />;
-                const pathWithoutHash = item.path.split('#')[0];
-                const active = item.exact ? pathname === pathWithoutHash : pathname.startsWith(pathWithoutHash);
-                return (
-                  <li key={item.path} className="relative flex justify-center">
-                    <Tooltip delayDuration={0}>
-                      <TooltipTrigger asChild>
-                        <Link
-                          to={item.path}
-                          onMouseEnter={() => handlePrefetch(item.path)}
-                          onFocus={() => handlePrefetch(item.path)}
-                          onTouchStart={() => handlePrefetch(item.path)}
-                          className={cn(
-                            "relative flex items-center justify-center rounded-md transition-all duration-200 w-8 h-8",
-                            active ? "bg-primary/15 text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
-                          )}
-                        >
-                          <item.icon className="h-4 w-4 shrink-0" />
-                        </Link>
-                      </TooltipTrigger>
-                      <TooltipContent side="right">{item.name}</TooltipContent>
-                    </Tooltip>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            /* Collapsed mode: icon-only with tooltip */
-            <ul className="flex w-full min-w-0 flex-col gap-1">
-              {[
-                { path: '/eaisybooks', name: 'Portfólió', icon: Briefcase },
-                { path: '/eaisybooks/missing-invoices', name: 'Hiányzó számlák', icon: FileWarning, badge: kpis?.missingItems },
-                { path: '/eaisybooks/tax-calendar', name: 'Naptár & Határidők', icon: Calendar },
-                { path: '/eaisybooks/reports', name: 'Riportok', icon: BarChart2 },
-                { path: '/eaisybooks/approval-queue', name: 'Jóváhagyó rendszer', icon: MailCheck },
-                { path: '/eaisybooks/alerts', name: 'Riasztások', icon: AlertTriangle },
-                { path: '/eaisybooks/onboarding', name: 'Onboarding', icon: Rocket },
-                { type: 'divider' as const },
-                { path: '/eaisybooks/settings', name: 'Beállítások', icon: Settings },
-                { path: '/eaisybooks/tickets', name: 'Hibajegyek', icon: TicketCheck, badge: unreadTicketCount },
-                { path: '/eaisybooks/help', name: 'Segítség', icon: HelpCircle },
-                { path: '/eaisybooks/ai-assistant', name: 'AI Asszisztens', icon: Bot },
-                { path: '/eaisybooks/admin/audit', name: 'Audit', icon: ShieldCheck },
-              ].filter(item => {
-                if ('type' in item) return true;
-                const cleanPath = (item as any).path.split('?')[0];
-                const module = PATH_TO_MODULE[cleanPath];
-                return !module || canAccess(module);
-              }).map((item, idx) => {
-                if ('type' in item) return <li key={`div-${idx}`} className="my-1 mx-2 h-px bg-border/50" />;
-                const navItem = item as { path: string; name: string; icon: any; badge?: number };
-                return (
-                  <li key={navItem.path} className="relative flex justify-center">
-                    <Tooltip delayDuration={0}>
-                      <TooltipTrigger asChild>
-                        <Link
-                          to={navItem.path}
-                          onMouseEnter={() => handlePrefetch(navItem.path)}
-                          onFocus={() => handlePrefetch(navItem.path)}
-                          onTouchStart={() => handlePrefetch(navItem.path)}
-                          className={cn(
-                            "relative flex items-center justify-center rounded-md transition-all duration-200 w-8 h-8",
-                            isPathActive(navItem.path) ? "bg-primary/15 text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
-                          )}
-                        >
-                          <navItem.icon className="h-4 w-4 shrink-0" />
-                          {navItem.badge && navItem.badge > 0 ? (
-                            <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 flex items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
-                              {navItem.badge > 9 ? '9+' : navItem.badge}
-                            </span>
-                          ) : null}
-                        </Link>
-                      </TooltipTrigger>
-                      <TooltipContent side="right">{navItem.name}</TooltipContent>
-                    </Tooltip>
-                  </li>
-                );
-              })}
-            </ul>
-          )
-        ) : selectedClientId ? (
-          /* Client Context Expanded Mode */
-          <div className="flex flex-col gap-1 px-1 animate-in fade-in duration-300">
-            {/* Back to Portfolio */}
-            <button
-              onClick={handleBackToPortfolio}
-              className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm transition-all duration-150 h-8 hover:bg-primary/10 hover:text-primary text-sidebar-foreground/70 mb-2 border border-border/40"
-            >
-              <ArrowLeft className="h-4 w-4 shrink-0" />
-              <span className="truncate flex-1 font-semibold text-xs">Vissza a portfólióhoz</span>
-            </button>
-
-            <ul className="flex flex-col gap-1">
-              {[
-                { to: `/eaisybooks/${selectedClientId}/${currentDateRange}/overview`, label: 'Áttekintés', icon: Briefcase, exact: true, id: 'portfolio' },
-                { to: `/eaisybooks/${selectedClientId}/${currentDateRange}/profile`, label: 'Profil', icon: User, id: 'profile' },
-                { to: `/eaisybooks/${selectedClientId}/${currentDateRange}/invoices`, label: 'Számlák', icon: FileText, id: 'invoices' },
-                { to: `/eaisybooks/${selectedClientId}/${currentDateRange}/missing-invoices`, label: 'Hiányzó számlák', icon: FileWarning, id: 'missing-invoices' },
-                { to: `/eaisybooks/${selectedClientId}/${currentDateRange}/ev`, label: 'Egyéni Vállalkozás', icon: Coins, id: 'ev' },
-                { to: `/eaisybooks/${selectedClientId}/${currentDateRange}/tao`, label: 'Társasági Adó', icon: Landmark, id: 'tao' },
-                { to: `/eaisybooks/${selectedClientId}/${currentDateRange}/payroll`, label: 'Bérszámfejtés', icon: Calculator, id: 'payroll' },
-                { to: `/eaisybooks/${selectedClientId}/${currentDateRange}/payroll/filings`, label: 'NAV bevallások', icon: ClipboardList, id: 'filings' },
-                { to: `/eaisybooks/${selectedClientId}/${currentDateRange}/prompts`, label: 'Könyvelési Szabályok', icon: Brain, id: 'prompts' },
-                { to: `/eaisybooks/${selectedClientId}/${currentDateRange}/settings#notifications`, label: 'Beállítások / Cégkapu', icon: Settings, id: 'settings' },
-              ].map(item => {
-                const pathWithoutHash = item.to.split('#')[0];
-                const active = item.exact 
-                  ? pathname === pathWithoutHash 
-                  : item.to.endsWith('/payroll')
-                    ? pathname.startsWith(pathWithoutHash) && !pathname.startsWith(pathWithoutHash + '/filings')
-                    : pathname.startsWith(pathWithoutHash);
-                return (
-                  <li key={item.to}>
-                    <Link
-                      to={item.to}
-                      onMouseEnter={() => handlePrefetch(item.to)}
-                      onFocus={() => handlePrefetch(item.to)}
-                      onTouchStart={() => handlePrefetch(item.to)}
-                      className={cn(
-                        "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm transition-all duration-200",
-                        hoveredHelpSection === item.id
-                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border-l-4 border-l-emerald-500 ring-1 ring-emerald-500/30 animate-help-glow transition-all duration-300"
-                          : active
-                            ? "bg-primary/15 font-semibold text-primary scale-[1.02] shadow-sm ring-1 ring-primary/20"
-                            : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground/80"
-                      )}
-                    >
-                      <item.icon className="h-4 w-4 shrink-0" />
-                      <span className="truncate flex-1">{item.label}</span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+        ) : mode === 'client' ? (
+          <ClientNav />
         ) : (
-          /* Expanded mode: Collapsible groups */
-          <div className="flex flex-col gap-1 animate-in fade-in duration-300">
-            {/* Portfólió csoport */}
-            {(() => {
-              const groupKey = 'portfolio';
-              const isOpen = expandedSections.has(groupKey);
-              const allPortfolioItems = [
-                { to: '/eaisybooks', icon: Briefcase, label: 'Portfólió', exact: true, id: 'portfolio' },
-                { to: '/eaisybooks/missing-invoices', icon: FileWarning, label: 'Hiányzó számlák', badge: kpis?.missingItems, id: 'missing-invoices' },
-                { to: '/eaisybooks/tax-calendar', icon: Calendar, label: 'Naptár & Határidők', id: 'calendar' },
-                { to: '/eaisybooks/reports', icon: BarChart2, label: 'Riportok', id: 'reports' },
-                { to: '/eaisybooks/approval-queue', icon: MailCheck, label: 'Jóváhagyó rendszer', id: 'approval-queue' },
-                { to: '/eaisybooks/alerts', icon: AlertTriangle, label: 'Riasztások', id: 'alerts' },
-                { to: '/eaisybooks/onboarding', icon: Rocket, label: 'Onboarding', id: 'onboarding' },
-              ];
-              const items = allPortfolioItems.filter(item => {
-                const cleanPath = item.to.split('?')[0];
-                const module = PATH_TO_MODULE[cleanPath];
-                return !module || canAccess(module);
-              });
-              const groupHasActive = items.some(i => isPathActive(i.to, i.exact));
-              return (
-                <div>
-                  <button
-                    onClick={() => toggleSection(groupKey)}
-                    className={cn(
-                      "relative flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm font-medium transition-colors select-none group/trigger",
-                      !isOpen && groupHasActive
-                        ? "bg-primary/8 text-primary font-semibold"
-                        : "text-sidebar-foreground/70 hover:bg-primary/10 hover:text-primary"
-                    )}
-                  >
-                    <Briefcase className={cn("h-4 w-4 shrink-0 transition-colors", !isOpen && groupHasActive ? "text-primary" : "text-muted-foreground group-hover/trigger:text-primary")} />
-                    <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">Portfólió</span>
-                    <ChevronRight className={cn("h-3.5 w-3.5 transition-transform duration-200", isOpen ? 'rotate-90' : '', !isOpen && groupHasActive ? 'text-primary' : 'text-muted-foreground')} />
-                    {!isOpen && groupHasActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/5 rounded-r-md bg-primary" />}
-                  </button>
-                  {isOpen && (
-                    <ul className="mt-0.5 flex flex-col gap-0.5 pb-1">
-                      {items.map(item => {
-                        const active = isPathActive(item.to, item.exact);
-                        return (
-                          <li key={item.to}>
-                            <Link
-                              to={item.to}
-                              onMouseEnter={() => handlePrefetch(item.to)}
-                              onFocus={() => handlePrefetch(item.to)}
-                              onTouchStart={() => handlePrefetch(item.to)}
-                              className={cn(
-                                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-9 text-left text-sm transition-all duration-200",
-                                hoveredHelpSection === item.id
-                                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border-l-4 border-l-emerald-500 ring-1 ring-emerald-500/30 animate-help-glow transition-all duration-300"
-                                  : active
-                                    ? "bg-primary/15 font-semibold text-primary scale-[1.02] shadow-sm ring-1 ring-primary/20"
-                                    : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
-                              )}
-                            >
-                              <item.icon className="h-4 w-4 shrink-0" />
-                              <span className="truncate flex-1">{item.label}</span>
-                              {item.badge && item.badge > 0 ? (
-                                <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md min-w-5 text-center tabular-nums">{item.badge}</span>
-                              ) : null}
-                            </Link>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </div>
-              );
-            })()}
-
-            {/* Adminisztráció csoport */}
-            {(() => {
-              const groupKey = 'admin';
-              const isOpen = expandedSections.has(groupKey);
-              const visibleSubGroups = subGroups.filter(g => g.items.length > 0);
-              const groupHasActive = visibleSubGroups.some(g => g.items.some(i => isActive(i.to)));
-
-              if (visibleSubGroups.length === 0) return null;
-
-              return (
-                <div>
-                  <button
-                    onClick={() => toggleSection(groupKey)}
-                    className={cn(
-                      "relative flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm font-medium transition-colors select-none group/trigger",
-                      !isOpen && groupHasActive
-                        ? "bg-primary/8 text-primary font-semibold"
-                        : "text-sidebar-foreground/70 hover:bg-primary/10 hover:text-primary"
-                    )}
-                  >
-                    <Settings className={cn("h-4 w-4 shrink-0 transition-colors", !isOpen && groupHasActive ? "text-primary" : "text-muted-foreground group-hover/trigger:text-primary")} />
-                    <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">Adminisztráció</span>
-                    <ChevronRight className={cn("h-3.5 w-3.5 transition-transform duration-200", isOpen ? 'rotate-90' : '', !isOpen && groupHasActive ? 'text-primary' : 'text-muted-foreground')} />
-                    {!isOpen && groupHasActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/5 rounded-r-md bg-primary" />}
-                  </button>
-                  {isOpen && (
-                    <div className="mt-1 flex flex-col gap-1 pb-1">
-                      {visibleSubGroups.map(subGroup => {
-                        const subGroupOpen = expandedSubSections.has(subGroup.id);
-                        const subGroupActive = subGroup.items.some(i => isActive(i.to));
-                        return (
-                          <div key={subGroup.id} className="space-y-0.5">
-                            <button
-                              onClick={() => toggleSubSection(subGroup.id)}
-                              className={cn(
-                                "flex w-full items-center gap-2 rounded-md px-2 py-1 pl-6 text-left text-xs font-semibold transition-colors select-none group/subtrigger",
-                                subGroupActive ? "text-primary" : "text-sidebar-foreground/60 hover:text-primary hover:bg-primary/5"
-                              )}
-                            >
-                              <subGroup.icon className="h-3.5 w-3.5 shrink-0" />
-                              <span className="flex-1 truncate">{subGroup.label}</span>
-                              <ChevronRight className={cn("h-3 w-3 transition-transform duration-200", subGroupOpen ? 'rotate-90' : '')} />
-                            </button>
-                            {subGroupOpen && (
-                              <ul className="mt-0.5 flex flex-col gap-0.5 pb-1">
-                                {subGroup.items.map(item => {
-                                  const active = isActive(item.to);
-                                  return (
-                                    <li key={item.to}>
-                                      <Link
-                                        to={item.to}
-                                        onMouseEnter={() => handlePrefetch(item.to)}
-                                        onFocus={() => handlePrefetch(item.to)}
-                                        onTouchStart={() => handlePrefetch(item.to)}
-                                        className={cn(
-                                          "flex w-full items-center gap-2 rounded-md px-2 py-1 pl-10 text-left text-sm transition-all duration-200",
-                                          hoveredHelpSection === (item as any).id
-                                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border-l-4 border-l-emerald-500 ring-1 ring-emerald-500/30 animate-help-glow transition-all duration-300"
-                                            : active
-                                              ? "bg-primary/10 font-semibold text-primary scale-[1.02] shadow-sm ring-1 ring-primary/20"
-                                              : "hover:bg-primary/5 hover:text-primary text-sidebar-foreground/80"
-                                        )}
-                                      >
-                                        <item.icon className="h-3.5 w-3.5 shrink-0" />
-                                        <span className="truncate flex-1">{item.label}</span>
-                                        {(item as any).badge && (item as any).badge > 0 ? (
-                                           <span className={cn(
-                                             "h-4.5 min-w-4.5 px-1 flex items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground",
-                                             item.to.includes('tickets') && "animate-pulse shadow-[0_0_8px_rgba(20,212,184,0.5)]"
-                                           )}>
-                                             {(item as any).badge > 9 ? '9+' : (item as any).badge}
-                                           </span>
-                                        ) : null}
-                                      </Link>
-                                    </li>
-                                  );
-                                })}
-                              </ul>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-          </div>
+          <PortfolioNav />
         )}
       </nav>
 
@@ -712,7 +303,12 @@ export default function AccountySidebar({
             </Avatar>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="w-8 h-8 hover:bg-primary/10 hover:text-primary">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} 
+                  className="w-8 h-8 hover:bg-primary/10 hover:text-primary"
+                >
                   <div className="relative h-4 w-4">
                     <Sun className={`h-4 w-4 absolute transition-all ${theme === 'dark' ? 'animate-rotate-out' : 'animate-rotate-in'}`} />
                     <Moon className={`h-4 w-4 absolute transition-all ${theme === 'dark' ? 'animate-rotate-in' : 'animate-rotate-out'}`} />
@@ -735,7 +331,12 @@ export default function AccountySidebar({
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="outline" size="icon" onClick={async () => { await signOut(); navigate('/auth?app=eaisybooks'); }} className="w-8 h-8 hover:bg-primary/10 hover:text-primary hover:border-primary/30">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={async () => { await signOut(); navigate('/auth?app=eaisybooks'); }} 
+                  className="w-8 h-8 hover:bg-primary/10 hover:text-primary hover:border-primary/30"
+                >
                   <LogOut className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
@@ -749,62 +350,52 @@ export default function AccountySidebar({
                 <AvatarImage src={user?.user_metadata?.avatar_url} />
                 <AvatarFallback className="text-xs">{getUserInitials()}</AvatarFallback>
               </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">
-                  {user?.user_metadata?.name || 'Felhasználó'}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="text-xs font-semibold truncate text-foreground">
+                  {user?.user_metadata?.name || user?.email?.split('@')[0] || 'Felhasználó'}
+                </span>
+                <span className="text-[10px] text-muted-foreground truncate">{user?.email}</span>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            </div>
+
+            <div className="flex items-center justify-between pt-1 border-t border-border/40">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} 
                 className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                title={theme === 'dark' ? 'Világos mód' : 'Sötét mód'}
               >
                 <div className="relative h-4 w-4">
                   <Sun className={`h-4 w-4 absolute transition-all ${theme === 'dark' ? 'animate-rotate-out' : 'animate-rotate-in'}`} />
                   <Moon className={`h-4 w-4 absolute transition-all ${theme === 'dark' ? 'animate-rotate-in' : 'animate-rotate-out'}`} />
                 </div>
               </Button>
-            </div>
-            <div className="grid grid-cols-2 gap-2 w-full">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" asChild className="w-full aspect-square justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/30">
-                    <Link to="/eaisybooks/profile/settings">
-                      <Settings className="h-5 w-5" />
-                    </Link>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="top">Beállítások</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" onClick={async () => { await signOut(); navigate('/auth?app=eaisybooks'); }} className="w-full aspect-square justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/30">
-                    <LogOut className="h-5 w-5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="top">Kilépés</TooltipContent>
-              </Tooltip>
+
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                asChild 
+                className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                title="Profilbeállítások"
+              >
+                <Link to="/eaisybooks/profile/settings">
+                  <Settings className="h-4 w-4" />
+                </Link>
+              </Button>
+
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={async () => { await signOut(); navigate('/auth?app=eaisybooks'); }} 
+                className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+                title="Kijelentkezés"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         )}
-
-        {/* Sidebar Toggle */}
-        <div className={cn("p-2 border-t border-border shrink-0", isCollapsed ? 'flex justify-center' : '')}>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleSidebarCollapse}
-            className={cn(
-              "h-7 hover:bg-primary/10 hover:text-primary",
-              isCollapsed ? "w-7" : "w-full"
-            )}
-          >
-            {isCollapsed ? <PanelLeft className="h-4 w-4 shrink-0" /> : <PanelLeft className="h-4 w-4 shrink-0 rotate-180" />}
-            <span className="sr-only">Toggle Sidebar</span>
-          </Button>
-        </div>
       </div>
     </aside>
   );
