@@ -413,39 +413,9 @@ export function useDashboardData() {
   });
 
   // ── FX Differences (devizás árfolyam-különbözet) ──
-  // Auto-fetches MNB rates if the daily_exchange_rates table is empty.
-  const fxRatesFetchedRef = useRef(false);
-
   const { data: fxDifferences = [], refetch: refetchFx } = useQuery<any[]>({
     queryKey: queryKeys.fxDifferences(companyId, dateFromFormatted, dateToFormatted),
     queryFn: async () => {
-      // 1. Check if daily_exchange_rates has any data
-      const { count } = await supabase
-        .from('daily_exchange_rates')
-        .select('id', { count: 'exact', head: true })
-        .limit(1);
-
-      // 2. If no rates exist and we haven't tried fetching yet, auto-fetch from MNB
-      if ((count === null || count === 0) && !fxRatesFetchedRef.current) {
-        fxRatesFetchedRef.current = true;
-        try {
-          const { data: session } = await supabase.auth.getSession();
-          const token = session?.session?.access_token;
-          if (token) {
-            await supabase.functions.invoke('fetch-mnb-rates', {
-              headers: { Authorization: `Bearer ${token}` },
-              body: {
-                date_from: `${new Date().getFullYear() - 1}-01-01`,
-                date_to: new Date().toISOString().split('T')[0],
-              },
-            });
-          }
-        } catch (e) {
-          reportError({ type: 'api_call', severity: 'warning', component: 'useDashboardData', action: 'warning', message: 'Failed to auto-fetch MNB rates', error: e });
-        }
-      }
-
-      // 3. Now query the actual FX differences
       const { data, error } = await supabase.rpc('get_fx_differences', {
         p_company_id: companyId,
         p_date_from: dateFromFormatted,

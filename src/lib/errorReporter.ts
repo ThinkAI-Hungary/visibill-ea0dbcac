@@ -125,7 +125,7 @@ export async function reportError(opts: ReportErrorOptions): Promise<void> {
     return;
   }
 
-  // 1.5 Filter out expected client-side validation errors and chunk loading errors from DB logs
+  // 1.5 Filter out expected client-side validation errors, transient network aborts, and chunk loading errors from DB logs
   const errDetails = extractErrorDetails(opts.error);
   const errMsg = ((opts.message || '') + ' ' + (errDetails.message || '')).toLowerCase();
   const isExcluded = 
@@ -136,7 +136,11 @@ export async function reportError(opts: ReportErrorOptions): Promise<void> {
     errMsg.includes('nincs számfejtési ciklus') ||
     errMsg.includes('nincsenek számfejtési adatok') ||
     errMsg.includes('reportallchanges') ||
-    (errMsg.includes('starttime') && errMsg.includes('undefined'));
+    (errMsg.includes('starttime') && errMsg.includes('undefined')) ||
+    errMsg.includes('networkerror when attempting to fetch resource') ||
+    errMsg.includes('the user aborted a request') ||
+    errDetails.name === 'AbortError' ||
+    (typeof navigator !== 'undefined' && !navigator.onLine);
 
   if (isExcluded) return;
 

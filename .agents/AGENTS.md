@@ -1,50 +1,42 @@
-# Visibill Development & Escalation Rules
+# Visibill Development & Escalation Protocol
 
-## 🔄 Eszkalációs Fejlesztési Folyamat (Escalation Workflow)
-
-Minden fejlesztési feladatot egy szigorú, komplexitás alapú eszkalációs folyamaton kell végigvezetni:
-
-```
-                  [ Feladat Indítása ]
-                           │
-                           ▼
-               1. visibill-spec-lookup
-           (Specifikációk & kontextus keresése)
-                           │
-                           ├────────────────────────┐
-                           ▼                        ▼
-                [ Egyszerű / Közepes ]          [ Komplex ]
-                    (1-5 érintett fájl,      (5+ érintett fájl, új táblák,
-                     ismert UI/kód minták)    migrációk, új architektúra)
-                           │                        │
-                           ▼                        ▼
-                  2. visibill-dev           2. visibill-feature-planner
-                (Lite TDD fejlesztés)      (Nagy tervezési & végrehajtási skill)
-```
+## 🎯 3 Nem-alkuképes Alapelv (Core Invariants)
+1. **Zero Silent Decisions:** Architektúrális, adatbázis- vagy üzleti logikai döntést soha ne hozz önhatalmúan; mindig vázold fel az opciókat a felhasználónak.
+2. **Evidence Before Assertions:** Soha ne állítsd, hogy egy módosítás működik vagy kész van, amíg meg nem bizonyosodtál róla (típusellenőrzés: `npm run build` vagy `npx tsc --noEmit`).
+3. **Docs & Spec Integrity:** Ha a kód struktúrája, sémája vagy üzleti logikája változik, a kapcsolódó specifikációknak és ADR-eknek szinkronban kell maradniuk.
 
 ---
 
-## 📋 Szabályok & Irányelvek
+## 🔄 Eszkalációs Döntési Mátrix (Escalation Workflow)
 
-### 1. Első lépés: Specifikáció és Kontextus Keresés (`visibill-spec-lookup`)
-* **Kötelező:** Bármilyen kérésnél az első lépés a `visibill-spec-lookup` beolvasása és a specifikációk felkutatása. Ekkor határozza meg az Agent a feladat komplexitását és a követendő mintákat (patterns).
+Ne használj feleslegesen nehéz tervezési fázist egyszerű kérdésekre, de ne kódolj vakon komplex feladatoknál:
 
-### 2. Kis és Közepes skálás feladatok: `visibill-dev` (Lite)
-* Ha a feladat 1-5 fájlt érint, és nem vezet be új adatbázis-táblákat, Edge Function-öket vagy mélyreható strukturális változásokat:
-  * **Kötelező** a [visibill-dev](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/skills/visibill-dev/SKILL.md) skill betöltése.
-  * Ugyanazt a szigort képviseli, mint a feature-planner (baseline build, TDD / Prove-It pattern tesztelés, smoke testing), de a kisebb skálához igazított, gyorsabb ciklussal.
+```
+                          [ Feladat Érkezése ]
+                                    │
+       ┌────────────────────────────┼────────────────────────────┐
+       ▼                            ▼                            ▼
+[ Kérdés / Tájékozódás ]  [ Egyszerű / Közepes (1-4 fájl) ]  [ Komplex (5+ fájl / DB / Új Modul) ]
+  • Direkt válasz           • Fókuszált módosítás               • visibill-spec-lookup (Spec keresés)
+  • Grep / Graphify         • visibill-dev                      • visibill-feature-planner (Terv)
+  • Nincs skill overhead    • Típusellenőrzés                   • Jóváhagyás után Subagent kivitelezés
+```
 
-### 3. Nagy skálás / Komplex feladatok: `visibill-feature-planner`
-* Ha a feladat 5+-nál több fájlt érint, új DB táblát/migrációt hoz be, vagy nem definiált architektúra döntést igényel:
-  * **Kötelező** a [visibill-feature-planner](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/skills/visibill-feature-planner/SKILL.md) skill betöltése.
-  * Ebben a fázisban kötelező az implementation plan (tervezési dokumentum) elkészítése, döntési mátrixok felállítása a user felé és a micro-modulokra bontott, sub-agent alapú megvalósítás.
+| Feladat Jellege | Teendő | Hivatkozott Szabály / Skill |
+| :--- | :--- | :--- |
+| **Kérdés / Keresés / Olvasás** | Válaszolj közvetlenül; használd a fájlolvasást vagy Graphify-t. **Ne tölts be felesleges skilleket.** | [rules/graphify.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/graphify.md) |
+| **Egyszerű / Közepes módosítás (1–4 fájl)** | Célzott fejlesztés, TDD szemlélet, majd build validáció. | [rules/frontend.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/frontend.md), [visibill-dev](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/skills/visibill-dev/SKILL.md) |
+| **Adatbázis / Migráció / RPC / RLS / Edge Function** | Tilos azonnal SQL-t futtatni. Sématerv felvázolása, checklist és kliensvédelem. | [rules/database.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/database.md), [rules/edge-functions.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/edge-functions.md), [visibill-db-checklist](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/skills/visibill-db-checklist/SKILL.md) |
+| **Nagy léptékű feladat (5+ fájl, új modul)** | Specifikációk feltérképezése, `implementation_plan.md` készítése és jóváhagyatása kötelező. | [visibill-spec-lookup](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/skills/visibill-spec-lookup/SKILL.md), [visibill-feature-planner](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/skills/visibill-feature-planner/SKILL.md) |
 
-### 4. Adatbázis-módosítások és döntések (Database Operations)
-* **Kötelező:** Bármilyen olyan feladatnál, döntéspontnál vagy kódolásnál, ami **adatbázishoz nyúl** (új tábla, migráció, RPC függvény, RLS szabályok, frontend vagy worker Supabase lekérdezések):
-  * **Kötelező** beolvasni és végrehajtani a [visibill-db-checklist](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/skills/visibill-db-checklist/SKILL.md) ellenőrző listáit.
-  * A checklist használata során **kötelező** betölteni és követni a **`supabase`** ([supabase/SKILL.md](file:///~/.gemini/config/skills/supabase/SKILL.md)) és a **`supabase-postgres-best-practices`** ([supabase-postgres-best-practices/SKILL.md](file:///~/.gemini/config/skills/supabase-postgres-best-practices/SKILL.md)) skillek biztonsági és teljesítménybeli irányelveit. No silent decisions elv érvényes az adatbázis sémák és indexek módosítására is.
+---
 
-### 5. React Frontend Fejlesztés (React Frontend Development)
-* **Kötelező:** Bármilyen olyan feladatnál, ami **React frontend kódhoz nyúl** (komponensek, oldalak, hookok, állapotkezelés, styling):
-  * **Kötelező** betölteni és követni a **`vercel-react-best-practices`** ([react-best-practices/SKILL.md](file:///C:/Users/Morfi/.gemini/config/skills/react-best-practices/SKILL.md)) skillben található Vercel és React best practices irányelveket (különös tekintettel a felesleges re-renderelések megelőzésére, a helyes state management-re és a teljesítmény-optimalizációra).
-  * **Kötelező** betölteni és követni a **`vercel-composition-patterns`** ([composition-patterns/SKILL.md](file:///C:/Users/Morfi/.gemini/config/skills/composition-patterns/SKILL.md)) skillt (különös tekintettel az anti-boolean prop explosion szabályra, a compound komponensekre és a tiszta provider architektúrára).
+## 📋 Szakterületi Szabályok és Minőségbiztosítás
+
+* **Frontend szabályzat:** Komponens kompozíció, Tailwind, Vercel optimalizációk és TypeScript típusbiztonság $\rightarrow$ [rules/frontend.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/frontend.md)
+* **UI & UX szabályzat:** 4 kötelező állapot, double-submit védelem, pénzügyi formázás és villogásvédelem $\rightarrow$ [rules/ui-ux.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/ui-ux.md)
+* **Adatbázis szabályzat:** RLS, indexelés, Supabase típusok és biztonsági előírások $\rightarrow$ [rules/database.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/database.md)
+* **Edge Functions szabályzat:** Deno runtime, kötelező `checkAutomationShield` és hibakezelés $\rightarrow$ [rules/edge-functions.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/edge-functions.md)
+* **Verifikáció és Lezárás:** Kötelező build és típusellenőrzés bejelentés előtt $\rightarrow$ [rules/verification.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/verification.md)
+* **Design Rendszer & Dokumentáció (ADR/PRD):** Új komponensek létrehozása design tokenekkel és döntési nyilvántartás $\rightarrow$ [rules/documentation.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/documentation.md)
+* **Kódbázis Tudásgráf:** Architektúrális összefüggések felderítése és AST frissítés $\rightarrow$ [rules/graphify.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/graphify.md)

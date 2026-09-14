@@ -49,19 +49,30 @@ export const SOURCE_LABELS: Record<string, string> = {
   bank_statement_uploads: "Bank",
   app_error_logs:         "Frontend",
   "app_error_logs:frontend": "Frontend",
+  "app_error_logs:db_query": "Adatbázis",
   "app_error_logs:edge_function": "Edge Function",
   "app_error_logs:mailgun":  "Mailgun",
   "app_error_logs:auth":     "Auth",
+  "app_error_logs:worker":   "Worker",
 };
 
 export function appLogSubSource(errorType: string): string {
   if (errorType === "webhook" || errorType === "mailgun" || errorType === "email_alias") {
     return "app_error_logs:mailgun";
   }
+  if (errorType === "worker") {
+    return "app_error_logs:worker";
+  }
   if (errorType === "auth") {
     return "app_error_logs:auth";
   }
-  if (errorType === "api_call" || errorType === "db_query") {
+  if (errorType === "db_query") {
+    return "app_error_logs:db_query";
+  }
+  if (errorType === "edge_function") {
+    return "app_error_logs:edge_function";
+  }
+  if (errorType === "api_call") {
     return "app_error_logs:edge_function";
   }
   return "app_error_logs:frontend";

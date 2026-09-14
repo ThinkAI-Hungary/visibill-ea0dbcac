@@ -256,6 +256,7 @@ export function ErrorControlPanel({ onOpenCompany: _onOpenCompany, allUsers = []
     'report_uploads',
     'app_error_logs',
     'app_error_logs:frontend',
+    'app_error_logs:db_query',
     'app_error_logs:worker',
     'app_error_logs:mailgun',
   ]);
@@ -378,6 +379,7 @@ export function ErrorControlPanel({ onOpenCompany: _onOpenCompany, allUsers = []
   const sourceOptions = [
     { value: 'uploads', label: 'Feltöltés' },
     { value: 'app_error_logs:frontend', label: 'Frontend' },
+    { value: 'app_error_logs:db_query', label: 'Adatbázis' },
     { value: 'app_error_logs:edge_function', label: 'Edge Function' },
     { value: 'app_error_logs:auth', label: 'Auth' },
     { value: 'app_error_logs:worker', label: 'Worker' },
@@ -407,6 +409,7 @@ export function ErrorControlPanel({ onOpenCompany: _onOpenCompany, allUsers = []
     gl_upload_notifications: 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
     nav_sync_logs: 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 border-indigo-500/30',
     'app_error_logs:frontend': 'bg-teal-500/15 text-teal-700 dark:text-teal-400 border-teal-500/30',
+    'app_error_logs:db_query': 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 border-cyan-500/30',
     'app_error_logs:edge_function': 'bg-violet-500/15 text-violet-700 dark:text-violet-400 border-violet-500/30',
     'app_error_logs:auth': 'bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-500/30',
     'app_error_logs:worker': 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
@@ -415,6 +418,7 @@ export function ErrorControlPanel({ onOpenCompany: _onOpenCompany, allUsers = []
     // Fallbacks by label
     'Edge Function': 'bg-violet-500/15 text-violet-700 dark:text-violet-400 border-violet-500/30',
     Frontend: 'bg-teal-500/15 text-teal-700 dark:text-teal-400 border-teal-500/30',
+    Adatbázis: 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 border-cyan-500/30',
     Auth: 'bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-500/30',
     Feltöltés: 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
     Mailgun: 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30',
