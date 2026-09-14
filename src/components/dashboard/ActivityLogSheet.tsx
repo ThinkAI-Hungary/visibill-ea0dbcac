@@ -14,7 +14,8 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   History, Plus, Pencil, Trash2, Upload, Link2, FileText, Banknote,
-  ArrowLeftRight, Tag, ClipboardList, Search, User, CalendarDays, CheckCircle2, Bot, ExternalLink, AlertCircle, Filter, ListFilter, Check, ChevronRight, Mail
+  ArrowLeftRight, Tag, ClipboardList, Search, User, CalendarDays, CheckCircle2, Bot, ExternalLink, AlertCircle, Filter, ListFilter, Check, ChevronRight, Mail,
+  Download, FileSpreadsheet, FileArchive
 } from 'lucide-react';
 import { format, startOfDay, endOfDay, subDays, startOfWeek } from 'date-fns';
 import { formatDistanceToNow } from 'date-fns';
@@ -363,6 +364,9 @@ export function ActivityLogSheet() {
   // For non-PDF files that are images: show inline with a notice
   const [previewIsImage, setPreviewIsImage] = useState(false);
   const [previewActualExt, setPreviewActualExt] = useState<string | null>(null);
+  // For non-inline files (spreadsheets, archives, etc.): show download card
+  const [previewIsDownloadOnly, setPreviewIsDownloadOnly] = useState(false);
+  const [previewDirectUrl, setPreviewDirectUrl] = useState<string | null>(null);
   // Track the log entry currently being previewed (for retry)
   const [currentPreviewLog, setCurrentPreviewLog] = useState<AuditLogRow | null>(null);
   // Track blob URL so we can revoke it when a new one is created
@@ -539,6 +543,8 @@ export function ActivityLogSheet() {
     setPdfErrorType(null);
     setPreviewIsImage(false);
     setPreviewActualExt(null);
+    setPreviewIsDownloadOnly(false);
+    setPreviewDirectUrl(null);
     setPreviewUrl('');
 
     try {
@@ -553,9 +559,24 @@ export function ActivityLogSheet() {
       if (!url) {
         const details = log.details as any;
         const sourceTable = details?.table;
-        const tablesToCheck = sourceTable ? [sourceTable] : ['invoice_uploads', 'salary_files', 'bank_statement_uploads'];
+        const uploadId = details?.upload_id || details?.id;
+        const tablesToCheck = sourceTable
+          ? [sourceTable]
+          : ['invoice_uploads', 'transaction_uploads', 'report_uploads', 'salary_files', 'bank_statement_uploads'];
 
         for (const t of tablesToCheck) {
+          if (uploadId) {
+            try {
+              const { data: byId } = await supabase.from(t as any).select('file_url').eq('id', uploadId).limit(1).maybeSingle();
+              if ((byId as any)?.file_url) {
+                url = (byId as any).file_url;
+                break;
+              }
+            } catch {
+              // Ignore if column doesn't match table
+            }
+          }
+
           let { data } = await supabase.from(t as any).select('file_url').eq('file_name', originalName).limit(1).maybeSingle();
           let currentData = data as any;
           if (!currentData?.file_url && !originalName.toLowerCase().endsWith('.pdf')) {
@@ -571,14 +592,31 @@ export function ActivityLogSheet() {
 
       if (!url) {
         setPdfErrorType('not_found');
-        throw new Error('File not found in any related tables');
+        setPdfError(true);
+        return;
+      }
+
+      setPreviewDirectUrl(url);
+
+      const lowerName = originalName.toLowerCase();
+      const isKnownSpreadsheet = lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls') || lowerName.endsWith('.csv');
+      const isKnownArchive = lowerName.endsWith('.zip') || lowerName.endsWith('.tar') || lowerName.endsWith('.gz');
+      const isKnownDoc = lowerName.endsWith('.xml') || lowerName.endsWith('.txt');
+
+      if (isKnownSpreadsheet || isKnownArchive || isKnownDoc) {
+        const ext = lowerName.split('.').pop() || 'fájl';
+        setPreviewIsDownloadOnly(true);
+        setPreviewActualExt(ext);
+        setPreviewUrl(url);
+        return;
       }
 
       // Fetch as blob to bypass Content-Disposition: attachment headers
       const response = await fetch(url);
       if (!response.ok) {
         setPdfErrorType('unreachable');
-        throw new Error(`HTTP ${response.status}`);
+        setPdfError(true);
+        return;
       }
       const blob = await response.blob();
 
@@ -593,6 +631,7 @@ export function ActivityLogSheet() {
       const isWebp = h[0]===0x52 && h[1]===0x49 && h[2]===0x46 && h[3]===0x46 && // RIFF
                      h[8]===0x57 && h[9]===0x45 && h[10]===0x42 && h[11]===0x50; // WEBP
       const isBmp  = h[0]===0x42 && h[1]===0x4D; // BM
+      const isPkZip = h[0]===0x50 && h[1]===0x4B; // PK
 
       if (isPdf) {
         const blobUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
@@ -610,12 +649,19 @@ export function ActivityLogSheet() {
         setPreviewIsImage(true);
         setPreviewActualExt(ext);
         setPreviewUrl(blobUrl);
+      } else if (isPkZip) {
+        const ext = lowerName.split('.').pop() || 'xlsx';
+        setPreviewIsDownloadOnly(true);
+        setPreviewActualExt(ext);
+        setPreviewUrl(url);
       } else {
-        setPdfErrorType('invalid_format');
-        throw new Error('Unrecognized file format');
+        const ext = lowerName.split('.').pop() || 'fájl';
+        setPreviewIsDownloadOnly(true);
+        setPreviewActualExt(ext);
+        setPreviewUrl(url);
       }
     } catch (err) {
-      reportError({ type: 'db_query', component: 'ActivityLogSheet', action: 'error', message: 'PDF Preview Error:', error: err });
+      console.warn('File preview error:', err);
       setPdfError(true);
     } finally {
       setIsLoadingPdf(false);
@@ -1139,6 +1185,40 @@ export function ActivityLogSheet() {
                     Újratöltés
                   </Button>
                 )}
+              </div>
+            ) : previewIsDownloadOnly ? (
+              <div className="flex flex-col items-center justify-center p-8 text-center max-w-md gap-4">
+                <div className="p-4 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                  {['xlsx', 'xls', 'csv'].includes(previewActualExt || '') ? (
+                    <FileSpreadsheet className="h-12 w-12" />
+                  ) : ['zip', 'tar', 'gz', 'rar', '7z'].includes(previewActualExt || '') ? (
+                    <FileArchive className="h-12 w-12" />
+                  ) : (
+                    <FileText className="h-12 w-12" />
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-semibold text-foreground text-base truncate max-w-xs">{previewTitle}</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Ez a fájl ({previewActualExt ? `.${previewActualExt.toUpperCase()}` : 'táblázat'}) közvetlenül a számítógépre tölthető le megtekintésre vagy feldolgozásra.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => {
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = previewDirectUrl || previewUrl || '';
+                    downloadLink.download = previewTitle || 'letoltes';
+                    downloadLink.target = '_blank';
+                    downloadLink.rel = 'noopener noreferrer';
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                  }}
+                  className="mt-2 gap-2 shadow-sm"
+                >
+                  <Download className="h-4 w-4" />
+                  Fájl letöltése
+                </Button>
               </div>
             ) : previewUrl ? (
               previewIsImage ? (

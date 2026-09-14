@@ -125,9 +125,9 @@ export async function reportError(opts: ReportErrorOptions): Promise<void> {
     return;
   }
 
-  // 1.5 Filter out expected client-side validation errors, transient network aborts, and chunk loading errors from DB logs
+  // 1.5 Filter out expected client-side validation errors, chunk loading errors, and transient network errors from DB logs
   const errDetails = extractErrorDetails(opts.error);
-  const errMsg = ((opts.message || '') + ' ' + (errDetails.message || '')).toLowerCase();
+  const errMsg = ((opts.message || '') + ' ' + (errDetails.message || '') + ' ' + (errDetails.name || '')).toLowerCase();
   const isExcluded = 
     errMsg.includes('failed to fetch dynamically imported module') ||
     errMsg.includes('chunkloaderror') ||
@@ -137,8 +137,13 @@ export async function reportError(opts: ReportErrorOptions): Promise<void> {
     errMsg.includes('nincsenek számfejtési adatok') ||
     errMsg.includes('reportallchanges') ||
     (errMsg.includes('starttime') && errMsg.includes('undefined')) ||
+    // Transient client network drops / offline / aborted requests
     errMsg.includes('networkerror when attempting to fetch resource') ||
+    errMsg.includes('failed to fetch') ||
+    errMsg.includes('network request failed') ||
     errMsg.includes('the user aborted a request') ||
+    errMsg.includes('aborterror') ||
+    errMsg.includes('load failed') ||
     errDetails.name === 'AbortError' ||
     (typeof navigator !== 'undefined' && !navigator.onLine);
 

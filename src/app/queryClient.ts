@@ -13,6 +13,9 @@ export const queryClient = new QueryClient({
   },
   queryCache: new QueryCache({
     onError: (error, query) => {
+      // Don't report to DB if user is offline or fetch was aborted
+      if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       // Log every final query failure (after retries exhausted)
       const { message, details } = extractErrorInfo(error);
       reportError({
@@ -27,6 +30,8 @@ export const queryClient = new QueryClient({
   }),
   mutationCache: new MutationCache({
     onError: (error, _variables, _context, mutation) => {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       // Log every mutation failure
       const { message, details } = extractErrorInfo(error);
       reportError({
