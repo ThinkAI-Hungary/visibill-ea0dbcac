@@ -23,8 +23,7 @@ export default defineConfig(({ mode }) => ({
         injectionPoint: undefined // We just want the SW for push, no precaching
       },
       devOptions: {
-        enabled: true,
-        type: 'module',
+        enabled: false,
       }
     }),
   ].filter(Boolean),

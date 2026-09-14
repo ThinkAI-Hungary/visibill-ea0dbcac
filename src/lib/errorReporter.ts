@@ -120,8 +120,14 @@ export async function reportError(opts: ReportErrorOptions): Promise<void> {
       : console.error(tag, opts.message);
   }
 
-  // 1.2 Never write test-generated errors to Supabase DB
-  if (import.meta.env.MODE === 'test' || (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test')) {
+  // 1.2 Never log localhost / local dev / test errors to production Supabase DB
+  const isLocalhost = typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname === '[::1]' ||
+    window.location.hostname.endsWith('.localhost')
+  );
+  if (import.meta.env.DEV || isLocalhost || import.meta.env.MODE === 'test' || (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test')) {
     return;
   }
 
@@ -137,6 +143,10 @@ export async function reportError(opts: ReportErrorOptions): Promise<void> {
     errMsg.includes('nincsenek számfejtési adatok') ||
     errMsg.includes('reportallchanges') ||
     (errMsg.includes('starttime') && errMsg.includes('undefined')) ||
+    // Service worker / dev-sw registration errors
+    errMsg.includes('dev-sw') ||
+    errMsg.includes('serviceworker') ||
+    errMsg.includes('service worker') ||
     // Transient client network drops / offline / aborted requests
     errMsg.includes('networkerror when attempting to fetch resource') ||
     errMsg.includes('failed to fetch') ||

@@ -7,7 +7,14 @@ import { reportError } from "./lib/errorReporter.ts";
 // ── Global error catchers → app_error_logs ──
 window.addEventListener('unhandledrejection', (event) => {
   const msg = event.reason?.message || String(event.reason || '');
-  if (msg.toLowerCase().includes('reportallchanges') || (msg.toLowerCase().includes('starttime') && msg.toLowerCase().includes('undefined'))) {
+  const lower = msg.toLowerCase();
+  if (
+    lower.includes('reportallchanges') || 
+    (lower.includes('starttime') && lower.includes('undefined')) ||
+    lower.includes('dev-sw') ||
+    lower.includes('serviceworker') ||
+    lower.includes('service worker')
+  ) {
     return;
   }
   reportError({
@@ -21,7 +28,14 @@ window.addEventListener('unhandledrejection', (event) => {
 
 window.addEventListener('error', (event) => {
   const msg = event.message || '';
-  if (msg.toLowerCase().includes('reportallchanges') || (msg.toLowerCase().includes('starttime') && msg.toLowerCase().includes('undefined'))) {
+  const lower = msg.toLowerCase();
+  if (
+    lower.includes('reportallchanges') || 
+    (lower.includes('starttime') && lower.includes('undefined')) ||
+    lower.includes('dev-sw') ||
+    lower.includes('serviceworker') ||
+    lower.includes('service worker')
+  ) {
     return;
   }
   reportError({
