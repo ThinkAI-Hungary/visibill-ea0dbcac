@@ -97,38 +97,63 @@ export function CompanySwitcher() {
     setSearchQuery('');
   }
 
-  // On non-company pages (portfolio, tax-calendar, etc.), render a stable placeholder to prevent layout shifts
-  if (!currentCompanyId) {
-    return (
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/40 border border-border/50 text-xs font-medium text-muted-foreground select-none max-w-[260px]">
-        <Building2 className="w-3.5 h-3.5 shrink-0 text-muted-foreground/60" />
-        <span className="truncate">Portfólió nézet</span>
-      </div>
-    );
-  }
-
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
+          type="button"
+          style={{ outline: 'none' }}
           className="flex items-center gap-2 px-3 py-1.5 rounded-lg
                      bg-muted hover:bg-accent/80
                      border border-border
                      text-sm font-medium text-foreground
-                     transition-all duration-150 max-w-[260px] group"
+                     transition-all duration-150 max-w-[260px] group
+                     outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 ring-0 focus-visible:ring-offset-0
+                     [outline:none!important] focus:[outline:none!important] focus-visible:[outline:none!important]
+                     [box-shadow:none!important] focus:[box-shadow:none!important] focus-visible:[box-shadow:none!important]"
         >
           <Building2 className="w-4 h-4 shrink-0 text-primary" />
           <span className="truncate">
-            {currentCompany?.name ?? (isLoading ? '...' : 'Cég kiválasztása')}
+            {currentCompany?.name ?? (currentCompanyId ? (isLoading ? '...' : 'Cég kiválasztása') : 'Portfólió nézet')}
           </span>
           <ChevronDown className="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover:text-foreground transition-transform duration-200" style={{ transform: open ? 'rotate(180deg)' : undefined }} />
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-72 p-0 border-border shadow-md rounded-lg overflow-hidden bg-card"
+        className="w-72 p-0 border-border shadow-md rounded-lg overflow-hidden bg-card outline-none focus:outline-none [outline:none!important]"
         align="start"
         sideOffset={6}
+        onCloseAutoFocus={(e) => {
+          e.preventDefault();
+        }}
       >
+        {/* Teljes Portfólió option */}
+        <div className="p-1 border-b border-border">
+          <button
+            type="button"
+            style={{ outline: 'none' }}
+            onClick={() => {
+              navigate('/eaisybooks');
+              setOpen(false);
+              setSearchQuery('');
+            }}
+            className={`w-full flex items-center gap-3 px-3 py-2 text-sm transition-colors text-left rounded-md
+              outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 ring-0
+              [outline:none!important] focus:[outline:none!important] focus-visible:[outline:none!important]
+              [box-shadow:none!important] focus:[box-shadow:none!important] focus-visible:[box-shadow:none!important]
+              ${!currentCompanyId
+                ? 'bg-primary/10 text-primary font-medium'
+                : 'hover:bg-accent text-foreground'
+              }`}
+          >
+            <Building2 className={`w-4 h-4 shrink-0 ${!currentCompanyId ? 'text-primary' : 'text-muted-foreground'}`} />
+            <div className="flex-1 min-w-0">
+              <div className="truncate font-semibold">Teljes Portfólió</div>
+              <div className="text-[11px] text-muted-foreground truncate">Portfólió áttekintés</div>
+            </div>
+            {!currentCompanyId && <Check className="w-4 h-4 shrink-0 text-primary" />}
+          </button>
+        </div>
         {/* Search */}
         <div className="px-3 py-2 border-b border-border">
           <div className="flex items-center gap-2 px-2 py-1.5 bg-muted/40 rounded-md border border-border">
@@ -137,7 +162,8 @@ export function CompanySwitcher() {
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Cég keresése..."
-              className="bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none flex-1 min-w-0"
+              style={{ outline: 'none' }}
+              className="bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none focus:outline-none focus:ring-0 [outline:none!important] [box-shadow:none!important] flex-1 min-w-0"
               autoFocus
             />
           </div>
@@ -155,8 +181,13 @@ export function CompanySwitcher() {
               return (
                 <button
                   key={client.id}
+                  type="button"
+                  style={{ outline: 'none' }}
                   onClick={() => handleSelect(client)}
                   className={`w-full flex items-center gap-3 px-3 py-2 text-sm transition-colors text-left
+                    outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 ring-0
+                    [outline:none!important] focus:[outline:none!important] focus-visible:[outline:none!important]
+                    [box-shadow:none!important] focus:[box-shadow:none!important] focus-visible:[box-shadow:none!important]
                     ${isSelected
                       ? 'bg-primary/10 text-primary font-medium'
                       : 'hover:bg-accent text-foreground'
@@ -188,8 +219,10 @@ export function CompanySwitcher() {
         {/* Footer: back to portfolio */}
         <div className="border-t border-border px-3 py-2">
           <button
+            type="button"
+            style={{ outline: 'none' }}
             onClick={() => { navigate('/eaisybooks'); setOpen(false); }}
-            className="w-full text-center text-xs font-medium text-primary hover:text-primary/80 transition-colors py-1"
+            className="w-full text-center text-xs font-medium text-primary hover:text-primary/80 transition-colors py-1 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 [outline:none!important] [box-shadow:none!important]"
           >
             ← Vissza a portfólióhoz
           </button>

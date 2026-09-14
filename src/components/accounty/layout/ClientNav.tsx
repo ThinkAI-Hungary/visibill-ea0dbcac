@@ -18,6 +18,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { cn } from '@/lib/utils';
 import { useAccountyShell } from '@/pages/Accounty/AccountyShellContext';
 import { useEvClientSettings } from '@/hooks/useEvData';
+import AccountyCompanySelector from './AccountyCompanySelector';
 
 export default function ClientNav() {
   const {
@@ -105,14 +106,25 @@ export default function ClientNav() {
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <button
+                type="button"
                 onClick={handleBackToPortfolio}
-                className="relative flex items-center justify-center rounded-md transition-all duration-200 w-8 h-8 hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
+                style={{ outline: 'none' }}
+                className={cn(
+                  "relative flex items-center justify-center rounded-md transition-all duration-200 w-8 h-8",
+                  "hover:bg-primary/10 hover:text-primary text-sidebar-foreground",
+                  "outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 ring-0 focus-visible:ring-offset-0",
+                  "[outline:none!important] focus:[outline:none!important] focus-visible:[outline:none!important]",
+                  "[box-shadow:none!important] focus:[box-shadow:none!important] focus-visible:[box-shadow:none!important]"
+                )}
               >
                 <ArrowLeft className="h-4 w-4 shrink-0 text-primary" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="right">Vissza a portfólióhoz</TooltipContent>
           </Tooltip>
+        </li>
+        <li className="relative flex justify-center">
+          <AccountyCompanySelector isCollapsed isEv={isEv} />
         </li>
         <li className="my-1 mx-2 h-px bg-border/50" />
         {clientNavItems.map((item) => {
@@ -149,29 +161,23 @@ export default function ClientNav() {
       {/* Back to Portfolio Button & Active Client Card */}
       <div className="px-1 space-y-2">
         <button
+          type="button"
           onClick={handleBackToPortfolio}
-          className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 transition-colors group"
+          style={{ outline: 'none' }}
+          className={cn(
+            "flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 transition-colors group",
+            "outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 ring-0 focus-visible:ring-offset-0",
+            "[outline:none!important] focus:[outline:none!important] focus-visible:[outline:none!important]",
+            "[box-shadow:none!important] focus:[box-shadow:none!important] focus-visible:[box-shadow:none!important]"
+          )}
         >
           <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
           <span>Vissza a portfólióhoz</span>
         </button>
 
-        {selectedClient && (
-          <div className="px-2 py-1.5 rounded-lg bg-sidebar-foreground/5 border border-border/50">
-            <div className="flex items-center gap-1.5">
-              <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              <div className="font-semibold text-xs text-foreground truncate flex-1">
-                {selectedClient.name}
-              </div>
-            </div>
-            <div className="flex items-center justify-between text-[10px] text-muted-foreground mt-0.5 pl-5">
-              <span>{selectedClient.taxNumber || 'Nincs adószám'}</span>
-              <span className="px-1 py-0.2 rounded bg-sidebar-foreground/10 text-[9px] font-mono uppercase">
-                {isEv ? 'EV' : 'Társaság'}
-              </span>
-            </div>
-          </div>
-        )}
+        <div data-tour="company-selector">
+          <AccountyCompanySelector isEv={isEv} />
+        </div>
       </div>
 
       {/* Client Context Items */}

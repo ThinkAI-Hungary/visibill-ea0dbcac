@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { useAccountyShell } from '@/pages/Accounty/AccountyShellContext';
 import { PATH_TO_MODULE } from '@/hooks/useAccountyPermissions';
 import { Input } from '@/components/ui/input';
+import AccountyCompanySelector from './AccountyCompanySelector';
 
 export default function PortfolioNav() {
   const {
@@ -53,6 +54,10 @@ export default function PortfolioNav() {
   if (isCollapsed) {
     return (
       <ul className="flex w-full min-w-0 flex-col gap-1">
+        <li className="relative flex justify-center">
+          <AccountyCompanySelector isCollapsed />
+        </li>
+        <li className="my-1 mx-2 h-px bg-border/50" />
         {[
           // 1. Teendők
           { path: '/eaisybooks/missing-invoices', name: 'Hiányzó számlák', icon: FileWarning, badge: kpis?.missingItems },
@@ -116,6 +121,11 @@ export default function PortfolioNav() {
 
   return (
     <div className="space-y-4">
+      {/* Portfólió / Cégnézet Választó */}
+      <div className="px-1" data-tour="company-selector">
+        <AccountyCompanySelector />
+      </div>
+
       {/* 1. Csoport: Teendők */}
       <div>
         <div className="px-3 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70">
@@ -211,8 +221,12 @@ export default function PortfolioNav() {
                 <button
                   type="button"
                   onClick={() => toggleSubSection(professionalGroup.id)}
+                  style={{ outline: 'none' }}
                   className={cn(
                     "flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium transition-all duration-200 select-none group/prof",
+                    "outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 ring-0 focus-visible:ring-offset-0",
+                    "[outline:none!important] focus:[outline:none!important] focus-visible:[outline:none!important]",
+                    "[box-shadow:none!important] focus:[box-shadow:none!important] focus-visible:[box-shadow:none!important]",
                     isProfActive
                       ? "text-primary font-semibold bg-primary/5"
                       : "hover:bg-primary/5 hover:text-primary text-sidebar-foreground/80"

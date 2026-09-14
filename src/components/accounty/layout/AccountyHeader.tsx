@@ -2,7 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, Bell, AlertTriangle, Clock, FileWarning, Calendar, HelpCircle } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CompanySwitcher } from '@/components/accounty/CompanySwitcher';
 import { GlobalDatePicker } from '@/components/GlobalDatePicker';
 import { useAccountyShellOptional } from '@/pages/Accounty/AccountyShellContext';
 
@@ -32,13 +31,10 @@ function AccountyHeaderComponent(props: AccountyHeaderProps) {
       >
         <Menu className="w-5 h-5" />
       </button>
-      <div className="flex items-center gap-3 flex-1 min-w-0 pl-3 lg:pl-6" data-tour="company-selector">
-        <CompanySwitcher />
-        <div className="flex-1">
-          <GlobalDatePicker />
-        </div>
+      <div className="flex-1 min-w-0">
+        <GlobalDatePicker />
       </div>
-      <div className="flex items-center pr-4 lg:pr-6 gap-1">
+      <div className="flex items-center pr-4 lg:pr-6 gap-1 shrink-0">
         <button
           onClick={onHelpClick}
           className="p-2 text-muted-foreground hover:text-foreground transition-colors focus:outline-none rounded-md"
