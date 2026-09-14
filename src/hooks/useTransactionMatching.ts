@@ -345,7 +345,6 @@ export function useTransactionMatching({
       queryClient.invalidateQueries({ queryKey: ['glBalances'] });
       queryClient.invalidateQueries({ queryKey: ['glItems'] });
       onUpdate?.();
-      onClose?.();
     },
     onError: () => {
       toast({ title: 'Hiba a kontírozás mentésekor', variant: 'destructive' });

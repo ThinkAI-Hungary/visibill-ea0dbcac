@@ -20,6 +20,7 @@ import { TransactionMultiMatchesList } from './transaction-details/TransactionMu
 import { ManualMatchSearchSection } from './transaction-details/ManualMatchSearchSection';
 import { TransactionGlAccountSelector } from './transaction-details/TransactionGlAccountSelector';
 import { TransactionNotesSection } from './transaction-details/TransactionNotesSection';
+import { TransactionRuleQuickSaveDialog } from '@/components/transactions/TransactionRuleQuickSaveDialog';
 
 export interface TransactionDetailsDialogProps {
   open: boolean;
@@ -43,6 +44,10 @@ export const TransactionDetailsDialog = ({
   const [invoiceDetailOpen, setInvoiceDetailOpen] = useState(false);
   const [invoiceDetailId, setInvoiceDetailId] = useState<string | null>(null);
 
+  // Quick Rule prompt state after booking
+  const [quickRuleOpen, setQuickRuleOpen] = useState(false);
+  const [bookedGlForRule, setBookedGlForRule] = useState<{ id: string; gl_number: string; short_name: string } | null>(null);
+
   // Hook connecting domain matching core
   const matching = useTransactionMatching({
     transaction,
@@ -51,6 +56,21 @@ export const TransactionDetailsDialog = ({
     onUpdate,
     onClose: () => onOpenChange(false),
   });
+
+  const handleBookGlWithRulePrompt = async (payload: any) => {
+    const glItem = glAccounts.find(g => g.id === payload.selectedGlId);
+    if (glItem) {
+      setBookedGlForRule({
+        id: glItem.id,
+        gl_number: glItem.gl_number,
+        short_name: glItem.short_name,
+      });
+    }
+    await matching.handleBookGl(payload);
+    if (glItem) {
+      setQuickRuleOpen(true);
+    }
+  };
 
   // GL accounts query for direct ledger booking (paginated)
   const { data: glAccounts = [] } = useQuery({
@@ -138,7 +158,7 @@ export const TransactionDetailsDialog = ({
                 userId={session?.user?.id}
                 presetId={activePresetId || undefined}
                 isSaving={matching.isSaving}
-                onBookGl={matching.handleBookGl}
+                onBookGl={handleBookGlWithRulePrompt}
                 onUnbookGl={matching.handleUnbookGl}
               />
             )}
@@ -211,6 +231,18 @@ export const TransactionDetailsDialog = ({
         open={invoiceDetailOpen}
         onOpenChange={setInvoiceDetailOpen}
         invoiceId={invoiceDetailId}
+      />
+
+      <TransactionRuleQuickSaveDialog
+        open={quickRuleOpen}
+        onOpenChange={(isOpen) => {
+          setQuickRuleOpen(isOpen);
+          if (!isOpen) {
+            onOpenChange(false);
+          }
+        }}
+        transaction={transaction}
+        glAccount={bookedGlForRule}
       />
     </>
   );

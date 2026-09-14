@@ -125,7 +125,8 @@
     "delete_dialog_title": "Trajno brisanje transakcija",
     "delete_dialog_desc": "Trajno će se izbrisati {{count}} transakcija. Ova se radnja ne može poništiti.",
     "delete_dialog_prompt": "Za potvrdu unesite broj označenih transakcija: {{count}}",
-    "delete_confirm_btn": "Obriši ({{count}} kom)"
+    "delete_confirm_btn": "Brisanje ({{count}} kom)",
+    "book_button": "Knjiženje"
   },
   "expanded": {
     "loading_invoice": "Učitavanje računa...",

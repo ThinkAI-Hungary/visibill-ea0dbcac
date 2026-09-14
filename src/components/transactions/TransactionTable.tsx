@@ -33,7 +33,8 @@ import { getTransactionTypeLabel } from '@/lib/transactionUtils';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useAuth } from '@/contexts/AuthContext';
-import { TransactionRuleQuickSaveDialog } from './TransactionRuleQuickSaveDialog';
+import { useCompany } from '@/contexts/CompanyContext';
+
 
 
 
@@ -96,6 +97,7 @@ const getTypeBgClass = (type: string | null): string => {
 
 import ExpandedInvoiceRow from '@/components/ExpandedInvoiceRow';
 import { TransactionRuleQuickSaveDialog } from '@/components/transactions/TransactionRuleQuickSaveDialog';
+import { BulkBookTransactionsDialog } from './BulkBookTransactionsDialog';
 
 const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoice({
   matchedInvoiceId,
@@ -1145,10 +1147,25 @@ const TransactionTable = React.memo(function TransactionTable({
   onBulkDelete,
 }: TransactionTableProps) {
   const { t } = useTranslation(['transactions', 'common']);
+  const { selectedCompany } = useCompany();
+  const { session } = useAuth();
+  const { activePresetId } = useActivePreset(selectedCompany?.id);
   const { data: exchangeRates } = useExchangeRates();
   const [expandedTxIds, setExpandedTxIds] = useState<Set<string>>(new Set());
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
+
+  // Bulk Booking state
+  const [bulkBookOpen, setBulkBookOpen] = useState(false);
+
+  const { data: tableGlAccounts = [] } = useQuery({
+    queryKey: ['glAccounts', activePresetId],
+    queryFn: async () => {
+      if (!activePresetId) return [];
+      return await fetchAllGlAccountsByPreset(activePresetId);
+    },
+    enabled: !!activePresetId,
+  });
 
   // F1: Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -1284,6 +1301,13 @@ const TransactionTable = React.memo(function TransactionTable({
             </Button>
           </>
         )}
+        <Button
+          size="sm"
+          className="h-9 text-xs gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-sm"
+          onClick={() => setBulkBookOpen(true)}
+        >
+          <ClipboardCheck className="w-3.5 h-3.5" /> {t('transactions:bulk.book_button', 'Kontírozás')}
+        </Button>
         {onBulkDelete && (
           <Button
             size="sm"
@@ -1295,6 +1319,18 @@ const TransactionTable = React.memo(function TransactionTable({
           </Button>
         )}
       </FloatingBulkBar>
+
+      {/* Bulk Book Dialog */}
+      <BulkBookTransactionsDialog
+        open={bulkBookOpen}
+        onOpenChange={setBulkBookOpen}
+        selectedTransactions={transactions.filter(t => selectedIds.has(t.id))}
+        glAccounts={tableGlAccounts}
+        presetId={activePresetId}
+        onSuccess={() => {
+          clearSelection();
+        }}
+      />
 
       {/* Delete confirmation dialog */}
       <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>

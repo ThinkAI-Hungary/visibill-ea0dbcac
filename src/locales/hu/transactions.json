@@ -125,7 +125,8 @@
     "delete_dialog_title": "Tranzakciók végleges törlése",
     "delete_dialog_desc": "{{count}} tranzakció véglegesen törlődik. Ez a művelet nem vonható vissza.",
     "delete_dialog_prompt": "A megerősítéshez írd be a kijelölt tranzakciók számát: {{count}}",
-    "delete_confirm_btn": "Törlés ({{count}} db)"
+    "delete_confirm_btn": "Törlés ({{count}} db)",
+    "book_button": "Kontírozás"
   },
   "expanded": {
     "loading_invoice": "Számla betöltése...",
