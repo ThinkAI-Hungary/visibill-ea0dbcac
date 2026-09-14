@@ -1195,7 +1195,6 @@ const TransactionTable = React.memo(function TransactionTable({
         cancelLabel={t('transactions:bulk.cancel', 'Mégse')}
         onCancel={clearSelection}
         hideSaveButton={true}
-        className="max-w-5xl"
         details={(() => {
           const selectedTxs = transactions.filter(t => selectedIds.has(t.id));
           let inflow = 0;

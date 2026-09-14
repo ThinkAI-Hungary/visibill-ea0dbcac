@@ -116,9 +116,9 @@ export function FloatingBulkBar({
     <div
       data-testid="floating-bulk-bar"
       className={cn(
-        'fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-4xl',
+        'fixed bottom-6 left-1/2 -translate-x-1/2 w-max max-w-[calc(100vw-2rem)] sm:max-w-6xl xl:max-w-7xl',
         'bg-card/95 backdrop-blur-md border border-border/80 shadow-2xl rounded-xl',
-        'px-5 py-3 flex items-center justify-between gap-3 z-[9999]',
+        'px-4 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between gap-3 sm:gap-4 z-[9999]',
         'animate-in fade-in slide-in-from-bottom-4 duration-300',
         className
       )}
@@ -133,7 +133,7 @@ export function FloatingBulkBar({
         {details && (
           <>
             <span className="text-muted-foreground/30 text-xs hidden sm:inline">|</span>
-            <div className="text-xs text-muted-foreground font-medium flex items-center gap-2 whitespace-nowrap">
+            <div className="text-xs text-muted-foreground font-medium hidden sm:flex items-center gap-2 whitespace-nowrap">
               {details}
             </div>
           </>
@@ -152,7 +152,7 @@ export function FloatingBulkBar({
             disabled={!saveAllowed}
             onClick={onSave}
             className={cn(
-              'h-9 text-xs gap-1.5 rounded-lg font-semibold shadow-sm transition-all shrink-0',
+              'h-9 text-xs gap-1.5 rounded-lg font-semibold shadow-sm transition-all shrink-0 px-3',
               isDirty
                 ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/20 animate-in fade-in zoom-in-95'
                 : 'opacity-50 cursor-not-allowed'
