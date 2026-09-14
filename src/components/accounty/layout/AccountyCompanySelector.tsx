@@ -181,14 +181,7 @@ export default function AccountyCompanySelector({
           </div>
           <div className="flex items-center justify-between text-[10px] text-muted-foreground pl-5 w-full">
             <span className="truncate">{subtitle}</span>
-            <span
-              className={cn(
-                "px-1 py-0.2 rounded text-[9px] font-mono uppercase font-semibold shrink-0 ml-1",
-                isClientMode
-                  ? "bg-sidebar-foreground/10 text-muted-foreground"
-                  : "bg-primary/10 text-primary"
-              )}
-            >
+            <span className="px-1 py-0.2 rounded text-[9px] font-mono uppercase font-semibold shrink-0 ml-1 bg-primary/10 text-primary">
               {badgeText}
             </span>
           </div>
@@ -297,7 +290,7 @@ export default function AccountyCompanySelector({
                     <div className="truncate font-medium">{client.name}</div>
                     <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
                       <span>{client.taxNumber || 'Nincs adószám'}</span>
-                      <span className="text-[8px] font-mono uppercase px-1 rounded bg-sidebar-foreground/10 text-muted-foreground">
+                      <span className="text-[8px] font-mono uppercase px-1 rounded font-semibold bg-primary/10 text-primary">
                         {clientIsEv ? 'EV' : 'Társaság'}
                       </span>
                     </div>
