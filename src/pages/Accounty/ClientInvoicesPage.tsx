@@ -24,6 +24,7 @@ import { exportToRLB60, exportToKulcsSoft, exportToNovitax } from '@/lib/bookkee
 import { TAccountLedger } from '@/components/accounty/invoices/TAccountLedger';
 import { FloatingBulkBar } from '@/components/ui/floating-bulk-bar';
 import { PageHeader } from '@/components/ui/page-header';
+import { extractNavSyncError } from '@/lib/nav/navErrorUtils';
 
 const BULK_STATUS_OPTIONS = [
   { value: 'Új', label: 'Új' },
@@ -110,8 +111,10 @@ export default function ClientInvoicesPage() {
         }
       });
 
-      if (outboundError) throw outboundError;
-      if (outboundData?.error) throw new Error(outboundData.error);
+      if (outboundError || outboundData?.error) {
+        const errText = await extractNavSyncError(outboundError, outboundData);
+        throw new Error(`Kimenő: ${errText}`);
+      }
       const totalOutbound = outboundData?.totalInvoices || 0;
 
       // 2. Inbound sync
@@ -127,8 +130,10 @@ export default function ClientInvoicesPage() {
         }
       });
 
-      if (inboundError) throw inboundError;
-      if (inboundData?.error) throw new Error(inboundData.error);
+      if (inboundError || inboundData?.error) {
+        const errText = await extractNavSyncError(inboundError, inboundData);
+        throw new Error(`Bejövő: ${errText}`);
+      }
       const totalInbound = inboundData?.totalInvoices || 0;
 
       // 3. Webhook/Categorization call (optional)

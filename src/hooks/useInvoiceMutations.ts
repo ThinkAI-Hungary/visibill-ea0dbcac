@@ -4,6 +4,7 @@ import { toast } from '@/hooks/use-toast';
 import { exportToFile } from '@/lib/exportUtils';
 import type { NavInvoice, SubmittedInvoice } from './useInvoiceData';
 import { reportError } from '@/lib/errorReporter';
+import { extractNavSyncError, isNavTransientError } from '@/lib/nav/navErrorUtils';
 import type { SyncProgress } from '@/components/nav/NavSyncDialog';
 import { useQueryClient } from '@tanstack/react-query';
 import { extractStoragePath } from '@/lib/utils';
@@ -171,19 +172,27 @@ export function useInvoiceMutations({
         if (outboundResult.status === 'fulfilled') {
           const { data, error } = outboundResult.value;
           if (error || data?.error) {
-            errors.push(`Kimenő (${chunk.from}): ${error?.message || data?.error}`);
+            const errText = await extractNavSyncError(error, data);
+            errors.push(`Kimenő (${chunk.from}): ${errText}`);
           } else if (data?.success) {
             totalOutbound += data.totalInvoices || 0;
           }
+        } else if (outboundResult.status === 'rejected') {
+          const errText = await extractNavSyncError(outboundResult.reason);
+          errors.push(`Kimenő (${chunk.from}): ${errText}`);
         }
 
         if (inboundResult.status === 'fulfilled') {
           const { data, error } = inboundResult.value;
           if (error || data?.error) {
-            errors.push(`Bejövő (${chunk.from}): ${error?.message || data?.error}`);
+            const errText = await extractNavSyncError(error, data);
+            errors.push(`Bejövő (${chunk.from}): ${errText}`);
           } else if (data?.success) {
             totalInbound += data.totalInvoices || 0;
           }
+        } else if (inboundResult.status === 'rejected') {
+          const errText = await extractNavSyncError(inboundResult.reason);
+          errors.push(`Bejövő (${chunk.from}): ${errText}`);
         }
 
         // Report chunk progress
@@ -193,14 +202,18 @@ export function useInvoiceMutations({
       const totalInvoices = totalOutbound + totalInbound;
       setServerLastSyncTime(new Date());
 
-      if (errors.length === 2) {
-        throw new Error(errors.join('; '));
-      } else if (errors.length === 1) {
-        toast({ title: `Szinkronizálás részben sikeres`,
-          description: `${totalInvoices} számla letöltve (${totalOutbound} kimenő, ${totalInbound} bejövő). Hibák: ${errors.join('; ')}`
-        });
+      if (errors.length > 0) {
+        if (totalInvoices === 0) {
+          throw new Error(errors.join('; '));
+        } else {
+          toast({
+            title: `Szinkronizálás részben sikeres`,
+            description: `${totalInvoices} számla letöltve (${totalOutbound} kimenő, ${totalInbound} bejövő). Hibák: ${errors.join('; ')}`
+          });
+        }
       } else {
-        toast({ title: `Sikeres szinkronizálás!`,
+        toast({
+          title: `Sikeres szinkronizálás!`,
           description: `Összesen ${totalInvoices} számla: ${totalOutbound} kimenő, ${totalInbound} bejövő`
         });
       }
@@ -214,14 +227,22 @@ export function useInvoiceMutations({
             headers: { Authorization: `Bearer ${session.access_token}` }
           });
         } catch (categorizationError) {
-          reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Categorization webhook failed:', error: categorizationError });
+          reportError({ type: 'api_call', severity: 'warning', component: 'useInvoiceMutations', action: 'warning', message: 'Categorization webhook failed:', error: categorizationError });
         }
       }
 
       setSelectedInvoiceIds(new Set());
       invalidateInvoiceData();
     } catch (error: any) {
-      reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Sync error:', error: error });
+      const isTransient = isNavTransientError(error?.message || '');
+      reportError({
+        type: 'api_call',
+        severity: isTransient ? 'warning' : 'error',
+        component: 'useInvoiceMutations',
+        action: 'nav_sync',
+        message: 'NAV Sync error:',
+        error: error
+      });
       toast({ title: error.message || 'Nem sikerült szinkronizálni a számlákat', variant: 'destructive' });
     } finally {
       setSyncing(false);

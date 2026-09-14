@@ -15,6 +15,7 @@ import { blockingCategoryMeta, type BlockingCategory, type BlockingItem } from '
 import { useAccountyClients, useAccountyMissingItems, useIgnoreMissingItem, useAddMissingItem, useAccountyDeadlines, useAccountyCommunicationPrefs, useUpsertCommunicationPrefs, useCompleteDeadline, useAccountyTaxProfile, useUpsertTaxProfile, useGeneratePortalToken, useCompanyInvoices, useAccountyAuditLog, type AuditLogEntry, type CompanyInvoice, type AccountyDeadline, type AccountyMissingItem } from '@/hooks/accounty';
 import { useToast } from '@/hooks/use-toast';
 import { reportError } from '@/lib/errorReporter';
+import { extractNavSyncError, formatNavErrorMessage } from '@/lib/nav/navErrorUtils';
 import {
   generateRequestEmail,
   addToApprovalQueue,
@@ -48,7 +49,7 @@ export default function ClientDetailsPage() {
       const firstDayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
       const lastDayStr = today.toISOString().slice(0, 10);
 
-      const [{ data: syncOut, error: errOut }, { data: syncIn, error: errIn }] = await Promise.all([
+      const [outResult, inResult] = await Promise.all([
         supabase.functions.invoke('nav-sync', {
           body: { direction: 'OUTBOUND', dateFrom: firstDayStr, dateTo: lastDayStr, companyId: id }
         }),
@@ -57,8 +58,12 @@ export default function ClientDetailsPage() {
         })
       ]);
 
+      const errOut = outResult.error ? await extractNavSyncError(outResult.error) : null;
+      const errIn = inResult.error ? await extractNavSyncError(inResult.error) : null;
+
       if (errOut || errIn) {
-        throw errOut || errIn || new Error('NAV szinkronizáció sikertelen');
+        const primaryError = errOut || errIn;
+        throw primaryError || new Error('NAV szinkronizáció sikertelen');
       }
 
       toast({
@@ -71,7 +76,8 @@ export default function ClientDetailsPage() {
       queryClient.invalidateQueries({ queryKey: ['portfolio-kata-customer-totals'] });
     } catch (err: any) {
       console.error('NAV sync error:', err);
-      const errMsg = err?.message || 'Nem sikerült kapcsolatot létesíteni a NAV szerverrel. Ellenőrizd a hitelesítő adatokat.';
+      const rawMsg = err?.message || 'Nem sikerült kapcsolatot létesíteni a NAV szerverrel. Ellenőrizd a hitelesítő adatokat.';
+      const errMsg = formatNavErrorMessage(rawMsg);
       setNavSyncError(errMsg);
       toast({
         title: 'Szinkronizálási hiba',
