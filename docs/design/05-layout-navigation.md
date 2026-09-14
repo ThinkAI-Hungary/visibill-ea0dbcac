@@ -416,6 +416,12 @@ A Control Center (`ControlCenter` component) és a Tickets Page (`TicketsPage` `
 - Container: `flex bg-muted/20 rounded-lg p-1 w-fit gap-1`
 - Gomb: `px-4 py-2 rounded-md text-xs font-semibold whitespace-nowrap border`
 
+### Hover Intent Prefetching és Optimista Visszajelzés (2026-09-14)
+
+A Control Center almenüi (`ControlCenter.tsx`) és a főmenü Control Center gombja (`ManagementDashboard.tsx`) dinamikus kód-darabolást (lazy loading) használnak. A navigációs késleltetés kiküszöbölésére a Vercel `bundle-preload` minta szerint:
+1. **70ms Hover Intent Delay:** Az `onMouseEnter` esemény 70 ms-os időzítővel indítja el az alpanel JS moduljának dinamikus `import(...)` előtöltését. Ha a kurzor csak átsuhan a gombon (<70 ms), a `mouseLeave` törli a timert, megelőzve a felesleges modul-letöltéseket.
+2. **Optimista Vizuális Kiemelés:** A gombra kattintás pillanatában a menügomb azonnal aktív stílust kap (`optimisticTab`), mialatt a React Router URL frissítés és a tartalom renderelése lefut (0 ms vizuális késleltetés).
+
 ---
 
 ## Layout Shift Prevention (Anti-CLS szabályok)

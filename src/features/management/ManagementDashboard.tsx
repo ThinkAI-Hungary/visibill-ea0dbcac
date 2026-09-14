@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, Navigate } from 'react-router-dom';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
@@ -96,6 +96,36 @@ export function ManagementDashboard() {
   const openSuperadmin = useCallback(() => { setSearchParams({ view: 'superadmin' }); }, [setSearchParams]);
   const openTickets = useCallback(() => { setSearchParams({ view: 'tickets' }); }, [setSearchParams]);
   const openWorker = useCallback(() => { setSearchParams({ view: 'worker' }); }, [setSearchParams]);
+  const controlCenterHoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleControlCenterMouseEnter = useCallback(() => {
+    if (controlCenterHoverTimerRef.current) {
+      clearTimeout(controlCenterHoverTimerRef.current);
+    }
+    controlCenterHoverTimerRef.current = setTimeout(() => {
+      if (typeof window !== 'undefined') {
+        void import('./components/ControlCenter');
+        void import('./components/errors/ErrorControlPanel');
+      }
+      controlCenterHoverTimerRef.current = null;
+    }, 70);
+  }, []);
+
+  const handleControlCenterMouseLeave = useCallback(() => {
+    if (controlCenterHoverTimerRef.current) {
+      clearTimeout(controlCenterHoverTimerRef.current);
+      controlCenterHoverTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (controlCenterHoverTimerRef.current) {
+        clearTimeout(controlCenterHoverTimerRef.current);
+      }
+    };
+  }, []);
+
   const goBack = useCallback(() => {
     if (view === 'company' || view === 'user') {
       setSearchParams({ view: 'users' });
@@ -180,6 +210,14 @@ export function ManagementDashboard() {
               </button>
               <button
                 onClick={openErrors}
+                onMouseEnter={handleControlCenterMouseEnter}
+                onMouseLeave={handleControlCenterMouseLeave}
+                onFocus={() => {
+                  if (typeof window !== 'undefined') {
+                    void import('./components/ControlCenter');
+                    void import('./components/errors/ErrorControlPanel');
+                  }
+                }}
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-all duration-200 whitespace-nowrap border ${
                   view === 'errors' || view === 'permissions' || view === 'files' || view === 'worker' || view === 'users' || view === 'company' || view === 'user'
                     ? 'bg-primary text-primary-foreground border-transparent shadow-sm'

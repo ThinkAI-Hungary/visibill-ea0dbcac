@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useState, useCallback, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ControlCenterUser } from '../api/types';
 import { Skeleton } from './common/ManagementSkeleton';
@@ -11,6 +11,27 @@ const WorkerPanel = lazy(() => import('./worker/WorkerPanel').then(m => ({ defau
 const UsersControlPanel = lazy(() => import('./user/UsersControlPanel').then(m => ({ default: m.UsersControlPanel })));
 
 export type ControlCenterTab = 'errors' | 'permissions' | 'files' | 'worker' | 'users';
+
+export function preloadControlCenterPanel(tabName: ControlCenterTab) {
+  if (typeof window === 'undefined') return;
+  switch (tabName) {
+    case 'errors':
+      void import('./errors/ErrorControlPanel');
+      break;
+    case 'files':
+      void import('./files/FilesPanel');
+      break;
+    case 'worker':
+      void import('./worker/WorkerPanel');
+      break;
+    case 'users':
+      void import('./user/UsersControlPanel');
+      break;
+    case 'permissions':
+      void import('./permissions/PermissionsPanel');
+      break;
+  }
+}
 
 interface ControlCenterProps {
   initialTab: ControlCenterTab;
@@ -28,11 +49,57 @@ function ControlCenterComponent({
   companyCostMap,
 }: ControlCenterProps) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const tab = initialTab;
+  const [optimisticTab, setOptimisticTab] = useState<ControlCenterTab | null>(null);
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const setTab = (newTab: ControlCenterTab) => {
+  // Synchronize optimistic state with URL/router prop updates
+  useEffect(() => {
+    setOptimisticTab(null);
+  }, [initialTab]);
+
+  // Clean up any pending hover intent timer on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimerRef.current) {
+        clearTimeout(hoverTimerRef.current);
+      }
+    };
+  }, []);
+
+  const tab = optimisticTab ?? initialTab;
+
+  const handleMouseEnter = useCallback((targetTab: ControlCenterTab) => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+    }
+    // 70ms intent threshold: prevents triggering prefetch on incidental mouse pass-through
+    hoverTimerRef.current = setTimeout(() => {
+      preloadControlCenterPanel(targetTab);
+      hoverTimerRef.current = null;
+    }, 70);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+  }, []);
+
+  const handleFocus = useCallback((targetTab: ControlCenterTab) => {
+    // Immediate prefetch on keyboard focus
+    preloadControlCenterPanel(targetTab);
+  }, []);
+
+  const setTab = useCallback((newTab: ControlCenterTab) => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+    preloadControlCenterPanel(newTab);
+    setOptimisticTab(newTab);
     setSearchParams({ view: newTab });
-  };
+  }, [setSearchParams]);
 
   return (
     <div className="space-y-4 page-animate">
@@ -41,6 +108,9 @@ function ControlCenterComponent({
         <div className="flex border-b border-border bg-muted/20 rounded-lg p-1 w-fit gap-1 overflow-x-auto max-w-full">
           <button
             onClick={() => setTab('errors')}
+            onMouseEnter={() => handleMouseEnter('errors')}
+            onMouseLeave={handleMouseLeave}
+            onFocus={() => handleFocus('errors')}
             className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap border ${
               tab === 'errors'
                 ? 'bg-primary/10 text-primary border-primary/20'
@@ -52,6 +122,9 @@ function ControlCenterComponent({
           </button>
           <button
             onClick={() => setTab('files')}
+            onMouseEnter={() => handleMouseEnter('files')}
+            onMouseLeave={handleMouseLeave}
+            onFocus={() => handleFocus('files')}
             className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap border ${
               tab === 'files'
                 ? 'bg-primary/10 text-primary border-primary/20'
@@ -63,6 +136,9 @@ function ControlCenterComponent({
           </button>
           <button
             onClick={() => setTab('worker')}
+            onMouseEnter={() => handleMouseEnter('worker')}
+            onMouseLeave={handleMouseLeave}
+            onFocus={() => handleFocus('worker')}
             className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap border ${
               tab === 'worker'
                 ? 'bg-primary/10 text-primary border-primary/20'
@@ -74,6 +150,9 @@ function ControlCenterComponent({
           </button>
           <button
             onClick={() => setTab('users')}
+            onMouseEnter={() => handleMouseEnter('users')}
+            onMouseLeave={handleMouseLeave}
+            onFocus={() => handleFocus('users')}
             className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap border ${
               tab === 'users'
                 ? 'bg-primary/10 text-primary border-primary/20'
@@ -85,6 +164,9 @@ function ControlCenterComponent({
           </button>
           <button
             onClick={() => setTab('permissions')}
+            onMouseEnter={() => handleMouseEnter('permissions')}
+            onMouseLeave={handleMouseLeave}
+            onFocus={() => handleFocus('permissions')}
             className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap border ${
               tab === 'permissions'
                 ? 'bg-primary/10 text-primary border-primary/20'
