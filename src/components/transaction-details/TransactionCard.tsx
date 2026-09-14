@@ -1,13 +1,16 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, AlertTriangle, HelpCircle, Ban, UploadCloud, Undo2 } from 'lucide-react';
-import { formatCurrency, cn, fixCharacterEncoding } from '@/lib/utils';
+import { CheckCircle2, AlertTriangle, HelpCircle, Ban, UploadCloud, Undo2, Landmark, ExternalLink, Download, Loader2 } from 'lucide-react';
+import { formatCurrency, cn, fixCharacterEncoding, extractStoragePath } from '@/lib/utils';
 import { formatDate } from '@/lib/locale/formatters';
 import { useTranslation } from 'react-i18next';
 import { computeMatchStatus } from '@/hooks/useComputedStatus';
 import { TransactionItem } from '@/lib/matching/types';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export interface TransactionCardProps {
   transaction: TransactionItem;
@@ -21,7 +24,64 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
   onRevertStatus,
 }) => {
   const { t } = useTranslation(['transactions', 'common']);
+  const { toast } = useToast();
+  const [downloading, setDownloading] = useState(false);
   const matchStatus = computeMatchStatus(transaction);
+
+  // Fetch attached bank statement upload details
+  const { data: uploadInfo } = useQuery({
+    queryKey: ['transaction-upload-file', transaction?.id],
+    queryFn: async () => {
+      if (!transaction?.id) return null;
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('upload_id, upload:transaction_uploads(id, file_name, file_url)')
+        .eq('id', transaction.id)
+        .maybeSingle();
+      if (error || !data) return null;
+      return (data as any)?.upload as { id: string; file_name: string; file_url: string } | null;
+    },
+    enabled: !!transaction?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const handleDownloadUpload = useCallback(async (fileUrl: string, fileName: string) => {
+    setDownloading(true);
+    try {
+      const storagePath = extractStoragePath(fileUrl, 'transactions');
+      if (storagePath) {
+        const { data, error } = await supabase.storage.from('transactions').download(storagePath);
+        if (!error && data) {
+          const url = URL.createObjectURL(data);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          toast({ title: 'Sikeres letöltés', description: `${fileName} letöltve.` });
+          return;
+        }
+      }
+      const a = document.createElement('a');
+      a.href = fileUrl;
+      a.download = fileName;
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      toast({ title: 'Sikeres letöltés', description: `${fileName} letöltve.` });
+    } catch (e: any) {
+      toast({
+        title: 'Hiba a letöltés során',
+        description: e?.message || 'Nem sikerült letölteni a kivonatot.',
+        variant: 'destructive',
+      });
+    } finally {
+      setDownloading(false);
+    }
+  }, [toast]);
 
   return (
     <>
@@ -90,6 +150,51 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
                 <p className="mt-1 text-[10px] bg-background/50 p-1.5 rounded border border-border/30 max-h-[80px] overflow-y-auto">
                   {transaction.reason}
                 </p>
+              </div>
+            )}
+
+            {uploadInfo?.file_url && (
+              <div className="col-span-2 pt-2 border-t border-border/40">
+                <span className="text-muted-foreground block text-[11px] mb-1.5">Csatolt eredeti bankkivonat</span>
+                <div className="flex items-center justify-between p-2.5 rounded-md bg-background/80 border border-border/60 text-xs">
+                  <div className="flex items-center gap-2 min-w-0 pr-2">
+                    <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center shrink-0">
+                      <Landmark className="w-3.5 h-3.5 text-primary" />
+                    </div>
+                    <span className="font-medium text-foreground truncate text-xs" title={uploadInfo.file_name}>
+                      {uploadInfo.file_name}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-[11px] gap-1 hover:bg-primary/10"
+                      onClick={() => window.open(uploadInfo.file_url, '_blank')}
+                      title="Megnyitás új lapon"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      Megnyitás
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={downloading}
+                      className="h-7 px-2 text-[11px] gap-1"
+                      onClick={() => handleDownloadUpload(uploadInfo.file_url, uploadInfo.file_name)}
+                      title="Kivonat letöltése"
+                    >
+                      {downloading ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Download className="w-3 h-3" />
+                      )}
+                      Letöltés
+                    </Button>
+                  </div>
+                </div>
               </div>
             )}
           </div>

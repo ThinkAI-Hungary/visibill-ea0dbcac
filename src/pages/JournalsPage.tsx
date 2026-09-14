@@ -35,8 +35,12 @@ import {
   XCircle,
   Sparkles,
   RotateCcw,
-  Undo2
+  Undo2,
+  Download,
+  ExternalLink
 } from 'lucide-react';
+import { extractStoragePath } from '@/lib/utils';
+import { InvoiceDetailPopup } from '@/components/InvoiceDetailPopup';
 import AddManualJournalEntryModal from '@/components/journals/AddManualJournalEntryModal';
 import OpeningJournalWizardModal from '@/components/journals/OpeningJournalWizardModal';
 import PeriodClosingSettings from '@/components/journals/PeriodClosingSettings';
@@ -210,6 +214,10 @@ export default function JournalsPage() {
   // Delete confirmation dialogs state
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [singleDeleteTarget, setSingleDeleteTarget] = useState<{ id: string; description?: string } | null>(null);
+
+  // Source document preview / download state
+  const [previewInvoiceId, setPreviewInvoiceId] = useState<string | null>(null);
+  const [downloadingSourceDoc, setDownloadingSourceDoc] = useState(false);
 
   // Fetch existing NY journal entries count
   const { data: nyEntriesCount = 0 } = useQuery({
@@ -394,6 +402,148 @@ export default function JournalsPage() {
     },
     enabled: !!selectedCompany?.id && !!selectedJournalId,
   });
+
+  // Source document query for selected entry (original bank statement PDF or invoice)
+  const { data: sourceDocument } = useQuery({
+    queryKey: ['acc-journal-source-doc', selectedEntry?.id, selectedEntry?.source, selectedEntry?.import_key, selectedEntry?.document_id],
+    queryFn: async () => {
+      if (!selectedEntry) return null;
+
+      // 1. Bank transaction source
+      if (selectedEntry.source === 'AUTO_BANK') {
+        const txId = selectedEntry.import_key;
+        if (!txId) return null;
+
+        const { data: tx, error } = await supabase
+          .from('transactions')
+          .select('id, upload_id, upload:transaction_uploads(id, file_name, file_url)')
+          .eq('id', txId)
+          .maybeSingle();
+
+        if (error) return null;
+        const upload = (tx as any)?.upload;
+        if (upload?.file_url) {
+          return {
+            type: 'bank' as const,
+            title: upload.file_name || 'Banki kivonat',
+            fileUrl: upload.file_url,
+            bucket: 'transactions',
+            fileName: upload.file_name || 'bankkivonat.pdf',
+          };
+        }
+        return null;
+      }
+
+      // 2. Invoice source
+      if (selectedEntry.source === 'AUTO_SZAMLA') {
+        const docId = selectedEntry.document_id;
+        const importKey = selectedEntry.import_key;
+
+        // Try invoices table first (by id or bizonylatsorszam)
+        if (importKey) {
+          const { data: invById } = await supabase
+            .from('invoices')
+            .select('id, bizonylatsorszam, pdf_file_url, image_url')
+            .eq('id', importKey)
+            .maybeSingle();
+
+          if (invById) {
+            return {
+              type: 'invoice' as const,
+              title: `Számla: ${invById.bizonylatsorszam}`,
+              fileUrl: invById.pdf_file_url || invById.image_url,
+              bucket: 'invoice-uploads',
+              fileName: `${invById.bizonylatsorszam || 'szamla'}.pdf`,
+              invoiceId: invById.id,
+            };
+          }
+        }
+
+        if (docId) {
+          const { data: invByDoc } = await supabase
+            .from('invoices')
+            .select('id, bizonylatsorszam, pdf_file_url, image_url')
+            .eq('bizonylatsorszam', docId)
+            .maybeSingle();
+
+          if (invByDoc) {
+            return {
+              type: 'invoice' as const,
+              title: `Számla: ${invByDoc.bizonylatsorszam}`,
+              fileUrl: invByDoc.pdf_file_url || invByDoc.image_url,
+              bucket: 'invoice-uploads',
+              fileName: `${invByDoc.bizonylatsorszam || 'szamla'}.pdf`,
+              invoiceId: invByDoc.id,
+            };
+          }
+
+          // Try nav_invoices table (by invoice_number)
+          const { data: navInv } = await supabase
+            .from('nav_invoices')
+            .select('id, invoice_number, invoice_pdf_url')
+            .eq('invoice_number', docId)
+            .maybeSingle();
+
+          if (navInv) {
+            return {
+              type: 'invoice' as const,
+              title: `NAV Számla: ${navInv.invoice_number}`,
+              fileUrl: navInv.invoice_pdf_url,
+              bucket: 'invoice-uploads',
+              fileName: `${navInv.invoice_number}.pdf`,
+              invoiceId: navInv.id,
+            };
+          }
+        }
+
+        return null;
+      }
+
+      return null;
+    },
+    enabled: !!selectedEntry && (selectedEntry.source === 'AUTO_BANK' || selectedEntry.source === 'AUTO_SZAMLA'),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const handleDownloadSourceDoc = useCallback(async (fileUrl: string, fileName: string, bucket?: string) => {
+    setDownloadingSourceDoc(true);
+    try {
+      if (bucket) {
+        const storagePath = extractStoragePath(fileUrl, bucket);
+        if (storagePath) {
+          const { data, error } = await supabase.storage.from(bucket).download(storagePath);
+          if (!error && data) {
+            const url = URL.createObjectURL(data);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            toast({ title: 'Sikeres letöltés', description: `${fileName} letöltve.` });
+            return;
+          }
+        }
+      }
+      const a = document.createElement('a');
+      a.href = fileUrl;
+      a.download = fileName;
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      toast({ title: 'Sikeres letöltés', description: `${fileName} letöltve.` });
+    } catch (e: any) {
+      toast({
+        title: 'Hiba a letöltés során',
+        description: e?.message || 'Nem sikerült letölteni a fájlt.',
+        variant: 'destructive',
+      });
+    } finally {
+      setDownloadingSourceDoc(false);
+    }
+  }, [toast]);
 
   // Canonical helper to invalidate all related caches across journals, GL, and VAT
   const invalidateGlAndJournalQueries = useCallback(() => {
@@ -1428,6 +1578,69 @@ export default function JournalsPage() {
                   )}
                 </div>
 
+                {/* Source Document Card (Original Bank Statement PDF or Invoice) */}
+                {sourceDocument && (
+                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-3.5 flex items-center justify-between gap-3 transition-all hover:bg-primary/[0.08]">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                        {sourceDocument.type === 'bank' ? (
+                          <Landmark className="w-4 h-4 text-primary" />
+                        ) : (
+                          <Receipt className="w-4 h-4 text-primary" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-[11px] font-medium text-muted-foreground block">
+                          {sourceDocument.type === 'bank' ? 'Csatolt eredeti bankkivonat' : 'Csatolt bizonylat / számla'}
+                        </span>
+                        <span className="text-xs font-semibold text-foreground truncate block" title={sourceDocument.title}>
+                          {sourceDocument.title}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {sourceDocument.type === 'invoice' && sourceDocument.invoiceId && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 gap-1.5 text-xs font-medium"
+                          onClick={() => setPreviewInvoiceId(sourceDocument.invoiceId!)}
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          Részletek
+                        </Button>
+                      )}
+                      {sourceDocument.fileUrl && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 gap-1.5 text-xs font-medium"
+                            onClick={() => window.open(sourceDocument.fileUrl, '_blank')}
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            Megnyitás
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            disabled={downloadingSourceDoc}
+                            className="h-8 gap-1.5 text-xs font-medium"
+                            onClick={() => handleDownloadSourceDoc(sourceDocument.fileUrl, sourceDocument.fileName, sourceDocument.bucket)}
+                          >
+                            {downloadingSourceDoc ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Download className="w-3.5 h-3.5" />
+                            )}
+                            Letöltés
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Double entry lines */}
                 <div className="space-y-2">
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Kontírozott tételek (Tétel sorok)</h4>
@@ -1933,6 +2146,13 @@ export default function JournalsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {previewInvoiceId && (
+        <InvoiceDetailPopup
+          open={!!previewInvoiceId}
+          onOpenChange={(open) => !open && setPreviewInvoiceId(null)}
+          invoiceId={previewInvoiceId}
+        />
+      )}
       </div>
     </TooltipProvider>
   );
