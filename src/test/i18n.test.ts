@@ -194,6 +194,8 @@ describe('i18n and Localization Suite', () => {
       expect(i18n.t('accounting:journals.table.col_journal_num')).toBe('Naplószám');
       expect(i18n.t('accounting:journals.status.kezi_piszkozat')).toBe('Kézi piszkozat');
       expect(i18n.t('accounting:journals.batch_bar.post_selected')).toBe('Kijelöltek könyvelése');
+      expect(i18n.t('accounting:journals.pending_badge', { count: 12 })).toBe('12 db jóváhagyásra vár');
+      expect(i18n.t('accounting:journals.guidance_banner.pending_badge', { count: 8 })).toBe('8 db jóváhagyásra váró javaslat');
     });
 
     it('provides valid Croatian translations for demo', async () => {
@@ -241,6 +243,8 @@ describe('i18n and Localization Suite', () => {
       expect(i18n.t('dashboard:fx_differences.gl_classification')).toBe('Knjiženje u glavnu knjigu');
       expect(i18n.t('dashboard:fx_differences.table.month')).toBe('Mjesec');
       expect(i18n.t('dashboard:fx_differences.table.total')).toBe('Ukupno');
+      expect(i18n.t('accounting:journals.pending_badge', { count: 5 })).toBe('5 stavaka čeka odobrenje');
+      expect(i18n.t('accounting:journals.guidance_banner.pending_badge', { count: 3 })).toBe('3 prijedloga koji čekaju odobrenje');
 
       // General Ledger Toolbar in Croatian
       expect(i18n.t('accounting:general_ledger.toolbar.active_preset')).toBe('Aktivni kontni plan:');

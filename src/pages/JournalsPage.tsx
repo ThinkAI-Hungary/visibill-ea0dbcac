@@ -176,6 +176,7 @@ export default function JournalsPage() {
     },
     onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['acc-munkalista-count'] });
       toast({ title: "Javaslatok sikeresen legenerálva", description: `${count} db könyvelési tétel javaslat jött létre a meglévő adatokból.` });
     },
     onError: (err: any) => {
@@ -238,6 +239,23 @@ export default function JournalsPage() {
         .select('id', { count: 'exact', head: true })
         .eq('company_id', selectedCompany.id)
         .eq('journal_id', nyJ.id);
+
+      if (error) return 0;
+      return count || 0;
+    },
+    enabled: !!selectedCompany?.id,
+  });
+
+  // Fetch pending drafts count for Munkalista badge
+  const { data: munkalistaCount = 0 } = useQuery({
+    queryKey: ['acc-munkalista-count', selectedCompany?.id],
+    queryFn: async () => {
+      if (!selectedCompany?.id) return 0;
+      const { count, error } = await supabase
+        .from('acc_journal_headers')
+        .select('id', { count: 'exact', head: true })
+        .eq('company_id', selectedCompany.id)
+        .in('status', ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT']);
 
       if (error) return 0;
       return count || 0;
@@ -549,6 +567,7 @@ export default function JournalsPage() {
   const invalidateGlAndJournalQueries = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
     queryClient.invalidateQueries({ queryKey: ['acc-ny-entries-count'] });
+    queryClient.invalidateQueries({ queryKey: ['acc-munkalista-count'] });
     queryClient.invalidateQueries({ queryKey: ['glBalances'] });
     queryClient.invalidateQueries({ queryKey: ['glItems'] });
     queryClient.invalidateQueries({ queryKey: ['glJournalItems'] });
@@ -946,7 +965,10 @@ export default function JournalsPage() {
             </div>
           </div>
           <Badge variant={selectedJournalId === 'munkalista' ? 'secondary' : 'outline'} className="px-1.5 py-0.5 text-[8px] shrink-0 font-normal mr-1">
-            {t('accounting:journals.pending_badge', 'Függő')}
+            {t('accounting:journals.pending_badge', {
+              count: munkalistaCount,
+              defaultValue: `${munkalistaCount} db jóváhagyásra vár`,
+            })}
           </Badge>
         </button>
 
@@ -1073,51 +1095,56 @@ export default function JournalsPage() {
           </div>
 
           {/* Guidance Banner for Pending Drafts & System Proposals */}
-          {filteredEntries.filter((e: any) => ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status)).length > 0 && (
-            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 dark:bg-amber-950/20 p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-2xs">
-              <div className="flex items-start gap-2.5">
-                <div className="p-1.5 bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-md shrink-0 mt-0.5 sm:mt-0">
-                  <Sparkles className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="font-semibold text-foreground flex items-center gap-2">
-                    <span>
-                      {t('accounting:journals.guidance_banner.title', {
-                        count: filteredEntries.filter((e: any) => ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status)).length,
-                        defaultValue: `${filteredEntries.filter((e: any) => ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status)).length} db lekönyvelésre váró könyvelési javaslat`,
-                      })}
-                    </span>
-                    <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 py-0 font-medium">
-                      {t('accounting:journals.guidance_banner.pending_badge', 'Jóváhagyásra vár')}
-                    </Badge>
+          {(() => {
+            const draftProposals = filteredEntries.filter((e: any) => ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status));
+            if (draftProposals.length === 0) return null;
+            return (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 dark:bg-amber-950/20 p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-2xs">
+                <div className="flex items-start gap-2.5">
+                  <div className="p-1.5 bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-md shrink-0 mt-0.5 sm:mt-0">
+                    <Sparkles className="w-4 h-4" />
                   </div>
-                  <p className="text-muted-foreground text-[11px] mt-0.5 leading-relaxed">
-                    {t('accounting:journals.guidance_banner.description', 'A rendszerjavaslatok az ellenőrzést és lekönyvelést követően kapnak hivatalos naplósorszámot és válnak zárt, módosításvédett könyvelési tétellé.')}
-                  </p>
+                  <div>
+                    <div className="font-semibold text-foreground flex items-center gap-2">
+                      <span>
+                        {t('accounting:journals.guidance_banner.title', {
+                          count: draftProposals.length,
+                          defaultValue: `${draftProposals.length} db lekönyvelésre váró könyvelési javaslat`,
+                        })}
+                      </span>
+                      <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 py-0 font-medium">
+                        {t('accounting:journals.guidance_banner.pending_badge', {
+                          count: draftProposals.length,
+                          defaultValue: `${draftProposals.length} db jóváhagyásra vár`,
+                        })}
+                      </Badge>
+                    </div>
+                    <p className="text-muted-foreground text-[11px] mt-0.5 leading-relaxed">
+                      {t('accounting:journals.guidance_banner.description', 'A rendszerjavaslatok az ellenőrzést és lekönyvelést követően kapnak hivatalos naplósorszámot és válnak zárt, módosításvédett könyvelési tétellé.')}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs gap-1.5 border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/15"
+                    onClick={() => {
+                      const draftIds = draftProposals.map((e: any) => e.id);
+                      setSelectedEntryIds(new Set(draftIds));
+                    }}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    {t('accounting:journals.guidance_banner.select_all_proposals', {
+                      count: draftProposals.length,
+                      defaultValue: `Összes javaslat kijelölése (${draftProposals.length})`,
+                    })}
+                  </Button>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="h-8 text-xs gap-1.5 border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/15"
-                  onClick={() => {
-                    const draftIds = filteredEntries
-                      .filter((e: any) => ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status))
-                      .map((e: any) => e.id);
-                    setSelectedEntryIds(new Set(draftIds));
-                  }}
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  {t('accounting:journals.guidance_banner.select_all_proposals', {
-                    count: filteredEntries.filter((e: any) => ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status)).length,
-                    defaultValue: `Összes javaslat kijelölése (${filteredEntries.filter((e: any) => ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status)).length})`,
-                  })}
-                </Button>
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Top Pagination */}
           {totalItems > 0 && (
