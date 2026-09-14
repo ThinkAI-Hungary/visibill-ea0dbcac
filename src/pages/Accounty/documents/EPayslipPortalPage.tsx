@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { FinancialPageSkeleton } from '@/components/ui/financial-skeleton';
+import { FloatingBulkBar } from '@/components/ui/floating-bulk-bar';
 
 export default function EPayslipPortalPage() {
   const { companyId } = useParams<{ companyId: string }>();
@@ -67,6 +68,26 @@ export default function EPayslipPortalPage() {
   const sentCount = slips.filter(e => e.status === 'sent').length;
   const generatedCount = slips.filter(e => e.status === 'generated').length;
 
+  const handleSendSlips = async (targetIds?: string[]) => {
+    setSending(true);
+    try {
+      const idsToSend = targetIds || (selectedIds.size > 0 ? Array.from(selectedIds) : slips.map(s => s.id));
+      if (idsToSend.length === 0) return;
+      const { error } = await supabase
+        .from('accounty_documents')
+        .update({ status: 'sent', updated_at: new Date().toISOString() })
+        .in('id', idsToSend);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['accounty-documents'] });
+      toast({ title: 'E-bérjegyzékek kiküldve', description: `${idsToSend.length} bérjegyzék elküldve.` });
+      setSelectedIds(new Set());
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
+    } finally {
+      setSending(false);
+    }
+  };
+
   // Build payslip data from calculation for a given document
   const getPayslipData = (slip: AccountyDocument): PayslipPdfData | null => {
     const cleanName = slip.title.replace(' - Bérjegyzék', '').replace(' - E-bérjegyzék', '').trim();
@@ -114,26 +135,9 @@ export default function EPayslipPortalPage() {
             <p className="text-sm text-muted-foreground">Elektronikus bérjegyzék hozzáférhetővé tétel — Mt. 155. § (3)</p>
           </div>
         </div>
-        <Button onClick={async () => {
-          setSending(true);
-          try {
-            const idsToSend = selectedIds.size > 0 ? Array.from(selectedIds) : slips.map(s => s.id);
-            const { error } = await supabase
-              .from('accounty_documents')
-              .update({ status: 'sent', updated_at: new Date().toISOString() })
-              .in('id', idsToSend);
-            if (error) throw error;
-            queryClient.invalidateQueries({ queryKey: ['accounty-documents'] });
-            toast({ title: 'E-bérjegyzékek kiküldve', description: `${idsToSend.length} bérjegyzék elküldve.` });
-            setSelectedIds(new Set());
-          } catch (err: any) {
-            toast({ variant: 'destructive', title: 'Hiba', description: err.message });
-          } finally {
-            setSending(false);
-          }
-        }} disabled={sending || slips.length === 0} className="gap-1.5 bg-blue-600 hover:bg-blue-700">
+        <Button onClick={() => handleSendSlips()} disabled={sending || slips.length === 0} className="gap-1.5 bg-blue-600 hover:bg-blue-700">
           {sending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          {sending ? 'Küldés...' : `Kiküldés (${selectedIds.size || 'mind'})`}
+          {sending ? 'Küldés...' : `Összes kiküldése (${slips.length} db)`}
         </Button>
       </div>
 
@@ -237,6 +241,27 @@ export default function EPayslipPortalPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Centralized Floating Bulk Action Bar */}
+      <FloatingBulkBar
+        count={selectedIds.size}
+        label="Kijelölt bérjegyzékek:"
+        itemUnit="db"
+        onCancel={() => setSelectedIds(new Set())}
+        cancelLabel="Mégse"
+        hideSaveButton={true}
+      >
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => handleSendSlips(Array.from(selectedIds))}
+          disabled={sending}
+          className="h-9 text-xs gap-1.5 rounded-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm shrink-0"
+        >
+          {sending ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+          {sending ? 'Küldés...' : `Kiküldés (${selectedIds.size} db)`}
+        </Button>
+      </FloatingBulkBar>
     </div>
   );
 }

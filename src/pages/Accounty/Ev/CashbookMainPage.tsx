@@ -20,15 +20,9 @@ import { toast } from '@/hooks/use-toast';
 import { exportEvCashbookAnykXml, exportEvCashbookOnyaXml } from '@/lib/evCashbookXml';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
+import { FloatingBulkBar } from '@/components/ui/floating-bulk-bar';
 
 // ─── Category labels (constant, not mock) ────────────────────────────────────
 
@@ -45,6 +39,11 @@ const CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
   kiadas_levonhato_afa: { label: 'Levonható ÁFA', color: 'text-cyan-600' },
   kiadas_egyeb_nem_koltseg: { label: 'Egyéb nem költség', color: 'text-muted-foreground' },
 };
+
+const CATEGORY_OPTIONS = Object.entries(CATEGORY_LABELS).map(([key, value]) => ({
+  value: key,
+  label: value.label,
+}));
 
 type FilterDirection = 'all' | 'bevetel' | 'kiadas';
 
@@ -64,6 +63,13 @@ export default function CashbookMainPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [lastSelectedIdx, setLastSelectedIdx] = useState<number | null>(null);
   const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+  const [stagedCategory, setStagedCategory] = useState<PenztarkonyvCategory | null>(null);
+
+  useEffect(() => {
+    if (selectedIds.size === 0) {
+      setStagedCategory(null);
+    }
+  }, [selectedIds.size]);
 
   const handleBulkCategoryChange = async (newCategory: PenztarkonyvCategory) => {
     if (selectedIds.size === 0 || !id) return;
@@ -565,43 +571,41 @@ export default function CashbookMainPage() {
         </div>
       </div>
 
-      {/* Floating Action Bar */}
-      {selectedIds.size > 0 && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-card/90 backdrop-blur-md border border-border shadow-2xl px-6 py-3.5 rounded-lg flex items-center justify-between gap-6 z-40 w-[95%] max-w-4xl page-animate slide-in-from-bottom-4 duration-300">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-primary dark:text-primary">{selectedIds.size} tétel kijelölve</span>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground font-medium">Tömeges kategória:</span>
-            <select
-              disabled={isBulkUpdating}
-              onChange={(e) => {
-                if (e.target.value) {
-                  handleBulkCategoryChange(e.target.value as PenztarkonyvCategory);
-                  e.target.value = ''; // Reset select
-                }
-              }}
-              className="text-xs bg-card border border-border rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary font-medium cursor-pointer"
-              defaultValue=""
-            >
-              <option value="" disabled>Válassz kategóriát...</option>
-              {Object.entries(CATEGORY_LABELS).map(([key, value]) => (
-                <option key={key} value={key}>
-                  {value.label}
-                </option>
-              ))}
-            </select>
-            <button
-              onClick={() => { setSelectedIds(new Set()); setLastSelectedIdx(null); }}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground/60 hover:bg-muted transition-colors"
-              title="Kijelölés törlése"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+      {/* F1: Centralized Floating Bulk Action Bar */}
+      <FloatingBulkBar
+        count={selectedIds.size}
+        label="Kijelölt tételek:"
+        itemUnit="db"
+        onSave={async () => {
+          if (!stagedCategory || isBulkUpdating) return;
+          await handleBulkCategoryChange(stagedCategory);
+          setStagedCategory(null);
+        }}
+        saveLabel="Mentés"
+        isDirty={stagedCategory !== null}
+        isSaving={isBulkUpdating}
+        onCancel={() => {
+          setStagedCategory(null);
+          setSelectedIds(new Set());
+          setLastSelectedIdx(null);
+        }}
+        cancelLabel="Mégse"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground font-medium hidden sm:inline">Kategória:</span>
+          <FloatingBulkBar.Select
+            value={stagedCategory}
+            disabled={isBulkUpdating}
+            onValueChange={(val) => {
+              setStagedCategory(val as PenztarkonyvCategory);
+            }}
+            placeholder="Válassz kategóriát..."
+            searchPlaceholder="Keresés kategóriára..."
+            options={CATEGORY_OPTIONS}
+            popoverWidth="w-[240px]"
+          />
         </div>
-      )}
+      </FloatingBulkBar>
     </div>
   );
 }

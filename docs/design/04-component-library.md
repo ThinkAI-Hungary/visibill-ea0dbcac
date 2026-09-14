@@ -695,9 +695,19 @@ Központosított, lebegő alsó műveleti sáv tömeges kijelölésekhez (száml
 
 **Fő Funkciók:**
 - **Univerzális Számláló:** `count` + pulzáló teal indikátor pont + tetszőleges extra részletek (`details`).
-- **Kétlépcsős Mentés Jóváhagyás (`dirty-only`):** A módosítások először csak helyi állapotba kerülnek (`staged`). A Mentés gomb csak piszkos (`isDirty`) állapotban válik aktívvá / kattinthatóvá.
-- **Univerzális Mégse:** Törli a staged állapotot és eldobja a kijelölést.
-- **Egysoros pill layout:** `max-w-4xl`, `rounded-xl`, flex no-wrap elrendezés mobilon és asztalon.
+- **Kétlépcsős Mentés Jóváhagyás (`dirty-only`):** A módosítások először csak helyi állapotba kerülnek (`stagedStatus` / `stagedCategory`). A Mentés gomb csak piszkos (`isDirty`) állapotban válik láthatóvá / aktívvá, megelőzve a véletlen tömeges adatbázis-módosításokat.
+- **Univerzális Mégse:** Törli a staged állapotot és eldobja a kijelölést (`onCancel`).
+- **Egysoros pill layout:** `w-max max-w-[calc(100vw-2rem)] sm:max-w-6xl xl:max-w-7xl`, `rounded-xl`, flex no-wrap elrendezés mobilon és asztalon.
+- **Modul-szintű Alkalmazás:**
+  - `eaisybill`: Számlák (`Invoices.tsx`), Tranzakciók (`TransactionTable.tsx`).
+  - `eaisybooks`:
+    - Ügyfél számlák (`ClientInvoicesPage.tsx`): Kétlépcsős státusz módosítás Mentés gombbal + export dropdown + törlés.
+    - EV Pénztárkönyv (`CashbookMainPage.tsx`): Kétlépcsős kategória választás Mentés gombbal.
+    - Jóváhagyási sor (`ApprovalQueuePage.tsx`): Tömeges jóváhagyás & küldés, elutasítás.
+    - Hiányzó számlák (`MissingInvoicesBulkBar.tsx` / `ClientMissingInvoicesPage.tsx`): Felszólítás, megérkezett, törlés.
+    - Hiányzó számlák portfólió (`MissingInvoicesPage.tsx`): Tömeges ügyfél-felszólítás.
+    - Ügyféllista irányítópult (`ClientListView.tsx`): Tömeges ügyfél kijelölés.
+    - E-bérjegyzék portál (`EPayslipPortalPage.tsx`): Tömeges bérjegyzék kiküldés.
 
 ### FloatingBulkSelect (és `FloatingBulkBar.Select`)
 **Fájl:** `src/components/ui/floating-bulk-select.tsx`

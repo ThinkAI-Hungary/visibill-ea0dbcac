@@ -22,8 +22,16 @@ import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import { InvoiceApprovalDialog } from '@/features/invoices/components/dialogs/InvoiceApprovalDialog';
 import { exportToRLB60, exportToKulcsSoft, exportToNovitax } from '@/lib/bookkeepingExports';
 import { TAccountLedger } from '@/components/accounty/invoices/TAccountLedger';
-import { createPortal } from 'react-dom';
+import { FloatingBulkBar } from '@/components/ui/floating-bulk-bar';
 import { PageHeader } from '@/components/ui/page-header';
+
+const BULK_STATUS_OPTIONS = [
+  { value: 'Új', label: 'Új' },
+  { value: 'Kontírozásra vár', label: 'Kontírozásra vár' },
+  { value: 'Kontírozott', label: 'Kontírozott' },
+  { value: 'Exportálva', label: 'Exportálva' },
+  { value: 'Problémás', label: 'Problémás' },
+];
 
 export default function ClientInvoicesPage() {
   const navigate = useNavigate();
@@ -223,7 +231,17 @@ export default function ClientInvoicesPage() {
   useEffect(() => {
     setCurrentPage(1);
     setSelectedInvoiceIds(new Set());
+    setStagedStatus(null);
   }, [searchQuery, statusFilter, typeFilter, fadFilter, missingImageFilter, missingNavFilter]);
+
+  const [stagedStatus, setStagedStatus] = useState<string | null>(null);
+  const [isSavingStatus, setIsSavingStatus] = useState(false);
+
+  useEffect(() => {
+    if (selectedInvoiceIds.size === 0) {
+      setStagedStatus(null);
+    }
+  }, [selectedInvoiceIds.size]);
 
   const handleBulkStatusChange = async (newStatus: string) => {
     const selectedUploadedIds = filteredInvoices
@@ -1058,115 +1076,110 @@ export default function ClientInvoicesPage() {
         </DialogContent>
       </Dialog>
 
-      {selectedInvoiceIds.size > 0 && createPortal(
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-4xl bg-card border border-primary/30 shadow-2xl rounded-lg px-6 py-4 flex items-center justify-between z-[9999] page-animate slide-in-from-bottom-4 duration-300">
-          <div className="flex items-center gap-3">
-            <div className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
-            <p className="text-sm font-semibold text-foreground">
-              Kijelölt számlák: <span className="font-extrabold text-primary">{selectedInvoiceIds.size} db</span>
-            </p>
-            {(() => {
-              const selectedItems = filteredInvoices.filter(inv => selectedInvoiceIds.has(inv.id));
-              const sums: Record<string, number> = {};
-              selectedItems.forEach(inv => {
-                const currency = inv.currency || 'HUF';
-                sums[currency] = (sums[currency] || 0) + (inv.grossAmount || 0);
-              });
-              const sumStrings = Object.entries(sums).map(([ccy, amt]) => formatCurrency(amt, ccy));
-              if (sumStrings.length === 0) return null;
-              return (
-                <>
-                  <span className="text-muted-foreground/30 text-xs">|</span>
-                  <p className="text-xs text-muted-foreground font-medium">
-                    Összesen: <span className="font-bold text-foreground">{sumStrings.join(', ')}</span>
-                  </p>
-                </>
-              );
-            })()}
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Select onValueChange={(val) => handleBulkStatusChange(val)}>
-              <SelectTrigger className="h-9 text-xs w-[220px] shrink-0 bg-background/50 border-border/60 rounded-lg">
-                <SelectValue placeholder="Státusz módosítása..." />
-              </SelectTrigger>
-              <SelectContent className="bg-card border-border w-[220px] z-[10000]" sideOffset={6}>
-                <SelectItem value="Új" className="text-xs">Új</SelectItem>
-                <SelectItem value="Kontírozásra vár" className="text-xs">Kontírozásra vár</SelectItem>
-                <SelectItem value="Kontírozott" className="text-xs">Kontírozott</SelectItem>
-                <SelectItem value="Exportálva" className="text-xs">Exportálva</SelectItem>
-                <SelectItem value="Problémás" className="text-xs">Problémás</SelectItem>
-              </SelectContent>
-            </Select>
+      {/* F1: Centralized Floating Bulk Action Bar */}
+      <FloatingBulkBar
+        count={selectedInvoiceIds.size}
+        label="Kijelölt számlák:"
+        itemUnit="db"
+        onSave={async () => {
+          if (!stagedStatus || isSavingStatus) return;
+          setIsSavingStatus(true);
+          try {
+            await handleBulkStatusChange(stagedStatus);
+            setStagedStatus(null);
+          } finally {
+            setIsSavingStatus(false);
+          }
+        }}
+        saveLabel="Mentés"
+        isDirty={stagedStatus !== null}
+        isSaving={isSavingStatus}
+        onCancel={() => {
+          setStagedStatus(null);
+          setSelectedInvoiceIds(new Set());
+        }}
+        cancelLabel="Mégse"
+        details={(() => {
+          const selectedItems = filteredInvoices.filter(inv => selectedInvoiceIds.has(inv.id));
+          const sums: Record<string, number> = {};
+          selectedItems.forEach(inv => {
+            const currency = inv.currency || 'HUF';
+            sums[currency] = (sums[currency] || 0) + (inv.grossAmount || 0);
+          });
+          const sumStrings = Object.entries(sums).map(([ccy, amt]) => formatCurrency(amt, ccy));
+          if (sumStrings.length === 0) return null;
+          return (
+            <span>
+              Összesen: <span className="font-bold text-foreground">{sumStrings.join(', ')}</span>
+            </span>
+          );
+        })()}
+      >
+        <FloatingBulkBar.Select
+          value={stagedStatus}
+          onValueChange={(val) => setStagedStatus(val)}
+          placeholder="Státusz módosítása..."
+          searchPlaceholder="Keresés státuszra..."
+          options={BULK_STATUS_OPTIONS}
+          popoverWidth="w-[200px]"
+        />
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9 text-xs gap-1.5 rounded-lg border-border/60 bg-background/50 shrink-0">
-                  <Download className="w-3.5 h-3.5" /> Exportálás <ChevronDown className="w-3 h-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-card border-border">
-                <DropdownMenuItem 
-                  className="cursor-pointer gap-2 hover:bg-accent focus:bg-accent"
-                  onClick={() => {
-                    const itemsToExport = filteredInvoices.filter(i => selectedInvoiceIds.has(i.id));
-                    exportToRLB60(itemsToExport);
-                    toast({ title: 'RLB60 export sikeres', description: `${itemsToExport.length} számla exportálva.` });
-                  }}
-                >
-                  <FileText className="w-4 h-4 text-muted-foreground" />
-                  RLB60 formátum (.csv)
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  className="cursor-pointer gap-2 hover:bg-accent focus:bg-accent"
-                  onClick={() => {
-                    const itemsToExport = filteredInvoices.filter(i => selectedInvoiceIds.has(i.id));
-                    exportToKulcsSoft(itemsToExport);
-                    toast({ title: 'Kulcs-Soft export sikeres', description: `${itemsToExport.length} számla exportálva.` });
-                  }}
-                >
-                  <Cloud className="w-4 h-4 text-muted-foreground" />
-                  Kulcs-Soft formátum (.xml)
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  className="cursor-pointer gap-2 hover:bg-accent focus:bg-accent"
-                  onClick={() => {
-                    const itemsToExport = filteredInvoices.filter(i => selectedInvoiceIds.has(i.id));
-                    exportToNovitax(itemsToExport);
-                    toast({ title: 'Novitax export sikeres', description: `${itemsToExport.length} számla exportálva.` });
-                  }}
-                >
-                  <FileText className="w-4 h-4 text-muted-foreground" />
-                  Novitax formátum (.csv)
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {filteredInvoices.some(inv => selectedInvoiceIds.has(inv.id) && !inv.isNav) && (
-              <Button
-                variant="destructive"
-                size="sm"
-                className="h-9 text-xs gap-1.5 rounded-lg font-semibold shrink-0"
-                onClick={() => setBulkDeleteDialogOpen(true)}
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                Törlés
-              </Button>
-            )}
-            
-            <div className="w-px h-6 bg-border/60 mx-1" />
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-9 text-xs text-muted-foreground hover:text-foreground rounded-lg shrink-0"
-              onClick={() => setSelectedInvoiceIds(new Set())}
-            >
-              Mégse
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="h-9 text-xs gap-1.5 rounded-lg border-border/80 bg-background/80 hover:bg-muted font-medium shrink-0">
+              <Download className="w-3.5 h-3.5" /> Exportálás <ChevronDown className="w-3 h-3 text-muted-foreground" />
             </Button>
-          </div>
-        </div>,
-        document.body
-      )}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="bg-card border-border">
+            <DropdownMenuItem 
+              className="cursor-pointer gap-2 hover:bg-accent focus:bg-accent"
+              onClick={() => {
+                const itemsToExport = filteredInvoices.filter(i => selectedInvoiceIds.has(i.id));
+                exportToRLB60(itemsToExport);
+                toast({ title: 'RLB60 export sikeres', description: `${itemsToExport.length} számla exportálva.` });
+              }}
+            >
+              <FileText className="w-4 h-4 text-muted-foreground" />
+              RLB60 formátum (.csv)
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              className="cursor-pointer gap-2 hover:bg-accent focus:bg-accent"
+              onClick={() => {
+                const itemsToExport = filteredInvoices.filter(i => selectedInvoiceIds.has(i.id));
+                exportToKulcsSoft(itemsToExport);
+                toast({ title: 'Kulcs-Soft export sikeres', description: `${itemsToExport.length} számla exportálva.` });
+              }}
+            >
+              <Cloud className="w-4 h-4 text-muted-foreground" />
+              Kulcs-Soft formátum (.xml)
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              className="cursor-pointer gap-2 hover:bg-accent focus:bg-accent"
+              onClick={() => {
+                const itemsToExport = filteredInvoices.filter(i => selectedInvoiceIds.has(i.id));
+                exportToNovitax(itemsToExport);
+                toast({ title: 'Novitax export sikeres', description: `${itemsToExport.length} számla exportálva.` });
+              }}
+            >
+              <FileText className="w-4 h-4 text-muted-foreground" />
+              Novitax formátum (.csv)
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {filteredInvoices.some(inv => selectedInvoiceIds.has(inv.id) && !inv.isNav) && (
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            className="h-9 text-xs gap-1.5 rounded-lg font-semibold shrink-0"
+            onClick={() => setBulkDeleteDialogOpen(true)}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Törlés
+          </Button>
+        )}
+      </FloatingBulkBar>
 
       {/* Bulk Delete Dialog */}
       <Dialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>

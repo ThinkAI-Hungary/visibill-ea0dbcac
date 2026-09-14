@@ -26,6 +26,8 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import { FloatingBulkBar } from '@/components/ui/floating-bulk-bar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { reportError } from '@/lib/errorReporter';
@@ -634,34 +636,47 @@ export default function ApprovalQueuePage() {
         </div>
       )}
 
-      {/* Floating Action Bar (bulk actions) */}
-      {selectedIds.size > 0 && activeTab === 'pending' && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-full max-w-3xl bg-muted/95 dark:bg-muted/95 backdrop-blur-sm border border-border p-4 rounded-lg shadow-xl flex items-center justify-between animate-in slide-in-from-bottom-10 fade-in duration-300 z-50">
-          <div className="text-sm font-semibold text-foreground/90 pl-2">
-            {selectedIds.size} kijelölve
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleBulkApprove}
-              disabled={isSending}
-              className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium shadow-soft transition-colors"
-            >
-              {isSending ? (
-                <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Küldés...</>
-              ) : (
-                <><CheckCircle2 className="w-4 h-4" /> Jóváhagyás és Küldés</>
-              )}
-            </button>
-            <button
-              onClick={handleBulkReject}
-              className="flex items-center gap-2 px-5 py-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 text-red-600 dark:text-red-400 rounded-lg text-sm font-medium shadow-soft hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
-            >
-              <XCircle className="w-4 h-4" />
-              Elutasítás
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Centralized Floating Bulk Action Bar */}
+      <FloatingBulkBar
+        open={selectedIds.size > 0 && activeTab === 'pending'}
+        count={selectedIds.size}
+        label="Kijelölt üzenetek:"
+        itemUnit="db"
+        onCancel={() => setSelectedIds(new Set())}
+        cancelLabel="Mégse"
+        hideSaveButton={true}
+      >
+        <Button
+          type="button"
+          size="sm"
+          onClick={handleBulkApprove}
+          disabled={isSending}
+          className="h-9 text-xs gap-1.5 rounded-lg font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-sm shrink-0"
+        >
+          {isSending ? (
+            <>
+              <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              Küldés...
+            </>
+          ) : (
+            <>
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Jóváhagyás és Küldés
+            </>
+          )}
+        </Button>
+
+        <Button
+          type="button"
+          size="sm"
+          variant="destructive"
+          onClick={handleBulkReject}
+          className="h-9 text-xs gap-1.5 rounded-lg font-semibold shadow-sm shrink-0"
+        >
+          <XCircle className="w-3.5 h-3.5" />
+          Elutasítás
+        </Button>
+      </FloatingBulkBar>
 
       {/* Approval Modal */}
       <Dialog open={isApprovalModalOpen} onOpenChange={(open) => { if (!open) setIsApprovalModalOpen(false); }}>

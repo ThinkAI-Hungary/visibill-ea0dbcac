@@ -21,6 +21,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { TableEmptyState } from '@/components/ui/table-empty-state';
+import { FloatingBulkBar } from '@/components/ui/floating-bulk-bar';
+import { useToast } from '@/hooks/use-toast';
 
 function AnimatedNumber({ value, duration = 1200 }: { value: number; duration?: number }) {
   const [display, setDisplay] = useState(0);
@@ -84,6 +86,29 @@ export default function MissingInvoicesPage() {
   }, [companySummary]);
 
   const [selectedInvoiceForDetails, setSelectedInvoiceForDetails] = useState<any>(null);
+  const { toast } = useToast();
+  const [selectedClientIds, setSelectedClientIds] = useState<Set<string>>(new Set());
+
+  const toggleSelectClient = (id: string) => {
+    setSelectedClientIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAllClients = () => {
+    if (selectedClientIds.size === paginatedData.length && paginatedData.length > 0) {
+      setSelectedClientIds(new Set());
+    } else {
+      setSelectedClientIds(new Set(paginatedData.map(d => d.id)));
+    }
+  };
+
+  useEffect(() => {
+    setSelectedClientIds(new Set());
+  }, [searchQuery, statusFilter, currentPage]);
 
   const totalMissing = data.reduce((sum, item) => sum + item.missing, 0);
   const totalCritical = data.reduce((sum, item) => sum + item.critical, 0);
@@ -486,7 +511,12 @@ export default function MissingInvoicesPage() {
          <Table className="compact-table min-w-[900px]">
            <TableHeader>
              <TableRow className="bg-muted/40 border-b border-border">
-               <TableHead className="px-6 py-4 w-12 text-center"><Checkbox /></TableHead>
+               <TableHead className="px-6 py-4 w-12 text-center">
+                 <Checkbox
+                   checked={selectedClientIds.size === paginatedData.length && paginatedData.length > 0}
+                   onCheckedChange={toggleSelectAllClients}
+                 />
+               </TableHead>
                <TableHead className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ügyfél</TableHead>
                <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Hiányzó</TableHead>
                <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Kritikus</TableHead>
@@ -501,9 +531,17 @@ export default function MissingInvoicesPage() {
                <TableRow 
                  key={row.id} 
                  onClick={() => navigate(`/eaisybooks/missing-invoices/${row.id}`)}
-                 className="hover:bg-muted/40 transition-colors group cursor-pointer border-l-2 border-l-transparent hover:border-l-primary"
+                 className={cn(
+                   "hover:bg-muted/40 transition-colors group cursor-pointer border-l-2 border-l-transparent hover:border-l-primary",
+                   selectedClientIds.has(row.id) && "bg-primary/5 border-l-primary"
+                 )}
                >
-                 <TableCell className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}><Checkbox /></TableCell>
+                 <TableCell className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
+                   <Checkbox
+                     checked={selectedClientIds.has(row.id)}
+                     onCheckedChange={() => toggleSelectClient(row.id)}
+                   />
+                 </TableCell>
                  <TableCell className="px-6 py-4 font-semibold text-foreground hover:text-primary transition-colors">{row.name}</TableCell>
                  <TableCell className="px-6 py-4 text-center">
                    <span className="w-7 h-7 rounded-md border border-border bg-card flex items-center justify-center mx-auto text-xs font-mono tabular-nums text-foreground">{row.missing}</span>
@@ -576,6 +614,32 @@ export default function MissingInvoicesPage() {
            />
          </div>
        )}
+
+      {/* Centralized Floating Bulk Action Bar */}
+      <FloatingBulkBar
+        count={selectedClientIds.size}
+        label="Kijelölt ügyfelek:"
+        itemUnit="db"
+        onCancel={() => setSelectedClientIds(new Set())}
+        cancelLabel="Mégse"
+        hideSaveButton={true}
+      >
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => {
+            toast({
+              title: 'Felszólítások elküldve',
+              description: `${selectedClientIds.size} ügyfélnek elküldve a hiánypótlási felszólítás.`
+            });
+            setSelectedClientIds(new Set());
+          }}
+          className="h-9 text-xs gap-1.5 rounded-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm shrink-0"
+        >
+          <Mail className="w-3.5 h-3.5" />
+          Felszólítás küldése ({selectedClientIds.size} db)
+        </Button>
+      </FloatingBulkBar>
     </div>
   );
 }

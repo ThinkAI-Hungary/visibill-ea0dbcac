@@ -13,6 +13,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import { FloatingBulkBar } from '@/components/ui/floating-bulk-bar';
 import { TableEmptyState } from '@/components/ui/table-empty-state';
 
 interface ClientListViewProps {
@@ -67,24 +69,6 @@ export default function ClientListView({
         }
       }}
     >
-      {/* F1: Bulk toolbar */}
-      {selectedIds.size > 0 && (
-        <div className="px-6 py-3 bg-primary/5 border-b border-primary/10 flex items-center gap-4 animate-in slide-in-from-top-2 duration-200">
-          <span className="text-sm font-semibold text-primary">{selectedIds.size} kijelölve</span>
-          <button 
-            onClick={() => selectAll(filteredClients.map(c => c.id))} 
-            className="text-xs text-muted-foreground hover:text-primary transition-colors"
-          >
-            Mind kijelölés
-          </button>
-          <button 
-            onClick={clearSelection} 
-            className="text-xs text-muted-foreground hover:text-red-500 transition-colors"
-          >
-            Törlés
-          </button>
-        </div>
-      )}
       <div className="overflow-x-auto">
         <Table className="compact-table min-w-[950px]">
           <TableHeader>
@@ -170,6 +154,28 @@ export default function ClientListView({
           </TableBody>
         </Table>
       </div>
+
+      {/* Centralized Floating Bulk Action Bar */}
+      <FloatingBulkBar
+        count={selectedIds.size}
+        label="Kijelölt ügyfelek:"
+        itemUnit="db"
+        onCancel={clearSelection}
+        cancelLabel="Mégse"
+        hideSaveButton={true}
+      >
+        {selectedIds.size < filteredClients.length && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => selectAll(filteredClients.map(c => c.id))}
+            className="h-9 text-xs gap-1.5 rounded-lg border-border/80 bg-background/80 hover:bg-muted font-medium shrink-0"
+          >
+            Mind kijelölése
+          </Button>
+        )}
+      </FloatingBulkBar>
     </div>
   );
 }
