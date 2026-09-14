@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchAllGlAccountsByPreset } from '@/lib/glData';
@@ -13,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Trash2, Edit2, Plus, Play, Check, ChevronsUpDown, Loader2, Sparkles, Sliders, AlertCircle, FileText } from 'lucide-react';
+import { Trash2, Edit2, Plus, Play, Check, ChevronsUpDown, Loader2, Sparkles, Sliders, AlertCircle, FileText, Building2, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency, cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
@@ -27,6 +28,9 @@ interface TransactionRule {
   amount_max: number | null;
   direction: 'INFLOW' | 'OUTFLOW' | 'ALL';
   target_gl_account_id: string | null;
+  target_gl_number?: string | null;
+  scope?: 'company' | 'tenant' | 'global';
+  user_id?: string | null;
   auto_verify: boolean;
 }
 
@@ -37,6 +41,7 @@ interface TransactionRulesDialogProps {
 
 export function TransactionRulesDialog({ open: externalOpen, onOpenChange: externalOnOpenChange }: TransactionRulesDialogProps = {}) {
   const { t } = useTranslation(['transactions', 'common']);
+  const { session } = useAuth();
   const { selectedCompany } = useCompany();
   const { activePresetId } = useActivePreset(selectedCompany?.id);
   const queryClient = useQueryClient();
@@ -60,6 +65,7 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
   const [formAmountMin, setFormAmountMin] = useState<string>('');
   const [formAmountMax, setFormAmountMax] = useState<string>('');
   const [formGlAccountId, setFormGlAccountId] = useState<string>('');
+  const [formScope, setFormScope] = useState<'company' | 'tenant'>('company');
   const [formAutoVerify, setFormAutoVerify] = useState(false);
 
   const [glSearchQuery, setGlSearchQuery] = useState('');
@@ -70,14 +76,14 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
   const [testResults, setTestResults] = useState<{ matchedCount: number; samples: any[] } | null>(null);
   const [testing, setTesting] = useState(false);
 
-  // Fetch transaction rules
+  // Fetch transaction rules (company-specific + tenant-wide + global)
   const { data: rules = [], isLoading: rulesLoading } = useQuery({
     queryKey: ['transaction_rules', companyId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('transaction_rules' as any)
         .select('*')
-        .eq('company_id', companyId!)
+        .or(`company_id.eq.${companyId},scope.eq.tenant,scope.eq.global`)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return (data || []) as unknown as TransactionRule[];
@@ -120,6 +126,7 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
     setFormAmountMin('');
     setFormAmountMax('');
     setFormGlAccountId('');
+    setFormScope('company');
     setFormAutoVerify(false);
     setTestResults(null);
     setViewMode('form');
@@ -135,6 +142,7 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
     setFormAmountMin(rule.amount_min !== null ? String(rule.amount_min) : '');
     setFormAmountMax(rule.amount_max !== null ? String(rule.amount_max) : '');
     setFormGlAccountId(rule.target_gl_account_id || '');
+    setFormScope(rule.scope === 'tenant' ? 'tenant' : 'company');
     setFormAutoVerify(rule.auto_verify);
     setTestResults(null);
     setViewMode('form');
@@ -154,16 +162,21 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
     setSaving(true);
     const amountMin = formAmountMin ? parseFloat(formAmountMin) : null;
     const amountMax = formAmountMax ? parseFloat(formAmountMax) : null;
+    const targetGlAccount = glAccounts.find(g => g.id === formGlAccountId);
+    const targetGlNum = targetGlAccount?.gl_number || null;
 
-    const payload = {
-      company_id: companyId,
+    const payload: any = {
+      company_id: formScope === 'company' ? companyId : null,
+      scope: formScope,
+      user_id: session?.user?.id || null,
       name: formName,
       description_pattern: formPattern,
       pattern_type: formPatternType,
       amount_min: amountMin,
       amount_max: amountMax,
       direction: formDirection,
-      target_gl_account_id: formGlAccountId || null,
+      target_gl_account_id: formScope === 'company' ? (formGlAccountId || null) : null,
+      target_gl_number: targetGlNum,
       auto_verify: formAutoVerify,
     };
 
@@ -387,7 +400,29 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
                   <TableBody>
                     {rules.map((rule) => (
                       <TableRow key={rule.id} data-row-hover>
-                        <TableCell className="font-semibold">{rule.name}</TableCell>
+                        <TableCell className="font-semibold">
+                          <div className="flex flex-col gap-1">
+                            <span>{rule.name}</span>
+                            <div>
+                              {rule.scope === 'tenant' ? (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                                  <Globe className="w-2.5 h-2.5" />
+                                  Minden cég (Irodai)
+                                </span>
+                              ) : rule.scope === 'global' ? (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
+                                  <Globe className="w-2.5 h-2.5" />
+                                  Rendszerszintű
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-muted text-muted-foreground border">
+                                  <Building2 className="w-2.5 h-2.5" />
+                                  Céges
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1.5">
                             <span className="font-mono text-xs bg-slate-100 dark:bg-secondary border px-1.5 py-0.5 rounded text-foreground">
@@ -421,6 +456,10 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
                           {rule.target_gl_account_id ? (
                             <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary">
                               {getGlLabel(rule.target_gl_account_id)}
+                            </span>
+                          ) : rule.target_gl_number ? (
+                            <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-mono">
+                              {rule.target_gl_number} (dinamikus)
                             </span>
                           ) : (
                             <span className="text-muted-foreground italic">{t('transactions:dialogs.rules.table.no_gl')}</span>
@@ -473,6 +512,34 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold">Szabály érvényessége (Hatókör)</label>
+                  <Select value={formScope} onValueChange={(v: 'company' | 'tenant') => setFormScope(v)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="company">
+                        <div className="flex items-center gap-1.5">
+                          <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
+                          <span>Csak ennél a cégnél ({selectedCompany?.name || 'Aktuális cég'})</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="tenant">
+                        <div className="flex items-center gap-1.5">
+                          <Globe className="w-3.5 h-3.5 text-amber-500" />
+                          <span>Minden általam kezelt cégnél (Könyvelőirodai szabály)</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {formScope === 'tenant' && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 p-2 rounded border border-amber-200 dark:border-amber-800">
+                      💡 Az irodai szabály a kiválasztott célfőkönyvi szám alapján a többi cégnél is automatikusan a megfelelő főkönyvi számlára fog kontírozni.
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

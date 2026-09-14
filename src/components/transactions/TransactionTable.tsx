@@ -33,6 +33,8 @@ import { getTransactionTypeLabel } from '@/lib/transactionUtils';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useAuth } from '@/contexts/AuthContext';
+import { TransactionRuleQuickSaveDialog } from './TransactionRuleQuickSaveDialog';
+
 
 
 // ── Row styling helpers (static, outside component) ──
@@ -93,6 +95,7 @@ const getTypeBgClass = (type: string | null): string => {
 // ── Expanded invoice inline (lazy-loaded, reuses ExpandedInvoiceRow) ──
 
 import ExpandedInvoiceRow from '@/components/ExpandedInvoiceRow';
+import { TransactionRuleQuickSaveDialog } from '@/components/transactions/TransactionRuleQuickSaveDialog';
 
 const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoice({
   matchedInvoiceId,
@@ -120,6 +123,8 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
   const [isEditingGl, setIsEditingGl] = useState(false);
   const [glSearchQuery, setGlSearchQuery] = useState('');
   const [saving, setSaving] = useState(false);
+  const [quickRuleOpen, setQuickRuleOpen] = useState(false);
+  const [bookedGlForRule, setBookedGlForRule] = useState<{ id: string; gl_number: string; short_name: string } | null>(null);
 
   const { data: glAccounts = [] } = useQuery({
     queryKey: ['glAccounts', activePresetId],
@@ -173,6 +178,16 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
       queryClient.invalidateQueries({ queryKey: ['glItems'] });
       setIsEditingGl(false);
       setGlSearchQuery('');
+
+      // Open quick rule prompt
+      if (newGlItem) {
+        setBookedGlForRule({
+          id: selectedGlId,
+          gl_number: newGlItem.gl_number,
+          short_name: newGlItem.short_name,
+        });
+        setQuickRuleOpen(true);
+      }
     } catch (error) {
       console.error('Error booking transaction directly inline:', error);
     } finally {
@@ -760,6 +775,12 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
             </div>
           </TableCell>
         </TableRow>
+        <TransactionRuleQuickSaveDialog
+          open={quickRuleOpen}
+          onOpenChange={setQuickRuleOpen}
+          transaction={transaction}
+          glAccount={bookedGlForRule}
+        />
       </>
     );
   }
