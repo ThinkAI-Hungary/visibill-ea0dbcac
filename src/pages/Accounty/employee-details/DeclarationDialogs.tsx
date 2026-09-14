@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Check, X, Edit3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   useAddDeclaration, useUpdateDeclaration,
   type PayrollDeclaration
@@ -49,9 +50,9 @@ export function NewDeclarationDialog({ employeeId, onClose }: { employeeId: stri
   };
 
   return (
-    <div className="mb-6 p-5 rounded-xl border-2 border-primary/30 bg-primary/5 dark:bg-primary/10 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+    <div className="mb-6 p-5 rounded-lg border-2 border-primary/30 bg-primary/5 dark:bg-primary/10 space-y-4 page-animate slide-in-from-top-2 duration-200">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">Új adóelőleg-nyilatkozat</h4>
+        <h4 className="text-sm font-bold text-foreground">Új adóelőleg-nyilatkozat</h4>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
           <X className="w-4 h-4" />
         </Button>
@@ -59,7 +60,7 @@ export function NewDeclarationDialog({ employeeId, onClose }: { employeeId: stri
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="md:col-span-2">
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Nyilatkozat típusa</label>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Nyilatkozat típusa</label>
           <select
             value={type}
             onChange={(e) => setType(e.target.value)}
@@ -74,7 +75,7 @@ export function NewDeclarationDialog({ employeeId, onClose }: { employeeId: stri
 
         {type === 'family' && (
           <div>
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Eltartottak száma</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Eltartottak száma</label>
             <select
               value={childrenCount}
               onChange={(e) => setChildrenCount(Number(e.target.value))}
@@ -89,22 +90,24 @@ export function NewDeclarationDialog({ employeeId, onClose }: { employeeId: stri
         )}
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Érvényes ettől</label>
-          <input
-            type="date"
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Érvényes ettől</label>
+          <DatePicker
             value={validFrom}
-            onChange={(e) => setValidFrom(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+            onChange={setValidFrom}
+            placeholder="éééé. hh. nn."
+            clearable
+            className="w-full"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Érvényes eddig (opcionális)</label>
-          <input
-            type="date"
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Érvényes eddig (opcionális)</label>
+          <DatePicker
             value={validUntil}
-            onChange={(e) => setValidUntil(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+            onChange={setValidUntil}
+            placeholder="éééé. hh. nn."
+            clearable
+            className="w-full"
           />
         </div>
       </div>
@@ -165,9 +168,9 @@ export function EditDeclarationDialog({
   };
 
   return (
-    <div className="mb-6 p-5 rounded-xl border-2 border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+    <div className="mb-6 p-5 rounded-lg border-2 border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10 space-y-4 page-animate slide-in-from-top-2 duration-200">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+        <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
           <Edit3 className="w-4 h-4 text-amber-500" />
           Nyilatkozat szerkesztése
         </h4>
@@ -178,15 +181,15 @@ export function EditDeclarationDialog({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="md:col-span-2">
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Nyilatkozat típusa</label>
-          <div className="w-full px-3 py-2 rounded-lg border border-border bg-slate-100 dark:bg-slate-800 text-sm text-slate-600 dark:text-slate-300 cursor-not-allowed">
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Nyilatkozat típusa</label>
+          <div className="w-full px-3 py-2 rounded-lg border border-border bg-muted text-sm text-muted-foreground dark:text-foreground/90 cursor-not-allowed">
             {DECLARATION_TYPES.find(t => t.value === type)?.label || type}
           </div>
         </div>
 
         {type === 'family' && (
           <div>
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Eltartottak száma</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Eltartottak száma</label>
             <select value={childrenCount} onChange={(e) => setChildrenCount(Number(e.target.value))} className={selectClassName} style={selectStyle}>
               {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
                 <option key={n} value={n}>{n} gyermek</option>
@@ -196,22 +199,24 @@ export function EditDeclarationDialog({
         )}
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Érvényes ettől</label>
-          <input
-            type="date"
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Érvényes ettől</label>
+          <DatePicker
             value={validFrom}
-            onChange={(e) => setValidFrom(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+            onChange={setValidFrom}
+            placeholder="éééé. hh. nn."
+            clearable
+            className="w-full"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Érvényes eddig (opcionális)</label>
-          <input
-            type="date"
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Érvényes eddig (opcionális)</label>
+          <DatePicker
             value={validUntil}
-            onChange={(e) => setValidUntil(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+            onChange={setValidUntil}
+            placeholder="éééé. hh. nn."
+            clearable
+            className="w-full"
           />
         </div>
       </div>

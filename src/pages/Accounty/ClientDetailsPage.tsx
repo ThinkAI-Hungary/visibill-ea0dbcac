@@ -22,6 +22,7 @@ import {
   type MissingItemForEmail,
 } from './generateRequestEmail';
 
+import { PageHeader } from '@/components/ui/page-header';
 import ClientProfileTab from '@/components/accounty/client-details/ClientProfileTab';
 import ClientInvoicesTab from '@/components/accounty/client-details/ClientInvoicesTab';
 import ClientPayrollTab from '@/components/accounty/client-details/ClientPayrollTab';
@@ -269,7 +270,7 @@ export default function ClientDetailsPage() {
       const statusColor = inv.status === 'Kontírozott' || inv.status === 'Exportálva' ? 'bg-emerald-100 text-emerald-700'
         : inv.status === 'Problémás' ? 'bg-red-100 text-red-700'
         : inv.status === 'Új' ? 'bg-amber-100 text-amber-700'
-        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400';
+        : 'bg-muted text-muted-foreground';
       const statusLabel = inv.status === 'Új' ? 'Feldolgozás alatt'
         : inv.status === 'Kontírozott' ? 'Könyvelve'
         : inv.status === 'Exportálva' ? 'Exportálva' : inv.status;
@@ -287,47 +288,27 @@ export default function ClientDetailsPage() {
   }, [companyInvoices]);
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => {
-              if (window.history.state && window.history.state.idx > 0) {
-                navigate(-1);
-              } else {
-                navigate('/eaisybooks?tab=companies');
-              }
-            }}
-            className="flex items-center justify-center w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
-            title="Vissza"
-          >
-            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-          </button>
-          <div>
-            {clientLoading ? (
-              <>
-                <div className="h-7 w-48 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
-                <div className="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse mt-1" />
-              </>
-            ) : (
-              <>
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{client.name}</h1>
-                <p className="text-sm text-slate-500 dark:text-slate-400">{client.taxNumber}</p>
-              </>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
+      <PageHeader
+        title={clientLoading ? 'Betöltés...' : client.name}
+        description={clientLoading ? undefined : (client.taxNumber ? `Adószám: ${client.taxNumber}` : undefined)}
+        breadcrumbs={[
+          { label: 'eaisyBooks', href: '/eaisybooks' },
+          { label: client.name || 'Ügyfél', href: `/eaisybooks/${id}/${dateRange}/overview` },
+          { label: pathname.endsWith('/settings') ? 'Beállítások' : 'Áttekintés' },
+        ]}
+        actions={
+          <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={handleNavSync}
             disabled={isSyncing}
             className={cn(
               'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all border border-indigo-200 dark:border-indigo-900/40',
               isSyncing
-                ? 'bg-indigo-500/10 text-indigo-500 dark:text-indigo-400 cursor-not-allowed animate-pulse'
-                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm'
+                ? 'bg-primary/10 text-primary dark:text-primary cursor-not-allowed animate-pulse'
+                : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm'
             )}
           >
             {isSyncing ? <Loader2 className="w-4 h-4 animate-spin shrink-0" /> : <RefreshCcw className="w-4 h-4 shrink-0" />}
@@ -340,7 +321,7 @@ export default function ClientDetailsPage() {
               'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors',
               callState === 'idle' || callState === 'completed' || callState === 'failed'
                 ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                : 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed'
+                : 'bg-muted text-muted-foreground cursor-not-allowed'
             )}
           >
             <Phone className="w-4 h-4" />
@@ -363,7 +344,7 @@ export default function ClientDetailsPage() {
               'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all',
               linkCopied
                 ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                : 'bg-muted text-muted-foreground hover:bg-muted dark:hover:bg-muted'
             )}
           >
             {generateToken.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : linkCopied ? <Check className="w-4 h-4" /> : <Link2 className="w-4 h-4" />}
@@ -378,20 +359,21 @@ export default function ClientDetailsPage() {
               }
             }}
             className={cn(
-              "p-2 rounded-full transition-all duration-200 shadow-sm border hover:scale-105 active:scale-95",
+              "p-2 rounded-full transition-all duration-200 shadow-sm border active:scale-95",
               pathname.endsWith('/settings')
                 ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
-                : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                : "bg-card border-border text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground/60 hover:bg-muted dark:hover:bg-muted"
             )}
             title={pathname.endsWith('/settings') ? "Vissza az áttekintéshez" : "Beállítások"}
           >
             <Settings className="w-5 h-5" />
           </button>
-        </div>
-      </div>
+          </div>
+        }
+      />
 
       {navSyncError && (
-        <div className="flex items-center justify-between gap-4 px-4 py-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40 rounded-xl text-sm animate-in slide-in-from-top-2 duration-300">
+        <div className="flex items-center justify-between gap-4 px-4 py-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40 rounded-lg text-sm animate-in slide-in-from-top-2 duration-300">
           <div className="flex items-center gap-2.5 text-red-800 dark:text-red-300">
             <AlertTriangle className="w-4.5 h-4.5 text-red-500 shrink-0" />
             <div>
@@ -422,11 +404,11 @@ export default function ClientDetailsPage() {
         const isOverview = pathname.endsWith('/overview') || (!pathname.endsWith('/settings') && !pathname.endsWith('/profile'));
         if (isOverview) {
           return (
-            <div className="space-y-6 animate-in fade-in duration-500">
+            <div className="space-y-6 page-animate">
           {/* KPI Cards */}
           <div className="grid grid-cols-4 gap-4">
             <div 
-              className="bg-card rounded-xl border border-border p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/30 hover:-translate-y-1"
+              className="bg-card rounded-lg border border-border p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/30 hover:-translate-y-1"
               onClick={() => navigate(pathname.replace(/(?:overview|settings|profile)$/, 'invoices'))}
             >
               <div className="flex justify-between items-start mb-4">
@@ -439,7 +421,7 @@ export default function ClientDetailsPage() {
             </div>
 
             <div 
-              className="bg-card rounded-xl border border-border p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/30 hover:-translate-y-1"
+              className="bg-card rounded-lg border border-border p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/30 hover:-translate-y-1"
               onClick={() => navigate(pathname.replace(/(?:overview|settings|profile)$/, 'invoices'))}
             >
               <div className="flex justify-between items-start mb-4">
@@ -452,7 +434,7 @@ export default function ClientDetailsPage() {
             </div>
 
             <div 
-              className="bg-card rounded-xl border border-border p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/30 hover:-translate-y-1"
+              className="bg-card rounded-lg border border-border p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/30 hover:-translate-y-1"
               onClick={() => navigate(pathname.replace(/(?:overview|settings|profile)$/, 'missing-invoices'))}
             >
               <div className="flex justify-between items-start mb-4">
@@ -464,7 +446,7 @@ export default function ClientDetailsPage() {
               <div className="text-3xl font-bold text-foreground">{missingCount}</div>
             </div>
 
-            <div className="bg-card rounded-xl border border-border p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/30 hover:-translate-y-1">
+            <div className="bg-card rounded-lg border border-border p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/30 hover:-translate-y-1">
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-sm font-medium text-muted-foreground">ÁFA egyenleg (becsült)</h3>
                 <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center">
@@ -481,14 +463,14 @@ export default function ClientDetailsPage() {
           <div className="grid grid-cols-3 gap-4">
             <Button 
               onClick={() => navigate(pathname.replace(/(?:overview|settings|profile)$/, 'invoices'))}
-              className="h-14 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-base font-semibold flex items-center justify-center gap-2"
+              className="h-14 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-base font-semibold flex items-center justify-center gap-2"
             >
               <FileCheck className="w-5 h-5" />
               Számlák feldolgozása
             </Button>
             <Button 
               variant="outline" 
-              className="h-14 bg-card border-border text-foreground hover:bg-accent hover:text-accent-foreground rounded-xl text-base font-semibold flex items-center justify-center gap-2"
+              className="h-14 bg-card border-border text-foreground hover:bg-accent hover:text-accent-foreground rounded-lg text-base font-semibold flex items-center justify-center gap-2"
               onClick={() => navigate(pathname.replace(/(?:overview|settings|profile)$/, 'missing-invoices'))}
             >
               <AlertTriangle className="w-5 h-5 text-muted-foreground" />
@@ -496,7 +478,7 @@ export default function ClientDetailsPage() {
             </Button>
             <Button 
               variant="outline" 
-              className="h-14 bg-card border-border text-foreground hover:bg-accent hover:text-accent-foreground rounded-xl text-base font-semibold flex items-center justify-center gap-2"
+              className="h-14 bg-card border-border text-foreground hover:bg-accent hover:text-accent-foreground rounded-lg text-base font-semibold flex items-center justify-center gap-2"
               onClick={() => navigate(pathname.replace(/(?:overview|settings|profile)$/, 'reports'))}
             >
               <UploadCloud className="w-5 h-5 text-muted-foreground" />
@@ -517,9 +499,9 @@ export default function ClientDetailsPage() {
               <button
                 key={link.label}
                 onClick={() => navigate(link.path)}
-                className="flex items-center justify-center p-3 h-14 rounded-xl bg-card border border-border shadow-sm hover:shadow-md hover:border-primary/30 hover:-translate-y-0.5 transition-all duration-200 group text-center"
+                className="flex items-center justify-center p-3 h-14 rounded-lg bg-card border border-border shadow-sm hover:shadow-md hover:border-primary/30 hover:-translate-y-0.5 transition-all duration-200 group text-center"
               >
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 group-hover:text-primary transition-colors text-center leading-tight">
+                <span className="text-xs font-semibold text-foreground/90 group-hover:text-primary transition-colors text-center leading-tight">
                   {link.label}
                 </span>
               </button>
@@ -544,7 +526,7 @@ export default function ClientDetailsPage() {
               const styles = {
                 urgent: 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400',
                 medium: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400',
-                low: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400',
+                low: 'bg-muted text-muted-foreground',
               };
               const labels = { urgent: 'Sürgős', medium: 'Közepes', low: 'Alacsony' };
               return (
@@ -559,7 +541,7 @@ export default function ClientDetailsPage() {
                 {/* Section Header */}
                 <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-3">
-                    <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
+                    <h2 className="text-lg font-semibold text-foreground">
                        Zárást blokkoló hiányosságok
                     </h2>
                     {totalCount > 0 && (
@@ -580,8 +562,8 @@ export default function ClientDetailsPage() {
                       className={cn(
                         'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
                         showAddForm
-                          ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                          ? 'bg-muted text-foreground/90'
+                          : 'bg-muted text-muted-foreground hover:bg-muted dark:hover:bg-muted'
                       )}
                     >
                       {showAddForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
@@ -597,16 +579,16 @@ export default function ClientDetailsPage() {
                     showAddForm ? 'max-h-[400px] opacity-100 mb-4' : 'max-h-0 opacity-0'
                   )}
                 >
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
-                    <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">Hiányosság manuális felvétele</h4>
+                  <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                    <h4 className="text-sm font-semibold text-foreground mb-3">Hiányosság manuális felvétele</h4>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {/* Kategória */}
                       <div>
-                        <label className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 block">Kategória</label>
+                        <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Kategória</label>
                         <select
                           value={newItem.category}
                           onChange={(e) => setNewItem({ ...newItem, category: e.target.value as BlockingCategory })}
-                          className="w-full h-9 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                          className="w-full h-9 px-2.5 rounded-lg border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-slate-400"
                         >
                           <option value="bejovo"> Bejövő</option>
                           <option value="kimeno"> Kimenő</option>
@@ -616,34 +598,34 @@ export default function ClientDetailsPage() {
                       </div>
                       {/* Megnevezés */}
                       <div>
-                        <label className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 block">Megnevezés</label>
+                        <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Megnevezés</label>
                         <input
                           type="text"
                           placeholder="pl. MOL Nyrt."
                           value={newItem.title}
                           onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
-                          className="w-full h-9 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                          className="w-full h-9 px-2.5 rounded-lg border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-slate-400"
                         />
                       </div>
                       {/* Részlet */}
                       <div>
-                        <label className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 block">Rövid leírás</label>
+                        <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Rövid leírás</label>
                         <input
                           type="text"
                           placeholder="pl. PDF hiányzik"
                           value={newItem.subtitle}
                           onChange={(e) => setNewItem({ ...newItem, subtitle: e.target.value })}
-                          className="w-full h-9 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                          className="w-full h-9 px-2.5 rounded-lg border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-slate-400"
                         />
                       </div>
                       {/* Prioritás + Gomb */}
                       <div className="flex gap-2">
                         <div className="flex-1">
-                          <label className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 block">Prioritás</label>
+                          <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Prioritás</label>
                           <select
                             value={newItem.priority}
                             onChange={(e) => setNewItem({ ...newItem, priority: e.target.value as BlockingItem['priority'] })}
-                            className="w-full h-9 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                            className="w-full h-9 px-2.5 rounded-lg border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-slate-400"
                           >
                             <option value="urgent"> Sürgős</option>
                             <option value="medium"> Közepes</option>
@@ -670,7 +652,7 @@ export default function ClientDetailsPage() {
                               }
                             }}
                             disabled={!newItem.title.trim()}
-                            className="h-9 px-4 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="h-9 px-4 rounded-lg bg-slate-900 dark:bg-muted text-white dark:text-foreground text-xs font-semibold hover:bg-slate-800 dark:hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                           >
                             Felvesz
                           </button>
@@ -685,17 +667,17 @@ export default function ClientDetailsPage() {
                   {grouped.map(({ category, meta, items }) => (
                     <div
                       key={category}
-                      className="bg-muted/30 border border-border rounded-xl p-4 flex flex-col gap-3 min-h-[200px]"
+                      className="bg-muted/30 border border-border rounded-lg p-4 flex flex-col gap-3 min-h-[200px]"
                     >
                       {/* Column header with count */}
                       <div className="flex items-center justify-between mb-1">
-                        <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+                        <h3 className="text-sm font-bold text-foreground/90 uppercase tracking-wide">
                           {meta.icon} {meta.label}
                         </h3>
                         <span className={cn(
                           'text-xs font-bold px-2 py-0.5 rounded-full',
                           items.length > 0
-                            ? 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                            ? 'bg-muted text-foreground/90'
                             : 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400'
                         )}>
                           {items.length > 0 ? items.length : ''}
@@ -705,7 +687,7 @@ export default function ClientDetailsPage() {
                       {/* Items */}
                       {items.length === 0 ? (
                         <div className="flex-1 flex items-center justify-center">
-                          <p className="text-xs text-slate-400 dark:text-slate-500 italic">Nincs hiányosság</p>
+                          <p className="text-xs text-muted-foreground italic">Nincs hiányosság</p>
                         </div>
                       ) : (
                         <div className="flex flex-col gap-2">
@@ -727,10 +709,10 @@ export default function ClientDetailsPage() {
                                   onClick={() => setExpandedItemId(isExpanded ? null : item.id)}
                                 >
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 leading-tight truncate">
+                                    <p className="text-sm font-semibold text-foreground leading-tight truncate">
                                       {item.title}
                                     </p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
+                                    <p className="text-xs text-muted-foreground mt-1 truncate">
                                       {item.subtitle}
                                     </p>
                                     <div className="mt-2">
@@ -739,7 +721,7 @@ export default function ClientDetailsPage() {
                                   </div>
                                   <ChevronDown
                                     className={cn(
-                                      'w-4 h-4 text-slate-400 shrink-0 mt-0.5 transition-transform duration-200',
+                                      'w-4 h-4 text-muted-foreground shrink-0 mt-0.5 transition-transform duration-200',
                                       isExpanded && 'rotate-180'
                                     )}
                                   />
@@ -752,31 +734,31 @@ export default function ClientDetailsPage() {
                                     isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
                                   )}
                                 >
-                                  <div className="px-3 pb-3 border-t border-slate-100 dark:border-slate-800">
+                                  <div className="px-3 pb-3 border-t border-border">
                                     {/* Detail rows */}
                                     <div className="mt-3 space-y-2">
-                                      <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
-                                        <Info className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                        <Info className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                                         <span className="font-medium">Forrás:</span>
                                         <span>{item.source}</span>
                                       </div>
                                       {item.date && (
-                                        <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
-                                          <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                          <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                                           <span className="font-medium">Dátum:</span>
                                           <span>{item.date}</span>
                                         </div>
                                       )}
                                       {item.amount && (
-                                        <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
-                                          <FileText className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                          <FileText className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                                           <span className="font-medium">Összeg:</span>
-                                          <span className="font-semibold text-slate-900 dark:text-slate-100">{item.amount}</span>
+                                          <span className="font-semibold text-foreground">{item.amount}</span>
                                         </div>
                                       )}
                                       {item.invoiceNumber && (
-                                        <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
-                                          <Hash className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                          <Hash className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                                           <span className="font-medium">Szla#:</span>
                                           <span className="font-mono text-[11px]">{item.invoiceNumber}</span>
                                         </div>
@@ -784,7 +766,7 @@ export default function ClientDetailsPage() {
                                     </div>
 
                                     {/* Details text */}
-                                    <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 leading-relaxed bg-slate-50 dark:bg-slate-800/50 rounded-md p-2.5 border border-slate-100 dark:border-slate-800">
+                                    <p className="mt-3 text-xs text-muted-foreground leading-relaxed bg-muted/50 rounded-md p-2.5 border border-border">
                                       {item.details}
                                     </p>
 
@@ -800,7 +782,7 @@ export default function ClientDetailsPage() {
                                           }
                                           setExpandedItemId(null);
                                         }}
-                                        className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                        className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
                                       >
                                         <EyeOff className="w-3.5 h-3.5" />
                                         Ignorálom (fals pozitív)
@@ -890,7 +872,7 @@ export default function ClientDetailsPage() {
             <RecentActivities companyId={client?.id} />
 
             {/* Upcoming Deadlines */}
-            <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden flex flex-col">
+            <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden flex flex-col">
               <div className="p-5 border-b border-border">
                 <h3 className="font-semibold text-foreground">Következő határidők</h3>
               </div>
@@ -912,7 +894,7 @@ export default function ClientDetailsPage() {
                       <div
                         key={dl.id}
                         className={cn(
-                          "border rounded-xl p-4 flex items-center justify-between",
+                          "border rounded-lg p-4 flex items-center justify-between",
                           isOverdue
                             ? "border-red-200 dark:border-red-950/40 bg-red-50/10 dark:bg-red-950/20"
                             : "border-border bg-muted/20"
@@ -991,12 +973,12 @@ export default function ClientDetailsPage() {
       {callState !== 'idle' && (
         <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-4 duration-300">
           <div className={cn(
-            'rounded-2xl shadow-2xl border p-5 w-80 transition-all duration-300',
+            'rounded-lg shadow-2xl border p-5 w-80 transition-all duration-300',
             callState === 'completed'
               ? 'bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800'
               : callState === 'failed'
                 ? 'bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800'
-                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'
+                : 'bg-card border-border'
           )}>
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
@@ -1016,16 +998,16 @@ export default function ClientDetailsPage() {
                   )}
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-900 dark:text-slate-100">AI Telefonhívás</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">{client.name}</p>
+                  <p className="text-xs font-bold text-foreground">AI Telefonhívás</p>
+                  <p className="text-[10px] text-muted-foreground">{client.name}</p>
                 </div>
               </div>
               {(callState === 'completed' || callState === 'failed') && (
                 <button
                   onClick={() => setCallState('idle')}
-                  className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors"
+                  className="p-1 hover:bg-muted dark:hover:bg-muted rounded-full transition-colors"
                 >
-                  <X className="w-3.5 h-3.5 text-slate-400" />
+                  <X className="w-3.5 h-3.5 text-muted-foreground" />
                 </button>
               )}
             </div>
@@ -1039,8 +1021,8 @@ export default function ClientDetailsPage() {
                       <Phone className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
                     </div>
                   </div>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Tárcsázás...</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Kapcsolódás az ügyfélhez</p>
+                  <p className="text-sm font-semibold text-foreground">Tárcsázás...</p>
+                  <p className="text-xs text-muted-foreground">Kapcsolódás az ügyfélhez</p>
                 </div>
               )}
               {callState === 'ringing' && (
@@ -1053,8 +1035,8 @@ export default function ClientDetailsPage() {
                       <div className="absolute inset-0 w-12 h-12 rounded-full border-2 border-emerald-400 animate-ping opacity-30" />
                     </div>
                   </div>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Csörög...</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Várakozás a válaszra</p>
+                  <p className="text-sm font-semibold text-foreground">Csörög...</p>
+                  <p className="text-xs text-muted-foreground">Várakozás a válaszra</p>
                 </div>
               )}
               {callState === 'speaking' && (
@@ -1064,9 +1046,9 @@ export default function ClientDetailsPage() {
                       <Mic className="w-6 h-6 text-white" />
                     </div>
                   </div>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Beszélgetés folyamatban</p>
+                  <p className="text-sm font-semibold text-foreground">Beszélgetés folyamatban</p>
                   <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">{formatTime(callTimer)}</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400"> AI kéri a hiányzó dokumentumokat</p>
+                  <p className="text-[10px] text-muted-foreground"> AI kéri a hiányzó dokumentumokat</p>
                 </div>
               )}
               {callState === 'completed' && (
@@ -1077,7 +1059,7 @@ export default function ClientDetailsPage() {
                     </div>
                   </div>
                   <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Sikeres hívás!</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Az ügyfél ígérte a dokumentumokat 2 napon belül</p>
+                  <p className="text-xs text-muted-foreground">Az ügyfél ígérte a dokumentumokat 2 napon belül</p>
                 </div>
               )}
               {callState === 'failed' && (
@@ -1088,7 +1070,7 @@ export default function ClientDetailsPage() {
                     </div>
                   </div>
                   <p className="text-sm font-semibold text-red-700 dark:text-red-400">Nem sikerült elérni</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Próbáld újra később</p>
+                  <p className="text-xs text-muted-foreground">Próbáld újra később</p>
                 </div>
               )}
             </div>
@@ -1097,7 +1079,7 @@ export default function ClientDetailsPage() {
             {(callState === 'dialing' || callState === 'ringing' || callState === 'speaking') && (
               <button
                 onClick={endCall}
-                className="w-full mt-3 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors"
+                className="w-full mt-3 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors"
               >
                 <PhoneOff className="w-4 h-4" />
                 Hívás befejezése
@@ -1118,18 +1100,18 @@ const ACTION_META: Record<string, { label: string; icon: React.ElementType; bg: 
   resolve_missing:   { label: 'Hiányzó bizonylat rendezve', icon: CheckCircle2, bg: 'bg-emerald-50 dark:bg-emerald-900/30', iconColor: 'text-emerald-600' },
   complete_deadline: { label: 'Határidő teljesítve',      icon: CheckCircle2, bg: 'bg-emerald-50 dark:bg-emerald-900/30', iconColor: 'text-emerald-600' },
   generate_report:   { label: 'Riport generálva',         icon: FileText,    bg: 'bg-blue-50 dark:bg-blue-900/30',      iconColor: 'text-blue-600' },
-  upload_invoice:    { label: 'Számla feltöltve',          icon: UploadCloud, bg: 'bg-slate-100 dark:bg-slate-800',      iconColor: 'text-slate-600 dark:text-slate-400' },
+  upload_invoice:    { label: 'Számla feltöltve',          icon: UploadCloud, bg: 'bg-muted',      iconColor: 'text-muted-foreground' },
   nav_sync:          { label: 'NAV szinkronizálás',        icon: RefreshCcw,  bg: 'bg-blue-50 dark:bg-blue-900/30',      iconColor: 'text-blue-600' },
   contiroz:          { label: 'Számla kontírozva',         icon: FileCheck,   bg: 'bg-amber-50 dark:bg-amber-900/30',    iconColor: 'text-amber-600' },
   send_notification: { label: 'Értesítés küldve',          icon: Bell,        bg: 'bg-violet-50 dark:bg-violet-900/30',  iconColor: 'text-violet-600' },
   add_missing:       { label: 'Hiányzó bizonylat rögzítve', icon: AlertTriangle, bg: 'bg-red-50 dark:bg-red-900/30',     iconColor: 'text-red-500' },
-  ignore_missing:    { label: 'Bizonylat figyelmen kívül hagyva', icon: EyeOff, bg: 'bg-slate-100 dark:bg-slate-800',   iconColor: 'text-slate-500' },
+  ignore_missing:    { label: 'Bizonylat figyelmen kívül hagyva', icon: EyeOff, bg: 'bg-muted',   iconColor: 'text-muted-foreground' },
   generate_portal:   { label: 'Portál link generálva',     icon: Link2,       bg: 'bg-blue-50 dark:bg-blue-900/30',      iconColor: 'text-blue-600' },
-  update_prefs:      { label: 'Kommunikációs beállítás frissítve', icon: Settings, bg: 'bg-slate-100 dark:bg-slate-800', iconColor: 'text-slate-500' },
+  update_prefs:      { label: 'Kommunikációs beállítás frissítve', icon: Settings, bg: 'bg-muted', iconColor: 'text-muted-foreground' },
   update_tax:        { label: 'Adóprofil módosítva',       icon: Wrench,      bg: 'bg-amber-50 dark:bg-amber-900/30',    iconColor: 'text-amber-600' },
 };
 
-const DEFAULT_META = { label: 'Tevékenység', icon: Clock, bg: 'bg-slate-100 dark:bg-slate-800', iconColor: 'text-slate-500' };
+const DEFAULT_META = { label: 'Tevékenység', icon: Clock, bg: 'bg-muted', iconColor: 'text-muted-foreground' };
 
 function RecentActivities({ companyId }: { companyId?: string }) {
   const { data: allLogs, isLoading } = useAccountyAuditLog(50);
@@ -1149,7 +1131,7 @@ function RecentActivities({ companyId }: { companyId?: string }) {
   };
 
   return (
-    <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden flex flex-col">
+    <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden flex flex-col">
       <div className="p-5 border-b border-border flex justify-between items-center">
         <h3 className="font-semibold text-foreground">Legutóbbi tevékenységek</h3>
         {logs.length > 0 && (

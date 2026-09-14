@@ -137,7 +137,7 @@ export default function GenericDeclarationPage() {
   if (!config) {
     return (
       <div className="text-center py-20">
-        <p className="text-slate-500">Ismeretlen nyilatkozat típus: {type}</p>
+        <p className="text-muted-foreground">Ismeretlen nyilatkozat típus: {type}</p>
         <Button asChild className="mt-4"><Link to={`/eaisybooks/payroll/${id}/declarations`}>Vissza</Link></Button>
       </div>
     );
@@ -162,34 +162,34 @@ export default function GenericDeclarationPage() {
   const isComplete = config.fields.filter(f => f.required).every(f => formData[f.key]?.trim());
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full max-w-4xl mx-auto space-y-6 page-animate">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link to={`/eaisybooks/payroll/${id}/declarations`} className="p-2 rounded-lg hover:bg-muted transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <div className={cn('p-2.5 bg-gradient-to-br rounded-xl shadow-lg', config.color)}>
+        <div className={cn('p-2.5 bg-gradient-to-br rounded-lg shadow-lg', config.color)}>
           <config.icon className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{config.title}</h1>
-          <p className="text-sm text-slate-500">{config.subtitle}</p>
+          <h1 className="text-2xl font-bold text-foreground">{config.title}</h1>
+          <p className="text-sm text-muted-foreground">{config.subtitle}</p>
         </div>
       </div>
 
       {/* Info */}
-      <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl p-4 text-sm text-blue-800 dark:text-blue-300 flex items-start gap-2">
+      <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-lg p-4 text-sm text-blue-800 dark:text-blue-300 flex items-start gap-2">
         <Info className="w-4 h-4 mt-0.5 shrink-0" />
         <span>{config.infoText}</span>
       </div>
 
       {/* Form fields */}
-      <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-        <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Nyilatkozat adatai</h2>
+      <div className="bg-card rounded-lg border border-border p-6 space-y-4">
+        <h2 className="text-sm font-bold text-foreground/90">Nyilatkozat adatai</h2>
         <div className="grid grid-cols-2 gap-4">
           {config.fields.map(f => (
             <div key={f.key}>
-              <label className="text-xs text-slate-500 mb-1 block">
+              <label className="text-xs text-muted-foreground mb-1 block">
                 {f.label} {f.required && <span className="text-red-500">*</span>}
               </label>
               {f.type === 'select' ? (
@@ -219,11 +219,11 @@ export default function GenericDeclarationPage() {
       </div>
 
       {/* Validations */}
-      <div className="bg-card rounded-xl border border-border p-5">
-        <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Jogosultsági feltételek</h3>
+      <div className="bg-card rounded-lg border border-border p-5">
+        <h3 className="text-sm font-bold text-foreground/90 mb-3">Jogosultsági feltételek</h3>
         <div className="space-y-1.5">
           {config.validations.map((v, i) => (
-            <div key={i} className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+            <div key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
               <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
               {v}
             </div>
@@ -233,28 +233,28 @@ export default function GenericDeclarationPage() {
 
       {/* Calculator */}
       {config.monthlySaving > 0 && (
-        <div className={cn('bg-gradient-to-r rounded-xl border p-6 space-y-3',
+        <div className={cn('bg-gradient-to-r rounded-lg border p-6 space-y-3',
           `from-${declType === 'young' ? 'green' : declType === 'personal' ? 'red' : declType === 'first-marriage' ? 'violet' : 'pink'}-50 to-${declType === 'young' ? 'emerald' : declType === 'personal' ? 'pink' : declType === 'first-marriage' ? 'purple' : 'rose'}-50 dark:from-slate-900/50 dark:to-slate-800/50 border-border`
         )}>
           <h3 className="text-sm font-bold flex items-center gap-2">
             <Calculator className="w-4 h-4" /> Kedvezmény összefoglaló
           </h3>
           <div className="grid grid-cols-3 gap-3">
-            <div className="bg-white dark:bg-slate-900 rounded-lg p-3 text-center">
+            <div className="bg-card rounded-lg p-3 text-center">
               <p className="text-lg font-bold font-mono">{config.monthlyBase.toLocaleString('hu-HU')}</p>
-              <p className="text-[10px] text-slate-500 uppercase font-bold">Ft/hó adóalap-csökkentés</p>
+              <p className="text-[10px] text-muted-foreground uppercase font-bold">Ft/hó adóalap-csökkentés</p>
             </div>
-            <div className="bg-white dark:bg-slate-900 rounded-lg p-3 text-center">
+            <div className="bg-card rounded-lg p-3 text-center">
               <p className="text-lg font-bold font-mono text-emerald-600">{config.monthlySaving.toLocaleString('hu-HU')}</p>
-              <p className="text-[10px] text-slate-500 uppercase font-bold">Ft/hó megtakarítás</p>
+              <p className="text-[10px] text-muted-foreground uppercase font-bold">Ft/hó megtakarítás</p>
             </div>
-            <div className="bg-white dark:bg-slate-900 rounded-lg p-3 text-center">
-              <p className="text-lg font-bold font-mono text-indigo-600">{(config.monthlySaving * 12).toLocaleString('hu-HU')}</p>
-              <p className="text-[10px] text-slate-500 uppercase font-bold">Ft/év megtakarítás</p>
+            <div className="bg-card rounded-lg p-3 text-center">
+              <p className="text-lg font-bold font-mono text-primary">{(config.monthlySaving * 12).toLocaleString('hu-HU')}</p>
+              <p className="text-[10px] text-muted-foreground uppercase font-bold">Ft/év megtakarítás</p>
             </div>
           </div>
           {endDate && (
-            <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
+            <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
               <AlertTriangle className="w-3 h-3" /> A kedvezmény {endDate}-ig érvényes
             </p>
           )}
@@ -263,10 +263,10 @@ export default function GenericDeclarationPage() {
 
       {/* NÉTAK: teljes mentesség */}
       {declType === 'netak' && (
-        <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-500/10 dark:to-orange-500/10 rounded-xl border border-amber-200 dark:border-amber-500/20 p-6 text-center">
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-500/10 dark:to-orange-500/10 rounded-lg border border-amber-200 dark:border-amber-500/20 p-6 text-center">
           <Star className="w-10 h-10 mx-auto mb-2 text-amber-600" />
           <p className="text-lg font-bold text-amber-800 dark:text-amber-300">Teljes SZJA mentesség</p>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Korlát nélkül — a teljes jövedelem SZJA mentes</p>
+          <p className="text-sm text-muted-foreground mt-1">Korlát nélkül — a teljes jövedelem SZJA mentes</p>
           {formData.childCount && Number(formData.childCount) < 4 && (
             <p className="text-sm text-red-600 mt-2 flex items-center gap-1 justify-center">
               <AlertTriangle className="w-4 h-4" /> Minimum 4 gyermek szükséges! Jelenleg: {formData.childCount}

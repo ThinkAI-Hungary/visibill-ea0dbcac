@@ -30,28 +30,28 @@ export function RenderStep1({ data, upd }: TaoStepProps) {
 export function RenderStep2({ data, computed }: TaoStepProps) {
   return (
     <div className="space-y-5">
-      <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-xl p-6 border border-emerald-200 dark:border-emerald-800">
-        <p className="text-xs text-slate-500 mb-1">Adózás Előtti Eredmény (AEE)</p>
+      <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-lg p-6 border border-emerald-200 dark:border-emerald-800">
+        <p className="text-xs text-muted-foreground mb-1">Adózás Előtti Eredmény (AEE)</p>
         <p className={cn('text-4xl font-black', computed.aee >= 0 ? 'text-emerald-600' : 'text-rose-600')}>
           {fmt(computed.aee)} Ft
         </p>
-        <p className="text-xs text-slate-400 mt-2">= Bevételek ({fmt(computed.totalRevenue)}) − Költségek ({fmt(computed.totalCosts)}) + Pénzügyi ({fmt(data.financial_result)})</p>
+        <p className="text-xs text-muted-foreground mt-2">= Bevételek ({fmt(computed.totalRevenue)}) − Költségek ({fmt(computed.totalCosts)}) + Pénzügyi ({fmt(data.financial_result)})</p>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-card rounded-lg border border-border p-3">
-          <p className="text-[10px] text-slate-500">Összbevétel</p>
-          <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{fmt(computed.totalRevenue)} Ft</p>
+          <p className="text-[10px] text-muted-foreground">Összbevétel</p>
+          <p className="text-sm font-bold text-foreground">{fmt(computed.totalRevenue)} Ft</p>
         </div>
         <div className="bg-card rounded-lg border border-border p-3">
-          <p className="text-[10px] text-slate-500">Összköltség</p>
-          <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{fmt(computed.totalCosts)} Ft</p>
+          <p className="text-[10px] text-muted-foreground">Összköltség</p>
+          <p className="text-sm font-bold text-foreground">{fmt(computed.totalCosts)} Ft</p>
         </div>
         <div className="bg-card rounded-lg border border-border p-3">
-          <p className="text-[10px] text-slate-500">Pénzügyi eredmény</p>
-          <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{fmt(data.financial_result)} Ft</p>
+          <p className="text-[10px] text-muted-foreground">Pénzügyi eredmény</p>
+          <p className="text-sm font-bold text-foreground">{fmt(data.financial_result)} Ft</p>
         </div>
         <div className="bg-card rounded-lg border border-border p-3">
-          <p className="text-[10px] text-slate-500">AEE</p>
+          <p className="text-[10px] text-muted-foreground">AEE</p>
           <p className={cn('text-sm font-bold', computed.aee >= 0 ? 'text-emerald-600' : 'text-rose-600')}>{fmt(computed.aee)} Ft</p>
         </div>
       </div>

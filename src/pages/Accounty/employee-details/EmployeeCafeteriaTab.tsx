@@ -110,8 +110,8 @@ export function EmployeeCafeteriaTab({ employmentId }: EmployeeCafeteriaTabProps
   return (
     <div className="p-6 space-y-6">
       {/* 2026 Tax Rules Summary Banner */}
-      <div className="p-4 bg-indigo-500/5 dark:bg-indigo-500/10 border border-indigo-500/20 rounded-xl flex items-start gap-3">
-        <Sparkles className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
+      <div className="p-4 bg-primary/5 dark:bg-primary/10 border border-primary/20 rounded-lg flex items-start gap-3">
+        <Sparkles className="w-5 h-5 text-primary shrink-0 mt-0.5" />
         <div className="text-xs text-indigo-700 dark:text-indigo-300 space-y-1">
           <p className="font-bold">2026. évi Cafeteria és Juttatási szabályok:</p>
           <ul className="list-disc pl-4 space-y-0.5">
@@ -125,8 +125,8 @@ export function EmployeeCafeteriaTab({ employmentId }: EmployeeCafeteriaTabProps
       {/* Overview stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* SZÉP Kártya Progress */}
-        <div className="p-4 rounded-xl border border-border bg-card shadow-sm space-y-3">
-          <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">SZÉP Kártya Keretek</h4>
+        <div className="p-4 rounded-lg border border-border bg-card shadow-sm space-y-3">
+          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">SZÉP Kártya Keretek</h4>
           <div className="space-y-3 text-xs">
             {[
               { label: 'Vendéglátás', used: szepHospitality, limit: 450000, color: 'bg-amber-500' },
@@ -136,9 +136,9 @@ export function EmployeeCafeteriaTab({ employmentId }: EmployeeCafeteriaTabProps
               <div key={idx}>
                 <div className="flex justify-between font-medium mb-1">
                   <span>{p.label}</span>
-                  <span className="font-mono text-slate-500">{p.used.toLocaleString('hu-HU')} / {p.limit.toLocaleString('hu-HU')} Ft</span>
+                  <span className="font-mono text-muted-foreground">{p.used.toLocaleString('hu-HU')} / {p.limit.toLocaleString('hu-HU')} Ft</span>
                 </div>
-                <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                   <div className={cn('h-full transition-all', p.color)} style={{ width: `${Math.min(100, (p.used / p.limit) * 100)}%` }} />
                 </div>
               </div>
@@ -147,32 +147,32 @@ export function EmployeeCafeteriaTab({ employmentId }: EmployeeCafeteriaTabProps
         </div>
 
         {/* Rekreáció Progress */}
-        <div className="p-4 rounded-xl border border-border bg-card shadow-sm flex flex-col justify-between">
+        <div className="p-4 rounded-lg border border-border bg-card shadow-sm flex flex-col justify-between">
           <div>
-            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Rekreációs Keret</h4>
+            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Rekreációs Keret</h4>
             <div className="flex justify-between text-xs font-medium mb-1">
               <span>Éves limit</span>
-              <span className="font-mono text-slate-500">{recreation.toLocaleString('hu-HU')} / 120 000 Ft</span>
+              <span className="font-mono text-muted-foreground">{recreation.toLocaleString('hu-HU')} / 120 000 Ft</span>
             </div>
-            <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
               <div className="h-full bg-violet-500 transition-all" style={{ width: `${Math.min(100, (recreation / 120000) * 100)}%` }} />
             </div>
           </div>
-          <p className="text-[10px] text-slate-400 mt-4 flex items-center gap-1.5">
+          <p className="text-[10px] text-muted-foreground mt-4 flex items-center gap-1.5">
             <AlertCircle className="w-3.5 h-3.5" /> Évi 120 000 Ft-ig kedvezményes (28%) adózású.
           </p>
         </div>
 
         {/* Lakhatási Támogatás Summary */}
-        <div className="p-4 rounded-xl border border-border bg-card shadow-sm flex flex-col justify-between">
+        <div className="p-4 rounded-lg border border-border bg-card shadow-sm flex flex-col justify-between">
           <div>
-            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Lakhatási Támogatás</h4>
+            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Lakhatási Támogatás</h4>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold font-mono text-indigo-600 dark:text-indigo-400">{housingAllowance.toLocaleString('hu-HU')}</span>
-              <span className="text-xs text-slate-500">Ft / hó</span>
+              <span className="text-2xl font-bold font-mono text-primary dark:text-primary">{housingAllowance.toLocaleString('hu-HU')}</span>
+              <span className="text-xs text-muted-foreground">Ft / hó</span>
             </div>
           </div>
-          <p className="text-[10px] text-slate-400 mt-4">
+          <p className="text-[10px] text-muted-foreground mt-4">
             35 év alatti dolgozónál havi 150 000 Ft-ig a munkáltatót 28% közteher terheli, a dolgozónak teljesen adómentes.
           </p>
         </div>
@@ -180,13 +180,13 @@ export function EmployeeCafeteriaTab({ employmentId }: EmployeeCafeteriaTabProps
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Form panel */}
-        <div className="lg:col-span-1 border border-border rounded-xl p-5 bg-card shadow-sm space-y-4">
-          <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+        <div className="lg:col-span-1 border border-border rounded-lg p-5 bg-card shadow-sm space-y-4">
+          <h3 className="text-sm font-bold text-foreground/90 flex items-center gap-1.5">
             <Plus className="w-4 h-4 text-primary" /> Új cafeteria elem rögzítése
           </h3>
           <form onSubmit={handleAdd} className="space-y-3.5">
             <div>
-              <label className="block text-[11px] font-bold text-slate-500 mb-1">Típus</label>
+              <label className="block text-[11px] font-bold text-muted-foreground mb-1">Típus</label>
               <select
                 value={benefitType}
                 onChange={e => {
@@ -211,7 +211,7 @@ export function EmployeeCafeteriaTab({ employmentId }: EmployeeCafeteriaTabProps
               <>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-500 mb-1">Zseb / Altípus</label>
+                    <label className="block text-[11px] font-bold text-muted-foreground mb-1">Zseb / Altípus</label>
                     <select
                       value={subType}
                       onChange={e => setSubType(e.target.value)}
@@ -223,7 +223,7 @@ export function EmployeeCafeteriaTab({ employmentId }: EmployeeCafeteriaTabProps
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-500 mb-1">Kibocsátó</label>
+                    <label className="block text-[11px] font-bold text-muted-foreground mb-1">Kibocsátó</label>
                     <select
                       value={provider}
                       onChange={e => setProvider(e.target.value)}
@@ -237,7 +237,7 @@ export function EmployeeCafeteriaTab({ employmentId }: EmployeeCafeteriaTabProps
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-500 mb-1">Kártyaszám (opcionális)</label>
+                  <label className="block text-[11px] font-bold text-muted-foreground mb-1">Kártyaszám (opcionális)</label>
                   <input
                     type="text"
                     value={cardNumber}
@@ -250,7 +250,7 @@ export function EmployeeCafeteriaTab({ employmentId }: EmployeeCafeteriaTabProps
             )}
 
             <div>
-              <label className="block text-[11px] font-bold text-slate-500 mb-1">Összeg (Ft)</label>
+              <label className="block text-[11px] font-bold text-muted-foreground mb-1">Összeg (Ft)</label>
               <Input
                 type="number"
                 value={amount}
@@ -269,10 +269,10 @@ export function EmployeeCafeteriaTab({ employmentId }: EmployeeCafeteriaTabProps
         </div>
 
         {/* List panel */}
-        <div className="lg:col-span-2 border border-border rounded-xl overflow-hidden bg-card shadow-sm flex flex-col justify-start">
-          <div className="bg-slate-50 dark:bg-slate-900/40 px-4 py-3 border-b border-border flex justify-between items-center">
-            <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <Gift className="w-4 h-4 text-indigo-500" /> Rögzített Juttatások
+        <div className="lg:col-span-2 border border-border rounded-lg overflow-hidden bg-card shadow-sm flex flex-col justify-start">
+          <div className="bg-background/40 px-4 py-3 border-b border-border flex justify-between items-center">
+            <h3 className="text-sm font-bold text-foreground/90 flex items-center gap-1.5">
+              <Gift className="w-4 h-4 text-primary" /> Rögzített Juttatások
             </h3>
             <span className="text-[10px] bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200 font-semibold px-2 py-0.5 rounded-full">
               {cafeteriaItems.length} juttatás
@@ -280,14 +280,14 @@ export function EmployeeCafeteriaTab({ employmentId }: EmployeeCafeteriaTabProps
           </div>
 
           {cafeteriaItems.length === 0 ? (
-            <div className="p-8 text-center text-sm text-slate-500 italic">
+            <div className="p-8 text-center text-sm text-muted-foreground italic">
               Nincs rögzített cafeteria juttatás ehhez a dolgozóhoz.
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border text-slate-500 font-semibold text-xs uppercase bg-slate-50/50 dark:bg-slate-900/10">
+                  <tr className="border-b border-border text-muted-foreground font-semibold text-xs uppercase bg-muted/40/50 dark:bg-card/10">
                     <th className="px-4 py-2.5 text-left">Típus</th>
                     <th className="px-4 py-2.5 text-left">Zseb/Provider</th>
                     <th className="px-4 py-2.5 text-right">Összeg</th>
@@ -296,13 +296,13 @@ export function EmployeeCafeteriaTab({ employmentId }: EmployeeCafeteriaTabProps
                 </thead>
                 <tbody className="divide-y divide-border/60">
                   {cafeteriaItems.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/30">
-                      <td className="px-4 py-2.5 font-medium text-slate-700 dark:text-slate-300">
+                    <tr key={item.id} className="hover:bg-muted/40/30">
+                      <td className="px-4 py-2.5 font-medium text-foreground/90">
                         {item.benefit_type === 'szep_recreation' ? 'SZÉP Kártya' :
                          item.benefit_type === 'housing' ? 'Lakhatási támogatás' :
                          item.benefit_type === 'szep_active' ? 'Rekreációs keret' : item.benefit_type}
                       </td>
-                      <td className="px-4 py-2.5 text-slate-500">
+                      <td className="px-4 py-2.5 text-muted-foreground">
                         {item.benefit_type === 'szep_recreation' ? (
                           <div className="flex flex-col">
                             <span className="capitalize">{item.sub_type}</span>
@@ -312,7 +312,7 @@ export function EmployeeCafeteriaTab({ employmentId }: EmployeeCafeteriaTabProps
                           <span>–</span>
                         )}
                       </td>
-                      <td className="px-4 py-2.5 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
+                      <td className="px-4 py-2.5 text-right font-mono font-bold text-foreground">
                         {item.amount.toLocaleString('hu-HU')} Ft
                       </td>
                       <td className="px-4 py-2.5 text-center">

@@ -32,9 +32,24 @@ select:focus:not(:focus-visible) {
   box-shadow: none !important;
   transition: none !important;
 }
+
+/* Combobox triggerek, popover vezérlők és kereső input mezők focus ring elnyomása */
+button[role="combobox"]:focus,
+button[role="combobox"]:focus-visible,
+button[role="combobox"]:active,
+[cmdk-input]:focus,
+[cmdk-input]:focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+}
 ```
 
-> **Döntés:** Csak billentyűzetes navigáció esetén jelenik meg a focus ring. Egérkattintásra nincs vizuális feedback, ami letisztultabb megjelenést eredményez.
+> **Döntés:** 
+> 1. Csak billentyűzetes navigáció esetén jelenik meg az alapértelmezett focus ring. Egérkattintásra nincs külső ring.
+> 2. **Combobox és Kereső Input Pattern (2026-09-14):** A keresőmezőkön (`[cmdk-input]`) és a popover/combobox trigger gombokon (`button[role="combobox"]`) sem billentyűzetes, sem egér fókusz esetén **nincs külső lebegő ring (activation ring)**.
+> 3. **Aktív / Nyitott Állapot Kiemelése:** Külső offset-gyűrű helyett a komponens saját szegélye és háttere jelzi az aktív állapotot: nyitott dropdown esetén `border-primary/80 bg-accent/40 text-foreground` (és `text-primary` az ikonoknál).
+> 4. **`transition-colors` Szabály Interaktív Vezérlőkön:** Interaktív trigger gombokon tilos a `transition-all` használata. A `transition-all` az `outline-color`-t is animálja, ami sötét témában a Chromium motor átlátszóvá halványulásakor **fehér keret-villanást** okoz blur/elkattintás esetén. Helyette kizárólag a `transition-colors duration-150` használandó.
 
 ---
 

@@ -444,7 +444,7 @@ export default function EmployeeWorksheetView({
   return (
     <div className="space-y-4">
       {/* Top Banner & Control Bar */}
-      <div className="bg-card rounded-xl border border-border shadow-xs p-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-card rounded-lg border border-border shadow-xs p-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold">
             <Sparkles className="w-5 h-5" />
@@ -532,7 +532,7 @@ export default function EmployeeWorksheetView({
       {/* 3-Column Layout: Sidebar (left) + Form (center) + Live Payslip (right) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
         {/* Left: Employee List (3 cols) */}
-        <div className="lg:col-span-3 rounded-xl border border-border bg-card overflow-hidden h-[780px]">
+        <div className="lg:col-span-3 rounded-lg border border-border bg-card overflow-hidden h-[780px]">
           <WorksheetSidebar
             employees={activeEmployees}
             employments={allEmployments}

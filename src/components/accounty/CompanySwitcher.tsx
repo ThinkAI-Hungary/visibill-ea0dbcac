@@ -125,7 +125,7 @@ export function CompanySwitcher() {
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-72 p-0 border-border shadow-xl rounded-xl overflow-hidden dark:bg-card"
+        className="w-72 p-0 border-border shadow-md rounded-lg overflow-hidden bg-card"
         align="start"
         sideOffset={6}
       >
@@ -171,9 +171,9 @@ export function CompanySwitcher() {
                   </div>
                   {isSelected && <Check className="w-4 h-4 shrink-0 text-primary" />}
                   {client.missingCount > 0 && (
-                    <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full
+                    <span className={`shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-sm
                       ${client.missingCount > 3
-                        ? 'bg-red-500/10 text-red-500'
+                        ? 'bg-destructive/10 text-destructive'
                         : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
                       }`}>
                       {client.missingCount}

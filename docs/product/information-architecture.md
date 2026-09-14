@@ -312,20 +312,24 @@ Az eaisyBooks modul **teljesen önálló moduláris layout-ot** használ (`Accou
 │  │   │ PORTFÓLIÓ MÓD            │ ÜGYFÉL KONTEXTUS MÓD             │   │
 │  │   │ (/eaisybooks/*)          │ (/eaisybooks/:companyId/:range/*)│   │
 │  │   ├──────────────────────────┼──────────────────────────────────┤   │
-│  │   │ • Portfólió (Grid/List/  │ • Cég Áttekintés                 │   │
-│  │   │   Kanban)                │ • Cégprofil                      │   │
-│  │   │ • Jóváhagyási Sor        │ • Számlák & Bizonylatok          │   │
-│  │   │ • Hiányzó Számlák        │ • Hiányzó Bizonylatok            │   │
-│  │   │ • Adó Naptár             │ • Egyéni Vállalkozás (EV - 8 tab)│   │
-│  │   │ • AI Asszisztens (Chat)  │ • Társasági Adó (TAO/KIVA - 7 tab│   │
-│  │   │ • Riasztási Központ      │ • Bérszámfejtés (5 tab)          │   │
-│  │   │ • Ügyfél Portál (Portal) │ • NAV Bevallások                 │   │
-│  │   │                          │ • Könyvelési Szabályok (Prompts) │   │
-│  │   │ ▾ ADMINISZTRÁCIÓ         │ • Beállítások (Tabs)             │   │
-│  │   │   ▸ Iroda (Könyvelők, ..)│ • Cégkapu / KÜNY Tárhely        │   │
-│  │   │   ▸ Szakmai (Sablonok,..)│ • EGYKE Meghatalmazások          │   │
-│  │   │   ▸ Biztonság (Audit,..) │ • Adatmegőrzési Szabályzat       │   │
-│  │   │   ▸ Támogatás (Ticketek) │ • Cégstruktúra (Telephelyek)     │   │
+│  │   │ ⚡ TEENDŐK               │ • Cég Áttekintés                 │   │
+│  │   │ • Hiányzó számlák [491]  │ • Cégprofil                      │   │
+│  │   │ • Jóváhagyási sor        │ • Számlák & Bizonylatok          │   │
+│  │   │ • Riasztások             │ • Hiányzó Bizonylatok            │   │
+│  │   │ • Adónaptár & Határidők  │ • Egyéni Vállalkozás (EV - 8 tab)│   │
+│  │   │ 💼 PORTFÓLIÓ             │ • Társasági Adó (TAO/KIVA - 7 tab│   │
+│  │   │ • Portfólió (Főoldal)    │ • Bérszámfejtés (5 tab)          │   │
+│  │   │ • Bérszámfejtés Ciklusok │ • NAV Bevallások                 │   │
+│  │   │ • Irodai Riportok        │ • Könyvelési Szabályok (Prompts) │   │
+│  │   │ • Onboarding             │ • Beállítások (Tabs)             │   │
+│  │   │ • ▾ Szakmai Törzsadatok  │ • Cégkapu / KÜNY Tárhely        │   │
+│  │   │ ✨ SEGÍTSÉG              │ • EGYKE Meghatalmazások          │   │
+│  │   │ • AI Asszisztens (kiemelt│ • Adatmegőrzési Szabályzat       │   │
+│  │   │ • Hibajegyek [számláló]  │ • Cégstruktúra (Telephelyek)     │   │
+│  │   │ • Segítség               │ • Cégstruktúra (Telephelyek)     │   │
+│  │   │ ⚙️ BEÁLLÍTÁSOK (lenyíló) │                                  │   │
+│  │   │   ▸ Iroda & Beállítások  │                                  │   │
+│  │   │   ▸ Biztonság & GDPR     │                                  │   │
 │  │   └──────────────────────────┴──────────────────────────────────┘   │
 │  │                                                                     │
 │  └── Tartalmi Terület (<Outlet /> + ErrorBoundary + DateRangeProvider) │
@@ -357,24 +361,30 @@ Az eaisyBooks modul **teljesen önálló moduláris layout-ot** használ (`Accou
 
 A navigációs sáv az URL mintázata alapján automatikusan vált a két nézet között (`sidebarMode === 'portfolio' | 'client'`):
 
-#### 1. Portfólió Mód (`/eaisybooks/*`)
-Irodai szintű áttekintés, ahol a könyvelő az összes hozzárendelt ügyfélcéget egyben látja és kezeli.
+#### 1. Portfólió Mód (`/eaisybooks/*`, PRD P-085)
+Irodai szintű áttekintés 4 munkafolyamat-alapú kategóriában:
 
-| Menüpont | Útvonal | Ikon | Leírás & Funkció |
-|---|---|---|---|
-| **Portfólió** | `/eaisybooks` vagy `/eaisybooks/portfolio` | `Briefcase` | Grid / Lista / Kanban nézet az összes cégről; szűrés státuszra, könyvelőre; KPI mutatók |
-| **Jóváhagyási sor** | `/eaisybooks/approval-queue` | `MailCheck` | Jóváhagyandó számlák és bizonylatok kötegelt (batch) ellenőrzése és elfogadása |
-| **Hiányzó számlák** | `/eaisybooks/missing-invoices` | `FileWarning` | Irodai szintű konszolidált lista a hiányzó bizonylatokról, felszólító email küldéssel |
-| **Adó naptár** | `/eaisybooks/tax-calendar` | `Calendar` | Aggregált NAV és önkormányzati határidők az összes ügyfélre kiterjedően |
-| **AI Asszisztens** | `/eaisybooks/ai-assistant` | `Sparkles` | Könyvelési jogszabály-értelmező, kontírozási tanácsadó chat felület (teljes oldal és lebegő Speed Dial Drawer, [P-077](decisions/P-077-eaisybooks-ai-assistant-chat-and-speed-dial-ux.md)) |
-| **Riasztások** | `/eaisybooks/alerts` | `Bell` | Kritikus események (lejárt határidő, sikertelen NAV sync, elakadt bérszámfejtés) |
-| **Ügyfélportál** | `/eaisybooks/client-portal` | `ExternalLink` | Az ügyfelek számára generált magic-linkes bizonylatpótló felület konfigurációja és előnézete |
+| Kategória | Menüpont | Útvonal | Ikon | Leírás & Funkció |
+|---|---|---|---|---|
+| **⚡ Teendők** | **Hiányzó számlák** | `/eaisybooks/missing-invoices` | `FileWarning` | Irodai szintű konszolidált lista hiányzó bizonylatokról; kiemelt piros badge (`491`) |
+| | **Jóváhagyási sor** | `/eaisybooks/approval-queue` | `MailCheck` | Jóváhagyandó számlák és bizonylatok kötegelt (batch) ellenőrzése és elfogadása |
+| | **Riasztások** | `/eaisybooks/alerts` | `AlertTriangle` | Kritikus események (lejárt határidő, anomáliák) |
+| | **Adónaptár & Határidők** | `/eaisybooks/tax-calendar` | `Calendar` | Aggregált NAV és önkormányzati határidők az összes ügyfélre kiterjedően |
+| **💼 Portfólió** | **Portfólió** | `/eaisybooks` | `Briefcase` | Grid / Lista / Kanban nézet az összes cégről; szűrés státuszra, könyvelőre; KPI mutatók |
+| | **Bérszámfejtés Ciklusok** | `/eaisybooks?tab=payroll` | `Calculator` | Bérszámfejtési folyamatok havi zárási státusza az összes ügyfélnél |
+| | **Irodai Riportok** | `/eaisybooks/reports` | `BarChart2` | Irodai szintű kimutatások és aggregációk |
+| | **Onboarding** | `/eaisybooks/onboarding` | `Rocket` | Új ügyfelek felvétele és bevezetési folyamata |
+| | **Szakmai Törzsadatok** | `/eaisybooks/admin/*` | `BookOpen` | Lenyíló almenü közvetlenül a Portfólió alatt: Sablonok, Jogviszonykódok, Adómértékek, Jogszabály-frissítések |
+| **✨ Segítség** | **AI Asszisztens** | `/eaisybooks/ai-assistant` | `Bot` | Könyvelési jogszabály-értelmező, kontírozási tanácsadó; pulzáló vizuális AI pont |
+| | **Hibajegyek** | `/eaisybooks/tickets` | `TicketCheck` | Hibajegykezelés és belső support; olvasatlan jegy számlálóval |
+| | **Segítség** | `/eaisybooks/help` | `HelpCircle` | Rendszer súgó és interaktív útmutatók |
+| **⚙️ Beállítások** | **Iroda & Beállítások** | `/eaisybooks/settings` | `Settings` | Beállítások, Profilbeállítások, Jogosultságkezelő, Könyvelők kezelése |
+| | **Biztonság & GDPR** | `/eaisybooks/admin/*` | `ShieldCheck` | Audit napló, GDPR megfelelőség |
 
-**Adminisztrációs Csoportok (iroda_admin & senior_könyvelő jogosultság):**
-- **Iroda:** Könyvelők kezelése (`/eaisybooks/admin/accountants`), Irodai beállítások (`/eaisybooks/settings`)
-- **Szakmai:** Sablonok (`/eaisybooks/admin/templates`), Jogviszonykódok (`/eaisybooks/admin/job-codes`), Adómértékek (`/eaisybooks/admin/tax-parameters`), Jogszabály-frissítések (`/eaisybooks/admin/legal-updates`)
-- **Biztonság & Kormányzás:** Audit napló (`/eaisybooks/admin/audit-log`), GDPR kérelmek (`/eaisybooks/admin/gdpr`), Adatmegőrzési szabályzatok (`/eaisybooks/admin/data-retention`), Jogosultságkezelő mátrix (`/eaisybooks/admin/permission-matrix`)
-- **Támogatás:** Hibajegykezelés és belső support
+#### Hierarchikus Útvonalkövető (Breadcrumbs, PRD P-084)
+Az eaisyBooks felületeken a `PageHeader` komponens és a `useAccountyBreadcrumbs` tiszta útvonalfeloldó biztosítja az azonnali, kattintható tájékozódást:
+* `Portfólió / [Ügyfél neve] / [Aloldal] / [Ciklus]`
+* Visszamenőlegesen 100%-ban kompatibilis a korábbi string-alapú fejlécekkel, determinisztikusan generálja a navigációs szinteket.
 
 #### 2. Ügyfél Kontextus Mód (`/eaisybooks/:companyId/:dateRange/*`)
 Amikor a könyvelő kiválaszt egy ügyfelet a portfólióból, a sidebar átvált a cég-specifikus navigációs struktúrára. A fejlécben megjelenik a `CompanySwitcher` (amely UUID cserével a kiválasztott cégnél tartja az aktuális aloldalt) és a **"Vissza a portfólióhoz"** gomb.

@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -256,18 +257,22 @@ export function SickLeaveFormDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Kezdő dátum *</Label>
-                <Input
-                  type="date"
+                <DatePicker
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  onChange={setStartDate}
+                  placeholder="éééé. hh. nn."
+                  clearable
+                  className="w-full"
                 />
               </div>
               <div className="space-y-1.5">
                 <Label>Befejező dátum *</Label>
-                <Input
-                  type="date"
+                <DatePicker
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  onChange={setEndDate}
+                  placeholder="éééé. hh. nn."
+                  clearable
+                  className="w-full"
                 />
               </div>
             </div>
@@ -315,10 +320,12 @@ export function SickLeaveFormDialog({
                 </div>
                 <div className="space-y-1.5">
                   <Label>Gyermek születési ideje *</Label>
-                  <Input
-                    type="date"
+                  <DatePicker
                     value={childBirthDate}
-                    onChange={(e) => setChildBirthDate(e.target.value)}
+                    onChange={setChildBirthDate}
+                    placeholder="éééé. hh. nn."
+                    clearable
+                    className="w-full"
                   />
                 </div>
               </div>
@@ -326,19 +333,22 @@ export function SickLeaveFormDialog({
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label>Várható szülés ideje (opcionális)</Label>
-                  <Input
-                    type="date"
+                  <DatePicker
                     value={expectedDateOfDelivery}
-                    onChange={(e) => setExpectedDateOfDelivery(e.target.value)}
+                    onChange={setExpectedDateOfDelivery}
+                    placeholder="éééé. hh. nn."
+                    clearable
+                    className="w-full"
                   />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Ellátás kezdőnapja</Label>
-                  <Input
-                    type="date"
+                  <DatePicker
                     value={expectedStartDate}
+                    onChange={setExpectedStartDate}
                     placeholder="Alapértelmezett: távollét kezdete"
-                    onChange={(e) => setExpectedStartDate(e.target.value)}
+                    clearable
+                    className="w-full"
                   />
                 </div>
               </div>
@@ -369,10 +379,12 @@ export function SickLeaveFormDialog({
 
               <div className="space-y-1.5">
                 <Label>Várható szülés időpontja *</Label>
-                <Input
-                  type="date"
+                <DatePicker
                   value={expectedDateOfDelivery}
-                  onChange={(e) => setExpectedDateOfDelivery(e.target.value)}
+                  onChange={setExpectedDateOfDelivery}
+                  placeholder="éééé. hh. nn."
+                  clearable
+                  className="w-full"
                 />
               </div>
             </div>
@@ -408,10 +420,12 @@ export function SickLeaveFormDialog({
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label>Baleset dátuma *</Label>
-                  <Input
-                    type="date"
+                  <DatePicker
                     value={accidentDate}
-                    onChange={(e) => setAccidentDate(e.target.value)}
+                    onChange={setAccidentDate}
+                    placeholder="éééé. hh. nn."
+                    clearable
+                    className="w-full"
                   />
                 </div>
                 <div className="space-y-1.5">

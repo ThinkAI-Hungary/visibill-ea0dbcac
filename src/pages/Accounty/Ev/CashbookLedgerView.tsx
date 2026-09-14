@@ -38,7 +38,7 @@ interface MonthlyAggregate {
 const COLUMN_LABELS: Record<string, { label: string; shortLabel: string; color: string }> = {
   bevetel_adokoteles: { label: 'I. Adóköteles bevétel', shortLabel: 'Adóköt.bev.', color: 'bg-green-500' },
   bevetel_fizetendo_afa: { label: 'II. Fizetendő ÁFA', shortLabel: 'Fiz.ÁFA', color: 'bg-teal-500' },
-  bevetel_be_nem_szamito: { label: 'III. Be nem számító', shortLabel: 'Nem szám.', color: 'bg-slate-400' },
+  bevetel_be_nem_szamito: { label: 'III. Be nem számító', shortLabel: 'Nem szám.', color: 'bg-muted-foreground/40' },
   kiadas_anyag_arubeszerzes: { label: 'IV. Anyag/áru', shortLabel: 'Anyag', color: 'bg-red-500' },
   kiadas_kozvetitett_szolgaltatas: { label: 'V. Közvetített', shortLabel: 'Közvetít.', color: 'bg-orange-500' },
   kiadas_alkalmazott_ber_kozteher: { label: 'VI. Bér/közteher', shortLabel: 'Bér', color: 'bg-violet-500' },
@@ -46,7 +46,7 @@ const COLUMN_LABELS: Record<string, { label: string; shortLabel: string; color: 
   kiadas_egyeb_koltseg: { label: 'VIII. Egyéb költség', shortLabel: 'Egyéb', color: 'bg-amber-500' },
   kiadas_beruhazasi_koltseg: { label: 'IX. Beruházás', shortLabel: 'Beruh.', color: 'bg-rose-500' },
   kiadas_levonhato_afa: { label: 'X. Levonható ÁFA', shortLabel: 'Lev.ÁFA', color: 'bg-cyan-500' },
-  kiadas_egyeb_nem_koltseg: { label: 'XI. Egyéb nem költség', shortLabel: 'Nem költ.', color: 'bg-slate-300' },
+  kiadas_egyeb_nem_koltseg: { label: 'XI. Egyéb nem költség', shortLabel: 'Nem költ.', color: 'bg-muted-foreground/30' },
 };
 
 type ViewMode = 'monthly' | 'columns' | 'chart';
@@ -134,30 +134,30 @@ export default function CashbookLedgerView() {
 
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/eaisybooks/${id}/${dateRange}/ev/cashbook`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev/cashbook`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> Pénztárkönyv
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <span className="text-slate-900 dark:text-slate-100 font-medium">Főkönyvi áttekintés</span>
+        <span className="text-foreground font-medium">Főkönyvi áttekintés</span>
       </div>
 
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-lg shadow-emerald-500/25">
+          <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg shadow-lg shadow-emerald-500/25">
             <BarChart3 className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Főkönyvi áttekintés</h1>
-            <p className="text-sm text-slate-500">{client?.name || 'Ügyfél'} · {selectedYear}. adóév</p>
+            <h1 className="text-2xl font-bold text-foreground">Főkönyvi áttekintés</h1>
+            <p className="text-sm text-muted-foreground">{client?.name || 'Ügyfél'} · {selectedYear}. adóév</p>
           </div>
         </div>
 
         {/* View mode toggle */}
-        <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/50 rounded-lg p-0.5">
+        <div className="flex gap-1 bg-muted/50 rounded-lg p-0.5">
           {([
             ['monthly', 'Havi', Calendar],
             ['columns', 'Oszlopok', Layers],
@@ -169,8 +169,8 @@ export default function CashbookLedgerView() {
               className={cn(
                 'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
                 viewMode === v
-                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-card dark:bg-muted text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground/90'
               )}
             >
               <Icon className="w-3 h-3" /> {l}
@@ -181,24 +181,24 @@ export default function CashbookLedgerView() {
 
       {/* Year totals */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
           <div className="flex items-center gap-2 mb-1">
             <TrendingUp className="w-3.5 h-3.5 text-green-500" />
-            <p className="text-xs text-slate-500">Éves bevétel</p>
+            <p className="text-xs text-muted-foreground">Éves bevétel</p>
           </div>
           <p className="text-xl font-bold text-green-600 font-mono tabular-nums">{formatHuf(totalRevenue)}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
           <div className="flex items-center gap-2 mb-1">
             <TrendingDown className="w-3.5 h-3.5 text-red-500" />
-            <p className="text-xs text-slate-500">Éves kiadás</p>
+            <p className="text-xs text-muted-foreground">Éves kiadás</p>
           </div>
           <p className="text-xl font-bold text-red-500 font-mono tabular-nums">{formatHuf(totalExpense)}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Egyenleg</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Egyenleg</p>
           <p className={cn('text-xl font-bold font-mono tabular-nums',
-            totalBalance >= 0 ? 'text-slate-900 dark:text-slate-100' : 'text-red-600'
+            totalBalance >= 0 ? 'text-foreground' : 'text-red-600'
           )}>
             {formatHuf(totalBalance)}
           </p>
@@ -206,31 +206,31 @@ export default function CashbookLedgerView() {
       </div>
 
       {isLoading ? (
-        <div className="bg-card rounded-xl border border-border shadow-soft p-16 text-center">
-          <Loader2 className="w-8 h-8 mx-auto mb-3 text-indigo-400 animate-spin" />
-          <p className="text-sm text-slate-400">Betöltés...</p>
+        <div className="bg-card rounded-lg border border-border shadow-soft p-16 text-center">
+          <Loader2 className="w-8 h-8 mx-auto mb-3 text-primary animate-spin" />
+          <p className="text-sm text-muted-foreground">Betöltés...</p>
         </div>
       ) : entries.length === 0 ? (
-        <div className="bg-card rounded-xl border-2 border-dashed border-border p-16 text-center">
-          <BookOpen className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Nincs pénztárkönyv tétel</p>
-          <p className="text-xs text-slate-500 mt-1">A főkönyvi áttekintés automatikusan frissül a pénztárkönyv tételek rögzítése után.</p>
+        <div className="bg-card rounded-lg border-2 border-dashed border-border p-16 text-center">
+          <BookOpen className="w-12 h-12 mx-auto mb-3 text-muted-foreground/60" />
+          <p className="text-sm font-semibold text-foreground">Nincs pénztárkönyv tétel</p>
+          <p className="text-xs text-muted-foreground mt-1">A főkönyvi áttekintés automatikusan frissül a pénztárkönyv tételek rögzítése után.</p>
         </div>
       ) : (
         <>
           {/* Monthly view */}
           {viewMode === 'monthly' && (
-            <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+            <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-border bg-slate-50 dark:bg-slate-900/30">
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Hónap</th>
-                      <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Tételek</th>
+                    <tr className="border-b border-border bg-background/30">
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Hónap</th>
+                      <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tételek</th>
                       <th className="text-right px-4 py-3 text-xs font-semibold text-green-600 uppercase tracking-wider">Bevétel</th>
                       <th className="text-right px-4 py-3 text-xs font-semibold text-red-500 uppercase tracking-wider">Kiadás</th>
-                      <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Egyenleg</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider w-48">Arány</th>
+                      <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Egyenleg</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-48">Arány</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
@@ -239,14 +239,14 @@ export default function CashbookLedgerView() {
                       const revPct = total > 0 ? (m.revenue / total) * 100 : 50;
                       return (
                         <tr key={m.month} className={cn(
-                          'hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors',
+                          'hover:bg-muted/50 transition-colors',
                           m.entryCount === 0 && 'opacity-40'
                         )}>
                           <td className="px-4 py-3">
-                            <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{m.label}</span>
+                            <span className="text-sm font-semibold text-foreground">{m.label}</span>
                           </td>
                           <td className="px-4 py-3 text-right">
-                            <span className="text-sm text-slate-500 tabular-nums">{m.entryCount}</span>
+                            <span className="text-sm text-muted-foreground tabular-nums">{m.entryCount}</span>
                           </td>
                           <td className="px-4 py-3 text-right">
                             <span className="text-sm font-semibold text-green-600 font-mono tabular-nums">
@@ -261,7 +261,7 @@ export default function CashbookLedgerView() {
                           <td className="px-4 py-3 text-right">
                             <span className={cn(
                               'text-sm font-bold font-mono tabular-nums',
-                              m.balance > 0 ? 'text-slate-900 dark:text-slate-100' : m.balance < 0 ? 'text-red-600' : 'text-slate-400'
+                              m.balance > 0 ? 'text-foreground' : m.balance < 0 ? 'text-red-600' : 'text-muted-foreground'
                             )}>
                               {m.entryCount > 0 ? formatHuf(m.balance) : '—'}
                             </span>
@@ -269,7 +269,7 @@ export default function CashbookLedgerView() {
                           <td className="px-4 py-3">
                             {m.entryCount > 0 && (
                               <div className="flex items-center gap-1.5">
-                                <div className="flex-1 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
+                                <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden flex">
                                   <div className="h-full bg-green-500 rounded-l-full transition-all" style={{ width: `${revPct}%` }} />
                                   <div className="h-full bg-red-400 rounded-r-full transition-all" style={{ width: `${100 - revPct}%` }} />
                                 </div>
@@ -281,9 +281,9 @@ export default function CashbookLedgerView() {
                     })}
                   </tbody>
                   <tfoot>
-                    <tr className="border-t-2 border-border bg-slate-50 dark:bg-slate-900/30 font-bold">
-                      <td className="px-4 py-3 text-sm text-slate-900 dark:text-slate-100">Összesen</td>
-                      <td className="px-4 py-3 text-right text-sm text-slate-500 tabular-nums">{entries.length}</td>
+                    <tr className="border-t-2 border-border bg-background/30 font-bold">
+                      <td className="px-4 py-3 text-sm text-foreground">Összesen</td>
+                      <td className="px-4 py-3 text-right text-sm text-muted-foreground tabular-nums">{entries.length}</td>
                       <td className="px-4 py-3 text-right text-sm text-green-600 font-mono tabular-nums">{formatHuf(totalRevenue)}</td>
                       <td className="px-4 py-3 text-right text-sm text-red-500 font-mono tabular-nums">{formatHuf(totalExpense)}</td>
                       <td className="px-4 py-3 text-right text-sm font-mono tabular-nums">{formatHuf(totalBalance)}</td>
@@ -297,9 +297,9 @@ export default function CashbookLedgerView() {
 
           {/* Column aggregation view */}
           {viewMode === 'columns' && (
-            <div className="bg-card rounded-xl border border-border shadow-soft p-6 space-y-4">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-indigo-500" />
+            <div className="bg-card rounded-lg border border-border shadow-soft p-6 space-y-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <Layers className="w-4 h-4 text-primary" />
                 Pénztárkönyv oszlopok szerinti bontás (I–XI.)
               </h3>
 
@@ -314,17 +314,17 @@ export default function CashbookLedgerView() {
                     return (
                       <div key={key} className="flex items-center gap-3">
                         <div className={cn('w-2 h-2 rounded-full shrink-0', col.color)} />
-                        <span className="text-xs text-slate-600 dark:text-slate-400 w-40 shrink-0">{col.label}</span>
-                        <div className="flex-1 h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <span className="text-xs text-muted-foreground w-40 shrink-0">{col.label}</span>
+                        <div className="flex-1 h-3 bg-muted rounded-full overflow-hidden">
                           <div
                             className={cn('h-full rounded-full transition-all', col.color)}
                             style={{ width: `${Math.max(pct, 0.5)}%` }}
                           />
                         </div>
-                        <span className="text-xs font-bold text-slate-900 dark:text-slate-100 font-mono tabular-nums w-28 text-right">
+                        <span className="text-xs font-bold text-foreground font-mono tabular-nums w-28 text-right">
                           {formatHuf(val)}
                         </span>
-                        <span className="text-[10px] text-slate-400 w-10 text-right">{pct.toFixed(0)}%</span>
+                        <span className="text-[10px] text-muted-foreground w-10 text-right">{pct.toFixed(0)}%</span>
                       </div>
                     );
                   })}
@@ -341,17 +341,17 @@ export default function CashbookLedgerView() {
                     return (
                       <div key={key} className="flex items-center gap-3">
                         <div className={cn('w-2 h-2 rounded-full shrink-0', col.color)} />
-                        <span className="text-xs text-slate-600 dark:text-slate-400 w-40 shrink-0">{col.label}</span>
-                        <div className="flex-1 h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <span className="text-xs text-muted-foreground w-40 shrink-0">{col.label}</span>
+                        <div className="flex-1 h-3 bg-muted rounded-full overflow-hidden">
                           <div
                             className={cn('h-full rounded-full transition-all', col.color)}
                             style={{ width: `${Math.max(pct, 0.5)}%` }}
                           />
                         </div>
-                        <span className="text-xs font-bold text-slate-900 dark:text-slate-100 font-mono tabular-nums w-28 text-right">
+                        <span className="text-xs font-bold text-foreground font-mono tabular-nums w-28 text-right">
                           {formatHuf(val)}
                         </span>
-                        <span className="text-[10px] text-slate-400 w-10 text-right">{pct.toFixed(0)}%</span>
+                        <span className="text-[10px] text-muted-foreground w-10 text-right">{pct.toFixed(0)}%</span>
                       </div>
                     );
                   })}
@@ -369,9 +369,9 @@ export default function CashbookLedgerView() {
             const stepVal = niceMax / gridLines;
 
             return (
-              <div className="bg-card rounded-xl border border-border shadow-soft p-6 space-y-4">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4 text-indigo-500" />
+              <div className="bg-card rounded-lg border border-border shadow-soft p-6 space-y-4">
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-primary" />
                   Havi bevétel vs. kiadás — {selectedYear}
                 </h3>
 
@@ -382,7 +382,7 @@ export default function CashbookLedgerView() {
                     {Array.from({ length: gridLines + 1 }).map((_, i) => {
                       const val = niceMax - i * stepVal;
                       return (
-                        <span key={i} className="text-[10px] text-slate-400 font-mono tabular-nums text-right w-16">
+                        <span key={i} className="text-[10px] text-muted-foreground font-mono tabular-nums text-right w-16">
                           {val >= 1_000_000 ? `${(val / 1_000_000).toFixed(val % 1_000_000 === 0 ? 0 : 1)}M` : val >= 1000 ? `${(val / 1000).toFixed(0)}e` : val.toFixed(0)}
                         </span>
                       );
@@ -397,7 +397,7 @@ export default function CashbookLedgerView() {
                       {Array.from({ length: gridLines + 1 }).map((_, i) => (
                         <div
                           key={i}
-                          className="absolute w-full border-t border-slate-100 dark:border-slate-800"
+                          className="absolute w-full border-t border-border"
                           style={{ top: `${(i / gridLines) * 100}%` }}
                         />
                       ))}
@@ -437,12 +437,12 @@ export default function CashbookLedgerView() {
                     </div>
 
                     {/* X-axis labels */}
-                    <div className="flex gap-1 pt-2 border-t border-slate-200 dark:border-slate-700">
+                    <div className="flex gap-1 pt-2 border-t border-border">
                       {monthlyData.map(m => (
                         <div key={m.month} className="flex-1 text-center">
                           <span className={cn(
                             'text-[10px] font-medium',
-                            m.entryCount > 0 ? 'text-slate-600 dark:text-slate-400' : 'text-slate-300 dark:text-slate-700'
+                            m.entryCount > 0 ? 'text-muted-foreground' : 'text-muted-foreground/60 dark:text-foreground/90'
                           )}>
                             {m.label.substring(0, 3)}.
                           </span>
@@ -457,17 +457,17 @@ export default function CashbookLedgerView() {
                   <div className="flex items-center gap-6">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-sm bg-gradient-to-t from-green-500 to-green-400" />
-                      <span className="text-xs text-slate-500">Bevétel</span>
+                      <span className="text-xs text-muted-foreground">Bevétel</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-sm bg-gradient-to-t from-red-500 to-red-400" />
-                      <span className="text-xs text-slate-500">Kiadás</span>
+                      <span className="text-xs text-muted-foreground">Kiadás</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-4 text-xs">
                     <span className="text-green-600 font-bold font-mono">{formatHuf(totalRevenue)}</span>
                     <span className="text-red-500 font-bold font-mono">{formatHuf(totalExpense)}</span>
-                    <span className={cn('font-bold font-mono', totalBalance >= 0 ? 'text-slate-700 dark:text-slate-300' : 'text-red-600')}>
+                    <span className={cn('font-bold font-mono', totalBalance >= 0 ? 'text-foreground/90' : 'text-red-600')}>
                       Egyenleg: {formatHuf(totalBalance)}
                     </span>
                   </div>
@@ -480,7 +480,7 @@ export default function CashbookLedgerView() {
 
       {/* Info footer */}
       <div className="text-center py-4">
-        <p className="text-[10px] text-slate-400">
+        <p className="text-[10px] text-muted-foreground">
           Pénztárkönyv főkönyvi áttekintés · Szja tv. 5. sz. melléklet · {selectedYear}. adóév
         </p>
       </div>

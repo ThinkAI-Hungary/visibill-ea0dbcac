@@ -59,21 +59,21 @@ function KpiCard({ title, value, subtitle, icon: Icon, accentColor = 'teal' }: {
 
   return (
     <div className={cn(
-      "relative overflow-hidden bg-gradient-to-br rounded-xl p-5 border border-border shadow-soft flex flex-col justify-between h-32",
-      "hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-default group bg-card",
+      "relative overflow-hidden bg-gradient-to-br rounded-lg p-5 border border-border shadow-soft flex flex-col justify-between h-32",
+      " transition-all duration-300 cursor-default group bg-card",
       colorMap[accentColor] || colorMap.teal
     )}>
       <div className="flex items-start justify-between">
-        <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">{title}</h3>
+        <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
         <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110", iconColorMap[accentColor] || iconColorMap.teal)}>
           <Icon className="w-4.5 h-4.5" />
         </div>
       </div>
       <div>
-        <p className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+        <p className="text-3xl font-bold tracking-tight text-foreground">
           {typeof value === 'number' ? <AnimatedNumber value={value} /> : value}
         </p>
-        {subtitle && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{subtitle}</p>}
+        {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
       </div>
     </div>
   );
@@ -82,15 +82,15 @@ function KpiCard({ title, value, subtitle, icon: Icon, accentColor = 'teal' }: {
 // ── Status badge ──
 function CycleStatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    draft: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+    draft: 'bg-muted text-foreground/90 dark:bg-muted dark:text-foreground/90',
     data_collection: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400',
     review: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
     calculating: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400',
     calculated: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-400',
     approved: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400',
-    documents: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400',
+    documents: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-primary',
     submitted: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
-    closed: 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300',
+    closed: 'bg-muted text-muted-foreground dark:bg-muted dark:text-foreground/90',
   };
   const labels: Record<string, string> = {
     draft: 'Tervezet',
@@ -165,15 +165,15 @@ export default function PayrollDashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="w-full space-y-6 animate-in fade-in duration-300">
+      <div className="w-full space-y-6 page-animate">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[0, 1, 2, 3].map(i => (
-            <div key={i} className="bg-card rounded-xl p-5 border border-border h-32 animate-pulse">
+            <div key={i} className="bg-card rounded-lg p-5 border border-border h-32 animate-pulse">
               <div className="flex justify-between">
-                <div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded" />
-                <div className="w-9 h-9 bg-slate-100 dark:bg-slate-800 rounded-lg" />
+                <div className="h-4 w-24 bg-muted rounded" />
+                <div className="w-9 h-9 bg-muted rounded-lg" />
               </div>
-              <div className="h-8 w-16 bg-slate-200 dark:bg-slate-800 rounded mt-8" />
+              <div className="h-8 w-16 bg-muted rounded mt-8" />
             </div>
           ))}
         </div>
@@ -182,7 +182,7 @@ export default function PayrollDashboardPage() {
   }
 
   return (
-    <div className="w-full space-y-8 animate-in fade-in duration-500">
+    <div className="w-full space-y-8 page-animate">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
@@ -194,21 +194,21 @@ export default function PayrollDashboardPage() {
                 navigate('/eaisybooks?tab=payroll');
               }
             }}
-            className="flex items-center justify-center w-8 h-8 mt-1.5 shrink-0 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm"
+            className="flex items-center justify-center w-8 h-8 mt-1.5 shrink-0 rounded-lg border border-border bg-card hover:bg-muted transition-colors shadow-sm"
             title="Vissza"
           >
-            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            <ChevronLeft className="w-5 h-5 text-muted-foreground" />
           </button>
           <div>
             <div className="flex items-center gap-1.5 mb-1">
               {clientLoading ? (
-                <div className="h-3.5 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+                <div className="h-3.5 w-32 bg-muted rounded animate-pulse" />
               ) : (
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{currentClientName}</span>
+                <span className="text-xs font-semibold text-muted-foreground">{currentClientName}</span>
               )}
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Bérszámfejtés</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Foglalkoztatottak, havi ciklusok és bevallások kezelése</p>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">Bérszámfejtés</h1>
+            <p className="text-xs text-muted-foreground mt-1">Foglalkoztatottak, havi ciklusok és bevallások kezelése</p>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -256,16 +256,16 @@ export default function PayrollDashboardPage() {
 
       {/* Onboarding / Fast-Track Banner if 0 cycles */}
       {cycles.length === 0 && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-800/50 rounded-2xl p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in duration-300">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-800/50 rounded-lg p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 page-animate">
           <div className="flex items-center gap-3.5">
-            <div className="p-2.5 bg-blue-600 text-white rounded-xl shadow-md shadow-blue-500/20 shrink-0">
+            <div className="p-2.5 bg-blue-600 text-white rounded-lg shadow-md shadow-blue-500/20 shrink-0">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">
+              <h3 className="font-bold text-foreground text-sm">
                 Új cég bérszámfejtésének beüzemelése & korábbi számfejtések feltöltése
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Töltsd fel a korábban a NAV-nak beadott 08-as (2608 / 2508 / 2408) ÁNYK XML fájlokat, és a rendszer 1 kattintással felépíti az összes dolgozót, jogviszonyt és a lezárt havi bérszámfejtési ciklusokat!
               </p>
             </div>
@@ -324,9 +324,9 @@ export default function PayrollDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* ── Foglalkoztatottak panel ── */}
-        <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+        <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
           <div className="p-5 border-b border-border flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Foglalkoztatottak</h2>
+            <h2 className="text-lg font-bold text-foreground">Foglalkoztatottak</h2>
             <Button
               variant="ghost"
               size="sm"
@@ -339,20 +339,20 @@ export default function PayrollDashboardPage() {
 
           <div className="px-5 py-3 border-b border-border/50">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Keresés név, TAJ, adóazonosító..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 bg-slate-50 dark:bg-background border-transparent text-sm h-9"
+                className="pl-9 bg-muted/40 dark:bg-background border-transparent text-sm h-9"
               />
             </div>
           </div>
 
           <div className="divide-y divide-border/50">
             {filteredEmployees.length === 0 ? (
-              <div className="py-12 text-center text-sm text-slate-500 dark:text-slate-400">
-                <Users className="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-slate-600" />
+              <div className="py-12 text-center text-sm text-muted-foreground">
+                <Users className="w-8 h-8 mx-auto mb-2 text-muted-foreground/60" />
                 {employees.length === 0 ? 'Még nincsenek foglalkoztatottak' : 'Nincs találat'}
               </div>
             ) : (
@@ -360,16 +360,16 @@ export default function PayrollDashboardPage() {
                 <div
                   key={emp.id}
                   onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/${emp.id}`)}
-                  className="px-5 py-3.5 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors group"
+                  className="px-5 py-3.5 flex items-center gap-3 hover:bg-muted/50 cursor-pointer transition-colors group"
                 >
                   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-sm font-bold text-primary">
                     {emp.last_name[0]}{emp.first_name[0]}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                    <p className="text-sm font-semibold text-foreground truncate">
                       {emp.last_name} {emp.first_name}
                     </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                    <p className="text-xs text-muted-foreground">
                       {emp.taj_number || 'TAJ: –'}
                     </p>
                   </div>
@@ -377,11 +377,11 @@ export default function PayrollDashboardPage() {
                     'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase',
                     emp.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' :
                     emp.status === 'pending' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' :
-                    'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                    'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground'
                   )}>
                     {emp.status === 'active' ? 'Aktív' : emp.status === 'pending' ? 'Függő' : emp.status === 'terminated' ? 'Kilépett' : emp.status}
                   </span>
-                  <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-primary transition-colors" />
+                  <ChevronRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-primary transition-colors" />
                 </div>
               ))
             )}
@@ -389,9 +389,9 @@ export default function PayrollDashboardPage() {
         </div>
 
         {/* ── Havi ciklusok panel ── */}
-        <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+        <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
           <div className="p-5 border-b border-border flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Havi ciklusok</h2>
+            <h2 className="text-lg font-bold text-foreground">Havi ciklusok</h2>
             <Button
               variant="ghost"
               size="sm"
@@ -404,8 +404,8 @@ export default function PayrollDashboardPage() {
 
           <div className="divide-y divide-border/50">
             {recentCycles.length === 0 ? (
-              <div className="py-12 text-center text-sm text-slate-500 dark:text-slate-400">
-                <Calendar className="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-slate-600" />
+              <div className="py-12 text-center text-sm text-muted-foreground">
+                <Calendar className="w-8 h-8 mx-auto mb-2 text-muted-foreground/60" />
                 Még nincs bérszámfejtési ciklus
               </div>
             ) : (
@@ -413,7 +413,7 @@ export default function PayrollDashboardPage() {
                 <div
                   key={cycle.id}
                   onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/cycle/${cycle.id}`)}
-                  className="px-5 py-4 flex items-center gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors group"
+                  className="px-5 py-4 flex items-center gap-4 hover:bg-muted/50 cursor-pointer transition-colors group"
                 >
                   <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/20 flex flex-col items-center justify-center">
                     <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase leading-none">
@@ -424,7 +424,7 @@ export default function PayrollDashboardPage() {
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    <p className="text-sm font-semibold text-foreground">
                       {cycle.year}. {MONTHS[cycle.month - 1]}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
@@ -435,18 +435,18 @@ export default function PayrollDashboardPage() {
                             key={i}
                             className={cn(
                               'w-3 h-1 rounded-full transition-colors',
-                              i < cycle.current_step ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-700'
+                              i < cycle.current_step ? 'bg-primary' : 'bg-muted'
                             )}
                           />
                         ))}
                       </div>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                      <span className="text-[11px] text-muted-foreground">
                         {cycle.current_step}/8 lépés
                       </span>
                     </div>
                   </div>
                   <CycleStatusBadge status={cycle.status} />
-                  <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-primary transition-colors" />
+                  <ChevronRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-primary transition-colors" />
                 </div>
               ))
             )}
@@ -455,9 +455,9 @@ export default function PayrollDashboardPage() {
       </div>
 
       {/* ── Bevallások ── */}
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
         <div className="p-5 border-b border-border flex items-center justify-between">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">NAV Bevallások</h2>
+          <h2 className="text-lg font-bold text-foreground">NAV Bevallások</h2>
           <Button
             variant="ghost"
             size="sm"
@@ -472,31 +472,31 @@ export default function PayrollDashboardPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border/50">
-                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400">Típus</th>
-                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400">Időszak</th>
-                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400">Csatorna</th>
-                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400">Státusz</th>
-                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400">Beküldve</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-muted-foreground">Típus</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-muted-foreground">Időszak</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-muted-foreground">Csatorna</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-muted-foreground">Státusz</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-muted-foreground">Beküldve</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
               {filings.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-5 py-12 text-center text-sm text-slate-500 dark:text-slate-400">
-                    <FileText className="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-slate-600" />
+                  <td colSpan={5} className="px-5 py-12 text-center text-sm text-muted-foreground">
+                    <FileText className="w-8 h-8 mx-auto mb-2 text-muted-foreground/60" />
                     Nincs bevallás
                   </td>
                 </tr>
               ) : (
                 filings.slice(0, 5).map((f) => (
-                  <tr key={f.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <tr key={f.id} className="hover:bg-muted/50 transition-colors">
                     <td className="px-5 py-3">
-                      <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 uppercase">{f.filing_type}</span>
+                      <span className="text-sm font-semibold text-foreground uppercase">{f.filing_type}</span>
                     </td>
-                    <td className="px-5 py-3 text-sm text-slate-600 dark:text-slate-300">
+                    <td className="px-5 py-3 text-sm text-muted-foreground dark:text-foreground/90">
                       {f.period_year}/{f.period_month ? String(f.period_month).padStart(2, '0') : f.period_quarter ? `Q${f.period_quarter}` : '–'}
                     </td>
-                    <td className="px-5 py-3 text-sm text-slate-600 dark:text-slate-300 uppercase">
+                    <td className="px-5 py-3 text-sm text-muted-foreground dark:text-foreground/90 uppercase">
                       {f.channel || '–'}
                     </td>
                     <td className="px-5 py-3">
@@ -505,12 +505,12 @@ export default function PayrollDashboardPage() {
                         f.status === 'accepted' ? 'bg-green-100 text-green-700 dark:bg-green-900/40' :
                         f.status === 'submitted' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40' :
                         f.status === 'error' ? 'bg-red-100 text-red-700 dark:bg-red-900/40' :
-                        'bg-slate-100 text-slate-600 dark:bg-slate-800'
+                        'bg-muted text-muted-foreground dark:bg-muted'
                       )}>
                         {({ draft: 'Tervezet', generated: 'Generálva', submitted: 'Beküldve', accepted: 'Elfogadva', rejected: 'Elutasítva', error: 'Hiba' } as Record<string, string>)[f.status] || f.status}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-sm text-slate-500 dark:text-slate-400">
+                    <td className="px-5 py-3 text-sm text-muted-foreground">
                       {f.submitted_at ? new Date(f.submitted_at).toLocaleDateString('hu-HU') : '–'}
                     </td>
                   </tr>
@@ -533,8 +533,8 @@ export default function PayrollDashboardPage() {
             { label: 'EHO/hó', value: formatAmount(taxParams.health_service_monthly) },
           ].map((item) => (
             <div key={item.label} className="bg-card rounded-lg border border-border/50 p-3 text-center">
-              <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{item.label}</p>
-              <p className="text-sm font-bold text-slate-900 dark:text-slate-100 mt-1">{item.value}</p>
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{item.label}</p>
+              <p className="text-sm font-bold text-foreground mt-1">{item.value}</p>
             </div>
           ))}
         </div>
@@ -559,24 +559,24 @@ export default function PayrollDashboardPage() {
             violet: 'bg-violet-100 dark:bg-violet-900/30',
             amber: 'bg-amber-100 dark:bg-amber-900/30',
             teal: 'bg-teal-100 dark:bg-teal-900/30',
-            slate: 'bg-slate-200 dark:bg-slate-700/50',
+            slate: 'bg-muted/50',
           };
           const iconColorMap: Record<string, string> = {
-            blue: 'text-blue-600', violet: 'text-violet-600', amber: 'text-amber-600', teal: 'text-teal-600', slate: 'text-slate-600',
+            blue: 'text-blue-600', violet: 'text-violet-600', amber: 'text-amber-600', teal: 'text-teal-600', slate: 'text-muted-foreground',
           };
           return (
             <div
               key={card.path}
               onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/${card.path}`)}
-              className="bg-card rounded-xl border border-border shadow-soft p-5 hover:shadow-lg hover:border-primary/30 cursor-pointer transition-all group"
+              className="bg-card rounded-lg border border-border shadow-soft p-5 hover:border-primary/30 cursor-pointer transition-all group"
             >
               <div className="flex items-center gap-3 mb-2">
                 <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', colorMap[card.color])}>
                   <card.icon className={cn('w-5 h-5', iconColorMap[card.color])} />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-primary transition-colors">{card.title}</p>
-                  <p className="text-xs text-slate-500">{card.desc}</p>
+                  <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{card.title}</p>
+                  <p className="text-xs text-muted-foreground">{card.desc}</p>
                 </div>
               </div>
               <div className="flex items-center gap-1 text-xs text-primary font-semibold mt-2">

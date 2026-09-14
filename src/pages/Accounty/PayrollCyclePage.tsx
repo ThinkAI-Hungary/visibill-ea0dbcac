@@ -25,6 +25,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { reportError } from '@/lib/errorReporter';
 import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
+import { PageHeader } from '@/components/ui/page-header';
 
 import PayrollStep1 from '@/components/accounty/payroll/PayrollStep1';
 import PayrollStep2 from '@/components/accounty/payroll/PayrollStep2';
@@ -101,6 +102,9 @@ export default function PayrollCyclePage() {
   const createCycle = useCreateCycle();
   const runBatch = useRunBatchPayroll();
   const { data: clients } = useAccountyClients();
+  const clientName = useMemo(() => {
+    return clients?.find(c => c.id === companyId || c.companyId === companyId)?.name || 'Ügyfél';
+  }, [clients, companyId]);
   const { toast } = useToast();
   const { user } = useAuth();
   const [emailSending, setEmailSending] = useState(false);
@@ -620,35 +624,36 @@ export default function PayrollCyclePage() {
 
   if (isNewCycle) {
     return (
-      <div className="w-full max-w-2xl mx-auto space-y-8 animate-in fade-in duration-500">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="h-9 w-9">
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Új havi ciklus</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Bérszámfejtési időszak indítása</p>
-          </div>
-        </div>
+      <div className="w-full max-w-2xl mx-auto space-y-8 page-animate">
+        <PageHeader
+          title="Új havi ciklus"
+          description="Bérszámfejtési időszak indítása"
+          breadcrumbs={[
+            { label: 'eaisyBooks', href: '/eaisybooks' },
+            { label: clientName, href: `/eaisybooks/${companyId}/${effectiveDateRange}/overview` },
+            { label: 'Bérszámfejtés', href: `/eaisybooks/${companyId}/${effectiveDateRange}/payroll` },
+            { label: 'Új havi ciklus' },
+          ]}
+        />
 
-        <div className="bg-card rounded-xl border border-border shadow-soft p-8">
+        <div className="bg-card rounded-lg border border-border shadow-soft p-8">
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Év</label>
+              <label className="block text-sm font-medium text-foreground/90 mb-1.5">Év</label>
               <select
                 value={newYear}
                 onChange={(e) => setNewYear(parseInt(e.target.value))}
-                className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100"
+                className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground"
               >
                 {[2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Hónap</label>
+              <label className="block text-sm font-medium text-foreground/90 mb-1.5">Hónap</label>
               <select
                 value={newMonth}
                 onChange={(e) => setNewMonth(parseInt(e.target.value))}
-                className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100"
+                className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground"
               >
                 {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
               </select>
@@ -683,10 +688,10 @@ export default function PayrollCyclePage() {
 
   if (cycleLoading) {
     return (
-      <div className="w-full space-y-6 animate-in fade-in">
-        <div className="h-8 w-64 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
-        <div className="h-24 bg-slate-200 dark:bg-slate-800 rounded-xl animate-pulse" />
-        <div className="h-64 bg-slate-200 dark:bg-slate-800 rounded-xl animate-pulse" />
+      <div className="w-full space-y-6 page-animate">
+        <div className="h-8 w-64 bg-muted rounded animate-pulse" />
+        <div className="h-24 bg-muted rounded-lg animate-pulse" />
+        <div className="h-64 bg-muted rounded-lg animate-pulse" />
       </div>
     );
   }
@@ -694,30 +699,26 @@ export default function PayrollCyclePage() {
   if (!cycle) {
     return (
       <div className="w-full text-center py-16">
-        <AlertTriangle className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-        <p className="text-slate-500">Ciklus nem található</p>
+        <AlertTriangle className="w-12 h-12 mx-auto mb-3 text-muted-foreground/60" />
+        <p className="text-muted-foreground">Ciklus nem található</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll`)} className="h-9 w-9">
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-              {cycle.year}. {MONTHS[cycle.month - 1]}
-            </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              {activeEmployees.length} foglalkoztatott · {viewMode === 'stepper' ? `Lépés ${currentStep}/8` : 'Dolgozói munkalap nézet'}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap">
+      <PageHeader
+        title={`${cycle.year}. ${MONTHS[cycle.month - 1]}`}
+        description={`${activeEmployees.length} foglalkoztatott · ${viewMode === 'stepper' ? `Lépés ${currentStep}/8` : 'Dolgozói munkalap nézet'}`}
+        breadcrumbs={[
+          { label: 'eaisyBooks', href: '/eaisybooks' },
+          { label: clientName, href: `/eaisybooks/${companyId}/${effectiveDateRange}/overview` },
+          { label: 'Bérszámfejtés', href: `/eaisybooks/${companyId}/${effectiveDateRange}/payroll` },
+          { label: `${cycle.year}. ${MONTHS[cycle.month - 1]}` },
+        ]}
+        actions={
+          <div className="flex items-center gap-3 flex-wrap">
           {/* Dual View Mode Switcher */}
           <div className="flex items-center bg-muted/60 p-1 rounded-lg border border-border">
             <button
@@ -775,7 +776,8 @@ export default function PayrollCyclePage() {
             size="sm"
           />
         </div>
-      </div>
+      }
+    />
 
       {viewMode === 'worksheet' ? (
         <EmployeeWorksheetView
@@ -802,7 +804,7 @@ export default function PayrollCyclePage() {
       ) : (
         <>
           {/* 8-step stepper */}
-          <div className="bg-card rounded-xl border border-border shadow-soft p-6 overflow-hidden">
+          <div className="bg-card rounded-lg border border-border shadow-soft p-6 overflow-hidden">
         <div className="flex items-center gap-0">
           {CYCLE_STEPS.map((s, i) => {
             const isActive = s.id === currentStep;
@@ -823,13 +825,13 @@ export default function PayrollCyclePage() {
                     'w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300',
                     isActive ? 'bg-primary text-primary-foreground shadow-lg scale-110 ring-4 ring-primary/20' :
                     isDone ? 'bg-green-500 text-white' :
-                    'bg-slate-200 text-slate-400 dark:bg-slate-700 dark:text-slate-500'
+                    'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground'
                   )}>
                     {isDone ? <CheckCircle2 className="w-5 h-5" /> : <s.icon className="w-4 h-4" />}
                   </div>
                   <span className={cn(
                     'text-[10px] font-semibold text-center leading-tight max-w-[72px]',
-                    isActive ? 'text-primary' : isDone ? 'text-green-600 dark:text-green-400' : 'text-slate-400'
+                    isActive ? 'text-primary' : isDone ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'
                   )}>
                     {s.title}
                   </span>
@@ -837,7 +839,7 @@ export default function PayrollCyclePage() {
                 {i < CYCLE_STEPS.length - 1 && (
                   <div className={cn(
                     'flex-1 h-0.5 rounded-full mx-1',
-                    s.id < currentStep ? 'bg-green-500' : 'bg-slate-200 dark:bg-slate-700'
+                    s.id < currentStep ? 'bg-green-500' : 'bg-muted'
                   )} />
                 )}
               </React.Fragment>
@@ -847,7 +849,7 @@ export default function PayrollCyclePage() {
       </div>
 
       {/* Step content card */}
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
         <div className="p-6 border-b border-border">
           <div className="flex items-center gap-3">
             {(() => {
@@ -859,10 +861,10 @@ export default function PayrollCyclePage() {
               );
             })()}
             <div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+              <h2 className="text-lg font-bold text-foreground">
                 {currentStep}. {CYCLE_STEPS[currentStep - 1].title}
               </h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-sm text-muted-foreground">
                 {CYCLE_STEPS[currentStep - 1].desc}
               </p>
             </div>

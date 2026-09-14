@@ -156,7 +156,7 @@ export default function MissingInvoicesReportPage() {
   }, [filteredItems, kpis.successRate]);
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-sm text-muted-foreground stagger-1">
         <button onClick={() => navigate('/eaisybooks/missing-invoices')} className="hover:text-primary transition-colors">Hiányzó számlák</button>
@@ -169,9 +169,9 @@ export default function MissingInvoicesReportPage() {
         <div className="flex items-start gap-4">
           <button 
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors mt-1"
+            className="p-2 hover:bg-muted rounded-full transition-colors mt-1"
           >
-            <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            <ArrowLeft className="w-5 h-5 text-muted-foreground" />
           </button>
           <div>
             <h1 className="text-2xl font-bold text-foreground tracking-tight">Hiányzó számlák riport</h1>
@@ -202,7 +202,7 @@ export default function MissingInvoicesReportPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-4 gap-4">
         <div className="stagger-1">
-          <div className="bg-card rounded-xl border border-border p-5 shadow-soft card-ripple"
+          <div className="bg-card rounded-lg border border-border p-5 shadow-soft card-ripple"
             onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`); e.currentTarget.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`); }}
           >
             <h3 className="text-sm font-medium text-muted-foreground">Összes felszólítás</h3>
@@ -217,7 +217,7 @@ export default function MissingInvoicesReportPage() {
         </div>
 
         <div className="stagger-2">
-          <div className="bg-card rounded-xl border border-border p-5 shadow-soft card-ripple"
+          <div className="bg-card rounded-lg border border-border p-5 shadow-soft card-ripple"
             onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`); e.currentTarget.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`); }}
           >
             <h3 className="text-sm font-medium text-muted-foreground">Sikeres bekérés</h3>
@@ -232,7 +232,7 @@ export default function MissingInvoicesReportPage() {
         </div>
 
         <div className="stagger-3">
-          <div className="bg-card rounded-xl border border-border p-5 shadow-soft card-ripple"
+          <div className="bg-card rounded-lg border border-border p-5 shadow-soft card-ripple"
             onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`); e.currentTarget.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`); }}
           >
             <h3 className="text-sm font-medium text-muted-foreground">Megoldatlan tételek</h3>
@@ -247,7 +247,7 @@ export default function MissingInvoicesReportPage() {
         </div>
 
         <div className="stagger-4">
-          <div className="bg-card rounded-xl border border-border p-5 shadow-soft card-ripple"
+          <div className="bg-card rounded-lg border border-border p-5 shadow-soft card-ripple"
             onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`); e.currentTarget.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`); }}
           >
             <h3 className="text-sm font-medium text-muted-foreground">Felszólított arány</h3>
@@ -265,7 +265,7 @@ export default function MissingInvoicesReportPage() {
       {/* Charts */}
       <div className="grid grid-cols-2 gap-4">
         {/* Bar Chart */}
-        <div className="bg-card rounded-xl border border-border p-6 shadow-soft stagger-5">
+        <div className="bg-card rounded-lg border border-border p-6 shadow-soft stagger-5">
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-foreground">Bekérések havi alakulása</h3>
             <p className="text-xs text-muted-foreground mt-1">Összes és megoldott bekérés havonta</p>
@@ -295,7 +295,7 @@ export default function MissingInvoicesReportPage() {
         </div>
 
         {/* Donut Chart */}
-        <div className="bg-card rounded-xl border border-border p-6 shadow-soft flex flex-col stagger-6">
+        <div className="bg-card rounded-lg border border-border p-6 shadow-soft flex flex-col stagger-6">
           <div className="mb-2">
             <h3 className="text-lg font-semibold text-foreground">Csatornák eloszlása</h3>
             <p className="text-xs text-muted-foreground mt-1">Bekérések csatorna szerinti megoszlása</p>
@@ -344,7 +344,7 @@ export default function MissingInvoicesReportPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden pb-4 stagger-7">
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden pb-4 stagger-7">
         <div className="p-6 border-b border-border flex justify-between items-center">
           <div>
             <h3 className="text-lg font-semibold text-foreground">Ügyfél megbízhatóság</h3>
@@ -362,16 +362,16 @@ export default function MissingInvoicesReportPage() {
               <th className="px-6 py-4 font-medium">Megbízhatóság</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
+          <tbody className="divide-y divide-slate-50 dark:divide-border">
             {paginatedTableData.map((row) => (
-              <tr key={row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+              <tr key={row.id} className="hover:bg-muted/50 transition-colors">
                 <td className="px-6 py-4 font-semibold text-foreground">{row.name}</td>
                 <td className="px-6 py-4 text-center font-medium text-foreground">{row.requested}</td>
                 <td className="px-6 py-4 text-center font-medium text-foreground">{row.resolved}</td>
                 <td className="px-6 py-4 text-center font-medium text-muted-foreground">{row.avgTime}</td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="h-1.5 w-24 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div className="h-1.5 w-24 bg-muted rounded-full overflow-hidden">
                       <div 
                         className={`h-full rounded-full transition-all duration-700 ${row.reliability < 50 ? 'bg-red-500' : row.reliability < 80 ? 'bg-amber-500' : 'bg-primary'}`} 
                         style={{ width: `${row.reliability}%` }}

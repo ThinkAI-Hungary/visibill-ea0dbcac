@@ -69,16 +69,16 @@ export default function GdprPage() {
   }
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-lg shadow-emerald-500/25">
+          <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg shadow-lg shadow-emerald-500/25">
             <ShieldCheck className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">GDPR modul</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Érintetti kérelmek kezelése</p>
+            <h1 className="text-2xl font-bold text-foreground">GDPR modul</h1>
+            <p className="text-sm text-muted-foreground">Érintetti kérelmek kezelése</p>
           </div>
         </div>
         <Button className="gap-2" onClick={() => setIsCreateOpen(true)}>
@@ -94,34 +94,34 @@ export default function GdprPage() {
           { label: 'Folyamatban', value: stats.in_progress, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20' },
           { label: 'Teljesítve', value: stats.completed, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20' },
         ].map(s => (
-          <div key={s.label} className={`${s.bg} rounded-xl p-4 border border-border`}>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{s.label}</p>
+          <div key={s.label} className={`${s.bg} rounded-lg p-4 border border-border`}>
+            <p className="text-xs text-muted-foreground mb-1">{s.label}</p>
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
           </div>
         ))}
       </div>
 
       {/* Table */}
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-border dark:bg-slate-900/30">
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Érintett</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Típus</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Benyújtás</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Státusz</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Művelet</th>
+            <tr className="border-b border-border dark:bg-card/30">
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Érintett</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Típus</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Benyújtás</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Státusz</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Művelet</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/50">
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i}><td colSpan={5} className="px-4 py-3"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" /></td></tr>
+                <tr key={i}><td colSpan={5} className="px-4 py-3"><div className="h-4 bg-muted rounded animate-pulse" /></td></tr>
               ))
             ) : requests.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-16 text-center text-sm text-slate-400">
-                  <ShieldCheck className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+                <td colSpan={5} className="py-16 text-center text-sm text-muted-foreground">
+                  <ShieldCheck className="w-10 h-10 mx-auto mb-3 text-muted-foreground/60" />
                   Nincs érintetti kérelem
                 </td>
               </tr>
@@ -129,10 +129,10 @@ export default function GdprPage() {
               paginated.map((req: any) => {
                 const sc = STATUS_CONFIG[req.status] || STATUS_CONFIG.pending;
                 return (
-                  <tr key={req.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                    <td className="px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-100">{req.employee_name}</td>
+                  <tr key={req.id} className="hover:bg-muted/50 transition-colors">
+                    <td className="px-4 py-3 text-sm font-medium text-foreground">{req.employee_name}</td>
                     <td className="px-4 py-3 text-sm">{TYPE_LABELS[req.request_type] || req.request_type}</td>
-                    <td className="px-4 py-3 text-sm text-slate-500">{new Date(req.requested_at).toLocaleDateString('hu-HU')}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">{new Date(req.requested_at).toLocaleDateString('hu-HU')}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border ${sc.color}`}>
                         <sc.icon className="w-3 h-3" /> {sc.label}
@@ -181,17 +181,17 @@ export default function GdprPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Érintett neve</label>
+              <label className="text-sm font-medium text-foreground/90">Érintett neve</label>
               <Input value={form.employee_name} onChange={e => setForm(f => ({ ...f, employee_name: e.target.value }))} placeholder="Név" className="mt-1" />
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Kérelem típusa</label>
+              <label className="text-sm font-medium text-foreground/90">Kérelem típusa</label>
               <select value={form.request_type} onChange={e => setForm(f => ({ ...f, request_type: e.target.value }))} className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm">
                 {Object.entries(TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Megjegyzés</label>
+              <label className="text-sm font-medium text-foreground/90">Megjegyzés</label>
               <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm min-h-[80px]" />
             </div>
           </div>

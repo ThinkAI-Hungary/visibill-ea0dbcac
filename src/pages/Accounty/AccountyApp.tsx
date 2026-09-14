@@ -21,7 +21,8 @@ import {
   X,
   CheckCircle,
   AlertCircle,
-  Check
+  Check,
+  ChevronRight
 } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
@@ -51,6 +52,7 @@ import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { supabase } from '@/integrations/supabase/client';
 import { BarChart2 } from 'lucide-react';
+import { PageHeader } from '@/components/ui/page-header';
 
 import DashboardKpiView from '@/components/accounty/dashboard/DashboardKpiView';
 import ClientGridView from '@/components/accounty/dashboard/ClientGridView';
@@ -221,7 +223,8 @@ export default function AccountyApp() {
     }
   };
 
-  const [viewScope, setViewScope] = useState<'kpi' | 'mine' | 'all'>('kpi');
+  const [viewScope, setViewScope] = useState<'all' | 'mine'>('all');
+  const [showExecutiveAnalysis, setShowExecutiveAnalysis] = useState(false);
 
   // Inline invite code state
   const [showInviteCode, setShowInviteCode] = useState(false);
@@ -231,19 +234,25 @@ export default function AccountyApp() {
   const [isJoiningAsAccountant, setIsJoiningAsAccountant] = useState(false);
   const queryClientRef = useQueryClient();
 
-  const scopedClients = clients.filter(client => 
-    viewScope === 'all' || client.isMainAccountant
-  );
+  const scopedClients = useMemo(() => {
+    return clients.filter(client => 
+      viewScope === 'all' || client.isMainAccountant
+    );
+  }, [clients, viewScope]);
 
-  const filteredClients = scopedClients.filter(client => {
-    const matchesSearch = client.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          client.taxNumber.includes(searchQuery);
-    const matchesStatus = statusFilter === 'Minden' || client.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
+  const filteredClients = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return scopedClients.filter(client => {
+      const matchesSearch = !q || 
+        client.name.toLowerCase().includes(q) || 
+        client.taxNumber.includes(q);
+      const matchesStatus = statusFilter === 'Minden' || client.status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+  }, [scopedClients, searchQuery, statusFilter]);
 
-  const mineCount = clients.filter(c => c.isMainAccountant).length;
+  const mineCount = useMemo(() => clients.filter(c => c.isMainAccountant).length, [clients]);
   const allCount = clients.length;
 
   const { role: userRole } = useUserRole();
@@ -265,10 +274,10 @@ export default function AccountyApp() {
 
   if (clientsLoading) {
     return (
-      <div className="w-full space-y-6 animate-in fade-in duration-300">
+      <div className="w-full space-y-6 page-animate">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[0, 1, 2, 3].map(i => (
-            <div key={i} className="bg-card rounded-xl p-5 border border-border h-32 animate-pulse">
+            <div key={i} className="bg-card rounded-lg p-5 border border-border h-32 animate-pulse">
               <div className="flex justify-between">
                 <div className="h-4 w-24 bg-muted rounded" />
                 <div className="w-9 h-9 bg-muted/60 rounded-lg" />
@@ -279,7 +288,7 @@ export default function AccountyApp() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {[0, 1, 2, 3, 4, 5].map(i => (
-            <div key={i} className="bg-card rounded-xl border border-border overflow-hidden animate-pulse" style={{ animationDelay: `${i * 100}ms` }}>
+            <div key={i} className="bg-card rounded-lg border border-border overflow-hidden animate-pulse" style={{ animationDelay: `${i * 100}ms` }}>
               <div className="h-1 w-full bg-muted" />
               <div className="p-5 space-y-4">
                 <div className="flex items-center gap-3">
@@ -383,14 +392,14 @@ export default function AccountyApp() {
                 window.location.reload();
               }
             }}
-            className="px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-xl font-medium text-sm transition-colors shadow-lg"
+            className="px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium text-sm transition-colors shadow-lg"
           >
             Hozzárendelés indítása (eaisybill cégek)
           </button>
           <button
             onClick={() => setShowInviteCode(!showInviteCode)}
             className={cn(
-              "px-6 py-3 rounded-xl font-medium text-sm transition-all border shadow-soft",
+              "px-6 py-3 rounded-lg font-medium text-sm transition-all border shadow-soft",
               showInviteCode
                 ? "bg-primary/10 text-primary border-primary/30"
                 : "bg-card hover:bg-muted/20 text-foreground border-border"
@@ -401,8 +410,8 @@ export default function AccountyApp() {
         </div>
 
         {showInviteCode && (
-          <div className="w-full max-w-lg animate-in fade-in slide-in-from-top-4 duration-400">
-            <div className="bg-card rounded-xl p-6 border border-border shadow-soft">
+          <div className="w-full max-w-lg page-animate slide-in-from-top-4 duration-400">
+            <div className="bg-card rounded-lg p-6 border border-border shadow-soft">
               <h2 className="text-xl font-bold text-foreground mb-1">Ügyfél hozzáadása meghívó kóddal</h2>
               <p className="text-sm text-muted-foreground mb-6">Írd be az ügyfeled eaisybill fiókjából generált meghívó kódot</p>
               
@@ -424,25 +433,25 @@ export default function AccountyApp() {
                   className="bg-muted/10 border-border font-mono uppercase tracking-widest text-lg" 
                 />
                 {codeStatus === 'valid' && linkedCompany && (
-                  <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm mt-2 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm mt-2 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20 page-animate slide-in-from-top-2 duration-300">
                     <CheckCircle className="w-4 h-4 shrink-0" />
                     <span>Cég megtalálva: <strong>{linkedCompany.name}</strong> ({linkedCompany.tax_number})</span>
                   </div>
                 )}
                 {codeStatus === 'invalid' && (
-                  <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 text-sm mt-2 p-3 bg-rose-500/10 rounded-lg border border-rose-500/20 animate-in fade-in duration-200">
+                  <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 text-sm mt-2 p-3 bg-rose-500/10 rounded-lg border border-rose-500/20 page-animate duration-200">
                     <AlertCircle className="w-4 h-4 shrink-0" />
                     <span>Érvénytelen meghívó kód</span>
                   </div>
                 )}
                 {codeStatus === 'expired' && (
-                  <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-sm mt-2 p-3 bg-amber-500/10 rounded-lg border border-amber-500/20 animate-in fade-in duration-200">
+                  <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-sm mt-2 p-3 bg-amber-500/10 rounded-lg border border-amber-500/20 page-animate duration-200">
                     <AlertCircle className="w-4 h-4 shrink-0" />
                     <span>A meghívó kód lejárt — kérj újat az ügyféltől!</span>
                   </div>
                 )}
                 {codeStatus === 'already_assigned' && (
-                  <div className="flex items-center gap-2 text-primary text-sm mt-2 p-3 bg-muted/10 rounded-lg border border-border animate-in fade-in duration-200">
+                  <div className="flex items-center gap-2 text-primary text-sm mt-2 p-3 bg-muted/10 rounded-lg border border-border page-animate duration-200">
                     <CheckCircle className="w-4 h-4 shrink-0" />
                     <span>Ez a cég már hozzá van rendelve a fiókodhoz</span>
                   </div>
@@ -487,60 +496,377 @@ export default function AccountyApp() {
   }
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       
-      {/* Header section */}
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">Portfólió</h1>
-          <p className="text-muted-foreground mt-1">Ügyfeleid áttekintése és kezelése</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center bg-muted/10 px-3 py-1.5 rounded-lg border border-border">
-            {isAdmin ? (
-              <span className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-                <Shield className="w-3.5 h-3.5" />
-                Irodavezető
-              </span>
-            ) : (
-              <span className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-                <UserCheck className="w-3.5 h-3.5" />
-                {role === 'senior_könyvelő' ? 'Senior könyvelő' : role === 'asszisztens' ? 'Asszisztens' : 'Könyvelő'}
-              </span>
-            )}
+      {/* Header section with Breadcrumb */}
+      <PageHeader
+        breadcrumbs={[
+          { label: 'eaisyBooks', href: '/eaisybooks' },
+          { label: 'Portfólió Menedzsment' }
+        ]}
+        title="Ügyfélportfólió & Irodai Áttekintés"
+        description="Könyvelési ciklusok, hiányzó bizonylatok és irodai feladatok központi felügyelete"
+        actions={
+          <div className="flex items-center gap-3 self-start sm:self-auto">
+            <div className="flex items-center bg-muted/40 px-3 py-1.5 rounded-lg border border-border/60">
+              {isAdmin ? (
+                <span className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                  <Shield className="w-3.5 h-3.5 text-primary" />
+                  Irodavezető
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                  <UserCheck className="w-3.5 h-3.5 text-primary" />
+                  {role === 'senior_könyvelő' ? 'Senior könyvelő' : role === 'asszisztens' ? 'Asszisztens' : 'Könyvelő'}
+                </span>
+              )}
+            </div>
+            <Link to="/eaisybooks/new-client">
+              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-4 flex items-center gap-2 shadow-sm">
+                <Plus className="w-4 h-4" />
+                Új ügyfél
+              </Button>
+            </Link>
           </div>
-          <Link to="/eaisybooks/new-client">
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-4 flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              Új ügyfél
-            </Button>
-          </Link>
+        }
+      />
+
+      {/* 1. Metric Pulse Bar (Kompakt 4 Kártya, interaktív szűrő funkcióval) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        {/* Zárási státusz kártya */}
+        <div 
+          onClick={() => setShowExecutiveAnalysis(prev => !prev)}
+          className="group relative bg-card border border-border hover:border-amber-500/40 rounded-lg p-4 shadow-card hover:shadow-md transition-all cursor-pointer overflow-hidden flex flex-col justify-between"
+        >
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-amber-400" />
+          <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <span>Zárási státusz (2026)</span>
+            <Clock className="w-4 h-4 text-amber-500 group-hover:rotate-12 transition-transform" />
+          </div>
+          <div className="my-2">
+            <div className="text-2xl font-bold text-foreground tracking-tight flex items-baseline gap-2">
+              <span>{dynamicKpiStats.zarasiSzazalek}%</span>
+              <span className="text-xs font-medium text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">
+                {dynamicKpiStats.zarasiSzazalek >= 100 ? 'Kész' : 'Folyamatban'}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {dynamicKpiStats.kiosztottLezart} ügyfél lezárva
+            </p>
+          </div>
+          <div className="text-[11px] font-medium text-primary flex items-center gap-1 group-hover:underline">
+            <span>{showExecutiveAnalysis ? 'Elemzés elrejtése' : 'Vezetői elemzés megtekintése'}</span>
+            <ChevronRight className="w-3 h-3" />
+          </div>
+        </div>
+
+        {/* Kritikus ügyfelek kártya */}
+        <div 
+          onClick={() => {
+            setStatusFilter(prev => prev === 'Kritikus' ? 'Minden' : 'Kritikus');
+            if (activeTab !== 'companies') setSearchParams({ tab: 'companies' });
+          }}
+          className={cn(
+            "group relative bg-card border rounded-lg p-4 shadow-card hover:shadow-md transition-all cursor-pointer overflow-hidden flex flex-col justify-between",
+            statusFilter === 'Kritikus' ? "border-red-500 ring-2 ring-red-500/20 bg-red-500/[0.02]" : "border-border hover:border-red-500/40"
+          )}
+        >
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 to-rose-500" />
+          <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <span>Kritikus ügyfelek</span>
+            <AlertTriangle className="w-4 h-4 text-red-500 group-hover:animate-bounce" />
+          </div>
+          <div className="my-2">
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400 tracking-tight flex items-baseline gap-2">
+              <span>{dynamicKpiStats.kritikusDb} db</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Azonnali beavatkozást igénylő
+            </p>
+          </div>
+          <div className="text-[11px] font-medium text-red-600 dark:text-red-400 flex items-center gap-1 group-hover:underline">
+            <span>Kritikus cégek szűrése</span>
+            <ChevronRight className="w-3 h-3" />
+          </div>
+        </div>
+
+        {/* Kiosztott / Rendben kártya */}
+        <div 
+          onClick={() => {
+            setStatusFilter(prev => prev === 'Rendben' ? 'Minden' : 'Rendben');
+            if (activeTab !== 'companies') setSearchParams({ tab: 'companies' });
+          }}
+          className={cn(
+            "group relative bg-card border rounded-lg p-4 shadow-card hover:shadow-md transition-all cursor-pointer overflow-hidden flex flex-col justify-between",
+            statusFilter === 'Rendben' ? "border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-500/[0.02]" : "border-border hover:border-emerald-500/40"
+          )}
+        >
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500" />
+          <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <span>Kiosztott / Rendben</span>
+            <CheckCircle className="w-4 h-4 text-emerald-500" />
+          </div>
+          <div className="my-2">
+            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 tracking-tight flex items-baseline gap-2">
+              <span>{clients.filter(c => c.status === 'Rendben').length} / {clients.length}</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Aktív könyvelés rendben
+            </p>
+          </div>
+          <div className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1 group-hover:underline">
+            <span>Rendben lévő cégek</span>
+            <ChevronRight className="w-3 h-3" />
+          </div>
+        </div>
+
+        {/* Hiányzó számlák kártya */}
+        <div 
+          onClick={() => navigate('/eaisybooks/missing-invoices')}
+          className="group relative bg-card border border-border hover:border-primary/40 rounded-lg p-4 shadow-card hover:shadow-md transition-all cursor-pointer overflow-hidden flex flex-col justify-between"
+        >
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-teal-400" />
+          <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <span>Hiányzó számlák</span>
+            <FileText className="w-4 h-4 text-primary" />
+          </div>
+          <div className="my-2">
+            <div className="text-2xl font-bold text-foreground tracking-tight">
+              <span>{kpis.missingInvoices} db</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Bizonylatpótlási teendő
+            </p>
+          </div>
+          <div className="text-[11px] font-medium text-primary flex items-center gap-1 group-hover:underline">
+            <span>Hiánypótlási lista megnyitása</span>
+            <ChevronRight className="w-3 h-3" />
+          </div>
         </div>
       </div>
 
-      {/* Tab Switcher for Overviews */}
-      <div className="flex items-center gap-1 border-b border-border/40 pb-px mb-2 overflow-x-auto">
-        {([
-          ['companies', 'Céglista'],
-          ['payroll', 'Bérszámfejtés'],
-          ['tao', 'TAO / KIVA'],
-          ['ev', 'EV / Szervezetek'],
-        ] as const).map(([tabKey, label]) => (
-          <button
-            key={tabKey}
-            onClick={() => setSearchParams({ tab: tabKey })}
+      {/* 2. Fused Unified Filter Bar (Egyetlen professzionális szűrősáv a 2 különálló tabsor helyett) */}
+      <div className="bg-card border border-border rounded-lg p-2.5 sm:p-3 shadow-card flex flex-col lg:flex-row lg:items-center justify-between gap-3 sticky top-2 z-20 backdrop-blur-md bg-card/95">
+        {/* Bal oldal: Felelős Scope és Kategóriák */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Felelős Scope Pill */}
+          <div className="flex items-center bg-muted/40 p-1 rounded-lg border border-border/60">
+            <button
+              onClick={() => setViewScope('all')}
+              className={cn(
+                "px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5",
+                viewScope === 'all'
+                  ? "bg-card text-foreground shadow-sm font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Building className="w-3.5 h-3.5" />
+              <span>Összes ügyfél</span>
+              <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded-full font-mono text-muted-foreground">
+                {allCount}
+              </span>
+            </button>
+            <button
+              onClick={() => setViewScope('mine')}
+              className={cn(
+                "px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5",
+                viewScope === 'mine'
+                  ? "bg-card text-foreground shadow-sm font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>Saját ügyfeleim</span>
+              <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded-full font-mono text-muted-foreground">
+                {mineCount}
+              </span>
+            </button>
+          </div>
+
+          <div className="hidden sm:block h-5 w-px bg-border/60 mx-0.5" />
+
+          {/* Kategória / Szakmai Szűrő Chip-ek */}
+          <div className="flex items-center gap-1.5 overflow-x-auto">
+            <button
+              onClick={() => setSearchParams({ tab: 'companies' })}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-semibold transition-all border whitespace-nowrap",
+                activeTab === 'companies'
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40 border-border"
+              )}
+            >
+              Minden cég
+            </button>
+            <button
+              onClick={() => setSearchParams({ tab: 'tao' })}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-semibold transition-all border whitespace-nowrap",
+                activeTab === 'tao'
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40 border-border"
+              )}
+            >
+              TAO / KIVA
+            </button>
+            <button
+              onClick={() => setSearchParams({ tab: 'ev' })}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-semibold transition-all border whitespace-nowrap",
+                activeTab === 'ev'
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40 border-border"
+              )}
+            >
+              EV & Egyéni
+            </button>
+            <button
+              onClick={() => setSearchParams({ tab: 'payroll' })}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-semibold transition-all border whitespace-nowrap",
+                activeTab === 'payroll'
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40 border-border"
+              )}
+            >
+              Bérszámfejtés
+            </button>
+          </div>
+        </div>
+
+        {/* Jobb oldal: Keresés, Státusz, Nézetváltó, Vezetői Elemzés gomb */}
+        <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+          {activeTab === 'companies' && (
+            <>
+              {/* Kereső */}
+              <div className="relative w-full sm:w-56">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <Input 
+                  placeholder="Cégnév vagy adószám..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 pr-7 h-9 text-xs bg-background border-border focus-visible:ring-1 focus-visible:ring-primary"
+                />
+                {searchQuery && (
+                  <button 
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Státusz szűrő */}
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[130px] h-9 text-xs bg-background border-border gap-1 text-muted-foreground">
+                  <Filter className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                  <SelectValue placeholder="Státusz..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Minden">Minden</SelectItem>
+                  <SelectItem value="Rendben">Rendben</SelectItem>
+                  <SelectItem value="Feldolgozandó">Feldolgozandó</SelectItem>
+                  <SelectItem value="Kritikus">Kritikus</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Nézetváltó */}
+              <div className="flex items-center bg-muted/40 p-0.5 rounded-lg border border-border/60">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setViewMode('grid')}
+                  title="Rács nézet (1)"
+                  className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'grid' ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
+                >
+                  <Grid className="w-3.5 h-3.5" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setViewMode('list')}
+                  title="Lista nézet (2)"
+                  className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'list' ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
+                >
+                  <ListIcon className="w-3.5 h-3.5" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setViewMode('kanban')}
+                  title="Kanban nézet (3)"
+                  className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'kanban' ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
+                >
+                  <Kanban className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </>
+          )}
+
+          {/* Vezetői Elemzés Toggle */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowExecutiveAnalysis(prev => !prev)}
             className={cn(
-              "px-5 py-2.5 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap",
-              activeTab === tabKey
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+              "h-9 px-3 gap-1.5 text-xs font-semibold transition-all border",
+              showExecutiveAnalysis
+                ? "bg-primary/10 text-primary border-primary/40 shadow-sm"
+                : "bg-background hover:bg-muted/40 text-foreground border-border"
             )}
           >
-            {label}
-          </button>
-        ))}
+            <BarChart2 className={cn("w-3.5 h-3.5", showExecutiveAnalysis ? "text-primary" : "text-muted-foreground")} />
+            <span>Vezetői Elemzés</span>
+          </Button>
+        </div>
       </div>
 
+      {/* 3. Vezetői Elemzés Panel (Kinyitható / Becsukható) */}
+      {showExecutiveAnalysis && (
+        <div className="bg-card border border-primary/20 rounded-lg p-5 shadow-lg page-animate slide-in-from-top-3 duration-300 relative">
+          <div className="flex items-center justify-between pb-4 mb-4 border-b border-border/60">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                <BarChart2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-foreground">Vezetői Statisztikák & Rendszerelemzés</h2>
+                <p className="text-xs text-muted-foreground">Könyvelői kapacitás, havi trendek és automatizációs audit</p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowExecutiveAnalysis(false)}
+              className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground gap-1.5"
+            >
+              <X className="w-4 h-4" />
+              <span>Bezárás</span>
+            </Button>
+          </div>
+
+          <DashboardKpiView
+            clients={clients}
+            dynamicKpiStats={dynamicKpiStats}
+            portalStats={portalStats}
+            editingLayout={editingLayout}
+            setEditingLayout={setEditingLayout}
+            widgetOrder={widgetOrder}
+            moveWidget={moveWidget}
+            dynamicBarData={dynamicBarData}
+            dynamicPieData={dynamicPieData}
+            monthlyTrendData={monthlyTrendData}
+            colleagueStats={colleagueStats}
+            auditLog={auditLog}
+            isAdmin={isAdmin}
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+          />
+        </div>
+      )}
+
+      {/* 4. Munkaterület a kiválasztott Tab alapján */}
       <Suspense fallback={
         <div className="py-20 text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
@@ -548,140 +874,32 @@ export default function AccountyApp() {
         </div>
       }>
         {activeTab === 'companies' && (
-          <div className="space-y-6">
-            {/* KPIs (Hidden in KPI view since it has its own) */}
-            {viewScope !== 'kpi' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="stagger-1"><KpiCard title="Összes ügyfél" value={kpis.totalClients} icon={Users} accentColor="teal" /></div>
-                <div className="stagger-2"><KpiCard title="Feldolgozatlan számlák" value={kpis.unprocessedInvoices} icon={FileText} accentColor="blue" /></div>
-                <div className="stagger-3"><KpiCard title="Hiányzó számlák" value={kpis.missingInvoices} icon={AlertTriangle} valueClass="text-red-600" accentColor="red" onClick={() => navigate('/eaisybooks/missing-invoices')} /></div>
-                <div className="stagger-4"><KpiCard title="Közeledő határidők" value={kpis.upcomingDeadlines} icon={Clock} accentColor="amber" onClick={() => navigate('/eaisybooks/tax-calendar')} /></div>
+          <div className="space-y-4">
+            {/* Táblázat / Munkalap Fejléc Infó */}
+            <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+              <div className="flex items-center gap-2 font-medium">
+                <span>Ügyfelek Munkalapja</span>
+                <span>·</span>
+                <span className="text-foreground font-semibold">
+                  {filteredClients.length} cég megjelenítve ({allCount > 0 ? Math.round((filteredClients.length / allCount) * 100) : 0}%)
+                </span>
               </div>
-            )}
-
-            {/* Scope Tabs */}
-            <div className="w-full bg-muted/20 p-1.5 rounded-xl border border-border flex items-center">
-              <button
-                onClick={() => setViewScope('kpi')}
-                className={cn(
-                  "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
-                  viewScope === 'kpi' 
-                    ? "bg-card text-foreground shadow-soft" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/10"
-                )}
-              >
-                <BarChart2 className="w-4 h-4" />
-                {isAdmin ? 'Irodai KPI (Vezetői)' : 'Statisztikák'}
-              </button>
-              <button
-                onClick={() => setViewScope('mine')}
-                className={cn(
-                  "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
-                  viewScope === 'mine' 
-                    ? "bg-card text-foreground shadow-soft" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/10"
-                )}
-              >
-                <User className="w-4 h-4" />
-                Saját ügyfeleim ({mineCount})
-              </button>
-              {isAdmin && (
+              {(searchQuery || statusFilter !== 'Minden' || viewScope !== 'all') && (
                 <button
-                  onClick={() => setViewScope('all')}
-                  className={cn(
-                    "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
-                    viewScope === 'all' 
-                      ? "bg-card text-foreground shadow-soft" 
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/10"
-                  )}
+                  onClick={() => {
+                    setSearchQuery('');
+                    setStatusFilter('Minden');
+                    setViewScope('all');
+                  }}
+                  className="text-primary hover:underline flex items-center gap-1 font-medium"
                 >
-                  <Building className="w-4 h-4" />
-                  Összes ügyfél ({allCount})
+                  <X className="w-3 h-3" />
+                  <span>Szűrők visszaállítása</span>
                 </button>
               )}
             </div>
 
-            {/* Toolbar - Hide if KPI view */}
-            {viewScope !== 'kpi' && (
-              <div className="flex items-center justify-between gap-4 bg-card/95 backdrop-blur-sm p-3 rounded-xl border border-border shadow-soft sticky top-0 z-10">
-                <div className="flex items-center gap-3 flex-1">
-                  <div className="relative w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input 
-                      placeholder="Keresés..." 
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9 bg-card border-border focus-visible:ring-primary"
-                    />
-                  </div>
-                  
-                  <div className="hidden sm:block">
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="w-[140px] bg-card border-border h-9 gap-2 text-muted-foreground">
-                        <div className="flex items-center gap-2">
-                          <Filter className="w-4 h-4 shrink-0" />
-                          <SelectValue placeholder="Szűrés..." />
-                        </div>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Minden">Minden</SelectItem>
-                        <SelectItem value="Rendben">Rendben</SelectItem>
-                        <SelectItem value="Feldolgozandó">Feldolgozandó</SelectItem>
-                        <SelectItem value="Kritikus">Kritikus</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div className="flex items-center bg-muted/10 rounded-lg p-1 border border-border">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => setViewMode('grid')}
-                    className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'grid' ? "bg-card shadow-soft text-foreground" : "text-muted-foreground hover:text-foreground")}
-                  >
-                    <Grid className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => setViewMode('list')}
-                    className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'list' ? "bg-card shadow-soft text-foreground" : "text-muted-foreground hover:text-foreground")}
-                  >
-                    <ListIcon className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => setViewMode('kanban')}
-                    className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'kanban' ? "bg-card shadow-soft text-foreground" : "text-muted-foreground hover:text-foreground")}
-                  >
-                    <Kanban className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Content based on View Mode */}
-            {viewScope === 'kpi' ? (
-              <DashboardKpiView
-                clients={clients}
-                dynamicKpiStats={dynamicKpiStats}
-                portalStats={portalStats}
-                editingLayout={editingLayout}
-                setEditingLayout={setEditingLayout}
-                widgetOrder={widgetOrder}
-                moveWidget={moveWidget}
-                dynamicBarData={dynamicBarData}
-                dynamicPieData={dynamicPieData}
-                monthlyTrendData={monthlyTrendData}
-                colleagueStats={colleagueStats}
-                auditLog={auditLog}
-                isAdmin={isAdmin}
-                dateFrom={dateFrom}
-                dateTo={dateTo}
-              />
-            ) : viewMode === 'kanban' ? (
+            {viewMode === 'kanban' ? (
               <ClientKanbanView
                 filteredClients={filteredClients}
                 handleUpdateOwner={handleUpdateOwner}

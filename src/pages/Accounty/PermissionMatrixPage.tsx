@@ -54,7 +54,7 @@ const ROLE_COLORS: Record<RoleOption, string> = {
   'iroda_admin': 'bg-violet-500/15 text-violet-600 dark:text-violet-400 border-violet-500/20',
   'senior_könyvelő': 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/20',
   'könyvelő': 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-  'asszisztens': 'bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/20',
+  'asszisztens': 'bg-muted-foreground/15 text-muted-foreground border-muted-foreground/20',
 };
 
 // Modules that can be configured by admin
@@ -292,7 +292,7 @@ function useToggleModulePermission() {
 
 function RoleBadge({ role, onClick }: { role: string; onClick?: () => void }) {
   const r = role as RoleOption;
-  const color = ROLE_COLORS[r] || 'bg-slate-100 text-slate-600';
+  const color = ROLE_COLORS[r] || 'bg-muted text-muted-foreground';
   const label = ROLE_LABELS[r] || role;
 
   return (
@@ -392,7 +392,7 @@ function PermissionToggle({ canRead, canWrite, defaultRead, defaultWrite, onTogg
         className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium border transition-all
           ${writeActive
             ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/20 hover:bg-blue-500/25'
-            : 'bg-slate-500/10 text-slate-400 border-slate-500/15 hover:bg-slate-500/20'
+            : 'bg-muted-foreground/10 text-muted-foreground border-muted-foreground/15 hover:bg-muted-foreground/20'
           }
           ${!isWriteCustom ? 'opacity-55 border-dashed' : ''}
         `}
@@ -626,7 +626,7 @@ export default function PermissionMatrixPage() {
       {/* ── Tab: Roles Matrix ── */}
       {activeTab === 'roles' && (
         <>
-          <div className="border border-border rounded-xl overflow-hidden bg-card shadow-sm">
+          <div className="border border-border rounded-lg overflow-hidden bg-card shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -750,7 +750,7 @@ export default function PermissionMatrixPage() {
             Egyedi modul-hozzáférés beállítása könyvelőnként. A szaggatott szegélyes cellák az alapértelmezett (szerepkör szerinti) jogosultságot mutatják.
             Kattints a módosításhoz. Az iroda admin jogosultságai nem korlátozhatók.
           </p>
-          <div className="border border-border rounded-xl overflow-hidden bg-card shadow-sm">
+          <div className="border border-border rounded-lg overflow-hidden bg-card shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>

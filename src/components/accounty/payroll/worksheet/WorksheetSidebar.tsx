@@ -170,7 +170,7 @@ export default function WorksheetSidebar({
                       Adattal
                     </Badge>
                   ) : (
-                    <Badge variant="outline" className="h-5 px-1.5 gap-1 text-[10px] bg-slate-500/10 text-slate-500 border-slate-500/20 shrink-0">
+                    <Badge variant="outline" className="h-5 px-1.5 gap-1 text-[10px] bg-muted-foreground/10 text-muted-foreground border-muted-foreground/20 shrink-0">
                       <Circle className="w-2.5 h-2.5" />
                       Alapért.
                     </Badge>

@@ -1,5 +1,6 @@
 import { AlertTriangle, CheckCircle, Globe, Info } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { DECREASING_ITEMS, NumberInput, fmt } from '../taoWizardData';
 import type { TaoStepProps } from '../taoWizardTypes';
@@ -52,23 +53,23 @@ export function RenderStep5({ data, computed, upd }: TaoStepProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <NumberInput label="Nettó kamatráfordítás" value={data.interest_expense} onChange={v => upd('interest_expense', v)} />
         <div>
-          <label className="text-xs font-medium text-slate-500 mb-1 block">EBITDA (számított)</label>
-          <div className="bg-slate-50 dark:bg-slate-800 rounded-lg border border-border px-3 py-2 text-sm font-mono text-right">
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">EBITDA (számított)</label>
+          <div className="bg-muted rounded-lg border border-border px-3 py-2 text-sm font-mono text-right">
             {fmt(computed.ebitda)} Ft
           </div>
         </div>
       </div>
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-card rounded-lg border border-border p-4">
-          <p className="text-[10px] text-slate-500">EBITDA × 30%</p>
-          <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{fmt(computed.interestLimit)} Ft</p>
+          <p className="text-[10px] text-muted-foreground">EBITDA × 30%</p>
+          <p className="text-sm font-bold text-foreground">{fmt(computed.interestLimit)} Ft</p>
         </div>
         <div className="bg-card rounded-lg border border-border p-4">
-          <p className="text-[10px] text-slate-500">Kamatráfordítás</p>
-          <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{fmt(data.interest_expense)} Ft</p>
+          <p className="text-[10px] text-muted-foreground">Kamatráfordítás</p>
+          <p className="text-sm font-bold text-foreground">{fmt(data.interest_expense)} Ft</p>
         </div>
         <div className={cn('rounded-lg border p-4', computed.interestAdjustment > 0 ? 'bg-rose-50 dark:bg-rose-900/20 border-rose-200' : 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200')}>
-          <p className="text-[10px] text-slate-500">Korrekció</p>
+          <p className="text-[10px] text-muted-foreground">Korrekció</p>
           <p className={cn('text-sm font-bold', computed.interestAdjustment > 0 ? 'text-rose-600' : 'text-emerald-600')}>
             {computed.interestAdjustment > 0 ? '+' : ''}{fmt(computed.interestAdjustment)} Ft
           </p>
@@ -83,19 +84,17 @@ export function RenderStep6({ data, upd, computed }: TaoStepProps) {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3 p-4 bg-card rounded-lg border border-border">
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <Checkbox
             checked={data.has_cfc}
-            onChange={e => upd('has_cfc', e.target.checked)}
-            className="rounded border-border"
+            onCheckedChange={checked => upd('has_cfc', !!checked)}
           />
-          <span className="text-sm text-slate-700 dark:text-slate-300">Van ellenőrzött külföldi társaság (CFC)?</span>
+          <span className="text-sm text-foreground/90">Van ellenőrzött külföldi társaság (CFC)?</span>
         </label>
       </div>
       {!data.has_cfc && (
-        <div className="py-12 text-center text-sm text-slate-400">
-          <Globe className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+        <div className="py-12 text-center text-sm text-muted-foreground">
+          <Globe className="w-10 h-10 mx-auto mb-3 text-muted-foreground/60" />
           Nincs CFC érintettség — továbbléphet.
         </div>
       )}
@@ -109,11 +108,11 @@ export function RenderStep6({ data, upd, computed }: TaoStepProps) {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Székhely országa</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Székhely országa</label>
               <Input value={data.cfc_country} onChange={e => upd('cfc_country', e.target.value)} className="bg-background" placeholder="pl. Ciprus" />
             </div>
             <div>
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Társaság neve</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Társaság neve</label>
               <Input value={data.cfc_company} onChange={e => upd('cfc_company', e.target.value)} className="bg-background" placeholder="pl. XYZ Holdings Ltd" />
             </div>
             <NumberInput label="CFC jövedelem" value={data.cfc_income} onChange={v => upd('cfc_income', v)} />

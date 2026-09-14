@@ -69,9 +69,9 @@ export function NumberInput({ value, onChange, label, hint, suffix = 'Ft' }: {
 }) {
   return (
     <div>
-      <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">
+      <label className="text-xs font-medium text-muted-foreground mb-1 block">
         {label}
-        {hint && <span className="ml-1 text-slate-400 font-normal">({hint})</span>}
+        {hint && <span className="ml-1 text-muted-foreground font-normal">({hint})</span>}
       </label>
       <div className="relative">
         <Input
@@ -84,7 +84,7 @@ export function NumberInput({ value, onChange, label, hint, suffix = 'Ft' }: {
           className="bg-background pr-10 text-right font-mono"
           placeholder="0"
         />
-        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">{suffix}</span>
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{suffix}</span>
       </div>
     </div>
   );

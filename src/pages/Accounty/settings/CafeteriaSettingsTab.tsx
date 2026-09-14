@@ -1,6 +1,7 @@
 import React from 'react';
 import { CreditCard, Gift } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 
 interface CafeteriaSettingsTabProps {
@@ -32,38 +33,38 @@ export default function CafeteriaSettingsTab({
   return (
     <div key="cafeteria" className="p-6 space-y-6 tab-content-enter">
       <div className="border-b border-border pb-4">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Cafeteria beállítások</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">SZÉP-kártya és béren kívüli juttatások konfigurálása</p>
+        <h2 className="text-lg font-bold text-foreground">Cafeteria beállítások</h2>
+        <p className="text-sm text-muted-foreground mt-1">SZÉP-kártya és béren kívüli juttatások konfigurálása</p>
       </div>
 
-      <label className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl cursor-pointer">
-        <input type="checkbox" checked={cafeEnabled} onChange={e => setCafeEnabled(e.target.checked)} className="w-4 h-4 rounded" />
+      <label className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg cursor-pointer select-none">
+        <Checkbox checked={cafeEnabled} onCheckedChange={checked => setCafeEnabled(!!checked)} />
         <div>
-          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Cafeteria modul aktív</p>
-          <p className="text-xs text-slate-500">Béren kívüli juttatások kezelése a bérszámfejtésben</p>
+          <p className="text-sm font-medium text-foreground">Cafeteria modul aktív</p>
+          <p className="text-xs text-muted-foreground">Béren kívüli juttatások kezelése a bérszámfejtésben</p>
         </div>
       </label>
 
       {cafeEnabled && (
         <>
           <div>
-            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3">Éves keret</h3>
+            <h3 className="text-sm font-bold text-foreground mb-3">Éves keret</h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-xs text-slate-500">Éves cafeteria keret (Ft/fő)</label>
+                <label className="text-xs text-muted-foreground">Éves cafeteria keret (Ft/fő)</label>
                 <Input value={cafeAnnualBudget} onChange={e => setCafeAnnualBudget(e.target.value)} className="bg-card border-border font-mono" />
-                <p className="text-[10px] text-slate-400">Szja tv. 71. § — évi 450 000 Ft kedvezményes</p>
+                <p className="text-[10px] text-muted-foreground">Szja tv. 71. § — évi 450 000 Ft kedvezményes</p>
               </div>
               <div className="space-y-2">
-                <label className="text-xs text-slate-500">Feltöltés napja (hónap)</label>
+                <label className="text-xs text-muted-foreground">Feltöltés napja (hónap)</label>
                 <Input value={cafeDeadline} onChange={e => setCafeDeadline(e.target.value)} className="bg-card border-border" />
-                <p className="text-[10px] text-slate-400">Hónap hányadik napjáig kell feltölteni</p>
+                <p className="text-[10px] text-muted-foreground">Hónap hányadik napjáig kell feltölteni</p>
               </div>
             </div>
           </div>
 
           <div>
-            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3 flex items-center gap-2"><CreditCard className="w-4 h-4" /> SZÉP-kártya alszámlák</h3>
+            <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2"><CreditCard className="w-4 h-4" /> SZÉP-kártya alszámlák</h3>
             <div className="grid grid-cols-3 gap-4">
               {[
                 { label: 'Szálláshely', value: szepSzallas, setter: setSzepSzallas, max: '150 000', color: 'text-blue-600' },
@@ -73,14 +74,14 @@ export default function CafeteriaSettingsTab({
                 <div key={sub.label} className="space-y-2">
                   <label className={cn('text-xs font-bold', sub.color)}>{sub.label}</label>
                   <Input value={sub.value} onChange={e => sub.setter(e.target.value)} className="bg-card border-border font-mono" />
-                  <p className="text-[10px] text-slate-400">Max: {sub.max} Ft/év (kedvezményes)</p>
+                  <p className="text-[10px] text-muted-foreground">Max: {sub.max} Ft/év (kedvezményes)</p>
                 </div>
               ))}
             </div>
           </div>
 
           <div>
-            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3">SZÉP-kártya szolgáltató</h3>
+            <h3 className="text-sm font-bold text-foreground mb-3">SZÉP-kártya szolgáltató</h3>
             <div className="flex gap-3">
               {[
                 { value: 'otp', label: 'OTP SZÉP', desc: 'OTP Cafeteria Kft.' },
@@ -88,9 +89,9 @@ export default function CafeteriaSettingsTab({
                 { value: 'mkb', label: 'MBH SZÉP', desc: 'MBH Bank SZÉP' },
               ].map(prov => (
                 <button key={prov.value} onClick={() => setCafeProvider(prov.value)}
-                  className={cn('flex-1 p-4 rounded-xl border-2 transition-all text-center', cafeProvider === prov.value ? 'border-primary/30 bg-accent-subtle/50 dark:bg-accent' : 'border-border hover:border-slate-300')}>
-                  <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{prov.label}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">{prov.desc}</p>
+                  className={cn('flex-1 p-4 rounded-lg border-2 transition-all text-center', cafeProvider === prov.value ? 'border-primary/30 bg-accent-subtle/50 dark:bg-accent' : 'border-border hover:border-border')}>
+                  <p className="text-sm font-bold text-foreground">{prov.label}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{prov.desc}</p>
                 </button>
               ))}
             </div>

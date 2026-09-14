@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Bell, AlertTriangle, Info, CheckCircle, XCircle, Clock, TrendingUp, Users, FileWarning, Calculator, Search, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { useAccountyClients } from '@/hooks/accounty';
 import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
@@ -311,31 +312,29 @@ export default function AlertsCenterPage() {
   if (isLoading) {
     return (
       <div className="py-32 text-center">
-        <Loader2 className="w-10 h-10 mx-auto mb-3 text-indigo-500 animate-spin" />
-        <p className="text-sm text-slate-500">Riasztások betöltése...</p>
+        <Loader2 className="w-10 h-10 mx-auto mb-3 text-primary animate-spin" />
+        <p className="text-sm text-muted-foreground">Riasztások betöltése...</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-red-500 to-orange-600 rounded-xl shadow-lg shadow-red-500/25">
+          <div className="p-2.5 bg-gradient-to-br from-red-500 to-orange-600 rounded-lg shadow-lg shadow-red-500/25">
             <Bell className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Riasztások és figyelmeztetések</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Portfólió-szintű figyelmeztető rendszer</p>
+            <h1 className="text-2xl font-bold text-foreground">Riasztások és figyelmeztetések</h1>
+            <p className="text-sm text-muted-foreground">Portfólió-szintű figyelmeztető rendszer</p>
           </div>
         </div>
-        <label className="flex items-center gap-2 text-xs text-slate-500 cursor-pointer select-none">
-          <input
-            type="checkbox"
+        <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+          <Checkbox
             checked={showArchived}
-            onChange={e => setShowArchived(e.target.checked)}
-            className="rounded"
+            onCheckedChange={checked => setShowArchived(!!checked)}
           />
           Archivált mutatása
         </label>
@@ -343,19 +342,19 @@ export default function AlertsCenterPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/40 rounded-xl p-4">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/40 rounded-lg p-4">
           <p className="text-xs text-red-500 font-medium">Kritikus</p>
           <p className="text-3xl font-bold text-red-600 dark:text-red-400">{stats.critical}</p>
         </div>
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/40 rounded-xl p-4">
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/40 rounded-lg p-4">
           <p className="text-xs text-amber-500 font-medium">Figyelmeztetés</p>
           <p className="text-3xl font-bold text-amber-600 dark:text-amber-400">{stats.warning}</p>
         </div>
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40 rounded-xl p-4">
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40 rounded-lg p-4">
           <p className="text-xs text-blue-500 font-medium">Tájékoztató</p>
           <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{stats.info}</p>
         </div>
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800/40 rounded-xl p-4">
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800/40 rounded-lg p-4">
           <p className="text-xs text-green-500 font-medium">Megoldva</p>
           <p className="text-3xl font-bold text-green-600 dark:text-green-400">{stats.resolved}</p>
         </div>
@@ -364,7 +363,7 @@ export default function AlertsCenterPage() {
       {/* Search + Category tabs */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Keresés riasztásokban..."
             value={searchQuery}
@@ -372,7 +371,7 @@ export default function AlertsCenterPage() {
             className="pl-9 bg-card border-border h-9 text-sm"
           />
         </div>
-        <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/50 rounded-xl p-1 overflow-x-auto">
+        <div className="flex gap-1 bg-muted/50 rounded-lg p-1 overflow-x-auto">
           {CATEGORIES.map(cat => (
             <button
               key={cat.id}
@@ -380,8 +379,8 @@ export default function AlertsCenterPage() {
               className={cn(
                 'flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all',
                 categoryFilter === cat.id
-                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                  ? 'bg-card dark:bg-muted text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground/90 dark:hover:text-muted-foreground/60'
               )}
             >
               <cat.icon className="w-3.5 h-3.5" />
@@ -394,9 +393,9 @@ export default function AlertsCenterPage() {
       {/* Alert list */}
       <div className="space-y-3">
         {filtered.length === 0 ? (
-          <div className="py-16 text-center bg-card rounded-xl border border-border">
+          <div className="py-16 text-center bg-card rounded-lg border border-border">
             <CheckCircle className="w-10 h-10 mx-auto mb-3 text-green-400" />
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-muted-foreground">
               {searchQuery || categoryFilter !== 'all' ? 'Nincs találat a szűrőkkel' : 'Nincs aktív riasztás — minden rendben!'}
             </p>
           </div>
@@ -414,25 +413,25 @@ export default function AlertsCenterPage() {
               <div
                 key={alert.id}
                 className={cn(
-                  'rounded-xl border p-5 transition-all hover:shadow-md',
+                  'rounded-lg border p-5 transition-all hover:shadow-md',
                   isArchived ? 'opacity-50' : '',
                   config.bg, config.border
                 )}
               >
                 <div className="flex items-start gap-4">
-                  <div className={cn('p-2 rounded-xl', config.bg)}>
+                  <div className={cn('p-2 rounded-lg', config.bg)}>
                     <Icon className={cn('w-5 h-5', config.color)} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h3 className={cn('text-sm font-bold', isResolved ? 'text-green-700 dark:text-green-400 line-through' : 'text-slate-900 dark:text-slate-100')}>
+                        <h3 className={cn('text-sm font-bold', isResolved ? 'text-green-700 dark:text-green-400 line-through' : 'text-foreground')}>
                           {alert.title}
                         </h3>
                         {alert.client && <p className="text-[10px] text-primary font-medium mt-0.5">{alert.client}</p>}
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           {alert.createdAt.toLocaleDateString('hu-HU', { month: 'short', day: 'numeric' })}
                         </span>
@@ -450,7 +449,7 @@ export default function AlertsCenterPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-6 text-[10px] text-slate-400 hover:text-slate-600"
+                              className="h-6 text-[10px] text-muted-foreground hover:text-muted-foreground"
                               onClick={() => setAlertState(alert.id, 'dismissed')}
                             >
                               Elutasít
@@ -461,7 +460,7 @@ export default function AlertsCenterPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-6 text-[10px] text-slate-400 hover:text-slate-600"
+                            className="h-6 text-[10px] text-muted-foreground hover:text-muted-foreground"
                             onClick={() => setAlertState(alert.id, 'active')}
                           >
                             Visszaállít
@@ -469,7 +468,7 @@ export default function AlertsCenterPage() {
                         )}
                       </div>
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">{alert.description}</p>
+                    <p className="text-xs text-muted-foreground mt-1.5">{alert.description}</p>
                     {alert.action && !isArchived && (
                       <div className="mt-2.5">
                         <Button variant="outline" size="sm" asChild className="h-6 text-[10px] hover:bg-primary/10 hover:text-primary">

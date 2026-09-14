@@ -95,7 +95,7 @@ export default function PayrollReportsPage() {
 
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -103,8 +103,8 @@ export default function PayrollReportsPage() {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Bérelőzmény riportok</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{company?.name || '–'}</p>
+            <h1 className="text-2xl font-bold text-foreground">Bérelőzmény riportok</h1>
+            <p className="text-sm text-muted-foreground">{company?.name || '–'}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -141,7 +141,7 @@ export default function PayrollReportsPage() {
                 'px-3 py-1.5 rounded-lg text-sm font-semibold transition-all',
                 selectedYear === year
                   ? 'bg-primary text-primary-foreground'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                  : 'bg-muted text-muted-foreground hover:bg-muted'
               )}
             >
               {year}
@@ -153,15 +153,15 @@ export default function PayrollReportsPage() {
       {/* Year summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { label: 'Éves bruttó', value: yearTotals.gross, color: 'text-slate-900 dark:text-slate-100' },
+          { label: 'Éves bruttó', value: yearTotals.gross, color: 'text-foreground' },
           { label: 'Éves nettó', value: yearTotals.net, color: 'text-green-600' },
           { label: 'Éves SZJA', value: yearTotals.szja, color: 'text-red-600' },
           { label: 'Éves TB', value: yearTotals.tb, color: 'text-blue-600' },
           { label: 'Éves SZOCHO', value: yearTotals.szocho, color: 'text-violet-600' },
           { label: 'Átl. létszám', value: yearTotals.avgEmployees, color: 'text-teal-600', isCnt: true },
         ].map((item) => (
-          <div key={item.label} className="bg-card rounded-xl border border-border shadow-soft p-4">
-            <p className="text-[10px] font-medium text-slate-500 uppercase">{item.label}</p>
+          <div key={item.label} className="bg-card rounded-lg border border-border shadow-soft p-4">
+            <p className="text-[10px] font-medium text-muted-foreground uppercase">{item.label}</p>
             <p className={cn('text-lg font-bold mt-1 font-mono', item.color)}>
               {(item).isCnt ? item.value : `${fmt(item.value)} Ft`}
             </p>
@@ -170,20 +170,20 @@ export default function PayrollReportsPage() {
       </div>
 
       {/* Bar chart */}
-      <div className="bg-card rounded-xl border border-border shadow-soft p-6">
+      <div className="bg-card rounded-lg border border-border shadow-soft p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Havi bruttó / nettó trend</h2>
+            <h2 className="text-lg font-bold text-foreground">Havi bruttó / nettó trend</h2>
           </div>
           <div className="flex items-center gap-4 text-xs">
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-sm bg-primary/70" />
-              <span className="text-slate-500">Bruttó</span>
+              <span className="text-muted-foreground">Bruttó</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-sm bg-green-500" />
-              <span className="text-slate-500">Nettó</span>
+              <span className="text-muted-foreground">Nettó</span>
             </div>
           </div>
         </div>
@@ -197,7 +197,7 @@ export default function PayrollReportsPage() {
                   className="flex-1 bg-primary/20 hover:bg-primary/30 rounded-t transition-all relative group"
                   style={{ height: `${Math.max(2, (m.gross / maxGross) * 100)}%` }}
                 >
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                     {fmt(m.gross)} Ft
                   </div>
                 </div>
@@ -206,45 +206,45 @@ export default function PayrollReportsPage() {
                   className="flex-1 bg-green-500/30 hover:bg-green-500/40 rounded-t transition-all relative group"
                   style={{ height: `${Math.max(2, (m.net / maxGross) * 100)}%` }}
                 >
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                     {fmt(m.net)} Ft
                   </div>
                 </div>
               </div>
-              <span className="text-[10px] font-medium text-slate-500">{MONTHS[m.month - 1]}</span>
+              <span className="text-[10px] font-medium text-muted-foreground">{MONTHS[m.month - 1]}</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* Detail table */}
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
         <div className="p-5 border-b border-border">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Havi részletes összesítő</h2>
+          <h2 className="text-lg font-bold text-foreground">Havi részletes összesítő</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border dark:bg-slate-900/30">
-                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Hónap</th>
-                <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 uppercase">Létszám</th>
-                <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 uppercase">Bruttó</th>
-                <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 uppercase">SZJA</th>
-                <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 uppercase">TB</th>
-                <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 uppercase">SZOCHO</th>
-                <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 uppercase">Nettó</th>
+              <tr className="border-b border-border dark:bg-card/30">
+                <th className="px-5 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Hónap</th>
+                <th className="px-5 py-3 text-right text-xs font-medium text-muted-foreground uppercase">Létszám</th>
+                <th className="px-5 py-3 text-right text-xs font-medium text-muted-foreground uppercase">Bruttó</th>
+                <th className="px-5 py-3 text-right text-xs font-medium text-muted-foreground uppercase">SZJA</th>
+                <th className="px-5 py-3 text-right text-xs font-medium text-muted-foreground uppercase">TB</th>
+                <th className="px-5 py-3 text-right text-xs font-medium text-muted-foreground uppercase">SZOCHO</th>
+                <th className="px-5 py-3 text-right text-xs font-medium text-muted-foreground uppercase">Nettó</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
               {monthlyData.map((m) => (
                 <tr key={m.month} className={cn(
-                  'hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors',
+                  'hover:bg-muted/50 transition-colors',
                   m.employees === 0 && 'opacity-40'
                 )}>
-                  <td className="px-5 py-3 text-sm font-medium text-slate-900 dark:text-slate-100">
+                  <td className="px-5 py-3 text-sm font-medium text-foreground">
                     {selectedYear}. {MONTHS[m.month - 1]}
                   </td>
-                  <td className="px-5 py-3 text-right text-sm font-mono text-slate-600">{m.employees || '–'}</td>
+                  <td className="px-5 py-3 text-right text-sm font-mono text-muted-foreground">{m.employees || '–'}</td>
                   <td className="px-5 py-3 text-right text-sm font-mono">{m.gross ? fmt(m.gross) : '–'}</td>
                   <td className="px-5 py-3 text-right text-sm font-mono text-red-600">{m.szja ? fmt(m.szja) : '–'}</td>
                   <td className="px-5 py-3 text-right text-sm font-mono text-blue-600">{m.tb ? fmt(m.tb) : '–'}</td>
@@ -254,8 +254,8 @@ export default function PayrollReportsPage() {
               ))}
             </tbody>
             <tfoot>
-              <tr className="border-t-2 border-border bg-slate-50/80 dark:bg-slate-900/50 font-bold">
-                <td className="px-5 py-3 text-sm text-slate-900 dark:text-slate-100">ÖSSZESEN</td>
+              <tr className="border-t-2 border-border bg-muted/40/80 dark:bg-card/50 font-bold">
+                <td className="px-5 py-3 text-sm text-foreground">ÖSSZESEN</td>
                 <td className="px-5 py-3 text-right text-sm font-mono">{yearTotals.avgEmployees}</td>
                 <td className="px-5 py-3 text-right text-sm font-mono">{fmt(yearTotals.gross)}</td>
                 <td className="px-5 py-3 text-right text-sm font-mono text-red-600">{fmt(yearTotals.szja)}</td>

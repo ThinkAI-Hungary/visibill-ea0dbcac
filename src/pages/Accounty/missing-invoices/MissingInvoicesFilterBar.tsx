@@ -21,7 +21,7 @@ export function MissingInvoicesFilterBar({
   return (
     <div className="flex flex-col md:flex-row items-center justify-between gap-4">
       <div className="relative w-full md:w-[400px]">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <input 
           type="text" 
           placeholder="Keresés szállító, leírás..." 
@@ -34,7 +34,7 @@ export function MissingInvoicesFilterBar({
         <select 
           value={sourceFilter}
           onChange={(e) => onSourceFilterChange(e.target.value)}
-          className="px-3 py-2 bg-card border border-border rounded-lg text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-soft cursor-pointer min-w-[140px]"
+          className="px-3 py-2 bg-card border border-border rounded-lg text-sm text-foreground/90 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-soft cursor-pointer min-w-[140px]"
         >
           <option value="Minden forrás">Minden forrás</option>
           <option value="NAV">NAV</option>
@@ -45,7 +45,7 @@ export function MissingInvoicesFilterBar({
         <select 
           value={statusFilter}
           onChange={(e) => onStatusFilterChange(e.target.value)}
-          className="px-3 py-2 bg-card border border-border rounded-lg text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-soft cursor-pointer min-w-[120px]"
+          className="px-3 py-2 bg-card border border-border rounded-lg text-sm text-foreground/90 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-soft cursor-pointer min-w-[120px]"
         >
           <option value="Minden">Minden</option>
           <option value="Sürgős">Sürgős</option>

@@ -102,24 +102,24 @@ export class AccountyErrorBoundary extends React.Component<Props, State> {
       if (this.props.fallback) return this.props.fallback;
 
       return (
-        <div className="w-full flex flex-col items-center justify-center py-20 px-6 animate-in fade-in duration-300">
-          <div className="max-w-md w-full bg-card rounded-xl border border-border shadow-soft p-8 text-center space-y-5">
+        <div className="w-full flex flex-col items-center justify-center py-20 px-6 page-animate">
+          <div className="max-w-md w-full bg-card rounded-lg border border-border shadow-soft p-8 text-center space-y-5">
             <div className="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto">
               <AlertTriangle className="w-7 h-7 text-red-500 dark:text-red-400" />
             </div>
 
             <div className="space-y-2">
-              <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">
+              <h2 className="text-lg font-bold text-foreground">
                 Hiba történt az oldal megjelenítésekor
               </h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-sm text-muted-foreground">
                 Az oldal egy részének betöltése sikertelen volt. 
                 Próbáld újra, vagy lépj vissza az előző oldalra.
               </p>
             </div>
 
             {this.state.error && import.meta.env.DEV && (
-              <div className="bg-slate-100 dark:bg-slate-800 rounded-lg p-3 text-left">
+              <div className="bg-muted rounded-lg p-3 text-left">
                 <p className="font-mono text-[10px] text-red-600 dark:text-red-400 break-all">
                   {this.state.error.name}: {this.state.error.message}
                 </p>

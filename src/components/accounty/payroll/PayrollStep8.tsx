@@ -170,12 +170,12 @@ export default function PayrollStep8({
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <p className="text-sm text-slate-600 dark:text-slate-300">
+          <p className="text-sm text-muted-foreground dark:text-foreground/90">
             Véglegesítés: bruttó→nettó összesítő, jóváhagyás, adómentes juttatások és bérjegyzék generálása.
           </p>
           {lastCalcDate && (
-            <p className="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-0.5">
-              <Clock className="w-3 h-3 inline" /> Utolsó számfejtés: <span className="font-medium text-slate-600 dark:text-slate-400">{lastCalcDate}</span>
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+              <Clock className="w-3 h-3 inline" /> Utolsó számfejtés: <span className="font-medium text-muted-foreground">{lastCalcDate}</span>
             </p>
           )}
         </div>
@@ -212,15 +212,15 @@ export default function PayrollStep8({
           {/* Summary totals */}
           <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
             {[
-              { label: 'Össz. bruttó', value: calculations.reduce((s, c) => s + (c.gross_salary || 0), 0), color: 'text-slate-900 dark:text-slate-100' },
+              { label: 'Össz. bruttó', value: calculations.reduce((s, c) => s + (c.gross_salary || 0), 0), color: 'text-foreground' },
               { label: 'Össz. SZJA+TB', value: calculations.reduce((s, c) => s + (c.szja_amount || 0) + (c.tb_amount || 0), 0), color: 'text-red-600' },
               { label: isKiva ? 'Össz. SZOCHO (KIVA: 0 Ft)' : 'Össz. SZOCHO', value: calculations.reduce((s, c) => s + getSzocho(c), 0), color: 'text-violet-600' },
               { label: 'Össz. Home Office', value: totalHomeOffice, color: 'text-emerald-600 dark:text-emerald-400' },
               { label: 'Munkába járás', value: totalCommute, color: 'text-emerald-600 dark:text-emerald-400' },
               { label: 'Össz. Kifizetendő', value: totalFinalPayout, color: 'text-green-600 font-extrabold' },
             ].map((item) => (
-              <div key={item.label} className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 text-center">
-                <p className="text-[10px] font-medium text-slate-500 uppercase">{item.label}</p>
+              <div key={item.label} className="bg-muted/50 rounded-lg p-3 text-center">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase">{item.label}</p>
                 <p className={cn('text-base md:text-lg font-bold mt-0.5 font-mono', item.color)}>
                   {item.value.toLocaleString('hu-HU')} Ft
                 </p>
@@ -232,20 +232,20 @@ export default function PayrollStep8({
           <div className="overflow-x-auto rounded-lg border border-border">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-border dark:bg-slate-900/30">
-                  <th className="px-3 py-2 text-left font-medium text-slate-500 uppercase">Név</th>
-                  <th className="px-3 py-2 text-right font-medium text-slate-500 uppercase">Bruttó</th>
-                  <th className="px-3 py-2 text-right font-medium text-slate-500 uppercase">Prémium</th>
+                <tr className="border-b border-border dark:bg-card/30">
+                  <th className="px-3 py-2 text-left font-medium text-muted-foreground uppercase">Név</th>
+                  <th className="px-3 py-2 text-right font-medium text-muted-foreground uppercase">Bruttó</th>
+                  <th className="px-3 py-2 text-right font-medium text-muted-foreground uppercase">Prémium</th>
                   {totalServiceCharge > 0 && (
                     <th className="px-3 py-2 text-right font-medium text-emerald-600 uppercase">Felszolgálási díj</th>
                   )}
-                  <th className="px-3 py-2 text-right font-medium text-slate-500 uppercase">SZJA</th>
-                  <th className="px-3 py-2 text-right font-medium text-slate-500 uppercase">TB</th>
-                  <th className="px-3 py-2 text-right font-medium text-slate-500 uppercase">SZOCHO</th>
-                  <th className="px-3 py-2 text-right font-medium text-slate-500 uppercase">Home Office</th>
+                  <th className="px-3 py-2 text-right font-medium text-muted-foreground uppercase">SZJA</th>
+                  <th className="px-3 py-2 text-right font-medium text-muted-foreground uppercase">TB</th>
+                  <th className="px-3 py-2 text-right font-medium text-muted-foreground uppercase">SZOCHO</th>
+                  <th className="px-3 py-2 text-right font-medium text-muted-foreground uppercase">Home Office</th>
                   <th className="px-3 py-2 text-right font-medium text-emerald-600 uppercase">Munkába járás</th>
-                  <th className="px-3 py-2 text-right font-medium text-slate-500 uppercase">Kifizetendő Nettó</th>
-                  <th className="px-3 py-2 text-center font-medium text-slate-500 uppercase">Bérjegyzék</th>
+                  <th className="px-3 py-2 text-right font-medium text-muted-foreground uppercase">Kifizetendő Nettó</th>
+                  <th className="px-3 py-2 text-center font-medium text-muted-foreground uppercase">Bérjegyzék</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
@@ -257,8 +257,8 @@ export default function PayrollStep8({
                   const finalPayout = (calc.net_salary || 0) + hoAmount + commuteAmount;
 
                   return (
-                    <tr key={calc.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                      <td className="px-3 py-2.5 font-medium text-slate-900 dark:text-slate-100">
+                    <tr key={calc.id} className="hover:bg-muted/50">
+                      <td className="px-3 py-2.5 font-medium text-foreground">
                         {getCalcName(calc)}
                       </td>
                       <td className="px-3 py-2.5 text-right font-mono">{(calc.gross_salary || 0).toLocaleString('hu-HU')}</td>
@@ -298,8 +298,8 @@ export default function PayrollStep8({
                 })}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-border bg-slate-50/80 dark:bg-slate-900/50 font-bold">
-                  <td className="px-3 py-2.5 text-slate-900 dark:text-slate-100">ÖSSZESEN</td>
+                <tr className="border-t-2 border-border bg-muted/40/80 dark:bg-card/50 font-bold">
+                  <td className="px-3 py-2.5 text-foreground">ÖSSZESEN</td>
                   <td className="px-3 py-2.5 text-right font-mono">{calculations.reduce((s, c) => s + (c.gross_salary || 0), 0).toLocaleString('hu-HU')}</td>
                   <td className="px-3 py-2.5 text-right font-mono text-emerald-600">{calculations.reduce((s, c) => s + getBonus(c.employment_id), 0).toLocaleString('hu-HU')}</td>
                   {totalServiceCharge > 0 && (
@@ -361,7 +361,7 @@ export default function PayrollStep8({
           </div>
 
           {/* General Ledger Payroll Journal Posting Preview */}
-          <div className="bg-card text-card-foreground rounded-xl p-5 border border-border space-y-4 shadow-sm">
+          <div className="bg-card text-card-foreground rounded-lg p-5 border border-border space-y-4 shadow-sm">
             <div className="flex items-center justify-between border-b border-border pb-3 flex-wrap gap-2">
               <div>
                 <div className="flex items-center gap-2 flex-wrap">

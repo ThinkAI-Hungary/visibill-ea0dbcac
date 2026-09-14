@@ -121,6 +121,37 @@ A bejövő és kimenő beküldött számlák (`SUBMITTED_INBOUND`, `SUBMITTED_OU
    - A rendszer automatikusan észleli a kiürült oldalt (`currentPage > 1 && result.length === 0`), és a szerveroldali KPI fallback alapján azonnal visszalépteti a felhasználót a megelőző érvényes utolsó oldalra (pl. oldal 1-re).
    - A lapozó vezérlő (`UnifiedPagination`) és az URL paraméterezés (`?p=...`) automatikusan és szinkronban frissül.
 
+## Számlák és Tranzakciók — Központi Lebegő Műveleti Sáv (FloatingBulkBar) (2026-09-14)
+
+A számlák és tranzakciók lebegő kijelölési sávja egy központosított, újrafelhasználható architektúrába (`FloatingBulkBar` és `FloatingBulkSelect`) került integrálásra az alábbi univerzális alapelvek mentén:
+
+### Univerzális Funkciók és Felépítés
+1. **Univerzális Elem-számláló:**
+   - Pulzáló teal indikátor + `Kijelölt számlák / tranzakciók: X db` számláló.
+   - Opcionális összegző részletek (pl. bruttó összegek devizánként csoportosítva).
+2. **Kétlépcsős Mentés Jóváhagyás (Staged Changes + Explicit Mentés Gomb):**
+   - Amikor a felhasználó a lebegő sávon kiválaszt egy kategóriát vagy projektet, a rendszer nem indít azonnal hálózati kérést, hanem helyi állapotba (`stagedCategory`, `stagedProject`) menti azt.
+   - A lebegő sávon megjelenik az univerzális **Mentés** gomb (`dirty-only` módban: csak akkor aktív, ha történt staged módosítás).
+   - A módosítás kizárólag a Mentés gombra kattintva fut le, megvédve a felhasználót a véletlen tömeges átállításoktól.
+3. **Univerzális Mégse Gomb:**
+   - Az `X` ikonnal ellátott Mégse gomb egy lépésben törli az összes staged állapotot és a kijelölést is megszünteti.
+4. **Kereshető Lenyíló Mezők (`FloatingBulkSelect`):**
+   - Dropdownokba integrált keresősáv (`CommandInput`), automatikus fókusszal.
+   - Felfelé nyíló megjelenés (`side="top"`), hogy a lebegő sáv feletti tartalmat ne takarja ki, és ne lógjon le a képernyőről.
+5. **Egyetlen Batch Hálózati Hívás Garancia:**
+   - A tömeges műveletek (kategória módosítás, projekt módosítás, státuszváltás, export, törlés) szigorúan **egyetlen batch Supabase/PostgreSQL hívással** futnak le `.in('id', selectedIds)` szűréssel, sosem soronkénti ciklussal.
+6. **Focus Ring és Outline Pattern:**
+   - A kereső inputokon és combobox gombokon sem egérrel, sem programozott fókusszal **nincs külső lebegő ring vagy outline** (`outline: none !important; box-shadow: none !important`).
+   - A nyitott állapotot a gomb saját szegélye (`border-primary/80`) és enyhe háttere (`bg-accent/40`) jelzi.
+   - Szigorúan `transition-colors duration-150` használandó (a `transition-all` helyett), megakadályozva a Chromium dark-mode outline-átmenet fehér villanását elkattintáskor.
+
+### Érintett Fájlok és Komponensek
+- `src/components/ui/floating-bulk-bar.tsx` — Központi lebegő komponens.
+- `src/components/ui/floating-bulk-select.tsx` — Központi kereshető popover combobox.
+- `src/features/invoices/components/actions/InvoiceBulkActionsBar.tsx` — Számlák lebegő sávja.
+- `src/components/transactions/TransactionTable.tsx` — Tranzakciók lebegő sávja.
+- `src/index.css` — Globális combobox és search input outline elnyomás.
+
 ---
 
 ## Tervezett (még nem implementált)
@@ -134,3 +165,5 @@ A bejövő és kimenő beküldött számlák (`SUBMITTED_INBOUND`, `SUBMITTED_OU
 - `P-012` — Invoice Editing (Számlakép törlése egyedi dialógus)
 - `P-013` — Upload UX (UploadedFilesModal)
 - `A-099` — Számlakép Törlés Kettős Döntési Modell és Lapozási Határeset Auto-Recovery
+- `docs/design/04-component-library.md` — FloatingBulkBar & FloatingBulkSelect
+- `docs/design/10-accessibility-ux.md` — Focus Management & Ringless Pattern

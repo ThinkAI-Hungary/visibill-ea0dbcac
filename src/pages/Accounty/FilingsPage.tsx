@@ -20,6 +20,15 @@ import { exportPdf } from '@/lib/exportPdf';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { PageHeader } from '@/components/ui/page-header';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 
 const FILING_TYPES: Record<string, { label: string; color: string; desc: string }> = {
@@ -29,7 +38,7 @@ const FILING_TYPES: Record<string, { label: string; color: string; desc: string 
 };
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  draft: { label: 'Tervezet', color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400', icon: FileText },
+  draft: { label: 'Tervezet', color: 'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground', icon: FileText },
   generated: { label: 'Generálva', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400', icon: Clock },
   submitted: { label: 'Beküldve', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400', icon: Send },
   accepted: { label: 'Elfogadva', color: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400', icon: CheckCircle2 },
@@ -232,114 +241,99 @@ export default function FilingsPage() {
 
   if (isLoading) {
     return (
-      <div className="w-full space-y-6 animate-in fade-in">
-        <div className="h-8 w-64 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+      <div className="w-full space-y-6 page-animate">
+        <div className="h-8 w-64 bg-muted rounded animate-pulse" />
         <div className="grid grid-cols-4 gap-4">
-          {[0, 1, 2, 3].map(i => <div key={i} className="h-24 bg-slate-200 dark:bg-slate-800 rounded-xl animate-pulse" />)}
+          {[0, 1, 2, 3].map(i => <div key={i} className="h-24 bg-muted rounded-lg animate-pulse" />)}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-4">
-          <button 
-            onClick={() => navigate(`/eaisybooks/${companyId}/${dateRange}/overview`)}
-            className="flex items-center justify-center w-8 h-8 mt-1.5 shrink-0 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm"
-            title="Vissza az áttekintéshez"
-          >
-            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-          </button>
-          <div>
-            <div className="flex items-center gap-1.5 mb-1">
-              {clientsLoading ? (
-                <div className="h-3.5 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
-              ) : (
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{company?.name || '–'}</span>
-              )}
-            </div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">NAV Bevallások</h1>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => navigate(`/eaisybooks/payroll/${companyId}/filings/08e`)}
-            className="flex items-center gap-1.5 text-sm"
-          >
-            <FileText className="w-4 h-4" /> 08E
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => navigate(`/eaisybooks/payroll/${companyId}/filings/2608`)}
-            className="flex items-center gap-1.5 text-sm"
-          >
-            <FileText className="w-4 h-4" /> 2608
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => navigate(`/eaisybooks/payroll/${companyId}/filings/all`)}
-            className="flex items-center gap-1.5 text-sm"
-          >
-            <Filter className="w-4 h-4" /> Összes típus
-          </Button>
-          <Button
-            onClick={() => setShowGenPanel(!showGenPanel)}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" /> Új bevallás
-          </Button>
-          <ExportButton
-            filename={`bevallasok_${company?.name || 'ceg'}`}
-            headers={['Típus', 'Időszak', 'Státusz', 'NAV azonosító', 'Beküldve']}
-            getRows={() => filteredFilings.map(f => [
-              FILING_TYPES[f.filing_type]?.label || f.filing_type,
-              `${f.period_year}/${f.period_month ? String(f.period_month).padStart(2, '0') : '-'}`,
-              STATUS_MAP[f.status]?.label || f.status,
-              f.nav_receipt_id || '-',
-              f.submitted_at ? new Date(f.submitted_at).toLocaleDateString('hu-HU') : '-',
-            ])}
-            size="sm"
-          />
-        </div>
-      </div>
+      <PageHeader
+        title="NAV Bevallások"
+        description="Foglalkoztatói és egyéb adóhivatali bevallások kezelése"
+        actions={
+          <>
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/eaisybooks/payroll/${companyId}/filings/08e`)}
+              className="flex items-center gap-1.5 text-sm"
+            >
+              <FileText className="w-4 h-4" /> 08E
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/eaisybooks/payroll/${companyId}/filings/2608`)}
+              className="flex items-center gap-1.5 text-sm"
+            >
+              <FileText className="w-4 h-4" /> 2608
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/eaisybooks/payroll/${companyId}/filings/all`)}
+              className="flex items-center gap-1.5 text-sm"
+            >
+              <Filter className="w-4 h-4" /> Összes típus
+            </Button>
+            <Button
+              onClick={() => setShowGenPanel(!showGenPanel)}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" /> Új bevallás
+            </Button>
+            <ExportButton
+              filename={`bevallasok_${company?.name || 'ceg'}`}
+              headers={['Típus', 'Időszak', 'Státusz', 'NAV azonosító', 'Beküldve']}
+              getRows={() => filteredFilings.map(f => [
+                FILING_TYPES[f.filing_type]?.label || f.filing_type,
+                `${f.period_year}/${f.period_month ? String(f.period_month).padStart(2, '0') : '-'}`,
+                STATUS_MAP[f.status]?.label || f.status,
+                f.nav_receipt_id || '-',
+                f.submitted_at ? new Date(f.submitted_at).toLocaleDateString('hu-HU') : '-',
+              ])}
+              size="sm"
+            />
+          </>
+        }
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4">
         {[
-          { label: 'Összes', value: stats.total, icon: FileText, color: 'text-slate-600', bg: 'bg-slate-100 dark:bg-slate-800' },
+          { label: 'Összes', value: stats.total, icon: FileText, color: 'text-muted-foreground', bg: 'bg-muted' },
           { label: 'Elfogadva', value: stats.accepted, icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20' },
           { label: 'Függőben', value: stats.pending, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/20' },
           { label: 'Tervezet', value: stats.draft, icon: FileText, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20' },
         ].map((s) => (
-          <div key={s.label} className="bg-card rounded-xl border border-border shadow-soft p-4">
+          <div key={s.label} className="bg-card rounded-lg border border-border shadow-soft p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-slate-500 uppercase">{s.label}</span>
+              <span className="text-xs font-medium text-muted-foreground uppercase">{s.label}</span>
               <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', s.bg)}>
                 <s.icon className={cn('w-4 h-4', s.color)} />
               </div>
             </div>
-            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{s.value}</p>
+            <p className="text-2xl font-bold text-foreground">{s.value}</p>
           </div>
         ))}
       </div>
 
       {/* Generate panel */}
       {showGenPanel && (
-        <div className="bg-card rounded-xl border border-primary/30 shadow-soft p-6 animate-in slide-in-from-top-4 duration-300">
-          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-4">08-as bevallás generálása</h3>
+        <div className="bg-card rounded-lg border border-primary/30 shadow-soft p-6 animate-in slide-in-from-top-4 duration-300">
+          <h3 className="text-sm font-bold text-foreground mb-4">08-as bevallás generálása</h3>
           <div className="grid grid-cols-3 gap-4 items-end">
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Év</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Év</label>
               <select value={genYear} onChange={(e) => setGenYear(parseInt(e.target.value))} className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm">
                 {[2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Hónap</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Hónap</label>
               <select value={genMonth} onChange={(e) => setGenMonth(parseInt(e.target.value))} className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm">
                 {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
               </select>
@@ -353,7 +347,7 @@ export default function FilingsPage() {
               {generating ? 'Generálás...' : 'Generálás + Letöltés'}
             </Button>
           </div>
-          <p className="text-xs text-slate-500 mt-3">
+          <p className="text-xs text-muted-foreground mt-3">
             A generálás a kiválasztott ciklus számfejtett eredményeiből állítja elő az XML-t.
           </p>
         </div>
@@ -362,7 +356,7 @@ export default function FilingsPage() {
       {/* Filters */}
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Keresés..."
             value={searchQuery}
@@ -393,18 +387,18 @@ export default function FilingsPage() {
       </div>
 
       {/* Filings table */}
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
         {filteredFilings.length === 0 ? (
           <div className="py-16 text-center">
-            <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4">
-              <FileText className="w-8 h-8 text-slate-400 dark:text-slate-500" />
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+              <FileText className="w-8 h-8 text-muted-foreground" />
             </div>
-            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            <p className="text-sm font-medium text-foreground/90">
               {filterType !== 'all' || filterStatus !== 'all' || searchQuery
                 ? 'Nincs bevallás a szűrési feltételeknek'
                 : 'Még nincsenek bevallások'}
             </p>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-sm mx-auto">
+            <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
               {filterType !== 'all' || filterStatus !== 'all' || searchQuery
                 ? 'Próbáld módosítani a szűrőket, vagy töröld a keresést.'
                 : 'A 08-as bevallást a számfejtett ciklus alapján generálhatod.'}
@@ -421,46 +415,50 @@ export default function FilingsPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border dark:bg-slate-900/30">
-                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Típus</th>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Időszak</th>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Státusz</th>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">NAV azonosító</th>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Beküldve</th>
-                  <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 uppercase">Műveletek</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/50">
+            <Table className="compact-table min-w-[850px]">
+              <TableHeader>
+                <TableRow className="border-b border-border bg-muted/40 hover:bg-muted/40">
+                  <TableHead className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Típus</TableHead>
+                  <TableHead className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Időszak</TableHead>
+                  <TableHead className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Státusz</TableHead>
+                  <TableHead className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">NAV azonosító</TableHead>
+                  <TableHead className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Beküldve</TableHead>
+                  <TableHead className="px-5 py-3 text-right text-xs font-semibold text-muted-foreground uppercase">Műveletek</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-border/50">
                 {paginatedFilings.map((filing) => {
-                  const typeInfo = FILING_TYPES[filing.filing_type] || { label: filing.filing_type, color: 'bg-slate-100 text-slate-600', desc: '' };
+                  const typeInfo = FILING_TYPES[filing.filing_type] || { label: filing.filing_type, color: 'bg-muted text-muted-foreground', desc: '' };
                   const statusInfo = STATUS_MAP[filing.status] || STATUS_MAP.draft;
                   const StatusIcon = statusInfo.icon;
 
                   return (
-                    <tr key={filing.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" onClick={() => navigate(`/eaisybooks/payroll/${companyId}/filings/${filing.id}/workflow`)}>
-                      <td className="px-5 py-3">
+                    <TableRow 
+                      key={filing.id} 
+                      className="hover:bg-muted/40 transition-colors cursor-pointer border-l-2 border-l-transparent hover:border-l-primary" 
+                      onClick={() => navigate(`/eaisybooks/payroll/${companyId}/filings/${filing.id}/workflow`)}
+                    >
+                      <TableCell className="px-5 py-3">
                         <span className={cn('px-2.5 py-1 rounded-full text-[10px] font-bold uppercase', typeInfo.color)}>
                           {typeInfo.label}
                         </span>
-                      </td>
-                      <td className="px-5 py-3 text-sm text-slate-900 dark:text-slate-100 font-mono">
+                      </TableCell>
+                      <TableCell className="px-5 py-3 text-sm text-foreground font-mono tabular-nums">
                         {filing.period_year}/{filing.period_month ? String(filing.period_month).padStart(2, '0') : filing.period_quarter ? `Q${filing.period_quarter}` : '–'}
-                      </td>
-                      <td className="px-5 py-3">
+                      </TableCell>
+                      <TableCell className="px-5 py-3">
                         <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase', statusInfo.color)}>
                           <StatusIcon className="w-3 h-3" />
                           {statusInfo.label}
                         </span>
-                      </td>
-                      <td className="px-5 py-3 text-xs font-mono text-slate-500">
+                      </TableCell>
+                      <TableCell className="px-5 py-3 text-xs font-mono tabular-nums text-muted-foreground">
                         {filing.nav_receipt_id || '–'}
-                      </td>
-                      <td className="px-5 py-3 text-xs text-slate-500">
+                      </TableCell>
+                      <TableCell className="px-5 py-3 text-xs font-mono tabular-nums text-muted-foreground">
                         {filing.submitted_at ? new Date(filing.submitted_at).toLocaleDateString('hu-HU') : '–'}
-                      </td>
-                      <td className="px-5 py-3 text-right">
+                      </TableCell>
+                      <TableCell className="px-5 py-3 text-right">
                         <div className="flex items-center justify-end gap-1" onClick={e => e.stopPropagation()}>
                           {filing.xml_data && (
                             <>
@@ -538,12 +536,12 @@ export default function FilingsPage() {
                             </Button>
                           )}
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
         {totalPages > 1 && (

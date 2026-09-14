@@ -48,6 +48,7 @@ describe('InvoiceBulkActionsBar', () => {
     expect(screen.getByText(/35 000 Ft/i)).toBeInTheDocument();
     expect(screen.getByText('Kategória...')).toBeInTheDocument();
     expect(screen.getByText('Projekt...')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Mentés/i })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Törlés/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Mégse/i })).toBeInTheDocument();
   });

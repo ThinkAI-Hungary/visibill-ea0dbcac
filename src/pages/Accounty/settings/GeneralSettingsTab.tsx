@@ -29,13 +29,13 @@ export default function GeneralSettingsTab({
   return (
     <div key="general" className="p-6 space-y-6 tab-content-enter">
       <div className="border-b border-border pb-4">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Iroda adatok</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Könyvelő iroda alapadatai</p>
+        <h2 className="text-lg font-bold text-foreground">Iroda adatok</h2>
+        <p className="text-sm text-muted-foreground mt-1">Könyvelő iroda alapadatai</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+          <label className="text-sm font-medium text-foreground/90 flex items-center gap-1.5">
             Iroda neve
             {firmData?.name && <Lock className="h-3 w-3 text-muted-foreground" />}
           </label>
@@ -49,7 +49,7 @@ export default function GeneralSettingsTab({
           />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700 dark:text-slate-300">E-mail</label>
+          <label className="text-sm font-medium text-foreground/90">E-mail</label>
           <Input 
             value={officeEmail} 
             onChange={e => setOfficeEmail(e.target.value)} 
@@ -58,7 +58,7 @@ export default function GeneralSettingsTab({
           />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Telefonszám</label>
+          <label className="text-sm font-medium text-foreground/90">Telefonszám</label>
           <Input 
             value={officePhone} 
             onChange={e => setOfficePhone(e.target.value)} 
@@ -67,7 +67,7 @@ export default function GeneralSettingsTab({
           />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+          <label className="text-sm font-medium text-foreground/90 flex items-center gap-1.5">
             Cím
             {firmData?.address && <Lock className="h-3 w-3 text-muted-foreground" />}
           </label>
@@ -82,28 +82,28 @@ export default function GeneralSettingsTab({
       </div>
 
       <div className="border-t border-border pt-4">
-        <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3">API kapcsolatok</h3>
+        <h3 className="text-sm font-bold text-foreground mb-3">API kapcsolatok</h3>
         <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-accent dark:bg-accent flex items-center justify-center">
                 <Globe className="w-4 h-4 text-primary" />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">NAV Online Számla</p>
-                <p className="text-xs text-slate-500">Automatikus számla szinkronizálás</p>
+                <p className="text-sm font-medium text-foreground">NAV Online Számla</p>
+                <p className="text-xs text-muted-foreground">Automatikus számla szinkronizálás</p>
               </div>
             </div>
             <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400">Konfigurálandó</span>
           </div>
-          <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
                 <Key className="w-4 h-4 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Bank integráció</p>
-                <p className="text-xs text-slate-500">Banki tranzakciók importálása</p>
+                <p className="text-sm font-medium text-foreground">Bank integráció</p>
+                <p className="text-xs text-muted-foreground">Banki tranzakciók importálása</p>
               </div>
             </div>
             <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400">Konfigurálandó</span>
@@ -113,7 +113,7 @@ export default function GeneralSettingsTab({
 
       <div className="border-t border-border pt-6 space-y-4">
         <div>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
             <BookOpen className="w-4 h-4 text-primary" />
             Főkönyvi & Könyvelési beállítások
           </h3>
@@ -125,7 +125,7 @@ export default function GeneralSettingsTab({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           <label 
             className={cn(
-              "flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer",
+              "flex items-start gap-3 p-3.5 rounded-lg border transition-all cursor-pointer",
               glDateBasis === 'kibocsatas'
                 ? "border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary"
                 : "border-border bg-card hover:bg-muted/50"
@@ -152,7 +152,7 @@ export default function GeneralSettingsTab({
 
           <label 
             className={cn(
-              "flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer",
+              "flex items-start gap-3 p-3.5 rounded-lg border transition-all cursor-pointer",
               glDateBasis === 'teljesites'
                 ? "border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary"
                 : "border-border bg-card hover:bg-muted/50"

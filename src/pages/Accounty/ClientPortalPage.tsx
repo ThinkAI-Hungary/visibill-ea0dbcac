@@ -429,8 +429,8 @@ export default function ClientPortalPage() {
                 <FileText className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h1 className="text-sm font-bold text-slate-900 dark:text-slate-100">{company?.name || 'Betöltés...'}</h1>
-                <p className="text-[11px] text-slate-500">Dokumentum feltöltő portál</p>
+                <h1 className="text-sm font-bold text-foreground">{company?.name || 'Betöltés...'}</h1>
+                <p className="text-[11px] text-muted-foreground">Dokumentum feltöltő portál</p>
               </div>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
@@ -444,11 +444,11 @@ export default function ClientPortalPage() {
         <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
 
           {/* Welcome card */}
-          <div className="bg-card rounded-xl border border-border shadow-soft p-6">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+          <div className="bg-card rounded-lg border border-border shadow-soft p-6">
+            <h2 className="text-xl font-bold text-foreground mb-2">
               Üdvözöljük! 
             </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               Könyvelője hiányzó dokumentumokat kér Öntől. Kérjük, válassza ki a megfelelő fájlokat 
               az egyes tételeknél, majd kattintson a feltöltés gombra.
             </p>
@@ -461,16 +461,16 @@ export default function ClientPortalPage() {
           </div>
 
           {/* Missing documents list */}
-          <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+          <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
             <div className="px-6 py-4 border-b border-border flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-500" />
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Hiányzó dokumentumok</h3>
+              <h3 className="text-sm font-bold text-foreground">Hiányzó dokumentumok</h3>
             </div>
             {requests.length === 0 ? (
               <div className="py-10 text-center">
                 <CheckCircle2 className="w-10 h-10 text-green-500 mx-auto mb-3" />
-                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Minden dokumentum beérkezett!</p>
-                <p className="text-xs text-slate-400 mt-1">Köszönjük a gyors válaszát.</p>
+                <p className="text-sm font-medium text-foreground/90">Minden dokumentum beérkezett!</p>
+                <p className="text-xs text-muted-foreground mt-1">Köszönjük a gyors válaszát.</p>
               </div>
             ) : (
               <div className="divide-y divide-border/50">
@@ -483,7 +483,7 @@ export default function ClientPortalPage() {
                   return (
                     <div key={req.id} className={cn(
                       'px-6 py-4 transition-colors',
-                      isUploaded ? 'bg-green-50/50 dark:bg-green-900/10' : 'hover:bg-slate-50/50 dark:hover:bg-slate-800/30'
+                      isUploaded ? 'bg-green-50/50 dark:bg-green-900/10' : 'hover:bg-muted/50 dark:hover:bg-muted/50/30'
                     )}>
                       {/* Document info row */}
                       <div className="flex items-center justify-between gap-4">
@@ -492,14 +492,14 @@ export default function ClientPortalPage() {
                             {isUploaded && <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />}
                             <p className={cn(
                               'text-sm font-semibold',
-                              isUploaded ? 'text-green-700 dark:text-green-400' : 'text-slate-900 dark:text-slate-100'
+                              isUploaded ? 'text-green-700 dark:text-green-400' : 'text-foreground'
                             )}>{req.title}</p>
                           </div>
                           <div className="flex items-center gap-3 mt-1.5">
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-primary/10 text-primary border border-primary/20">
                               {req.category}
                             </span>
-                            <span className={cn('text-xs', isOverdue ? 'text-red-500 font-semibold' : 'text-slate-400')}>
+                            <span className={cn('text-xs', isOverdue ? 'text-red-500 font-semibold' : 'text-muted-foreground')}>
                               Határidő: {new Date(req.dueDate).toLocaleDateString('hu-HU')}
                               {isOverdue && ' · LEJÁRT'}
                             </span>
@@ -511,7 +511,7 @@ export default function ClientPortalPage() {
                             <div className={cn(
                               'flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors',
                               staged.length > 0
-                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-border hover:bg-slate-200 dark:hover:bg-slate-700'
+                                ? 'bg-muted text-muted-foreground border border-border hover:bg-muted dark:hover:bg-muted'
                                 : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm'
                             )}>
                               <Upload className="w-3.5 h-3.5" />
@@ -535,8 +535,8 @@ export default function ClientPortalPage() {
                           {staged.map((file, idx) => (
                             <div key={idx} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/5 border border-primary/10">
                               <FileText className="w-3.5 h-3.5 text-primary shrink-0" />
-                              <span className="text-xs text-slate-700 dark:text-slate-300 truncate flex-1">{file.name}</span>
-                              <span className="text-[10px] text-slate-400 shrink-0">{(file.size / 1024).toFixed(0)} KB</span>
+                              <span className="text-xs text-foreground/90 truncate flex-1">{file.name}</span>
+                              <span className="text-[10px] text-muted-foreground shrink-0">{(file.size / 1024).toFixed(0)} KB</span>
                               <button
                                 onClick={() => handleRemoveFile(req.id, idx)}
                                 className="p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors shrink-0"
@@ -566,7 +566,7 @@ export default function ClientPortalPage() {
 
             {/* Global upload button */}
             {totalStagedCount > 0 && (
-              <div className="px-6 py-4 border-t border-border dark:bg-slate-900/30">
+              <div className="px-6 py-4 border-t border-border dark:bg-card/30">
                 <button
                   onClick={handleUploadAll}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold transition-colors shadow-sm"
@@ -580,10 +580,10 @@ export default function ClientPortalPage() {
 
           {/* Footer disclaimer */}
           <div className="text-center pt-4 pb-8 space-y-1">
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-muted-foreground">
               Ez a link egyedi az Ön számára. Kérjük, ne ossza meg másokkal.
             </p>
-            <p className="text-[10px] text-slate-500/60">
+            <p className="text-[10px] text-muted-foreground/60">
               Powered by eaisybooks · {new Date().getFullYear()}
             </p>
           </div>
@@ -593,7 +593,7 @@ export default function ClientPortalPage() {
   }
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {!isMagicLink && (
@@ -602,8 +602,8 @@ export default function ClientPortalPage() {
             </Button>
           )}
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Ügyfélportál</h1>
-            <p className="text-sm text-slate-500">{company?.name || '–'} · Adatbekérés és dokumentumkezelés</p>
+            <h1 className="text-2xl font-bold text-foreground">Ügyfélportál</h1>
+            <p className="text-sm text-muted-foreground">{company?.name || '–'} · Adatbekérés és dokumentumkezelés</p>
           </div>
         </div>
         {!isMagicLink && (
@@ -623,46 +623,46 @@ export default function ClientPortalPage() {
       {!isMagicLink && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[
-            { icon: Shield, label: 'Portál státusz', value: portalTokens.length > 0 ? 'Aktív' : 'Nincs link', sub: portalTokens.length > 0 ? `${portalTokens.length} aktív link` : 'Generálj linket', color: portalTokens.length > 0 ? 'text-green-600' : 'text-slate-400' },
+            { icon: Shield, label: 'Portál státusz', value: portalTokens.length > 0 ? 'Aktív' : 'Nincs link', sub: portalTokens.length > 0 ? `${portalTokens.length} aktív link` : 'Generálj linket', color: portalTokens.length > 0 ? 'text-green-600' : 'text-muted-foreground' },
             { icon: Clock, label: 'Függő kérések', value: requests.filter(r => r.status === 'pending').length, sub: 'Válaszra vár', color: 'text-amber-600' },
             { icon: Users, label: 'Foglalkoztatottak', value: activeEmployees.length, sub: 'Aktív', color: 'text-blue-600' },
             { icon: Calendar, label: 'Aktuális ciklus', value: `${currentYear}/${String(currentMonth).padStart(2, '0')}`, sub: MONTHS[currentMonth - 1], color: 'text-violet-600' },
           ].map((card) => (
-            <div key={card.label} className="bg-card rounded-xl border border-border shadow-soft p-4">
+            <div key={card.label} className="bg-card rounded-lg border border-border shadow-soft p-4">
               <div className="flex items-center gap-2 mb-2">
                 <card.icon className={cn('w-4 h-4', card.color)} />
-                <span className="text-xs font-medium text-slate-500 uppercase">{card.label}</span>
+                <span className="text-xs font-medium text-muted-foreground uppercase">{card.label}</span>
               </div>
               <p className={cn('text-lg font-bold', card.color)}>{card.value}</p>
-              <p className="text-xs text-slate-500 mt-1">{card.sub}</p>
+              <p className="text-xs text-muted-foreground mt-1">{card.sub}</p>
             </div>
           ))}
         </div>
       )}
 
       {/* ── Data Requests (from actual missing items) ── */}
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
         <div className="p-5 border-b border-border flex items-center justify-between">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Adatbekérések — {currentYear}. {MONTHS[currentMonth - 1]}</h2>
-          <span className="text-xs text-slate-500">{requests.length} dokumentum</span>
+          <h2 className="text-lg font-bold text-foreground">Adatbekérések — {currentYear}. {MONTHS[currentMonth - 1]}</h2>
+          <span className="text-xs text-muted-foreground">{requests.length} dokumentum</span>
         </div>
         {requests.length === 0 ? (
           <div className="py-12 text-center">
             <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-3">
               <CheckCircle2 className="w-7 h-7 text-green-600" />
             </div>
-            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Nincs hiányzó dokumentum</p>
-            <p className="text-xs text-slate-400 mt-1">Minden szükséges dokumentum beérkezett.</p>
+            <p className="text-sm font-medium text-foreground/90">Nincs hiányzó dokumentum</p>
+            <p className="text-xs text-muted-foreground mt-1">Minden szükséges dokumentum beérkezett.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border dark:bg-slate-900/30">
-                  <th className="px-5 py-3 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Dokumentum</th>
-                  <th className="px-5 py-3 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Kategória</th>
-                  <th className="px-5 py-3 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Határidő</th>
-                  <th className="px-5 py-3 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Státusz</th>
+                <tr className="border-b border-border dark:bg-card/30">
+                  <th className="px-5 py-3 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Dokumentum</th>
+                  <th className="px-5 py-3 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Kategória</th>
+                  <th className="px-5 py-3 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Határidő</th>
+                  <th className="px-5 py-3 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Státusz</th>
                   <th className="px-5 py-3 w-24"></th>
                 </tr>
               </thead>
@@ -671,17 +671,17 @@ export default function ClientPortalPage() {
                   const status = statusColors[req.status];
                   const isOverdue = new Date(req.dueDate) < new Date() && req.status === 'pending';
                   return (
-                    <tr key={req.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <tr key={req.id} className="hover:bg-muted/50 transition-colors">
                       <td className="px-5 py-3">
-                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{req.title}</p>
+                        <p className="text-sm font-semibold text-foreground">{req.title}</p>
                       </td>
                       <td className="px-5 py-3">
-                        <span className="px-2 py-1 rounded-md text-[10px] font-bold uppercase bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                        <span className="px-2 py-1 rounded-md text-[10px] font-bold uppercase bg-muted text-muted-foreground">
                           {req.category}
                         </span>
                       </td>
                       <td className="px-5 py-3">
-                        <span className={cn('text-xs font-medium', isOverdue ? 'text-red-600' : 'text-slate-600 dark:text-slate-400')}>
+                        <span className={cn('text-xs font-medium', isOverdue ? 'text-red-600' : 'text-muted-foreground')}>
                           {new Date(req.dueDate).toLocaleDateString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit' })}
                           {isOverdue && <span className="ml-1 text-[9px] font-bold text-red-600">LEJÁRT</span>}
                         </span>
@@ -710,33 +710,33 @@ export default function ClientPortalPage() {
       </div>
 
       {/* ── Communication (real messages) ── */}
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
         <div className="p-5 border-b border-border flex items-center gap-2">
           <MessageCircle className="w-4 h-4 text-primary" />
-          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Kommunikáció</h2>
-          <span className="text-xs text-slate-400 ml-auto">{messages.length} üzenet</span>
+          <h2 className="text-lg font-bold text-foreground">Kommunikáció</h2>
+          <span className="text-xs text-muted-foreground ml-auto">{messages.length} üzenet</span>
         </div>
         <div className="p-5 space-y-3 max-h-80 overflow-y-auto">
           {messages.length === 0 ? (
             <div className="py-8 text-center">
-              <MessageCircle className="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-slate-600" />
-              <p className="text-sm text-slate-500">Még nincs üzenet. Írj az ügyfélnek!</p>
+              <MessageCircle className="w-8 h-8 mx-auto mb-2 text-muted-foreground/60" />
+              <p className="text-sm text-muted-foreground">Még nincs üzenet. Írj az ügyfélnek!</p>
             </div>
           ) : (
             messages.map((msg) => (
               <div key={msg.id} className={cn('flex', msg.is_from_client ? 'justify-start' : 'justify-end')}>
                 <div className={cn(
-                  'max-w-md rounded-xl px-4 py-2.5',
+                  'max-w-md rounded-lg px-4 py-2.5',
                   msg.is_from_client
-                    ? 'bg-slate-100 dark:bg-slate-800 border border-border'
+                    ? 'bg-muted border border-border'
                     : 'bg-primary/10 border border-primary/20'
                 )}>
                   <div className="flex items-center gap-2 mb-1">
-                    <MessageCircle className="w-3 h-3 text-slate-400" />
-                    <span className="text-[10px] font-bold text-slate-500 uppercase">{msg.sender_name}</span>
-                    <span className="text-[10px] text-slate-400">{new Date(msg.created_at).toLocaleString('hu-HU', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                    <MessageCircle className="w-3 h-3 text-muted-foreground" />
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase">{msg.sender_name}</span>
+                    <span className="text-[10px] text-muted-foreground">{new Date(msg.created_at).toLocaleString('hu-HU', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
-                  <p className="text-sm text-slate-700 dark:text-slate-300">{msg.message}</p>
+                  <p className="text-sm text-foreground/90">{msg.message}</p>
                 </div>
               </div>
             ))

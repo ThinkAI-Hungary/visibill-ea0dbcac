@@ -69,16 +69,16 @@ export default function AuditLogPage() {
 
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg shadow-indigo-500/25">
+          <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg shadow-lg shadow-primary/20">
             <Shield className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Audit napló</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Összes adatmódosítás, bejelentkezés és beküldés naplója</p>
+            <h1 className="text-2xl font-bold text-foreground">Audit napló</h1>
+            <p className="text-sm text-muted-foreground">Összes adatmódosítás, bejelentkezés és beküldés naplója</p>
           </div>
         </div>
         <ExportButton
@@ -98,7 +98,7 @@ export default function AuditLogPage() {
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Keresés email, entitás..."
             value={searchQuery}
@@ -107,7 +107,7 @@ export default function AuditLogPage() {
           />
         </div>
         <div className="flex items-center gap-1.5">
-          <Filter className="w-4 h-4 text-slate-400" />
+          <Filter className="w-4 h-4 text-muted-foreground" />
           <select
             value={eventFilter}
             onChange={e => { setEventFilter(e.target.value); setPage(0); }}
@@ -121,17 +121,17 @@ export default function AuditLogPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border dark:bg-slate-900/30">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Dátum</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Felhasználó</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Esemény</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Entitás</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Változás</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">IP</th>
+              <tr className="border-b border-border dark:bg-card/30">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dátum</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Felhasználó</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Esemény</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entitás</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Változás</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">IP</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
@@ -140,37 +140,37 @@ export default function AuditLogPage() {
                   <tr key={i}>
                     {Array.from({ length: 6 }).map((_, j) => (
                       <td key={j} className="px-4 py-3">
-                        <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" style={{ width: `${60 + j * 10}%` }} />
+                        <div className="h-4 bg-muted rounded animate-pulse" style={{ width: `${60 + j * 10}%` }} />
                       </td>
                     ))}
                   </tr>
                 ))
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-16 text-center text-sm text-slate-400">
-                    <Shield className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+                  <td colSpan={6} className="py-16 text-center text-sm text-muted-foreground">
+                    <Shield className="w-10 h-10 mx-auto mb-3 text-muted-foreground/60" />
                     Nincs naplóbejegyzés
                   </td>
                 </tr>
               ) : (
                 filtered.map((entry: any) => (
-                  <tr key={entry.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                    <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                  <tr key={entry.id} className="hover:bg-muted/50 transition-colors">
+                    <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
                       {new Date(entry.created_at).toLocaleString('hu-HU', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </td>
-                    <td className="px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-100">
+                    <td className="px-4 py-3 text-sm font-medium text-foreground">
                       {entry.user_email || '-'}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${EVENT_COLORS[entry.event_type] || 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'}`}>
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${EVENT_COLORS[entry.event_type] || 'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground'}`}>
                         {EVENT_LABELS[entry.event_type] || entry.event_type}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
                       <span className="font-medium">{entry.entity_type}</span>
-                      {entry.entity_id && <span className="text-slate-400 ml-1 font-mono text-xs">#{entry.entity_id.slice(0, 8)}</span>}
+                      {entry.entity_id && <span className="text-muted-foreground ml-1 font-mono text-xs">#{entry.entity_id.slice(0, 8)}</span>}
                     </td>
-                    <td className="px-4 py-3 text-xs font-mono text-slate-500 dark:text-slate-400 max-w-[200px] truncate">
+                    <td className="px-4 py-3 text-xs font-mono text-muted-foreground max-w-[200px] truncate">
                       {entry.old_value && entry.new_value ? (
                         <span className="text-amber-600 dark:text-amber-400">módosítva</span>
                       ) : entry.new_value ? (
@@ -179,7 +179,7 @@ export default function AuditLogPage() {
                         <span className="text-red-600 dark:text-red-400">törölve</span>
                       ) : '-'}
                     </td>
-                    <td className="px-4 py-3 text-xs font-mono text-slate-400">
+                    <td className="px-4 py-3 text-xs font-mono text-muted-foreground">
                       {entry.ip_address || '-'}
                     </td>
                   </tr>

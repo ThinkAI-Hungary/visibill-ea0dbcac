@@ -25,16 +25,16 @@ export function ReportCatalog({ reportTypes, onSelect }: ReportCatalogProps) {
         <button 
           key={report.id}
           onClick={() => onSelect(report.id as ReportType)}
-          className="flex flex-col text-left bg-card border border-border rounded-xl p-5 hover:border-slate-300 hover:shadow-soft transition-all group relative overflow-hidden"
+          className="flex flex-col text-left bg-card border border-border rounded-lg p-5 hover:border-border hover:shadow-soft transition-all group relative overflow-hidden"
         >
           <div className="flex justify-between items-start w-full mb-4">
             <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", report.bg)}>
               <report.icon className={cn("w-5 h-5", report.color)} />
             </div>
-            <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-slate-500 dark:text-slate-400 transition-colors" />
+            <ChevronRight className="w-5 h-5 text-muted-foreground/60 group-hover:text-muted-foreground transition-colors" />
           </div>
-          <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-1">{report.title}</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{report.description}</p>
+          <h3 className="font-semibold text-foreground mb-1">{report.title}</h3>
+          <p className="text-xs text-muted-foreground line-clamp-2">{report.description}</p>
         </button>
       ))}
     </div>

@@ -4,6 +4,16 @@ import { Building2, MoreVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ClientData } from '@/pages/Accounty/types';
 import { OwnerDropdown, StatusBadge } from './DashboardShared';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
+import { TableEmptyState } from '@/components/ui/table-empty-state';
 
 interface ClientListViewProps {
   filteredClients: ClientData[];
@@ -39,7 +49,7 @@ export default function ClientListView({
 
   return (
     <div 
-      className="bg-card border border-border rounded-xl shadow-soft overflow-hidden focus:outline-none focus:ring-1 focus:ring-primary/20"
+      className="bg-card border border-border rounded-lg shadow-soft overflow-hidden focus:outline-none focus:ring-1 focus:ring-primary/20"
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.target instanceof HTMLInputElement) return;
@@ -76,48 +86,46 @@ export default function ClientListView({
         </div>
       )}
       <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="bg-muted/50 border-b border-border text-muted-foreground font-semibold text-xs uppercase tracking-wider">
-            <tr>
-              <th className="px-3 py-4 w-10">
-                <input 
-                  type="checkbox" 
-                  className="rounded border-border focus:ring-primary" 
+        <Table className="compact-table min-w-[950px]">
+          <TableHeader>
+            <TableRow className="bg-muted/50 border-b border-border">
+              <TableHead className="px-3 py-4 w-10">
+                <Checkbox 
+                  className="cursor-pointer" 
                   checked={selectedIds.size === filteredClients.length && filteredClients.length > 0} 
-                  onChange={(e) => e.target.checked ? selectAll(filteredClients.map(c => c.id)) : clearSelection()} 
+                  onCheckedChange={(checked) => checked ? selectAll(filteredClients.map(c => c.id)) : clearSelection()} 
                 />
-              </th>
-              <th className="px-6 py-4">Cégnév</th>
-              <th className="px-6 py-4 text-center">Adószám</th>
-              <th className="px-6 py-4 text-center">Feldolgozatlan</th>
-              <th className="px-6 py-4 text-center">Hiányzó</th>
-              <th className="px-6 py-4 text-center">Határidő</th>
-              <th className="px-6 py-4 text-center">Felelős</th>
-              <th className="px-6 py-4 text-center">Státusz</th>
-              <th className="px-6 py-4 w-12 text-center"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
+              </TableHead>
+              <TableHead className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cégnév</TableHead>
+              <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Adószám</TableHead>
+              <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Feldolgozatlan</TableHead>
+              <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Hiányzó</TableHead>
+              <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Határidő</TableHead>
+              <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Felelős</TableHead>
+              <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Státusz</TableHead>
+              <TableHead className="px-6 py-4 w-12 text-center"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {filteredClients.length > 0 ? (
               filteredClients.map((client, idx) => (
-                <tr 
+                <TableRow 
                   key={client.id} 
                   onClick={() => navigate(`/eaisybooks/client/${client.id}`)}
                   className={cn(
-                    "hover:bg-accent/50 transition-colors group cursor-pointer",
-                    selectedIds.has(client.id) && "bg-primary/5",
+                    "hover:bg-muted/40 transition-colors group cursor-pointer border-l-2 border-l-transparent hover:border-l-primary",
+                    selectedIds.has(client.id) && "bg-primary/5 border-l-primary",
                     focusedIndex === idx && "ring-2 ring-primary/30 ring-inset"
                   )}
                 >
-                  <td className="px-3 py-4 w-10" onClick={(e) => e.stopPropagation()}>
-                    <input 
-                      type="checkbox" 
-                      className="rounded border-border focus:ring-primary" 
+                  <TableCell className="px-3 py-4 w-10" onClick={(e) => e.stopPropagation()}>
+                    <Checkbox 
+                      className="cursor-pointer" 
                       checked={selectedIds.has(client.id)} 
-                      onChange={() => toggleSelect(client.id)} 
+                      onCheckedChange={() => toggleSelect(client.id)} 
                     />
-                  </td>
-                  <td className="px-6 py-4">
+                  </TableCell>
+                  <TableCell className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${client.colorHex} shrink-0`}>
                         <Building2 className="w-4 h-4" />
@@ -126,41 +134,41 @@ export default function ClientListView({
                         {client.name}
                       </span>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 text-center text-muted-foreground">{client.taxNumber}</td>
-                  <td className="px-6 py-4 text-center font-medium text-foreground">{client.unprocessedCount}</td>
-                  <td className="px-6 py-4 text-center">
-                    <span className={`font-medium ${client.missingCount > 0 ? 'text-red-600' : 'text-foreground'}`}>
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-center font-mono tabular-nums text-muted-foreground">{client.taxNumber}</TableCell>
+                  <TableCell className="px-6 py-4 text-center font-mono tabular-nums font-medium text-foreground">{client.unprocessedCount}</TableCell>
+                  <TableCell className="px-6 py-4 text-center">
+                    <span className={`font-mono tabular-nums font-medium ${client.missingCount > 0 ? 'text-destructive font-semibold' : 'text-foreground'}`}>
                       {client.missingCount}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 text-center text-muted-foreground">
-                    <span className={`${client.status === 'Kritikus' ? 'text-red-600 font-medium' : ''}`}>
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-center text-muted-foreground">
+                    <span className={`${client.status === 'Kritikus' ? 'text-destructive font-semibold' : ''}`}>
                       {client.deadline}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 flex justify-center">
+                  </TableCell>
+                  <TableCell className="px-6 py-4 flex justify-center">
                     <OwnerDropdown client={client} onUpdateOwner={handleUpdateOwner} />
-                  </td>
-                  <td className="px-6 py-4 text-center">
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-center">
                     <StatusBadge status={client.status} />
-                  </td>
-                  <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
-                    <button className="text-muted-foreground/60 hover:text-foreground p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
+                    <button className="text-muted-foreground hover:text-foreground p-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <MoreVertical className="w-4 h-4" />
                     </button>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             ) : (
-              <tr>
-                <td colSpan={9} className="py-12 text-center text-muted-foreground">
-                  Nincs találat a következőre: "{searchQuery}" {statusFilter !== 'Minden' && `és státusz: ${statusFilter}`}
-                </td>
-              </tr>
+              <TableEmptyState 
+                colSpan={9} 
+                title="Nincs találat" 
+                description={`Nincs találat a következőre: "${searchQuery}" ${statusFilter !== 'Minden' ? `és státusz: ${statusFilter}` : ''}`} 
+              />
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

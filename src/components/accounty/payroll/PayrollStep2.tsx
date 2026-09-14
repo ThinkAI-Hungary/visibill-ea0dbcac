@@ -11,8 +11,8 @@ interface PayrollStep2Props {
 function DetailRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="flex items-baseline justify-between gap-2">
-      <span className="text-[11px] text-slate-500 dark:text-slate-400 shrink-0">{label}</span>
-      <span className={cn('text-[11px] font-medium text-slate-900 dark:text-slate-100 text-right', mono && 'font-mono')}>{value}</span>
+      <span className="text-[11px] text-muted-foreground shrink-0">{label}</span>
+      <span className={cn('text-[11px] font-medium text-foreground text-right', mono && 'font-mono')}>{value}</span>
     </div>
   );
 }
@@ -34,7 +34,7 @@ export default function PayrollStep2({
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-600 dark:text-slate-300">
+      <p className="text-sm text-muted-foreground dark:text-foreground/90">
         Ellenőrizd a beérkezett adatokat: változások, új belépők, kilépők, módosítások.
       </p>
       <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
@@ -53,20 +53,20 @@ export default function PayrollStep2({
               <button
                 onClick={() => toggleRow(emp.id)}
                 className={cn(
-                  'w-full px-4 py-3 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors',
-                  isOpen && 'bg-slate-50/50 dark:bg-slate-800/30'
+                  'w-full px-4 py-3 flex items-center gap-3 hover:bg-muted/50 transition-colors',
+                  isOpen && 'bg-muted/40/50 dark:bg-muted/30'
                 )}
               >
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
                   {emp.last_name?.[0]}{emp.first_name?.[0]}
                 </div>
                 <div className="flex-1 min-w-0 text-left">
-                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  <p className="text-sm font-semibold text-foreground">
                     {emp.last_name} {emp.first_name}
                   </p>
                   <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                     {employment && (
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                      <span className="text-[11px] text-muted-foreground">
                         {EMPLOYMENT_TYPE_LABELS[employment.employment_type] || employment.employment_type} · Kód: {employment.job_code}
                       </span>
                     )}
@@ -76,12 +76,12 @@ export default function PayrollStep2({
                       </span>
                     )}
                     {emp.taj_number && (
-                      <span className="text-[11px] font-mono text-slate-400">
+                      <span className="text-[11px] font-mono text-muted-foreground">
                         TAJ: {emp.taj_number}
                       </span>
                     )}
                     {employment?.start_date && (
-                      <span className="text-[11px] text-slate-400">
+                      <span className="text-[11px] text-muted-foreground">
                         {employment.start_date}
                       </span>
                     )}
@@ -89,15 +89,15 @@ export default function PayrollStep2({
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <ChevronDown className={cn('w-4 h-4 text-slate-400 transition-transform duration-200', isOpen && 'rotate-180')} />
+                  <ChevronDown className={cn('w-4 h-4 text-muted-foreground transition-transform duration-200', isOpen && 'rotate-180')} />
                 </div>
               </button>
 
               {isOpen && (
-                <div className="px-4 pb-4 pt-1 dark:bg-slate-800/20 animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="px-4 pb-4 pt-1 dark:bg-muted/20 page-animate slide-in-from-top-1 duration-200">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ml-12">
                     <div className="space-y-2">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Személyes adatok</p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Személyes adatok</p>
                       <DetailRow label="Teljes név" value={`${emp.last_name} ${emp.first_name}`} />
                       {emp.birth_name && <DetailRow label="Szül. név" value={emp.birth_name} />}
                       {emp.birth_date && <DetailRow label="Szül. dátum" value={emp.birth_date} />}
@@ -107,7 +107,7 @@ export default function PayrollStep2({
                       {emp.nationality && <DetailRow label="Állampolgárság" value={emp.nationality} />}
                     </div>
                     <div className="space-y-2">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Azonosítók & elérhetőség</p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Azonosítók & elérhetőség</p>
                       {emp.taj_number && <DetailRow label="TAJ-szám" value={emp.taj_number} mono />}
                       {emp.tax_id && <DetailRow label="Adóazonosító" value={emp.tax_id} mono />}
                       {emp.id_card_number && <DetailRow label="Személyi ig." value={emp.id_card_number} mono />}
@@ -116,7 +116,7 @@ export default function PayrollStep2({
                       {emp.bank_account && <DetailRow label="Bankszámla" value={emp.bank_account} mono />}
                     </div>
                     <div className="space-y-2">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Jogviszony</p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Jogviszony</p>
                       {employment ? (
                         <>
                           <DetailRow label="Típus" value={EMPLOYMENT_TYPE_LABELS[employment.employment_type] || employment.employment_type} />
@@ -132,7 +132,7 @@ export default function PayrollStep2({
                           {employment.is_fixed_term && <DetailRow label="Határozat" value="Határozott idejű" />}
                         </>
                       ) : (
-                        <p className="text-xs text-slate-400 italic">Nincs aktív jogviszony</p>
+                        <p className="text-xs text-muted-foreground italic">Nincs aktív jogviszony</p>
                       )}
                     </div>
                   </div>

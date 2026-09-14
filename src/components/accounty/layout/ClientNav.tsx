@@ -100,7 +100,7 @@ export default function ClientNav() {
 
   if (isCollapsed) {
     return (
-      <ul className="flex w-full min-w-0 flex-col gap-1 animate-in fade-in duration-300">
+      <ul className="flex w-full min-w-0 flex-col gap-1 page-animate">
         <li className="relative flex justify-center">
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
@@ -145,7 +145,7 @@ export default function ClientNav() {
   }
 
   return (
-    <div className="space-y-3 animate-in fade-in duration-200">
+    <div className="space-y-3 page-animate duration-200">
       {/* Back to Portfolio Button & Active Client Card */}
       <div className="px-1 space-y-2">
         <button

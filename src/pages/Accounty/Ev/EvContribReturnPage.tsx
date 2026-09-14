@@ -18,7 +18,7 @@ const STATUS_CFG = {
   submitted: { label: 'Benyújtva', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle2 },
   accepted: { label: 'Elfogadva', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle2 },
   draft: { label: 'Vázlat', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', icon: FileBarChart },
-  upcoming: { label: 'Közelgő', color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400', icon: Clock },
+  upcoming: { label: 'Közelgő', color: 'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground', icon: Clock },
   overdue: { label: 'Lejárt!', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', icon: AlertTriangle },
 };
 
@@ -275,49 +275,49 @@ export default function EvContribReturnPage() {
   const szochoRate = taxParams.szochoKulcs * 100;
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/eaisybooks?tab=ev&year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+    <div className="w-full space-y-6 page-animate">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link to={`/eaisybooks?tab=ev&year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">{client?.name || 'Ügyfél'}</Link>
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-primary transition-colors">{client?.name || 'Ügyfél'}</Link>
         <ChevronRight className="w-3 h-3" />
-        <span className="text-slate-900 dark:text-slate-100 font-medium">TB/Szocho bevallás (58-as)</span>
+        <span className="text-foreground font-medium">TB/Szocho bevallás (58-as)</span>
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="p-2.5 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-xl shadow-lg shadow-teal-500/25">
+        <div className="p-2.5 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-lg shadow-lg shadow-teal-500/25">
           <FileBarChart className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">TB/Szocho bevallás (58-as nyomtatvány)</h1>
-          <p className="text-sm text-slate-500">Tbj. 51. § – negyedéves járulékbevallás</p>
+          <h1 className="text-2xl font-bold text-foreground">TB/Szocho bevallás (58-as nyomtatvány)</h1>
+          <p className="text-sm text-muted-foreground">Tbj. 51. § – negyedéves járulékbevallás</p>
         </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">YTD befizetett</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">YTD befizetett</p>
           <p className="text-lg font-bold text-teal-600 tabular-nums">{isLoading ? '...' : formatHuf(totalPaid)}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">TB kulcs</p>
-          <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{tbRate}%</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">TB kulcs</p>
+          <p className="text-lg font-bold text-foreground">{tbRate}%</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Szocho kulcs</p>
-          <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{szochoRate}%</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Szocho kulcs</p>
+          <p className="text-lg font-bold text-foreground">{szochoRate}%</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Gyakoriság</p>
-          <p className="text-lg font-bold text-slate-900 dark:text-slate-100">Negyedéves</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Gyakoriság</p>
+          <p className="text-lg font-bold text-foreground">Negyedéves</p>
         </div>
       </div>
 
       <div className="space-y-3">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
             <Loader2 className="w-8 h-8 mb-3 animate-spin text-teal-400" />
             <p className="text-sm">Betöltés...</p>
           </div>
@@ -327,24 +327,24 @@ export default function EvContribReturnPage() {
             const Icon = cfg.icon;
             return (
               <div key={ret.id} className={cn(
-                'bg-card rounded-xl border shadow-soft overflow-hidden',
+                'bg-card rounded-lg border shadow-soft overflow-hidden',
                 ret.status === 'overdue' ? 'border-red-300 dark:border-red-800' : 'border-border'
               )}>
                 <div className="flex items-center justify-between px-5 py-4">
                   <div className="flex items-center gap-4">
                     <div className={cn(
-                      'w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold',
+                      'w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold',
                       ret.status === 'overdue' ? 'bg-red-100 dark:bg-red-900/30 text-red-600'
                         : 'bg-teal-100 dark:bg-teal-900/30 text-teal-600'
                     )}>58</div>
                     <div>
-                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{ret.quarter} – TB/Szocho bevallás</p>
+                      <p className="text-sm font-bold text-foreground">{ret.quarter} – TB/Szocho bevallás</p>
                       <div className="flex items-center gap-3 mt-0.5">
                         <span className={cn('inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full', cfg.color)}>
                           <Icon className="w-3 h-3" />{cfg.label}
                         </span>
                         {ret.deadline && (
-                          <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                             <Calendar className="w-3 h-3" />Határidő: {new Date(ret.deadline).toLocaleDateString('hu-HU')}
                           </span>
                         )}
@@ -354,16 +354,16 @@ export default function EvContribReturnPage() {
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       {(ret.tbAmount > 0 || ret.szochoAmount > 0) && (
-                        <p className="text-xs text-slate-400">TB: {formatHuf(ret.tbAmount)} | Szocho: {formatHuf(ret.szochoAmount)}</p>
+                        <p className="text-xs text-muted-foreground">TB: {formatHuf(ret.tbAmount)} | Szocho: {formatHuf(ret.szochoAmount)}</p>
                       )}
-                      <p className="text-sm font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100">
+                      <p className="text-sm font-bold font-mono tabular-nums text-foreground">
                         {ret.totalAmount > 0 ? formatHuf(ret.totalAmount) : '–'}
                       </p>
                     </div>
                     {ret.status !== 'submitted' && (
                       <button
                         onClick={() => handlePrepareAndDownload(ret)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-sm shadow-indigo-600/10"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors shadow-sm shadow-indigo-600/10"
                       >
                         <Send className="w-3.5 h-3.5" />
                         <span>Bevallás elkészítése</span>
@@ -386,14 +386,14 @@ export default function EvContribReturnPage() {
                             URL.revokeObjectURL(url);
                             toast({ title: 'Siker', description: 'Járulékbevallás XML letöltve.' });
                           }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 rounded-lg transition-colors shadow-sm"
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-muted hover:bg-muted text-foreground/90 dark:bg-muted dark:hover:bg-muted dark:text-foreground rounded-lg transition-colors shadow-sm"
                         >
                           <Download className="w-3.5 h-3.5" />
                           <span>XML letöltése</span>
                         </button>
                         <button
                           onClick={() => handlePrepareAndDownload(ret)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 text-indigo-600 dark:bg-indigo-950 dark:hover:bg-indigo-900 dark:text-indigo-400 rounded-lg transition-colors shadow-sm"
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-primary/10 hover:bg-indigo-100 text-primary dark:bg-indigo-950 dark:hover:bg-indigo-900 dark:text-primary rounded-lg transition-colors shadow-sm"
                         >
                           <Send className="w-3.5 h-3.5" />
                           <span>Újragenerálás</span>
@@ -408,7 +408,7 @@ export default function EvContribReturnPage() {
         )}
       </div>
 
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
         <div className="flex items-start gap-2">
           <Info className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
           <div className="text-xs text-blue-600 dark:text-blue-400">

@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-09-13  
-> **Összesen:** 78 döntés | ✅ Decided: 74 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Utoljára frissítve:** 2026-09-14  
+> **Összesen:** 80 döntés | ✅ Decided: 76 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -102,6 +102,8 @@
 | P-077 | eaisyBooks AI Asszisztens Chat és Speed Dial Lebegő Menü UX | ✅ Decided | [P-077](./P-077-eaisybooks-ai-assistant-chat-and-speed-dial-ux.md) |
 | P-080 | Dolgozó-Központú Munkalap (Worksheet View) és Munkába Járási Költségtérítés UX | ✅ Decided | [P-080](./P-080-employee-worksheet-and-commute-reimbursement-ux.md) |
 | P-082 | Bérszámfejtési Főkönyvi Feladás Kontírozás (Step 8), Kereshető Választó és Magyarázó Szövegezés UX | ✅ Decided | [P-082](./P-082-payroll-gl-mapping-combobox-and-step8-ux.md) |
+| P-084 | Hierarchikus Útvonalkövető (Breadcrumbs) Rendszer és Automatikus Route Resolver UX | ✅ Decided | [P-084](./P-084-hierarchical-breadcrumbs-navigation-ux.md) |
+| P-085 | eaisyBooks Portfólió Oldalsáv 4-Kategóriás Munkafolyamat-Alapú Csoportosítása UX | ✅ Decided | [P-085](./P-085-eaisybooks-portfolio-navigation-grouping-ux.md) |
 
 ## 🔍 Keresés
 

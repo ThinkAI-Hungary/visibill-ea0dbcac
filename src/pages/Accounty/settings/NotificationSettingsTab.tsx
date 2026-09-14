@@ -1,5 +1,6 @@
 import React from 'react';
 import { Mail, Phone } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 
 interface NotificationSettingsTabProps {
@@ -19,12 +20,12 @@ export default function NotificationSettingsTab({
   return (
     <div key="notifications" className="p-6 space-y-6 tab-content-enter">
       <div className="border-b border-border pb-4">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Értesítési beállítások</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Alapértelmezett értesítési csatornák és gyakoriság új ügyfelekhez</p>
+        <h2 className="text-lg font-bold text-foreground">Értesítési beállítások</h2>
+        <p className="text-sm text-muted-foreground mt-1">Alapértelmezett értesítési csatornák és gyakoriság új ügyfelekhez</p>
       </div>
 
       <div>
-        <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3">Csatornák</h3>
+        <h3 className="text-sm font-bold text-foreground mb-3">Csatornák</h3>
         <div className="grid grid-cols-2 gap-3">
           {[
             { key: 'email', label: 'E-mail', icon: Mail, desc: 'Automatikus email értesítések' },
@@ -36,23 +37,23 @@ export default function NotificationSettingsTab({
               key={ch.key}
               onClick={() => setDefaultChannels(prev => ({ ...prev, [ch.key]: !prev[ch.key as keyof typeof prev] }))}
               className={cn(
-                "flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left",
+                "flex items-center gap-3 p-4 rounded-lg border-2 transition-all text-left",
                 defaultChannels[ch.key as keyof typeof defaultChannels]
                   ? "border-primary/30 dark:border-primary/40 bg-accent-subtle/50 dark:bg-accent"
-                  : "border-border hover:border-slate-300"
+                  : "border-border hover:border-border"
               )}
             >
               <div className={cn(
                 "w-8 h-8 rounded-lg flex items-center justify-center",
                 defaultChannels[ch.key as keyof typeof defaultChannels]
                   ? "bg-accent dark:bg-accent"
-                  : "bg-slate-100 dark:bg-slate-800"
+                  : "bg-muted"
               )}>
-                <ch.icon className={cn("w-4 h-4", defaultChannels[ch.key as keyof typeof defaultChannels] ? "text-primary" : "text-slate-400")} />
+                <ch.icon className={cn("w-4 h-4", defaultChannels[ch.key as keyof typeof defaultChannels] ? "text-primary" : "text-muted-foreground")} />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{ch.label}</p>
-                <p className="text-xs text-slate-500">{ch.desc}</p>
+                <p className="text-sm font-medium text-foreground">{ch.label}</p>
+                <p className="text-xs text-muted-foreground">{ch.desc}</p>
               </div>
             </button>
           ))}
@@ -60,7 +61,7 @@ export default function NotificationSettingsTab({
       </div>
 
       <div>
-        <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3">Emlékeztető gyakoriság</h3>
+        <h3 className="text-sm font-bold text-foreground mb-3">Emlékeztető gyakoriság</h3>
         <div className="flex gap-3">
           {[
             { value: 'low', label: 'Alacsony', desc: 'Hetente 1x' },
@@ -71,29 +72,27 @@ export default function NotificationSettingsTab({
               key={freq.value}
               onClick={() => setReminderFrequency(freq.value)}
               className={cn(
-                "flex-1 p-4 rounded-xl border-2 transition-all text-center",
+                "flex-1 p-4 rounded-lg border-2 transition-all text-center",
                 reminderFrequency === freq.value
-                  ? "border-indigo-300 dark:border-indigo-700 bg-indigo-50/50 dark:bg-indigo-900/20"
-                  : "border-border hover:border-slate-300"
+                  ? "border-primary/40 dark:border-indigo-700 bg-primary/10/50 dark:bg-indigo-900/20"
+                  : "border-border hover:border-border"
               )}
             >
-              <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{freq.label}</p>
-              <p className="text-xs text-slate-500 mt-0.5">{freq.desc}</p>
+              <p className="text-sm font-bold text-foreground">{freq.label}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{freq.desc}</p>
             </button>
           ))}
         </div>
       </div>
 
-      <label className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl cursor-pointer">
-        <input
-          type="checkbox"
+      <label className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg cursor-pointer select-none">
+        <Checkbox
           checked={autoReminder}
-          onChange={e => setAutoReminder(e.target.checked)}
-          className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary"
+          onCheckedChange={checked => setAutoReminder(!!checked)}
         />
         <div>
-          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Automatikus emlékeztetők</p>
-          <p className="text-xs text-slate-500">A rendszer automatikusan küld emlékeztetőket a beállított gyakoriságnak megfelelően</p>
+          <p className="text-sm font-medium text-foreground">Automatikus emlékeztetők</p>
+          <p className="text-xs text-muted-foreground">A rendszer automatikusan küld emlékeztetőket a beállított gyakoriságnak megfelelően</p>
         </div>
       </label>
     </div>

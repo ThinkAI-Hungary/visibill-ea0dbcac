@@ -101,36 +101,36 @@ export default function EvIncomeReportPage() {
   const profitMargin = totals.revenue > 0 ? totals.income / totals.revenue : 0;
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to="/eaisybooks?tab=ev" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link to="/eaisybooks?tab=ev" className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/eaisybooks/${id}/${dateRange}/ev`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev`} className="hover:text-primary transition-colors">
           {client?.name || 'Ügyfél'}
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <span className="text-slate-900 dark:text-slate-100 font-medium">Jövedelem riport</span>
+        <span className="text-foreground font-medium">Jövedelem riport</span>
       </div>
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl shadow-lg shadow-emerald-500/25">
+          <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg shadow-lg shadow-emerald-500/25">
             <TrendingUp className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Jövedelem riport</h1>
-            <p className="text-sm text-slate-500">Havi bevétel, költség, jövedelem és adóteher áttekintés</p>
+            <h1 className="text-2xl font-bold text-foreground">Jövedelem riport</h1>
+            <p className="text-sm text-muted-foreground">Havi bevétel, költség, jövedelem és adóteher áttekintés</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <select
             value={year}
             onChange={e => setYear(+e.target.value)}
-            className="px-3 py-1.5 text-sm border border-border rounded-lg bg-card text-slate-900 dark:text-slate-100"
+            className="px-3 py-1.5 text-sm border border-border rounded-lg bg-card text-foreground"
           >
             <option value={2026}>2026</option>
             <option value={2025}>2025</option>
@@ -151,35 +151,35 @@ export default function EvIncomeReportPage() {
         <>
           {/* Summary cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-              <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">YTD Bevétel</p>
-              <p className="text-lg font-bold text-slate-900 dark:text-slate-100 tabular-nums">{formatHuf(totals.revenue)}</p>
+            <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">YTD Bevétel</p>
+              <p className="text-lg font-bold text-foreground tabular-nums">{formatHuf(totals.revenue)}</p>
             </div>
-            <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-              <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">YTD Költség</p>
+            <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">YTD Költség</p>
               <p className="text-lg font-bold text-red-500 tabular-nums">{formatHuf(totals.costs)}</p>
             </div>
-            <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-              <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">YTD Jövedelem</p>
+            <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">YTD Jövedelem</p>
               <p className="text-lg font-bold text-emerald-600 tabular-nums">{formatHuf(totals.income)}</p>
             </div>
-            <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-              <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">YTD SZJA</p>
-              <p className="text-lg font-bold text-indigo-600 tabular-nums">{formatHuf(totals.szja)}</p>
+            <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">YTD SZJA</p>
+              <p className="text-lg font-bold text-primary tabular-nums">{formatHuf(totals.szja)}</p>
             </div>
-            <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-              <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">YTD TB/Szocho</p>
+            <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">YTD TB/Szocho</p>
               <p className="text-lg font-bold text-violet-600 tabular-nums">{formatHuf(totals.tb)}</p>
             </div>
-            <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-              <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Profit margó</p>
+            <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Profit margó</p>
               <p className="text-lg font-bold text-emerald-600">{formatPercent(profitMargin)}</p>
             </div>
           </div>
 
           {/* Simple bar chart */}
-          <div className="bg-card rounded-xl border border-border shadow-soft p-5">
-            <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-4">Havi bevétel alakulás</h2>
+          <div className="bg-card rounded-lg border border-border shadow-soft p-5">
+            <h2 className="text-sm font-bold text-foreground mb-4">Havi bevétel alakulás</h2>
             <div className="flex gap-2 h-48">
               {MONTHS.map((monthLabel, idx) => {
                 const d = monthlyData.find(m => m.month === monthLabel);
@@ -190,7 +190,7 @@ export default function EvIncomeReportPage() {
 
                 return (
                   <div key={monthLabel} className="flex-1 flex flex-col items-center gap-1 min-w-0">
-                    <span className="text-[10px] font-mono text-slate-500 tabular-nums truncate w-full text-center">
+                    <span className="text-[10px] font-mono text-muted-foreground tabular-nums truncate w-full text-center">
                       {revenue > 0 ? formatHuf(revenue).replace(/\s*Ft$/, '') : '–'}
                     </span>
                     <div className="flex-1 w-full flex items-end">
@@ -205,73 +205,73 @@ export default function EvIncomeReportPage() {
                           />
                         </div>
                       ) : (
-                        <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-md" />
+                        <div className="w-full h-1.5 bg-muted rounded-md" />
                       )}
                     </div>
                     <span className={cn(
                       'text-[10px] font-bold',
-                      revenue > 0 ? 'text-slate-600 dark:text-slate-400' : 'text-slate-300'
+                      revenue > 0 ? 'text-muted-foreground' : 'text-muted-foreground/60'
                     )}>{monthLabel}</span>
                   </div>
                 );
               })}
             </div>
-            <div className="flex items-center gap-4 mt-3 text-[10px] text-slate-500">
+            <div className="flex items-center gap-4 mt-3 text-[10px] text-muted-foreground">
               <span className="flex items-center gap-1"><span className="w-3 h-3 bg-emerald-500/20 border border-emerald-500/30 rounded" /> Bevétel</span>
               <span className="flex items-center gap-1"><span className="w-3 h-3 bg-red-400/40 rounded" /> Költség</span>
             </div>
           </div>
 
           {/* Monthly table */}
-          <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+          <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
             <div className="px-5 py-3 border-b border-border/50">
-              <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Havi részletezés</h2>
+              <h2 className="text-sm font-bold text-foreground">Havi részletezés</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border bg-slate-50/50 dark:bg-slate-800/30">
-                    <th className="text-left py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Hónap</th>
-                    <th className="text-right py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Bevétel</th>
-                    <th className="text-right py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Költség</th>
-                    <th className="text-right py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Jövedelem</th>
-                    <th className="text-right py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">SZJA</th>
-                    <th className="text-right py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">TB/Szocho</th>
-                    <th className="text-right py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Össz. adó</th>
+                  <tr className="border-b border-border bg-muted/40/50 dark:bg-muted/30">
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Hónap</th>
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Bevétel</th>
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Költség</th>
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Jövedelem</th>
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">SZJA</th>
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">TB/Szocho</th>
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Össz. adó</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {monthlyData.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-12 text-center text-sm text-slate-400">
-                        <TrendingUp className="w-8 h-8 mx-auto mb-3 text-slate-300" />
+                      <td colSpan={7} className="py-12 text-center text-sm text-muted-foreground">
+                        <TrendingUp className="w-8 h-8 mx-auto mb-3 text-muted-foreground/60" />
                         Nincs adat a kiválasztott évre
                       </td>
                     </tr>
                   ) : (
                     monthlyData.map(d => (
-                      <tr key={d.month} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                        <td className="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100">{d.month}</td>
-                        <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-700 dark:text-slate-300">{formatHuf(d.revenue)}</td>
+                      <tr key={d.month} className="hover:bg-muted/50 dark:hover:bg-muted/50/30 transition-colors">
+                        <td className="py-3 px-4 font-semibold text-foreground">{d.month}</td>
+                        <td className="py-3 px-4 text-right font-mono tabular-nums text-foreground/90">{formatHuf(d.revenue)}</td>
                         <td className="py-3 px-4 text-right font-mono tabular-nums text-red-500">{formatHuf(d.costs)}</td>
                         <td className="py-3 px-4 text-right font-mono tabular-nums text-emerald-600 font-medium">{formatHuf(d.income)}</td>
-                        <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-600 dark:text-slate-400">{formatHuf(d.szja)}</td>
-                        <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-600 dark:text-slate-400">{formatHuf(d.tb)}</td>
-                        <td className="py-3 px-4 text-right font-mono tabular-nums text-indigo-600 font-medium">{formatHuf(d.totalTax)}</td>
+                        <td className="py-3 px-4 text-right font-mono tabular-nums text-muted-foreground">{formatHuf(d.szja)}</td>
+                        <td className="py-3 px-4 text-right font-mono tabular-nums text-muted-foreground">{formatHuf(d.tb)}</td>
+                        <td className="py-3 px-4 text-right font-mono tabular-nums text-primary font-medium">{formatHuf(d.totalTax)}</td>
                       </tr>
                     ))
                   )}
                 </tbody>
                 {monthlyData.length > 0 && (
                   <tfoot>
-                    <tr className="border-t-2 border-border bg-slate-50/30 dark:bg-slate-800/20 font-bold">
-                      <td className="py-3 px-4 text-slate-900 dark:text-slate-100">Összesen</td>
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-900 dark:text-slate-100">{formatHuf(totals.revenue)}</td>
+                    <tr className="border-t-2 border-border bg-muted/40/30 dark:bg-muted/20 font-bold">
+                      <td className="py-3 px-4 text-foreground">Összesen</td>
+                      <td className="py-3 px-4 text-right font-mono tabular-nums text-foreground">{formatHuf(totals.revenue)}</td>
                       <td className="py-3 px-4 text-right font-mono tabular-nums text-red-500">{formatHuf(totals.costs)}</td>
                       <td className="py-3 px-4 text-right font-mono tabular-nums text-emerald-600">{formatHuf(totals.income)}</td>
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-600 dark:text-slate-400">{formatHuf(totals.szja)}</td>
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-600 dark:text-slate-400">{formatHuf(totals.tb)}</td>
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-indigo-600">{formatHuf(totals.totalTax)}</td>
+                      <td className="py-3 px-4 text-right font-mono tabular-nums text-muted-foreground">{formatHuf(totals.szja)}</td>
+                      <td className="py-3 px-4 text-right font-mono tabular-nums text-muted-foreground">{formatHuf(totals.tb)}</td>
+                      <td className="py-3 px-4 text-right font-mono tabular-nums text-primary">{formatHuf(totals.totalTax)}</td>
                     </tr>
                   </tfoot>
                 )}

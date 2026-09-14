@@ -334,7 +334,7 @@ export default function ClientSettingsTab({
   ];
 
   return (
-    <div className="flex gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="flex gap-6 page-animate slide-in-from-bottom-4 duration-500">
       {/* Sidebar sub-tab navigation */}
       <div className="w-56 shrink-0 space-y-1">
         {subTabs.map(tab => (
@@ -345,7 +345,7 @@ export default function ClientSettingsTab({
               navigate(`#${tab.id}`, { replace: true });
             }}
             className={cn(
-              "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-left",
+              "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all text-left",
               activeSubTab === tab.id
                 ? "bg-primary/15 text-primary shadow-soft border border-primary/20"
                 : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -358,7 +358,7 @@ export default function ClientSettingsTab({
       </div>
 
       {/* Tab Contents */}
-      <div className="flex-1 bg-card rounded-xl border border-border shadow-sm p-6 space-y-6">
+      <div className="flex-1 bg-card rounded-lg border border-border shadow-sm p-6 space-y-6">
         
         {/* ── 1. Notifications & Contact Sub-Tab ── */}
         {activeSubTab === 'notifications' && (
@@ -378,7 +378,7 @@ export default function ClientSettingsTab({
               ].map(({ key, label, desc, icon: Icon }) => (
                 <div 
                   key={key} 
-                  className="flex items-center justify-between p-4 rounded-xl border border-border hover:bg-accent/40 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-accent/40 transition-colors"
                 >
                   <div className="flex items-center gap-4">
                     <div className={cn(
@@ -410,7 +410,7 @@ export default function ClientSettingsTab({
 
             {/* Language & Frequency Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="border border-border rounded-xl p-5 space-y-3">
+              <div className="border border-border rounded-lg p-5 space-y-3">
                 <h4 className="font-semibold text-sm flex items-center gap-2">
                   <Globe className="w-4 h-4 text-muted-foreground" /> Nyelvi beállítások
                 </h4>
@@ -440,7 +440,7 @@ export default function ClientSettingsTab({
                 </div>
               </div>
 
-              <div className="border border-border rounded-xl p-5 space-y-4">
+              <div className="border border-border rounded-lg p-5 space-y-4">
                 <h4 className="font-semibold text-sm flex items-center gap-2">
                   <Clock className="w-4 h-4 text-muted-foreground" /> Automatizmus
                 </h4>
@@ -470,7 +470,7 @@ export default function ClientSettingsTab({
             </div>
 
             {/* Kapcsolattartó */}
-            <div className="border border-border rounded-xl p-5 space-y-4">
+            <div className="border border-border rounded-lg p-5 space-y-4">
               <h4 className="font-semibold text-sm flex items-center gap-2">
                 <User className="w-4 h-4 text-muted-foreground" /> Ügyfél kapcsolattartó
               </h4>
@@ -508,7 +508,7 @@ export default function ClientSettingsTab({
               </div>
 
               {/* GDPR Opt-in */}
-              <div className="p-4 rounded-xl border border-border bg-muted/10 flex items-center justify-between">
+              <div className="p-4 rounded-lg border border-border bg-muted/10 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-foreground">GDPR Hozzájárulás</p>
                   <p className="text-xs text-muted-foreground mt-0.5 font-normal">
@@ -684,7 +684,7 @@ export default function ClientSettingsTab({
                         type="button"
                         onClick={() => updateCegkapu({ tarhelyType: opt.value })}
                         className={cn(
-                          'p-4 rounded-xl border-2 text-left transition-all',
+                          'p-4 rounded-lg border-2 text-left transition-all',
                           cegkapuData.tarhelyType === opt.value
                             ? 'border-primary bg-primary/10 text-foreground font-semibold'
                             : 'border-border hover:border-primary/50 text-muted-foreground'
@@ -698,7 +698,7 @@ export default function ClientSettingsTab({
                 </div>
 
                 {/* Tárhely azonosító */}
-                <div className="space-y-4 border border-border rounded-xl p-5">
+                <div className="space-y-4 border border-border rounded-lg p-5">
                   <h4 className="font-semibold text-sm flex items-center gap-2">
                     <Key className="w-4 h-4 text-muted-foreground" /> Tárhely azonosítása
                   </h4>
@@ -760,7 +760,7 @@ export default function ClientSettingsTab({
                 </div>
 
                 {/* Aláíró */}
-                <div className="space-y-4 border border-border rounded-xl p-5">
+                <div className="space-y-4 border border-border rounded-lg p-5">
                   <h4 className="font-semibold text-sm flex items-center gap-2">
                     <User className="w-4 h-4 text-muted-foreground" /> Aláíró személy (KAÜ)
                   </h4>
@@ -816,7 +816,7 @@ export default function ClientSettingsTab({
                 </div>
 
                 {/* Polling & Sync */}
-                <div className="space-y-4 border border-border rounded-xl p-5">
+                <div className="space-y-4 border border-border rounded-lg p-5">
                   <h4 className="font-semibold text-sm flex items-center gap-2">
                     <Monitor className="w-4 h-4 text-muted-foreground" /> Tárhely-figyelő és szinkronizáció
                   </h4>
@@ -900,7 +900,7 @@ export default function ClientSettingsTab({
             ) : (
               <div className="space-y-6">
                 {/* Payroll Config */}
-                <div className="space-y-4 border border-border rounded-xl p-5">
+                <div className="space-y-4 border border-border rounded-lg p-5">
                   <h4 className="font-semibold text-sm flex items-center gap-2">
                     <Clock className="w-4 h-4 text-muted-foreground" /> Munkaidő & Kerekítés
                   </h4>
@@ -952,7 +952,7 @@ export default function ClientSettingsTab({
                   </div>
                 </div>
 
-                <div className="space-y-4 border border-border rounded-xl p-5">
+                <div className="space-y-4 border border-border rounded-lg p-5">
                   <h4 className="font-semibold text-sm flex items-center gap-2">
                     <Calculator className="w-4 h-4 text-muted-foreground" /> Pótlék & Juttatás
                   </h4>
@@ -1005,7 +1005,7 @@ export default function ClientSettingsTab({
                   </div>
 
                   <div className="space-y-3 pt-2">
-                    <div className="flex items-center justify-between p-4 rounded-xl border border-border">
+                    <div className="flex items-center justify-between p-4 rounded-lg border border-border">
                       <div>
                         <p className="text-sm font-semibold text-foreground">Költséghely-kezelés</p>
                         <p className="text-xs text-muted-foreground">Költséghelyek engedélyezése a béradatoknál</p>
@@ -1025,7 +1025,7 @@ export default function ClientSettingsTab({
                       </button>
                     </div>
 
-                    <div className="flex items-center justify-between p-4 rounded-xl border border-border">
+                    <div className="flex items-center justify-between p-4 rounded-lg border border-border">
                       <div>
                         <p className="text-sm font-semibold text-foreground">Bérjegyzékek automatikus kiküldése</p>
                         <p className="text-xs text-muted-foreground">Lezáráskor e-bérjegyzék küldése a munkavállalóknak</p>
@@ -1048,7 +1048,7 @@ export default function ClientSettingsTab({
                 </div>
 
                 {/* NAV API Integration */}
-                <div className="space-y-4 border border-border rounded-xl p-5 bg-muted/10">
+                <div className="space-y-4 border border-border rounded-lg p-5 bg-muted/10">
                   <h4 className="font-semibold text-sm flex items-center gap-2 text-primary">
                     <Globe className="w-4 h-4" /> NAV Online Számla Integráció
                   </h4>
@@ -1090,14 +1090,14 @@ export default function ClientSettingsTab({
                 </div>
 
                 {/* Telephelyek */}
-                <div className="space-y-4 border border-border rounded-xl p-5">
+                <div className="space-y-4 border border-border rounded-lg p-5">
                   <h4 className="font-semibold text-sm flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-muted-foreground" /> Cég telephelyei
                   </h4>
                   {locLoading ? (
                     <div className="flex items-center justify-center py-4 text-muted-foreground gap-1.5 text-xs"><Loader2 className="w-4.5 h-4.5 animate-spin" /> Betöltés...</div>
                   ) : locations.length === 0 ? (
-                    <div className="text-center py-6 border border-dashed border-border rounded-xl">
+                    <div className="text-center py-6 border border-dashed border-border rounded-lg">
                       <MapPin className="w-6 h-6 mx-auto mb-2 text-muted-foreground/60" />
                       <p className="text-xs text-muted-foreground">Nincs még telephely felvéve</p>
                     </div>
@@ -1123,7 +1123,7 @@ export default function ClientSettingsTab({
                   )}
 
                   {/* Add Location Form */}
-                  <div className="p-4 rounded-xl bg-muted/10 border border-border space-y-3">
+                  <div className="p-4 rounded-lg bg-muted/10 border border-border space-y-3">
                     <p className="text-xs font-semibold text-foreground">Új telephely hozzáadása</p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div>

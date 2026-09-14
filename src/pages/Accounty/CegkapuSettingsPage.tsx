@@ -114,7 +114,7 @@ export default function CegkapuSettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
+      <div className="w-full max-w-4xl mx-auto space-y-6 page-animate">
         <div className="flex items-start gap-4">
           <Skeleton className="w-8 h-8 rounded-lg bg-muted/50 mt-1" />
           <div className="space-y-2 flex-1">
@@ -123,16 +123,16 @@ export default function CegkapuSettingsPage() {
             <Skeleton className="h-3 w-48 bg-muted/50" />
           </div>
         </div>
-        <div className="grid w-full grid-cols-3 bg-slate-100 dark:bg-slate-800/50 p-1 rounded-xl">
+        <div className="grid w-full grid-cols-3 bg-muted/50 p-1 rounded-lg">
           {Array.from({ length: 3 }).map((_, i) => (
             <Skeleton key={i} className="h-8 w-full bg-muted/50 rounded-lg" />
           ))}
         </div>
-        <div className="bg-card rounded-xl border border-border p-6 space-y-6">
+        <div className="bg-card rounded-lg border border-border p-6 space-y-6">
           <Skeleton className="h-4 w-32 bg-muted/50" />
           <div className="grid grid-cols-2 gap-4">
             {Array.from({ length: 2 }).map((_, i) => (
-              <Skeleton key={i} className="h-16 w-full bg-muted/50 rounded-xl" />
+              <Skeleton key={i} className="h-16 w-full bg-muted/50 rounded-lg" />
             ))}
           </div>
           <div className="space-y-1.5 pt-4 border-t border-border/50">
@@ -145,7 +145,7 @@ export default function CegkapuSettingsPage() {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full max-w-4xl mx-auto space-y-6 page-animate">
       {/* Header */}
       <div className="flex items-start gap-4">
         <button 
@@ -156,21 +156,21 @@ export default function CegkapuSettingsPage() {
               navigate(`/eaisybooks/${companyId}/${dateRange}/overview`);
             }
           }}
-          className="flex items-center justify-center w-8 h-8 mt-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
+          className="flex items-center justify-center w-8 h-8 mt-1 rounded-lg border border-border bg-card hover:bg-muted transition-colors shadow-sm shrink-0"
           title="Vissza"
         >
-          <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+          <ChevronLeft className="w-5 h-5 text-muted-foreground" />
         </button>
         <div>
           <div className="flex items-center gap-1.5 mb-1">
             {clientLoading ? (
-              <div className="h-3.5 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+              <div className="h-3.5 w-32 bg-muted rounded animate-pulse" />
             ) : (
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{client?.name || 'Ügyfél'}</span>
+              <span className="text-xs font-semibold text-muted-foreground">{client?.name || 'Ügyfél'}</span>
             )}
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Cégkapu / KÜNY-tárhely</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Hivatalos állami tárhely és KAÜ aláírás beállítás</p>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Cégkapu / KÜNY-tárhely</h1>
+          <p className="text-xs text-muted-foreground mt-1">Hivatalos állami tárhely és KAÜ aláírás beállítás</p>
         </div>
         {!saved && (
           <span className="ml-auto px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 shrink-0">ÚJ — nincs még mentve</span>
@@ -178,22 +178,22 @@ export default function CegkapuSettingsPage() {
       </div>
 
       <Tabs defaultValue="tarhely" className="w-full space-y-6">
-        <TabsList className="grid w-full grid-cols-3 bg-slate-100 dark:bg-slate-800/50 p-1 rounded-xl">
+        <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1 rounded-lg">
           <TabsTrigger value="tarhely" className="flex items-center gap-2 py-2 text-sm font-medium rounded-lg transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-sm">
-            <Building2 className="w-4 h-4 text-slate-500" /> Tárhely
+            <Building2 className="w-4 h-4 text-muted-foreground" /> Tárhely
           </TabsTrigger>
           <TabsTrigger value="alairo" className="flex items-center gap-2 py-2 text-sm font-medium rounded-lg transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-sm">
-            <User className="w-4 h-4 text-slate-500" /> Aláíró (KAÜ)
+            <User className="w-4 h-4 text-muted-foreground" /> Aláíró (KAÜ)
           </TabsTrigger>
           <TabsTrigger value="szinkron" className="flex items-center gap-2 py-2 text-sm font-medium rounded-lg transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-sm">
-            <Monitor className="w-4 h-4 text-slate-500" /> Szinkronizáció
+            <Monitor className="w-4 h-4 text-muted-foreground" /> Szinkronizáció
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="tarhely" className="space-y-6 animate-in fade-in duration-300 outline-none">
+        <TabsContent value="tarhely" className="space-y-6 page-animate outline-none">
           {/* Tárhely típus */}
-          <div className="bg-card rounded-xl border border-border p-6 space-y-4 shadow-sm">
-            <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+          <div className="bg-card rounded-lg border border-border p-6 space-y-4 shadow-sm">
+            <h2 className="text-sm font-bold text-foreground/90 flex items-center gap-2">
               <Building2 className="w-4 h-4" /> Tárhely típusa
             </h2>
             <div className="grid grid-cols-2 gap-3">
@@ -205,27 +205,27 @@ export default function CegkapuSettingsPage() {
                   key={opt.value}
                   onClick={() => update({ tarhelyType: opt.value })}
                   className={cn(
-                    'p-4 rounded-xl border-2 text-left transition-all',
+                    'p-4 rounded-lg border-2 text-left transition-all',
                     data.tarhelyType === opt.value
                       ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10 text-blue-900 dark:text-blue-100 font-semibold'
-                      : 'border-border hover:border-blue-300 text-slate-700 dark:text-slate-300'
+                      : 'border-border hover:border-blue-300 text-foreground/90'
                   )}
                 >
                   <p className="text-sm font-bold">{opt.label}</p>
-                  <p className="text-xs text-slate-500 mt-1">{opt.desc}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{opt.desc}</p>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Tárhely azonosító */}
-          <div className="bg-card rounded-xl border border-border p-6 space-y-4 shadow-sm">
-            <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+          <div className="bg-card rounded-lg border border-border p-6 space-y-4 shadow-sm">
+            <h2 className="text-sm font-bold text-foreground/90 flex items-center gap-2">
               <Key className="w-4 h-4" /> Tárhely-azonosító
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">Azonosító (10 jegyű)</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Azonosító (10 jegyű)</label>
                 <input
                   type="text"
                   maxLength={10}
@@ -234,7 +234,7 @@ export default function CegkapuSettingsPage() {
                     const val = e.target.value.replace(/\D/g, '').slice(0, 10);
                     update({ tarhelyId: val });
                   }}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none text-foreground"
                   placeholder="1234567890"
                 />
                 {data.tarhelyId.length > 0 && data.tarhelyId.length !== 10 && (
@@ -242,12 +242,12 @@ export default function CegkapuSettingsPage() {
                 )}
               </div>
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">Státusz</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Státusz</label>
                 <div className="flex items-center gap-2 h-10">
                   <select
                     value={data.tarhelyStatus}
                     onChange={e => update({ tarhelyStatus: e.target.value as FormData['tarhelyStatus'] })}
-                    className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                    className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-foreground"
                   >
                     <option value="unknown">Nem ellenőrzött</option>
                     <option value="active">Aktív</option>
@@ -257,12 +257,12 @@ export default function CegkapuSettingsPage() {
               </div>
             </div>
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">Cég neve a tárhelyen</label>
+              <label className="text-xs text-muted-foreground mb-1 block">Cég neve a tárhelyen</label>
               <input
                 type="text"
                 value={data.tarhelyCompanyName}
                 onChange={e => update({ tarhelyCompanyName: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-foreground"
                 placeholder="Pl. Minta Kft."
               />
             </div>
@@ -270,10 +270,10 @@ export default function CegkapuSettingsPage() {
             {/* Kapacitás */}
             <div>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-slate-500">Tárhely-kapacitás</span>
-                <span className="text-xs font-mono text-slate-600 dark:text-slate-400">{data.capacityUsed} / {data.capacityTotal} MB ({capacityPct}%)</span>
+                <span className="text-xs text-muted-foreground">Tárhely-kapacitás</span>
+                <span className="text-xs font-mono text-muted-foreground">{data.capacityUsed} / {data.capacityTotal} MB ({capacityPct}%)</span>
               </div>
-              <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
                 <div
                   className={cn('h-full rounded-full transition-all', capacityPct > 80 ? 'bg-red-500' : capacityPct > 50 ? 'bg-yellow-500' : 'bg-emerald-500')}
                   style={{ width: `${capacityPct}%` }}
@@ -283,29 +283,29 @@ export default function CegkapuSettingsPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="alairo" className="space-y-6 animate-in fade-in duration-300 outline-none">
+        <TabsContent value="alairo" className="space-y-6 page-animate outline-none">
           {/* Aláíró személy */}
-          <div className="bg-card rounded-xl border border-border p-6 space-y-4 shadow-sm">
-            <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+          <div className="bg-card rounded-lg border border-border p-6 space-y-4 shadow-sm">
+            <h2 className="text-sm font-bold text-foreground/90 flex items-center gap-2">
               <User className="w-4 h-4" /> Aláíró személy
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">Aláíró neve</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Aláíró neve</label>
                 <input
                   type="text"
                   value={data.signerName}
                   onChange={e => update({ signerName: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-foreground"
                   placeholder="Kovács Péter"
                 />
               </div>
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">KAÜ-azonosító típusa</label>
+                <label className="text-xs text-muted-foreground mb-1 block">KAÜ-azonosító típusa</label>
                 <select
                   value={data.signerKauType}
                   onChange={e => update({ signerKauType: e.target.value as KauType })}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-foreground"
                 >
                   <option value="ugyfelkapu_plus">Ügyfélkapu+</option>
                   <option value="dap">DÁP (Digitális Állampolgárság Program)</option>
@@ -313,12 +313,12 @@ export default function CegkapuSettingsPage() {
                 </select>
               </div>
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">KAÜ azonosító</label>
+                <label className="text-xs text-muted-foreground mb-1 block">KAÜ azonosító</label>
                 <input
                   type="text"
                   value={data.signerKauId}
                   onChange={e => update({ signerKauId: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none text-foreground"
                   placeholder="KP-2026-001"
                 />
               </div>
@@ -328,7 +328,7 @@ export default function CegkapuSettingsPage() {
                   size="sm"
                   onClick={handleTest}
                   disabled={testing || !data.signerName}
-                  className="gap-1.5 bg-card border-border text-slate-700 dark:text-slate-300"
+                  className="gap-1.5 bg-card border-border text-foreground/90"
                 >
                   {testing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <TestTube className="w-3.5 h-3.5" />}
                   {testing ? 'Tesztelés...' : 'Aláíró tesztelése'}
@@ -341,15 +341,15 @@ export default function CegkapuSettingsPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="szinkron" className="space-y-6 animate-in fade-in duration-300 outline-none">
+        <TabsContent value="szinkron" className="space-y-6 page-animate outline-none">
           {/* Tárhely-figyelő beállítások */}
-          <div className="bg-card rounded-xl border border-border p-6 space-y-4 shadow-sm">
-            <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+          <div className="bg-card rounded-lg border border-border p-6 space-y-4 shadow-sm">
+            <h2 className="text-sm font-bold text-foreground/90 flex items-center gap-2">
               <Monitor className="w-4 h-4" /> Tárhely-figyelő beállítások
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">Polling gyakoriság</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Polling gyakoriság</label>
                 <div className="flex gap-2">
                   {(['15', '30', '60'] as const).map(freq => (
                     <button
@@ -359,7 +359,7 @@ export default function CegkapuSettingsPage() {
                         'px-4 py-2 rounded-lg text-sm font-medium transition-all border',
                         data.pollingFrequency === freq
                           ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 font-semibold'
-                          : 'border-border hover:border-blue-300 text-slate-700 dark:text-slate-300'
+                          : 'border-border hover:border-blue-300 text-foreground/90'
                       )}
                     >
                       {freq === '60' ? '1 óra' : `${freq} perc`}
@@ -368,12 +368,12 @@ export default function CegkapuSettingsPage() {
                 </div>
               </div>
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">Automatikus nyugta-feldolgozás</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Automatikus nyugta-feldolgozás</label>
                 <button
                   onClick={() => update({ autoReceipt: !data.autoReceipt })}
                   className={cn(
                     'relative w-12 h-6 rounded-full transition-colors',
-                    data.autoReceipt ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'
+                    data.autoReceipt ? 'bg-emerald-500' : 'bg-muted-foreground/30'
                   )}
                 >
                   <div className={cn(
@@ -384,7 +384,7 @@ export default function CegkapuSettingsPage() {
               </div>
             </div>
             {data.lastSync && (
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-muted-foreground">
                 Utolsó szinkronizáció: {new Date(data.lastSync).toLocaleString('hu-HU')}
               </p>
             )}

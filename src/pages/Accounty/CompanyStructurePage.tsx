@@ -150,33 +150,33 @@ export default function CompanyStructurePage() {
       <React.Fragment key={node.id}>
         <div
           className={cn(
-            'flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer border-b border-border/30',
+            'flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors cursor-pointer border-b border-border/30',
           )}
           style={{ paddingLeft: `${16 + depth * 24}px` }}
           onClick={() => hasChildren && toggleNode(node.id)}
         >
           {hasChildren ? (
-            isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" /> : <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
+            isExpanded ? <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
           ) : (
             <div className="w-4 h-4 shrink-0" />
           )}
           <div className={cn(
             'w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0',
-            depth === 0 ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400' :
+            depth === 0 ? 'bg-indigo-100 text-indigo-700 dark:bg-primary/20 dark:text-primary' :
             depth === 1 ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' :
-            'bg-slate-100 text-slate-500 dark:bg-slate-700'
+            'bg-muted text-muted-foreground dark:bg-muted'
           )}>
             <FolderTree className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-mono text-slate-400">{node.code}</span>
-              <span className="text-sm font-bold text-slate-900 dark:text-slate-100">{node.name}</span>
+              <span className="text-xs font-mono text-muted-foreground">{node.code}</span>
+              <span className="text-sm font-bold text-foreground">{node.name}</span>
             </div>
-            {node.responsible && <p className="text-xs text-slate-500">Felelős: {node.responsible}</p>}
+            {node.responsible && <p className="text-xs text-muted-foreground">Felelős: {node.responsible}</p>}
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-500 flex items-center gap-1">
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
               <Users className="w-3 h-3" /> {node.headcount} fő
             </span>
             <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-500" onClick={e => { e.stopPropagation(); handleDeleteCC(node); }}>
@@ -194,7 +194,7 @@ export default function CompanyStructurePage() {
   const deptsList = departments || [];
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full max-w-5xl mx-auto space-y-6 page-animate">
       {/* Header */}
       <div className="flex items-start gap-4">
         <button 
@@ -205,18 +205,18 @@ export default function CompanyStructurePage() {
               navigate(`/eaisybooks/${id}/${dateRange}/overview`);
             }
           }}
-          className="flex items-center justify-center w-8 h-8 mt-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
+          className="flex items-center justify-center w-8 h-8 mt-1 rounded-lg border border-border bg-card hover:bg-muted transition-colors shadow-sm shrink-0"
           title="Vissza"
         >
-          <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+          <ChevronLeft className="w-5 h-5 text-muted-foreground" />
         </button>
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-lg shadow-amber-500/25">
+          <div className="p-2.5 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg shadow-lg shadow-amber-500/25">
             <Building className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Bérezési struktúra</h1>
-            <p className="text-sm text-slate-500">Telephelyek, költséghelyek, részlegek</p>
+            <h1 className="text-2xl font-bold text-foreground">Bérezési struktúra</h1>
+            <p className="text-sm text-muted-foreground">Telephelyek, költséghelyek, részlegek</p>
           </div>
         </div>
       </div>
@@ -228,20 +228,20 @@ export default function CompanyStructurePage() {
           { label: 'Költséghelyek', count: flattenCC(ccList), icon: FolderTree, color: 'from-indigo-500 to-blue-500' },
           { label: 'Részlegek', count: deptsList.length, icon: Layers, color: 'from-emerald-500 to-teal-500' },
         ].map(c => (
-          <div key={c.label} className="bg-card rounded-xl border border-border p-4 flex items-center gap-3">
+          <div key={c.label} className="bg-card rounded-lg border border-border p-4 flex items-center gap-3">
             <div className={cn('p-2 rounded-lg bg-gradient-to-br text-white', c.color)}>
               <c.icon className="w-4 h-4" />
             </div>
             <div>
               <p className="text-2xl font-bold">{c.count}</p>
-              <p className="text-xs text-slate-500">{c.label}</p>
+              <p className="text-xs text-muted-foreground">{c.label}</p>
             </div>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/50 rounded-lg p-0.5 w-fit">
+      <div className="flex gap-1 bg-muted/50 rounded-lg p-0.5 w-fit">
         {[
           { id: 'sites' as const, label: 'Telephelyek', icon: MapPin },
           { id: 'costcenters' as const, label: 'Költséghelyek', icon: FolderTree },
@@ -252,7 +252,7 @@ export default function CompanyStructurePage() {
             onClick={() => setTab(t.id)}
             className={cn(
               'flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-medium transition-all',
-              tab === t.id ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              tab === t.id ? 'bg-card dark:bg-muted text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground/90'
             )}
           >
             <t.icon className="w-3.5 h-3.5" />
@@ -271,26 +271,26 @@ export default function CompanyStructurePage() {
           </div>
 
           {showNewSite && (
-            <div className="bg-card rounded-xl border-2 border-amber-300 p-5 space-y-3">
+            <div className="bg-card rounded-lg border-2 border-amber-300 p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold">Új telephely hozzáadása</h3>
-                <button onClick={() => setShowNewSite(false)} className="p-1 hover:bg-slate-100 rounded"><X className="w-4 h-4" /></button>
+                <button onClick={() => setShowNewSite(false)} className="p-1 hover:bg-muted rounded"><X className="w-4 h-4" /></button>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-slate-500 mb-1 block">Telephely kód</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">Telephely kód</label>
                   <input type="text" value={newSite.code} onChange={e => setNewSite(s => ({ ...s, code: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono" placeholder="SZ-01" />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-500 mb-1 block">Megnevezés *</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">Megnevezés *</label>
                   <input type="text" value={newSite.name} onChange={e => setNewSite(s => ({ ...s, name: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm" placeholder="Szegedi iroda" />
                 </div>
                 <div className="col-span-2">
-                  <label className="text-xs text-slate-500 mb-1 block">Cím</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">Cím</label>
                   <input type="text" value={newSite.address} onChange={e => setNewSite(s => ({ ...s, address: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm" placeholder="6720 Szeged, Kárász utca 10." />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-500 mb-1 block">Főtevékenység (TEÁOR)</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">Főtevékenység (TEÁOR)</label>
                   <input type="text" value={newSite.mainActivity} onChange={e => setNewSite(s => ({ ...s, mainActivity: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm" placeholder="6920 - Könyvvizsgálat" />
                 </div>
                 <div className="flex items-end">
@@ -305,17 +305,17 @@ export default function CompanyStructurePage() {
           {sitesLoading ? (
             <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin" /> Betöltés...</div>
           ) : sitesList.length === 0 ? (
-            <div className="bg-card rounded-xl border border-border p-12 text-center text-sm text-slate-400">Nincsenek telephelyek. Adj hozzá az első telephelyet!</div>
+            <div className="bg-card rounded-lg border border-border p-12 text-center text-sm text-muted-foreground">Nincsenek telephelyek. Adj hozzá az első telephelyet!</div>
           ) : (
-            <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+            <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border dark:bg-slate-900/20">
-                    <th className="text-left px-5 py-2.5 text-xs font-bold text-slate-500 uppercase">Kód</th>
-                    <th className="text-left px-3 py-2.5 text-xs font-bold text-slate-500 uppercase">Megnevezés</th>
-                    <th className="text-left px-3 py-2.5 text-xs font-bold text-slate-500 uppercase">Cím</th>
-                    <th className="text-left px-3 py-2.5 text-xs font-bold text-slate-500 uppercase">Főtevékenység</th>
-                    <th className="text-center px-3 py-2.5 text-xs font-bold text-slate-500 uppercase">Létszám</th>
+                  <tr className="border-b border-border dark:bg-card/20">
+                    <th className="text-left px-5 py-2.5 text-xs font-bold text-muted-foreground uppercase">Kód</th>
+                    <th className="text-left px-3 py-2.5 text-xs font-bold text-muted-foreground uppercase">Megnevezés</th>
+                    <th className="text-left px-3 py-2.5 text-xs font-bold text-muted-foreground uppercase">Cím</th>
+                    <th className="text-left px-3 py-2.5 text-xs font-bold text-muted-foreground uppercase">Főtevékenység</th>
+                    <th className="text-center px-3 py-2.5 text-xs font-bold text-muted-foreground uppercase">Létszám</th>
                     <th className="px-3 py-2.5" />
                   </tr>
                 </thead>
@@ -327,13 +327,13 @@ export default function CompanyStructurePage() {
                       ? depsForSite.reduce((s, d) => s + d.headcount, 0)
                       : site.headcount;
                     return (
-                    <tr key={site.id} className="border-b border-border/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                      <td className="px-5 py-3 font-mono text-xs text-slate-600">{site.code}</td>
+                    <tr key={site.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
+                      <td className="px-5 py-3 font-mono text-xs text-muted-foreground">{site.code}</td>
                       <td className="px-3 py-3 font-medium">{site.name}</td>
-                      <td className="px-3 py-3 text-xs text-slate-500">{site.address}</td>
-                      <td className="px-3 py-3 text-xs text-slate-500">{site.mainActivity}</td>
+                      <td className="px-3 py-3 text-xs text-muted-foreground">{site.address}</td>
+                      <td className="px-3 py-3 text-xs text-muted-foreground">{site.mainActivity}</td>
                       <td className="px-3 py-3 text-center">
-                        <span className="bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full text-xs font-bold">{effectiveHeadcount} fő</span>
+                        <span className="bg-muted px-2 py-0.5 rounded-full text-xs font-bold">{effectiveHeadcount} fő</span>
                       </td>
                       <td className="px-3 py-3">
                         <div className="flex gap-1">
@@ -347,7 +347,7 @@ export default function CompanyStructurePage() {
                   })}
                 </tbody>
               </table>
-              <div className="px-5 py-3 dark:bg-slate-900/30 border-t border-border text-xs text-slate-500">
+              <div className="px-5 py-3 dark:bg-card/30 border-t border-border text-xs text-muted-foreground">
                 Összesen: {sitesList.reduce((s, site) => {
                   const depsForSite = deptsList.filter(d => d.siteId === site.id);
                   return s + (depsForSite.length > 0 ? depsForSite.reduce((acc, d) => acc + d.headcount, 0) : site.headcount);
@@ -362,26 +362,26 @@ export default function CompanyStructurePage() {
       {tab === 'costcenters' && (
         <div className="space-y-4">
           {showNewCC && (
-            <div className="bg-card rounded-xl border-2 border-indigo-300 p-5 space-y-3">
+            <div className="bg-card rounded-lg border-2 border-primary/40 p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold">Új költséghely</h3>
-                <button onClick={() => setShowNewCC(false)} className="p-1 hover:bg-slate-100 rounded"><X className="w-4 h-4" /></button>
+                <button onClick={() => setShowNewCC(false)} className="p-1 hover:bg-muted rounded"><X className="w-4 h-4" /></button>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-slate-500 mb-1 block">Kód</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">Kód</label>
                   <input type="text" value={newCC.code} onChange={e => setNewCC(s => ({ ...s, code: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono" placeholder="CC-100" />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-500 mb-1 block">Megnevezés *</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">Megnevezés *</label>
                   <input type="text" value={newCC.name} onChange={e => setNewCC(s => ({ ...s, name: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm" placeholder="Könyvelés" />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-500 mb-1 block">Felelős</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">Felelős</label>
                   <input type="text" value={newCC.responsible} onChange={e => setNewCC(s => ({ ...s, responsible: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm" placeholder="Kovács Péter" />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-500 mb-1 block">Létszám</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">Létszám</label>
                   <input type="number" min={0} value={newCC.headcount} onChange={e => setNewCC(s => ({ ...s, headcount: Number(e.target.value) }))} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono" />
                 </div>
                 <div className="col-span-2 flex items-end justify-end">
@@ -396,15 +396,15 @@ export default function CompanyStructurePage() {
           {ccLoading ? (
             <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin" /> Betöltés...</div>
           ) : (
-            <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-              <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Költséghelyi hierarchia</h2>
+            <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
+              <div className="px-5 py-3 border-b border-border dark:bg-card/30 flex items-center justify-between">
+                <h2 className="text-sm font-bold text-foreground/90">Költséghelyi hierarchia</h2>
                 <Button variant="outline" size="sm" onClick={() => setShowNewCC(true)} className="gap-1.5 text-xs"><Plus className="w-3 h-3" /> Új költséghely</Button>
               </div>
               {ccList.length === 0 ? (
-                <div className="py-12 text-center text-sm text-slate-400">Nincsenek költséghelyek.</div>
+                <div className="py-12 text-center text-sm text-muted-foreground">Nincsenek költséghelyek.</div>
               ) : ccList.map(node => renderCostCenterNode(node))}
-              <div className="px-5 py-3 dark:bg-slate-900/30 border-t border-border text-xs text-slate-500">
+              <div className="px-5 py-3 dark:bg-card/30 border-t border-border text-xs text-muted-foreground">
                 {flattenCC(ccList)} költséghely
               </div>
             </div>
@@ -416,29 +416,29 @@ export default function CompanyStructurePage() {
       {tab === 'departments' && (
         <div className="space-y-4">
           {showNewDept && (
-            <div className="bg-card rounded-xl border-2 border-emerald-300 p-5 space-y-3">
+            <div className="bg-card rounded-lg border-2 border-emerald-300 p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold">Új részleg</h3>
-                <button onClick={() => setShowNewDept(false)} className="p-1 hover:bg-slate-100 rounded"><X className="w-4 h-4" /></button>
+                <button onClick={() => setShowNewDept(false)} className="p-1 hover:bg-muted rounded"><X className="w-4 h-4" /></button>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-slate-500 mb-1 block">Részleg neve *</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">Részleg neve *</label>
                   <input type="text" value={newDept.name} onChange={e => setNewDept(s => ({ ...s, name: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm" placeholder="Pénzügy" />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-500 mb-1 block">Telephely</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">Telephely</label>
                   <select value={newDept.siteId || ''} onChange={e => setNewDept(s => ({ ...s, siteId: e.target.value || null }))} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm">
                     <option value="">— Nincs megadva —</option>
                     {sitesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-slate-500 mb-1 block">Vezető</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">Vezető</label>
                   <input type="text" value={newDept.manager} onChange={e => setNewDept(s => ({ ...s, manager: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm" placeholder="Kiss Júlia" />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-500 mb-1 block">Létszám</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">Létszám</label>
                   <input type="number" min={0} value={newDept.headcount} onChange={e => setNewDept(s => ({ ...s, headcount: Number(e.target.value) }))} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono" />
                 </div>
                 <div className="col-span-2 flex items-end justify-end">
@@ -453,21 +453,21 @@ export default function CompanyStructurePage() {
           {deptsLoading ? (
             <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin" /> Betöltés...</div>
           ) : (
-            <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-              <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Részlegek és csoportok</h2>
+            <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
+              <div className="px-5 py-3 border-b border-border dark:bg-card/30 flex items-center justify-between">
+                <h2 className="text-sm font-bold text-foreground/90">Részlegek és csoportok</h2>
                 <Button variant="outline" size="sm" onClick={() => setShowNewDept(true)} className="gap-1.5 text-xs"><Plus className="w-3 h-3" /> Új részleg</Button>
               </div>
               {deptsList.length === 0 ? (
-                <div className="py-12 text-center text-sm text-slate-400">Nincsenek részlegek.</div>
+                <div className="py-12 text-center text-sm text-muted-foreground">Nincsenek részlegek.</div>
               ) : (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-border dark:bg-slate-900/20">
-                      <th className="text-left px-5 py-2.5 text-xs font-bold text-slate-500 uppercase">Részleg</th>
-                      <th className="text-left px-3 py-2.5 text-xs font-bold text-slate-500 uppercase">Telephely</th>
-                      <th className="text-left px-3 py-2.5 text-xs font-bold text-slate-500 uppercase">Vezető</th>
-                      <th className="text-center px-3 py-2.5 text-xs font-bold text-slate-500 uppercase">Létszám</th>
+                    <tr className="border-b border-border dark:bg-card/20">
+                      <th className="text-left px-5 py-2.5 text-xs font-bold text-muted-foreground uppercase">Részleg</th>
+                      <th className="text-left px-3 py-2.5 text-xs font-bold text-muted-foreground uppercase">Telephely</th>
+                      <th className="text-left px-3 py-2.5 text-xs font-bold text-muted-foreground uppercase">Vezető</th>
+                      <th className="text-center px-3 py-2.5 text-xs font-bold text-muted-foreground uppercase">Létszám</th>
                       <th className="px-3 py-2.5" />
                     </tr>
                   </thead>
@@ -475,13 +475,13 @@ export default function CompanyStructurePage() {
                     {deptsList.map(dept => {
                       const site = sitesList.find(s => s.id === dept.siteId);
                       return (
-                        <tr key={dept.id} className="border-b border-border/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <tr key={dept.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
                           <td className="px-5 py-3 font-medium flex items-center gap-2">
                             <Layers className="w-4 h-4 text-emerald-500" />
                             {dept.name}
                           </td>
-                          <td className="px-3 py-3 text-xs text-slate-500">{site?.name || '—'}</td>
-                          <td className="px-3 py-3 text-xs text-slate-600">{dept.manager}</td>
+                          <td className="px-3 py-3 text-xs text-muted-foreground">{site?.name || '—'}</td>
+                          <td className="px-3 py-3 text-xs text-muted-foreground">{dept.manager}</td>
                           <td className="px-3 py-3 text-center">
                             <span className="bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full text-xs font-bold">
                               {dept.headcount} fő
@@ -500,7 +500,7 @@ export default function CompanyStructurePage() {
                   </tbody>
                 </table>
               )}
-              <div className="px-5 py-3 dark:bg-slate-900/30 border-t border-border text-xs text-slate-500">
+              <div className="px-5 py-3 dark:bg-card/30 border-t border-border text-xs text-muted-foreground">
                 Összesen: {deptsList.reduce((s, d) => s + d.headcount, 0)} fő{sitesList.length > 0 ? `, ${new Set(deptsList.filter(d => d.siteId).map(d => d.siteId)).size} telephelyen` : ''}
               </div>
             </div>

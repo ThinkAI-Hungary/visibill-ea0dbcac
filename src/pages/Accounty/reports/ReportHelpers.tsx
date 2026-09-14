@@ -19,12 +19,12 @@ export function PreviewTable({ data, type, options }: { data: FullReportData; ty
           <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3"><div className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Kimenő</div><div className="text-lg font-bold text-amber-700 dark:text-amber-300">{outbound.length}</div></div>
         </div>
         {options?.details !== false && (
-          <table className="w-full"><thead><tr className="text-[10px] text-slate-500 border-b"><th className="pb-1 text-left">Szám</th><th className="pb-1 text-left">Partner</th><th className="pb-1">Irány</th><th className="pb-1 text-right">Bruttó</th></tr></thead>
+          <table className="w-full"><thead><tr className="text-[10px] text-muted-foreground border-b"><th className="pb-1 text-left">Szám</th><th className="pb-1 text-left">Partner</th><th className="pb-1">Irány</th><th className="pb-1 text-right">Bruttó</th></tr></thead>
           <tbody>{data.invoices.slice(0, 5).map((inv, i) => (
-            <tr key={i} className="border-b border-slate-100 dark:border-slate-800"><td className="py-1 font-medium">{inv.invoiceNumber}</td><td className="py-1 text-slate-500 dark:text-slate-400">{inv.partnerName}</td><td className="py-1 text-center"><span className={cn("px-1.5 py-0.5 rounded text-[9px] font-bold", inv.direction === 'Bejövő' ? 'bg-accent text-accent-foreground' : 'bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300')}>{inv.direction}</span></td><td className="py-1 text-right font-semibold">{fmt(inv.grossAmount)} {inv.currency}</td></tr>
+            <tr key={i} className="border-b border-border"><td className="py-1 font-medium">{inv.invoiceNumber}</td><td className="py-1 text-muted-foreground">{inv.partnerName}</td><td className="py-1 text-center"><span className={cn("px-1.5 py-0.5 rounded text-[9px] font-bold", inv.direction === 'Bejövő' ? 'bg-accent text-accent-foreground' : 'bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300')}>{inv.direction}</span></td><td className="py-1 text-right font-semibold">{fmt(inv.grossAmount)} {inv.currency}</td></tr>
           ))}</tbody></table>
         )}
-        {data.invoices.length > 5 && <p className="text-[10px] text-slate-400 text-center">+{data.invoices.length - 5} további számla...</p>}
+        {data.invoices.length > 5 && <p className="text-[10px] text-muted-foreground text-center">+{data.invoices.length - 5} további számla...</p>}
       </div>
     );
   }
@@ -36,14 +36,14 @@ export function PreviewTable({ data, type, options }: { data: FullReportData; ty
     return (
       <div className="space-y-3">
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3"><div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Nettó összesen</div><div className="text-sm font-bold">{fmt(totalNet)} Ft</div></div>
+          <div className="bg-muted rounded-lg p-3"><div className="text-[10px] text-muted-foreground font-medium">Nettó összesen</div><div className="text-sm font-bold">{fmt(totalNet)} Ft</div></div>
           <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3"><div className="text-[10px] text-red-500 dark:text-red-400 font-medium">ÁFA összesen</div><div className="text-sm font-bold text-red-700 dark:text-red-300">{fmt(totalVat)} Ft</div></div>
-          <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3"><div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Bruttó összesen</div><div className="text-sm font-bold">{fmt(totalGross)} Ft</div></div>
+          <div className="bg-muted rounded-lg p-3"><div className="text-[10px] text-muted-foreground font-medium">Bruttó összesen</div><div className="text-sm font-bold">{fmt(totalGross)} Ft</div></div>
         </div>
         {options?.details !== false && (
-          <table className="w-full"><thead><tr className="text-[10px] text-slate-500 border-b"><th className="pb-1 text-left">Szám</th><th className="pb-1 text-right">Nettó</th><th className="pb-1 text-right">ÁFA</th><th className="pb-1 text-right">Bruttó</th></tr></thead>
+          <table className="w-full"><thead><tr className="text-[10px] text-muted-foreground border-b"><th className="pb-1 text-left">Szám</th><th className="pb-1 text-right">Nettó</th><th className="pb-1 text-right">ÁFA</th><th className="pb-1 text-right">Bruttó</th></tr></thead>
           <tbody>{data.invoices.slice(0, 5).map((inv, i) => (
-            <tr key={i} className="border-b border-slate-100 dark:border-slate-800"><td className="py-1 font-medium">{inv.invoiceNumber}</td><td className="py-1 text-right">{fmt(inv.netAmount)} {inv.currency}</td><td className="py-1 text-right text-red-600 dark:text-red-400 font-semibold">{fmt(inv.vatAmount)} {inv.currency}</td><td className="py-1 text-right font-semibold">{fmt(inv.grossAmount)} {inv.currency}</td></tr>
+            <tr key={i} className="border-b border-border"><td className="py-1 font-medium">{inv.invoiceNumber}</td><td className="py-1 text-right">{fmt(inv.netAmount)} {inv.currency}</td><td className="py-1 text-right text-red-600 dark:text-red-400 font-semibold">{fmt(inv.vatAmount)} {inv.currency}</td><td className="py-1 text-right font-semibold">{fmt(inv.grossAmount)} {inv.currency}</td></tr>
           ))}</tbody></table>
         )}
       </div>
@@ -58,9 +58,9 @@ export function PreviewTable({ data, type, options }: { data: FullReportData; ty
       <div className="space-y-3">
         <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3"><div className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Összes költség (bejövő számlák)</div><div className="text-lg font-bold text-amber-700 dark:text-amber-300">{fmt(costs.reduce((s, c) => s + c.grossAmount, 0))} Ft</div></div>
         {options?.details !== false && (
-          <table className="w-full"><thead><tr className="text-[10px] text-slate-500 border-b"><th className="pb-1 text-left">Ügyfél</th><th className="pb-1 text-right">Összeg</th></tr></thead>
+          <table className="w-full"><thead><tr className="text-[10px] text-muted-foreground border-b"><th className="pb-1 text-left">Ügyfél</th><th className="pb-1 text-right">Összeg</th></tr></thead>
           <tbody>{Object.entries(byClient).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([name, amount], i) => (
-            <tr key={i} className="border-b border-slate-100 dark:border-slate-800"><td className="py-1 font-medium">{name}</td><td className="py-1 text-right font-semibold">{fmt(amount)} Ft</td></tr>
+            <tr key={i} className="border-b border-border"><td className="py-1 font-medium">{name}</td><td className="py-1 text-right font-semibold">{fmt(amount)} Ft</td></tr>
           ))}</tbody></table>
         )}
       </div>
@@ -75,15 +75,15 @@ export function PreviewTable({ data, type, options }: { data: FullReportData; ty
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-accent-subtle dark:bg-accent rounded-lg p-3"><div className="text-[10px] text-primary font-medium">Befolyó (kimenő számlák)</div><div className="text-sm font-bold text-accent-foreground">+{fmt(inflow)} Ft</div></div>
           <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3"><div className="text-[10px] text-red-500 dark:text-red-400 font-medium">Kiáramló (bejövő számlák)</div><div className="text-sm font-bold text-red-700 dark:text-red-300">-{fmt(outflow)} Ft</div></div>
-          <div className={cn("rounded-lg p-3", inflow - outflow >= 0 ? "bg-accent-subtle dark:bg-accent" : "bg-red-50 dark:bg-red-900/20")}><div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Egyenleg</div><div className={cn("text-sm font-bold", inflow - outflow >= 0 ? "text-accent-foreground" : "text-red-700 dark:text-red-300")}>{fmt(inflow - outflow)} Ft</div></div>
+          <div className={cn("rounded-lg p-3", inflow - outflow >= 0 ? "bg-accent-subtle dark:bg-accent" : "bg-red-50 dark:bg-red-900/20")}><div className="text-[10px] text-muted-foreground font-medium">Egyenleg</div><div className={cn("text-sm font-bold", inflow - outflow >= 0 ? "text-accent-foreground" : "text-red-700 dark:text-red-300")}>{fmt(inflow - outflow)} Ft</div></div>
         </div>
         {options?.details !== false && (
-          <table className="w-full"><thead><tr className="text-[10px] text-slate-500 border-b"><th className="pb-1 text-left">Szám</th><th className="pb-1 text-left">Partner</th><th className="pb-1 text-center">Típus</th><th className="pb-1 text-right">Bruttó</th></tr></thead>
+          <table className="w-full"><thead><tr className="text-[10px] text-muted-foreground border-b"><th className="pb-1 text-left">Szám</th><th className="pb-1 text-left">Partner</th><th className="pb-1 text-center">Típus</th><th className="pb-1 text-right">Bruttó</th></tr></thead>
           <tbody>{data.invoices.slice(0, 5).map((inv, i) => (
-            <tr key={i} className="border-b border-slate-100 dark:border-slate-800"><td className="py-1 font-medium">{inv.invoiceNumber}</td><td className="py-1 text-slate-500 dark:text-slate-400">{inv.partnerName}</td><td className="py-1 text-center"><span className={cn("px-1.5 py-0.5 rounded text-[9px] font-bold", inv.direction === 'Bejövő' ? 'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300' : 'bg-accent text-accent-foreground')}>{inv.direction === 'Bejövő' ? 'Kiáramló' : 'Befolyó'}</span></td><td className={cn("py-1 text-right font-semibold", inv.direction === 'Bejövő' ? 'text-red-700 dark:text-red-400' : 'text-accent-foreground')}>{inv.direction === 'Bejövő' ? '-' : '+'}{fmt(inv.grossAmount)} {inv.currency}</td></tr>
+            <tr key={i} className="border-b border-border"><td className="py-1 font-medium">{inv.invoiceNumber}</td><td className="py-1 text-muted-foreground">{inv.partnerName}</td><td className="py-1 text-center"><span className={cn("px-1.5 py-0.5 rounded text-[9px] font-bold", inv.direction === 'Bejövő' ? 'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300' : 'bg-accent text-accent-foreground')}>{inv.direction === 'Bejövő' ? 'Kiáramló' : 'Befolyó'}</span></td><td className={cn("py-1 text-right font-semibold", inv.direction === 'Bejövő' ? 'text-red-700 dark:text-red-400' : 'text-accent-foreground')}>{inv.direction === 'Bejövő' ? '-' : '+'}{fmt(inv.grossAmount)} {inv.currency}</td></tr>
           ))}</tbody></table>
         )}
-        {data.invoices.length > 5 && <p className="text-[10px] text-slate-400 text-center">+{data.invoices.length - 5} további tétel...</p>}
+        {data.invoices.length > 5 && <p className="text-[10px] text-muted-foreground text-center">+{data.invoices.length - 5} további tétel...</p>}
       </div>
     );
   }
@@ -100,16 +100,16 @@ export function PreviewTable({ data, type, options }: { data: FullReportData; ty
       <div className="space-y-3">
         <div className="bg-rose-50 dark:bg-rose-900/20 rounded-lg p-3"><div className="text-[10px] text-rose-600 font-medium">Egyedi partnerek</div><div className="text-lg font-bold text-rose-700">{Object.keys(byPartner).length}</div></div>
         {options?.details !== false && (
-          <table className="w-full"><thead><tr className="text-[10px] text-slate-500 border-b"><th className="pb-1 text-left">Partner</th><th className="pb-1 text-right">Számlák</th><th className="pb-1 text-right">Forgalom</th></tr></thead>
+          <table className="w-full"><thead><tr className="text-[10px] text-muted-foreground border-b"><th className="pb-1 text-left">Partner</th><th className="pb-1 text-right">Számlák</th><th className="pb-1 text-right">Forgalom</th></tr></thead>
           <tbody>{Object.entries(byPartner).sort((a, b) => b[1].total - a[1].total).slice(0, 8).map(([name, d], i) => (
-            <tr key={i} className="border-b border-slate-100"><td className="py-1 font-medium">{name}</td><td className="py-1 text-right">{d.count}</td><td className="py-1 text-right font-semibold">{fmt(d.total)} Ft</td></tr>
+            <tr key={i} className="border-b border-border/60"><td className="py-1 font-medium">{name}</td><td className="py-1 text-right">{d.count}</td><td className="py-1 text-right font-semibold">{fmt(d.total)} Ft</td></tr>
           ))}</tbody></table>
         )}
       </div>
     );
   }
 
-  return <p className="text-slate-500">Nincs elérhető előnézet.</p>;
+  return <p className="text-muted-foreground">Nincs elérhető előnézet.</p>;
 }
 
 // ── Export helpers ──

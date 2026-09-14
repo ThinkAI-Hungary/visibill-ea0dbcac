@@ -181,7 +181,7 @@ export default function ClientEvMainPage() {
   }, [sections, evSettings?.org_type]);
 
   const colorMap: Record<string, string> = {
-    indigo: 'from-indigo-500 to-purple-600 shadow-indigo-500/20',
+    indigo: 'from-indigo-500 to-purple-600 shadow-primary/20',
     violet: 'from-violet-500 to-fuchsia-600 shadow-violet-500/20',
     teal: 'from-teal-500 to-cyan-600 shadow-teal-500/20',
     rose: 'from-rose-500 to-pink-600 shadow-rose-500/20',
@@ -197,7 +197,7 @@ export default function ClientEvMainPage() {
   };
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       <div className="flex items-center justify-between">
         <div className="flex items-start gap-4">
           <button 
@@ -208,31 +208,31 @@ export default function ClientEvMainPage() {
                 navigate('/eaisybooks?tab=ev');
               }
             }}
-            className="flex items-center justify-center w-8 h-8 mt-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
+            className="flex items-center justify-center w-8 h-8 mt-1.5 rounded-lg border border-border bg-card hover:bg-muted transition-colors shadow-sm shrink-0"
             title="Vissza"
           >
-            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            <ChevronLeft className="w-5 h-5 text-muted-foreground" />
           </button>
           <div>
             <div className="flex items-center gap-1.5 mb-1">
               {clientLoading ? (
-                <div className="h-3.5 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+                <div className="h-3.5 w-32 bg-muted rounded animate-pulse" />
               ) : (
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{client?.name || 'Ügyfél'}</span>
+                <span className="text-xs font-semibold text-muted-foreground">{client?.name || 'Ügyfél'}</span>
               )}
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Egyéni vállalkozás (EV)</h1>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">Egyéni vállalkozás (EV)</h1>
             <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-              <span className="text-xs text-slate-400 font-mono">{client?.taxNumber || ''}</span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600">
+              <span className="text-xs text-muted-foreground font-mono">{client?.taxNumber || ''}</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary">
                 {FORM_LABELS[taxpayerForm] || taxpayerForm}
               </span>
-              <span className="text-xs text-slate-400">{EMPLOYMENT_LABELS[employmentStatus] || employmentStatus}</span>
-              <span className="text-xs text-slate-400">•</span>
-              <span className="text-xs text-slate-400">{VAT_LABELS[vatStatus] || vatStatus}</span>
+              <span className="text-xs text-muted-foreground">{EMPLOYMENT_LABELS[employmentStatus] || employmentStatus}</span>
+              <span className="text-xs text-muted-foreground">•</span>
+              <span className="text-xs text-muted-foreground">{VAT_LABELS[vatStatus] || vatStatus}</span>
               {evSettings?.org_type && (
                 <>
-                  <span className="text-xs text-slate-400">•</span>
+                  <span className="text-xs text-muted-foreground">•</span>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600">
                     {ORG_TYPE_LABELS[evSettings.org_type] || evSettings.org_type}
                   </span>
@@ -257,7 +257,7 @@ export default function ClientEvMainPage() {
           </select>
           <Link
             to={`/eaisybooks/${companyId}/${dateRange}/ev/setup`}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
           >
             <Settings className="w-3.5 h-3.5" /> Beállítások
           </Link>
@@ -266,33 +266,33 @@ export default function ClientEvMainPage() {
 
       {/* YTD Summary */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Bevétel (YTD)</p>
-          <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{totalsLoading ? '...' : formatMillionHuf(ytdRevenue)}</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Bevétel (YTD)</p>
+          <p className="text-xl font-bold text-foreground">{totalsLoading ? '...' : formatMillionHuf(ytdRevenue)}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Kiadások</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Kiadások</p>
           <p className="text-xl font-bold text-red-500">{totalsLoading ? '...' : formatMillionHuf(ytdExpenses)}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Jövedelem</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Jövedelem</p>
           <p className="text-xl font-bold text-green-600">{totalsLoading ? '...' : formatMillionHuf(ytdIncome)}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Egyenleg</p>
-          <p className={cn('text-xl font-bold', (cashbookTotals?.balance || 0) >= 0 ? 'text-indigo-600' : 'text-red-600')}>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Egyenleg</p>
+          <p className={cn('text-xl font-bold', (cashbookTotals?.balance || 0) >= 0 ? 'text-primary' : 'text-red-600')}>
             {cashbookLoading ? '...' : formatMillionHuf(cashbookTotals?.balance || 0)}
           </p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Tételek</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Tételek</p>
           <p className="text-xl font-bold text-violet-600">{totalsLoading ? '...' : (realTotals?.itemCount || 0)}</p>
         </div>
       </div>
 
       {/* Threshold alerts */}
       {thresholds.some(t => t.status !== 'green') && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
             <AlertTriangle className="w-4 h-4 text-amber-600" />
             <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">Értékhatár-figyelmeztetés</p>
@@ -324,14 +324,14 @@ export default function ClientEvMainPage() {
       {/* Navigation sections */}
       <div className="space-y-4">
         {visibleSections.map(section => (
-          <div key={section.title} className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+          <div key={section.title} className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
             <div className="px-5 py-3 border-b border-border/50 flex items-center gap-3">
               <div className={cn('p-1.5 rounded-lg bg-gradient-to-br shadow-md', colorMap[section.color])}>
                 <section.icon className="w-4 h-4 text-white" />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">{section.title}</h2>
-                <p className="text-[11px] text-slate-400">{section.description}</p>
+                <h2 className="text-sm font-bold text-foreground">{section.title}</h2>
+                <p className="text-[11px] text-muted-foreground">{section.description}</p>
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-0">
@@ -342,18 +342,18 @@ export default function ClientEvMainPage() {
                   className={cn(
                     'flex items-center gap-3 px-5 py-3 transition-all group',
                     colorHover[section.color],
-                    'hover:bg-slate-50 dark:hover:bg-slate-800/50',
+                    'hover:bg-muted/50',
                     idx < section.items.length - (section.items.length % 3 === 0 ? 3 : section.items.length % 3)
                       ? 'border-b border-border/30'
                       : '',
                     (idx + 1) % 3 !== 0 ? 'sm:border-r border-border/30' : ''
                   )}
                 >
-                  <item.icon className="w-4 h-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors shrink-0" />
-                  <span className="text-sm text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors flex-1">
+                  <item.icon className="w-4 h-4 text-muted-foreground group-hover:text-muted-foreground dark:group-hover:text-muted-foreground/60 transition-colors shrink-0" />
+                  <span className="text-sm text-foreground/90 group-hover:text-foreground dark:group-hover:text-slate-100 transition-colors flex-1">
                     {item.label}
                   </span>
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-500 transition-colors" />
+                  <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-muted-foreground transition-colors" />
                 </Link>
               ))}
             </div>

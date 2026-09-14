@@ -162,7 +162,7 @@ export default function PromptsPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-6">
         <Building2 className="h-16 w-16 text-muted-foreground/40 mb-4 animate-pulse" />
-        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200">Nincs kiválasztott cég</h2>
+        <h2 className="text-xl font-bold text-foreground">Nincs kiválasztott cég</h2>
         <p className="text-sm text-muted-foreground mt-2 max-w-sm">Kérjük, válassz ki egy céget a navigációs sávban a szabályok kezeléséhez.</p>
       </div>
     );
@@ -262,10 +262,10 @@ export default function PromptsPage() {
                 </div>
               ) : rules.length === 0 ? (
                 <div className="flex flex-col items-center justify-center text-center p-12 border-t border-border/40">
-                  <div className="w-14 h-14 rounded-full bg-slate-50 dark:bg-slate-900 border flex items-center justify-center text-muted-foreground/60 mb-4 shadow-inner">
+                  <div className="w-14 h-14 rounded-full bg-background border flex items-center justify-center text-muted-foreground/60 mb-4 shadow-inner">
                     <ToggleLeft className="h-6 w-6" />
                   </div>
-                  <h3 className="font-semibold text-slate-800 dark:text-slate-200">Nincsenek egyedi szabályok</h3>
+                  <h3 className="font-semibold text-foreground">Nincsenek egyedi szabályok</h3>
                   <p className="text-sm text-muted-foreground mt-1 max-w-sm">Még nem adtál hozzá egyedi prompt szabályt ehhez a céghez. Használj sablont a jobb oldalon, vagy hozz létre újat!</p>
                 </div>
               ) : (
@@ -274,13 +274,13 @@ export default function PromptsPage() {
                     <div 
                       key={rule.id} 
                       className={cn(
-                        "p-5 flex items-start justify-between gap-4 transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-900/10",
-                        !rule.is_active && "opacity-75 bg-slate-50/30"
+                        "p-5 flex items-start justify-between gap-4 transition-colors hover:bg-muted/50 dark:hover:bg-muted/30",
+                        !rule.is_active && "opacity-75 bg-muted/40/30"
                       )}
                     >
                       <div className="space-y-1.5 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className={cn("font-semibold text-slate-900 dark:text-slate-100 text-sm", !rule.is_active && "line-through text-muted-foreground")}>
+                          <h4 className={cn("font-semibold text-foreground text-sm", !rule.is_active && "line-through text-muted-foreground")}>
                             {rule.rule_name}
                           </h4>
                           {rule.is_active ? (
@@ -288,12 +288,12 @@ export default function PromptsPage() {
                               Aktív
                             </span>
                           ) : (
-                            <span className="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-500 font-medium px-2 py-0.5 rounded-full">
+                            <span className="text-[10px] bg-muted text-muted-foreground font-medium px-2 py-0.5 rounded-full">
                               Inaktív
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-mono bg-slate-50/50 dark:bg-slate-950/40 p-3 rounded-lg border border-border/40">
+                        <p className="text-xs text-muted-foreground leading-relaxed font-mono bg-muted/40/50 dark:bg-background/40 p-3 rounded-lg border border-border/40">
                           {rule.rule_prompt}
                         </p>
                         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
@@ -348,17 +348,17 @@ export default function PromptsPage() {
                   <button
                     key={i}
                     onClick={() => handleApplyTemplate(tpl)}
-                    className="w-full text-left p-3.5 rounded-xl border border-border/50 bg-card hover:bg-slate-50/50 hover:border-primary/20 dark:hover:bg-slate-900/10 transition-all flex items-start gap-3 group hover:shadow-soft"
+                    className="w-full text-left p-3.5 rounded-lg border border-border/50 bg-card hover:bg-muted/50 hover:border-primary/20 dark:hover:bg-muted/30 transition-all flex items-start gap-3 group hover:shadow-soft"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 group- transition-transform">
                       <IconComponent className="h-4 w-4" />
                     </div>
                     <div className="space-y-1 min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="font-semibold text-xs text-slate-800 dark:text-slate-200 group-hover:text-primary transition-colors truncate">
+                        <p className="font-semibold text-xs text-foreground group-hover:text-primary transition-colors truncate">
                           {tpl.name}
                         </p>
-                        <span className="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-500 font-medium px-2 py-0.5 rounded-full">
+                        <span className="text-[9px] bg-muted text-muted-foreground font-medium px-2 py-0.5 rounded-full">
                           {tpl.badge}
                         </span>
                       </div>
@@ -366,7 +366,7 @@ export default function PromptsPage() {
                         {tpl.prompt}
                       </p>
                     </div>
-                    <ChevronRight className="h-3.5 w-3.5 text-slate-400 self-center shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground self-center shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
                 );
               })}
@@ -375,12 +375,12 @@ export default function PromptsPage() {
 
           <Card className="border-border/60 shadow-soft bg-muted/20">
             <CardHeader className="pb-3">
-              <CardTitle className="text-xs font-bold flex items-center gap-1 text-slate-700 dark:text-slate-300">
+              <CardTitle className="text-xs font-bold flex items-center gap-1 text-foreground/90">
                 <Info className="h-3.5 w-3.5" />
                 Hogyan írj hatékony könyvelési szabályokat?
               </CardTitle>
             </CardHeader>
-            <CardContent className="text-xs text-slate-600 dark:text-slate-400 space-y-2.5 leading-relaxed">
+            <CardContent className="text-xs text-muted-foreground space-y-2.5 leading-relaxed">
               <p>
                 1. <strong>Légy pontos:</strong> Ha lehetséges, említsd meg a konkrét partnert (pl. <em>„MOL”</em>, <em>„Cashbook”</em>) vagy a tétel megnevezésében előforduló kulcsszavakat.
               </p>

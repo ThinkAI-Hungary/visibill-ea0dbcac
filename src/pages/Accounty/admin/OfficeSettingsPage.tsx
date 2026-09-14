@@ -81,7 +81,7 @@ export default function OfficeSettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
+      <div className="w-full max-w-4xl mx-auto space-y-6 page-animate">
         <div className="flex items-center gap-3">
           <Skeleton className="w-10 h-10 rounded-lg bg-muted/50" />
           <div className="space-y-2 flex-1">
@@ -89,12 +89,12 @@ export default function OfficeSettingsPage() {
             <Skeleton className="h-3 w-64 bg-muted/50" />
           </div>
         </div>
-        <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800/50 rounded-lg w-fit">
+        <div className="flex gap-2 p-1 bg-muted/50 rounded-lg w-fit">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-8 w-24 rounded-md bg-muted/50" />
           ))}
         </div>
-        <div className="bg-card rounded-xl border border-border p-6 space-y-6">
+        <div className="bg-card rounded-lg border border-border p-6 space-y-6">
           <Skeleton className="h-4 w-32 bg-muted/50" />
           <div className="grid grid-cols-2 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -110,19 +110,19 @@ export default function OfficeSettingsPage() {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full max-w-4xl mx-auto space-y-6 page-animate">
       <div className="flex items-center gap-3">
         <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
-        <div className="p-2.5 bg-gradient-to-br from-slate-600 to-slate-800 rounded-xl shadow-lg"><Building className="w-5 h-5 text-white" /></div>
+        <div className="p-2.5 bg-gradient-to-br from-muted to-card rounded-lg shadow-lg"><Building className="w-5 h-5 text-white" /></div>
         <div>
           <h1 className="text-2xl font-bold">Iroda beállítások</h1>
-          <p className="text-sm text-slate-500">Rendszerszintű konfigurációk{settings.officeName ? ` — ${settings.officeName}` : ''}</p>
+          <p className="text-sm text-muted-foreground">Rendszerszintű konfigurációk{settings.officeName ? ` — ${settings.officeName}` : ''}</p>
         </div>
       </div>
 
-      <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/50 rounded-lg p-0.5 w-fit">
+      <div className="flex gap-1 bg-muted/50 rounded-lg p-0.5 w-fit">
         {TABS.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} className={cn('flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-medium transition-all', tab === t.id ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-700')}>
+          <button key={t.id} onClick={() => setTab(t.id)} className={cn('flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-medium transition-all', tab === t.id ? 'bg-card dark:bg-muted text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground/90')}>
             <t.icon className="w-3.5 h-3.5" /> {t.label}
           </button>
         ))}
@@ -130,8 +130,8 @@ export default function OfficeSettingsPage() {
 
       {tab === 'general' && (
         <div className="space-y-6">
-          <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-            <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Cégadatok</h2>
+          <div className="bg-card rounded-lg border border-border p-6 space-y-4">
+            <h2 className="text-sm font-bold text-foreground/90">Cégadatok</h2>
             <div className="grid grid-cols-2 gap-4">
               {[
                 { key: 'officeName', label: 'Iroda neve' },
@@ -145,34 +145,34 @@ export default function OfficeSettingsPage() {
                 { key: 'insurancePolicyNumber', label: 'Felelősségbiztosítás száma', mono: true },
               ].map(f => (
                 <div key={f.key}>
-                  <label className="text-xs text-slate-500 mb-1 block">{f.label}</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">{f.label}</label>
                   <input type="text" value={(settings as any)[f.key]} onChange={e => update({ [f.key]: e.target.value })} className={cn('w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none', f.mono && 'font-mono')} />
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-            <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Regionális beállítások</h2>
+          <div className="bg-card rounded-lg border border-border p-6 space-y-4">
+            <h2 className="text-sm font-bold text-foreground/90">Regionális beállítások</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">Nyelv</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Nyelv</label>
                 <select value={settings.language} onChange={e => update({ language: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm">
                   <option value="hu"> Magyar</option><option value="en"> English</option><option value="de"> Deutsch</option>
                 </select>
               </div>
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">Időzóna</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Időzóna</label>
                 <select value={settings.timezone} onChange={e => update({ timezone: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm">
                   <option value="Europe/Budapest">Europe/Budapest (CET)</option><option value="UTC">UTC</option>
                 </select>
               </div>
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">Pénzügyi év vége</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Pénzügyi év vége</label>
                 <input type="text" value={settings.fiscalYearEnd} onChange={e => update({ fiscalYearEnd: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono" placeholder="12-31" />
               </div>
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">Alapértelmezett pénznem</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Alapértelmezett pénznem</label>
                 <select value={settings.defaultCurrency} onChange={e => update({ defaultCurrency: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm">
                   <option value="HUF">HUF — Magyar Forint</option><option value="EUR">EUR — Euró</option>
                 </select>
@@ -183,54 +183,54 @@ export default function OfficeSettingsPage() {
       )}
 
       {tab === 'security' && (
-        <div className="bg-card rounded-xl border border-border p-6 space-y-5">
-          <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2"><Shield className="w-4 h-4" /> Biztonsági beállítások</h2>
+        <div className="bg-card rounded-lg border border-border p-6 space-y-5">
+          <h2 className="text-sm font-bold text-foreground/90 flex items-center gap-2"><Shield className="w-4 h-4" /> Biztonsági beállítások</h2>
           {[
             { key: 'twoFactor', label: 'Kétfaktoros hitelesítés (2FA)', desc: 'Minden felhasználónak kötelező Google Auth / SMS megerősítés' },
             { key: 'autoBackup', label: 'Automatikus biztonsági mentés', desc: 'Napi mentés külső tárhelyre — titkosított' },
           ].map(item => (
-            <div key={item.key} className="flex items-center justify-between p-4 rounded-xl border border-border hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-              <div><p className="text-sm font-bold">{item.label}</p><p className="text-xs text-slate-500 mt-0.5">{item.desc}</p></div>
-              <button onClick={() => update({ [item.key]: !(settings as any)[item.key] })} className={cn('relative w-12 h-6 rounded-full transition-colors', (settings as any)[item.key] ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600')}>
+            <div key={item.key} className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50/30 transition-colors">
+              <div><p className="text-sm font-bold">{item.label}</p><p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p></div>
+              <button onClick={() => update({ [item.key]: !(settings as any)[item.key] })} className={cn('relative w-12 h-6 rounded-full transition-colors', (settings as any)[item.key] ? 'bg-emerald-500' : 'bg-muted-foreground/30')}>
                 <div className={cn('absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform', (settings as any)[item.key] ? 'translate-x-6' : 'translate-x-0.5')} />
               </button>
             </div>
           ))}
           <div className="grid grid-cols-2 gap-4">
-            <div><label className="text-xs text-slate-500 mb-1 block">Munkamenet időtúllépés (perc)</label><input type="number" value={settings.sessionTimeout} onChange={e => update({ sessionTimeout: Number(e.target.value) })} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono" /></div>
-            <div><label className="text-xs text-slate-500 mb-1 block">Jelszó minimális hossz</label><input type="number" value={settings.passwordMinLength} onChange={e => update({ passwordMinLength: Number(e.target.value) })} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono" /></div>
-            <div><label className="text-xs text-slate-500 mb-1 block">Audit napló megőrzés (év)</label><input type="number" value={settings.auditRetention} onChange={e => update({ auditRetention: Number(e.target.value) })} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono" /></div>
+            <div><label className="text-xs text-muted-foreground mb-1 block">Munkamenet időtúllépés (perc)</label><input type="number" value={settings.sessionTimeout} onChange={e => update({ sessionTimeout: Number(e.target.value) })} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono" /></div>
+            <div><label className="text-xs text-muted-foreground mb-1 block">Jelszó minimális hossz</label><input type="number" value={settings.passwordMinLength} onChange={e => update({ passwordMinLength: Number(e.target.value) })} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono" /></div>
+            <div><label className="text-xs text-muted-foreground mb-1 block">Audit napló megőrzés (év)</label><input type="number" value={settings.auditRetention} onChange={e => update({ auditRetention: Number(e.target.value) })} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono" /></div>
           </div>
         </div>
       )}
 
       {tab === 'notifications' && (
-        <div className="bg-card rounded-xl border border-border p-6 space-y-5">
-          <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2"><Bell className="w-4 h-4" /> Értesítési beállítások</h2>
-          <div className="flex items-center justify-between p-4 rounded-xl border border-border">
-            <div><p className="text-sm font-bold">E-mail értesítések</p><p className="text-xs text-slate-500">Rendszerüzenetek és figyelemfelhívások</p></div>
-            <button onClick={() => update({ emailNotifications: !settings.emailNotifications })} className={cn('relative w-12 h-6 rounded-full transition-colors', settings.emailNotifications ? 'bg-emerald-500' : 'bg-slate-300')}>
+        <div className="bg-card rounded-lg border border-border p-6 space-y-5">
+          <h2 className="text-sm font-bold text-foreground/90 flex items-center gap-2"><Bell className="w-4 h-4" /> Értesítési beállítások</h2>
+          <div className="flex items-center justify-between p-4 rounded-lg border border-border">
+            <div><p className="text-sm font-bold">E-mail értesítések</p><p className="text-xs text-muted-foreground">Rendszerüzenetek és figyelemfelhívások</p></div>
+            <button onClick={() => update({ emailNotifications: !settings.emailNotifications })} className={cn('relative w-12 h-6 rounded-full transition-colors', settings.emailNotifications ? 'bg-emerald-500' : 'bg-muted-foreground/30')}>
               <div className={cn('absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform', settings.emailNotifications ? 'translate-x-6' : 'translate-x-0.5')} />
             </button>
           </div>
           <div>
-            <label className="text-xs text-slate-500 mb-1 block">Bérszámfejtési határidő emlékeztető (nap)</label>
+            <label className="text-xs text-muted-foreground mb-1 block">Bérszámfejtési határidő emlékeztető (nap)</label>
             <input type="number" value={settings.payrollDeadlineReminder} onChange={e => update({ payrollDeadlineReminder: Number(e.target.value) })} className="w-full max-w-xs px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono" />
-            <p className="text-[10px] text-slate-400 mt-1">Hány nappal a határidő előtt küldjön emlékeztetőt</p>
+            <p className="text-[10px] text-muted-foreground mt-1">Hány nappal a határidő előtt küldjön emlékeztetőt</p>
           </div>
         </div>
       )}
 
       {tab === 'integrations' && (
-        <div className="bg-card rounded-xl border border-border p-6 space-y-5">
-          <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2"><Globe className="w-4 h-4" /> NAV integráció</h2>
+        <div className="bg-card rounded-lg border border-border p-6 space-y-5">
+          <h2 className="text-sm font-bold text-foreground/90 flex items-center gap-2"><Globe className="w-4 h-4" /> NAV integráció</h2>
           <div className="bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/20 rounded-lg p-3 text-sm text-yellow-800 dark:text-yellow-300">
             <AlertTriangle className="w-4 h-4 inline mr-1" />
             Az API kulcs módosítása azonnali hatással van a NAV Online Számla és bevallás modulokra.
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div><label className="text-xs text-slate-500 mb-1 block">NAV API kulcs</label><input type="password" value={settings.navApiKey} onChange={e => update({ navApiKey: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono" /></div>
-            <div><label className="text-xs text-slate-500 mb-1 block">Környezet</label>
+            <div><label className="text-xs text-muted-foreground mb-1 block">NAV API kulcs</label><input type="password" value={settings.navApiKey} onChange={e => update({ navApiKey: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono" /></div>
+            <div><label className="text-xs text-muted-foreground mb-1 block">Környezet</label>
               <select value={settings.navEnvironment} onChange={e => update({ navEnvironment: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm">
                 <option value="production"> Production</option><option value="sandbox"> Sandbox (teszt)</option>
               </select>
@@ -240,7 +240,7 @@ export default function OfficeSettingsPage() {
       )}
 
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saveMut.isPending} className="gap-1.5 bg-slate-900 dark:bg-slate-100 dark:text-slate-900 hover:bg-slate-800">
+        <Button onClick={handleSave} disabled={saveMut.isPending} className="gap-1.5 bg-slate-900 dark:bg-muted dark:text-foreground hover:bg-slate-800">
           {saveMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           {saveMut.isPending ? 'Mentés...' : 'Beállítások mentése'}
         </Button>

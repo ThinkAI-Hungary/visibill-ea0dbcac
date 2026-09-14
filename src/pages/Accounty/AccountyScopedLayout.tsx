@@ -131,7 +131,7 @@ export default function AccountyScopedLayout() {
 
   if (clientsLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh] text-slate-400 gap-2">
+      <div className="flex items-center justify-center min-h-[50vh] text-muted-foreground gap-2">
         <Loader2 className="w-5 h-5 animate-spin" /> Betöltés...
       </div>
     );
@@ -141,7 +141,7 @@ export default function AccountyScopedLayout() {
     return (
       <div className="flex items-center justify-center min-h-[70vh] px-4">
         <div className="text-center max-w-md space-y-6">
-          <div className="mx-auto w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center">
+          <div className="mx-auto w-16 h-16 rounded-lg bg-destructive/10 flex items-center justify-center">
             <ShieldAlert className="h-8 w-8 text-destructive" />
           </div>
           <div className="space-y-2">

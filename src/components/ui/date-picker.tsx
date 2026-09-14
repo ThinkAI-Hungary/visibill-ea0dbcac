@@ -17,8 +17,12 @@ export interface DatePickerProps {
   formatStr?: string;
   clearable?: boolean;
   id?: string;
+  name?: string;
+  required?: boolean;
   minDate?: Date;
   maxDate?: Date;
+  min?: string | Date;
+  max?: string | Date;
 }
 
 export function DatePicker({
@@ -31,10 +35,36 @@ export function DatePicker({
   formatStr = 'yyyy. MM. dd.',
   clearable = false,
   id,
+  name,
+  required,
   minDate,
   maxDate,
+  min,
+  max,
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false);
+
+  const effectiveMinDate = React.useMemo(() => {
+    const m = minDate || min;
+    if (!m) return undefined;
+    if (m instanceof Date) return isValid(m) ? m : undefined;
+    if (typeof m === 'string') {
+      const parsed = parse(m.slice(0, 10), 'yyyy-MM-dd', new Date());
+      return isValid(parsed) ? parsed : undefined;
+    }
+    return undefined;
+  }, [minDate, min]);
+
+  const effectiveMaxDate = React.useMemo(() => {
+    const m = maxDate || max;
+    if (!m) return undefined;
+    if (m instanceof Date) return isValid(m) ? m : undefined;
+    if (typeof m === 'string') {
+      const parsed = parse(m.slice(0, 10), 'yyyy-MM-dd', new Date());
+      return isValid(parsed) ? parsed : undefined;
+    }
+    return undefined;
+  }, [maxDate, max]);
 
   // Parse value to Date object
   const selectedDate = React.useMemo(() => {
@@ -113,8 +143,8 @@ export function DatePicker({
           selected={selectedDate}
           onSelect={handleSelect}
           disabled={(date) => {
-            if (minDate && date < minDate) return true;
-            if (maxDate && date > maxDate) return true;
+            if (effectiveMinDate && date < effectiveMinDate) return true;
+            if (effectiveMaxDate && date > effectiveMaxDate) return true;
             return false;
           }}
           locale={hu}

@@ -147,7 +147,7 @@ export default function PayrollStep5({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-600 dark:text-slate-300">
+        <p className="text-sm text-muted-foreground dark:text-foreground/90">
           Alapbér, pótlékok, prémiumok és felszolgálási díj felvitele. A prémium és felszolgálási díj oszlopokban közvetlenül megadhatod az adott havi összegeket.
         </p>
         {isSaving && (
@@ -160,13 +160,13 @@ export default function PayrollStep5({
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-border dark:bg-slate-900/30">
-              <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Név</th>
-              <th className="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase">Alapbér</th>
-              <th className="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase">Pótlék</th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-slate-500 uppercase">Prémium / Jutalom (Ft)</th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-slate-500 uppercase">Felszolgálási díj (Ft)</th>
-              <th className="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase">Bruttó összesen</th>
+            <tr className="border-b border-border dark:bg-card/30">
+              <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Név</th>
+              <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">Alapbér</th>
+              <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">Pótlék</th>
+              <th className="px-4 py-2 text-center text-xs font-medium text-muted-foreground uppercase">Prémium / Jutalom (Ft)</th>
+              <th className="px-4 py-2 text-center text-xs font-medium text-muted-foreground uppercase">Felszolgálási díj (Ft)</th>
+              <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">Bruttó összesen</th>
             </tr>
           </thead>
           <tbody className="divide-y border-border/50">
@@ -239,14 +239,14 @@ export default function PayrollStep5({
               const totalGross = base + potlek + premium + currentServiceCharge;
 
               return (
-                <tr key={emp.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                  <td className="px-4 py-2.5 text-sm font-medium text-slate-900 dark:text-slate-100">
+                <tr key={emp.id} className="hover:bg-muted/50">
+                  <td className="px-4 py-2.5 text-sm font-medium text-foreground">
                     {emp.last_name} {emp.first_name}
                   </td>
-                  <td className="px-4 py-2.5 text-right text-sm font-mono text-slate-700 dark:text-slate-300">
+                  <td className="px-4 py-2.5 text-right text-sm font-mono text-foreground/90">
                     {base.toLocaleString('hu-HU')} Ft
                   </td>
-                  <td className="px-4 py-2.5 text-right text-sm font-mono text-slate-700 dark:text-slate-300">
+                  <td className="px-4 py-2.5 text-right text-sm font-mono text-foreground/90">
                     {potlek.toLocaleString('hu-HU')} Ft
                   </td>
                   <td className="px-4 py-2 text-center">
@@ -265,7 +265,7 @@ export default function PayrollStep5({
                         const numVal = Math.max(0, parseInt(e.target.value.replace(/^-+/, '')) || 0);
                         handleBonusChange(emp.id, empEmployment?.id || '', numVal);
                       }}
-                      className="w-28 text-right rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-sm font-mono font-bold text-emerald-600 dark:text-emerald-400 focus:border-primary focus:outline-none"
+                      className="w-28 text-right rounded border border-border dark:border-slate-600 bg-card px-2 py-1 text-sm font-mono font-bold text-emerald-600 dark:text-emerald-400 focus:border-primary focus:outline-none"
                     />
                   </td>
                   <td className="px-4 py-2 text-center">
@@ -284,7 +284,7 @@ export default function PayrollStep5({
                         const numVal = Math.max(0, parseInt(e.target.value.replace(/^-+/, '')) || 0);
                         handleServiceChargeChange(emp.id, empEmployment?.id || '', numVal);
                       }}
-                      className="w-28 text-right rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-sm font-mono font-bold text-amber-600 dark:text-amber-400 focus:border-primary focus:outline-none"
+                      className="w-28 text-right rounded border border-border dark:border-slate-600 bg-card px-2 py-1 text-sm font-mono font-bold text-amber-600 dark:text-amber-400 focus:border-primary focus:outline-none"
                     />
                   </td>
                   <td className="px-4 py-2.5 text-right text-sm font-bold font-mono text-primary">

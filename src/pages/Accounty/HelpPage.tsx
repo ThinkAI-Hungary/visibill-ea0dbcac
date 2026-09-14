@@ -89,11 +89,11 @@ export default function HelpPage() {
 
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full max-w-5xl mx-auto space-y-6 page-animate">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center">
             <HelpCircle className="w-5 h-5 text-primary" />
           </div>
           Segítség & Dokumentáció
@@ -135,7 +135,7 @@ export default function HelpPage() {
 
 
       {/* Tab Navigation */}
-      <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-xl border border-border/60 overflow-x-auto">
+      <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-lg border border-border/60 overflow-x-auto">
         {helpTabs.map(tab => (
           <button
             key={tab.id}

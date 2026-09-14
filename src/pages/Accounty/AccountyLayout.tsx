@@ -179,13 +179,13 @@ function AccountyLayoutInner() {
           {/* Zero-prop header */}
           <AccountyHeader />
 
-          <div id="accounty-main-scroll" className="flex-1 overflow-y-auto p-8 relative" style={{ scrollbarGutter: 'stable' }}>
+          <div id="accounty-main-scroll" className="flex-1 overflow-y-auto p-6 relative scrollbar-gutter-stable" style={{ scrollbarGutter: 'stable' }}>
             {!isOnline && (
-              <div className="mb-5 flex items-center gap-3 px-4 py-3 bg-red-50 dark:bg-red-900/15 border border-red-200 dark:border-red-800/40 rounded-xl text-sm animate-in fade-in slide-in-from-top-2 duration-300">
-                <WifiOff className="w-4 h-4 text-red-500 shrink-0" />
-                <p className="flex-1 text-red-800 dark:text-red-300">
+              <div className="mb-5 flex items-center gap-3 px-4 py-3 bg-destructive/10 border border-destructive/20 rounded-lg text-sm page-animate duration-200">
+                <WifiOff className="w-4 h-4 text-destructive shrink-0" />
+                <p className="flex-1 text-destructive">
                   <span className="font-medium">Nincs internetkapcsolat</span>
-                  <span className="text-red-600 dark:text-red-400"> — Az adatok nem frissülnek amíg a kapcsolat nem áll helyre.</span>
+                  <span className="opacity-90"> — Az adatok nem frissülnek amíg a kapcsolat nem áll helyre.</span>
                 </p>
               </div>
             )}
@@ -207,21 +207,21 @@ function AccountyLayoutInner() {
               if (cookieOk && privacyOk) return null;
 
               return (
-                <div className="mb-5 flex items-center gap-3 px-4 py-3 bg-amber-50 dark:bg-amber-900/15 border border-amber-200 dark:border-amber-800/40 rounded-xl text-sm animate-in fade-in slide-in-from-top-2 duration-500">
-                  <Shield className="w-4 h-4 text-amber-500 shrink-0" />
+                <div className="mb-5 flex items-center gap-3 px-4 py-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-sm page-animate duration-200">
+                  <Shield className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
                   <p className="flex-1 text-amber-800 dark:text-amber-300">
                     <span className="font-medium">GDPR megfelelőség hiányos</span>
-                    <span className="text-amber-600 dark:text-amber-400"> — Az adatvédelmi követelmények teljesítéséhez fogadja el a süti beállításokat és az adatkezelési tájékoztatót.</span>
+                    <span className="text-amber-700/80 dark:text-amber-300/80"> — Az adatvédelmi követelmények teljesítéséhez fogadja el a süti beállításokat és az adatkezelési tájékoztatót.</span>
                   </p>
                   <Link
                     to="/eaisybooks/settings"
-                    className="shrink-0 px-3 py-1 bg-amber-100 dark:bg-amber-800/40 text-amber-700 dark:text-amber-300 text-xs font-bold rounded-lg hover:bg-amber-200 dark:hover:bg-amber-800/60 transition-colors"
+                    className="shrink-0 px-3 py-1 bg-amber-500/20 text-amber-800 dark:text-amber-200 text-xs font-semibold rounded-md hover:bg-amber-500/30 transition-colors"
                   >
                     Beállítások
                   </Link>
                   <button
                     onClick={() => { sessionStorage.setItem('gdpr_banner_dismissed', '1'); setGdprBannerDismissed(true); }}
-                    className="shrink-0 p-1 text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 transition-colors"
+                    className="shrink-0 p-1 text-amber-500 hover:text-amber-700 dark:hover:text-amber-300 transition-colors"
                     title="Elutasítás"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -309,7 +309,7 @@ function AccountyLayoutInner() {
                         id: 'tao',
                         title: 'Társasági Adó (TAO)',
                         icon: Landmark,
-                        color: 'text-indigo-500 bg-indigo-500/10',
+                        color: 'text-primary bg-primary/10',
                         desc: 'Társasági adó hatálya alá tartozó cégek főkönyvi modulja, adóalap korrigáló tételek és a TAO bevalláshoz szükséges számítások.',
                         levels: ['company']
                       },
@@ -336,11 +336,11 @@ function AccountyLayoutInner() {
                           key={item.id}
                           onMouseEnter={() => setHoveredHelpSection(item.id)}
                           onMouseLeave={() => setHoveredHelpSection(null)}
-                          className="p-3.5 rounded-xl border border-border bg-card shadow-soft space-y-2 hover:border-primary/30 hover:bg-primary/[0.02] hover:scale-[1.01] hover:shadow-md transition-all duration-200 cursor-default"
+                          className="p-3.5 rounded-lg border border-border bg-card space-y-2 hover:border-primary/40 hover:bg-muted/30 transition-colors duration-150 cursor-default"
                         >
                           <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-center gap-2 text-xs font-bold text-foreground">
-                              <div className={`p-1.5 rounded-lg ${item.color} shrink-0`}>
+                            <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                              <div className={`p-1.5 rounded-md ${item.color} shrink-0`}>
                                 <Icon className="w-3.5 h-3.5" />
                               </div>
                               <span>{item.title}</span>

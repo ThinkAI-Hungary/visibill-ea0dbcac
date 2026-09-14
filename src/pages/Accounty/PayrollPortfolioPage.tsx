@@ -14,12 +14,12 @@ import { UnifiedPagination } from '@/components/ui/unified-pagination';
 type CycleStatus = 'none' | 'draft' | 'data_collection' | 'review' | 'calculating' | 'calculated' | 'approved' | 'documents' | 'submitted' | 'closed';
 
 const CYCLE_STATUS_CONFIG: Record<CycleStatus, { label: string; color: string; bg: string }> = {
-  none:            { label: 'Nincs indítva',   color: 'text-slate-500',  bg: 'bg-slate-100 dark:bg-slate-800' },
-  draft:           { label: 'Tervezet',        color: 'text-slate-600',  bg: 'bg-slate-100 dark:bg-slate-800' },
+  none:            { label: 'Nincs indítva',   color: 'text-muted-foreground',  bg: 'bg-muted' },
+  draft:           { label: 'Tervezet',        color: 'text-muted-foreground',  bg: 'bg-muted' },
   data_collection: { label: 'Adatbekérés',     color: 'text-amber-600',  bg: 'bg-amber-50 dark:bg-amber-900/30' },
   review:          { label: 'Ellenőrzés',      color: 'text-blue-600',   bg: 'bg-blue-50 dark:bg-blue-900/30' },
-  calculating:     { label: 'Számfejtés…',     color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-900/30' },
-  calculated:      { label: 'Számfejtve',      color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-900/30' },
+  calculating:     { label: 'Számfejtés…',     color: 'text-primary', bg: 'bg-primary/10' },
+  calculated:      { label: 'Számfejtve',      color: 'text-primary', bg: 'bg-primary/10' },
   approved:        { label: 'Jóváhagyva',      color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/30' },
   documents:       { label: 'Dokumentumok',    color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/30' },
   submitted:       { label: 'Kiküldve',        color: 'text-teal-600',   bg: 'bg-teal-50 dark:bg-teal-900/30' },
@@ -27,7 +27,7 @@ const CYCLE_STATUS_CONFIG: Record<CycleStatus, { label: string; color: string; b
 };
 
 const FILING_STATUS_MAP: Record<string, { label: string; color: string }> = {
-  none:      { label: 'Nem elkészítve', color: 'text-slate-400' },
+  none:      { label: 'Nem elkészítve', color: 'text-muted-foreground' },
   draft:     { label: 'Tervezet',       color: 'text-amber-600' },
   generated: { label: 'Generálva',      color: 'text-amber-600' },
   validated: { label: 'Validálva',      color: 'text-blue-600' },
@@ -199,61 +199,61 @@ export default function PayrollPortfolioPage() {
   const deadlineDay = `${now.toLocaleDateString('hu-HU', { month: 'short' })} 12.`;
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-primary to-indigo-600 rounded-xl shadow-lg shadow-primary/25">
+          <div className="p-2.5 bg-gradient-to-br from-primary to-primary rounded-lg shadow-lg shadow-primary/25">
             <Calculator className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Bérszámfejtés áttekintés</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{monthName} — összes ügyfél bérszámfejtési státusza</p>
+            <h1 className="text-2xl font-bold text-foreground">Bérszámfejtés áttekintés</h1>
+            <p className="text-sm text-muted-foreground">{monthName} — összes ügyfél bérszámfejtési státusza</p>
           </div>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-5 gap-3">
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Összes foglalkoztatott</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Összes foglalkoztatott</p>
           <p className="text-2xl font-bold text-primary">{totalEmployees}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Ciklusok lezárva</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Ciklusok lezárva</p>
           <div className="flex items-end gap-2">
             <p className="text-2xl font-bold text-green-600">{closedCount}</p>
-            <p className="text-xs text-slate-400 pb-1">/ {rows.length}</p>
+            <p className="text-xs text-muted-foreground pb-1">/ {rows.length}</p>
           </div>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Hiányzó adatok</p>
-          <p className={cn('text-2xl font-bold', missingCount > 0 ? 'text-red-600' : 'text-slate-400')}>{missingCount} ügyfélnél</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Hiányzó adatok</p>
+          <p className={cn('text-2xl font-bold', missingCount > 0 ? 'text-red-600' : 'text-muted-foreground')}>{missingCount} ügyfélnél</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Bevallási határidő</p>
-          <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{deadlineDay}</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Bevallási határidő</p>
+          <p className="text-lg font-bold text-foreground">{deadlineDay}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Ügyfelek</p>
-          <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{rows.length}</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Ügyfelek</p>
+          <p className="text-lg font-bold text-foreground">{rows.length}</p>
         </div>
       </div>
 
       {/* Filter bar */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Keresés ügyfél neve, adószám..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 bg-card border-border" />
         </div>
-        <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/50 rounded-lg p-0.5">
+        <div className="flex gap-1 bg-muted/50 rounded-lg p-0.5">
           {([
             ['all', 'Mind'],
             ['missing', 'Hiányos'],
             ['not_started', 'Nem indított'],
             ['no_filing', 'Bevallás nélkül'],
           ] as [FilterMode, string][]).map(([v, l]) => (
-            <button key={v} onClick={() => setFilterMode(v)} className={cn('px-3 py-1.5 rounded-md text-xs font-medium transition-all', filterMode === v ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-500')}>
+            <button key={v} onClick={() => setFilterMode(v)} className={cn('px-3 py-1.5 rounded-md text-xs font-medium transition-all', filterMode === v ? 'bg-card dark:bg-muted text-foreground shadow-sm' : 'text-muted-foreground')}>
               {l}
             </button>
           ))}
@@ -261,32 +261,32 @@ export default function PayrollPortfolioPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border dark:bg-slate-900/30">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Ügyfél</th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Létszám</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Ciklus státusz</th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Hiányzó</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Bevallás</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Utalás</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider"></th>
+              <tr className="border-b border-border dark:bg-card/30">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ügyfél</th>
+                <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Létszám</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ciklus státusz</th>
+                <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Hiányzó</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Bevallás</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Utalás</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="py-16 text-center text-sm text-slate-400">
-                    <Loader2 className="w-6 h-6 mx-auto mb-3 animate-spin text-slate-300" />
+                  <td colSpan={7} className="py-16 text-center text-sm text-muted-foreground">
+                    <Loader2 className="w-6 h-6 mx-auto mb-3 animate-spin text-muted-foreground/60" />
                     Betöltés…
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-16 text-center text-sm text-slate-400">
-                    <Calculator className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+                  <td colSpan={7} className="py-16 text-center text-sm text-muted-foreground">
+                    <Calculator className="w-10 h-10 mx-auto mb-3 text-muted-foreground/60" />
                     {searchQuery || filterMode !== 'all' ? 'Nincs találat a szűrőkkel' : 'Nincs bérszámfejtési ügyfél'}
                   </td>
                 </tr>
@@ -295,15 +295,15 @@ export default function PayrollPortfolioPage() {
                   const cs = CYCLE_STATUS_CONFIG[client.cycleStatus] || CYCLE_STATUS_CONFIG.none;
                   const fs = FILING_STATUS_MAP[client.filingStatus] || FILING_STATUS_MAP.none;
                   return (
-                    <tr key={client.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                    <tr key={client.id} className="hover:bg-muted/50 transition-colors group">
                       <td className="px-4 py-3">
-                        <Link to={`/eaisybooks/payroll/${client.companyId}`} className="text-sm font-bold text-slate-900 dark:text-slate-100 hover:text-primary transition-colors">
+                        <Link to={`/eaisybooks/payroll/${client.companyId}`} className="text-sm font-bold text-foreground hover:text-primary transition-colors">
                           {client.name}
                         </Link>
-                        {client.taxNumber && <p className="text-[10px] text-slate-400 font-mono">{client.taxNumber}</p>}
+                        {client.taxNumber && <p className="text-[10px] text-muted-foreground font-mono">{client.taxNumber}</p>}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{client.employeeCount}</span>
+                        <span className="text-sm font-semibold text-foreground/90">{client.employeeCount}</span>
                       </td>
                       <td className="px-4 py-3">
                         <span className={cn('px-2 py-1 rounded-full text-xs font-semibold', cs.bg, cs.color)}>
@@ -331,7 +331,7 @@ export default function PayrollPortfolioPage() {
                       <td className="px-4 py-3">
                         <span className={cn('text-xs font-semibold',
                           client.paymentStatus === 'completed' ? 'text-green-600' :
-                          client.paymentStatus === 'pending' ? 'text-amber-600' : 'text-slate-400'
+                          client.paymentStatus === 'pending' ? 'text-amber-600' : 'text-muted-foreground'
                         )}>
                           {client.paymentStatus === 'completed' ? 'Utalva' :
                            client.paymentStatus === 'pending' ? 'Függőben' : '–'}

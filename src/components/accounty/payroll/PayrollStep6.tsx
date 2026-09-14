@@ -77,7 +77,7 @@ export default function PayrollStep6({
       {companyId && <SzochoAdvisor companyId={companyId} />}
       
       {isKiva && (
-        <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-400 rounded-xl flex items-center justify-between">
+        <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-400 rounded-lg flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="font-bold text-sm">🟢 KIVA adózási profil aktív</span>
             <span className="text-xs opacity-90">— A KIVA kiváltja a munkáltatói SZOCHO-t (Munkáltatói SZOCHO: 0 Ft)</span>
@@ -88,12 +88,12 @@ export default function PayrollStep6({
       {/* Header bar with recalculate action */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <p className="text-sm text-slate-600 dark:text-slate-300">
+          <p className="text-sm text-muted-foreground dark:text-foreground/90">
             SZJA (15%), TB Járulék (18.5%), SZOCHO (13% / KIVA esetén 0 Ft) kalkuláció az adómotor segítségével.
           </p>
           {lastCalcDate && (
-            <p className="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-0.5">
-              <Clock className="w-3 h-3 inline" /> Utolsó számfejtés: <span className="font-medium text-slate-600 dark:text-slate-400">{lastCalcDate}</span>
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+              <Clock className="w-3 h-3 inline" /> Utolsó számfejtés: <span className="font-medium text-muted-foreground">{lastCalcDate}</span>
             </p>
           )}
         </div>
@@ -140,19 +140,19 @@ export default function PayrollStep6({
         <div className="overflow-x-auto rounded-lg border border-border">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border dark:bg-slate-900/30">
-                <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Név</th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase">SZJA</th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase">TB</th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase">SZOCHO</th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase">Nettó</th>
+              <tr className="border-b border-border dark:bg-card/30">
+                <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Név</th>
+                <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">SZJA</th>
+                <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">TB</th>
+                <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">SZOCHO</th>
+                <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">Nettó</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
               {calculations.map((calc) => {
                 return (
-                  <tr key={calc.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                    <td className="px-4 py-2.5 text-sm font-medium text-slate-900 dark:text-slate-100">
+                  <tr key={calc.id} className="hover:bg-muted/50">
+                    <td className="px-4 py-2.5 text-sm font-medium text-foreground">
                       {getCalcName(calc)}
                     </td>
                     <td className="px-4 py-2.5 text-right text-sm font-mono text-red-600">
@@ -174,7 +174,7 @@ export default function PayrollStep6({
           </table>
         </div>
       ) : (
-        <div className="p-6 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800 text-center space-y-3">
+        <div className="p-6 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800 text-center space-y-3">
           <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
             Még nem futott le a számfejtés ebben a ciklusban.
           </p>

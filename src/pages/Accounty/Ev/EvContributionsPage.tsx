@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAccountyClient, useEvTaxParams } from '@/hooks/accounty';
 import {
   calculateQuarterlyContributions, formatHuf, formatPercent,
@@ -139,29 +140,29 @@ export default function EvContributionsPage() {
   const STATUS_CONFIG = {
     paid: { label: 'Fizetve', icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20' },
     due: { label: 'Esedékes', icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/20' },
-    upcoming: { label: 'Jövőbeli', icon: Clock, color: 'text-slate-400', bg: 'bg-slate-50 dark:bg-slate-800' },
+    upcoming: { label: 'Jövőbeli', icon: Clock, color: 'text-muted-foreground', bg: 'bg-muted' },
   };
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Főoldal
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <span className="text-slate-900 dark:text-slate-100 font-medium">TB-járulék & szocho</span>
+        <span className="text-foreground font-medium">TB-járulék & szocho</span>
       </div>
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-rose-500 to-pink-600 rounded-xl shadow-lg shadow-rose-500/25">
+          <div className="p-2.5 bg-gradient-to-br from-rose-500 to-pink-600 rounded-lg shadow-lg shadow-rose-500/25">
             <Calculator className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">TB-járulék & szocho</h1>
-            <p className="text-sm text-slate-500">
+            <h1 className="text-2xl font-bold text-foreground">TB-járulék & szocho</h1>
+            <p className="text-sm text-muted-foreground">
               Tbj. 40–44. §, Szocho tv. — {client?.name || 'Ügyfél'} — {taxYear}
             </p>
           </div>
@@ -169,9 +170,9 @@ export default function EvContributionsPage() {
       </div>
 
       {/* Settings row */}
-      <div className="bg-card rounded-xl border border-border shadow-soft p-4 flex items-center gap-6 flex-wrap">
+      <div className="bg-card rounded-lg border border-border shadow-soft p-4 flex items-center gap-6 flex-wrap">
         <div className="space-y-1">
-          <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Foglalkoztatási jogviszony</label>
+          <label className="text-xs font-medium text-muted-foreground">Foglalkoztatási jogviszony</label>
           <div className="flex gap-1.5">
             {([
               { value: 'foallasu' as EmploymentStatus, label: 'Főfoglalkozás' },
@@ -185,7 +186,7 @@ export default function EvContributionsPage() {
                   'px-3 py-1.5 rounded-lg text-xs font-medium border transition-all',
                   employmentStatus === opt.value
                     ? 'border-rose-400 bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400'
-                    : 'border-border text-slate-500'
+                    : 'border-border text-muted-foreground'
                 )}
               >
                 {opt.label}
@@ -195,19 +196,17 @@ export default function EvContributionsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
+          <Checkbox
             id="skilled-cb"
             checked={isSkilled}
-            onChange={e => setIsSkilled(e.target.checked)}
-            className="rounded border-border"
+            onCheckedChange={checked => setIsSkilled(!!checked)}
           />
-          <label htmlFor="skilled-cb" className="text-xs text-slate-600 dark:text-slate-400">
+          <label htmlFor="skilled-cb" className="text-xs text-muted-foreground cursor-pointer select-none">
             Szakképzettséget igénylő (garantált bérminimum)
           </label>
         </div>
 
-        <div className="ml-auto flex items-center gap-4 text-xs text-slate-500">
+        <div className="ml-auto flex items-center gap-4 text-xs text-muted-foreground">
           <span>TB: {formatPercent(params.tbJarulekKulcs)}</span>
           <span>Szocho: {formatPercent(params.szochoKulcs)}</span>
           <span>Min.bér: {formatHuf(params.minimalber)}/hó</span>
@@ -216,7 +215,7 @@ export default function EvContributionsPage() {
 
       {/* Minimum base warning */}
       {minimumApplied && employmentStatus === 'foallasu' && (
-        <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl p-4 flex gap-3">
+        <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-lg p-4 flex gap-3">
           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <div className="text-xs text-amber-700 dark:text-amber-400">
             <p className="font-semibold">Minimum járulékalap alkalmazva</p>
@@ -229,7 +228,7 @@ export default function EvContributionsPage() {
       )}
 
       {employmentStatus === 'kiegeszito' && (
-        <div className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-xl p-4 flex gap-3">
+        <div className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-lg p-4 flex gap-3">
           <CheckCircle className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
           <div className="text-xs text-green-700 dark:text-green-400">
             <p className="font-semibold">Kiegészítő tevékenység — mentes a járulékfizetés alól</p>
@@ -240,24 +239,24 @@ export default function EvContributionsPage() {
 
       {/* Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Éves TB-járulék</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Éves TB-járulék</p>
           <p className="text-xl font-bold text-rose-600">{formatHuf(totalTb)}</p>
-          <p className="text-[10px] text-slate-400">{formatPercent(params.tbJarulekKulcs)}</p>
+          <p className="text-[10px] text-muted-foreground">{formatPercent(params.tbJarulekKulcs)}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Éves szocho</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Éves szocho</p>
           <p className="text-xl font-bold text-pink-600">{formatHuf(totalSzocho)}</p>
-          <p className="text-[10px] text-slate-400">{formatPercent(params.szochoKulcs)}</p>
+          <p className="text-[10px] text-muted-foreground">{formatPercent(params.szochoKulcs)}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Összesen</p>
-          <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{formatHuf(totalAll)}</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Összesen</p>
+          <p className="text-xl font-bold text-foreground">{formatHuf(totalAll)}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Kamarai hj.</p>
-          <p className="text-xl font-bold text-slate-700 dark:text-slate-300">{formatHuf(params.kamaraiHozzajarulas)}</p>
-          <p className="text-[10px] text-slate-400">éves fix</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Kamarai hj.</p>
+          <p className="text-xl font-bold text-foreground/90">{formatHuf(params.kamaraiHozzajarulas)}</p>
+          <p className="text-[10px] text-muted-foreground">éves fix</p>
         </div>
       </div>
 
@@ -271,10 +270,10 @@ export default function EvContributionsPage() {
           {calculations.map((q, i) => {
             const st = STATUS_CONFIG[q.status];
             return (
-              <div key={q.quarter} className={cn('bg-card rounded-xl border border-border shadow-soft overflow-hidden', q.status === 'due' && 'ring-1 ring-amber-300')}>
+              <div key={q.quarter} className={cn('bg-card rounded-lg border border-border shadow-soft overflow-hidden', q.status === 'due' && 'ring-1 ring-amber-300')}>
                 <div className={cn('px-4 py-2.5 flex items-center justify-between', st.bg)}>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-slate-900 dark:text-slate-100">{QUARTER_LABELS[i]} negyedév</span>
+                    <span className="text-sm font-bold text-foreground">{QUARTER_LABELS[i]} negyedév</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <st.icon className={cn('w-3.5 h-3.5', st.color)} />
@@ -284,12 +283,12 @@ export default function EvContributionsPage() {
 
                 <div className="p-4 space-y-3">
                   <div className="flex justify-between text-xs">
-                    <span className="text-slate-500">Határidő</span>
-                    <span className="font-medium text-slate-700 dark:text-slate-300">{taxYear}. {QUARTER_DEADLINES[i]}</span>
+                    <span className="text-muted-foreground">Határidő</span>
+                    <span className="font-medium text-foreground/90">{taxYear}. {QUARTER_DEADLINES[i]}</span>
                   </div>
                   <div className="flex justify-between text-xs">
-                    <span className="text-slate-500">Járulékalap</span>
-                    <span className="font-mono tabular-nums font-semibold text-slate-900 dark:text-slate-100">
+                    <span className="text-muted-foreground">Járulékalap</span>
+                    <span className="font-mono tabular-nums font-semibold text-foreground">
                       {formatHuf(q.calc.currentQuarterBase)}
                     </span>
                   </div>
@@ -300,16 +299,16 @@ export default function EvContributionsPage() {
                   )}
                   <div className="border-t border-border/50 pt-2 space-y-1.5">
                     <div className="flex justify-between text-xs">
-                      <span className="text-slate-500">TB ({formatPercent(params.tbJarulekKulcs)})</span>
+                      <span className="text-muted-foreground">TB ({formatPercent(params.tbJarulekKulcs)})</span>
                       <span className="font-mono tabular-nums text-rose-600 font-semibold">{formatHuf(q.calc.tbAmount)}</span>
                     </div>
                     <div className="flex justify-between text-xs">
-                      <span className="text-slate-500">Szocho ({formatPercent(params.szochoKulcs)})</span>
+                      <span className="text-muted-foreground">Szocho ({formatPercent(params.szochoKulcs)})</span>
                       <span className="font-mono tabular-nums text-pink-600 font-semibold">{formatHuf(q.calc.szochoAmount)}</span>
                     </div>
                     <div className="flex justify-between text-xs pt-1 border-t border-border/50">
-                      <span className="text-slate-700 dark:text-slate-300 font-semibold">Összesen</span>
-                      <span className="font-mono tabular-nums font-bold text-slate-900 dark:text-slate-100">{formatHuf(q.calc.totalAmount)}</span>
+                      <span className="text-foreground/90 font-semibold">Összesen</span>
+                      <span className="font-mono tabular-nums font-bold text-foreground">{formatHuf(q.calc.totalAmount)}</span>
                     </div>
                   </div>
                 </div>
@@ -320,7 +319,7 @@ export default function EvContributionsPage() {
       )}
 
       {/* Info */}
-      <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-xl p-4 flex gap-3">
+      <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-lg p-4 flex gap-3">
         <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
         <div className="text-xs text-blue-700 dark:text-blue-400 space-y-1">
           <p className="font-semibold">Járulékszámítás szabályai ({taxYear})</p>

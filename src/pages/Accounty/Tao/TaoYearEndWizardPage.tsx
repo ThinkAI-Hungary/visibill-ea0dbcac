@@ -249,20 +249,20 @@ export default function TaoYearEndWizardPage() {
 
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link to={`/eaisybooks/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-          <ArrowLeft className="w-4 h-4 text-slate-400" />
+        <Link to={`/eaisybooks/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-muted transition-colors">
+          <ArrowLeft className="w-4 h-4 text-muted-foreground" />
         </Link>
-        <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-lg shadow-emerald-500/25">
+        <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg shadow-lg shadow-emerald-500/25">
           <Landmark className="w-5 h-5 text-white" />
         </div>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+          <h1 className="text-2xl font-bold text-foreground">
             TAO Éves Záró — {taxYear}
           </h1>
-          <p className="text-sm text-slate-500">{client?.name || 'Ügyfél'}</p>
+          <p className="text-sm text-muted-foreground">{client?.name || 'Ügyfél'}</p>
         </div>
         <Link to={`/eaisybooks/${id}/${dateRange}/tao/kiva`}>
           <Button variant="outline" size="sm" className="gap-1.5">
@@ -280,16 +280,16 @@ export default function TaoYearEndWizardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Step content */}
         <div className="lg:col-span-2">
-          <div className="bg-card rounded-xl border border-border p-6 shadow-soft">
+          <div className="bg-card rounded-lg border border-border p-6 shadow-soft">
             <div className="flex items-center gap-3 mb-6">
               <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
                 <currentStepDef.icon className="w-5 h-5 text-emerald-600" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                <h2 className="text-lg font-bold text-foreground">
                   {step}. {currentStepDef.label}
                 </h2>
-                <p className="text-xs text-slate-500">{currentStepDef.desc}</p>
+                <p className="text-xs text-muted-foreground">{currentStepDef.desc}</p>
               </div>
             </div>
             {renderCurrentStep()}

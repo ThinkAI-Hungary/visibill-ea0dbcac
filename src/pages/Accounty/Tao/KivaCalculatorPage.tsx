@@ -13,9 +13,9 @@ function NumberInput({ value, onChange, label, hint }: {
 }) {
   return (
     <div>
-      <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">
+      <label className="text-xs font-medium text-muted-foreground mb-1 block">
         {label}
-        {hint && <span className="ml-1 text-slate-400 font-normal">({hint})</span>}
+        {hint && <span className="ml-1 text-muted-foreground font-normal">({hint})</span>}
       </label>
       <div className="relative">
         <Input
@@ -28,7 +28,7 @@ function NumberInput({ value, onChange, label, hint }: {
           className="bg-background pr-10 text-right font-mono"
           placeholder="0"
         />
-        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">Ft</span>
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">Ft</span>
       </div>
     </div>
   );
@@ -92,18 +92,18 @@ export default function KivaCalculatorPage() {
   }, [data]);
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500 max-w-4xl">
+    <div className="w-full space-y-6 page-animate max-w-4xl">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link to={`/eaisybooks/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-          <ArrowLeft className="w-4 h-4 text-slate-400" />
+        <Link to={`/eaisybooks/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-muted transition-colors">
+          <ArrowLeft className="w-4 h-4 text-muted-foreground" />
         </Link>
-        <div className="p-2.5 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl shadow-lg shadow-orange-500/25">
+        <div className="p-2.5 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg shadow-lg shadow-orange-500/25">
           <Calculator className="w-5 h-5 text-white" />
         </div>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">KIVA Kalkulátor</h1>
-          <p className="text-sm text-slate-500">{client?.name || 'Ügyfél'} — Kisvállalati adó szimuláció</p>
+          <h1 className="text-2xl font-bold text-foreground">KIVA Kalkulátor</h1>
+          <p className="text-sm text-muted-foreground">{client?.name || 'Ügyfél'} — Kisvállalati adó szimuláció</p>
         </div>
         <Link to={`/eaisybooks/${id}/${dateRange}/tao/compare`}>
           <Button variant="outline" size="sm" className="gap-1.5">
@@ -113,7 +113,7 @@ export default function KivaCalculatorPage() {
       </div>
 
       {/* Info */}
-      <div className="flex items-start gap-2 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
+      <div className="flex items-start gap-2 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
         <Info className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
         <div className="text-xs text-amber-700 dark:text-amber-300">
           <strong>KIVA</strong> (Kisvállalati adó, 2012. évi CXLVII. tv.) — a kisvállalati adó mértéke <strong>10%</strong>, adóalapja a személyi jellegű kifizetések + tőkeelemek változása.
@@ -125,8 +125,8 @@ export default function KivaCalculatorPage() {
         {/* Input */}
         <div className="lg:col-span-2 space-y-5">
           {/* Személyi jellegű kifizetések */}
-          <div className="bg-card rounded-xl border border-border p-6 shadow-soft space-y-4">
-            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <div className="bg-card rounded-lg border border-border p-6 shadow-soft space-y-4">
+            <h2 className="text-base font-bold text-foreground flex items-center gap-2">
               <Users className="w-4 h-4 text-blue-600" />
               Személyi jellegű ráfordítások
             </h2>
@@ -140,8 +140,8 @@ export default function KivaCalculatorPage() {
           </div>
 
           {/* Osztalék */}
-          <div className="bg-card rounded-xl border border-border p-6 shadow-soft space-y-4">
-            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <div className="bg-card rounded-lg border border-border p-6 shadow-soft space-y-4">
+            <h2 className="text-base font-bold text-foreground flex items-center gap-2">
               <Landmark className="w-4 h-4 text-purple-600" />
               Osztalék és tőke-elemek
             </h2>
@@ -151,8 +151,8 @@ export default function KivaCalculatorPage() {
           </div>
 
           {/* Korrekciók */}
-          <div className="bg-card rounded-xl border border-border p-6 shadow-soft space-y-4">
-            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <div className="bg-card rounded-lg border border-border p-6 shadow-soft space-y-4">
+            <h2 className="text-base font-bold text-foreground flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-amber-600" />
               Korrekciós tételek
             </h2>
@@ -163,8 +163,8 @@ export default function KivaCalculatorPage() {
 
         {/* Sidebar — Result */}
         <div className="lg:col-span-1">
-          <div className="bg-card rounded-xl border border-border p-5 shadow-soft sticky top-6 space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <div className="bg-card rounded-lg border border-border p-5 shadow-soft sticky top-6 space-y-4">
+            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
               <Calculator className="w-4 h-4 text-orange-600" /> KIVA Eredmény
             </h3>
 
@@ -176,15 +176,15 @@ export default function KivaCalculatorPage() {
                 { label: '+ Korrekciók', value: computed.corrections },
               ].map((row, i) => (
                 <div key={i} className="flex items-center justify-between py-1">
-                  <span className="text-xs text-slate-500">{row.label}</span>
-                  <span className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300">{fmt(row.value)}</span>
+                  <span className="text-xs text-muted-foreground">{row.label}</span>
+                  <span className="text-xs font-mono font-bold text-foreground/90">{fmt(row.value)}</span>
                 </div>
               ))}
             </div>
 
             <div className="border-t border-border pt-3">
               <div className="flex items-center justify-between py-1">
-                <span className="text-xs font-bold text-slate-900 dark:text-slate-100">KIVA adóalap</span>
+                <span className="text-xs font-bold text-foreground">KIVA adóalap</span>
                 <span className="text-sm font-black text-orange-600">{fmt(computed.effectiveBase)} Ft</span>
               </div>
               {computed.kivaBase < computed.minBase && (
@@ -194,8 +194,8 @@ export default function KivaCalculatorPage() {
               )}
             </div>
 
-            <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl p-4 border border-orange-200 dark:border-orange-800">
-              <p className="text-[10px] text-slate-500 mb-1">Fizetendő KIVA (10%)</p>
+            <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-lg p-4 border border-orange-200 dark:border-orange-800">
+              <p className="text-[10px] text-muted-foreground mb-1">Fizetendő KIVA (10%)</p>
               <p className="text-2xl font-black text-orange-600">{fmt(computed.effectiveTax)} Ft</p>
             </div>
 

@@ -334,40 +334,40 @@ eaisybooks`;
   }), [clients]);
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
         {companyId ? (
-          <Link to={`/eaisybooks/${companyId}/${dateRange || '2026-01-01_2026-12-31'}/ev`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+          <Link to={`/eaisybooks/${companyId}/${dateRange || '2026-01-01_2026-12-31'}/ev`} className="hover:text-primary transition-colors flex items-center gap-1">
             <ArrowLeft className="w-3.5 h-3.5" /> Egyéni vállalkozás (EV)
           </Link>
         ) : (
-          <Link to="/eaisybooks?tab=ev" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+          <Link to="/eaisybooks?tab=ev" className="hover:text-primary transition-colors flex items-center gap-1">
             <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
           </Link>
         )}
         <ChevronRight className="w-3 h-3" />
-        <span className="text-slate-900 dark:text-slate-100 font-medium">Értékhatár-figyelő</span>
+        <span className="text-foreground font-medium">Értékhatár-figyelő</span>
       </div>
 
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="p-2.5 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl shadow-lg shadow-orange-500/25">
+        <div className="p-2.5 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg shadow-lg shadow-orange-500/25">
           <Gauge className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Értékhatár-figyelő</h1>
-          <p className="text-sm text-slate-500">KATA keret, átalány bevételi határ, ÁFA alanyi mentesség – portfólió szintű monitoring</p>
+          <h1 className="text-2xl font-bold text-foreground">Értékhatár-figyelő</h1>
+          <p className="text-sm text-muted-foreground">KATA keret, átalány bevételi határ, ÁFA alanyi mentesség – portfólió szintű monitoring</p>
         </div>
       </div>
 
       {/* Prediction Model Toolbar */}
-      <div className="bg-card border border-border rounded-xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-soft">
+      <div className="bg-card border border-border rounded-lg p-4 flex flex-wrap items-center justify-between gap-4 shadow-soft">
         <div className="flex items-center gap-3">
-          <TrendingUp className="w-5 h-5 text-indigo-500" />
+          <TrendingUp className="w-5 h-5 text-primary" />
           <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Vetítési modell beállítása</h3>
-            <p className="text-xs text-slate-400">Válaszd ki, hogyan becsülje meg a rendszer az év végi bevételeket</p>
+            <h3 className="text-sm font-bold text-foreground">Vetítési modell beállítása</h3>
+            <p className="text-xs text-muted-foreground">Válaszd ki, hogyan becsülje meg a rendszer az év végi bevételeket</p>
           </div>
         </div>
 
@@ -385,7 +385,7 @@ eaisybooks`;
 
           {predictionModel === 'manual' && (
             <div className="flex items-center gap-2">
-              <label className="text-xs font-semibold text-slate-500">Célösszeg:</label>
+              <label className="text-xs font-semibold text-muted-foreground">Célösszeg:</label>
               <Input
                 type="number"
                 value={manualTarget}
@@ -404,12 +404,12 @@ eaisybooks`;
           <button
             onClick={() => setFilter('all')}
             className={cn(
-              'bg-card rounded-xl border p-4 shadow-soft text-left transition-all hover:shadow-md',
-              filter === 'all' ? 'border-indigo-500 ring-2 ring-indigo-500/20' : 'border-border'
+              'bg-card rounded-lg border p-4 shadow-soft text-left transition-all hover:shadow-md',
+              filter === 'all' ? 'border-primary ring-2 ring-indigo-500/20' : 'border-border'
             )}
           >
-            <p className="text-xs text-slate-500 mb-1">Összes ügyfél</p>
-            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{isLoading ? '...' : clients.length}</p>
+            <p className="text-xs text-muted-foreground mb-1">Összes ügyfél</p>
+            <p className="text-2xl font-bold text-foreground">{isLoading ? '...' : clients.length}</p>
           </button>
           {(['red', 'yellow', 'green'] as ThresholdStatus[]).map(status => {
             const cfg = STATUS_CONFIG[status];
@@ -419,7 +419,7 @@ eaisybooks`;
                 key={status}
                 onClick={() => setFilter(status)}
                 className={cn(
-                  'rounded-xl border p-4 shadow-soft text-left transition-all hover:shadow-md',
+                  'rounded-lg border p-4 shadow-soft text-left transition-all hover:shadow-md',
                   cfg.bgColor, cfg.borderColor,
                   filter === status ? 'ring-2 ring-indigo-500/20' : ''
                 )}
@@ -436,31 +436,31 @@ eaisybooks`;
       )}
 
       {/* Table */}
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-slate-50/50 dark:bg-slate-800/30">
-                <th className="text-left py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Ügyfél</th>
-                <th className="text-left py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Adóforma</th>
-                <th className="text-right py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">YTD bevétel</th>
-                <th className="text-left py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Értékhatárok</th>
-                <th className="text-center py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Státusz</th>
+              <tr className="border-b border-border bg-muted/40/50 dark:bg-muted/30">
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Ügyfél</th>
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Adóforma</th>
+                <th className="text-right py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">YTD bevétel</th>
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Értékhatárok</th>
+                <th className="text-center py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Státusz</th>
                 <th className="w-10 py-3 px-4" />
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="py-16 text-center text-sm text-slate-400">
+                  <td colSpan={6} className="py-16 text-center text-sm text-muted-foreground">
                     <Loader2 className="w-8 h-8 mx-auto mb-3 text-orange-400 animate-spin" />
                     Betöltés...
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-16 text-center text-sm text-slate-400">
-                    <Gauge className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+                  <td colSpan={6} className="py-16 text-center text-sm text-muted-foreground">
+                    <Gauge className="w-10 h-10 mx-auto mb-3 text-muted-foreground/60" />
                     Nincs EV ügyfél ebben a kategóriában
                   </td>
                 </tr>
@@ -468,10 +468,10 @@ eaisybooks`;
                 paginated.map(c => {
                   const worstCfg = STATUS_CONFIG[c.worstStatus];
                   return (
-                    <tr key={c.clientId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                    <tr key={c.clientId} className="hover:bg-muted/50 dark:hover:bg-muted/50/30 transition-colors">
                       <td className="py-3 px-4">
-                        <p className="font-semibold text-slate-900 dark:text-slate-100">{c.clientName}</p>
-                        {c.taxNumber && <p className="text-[10px] text-slate-400 font-mono">{c.taxNumber}</p>}
+                        <p className="font-semibold text-foreground">{c.clientName}</p>
+                        {c.taxNumber && <p className="text-[10px] text-muted-foreground font-mono">{c.taxNumber}</p>}
                       </td>
                       <td className="py-3 px-4">
                         <span className={cn(
@@ -483,7 +483,7 @@ eaisybooks`;
                           {c.taxpayerForm === 'atalany' ? 'Átalány' : c.taxpayerForm === 'kata' ? 'KATA' : 'VSZJA'}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-700 dark:text-slate-300 font-medium">
+                      <td className="py-3 px-4 text-right font-mono tabular-nums text-foreground/90 font-medium">
                         {formatMillionHuf(c.ytdRevenue)}
                       </td>
                       <td className="py-3 px-4">
@@ -494,14 +494,14 @@ eaisybooks`;
                             return (
                               <div key={t.name} className="space-y-1.5">
                                 <div className="flex items-center justify-between text-[10px] w-full max-w-[280px]">
-                                  <span className="font-semibold text-slate-700 dark:text-slate-300">{t.name}</span>
-                                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                                  <span className="font-semibold text-foreground/90">{t.name}</span>
+                                  <span className="text-[10px] text-muted-foreground font-mono">
                                     Limit: {formatMillionHuf(t.limit)}
                                   </span>
                                 </div>
                                 <div className="flex flex-col gap-1 w-full max-w-[280px]">
                                   {/* Single stacked progress bar */}
-                                  <div className="relative w-full h-2.5 bg-slate-100 dark:bg-slate-800/60 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-850 shadow-inner">
+                                  <div className="relative w-full h-2.5 bg-muted/60 rounded-full overflow-hidden border border-border/50 dark:border-slate-850 shadow-inner">
                                     {/* Projected Part: Semi-transparent background that extends further */}
                                     <div
                                       className={cn(
@@ -525,13 +525,13 @@ eaisybooks`;
                                   </div>
                                   
                                   {/* Dynamic badges / percentages right under the bar */}
-                                  <div className="flex items-center justify-between text-[9px] text-slate-500 dark:text-slate-400 font-medium font-sans">
+                                  <div className="flex items-center justify-between text-[9px] text-muted-foreground font-medium font-sans">
                                     <span className="flex items-center gap-1">
                                       <span className={cn(
                                         'w-1.5 h-1.5 rounded-full',
                                         t.status === 'red' ? 'bg-red-500' : t.status === 'yellow' ? 'bg-amber-500' : 'bg-emerald-500'
                                       )} />
-                                      Tény (YTD): <strong className="text-slate-700 dark:text-slate-200">{t.percentage.toFixed(0)}%</strong>
+                                      Tény (YTD): <strong className="text-foreground/90">{t.percentage.toFixed(0)}%</strong>
                                     </span>
                                     <span className="flex items-center gap-1">
                                       <span className={cn(
@@ -541,7 +541,7 @@ eaisybooks`;
                                       Projektált: <strong className={cn(
                                         isProjectedDanger ? "text-red-600 dark:text-red-400 font-bold" 
                                           : isProjectedWarning ? "text-amber-600 dark:text-amber-400 font-bold" 
-                                          : "text-slate-700 dark:text-slate-200"
+                                          : "text-foreground/90"
                                       )}>{t.projectedPercentage.toFixed(0)}%</strong>
                                     </span>
                                     {isProjectedDanger && (
@@ -592,7 +592,7 @@ eaisybooks`;
                           )}
                           <Link
                             to={`/eaisybooks/client/${c.clientId}/ev?year=${taxYear}`}
-                            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-indigo-600 inline-flex"
+                            className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-primary inline-flex"
                           >
                             <ArrowUpRight className="w-4 h-4" />
                           </Link>
@@ -621,7 +621,7 @@ eaisybooks`;
       </div>
 
       {/* Info */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
         <div className="flex items-start gap-2">
           <Info className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
           <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">

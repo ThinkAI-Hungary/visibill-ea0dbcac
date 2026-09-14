@@ -24,7 +24,7 @@ function DataField({ label, value, icon: Icon, mono, isEditing, onChange }: {
 }) {
   return (
     <div className="space-y-1">
-      <label className="text-[11px] font-medium text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+      <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
         {Icon && <Icon className="w-3 h-3" />}
         {label}
       </label>
@@ -37,7 +37,7 @@ function DataField({ label, value, icon: Icon, mono, isEditing, onChange }: {
         />
       ) : (
         <p className={cn(
-          'text-sm text-slate-900 dark:text-slate-100 font-medium',
+          'text-sm text-foreground font-medium',
           mono && 'font-mono tabular-nums'
         )}>
           {value || '—'}
@@ -201,36 +201,36 @@ export default function EvMasterDataPage() {
   ];
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to="/eaisybooks?tab=ev" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link to="/eaisybooks?tab=ev" className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-primary transition-colors">
           {client?.name || 'Ügyfél'}
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <span className="text-slate-900 dark:text-slate-100 font-medium">Törzsadatok</span>
+        <span className="text-foreground font-medium">Törzsadatok</span>
       </div>
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg shadow-indigo-500/25">
+          <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg shadow-lg shadow-primary/20">
             <Database className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Törzsadatok</h1>
-            <p className="text-sm text-slate-500">{client?.name || 'Ügyfél'} – NAV azonosítók, személyes és tevékenységi adatok</p>
+            <h1 className="text-2xl font-bold text-foreground">Törzsadatok</h1>
+            <p className="text-sm text-muted-foreground">{client?.name || 'Ügyfél'} – NAV azonosítók, személyes és tevékenységi adatok</p>
           </div>
         </div>
         {isEditing ? (
           <div className="flex items-center gap-2">
             <button
               onClick={cancelEditing}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg text-muted-foreground hover:bg-muted transition-colors"
             >
               <X className="w-3.5 h-3.5" /> Mégse
             </button>
@@ -246,7 +246,7 @@ export default function EvMasterDataPage() {
         ) : (
           <button
             onClick={startEditing}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
           >
             <Edit3 className="w-3.5 h-3.5" /> Szerkesztés
           </button>
@@ -256,19 +256,19 @@ export default function EvMasterDataPage() {
       {/* Loading */}
       {isLoading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
         </div>
       ) : (
         <>
           {/* Data sections */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {sections.map(section => (
-              <div key={section.title} className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+              <div key={section.title} className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
                 <div className="px-5 py-3 border-b border-border/50 flex items-center gap-3">
                   <div className={cn('p-1.5 rounded-lg bg-gradient-to-br shadow-md', section.color)}>
                     <section.icon className="w-4 h-4 text-white" />
                   </div>
-                  <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">{section.title}</h2>
+                  <h2 className="text-sm font-bold text-foreground">{section.title}</h2>
                 </div>
                 <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {section.fields.map(field => (
@@ -288,22 +288,22 @@ export default function EvMasterDataPage() {
           </div>
 
           {/* Secondary activities */}
-          <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+          <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
             <div className="px-5 py-3 border-b border-border/50 flex items-center gap-3">
               <div className="p-1.5 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 shadow-md">
                 <Tag className="w-4 h-4 text-white" />
               </div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Tevékenységi kódok (TEÁOR)</h2>
+              <h2 className="text-sm font-bold text-foreground">Tevékenységi kódok (TEÁOR)</h2>
             </div>
             <div className="divide-y divide-border">
               {masterData.activityCodes.length === 0 ? (
-                <div className="px-5 py-6 text-center text-sm text-slate-400">
+                <div className="px-5 py-6 text-center text-sm text-muted-foreground">
                   Nincs rögzített tevékenységi kód
                 </div>
               ) : (
                 masterData.activityCodes.map(code => (
                   <div key={code} className="px-5 py-3 flex items-center gap-3">
-                    <span className="text-xs font-mono font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded">{code}</span>
+                    <span className="text-xs font-mono font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">{code}</span>
                     {code === masterData.mainActivityCode && (
                       <span className="text-[10px] font-medium text-green-600 bg-green-50 dark:bg-green-900/30 px-1.5 py-0.5 rounded">Fő tevékenység</span>
                     )}

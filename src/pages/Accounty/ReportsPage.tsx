@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PreviewTable, exportCSV, exportPDF } from './reports/ReportHelpers';
 import { Calendar, FileText, PieChart, TrendingUp, Users, FileWarning } from 'lucide-react';
+import { PageHeader } from '@/components/ui/page-header';
 import { useAccountyFullReportData, type FullReportData, type InvoiceReportRow, type ReportRow } from '@/hooks/accounty';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,7 +26,7 @@ type ReportType = 'havi' | 'afa' | 'koltseg' | 'cashflow' | 'partner' | 'hianyzo
 
 
 const reportTypes: ReportTypeConfig[] = [
-  { id: 'havi', title: 'Havi összesítő', description: 'Bejövő és kimenő számlák összesítése, ÁFA kimutatás', icon: Calendar, color: 'text-indigo-500', bg: 'bg-indigo-50 dark:bg-indigo-900/30' },
+  { id: 'havi', title: 'Havi összesítő', description: 'Bejövő és kimenő számlák összesítése, ÁFA kimutatás', icon: Calendar, color: 'text-primary', bg: 'bg-primary/10' },
   { id: 'afa', title: 'ÁFA kimutatás', description: 'Részletes ÁFA bontás kategóriánként', icon: FileText, color: 'text-primary', bg: 'bg-accent-subtle dark:bg-accent' },
   { id: 'koltseg', title: 'Költségkimutatás', description: 'Költségek főkönyvi szám és kategória szerint', icon: PieChart, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/30' },
   { id: 'cashflow', title: 'Cash flow riport', description: 'Pénzforgalom és likviditás elemzés', icon: TrendingUp, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/30' },
@@ -272,12 +273,12 @@ ThinkAI`;
 
 
   return (
-    <div className="w-full space-y-8 animate-in fade-in duration-500 relative">
+    <div className="w-full space-y-8 page-animate relative">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Riportok</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Átfogó riportok és kimutatások</p>
-      </div>
+      <PageHeader
+        title="Riportok"
+        description="Átfogó riportok és kimutatások"
+      />
 
       {/* Report Types Grid */}
       <ReportCatalog reportTypes={reportTypes} onSelect={openModal} />

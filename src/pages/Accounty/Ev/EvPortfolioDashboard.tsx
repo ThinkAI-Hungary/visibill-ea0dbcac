@@ -36,7 +36,7 @@ interface EnrichedEvClient extends AccountyClient {
 }
 
 const FORM_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  atalany: { label: 'Átalány', color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-900/30' },
+  atalany: { label: 'Átalány', color: 'text-primary', bg: 'bg-primary/10' },
   vszja:   { label: 'VSZJA', color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/30' },
   kata:    { label: 'KATA', color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/30' },
 };
@@ -54,10 +54,10 @@ const VAT_LABELS: Record<string, string> = {
 };
 
 const FILING_STATUS: Record<EvFilingStatus, { label: string; color: string; bg: string }> = {
-  not_started:   { label: 'Nincs elindítva', color: 'text-slate-500', bg: 'bg-slate-100 dark:bg-slate-800' },
+  not_started:   { label: 'Nincs elindítva', color: 'text-muted-foreground', bg: 'bg-muted' },
   data_entry:    { label: 'Adatrögzítés', color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/30' },
   cashbook_open: { label: 'Pénztárkönyv nyitott', color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/30' },
-  period_closed: { label: 'Időszak lezárva', color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-900/30' },
+  period_closed: { label: 'Időszak lezárva', color: 'text-primary', bg: 'bg-primary/10' },
   returns_ready: { label: 'Bevallás kész', color: 'text-teal-600', bg: 'bg-teal-50 dark:bg-teal-900/30' },
   submitted:     { label: 'Beküldve', color: 'text-cyan-600', bg: 'bg-cyan-50 dark:bg-cyan-900/30' },
   accepted:      { label: 'Elfogadva', color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/30' },
@@ -388,18 +388,18 @@ export default function EvPortfolioDashboard() {
   const totalRevenue = enriched.reduce((sum: number, c: EnrichedEvClient) => sum + c.ytdRevenue, 0);
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg shadow-indigo-500/25">
+          <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg shadow-lg shadow-primary/20">
             <Receipt className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+            <h1 className="text-2xl font-bold text-foreground">
               EV & Egyszeres könyvvitel
             </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+            <p className="text-sm text-muted-foreground">
               {taxYear}. adóév — egyéni vállalkozók és szervezetek
             </p>
           </div>
@@ -422,11 +422,11 @@ export default function EvPortfolioDashboard() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Összes ügyfél</p>
-          <p className="text-2xl font-bold text-indigo-600">{totalClients}</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Összes ügyfél</p>
+          <p className="text-2xl font-bold text-primary">{totalClients}</p>
           <div className="flex gap-2 mt-1.5">
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 font-medium">
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
               Á: {atalanyCount}
             </span>
             <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-violet-50 dark:bg-violet-900/30 text-violet-600 font-medium">
@@ -438,9 +438,9 @@ export default function EvPortfolioDashboard() {
           </div>
         </div>
 
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Összesített bevétel</p>
-          <p className="text-lg font-bold text-slate-900 dark:text-slate-100">
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Összesített bevétel</p>
+          <p className="text-lg font-bold text-foreground">
             {formatMillionHuf(totalRevenue)}
           </p>
           <p className="text-[10px] text-green-600 flex items-center gap-0.5 mt-1">
@@ -448,13 +448,13 @@ export default function EvPortfolioDashboard() {
           </p>
         </div>
 
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Bevallás beadva</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Bevallás beadva</p>
           <div className="flex items-end gap-2">
             <p className="text-2xl font-bold text-green-600">{submittedCount}</p>
-            <p className="text-xs text-slate-400 pb-1">/ {totalClients}</p>
+            <p className="text-xs text-muted-foreground pb-1">/ {totalClients}</p>
           </div>
-          <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full mt-2">
+          <div className="w-full h-1.5 bg-muted rounded-full mt-2">
             <div
               className="h-full bg-green-500 rounded-full transition-all"
               style={{ width: `${totalClients > 0 ? (submittedCount / totalClients) * 100 : 0}%` }}
@@ -462,9 +462,9 @@ export default function EvPortfolioDashboard() {
           </div>
         </div>
 
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Értékhatár-figyelmeztetés</p>
-          <p className={cn('text-2xl font-bold', warningCount > 0 ? 'text-amber-600' : 'text-slate-400')}>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Értékhatár-figyelmeztetés</p>
+          <p className={cn('text-2xl font-bold', warningCount > 0 ? 'text-amber-600' : 'text-muted-foreground')}>
             {warningCount}
           </p>
           {warningCount > 0 && (
@@ -474,27 +474,27 @@ export default function EvPortfolioDashboard() {
           )}
         </div>
 
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Bevallási határidő</p>
-          <p className="text-base font-bold text-slate-900 dark:text-slate-100">
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Bevallási határidő</p>
+          <p className="text-base font-bold text-foreground">
             {taxYear === 2026 ? '2027. máj. 20.' : `${taxYear + 1}. máj. 20.`}
           </p>
-          <p className="text-[10px] text-slate-400 mt-0.5">SZJA bevallás</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">SZJA bevallás</p>
         </div>
 
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Következő járulék</p>
-          <p className="text-base font-bold text-slate-900 dark:text-slate-100">
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Következő járulék</p>
+          <p className="text-base font-bold text-foreground">
             {taxYear === 2026 ? '2026. okt. 12.' : '—'}
           </p>
-          <p className="text-[10px] text-slate-400 mt-0.5">Q3 2658 határidő</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">Q3 2658 határidő</p>
         </div>
       </div>
 
       {/* Filter bar */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Keresés ügyfél neve, adószám..."
             value={searchQuery}
@@ -502,7 +502,7 @@ export default function EvPortfolioDashboard() {
             className="pl-9 bg-card border-border"
           />
         </div>
-        <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/50 rounded-lg p-0.5">
+        <div className="flex gap-1 bg-muted/50 rounded-lg p-0.5">
           {([
             ['all', 'Mind'],
             ['atalany', 'Átalány'],
@@ -517,8 +517,8 @@ export default function EvPortfolioDashboard() {
               className={cn(
                 'px-3 py-1.5 rounded-md text-xs font-medium transition-all',
                 filterMode === v
-                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-card dark:bg-muted text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground/90'
               )}
             >
               {l}
@@ -528,33 +528,33 @@ export default function EvPortfolioDashboard() {
       </div>
 
       {/* Table */}
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border dark:bg-slate-900/30">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Ügyfél</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Adózási forma</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Foglalkoztatás</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Bevétel (YTD)</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Jövedelem</th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Határ</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Státusz</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider"></th>
+              <tr className="border-b border-border dark:bg-card/30">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ügyfél</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Adózási forma</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Foglalkoztatás</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Bevétel (YTD)</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Jövedelem</th>
+                <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Határ</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Státusz</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="py-16 text-center text-sm text-slate-400">
-                    <Loader2 className="w-8 h-8 mx-auto mb-3 text-indigo-400 animate-spin" />
+                  <td colSpan={8} className="py-16 text-center text-sm text-muted-foreground">
+                    <Loader2 className="w-8 h-8 mx-auto mb-3 text-primary animate-spin" />
                     Betöltés...
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-16 text-center text-sm text-slate-400">
-                    <Receipt className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+                  <td colSpan={8} className="py-16 text-center text-sm text-muted-foreground">
+                    <Receipt className="w-10 h-10 mx-auto mb-3 text-muted-foreground/60" />
                     {enriched.length === 0 ? 'Nincs EV ügyfél rögzítve' : 'Nincs találat'}
                   </td>
                 </tr>
@@ -564,16 +564,16 @@ export default function EvPortfolioDashboard() {
                   const fs = FILING_STATUS[client.filingStatus];
                   const ts = THRESHOLD_CONFIG[client.thresholdStatus];
                   return (
-                    <tr key={client.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                    <tr key={client.id} className="hover:bg-muted/50 transition-colors group">
                       <td className="px-4 py-3">
                         <Link
                           to={`/eaisybooks/client/${client.companyId}/ev`}
-                          className="text-sm font-bold text-slate-900 dark:text-slate-100 hover:text-indigo-600 transition-colors"
+                          className="text-sm font-bold text-foreground hover:text-primary transition-colors"
                         >
                           {client.name}
                         </Link>
                         {client.taxNumber && (
-                          <p className="text-[10px] text-slate-400 font-mono">{client.taxNumber}</p>
+                          <p className="text-[10px] text-muted-foreground font-mono">{client.taxNumber}</p>
                         )}
                         {client.isOrgType && (
                           <span className="text-[9px] px-1 py-0.5 rounded bg-teal-50 dark:bg-teal-900/30 text-teal-600 font-medium">
@@ -587,22 +587,22 @@ export default function EvPortfolioDashboard() {
                             {form.label}
                           </span>
                         ) : (
-                          <span className="text-xs text-slate-400">—</span>
+                          <span className="text-xs text-muted-foreground">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-300">
+                      <td className="px-4 py-3 text-xs text-muted-foreground dark:text-foreground/90">
                         {client.employmentStatus}
-                        <p className="text-[10px] text-slate-400">{client.vatStatus}</p>
+                        <p className="text-[10px] text-muted-foreground">{client.vatStatus}</p>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <span className="text-sm font-semibold tabular-nums text-slate-700 dark:text-slate-300">
+                        <span className="text-sm font-semibold tabular-nums text-foreground/90">
                           {client.ytdRevenue > 0 ? formatMillionHuf(client.ytdRevenue) : '—'}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <span className={cn(
                           'text-sm font-semibold tabular-nums',
-                          client.ytdIncome > 0 ? 'text-green-600' : 'text-slate-400'
+                          client.ytdIncome > 0 ? 'text-green-600' : 'text-muted-foreground'
                         )}>
                           {client.ytdIncome > 0 ? formatMillionHuf(client.ytdIncome) : '—'}
                         </span>
@@ -619,7 +619,7 @@ export default function EvPortfolioDashboard() {
                             {' '}{ts.label}
                           </span>
                         ) : (
-                          <span className="text-[10px] text-slate-400">—</span>
+                          <span className="text-[10px] text-muted-foreground">—</span>
                         )}
                       </td>
                       <td className="px-4 py-3">
@@ -630,7 +630,7 @@ export default function EvPortfolioDashboard() {
                       <td className="px-4 py-3 text-right">
                         <Link
                           to={`/eaisybooks/client/${client.companyId}/ev`}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-500"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center gap-1 text-xs text-primary hover:text-primary"
                         >
                           Megnyit <ChevronRight className="w-3 h-3" />
                         </Link>
@@ -643,7 +643,7 @@ export default function EvPortfolioDashboard() {
           </table>
         </div>
         {totalPages > 1 && (
-          <div className="border-t border-border px-4 py-3 dark:bg-slate-900/30">
+          <div className="border-t border-border px-4 py-3 dark:bg-card/30">
             <UnifiedPagination
               currentPage={currentPage}
               totalPages={totalPages}

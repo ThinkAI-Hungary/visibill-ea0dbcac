@@ -25,6 +25,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { reportError } from '@/lib/errorReporter';
@@ -53,7 +54,7 @@ const categoryConfig: Record<MessageCategory, { label: string; color: string }> 
   },
   normal: {
     label: 'EGYÉB',
-    color: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700',
+    color: 'bg-muted text-muted-foreground border-border',
   },
 };
 
@@ -301,14 +302,14 @@ export default function ApprovalQueuePage() {
   };
 
   return (
-    <div className="w-full space-y-6 pb-24 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 pb-24 page-animate">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
              Jóváhagyó rendszer
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Kimenő kommunikáció áttekintése és jóváhagyása
           </p>
         </div>
@@ -318,14 +319,14 @@ export default function ApprovalQueuePage() {
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           {/* Tabs */}
-          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+          <div className="flex bg-muted p-1 rounded-lg">
             <button
               onClick={() => { setActiveTab('pending'); setSelectedIds(new Set()); }}
               className={cn(
                 'flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all',
                 activeTab === 'pending'
-                  ? 'bg-card text-slate-900 dark:text-slate-100 shadow-soft'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                  ? 'bg-card text-foreground shadow-soft'
+                  : 'text-muted-foreground hover:text-foreground/90 dark:hover:text-foreground'
               )}
             >
               <Clock className="w-4 h-4" />
@@ -341,8 +342,8 @@ export default function ApprovalQueuePage() {
               className={cn(
                 'flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all',
                 activeTab === 'history'
-                  ? 'bg-card text-slate-900 dark:text-slate-100 shadow-soft'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                  ? 'bg-card text-foreground shadow-soft'
+                  : 'text-muted-foreground hover:text-foreground/90 dark:hover:text-foreground'
               )}
             >
               <RotateCcw className="w-4 h-4" />
@@ -351,14 +352,14 @@ export default function ApprovalQueuePage() {
           </div>
 
           {/* View Toggle */}
-          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+          <div className="flex bg-muted p-1 rounded-lg">
             <button
               onClick={() => setViewMode('grid')}
               className={cn(
                 'p-2 rounded-md transition-all',
                 viewMode === 'grid'
-                  ? 'bg-card text-slate-900 dark:text-slate-100 shadow-soft'
-                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                  ? 'bg-card text-foreground shadow-soft'
+                  : 'text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground/60'
               )}
             >
               <LayoutGrid className="w-4 h-4" />
@@ -368,8 +369,8 @@ export default function ApprovalQueuePage() {
               className={cn(
                 'p-2 rounded-md transition-all',
                 viewMode === 'list'
-                  ? 'bg-card text-slate-900 dark:text-slate-100 shadow-soft'
-                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                  ? 'bg-card text-foreground shadow-soft'
+                  : 'text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground/60'
               )}
             >
               <List className="w-4 h-4" />
@@ -380,12 +381,11 @@ export default function ApprovalQueuePage() {
         {/* Search + Filter */}
         <div className="flex items-center gap-3 w-full md:w-auto">
           {activeTab === 'pending' && filteredMessages.length > 0 && (
-            <label className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 cursor-pointer select-none">
-              <input
-                type="checkbox"
+            <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+              <Checkbox
                 checked={selectedIds.size === filteredMessages.length && filteredMessages.length > 0}
-                onChange={handleSelectAll}
-                className="rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                onCheckedChange={handleSelectAll}
+                className="cursor-pointer"
               />
               Mind
             </label>
@@ -393,7 +393,7 @@ export default function ApprovalQueuePage() {
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value as typeof categoryFilter)}
-            className="px-3 py-2 bg-card border border-border rounded-lg text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-soft cursor-pointer"
+            className="px-3 py-2 bg-card border border-border rounded-lg text-sm text-foreground/90 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-soft cursor-pointer"
           >
             <option value="all">Összes kategória</option>
             <option value="urgent">Sürgős</option>
@@ -401,7 +401,7 @@ export default function ApprovalQueuePage() {
             <option value="normal">Egyéb</option>
           </select>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Keresés..."
@@ -414,20 +414,20 @@ export default function ApprovalQueuePage() {
       </div>
 
       {/* Counter */}
-      <div className="text-xs text-slate-400 dark:text-slate-500">
+      <div className="text-xs text-muted-foreground">
         {filteredMessages.length} megjelenítve
       </div>
 
       {/* Empty State */}
       {filteredMessages.length === 0 && (
-        <div className="bg-card border border-border rounded-xl shadow-soft p-16 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 mx-auto flex items-center justify-center mb-4">
-            <Mail className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+        <div className="bg-card border border-border rounded-lg shadow-soft p-16 text-center">
+          <div className="w-16 h-16 rounded-lg bg-muted mx-auto flex items-center justify-center mb-4">
+            <Mail className="w-8 h-8 text-muted-foreground/60" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-lg font-semibold text-foreground mb-2">
             {activeTab === 'pending' ? 'Nincs várakozó üzenet' : 'Nincsenek előzmények'}
           </h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+          <p className="text-sm text-muted-foreground max-w-sm mx-auto">
             {activeTab === 'pending'
               ? 'Amikor „Bekérés küldése" gombra kattintasz egy hiányzó számlánál, az üzenet ide kerül jóváhagyásra.'
               : 'A jóváhagyott és elutasított üzenetek itt jelennek majd meg.'}
@@ -445,10 +445,10 @@ export default function ApprovalQueuePage() {
               <div
                 key={message.id}
                 className={cn(
-                  'bg-card border rounded-xl shadow-soft overflow-hidden transition-all duration-200 cursor-pointer hover:shadow-md hover:-translate-y-0.5 group relative',
+                  'bg-card border rounded-lg shadow-soft overflow-hidden transition-all duration-200 cursor-pointer hover:shadow-md hover:-translate-y-0.5 group relative',
                   isSelected
                     ? 'border-primary ring-2 ring-primary/20'
-                    : 'border-border hover:border-slate-300 dark:hover:border-slate-600'
+                    : 'border-border hover:border-border dark:hover:border-slate-600'
                 )}
                 onClick={() => handleOpenApproval(message)}
               >
@@ -457,18 +457,15 @@ export default function ApprovalQueuePage() {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       {activeTab === 'pending' && (
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            toggleSelect(message.id);
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                          className="rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
-                        />
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleSelect(message.id)}
+                            className="cursor-pointer"
+                          />
+                        </div>
                       )}
-                      <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                         <Mail className="w-3.5 h-3.5" />
                         Email
                       </div>
@@ -479,7 +476,7 @@ export default function ApprovalQueuePage() {
                   </div>
 
                   {/* Client name */}
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-1 truncate">
+                  <h3 className="text-sm font-bold text-foreground mb-1 truncate">
                     {message.companyName}
                   </h3>
                   <p className="text-xs text-primary font-medium truncate mb-3">
@@ -487,15 +484,15 @@ export default function ApprovalQueuePage() {
                   </p>
 
                   {/* Message preview */}
-                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-3 leading-relaxed min-h-[3.6em]">
+                  <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed min-h-[3.6em]">
                     {message.aiGeneratedBody.substring(0, 150)}...
                   </p>
                 </div>
 
                 {/* Footer */}
-                <div className="px-4 py-3 dark:bg-slate-900/50 border-t border-border flex items-center justify-between">
+                <div className="px-4 py-3 dark:bg-card/50 border-t border-border flex items-center justify-between">
                   {activeTab === 'pending' ? (
-                    <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <Clock className="w-3 h-3" />
                       {formatDate(message.createdAt)}
                     </div>
@@ -514,7 +511,7 @@ export default function ApprovalQueuePage() {
                     </div>
                   )}
                   {activeTab === 'history' && (
-                    <div className="text-xs text-slate-400 dark:text-slate-500">
+                    <div className="text-xs text-muted-foreground">
                       {formatDate(message.approvedAt || message.rejectedAt || message.createdAt)}
                     </div>
                   )}
@@ -527,32 +524,31 @@ export default function ApprovalQueuePage() {
 
       {/* List View */}
       {filteredMessages.length > 0 && viewMode === 'list' && (
-        <div className="bg-card border border-border rounded-xl shadow-soft overflow-hidden">
+        <div className="bg-card border border-border rounded-lg shadow-soft overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-border dark:bg-slate-900/50">
+                <tr className="border-b border-border dark:bg-card/50">
                   {activeTab === 'pending' && (
                     <th className="py-4 px-4 w-12">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={selectedIds.size === filteredMessages.length && filteredMessages.length > 0}
-                        onChange={handleSelectAll}
-                        className="rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                        onCheckedChange={handleSelectAll}
+                        className="cursor-pointer"
                       />
                     </th>
                   )}
-                  <th className="py-4 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Csatorna</th>
-                  <th className="py-4 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Ügyfél</th>
-                  <th className="py-4 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tárgy</th>
-                  <th className="py-4 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Kategória</th>
-                  <th className="py-4 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Csatorna</th>
+                  <th className="py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ügyfél</th>
+                  <th className="py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tárgy</th>
+                  <th className="py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Kategória</th>
+                  <th className="py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     {activeTab === 'pending' ? 'Létrehozva' : 'Státusz'}
                   </th>
                   <th className="py-4 px-4 w-12"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-border">
                 {paginatedMessages.map((message) => {
                   const cat = categoryConfig[message.category];
                   const isSelected = selectedIds.has(message.id);
@@ -560,32 +556,31 @@ export default function ApprovalQueuePage() {
                     <tr
                       key={message.id}
                       className={cn(
-                        'hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors cursor-pointer',
-                        isSelected && 'bg-slate-50 dark:bg-slate-800/30'
+                        'hover:bg-muted/40/80 dark:hover:bg-muted/50/50 transition-colors cursor-pointer',
+                        isSelected && 'bg-muted/30'
                       )}
                       onClick={() => handleOpenApproval(message)}
                     >
                       {activeTab === 'pending' && (
                         <td className="py-4 px-4" onClick={(e) => e.stopPropagation()}>
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             checked={isSelected}
-                            onChange={() => toggleSelect(message.id)}
-                            className="rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                            onCheckedChange={() => toggleSelect(message.id)}
+                            className="cursor-pointer"
                           />
                         </td>
                       )}
                       <td className="py-4 px-4">
-                        <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                           <Mail className="w-3.5 h-3.5" />
                           Email
                         </div>
                       </td>
                       <td className="py-4 px-4">
-                        <div className="font-semibold text-slate-900 dark:text-slate-100 text-sm">{message.companyName}</div>
+                        <div className="font-semibold text-foreground text-sm">{message.companyName}</div>
                         <div className="text-xs text-primary font-medium">{message.contactEmail}</div>
                       </td>
-                      <td className="py-4 px-4 text-sm text-slate-600 dark:text-slate-400 max-w-xs truncate">{message.subject}</td>
+                      <td className="py-4 px-4 text-sm text-muted-foreground max-w-xs truncate">{message.subject}</td>
                       <td className="py-4 px-4">
                         <span className={cn('px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border', cat.color)}>
                           {cat.label}
@@ -593,7 +588,7 @@ export default function ApprovalQueuePage() {
                       </td>
                       <td className="py-4 px-4">
                         {activeTab === 'pending' ? (
-                          <span className="text-xs text-slate-500 dark:text-slate-400">{formatDate(message.createdAt)}</span>
+                          <span className="text-xs text-muted-foreground">{formatDate(message.createdAt)}</span>
                         ) : (
                           (() => {
                             const sc = statusConfig[message.status];
@@ -611,7 +606,7 @@ export default function ApprovalQueuePage() {
                             e.stopPropagation();
                             handleOpenApproval(message);
                           }}
-                          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+                          className="text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground/60 p-1.5 rounded-md hover:bg-muted transition-all"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
@@ -626,7 +621,7 @@ export default function ApprovalQueuePage() {
       )}
 
       {totalPages > 1 && (
-        <div className="bg-card border border-border rounded-xl p-4 shadow-soft">
+        <div className="bg-card border border-border rounded-lg p-4 shadow-soft">
           <UnifiedPagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -641,15 +636,15 @@ export default function ApprovalQueuePage() {
 
       {/* Floating Action Bar (bulk actions) */}
       {selectedIds.size > 0 && activeTab === 'pending' && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-full max-w-3xl bg-slate-100/95 dark:bg-slate-800/95 backdrop-blur-sm border border-slate-200 dark:border-slate-700 p-4 rounded-2xl shadow-xl flex items-center justify-between animate-in slide-in-from-bottom-10 fade-in duration-300 z-50">
-          <div className="text-sm font-semibold text-slate-700 dark:text-slate-300 pl-2">
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-full max-w-3xl bg-muted/95 dark:bg-muted/95 backdrop-blur-sm border border-border p-4 rounded-lg shadow-xl flex items-center justify-between animate-in slide-in-from-bottom-10 fade-in duration-300 z-50">
+          <div className="text-sm font-semibold text-foreground/90 pl-2">
             {selectedIds.size} kijelölve
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={handleBulkApprove}
               disabled={isSending}
-              className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-medium shadow-soft transition-colors"
+              className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium shadow-soft transition-colors"
             >
               {isSending ? (
                 <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Küldés...</>
@@ -659,7 +654,7 @@ export default function ApprovalQueuePage() {
             </button>
             <button
               onClick={handleBulkReject}
-              className="flex items-center gap-2 px-5 py-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 text-red-600 dark:text-red-400 rounded-xl text-sm font-medium shadow-soft hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
+              className="flex items-center gap-2 px-5 py-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 text-red-600 dark:text-red-400 rounded-lg text-sm font-medium shadow-soft hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
             >
               <XCircle className="w-4 h-4" />
               Elutasítás
@@ -674,21 +669,21 @@ export default function ApprovalQueuePage() {
           {selectedMessage && (
             <>
               <DialogHeader className="px-6 py-4 border-b border-border">
-                <DialogTitle className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                <DialogTitle className="text-lg font-bold text-foreground">
                   Üzenet jóváhagyása
                 </DialogTitle>
               </DialogHeader>
 
               <div className="px-6 py-5 space-y-5 max-h-[60vh] overflow-y-auto">
                 {/* Original Context */}
-                <div className="bg-amber-50/80 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl p-4">
+                <div className="bg-amber-50/80 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-lg p-4">
                   <p className="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-2">
                     Eredeti üzenet / Kontextus:
                   </p>
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                  <p className="text-sm font-medium text-foreground">
                     {selectedMessage.originalContext}
                   </p>
-                  <div className="flex items-center gap-4 mt-3 text-xs text-slate-500 dark:text-slate-400">
+                  <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
                     <span> {selectedMessage.companyName}</span>
                   </div>
                 </div>
@@ -696,14 +691,14 @@ export default function ApprovalQueuePage() {
                 {/* Editable Recipient */}
                 {selectedMessage.status === 'pending' && (
                   <div>
-                    <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
                       Címzett email:
                     </p>
                     <input
                       type="email"
                       value={editedRecipient}
                       onChange={(e) => setEditedRecipient(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-card border border-border rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      className="w-full px-4 py-2.5 bg-card border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                       placeholder="email@example.com"
                     />
                     {editedRecipient !== selectedMessage.contactEmail && (
@@ -719,9 +714,9 @@ export default function ApprovalQueuePage() {
                   <p className="text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wider mb-2">
                     AI által generált válasz piszkozata:
                   </p>
-                  <div className="border border-border rounded-xl overflow-hidden">
-                    <div className="bg-slate-50 dark:bg-slate-900/50 px-4 py-2 border-b border-border">
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                  <div className="border border-border rounded-lg overflow-hidden">
+                    <div className="bg-background/50 px-4 py-2 border-b border-border">
+                      <p className="text-xs text-muted-foreground">
                         <span className="font-medium">Tárgy:</span> {selectedMessage.subject}
                       </p>
                     </div>
@@ -729,11 +724,11 @@ export default function ApprovalQueuePage() {
                       <textarea
                         value={editedBody}
                         onChange={(e) => setEditedBody(e.target.value)}
-                        className="w-full px-4 py-3 bg-card text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none min-h-[250px] font-mono leading-relaxed"
+                        className="w-full px-4 py-3 bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none min-h-[250px] font-mono leading-relaxed"
                         placeholder="Email szöveg..."
                       />
                     ) : (
-                      <div className="px-4 py-3 bg-card text-sm text-slate-900 dark:text-slate-100 whitespace-pre-wrap font-mono leading-relaxed min-h-[200px]">
+                      <div className="px-4 py-3 bg-card text-sm text-foreground whitespace-pre-wrap font-mono leading-relaxed min-h-[200px]">
                         {selectedMessage.aiGeneratedBody}
                       </div>
                     )}
@@ -742,9 +737,9 @@ export default function ApprovalQueuePage() {
 
                 {/* Portal Link */}
                 {selectedMessage.portalLink && (
-                  <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-border">
+                  <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border border-border">
                     <ExternalLink className="w-4 h-4 text-primary shrink-0" />
-                    <span className="text-xs text-slate-500 dark:text-slate-400">Magic Link:</span>
+                    <span className="text-xs text-muted-foreground">Magic Link:</span>
                     <a href={selectedMessage.portalLink} target="_blank" rel="noopener noreferrer" className="text-xs text-primary font-mono truncate flex-1 hover:underline cursor-pointer">{selectedMessage.portalLink}</a>
                   </div>
                 )}
@@ -752,17 +747,17 @@ export default function ApprovalQueuePage() {
 
               {/* Footer Actions */}
               {selectedMessage.status === 'pending' ? (
-                <div className="px-6 py-4 bg-slate-50/80 dark:bg-slate-800/80 border-t border-border flex items-center justify-between">
+                <div className="px-6 py-4 bg-muted/40/80 dark:bg-muted/80 border-t border-border flex items-center justify-between">
                   <button
                     onClick={handleReject}
-                    className="px-4 py-2.5 bg-card border border-border text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors shadow-soft"
+                    className="px-4 py-2.5 bg-card border border-border text-foreground/90 rounded-lg text-sm font-medium hover:bg-muted/50 transition-colors shadow-soft"
                   >
                     Elutasítás
                   </button>
                   <button
                     onClick={handleApprove}
                     disabled={isSending}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition-colors shadow-soft"
+                    className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-semibold transition-colors shadow-soft"
                   >
                     {isSending ? (
                       <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Küldés...</>
@@ -772,10 +767,10 @@ export default function ApprovalQueuePage() {
                   </button>
                 </div>
               ) : (
-                <div className="px-6 py-4 bg-slate-50/80 dark:bg-slate-800/80 border-t border-border flex items-center justify-end">
+                <div className="px-6 py-4 bg-muted/40/80 dark:bg-muted/80 border-t border-border flex items-center justify-end">
                   <button
                     onClick={() => setIsApprovalModalOpen(false)}
-                    className="px-4 py-2.5 bg-card border border-border text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors shadow-soft"
+                    className="px-4 py-2.5 bg-card border border-border text-foreground/90 rounded-lg text-sm font-medium hover:bg-muted/50 transition-colors shadow-soft"
                   >
                     Bezárás
                   </button>

@@ -67,15 +67,15 @@ export function ExportButton({
         <ChevronDown className={cn('w-3 h-3 transition-transform', open && 'rotate-180')} />
       </Button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[180px] animate-in fade-in slide-in-from-top-1 duration-150">
+        <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[180px] page-animate slide-in-from-top-1 duration-150">
           <button
             onClick={() => handleExport('xlsx')}
             className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors text-left"
           >
             <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
             <div>
-              <p className="font-medium text-slate-900 dark:text-slate-100">Excel (.xlsx)</p>
-              <p className="text-[10px] text-slate-400">Microsoft Excel formátum</p>
+              <p className="font-medium text-foreground">Excel (.xlsx)</p>
+              <p className="text-[10px] text-muted-foreground">Microsoft Excel formátum</p>
             </div>
           </button>
           <div className="border-t border-border" />
@@ -85,8 +85,8 @@ export function ExportButton({
           >
             <FileText className="w-4 h-4 text-blue-600" />
             <div>
-              <p className="font-medium text-slate-900 dark:text-slate-100">CSV (.csv)</p>
-              <p className="text-[10px] text-slate-400">Szöveges, pontosvesszővel tagolt</p>
+              <p className="font-medium text-foreground">CSV (.csv)</p>
+              <p className="text-[10px] text-muted-foreground">Szöveges, pontosvesszővel tagolt</p>
             </div>
           </button>
           <div className="border-t border-border" />
@@ -96,8 +96,8 @@ export function ExportButton({
           >
             <FileDown className="w-4 h-4 text-red-600" />
             <div>
-              <p className="font-medium text-slate-900 dark:text-slate-100">PDF (.pdf)</p>
-              <p className="text-[10px] text-slate-400">Nyomtatható dokumentum</p>
+              <p className="font-medium text-foreground">PDF (.pdf)</p>
+              <p className="text-[10px] text-muted-foreground">Nyomtatható dokumentum</p>
             </div>
           </button>
         </div>

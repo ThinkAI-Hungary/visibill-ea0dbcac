@@ -3,6 +3,8 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, ChevronDown, RefreshCcw, Upload, Search, MoreVertical, Cloud, Clock, Calendar, Download, Settings, Check, ShieldAlert, Loader2, FileText, Coins, Percent, ArrowLeftRight, Trash2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCompanyInvoices, type CompanyInvoice } from '@/hooks/accounty';
@@ -21,6 +23,7 @@ import { InvoiceApprovalDialog } from '@/features/invoices/components/dialogs/In
 import { exportToRLB60, exportToKulcsSoft, exportToNovitax } from '@/lib/bookkeepingExports';
 import { TAccountLedger } from '@/components/accounty/invoices/TAccountLedger';
 import { createPortal } from 'react-dom';
+import { PageHeader } from '@/components/ui/page-header';
 
 export default function ClientInvoicesPage() {
   const navigate = useNavigate();
@@ -352,30 +355,17 @@ export default function ClientInvoicesPage() {
   const fadCount = filteredInvoices.filter(inv => inv.isReverseCharge).length;
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500 pb-12">
+    <div className="w-full space-y-6 page-animate pb-12">
       {/* Header */}
-      <div className="flex justify-between items-start">
-        <div className="flex items-start gap-4">
-          <button 
-            onClick={() => navigate(`/eaisybooks/${companyId}/${dateRange}/overview`)}
-            className="flex items-center justify-center w-8 h-8 mt-1 shrink-0 rounded-lg border border-border bg-card text-foreground hover:bg-accent transition-colors shadow-sm"
-            title="Vissza az áttekintéshez"
-          >
-            <ChevronLeft className="w-5 h-5 text-muted-foreground" />
-          </button>
-          <div>
-            <div className="flex items-center gap-1.5 mb-1">
-              {clientLoading ? (
-                <div className="h-3.5 w-24 bg-muted rounded animate-pulse" />
-              ) : (
-                <span className="text-xs font-semibold text-muted-foreground">{client.name}</span>
-              )}
-            </div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Számlák</h1>
-          </div>
-        </div>
-
-        <div className="flex gap-3">
+      <PageHeader
+        title="Számlák"
+        breadcrumbs={[
+          { label: 'eaisyBooks', href: '/eaisybooks' },
+          { label: client.name || 'Ügyfél', href: `/eaisybooks/${companyId}/${dateRange}/overview` },
+          { label: 'Számlák' },
+        ]}
+        actions={
+          <div className="flex items-center gap-3">
           <Dialog open={isNavSyncOpen} onOpenChange={setIsNavSyncOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2 bg-card border-border text-foreground hover:bg-accent">
@@ -393,7 +383,7 @@ export default function ClientInvoicesPage() {
                 </DialogHeader>
 
                 {/* Status Box */}
-                <div className="bg-muted/10 border border-border rounded-xl p-4 mb-6">
+                <div className="bg-muted/10 border border-border rounded-lg p-4 mb-6">
                   <div className="flex justify-between items-center mb-3">
                     <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                       <Clock className="w-4 h-4 text-muted-foreground/60" />
@@ -414,20 +404,22 @@ export default function ClientInvoicesPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-muted-foreground">Kezdő dátum</label>
-                      <Input
-                        type="date"
+                      <DatePicker
                         value={syncDateFrom}
-                        onChange={(e) => setSyncDateFrom(e.target.value)}
-                        className="bg-card border-border"
+                        onChange={setSyncDateFrom}
+                        placeholder="éééé. hh. nn."
+                        clearable
+                        className="bg-card border-border w-full"
                       />
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-muted-foreground">Záró dátum</label>
-                      <Input
-                        type="date"
+                      <DatePicker
                         value={syncDateTo}
-                        onChange={(e) => setSyncDateTo(e.target.value)}
-                        className="bg-card border-border"
+                        onChange={setSyncDateTo}
+                        placeholder="éééé. hh. nn."
+                        clearable
+                        className="bg-card border-border w-full"
                       />
                     </div>
                   </div>
@@ -573,7 +565,7 @@ export default function ClientInvoicesPage() {
               </DialogHeader>
 
               {/* Drag & Drop Area */}
-              <div className="border border-dashed border-border rounded-xl p-8 flex flex-col items-center justify-center bg-muted/5 mt-2 mb-6">
+              <div className="border border-dashed border-border rounded-lg p-8 flex flex-col items-center justify-center bg-muted/5 mt-2 mb-6">
                 <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4">
                   <Cloud className="w-5 h-5 text-muted-foreground" />
                 </div>
@@ -614,11 +606,12 @@ export default function ClientInvoicesPage() {
               </div>
             </DialogContent>
           </Dialog>
-        </div>
-      </div>
+          </div>
+        }
+      />
 
       {/* Main Content Area */}
-      <div className="bg-card border border-border rounded-xl shadow-soft overflow-hidden flex flex-col">
+      <div className="bg-card border border-border rounded-lg shadow-soft overflow-hidden flex flex-col">
         {/* Toolbar */}
         <div className="p-4 border-b border-border flex justify-between items-center bg-card">
           <div className="w-96 relative">
@@ -713,7 +706,7 @@ export default function ClientInvoicesPage() {
         {/* Summary Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border-b border-border bg-muted/5">
           {/* Card 1: Számlák száma */}
-          <div className="bg-card border border-border/60 rounded-xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+          <div className="bg-card border border-border/60 rounded-lg p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
             <div className="bg-primary/10 text-primary p-2.5 rounded-lg shrink-0">
               <FileText className="w-5 h-5" />
             </div>
@@ -726,7 +719,7 @@ export default function ClientInvoicesPage() {
           </div>
 
           {/* Card 2: Bruttó összesen */}
-          <div className="bg-card border border-border/60 rounded-xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+          <div className="bg-card border border-border/60 rounded-lg p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
             <div className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-500 p-2.5 rounded-lg shrink-0">
               <Coins className="w-5 h-5" />
             </div>
@@ -741,7 +734,7 @@ export default function ClientInvoicesPage() {
           </div>
 
           {/* Card 3: ÁFA összesen */}
-          <div className="bg-card border border-border/60 rounded-xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+          <div className="bg-card border border-border/60 rounded-lg p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
             <div className="bg-violet-500/10 text-violet-600 dark:text-violet-500 p-2.5 rounded-lg shrink-0">
               <Percent className="w-5 h-5" />
             </div>
@@ -756,7 +749,7 @@ export default function ClientInvoicesPage() {
           </div>
 
           {/* Card 4: Fordított adózás (FAD) */}
-          <div className="bg-card border border-border/60 rounded-xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+          <div className="bg-card border border-border/60 rounded-lg p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
             <div className={cn(
               "p-2.5 rounded-lg shrink-0 transition-colors",
               fadCount > 0 ? "bg-amber-500/10 text-amber-600 dark:text-amber-500" : "bg-muted text-muted-foreground"
@@ -788,11 +781,10 @@ export default function ClientInvoicesPage() {
             <thead className="bg-muted/50 border-b border-border text-muted-foreground font-semibold text-xs">
               <tr>
                 <th className="px-6 py-4 w-12 text-center font-semibold">
-                  <input 
-                    type="checkbox" 
-                    className="rounded border-border w-4 h-4 accent-primary cursor-pointer" 
+                  <Checkbox 
+                    className="cursor-pointer" 
                     checked={isAllPageSelected}
-                    onChange={(e) => handleSelectAllPage(e.target.checked)}
+                    onCheckedChange={(checked) => handleSelectAllPage(!!checked)}
                   />
                 </th>
                 <th className="px-6 py-4 font-semibold">Számla sorszám</th>
@@ -818,11 +810,10 @@ export default function ClientInvoicesPage() {
                 paginatedInvoices.map((inv) => (
                   <tr key={inv.id} className="hover:bg-accent/50 transition-colors group">
                     <td className="px-6 py-4 text-center">
-                      <input 
-                        type="checkbox" 
-                        className="rounded border-border w-4 h-4 accent-primary cursor-pointer" 
+                      <Checkbox 
+                        className="cursor-pointer" 
                         checked={selectedInvoiceIds.has(inv.id)}
-                        onChange={(e) => handleRowSelect(inv.id, e.target.checked)}
+                        onCheckedChange={(checked) => handleRowSelect(inv.id, !!checked)}
                       />
                     </td>
                     <td className="px-6 py-4 font-medium font-mono text-foreground">
@@ -1057,7 +1048,7 @@ export default function ClientInvoicesPage() {
         <DialogContent className="sm:max-w-[700px] p-6 bg-card border-border">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold text-foreground flex items-center gap-2">
-              <ArrowLeftRight className="w-5 h-5 text-indigo-500" />
+              <ArrowLeftRight className="w-5 h-5 text-primary" />
               Számla főkönyvi tételei – {selectedLedgerInvoice?.invoiceNumber}
             </DialogTitle>
           </DialogHeader>
@@ -1068,7 +1059,7 @@ export default function ClientInvoicesPage() {
       </Dialog>
 
       {selectedInvoiceIds.size > 0 && createPortal(
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-4xl bg-card border border-primary/30 shadow-2xl rounded-2xl px-6 py-4 flex items-center justify-between z-[9999] animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-4xl bg-card border border-primary/30 shadow-2xl rounded-lg px-6 py-4 flex items-center justify-between z-[9999] page-animate slide-in-from-bottom-4 duration-300">
           <div className="flex items-center gap-3">
             <div className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
             <p className="text-sm font-semibold text-foreground">
@@ -1096,7 +1087,7 @@ export default function ClientInvoicesPage() {
           
           <div className="flex items-center gap-2">
             <Select onValueChange={(val) => handleBulkStatusChange(val)}>
-              <SelectTrigger className="h-9 text-xs w-[220px] shrink-0 bg-background/50 border-border/60 rounded-xl">
+              <SelectTrigger className="h-9 text-xs w-[220px] shrink-0 bg-background/50 border-border/60 rounded-lg">
                 <SelectValue placeholder="Státusz módosítása..." />
               </SelectTrigger>
               <SelectContent className="bg-card border-border w-[220px] z-[10000]" sideOffset={6}>
@@ -1110,7 +1101,7 @@ export default function ClientInvoicesPage() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9 text-xs gap-1.5 rounded-xl border-border/60 bg-background/50 shrink-0">
+                <Button variant="outline" size="sm" className="h-9 text-xs gap-1.5 rounded-lg border-border/60 bg-background/50 shrink-0">
                   <Download className="w-3.5 h-3.5" /> Exportálás <ChevronDown className="w-3 h-3" />
                 </Button>
               </DropdownMenuTrigger>
@@ -1155,7 +1146,7 @@ export default function ClientInvoicesPage() {
               <Button
                 variant="destructive"
                 size="sm"
-                className="h-9 text-xs gap-1.5 rounded-xl font-semibold shrink-0"
+                className="h-9 text-xs gap-1.5 rounded-lg font-semibold shrink-0"
                 onClick={() => setBulkDeleteDialogOpen(true)}
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -1167,7 +1158,7 @@ export default function ClientInvoicesPage() {
             <Button
               variant="ghost"
               size="sm"
-              className="h-9 text-xs text-muted-foreground hover:text-foreground rounded-xl shrink-0"
+              className="h-9 text-xs text-muted-foreground hover:text-foreground rounded-lg shrink-0"
               onClick={() => setSelectedInvoiceIds(new Set())}
             >
               Mégse

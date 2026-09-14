@@ -74,10 +74,10 @@ export default function YearEndDashboardPage() {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full max-w-5xl mx-auto space-y-6 page-animate">
       <div className="flex items-center gap-3">
         <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
-        <div className="p-2.5 bg-gradient-to-br from-amber-500 to-red-500 rounded-xl shadow-lg shadow-amber-500/25"><Star className="w-5 h-5 text-white" /></div>
+        <div className="p-2.5 bg-gradient-to-br from-amber-500 to-red-500 rounded-lg shadow-lg shadow-amber-500/25"><Star className="w-5 h-5 text-white" /></div>
         <div>
           <h1 className="text-2xl font-bold">Év végi feladatok — {currentYear}</h1>
           <p className="text-sm text-muted-foreground">Bérszámfejtési éves zárás teendők és határidők</p>
@@ -98,8 +98,8 @@ export default function YearEndDashboardPage() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-6 animate-in fade-in duration-300">
-          <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+        <div className="space-y-6 page-animate">
+          <div className="bg-card rounded-lg border border-border p-6 space-y-4">
             <div className="flex items-center justify-between">
               <Skeleton className="h-4 w-32 bg-muted/50" />
               <Skeleton className="h-4 w-28 bg-muted/50" />
@@ -116,8 +116,8 @@ export default function YearEndDashboardPage() {
           </div>
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="bg-card rounded-xl border border-border p-4 flex items-center gap-4">
-                <Skeleton className="w-10 h-10 rounded-xl bg-muted/50 shrink-0" />
+              <div key={i} className="bg-card rounded-lg border border-border p-4 flex items-center gap-4">
+                <Skeleton className="w-10 h-10 rounded-lg bg-muted/50 shrink-0" />
                 <div className="flex-1 space-y-2">
                   <Skeleton className="h-4 w-48 bg-muted/50" />
                   <Skeleton className="h-3 w-64 bg-muted/50" />
@@ -131,7 +131,7 @@ export default function YearEndDashboardPage() {
           </div>
         </div>
       ) : taskList.length === 0 ? (
-        <div className="bg-card rounded-xl border border-border p-12 text-center space-y-3">
+        <div className="bg-card rounded-lg border border-border p-12 text-center space-y-3">
           <Database className="w-10 h-10 mx-auto text-muted-foreground/30" />
           <p className="text-sm text-muted-foreground">Nincsenek évzárási feladatok rögzítve erre az évre.</p>
           <Button onClick={handleSeed} disabled={seedMut.isPending} className="gap-1.5">
@@ -142,7 +142,7 @@ export default function YearEndDashboardPage() {
       ) : (
         <>
           {/* Progress */}
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-500/10 dark:to-orange-500/10 rounded-xl border border-amber-200 dark:border-amber-500/20 p-6">
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-500/10 dark:to-orange-500/10 rounded-lg border border-amber-200 dark:border-amber-500/20 p-6">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-amber-800 dark:text-amber-300">Éves zárás haladás</h3>
               <span className="text-sm font-bold">{progress}% ({doneChecks}/{totalChecks} feladat)</span>
@@ -167,9 +167,9 @@ export default function YearEndDashboardPage() {
               const IconComp = ICON_MAP[task.iconName] || FileText;
 
               return (
-                <div key={task.id} className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+                <div key={task.id} className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
                   <button onClick={() => setExpandedTask(isExpanded ? null : task.id)} className="w-full flex items-center gap-4 px-5 py-4 hover:bg-accent/50 transition-colors text-left">
-                    <div className={cn('w-10 h-10 rounded-xl bg-gradient-to-br text-white flex items-center justify-center shrink-0', task.color)}>
+                    <div className={cn('w-10 h-10 rounded-lg bg-gradient-to-br text-white flex items-center justify-center shrink-0', task.color)}>
                       <IconComp className="w-5 h-5" />
                     </div>
                     <div className="flex-1 min-w-0">

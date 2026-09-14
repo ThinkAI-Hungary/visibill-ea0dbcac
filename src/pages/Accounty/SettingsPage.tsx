@@ -228,11 +228,11 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Beállítások</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Könyvelő iroda beállítások és preferenciák</p>
+        <h1 className="text-2xl font-bold text-foreground tracking-tight">Beállítások</h1>
+        <p className="text-sm text-muted-foreground mt-1">Könyvelő iroda beállítások és preferenciák</p>
       </div>
 
       <div className="flex gap-6">
@@ -243,10 +243,10 @@ export default function SettingsPage() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all",
+                "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all",
                 activeTab === tab.id
                   ? "bg-primary/15 text-primary shadow-soft border border-primary/20"
-                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50"
+                  : "text-muted-foreground hover:bg-muted/50"
               )}
             >
               <tab.icon className="w-4 h-4" />
@@ -256,7 +256,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Right: Content */}
-        <div className="flex-1 bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+        <div className="flex-1 bg-card rounded-lg border border-border shadow-soft overflow-hidden">
           {activeTab === 'general' && (
             <GeneralSettingsTab
               officeName={officeName} setOfficeName={setOfficeName}
@@ -316,7 +316,7 @@ export default function SettingsPage() {
           )}
 
           {/* Save button */}
-          <div className="p-4 border-t border-border dark:bg-slate-900/50 flex justify-end">
+          <div className="p-4 border-t border-border dark:bg-card/50 flex justify-end">
             <Button
               onClick={handleSave}
               disabled={saving}

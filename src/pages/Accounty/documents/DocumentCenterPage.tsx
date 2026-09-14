@@ -20,7 +20,7 @@ const DOC_CATEGORIES = [
   { id: 'cash', title: 'Készpénzes kifizetési lista', icon: FileSpreadsheet, color: 'from-amber-500 to-orange-500', route: 'cash' },
   { id: 'garnishment', title: 'Letiltások jegyzéke', icon: AlertTriangle, color: 'from-red-500 to-pink-500', route: 'garnishment' },
   { id: 'cafeteria', title: 'Cafeteria feltöltési fájlok', icon: Archive, color: 'from-violet-500 to-purple-500', route: 'cafeteria' },
-  { id: 'summary', title: 'Munkáltatói összesítő', icon: Users, color: 'from-slate-500 to-slate-600', route: 'summary' },
+  { id: 'summary', title: 'Munkáltatói összesítő', icon: Users, color: 'from-muted-foreground/80 to-muted-foreground', route: 'summary' },
   { id: 'certificate', title: 'Igazolások', icon: Folder, color: 'from-green-500 to-emerald-500', route: 'certificates' },
 ];
 
@@ -44,18 +44,18 @@ export default function DocumentCenterPage() {
   const STATUS_BADGE: Record<string, { label: string; color: string; icon: React.ElementType }> = {
     ready: { label: 'Kész', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400', icon: CheckCircle },
     generating: { label: 'Generálás...', color: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400', icon: RefreshCw },
-    pending: { label: 'Üres', color: 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400', icon: Clock },
+    pending: { label: 'Üres', color: 'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground', icon: Clock },
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full max-w-5xl mx-auto space-y-6 page-animate">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
-          <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg shadow-blue-500/25"><Folder className="w-5 h-5 text-white" /></div>
+          <div className="p-2.5 bg-gradient-to-br from-blue-500 to-primary rounded-lg shadow-lg shadow-blue-500/25"><Folder className="w-5 h-5 text-white" /></div>
           <div>
             <h1 className="text-2xl font-bold">Dokumentum-központ</h1>
-            <p className="text-sm text-slate-500">Havi kimeneti állományok</p>
+            <p className="text-sm text-muted-foreground">Havi kimeneti állományok</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -94,8 +94,8 @@ export default function DocumentCenterPage() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-6 animate-in fade-in duration-300">
-          <div className="bg-card rounded-xl border border-border p-4">
+        <div className="space-y-6 page-animate">
+          <div className="bg-card rounded-lg border border-border p-4">
             <div className="space-y-2">
               <Skeleton className="h-4 w-20" />
               <Skeleton className="h-2 w-full rounded-full bg-muted/50" />
@@ -103,9 +103,9 @@ export default function DocumentCenterPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="bg-card rounded-xl border border-border shadow-soft p-5 space-y-4">
+              <div key={i} className="bg-card rounded-lg border border-border shadow-soft p-5 space-y-4">
                 <div className="flex items-start gap-4">
-                  <Skeleton className="w-12 h-12 rounded-xl shrink-0 bg-muted/50" />
+                  <Skeleton className="w-12 h-12 rounded-lg shrink-0 bg-muted/50" />
                   <div className="flex-1 space-y-2">
                     <Skeleton className="h-4 w-32 bg-muted/50" />
                     <Skeleton className="h-3 w-16 bg-muted/50" />
@@ -122,13 +122,13 @@ export default function DocumentCenterPage() {
         </div>
       ) : (
         <>
-          <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-4">
+          <div className="bg-card rounded-lg border border-border p-4 flex items-center gap-4">
             <div className="flex-1">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-slate-500">Dokumentumok</span>
+                <span className="text-xs text-muted-foreground">Dokumentumok</span>
                 <span className="text-xs font-bold">{docList.length} db összesen</span>
               </div>
-              <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
                 <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: docList.length > 0 ? `${(docList.filter(d => d.status === 'generated' || d.status === 'sent').length / docList.length) * 100}%` : '0%' }} />
               </div>
             </div>
@@ -142,19 +142,19 @@ export default function DocumentCenterPage() {
               const badge = STATUS_BADGE[status];
 
               return (
-                <Link key={cat.id} to={`/eaisybooks/payroll/${id}/documents/${cat.route}`} className="bg-card rounded-xl border border-border shadow-soft overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer">
+                <Link key={cat.id} to={`/eaisybooks/payroll/${id}/documents/${cat.route}`} className="bg-card rounded-lg border border-border shadow-soft overflow-hidden hover:-translate-y-0.5 transition-all cursor-pointer">
                   <div className="p-5 flex items-start gap-4">
-                    <div className={cn('w-12 h-12 rounded-xl bg-gradient-to-br text-white flex items-center justify-center shrink-0', cat.color)}>
+                    <div className={cn('w-12 h-12 rounded-lg bg-gradient-to-br text-white flex items-center justify-center shrink-0', cat.color)}>
                       <cat.icon className="w-6 h-6" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">{cat.title}</h3>
+                      <h3 className="text-sm font-bold text-foreground">{cat.title}</h3>
                       <div className="flex items-center gap-2 mt-1">
                         <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1', badge.color)}>
                           <badge.icon className="w-3 h-3" />
                           {badge.label}
                         </span>
-                        <span className="text-xs text-slate-400">{count} db</span>
+                        <span className="text-xs text-muted-foreground">{count} db</span>
                       </div>
                     </div>
                   </div>
@@ -164,7 +164,7 @@ export default function DocumentCenterPage() {
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="text-xs gap-1 ml-auto text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                      className="text-xs gap-1 ml-auto text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
                       onClick={async (e) => {
                         e.preventDefault();
                         toast({ title: 'Generálás indítva', description: `${cat.title} dokumentumok elkészítése folyamatban.` });

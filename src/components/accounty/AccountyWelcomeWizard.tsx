@@ -121,18 +121,18 @@ function FeatureCard({
   return (
     <div
       className={cn(
-        'rounded-xl p-5 border transition-all duration-500 hover:shadow-lg hover:-translate-y-1 cursor-default',
+        'rounded-lg p-5 border transition-all duration-500 hover:-translate-y-1 cursor-default',
         c.bg,
         c.border,
-        'animate-in fade-in slide-in-from-bottom-4'
+        'page-animate slide-in-from-bottom-4'
       )}
       style={{ animationDelay: `${delay}ms`, animationFillMode: 'both' }}
     >
       <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center mb-3', c.icon)}>
         <Icon className="w-5 h-5" />
       </div>
-      <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-1">{title}</h3>
-      <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{description}</p>
+      <h3 className="text-sm font-bold text-foreground mb-1">{title}</h3>
+      <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
     </div>
   );
 }
@@ -293,7 +293,7 @@ export default function AccountyWelcomeWizard({ onComplete }: AccountyWelcomeWiz
     <div className="flex flex-col items-center text-center max-w-2xl mx-auto">
       {/* Hero icon */}
       <div className="relative mb-6">
-        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow-2xl shadow-primary/30 animate-in zoom-in duration-500">
+        <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow-2xl shadow-primary/30 animate-in zoom-in duration-500">
           <Rocket className="w-10 h-10 text-white" />
         </div>
         <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-amber-400 flex items-center justify-center animate-bounce shadow-lg">
@@ -302,10 +302,10 @@ export default function AccountyWelcomeWizard({ onComplete }: AccountyWelcomeWiz
       </div>
 
       {/* Greeting */}
-      <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2 animate-in fade-in slide-in-from-bottom-3 duration-500">
+      <h1 className="text-3xl font-bold text-foreground mb-2 page-animate slide-in-from-bottom-3 duration-500">
         Üdvözlünk az eaisybooks-ban! 🎉
       </h1>
-      <p className="text-base text-slate-500 dark:text-slate-400 mb-8 max-w-lg animate-in fade-in slide-in-from-bottom-3 duration-500" style={{ animationDelay: '100ms' }}>
+      <p className="text-base text-muted-foreground mb-8 max-w-lg page-animate slide-in-from-bottom-3 duration-500" style={{ animationDelay: '100ms' }}>
         A könyvelőirodád digitális munkatársa. Néhány lépésben beállítjuk az alapokat, hogy azonnal dolgozni tudj.
       </p>
 
@@ -338,7 +338,7 @@ export default function AccountyWelcomeWizard({ onComplete }: AccountyWelcomeWiz
       <Button
         onClick={() => goTo(2)}
         size="lg"
-        className="bg-gradient-to-r from-primary to-violet-600 hover:from-primary/90 hover:to-violet-600/90 text-white shadow-xl shadow-primary/25 px-8 gap-2 animate-in fade-in slide-in-from-bottom-3 duration-500"
+        className="bg-gradient-to-r from-primary to-violet-600 hover:from-primary/90 hover:to-violet-600/90 text-white shadow-xl shadow-primary/25 px-8 gap-2 page-animate slide-in-from-bottom-3 duration-500"
         style={{ animationDelay: '600ms', animationFillMode: 'both' }}
       >
         Kezdjük el!
@@ -355,15 +355,15 @@ export default function AccountyWelcomeWizard({ onComplete }: AccountyWelcomeWiz
         <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-3 animate-in zoom-in duration-300">
           <Users className="h-7 w-7 text-primary" />
         </div>
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-1">Első ügyfél hozzáadása</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <h2 className="text-2xl font-bold text-foreground mb-1">Első ügyfél hozzáadása</h2>
+        <p className="text-sm text-muted-foreground">
           Válaszd ki, hogyan szeretnéd hozzáadni az első ügyfeledet
         </p>
       </div>
 
       {/* Success state */}
       {clientAdded && (
-        <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 border-2 border-emerald-500 rounded-xl flex items-center gap-3 mb-6 animate-in fade-in zoom-in duration-300">
+        <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 border-2 border-emerald-500 rounded-lg flex items-center gap-3 mb-6 page-animate zoom-in duration-300">
           <CheckCircle className="h-6 w-6 text-emerald-600 shrink-0" />
           <div>
             <p className="font-semibold text-emerald-700 dark:text-emerald-400">Ügyfél sikeresen hozzáadva!</p>
@@ -376,23 +376,23 @@ export default function AccountyWelcomeWizard({ onComplete }: AccountyWelcomeWiz
       {!clientAdded && (
         <div className="space-y-4">
           {/* Option 1: Invite Code */}
-          <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+          <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
             <details className="group">
               <summary className="flex items-center gap-4 p-5 cursor-pointer select-none hover:bg-primary/5 transition-colors list-none [&::-webkit-details-marker]:hidden">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                   <Link2 className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Meghívó kóddal</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Az ügyfeled eaisybill fiókjából kapott kóddal</p>
+                  <h3 className="text-sm font-bold text-foreground">Meghívó kóddal</h3>
+                  <p className="text-xs text-muted-foreground">Az ügyfeled eaisybill fiókjából kapott kóddal</p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 transition-transform duration-200 group-open:rotate-90" />
               </summary>
 
-              <div className="px-5 pb-5 pt-2 border-t border-border/50 animate-in fade-in duration-200">
+              <div className="px-5 pb-5 pt-2 border-t border-border/50 page-animate duration-200">
                 <div className="space-y-3">
-                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 text-xs text-slate-500 dark:text-slate-400 space-y-1.5">
-                    <p className="font-medium text-slate-700 dark:text-slate-300 text-sm">Így működik:</p>
+                  <div className="bg-muted/50 rounded-lg p-4 text-xs text-muted-foreground space-y-1.5">
+                    <p className="font-medium text-foreground/90 text-sm">Így működik:</p>
                     <p>1. Kérd meg az ügyfelet, hogy generáljon meghívó kódot az eaisybill Beállításokban</p>
                     <p>2. Írd be ide a kapott 6 jegyű kódot</p>
                     <p>3. Ha érvényes, azonnal hozzárendelődik</p>
@@ -411,25 +411,25 @@ export default function AccountyWelcomeWizard({ onComplete }: AccountyWelcomeWiz
 
                   {/* Validation feedback */}
                   {codeStatus === 'valid' && linkedCompany && (
-                    <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg border border-emerald-200 dark:border-emerald-800 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg border border-emerald-200 dark:border-emerald-800 page-animate slide-in-from-top-2 duration-300">
                       <CheckCircle className="w-4 h-4 shrink-0" />
                       <span>Cég megtalálva: <strong>{linkedCompany.name}</strong> ({linkedCompany.tax_number})</span>
                     </div>
                   )}
                   {codeStatus === 'invalid' && (
-                    <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 text-sm p-3 bg-rose-50 dark:bg-rose-950/30 rounded-lg border border-rose-200 dark:border-rose-800 animate-in fade-in duration-200">
+                    <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 text-sm p-3 bg-rose-50 dark:bg-rose-950/30 rounded-lg border border-rose-200 dark:border-rose-800 page-animate duration-200">
                       <AlertCircle className="w-4 h-4 shrink-0" />
                       <span>Érvénytelen meghívó kód</span>
                     </div>
                   )}
                   {codeStatus === 'expired' && (
-                    <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-sm p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800 animate-in fade-in duration-200">
+                    <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-sm p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800 page-animate duration-200">
                       <AlertCircle className="w-4 h-4 shrink-0" />
                       <span>A meghívó kód lejárt — kérj újat az ügyféltől!</span>
                     </div>
                   )}
                   {codeStatus === 'already_assigned' && (
-                    <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-sm p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800 animate-in fade-in duration-200">
+                    <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-sm p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800 page-animate duration-200">
                       <CheckCircle className="w-4 h-4 shrink-0" />
                       <span>Ez a cég már hozzá van rendelve a fiókodhoz</span>
                     </div>
@@ -460,14 +460,14 @@ export default function AccountyWelcomeWizard({ onComplete }: AccountyWelcomeWiz
           </div>
 
           {/* Option 2: Sync from eaisybill */}
-          <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+          <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
             <div className="flex items-center gap-4 p-5">
               <div className="w-10 h-10 rounded-lg bg-violet-500/10 flex items-center justify-center shrink-0">
                 <BarChart2 className="w-5 h-5 text-violet-600 dark:text-violet-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">eaisybill cégek szinkronizálása</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Meglévő eaisybill cégeid automatikus hozzárendelése</p>
+                <h3 className="text-sm font-bold text-foreground">eaisybill cégek szinkronizálása</h3>
+                <p className="text-xs text-muted-foreground">Meglévő eaisybill cégeid automatikus hozzárendelése</p>
               </div>
               <Button
                 variant="outline"
@@ -486,14 +486,14 @@ export default function AccountyWelcomeWizard({ onComplete }: AccountyWelcomeWiz
           </div>
 
           {/* Option 3: Manual new client */}
-          <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+          <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
             <div className="flex items-center gap-4 p-5">
               <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
                 <Plus className="w-5 h-5 text-amber-600 dark:text-amber-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Új ügyfél kézi felvétele</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Cégadatok megadása a New Client wizarddal</p>
+                <h3 className="text-sm font-bold text-foreground">Új ügyfél kézi felvétele</h3>
+                <p className="text-xs text-muted-foreground">Cégadatok megadása a New Client wizarddal</p>
               </div>
               <Button
                 variant="outline"
@@ -549,17 +549,17 @@ export default function AccountyWelcomeWizard({ onComplete }: AccountyWelcomeWiz
         </div>
       </div>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2 animate-in fade-in slide-in-from-bottom-3 duration-500">
+      <h2 className="text-3xl font-bold text-foreground mb-2 page-animate slide-in-from-bottom-3 duration-500">
         Készen állsz! 🚀
       </h2>
-      <p className="text-base text-slate-500 dark:text-slate-400 mb-8 animate-in fade-in slide-in-from-bottom-3 duration-500" style={{ animationDelay: '100ms' }}>
+      <p className="text-base text-muted-foreground mb-8 page-animate slide-in-from-bottom-3 duration-500" style={{ animationDelay: '100ms' }}>
         {clientAdded
           ? 'Az első ügyfeled hozzáadva. Fedezd fel az eaisybooks funkcióit!'
           : 'Bármikor hozzáadhatsz ügyfeleket a portfólió oldalon.'}
       </p>
 
       {/* Quick links */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full mb-8 animate-in fade-in slide-in-from-bottom-3 duration-500" style={{ animationDelay: '200ms', animationFillMode: 'both' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full mb-8 page-animate slide-in-from-bottom-3 duration-500" style={{ animationDelay: '200ms', animationFillMode: 'both' }}>
         {[
           { icon: Briefcase, label: 'Portfólió', desc: 'Ügyfelek áttekintése', path: '/eaisybooks' },
           { icon: Bot, label: 'AI Asszisztens', desc: 'Intelligens segítség', path: '/eaisybooks/ai-assistant' },
@@ -568,10 +568,10 @@ export default function AccountyWelcomeWizard({ onComplete }: AccountyWelcomeWiz
           <button
             key={link.path}
             onClick={() => { onComplete(); navigate(link.path); }}
-            className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border bg-card hover:bg-primary/5 hover:border-primary/30 transition-all duration-200 group"
+            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-border bg-card hover:bg-primary/5 hover:border-primary/30 transition-all duration-200 group"
           >
             <link.icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-            <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{link.label}</span>
+            <span className="text-sm font-semibold text-foreground">{link.label}</span>
             <span className="text-[10px] text-muted-foreground">{link.desc}</span>
           </button>
         ))}
@@ -581,7 +581,7 @@ export default function AccountyWelcomeWizard({ onComplete }: AccountyWelcomeWiz
       <Button
         onClick={handleFinish}
         size="lg"
-        className="bg-gradient-to-r from-primary to-teal-500 hover:from-primary/90 hover:to-teal-500/90 text-white shadow-xl shadow-primary/25 px-10 gap-2 animate-in fade-in slide-in-from-bottom-3 duration-500"
+        className="bg-gradient-to-r from-primary to-teal-500 hover:from-primary/90 hover:to-teal-500/90 text-white shadow-xl shadow-primary/25 px-10 gap-2 page-animate slide-in-from-bottom-3 duration-500"
         style={{ animationDelay: '400ms', animationFillMode: 'both' }}
       >
         Fedezd fel az eaisybooks-t
@@ -607,7 +607,7 @@ export default function AccountyWelcomeWizard({ onComplete }: AccountyWelcomeWiz
         <div
           key={step}
           className={cn(
-            'animate-in fade-in duration-400',
+            'page-animate duration-400',
             slideDir === 'left' ? 'slide-in-from-right-8' : 'slide-in-from-left-8'
           )}
         >

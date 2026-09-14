@@ -216,12 +216,12 @@ export default function NewClientPage() {
   const toggleDoc = (id: string) => setSelectedDocs(prev => prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id]);
 
   return (
-    <div className="h-screen w-full flex flex-col bg-slate-50 dark:bg-background font-sans text-slate-900 dark:text-slate-100">
+    <div className="h-screen w-full flex flex-col bg-muted/40 dark:bg-background font-sans text-foreground">
       {/* Top Bar */}
       <header className="h-16 shrink-0 bg-card border-b border-border flex items-center justify-between px-8">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-lg leading-none">v</div>
-          <span className="text-xl font-bold text-slate-800 dark:text-slate-200 tracking-tight">Visibill for Accountants</span>
+          <span className="text-xl font-bold text-foreground tracking-tight">Visibill for Accountants</span>
         </div>
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
@@ -235,18 +235,18 @@ export default function NewClientPage() {
                     "w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium transition-colors",
                     isCompleted ? "bg-primary text-primary-foreground" : 
                     isActive ? "bg-primary text-primary-foreground ring-2 ring-offset-1 ring-primary" : 
-                    "bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
+                    "bg-muted text-muted-foreground"
                   )}>
                     {isCompleted ? <Check className="w-3.5 h-3.5" /> : num}
                   </div>
                 </div>
               );
             })}
-            <span className="text-sm font-medium text-slate-600 dark:text-slate-400 ml-2">
+            <span className="text-sm font-medium text-muted-foreground ml-2">
               {step === 1 ? "Első ügyfél" : step === 2 ? "Integráció" : "Kész"}
             </span>
           </div>
-          <button onClick={() => navigate('/eaisybooks')} className="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 transition-colors">
+          <button onClick={() => navigate('/eaisybooks')} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             Kihagyás
           </button>
         </div>
@@ -294,13 +294,13 @@ export default function NewClientPage() {
           )}
 
           {step === 3 && (
-            <div className="animate-in fade-in duration-500 w-full">
+            <div className="page-animate w-full">
               <div className="text-center mb-8">
                 <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
                   <span className="text-3xl"></span>
                 </div>
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Minden készen áll!</h1>
-                <p className="text-slate-500 dark:text-slate-400 mt-2">A könyvelői fiókod be van állítva. Kezdheted a munkát!</p>
+                <h1 className="text-2xl font-bold text-foreground">Minden készen áll!</h1>
+                <p className="text-muted-foreground mt-2">A könyvelői fiókod be van állítva. Kezdheted a munkát!</p>
               </div>
 
               <div className="space-y-3 mb-6">
@@ -309,24 +309,24 @@ export default function NewClientPage() {
                   { label: 'Ügyfelek', desc: '1 ügyfél hozzáadva', Icon: Users },
                   { label: 'Integráció', desc: integrationType === 'other' ? 'Manuális beállítva' : `${integrationType?.toUpperCase()} beállítva`, Icon: Settings },
                 ].map(item => (
-                  <div key={item.label} className="bg-card rounded-xl p-4 border border-border shadow-soft flex items-center justify-between">
+                  <div key={item.label} className="bg-card rounded-lg p-4 border border-border shadow-soft flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-6 h-6 rounded-full bg-accent text-primary flex items-center justify-center"><Check className="w-3.5 h-3.5" /></div>
                       <div>
-                        <p className="font-semibold text-slate-900 dark:text-slate-100 text-sm">{item.label}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{item.desc}</p>
+                        <p className="font-semibold text-foreground text-sm">{item.label}</p>
+                        <p className="text-xs text-muted-foreground">{item.desc}</p>
                       </div>
                     </div>
-                    <item.Icon className="w-5 h-5 text-slate-400" />
+                    <item.Icon className="w-5 h-5 text-muted-foreground" />
                   </div>
                 ))}
               </div>
 
-              <div className="bg-card rounded-xl p-5 border border-border shadow-soft mb-6 text-sm">
+              <div className="bg-card rounded-lg p-5 border border-border shadow-soft mb-6 text-sm">
                 <p className="font-semibold text-amber-600 flex items-center gap-2 mb-2">
                   <span className="text-base"></span> Tudtad?
                 </p>
-                <ul className="list-disc pl-5 text-slate-600 dark:text-slate-400 space-y-1.5 text-xs">
+                <ul className="list-disc pl-5 text-muted-foreground space-y-1.5 text-xs">
                   <li>A portfólió nézetben egy helyen látod az összes ügyfeled státuszát</li>
                   <li>A NAV szinkronizálás automatikusan letölti a bejövő számlákat</li>
                   <li>Az automatikus bekérő emlékezteti az ügyfeleidet a hiányzó számlákra</li>
@@ -338,10 +338,10 @@ export default function NewClientPage() {
               </Button>
               
               <div className="flex gap-3">
-                <Button variant="outline" onClick={() => setStep(1)} className="flex-1 text-slate-600 dark:text-slate-400">
+                <Button variant="outline" onClick={() => setStep(1)} className="flex-1 text-muted-foreground">
                   + Újabb ügyfél
                 </Button>
-                <Button variant="outline" className="flex-1 text-slate-600 dark:text-slate-400">
+                <Button variant="outline" className="flex-1 text-muted-foreground">
                   <Settings className="w-4 h-4 mr-2" /> Beállítások
                 </Button>
               </div>

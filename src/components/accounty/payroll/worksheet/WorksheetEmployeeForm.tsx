@@ -92,7 +92,7 @@ export default function WorksheetEmployeeForm({
   if (!employee || !employment) {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground">
-        <User className="w-12 h-12 mb-3 text-slate-300" />
+        <User className="w-12 h-12 mb-3 text-muted-foreground/60" />
         <p>Válassz ki egy munkavállalót a bal oldali listából.</p>
       </div>
     );
@@ -117,7 +117,7 @@ export default function WorksheetEmployeeForm({
   return (
     <div className="space-y-6">
       {/* Dolgozói törzsadat fejléc kártya */}
-      <div className="p-4 rounded-xl border border-border bg-card shadow-xs flex flex-wrap items-center justify-between gap-4">
+      <div className="p-4 rounded-lg border border-border bg-card shadow-xs flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-base shrink-0">
             {employee.last_name?.[0] || ''}

@@ -115,13 +115,13 @@ export default function PayrollStep4({
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-slate-600 dark:text-slate-300">
+      <p className="text-sm text-muted-foreground dark:text-foreground/90">
         Magáncélú telefonhasználat, cafeteria juttatások, SZÉP kártya kezelés.
       </p>
 
       {/* Tax info banner */}
-      <div className="p-4 bg-indigo-500/5 dark:bg-indigo-500/10 border border-indigo-500/20 rounded-xl flex items-start gap-3">
-        <Sparkles className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
+      <div className="p-4 bg-primary/5 dark:bg-primary/10 border border-primary/20 rounded-lg flex items-start gap-3">
+        <Sparkles className="w-5 h-5 text-primary shrink-0 mt-0.5" />
         <div className="text-xs text-indigo-700 dark:text-indigo-300 space-y-1">
           <p className="font-bold">2026. évi Cafeteria és Juttatási szabályok:</p>
           <ul className="list-disc pl-4 space-y-0.5">
@@ -133,7 +133,7 @@ export default function PayrollStep4({
       </div>
 
       {/* Tip for Service Charge (Felszolgálási díj) */}
-      <div className="p-3.5 bg-amber-500/10 border border-amber-500/25 rounded-xl flex items-start gap-3">
+      <div className="p-3.5 bg-amber-500/10 border border-amber-500/25 rounded-lg flex items-start gap-3">
         <UtensilsCrossed className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
         <div className="text-xs text-amber-800 dark:text-amber-200">
           <p className="font-semibold text-amber-900 dark:text-amber-100">Vendéglátóipari felszolgálási díjat rögzítenél?</p>
@@ -145,11 +145,11 @@ export default function PayrollStep4({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* SZÉP kártya panel */}
-        <div className="p-5 rounded-xl border border-border bg-card shadow-sm space-y-3 lg:col-span-2">
-          <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+        <div className="p-5 rounded-lg border border-border bg-card shadow-sm space-y-3 lg:col-span-2">
+          <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
             <Coffee className="w-4 h-4 text-amber-500" /> SZÉP kártya összesítés
           </h4>
-          <p className="text-xs text-slate-500 mb-2">Éves limit: 450.000 Ft / zseb</p>
+          <p className="text-xs text-muted-foreground mb-2">Éves limit: 450.000 Ft / zseb</p>
           <div className="space-y-4">
             {[
               { name: 'Szálláshely', used: szepAccom, limit: 450000, color: 'bg-blue-500' },
@@ -158,12 +158,12 @@ export default function PayrollStep4({
             ].map((pocket) => (
               <div key={pocket.name} className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs font-semibold">
-                  <span className="text-slate-600 dark:text-slate-400">{pocket.name}</span>
-                  <span className="font-mono text-slate-500">
+                  <span className="text-muted-foreground">{pocket.name}</span>
+                  <span className="font-mono text-muted-foreground">
                     {pocket.used.toLocaleString('hu-HU')} / {pocket.limit.toLocaleString('hu-HU')} Ft
                   </span>
                 </div>
-                <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
                   <div
                     className={cn('h-full rounded-full transition-all duration-500', pocket.color)}
                     style={{ width: `${Math.min(100, (pocket.used / pocket.limit) * 100)}%` }}
@@ -177,42 +177,42 @@ export default function PayrollStep4({
         {/* Right side widgets: Rekreáció & Lakhatási */}
         <div className="space-y-4 lg:col-span-1">
           {/* Rekreáció */}
-          <div className="p-5 rounded-xl border border-border bg-card shadow-sm space-y-3">
+          <div className="p-5 rounded-lg border border-border bg-card shadow-sm space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+              <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5">
                 <Gift className="w-4 h-4 text-violet-500" /> Rekreáció
               </h4>
-              <span className="text-xs text-slate-500 font-mono font-bold">
+              <span className="text-xs text-muted-foreground font-mono font-bold">
                 {recreation.toLocaleString('hu-HU')} / 120.000 Ft
               </span>
             </div>
-            <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+            <div className="h-2 bg-muted rounded-full overflow-hidden">
               <div 
                 className="h-full bg-violet-500 rounded-full transition-all duration-500" 
                 style={{ width: `${Math.min(100, (recreation / 120000) * 100)}%` }} 
               />
             </div>
-            <p className="text-[10px] text-slate-400 mt-1">Kedvezményes keret: évi 120.000 Ft</p>
+            <p className="text-[10px] text-muted-foreground mt-1">Kedvezményes keret: évi 120.000 Ft</p>
           </div>
 
           {/* Lakhatási támogatás */}
-          <div className="p-5 rounded-xl border border-border bg-card shadow-sm space-y-3">
-            <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-              <Home className="w-4 h-4 text-indigo-500" /> Lakhatási támogatás
+          <div className="p-5 rounded-lg border border-border bg-card shadow-sm space-y-3">
+            <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+              <Home className="w-4 h-4 text-primary" /> Lakhatási támogatás
             </h4>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold font-mono text-indigo-600 dark:text-indigo-400">
+              <span className="text-2xl font-bold font-mono text-primary dark:text-primary">
                 {housingAllowance.toLocaleString('hu-HU')}
               </span>
-              <span className="text-xs text-slate-500">Ft / hó</span>
+              <span className="text-xs text-muted-foreground">Ft / hó</span>
             </div>
-            <p className="text-[10px] text-slate-400">35 év alattiaknál havi 150.000 Ft-ig adómentes.</p>
+            <p className="text-[10px] text-muted-foreground">35 év alattiaknál havi 150.000 Ft-ig adómentes.</p>
           </div>
 
           {/* Home Office Költségtérítés (Adómentes átalány) */}
-          <div className="p-5 rounded-xl border border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/10 shadow-sm space-y-3">
+          <div className="p-5 rounded-lg border border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/10 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+              <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5">
                 <Home className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Home Office átalány (Adómentes)
               </h4>
               <span className="px-2 py-0.5 text-[10px] font-bold bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 rounded">
@@ -226,9 +226,9 @@ export default function PayrollStep4({
                   .reduce((s, i) => s + Number(i.amount), 0)
                   .toLocaleString('hu-HU')}
               </span>
-              <span className="text-xs text-slate-500">Ft / hó</span>
+              <span className="text-xs text-muted-foreground">Ft / hó</span>
             </div>
-            <p className="text-[10px] text-slate-500 dark:text-slate-400">
+            <p className="text-[10px] text-muted-foreground">
               SZJA tv. 3. sz. melléklet: Havi minimálbér max. 10%-áig (max. <strong>32 280 Ft/hó</strong>) igazolás nélkül adómentes otthoni munkavégzésre.
             </p>
           </div>
@@ -236,13 +236,13 @@ export default function PayrollStep4({
       </div>
 
       {/* Interactive Home Office Reimbursement Management per Employee */}
-      <div className="p-5 rounded-xl border border-emerald-500/30 bg-card shadow-sm space-y-4">
+      <div className="p-5 rounded-lg border border-emerald-500/30 bg-card shadow-sm space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <h4 className="text-base font-bold text-foreground flex items-center gap-2">
               <Home className="w-5 h-5 text-emerald-500" /> Home Office költségtérítés megadása dolgozónként
             </h4>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               Itt adhatod meg az igazolás nélküli adómentes otthoni munkavégzési átalányt dolgozónként (max. 32 280 Ft/hó).
             </p>
           </div>
@@ -251,10 +251,10 @@ export default function PayrollStep4({
         <div className="overflow-x-auto rounded-lg border border-border">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-border bg-slate-50 dark:bg-slate-900/30">
-                <th className="px-4 py-2 text-left font-medium text-slate-500 uppercase">Dolgozó neve</th>
-                <th className="px-4 py-2 text-center font-medium text-slate-500 uppercase">Havi adómentes átalány (Ft/hó)</th>
-                <th className="px-4 py-2 text-right font-medium text-slate-500 uppercase">Gyorsbeállítás</th>
+              <tr className="border-b border-border bg-background/30">
+                <th className="px-4 py-2 text-left font-medium text-muted-foreground uppercase">Dolgozó neve</th>
+                <th className="px-4 py-2 text-center font-medium text-muted-foreground uppercase">Havi adómentes átalány (Ft/hó)</th>
+                <th className="px-4 py-2 text-right font-medium text-muted-foreground uppercase">Gyorsbeállítás</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
@@ -308,8 +308,8 @@ export default function PayrollStep4({
                   : (currentHoAmount ? String(currentHoAmount) : '');
 
                 return (
-                  <tr key={emp.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                    <td className="px-4 py-2.5 font-semibold text-slate-900 dark:text-slate-100">
+                  <tr key={emp.id} className="hover:bg-muted/50">
+                    <td className="px-4 py-2.5 font-semibold text-foreground">
                       {emp.last_name} {emp.first_name}
                     </td>
                     <td className="px-4 py-2 text-center">
@@ -328,9 +328,9 @@ export default function PayrollStep4({
                             const val = parseInt(e.target.value) || 0;
                             updateHoAmount(val);
                           }}
-                          className="w-32 text-right rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 font-mono font-bold text-emerald-600 dark:text-emerald-400 focus:border-primary focus:outline-none"
+                          className="w-32 text-right rounded border border-border dark:border-slate-600 bg-card px-2 py-1 font-mono font-bold text-emerald-600 dark:text-emerald-400 focus:border-primary focus:outline-none"
                         />
-                        <span className="text-slate-400 font-mono">Ft</span>
+                        <span className="text-muted-foreground font-mono">Ft</span>
                       </div>
                     </td>
                     <td className="px-4 py-2 text-right space-x-2">
@@ -351,7 +351,7 @@ export default function PayrollStep4({
                             setLocalHoInputs(prev => ({ ...prev, [emp.id]: '0' }));
                             updateHoAmount(0);
                           }}
-                          className="px-2 py-1 text-[11px] text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                          className="px-2 py-1 text-[11px] text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                         >
                           Törlés
                         </button>
@@ -367,24 +367,24 @@ export default function PayrollStep4({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Phone panel */}
-        <div className="p-5 rounded-xl border border-border bg-card shadow-sm">
-          <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-2 flex items-center gap-2">
+        <div className="p-5 rounded-lg border border-border bg-card shadow-sm">
+          <h4 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2">
             <Smartphone className="w-4 h-4 text-blue-500" /> Magáncélú telefon
           </h4>
-          <p className="text-xs text-slate-500 mb-4">A magáncélú telefonhasználat 20%-a kerül adóztatásra.</p>
+          <p className="text-xs text-muted-foreground mb-4">A magáncélú telefonhasználat 20%-a kerül adóztatásra.</p>
           {phoneItems.length === 0 ? (
-            <div className="text-center py-6 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-border/60">
-              <p className="text-xs text-slate-400">Nincs rögzített tétel</p>
+            <div className="text-center py-6 bg-muted/50 rounded-lg border border-dashed border-border/60">
+              <p className="text-xs text-muted-foreground">Nincs rögzített tétel</p>
             </div>
           ) : (
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {phoneItems.map((item) => (
-                <div key={item.id} className="flex justify-between items-center text-xs p-3 bg-slate-50 dark:bg-slate-800/30 rounded-lg border border-border/40">
+                <div key={item.id} className="flex justify-between items-center text-xs p-3 bg-muted/30 rounded-lg border border-border/40">
                   <div>
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                    <span className="font-semibold text-foreground/90">
                       {getEmployeeNameByEmploymentId(item.employment_id)}
                     </span>
-                    {item.description && <span className="text-slate-400 block text-[10px] mt-0.5">{item.description}</span>}
+                    {item.description && <span className="text-muted-foreground block text-[10px] mt-0.5">{item.description}</span>}
                   </div>
                   <span className="font-mono font-bold text-slate-950 dark:text-slate-50">
                     {Number(item.amount).toLocaleString('hu-HU')} Ft
@@ -396,24 +396,24 @@ export default function PayrollStep4({
         </div>
 
         {/* Cafeteria Details per Employee */}
-        <div className="p-5 rounded-xl border border-border bg-card shadow-sm">
-          <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-2 flex items-center gap-2">
+        <div className="p-5 rounded-lg border border-border bg-card shadow-sm">
+          <h4 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2">
             <User className="w-4 h-4 text-emerald-500" /> Cafeteria juttatások dolgozónként
           </h4>
-          <p className="text-xs text-slate-500 mb-4">Aktív cafeteria tételek listája a jelenlegi ciklusban.</p>
+          <p className="text-xs text-muted-foreground mb-4">Aktív cafeteria tételek listája a jelenlegi ciklusban.</p>
           {cafeteriaItems.length === 0 ? (
-            <div className="text-center py-6 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-border/60">
-              <p className="text-xs text-slate-400">Nincs rögzített cafeteria juttatás</p>
+            <div className="text-center py-6 bg-muted/50 rounded-lg border border-dashed border-border/60">
+              <p className="text-xs text-muted-foreground">Nincs rögzített cafeteria juttatás</p>
             </div>
           ) : (
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {cafeteriaItems.map((item) => (
-                <div key={item.id} className="flex justify-between items-center text-xs p-3 bg-slate-50 dark:bg-slate-800/30 rounded-lg border border-border/40">
+                <div key={item.id} className="flex justify-between items-center text-xs p-3 bg-muted/30 rounded-lg border border-border/40">
                   <div>
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                    <span className="font-semibold text-foreground/90">
                       {getEmployeeNameByEmploymentId(item.employment_id)}
                     </span>
-                    <span className="text-slate-400 block text-[10px] mt-0.5 capitalize">
+                    <span className="text-muted-foreground block text-[10px] mt-0.5 capitalize">
                       {item.benefit_type === 'szep_recreation' ? `SZÉP Kártya (${item.sub_type})` :
                        item.benefit_type === 'housing' ? 'Lakhatási támogatás' :
                        item.benefit_type === 'home_office' ? 'Home Office átalány' :

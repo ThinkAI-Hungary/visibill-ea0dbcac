@@ -65,15 +65,15 @@ export default function TeamSettingsTab({
   return (
     <div key="team" className="p-6 space-y-6 tab-content-enter">
       <div className="border-b border-border pb-4">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Csapat</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Könyvelők és hozzáférések kezelése</p>
+        <h2 className="text-lg font-bold text-foreground">Csapat</h2>
+        <p className="text-sm text-muted-foreground mt-1">Könyvelők és hozzáférések kezelése</p>
       </div>
 
       <div className="space-y-3">
         {teamMembers.map((member, idx) => {
           const isExpanded = expandedMembers.has(member.id);
           return (
-            <div key={member.id} className="flex flex-col bg-slate-50 dark:bg-slate-800/50 rounded-xl overflow-hidden">
+            <div key={member.id} className="flex flex-col bg-muted/50 rounded-lg overflow-hidden">
               {/* Header Row */}
               <div 
                 onClick={() => {
@@ -84,18 +84,18 @@ export default function TeamSettingsTab({
                     return next;
                   });
                 }}
-                className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-100/30 dark:hover:bg-slate-800 transition-colors select-none"
+                className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 dark:hover:bg-muted/50 transition-colors select-none"
               >
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white",
-                    idx === 0 ? "bg-primary" : idx === 1 ? "bg-blue-600" : idx === 2 ? "bg-purple-600" : "bg-slate-500"
+                    idx === 0 ? "bg-primary" : idx === 1 ? "bg-blue-600" : idx === 2 ? "bg-purple-600" : "bg-muted-foreground"
                   )}>
                     {member.initial}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{member.name}</p>
-                    <p className="text-xs text-slate-500">{member.clientCount} ügyfél hozzárendelve</p>
+                    <p className="text-sm font-semibold text-foreground">{member.name}</p>
+                    <p className="text-xs text-muted-foreground">{member.clientCount} ügyfél hozzárendelve</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -112,30 +112,30 @@ export default function TeamSettingsTab({
                         setMemberToDelete({ id: member.id, name: member.name });
                         setDeleteConfirmOpen(true);
                       }}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
                       title="Eltávolítás"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   )}
-                  <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform duration-200", isExpanded && "rotate-180")} />
+                  <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform duration-200", isExpanded && "rotate-180")} />
                 </div>
               </div>
 
               {/* Collapsible Panel */}
               {isExpanded && (
-                <div className="border-t border-border/50 bg-slate-50/50 dark:bg-slate-900/10 px-4 py-3 space-y-2">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                <div className="border-t border-border/50 bg-muted/40/50 dark:bg-card/10 px-4 py-3 space-y-2">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                     Hozzárendelt ügyfelek ({member.assignedCompanies?.length || 0})
                   </p>
                   {!member.assignedCompanies || member.assignedCompanies.length === 0 ? (
-                    <p className="text-xs text-slate-400 dark:text-slate-500 italic">Nincsenek hozzárendelt ügyfelek</p>
+                    <p className="text-xs text-muted-foreground italic">Nincsenek hozzárendelt ügyfelek</p>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {member.assignedCompanies.map((comp: any) => (
                         <div key={comp.id} className="flex items-center gap-2 px-3 py-2 bg-card border border-border rounded-lg text-xs font-medium">
                           <Building2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                          <span className="truncate text-slate-700 dark:text-slate-300">{comp.name}</span>
+                          <span className="truncate text-foreground/90">{comp.name}</span>
                         </div>
                       ))}
                     </div>
@@ -146,8 +146,8 @@ export default function TeamSettingsTab({
           );
         })}
         {teamMembers.length === 0 && (
-          <div className="text-center py-8 text-slate-500">
-            <Users className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+          <div className="text-center py-8 text-muted-foreground">
+            <Users className="w-8 h-8 mx-auto mb-2 text-muted-foreground/60" />
             <p className="text-sm">Még nincs csapattag regisztrálva</p>
           </div>
         )}
@@ -155,7 +155,7 @@ export default function TeamSettingsTab({
 
       <Button
         variant="outline"
-        className="gap-2 w-full border-dashed border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+        className="gap-2 w-full border-dashed border-border text-muted-foreground hover:bg-muted/50"
         onClick={() => setInviteOpen(true)}
       >
         <Users className="w-4 h-4" />
@@ -198,7 +198,7 @@ export default function TeamSettingsTab({
                       'px-3 py-2 rounded-lg border text-sm font-medium transition-all text-left',
                       inviteRole === r
                         ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border hover:border-slate-300'
+                        : 'border-border hover:border-border'
                     )}
                   >
                     {ROLE_LABELS[r] || r}

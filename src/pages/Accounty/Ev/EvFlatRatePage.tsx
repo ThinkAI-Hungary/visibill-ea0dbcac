@@ -116,25 +116,25 @@ export default function EvFlatRatePage() {
   };
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Főoldal
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <span className="text-slate-900 dark:text-slate-100 font-medium">Átalányadó kalkulátor</span>
+        <span className="text-foreground font-medium">Átalányadó kalkulátor</span>
       </div>
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg shadow-indigo-500/25">
+          <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg shadow-lg shadow-primary/20">
             <PiggyBank className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Átalányadó kalkulátor</h1>
-            <p className="text-sm text-slate-500">Szja tv. 50–56. § — {client?.name || 'Ügyfél'}</p>
+            <h1 className="text-2xl font-bold text-foreground">Átalányadó kalkulátor</h1>
+            <p className="text-sm text-muted-foreground">Szja tv. 50–56. § — {client?.name || 'Ügyfél'}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -149,7 +149,7 @@ export default function EvFlatRatePage() {
           <button
             onClick={handleGenerateReturn}
             disabled={saving}
-            className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors disabled:opacity-50"
           >
             <Send className="w-3.5 h-3.5" />
             Bevallás elkészítése (2553)
@@ -160,11 +160,11 @@ export default function EvFlatRatePage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Input panel */}
         <div className="lg:col-span-1 space-y-4">
-          <div className="bg-card rounded-xl border border-border shadow-soft p-5 space-y-4">
-            <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Bemeneti adatok</h2>
+          <div className="bg-card rounded-lg border border-border shadow-soft p-5 space-y-4">
+            <h2 className="text-sm font-bold text-foreground">Bemeneti adatok</h2>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Éves bevétel (Ft)</label>
+              <label className="text-xs font-medium text-muted-foreground">Éves bevétel (Ft)</label>
               <Input
                 type="number"
                 value={revenue}
@@ -178,12 +178,12 @@ export default function EvFlatRatePage() {
                 step={100_000}
                 value={revenue}
                 onChange={e => setRevenue(Number(e.target.value))}
-                className="w-full mt-1 accent-indigo-600"
+                className="w-full mt-1 accent-primary"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Költséghányad kategória</label>
+              <label className="text-xs font-medium text-muted-foreground">Költséghányad kategória</label>
               <div className="grid grid-cols-3 gap-1.5">
                 {([
                   { value: 'general' as const, label: `${params.atalanyKoltseghanyadGeneral * 100}%`, desc: 'Általános' },
@@ -196,12 +196,12 @@ export default function EvFlatRatePage() {
                     className={cn(
                       'p-2.5 rounded-lg border text-center transition-all',
                       costCategory === opt.value
-                        ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20'
-                        : 'border-border hover:border-slate-300'
+                        ? 'border-indigo-400 bg-primary/10'
+                        : 'border-border hover:border-border'
                     )}
                   >
-                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{opt.label}</p>
-                    <p className="text-[9px] text-slate-500">{opt.desc}</p>
+                    <p className="text-sm font-bold text-foreground">{opt.label}</p>
+                    <p className="text-[9px] text-muted-foreground">{opt.desc}</p>
                   </button>
                 ))}
               </div>
@@ -240,8 +240,8 @@ export default function EvFlatRatePage() {
 
             {/* Adóév paraméterek */}
             <div className="pt-2 border-t border-border/50 space-y-1.5">
-              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Adóévi paraméterek</p>
-              <div className="text-[11px] text-slate-500 space-y-0.5">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Adóévi paraméterek</p>
+              <div className="text-[11px] text-muted-foreground space-y-0.5">
                 <p>SZJA kulcs: {formatPercent(params.szjaRate)}</p>
                 <p>Bevételi határ: {formatHuf(params.atalanyBevetelHatar)}</p>
                 <p>Kisker. határ: {formatHuf(params.atalanyKiskerHatar)}</p>
@@ -255,31 +255,31 @@ export default function EvFlatRatePage() {
         <div className="lg:col-span-2 space-y-4">
           {/* Summary cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-              <p className="text-xs text-slate-500 mb-1">Bevétel</p>
-              <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{formatMillionHuf(result.revenue)}</p>
+            <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+              <p className="text-xs text-muted-foreground mb-1">Bevétel</p>
+              <p className="text-lg font-bold text-foreground">{formatMillionHuf(result.revenue)}</p>
             </div>
-            <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-              <p className="text-xs text-slate-500 mb-1">Számított költség</p>
+            <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+              <p className="text-xs text-muted-foreground mb-1">Számított költség</p>
               <p className="text-lg font-bold text-red-500">{formatMillionHuf(result.calculatedCosts)}</p>
-              <p className="text-[10px] text-slate-400">{formatPercent(result.costRatio)} hányad</p>
+              <p className="text-[10px] text-muted-foreground">{formatPercent(result.costRatio)} hányad</p>
             </div>
-            <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-              <p className="text-xs text-slate-500 mb-1">Jövedelem</p>
+            <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+              <p className="text-xs text-muted-foreground mb-1">Jövedelem</p>
               <p className="text-lg font-bold text-green-600">{formatMillionHuf(result.income)}</p>
             </div>
-            <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-              <p className="text-xs text-slate-500 mb-1">Fizetendő SZJA</p>
-              <p className="text-lg font-bold text-indigo-600">{formatHuf(result.szja)}</p>
-              <p className="text-[10px] text-slate-400">Eff. ráta: {formatPercent(result.effectiveRate)}</p>
+            <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+              <p className="text-xs text-muted-foreground mb-1">Fizetendő SZJA</p>
+              <p className="text-lg font-bold text-primary">{formatHuf(result.szja)}</p>
+              <p className="text-[10px] text-muted-foreground">Eff. ráta: {formatPercent(result.effectiveRate)}</p>
             </div>
           </div>
 
           {/* Calculation breakdown */}
-          <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+          <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
             <div className="px-5 py-3 border-b border-border flex items-center gap-2">
-              <Calculator className="w-4 h-4 text-indigo-600" />
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Számítási levezetés</h3>
+              <Calculator className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-bold text-foreground">Számítási levezetés</h3>
             </div>
             <div className="divide-y divide-border/50">
               {[
@@ -294,21 +294,21 @@ export default function EvFlatRatePage() {
                   key={i}
                   className={cn(
                     'flex items-center justify-between px-5 py-3',
-                    row.highlight && 'bg-indigo-50/50 dark:bg-indigo-900/10'
+                    row.highlight && 'bg-primary/10/50 dark:bg-indigo-900/10'
                   )}
                 >
                   <span className={cn(
                     'text-sm',
-                    row.bold ? 'font-semibold text-slate-900 dark:text-slate-100' : 'text-slate-600 dark:text-slate-400'
+                    row.bold ? 'font-semibold text-foreground' : 'text-muted-foreground'
                   )}>
                     {row.label}
                   </span>
                   <span className={cn(
                     'text-sm font-mono tabular-nums',
-                    row.highlight ? 'font-bold text-indigo-600' :
+                    row.highlight ? 'font-bold text-primary' :
                     row.negative ? 'text-red-500' :
-                    row.bold ? 'font-bold text-slate-900 dark:text-slate-100' :
-                    'text-slate-700 dark:text-slate-300'
+                    row.bold ? 'font-bold text-foreground' :
+                    'text-foreground/90'
                   )}>
                     {row.negative ? `– ${formatHuf(Math.abs(row.value))}` : formatHuf(row.value)}
                   </span>
@@ -318,7 +318,7 @@ export default function EvFlatRatePage() {
           </div>
 
           {/* Info box */}
-          <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-xl p-4 flex gap-3">
+          <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-lg p-4 flex gap-3">
             <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
             <div className="text-xs text-blue-700 dark:text-blue-400 space-y-1">
               <p className="font-semibold">Átalányadó tudnivalók ({taxYear})</p>

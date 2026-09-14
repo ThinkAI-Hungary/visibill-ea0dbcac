@@ -56,28 +56,28 @@ export default function EvVatPage() {
   }));
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to="/eaisybooks?tab=ev" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link to="/eaisybooks?tab=ev" className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-primary transition-colors">
           {client?.name || 'Ügyfél'}
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <span className="text-slate-900 dark:text-slate-100 font-medium">ÁFA kezelés</span>
+        <span className="text-foreground font-medium">ÁFA kezelés</span>
       </div>
 
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="p-2.5 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl shadow-lg shadow-cyan-500/25">
+        <div className="p-2.5 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg shadow-lg shadow-cyan-500/25">
           <Receipt className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">ÁFA kezelés</h1>
-          <p className="text-sm text-slate-500">Áfa tv. – alanyi mentesség, bevallási időszakok, áfa-státusz</p>
+          <h1 className="text-2xl font-bold text-foreground">ÁFA kezelés</h1>
+          <p className="text-sm text-muted-foreground">Áfa tv. – alanyi mentesség, bevallási időszakok, áfa-státusz</p>
         </div>
       </div>
 
@@ -85,8 +85,8 @@ export default function EvVatPage() {
         {/* Left: Status & Threshold */}
         <div className="lg:col-span-1 space-y-4">
           {/* VAT status selector */}
-          <div className="bg-card rounded-xl border border-border shadow-soft p-5 space-y-4">
-            <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">ÁFA státusz</h2>
+          <div className="bg-card rounded-lg border border-border shadow-soft p-5 space-y-4">
+            <h2 className="text-sm font-bold text-foreground">ÁFA státusz</h2>
             <div className="space-y-2">
               {vatStatusOptions.map(opt => (
                 <button
@@ -104,14 +104,14 @@ export default function EvVatPage() {
                   className={cn(
                     'w-full flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition-all text-left',
                     vatStatus === opt.value
-                      ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/10'
-                      : 'border-border hover:border-slate-300 dark:hover:border-slate-600'
+                      ? 'border-primary bg-primary/10/50 dark:bg-indigo-900/10'
+                      : 'border-border hover:border-border dark:hover:border-slate-600'
                   )}
                 >
-                  <div className={cn('w-3 h-3 rounded-full', vatStatus === opt.value ? 'bg-indigo-500' : 'bg-slate-200 dark:bg-slate-700')} />
+                  <div className={cn('w-3 h-3 rounded-full', vatStatus === opt.value ? 'bg-primary' : 'bg-muted')} />
                   <div>
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{opt.label}</p>
-                    <p className="text-xs text-slate-500">{opt.desc}</p>
+                    <p className="text-sm font-semibold text-foreground">{opt.label}</p>
+                    <p className="text-xs text-muted-foreground">{opt.desc}</p>
                   </div>
                 </button>
               ))}
@@ -121,7 +121,7 @@ export default function EvVatPage() {
           {/* Threshold */}
           {vatStatus === 'alanyi_mentes' && (
             <div className={cn(
-              'rounded-xl border p-5 shadow-soft',
+              'rounded-lg border p-5 shadow-soft',
               isOver ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
                 : isWarning ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
                 : 'bg-card border-border'
@@ -130,14 +130,14 @@ export default function EvVatPage() {
                 {isOver ? <AlertTriangle className="w-4 h-4 text-red-600" />
                   : isWarning ? <AlertTriangle className="w-4 h-4 text-amber-600" />
                   : <CheckCircle2 className="w-4 h-4 text-green-600" />}
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Alanyi mentesség határ</h3>
+                <h3 className="text-sm font-bold text-foreground">Alanyi mentesség határ</h3>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-500">Aktuális bevétel</span>
-                  <span className="font-mono tabular-nums font-semibold text-slate-700 dark:text-slate-300">{formatHuf(ytdRevenue)}</span>
+                  <span className="text-muted-foreground">Aktuális bevétel</span>
+                  <span className="font-mono tabular-nums font-semibold text-foreground/90">{formatHuf(ytdRevenue)}</span>
                 </div>
-                <div className="w-full h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
                   <div
                     className={cn(
                       'h-full rounded-full transition-all',
@@ -147,7 +147,7 @@ export default function EvVatPage() {
                   />
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-500">Határ: {formatHuf(afaLimit)}</span>
+                  <span className="text-muted-foreground">Határ: {formatHuf(afaLimit)}</span>
                   <span className={cn('font-semibold', isOver ? 'text-red-600' : isWarning ? 'text-amber-600' : 'text-green-600')}>
                     {isOver ? 'TÚLLÉPVE!' : `Hátralévő: ${formatHuf(remaining)}`}
                   </span>
@@ -157,7 +157,7 @@ export default function EvVatPage() {
           )}
 
           {/* Info */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <div className="flex items-start gap-2">
               <Info className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
               <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
@@ -176,53 +176,53 @@ export default function EvVatPage() {
         {/* Right: VAT returns */}
         <div className="lg:col-span-2 space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-              <p className="text-xs text-slate-500 mb-1">YTD Bevétel</p>
-              <p className="text-lg font-bold text-slate-900 dark:text-slate-100 tabular-nums">{formatHuf(ytdRevenue)}</p>
+            <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+              <p className="text-xs text-muted-foreground mb-1">YTD Bevétel</p>
+              <p className="text-lg font-bold text-foreground tabular-nums">{formatHuf(ytdRevenue)}</p>
             </div>
-            <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-              <p className="text-xs text-slate-500 mb-1">ÁFA státusz</p>
+            <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+              <p className="text-xs text-muted-foreground mb-1">ÁFA státusz</p>
               <p className="text-lg font-bold text-green-600">
                 {vatStatus === 'alanyi_mentes' ? 'Alanyi mentes' : vatStatus === 'afas' ? 'ÁFA körös' : 'Pénzforgalmi'}
               </p>
             </div>
-            <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-              <p className="text-xs text-slate-500 mb-1">Felszámított ÁFA (YTD)</p>
+            <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+              <p className="text-xs text-muted-foreground mb-1">Felszámított ÁFA (YTD)</p>
               <p className="text-lg font-bold text-blue-600 tabular-nums">{formatHuf(vatReturns.reduce((s, r) => s + r.outputVat, 0))}</p>
             </div>
-            <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-              <p className="text-xs text-slate-500 mb-1">Fizetendő ÁFA (YTD)</p>
+            <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+              <p className="text-xs text-muted-foreground mb-1">Fizetendő ÁFA (YTD)</p>
               <p className="text-lg font-bold text-red-500 tabular-nums">{formatHuf(vatReturns.reduce((s, r) => s + r.payable, 0))}</p>
             </div>
           </div>
 
           {vatStatus !== 'alanyi_mentes' && (
-            <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+            <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
               <div className="px-5 py-3 border-b border-border/50">
-                <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">ÁFA bevallások</h2>
+                <h2 className="text-sm font-bold text-foreground">ÁFA bevallások</h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-border bg-slate-50/50 dark:bg-slate-800/30">
-                      <th className="text-left py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Időszak</th>
-                      <th className="text-left py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Státusz</th>
-                      <th className="text-right py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Előzetesen felszámított</th>
-                      <th className="text-right py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Fizetendő</th>
-                      <th className="text-right py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Egyenleg</th>
-                      <th className="text-left py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Határidő</th>
+                    <tr className="border-b border-border bg-muted/40/50 dark:bg-muted/30">
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Időszak</th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Státusz</th>
+                      <th className="text-right py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Előzetesen felszámított</th>
+                      <th className="text-right py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Fizetendő</th>
+                      <th className="text-right py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Egyenleg</th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Határidő</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {vatReturns.map(ret => (
-                      <tr key={ret.period} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                        <td className="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100">{ret.period}</td>
+                      <tr key={ret.period} className="hover:bg-muted/50 dark:hover:bg-muted/50/30 transition-colors">
+                        <td className="py-3 px-4 font-semibold text-foreground">{ret.period}</td>
                         <td className="py-3 px-4">
                           <span className={cn(
                             'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold',
                             ret.status === 'submitted' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                               : ret.status === 'draft' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                              : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                              : 'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground'
                           )}>
                             {ret.status === 'submitted' ? <CheckCircle2 className="w-3 h-3" />
                               : ret.status === 'draft' ? <FileText className="w-3 h-3" />
@@ -230,10 +230,10 @@ export default function EvVatPage() {
                             {ret.status === 'submitted' ? 'Benyújtva' : ret.status === 'draft' ? 'Vázlat' : 'Közelgő'}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-600 dark:text-slate-400">{formatHuf(ret.inputVat)}</td>
-                        <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-600 dark:text-slate-400">{formatHuf(ret.outputVat)}</td>
+                        <td className="py-3 px-4 text-right font-mono tabular-nums text-muted-foreground">{formatHuf(ret.inputVat)}</td>
+                        <td className="py-3 px-4 text-right font-mono tabular-nums text-muted-foreground">{formatHuf(ret.outputVat)}</td>
                         <td className="py-3 px-4 text-right font-mono tabular-nums text-red-600 font-medium">{formatHuf(ret.payable)}</td>
-                        <td className="py-3 px-4 font-mono text-xs tabular-nums text-slate-600 dark:text-slate-400">
+                        <td className="py-3 px-4 font-mono text-xs tabular-nums text-muted-foreground">
                           {new Date(ret.deadline).toLocaleDateString('hu-HU')}
                         </td>
                       </tr>
@@ -245,11 +245,11 @@ export default function EvVatPage() {
           )}
 
           {vatStatus === 'alanyi_mentes' && (
-            <div className="bg-card rounded-xl border border-border shadow-soft p-8 text-center">
-              <Receipt className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-              <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">Alanyi adómentes</p>
-              <p className="text-sm text-slate-500 mt-1">ÁFA bevallás nem szükséges alanyi mentesség esetén.</p>
-              <p className="text-xs text-slate-400 mt-3">
+            <div className="bg-card rounded-lg border border-border shadow-soft p-8 text-center">
+              <Receipt className="w-12 h-12 text-muted-foreground/60 mx-auto mb-3" />
+              <p className="text-lg font-semibold text-foreground">Alanyi adómentes</p>
+              <p className="text-sm text-muted-foreground mt-1">ÁFA bevallás nem szükséges alanyi mentesség esetén.</p>
+              <p className="text-xs text-muted-foreground mt-3">
                 Bevételi határ: {formatHuf(afaLimit)} – túllépés esetén automatikus ÁFA-körbe sorolás.
               </p>
             </div>

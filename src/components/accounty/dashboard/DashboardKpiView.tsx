@@ -28,6 +28,14 @@ import {
   Line 
 } from 'recharts';
 import { cn } from '@/lib/utils';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { ClientData } from '@/pages/Accounty/types';
 import { WidgetWrapper, MissingItemsTooltip } from './DashboardShared';
 
@@ -98,7 +106,7 @@ export default function DashboardKpiView({
   }, [dateFrom, dateTo]);
 
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in duration-500">
+    <div className="flex flex-col gap-6 page-animate">
       {/* Top Row: KPI Cards */}
       <WidgetWrapper 
         id="kpi_cards" 
@@ -110,7 +118,7 @@ export default function DashboardKpiView({
         order={widgetOrder.indexOf('kpi_cards')}
       >
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-card/50 backdrop-blur-md rounded-xl p-6 border border-border/80 shadow-soft flex flex-col justify-center">
+          <div className="bg-card/50 backdrop-blur-md rounded-lg p-6 border border-border/80 shadow-soft flex flex-col justify-center">
             <h3 className="text-sm font-medium text-muted-foreground mb-2">
               {`Zárási státusz (${periodLabel}):`}
             </h3>
@@ -119,19 +127,19 @@ export default function DashboardKpiView({
               <span className="text-sm font-semibold text-primary">aktív</span>
             </div>
           </div>
-          <div className="bg-card/50 backdrop-blur-md rounded-xl p-6 border border-border/80 shadow-soft flex flex-col justify-center">
+          <div className="bg-card/50 backdrop-blur-md rounded-lg p-6 border border-border/80 shadow-soft flex flex-col justify-center">
             <h3 className="text-sm font-medium text-muted-foreground mb-2">Kritikus ügyfelek:</h3>
             <div className="flex items-baseline gap-4">
               <span className="text-4xl font-bold text-foreground">{dynamicKpiStats.kritikusDb} db</span>
             </div>
           </div>
-          <div className="bg-card/50 backdrop-blur-md rounded-xl p-6 border border-border/80 shadow-soft flex flex-col justify-center">
+          <div className="bg-card/50 backdrop-blur-md rounded-lg p-6 border border-border/80 shadow-soft flex flex-col justify-center">
             <h3 className="text-sm font-medium text-muted-foreground mb-2">Kiosztott / Rendben:</h3>
             <div className="flex items-baseline gap-4">
               <span className="text-4xl font-bold text-foreground">{dynamicKpiStats.kiosztottLezart}</span>
             </div>
           </div>
-          <div className="bg-card/50 backdrop-blur-md rounded-xl p-6 border border-border/80 shadow-soft flex flex-col justify-center">
+          <div className="bg-card/50 backdrop-blur-md rounded-lg p-6 border border-border/80 shadow-soft flex flex-col justify-center">
             <h3 className="text-sm font-medium text-muted-foreground mb-2">Portál aktivitás:</h3>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-bold text-foreground">{portalStats?.totalVisits ?? 0}</span>
@@ -169,7 +177,7 @@ export default function DashboardKpiView({
         order={widgetOrder.indexOf('charts')}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-card/50 backdrop-blur-md rounded-xl p-6 border border-border/80 shadow-soft h-80 flex flex-col">
+          <div className="bg-card/50 backdrop-blur-md rounded-lg p-6 border border-border/80 shadow-soft h-80 flex flex-col">
             <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
               <BarChart2 className="w-4 h-4 text-primary" />
               Könyvelői Teljesítmény
@@ -195,7 +203,7 @@ export default function DashboardKpiView({
             </div>
           </div>
 
-          <div className="bg-card/50 backdrop-blur-md rounded-xl p-6 border border-border/80 shadow-soft h-80 flex flex-col relative">
+          <div className="bg-card/50 backdrop-blur-md rounded-lg p-6 border border-border/80 shadow-soft h-80 flex flex-col relative">
             <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
               <PieChartIcon className="w-4 h-4 text-amber-600" />
               {isAdmin ? 'Irodai Ügyfél Státuszok' : 'Saját Ügyfél Státuszok'}
@@ -258,7 +266,7 @@ export default function DashboardKpiView({
         isLast={widgetOrder.indexOf('monthly_trend') === widgetOrder.length - 1}
         order={widgetOrder.indexOf('monthly_trend')}
       >
-        <div className="bg-card/50 backdrop-blur-md rounded-xl p-6 border border-border/80 shadow-soft">
+        <div className="bg-card/50 backdrop-blur-md rounded-lg p-6 border border-border/80 shadow-soft">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-primary" />
@@ -319,7 +327,7 @@ export default function DashboardKpiView({
           isLast={widgetOrder.indexOf('colleague_table') === widgetOrder.length - 1}
           order={widgetOrder.indexOf('colleague_table')}
         >
-          <div className="bg-card/50 backdrop-blur-md rounded-xl border border-border/80 shadow-soft overflow-hidden">
+          <div className="bg-card/50 backdrop-blur-md rounded-lg border border-border/80 shadow-soft overflow-hidden">
             <div className="p-4 border-b border-border dark:bg-muted/5 flex items-center justify-between">
               <h3 className="font-bold text-foreground flex items-center gap-2">
                 <User className="w-4 h-4 text-muted-foreground" />
@@ -331,64 +339,64 @@ export default function DashboardKpiView({
               </button>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="bg-muted/50 border-b border-border text-muted-foreground font-semibold text-xs tracking-wider">
-                  <tr>
-                    <th className="px-6 py-4">Kolléga</th>
-                    <th className="px-4 py-4 text-center">Kiosztott</th>
-                    <th className="px-4 py-4 text-center">Lezárt</th>
-                    <th className="px-4 py-4 text-center">Zárási %</th>
-                    <th className="px-4 py-4 text-center">Átl. feldolg. idő</th>
-                    <th className="px-4 py-4 text-center">Hiányzó</th>
-                    <th className="px-4 py-4 text-center">Hatékonyság</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
+              <Table className="compact-table min-w-[700px]">
+                <TableHeader>
+                  <TableRow className="bg-muted/40 border-b border-border hover:bg-muted/40">
+                    <TableHead className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Kolléga</TableHead>
+                    <TableHead className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Kiosztott</TableHead>
+                    <TableHead className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Lezárt</TableHead>
+                    <TableHead className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Zárási %</TableHead>
+                    <TableHead className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Átl. feldolg. idő</TableHead>
+                    <TableHead className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Hiányzó</TableHead>
+                    <TableHead className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Hatékonyság</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-border">
                   {colleagueStats.map((colleague, idx) => (
-                    <tr key={idx} className="hover:bg-accent/50 transition-colors">
-                      <td className="px-6 py-4">
+                    <TableRow key={idx} className="hover:bg-muted/40 transition-colors border-l-2 border-l-transparent hover:border-l-primary">
+                      <TableCell className="px-6 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-muted-foreground/30 flex items-center justify-center text-xs font-bold text-white shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
                             {colleague.initial}
                           </div>
                           <span className="font-semibold text-foreground">{colleague.name}</span>
                         </div>
-                      </td>
-                      <td className="px-4 py-4 text-center font-medium text-foreground">{colleague.assigned}</td>
-                      <td className="px-4 py-4 text-center font-medium text-foreground">{colleague.closed}</td>
-                      <td className="px-4 py-4 text-center">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-center font-medium font-mono tabular-nums text-foreground">{colleague.assigned}</TableCell>
+                      <TableCell className="px-4 py-3 text-center font-medium font-mono tabular-nums text-foreground">{colleague.closed}</TableCell>
+                      <TableCell className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-2">
-                          <div className="w-16 bg-muted/20 dark:bg-muted/10 rounded-full h-1.5">
-                            <div className={cn('h-1.5 rounded-full', colleague.closingPct >= 80 ? 'bg-primary' : colleague.closingPct >= 60 ? 'bg-amber-500' : 'bg-red-500')} style={{ width: `${colleague.closingPct}%` }} />
+                          <div className="w-16 bg-muted rounded-full h-1.5">
+                            <div className={cn('h-1.5 rounded-full', colleague.closingPct >= 80 ? 'bg-primary' : colleague.closingPct >= 60 ? 'bg-amber-500' : 'bg-destructive')} style={{ width: `${colleague.closingPct}%` }} />
                           </div>
-                          <span className="text-xs font-bold text-foreground">{colleague.closingPct}%</span>
+                          <span className="text-xs font-bold font-mono tabular-nums text-foreground">{colleague.closingPct}%</span>
                         </div>
-                      </td>
-                      <td className="px-4 py-4 text-center font-medium text-foreground">{colleague.avgDays} nap</td>
-                      <td className="px-4 py-4 text-center">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-center font-medium font-mono tabular-nums text-foreground">{colleague.avgDays} nap</TableCell>
+                      <TableCell className="px-4 py-3 text-center">
                         {colleague.missing > 15 ? (
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-50 dark:bg-red-900/40 text-red-700 dark:text-red-400 font-bold">
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-destructive/10 text-destructive font-bold font-mono tabular-nums">
                             <AlertTriangle className="w-3.5 h-3.5" />
                             {colleague.missing}
                           </div>
                         ) : (
-                          <span className="font-medium text-foreground">{colleague.missing}</span>
+                          <span className="font-medium font-mono tabular-nums text-foreground">{colleague.missing}</span>
                         )}
-                      </td>
-                      <td className="px-4 py-4 text-center">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-center">
                         <span className={cn(
                           'inline-flex px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider',
                           colleague.efficiency === 'Kiváló' 
-                            ? 'bg-accent dark:bg-accent text-accent-foreground dark:text-primary'
+                            ? 'bg-accent text-accent-foreground'
                             : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400'
                         )}>
                           {colleague.efficiency}
                         </span>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </div>
         </WidgetWrapper>
@@ -405,7 +413,7 @@ export default function DashboardKpiView({
           isLast={widgetOrder.indexOf('audit_log') === widgetOrder.length - 1}
           order={widgetOrder.indexOf('audit_log')}
         >
-          <div className="bg-card/50 backdrop-blur-md rounded-xl border border-border/80 shadow-soft p-6">
+          <div className="bg-card/50 backdrop-blur-md rounded-lg border border-border/80 shadow-soft p-6">
             <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
               <Clock className="w-4 h-4 text-primary" />
               Tevékenységnapló
@@ -449,7 +457,7 @@ export default function DashboardKpiView({
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
-              <div className="bg-card/50 backdrop-blur-md rounded-xl p-6 border border-border/80 shadow-soft transition-all duration-300">
+              <div className="bg-card/50 backdrop-blur-md rounded-lg p-6 border border-border/80 shadow-soft transition-all duration-300">
                 <h3 className="font-bold text-foreground mb-6">Értesítési Csatornák (Sikeres adatbekérés %)</h3>
                 <div className="space-y-6">
                   <div>
@@ -493,50 +501,50 @@ export default function DashboardKpiView({
                 </div>
               </div>
 
-              <div className="bg-card/50 backdrop-blur-md rounded-xl p-6 border border-border/80 shadow-soft transition-all duration-300 flex flex-col">
+              <div className="bg-card/50 backdrop-blur-md rounded-lg p-6 border border-border/80 shadow-soft transition-all duration-300 flex flex-col">
                 <h3 className="font-bold text-foreground mb-6">Legtöbb hiányzó tétellel rendelkező ügyfelek</h3>
                 <div className="overflow-x-auto pt-3 pb-1">
-                  <table className="w-full text-sm text-left">
-                    <thead className="bg-transparent border-b border-border text-muted-foreground font-semibold text-xs tracking-wider leading-relaxed">
-                      <tr>
-                        <th className="pt-2 pb-3 pr-4">Ügyfél neve</th>
-                        <th className="pt-2 pb-3 px-4 text-center">Hiányzó</th>
-                        <th className="pt-2 pb-3 pl-4 pr-6 text-right">Kockázat</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
+                  <Table className="compact-table w-full text-sm text-left">
+                    <TableHeader>
+                      <TableRow className="bg-transparent border-b border-border hover:bg-transparent">
+                        <TableHead className="pt-2 pb-3 pr-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ügyfél neve</TableHead>
+                        <TableHead className="pt-2 pb-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Hiányzó</TableHead>
+                        <TableHead className="pt-2 pb-3 pl-4 pr-6 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">Kockázat</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody className="divide-y divide-border">
                       {[...clients]
                         .sort((a, b) => b.missingCount - a.missingCount)
                         .slice(0, 5)
                         .filter(c => c.missingCount > 0)
                         .map(c => (
                           <MissingItemsTooltip key={c.id} companyId={c.id}>
-                            <tr 
-                              className="hover:bg-accent/50 transition-colors cursor-pointer group/row relative" 
+                            <TableRow 
+                              className="hover:bg-muted/40 transition-colors cursor-pointer group/row relative border-l-2 border-l-transparent hover:border-l-primary" 
                               onClick={() => navigate(`/eaisybooks/missing-invoices/${c.id}`)}
                             >
-                              <td className="py-3 pr-4 font-semibold text-foreground">{c.name}</td>
-                              <td className="py-3 px-4 text-center font-bold text-foreground">{c.missingCount}</td>
-                              <td className="py-3 pl-4 pr-6 text-right">
+                              <TableCell className="py-3 pr-4 font-semibold text-foreground">{c.name}</TableCell>
+                              <TableCell className="py-3 px-4 text-center font-bold font-mono tabular-nums text-foreground">{c.missingCount}</TableCell>
+                              <TableCell className="py-3 pl-4 pr-6 text-right">
                                 <span className={cn(
                                   "inline-flex px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider",
                                   c.missingCount > 500
-                                    ? "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400"
+                                    ? "bg-destructive/10 text-destructive"
                                     : c.missingCount > 100
                                     ? "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400"
-                                    : "bg-muted/20 text-muted-foreground"
+                                    : "bg-muted/40 text-muted-foreground"
                                 )}>
                                   {c.missingCount > 500 ? 'Kritikus' : c.missingCount > 100 ? 'Magas' : 'Közepes'}
                                 </span>
-                              </td>
-                            </tr>
+                              </TableCell>
+                            </TableRow>
                           </MissingItemsTooltip>
                         ))}
                       {clients.filter(c => c.missingCount > 0).length === 0 && (
-                        <tr><td colSpan={3} className="py-6 text-center text-muted-foreground text-sm">Nincs kritikus ügyfél</td></tr>
+                        <TableRow><TableCell colSpan={3} className="py-6 text-center text-muted-foreground text-sm">Nincs kritikus ügyfél</TableCell></TableRow>
                       )}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
 

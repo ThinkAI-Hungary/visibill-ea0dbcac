@@ -42,60 +42,60 @@ export default function EvChamberPage() {
   const membershipNumber = latestPayment?.membership_number || '—';
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to="/eaisybooks?tab=ev" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link to="/eaisybooks?tab=ev" className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-primary transition-colors">
           {client?.name || 'Ügyfél'}
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <span className="text-slate-900 dark:text-slate-100 font-medium">Kamarai hozzájárulás</span>
+        <span className="text-foreground font-medium">Kamarai hozzájárulás</span>
       </div>
 
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="p-2.5 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-lg shadow-amber-500/25">
+        <div className="p-2.5 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg shadow-lg shadow-amber-500/25">
           <Shield className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Kamarai hozzájárulás</h1>
-          <p className="text-sm text-slate-500">Gazdasági kamarai hozzájárulás – éves fizetési kötelezettség</p>
+          <h1 className="text-2xl font-bold text-foreground">Kamarai hozzájárulás</h1>
+          <p className="text-sm text-muted-foreground">Gazdasági kamarai hozzájárulás – éves fizetési kötelezettség</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Info */}
         <div className="lg:col-span-1 space-y-4">
-          <div className="bg-card rounded-xl border border-border shadow-soft p-5 space-y-4">
-            <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <div className="bg-card rounded-lg border border-border shadow-soft p-5 space-y-4">
+            <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
               <Building2 className="w-4 h-4 text-amber-600" />
               Kamarai tagság adatai
             </h2>
             <div className="space-y-3">
               <div>
-                <label className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Kamara neve</label>
-                <p className="text-sm text-slate-900 dark:text-slate-100 font-medium">{chamberName}</p>
+                <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Kamara neve</label>
+                <p className="text-sm text-foreground font-medium">{chamberName}</p>
               </div>
               <div>
-                <label className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Tagsági szám</label>
-                <p className="text-sm text-slate-900 dark:text-slate-100 font-medium font-mono">{membershipNumber}</p>
+                <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Tagsági szám</label>
+                <p className="text-sm text-foreground font-medium font-mono">{membershipNumber}</p>
               </div>
               <div>
-                <label className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Éves hozzájárulás ({taxYear})</label>
+                <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Éves hozzájárulás ({taxYear})</label>
                 <p className="text-2xl font-bold text-amber-600">{formatHuf(annualFee)}</p>
               </div>
               <div>
-                <label className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Fizetési határidő</label>
-                <p className="text-sm text-slate-900 dark:text-slate-100 font-medium">Március 31.</p>
+                <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Fizetési határidő</label>
+                <p className="text-sm text-foreground font-medium">Március 31.</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <div className="flex items-start gap-2">
               <Info className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
               <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
@@ -114,9 +114,9 @@ export default function EvChamberPage() {
 
         {/* Right: Payment history */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+          <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
             <div className="px-5 py-3 border-b border-border/50">
-              <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Fizetési előzmények</h2>
+              <h2 className="text-sm font-bold text-foreground">Fizetési előzmények</h2>
             </div>
             <div className="divide-y divide-border">
               {payments.map(p => (
@@ -126,7 +126,7 @@ export default function EvChamberPage() {
                 )}>
                   <div className="flex items-center gap-4">
                     <div className={cn(
-                      'w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold',
+                      'w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold',
                       p.status === 'paid'
                         ? 'bg-green-100 dark:bg-green-900/30 text-green-600'
                         : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600'
@@ -134,7 +134,7 @@ export default function EvChamberPage() {
                       {p.year}
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      <p className="text-sm font-semibold text-foreground">
                         {p.year}. évi kamarai hozzájárulás
                       </p>
                       <div className="flex items-center gap-2 mt-0.5">
@@ -148,7 +148,7 @@ export default function EvChamberPage() {
                           {p.status === 'paid' ? 'Fizetve' : 'Függőben'}
                         </span>
                         {p.paidDate && (
-                          <span className="text-[10px] text-slate-400">
+                          <span className="text-[10px] text-muted-foreground">
                             {new Date(p.paidDate).toLocaleDateString('hu-HU')}
                           </span>
                         )}
@@ -156,10 +156,10 @@ export default function EvChamberPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100">
+                    <p className="text-lg font-bold font-mono tabular-nums text-foreground">
                       {formatHuf(p.amount)}
                     </p>
-                    <p className="text-[10px] text-slate-400">
+                    <p className="text-[10px] text-muted-foreground">
                       Határidő: {new Date(p.deadline).toLocaleDateString('hu-HU')}
                     </p>
                   </div>

@@ -5,6 +5,7 @@ import {
   FileText, Save, AlertTriangle, User, Briefcase, Loader2, MapPin
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { usePayrollEmployments, type PayrollEmployment } from '@/hooks/usePayrollData';
@@ -154,22 +155,22 @@ export default function JobModificationPage() {
   if (isLoading) return <ContentSkeleton />;
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full max-w-4xl mx-auto space-y-6 page-animate">
       <div className="flex items-center gap-3">
         <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
-        <div className="p-2.5 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl shadow-lg shadow-violet-500/25"><RefreshCw className="w-5 h-5 text-white" /></div>
+        <div className="p-2.5 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg shadow-lg shadow-violet-500/25"><RefreshCw className="w-5 h-5 text-white" /></div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Jogviszony módosítás</h1>
-          <p className="text-sm text-slate-500">{activeJob ? `${activeJob.job_title || activeJob.employment_type} — ${activeJob.feor_code || ''}` : 'Munkavállaló'}</p>
+          <h1 className="text-2xl font-bold text-foreground">Jogviszony módosítás</h1>
+          <p className="text-sm text-muted-foreground">{activeJob ? `${activeJob.job_title || activeJob.employment_type} — ${activeJob.feor_code || ''}` : 'Munkavállaló'}</p>
         </div>
       </div>
 
       {!activeJob ? (
-        <div className="bg-card rounded-xl border border-border p-12 text-center text-sm text-slate-400">Nincs aktív jogviszony a munkavállalóhoz. Először hozzon létre egy jogviszonyt.</div>
+        <div className="bg-card rounded-lg border border-border p-12 text-center text-sm text-muted-foreground">Nincs aktív jogviszony a munkavállalóhoz. Először hozzon létre egy jogviszonyt.</div>
       ) : (
         <>
-          <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-            <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Változás típusa</h2>
+          <div className="bg-card rounded-lg border border-border p-6 space-y-4">
+            <h2 className="text-sm font-bold text-foreground/90">Változás típusa</h2>
             <div className="grid grid-cols-3 gap-2">
               {CHANGE_TYPES.map(ct => {
                 const hasValue = perTypeData[ct.value].newValue.trim().length > 0;
@@ -178,7 +179,7 @@ export default function JobModificationPage() {
                     key={ct.value}
                     onClick={() => switchType(ct.value)}
                     className={cn(
-                      'p-3 rounded-xl border-2 text-left transition-all relative',
+                      'p-3 rounded-lg border-2 text-left transition-all relative',
                       activeType === ct.value
                         ? 'border-violet-500 bg-violet-50 dark:bg-violet-500/10'
                         : 'border-border hover:border-violet-300'
@@ -186,7 +187,7 @@ export default function JobModificationPage() {
                   >
                     <ct.icon className="w-4 h-4 mb-1 text-violet-600" />
                     <p className="text-xs font-bold">{ct.label}</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">{ct.deadline}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{ct.deadline}</p>
                     {hasValue && (
                       <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-card" title="Kitöltve" />
                     )}
@@ -196,9 +197,14 @@ export default function JobModificationPage() {
             </div>
           </div>
 
-          <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-            <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2"><Calendar className="w-4 h-4" /> Hatálybalépés dátuma</h2>
-            <input type="date" value={effectiveDate} onChange={e => setEffectiveDate(e.target.value)} className="px-3 py-2 rounded-lg border border-border bg-background text-sm" />
+          <div className="bg-card rounded-lg border border-border p-6 space-y-4">
+            <h2 className="text-sm font-bold text-foreground/90 flex items-center gap-2"><Calendar className="w-4 h-4" /> Hatálybalépés dátuma</h2>
+            <DatePicker
+              value={effectiveDate}
+              onChange={setEffectiveDate}
+              placeholder="éééé. hh. nn."
+              className="max-w-[260px]"
+            />
             {needs08E && (
               <div className="bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/20 rounded-lg p-3 text-sm text-yellow-800 dark:text-yellow-300 flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
@@ -207,13 +213,13 @@ export default function JobModificationPage() {
             )}
           </div>
 
-          <div className="bg-card rounded-xl border border-border p-6 space-y-5">
-            <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Változás részletei</h2>
+          <div className="bg-card rounded-lg border border-border p-6 space-y-5">
+            <h2 className="text-sm font-bold text-foreground/90">Változás részletei</h2>
             <div className="space-y-2">
-              <label className="text-xs text-slate-500 font-medium">{selectedType.label}</label>
+              <label className="text-xs text-muted-foreground font-medium">{selectedType.label}</label>
               <div className="grid grid-cols-[1fr,auto,1fr] gap-3 items-center">
                 <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg px-3 py-2 text-sm text-red-700 dark:text-red-300 line-through">{getOldValueFor(activeType)}</div>
-                <ArrowRight className="w-4 h-4 text-slate-400" />
+                <ArrowRight className="w-4 h-4 text-muted-foreground" />
                 {activeType === 'site' ? (
                   <select
                     value={data.newValue}
@@ -233,14 +239,14 @@ export default function JobModificationPage() {
               </div>
             </div>
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">Megjegyzés / Indoklás</label>
+              <label className="text-xs text-muted-foreground mb-1 block">Megjegyzés / Indoklás</label>
               <textarea value={data.reason} onChange={e => updateField('reason', e.target.value)} rows={3} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm resize-none" placeholder={getReasonPlaceholder()} />
             </div>
           </div>
 
           <div className="flex items-center justify-between">
             {pendingCount > 0 ? (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300 text-[10px] font-bold mr-1.5">{pendingCount}</span>
                 módosítás kitöltve
               </p>

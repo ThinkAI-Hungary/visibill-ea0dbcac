@@ -94,27 +94,27 @@ export default function OrgBookkeepingModePage() {
   const [saving, setSaving] = useState(false);
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Áttekintés
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <span className="text-slate-900 dark:text-slate-100 font-medium">Könyvvezetési mód</span>
+        <span className="text-foreground font-medium">Könyvvezetési mód</span>
       </div>
 
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Könyvvezetési mód választó</h1>
-        <p className="text-sm text-slate-500 mt-1">
+        <h1 className="text-2xl font-bold text-foreground">Könyvvezetési mód választó</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           {client?.name || 'Szervezet'} · Határozza meg a könyvvezetés módját a szervezeti forma és törvényi feltételek alapján.
         </p>
       </div>
 
       {/* Organization type selector */}
-      <div className="bg-card rounded-xl border border-border p-5 space-y-4">
-        <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+      <div className="bg-card rounded-lg border border-border p-5 space-y-4">
+        <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
           <Building2 className="w-4 h-4 text-primary" /> Szervezeti forma kiválasztása
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -129,15 +129,15 @@ export default function OrgBookkeepingModePage() {
                   setSelectedMode(org.typical);
                 }}
                 className={cn(
-                  'flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all text-center',
+                  'flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all text-center',
                   isSelected
                     ? 'border-primary bg-primary/5 shadow-sm'
-                    : 'border-border hover:border-primary/30 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                    : 'border-border hover:border-primary/30 hover:bg-muted/50'
                 )}
               >
-                <Icon className={cn('w-5 h-5', isSelected ? 'text-primary' : 'text-slate-400')} />
-                <span className={cn('text-xs font-semibold', isSelected ? 'text-primary' : 'text-slate-700 dark:text-slate-300')}>{org.name}</span>
-                <span className="text-[10px] text-slate-400">{org.rules}</span>
+                <Icon className={cn('w-5 h-5', isSelected ? 'text-primary' : 'text-muted-foreground')} />
+                <span className={cn('text-xs font-semibold', isSelected ? 'text-primary' : 'text-foreground/90')}>{org.name}</span>
+                <span className="text-[10px] text-muted-foreground">{org.rules}</span>
               </button>
             );
           })}
@@ -154,7 +154,7 @@ export default function OrgBookkeepingModePage() {
               key={mode.id}
               onClick={() => setSelectedMode(mode.id)}
               className={cn(
-                'bg-card rounded-xl border-2 p-5 text-left transition-all group',
+                'bg-card rounded-lg border-2 p-5 text-left transition-all group',
                 isSelected
                   ? 'border-primary shadow-lg shadow-primary/10'
                   : 'border-border hover:border-primary/30 hover:shadow-md'
@@ -162,28 +162,28 @@ export default function OrgBookkeepingModePage() {
             >
               {/* Header */}
               <div className="flex items-center gap-3 mb-4">
-                <div className={cn('p-2.5 rounded-xl bg-gradient-to-br shadow-sm', mode.color)}>
+                <div className={cn('p-2.5 rounded-lg bg-gradient-to-br shadow-sm', mode.color)}>
                   <Icon className="w-5 h-5 text-white" />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">{mode.name}</h3>
+                    <h3 className="text-base font-bold text-foreground">{mode.name}</h3>
                     {isSelected && <CheckCircle2 className="w-4 h-4 text-primary" />}
                   </div>
-                  <p className="text-xs text-slate-500">{mode.subtitle} · {mode.legalRef}</p>
+                  <p className="text-xs text-muted-foreground">{mode.subtitle} · {mode.legalRef}</p>
                 </div>
               </div>
 
-              <p className="text-xs text-slate-600 dark:text-slate-400 mb-4">{mode.description}</p>
+              <p className="text-xs text-muted-foreground mb-4">{mode.description}</p>
 
               {/* Conditions */}
               <div className="mb-3">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
                   {mode.id === 'single' ? 'Alkalmazási feltételek' : 'Kötelező, ha'}
                 </p>
                 <ul className="space-y-1">
                   {mode.conditions.map((c, i) => (
-                    <li key={i} className="flex items-start gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+                    <li key={i} className="flex items-start gap-1.5 text-xs text-muted-foreground">
                       <span className={cn('w-1 h-1 rounded-full mt-1.5 shrink-0', mode.id === 'single' ? 'bg-indigo-400' : 'bg-emerald-400')} />
                       {c}
                     </li>
@@ -193,10 +193,10 @@ export default function OrgBookkeepingModePage() {
 
               {/* Advantages */}
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Előnyök</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Előnyök</p>
                 <ul className="space-y-1">
                   {mode.advantages.map((a, i) => (
-                    <li key={i} className="flex items-start gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+                    <li key={i} className="flex items-start gap-1.5 text-xs text-muted-foreground">
                       <CheckCircle2 className="w-3 h-3 mt-0.5 shrink-0 text-green-500" />
                       {a}
                     </li>
@@ -211,16 +211,16 @@ export default function OrgBookkeepingModePage() {
       {/* Decision result */}
       {selectedMode && selectedOrgType && (
         <div className={cn(
-          'rounded-xl border p-5 animate-in slide-in-from-bottom-4 duration-300',
+          'rounded-lg border p-5 animate-in slide-in-from-bottom-4 duration-300',
           'bg-primary/5 border-primary/20'
         )}>
           <div className="flex items-start gap-3">
             <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 shrink-0" />
             <div className="flex-1 space-y-2">
-              <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              <p className="text-sm font-bold text-foreground">
                 Javasolt könyvvezetési mód: {MODES.find(m => m.id === selectedMode)?.name}
               </p>
-              <p className="text-xs text-slate-600 dark:text-slate-400">
+              <p className="text-xs text-muted-foreground">
                 A kiválasztott szervezeti forma ({ORG_TYPES.find(o => o.id === selectedOrgType)?.name})
                 és a törvényi feltételek alapján a(z) {selectedMode === 'single' ? 'egyszeres' : 'kettős'} könyvvitel alkalmazása javasolt.
               </p>
@@ -266,7 +266,7 @@ export default function OrgBookkeepingModePage() {
       )}
 
       {/* Legal info */}
-      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
         <div className="flex items-start gap-2">
           <Scale className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
           <div className="text-xs text-amber-700 dark:text-amber-400 space-y-1">

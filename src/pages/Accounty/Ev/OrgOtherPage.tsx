@@ -34,7 +34,7 @@ const ORG_TYPES: (OrgTypeInfo & { details?: string })[] = [
     bookkeeping: 'double',
     taxObligations: ['Társasági adó (TAO)', 'Áfa bevallás', 'Éves beszámoló', 'Adóelőleg'],
     icon: Users,
-    color: 'from-blue-500 to-indigo-600',
+    color: 'from-blue-500 to-primary',
     details: 'A szövetkezet a 2006. évi X. törvény alapján működő, tagjainak közös gazdasági érdekét szolgáló szervezet. Kettős könyvvitelt vezet, éves beszámolót készít. A szövetkezet tagjai korlátolt felelősséggel tartoznak. A TAO kulcs 9%, az osztalékot 15% SZJA terheli. Az áfa-bevallás gyakoriságát az éves árbevétel határozza meg.',
   },
   {
@@ -111,20 +111,20 @@ export default function OrgOtherPage() {
   const selectedOrg = ORG_TYPES.find(o => o.id === selectedType);
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Áttekintés
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <span className="text-slate-900 dark:text-slate-100 font-medium">Egyéb szervezetek</span>
+        <span className="text-foreground font-medium">Egyéb szervezetek</span>
       </div>
 
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Egyéb szervezetek</h1>
-        <p className="text-sm text-slate-500 mt-1">
+        <h1 className="text-2xl font-bold text-foreground">Egyéb szervezetek</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           {client?.name || 'Szervezet'} · Válassza ki a szervezeti formát a könyvelési és adózási konfigurációhoz.
         </p>
       </div>
@@ -139,29 +139,29 @@ export default function OrgOtherPage() {
               key={org.id}
               onClick={() => setSelectedType(org.id)}
               className={cn(
-                'bg-card rounded-xl border-2 p-4 text-left transition-all group',
+                'bg-card rounded-lg border-2 p-4 text-left transition-all group',
                 isSelected
                   ? 'border-primary shadow-lg shadow-primary/10'
                   : 'border-border hover:border-primary/30 hover:shadow-md'
               )}
             >
               <div className="flex items-center gap-3 mb-3">
-                <div className={cn('p-2 rounded-xl bg-gradient-to-br shadow-sm', org.color)}>
+                <div className={cn('p-2 rounded-lg bg-gradient-to-br shadow-sm', org.color)}>
                   <Icon className="w-4 h-4 text-white" />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">{org.name}</h3>
+                    <h3 className="text-sm font-bold text-foreground">{org.name}</h3>
                     {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-primary" />}
                   </div>
-                  <p className="text-[10px] text-slate-400">{org.legalRef}</p>
+                  <p className="text-[10px] text-muted-foreground">{org.legalRef}</p>
                 </div>
               </div>
-              <p className="text-xs text-slate-500 mb-3">{org.description}</p>
+              <p className="text-xs text-muted-foreground mb-3">{org.description}</p>
               <div className="flex items-center gap-2 text-[10px]">
                 <span className={cn(
                   'inline-flex items-center px-2 py-0.5 rounded-full font-semibold',
-                  org.bookkeeping === 'single' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
+                  org.bookkeeping === 'single' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-primary'
                     : org.bookkeeping === 'double' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                     : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
                 )}>
@@ -175,23 +175,23 @@ export default function OrgOtherPage() {
 
       {/* Detail panel */}
       {selectedOrg && (
-        <div className="bg-card rounded-xl border border-border p-6 space-y-5 animate-in slide-in-from-bottom-4 duration-300">
+        <div className="bg-card rounded-lg border border-border p-6 space-y-5 animate-in slide-in-from-bottom-4 duration-300">
           <div className="flex items-center gap-3">
-            <div className={cn('p-2.5 rounded-xl bg-gradient-to-br shadow-sm', selectedOrg.color)}>
+            <div className={cn('p-2.5 rounded-lg bg-gradient-to-br shadow-sm', selectedOrg.color)}>
               <selectedOrg.icon className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">{selectedOrg.name}</h2>
-              <p className="text-xs text-slate-500">{selectedOrg.legalRef} · {selectedOrg.description}</p>
+              <h2 className="text-lg font-bold text-foreground">{selectedOrg.name}</h2>
+              <p className="text-xs text-muted-foreground">{selectedOrg.legalRef} · {selectedOrg.description}</p>
             </div>
           </div>
 
           {/* Bookkeeping requirement */}
-          <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
+          <div className="bg-muted/50 rounded-lg p-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
               <BookOpen className="w-3.5 h-3.5" /> Könyvvezetési kötelezettség
             </h3>
-            <p className="text-sm text-slate-700 dark:text-slate-300">
+            <p className="text-sm text-foreground/90">
               {selectedOrg.bookkeeping === 'single'
                 ? 'Egyszeres könyvvitel alkalmazása kötelező.'
                 : selectedOrg.bookkeeping === 'double'
@@ -203,12 +203,12 @@ export default function OrgOtherPage() {
 
           {/* Tax obligations */}
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
               <Scale className="w-3.5 h-3.5" /> Adózási és bevallási kötelezettségek
             </h3>
             <div className="space-y-1.5">
               {selectedOrg.taxObligations.map((obl, i) => (
-                <div key={i} className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+                <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
                   <CheckCircle2 className="w-3 h-3 text-primary shrink-0" />
                   {obl}
                 </div>
@@ -253,7 +253,7 @@ export default function OrgOtherPage() {
                 'flex items-center gap-1.5 px-4 py-2 text-sm border rounded-lg transition-colors',
                 showInfo
                   ? 'text-primary border-primary bg-primary/5'
-                  : 'text-slate-600 border-border hover:bg-slate-50 dark:hover:bg-slate-800'
+                  : 'text-muted-foreground border-border hover:bg-muted/50'
               )}
             >
               <HelpCircle className="w-3.5 h-3.5" /> {showInfo ? 'Tájékoztató elrejtése' : 'Részletes tájékoztató'}
@@ -262,7 +262,7 @@ export default function OrgOtherPage() {
 
           {/* Detailed info panel */}
           {showInfo && selectedOrg && (
-            <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl p-5 space-y-3 animate-in slide-in-from-top-2 duration-300">
+            <div className="bg-primary/10 border border-indigo-200 dark:border-indigo-800 rounded-lg p-5 space-y-3 animate-in slide-in-from-top-2 duration-300">
               <h3 className="text-sm font-bold text-indigo-900 dark:text-indigo-200 flex items-center gap-2">
                 <BookOpen className="w-4 h-4" />
                 {selectedOrg.name} — Részletes tájékoztató
@@ -271,13 +271,13 @@ export default function OrgOtherPage() {
                 {(selectedOrg as any).details || 'Nincs részletes leírás.'}
               </p>
               <div className="grid grid-cols-2 gap-3 pt-2">
-                <div className="bg-white/50 dark:bg-slate-800/50 rounded-lg p-3">
-                  <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Jogszabályi háttér</p>
-                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">{selectedOrg.legalRef}</p>
+                <div className="bg-white/50 dark:bg-muted/50 rounded-lg p-3">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Jogszabályi háttér</p>
+                  <p className="text-xs font-semibold text-foreground/90">{selectedOrg.legalRef}</p>
                 </div>
-                <div className="bg-white/50 dark:bg-slate-800/50 rounded-lg p-3">
-                  <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Könyvvezetés</p>
-                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <div className="bg-white/50 dark:bg-muted/50 rounded-lg p-3">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Könyvvezetés</p>
+                  <p className="text-xs font-semibold text-foreground/90">
                     {selectedOrg.bookkeeping === 'single' ? 'Egyszeres könyvvitel (kötelező)'
                       : selectedOrg.bookkeeping === 'double' ? 'Kettős könyvvitel (kötelező)'
                       : 'Egyszeres vagy kettős (választható)'}
@@ -290,7 +290,7 @@ export default function OrgOtherPage() {
       )}
 
       {/* Info */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
         <div className="flex items-start gap-2">
           <Info className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
           <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">

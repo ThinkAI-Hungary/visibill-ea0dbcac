@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Clock, Calendar, Info, Save, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { cn } from '@/lib/utils';
 
 export default function TaoLifecyclePage() {
@@ -13,32 +14,32 @@ export default function TaoLifecyclePage() {
   const [terminationType, setTerminationType] = useState('');
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500 max-w-4xl">
+    <div className="w-full space-y-6 page-animate max-w-4xl">
       <div className="flex items-center gap-3">
-        <Link to={`/eaisybooks/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-          <ArrowLeft className="w-4 h-4 text-slate-400" />
+        <Link to={`/eaisybooks/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-muted transition-colors">
+          <ArrowLeft className="w-4 h-4 text-muted-foreground" />
         </Link>
-        <div className="p-2.5 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl shadow-lg shadow-purple-500/25">
+        <div className="p-2.5 bg-gradient-to-br from-purple-500 to-violet-600 rounded-lg shadow-lg shadow-purple-500/25">
           <Clock className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Adóalanyiság Életciklusa</h1>
-          <p className="text-sm text-slate-500">Keletkezés, megszűnés, áttéréskori korrekciók</p>
+          <h1 className="text-2xl font-bold text-foreground">Adóalanyiság Életciklusa</h1>
+          <p className="text-sm text-muted-foreground">Keletkezés, megszűnés, áttéréskori korrekciók</p>
         </div>
       </div>
 
       {/* Keletkezés */}
-      <div className="bg-card rounded-xl border border-border p-6 shadow-soft space-y-4">
-        <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Keletkezés</h2>
+      <div className="bg-card rounded-lg border border-border p-6 shadow-soft space-y-4">
+        <h2 className="text-base font-bold text-foreground">Keletkezés</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">Bejegyzési kérelem napja</label>
-            <Input type="date" value={registrationDate} onChange={e => setRegistrationDate(e.target.value)} className="bg-background" />
-            <p className="text-[10px] text-slate-400 mt-1">Előtársaság-időszak kezdete</p>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">Bejegyzési kérelem napja</label>
+            <DatePicker value={registrationDate} onChange={setRegistrationDate} placeholder="éééé. hh. nn." clearable className="w-full bg-background" />
+            <p className="text-[10px] text-muted-foreground mt-1">Előtársaság-időszak kezdete</p>
           </div>
           <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">Cégbejegyzés napja</label>
-            <Input type="date" value={incorporationDate} onChange={e => setIncorporationDate(e.target.value)} className="bg-background" />
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">Cégbejegyzés napja</label>
+            <DatePicker value={incorporationDate} onChange={setIncorporationDate} placeholder="éééé. hh. nn." clearable className="w-full bg-background" />
           </div>
         </div>
         <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
@@ -50,10 +51,10 @@ export default function TaoLifecyclePage() {
       </div>
 
       {/* Megszűnés */}
-      <div className="bg-card rounded-xl border border-border p-6 shadow-soft space-y-4">
-        <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Megszűnés</h2>
+      <div className="bg-card rounded-lg border border-border p-6 shadow-soft space-y-4">
+        <h2 className="text-base font-bold text-foreground">Megszűnés</h2>
         <div>
-          <label className="text-xs font-medium text-slate-500 mb-1 block">Megszűnés típusa</label>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Megszűnés típusa</label>
           <select
             value={terminationType}
             onChange={e => setTerminationType(e.target.value)}
@@ -76,17 +77,17 @@ export default function TaoLifecyclePage() {
       </div>
 
       {/* Áttéréskori korrekciók */}
-      <div className="bg-card rounded-xl border border-border p-6 shadow-soft space-y-4">
-        <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Áttéréskori korrekciók</h2>
+      <div className="bg-card rounded-lg border border-border p-6 shadow-soft space-y-4">
+        <h2 className="text-base font-bold text-foreground">Áttéréskori korrekciók</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {[
             { label: 'KIVA  TAO', desc: 'Áttérési különbözet', link: '#' },
             { label: 'IFRS áttérés', desc: 'Tao tv. 18/A.§', link: '#' },
             { label: 'Pénznem-váltás', desc: 'Könyvvezetés pénzneme', link: '#' },
           ].map(item => (
-            <div key={item.label} className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
-              <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{item.label}</p>
-              <p className="text-xs text-slate-500 mt-1">{item.desc}</p>
+            <div key={item.label} className="p-4 bg-muted/50 rounded-lg border border-border">
+              <p className="text-sm font-bold text-foreground">{item.label}</p>
+              <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>
             </div>
           ))}
         </div>

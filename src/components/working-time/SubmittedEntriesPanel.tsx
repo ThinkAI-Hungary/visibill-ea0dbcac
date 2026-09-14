@@ -314,8 +314,15 @@ export function SubmittedEntriesPanel() {
             className="rounded-xl border-border/50 bg-card/50 backdrop-blur-sm overflow-hidden"
           >
             {/* Employee header */}
-            <button
-              type="button"
+            <div
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggleEmployee(employeeName);
+                }
+              }}
               onClick={() => toggleEmployee(employeeName)}
               className={cn(
                 'w-full flex items-center justify-between px-4 py-3 text-left',
@@ -369,7 +376,7 @@ export function SubmittedEntriesPanel() {
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 )}
               </div>
-            </button>
+            </div>
 
             {/* Collapsible entry rows */}
             <div

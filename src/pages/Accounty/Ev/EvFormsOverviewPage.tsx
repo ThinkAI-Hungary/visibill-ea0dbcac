@@ -31,17 +31,17 @@ const STATUS_CONFIG: Record<FormStatus, { icon: React.ReactNode; label: string; 
   draft: { icon: <FileText className="w-4 h-4" />, label: 'Vázlat', color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' },
   overdue: { icon: <AlertTriangle className="w-4 h-4" />, label: 'Lejárt!', color: 'text-red-600 bg-red-50 dark:bg-red-900/20' },
   upcoming: { icon: <Clock className="w-4 h-4" />, label: 'Közelgő', color: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20' },
-  not_required: { icon: <Shield className="w-4 h-4" />, label: 'Nem kötelező', color: 'text-slate-400 bg-slate-50 dark:bg-slate-900/20' },
+  not_required: { icon: <Shield className="w-4 h-4" />, label: 'Nem kötelező', color: 'text-muted-foreground bg-background/20' },
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  szja: 'bg-indigo-500',
+  szja: 'bg-primary',
   contrib: 'bg-violet-500',
   hipa: 'bg-teal-500',
   kata: 'bg-amber-500',
   afa: 'bg-cyan-500',
   car: 'bg-rose-500',
-  egyeb: 'bg-slate-400',
+  egyeb: 'bg-muted-foreground/40',
 };
 
 const RETURN_TYPE_META: Record<string, { code: string; name: string; description: string; category: string }> = {
@@ -200,45 +200,45 @@ export default function EvFormsOverviewPage() {
   }, [forms]);
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to="/eaisybooks?tab=ev" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link to="/eaisybooks?tab=ev" className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <span className="text-slate-900 dark:text-slate-100 font-medium">Nyomtatványok</span>
+        <span className="text-foreground font-medium">Nyomtatványok</span>
       </div>
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg shadow-indigo-500/25">
+          <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg shadow-lg shadow-primary/20">
             <FileText className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Nyomtatványok & Bevallások</h1>
-            <p className="text-sm text-slate-500">NAV nyomtatványok, bevallási státuszok a teljes EV portfólióra</p>
+            <h1 className="text-2xl font-bold text-foreground">Nyomtatványok & Bevallások</h1>
+            <p className="text-sm text-muted-foreground">NAV nyomtatványok, bevallási státuszok a teljes EV portfólióra</p>
           </div>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Összes nyomtatvány</p>
-          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{isLoading ? '...' : stats.total}</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Összes nyomtatvány</p>
+          <p className="text-2xl font-bold text-foreground">{isLoading ? '...' : stats.total}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Benyújtott</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Benyújtott</p>
           <p className="text-2xl font-bold text-green-600">{isLoading ? '...' : stats.submitted}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Függőben</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Függőben</p>
           <p className="text-2xl font-bold text-amber-600">{isLoading ? '...' : stats.pending}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Lejárt</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Lejárt</p>
           <p className="text-2xl font-bold text-red-600">{isLoading ? '...' : stats.overdue}</p>
         </div>
       </div>
@@ -246,13 +246,13 @@ export default function EvFormsOverviewPage() {
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
           <input
             type="text"
             placeholder="Nyomtatvány keresése..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full text-sm pl-9 pr-3 py-2 bg-card border border-border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/30 text-foreground placeholder:text-muted-foreground"
+            className="w-full text-sm pl-9 pr-3 py-2 bg-card border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary/30 text-foreground placeholder:text-muted-foreground"
           />
         </div>
         <select
@@ -288,23 +288,23 @@ export default function EvFormsOverviewPage() {
       </div>
 
       {/* Forms table */}
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-16 text-slate-400">
-            <Loader2 className="w-8 h-8 mb-3 animate-spin text-indigo-400" />
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+            <Loader2 className="w-8 h-8 mb-3 animate-spin text-primary" />
             <p className="text-sm">Betöltés...</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-slate-50/50 dark:bg-slate-800/30">
-                  <th className="text-left py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Nyomtatvány</th>
-                  <th className="text-left py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Időszak</th>
-                  <th className="text-left py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Határidő</th>
-                  <th className="text-left py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Státusz</th>
-                  <th className="text-right py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Ügyfelek</th>
-                  <th className="text-right py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider w-24">Műveletek</th>
+                <tr className="border-b border-border bg-muted/40/50 dark:bg-muted/30">
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Nyomtatvány</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Időszak</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Határidő</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Státusz</th>
+                  <th className="text-right py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Ügyfelek</th>
+                  <th className="text-right py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider w-24">Műveletek</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -313,26 +313,26 @@ export default function EvFormsOverviewPage() {
                   const progress = form.clientsAffected > 0 ? (form.clientsSubmitted / form.clientsAffected) * 100 : 0;
 
                   return (
-                    <tr key={form.key} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                    <tr key={form.key} className="hover:bg-muted/50 dark:hover:bg-muted/50/30 transition-colors">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
                           <div className={cn('w-1 h-10 rounded-full', CATEGORY_COLORS[form.category] || CATEGORY_COLORS.egyeb)} />
                           <div>
-                            <p className="font-semibold text-slate-900 dark:text-slate-100">{form.code}</p>
-                            <p className="text-xs text-slate-500 mt-0.5">{form.name}</p>
+                            <p className="font-semibold text-foreground">{form.code}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{form.name}</p>
                           </div>
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        <span className="text-slate-700 dark:text-slate-300 font-mono text-xs">{form.period}</span>
+                        <span className="text-foreground/90 font-mono text-xs">{form.period}</span>
                       </td>
                       <td className="py-3 px-4">
                         {form.deadline !== '-' ? (
-                          <span className="text-slate-700 dark:text-slate-300 font-mono text-xs tabular-nums">
+                          <span className="text-foreground/90 font-mono text-xs tabular-nums">
                             {new Date(form.deadline).toLocaleDateString('hu-HU')}
                           </span>
                         ) : (
-                          <span className="text-slate-400 text-xs">-</span>
+                          <span className="text-muted-foreground text-xs">-</span>
                         )}
                       </td>
                       <td className="py-3 px-4">
@@ -344,26 +344,26 @@ export default function EvFormsOverviewPage() {
                       <td className="py-3 px-4 text-right">
                         {form.clientsAffected > 0 ? (
                           <div className="flex items-center gap-2 justify-end">
-                            <div className="w-16 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                            <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
                               <div
                                 className="h-full bg-green-500 rounded-full transition-all"
                                 style={{ width: `${progress}%` }}
                               />
                             </div>
-                            <span className="text-xs font-mono tabular-nums text-slate-600 dark:text-slate-400">
+                            <span className="text-xs font-mono tabular-nums text-muted-foreground">
                               {form.clientsSubmitted}/{form.clientsAffected}
                             </span>
                           </div>
                         ) : (
-                          <span className="text-xs text-slate-400">-</span>
+                          <span className="text-xs text-muted-foreground">-</span>
                         )}
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center gap-1 justify-end">
-                          <button className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-600" title="Megtekintés">
+                          <button className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-muted-foreground" title="Megtekintés">
                             <Eye className="w-3.5 h-3.5" />
                           </button>
-                          <button className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-600" title="Letöltés">
+                          <button className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-muted-foreground" title="Letöltés">
                             <Download className="w-3.5 h-3.5" />
                           </button>
                         </div>
@@ -377,7 +377,7 @@ export default function EvFormsOverviewPage() {
         )}
 
         {!isLoading && filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
             <FileText className="w-10 h-10 mb-3 opacity-50" />
             <p className="text-sm font-medium">Nincs találat</p>
             <p className="text-xs mt-1">Módosítsd a szűrőket a kereséshez.</p>

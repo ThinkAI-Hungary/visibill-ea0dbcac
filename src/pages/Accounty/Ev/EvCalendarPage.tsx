@@ -28,12 +28,12 @@ const TYPE_LABELS: Record<string, string> = {
   szja: 'SZJA', 'járulék': 'Járulék', hipa: 'HIPA', kata: 'KATA', afa: 'ÁFA', egyeb: 'Egyéb'
 };
 const TYPE_COLORS: Record<string, string> = {
-  szja: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400',
+  szja: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-primary',
   'járulék': 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400',
   hipa: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-400',
   kata: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
   afa: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-400',
-  egyeb: 'bg-slate-100 text-slate-700 dark:bg-slate-900/40 dark:text-slate-400',
+  egyeb: 'bg-muted text-foreground/90 dark:bg-card/40 dark:text-muted-foreground',
 };
 
 type DeadlineStatus = 'done' | 'upcoming' | 'overdue' | 'warning';
@@ -120,38 +120,38 @@ export default function EvCalendarPage() {
   }), [filtered]);
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to="/eaisybooks?tab=ev" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link to="/eaisybooks?tab=ev" className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <span className="text-slate-900 dark:text-slate-100 font-medium">Adónaptár</span>
+        <span className="text-foreground font-medium">Adónaptár</span>
       </div>
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg shadow-indigo-500/25">
+          <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg shadow-lg shadow-primary/20">
             <Calendar className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">EV Adónaptár</h1>
-            <p className="text-sm text-slate-500">{selectedYear}. adóévi határidők és bevallási kötelezettségek</p>
+            <h1 className="text-2xl font-bold text-foreground">EV Adónaptár</h1>
+            <p className="text-sm text-muted-foreground">{selectedYear}. adóévi határidők és bevallási kötelezettségek</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setSelectedYear(y => y - 1)}
-            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-muted transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="text-lg font-bold text-slate-900 dark:text-slate-100 tabular-nums w-16 text-center">{selectedYear}</span>
+          <span className="text-lg font-bold text-foreground tabular-nums w-16 text-center">{selectedYear}</span>
           <button
             onClick={() => setSelectedYear(y => y + 1)}
-            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-muted transition-colors"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -160,20 +160,20 @@ export default function EvCalendarPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Összes határidő</p>
-          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.total}</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Összes határidő</p>
+          <p className="text-2xl font-bold text-foreground">{stats.total}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Teljesített</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Teljesített</p>
           <p className="text-2xl font-bold text-green-600">{stats.done}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Közelgő</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Közelgő</p>
           <p className="text-2xl font-bold text-blue-600">{stats.upcoming}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Lejárt</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Lejárt</p>
           <p className="text-2xl font-bold text-red-600">{stats.overdue}</p>
         </div>
       </div>
@@ -181,8 +181,8 @@ export default function EvCalendarPage() {
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-1.5">
-          <Filter className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-xs font-medium text-slate-500">Szűrés:</span>
+          <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-xs font-medium text-muted-foreground">Szűrés:</span>
         </div>
         <select
           value={typeFilter}
@@ -223,33 +223,33 @@ export default function EvCalendarPage() {
                 items.length === 0 && 'opacity-40'
               )}>
                 <div className={cn(
-                  'w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0',
+                  'w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold shrink-0',
                   isCurrentMonth
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                    ? 'bg-primary text-white shadow-lg shadow-indigo-500/30'
+                    : 'bg-muted text-muted-foreground'
                 )}>
                   {String(monthIdx + 1).padStart(2, '0')}
                 </div>
                 <div>
                   <p className={cn(
                     'text-sm font-semibold',
-                    isCurrentMonth ? 'text-indigo-600' : 'text-slate-700 dark:text-slate-300'
+                    isCurrentMonth ? 'text-primary' : 'text-foreground/90'
                   )}>
                     {MONTH_NAMES[monthIdx]}
-                    {isCurrentMonth && <span className="ml-2 text-[10px] font-bold bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 px-1.5 py-0.5 rounded-full">AKTUÁLIS</span>}
+                    {isCurrentMonth && <span className="ml-2 text-[10px] font-bold bg-indigo-100 dark:bg-indigo-900/40 text-primary px-1.5 py-0.5 rounded-full">AKTUÁLIS</span>}
                   </p>
-                  <p className="text-xs text-slate-400">{items.length} határidő</p>
+                  <p className="text-xs text-muted-foreground">{items.length} határidő</p>
                 </div>
               </div>
 
               {/* Items */}
               {items.length > 0 && (
-                <div className="ml-5 pl-8 border-l-2 border-slate-200 dark:border-slate-700 space-y-2">
+                <div className="ml-5 pl-8 border-l-2 border-border space-y-2">
                   {items.map(item => (
                     <div
                       key={item.id}
                       className={cn(
-                        'relative bg-card border border-border rounded-xl p-4 shadow-soft hover:shadow-md transition-all',
+                        'relative bg-card border border-border rounded-lg p-4 shadow-soft hover:shadow-md transition-all',
                         item.status === 'overdue' && 'border-red-200 dark:border-red-800/50',
                         item.status === 'warning' && 'border-amber-200 dark:border-amber-800/50'
                       )}
@@ -267,14 +267,14 @@ export default function EvCalendarPage() {
                         <div className="flex items-start gap-3">
                           {STATUS_ICON[item.status]}
                           <div>
-                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{item.title}</p>
-                            <p className="text-xs text-slate-500 mt-0.5">{item.description}</p>
+                            <p className="text-sm font-semibold text-foreground">{item.title}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{item.description}</p>
                             <div className="flex items-center gap-2 mt-2">
                               <span className={cn('text-[10px] font-bold px-1.5 py-0.5 rounded-full', TYPE_COLORS[item.type])}>
                                 {TYPE_LABELS[item.type]}
                               </span>
                               {item.clientCount && (
-                                <span className="text-[10px] text-slate-400">
+                                <span className="text-[10px] text-muted-foreground">
                                   {item.clientCount} ügyfél érintett
                                 </span>
                               )}
@@ -282,7 +282,7 @@ export default function EvCalendarPage() {
                           </div>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-sm font-mono tabular-nums text-slate-700 dark:text-slate-300">
+                          <p className="text-sm font-mono tabular-nums text-foreground/90">
                             {new Date(item.date).toLocaleDateString('hu-HU', { month: 'short', day: 'numeric' })}
                           </p>
                           <p className={cn(

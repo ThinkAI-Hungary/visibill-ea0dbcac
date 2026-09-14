@@ -230,7 +230,7 @@ export default function WorksheetLivePayslip({
 
       <CardContent className="p-4 space-y-4 text-xs">
         {/* Kiemelt Nettó Kifizetendő doboz */}
-        <div className="p-3.5 rounded-xl bg-gradient-to-br from-green-500/10 via-emerald-500/10 to-teal-500/10 border border-green-500/30 dark:border-green-500/20 text-center space-y-1">
+        <div className="p-3.5 rounded-lg bg-gradient-to-br from-green-500/10 via-emerald-500/10 to-teal-500/10 border border-green-500/30 dark:border-green-500/20 text-center space-y-1">
           <span className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
             Kifizetendő Nettó Összeg
           </span>
@@ -369,7 +369,7 @@ export default function WorksheetLivePayslip({
         )}
 
         {/* Munkáltatói Költségek blokk */}
-        <div className="p-3 rounded-lg bg-slate-100 dark:bg-slate-800/60 border border-border/50 space-y-1.5">
+        <div className="p-3 rounded-lg bg-muted/60 border border-border/50 space-y-1.5">
           <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground">
             <span>Munkáltatói Terhek</span>
             {isKiva ? (

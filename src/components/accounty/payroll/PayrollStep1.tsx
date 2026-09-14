@@ -26,7 +26,7 @@ export default function PayrollStep1({
 }: PayrollStep1Props) {
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-600 dark:text-slate-300">
+      <p className="text-sm text-muted-foreground dark:text-foreground/90">
         Küldj adatbekérő üzenetet az ügyfélnek a hiányzó bér-adatokról (jelenléti ív, változások, új belépők/kilépők).
       </p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -52,24 +52,24 @@ export default function PayrollStep1({
               <Mail className="w-5 h-5 text-blue-500" />
             )}
             <div className="text-left">
-              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+              <p className="text-sm font-semibold text-foreground">
                 {emailSending ? 'Küldés...' : emailSent ? `Elküldve  → ${emailTo}` : 'E-mail küldése'}
               </p>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 {emailSent ? 'Adatbekérő sikeresen kiküldve' : 'Sablon-alapú bekérés'}
               </p>
             </div>
           </button>
           {emailDialogOpen && !emailSent && (
-            <div className="absolute top-full left-0 right-0 mt-2 p-4 bg-card border border-border rounded-xl shadow-xl z-20 animate-in fade-in slide-in-from-top-2 duration-200">
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Címzett email cím</label>
+            <div className="absolute top-full left-0 right-0 mt-2 p-4 bg-card border border-border rounded-lg shadow-xl z-20 page-animate slide-in-from-top-2 duration-200">
+              <label className="block text-xs font-semibold text-foreground/90 mb-1.5">Címzett email cím</label>
               <div className="flex gap-2">
                 <input
                   type="email"
                   value={emailTo}
                   onChange={e => setEmailTo(e.target.value)}
                   placeholder="pelda@ceg.hu"
-                  className="flex-1 px-3 py-2 text-sm bg-background border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary/30 text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+                  className="flex-1 px-3 py-2 text-sm bg-background border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary/30 text-foreground placeholder:text-muted-foreground"
                   autoFocus
                   onKeyDown={e => e.key === 'Enter' && handleSendEmail()}
                 />
@@ -83,7 +83,7 @@ export default function PayrollStep1({
                   Küldés
                 </Button>
               </div>
-              <p className="text-[10px] text-slate-400 mt-1.5">Az adatbekérő email erre a címre lesz kiküldve.</p>
+              <p className="text-[10px] text-muted-foreground mt-1.5">Az adatbekérő email erre a címre lesz kiküldve.</p>
             </div>
           )}
         </div>
@@ -93,15 +93,15 @@ export default function PayrollStep1({
         >
           <Eye className="w-5 h-5 text-violet-500" />
           <div className="text-left">
-            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Előnézet</p>
-            <p className="text-xs text-slate-500">E-mail megtekintése</p>
+            <p className="text-sm font-semibold text-foreground">Előnézet</p>
+            <p className="text-xs text-muted-foreground">E-mail megtekintése</p>
           </div>
         </button>
         <button className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary/30 hover:bg-primary/5 transition-all">
           <Send className="w-5 h-5 text-teal-500" />
           <div className="text-left">
-            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Portál link</p>
-            <p className="text-xs text-slate-500">Ügyfélportál meghívó</p>
+            <p className="text-sm font-semibold text-foreground">Portál link</p>
+            <p className="text-xs text-muted-foreground">Ügyfélportál meghívó</p>
           </div>
         </button>
       </div>

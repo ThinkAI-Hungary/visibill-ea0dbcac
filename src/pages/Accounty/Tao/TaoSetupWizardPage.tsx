@@ -79,17 +79,17 @@ export default function TaoSetupWizardPage() {
   };
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500 max-w-3xl">
+    <div className="w-full space-y-6 page-animate max-w-3xl">
       <div className="flex items-center gap-3">
-        <Link to={`/eaisybooks/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-          <ArrowLeft className="w-4 h-4 text-slate-400" />
+        <Link to={`/eaisybooks/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-muted transition-colors">
+          <ArrowLeft className="w-4 h-4 text-muted-foreground" />
         </Link>
-        <div className="p-2.5 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-lg shadow-amber-500/25">
+        <div className="p-2.5 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg shadow-lg shadow-amber-500/25">
           <Shield className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Adóalany-státusz Wizard</h1>
-          <p className="text-sm text-slate-500">A Tao tv. 2.§ döntési fa szerinti besorolás</p>
+          <h1 className="text-2xl font-bold text-foreground">Adóalany-státusz Wizard</h1>
+          <p className="text-sm text-muted-foreground">A Tao tv. 2.§ döntési fa szerinti besorolás</p>
         </div>
       </div>
 
@@ -101,12 +101,12 @@ export default function TaoSetupWizardPage() {
               'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all',
               i < currentStep ? 'bg-emerald-500 text-white' :
               i === currentStep ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 ring-2 ring-amber-400' :
-              'bg-slate-100 dark:bg-slate-800 text-slate-400'
+              'bg-muted text-muted-foreground'
             )}>
               {answers[q.id] ? <Check className="w-4 h-4" /> : q.id}
             </div>
             {i < QUESTIONS.length - 1 && (
-              <div className={cn('flex-1 h-0.5', i < currentStep ? 'bg-emerald-400' : 'bg-slate-200 dark:bg-slate-700')} />
+              <div className={cn('flex-1 h-0.5', i < currentStep ? 'bg-emerald-400' : 'bg-muted')} />
             )}
           </React.Fragment>
         ))}
@@ -114,13 +114,13 @@ export default function TaoSetupWizardPage() {
 
       {/* Current question */}
       {!isComplete && (
-        <div className="bg-card rounded-xl border border-border p-8 shadow-soft">
+        <div className="bg-card rounded-lg border border-border p-8 shadow-soft">
           <div className="text-center space-y-4">
-            <span className="text-xs font-medium text-slate-400">Kérdés {currentStep + 1} / {QUESTIONS.length}</span>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+            <span className="text-xs font-medium text-muted-foreground">Kérdés {currentStep + 1} / {QUESTIONS.length}</span>
+            <h2 className="text-xl font-bold text-foreground">
               {QUESTIONS[currentStep].question}
             </h2>
-            <p className="text-sm text-slate-500 flex items-center justify-center gap-1.5">
+            <p className="text-sm text-muted-foreground flex items-center justify-center gap-1.5">
               <HelpCircle className="w-4 h-4" />
               {QUESTIONS[currentStep].hint}
             </p>
@@ -147,17 +147,17 @@ export default function TaoSetupWizardPage() {
       {isComplete && (() => {
         const result = getResult();
         return (
-          <div className="bg-card rounded-xl border border-border p-8 shadow-soft text-center space-y-4">
+          <div className="bg-card rounded-lg border border-border p-8 shadow-soft text-center space-y-4">
             <div className={cn(
               'w-16 h-16 rounded-full mx-auto flex items-center justify-center',
               `bg-${result.color}-100 dark:bg-${result.color}-900/30`
             )}>
               <Shield className={cn('w-8 h-8', `text-${result.color}-600`)} />
             </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+            <h2 className="text-xl font-bold text-foreground">
               Besorolás: {result.type}
             </h2>
-            <p className="text-sm text-slate-500">{result.regime}</p>
+            <p className="text-sm text-muted-foreground">{result.regime}</p>
             <div className="flex items-center justify-center gap-3 mt-6">
               <Button variant="outline" onClick={() => { setCurrentStep(0); setAnswers({}); }} disabled={upsertTaxProfile.isPending}>
                 Újrakezdés
@@ -177,13 +177,13 @@ export default function TaoSetupWizardPage() {
 
       {/* Answers summary */}
       {Object.keys(answers).length > 0 && (
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Válaszok</h3>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <h3 className="text-sm font-bold text-foreground/90 mb-3">Válaszok</h3>
           <div className="space-y-2">
             {QUESTIONS.filter(q => answers[q.id]).map(q => (
               <div key={q.id} className="flex items-center justify-between text-sm">
-                <span className="text-slate-500">{q.question}</span>
-                <span className="font-medium text-slate-900 dark:text-slate-100">{answers[q.id]}</span>
+                <span className="text-muted-foreground">{q.question}</span>
+                <span className="font-medium text-foreground">{answers[q.id]}</span>
               </div>
             ))}
           </div>

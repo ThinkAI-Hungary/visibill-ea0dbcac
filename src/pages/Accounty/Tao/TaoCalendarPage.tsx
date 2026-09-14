@@ -89,17 +89,17 @@ export default function TaoCalendarPage() {
     const date = new Date(ev.date);
     const daysLeft = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     return (
-      <div key={i} className={cn('flex items-center gap-4 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors', isPast && 'opacity-60')}>
+      <div key={i} className={cn('flex items-center gap-4 px-4 py-3 hover:bg-muted/50 transition-colors', isPast && 'opacity-60')}>
         <div className={cn('w-3 h-3 rounded-full shrink-0', ev.color)} />
         <div className="flex-1">
-          <p className={cn('text-sm font-medium', isPast ? 'text-slate-500' : 'text-slate-900 dark:text-slate-100')}>{ev.label}</p>
+          <p className={cn('text-sm font-medium', isPast ? 'text-muted-foreground' : 'text-foreground')}>{ev.label}</p>
         </div>
         <div className="text-right">
-          <p className="text-sm font-mono font-bold text-slate-700 dark:text-slate-300">
+          <p className="text-sm font-mono font-bold text-foreground/90">
             {date.toLocaleDateString('hu-HU', { year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
           {!isPast && (
-            <p className={cn('text-xs', daysLeft <= 14 ? 'text-red-600 font-bold' : 'text-slate-400')}>
+            <p className={cn('text-xs', daysLeft <= 14 ? 'text-red-600 font-bold' : 'text-muted-foreground')}>
               {daysLeft} nap
             </p>
           )}
@@ -119,21 +119,21 @@ export default function TaoCalendarPage() {
             key={mi}
             onClick={() => { setSelectedMonth(mi); setViewMode('month'); }}
             className={cn(
-              'bg-card rounded-xl border p-4 text-left hover:shadow-md transition-all',
+              'bg-card rounded-lg border p-4 text-left hover:shadow-md transition-all',
               isCurrentMonth ? 'border-emerald-400 ring-1 ring-emerald-400/30' : 'border-border hover:border-primary/30'
             )}
           >
-            <p className={cn('text-sm font-bold mb-2', isCurrentMonth ? 'text-emerald-600' : 'text-slate-700 dark:text-slate-300')}>
+            <p className={cn('text-sm font-bold mb-2', isCurrentMonth ? 'text-emerald-600' : 'text-foreground/90')}>
               {name}
             </p>
             {monthEvents.length === 0 ? (
-              <p className="text-[10px] text-slate-400">Nincs esemény</p>
+              <p className="text-[10px] text-muted-foreground">Nincs esemény</p>
             ) : (
               <div className="space-y-1">
                 {monthEvents.map((ev, i) => (
                   <div key={i} className="flex items-center gap-1.5">
                     <div className={cn('w-2 h-2 rounded-full shrink-0', ev.color)} />
-                    <span className="text-[10px] text-slate-500 truncate">{ev.label}</span>
+                    <span className="text-[10px] text-muted-foreground truncate">{ev.label}</span>
                   </div>
                 ))}
               </div>
@@ -159,15 +159,15 @@ export default function TaoCalendarPage() {
           <div
             key={qi}
             className={cn(
-              'bg-card rounded-xl border p-4',
+              'bg-card rounded-lg border p-4',
               isCurrentQ ? 'border-emerald-400 ring-1 ring-emerald-400/30' : 'border-border'
             )}
           >
-            <p className={cn('text-sm font-bold mb-3', isCurrentQ ? 'text-emerald-600' : 'text-slate-700 dark:text-slate-300')}>
+            <p className={cn('text-sm font-bold mb-3', isCurrentQ ? 'text-emerald-600' : 'text-foreground/90')}>
               {qLabel}
             </p>
             {qEvents.length === 0 ? (
-              <p className="text-xs text-slate-400 py-4 text-center">Nincs határidő</p>
+              <p className="text-xs text-muted-foreground py-4 text-center">Nincs határidő</p>
             ) : (
               <div className="space-y-2">
                 {qEvents.map((ev, i) => {
@@ -177,8 +177,8 @@ export default function TaoCalendarPage() {
                     <div key={i} className={cn('flex items-start gap-2', isPast && 'opacity-50')}>
                       <div className={cn('w-2.5 h-2.5 rounded-full shrink-0 mt-1', ev.color)} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">{ev.label}</p>
-                        <p className="text-[10px] text-slate-400 font-mono">
+                        <p className="text-xs font-medium text-foreground/90 truncate">{ev.label}</p>
+                        <p className="text-[10px] text-muted-foreground font-mono">
                           {date.toLocaleDateString('hu-HU', { month: 'short', day: 'numeric' })}
                         </p>
                       </div>
@@ -211,9 +211,9 @@ export default function TaoCalendarPage() {
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
-        <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+        <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
           {monthEvents.length === 0 ? (
-            <div className="py-12 text-center text-sm text-slate-400">Nincs határidő ebben a hónapban</div>
+            <div className="py-12 text-center text-sm text-muted-foreground">Nincs határidő ebben a hónapban</div>
           ) : (
             <div className="divide-y divide-border/50">
               {monthEvents.map((ev, i) => renderEventRow(ev, i, new Date(ev.date) < now))}
@@ -227,22 +227,22 @@ export default function TaoCalendarPage() {
   // List view: upcoming + past
   const renderListView = () => (
     <div className="space-y-4">
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-        <div className="px-4 py-3 border-b border-border dark:bg-slate-900/30">
-          <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Közelgő határidők</h2>
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
+        <div className="px-4 py-3 border-b border-border dark:bg-card/30">
+          <h2 className="text-sm font-bold text-foreground/90">Közelgő határidők</h2>
         </div>
         <div className="divide-y divide-border/50">
           {upcomingEvents.length === 0 ? (
-            <div className="py-12 text-center text-sm text-slate-400">Nincs közelgő határidő</div>
+            <div className="py-12 text-center text-sm text-muted-foreground">Nincs közelgő határidő</div>
           ) : (
             upcomingEvents.map((ev, i) => renderEventRow(ev, i, false))
           )}
         </div>
       </div>
       {pastEvents.length > 0 && (
-        <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-          <div className="px-4 py-3 border-b border-border dark:bg-slate-900/30">
-            <h2 className="text-sm font-bold text-slate-400">Lejárt határidők</h2>
+        <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
+          <div className="px-4 py-3 border-b border-border dark:bg-card/30">
+            <h2 className="text-sm font-bold text-muted-foreground">Lejárt határidők</h2>
           </div>
           <div className="divide-y divide-border/50">
             {pastEvents.map((ev, i) => renderEventRow(ev, i, true))}
@@ -253,7 +253,7 @@ export default function TaoCalendarPage() {
   );
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Header */}
       <div className="flex justify-between items-start flex-wrap gap-4">
         <div className="flex items-start gap-4">
@@ -265,14 +265,14 @@ export default function TaoCalendarPage() {
                 navigate('/eaisybooks?tab=tao');
               }
             }}
-            className="flex items-center justify-center w-8 h-8 mt-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
+            className="flex items-center justify-center w-8 h-8 mt-1 rounded-lg border border-border bg-card hover:bg-muted transition-colors shadow-sm shrink-0"
             title="Vissza"
           >
-            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            <ChevronLeft className="w-5 h-5 text-muted-foreground" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">TAO-zárási Kalendárium</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">TAO, KIVA, HIPA, Inno, Pillar Two határidők</p>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">TAO-zárási Kalendárium</h1>
+            <p className="text-sm text-muted-foreground mt-1">TAO, KIVA, HIPA, Inno, Pillar Two határidők</p>
           </div>
         </div>
 
@@ -285,14 +285,14 @@ export default function TaoCalendarPage() {
 
       {/* View toggle + Legend */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/50 rounded-lg p-0.5">
+        <div className="flex gap-1 bg-muted/50 rounded-lg p-0.5">
           {(['year', 'quarter', 'month', 'list'] as ViewMode[]).map(v => (
             <button
               key={v}
               onClick={() => setViewMode(v)}
               className={cn(
                 'px-3 py-1.5 rounded-md text-xs font-medium transition-all',
-                viewMode === v ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                viewMode === v ? 'bg-card dark:bg-muted text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground/90 dark:hover:text-muted-foreground/60'
               )}
             >
               {{ year: 'Év', quarter: 'Negyedév', month: 'Hónap', list: 'Lista' }[v]}
@@ -303,7 +303,7 @@ export default function TaoCalendarPage() {
           {Object.entries(COLOR_MAP).map(([key, val]) => (
             <div key={key} className="flex items-center gap-1.5">
               <div className={cn('w-2.5 h-2.5 rounded-full', val.dot)} />
-              <span className="text-[10px] text-slate-500">{val.label}</span>
+              <span className="text-[10px] text-muted-foreground">{val.label}</span>
             </div>
           ))}
         </div>

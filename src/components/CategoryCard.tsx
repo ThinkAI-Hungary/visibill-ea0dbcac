@@ -126,7 +126,7 @@ export function CategoryCard({
       </Card>
 
       <Dialog open={isEditing} onOpenChange={(open) => !open && handleCancel()}>
-        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-md border-border/50">
+        <DialogContent className="sm:max-w-2xl bg-card/95 backdrop-blur-md border-border/50">
           <DialogHeader>
             <DialogTitle>{name ? 'Kategória szerkesztése' : 'Új kategória'}</DialogTitle>
           </DialogHeader>

@@ -371,21 +371,8 @@ export function AccountyShellProvider({ children }: { children: React.ReactNode 
         const module = PATH_TO_MODULE[item.to];
         return !module || canAccess(module);
       })
-    },
-    {
-      id: 'support',
-      label: 'Támogatás & AI',
-      icon: HelpCircle,
-      items: [
-        { to: '/eaisybooks/ai-assistant', icon: Bot, label: 'AI Asszisztens' },
-        { to: '/eaisybooks/tickets', icon: TicketCheck, label: 'Hibajegyek', badge: unreadTicketCount },
-        { to: '/eaisybooks/help', icon: HelpCircle, label: 'Segítség' },
-      ].filter(item => {
-        const module = PATH_TO_MODULE[item.to];
-        return !module || canAccess(module);
-      })
     }
-  ], [unreadTicketCount, canAccess]);
+  ], [canAccess]);
 
   const isActive = useCallback((path: string) => {
     if (path === '/eaisybooks') {

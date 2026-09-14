@@ -5,6 +5,7 @@ import {
   Mail, RefreshCw, Loader2, Database, Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { useAccountyDocuments, useAccountyClients, type AccountyDocument } from '@/hooks/accounty';
 import { usePayrollCalculations, usePayrollCycles } from '@/hooks/usePayrollData';
@@ -103,14 +104,14 @@ export default function EPayslipPortalPage() {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full max-w-5xl mx-auto space-y-6 page-animate">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
-          <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg shadow-blue-500/25"><Mail className="w-5 h-5 text-white" /></div>
+          <div className="p-2.5 bg-gradient-to-br from-blue-500 to-primary rounded-lg shadow-lg shadow-blue-500/25"><Mail className="w-5 h-5 text-white" /></div>
           <div>
             <h1 className="text-2xl font-bold">E-bérjegyzék portál</h1>
-            <p className="text-sm text-slate-500">Elektronikus bérjegyzék hozzáférhetővé tétel — Mt. 155. § (3)</p>
+            <p className="text-sm text-muted-foreground">Elektronikus bérjegyzék hozzáférhetővé tétel — Mt. 155. § (3)</p>
           </div>
         </div>
         <Button onClick={async () => {
@@ -139,35 +140,35 @@ export default function EPayslipPortalPage() {
       {isLoading ? (
         <FinancialPageSkeleton title="E-bérjegyzékek betöltése..." />
       ) : slips.length === 0 ? (
-        <div className="bg-card rounded-xl border border-border p-12 text-center space-y-3">
-          <Database className="w-10 h-10 mx-auto text-slate-400" />
-          <p className="text-sm text-slate-500">Nincsenek bérjegyzékek a portálon.</p>
-          <p className="text-xs text-slate-400">Először generálja a bérjegyzékeket a Bérjegyzék generálás oldalon.</p>
+        <div className="bg-card rounded-lg border border-border p-12 text-center space-y-3">
+          <Database className="w-10 h-10 mx-auto text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Nincsenek bérjegyzékek a portálon.</p>
+          <p className="text-xs text-muted-foreground">Először generálja a bérjegyzékeket a Bérjegyzék generálás oldalon.</p>
         </div>
       ) : (
         <>
           <div className="grid grid-cols-3 gap-3">
-            <div className="bg-card rounded-xl border border-border p-4 text-center"><p className="text-2xl font-bold text-slate-700">{slips.length}</p><p className="text-xs text-slate-500">Összes</p></div>
-            <div className="bg-card rounded-xl border border-border p-4 text-center"><p className="text-2xl font-bold text-blue-600">{generatedCount}</p><p className="text-xs text-slate-500">Generálva</p></div>
-            <div className="bg-card rounded-xl border border-border p-4 text-center"><p className="text-2xl font-bold text-emerald-600">{sentCount}</p><p className="text-xs text-slate-500">Kiküldve</p></div>
+            <div className="bg-card rounded-lg border border-border p-4 text-center"><p className="text-2xl font-bold text-foreground/90">{slips.length}</p><p className="text-xs text-muted-foreground">Összes</p></div>
+            <div className="bg-card rounded-lg border border-border p-4 text-center"><p className="text-2xl font-bold text-blue-600">{generatedCount}</p><p className="text-xs text-muted-foreground">Generálva</p></div>
+            <div className="bg-card rounded-lg border border-border p-4 text-center"><p className="text-2xl font-bold text-emerald-600">{sentCount}</p><p className="text-xs text-muted-foreground">Kiküldve</p></div>
           </div>
 
-          <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl p-4 text-sm text-blue-800 dark:text-blue-300">
+          <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-lg p-4 text-sm text-blue-800 dark:text-blue-300">
             <Shield className="w-4 h-4 inline mr-1" />
             <strong>Titkosított hozzáférés:</strong> A bérjegyzékek jelszóval védett PDF formátumban érhetők el. Jelszó: TAJ szám utolsó 6 számjegye.
           </div>
 
-          <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-            <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30">
-              <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Bérjegyzék hozzáférés státusz</h2>
+          <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
+            <div className="px-5 py-3 border-b border-border dark:bg-card/30">
+              <h2 className="text-sm font-bold text-foreground/90">Bérjegyzék hozzáférés státusz</h2>
             </div>
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="px-5 py-2"><input type="checkbox" checked={selectedIds.size === slips.length} onChange={toggleAll} className="rounded" /></th>
-                  <th className="text-left px-3 py-2 text-xs font-bold text-slate-500">Dokumentum</th>
-                  <th className="text-left px-3 py-2 text-xs font-bold text-slate-500">Időszak</th>
-                  <th className="text-center px-3 py-2 text-xs font-bold text-slate-500">Státusz</th>
+                  <th className="px-5 py-2"><Checkbox checked={selectedIds.size === slips.length && slips.length > 0} onCheckedChange={toggleAll} /></th>
+                  <th className="text-left px-3 py-2 text-xs font-bold text-muted-foreground">Dokumentum</th>
+                  <th className="text-left px-3 py-2 text-xs font-bold text-muted-foreground">Időszak</th>
+                  <th className="text-center px-3 py-2 text-xs font-bold text-muted-foreground">Státusz</th>
                   <th className="px-3 py-2" />
                 </tr>
               </thead>
@@ -175,14 +176,14 @@ export default function EPayslipPortalPage() {
                 {paginatedSlips.map(slip => {
                   const payslipData = getPayslipData(slip);
                   return (
-                    <tr key={slip.id} className="border-b border-border/50 hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                      <td className="px-5 py-2.5"><input type="checkbox" checked={selectedIds.has(slip.id)} onChange={() => toggleSelect(slip.id)} className="rounded" /></td>
+                    <tr key={slip.id} className="border-b border-border/50 hover:bg-muted/50">
+                      <td className="px-5 py-2.5"><Checkbox checked={selectedIds.has(slip.id)} onCheckedChange={() => toggleSelect(slip.id)} /></td>
                       <td className="px-3 py-2.5 font-medium">{slip.title}</td>
-                      <td className="px-3 py-2.5 text-xs text-slate-500">{slip.period}</td>
+                      <td className="px-3 py-2.5 text-xs text-muted-foreground">{slip.period}</td>
                       <td className="px-3 py-2.5 text-center">
                         {slip.status === 'sent' ? <CheckCircle className="w-4 h-4 text-emerald-500 mx-auto" /> :
                          slip.status === 'generated' ? <span className="text-xs text-blue-600">Generálva</span> :
-                         <Clock className="w-4 h-4 text-slate-300 mx-auto" />}
+                         <Clock className="w-4 h-4 text-muted-foreground/60 mx-auto" />}
                       </td>
                       <td className="px-3 py-2.5">
                         <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Megtekintés" onClick={async () => {
@@ -229,7 +230,7 @@ export default function EPayslipPortalPage() {
               {previewTitle}
             </DialogTitle>
           </DialogHeader>
-          <div className="flex-1 w-full bg-slate-200 dark:bg-slate-900">
+          <div className="flex-1 w-full bg-muted dark:bg-card">
             {previewUrl && (
               <iframe src={previewUrl} className="w-full h-full border-0" title="Bérjegyzék megtekintő" />
             )}

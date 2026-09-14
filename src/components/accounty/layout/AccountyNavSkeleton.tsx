@@ -12,7 +12,7 @@ export const AccountyNavSkeleton: React.FC<AccountyNavSkeletonProps> = ({
 }) => {
   if (isCollapsed) {
     return (
-      <div className="flex w-full min-w-0 flex-col items-center gap-2 py-1 animate-in fade-in duration-200">
+      <div className="flex w-full min-w-0 flex-col items-center gap-2 py-1 page-animate duration-200">
         {Array.from({ length: count }).map((_, idx) => (
           <Skeleton
             key={idx}
@@ -24,7 +24,7 @@ export const AccountyNavSkeleton: React.FC<AccountyNavSkeletonProps> = ({
   }
 
   return (
-    <div className="flex flex-col gap-2 px-1 py-1 animate-in fade-in duration-200">
+    <div className="flex flex-col gap-2 px-1 py-1 page-animate duration-200">
       {/* Back button / Group Header Skeleton */}
       <div className="flex items-center gap-2 px-3 py-1.5 h-8 rounded-md border border-border/30 bg-sidebar-foreground/5 mb-1">
         <Skeleton className="h-4 w-4 rounded shrink-0 bg-sidebar-foreground/15" />

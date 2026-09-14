@@ -206,14 +206,14 @@ export default function AiAnomalyReportPage() {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full max-w-5xl mx-auto space-y-6 page-animate">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
-          <div className="p-2.5 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl shadow-lg shadow-purple-500/25"><Brain className="w-5 h-5 text-white" /></div>
+          <div className="p-2.5 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg shadow-lg shadow-purple-500/25"><Brain className="w-5 h-5 text-white" /></div>
           <div>
             <h1 className="text-2xl font-bold">Anomália észlelés</h1>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-muted-foreground">
               Szabályalapú bérszámfejtési anomáliák felderítése
               {cycleLabel && <span className="ml-1 text-primary">· {cycleLabel}</span>}
               {!isLoading && <span className="ml-1">· {clients.length} cég, {employments.length} jogviszony</span>}
@@ -228,11 +228,11 @@ export default function AiAnomalyReportPage() {
 
       {/* Loading state */}
       {isLoading && (
-        <div className="flex items-center justify-center py-20 bg-card rounded-xl border border-border">
+        <div className="flex items-center justify-center py-20 bg-card rounded-lg border border-border">
           <div className="text-center space-y-3">
             <Loader2 className="w-8 h-8 mx-auto animate-spin text-purple-500" />
-            <p className="text-sm text-slate-500">Adatok lekérdezése és elemzés...</p>
-            <p className="text-xs text-slate-400">{clients.length} cég, jogviszonyok és számfejtések betöltése</p>
+            <p className="text-sm text-muted-foreground">Adatok lekérdezése és elemzés...</p>
+            <p className="text-xs text-muted-foreground">{clients.length} cég, jogviszonyok és számfejtések betöltése</p>
           </div>
         </div>
       )}
@@ -241,28 +241,28 @@ export default function AiAnomalyReportPage() {
         <>
           {/* Summary */}
           <div className="grid grid-cols-4 gap-3">
-            <div className="bg-card rounded-xl border border-border p-4 text-center">
+            <div className="bg-card rounded-lg border border-border p-4 text-center">
               <p className="text-2xl font-bold text-red-600">{stats.critical}</p>
-              <p className="text-xs text-slate-500">Kritikus</p>
+              <p className="text-xs text-muted-foreground">Kritikus</p>
             </div>
-            <div className="bg-card rounded-xl border border-border p-4 text-center">
+            <div className="bg-card rounded-lg border border-border p-4 text-center">
               <p className="text-2xl font-bold text-yellow-600">{stats.warning}</p>
-              <p className="text-xs text-slate-500">Figyelmeztetés</p>
+              <p className="text-xs text-muted-foreground">Figyelmeztetés</p>
             </div>
-            <div className="bg-card rounded-xl border border-border p-4 text-center">
+            <div className="bg-card rounded-lg border border-border p-4 text-center">
               <p className="text-2xl font-bold text-blue-600">{stats.info}</p>
-              <p className="text-xs text-slate-500">Információ</p>
+              <p className="text-xs text-muted-foreground">Információ</p>
             </div>
-            <div className="bg-card rounded-xl border border-border p-4 text-center">
+            <div className="bg-card rounded-lg border border-border p-4 text-center">
               <p className="text-2xl font-bold text-emerald-600">{stats.resolved}</p>
-              <p className="text-xs text-slate-500">Megoldva</p>
+              <p className="text-xs text-muted-foreground">Megoldva</p>
             </div>
           </div>
 
           {/* Search + Filters */}
           <div className="flex items-center gap-3 flex-wrap">
             <div className="relative flex-1 max-w-xs">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Keresés anomáliákban..."
                 value={searchQuery}
@@ -270,9 +270,9 @@ export default function AiAnomalyReportPage() {
                 className="pl-9 bg-card border-border h-9 text-sm"
               />
             </div>
-            <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/50 rounded-lg p-0.5">
+            <div className="flex gap-1 bg-muted/50 rounded-lg p-0.5">
               {[{ id: 'all' as const, label: 'Mind' }, { id: 'critical' as const, label: 'Kritikus' }, { id: 'warning' as const, label: 'Figyelmeztetés' }, { id: 'info' as const, label: 'Info' }].map(f => (
-                <button key={f.id} onClick={() => setFilter(f.id)} className={cn('px-3 py-1.5 rounded-md text-xs font-medium transition-all', filter === f.id ? 'bg-white dark:bg-slate-700 shadow-sm' : 'text-slate-500')}>{f.label}</button>
+                <button key={f.id} onClick={() => setFilter(f.id)} className={cn('px-3 py-1.5 rounded-md text-xs font-medium transition-all', filter === f.id ? 'bg-card dark:bg-muted shadow-sm' : 'text-muted-foreground')}>{f.label}</button>
               ))}
             </div>
           </div>
@@ -280,13 +280,13 @@ export default function AiAnomalyReportPage() {
           {/* Results */}
           <div className="space-y-3">
             {filtered.length === 0 ? (
-              <div className="py-16 text-center bg-card rounded-xl border border-border">
+              <div className="py-16 text-center bg-card rounded-lg border border-border">
                 <CheckCircle2 className="w-10 h-10 mx-auto mb-3 text-green-400" />
-                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                <p className="text-sm font-semibold text-foreground/90">
                   {anomalies.length === 0 ? 'Nincs anomália — minden rendben!' : 'Nincs találat a szűrőkkel'}
                 </p>
                 {anomalies.length === 0 && (
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     {employments.length} jogviszony és {calculations.length} számfejtés ellenőrizve, {7} szabály alapján.
                   </p>
                 )}
@@ -295,7 +295,7 @@ export default function AiAnomalyReportPage() {
               filtered.map(anomaly => {
                 const sev = SEV_CONFIG[anomaly.severity];
                 return (
-                  <div key={anomaly.id} className={cn('rounded-xl border p-5 space-y-3 transition-all', anomaly.resolved ? 'bg-slate-50 dark:bg-slate-900/30 border-border opacity-60' : sev.bg)}>
+                  <div key={anomaly.id} className={cn('rounded-lg border p-5 space-y-3 transition-all', anomaly.resolved ? 'bg-background/30 border-border opacity-60' : sev.bg)}>
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3">
                         <sev.icon className={cn('w-5 h-5 mt-0.5 shrink-0', sev.color)} />
@@ -303,24 +303,24 @@ export default function AiAnomalyReportPage() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <h3 className="text-sm font-bold">{anomaly.title}</h3>
                             <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold', anomaly.severity === 'critical' ? 'bg-red-200 text-red-800' : anomaly.severity === 'warning' ? 'bg-yellow-200 text-yellow-800' : 'bg-blue-200 text-blue-800')}>{sev.label}</span>
-                            <span className="text-[10px] bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded">{anomaly.category}</span>
+                            <span className="text-[10px] bg-muted px-2 py-0.5 rounded">{anomaly.category}</span>
                           </div>
-                          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{anomaly.description}</p>
+                          <p className="text-sm text-muted-foreground mt-1">{anomaly.description}</p>
                         </div>
                       </div>
-                      <button onClick={() => toggleResolved(anomaly.id)} className={cn('px-3 py-1 rounded-lg text-xs font-bold transition-colors shrink-0', anomaly.resolved ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600 hover:bg-emerald-100 hover:text-emerald-700')}>
+                      <button onClick={() => toggleResolved(anomaly.id)} className={cn('px-3 py-1 rounded-lg text-xs font-bold transition-colors shrink-0', anomaly.resolved ? 'bg-emerald-100 text-emerald-700' : 'bg-muted text-muted-foreground hover:bg-emerald-100 hover:text-emerald-700')}>
                         {anomaly.resolved ? ' Megoldva' : 'Megoldva'}
                       </button>
                     </div>
                     {!anomaly.resolved && (
                       <>
                         <div className="grid grid-cols-2 gap-3 pl-8 text-xs">
-                          <div><span className="text-slate-400">Érintett:</span> <strong>{anomaly.affectedEmployees.join(', ')}</strong></div>
-                          <div><span className="text-slate-400">Hatás:</span> <strong>{anomaly.potentialImpact}</strong></div>
+                          <div><span className="text-muted-foreground">Érintett:</span> <strong>{anomaly.affectedEmployees.join(', ')}</strong></div>
+                          <div><span className="text-muted-foreground">Hatás:</span> <strong>{anomaly.potentialImpact}</strong></div>
                         </div>
-                        <div className="pl-8 bg-white dark:bg-slate-900 rounded-lg p-3 text-sm border border-border/50">
+                        <div className="pl-8 bg-card rounded-lg p-3 text-sm border border-border/50">
                           <span className="text-[10px] text-emerald-600 font-bold uppercase">Javaslat:</span>
-                          <p className="text-slate-700 dark:text-slate-300 mt-0.5">{anomaly.recommendation}</p>
+                          <p className="text-foreground/90 mt-0.5">{anomaly.recommendation}</p>
                         </div>
                       </>
                     )}

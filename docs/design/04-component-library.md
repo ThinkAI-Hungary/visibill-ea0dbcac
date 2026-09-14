@@ -666,3 +666,59 @@ Biztonságos, XSS-védett HTML és szöveg renderelő `prose prose-sm dark:prose
 ```tsx
 <RichTextContent content={comment.message} />
 ```
+
+---
+
+## Tömeges Kijelölési Komponensek (Floating Bulk Bar)
+
+### FloatingBulkBar
+**Fájl:** `src/components/ui/floating-bulk-bar.tsx`
+
+Központosított, lebegő alsó műveleti sáv tömeges kijelölésekhez (számlák, tranzakciók, feladatok). Automatikus React Portal-lal a `document.body`-ba renderel, prémium `backdrop-blur-md` háttérrel és szigorúan egysoros elrendezéssel.
+
+```tsx
+<FloatingBulkBar
+  count={activeSelection.size}
+  label="Kijelölt számlák:"
+  details={<span>Összesen: <b>{formatCurrency(total)}</b></span>}
+  onSave={handleSave}
+  isDirty={isDirty}
+  isSaving={isSaving}
+  onCancel={handleCancel}
+  saveLabel="Mentés"
+  cancelLabel="Mégse"
+>
+  {/* Specifikus akciógombok vagy dropdownok */}
+  <FloatingBulkBar.Select ... />
+</FloatingBulkBar>
+```
+
+**Fő Funkciók:**
+- **Univerzális Számláló:** `count` + pulzáló teal indikátor pont + tetszőleges extra részletek (`details`).
+- **Kétlépcsős Mentés Jóváhagyás (`dirty-only`):** A módosítások először csak helyi állapotba kerülnek (`staged`). A Mentés gomb csak piszkos (`isDirty`) állapotban válik aktívvá / kattinthatóvá.
+- **Univerzális Mégse:** Törli a staged állapotot és eldobja a kijelölést.
+- **Egysoros pill layout:** `max-w-4xl`, `rounded-xl`, flex no-wrap elrendezés mobilon és asztalon.
+
+### FloatingBulkSelect (és `FloatingBulkBar.Select`)
+**Fájl:** `src/components/ui/floating-bulk-select.tsx`
+
+Kereshető popover combobox kifejezetten a lebegő sávhoz tervezve. Automatikus felfelé nyílással (`side="top"`), beépített fókuszált keresőmezővel (`CommandInput`), pipa kijelöléssel és a globális design pattern szerinti ringmentes fókuszkezeléssel.
+
+```tsx
+<FloatingBulkBar.Select
+  value={stagedCategory}
+  onValueChange={(val) => setStagedCategory(val)}
+  placeholder="Kategória..."
+  searchPlaceholder="Keresés kategóriára..."
+  emptyText="Nincs ilyen kategória"
+  icon={<Tag className="w-3.5 h-3.5" />}
+  options={categoryOptions}
+  popoverWidth="w-[220px]"
+/>
+```
+
+**Design & A11y Szabályok:**
+- **Nincs activation ring:** `[outline:none!important]`, `box-shadow: none !important`.
+- **Aktív nyitott állapot:** Amikor a dropdown nyitva van, a gomb saját kerete kap `border-primary/80 bg-accent/40` kiemelést és zöld ikont.
+- **Nincs villanás:** Szigorúan `transition-colors duration-150` van beállítva a `transition-all` helyett, így elkattintáskor a böngésző nem produkál fehér outline-villanást.
+- **`onCloseAutoFocus` guard:** Bezáráskor nem rántja vissza kényszerítve a fókuszt a triggerre.

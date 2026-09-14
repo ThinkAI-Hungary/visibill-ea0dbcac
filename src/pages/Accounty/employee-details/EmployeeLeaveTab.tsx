@@ -43,13 +43,13 @@ export function EmployeeLeaveTab({ leaves, leaveBalance }: EmployeeLeaveTabProps
           </div>
 
           {/* Tabular breakdown */}
-          <div className="border border-border rounded-xl overflow-hidden">
-            <div className="bg-slate-50 dark:bg-slate-900/40 px-4 py-3 border-b border-border">
-              <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">Részletes Szabadság Nyilvántartás (Mt.)</h3>
+          <div className="border border-border rounded-lg overflow-hidden">
+            <div className="bg-background/40 px-4 py-3 border-b border-border">
+              <h3 className="text-sm font-bold text-foreground/90">Részletes Szabadság Nyilvántartás (Mt.)</h3>
             </div>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-slate-500 font-medium text-xs uppercase">
+                <tr className="border-b border-border text-muted-foreground font-medium text-xs uppercase">
                   <th className="px-4 py-2.5 text-left">Jogcím</th>
                   <th className="px-4 py-2.5 text-right">Napok</th>
                   <th className="px-4 py-2.5 text-right">Órák</th>
@@ -57,16 +57,16 @@ export function EmployeeLeaveTab({ leaves, leaveBalance }: EmployeeLeaveTabProps
               </thead>
               <tbody className="divide-y divide-border/60">
                 {categories.map((cat, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50/30">
-                    <td className="px-4 py-2.5 font-medium text-slate-700 dark:text-slate-300">{cat.label}</td>
+                  <tr key={idx} className="hover:bg-muted/40/30">
+                    <td className="px-4 py-2.5 font-medium text-foreground/90">{cat.label}</td>
                     <td className="px-4 py-2.5 text-right font-mono font-semibold">{cat.days} nap</td>
-                    <td className="px-4 py-2.5 text-right font-mono text-slate-500">{cat.hours} óra</td>
+                    <td className="px-4 py-2.5 text-right font-mono text-muted-foreground">{cat.hours} óra</td>
                   </tr>
                 ))}
-                <tr className="font-bold border-t-2 border-border bg-slate-50/10 dark:bg-slate-900/30">
-                  <td className="px-4 py-3 text-slate-900 dark:text-slate-100">ÖSSZESÍTÉS</td>
+                <tr className="font-bold border-t-2 border-border bg-muted/40/10 dark:bg-card/30">
+                  <td className="px-4 py-3 text-foreground">ÖSSZESÍTÉS</td>
                   <td className="px-4 py-3 text-right font-mono text-primary">{leaveBalance.totalAvailable} nap</td>
-                  <td className="px-4 py-3 text-right font-mono text-slate-700 dark:text-slate-300">{leaveBalance.totalAvailableHours} óra</td>
+                  <td className="px-4 py-3 text-right font-mono text-foreground/90">{leaveBalance.totalAvailableHours} óra</td>
                 </tr>
               </tbody>
             </table>
@@ -76,9 +76,9 @@ export function EmployeeLeaveTab({ leaves, leaveBalance }: EmployeeLeaveTabProps
 
       {/* Leave history */}
       <div>
-        <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Távollét Történet</h3>
+        <h3 className="text-sm font-bold text-foreground/90 mb-3">Távollét Történet</h3>
         {leaves.length === 0 ? (
-          <div className="py-8 text-center text-sm text-slate-500 border border-dashed rounded-xl">
+          <div className="py-8 text-center text-sm text-muted-foreground border border-dashed rounded-lg">
             Nincs rögzített távollét ebben az évben.
           </div>
         ) : (
@@ -86,10 +86,10 @@ export function EmployeeLeaveTab({ leaves, leaveBalance }: EmployeeLeaveTabProps
             {leaves.map((l) => (
               <div key={l.id} className="p-3 rounded-lg border border-border flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 capitalize">
+                  <p className="text-sm font-semibold text-foreground capitalize">
                     {l.leave_type.replace(/_/g, ' ')}
                   </p>
-                  <p className="text-xs text-slate-500">{l.start_date} – {l.end_date} · {l.days} nap ({l.days * 8} óra)</p>
+                  <p className="text-xs text-muted-foreground">{l.start_date} – {l.end_date} · {l.days} nap ({l.days * 8} óra)</p>
                 </div>
                 <span className={cn(
                   'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase',

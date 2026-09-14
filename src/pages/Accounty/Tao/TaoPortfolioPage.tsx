@@ -31,7 +31,7 @@ const FILING_STATUS: Record<TaoFilingStatus, { label: string; color: string; bg:
   not_started:  { label: 'Nincs elindítva', color: 'text-muted-foreground',  bg: 'bg-muted/10' },
   data_entry:   { label: 'Adatrögzítés',   color: 'text-amber-600',  bg: 'bg-amber-50 dark:bg-amber-900/30' },
   deductions:   { label: 'Korrekciók',      color: 'text-primary',   bg: 'bg-primary/10' },
-  credits:      { label: 'Kedvezmények',    color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-900/30' },
+  credits:      { label: 'Kedvezmények',    color: 'text-primary', bg: 'bg-primary/10' },
   review:       { label: 'Felülvizsgálat',  color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/30' },
   signed:       { label: 'Aláírva',         color: 'text-teal-600',   bg: 'bg-teal-50 dark:bg-teal-900/30' },
   submitted:    { label: 'Beküldve',        color: 'text-cyan-600',   bg: 'bg-cyan-50 dark:bg-cyan-900/30' },
@@ -39,10 +39,10 @@ const FILING_STATUS: Record<TaoFilingStatus, { label: string; color: string; bg:
 };
 
 const TP_STATUS: Record<string, { label: string; color: string }> = {
-  exempt:     { label: 'Mentes',          color: 'text-muted-foreground' },
-  local_done: { label: 'Local File kész', color: 'text-green-600' },
-  master_done:{ label: 'Master File kész',color: 'text-primary' },
-  missing:    { label: 'Hiányzó',         color: 'text-red-600' },
+  exempt:      { label: 'Mentes',                 color: 'text-muted-foreground' },
+  local_done:  { label: 'Helyi dokumentum kész',  color: 'text-green-600' },
+  master_done: { label: 'Fődokumentum kész',      color: 'text-primary' },
+  missing:     { label: 'Hiányzó',                color: 'text-red-600' },
 };
 
 // Mock enrichment — TAO-specific data per client
@@ -120,11 +120,11 @@ export default function TaoPortfolioPage() {
   const deadlineStr = taxYear === 2025 ? '2026. június 1.' : `${taxYear + 1}. május 31.`;
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-lg shadow-emerald-500/25">
+          <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg shadow-lg shadow-emerald-500/25">
             <Landmark className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -162,27 +162,27 @@ export default function TaoPortfolioPage() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
           <p className="text-xs text-muted-foreground mb-1">Aktív TAO-alany</p>
           <p className="text-2xl font-bold text-emerald-600">{totalClients - kivaCount}</p>
           <p className="text-[10px] text-muted-foreground mt-0.5">KIVA: {kivaCount}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
           <p className="text-xs text-muted-foreground mb-1">2529 beadva</p>
           <div className="flex items-end gap-2">
             <p className="text-2xl font-bold text-green-600">{submittedCount}</p>
             <p className="text-xs text-muted-foreground pb-1">/ {totalClients}</p>
           </div>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
           <p className="text-xs text-muted-foreground mb-1">Pillar Two érintett</p>
           <p className={cn('text-2xl font-bold', pillar2Count > 0 ? 'text-amber-600' : 'text-muted-foreground')}>{pillar2Count}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
           <p className="text-xs text-muted-foreground mb-1">Bevallási határidő</p>
           <p className="text-base font-bold text-foreground">{deadlineStr}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
           <p className="text-xs text-muted-foreground mb-1">Adókulcs</p>
           <p className="text-2xl font-bold text-emerald-600">9%</p>
           <p className="text-[10px] text-muted-foreground mt-0.5">KIVA: {kivaCount}</p>
@@ -224,7 +224,7 @@ export default function TaoPortfolioPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -235,8 +235,8 @@ export default function TaoPortfolioPage() {
                 <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">AEE</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Fizetendő adó</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">2529 státusz</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">TP</th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">P2</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider" title="Transzferár-dokumentáció (Helyi dokumentum / Fődokumentum)">TP</th>
+                <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider" title="Pillar Two (Globális minimumadó 15%)">P2</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider"></th>
               </tr>
             </thead>

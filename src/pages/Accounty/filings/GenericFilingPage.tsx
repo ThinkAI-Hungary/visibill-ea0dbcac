@@ -227,7 +227,7 @@ export default function GenericFilingPage() {
 
   if (!config) {
     return (
-      <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
+      <div className="w-full max-w-5xl mx-auto space-y-6 page-animate">
         <div className="flex items-center gap-3">
           <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
           <h1 className="text-2xl font-bold">Bevallás típusok</h1>
@@ -235,11 +235,11 @@ export default function GenericFilingPage() {
         <div className="grid grid-cols-2 gap-3">
           {Object.entries(CONFIGS).map(([key, cfg]) => (
             <Link key={key} to={`/eaisybooks/payroll/${companyId}/filings/${key}`}
-              className="p-4 rounded-xl border border-border hover:border-violet-300 hover:shadow-lg hover:-translate-y-0.5 transition-all bg-card">
+              className="p-4 rounded-lg border border-border hover:border-violet-300 hover:-translate-y-0.5 transition-all bg-card">
               <p className="text-sm font-bold">{cfg.title}</p>
-              <p className="text-xs text-slate-400 mt-0.5">{cfg.subtitle}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{cfg.subtitle}</p>
               <div className="flex gap-2 mt-2">
-                <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">{cfg.frequency}</span>
+                <span className="text-[10px] bg-muted px-2 py-0.5 rounded">{cfg.frequency}</span>
                 <span className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 px-2 py-0.5 rounded">{cfg.deadline}</span>
               </div>
             </Link>
@@ -253,14 +253,14 @@ export default function GenericFilingPage() {
   const allRows = config.sections.flatMap(s => s.rows);
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full max-w-4xl mx-auto space-y-6 page-animate">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
-          <div className="p-2.5 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl shadow-lg shadow-violet-500/25"><FileText className="w-5 h-5 text-white" /></div>
+          <div className="p-2.5 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg shadow-lg shadow-violet-500/25"><FileText className="w-5 h-5 text-white" /></div>
           <div>
             <h1 className="text-xl font-bold">{config.title}</h1>
-            <p className="text-sm text-slate-500">{company?.name || '–'} — {config.legalRef}</p>
+            <p className="text-sm text-muted-foreground">{company?.name || '–'} — {config.legalRef}</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -302,22 +302,22 @@ export default function GenericFilingPage() {
 
       {/* Meta info */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-card rounded-xl border border-border p-3 flex items-center gap-2">
-          <Clock className="w-4 h-4 text-slate-400" />
-          <div><p className="text-[10px] text-slate-400">Gyakoriság</p><p className="text-xs font-bold">{config.frequency}</p></div>
+        <div className="bg-card rounded-lg border border-border p-3 flex items-center gap-2">
+          <Clock className="w-4 h-4 text-muted-foreground" />
+          <div><p className="text-[10px] text-muted-foreground">Gyakoriság</p><p className="text-xs font-bold">{config.frequency}</p></div>
         </div>
-        <div className="bg-card rounded-xl border border-border p-3 flex items-center gap-2">
+        <div className="bg-card rounded-lg border border-border p-3 flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 text-amber-500" />
-          <div><p className="text-[10px] text-slate-400">Határidő</p><p className="text-xs font-bold">{config.deadline}</p></div>
+          <div><p className="text-[10px] text-muted-foreground">Határidő</p><p className="text-xs font-bold">{config.deadline}</p></div>
         </div>
-        <div className="bg-card rounded-xl border border-border p-3 flex items-center gap-2">
+        <div className="bg-card rounded-lg border border-border p-3 flex items-center gap-2">
           <Info className="w-4 h-4 text-blue-500" />
-          <div><p className="text-[10px] text-slate-400">Jogszabály</p><p className="text-xs font-bold">{config.legalRef}</p></div>
+          <div><p className="text-[10px] text-muted-foreground">Jogszabály</p><p className="text-xs font-bold">{config.legalRef}</p></div>
         </div>
       </div>
 
       {existingFiling && (
-        <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl p-3 text-sm text-blue-800 dark:text-blue-300 flex items-center gap-2">
+        <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-lg p-3 text-sm text-blue-800 dark:text-blue-300 flex items-center gap-2">
           <CheckCircle className="w-4 h-4 text-blue-600" />
           Korábban mentett adatok betöltve — utolsó módosítás: {new Date(existingFiling.updated_at).toLocaleString('hu-HU')}
         </div>
@@ -325,12 +325,12 @@ export default function GenericFilingPage() {
 
       {/* Sections */}
       {config.sections.map((section, si) => (
-        <div key={si} className="bg-card rounded-xl border border-border p-6 space-y-3">
-          <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">{section.title}</h2>
+        <div key={si} className="bg-card rounded-lg border border-border p-6 space-y-3">
+          <h2 className="text-sm font-bold text-foreground/90">{section.title}</h2>
           <div className="space-y-2">
             {section.rows.map((row) => (
               <div key={row.key} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
-                <span className="text-sm text-slate-600 dark:text-slate-400">{row.label}</span>
+                <span className="text-sm text-muted-foreground">{row.label}</span>
                 {row.editable ? (
                   <input
                     type="text"

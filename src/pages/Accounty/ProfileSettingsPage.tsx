@@ -170,7 +170,7 @@ function FirmMembersCard({ companyId, companyName, isOwnerOrAdmin, toast }: { co
     { value: 'iroda_admin', label: 'Iroda Admin', desc: 'Teljes hozzáférés, iroda kezelés', color: 'bg-blue-500/15 text-blue-600 dark:text-blue-400' },
     { value: 'senior_könyvelő', label: 'Senior Könyvelő', desc: 'Könyvelés, felügyelet', color: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' },
     { value: 'könyvelő', label: 'Könyvelő', desc: 'Könyvelési feladatok', color: 'bg-teal-500/15 text-teal-600 dark:text-teal-400' },
-    { value: 'asszisztens', label: 'Asszisztens', desc: 'Adminisztrációs feladatok', color: 'bg-slate-500/15 text-slate-600 dark:text-slate-400' },
+    { value: 'asszisztens', label: 'Asszisztens', desc: 'Adminisztrációs feladatok', color: 'bg-muted-foreground/15 text-muted-foreground' },
   ];
 
   const getRoleBadge = (role: string) => {
@@ -558,10 +558,10 @@ export default function ProfileSettingsPage() {
   if (!initialDataLoaded || companiesLoading) return <ContentSkeleton />;
 
   return (
-    <div className="w-full space-y-8 animate-in fade-in duration-500">
+    <div className="w-full space-y-8 page-animate">
       <div className="mb-2">
         <div className="flex items-center gap-2">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Beállítások</h1>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">Beállítások</h1>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild><Info className="h-5 w-5 text-muted-foreground cursor-help" /></TooltipTrigger>
@@ -569,7 +569,7 @@ export default function ProfileSettingsPage() {
             </Tooltip>
           </TooltipProvider>
         </div>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">Rendszer és üzleti beállítások kezelése</p>
+        <p className="text-muted-foreground mt-1">Rendszer és üzleti beállítások kezelése</p>
       </div>
 
       <Tabs value={activeSettingsTab} onValueChange={setActiveSettingsTab} className="space-y-6">

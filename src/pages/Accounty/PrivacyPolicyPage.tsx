@@ -80,13 +80,13 @@ export default function PrivacyPolicyPage() {
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full max-w-3xl mx-auto space-y-6 page-animate">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link to="/eaisybooks/settings" className="p-2 rounded-lg hover:bg-muted transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <div className="p-2.5 bg-gradient-to-br from-primary to-primary/70 rounded-xl shadow-lg">
+        <div className="p-2.5 bg-gradient-to-br from-primary to-primary/70 rounded-lg shadow-lg">
           <Shield className="w-5 h-5 text-white" />
         </div>
         <div>
@@ -97,7 +97,7 @@ export default function PrivacyPolicyPage() {
 
       {/* Acceptance status */}
       {accepted && (
-        <div className="flex items-center gap-3 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl">
+        <div className="flex items-center gap-3 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
           <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
           <div>
             <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Tájékoztató elfogadva</p>
@@ -115,7 +115,7 @@ export default function PrivacyPolicyPage() {
       {/* Sections */}
       <div className="space-y-4">
         {sections.map((section, i) => (
-          <div key={i} className="bg-card rounded-xl border border-border p-5 shadow-soft">
+          <div key={i} className="bg-card rounded-lg border border-border p-5 shadow-soft">
             <h2 className="text-sm font-bold text-foreground mb-2">{section.title}</h2>
             <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{section.content}</div>
           </div>
@@ -124,7 +124,7 @@ export default function PrivacyPolicyPage() {
 
       {/* Accept button */}
       {!accepted && (
-        <div className="sticky bottom-4 bg-card/95 backdrop-blur border border-border rounded-xl p-4 shadow-lg flex items-center justify-between">
+        <div className="sticky bottom-4 bg-card/95 backdrop-blur border border-border rounded-lg p-4 shadow-lg flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
             Az eaisybooks használatával elfogadja az adatkezelési tájékoztatót.
           </p>

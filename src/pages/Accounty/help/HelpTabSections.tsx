@@ -25,9 +25,9 @@ export function HelpOverviewSection({ filteredFaqs, searchActive }: OverviewProp
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-6 page-animate">
       {/* Quick Start */}
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
         <div className="p-5 border-b border-border">
           <h2 className="font-semibold text-foreground flex items-center gap-2">
             <Zap className="w-4 h-4 text-primary" />
@@ -54,7 +54,7 @@ export function HelpOverviewSection({ filteredFaqs, searchActive }: OverviewProp
       </div>
 
       {/* Modules */}
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
         <div className="p-5 border-b border-border">
           <h2 className="font-semibold text-foreground flex items-center gap-2">
             <BookOpen className="w-4 h-4 text-primary" />
@@ -77,7 +77,7 @@ export function HelpOverviewSection({ filteredFaqs, searchActive }: OverviewProp
       </div>
 
       {/* FAQ */}
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
         <div className="p-5 border-b border-border">
           <h2 className="font-semibold text-foreground flex items-center gap-2">
             <Lightbulb className="w-4 h-4 text-amber-500" />
@@ -113,7 +113,7 @@ export function HelpOverviewSection({ filteredFaqs, searchActive }: OverviewProp
       </div>
 
       {/* Keyboard Shortcuts */}
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
         <div className="p-5 border-b border-border">
           <h2 className="font-semibold text-foreground flex items-center gap-2">
             <Keyboard className="w-4 h-4 text-primary" />
@@ -141,7 +141,7 @@ export function HelpOverviewSection({ filteredFaqs, searchActive }: OverviewProp
 
       {/* Contact & Support */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-card rounded-xl border border-border shadow-soft p-5">
+        <div className="bg-card rounded-lg border border-border shadow-soft p-5">
           <h3 className="font-semibold text-foreground flex items-center gap-2 mb-4">
             <MessageCircle className="w-4 h-4 text-primary" />
             Kapcsolat
@@ -156,7 +156,7 @@ export function HelpOverviewSection({ filteredFaqs, searchActive }: OverviewProp
           </div>
         </div>
 
-        <div className="bg-card rounded-xl border border-border shadow-soft p-5">
+        <div className="bg-card rounded-lg border border-border shadow-soft p-5">
           <h3 className="font-semibold text-foreground flex items-center gap-2 mb-4">
             <Shield className="w-4 h-4 text-primary" />
             Verzió & Adatvédelem
@@ -194,7 +194,7 @@ export function HelpCategoriesSection({ filteredCategories, searchActive }: Cate
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
   return (
-    <div className="space-y-4 animate-in fade-in duration-300">
+    <div className="space-y-4 page-animate">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">Böngéssz a témakörök között, vagy használd a keresőt a szűréshez.</p>
         <Badge variant="outline" className="gap-1.5 bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 border-0">
@@ -205,7 +205,7 @@ export function HelpCategoriesSection({ filteredCategories, searchActive }: Cate
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredCategories.map((cat) => (
-          <div key={cat.id} className="bg-card rounded-xl border border-border shadow-soft overflow-hidden hover:shadow-md transition-shadow">
+          <div key={cat.id} className="bg-card rounded-lg border border-border shadow-soft overflow-hidden hover:shadow-md transition-shadow">
             <button
               onClick={() => setExpandedCategory(expandedCategory === cat.id ? null : cat.id)}
               className="w-full p-5 text-left"
@@ -274,7 +274,7 @@ interface VideosProps {
 
 export function HelpVideosSection({ filteredVideos, searchActive }: VideosProps) {
   return (
-    <div className="space-y-4 animate-in fade-in duration-300">
+    <div className="space-y-4 page-animate">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">Videós útmutatók az eaisybooks használatához.</p>
         <Badge variant="outline" className="gap-1.5 bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 border-0">
@@ -285,14 +285,14 @@ export function HelpVideosSection({ filteredVideos, searchActive }: VideosProps)
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredVideos.map((video, i) => (
-          <div key={i} className="bg-card rounded-xl border border-border shadow-soft overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group cursor-not-allowed opacity-75">
+          <div key={i} className="bg-card rounded-lg border border-border shadow-soft overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group cursor-not-allowed opacity-75">
             <div className="relative aspect-video bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
               <div className="w-14 h-14 rounded-full bg-primary/90 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-200">
                 <Play className="w-6 h-6 text-white ml-0.5" />
               </div>
               <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-black/70 text-white text-xs font-mono font-medium">{video.duration}</div>
               <div className="absolute top-2 left-2">
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/90 dark:bg-slate-800/90 text-foreground font-semibold">{video.category}</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/90 dark:bg-muted/90 text-foreground font-semibold">{video.category}</span>
               </div>
             </div>
             <div className="p-4">
@@ -307,7 +307,7 @@ export function HelpVideosSection({ filteredVideos, searchActive }: VideosProps)
         <p className="p-8 text-center text-sm text-muted-foreground">Nincs találat a keresésre.</p>
       )}
 
-      <div className="bg-card rounded-xl border border-dashed border-primary/30 p-8 text-center space-y-3">
+      <div className="bg-card rounded-lg border border-dashed border-primary/30 p-8 text-center space-y-3">
         <GraduationCap className="w-10 h-10 text-primary/40 mx-auto" />
         <h3 className="font-semibold text-foreground">További videók hamarosan</h3>
         <p className="text-sm text-muted-foreground max-w-md mx-auto">
@@ -331,12 +331,12 @@ export function HelpLegislationSection({ filteredLegislations, searchActive }: L
   const [expandedLaw, setExpandedLaw] = useState<string | null>(null);
 
   return (
-    <div className="space-y-4 animate-in fade-in duration-300">
+    <div className="space-y-4 page-animate">
       <p className="text-sm text-muted-foreground">A könyvelési és bérszámfejtési munkához legfontosabb jogszabályok gyűjteménye.</p>
 
       <div className="space-y-3">
         {filteredLegislations.map((law) => (
-          <div key={law.abbreviation} className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+          <div key={law.abbreviation} className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
             <button
               onClick={() => setExpandedLaw(expandedLaw === law.abbreviation ? null : law.abbreviation)}
               className="w-full p-5 text-left hover:bg-accent/30 transition-colors"
@@ -404,7 +404,7 @@ interface GlossaryProps {
 
 export function HelpGlossarySection({ filteredGlossary, searchActive }: GlossaryProps) {
   return (
-    <div className="space-y-4 animate-in fade-in duration-300">
+    <div className="space-y-4 page-animate">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
           Könyvelési és bérszámfejtési rövidítések magyarázata — {filteredGlossary.length} kifejezés
@@ -426,7 +426,7 @@ export function HelpGlossarySection({ filteredGlossary, searchActive }: Glossary
         </div>
       )}
 
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
         <div className="divide-y divide-border">
           {filteredGlossary
             .sort((a, b) => a.abbr.localeCompare(b.abbr, 'hu'))

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAccountyClient } from '@/hooks/accounty';
 import { useEvClientSettings, useUpdateEvSettings } from '@/hooks/useEvData';
 import { toast } from '@/hooks/use-toast';
@@ -139,8 +140,8 @@ export default function EvSetupWizardPage() {
         return (
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">Milyen típusú entitás?</h3>
-              <p className="text-sm text-slate-500">Válassza ki az ügyfél típusát az EV modul megfelelő konfigurálásához.</p>
+              <h3 className="text-lg font-bold text-foreground mb-1">Milyen típusú entitás?</h3>
+              <p className="text-sm text-muted-foreground">Válassza ki az ügyfél típusát az EV modul megfelelő konfigurálásához.</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -156,23 +157,23 @@ export default function EvSetupWizardPage() {
                   key={opt.value ?? 'ev'}
                   onClick={() => setForm(f => ({ ...f, orgType: opt.value }))}
                   className={cn(
-                    'flex items-start gap-3 p-4 rounded-xl border-2 transition-all text-left',
+                    'flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left',
                     form.orgType === opt.value
-                      ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/20 ring-1 ring-indigo-200'
+                      ? 'border-primary bg-primary/10/50 dark:bg-indigo-900/20 ring-1 ring-indigo-200'
                       : 'border-border hover:border-indigo-200 dark:hover:border-indigo-800'
                   )}
                 >
                   <div className={cn(
                     'p-2 rounded-lg transition-colors shrink-0',
                     form.orgType === opt.value
-                      ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
+                      ? 'bg-indigo-100 dark:bg-indigo-900/40 text-primary'
+                      : 'bg-muted text-muted-foreground'
                   )}>
                     <opt.icon className="w-4 h-4" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{opt.label}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{opt.desc}</p>
+                    <p className="text-sm font-semibold text-foreground">{opt.label}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
                   </div>
                 </button>
               ))}
@@ -184,8 +185,8 @@ export default function EvSetupWizardPage() {
         return (
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">Adózási forma</h3>
-              <p className="text-sm text-slate-500">
+              <h3 className="text-lg font-bold text-foreground mb-1">Adózási forma</h3>
+              <p className="text-sm text-muted-foreground">
                 {form.orgType ? 'Szervezetek egyszeres könyvvitelt vezetnek.' : 'Milyen formában adózik a vállalkozó?'}
               </p>
             </div>
@@ -207,21 +208,21 @@ export default function EvSetupWizardPage() {
                         ...(opt.value === 'kata' ? { employmentStatus: 'foallasu' as EmploymentStatus } : {}),
                       }))}
                       className={cn(
-                        'p-4 rounded-xl border-2 transition-all text-left',
+                        'p-4 rounded-lg border-2 transition-all text-left',
                         form.taxpayerForm === opt.value
                           ? `border-${opt.color}-500 bg-${opt.color}-50/50 dark:bg-${opt.color}-900/20 ring-1 ring-${opt.color}-200`
-                          : 'border-border hover:border-slate-300'
+                          : 'border-border hover:border-border'
                       )}
                     >
-                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{opt.label}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">{opt.desc}</p>
+                      <p className="text-sm font-bold text-foreground">{opt.label}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
                     </button>
                   ))}
                 </div>
 
                 {form.taxpayerForm === 'atalany' && (
-                  <div className="bg-indigo-50/50 dark:bg-indigo-900/10 rounded-xl border border-indigo-100 dark:border-indigo-800 p-4 space-y-3">
-                    <p className="text-sm font-semibold text-indigo-700 dark:text-indigo-400">Költséghányad kategória</p>
+                  <div className="bg-primary/10/50 dark:bg-indigo-900/10 rounded-lg border border-indigo-100 dark:border-indigo-800 p-4 space-y-3">
+                    <p className="text-sm font-semibold text-indigo-700 dark:text-primary">Költséghányad kategória</p>
                     <div className="grid grid-cols-3 gap-2">
                       {[
                         { value: 'general' as CostRatio, label: '45%', desc: '2026. év általános' },
@@ -238,8 +239,8 @@ export default function EvSetupWizardPage() {
                               : 'border-border'
                           )}
                         >
-                          <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{opt.label}</p>
-                          <p className="text-[10px] text-slate-500">{opt.desc}</p>
+                          <p className="text-lg font-bold text-foreground">{opt.label}</p>
+                          <p className="text-[10px] text-muted-foreground">{opt.desc}</p>
                         </button>
                       ))}
                     </div>
@@ -247,7 +248,7 @@ export default function EvSetupWizardPage() {
                 )}
 
                 <div className="space-y-3">
-                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Foglalkoztatási jogviszony</p>
+                  <p className="text-sm font-semibold text-foreground/90">Foglalkoztatási jogviszony</p>
                   {form.taxpayerForm === 'kata' && (
                     <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
                       ⚠ KATA kisadózó kizárólag főfoglalkozásúként választható (KATA tv. 2. § (1)).
@@ -268,10 +269,10 @@ export default function EvSetupWizardPage() {
                           className={cn(
                             'p-3 rounded-lg border transition-all text-sm font-medium',
                             isDisabled
-                              ? 'border-border bg-slate-50 dark:bg-slate-800/30 text-slate-300 dark:text-slate-600 cursor-not-allowed'
+                              ? 'border-border bg-muted/30 text-muted-foreground/60 cursor-not-allowed'
                               : form.employmentStatus === opt.value
-                                ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400'
-                                : 'border-border text-slate-600 dark:text-slate-400'
+                                ? 'border-indigo-400 bg-primary/10 text-indigo-700 dark:text-primary'
+                                : 'border-border text-muted-foreground'
                           )}
                         >
                           {opt.label}
@@ -282,7 +283,7 @@ export default function EvSetupWizardPage() {
                 </div>
 
                 <div className="space-y-3">
-                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">ÁFA-státusz</p>
+                  <p className="text-sm font-semibold text-foreground/90">ÁFA-státusz</p>
                   <div className="grid grid-cols-3 gap-2">
                     {[
                       { value: 'alanyi_mentes' as VatStatus, label: 'Alanyi mentes' },
@@ -295,8 +296,8 @@ export default function EvSetupWizardPage() {
                         className={cn(
                           'p-3 rounded-lg border transition-all text-sm font-medium',
                           form.vatStatus === opt.value
-                            ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400'
-                            : 'border-border text-slate-600 dark:text-slate-400'
+                            ? 'border-indigo-400 bg-primary/10 text-indigo-700 dark:text-primary'
+                            : 'border-border text-muted-foreground'
                         )}
                       >
                         {opt.label}
@@ -313,14 +314,14 @@ export default function EvSetupWizardPage() {
         return (
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">Részletek</h3>
-              <p className="text-sm text-slate-500">Adja meg az azonosítókat és a fő tevékenységet.</p>
+              <h3 className="text-lg font-bold text-foreground mb-1">Részletek</h3>
+              <p className="text-sm text-muted-foreground">Adja meg az azonosítókat és a fő tevékenységet.</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {!form.orgType && (
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Nyilvántartási szám</label>
+                  <label className="text-xs font-medium text-muted-foreground">Nyilvántartási szám</label>
                   <Input
                     placeholder="EV-12345678"
                     value={form.registrationNumber}
@@ -331,7 +332,7 @@ export default function EvSetupWizardPage() {
               )}
 
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Fő TEÁOR / tevékenységi kód</label>
+                <label className="text-xs font-medium text-muted-foreground">Fő TEÁOR / tevékenységi kód</label>
                 <Input
                   placeholder="6201 - Számítógépes programozás"
                   value={form.mainActivityCode}
@@ -341,7 +342,7 @@ export default function EvSetupWizardPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Adóév</label>
+                <label className="text-xs font-medium text-muted-foreground">Adóév</label>
                 <select
                   value={form.taxYear}
                   onChange={e => setForm(f => ({ ...f, taxYear: Number(e.target.value) }))}
@@ -354,7 +355,7 @@ export default function EvSetupWizardPage() {
 
               {!form.orgType && (
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Könyvvezetés módja</label>
+                  <label className="text-xs font-medium text-muted-foreground">Könyvvezetés módja</label>
                   <div className="flex gap-2">
                     {[
                       { value: 'egyszeres' as BookkeepingMode, label: 'Egyszeres' },
@@ -366,8 +367,8 @@ export default function EvSetupWizardPage() {
                         className={cn(
                           'flex-1 p-2.5 rounded-lg border transition-all text-sm font-medium',
                           form.bookkeepingMode === opt.value
-                            ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700'
-                            : 'border-border text-slate-500'
+                            ? 'border-indigo-400 bg-primary/10 text-indigo-700'
+                            : 'border-border text-muted-foreground'
                         )}
                       >
                         {opt.label}
@@ -379,30 +380,26 @@ export default function EvSetupWizardPage() {
             </div>
 
             {!form.orgType && (
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-                <input
-                  type="checkbox"
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <Checkbox
                   id="skilled"
                   checked={form.skilledMainActivity}
-                  onChange={e => setForm(f => ({ ...f, skilledMainActivity: e.target.checked }))}
-                  className="rounded border-border"
+                  onCheckedChange={checked => setForm(f => ({ ...f, skilledMainActivity: !!checked }))}
                 />
-                <label htmlFor="skilled" className="text-sm text-slate-700 dark:text-slate-300">
+                <label htmlFor="skilled" className="text-sm text-foreground/90 cursor-pointer select-none">
                   Szakképzett tevékenység (garantált bérminimum alkalmazandó)
                 </label>
               </div>
             )}
 
             {form.orgType && (
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-                <input
-                  type="checkbox"
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <Checkbox
                   id="publicBenefit"
                   checked={form.isPublicBenefit}
-                  onChange={e => setForm(f => ({ ...f, isPublicBenefit: e.target.checked }))}
-                  className="rounded border-border"
+                  onCheckedChange={checked => setForm(f => ({ ...f, isPublicBenefit: !!checked }))}
                 />
-                <label htmlFor="publicBenefit" className="text-sm text-slate-700 dark:text-slate-300">
+                <label htmlFor="publicBenefit" className="text-sm text-foreground/90 cursor-pointer select-none">
                   Közhasznú szervezet
                 </label>
               </div>
@@ -414,11 +411,11 @@ export default function EvSetupWizardPage() {
         return (
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">Összegzés</h3>
-              <p className="text-sm text-slate-500">Ellenőrizze az adatokat a mentés előtt.</p>
+              <h3 className="text-lg font-bold text-foreground mb-1">Összegzés</h3>
+              <p className="text-sm text-muted-foreground">Ellenőrizze az adatokat a mentés előtt.</p>
             </div>
 
-            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-5 space-y-3">
+            <div className="bg-muted/50 rounded-lg p-5 space-y-3">
               {[
                 ['Típus', form.orgType ? form.orgType.charAt(0).toUpperCase() + form.orgType.slice(1) : 'Egyéni vállalkozó'],
                 ['Adóforma', form.orgType ? 'Egyszeres könyvvitel' : form.taxpayerForm === 'atalany' ? 'Átalányadó' : form.taxpayerForm === 'vszja' ? 'Vállalkozói SZJA' : 'KATA'],
@@ -430,8 +427,8 @@ export default function EvSetupWizardPage() {
                 ['Adóév', String(form.taxYear)],
               ].map(([label, value]) => (
                 <div key={label as string} className="flex justify-between items-center">
-                  <span className="text-sm text-slate-500">{label}</span>
-                  <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{value}</span>
+                  <span className="text-sm text-muted-foreground">{label}</span>
+                  <span className="text-sm font-semibold text-foreground">{value}</span>
                 </div>
               ))}
             </div>
@@ -444,25 +441,25 @@ export default function EvSetupWizardPage() {
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full max-w-3xl mx-auto space-y-6 page-animate">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${defaultTaxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${defaultTaxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" />
           EV Főoldal
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <span className="text-slate-900 dark:text-slate-100 font-medium">Beállítások</span>
+        <span className="text-foreground font-medium">Beállítások</span>
       </div>
 
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg shadow-indigo-500/25">
+        <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg shadow-lg shadow-primary/20">
           <Receipt className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">EV Beállítás varázsló</h1>
-          <p className="text-sm text-slate-500">{client?.name || 'Ügyfél'}</p>
+          <h1 className="text-xl font-bold text-foreground">EV Beállítás varázsló</h1>
+          <p className="text-sm text-muted-foreground">{client?.name || 'Ügyfél'}</p>
         </div>
       </div>
 
@@ -475,9 +472,9 @@ export default function EvSetupWizardPage() {
               onClick={() => i < step && setStep(i)}
               className={cn(
                 'flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all',
-                i === step ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 ring-1 ring-indigo-200' :
+                i === step ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-primary ring-1 ring-indigo-200' :
                 i < step ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 cursor-pointer' :
-                'bg-slate-100 dark:bg-slate-800 text-slate-400'
+                'bg-muted text-muted-foreground'
               )}
             >
               {i < step ? <Check className="w-3.5 h-3.5" /> : <s.icon className="w-3.5 h-3.5" />}
@@ -488,7 +485,7 @@ export default function EvSetupWizardPage() {
       </div>
 
       {/* Content */}
-      <div className="bg-card rounded-xl border border-border shadow-soft p-6">
+      <div className="bg-card rounded-lg border border-border shadow-soft p-6">
         {renderStepContent()}
       </div>
 
@@ -499,7 +496,7 @@ export default function EvSetupWizardPage() {
           disabled={step === 0}
           className={cn(
             'flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all',
-            step === 0 ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:bg-slate-100'
+            step === 0 ? 'text-muted-foreground/60 cursor-not-allowed' : 'text-muted-foreground hover:bg-muted'
           )}
         >
           <ChevronLeft className="w-4 h-4" /> Vissza
@@ -512,8 +509,8 @@ export default function EvSetupWizardPage() {
             className={cn(
               'flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all',
               canProceed()
-                ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                : 'bg-muted text-muted-foreground cursor-not-allowed'
             )}
           >
             Következő <ChevronRight className="w-4 h-4" />
@@ -526,7 +523,7 @@ export default function EvSetupWizardPage() {
               'flex items-center gap-1.5 px-5 py-2 rounded-lg text-sm font-medium transition-all',
               updateSettings.isPending
                 ? 'bg-indigo-400 text-white cursor-not-allowed'
-                : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                : 'bg-primary text-primary-foreground hover:bg-primary/90'
             )}
           >
             {updateSettings.isPending ? (

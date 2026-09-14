@@ -355,25 +355,25 @@ export default function EvCashbookImportNavPage() {
   const isLoading = invoicesLoading || entriesLoading;
 
   return (
-    <div className="w-full space-y-6 pb-24 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 pb-24 page-animate">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/eaisybooks/${id}/${dateRange}/ev/cashbook?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev/cashbook?year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> Pénztárkönyv
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <span className="text-slate-900 dark:text-slate-100 font-medium">NAV Import Varázsló</span>
+        <span className="text-foreground font-medium">NAV Import Varázsló</span>
       </div>
 
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl shadow-lg shadow-indigo-500/25">
+          <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-lg shadow-lg shadow-primary/20">
             <Import className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">NAV Számla Import Varázsló</h1>
-            <p className="text-sm text-slate-500">NAV Online Számla adatok átvitele a pénztárkönyvbe kategória-jóslással</p>
+            <h1 className="text-2xl font-bold text-foreground">NAV Számla Import Varázsló</h1>
+            <p className="text-sm text-muted-foreground">NAV Online Számla adatok átvitele a pénztárkönyvbe kategória-jóslással</p>
           </div>
         </div>
 
@@ -381,7 +381,7 @@ export default function EvCashbookImportNavPage() {
           <Button
             onClick={handleAiPredictAll}
             disabled={selectedCount === 0 || isPredictingAll || isImporting}
-            className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-medium shadow-md shadow-indigo-500/20 gap-2"
+            className="bg-gradient-to-r from-violet-600 to-primary hover:from-violet-700 hover:to-primary/90 text-white font-medium shadow-md shadow-primary/20 gap-2"
           >
             {isPredictingAll ? (
               <>
@@ -399,7 +399,7 @@ export default function EvCashbookImportNavPage() {
       </div>
 
       {/* GDPR & Usage Alert */}
-      <div className="p-4 bg-amber-50/80 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-xl flex items-start gap-3">
+      <div className="p-4 bg-amber-50/80 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-lg flex items-start gap-3">
         <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
         <div>
           <h4 className="text-sm font-bold text-amber-900 dark:text-amber-400">Biztonsági és AI tudnivalók</h4>
@@ -410,43 +410,43 @@ export default function EvCashbookImportNavPage() {
       </div>
 
       {/* Grid Container */}
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
         {isLoading ? (
-          <div className="py-24 text-center text-sm text-slate-400">
-            <Loader2 className="w-8 h-8 mx-auto mb-3 text-indigo-400 animate-spin" />
+          <div className="py-24 text-center text-sm text-muted-foreground">
+            <Loader2 className="w-8 h-8 mx-auto mb-3 text-primary animate-spin" />
             Adatok betöltése és egyeztetése...
           </div>
         ) : gridData.length === 0 ? (
-          <div className="py-24 text-center text-slate-400 flex flex-col items-center">
-            <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+          <div className="py-24 text-center text-muted-foreground flex flex-col items-center">
+            <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4">
               <Check className="w-6 h-6 text-green-500" />
             </div>
-            <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-1">Minden számla importálva!</h3>
-            <p className="text-xs text-slate-500 max-w-sm">Nincs több új NAV számla, amit a pénztárkönyvbe kellene importálni ebben az adóévben.</p>
+            <h3 className="font-semibold text-foreground mb-1">Minden számla importálva!</h3>
+            <p className="text-xs text-muted-foreground max-w-sm">Nincs több új NAV számla, amit a pénztárkönyvbe kellene importálni ebben az adóévben.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-border dark:bg-slate-900/30">
+                <tr className="border-b border-border dark:bg-card/30">
                   <th className="px-4 py-3 text-center w-12">
                     <button
                       onClick={handleToggleSelectAll}
-                      className="text-slate-400 hover:text-slate-600 transition-colors mx-auto block"
+                      className="text-muted-foreground hover:text-muted-foreground transition-colors mx-auto block"
                     >
                       {gridData.every(r => r.selected) ? (
-                        <CheckSquare className="w-4 h-4 text-indigo-600" />
+                        <CheckSquare className="w-4 h-4 text-primary" />
                       ) : (
                         <Square className="w-4 h-4" />
                       )}
                     </button>
                   </th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Számla szám</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Partner és Dátum</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Típus</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Összegek</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Pénztárkönyv Kategória</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Megjegyzés / Leírás</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Számla szám</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Partner és Dátum</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Típus</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">Összegek</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pénztárkönyv Kategória</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Megjegyzés / Leírás</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
@@ -456,30 +456,30 @@ export default function EvCashbookImportNavPage() {
                     <tr
                       key={row.invoiceId}
                       className={cn(
-                        "hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors",
+                        "hover:bg-muted/50/40 transition-colors",
                         !row.selected && "opacity-60"
                       )}
                     >
                       <td className="px-4 py-3 text-center">
                         <button
                           onClick={(e) => handleCheckboxClick(e, absoluteIndex)}
-                          className="text-slate-400 hover:text-slate-600 transition-colors mx-auto block"
+                          className="text-muted-foreground hover:text-muted-foreground transition-colors mx-auto block"
                         >
                           {row.selected ? (
-                            <CheckSquare className="w-4 h-4 text-indigo-600" />
+                            <CheckSquare className="w-4 h-4 text-primary" />
                           ) : (
                             <Square className="w-4 h-4" />
                           )}
                         </button>
                       </td>
-                      <td className="px-4 py-3 text-xs font-mono font-medium text-slate-900 dark:text-slate-100">
+                      <td className="px-4 py-3 text-xs font-mono font-medium text-foreground">
                         {row.invoiceNumber}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        <div className="text-sm font-semibold text-foreground">
                           {row.partnerName}
                         </div>
-                        <div className="text-xs text-slate-400">
+                        <div className="text-xs text-muted-foreground">
                           {row.date}
                         </div>
                       </td>
@@ -494,10 +494,10 @@ export default function EvCashbookImportNavPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <div className="text-sm font-bold text-slate-900 dark:text-slate-100 font-mono tabular-nums">
+                        <div className="text-sm font-bold text-foreground font-mono tabular-nums">
                           {new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', minimumFractionDigits: 0 }).format(row.grossAmount)}
                         </div>
-                        <div className="text-[10px] text-slate-400 font-mono tabular-nums">
+                        <div className="text-[10px] text-muted-foreground font-mono tabular-nums">
                           ÁFA: {new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', minimumFractionDigits: 0 }).format(row.vatAmount)}
                         </div>
                       </td>
@@ -507,9 +507,9 @@ export default function EvCashbookImportNavPage() {
                             value={row.category}
                             onChange={(e) => handleUpdateRow(row.invoiceId, { category: e.target.value as PenztarkonyvCategory, ruleApplied: false })}
                             className={cn(
-                              "flex-1 text-xs bg-card border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium transition-colors",
+                              "flex-1 text-xs bg-card border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary font-medium transition-colors",
                               row.ruleApplied
-                                ? "border-indigo-500/50 bg-indigo-50/30 dark:bg-indigo-950/20 text-indigo-700 dark:text-indigo-400"
+                                ? "border-primary/50 bg-primary/10/30 dark:bg-indigo-950/20 text-indigo-700 dark:text-primary"
                                 : "border-border"
                             )}
                           >
@@ -532,7 +532,7 @@ export default function EvCashbookImportNavPage() {
                                 });
                               } catch (err) {}
                             }}
-                            className="p-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 hover:text-indigo-600 transition-colors shrink-0"
+                            className="p-1 rounded bg-muted hover:bg-muted dark:hover:bg-muted text-muted-foreground hover:text-primary transition-colors shrink-0"
                             title="Mentés szabályként ehhez a partnerhez"
                           >
                             <Check className="w-3.5 h-3.5" />
@@ -573,20 +573,20 @@ export default function EvCashbookImportNavPage() {
         <div className="fixed bottom-0 left-0 right-0 bg-card/85 backdrop-blur-md border-t border-border shadow-2xl p-4 flex items-center justify-between z-40 max-w-7xl mx-auto rounded-t-2xl">
           <div className="flex items-center gap-6">
             <div>
-              <p className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Kijelölve</p>
-              <p className="text-lg font-bold text-indigo-600">{selectedCount} számla</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Kijelölve</p>
+              <p className="text-lg font-bold text-primary">{selectedCount} számla</p>
             </div>
             <div className="h-8 w-px bg-border" />
             <div>
-              <p className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Bruttó összeg</p>
-              <p className="text-sm font-bold font-mono text-slate-800 dark:text-slate-200">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Bruttó összeg</p>
+              <p className="text-sm font-bold font-mono text-foreground">
                 {new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', minimumFractionDigits: 0 }).format(selectedGross)}
               </p>
             </div>
             <div className="h-8 w-px bg-border hidden sm:block" />
             <div className="hidden sm:block">
-              <p className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">ÁFA tartalom</p>
-              <p className="text-xs font-bold font-mono text-slate-500 dark:text-slate-400">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">ÁFA tartalom</p>
+              <p className="text-xs font-bold font-mono text-muted-foreground">
                 {new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', minimumFractionDigits: 0 }).format(selectedVat)}
               </p>
             </div>
@@ -596,14 +596,14 @@ export default function EvCashbookImportNavPage() {
             <Button
               variant="outline"
               onClick={() => navigate(`/eaisybooks/${id}/${dateRange}/ev/cashbook?year=${taxYear}`)}
-              className="border-border text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+              className="border-border text-foreground/90 hover:bg-muted/50"
             >
               Mégse
             </Button>
             <Button
               onClick={handleImportSelected}
               disabled={selectedCount === 0 || isImporting || isPredictingAll}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold gap-2 shadow-lg shadow-indigo-500/20"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-2 shadow-lg shadow-primary/20"
             >
               {isImporting ? (
                 <>

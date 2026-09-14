@@ -7,6 +7,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { PageHeader } from '@/components/ui/page-header';
 import { useTaxParameters, useUpdateTaxParameter } from '@/hooks/usePayrollData';
 import { useToast } from '@/hooks/use-toast';
 
@@ -342,10 +343,10 @@ export default function TaxParametersPage() {
 
   if (isLoading) {
     return (
-      <div className="w-full space-y-6 animate-in fade-in">
-        <div className="h-8 w-64 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+      <div className="w-full space-y-6 page-animate">
+        <div className="h-8 w-64 bg-muted rounded animate-pulse" />
         {[0, 1, 2].map(i => (
-          <div key={i} className="h-32 bg-slate-200 dark:bg-slate-800 rounded-xl animate-pulse" />
+          <div key={i} className="h-32 bg-muted rounded-lg animate-pulse" />
         ))}
       </div>
     );
@@ -355,42 +356,24 @@ export default function TaxParametersPage() {
   const uncategorizedKeys = params ? Object.keys(params).filter(k => !allParamKeys.includes(k)) : [];
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-4">
-          <button 
-            onClick={() => {
-              if (window.history.state && window.history.state.idx > 0) {
-                navigate(-1);
-              } else {
-                navigate(`/eaisybooks/${companyId}/${dateRange}/overview`);
-              }
-            }}
-            className="flex items-center justify-center w-8 h-8 mt-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
-            title="Vissza"
-          >
-            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Paramétertábla</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Jogszabályi paraméterek — {selectedYear}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
+    <div className="w-full space-y-6 page-animate">
+      <PageHeader 
+        title="Paramétertábla"
+        description={`Jogszabályi paraméterek — ${selectedYear}`}
+        actions={
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-            className="rounded-lg border border-border bg-card px-3 py-2 text-sm"
+            className="rounded-md border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground"
           >
             {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
-        </div>
-      </div>
+        }
+      />
 
       {/* Search */}
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           placeholder="Keresés paraméter neve..."
           value={searchQuery}
@@ -401,10 +384,10 @@ export default function TaxParametersPage() {
 
       {/* Parameter categories */}
       {params && Object.entries(filteredCategories).map(([catId, cat]) => (
-        <div key={catId} className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-          <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30 flex items-center gap-2">
+        <div key={catId} className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
+          <div className="px-5 py-3 border-b border-border dark:bg-card/30 flex items-center gap-2">
             <cat.icon className="w-4 h-4 text-primary" />
-            <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">{cat.label}</h2>
+            <h2 className="text-sm font-bold text-foreground/90">{cat.label}</h2>
           </div>
           <div className="divide-y divide-border/50">
             {cat.keys.map((key) => {
@@ -413,10 +396,10 @@ export default function TaxParametersPage() {
               const isEditing = editingKey === key;
 
               return (
-                <div key={key} className="px-5 py-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                <div key={key} className="px-5 py-3 flex items-center justify-between hover:bg-muted/50 transition-colors group">
                   <div>
-                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{PARAM_LABELS[key] || key}</p>
-                    <p className="text-[11px] font-mono text-slate-400">{key}</p>
+                    <p className="text-sm font-medium text-foreground">{PARAM_LABELS[key] || key}</p>
+                    <p className="text-[11px] font-mono text-muted-foreground">{key}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     {isEditing ? (
@@ -450,7 +433,7 @@ export default function TaxParametersPage() {
                           className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
                           onClick={() => handleStartEdit(key, value)}
                         >
-                          <Edit3 className="w-3.5 h-3.5 text-slate-400" />
+                          <Edit3 className="w-3.5 h-3.5 text-muted-foreground" />
                         </Button>
                       </>
                     )}
@@ -464,16 +447,16 @@ export default function TaxParametersPage() {
 
       {/* Uncategorized parameters */}
       {uncategorizedKeys.length > 0 && params && (
-        <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-          <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30">
-            <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Egyéb paraméterek</h2>
+        <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
+          <div className="px-5 py-3 border-b border-border dark:bg-card/30">
+            <h2 className="text-sm font-bold text-foreground/90">Egyéb paraméterek</h2>
           </div>
           <div className="divide-y divide-border/50">
             {uncategorizedKeys.map((key) => (
               <div key={key} className="px-5 py-3 flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{PARAM_LABELS[key] || key}</p>
-                  <p className="text-[11px] font-mono text-slate-400">{key}</p>
+                  <p className="text-sm font-medium text-foreground">{PARAM_LABELS[key] || key}</p>
+                  <p className="text-[11px] font-mono text-muted-foreground">{key}</p>
                 </div>
                 <span className="text-sm font-bold text-primary font-mono">
                   {formatParamValue(key, params[key])}
@@ -487,8 +470,8 @@ export default function TaxParametersPage() {
       {/* Empty state */}
       {params && Object.keys(params).length === 0 && (
         <div className="py-16 text-center">
-          <Settings className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-          <p className="text-sm text-slate-500">Nincs paraméter a(z) {selectedYear}. évre</p>
+          <Settings className="w-12 h-12 mx-auto mb-3 text-muted-foreground/60" />
+          <p className="text-sm text-muted-foreground">Nincs paraméter a(z) {selectedYear}. évre</p>
         </div>
       )}
     </div>

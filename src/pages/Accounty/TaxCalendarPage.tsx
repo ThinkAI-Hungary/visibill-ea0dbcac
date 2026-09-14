@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
+import { PageHeader } from '@/components/ui/page-header';
 import { useAccountyRole } from './AccountyRoleContext';
 import NavDeadlinesPage from './NavDeadlinesPage';
 import { useAccountyDeadlines, useAccountyKpis, useCompleteDeadline } from '@/hooks/accounty';
@@ -66,12 +67,12 @@ const deadlineTypeTitle: Record<string, string> = {
   egyeb: 'Egyéb',
 };
 
-function KpiCard({ title, value, icon: Icon, valueClass = "text-slate-900 dark:text-slate-100" }: { title: string, value: number, icon: React.ElementType, valueClass?: string }) {
+function KpiCard({ title, value, icon: Icon, valueClass = "text-foreground" }: { title: string, value: number, icon: React.ElementType, valueClass?: string }) {
   return (
-    <div className="bg-card rounded-xl p-5 border border-border shadow-soft flex flex-col justify-between h-32 hover:shadow-md transition-shadow">
+    <div className="bg-card rounded-lg p-5 border border-border shadow-soft flex flex-col justify-between h-32 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
-        <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">{title}</h3>
-        <Icon className={`w-5 h-5 ${valueClass === 'text-red-600' ? 'text-red-500' : 'text-slate-400'}`} />
+        <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
+        <Icon className={`w-5 h-5 ${valueClass === 'text-red-600' ? 'text-red-500' : 'text-muted-foreground'}`} />
       </div>
       <p className={`text-3xl font-bold ${valueClass}`}>{value}</p>
     </div>
@@ -460,7 +461,7 @@ ThinkAI`;
       case 'Zöld': return 'bg-accent text-accent-foreground border-accent dark:bg-accent dark:text-primary dark:border-accent';
       case 'Sárga': return 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/40 dark:text-amber-400 dark:border-amber-800';
       case 'Piros': return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/40 dark:text-red-400 dark:border-red-800';
-      default: return 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-border';
+      default: return 'bg-muted text-foreground border-border';
     }
   };
 
@@ -469,7 +470,7 @@ ThinkAI`;
       case 'Zöld': return 'bg-primary';
       case 'Sárga': return 'bg-amber-500';
       case 'Piros': return 'bg-red-500';
-      default: return 'bg-slate-500';
+      default: return 'bg-muted-foreground';
     }
   };
 
@@ -479,26 +480,26 @@ ThinkAI`;
 
   if (activeTab === 'deadlines') {
     return (
-      <div className="w-full space-y-8 animate-in fade-in duration-500 pb-20">
+      <div className="w-full space-y-8 page-animate pb-20">
         {/* Header section with tabs */}
         <div className="flex flex-col gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Naptár & Határidők</h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-1">Könyvelési naptár és hivatalos NAV határidők</p>
+            <h1 className="text-3xl font-bold text-foreground tracking-tight">Naptár & Határidők</h1>
+            <p className="text-muted-foreground mt-1">Könyvelési naptár és hivatalos NAV határidők</p>
           </div>
           
           {/* Tab Selector */}
           <div className="flex border-b border-border">
             <button
               onClick={() => setActiveTab('calendar')}
-              className="px-4 py-2 text-sm font-semibold border-b-2 transition-all -mb-[2px] border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+              className="px-4 py-2 text-sm font-semibold border-b-2 transition-all -mb-[2px] border-transparent text-muted-foreground hover:text-foreground/90 dark:hover:text-muted-foreground/60"
             >
               Adónaptár
             </button>
             {isAuthorizedForNavDeadlines && (
               <button
                 onClick={() => setActiveTab('deadlines')}
-                className="px-4 py-2 text-sm font-semibold border-b-2 transition-all -mb-[2px] border-primary text-slate-900 dark:text-slate-100 font-bold"
+                className="px-4 py-2 text-sm font-semibold border-b-2 transition-all -mb-[2px] border-primary text-foreground font-bold"
               >
                 Hivatalos NAV határidők
               </button>
@@ -512,27 +513,27 @@ ThinkAI`;
   }
 
   return (
-    <div className="w-full space-y-8 animate-in fade-in duration-500 pb-20">
+    <div className="w-full space-y-6 page-animate pb-20">
       
       {/* Header section with tabs */}
       <div className="flex flex-col gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Naptár & Határidők</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Könyvelési naptár és hivatalos NAV határidők</p>
-        </div>
+        <PageHeader 
+          title="Naptár & Határidők"
+          description="Könyvelési naptár és hivatalos NAV határidők"
+        />
         
         {/* Tab Selector */}
         <div className="flex border-b border-border">
           <button
             onClick={() => setActiveTab('calendar')}
-            className="px-4 py-2 text-sm font-semibold border-b-2 transition-all -mb-[2px] border-primary text-slate-900 dark:text-slate-100 font-bold"
+            className="px-4 py-2 text-sm font-semibold border-b-2 transition-all -mb-[2px] border-primary text-foreground"
           >
             Adónaptár
           </button>
           {isAuthorizedForNavDeadlines && (
             <button
               onClick={() => setActiveTab('deadlines')}
-              className="px-4 py-2 text-sm font-semibold border-b-2 transition-all -mb-[2px] border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+              className="px-4 py-2 text-sm font-semibold border-b-2 transition-all -mb-[2px] border-transparent text-muted-foreground hover:text-foreground/90 dark:hover:text-muted-foreground/60"
             >
               Hivatalos NAV határidők
             </button>
@@ -549,14 +550,14 @@ ThinkAI`;
       </div>
 
       {/* Scope Tabs (Mine / All) */}
-      <div className="w-full bg-slate-100/80 dark:bg-slate-900/80 p-1.5 rounded-xl border border-border/60 shadow-inner flex items-center">
+      <div className="w-full bg-muted/80 dark:bg-card/80 p-1.5 rounded-lg border border-border/60 shadow-inner flex items-center">
         <button
           onClick={() => { setViewScope('mine'); setSelectedClient('all'); }}
           className={cn(
             "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
             viewScope === 'mine' 
-              ? "bg-card text-slate-900 dark:text-slate-100 shadow-soft" 
-              : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50"
+              ? "bg-card text-foreground shadow-soft" 
+              : "text-muted-foreground hover:text-foreground/90 dark:hover:text-foreground dark:text-foreground/90 hover:bg-muted/50"
           )}
         >
           <User className="w-4 h-4" />
@@ -568,8 +569,8 @@ ThinkAI`;
             className={cn(
               "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
               viewScope === 'all' 
-                ? "bg-card text-slate-900 dark:text-slate-100 shadow-soft" 
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50"
+                ? "bg-card text-foreground shadow-soft" 
+                : "text-muted-foreground hover:text-foreground/90 dark:hover:text-foreground dark:text-foreground/90 hover:bg-muted/50"
             )}
           >
             <Building className="w-4 h-4" />
@@ -586,7 +587,7 @@ ThinkAI`;
             <Button variant="outline" size="icon" onClick={handlePrev}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button variant="outline" onClick={handleToday} className="px-4 font-semibold text-slate-700 dark:text-slate-300">
+            <Button variant="outline" onClick={handleToday} className="px-4 font-semibold text-foreground/90">
               Ma
             </Button>
             <Button variant="outline" size="icon" onClick={handleNext}>
@@ -594,7 +595,7 @@ ThinkAI`;
             </Button>
           </div>
           
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+          <h2 className="text-xl font-bold text-foreground tracking-tight">
             {getHeaderText()}
           </h2>
           
@@ -611,22 +612,22 @@ ThinkAI`;
               </SelectContent>
             </Select>
 
-            <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-border flex items-center shadow-inner h-10">
+            <div className="bg-muted p-1 rounded-lg border border-border flex items-center shadow-inner h-10">
             <button
               onClick={() => setCalendarView('month')}
-              className={cn("px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-200", calendarView === 'month' ? "bg-card text-slate-900 dark:text-slate-100 shadow-soft" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50")}
+              className={cn("px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-200", calendarView === 'month' ? "bg-card text-foreground shadow-soft" : "text-muted-foreground hover:text-foreground/90 dark:hover:text-foreground dark:text-foreground/90 hover:bg-muted/50")}
             >
               Havi
             </button>
             <button
               onClick={() => setCalendarView('week')}
-              className={cn("px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-200", calendarView === 'week' ? "bg-card text-slate-900 dark:text-slate-100 shadow-soft" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50")}
+              className={cn("px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-200", calendarView === 'week' ? "bg-card text-foreground shadow-soft" : "text-muted-foreground hover:text-foreground/90 dark:hover:text-foreground dark:text-foreground/90 hover:bg-muted/50")}
             >
               Heti
             </button>
             <button
               onClick={() => setCalendarView('list')}
-              className={cn("px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-200", calendarView === 'list' ? "bg-card text-slate-900 dark:text-slate-100 shadow-soft" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50")}
+              className={cn("px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-200", calendarView === 'list' ? "bg-card text-foreground shadow-soft" : "text-muted-foreground hover:text-foreground/90 dark:hover:text-foreground dark:text-foreground/90 hover:bg-muted/50")}
             >
               Lista
             </button>
@@ -634,10 +635,10 @@ ThinkAI`;
           </div>
         </div>
       {calendarView === 'list' ? (
-        <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800">
+        <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden flex flex-col divide-y divide-border">
           {paginatedListItems.map((item, idx) => (
-            <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors gap-4">
-              <div className="font-semibold text-slate-800 dark:text-slate-200">
+            <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-muted/50 transition-colors gap-4">
+              <div className="font-semibold text-foreground">
                 {item.dateString}
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -661,7 +662,7 @@ ThinkAI`;
             </div>
           ))}
           {listItems.length === 0 && (
-            <div className="p-8 text-center text-slate-500 dark:text-slate-400 font-medium">
+            <div className="p-8 text-center text-muted-foreground font-medium">
               Nincs határidő ebben a hónapban.
             </div>
           )}
@@ -680,18 +681,18 @@ ThinkAI`;
           )}
         </div>
       ) : (
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
         
         {/* Calendar Grid */}
         <div className="grid grid-cols-7 border-b border-border">
           {['Mon', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat', 'Vasárnap'].map((day, i) => (
-            <div key={day} className={`py-3 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider ${i < 6 ? 'border-r border-border' : ''}`}>
+            <div key={day} className={`py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider ${i < 6 ? 'border-r border-border' : ''}`}>
               {day}
             </div>
           ))}
         </div>
         
-        <div className="grid grid-cols-7 bg-slate-100 dark:bg-slate-800 gap-[1px]">
+        <div className="grid grid-cols-7 bg-muted gap-[1px]">
           {calendarDays.map((cell, index) => {
             const badges = getBadgesForDay(cell.day, cell.isCurrentMonth);
             
@@ -699,13 +700,13 @@ ThinkAI`;
               <div 
                 key={index} 
                 className={cn(
-                  "bg-card min-h-[120px] p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group",
-                  !cell.isCurrentMonth && "text-slate-400 dark:bg-slate-950/50"
+                  "bg-card min-h-[120px] p-2 hover:bg-muted/50 transition-colors group",
+                  !cell.isCurrentMonth && "text-muted-foreground dark:bg-background/50"
                 )}
               >
                 <div className={cn(
                   "text-sm font-medium mb-2",
-                  cell.isCurrentMonth ? "text-slate-700 dark:text-slate-300" : "text-slate-400"
+                  cell.isCurrentMonth ? "text-foreground/90" : "text-muted-foreground"
                 )}>
                   {cell.day}
                 </div>
@@ -744,8 +745,8 @@ ThinkAI`;
           {selectedDeadline && (
             <>
               {/* Drawer Header */}
-              <div className="p-6 border-b border-border dark:bg-slate-900/50 relative">
-                <div className="flex items-center gap-3 text-slate-800 dark:text-slate-200">
+              <div className="p-6 border-b border-border dark:bg-card/50 relative">
+                <div className="flex items-center gap-3 text-foreground">
                   <div className="p-2 bg-red-100 text-red-600 rounded-lg shrink-0">
                     <CalendarIcon className="w-5 h-5" />
                   </div>
@@ -753,7 +754,7 @@ ThinkAI`;
                     <h3 className="text-lg font-bold">
                       {currentDate.toLocaleString('hu-HU', { month: 'long' }).charAt(0).toUpperCase() + currentDate.toLocaleString('hu-HU', { month: 'long' }).slice(1)} {selectedDeadline.date}.
                     </h3>
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Havi {selectedDeadline.title} Bevallás</p>
+                    <p className="text-sm font-medium text-muted-foreground">Havi {selectedDeadline.title} Bevallás</p>
                   </div>
                 </div>
               </div>
@@ -761,17 +762,17 @@ ThinkAI`;
               {/* Drawer Content */}
               <div className="flex-1 overflow-y-auto p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  <h4 className="text-sm font-bold text-foreground">
                     {viewScope === 'mine' ? 'Saját ügyfelek' : 'Összes ügyfél'}
                   </h4>
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Felelős</span>
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Felelős</span>
                 </div>
 
                 <div className="space-y-4">
                   {filteredClients.map((client) => (
-                    <div key={client.id} className="flex items-center justify-between py-2 border-b border-slate-50 dark:border-slate-800 last:border-0">
+                    <div key={client.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                       <div>
-                        <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-1">{client.clientName}</p>
+                        <p className="text-sm font-bold text-foreground mb-1">{client.clientName}</p>
                         <div className="flex items-center gap-2">
                           <span className={cn(
                             "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1",
@@ -788,8 +789,8 @@ ThinkAI`;
                             {client.status}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1.5 mt-2 text-xs text-slate-500 dark:text-slate-400 font-medium">
-                          <div className="w-5 h-5 rounded-full bg-slate-300 text-slate-700 dark:text-slate-300 flex items-center justify-center text-[10px] font-bold">
+                        <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground font-medium">
+                          <div className="w-5 h-5 rounded-full bg-muted-foreground/30 text-foreground/90 flex items-center justify-center text-[10px] font-bold">
                             {client.clientName.charAt(0)}
                           </div>
                           {client.clientName.split(' ')[0]}
@@ -804,7 +805,7 @@ ThinkAI`;
                             className="h-8 text-xs font-semibold gap-1.5 border-border"
                             onClick={() => handleNotify(client)}
                           >
-                            <Mail className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                            <Mail className="w-3.5 h-3.5 text-muted-foreground" />
                             Értesítés
                           </Button>
                         )}
@@ -822,7 +823,7 @@ ThinkAI`;
                   ))}
 
                   {filteredClients.length === 0 && (
-                    <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm">
+                    <div className="text-center py-8 text-muted-foreground text-sm">
                       Nincs megjeleníthető ügyfél ebben a nézetben.
                     </div>
                   )}

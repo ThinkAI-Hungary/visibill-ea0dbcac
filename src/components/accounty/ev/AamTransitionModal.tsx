@@ -70,19 +70,19 @@ export function AamTransitionModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px] p-6 bg-card border-border shadow-soft rounded-2xl">
+      <DialogContent className="sm:max-w-[550px] p-6 bg-card border-border shadow-soft rounded-lg">
         <DialogHeader className="space-y-2">
-          <DialogTitle className="flex items-center gap-2 text-xl font-bold text-slate-900 dark:text-slate-100">
+          <DialogTitle className="flex items-center gap-2 text-xl font-bold text-foreground">
             <AlertTriangle className="w-5.5 h-5.5 text-orange-500 animate-pulse" />
             ÁFA-körbe lépési Transition Workflow
           </DialogTitle>
-          <DialogDescription className="text-xs text-slate-500">
+          <DialogDescription className="text-xs text-muted-foreground">
             Az alanyi ÁFA-mentesség (AAM) értékhatárának átlépése miatt szükséges átállási teendők ellenőrzése és adminisztrációja.
           </DialogDescription>
         </DialogHeader>
 
         {/* Current status info */}
-        <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/50 rounded-xl p-4 flex gap-3 text-xs text-amber-800 dark:text-amber-300">
+        <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/50 rounded-lg p-4 flex gap-3 text-xs text-amber-800 dark:text-amber-300">
           <Info className="w-4.5 h-4.5 text-amber-600 shrink-0 mt-0.5" />
           <div className="space-y-1">
             <p className="font-bold">Figyelmeztetés: Bevételi korlát elérve!</p>
@@ -94,8 +94,8 @@ export function AamTransitionModal({
 
         {/* Checklist */}
         <div className="space-y-3.5 my-2">
-          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <ListTodo className="w-4 h-4 text-indigo-500" />
+          <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+            <ListTodo className="w-4 h-4 text-primary" />
             Kötelező feladatok listája
           </h3>
           <div className="space-y-2.5">
@@ -103,16 +103,16 @@ export function AamTransitionModal({
             <div 
               onClick={() => handleToggle('nav_report')}
               className={cn(
-                "p-3 rounded-xl border transition-all duration-300 flex items-start gap-3 cursor-pointer select-none",
-                checklist.nav_report ? "border-emerald-200 bg-emerald-500/5 dark:border-emerald-950 dark:bg-emerald-950/10" : "border-border hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/50 dark:bg-slate-900/20"
+                "p-3 rounded-lg border transition-all duration-300 flex items-start gap-3 cursor-pointer select-none",
+                checklist.nav_report ? "border-emerald-200 bg-emerald-500/5 dark:border-emerald-950 dark:bg-emerald-950/10" : "border-border hover:border-border dark:hover:border-border bg-muted/40/50 dark:bg-card/20"
               )}
             >
               <Checkbox id="nav_report" checked={checklist.nav_report} onCheckedChange={() => {}} className="mt-0.5" />
               <div>
-                <Label htmlFor="nav_report" className="text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
+                <Label htmlFor="nav_report" className="text-xs font-bold text-foreground cursor-pointer">
                   T101-es NAV adatbejelentő beküldése
                 </Label>
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                <p className="text-[10px] text-muted-foreground mt-0.5">
                   15 napos jogvesztő határidőn belül be kell nyújtani az adózási mód módosítását a NAV felé.
                 </p>
               </div>
@@ -122,16 +122,16 @@ export function AamTransitionModal({
             <div 
               onClick={() => handleToggle('billing_system')}
               className={cn(
-                "p-3 rounded-xl border transition-all duration-300 flex items-start gap-3 cursor-pointer select-none",
-                checklist.billing_system ? "border-emerald-200 bg-emerald-500/5 dark:border-emerald-950 dark:bg-emerald-950/10" : "border-border hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/50 dark:bg-slate-900/20"
+                "p-3 rounded-lg border transition-all duration-300 flex items-start gap-3 cursor-pointer select-none",
+                checklist.billing_system ? "border-emerald-200 bg-emerald-500/5 dark:border-emerald-950 dark:bg-emerald-950/10" : "border-border hover:border-border dark:hover:border-border bg-muted/40/50 dark:bg-card/20"
               )}
             >
               <Checkbox id="billing_system" checked={checklist.billing_system} onCheckedChange={() => {}} className="mt-0.5" />
               <div>
-                <Label htmlFor="billing_system" className="text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
+                <Label htmlFor="billing_system" className="text-xs font-bold text-foreground cursor-pointer">
                   Számlázó program átállítása
                 </Label>
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                <p className="text-[10px] text-muted-foreground mt-0.5">
                   Az értékhatár átlépése után kiállított számlákban kötelező felszámítani az ÁFÁ-t (alapértelmezetten 27%).
                 </p>
               </div>
@@ -141,16 +141,16 @@ export function AamTransitionModal({
             <div 
               onClick={() => handleToggle('vat_inventory')}
               className={cn(
-                "p-3 rounded-xl border transition-all duration-300 flex items-start gap-3 cursor-pointer select-none",
-                checklist.vat_inventory ? "border-emerald-200 bg-emerald-500/5 dark:border-emerald-950 dark:bg-emerald-950/10" : "border-border hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/50 dark:bg-slate-900/20"
+                "p-3 rounded-lg border transition-all duration-300 flex items-start gap-3 cursor-pointer select-none",
+                checklist.vat_inventory ? "border-emerald-200 bg-emerald-500/5 dark:border-emerald-950 dark:bg-emerald-950/10" : "border-border hover:border-border dark:hover:border-border bg-muted/40/50 dark:bg-card/20"
               )}
             >
               <Checkbox id="vat_inventory" checked={checklist.vat_inventory} onCheckedChange={() => {}} className="mt-0.5" />
               <div>
-                <Label htmlFor="vat_inventory" className="text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
+                <Label htmlFor="vat_inventory" className="text-xs font-bold text-foreground cursor-pointer">
                   Nyitó ÁFA-leltár elkészítése
                 </Label>
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                <p className="text-[10px] text-muted-foreground mt-0.5">
                   A meglévő, még értékesítetlen árukészlet korábban le nem vont előzetes áfája utólag levonásba helyezhető.
                 </p>
               </div>
@@ -160,16 +160,16 @@ export function AamTransitionModal({
             <div 
               onClick={() => handleToggle('partner_notify')}
               className={cn(
-                "p-3 rounded-xl border transition-all duration-300 flex items-start gap-3 cursor-pointer select-none",
-                checklist.partner_notify ? "border-emerald-200 bg-emerald-500/5 dark:border-emerald-950 dark:bg-emerald-950/10" : "border-border hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/50 dark:bg-slate-900/20"
+                "p-3 rounded-lg border transition-all duration-300 flex items-start gap-3 cursor-pointer select-none",
+                checklist.partner_notify ? "border-emerald-200 bg-emerald-500/5 dark:border-emerald-950 dark:bg-emerald-950/10" : "border-border hover:border-border dark:hover:border-border bg-muted/40/50 dark:bg-card/20"
               )}
             >
               <Checkbox id="partner_notify" checked={checklist.partner_notify} onCheckedChange={() => {}} className="mt-0.5" />
               <div>
-                <Label htmlFor="partner_notify" className="text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
+                <Label htmlFor="partner_notify" className="text-xs font-bold text-foreground cursor-pointer">
                   Ügyfelek/Partnerek tájékoztatása
                 </Label>
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                <p className="text-[10px] text-muted-foreground mt-0.5">
                   Írásos értesítő küldése a partnerek részére, hogy a további teljesítések már ÁFA felszámításával történnek.
                 </p>
               </div>
@@ -178,8 +178,8 @@ export function AamTransitionModal({
         </div>
 
         {/* VAT Regime Selection */}
-        <div className="bg-slate-50 dark:bg-slate-900/40 border rounded-xl p-4 space-y-3">
-          <Label className="text-xs font-bold text-slate-900 dark:text-slate-100 block">Választandó ÁFA adózási mód (NAV T101 pre-fill)</Label>
+        <div className="bg-background/40 border rounded-lg p-4 space-y-3">
+          <Label className="text-xs font-bold text-foreground block">Választandó ÁFA adózási mód (NAV T101 pre-fill)</Label>
           <div className="flex items-center gap-3">
             <Select value={selectedRegime} onValueChange={(v: any) => setSelectedRegime(v)}>
               <SelectTrigger className="w-full bg-card border-border h-9 text-xs">
@@ -194,7 +194,7 @@ export function AamTransitionModal({
 
             <Button 
               size="sm"
-              className="gap-1.5 h-9 shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-lg px-4"
+              className="gap-1.5 h-9 shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs rounded-lg px-4"
               onClick={handleDownloadT101}
             >
               <Download className="w-3.5 h-3.5" />
@@ -205,7 +205,7 @@ export function AamTransitionModal({
 
         {/* Completion summary */}
         <DialogFooter className="pt-2 flex justify-between items-center sm:justify-between w-full">
-          <div className="text-[10px] text-slate-400 font-semibold">
+          <div className="text-[10px] text-muted-foreground font-semibold">
             {completedCount} / 4 feladat kész
           </div>
           <div className="flex gap-2">

@@ -25,7 +25,7 @@ export default function PayrollStep3({
 }: PayrollStep3Props) {
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-600 dark:text-slate-300">
+      <p className="text-sm text-muted-foreground dark:text-foreground/90">
         Munkaidő feldolgozás. Töltsd fel a jelenléti ívet, vagy add meg manuálisan a munkanapokat.
       </p>
 
@@ -43,7 +43,7 @@ export default function PayrollStep3({
             }}
           />
         </label>
-        <span className="text-xs text-slate-500">Formátum: Név, Munkanapok, Túlóra, Táppénz, Szabadság</span>
+        <span className="text-xs text-muted-foreground">Formátum: Név, Munkanapok, Túlóra, Táppénz, Szabadság</span>
         {Object.keys(attendanceData).length > 0 && (
           <span className="flex items-center gap-1 text-xs text-green-600 font-semibold">
             <CheckCircle2 className="w-3.5 h-3.5" /> {Object.keys(attendanceData).length} betöltve
@@ -52,7 +52,7 @@ export default function PayrollStep3({
       </div>
 
       {csvValidation && (
-        <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="space-y-2 page-animate slide-in-from-top-2 duration-300">
           <div className={cn(
             'flex items-center justify-between px-4 py-3 rounded-lg border text-sm',
             csvValidation.unmatchedNames.length === 0 && csvValidation.warnings.length === 0
@@ -65,11 +65,11 @@ export default function PayrollStep3({
               ) : (
                 <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
               )}
-              <span className="font-medium text-slate-900 dark:text-slate-100">
+              <span className="font-medium text-foreground">
                 {csvValidation.fileName}: {csvValidation.matched}/{csvValidation.total} párosítva
               </span>
             </div>
-            <button onClick={() => setCsvValidation(null)} className="text-slate-400 hover:text-slate-600 text-xs font-medium">
+            <button onClick={() => setCsvValidation(null)} className="text-muted-foreground hover:text-muted-foreground text-xs font-medium">
               Bezárás
             </button>
           </div>
@@ -114,7 +114,7 @@ export default function PayrollStep3({
         </div>
       )}
 
-      <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900/30 border border-border text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2">
+      <div className="p-3 rounded-lg bg-background/30 border border-border text-xs text-muted-foreground dark:text-foreground/90 flex items-center gap-2">
         <span className="font-semibold text-primary">💡 Tipp:</span>
         <span>
           Órabéres dolgozóknál a <strong>„Munkaóra (h)”</strong> oszlopban közvetlenül megadhatod a hónapban teljesített tényleges órákat. A rendszer ezt szorozza fel a dolgozó órabérével.
@@ -124,13 +124,13 @@ export default function PayrollStep3({
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-border dark:bg-slate-900/30">
-              <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Név</th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-slate-500 uppercase">Munkanapok</th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-slate-500 uppercase">Munkaóra (h)</th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-slate-500 uppercase">Túlóra (h)</th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-slate-500 uppercase">Táppénz</th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-slate-500 uppercase">Szabadság</th>
+            <tr className="border-b border-border dark:bg-card/30">
+              <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Név</th>
+              <th className="px-4 py-2 text-center text-xs font-medium text-muted-foreground uppercase">Munkanapok</th>
+              <th className="px-4 py-2 text-center text-xs font-medium text-muted-foreground uppercase">Munkaóra (h)</th>
+              <th className="px-4 py-2 text-center text-xs font-medium text-muted-foreground uppercase">Túlóra (h)</th>
+              <th className="px-4 py-2 text-center text-xs font-medium text-muted-foreground uppercase">Táppénz</th>
+              <th className="px-4 py-2 text-center text-xs font-medium text-muted-foreground uppercase">Szabadság</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/50">
@@ -143,8 +143,8 @@ export default function PayrollStep3({
               const defaultHours = Math.round((att.workDays || 0) * dailyHours * 10) / 10;
               const fromCsv = !!attendanceData[emp.id];
               return (
-                <tr key={emp.id} className={cn('hover:bg-slate-50 dark:hover:bg-slate-800/50', fromCsv && 'bg-green-50/50 dark:bg-green-900/10')}>
-                  <td className="px-4 py-2.5 text-sm font-medium text-slate-900 dark:text-slate-100">
+                <tr key={emp.id} className={cn('hover:bg-muted/50', fromCsv && 'bg-green-50/50 dark:bg-green-900/10')}>
+                  <td className="px-4 py-2.5 text-sm font-medium text-foreground">
                     {emp.last_name} {emp.first_name}
                     {isHourly && (
                       <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
@@ -160,7 +160,7 @@ export default function PayrollStep3({
                       max={31}
                       value={att.workDays}
                       onChange={(e) => onAttendanceChange?.(emp.id, 'workDays', parseInt(e.target.value) || 0)}
-                      className="w-16 text-center rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-sm font-mono text-slate-900 dark:text-slate-100 focus:border-primary focus:outline-none"
+                      className="w-16 text-center rounded border border-border dark:border-slate-600 bg-card px-2 py-1 text-sm font-mono text-foreground focus:border-primary focus:outline-none"
                     />
                   </td>
                   <td className="px-4 py-2 text-center">
@@ -177,7 +177,7 @@ export default function PayrollStep3({
                         title="Órabéres dolgozó: Ténylegesen ledolgozott órák ebben a hónapban"
                       />
                     ) : (
-                      <span className="text-xs text-slate-400 font-mono" title="Havibéres dolgozó elméleti munkaideje">
+                      <span className="text-xs text-muted-foreground font-mono" title="Havibéres dolgozó elméleti munkaideje">
                         {defaultHours} h
                       </span>
                     )}
@@ -189,7 +189,7 @@ export default function PayrollStep3({
                       max={200}
                       value={att.overtime}
                       onChange={(e) => onAttendanceChange?.(emp.id, 'overtime', parseFloat(e.target.value) || 0)}
-                      className="w-16 text-center rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-sm font-mono text-slate-900 dark:text-slate-100 focus:border-primary focus:outline-none"
+                      className="w-16 text-center rounded border border-border dark:border-slate-600 bg-card px-2 py-1 text-sm font-mono text-foreground focus:border-primary focus:outline-none"
                     />
                   </td>
                   <td className="px-4 py-2 text-center">
@@ -199,7 +199,7 @@ export default function PayrollStep3({
                       max={31}
                       value={att.sickDays}
                       onChange={(e) => onAttendanceChange?.(emp.id, 'sickDays', parseInt(e.target.value) || 0)}
-                      className="w-16 text-center rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-sm font-mono text-slate-900 dark:text-slate-100 focus:border-primary focus:outline-none"
+                      className="w-16 text-center rounded border border-border dark:border-slate-600 bg-card px-2 py-1 text-sm font-mono text-foreground focus:border-primary focus:outline-none"
                     />
                   </td>
                   <td className="px-4 py-2 text-center">
@@ -209,7 +209,7 @@ export default function PayrollStep3({
                       max={31}
                       value={att.leaveDays}
                       onChange={(e) => onAttendanceChange?.(emp.id, 'leaveDays', parseInt(e.target.value) || 0)}
-                      className="w-16 text-center rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-sm font-mono text-slate-900 dark:text-slate-100 focus:border-primary focus:outline-none"
+                      className="w-16 text-center rounded border border-border dark:border-slate-600 bg-card px-2 py-1 text-sm font-mono text-foreground focus:border-primary focus:outline-none"
                     />
                   </td>
                 </tr>

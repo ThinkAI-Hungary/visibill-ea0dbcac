@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useCreateEmployee, useCreateEmployment, useJobCodes, useCreateDependent } from '@/hooks/usePayrollData';
@@ -383,15 +385,15 @@ export default function EmployeeWizardPage() {
   const isSaving = createEmployee.isPending || createEmployment.isPending;
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
+    <div className="w-full max-w-4xl mx-auto space-y-8 page-animate">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="h-9 w-9">
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Új foglalkoztatott</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Belépő rögzítése lépésről lépésre</p>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Új foglalkoztatott</h1>
+          <p className="text-sm text-muted-foreground">Belépő rögzítése lépésről lépésre</p>
         </div>
       </div>
 
@@ -405,7 +407,7 @@ export default function EmployeeWizardPage() {
               'w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all min-w-0',
               i === step ? 'bg-primary text-primary-foreground shadow-lg' :
               i < step ? 'bg-accent text-primary cursor-pointer hover:bg-accent/80' :
-              'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
+              'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground'
             )}
           >
             <s.icon className="w-4 h-4 shrink-0" />
@@ -416,9 +418,9 @@ export default function EmployeeWizardPage() {
       </div>
 
       {/* Step content */}
-      <div className="bg-card rounded-xl border border-border shadow-soft p-6 md:p-8">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">{STEPS[step].title}</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">{STEPS[step].subtitle}</p>
+      <div className="bg-card rounded-lg border border-border shadow-soft p-6 md:p-8">
+        <h2 className="text-lg font-bold text-foreground mb-1">{STEPS[step].title}</h2>
+        <p className="text-sm text-muted-foreground mb-6">{STEPS[step].subtitle}</p>
 
         {/* Step 0: Employment type selection */}
         {step === 0 && (() => {
@@ -432,13 +434,13 @@ export default function EmployeeWizardPage() {
             <div className="space-y-4">
               {/* Search */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   type="text"
                   placeholder="Keresés jogviszony neve, kódja alapján..."
                   value={typeSearch}
                   onChange={e => setTypeSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 text-sm bg-card border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary/30 text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+                  className="w-full pl-10 pr-4 py-2.5 text-sm bg-card border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary/30 text-foreground placeholder:text-muted-foreground"
                 />
               </div>
               {/* Group tabs */}
@@ -451,7 +453,7 @@ export default function EmployeeWizardPage() {
                       'px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
                       activeGroup === g
                         ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary'
+                        : 'bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary'
                     )}
                   >
                     {g} {g !== 'Mind' ? `(${EMPLOYMENT_TYPES.filter(t => (t as any).group === g).length})` : `(${EMPLOYMENT_TYPES.length})`}
@@ -470,7 +472,7 @@ export default function EmployeeWizardPage() {
                       update('minimum_contribution_base_rule', isVal ? 'minimal_wage' : 'none');
                     }}
                     className={cn(
-                      'relative flex items-start gap-3 p-4 rounded-xl border-2 text-left transition-all duration-200',
+                      'relative flex items-start gap-3 p-4 rounded-lg border-2 text-left transition-all duration-200',
                       form.employment_type === type.value
                         ? 'border-primary bg-primary/5 shadow-lg'
                         : 'border-border hover:border-primary/30 hover:shadow-md'
@@ -479,7 +481,7 @@ export default function EmployeeWizardPage() {
                     <span className="text-2xl">{type.icon}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{type.label}</p>
+                        <p className="text-sm font-bold text-foreground">{type.label}</p>
                         {type.isNew && (
                           <span className="px-1.5 py-0.5 text-[9px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 rounded-full uppercase">ÚJ</span>
                         )}
@@ -490,7 +492,7 @@ export default function EmployeeWizardPage() {
                           <span className="px-1.5 py-0.5 text-[9px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 rounded-full uppercase">KÖZSZ</span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{type.desc}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{type.desc}</p>
                       <p className="text-[10px] font-mono text-primary mt-1">Kód: {type.code}</p>
                     </div>
                     {form.employment_type === type.value && (
@@ -501,7 +503,7 @@ export default function EmployeeWizardPage() {
                   </button>
                 ))}
                 {filtered.length === 0 && (
-                  <p className="col-span-full text-center text-sm text-slate-400 py-8">Nincs találat a keresésre.</p>
+                  <p className="col-span-full text-center text-sm text-muted-foreground py-8">Nincs találat a keresésre.</p>
                 )}
               </div>
               {errors.employment_type && (
@@ -524,7 +526,7 @@ export default function EmployeeWizardPage() {
             <FormField label="Születési dátum" value={form.birth_date} onChange={(v) => update('birth_date', v)} type="date" />
             <FormField label="Anyja neve" value={form.mothers_name} onChange={(v) => update('mothers_name', v)} placeholder="pl. Kiss Mária" />
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Nem</label>
+              <label className="block text-sm font-medium text-foreground/90 mb-1.5">Nem</label>
               <Select value={form.gender} onValueChange={(v) => update('gender', v)}>
                 <SelectTrigger className="bg-card border-border">
                   <SelectValue placeholder="Válassz..." />
@@ -539,11 +541,11 @@ export default function EmployeeWizardPage() {
             <FormField label="Állampolgárság" value={form.eu_tax_id ? 'Külföldi' : 'Magyar'} onChange={() => {}} placeholder="Magyar" className="opacity-70 pointer-events-none" />
             
             <div className="md:col-span-2 border-t border-border pt-4 mt-2">
-              <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Külföldi / Egyedi adatok</p>
+              <p className="text-sm font-bold text-foreground/90 mb-3">Külföldi / Egyedi adatok</p>
             </div>
             <FormField label="EU adóazonosító (külföldieknek)" value={form.eu_tax_id} onChange={(v) => update('eu_tax_id', v)} placeholder="pl. DE123456789" />
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Végzettség / szakképzettség</label>
+              <label className="block text-sm font-medium text-foreground/90 mb-1.5">Végzettség / szakképzettség</label>
               <Select value={form.education_level} onValueChange={(v) => update('education_level', v)}>
                 <SelectTrigger className="bg-card border-border">
                   <SelectValue />
@@ -560,26 +562,26 @@ export default function EmployeeWizardPage() {
 
             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
               <div className="flex items-center gap-3 p-3 rounded-lg border border-border">
-                <input type="checkbox" id="age_concession" checked={form.has_age_concession} onChange={(e) => update('has_age_concession', e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
-                <label htmlFor="age_concession" className="text-xs text-slate-700 dark:text-slate-300 font-medium">Korkedvezményre jogosult</label>
+                <Checkbox id="age_concession" checked={form.has_age_concession} onCheckedChange={(c) => update('has_age_concession', Boolean(c))} />
+                <label htmlFor="age_concession" className="text-xs text-foreground/90 font-medium cursor-pointer select-none">Korkedvezményre jogosult</label>
               </div>
               <div className="flex items-center gap-3 p-3 rounded-lg border border-border">
-                <input type="checkbox" id="union_fee" checked={form.has_union_fee} onChange={(e) => update('has_union_fee', e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
-                <label htmlFor="union_fee" className="text-xs text-slate-700 dark:text-slate-300 font-medium">Érdekképviseleti tagdíj (szakszervezet)</label>
+                <Checkbox id="union_fee" checked={form.has_union_fee} onCheckedChange={(c) => update('has_union_fee', Boolean(c))} />
+                <label htmlFor="union_fee" className="text-xs text-foreground/90 font-medium cursor-pointer select-none">Érdekképviseleti tagdíj (szakszervezet)</label>
               </div>
               <div className="flex items-center gap-3 p-3 rounded-lg border border-border">
-                <input type="checkbox" id="no_hungarian_address" checked={form.has_no_hungarian_address} onChange={(e) => update('has_no_hungarian_address', e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
-                <label htmlFor="no_hungarian_address" className="text-xs text-slate-700 dark:text-slate-300 font-medium">Nincs magyar lakcíme</label>
+                <Checkbox id="no_hungarian_address" checked={form.has_no_hungarian_address} onCheckedChange={(c) => update('has_no_hungarian_address', Boolean(c))} />
+                <label htmlFor="no_hungarian_address" className="text-xs text-foreground/90 font-medium cursor-pointer select-none">Nincs magyar lakcíme</label>
               </div>
             </div>
 
             <div className="md:col-span-2 border-t border-border pt-4 mt-2">
-              <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Azonosítók</p>
+              <p className="text-sm font-bold text-foreground/90 mb-3">Azonosítók</p>
             </div>
             <FormField label="TAJ-szám" value={form.taj_number} onChange={(v) => update('taj_number', formatTajNumberOnType(v))} error={errors.taj_number} placeholder="000-000-000" />
             <FormField label="Adóazonosító jel" value={form.tax_id} onChange={(v) => update('tax_id', v)} error={errors.tax_id} placeholder="8XXXXXXXXX" />
             <div className="md:col-span-2 border-t border-border pt-4 mt-2">
-              <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Elérhetőség</p>
+              <p className="text-sm font-bold text-foreground/90 mb-3">Elérhetőség</p>
             </div>
             <FormField label="E-mail" value={form.email} onChange={(v) => update('email', v)} type="email" placeholder="pelda@email.hu" />
             <FormField label="Telefon" value={form.phone} onChange={(v) => update('phone', v)} type="tel" placeholder="+36 30 123 4567" />
@@ -590,7 +592,7 @@ export default function EmployeeWizardPage() {
         {step === 2 && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-sm text-muted-foreground">
                 Add meg az eltartottak (gyermekek, magzatok) adatait a családi kedvezmény érvényesítéséhez.
               </p>
               <Button
@@ -618,7 +620,7 @@ export default function EmployeeWizardPage() {
               <div className="border border-border rounded-lg overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-border text-slate-500">
+                    <tr className="bg-background/50 border-b border-border text-muted-foreground">
                       <th className="px-3 py-2 text-left">Név</th>
                       <th className="px-3 py-2 text-left">Adóazonosító</th>
                       <th className="px-3 py-2 text-left">TAJ szám</th>
@@ -630,7 +632,7 @@ export default function EmployeeWizardPage() {
                   </thead>
                   <tbody className="divide-y divide-border/60">
                     {form.dependents.map((dep, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/40">
+                      <tr key={idx} className="hover:bg-muted/40/40">
                         <td className="p-2">
                           <Input
                             value={dep.birth_name}
@@ -668,14 +670,14 @@ export default function EmployeeWizardPage() {
                           />
                         </td>
                         <td className="p-2">
-                          <Input
-                            type="date"
+                          <DatePicker
                             value={dep.birth_date}
-                            onChange={(e) => {
+                            onChange={(dateStr) => {
                               const list = [...form.dependents];
-                              list[idx].birth_date = e.target.value;
+                              list[idx].birth_date = dateStr;
                               update('dependents', list);
                             }}
+                            placeholder="éééé. hh. nn."
                             className="h-8 text-xs"
                           />
                         </td>
@@ -692,16 +694,16 @@ export default function EmployeeWizardPage() {
                           />
                         </td>
                         <td className="p-2 text-center">
-                          <input
-                            type="checkbox"
-                            checked={dep.is_fetus}
-                            onChange={(e) => {
-                              const list = [...form.dependents];
-                              list[idx].is_fetus = e.target.checked;
-                              update('dependents', list);
-                            }}
-                            className="w-4 h-4 rounded border-slate-300"
-                          />
+                          <div className="flex justify-center">
+                            <Checkbox
+                              checked={dep.is_fetus}
+                              onCheckedChange={(c) => {
+                                const list = [...form.dependents];
+                                list[idx].is_fetus = Boolean(c);
+                                update('dependents', list);
+                              }}
+                            />
+                          </div>
                         </td>
                         <td className="p-2 text-center">
                           <Button
@@ -723,8 +725,8 @@ export default function EmployeeWizardPage() {
                 </table>
               </div>
             ) : (
-              <div className="text-center py-10 border-2 border-dashed border-border rounded-xl">
-                <p className="text-sm text-slate-400">Nincsenek felvéve eltartottak ehhez a dolgozóhoz.</p>
+              <div className="text-center py-10 border-2 border-dashed border-border rounded-lg">
+                <p className="text-sm text-muted-foreground">Nincsenek felvéve eltartottak ehhez a dolgozóhoz.</p>
               </div>
             )}
           </div>
@@ -753,7 +755,7 @@ export default function EmployeeWizardPage() {
             <FormField label="Munkakör" value={form.job_title} onChange={(v) => update('job_title', v)} placeholder="pl. Könyvelő" className="md:col-span-2" />
             <FormField label="Alapbér (Ft)" value={form.base_salary} onChange={(v) => update('base_salary', v)} type="number" placeholder="pl. 450000" />
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Bérezés típusa</label>
+              <label className="block text-sm font-medium text-foreground/90 mb-1.5">Bérezés típusa</label>
               <Select value={form.salary_type} onValueChange={(v) => update('salary_type', v)}>
                 <SelectTrigger className="bg-card border-border">
                   <SelectValue />
@@ -776,7 +778,7 @@ export default function EmployeeWizardPage() {
               error={errors.weekly_hours} 
             />
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Projekt (opcionális)</label>
+              <label className="block text-sm font-medium text-foreground/90 mb-1.5">Projekt (opcionális)</label>
               <Select value={form.project_id} onValueChange={(v) => update('project_id', v === '__none__' ? '' : v)}>
                 <SelectTrigger className="bg-card border-border">
                   <SelectValue placeholder="Válassz projektet..." />
@@ -792,24 +794,24 @@ export default function EmployeeWizardPage() {
               </Select>
             </div>
             <div className="flex items-center gap-3 p-3 rounded-lg border border-border">
-              <input type="checkbox" checked={form.is_fixed_term} onChange={(e) => update('is_fixed_term', e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
-              <label className="text-sm text-slate-700 dark:text-slate-300">Határozott idejű</label>
+              <Checkbox id="is_fixed_term" checked={form.is_fixed_term} onCheckedChange={(c) => update('is_fixed_term', Boolean(c))} />
+              <label htmlFor="is_fixed_term" className="text-sm text-foreground/90 cursor-pointer select-none">Határozott idejű</label>
             </div>
             {form.is_fixed_term && (
               <FormField label="Jogviszony vége" value={form.end_date} onChange={(v) => update('end_date', v)} type="date" />
             )}
 
             <div className="md:col-span-2 border-t border-border pt-4 mt-2">
-              <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Speciális Adózási Formák</p>
+              <p className="text-sm font-bold text-foreground/90 mb-3">Speciális Adózási Formák</p>
             </div>
             <div className="flex flex-col gap-2 p-3 rounded-lg border border-border">
               <div className="flex items-center gap-3">
-                <input type="checkbox" id="is_pensioner" checked={form.is_pensioner} onChange={(e) => update('is_pensioner', e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
-                <label htmlFor="is_pensioner" className="text-sm text-slate-700 dark:text-slate-300 font-semibold">Nyugdíjas státusz</label>
+                <Checkbox id="is_pensioner" checked={form.is_pensioner} onCheckedChange={(c) => update('is_pensioner', Boolean(c))} />
+                <label htmlFor="is_pensioner" className="text-sm text-foreground/90 font-semibold cursor-pointer select-none">Nyugdíjas státusz</label>
               </div>
               {form.is_pensioner && (
                 <div className="mt-2 pl-6">
-                  <label className="block text-xs font-medium text-slate-500 mb-1">Nyugdíj típusa</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Nyugdíj típusa</label>
                   <Select value={form.pension_type} onValueChange={(v) => update('pension_type', v)}>
                     <SelectTrigger className="bg-card border-border h-8 text-xs">
                       <SelectValue placeholder="Válassz..." />
@@ -827,13 +829,13 @@ export default function EmployeeWizardPage() {
 
             <div className="flex flex-col gap-2 p-3 rounded-lg border border-border">
               <div className="flex items-center gap-3">
-                <input type="checkbox" id="is_ekho" checked={form.is_ekho} onChange={(e) => update('is_ekho', e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
-                <label htmlFor="is_ekho" className="text-sm text-slate-700 dark:text-slate-300 font-semibold">EKHO választása</label>
+                <Checkbox id="is_ekho" checked={form.is_ekho} onCheckedChange={(c) => update('is_ekho', Boolean(c))} />
+                <label htmlFor="is_ekho" className="text-sm text-foreground/90 font-semibold cursor-pointer select-none">EKHO választása</label>
               </div>
               {form.is_ekho && (
                 <div className="mt-2 pl-6 grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-xs font-medium text-slate-500 mb-1">Ki fizeti?</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1">Ki fizeti?</label>
                     <Select value={form.ekho_payer} onValueChange={(v) => update('ekho_payer', v)}>
                       <SelectTrigger className="bg-card border-border h-8 text-xs">
                         <SelectValue />
@@ -845,7 +847,7 @@ export default function EmployeeWizardPage() {
                     </Select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-500 mb-1">EKHO kategória</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1">EKHO kategória</label>
                     <Select value={form.ekho_category} onValueChange={(v) => update('ekho_category', v)}>
                       <SelectTrigger className="bg-card border-border h-8 text-xs">
                         <SelectValue />
@@ -863,13 +865,13 @@ export default function EmployeeWizardPage() {
 
             <div className="flex flex-col gap-2 p-3 rounded-lg border border-border md:col-span-2">
               <div className="flex items-center gap-3">
-                <input type="checkbox" id="is_szocho_discount" checked={form.is_szocho_discount} onChange={(e) => update('is_szocho_discount', e.target.checked)} className="w-4 h-4 rounded border-slate-300" />
-                <label htmlFor="is_szocho_discount" className="text-sm text-slate-700 dark:text-slate-300 font-semibold">SZOCHO kedvezmény érvényesítése</label>
+                <Checkbox id="is_szocho_discount" checked={form.is_szocho_discount} onCheckedChange={(c) => update('is_szocho_discount', Boolean(c))} />
+                <label htmlFor="is_szocho_discount" className="text-sm text-foreground/90 font-semibold cursor-pointer select-none">SZOCHO kedvezmény érvényesítése</label>
               </div>
               {form.is_szocho_discount && (
                 <div className="mt-2 pl-6 grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-xs font-medium text-slate-500 mb-1">Kedvezmény típusa</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1">Kedvezmény típusa</label>
                     <Select value={form.szocho_discount_type} onValueChange={(v) => update('szocho_discount_type', v)}>
                       <SelectTrigger className="bg-card border-border h-8 text-xs">
                         <SelectValue />
@@ -891,12 +893,12 @@ export default function EmployeeWizardPage() {
             </div>
 
             <div className="md:col-span-2 border-t border-border pt-4 mt-2">
-              <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Minimális Járulékalap Szabályok és Mentességek</p>
+              <p className="text-sm font-bold text-foreground/90 mb-3">Minimális Járulékalap Szabályok és Mentességek</p>
             </div>
             
-            <div className="flex flex-col gap-3 p-4 rounded-lg border border-border md:col-span-2 bg-slate-50/50 dark:bg-slate-900/10">
+            <div className="flex flex-col gap-3 p-4 rounded-lg border border-border md:col-span-2 bg-muted/40/50 dark:bg-card/10">
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Minimális járulékalap szabály</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Minimális járulékalap szabály</label>
                 <Select value={form.minimum_contribution_base_rule} onValueChange={(v) => update('minimum_contribution_base_rule', v)}>
                   <SelectTrigger className="bg-card border-border h-9 text-xs">
                     <SelectValue placeholder="Válassz szabályt..." />
@@ -913,14 +915,12 @@ export default function EmployeeWizardPage() {
                 <div className="space-y-3 mt-2 border-t border-border/60 pt-3">
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-3">
-                      <input 
-                        type="checkbox" 
+                      <Checkbox 
                         id="is_min_base_paid_elsewhere" 
                         checked={form.is_min_base_paid_elsewhere} 
-                        onChange={(e) => update('is_min_base_paid_elsewhere', e.target.checked)} 
-                        className="w-4 h-4 rounded border-slate-300" 
+                        onCheckedChange={(c) => update('is_min_base_paid_elsewhere', Boolean(c))} 
                       />
-                      <label htmlFor="is_min_base_paid_elsewhere" className="text-sm text-slate-700 dark:text-slate-300 font-semibold">
+                      <label htmlFor="is_min_base_paid_elsewhere" className="text-sm text-foreground/90 font-semibold cursor-pointer select-none">
                         A minimális járulékalap utáni járulékot máshol megfizették
                       </label>
                     </div>
@@ -946,27 +946,23 @@ export default function EmployeeWizardPage() {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <input 
-                      type="checkbox" 
+                    <Checkbox 
                       id="is_min_base_exempt_gyes_gyed" 
                       checked={form.is_min_base_exempt_gyes_gyed} 
-                      onChange={(e) => update('is_min_base_exempt_gyes_gyed', e.target.checked)} 
-                      className="w-4 h-4 rounded border-slate-300" 
+                      onCheckedChange={(c) => update('is_min_base_exempt_gyes_gyed', Boolean(c))} 
                     />
-                    <label htmlFor="is_min_base_exempt_gyes_gyed" className="text-sm text-slate-700 dark:text-slate-300 font-semibold">
+                    <label htmlFor="is_min_base_exempt_gyes_gyed" className="text-sm text-foreground/90 font-semibold cursor-pointer select-none">
                       Mentesség GYES/GYED melletti foglalkoztatás miatt
                     </label>
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <input 
-                      type="checkbox" 
+                    <Checkbox 
                       id="is_min_base_exempt_student" 
                       checked={form.is_min_base_exempt_student} 
-                      onChange={(e) => update('is_min_base_exempt_student', e.target.checked)} 
-                      className="w-4 h-4 rounded border-slate-300" 
+                      onCheckedChange={(c) => update('is_min_base_exempt_student', Boolean(c))} 
                     />
-                    <label htmlFor="is_min_base_exempt_student" className="text-sm text-slate-700 dark:text-slate-300 font-semibold">
+                    <label htmlFor="is_min_base_exempt_student" className="text-sm text-foreground/90 font-semibold cursor-pointer select-none">
                       Mentesség nappali tagozatos tanulói jogviszony miatt
                     </label>
                   </div>
@@ -975,13 +971,13 @@ export default function EmployeeWizardPage() {
             </div>
 
             <div className="md:col-span-2 border-t border-border pt-4 mt-2">
-              <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Munkába Járás Utazási Költségtérítése</p>
-              <p className="text-xs text-slate-500 mb-3">39/2010. (II. 26.) Korm. rendelet és Szja tv. 25. § (2) szerinti adómentes költségtérítés</p>
+              <p className="text-sm font-bold text-foreground/90 mb-1">Munkába Járás Utazási Költségtérítése</p>
+              <p className="text-xs text-muted-foreground mb-3">39/2010. (II. 26.) Korm. rendelet és Szja tv. 25. § (2) szerinti adómentes költségtérítés</p>
             </div>
 
-            <div className="flex flex-col gap-3 p-4 rounded-lg border border-border md:col-span-2 bg-slate-50/50 dark:bg-slate-900/10">
+            <div className="flex flex-col gap-3 p-4 rounded-lg border border-border md:col-span-2 bg-muted/40/50 dark:bg-card/10">
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Munkába járás módja</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Munkába járás módja</label>
                 <Select value={form.commute_type} onValueChange={(v: any) => update('commute_type', v)}>
                   <SelectTrigger className="bg-card border-border h-9 text-xs">
                     <SelectValue placeholder="Válassz módot..." />
@@ -1004,7 +1000,7 @@ export default function EmployeeWizardPage() {
                     placeholder="pl. 24"
                     className="h-9 text-xs"
                   />
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 italic">
+                  <p className="text-[11px] text-muted-foreground italic">
                     * A havi számfejtés során a rendszer a ténylegesen ledolgozott munkanapokkal és a céges rátával (alapértelmezett: 30 Ft/km) szorozza fel automatikusan. Teljesen adómentes.
                   </p>
                 </div>
@@ -1021,7 +1017,7 @@ export default function EmployeeWizardPage() {
                     className="h-9 text-xs"
                   />
                   <div>
-                    <label className="block text-xs font-medium text-slate-500 mb-1">Térítés mértéke (%)</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1">Térítés mértéke (%)</label>
                     <Select value={form.commute_reimbursement_pct} onValueChange={(v) => update('commute_reimbursement_pct', v)}>
                       <SelectTrigger className="bg-card border-border h-9 text-xs">
                         <SelectValue />
@@ -1032,7 +1028,7 @@ export default function EmployeeWizardPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 italic md:col-span-2">
+                  <p className="text-[11px] text-muted-foreground italic md:col-span-2">
                     * A havi elszámoláskor a bérlet ára a havi munkalapon ciklusonként is felülbírálható. Teljesen adómentes.
                   </p>
                 </div>
@@ -1148,14 +1144,24 @@ function FormField({ label, value, onChange, error, type = 'text', placeholder, 
 }) {
   return (
     <div className={className}>
-      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">{label}</label>
-      <Input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className={cn('bg-card border-border', error && 'border-red-500 focus-visible:ring-red-500')}
-      />
+      <label className="block text-sm font-medium text-foreground/90 mb-1.5">{label}</label>
+      {type === 'date' ? (
+        <DatePicker
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder || 'éééé. hh. nn.'}
+          clearable
+          className={cn('bg-card border-border', error && 'border-red-500')}
+        />
+      ) : (
+        <Input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className={cn('bg-card border-border', error && 'border-red-500 focus-visible:ring-red-500')}
+        />
+      )}
       {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
     </div>
   );
@@ -1164,8 +1170,8 @@ function FormField({ label, value, onChange, error, type = 'text', placeholder, 
 function ReviewRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between py-1.5">
-      <span className="text-sm text-slate-500 dark:text-slate-400">{label}</span>
-      <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{value}</span>
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="text-sm font-semibold text-foreground">{value}</span>
     </div>
   );
 }

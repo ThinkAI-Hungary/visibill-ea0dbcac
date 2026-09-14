@@ -190,24 +190,24 @@ export default function CashbookCloseWizard() {
   const firstOpenMonth = effectivePeriods.find(p => !p.isClosed && p.entryCount > 0);
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/eaisybooks/${id}/${dateRange}/ev/cashbook?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev/cashbook?year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> Pénztárkönyv
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <span className="text-slate-900 dark:text-slate-100 font-medium">Időszak lezárás</span>
+        <span className="text-foreground font-medium">Időszak lezárás</span>
       </div>
 
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="p-2.5 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-lg shadow-amber-500/25">
+        <div className="p-2.5 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg shadow-lg shadow-amber-500/25">
           <Lock className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Időszak lezárás</h1>
-          <p className="text-sm text-slate-500">{client?.name || 'Ügyfél'} · Pénztárkönyv periódus zárolás</p>
+          <h1 className="text-2xl font-bold text-foreground">Időszak lezárás</h1>
+          <p className="text-sm text-muted-foreground">{client?.name || 'Ügyfél'} · Pénztárkönyv periódus zárolás</p>
         </div>
       </div>
 
@@ -219,12 +219,12 @@ export default function CashbookCloseWizard() {
           const isDone = ['select', 'review', 'confirm', 'done'].indexOf(step) > i;
           return (
             <React.Fragment key={s}>
-              {i > 0 && <div className={cn('h-px flex-1', isDone || isActive ? 'bg-indigo-500' : 'bg-border')} />}
+              {i > 0 && <div className={cn('h-px flex-1', isDone || isActive ? 'bg-primary' : 'bg-border')} />}
               <div className={cn(
                 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all',
-                isActive ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 ring-1 ring-indigo-500/30' :
+                isActive ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-primary ring-1 ring-indigo-500/30' :
                 isDone ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400' :
-                'bg-slate-100 dark:bg-slate-800 text-slate-400'
+                'bg-muted text-muted-foreground'
               )}>
                 {isDone ? <CheckCircle2 className="w-3 h-3" /> : <span className="w-4 h-4 rounded-full bg-current/20 flex items-center justify-center text-[10px]">{i + 1}</span>}
                 {labels[i]}
@@ -236,13 +236,13 @@ export default function CashbookCloseWizard() {
 
       {/* Step 1: Select month */}
       {step === 'select' && (
-        <div className="bg-card rounded-xl border border-border shadow-soft p-6 space-y-4">
-          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-indigo-500" />
+        <div className="bg-card rounded-lg border border-border shadow-soft p-6 space-y-4">
+          <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-primary" />
             Válassz lezárandó hónapot
           </h3>
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Loader2 className="w-8 h-8 mb-3 animate-spin text-amber-400" />
               <p className="text-sm">Betöltés...</p>
             </div>
@@ -257,27 +257,27 @@ export default function CashbookCloseWizard() {
                     onClick={() => { if (canSelect) { setSelectedMonth(p.month); setStep('review'); } }}
                     disabled={!canSelect}
                     className={cn(
-                      'flex flex-col items-center p-3 rounded-xl border-2 transition-all',
+                      'flex flex-col items-center p-3 rounded-lg border-2 transition-all',
                       p.isClosed
                         ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/10 cursor-default'
                         : canSelect
                           ? cn('border-border hover:border-indigo-400 cursor-pointer',
-                              isNext && 'ring-2 ring-indigo-500/30 border-indigo-300')
+                              isNext && 'ring-2 ring-indigo-500/30 border-primary/40')
                           : 'border-border opacity-40 cursor-not-allowed'
                     )}
                   >
                     <span className={cn(
                       'text-sm font-bold',
-                      p.isClosed ? 'text-green-600' : 'text-slate-900 dark:text-slate-100'
+                      p.isClosed ? 'text-green-600' : 'text-foreground'
                     )}>
                       {p.label}
                     </span>
-                    <span className="text-[10px] text-slate-400 mt-0.5">{p.entryCount} tétel</span>
+                    <span className="text-[10px] text-muted-foreground mt-0.5">{p.entryCount} tétel</span>
                     {p.isClosed && (
                       <Lock className="w-3 h-3 text-green-500 mt-1" />
                     )}
                     {isNext && !p.isClosed && (
-                      <span className="text-[9px] text-indigo-500 font-bold mt-1">KÖVETKEZŐ</span>
+                      <span className="text-[9px] text-primary font-bold mt-1">KÖVETKEZŐ</span>
                     )}
                   </button>
                 );
@@ -289,15 +289,15 @@ export default function CashbookCloseWizard() {
 
       {/* Step 2: Review */}
       {step === 'review' && selectedPeriod && (
-        <div className="bg-card rounded-xl border border-border shadow-soft p-6 space-y-5">
+        <div className="bg-card rounded-lg border border-border shadow-soft p-6 space-y-5">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <Shield className="w-4 h-4 text-indigo-500" />
+            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+              <Shield className="w-4 h-4 text-primary" />
               Lezárási ellenőrzés — {selectedPeriod.label}
             </h3>
             <button
               onClick={() => { setStep('select'); setSelectedMonth(null); }}
-              className="text-xs text-slate-400 hover:text-slate-600"
+              className="text-xs text-muted-foreground hover:text-muted-foreground"
             >
               Vissza
             </button>
@@ -305,17 +305,17 @@ export default function CashbookCloseWizard() {
 
           {/* Summary */}
           <div className="grid grid-cols-3 gap-3">
-            <div className="bg-slate-50 dark:bg-slate-900/30 rounded-lg p-3 text-center">
-              <p className="text-[10px] text-slate-400">Bevétel</p>
+            <div className="bg-background/30 rounded-lg p-3 text-center">
+              <p className="text-[10px] text-muted-foreground">Bevétel</p>
               <p className="text-sm font-bold text-green-600 font-mono">{formatHuf(selectedPeriod.revenue)}</p>
             </div>
-            <div className="bg-slate-50 dark:bg-slate-900/30 rounded-lg p-3 text-center">
-              <p className="text-[10px] text-slate-400">Kiadás</p>
+            <div className="bg-background/30 rounded-lg p-3 text-center">
+              <p className="text-[10px] text-muted-foreground">Kiadás</p>
               <p className="text-sm font-bold text-red-500 font-mono">{formatHuf(selectedPeriod.expense)}</p>
             </div>
-            <div className="bg-slate-50 dark:bg-slate-900/30 rounded-lg p-3 text-center">
-              <p className="text-[10px] text-slate-400">Egyenleg</p>
-              <p className="text-sm font-bold text-slate-900 dark:text-slate-100 font-mono">{formatHuf(selectedPeriod.balance)}</p>
+            <div className="bg-background/30 rounded-lg p-3 text-center">
+              <p className="text-[10px] text-muted-foreground">Egyenleg</p>
+              <p className="text-sm font-bold text-foreground font-mono">{formatHuf(selectedPeriod.balance)}</p>
             </div>
           </div>
 
@@ -340,7 +340,7 @@ export default function CashbookCloseWizard() {
                   <p className={cn('text-xs font-bold', check.passed ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400')}>
                     {check.label}
                   </p>
-                  <p className="text-[10px] text-slate-500 mt-0.5">{check.detail}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{check.detail}</p>
                 </div>
               </div>
             ))}
@@ -349,7 +349,7 @@ export default function CashbookCloseWizard() {
           <div className="flex justify-between pt-2 border-t border-border">
             <button
               onClick={() => { setStep('select'); setSelectedMonth(null); }}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
+              className="flex items-center gap-1.5 px-4 py-2 text-sm text-muted-foreground hover:bg-muted rounded-lg"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> Vissza
             </button>
@@ -359,8 +359,8 @@ export default function CashbookCloseWizard() {
               className={cn(
                 'flex items-center gap-1.5 px-5 py-2 text-sm font-semibold rounded-lg transition-colors',
                 allChecksPassed
-                  ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  : 'bg-muted text-muted-foreground cursor-not-allowed'
               )}
             >
               Tovább <ArrowRight className="w-3.5 h-3.5" />
@@ -371,16 +371,16 @@ export default function CashbookCloseWizard() {
 
       {/* Step 3: Confirm */}
       {step === 'confirm' && selectedPeriod && (
-        <div className="bg-card rounded-xl border-2 border-amber-300 dark:border-amber-700 shadow-soft p-6 space-y-4">
+        <div className="bg-card rounded-lg border-2 border-amber-300 dark:border-amber-700 shadow-soft p-6 space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
               <AlertTriangle className="w-5 h-5 text-amber-600" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              <h3 className="text-sm font-bold text-foreground">
                 Biztosan lezárod a {selectedPeriod.label.toLowerCase()}i időszakot?
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 A lezárt időszak tételei nem módosíthatók és nem törölhetők.
               </p>
             </div>
@@ -398,7 +398,7 @@ export default function CashbookCloseWizard() {
           <div className="flex justify-between pt-2">
             <button
               onClick={() => setStep('review')}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
+              className="flex items-center gap-1.5 px-4 py-2 text-sm text-muted-foreground hover:bg-muted rounded-lg"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> Vissza
             </button>
@@ -420,15 +420,15 @@ export default function CashbookCloseWizard() {
 
       {/* Step 4: Done */}
       {step === 'done' && selectedPeriod && (
-        <div className="bg-card rounded-xl border border-green-200 dark:border-green-800 shadow-soft p-8 text-center space-y-4 animate-in zoom-in-95 duration-300">
+        <div className="bg-card rounded-lg border border-green-200 dark:border-green-800 shadow-soft p-8 text-center space-y-4 animate-in zoom-in-95 duration-300">
           <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto">
             <CheckCircle2 className="w-8 h-8 text-green-500" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+            <h3 className="text-lg font-bold text-foreground">
               {selectedPeriod.label} sikeresen lezárva!
             </h3>
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               A lezárt időszak tételei zárolva, nem módosíthatók.
             </p>
           </div>
@@ -436,15 +436,15 @@ export default function CashbookCloseWizard() {
           <div className="bg-green-50 dark:bg-green-900/10 rounded-lg p-4 inline-block">
             <div className="grid grid-cols-3 gap-6 text-center">
               <div>
-                <p className="text-[10px] text-slate-400">Tételek</p>
-                <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{selectedPeriod.entryCount}</p>
+                <p className="text-[10px] text-muted-foreground">Tételek</p>
+                <p className="text-sm font-bold text-foreground">{selectedPeriod.entryCount}</p>
               </div>
               <div>
-                <p className="text-[10px] text-slate-400">Bevétel</p>
+                <p className="text-[10px] text-muted-foreground">Bevétel</p>
                 <p className="text-sm font-bold text-green-600 font-mono">{formatHuf(selectedPeriod.revenue)}</p>
               </div>
               <div>
-                <p className="text-[10px] text-slate-400">Kiadás</p>
+                <p className="text-[10px] text-muted-foreground">Kiadás</p>
                 <p className="text-sm font-bold text-red-500 font-mono">{formatHuf(selectedPeriod.expense)}</p>
               </div>
             </div>
@@ -456,13 +456,13 @@ export default function CashbookCloseWizard() {
                 setStep('select');
                 setSelectedMonth(null);
               }}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
+              className="flex items-center gap-1.5 px-4 py-2 text-sm text-muted-foreground hover:bg-muted rounded-lg"
             >
               <Calendar className="w-3.5 h-3.5" /> Következő hónap
             </button>
             <Link
               to={`/eaisybooks/${id}/${dateRange}/ev/cashbook?year=${taxYear}`}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary/90"
             >
               <FileText className="w-3.5 h-3.5" /> Vissza a pénztárkönyvhöz
             </Link>

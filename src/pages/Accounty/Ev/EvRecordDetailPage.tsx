@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { useAccountyClient } from '@/hooks/accounty';
 import { formatHuf } from '@/lib/evCalculations';
@@ -44,7 +46,7 @@ const CONFIGS: Record<string, RecordTypeConfig> = {
     description: 'Kintlévőségek és kötelezettségek analitikus nyilvántartása',
     legalRef: 'Szt. 161. §',
     icon: Users,
-    color: 'from-blue-500 to-indigo-600',
+    color: 'from-blue-500 to-primary',
     dbFields: [
       { key: 'customer_name', label: 'Partner neve', type: 'text', required: true, placeholder: 'Pl. Kovács Kft.' },
       { key: 'invoice_number', label: 'Számlaszám', type: 'text', placeholder: 'Pl. SZ-2026-001' },
@@ -287,7 +289,7 @@ const BADGE_LABELS: Record<string, string> = {
 };
 
 function formatCell(value: any, type: string): React.ReactNode {
-  if (value === undefined || value === null || value === '') return <span className="text-slate-300">—</span>;
+  if (value === undefined || value === null || value === '') return <span className="text-muted-foreground/60">—</span>;
   switch (type) {
     case 'currency': return <span className="font-mono tabular-nums">{formatHuf(Number(value))}</span>;
     case 'number': return <span className="font-mono tabular-nums">{Number(value).toLocaleString('hu-HU')}</span>;
@@ -388,14 +390,14 @@ function QuickDistanceCalculator({ onUseDistance }: QuickDistanceCalculatorProps
   };
 
   return (
-    <div className="bg-card rounded-xl border border-primary/20 dark:border-primary/10 p-4 shadow-soft space-y-3">
+    <div className="bg-card rounded-lg border border-primary/20 dark:border-primary/10 p-4 shadow-soft space-y-3">
       <div className="flex items-center gap-2 text-primary">
         <Car className="w-4 h-4" />
-        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Gyors Távolság-kalkulátor (OSRM / OpenStreetMap)</h3>
+        <h3 className="text-sm font-bold text-foreground">Gyors Távolság-kalkulátor (OSRM / OpenStreetMap)</h3>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 items-end">
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-slate-500">Indulási hely</label>
+          <label className="text-xs font-medium text-muted-foreground">Indulási hely</label>
           <Input
             placeholder="Pl. Budapest, Hősök tere"
             value={departure}
@@ -404,7 +406,7 @@ function QuickDistanceCalculator({ onUseDistance }: QuickDistanceCalculatorProps
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-slate-500">Érkezési hely</label>
+          <label className="text-xs font-medium text-muted-foreground">Érkezési hely</label>
           <Input
             placeholder="Pl. Debrecen, Kossuth tér"
             value={arrival}
@@ -426,9 +428,9 @@ function QuickDistanceCalculator({ onUseDistance }: QuickDistanceCalculatorProps
       </div>
 
       {distance !== null && (
-        <div className="flex items-center justify-between bg-primary/5 dark:bg-primary/10 p-3 rounded-lg border border-primary/10 dark:border-primary/20 animate-in fade-in duration-300">
-          <div className="text-sm text-slate-700 dark:text-slate-300">
-            <span className="text-slate-500">Útvonal távolsága:</span>{' '}
+        <div className="flex items-center justify-between bg-primary/5 dark:bg-primary/10 p-3 rounded-lg border border-primary/10 dark:border-primary/20 page-animate">
+          <div className="text-sm text-foreground/90">
+            <span className="text-muted-foreground">Útvonal távolsága:</span>{' '}
             <strong className="text-primary font-bold font-mono text-base">{distance} km</strong>
           </div>
           <div className="flex gap-2">
@@ -516,12 +518,12 @@ function RecordForm({ fields, initialValues, onSave, onCancel, saving, recordTyp
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-card rounded-xl border-2 border-primary/20 dark:border-primary/10 shadow-soft p-5 space-y-4 animate-in slide-in-from-top-2 duration-300">
+    <form onSubmit={handleSubmit} className="bg-card rounded-lg border-2 border-primary/20 dark:border-primary/10 shadow-soft p-5 space-y-4 animate-in slide-in-from-top-2 duration-300">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+        <h3 className="text-sm font-bold text-foreground">
           {initialValues ? 'Bejegyzés szerkesztése' : 'Új bejegyzés rögzítése'}
         </h3>
-        <button type="button" onClick={onCancel} className="text-slate-400 hover:text-slate-600">
+        <button type="button" onClick={onCancel} className="text-muted-foreground hover:text-muted-foreground">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -529,7 +531,7 @@ function RecordForm({ fields, initialValues, onSave, onCancel, saving, recordTyp
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {fields.map(field => (
           <div key={field.key} className="space-y-1.5">
-            <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
+            <label className="text-xs font-medium text-muted-foreground">
               {field.label} {field.required && <span className="text-red-500">*</span>}
             </label>
             {field.type === 'select' ? (
@@ -545,18 +547,24 @@ function RecordForm({ fields, initialValues, onSave, onCancel, saving, recordTyp
                 ))}
               </select>
             ) : field.type === 'boolean' ? (
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <Checkbox
                   checked={!!form[field.key]}
-                  onChange={e => setForm(f => ({ ...f, [field.key]: e.target.checked }))}
-                  className="w-4 h-4 rounded border-slate-300"
+                  onCheckedChange={checked => setForm(f => ({ ...f, [field.key]: !!checked }))}
                 />
-                <span className="text-sm text-slate-600 dark:text-slate-400">Igen</span>
+                <span className="text-sm text-muted-foreground">Igen</span>
               </label>
+            ) : field.type === 'date' ? (
+              <DatePicker
+                value={form[field.key] ?? ''}
+                onChange={val => setForm(f => ({ ...f, [field.key]: val }))}
+                placeholder={field.placeholder || "éééé. hh. nn."}
+                clearable
+                className="w-full bg-card text-sm"
+              />
             ) : (
               <Input
-                type={field.type === 'date' ? 'date' : field.type === 'number' ? 'number' : 'text'}
+                type={field.type === 'number' ? 'number' : 'text'}
                 value={form[field.key] ?? ''}
                 onChange={e => setForm(f => ({ ...f, [field.key]: e.target.value }))}
                 placeholder={field.placeholder}
@@ -617,7 +625,7 @@ function RecordForm({ fields, initialValues, onSave, onCancel, saving, recordTyp
       </div>
 
       <div className="flex justify-end gap-2 pt-2 border-t border-border">
-        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm text-muted-foreground hover:bg-muted rounded-lg transition-colors">
           Mégse
         </button>
         <button type="submit" disabled={saving} className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors disabled:opacity-50">
@@ -637,19 +645,19 @@ function DeleteConfirm({ onConfirm, onCancel, deleting }: {
   deleting: boolean;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-in fade-in duration-200">
-      <div className="bg-card rounded-xl border border-border shadow-xl p-6 max-w-sm w-full mx-4 space-y-4 animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 page-animate duration-200">
+      <div className="bg-card rounded-lg border border-border shadow-xl p-6 max-w-sm w-full mx-4 space-y-4 animate-in zoom-in-95 duration-200">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
             <AlertTriangle className="w-5 h-5 text-red-600" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Biztosan törli?</h3>
-            <p className="text-xs text-slate-500">A törlés nem vonható vissza.</p>
+            <h3 className="text-sm font-bold text-foreground">Biztosan törli?</h3>
+            <p className="text-xs text-muted-foreground">A törlés nem vonható vissza.</p>
           </div>
         </div>
         <div className="flex justify-end gap-2">
-          <button onClick={onCancel} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">Mégse</button>
+          <button onClick={onCancel} className="px-4 py-2 text-sm text-muted-foreground hover:bg-muted rounded-lg">Mégse</button>
           <button onClick={onConfirm} disabled={deleting} className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
             {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
             Törlés
@@ -835,7 +843,7 @@ export default function EvRecordDetailPage() {
   const isEmpty = !isLoading && dbRecords.length === 0;
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Delete confirmation modal */}
       {deletingId && (
         <DeleteConfirm
@@ -846,7 +854,7 @@ export default function EvRecordDetailPage() {
       )}
 
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Áttekintés
         </Link>
@@ -855,24 +863,24 @@ export default function EvRecordDetailPage() {
           Nyilvántartások
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <span className="text-slate-900 dark:text-slate-100 font-medium">{config.name}</span>
+        <span className="text-foreground font-medium">{config.name}</span>
       </div>
 
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <div className={cn('p-2.5 bg-gradient-to-br rounded-xl shadow-lg', config.color)}>
+          <div className={cn('p-2.5 bg-gradient-to-br rounded-lg shadow-lg', config.color)}>
             <Icon className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{config.name}</h1>
-            <p className="text-sm text-slate-500">
+            <h1 className="text-2xl font-bold text-foreground">{config.name}</h1>
+            <p className="text-sm text-muted-foreground">
               {client?.name || 'Ügyfél'} · {config.legalRef} · {dbRecords.length} bejegyzés
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 bg-white dark:bg-slate-800 border border-border rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
+          <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted-foreground bg-card border border-border rounded-lg hover:bg-muted/40 transition-colors shadow-sm">
             <Download className="w-3 h-3" /> Export
           </button>
           {!isReadOnly && (
@@ -881,7 +889,7 @@ export default function EvRecordDetailPage() {
               className={cn(
                 'flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors shadow-sm',
                 showAddForm
-                  ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                  ? 'bg-muted text-foreground/90'
                   : 'bg-primary text-white hover:bg-primary/90'
               )}
             >
@@ -925,13 +933,13 @@ export default function EvRecordDetailPage() {
         <div className="space-y-3">
           <div className="flex items-center gap-3">
             <div className="relative flex-1 max-w-sm">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Keresés..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm bg-white dark:bg-slate-800 border border-border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-full pl-9 pr-3 py-2 text-sm bg-card border border-border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               />
             </div>
             <button
@@ -940,7 +948,7 @@ export default function EvRecordDetailPage() {
                 'flex items-center gap-1.5 px-3 py-2 text-xs border rounded-lg transition-colors',
                 showFilters
                   ? 'border-primary bg-primary/5 dark:bg-primary/10 text-primary hover:bg-primary/10'
-                  : 'text-slate-500 border-border hover:bg-slate-50 dark:hover:bg-slate-800'
+                  : 'text-muted-foreground border-border hover:bg-muted/50'
               )}
             >
               <Filter className="w-3 h-3" /> Szűrők
@@ -948,7 +956,7 @@ export default function EvRecordDetailPage() {
                 <span className="w-1.5 h-1.5 rounded-full bg-primary" />
               )}
             </button>
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-muted-foreground">
               {filteredData.length} / {dbRecords.length} bejegyzés
             </span>
           </div>
@@ -957,20 +965,22 @@ export default function EvRecordDetailPage() {
           {showFilters && dateCol && (
             <div className="bg-card border border-border rounded-lg p-4 flex items-end gap-4 animate-in slide-in-from-top-2 duration-200">
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-500">Dátum tól</label>
-                <Input
-                  type="date"
+                <label className="text-xs font-medium text-muted-foreground">Dátum tól</label>
+                <DatePicker
                   value={filterDateFrom}
-                  onChange={e => setFilterDateFrom(e.target.value)}
+                  onChange={setFilterDateFrom}
+                  placeholder="éééé. hh. nn."
+                  clearable
                   className="bg-card h-8 text-sm"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-500">Dátum ig</label>
-                <Input
-                  type="date"
+                <label className="text-xs font-medium text-muted-foreground">Dátum ig</label>
+                <DatePicker
                   value={filterDateTo}
-                  onChange={e => setFilterDateTo(e.target.value)}
+                  onChange={setFilterDateTo}
+                  placeholder="éééé. hh. nn."
+                  clearable
                   className="bg-card h-8 text-sm"
                 />
               </div>
@@ -989,18 +999,18 @@ export default function EvRecordDetailPage() {
 
       {/* Data table or empty state */}
       {isLoading ? (
-        <div className="bg-card rounded-xl border border-border shadow-soft p-16 text-center">
+        <div className="bg-card rounded-lg border border-border shadow-soft p-16 text-center">
           <Loader2 className="w-8 h-8 mx-auto mb-3 text-primary animate-spin" />
-          <p className="text-sm text-slate-400">Betöltés...</p>
+          <p className="text-sm text-muted-foreground">Betöltés...</p>
         </div>
       ) : isEmpty && !showAddForm ? (
-        <div className="bg-card rounded-xl border-2 border-dashed border-border p-12 text-center space-y-3">
-          <div className={cn('w-14 h-14 bg-gradient-to-br rounded-2xl flex items-center justify-center mx-auto opacity-40', config.color)}>
+        <div className="bg-card rounded-lg border-2 border-dashed border-border p-12 text-center space-y-3">
+          <div className={cn('w-14 h-14 bg-gradient-to-br rounded-lg flex items-center justify-center mx-auto opacity-40', config.color)}>
             <Icon className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Nincs bejegyzés</h3>
-            <p className="text-xs text-slate-500 mt-1">
+            <h3 className="text-sm font-bold text-foreground">Nincs bejegyzés</h3>
+            <p className="text-xs text-muted-foreground mt-1">
               Még nem került rögzítésre egyetlen tétel sem ebben a nyilvántartásban.
             </p>
           </div>
@@ -1014,24 +1024,24 @@ export default function EvRecordDetailPage() {
           )}
         </div>
       ) : filteredData.length > 0 && (
-        <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+        <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border bg-slate-50 dark:bg-slate-900/30">
+                <tr className="border-b border-border bg-background/30">
                   {config.displayColumns.map(col => (
                     <th
                       key={col.key}
                       onClick={() => handleSort(col.key)}
                       className={cn(
-                        'px-4 py-3 text-xs font-semibold uppercase tracking-wider cursor-pointer select-none hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors',
+                        'px-4 py-3 text-xs font-semibold uppercase tracking-wider cursor-pointer select-none hover:bg-muted/50 transition-colors',
                         col.align === 'right' ? 'text-right' : 'text-left',
-                        'text-slate-500'
+                        'text-muted-foreground'
                       )}
                     >
                       <div className={cn('flex items-center gap-1', col.align === 'right' && 'justify-end')}>
                         {col.label}
-                        <ArrowUpDown className={cn('w-3 h-3', sortKey === col.key ? 'text-primary' : 'text-slate-300')} />
+                        <ArrowUpDown className={cn('w-3 h-3', sortKey === col.key ? 'text-primary' : 'text-muted-foreground/60')} />
                       </div>
                     </th>
                   ))}
@@ -1040,14 +1050,14 @@ export default function EvRecordDetailPage() {
               </thead>
               <tbody className="divide-y divide-border/50">
                 {paginatedData.map((row) => (
-                  <tr key={row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                  <tr key={row.id} className="hover:bg-muted/50 transition-colors group">
                     {config.displayColumns.map((col, ci) => (
                       <td
                         key={col.key}
                         className={cn(
                           'px-4 py-2.5 text-sm',
                           col.align === 'right' ? 'text-right' : 'text-left',
-                          ci === 0 ? 'font-semibold text-slate-900 dark:text-slate-100' : 'text-slate-600 dark:text-slate-400'
+                          ci === 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'
                         )}
                       >
                         {formatCell(row[col.key], col.type)}
@@ -1058,14 +1068,14 @@ export default function EvRecordDetailPage() {
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => { setEditingRow(row); setShowAddForm(false); }}
-                            className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-primary transition-colors"
+                            className="p-1.5 rounded hover:bg-muted dark:hover:bg-muted text-muted-foreground hover:text-primary transition-colors"
                             title="Szerkesztés"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => setDeletingId(row.id)}
-                            className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-red-600 transition-colors"
+                            className="p-1.5 rounded hover:bg-muted dark:hover:bg-muted text-muted-foreground hover:text-red-600 transition-colors"
                             title="Törlés"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -1094,8 +1104,8 @@ export default function EvRecordDetailPage() {
           )}
 
           {/* Footer */}
-          <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-slate-50 dark:bg-slate-900/30">
-            <span className="text-xs text-slate-400">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-background/30">
+            <span className="text-xs text-muted-foreground">
               Összesen: {filteredData.length} bejegyzés
             </span>
           </div>
@@ -1103,7 +1113,7 @@ export default function EvRecordDetailPage() {
       )}
 
       {/* Legal info */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
         <div className="flex items-start gap-2">
           <Info className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
           <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">

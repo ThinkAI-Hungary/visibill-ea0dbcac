@@ -107,25 +107,25 @@ export default function EvHipaPage() {
   };
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Főoldal
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <span className="text-slate-900 dark:text-slate-100 font-medium">Helyi iparűzési adó</span>
+        <span className="text-foreground font-medium">Helyi iparűzési adó</span>
       </div>
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-rose-500 to-pink-600 rounded-xl shadow-lg shadow-rose-500/25">
+          <div className="p-2.5 bg-gradient-to-br from-rose-500 to-pink-600 rounded-lg shadow-lg shadow-rose-500/25">
             <Landmark className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Helyi iparűzési adó (HIPA)</h1>
-            <p className="text-sm text-slate-500">Htv. 39. § — {client?.name || 'Ügyfél'} — {taxYear}. adóév</p>
+            <h1 className="text-2xl font-bold text-foreground">Helyi iparűzési adó (HIPA)</h1>
+            <p className="text-sm text-muted-foreground">Htv. 39. § — {client?.name || 'Ügyfél'} — {taxYear}. adóév</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -140,7 +140,7 @@ export default function EvHipaPage() {
           <button
             onClick={handleGenerateReturn}
             disabled={saving}
-            className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors disabled:opacity-50"
           >
             <Send className="w-3.5 h-3.5" />
             Bevallás elkészítése (HIPA)
@@ -151,11 +151,11 @@ export default function EvHipaPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Inputs */}
         <div className="lg:col-span-1 space-y-4">
-          <div className="bg-card rounded-xl border border-border shadow-soft p-5 space-y-4">
-            <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Adatmegadás</h2>
+          <div className="bg-card rounded-lg border border-border shadow-soft p-5 space-y-4">
+            <h2 className="text-sm font-bold text-foreground">Adatmegadás</h2>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Megállapítási mód</label>
+              <label className="text-xs font-medium text-muted-foreground">Megállapítási mód</label>
               <div className="grid grid-cols-2 gap-1.5">
                 {([
                   { value: 'simplified' as const, label: 'Egyszerűsített' },
@@ -168,7 +168,7 @@ export default function EvHipaPage() {
                       'p-2.5 rounded-lg border text-sm font-medium transition-all',
                       mode === opt.value
                         ? 'border-rose-400 bg-rose-50 dark:bg-rose-900/20 text-rose-700'
-                        : 'border-border text-slate-500'
+                        : 'border-border text-muted-foreground'
                     )}
                   >
                     {opt.label}
@@ -178,38 +178,38 @@ export default function EvHipaPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
+              <label className="text-xs font-medium text-muted-foreground">
                 Nettó árbevétel (Ft)
               </label>
               <Input type="number" value={revenue} onChange={e => setRevenue(Number(e.target.value))} className="bg-card font-mono" />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1">
+              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
                 <MapPin className="w-3 h-3" /> Önkormányzati adókulcs (%)
               </label>
               <Input type="number" step={0.1} min={0} max={2} value={municipalityRate} onChange={e => setMunicipalityRate(Number(e.target.value))} className="bg-card" />
-              <p className="text-[10px] text-slate-400">Maximum 2% (alapértelmezett: 2%)</p>
+              <p className="text-[10px] text-muted-foreground">Maximum 2% (alapértelmezett: 2%)</p>
             </div>
 
             {mode === 'general' && (
               <>
                 <div className="pt-2 border-t border-border/50 space-y-3">
-                  <p className="text-xs font-semibold text-slate-600">Levonható tételek</p>
+                  <p className="text-xs font-semibold text-muted-foreground">Levonható tételek</p>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] text-slate-500">ELAB (anyagköltség)</label>
+                    <label className="text-[10px] text-muted-foreground">ELAB (anyagköltség)</label>
                     <Input type="number" value={elab} onChange={e => setElab(Number(e.target.value))} className="bg-card font-mono text-sm" />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] text-slate-500">Közvetített szolgáltatások</label>
+                    <label className="text-[10px] text-muted-foreground">Közvetített szolgáltatások</label>
                     <Input type="number" value={intermediary} onChange={e => setIntermediary(Number(e.target.value))} className="bg-card font-mono text-sm" />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] text-slate-500">Anyagköltség</label>
+                    <label className="text-[10px] text-muted-foreground">Anyagköltség</label>
                     <Input type="number" value={material} onChange={e => setMaterial(Number(e.target.value))} className="bg-card font-mono text-sm" />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] text-slate-500">Alvállalkozói teljesítmény</label>
+                    <label className="text-[10px] text-muted-foreground">Alvállalkozói teljesítmény</label>
                     <Input type="number" value={subcontractor} onChange={e => setSubcontractor(Number(e.target.value))} className="bg-card font-mono text-sm" />
                   </div>
                 </div>
@@ -221,57 +221,57 @@ export default function EvHipaPage() {
         {/* Results */}
         <div className="lg:col-span-2 space-y-4">
           <div className="grid grid-cols-3 gap-3">
-            <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-              <p className="text-xs text-slate-500 mb-1">Adóalap</p>
-              <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{formatHuf(result.taxBase)}</p>
-              <p className="text-[10px] text-slate-400">{mode === 'simplified' ? 'Egyszerűsített sáv' : 'Levonás utáni'}</p>
+            <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+              <p className="text-xs text-muted-foreground mb-1">Adóalap</p>
+              <p className="text-lg font-bold text-foreground">{formatHuf(result.taxBase)}</p>
+              <p className="text-[10px] text-muted-foreground">{mode === 'simplified' ? 'Egyszerűsített sáv' : 'Levonás utáni'}</p>
             </div>
-            <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-              <p className="text-xs text-slate-500 mb-1">Alkalmazott kulcs</p>
+            <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+              <p className="text-xs text-muted-foreground mb-1">Alkalmazott kulcs</p>
               <p className="text-lg font-bold text-rose-600">{formatPercent(result.municipalityRate)}</p>
             </div>
-            <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-              <p className="text-xs text-slate-500 mb-1">Fizetendő HIPA</p>
+            <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+              <p className="text-xs text-muted-foreground mb-1">Fizetendő HIPA</p>
               <p className="text-lg font-bold text-rose-600">{formatHuf(result.taxAmount)}</p>
             </div>
           </div>
 
           {/* Breakdown */}
-          <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+          <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
             <div className="px-5 py-3 border-b border-border flex items-center gap-2">
               <Calculator className="w-4 h-4 text-rose-600" />
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Levezetés</h3>
+              <h3 className="text-sm font-bold text-foreground">Levezetés</h3>
             </div>
             <div className="divide-y divide-border/50">
               <div className="flex justify-between px-5 py-3">
-                <span className="text-sm text-slate-600">Nettó árbevétel</span>
-                <span className="text-sm font-mono tabular-nums text-slate-700 dark:text-slate-300">{formatHuf(result.revenue)}</span>
+                <span className="text-sm text-muted-foreground">Nettó árbevétel</span>
+                <span className="text-sm font-mono tabular-nums text-foreground/90">{formatHuf(result.revenue)}</span>
               </div>
               {mode === 'simplified' && (
                 <div className="flex justify-between px-5 py-3">
-                  <span className="text-sm text-slate-600">Egyszerűsített adóalap-sáv</span>
-                  <span className="text-sm font-mono tabular-nums font-semibold text-slate-900 dark:text-slate-100">{formatHuf(result.taxBase)}</span>
+                  <span className="text-sm text-muted-foreground">Egyszerűsített adóalap-sáv</span>
+                  <span className="text-sm font-mono tabular-nums font-semibold text-foreground">{formatHuf(result.taxBase)}</span>
                 </div>
               )}
               {mode === 'general' && (
                 <>
-                  {elab > 0 && <div className="flex justify-between px-5 py-3"><span className="text-sm text-slate-600">– ELAB</span><span className="text-sm font-mono text-red-500">– {formatHuf(elab)}</span></div>}
-                  {intermediary > 0 && <div className="flex justify-between px-5 py-3"><span className="text-sm text-slate-600">– Közvetített szolg.</span><span className="text-sm font-mono text-red-500">– {formatHuf(intermediary)}</span></div>}
-                  {material > 0 && <div className="flex justify-between px-5 py-3"><span className="text-sm text-slate-600">– Anyagköltség</span><span className="text-sm font-mono text-red-500">– {formatHuf(material)}</span></div>}
-                  {subcontractor > 0 && <div className="flex justify-between px-5 py-3"><span className="text-sm text-slate-600">– Alvállalkozó</span><span className="text-sm font-mono text-red-500">– {formatHuf(subcontractor)}</span></div>}
-                  <div className="flex justify-between px-5 py-3"><span className="text-sm font-semibold text-slate-900 dark:text-slate-100">Adóalap</span><span className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100">{formatHuf(result.taxBase)}</span></div>
+                  {elab > 0 && <div className="flex justify-between px-5 py-3"><span className="text-sm text-muted-foreground">– ELAB</span><span className="text-sm font-mono text-red-500">– {formatHuf(elab)}</span></div>}
+                  {intermediary > 0 && <div className="flex justify-between px-5 py-3"><span className="text-sm text-muted-foreground">– Közvetített szolg.</span><span className="text-sm font-mono text-red-500">– {formatHuf(intermediary)}</span></div>}
+                  {material > 0 && <div className="flex justify-between px-5 py-3"><span className="text-sm text-muted-foreground">– Anyagköltség</span><span className="text-sm font-mono text-red-500">– {formatHuf(material)}</span></div>}
+                  {subcontractor > 0 && <div className="flex justify-between px-5 py-3"><span className="text-sm text-muted-foreground">– Alvállalkozó</span><span className="text-sm font-mono text-red-500">– {formatHuf(subcontractor)}</span></div>}
+                  <div className="flex justify-between px-5 py-3"><span className="text-sm font-semibold text-foreground">Adóalap</span><span className="text-sm font-mono font-bold text-foreground">{formatHuf(result.taxBase)}</span></div>
                 </>
               )}
               <div className="flex justify-between px-5 py-3 bg-rose-50/50 dark:bg-rose-900/10">
-                <span className="text-sm font-bold text-slate-900 dark:text-slate-100">Fizetendő HIPA ({formatPercent(result.municipalityRate)})</span>
+                <span className="text-sm font-bold text-foreground">Fizetendő HIPA ({formatPercent(result.municipalityRate)})</span>
                 <span className="text-sm font-mono font-bold text-rose-600">{formatHuf(result.taxAmount)}</span>
               </div>
             </div>
           </div>
 
           {mode === 'simplified' && (
-            <div className="bg-card rounded-xl border border-border shadow-soft p-5">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-3">Egyszerűsített adóalap-sávok</h3>
+            <div className="bg-card rounded-lg border border-border shadow-soft p-5">
+              <h3 className="text-sm font-bold text-foreground mb-3">Egyszerűsített adóalap-sávok</h3>
               <div className="space-y-2">
                 {[
                   { min: 0, max: 12_000_000, base: 2_500_000, label: '0 – 12 M Ft' },
@@ -288,10 +288,10 @@ export default function EvHipaPage() {
                       )}
                     >
                       <div>
-                        <p className={cn('text-sm font-medium', active ? 'text-rose-700 dark:text-rose-400' : 'text-slate-600 dark:text-slate-400')}>{sav.label}</p>
+                        <p className={cn('text-sm font-medium', active ? 'text-rose-700 dark:text-rose-400' : 'text-muted-foreground')}>{sav.label}</p>
                       </div>
                       <div className="text-right">
-                        <p className={cn('text-sm font-bold font-mono', active ? 'text-rose-700' : 'text-slate-700 dark:text-slate-300')}>
+                        <p className={cn('text-sm font-bold font-mono', active ? 'text-rose-700' : 'text-foreground/90')}>
                           {formatHuf(sav.base)}
                         </p>
                         {active && <p className="text-[10px] text-rose-500">← aktuális sáv</p>}
@@ -303,7 +303,7 @@ export default function EvHipaPage() {
             </div>
           )}
 
-          <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-xl p-4 flex gap-3">
+          <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-lg p-4 flex gap-3">
             <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
             <div className="text-xs text-blue-700 dark:text-blue-400 space-y-1">
               <p className="font-semibold">HIPA tudnivalók</p>

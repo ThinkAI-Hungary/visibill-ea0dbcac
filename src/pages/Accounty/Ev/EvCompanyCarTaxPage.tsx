@@ -74,29 +74,29 @@ export default function EvCompanyCarTaxPage() {
   const quarterlyTax = carTaxReturns.length > 0 ? carTaxReturns[0]?.calculated_tax || 0 : 0;
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to="/eaisybooks?tab=ev" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link to="/eaisybooks?tab=ev" className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-primary transition-colors">
           {client?.name || 'Ügyfél'}
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <span className="text-slate-900 dark:text-slate-100 font-medium">Cégautóadó</span>
+        <span className="text-foreground font-medium">Cégautóadó</span>
       </div>
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-rose-500 to-pink-600 rounded-xl shadow-lg shadow-rose-500/25">
+          <div className="p-2.5 bg-gradient-to-br from-rose-500 to-pink-600 rounded-lg shadow-lg shadow-rose-500/25">
             <Car className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Cégautóadó</h1>
-            <p className="text-sm text-slate-500">Gépjárműadóról szóló tv. – cégautóadó kötelezettség</p>
+            <h1 className="text-2xl font-bold text-foreground">Cégautóadó</h1>
+            <p className="text-sm text-muted-foreground">Gépjárműadóról szóló tv. – cégautóadó kötelezettség</p>
           </div>
         </div>
         <button className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-colors">
@@ -106,20 +106,20 @@ export default function EvCompanyCarTaxPage() {
 
       {/* Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Járművek száma</p>
-          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{isLoading ? '...' : vehicles.length}</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Járművek száma</p>
+          <p className="text-2xl font-bold text-foreground">{isLoading ? '...' : vehicles.length}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Negyedéves adó</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Negyedéves adó</p>
           <p className="text-lg font-bold text-rose-600 tabular-nums">{isLoading ? '...' : formatHuf(quarterlyTax)}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Éves adóteher</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Éves adóteher</p>
           <p className="text-lg font-bold text-rose-600 tabular-nums">{isLoading ? '...' : formatHuf(totalAnnualTax)}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Bevallás</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Bevallás</p>
           <p className="text-lg font-bold text-green-600">Negyedéves</p>
         </div>
       </div>
@@ -127,12 +127,12 @@ export default function EvCompanyCarTaxPage() {
       {/* Vehicle cards */}
       <div className="space-y-4">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
             <Loader2 className="w-8 h-8 mb-3 animate-spin text-rose-400" />
             <p className="text-sm">Betöltés...</p>
           </div>
         ) : vehicles.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
             <Car className="w-10 h-10 mb-3 opacity-50" />
             <p className="text-sm font-medium">Nincs rögzített jármű az útnyilvántartásban</p>
             <p className="text-xs mt-1">Az útnyilvántartásban rögzített járművek jelennek meg itt.</p>
@@ -141,21 +141,21 @@ export default function EvCompanyCarTaxPage() {
           vehicles.map(vehicle => {
             const usageRatio = vehicle.totalKm > 0 ? vehicle.businessKm / vehicle.totalKm : 0;
             return (
-              <div key={vehicle.plate} className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+              <div key={vehicle.plate} className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
                 <div className="px-5 py-4 flex items-center justify-between border-b border-border/50">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-lg bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center">
                       <Car className="w-6 h-6 text-rose-600" />
                     </div>
                     <div>
-                      <p className="text-base font-bold text-slate-900 dark:text-slate-100">
+                      <p className="text-base font-bold text-foreground">
                         {vehicle.plate}
                       </p>
                       <div className="flex items-center gap-3 mt-0.5">
-                        <span className="text-xs font-mono font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded">
+                        <span className="text-xs font-mono font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">
                           {vehicle.plate}
                         </span>
-                        <span className="text-xs text-slate-500">
+                        <span className="text-xs text-muted-foreground">
                           {vehicle.trips} útnyilvántartás bejegyzés
                         </span>
                       </div>
@@ -163,30 +163,30 @@ export default function EvCompanyCarTaxPage() {
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-bold font-mono tabular-nums text-rose-600">{formatHuf(vehicle.totalFuelCost)}</p>
-                    <p className="text-xs text-slate-400">üzemanyagköltség</p>
+                    <p className="text-xs text-muted-foreground">üzemanyagköltség</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-5">
                   <div>
-                    <p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium mb-1">Összes km</p>
-                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100 font-mono">{vehicle.totalKm.toLocaleString('hu-HU')} km</p>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium mb-1">Összes km</p>
+                    <p className="text-sm font-medium text-foreground font-mono">{vehicle.totalKm.toLocaleString('hu-HU')} km</p>
                   </div>
                   <div>
-                    <p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium mb-1">Üzleti km</p>
-                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100 font-mono">{vehicle.businessKm.toLocaleString('hu-HU')} km</p>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium mb-1">Üzleti km</p>
+                    <p className="text-sm font-medium text-foreground font-mono">{vehicle.businessKm.toLocaleString('hu-HU')} km</p>
                   </div>
                   <div>
-                    <p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium mb-1">Üzleti használat</p>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium mb-1">Üzleti használat</p>
                     <div className="flex items-center gap-2">
-                      <div className="w-16 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                      <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
                         <div className="h-full bg-rose-500 rounded-full" style={{ width: `${usageRatio * 100}%` }} />
                       </div>
-                      <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{(usageRatio * 100).toFixed(0)}%</span>
+                      <span className="text-sm font-medium text-foreground">{(usageRatio * 100).toFixed(0)}%</span>
                     </div>
                   </div>
                   <div>
-                    <p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium mb-1">Magán km</p>
-                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100 font-mono">{vehicle.privateKm.toLocaleString('hu-HU')} km</p>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium mb-1">Magán km</p>
+                    <p className="text-sm font-medium text-foreground font-mono">{vehicle.privateKm.toLocaleString('hu-HU')} km</p>
                   </div>
                 </div>
               </div>
@@ -196,7 +196,7 @@ export default function EvCompanyCarTaxPage() {
       </div>
 
       {/* Info */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
         <div className="flex items-start gap-2">
           <Info className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
           <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">

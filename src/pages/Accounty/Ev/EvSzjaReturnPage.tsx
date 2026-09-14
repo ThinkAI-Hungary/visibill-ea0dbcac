@@ -19,7 +19,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
   submitted: { label: 'Benyújtva', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle2 },
   accepted: { label: 'Elfogadva', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle2 },
   draft: { label: 'Vázlat', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', icon: FileText },
-  upcoming: { label: 'Közelgő', color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400', icon: Clock },
+  upcoming: { label: 'Közelgő', color: 'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground', icon: Clock },
   overdue: { label: 'Lejárt!', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', icon: AlertTriangle },
 };
 
@@ -311,53 +311,53 @@ export default function EvSzjaReturnPage() {
   const totalPaid = returns.filter(r => r.status === 'submitted').reduce((s, r) => s + r.amount, 0);
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/eaisybooks?tab=ev&year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link to={`/eaisybooks?tab=ev&year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-primary transition-colors">
           {client?.name || 'Ügyfél'}
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <span className="text-slate-900 dark:text-slate-100 font-medium">Bevallások</span>
+        <span className="text-foreground font-medium">Bevallások</span>
       </div>
 
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl shadow-lg shadow-indigo-500/25">
+        <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-lg shadow-lg shadow-primary/20">
           <FileText className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Bevallások áttekintés</h1>
-          <p className="text-sm text-slate-500">SZJA 53, TB 58, KATA, HIPA, ÁFA – összes adóbevallás egy helyen</p>
+          <h1 className="text-2xl font-bold text-foreground">Bevallások áttekintés</h1>
+          <p className="text-sm text-muted-foreground">SZJA 53, TB 58, KATA, HIPA, ÁFA – összes adóbevallás egy helyen</p>
         </div>
       </div>
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Összes bevallás</p>
-          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{isLoading ? '...' : returns.length}</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Összes bevallás</p>
+          <p className="text-2xl font-bold text-foreground">{isLoading ? '...' : returns.length}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Benyújtva</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Benyújtva</p>
           <p className="text-2xl font-bold text-green-600">{isLoading ? '...' : submittedCount}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Függőben</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Függőben</p>
           <p className="text-2xl font-bold text-amber-600">{isLoading ? '...' : pendingCount}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Befizetett összeg</p>
-          <p className="text-lg font-bold text-indigo-600 tabular-nums">{isLoading ? '...' : formatHuf(totalPaid)}</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Befizetett összeg</p>
+          <p className="text-lg font-bold text-primary tabular-nums">{isLoading ? '...' : formatHuf(totalPaid)}</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/50 rounded-lg p-1 w-fit">
+      <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1 w-fit">
         {[
           { key: 'all', label: 'Összes' },
           { key: 'pending', label: 'Függőben' },
@@ -369,8 +369,8 @@ export default function EvSzjaReturnPage() {
             className={cn(
               'px-4 py-1.5 text-xs font-semibold rounded-md transition-all',
               tab === t.key
-                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm'
-                : 'text-slate-500 hover:text-slate-700'
+                ? 'bg-card dark:bg-muted text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground/90'
             )}
           >
             {t.label}
@@ -381,12 +381,12 @@ export default function EvSzjaReturnPage() {
       {/* Returns list */}
       <div className="space-y-3">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-16 text-slate-400">
-            <Loader2 className="w-8 h-8 mb-3 animate-spin text-indigo-400" />
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+            <Loader2 className="w-8 h-8 mb-3 animate-spin text-primary" />
             <p className="text-sm">Betöltés...</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
             <FileText className="w-10 h-10 mb-3 opacity-50" />
             <p className="text-sm font-medium">Nincs bevallás{tab !== 'all' ? ` ebben a kategóriában` : ''}</p>
           </div>
@@ -415,17 +415,17 @@ export default function EvSzjaReturnPage() {
               <div className="flex items-center justify-between px-5 py-4">
                 <div className="flex items-center gap-4">
                   <div className={cn(
-                    'w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold shrink-0',
+                    'w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold shrink-0',
                     ret.status === 'submitted' ? 'bg-green-100 dark:bg-green-900/30 text-green-600'
                       : ret.status === 'draft' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                      : 'bg-muted text-muted-foreground'
                   )}>
                     {ret.code}
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100 hover:text-indigo-600 transition-colors">{ret.type}</p>
+                    <p className="text-sm font-bold text-foreground hover:text-primary transition-colors">{ret.type}</p>
                     <div className="flex items-center gap-3 mt-0.5">
-                      <span className="text-xs text-slate-500">{ret.period}</span>
+                      <span className="text-xs text-muted-foreground">{ret.period}</span>
                       <span className={cn('inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full', cfg.color)}>
                         <Icon className="w-3 h-3" />
                         {cfg.label}
@@ -435,11 +435,11 @@ export default function EvSzjaReturnPage() {
                 </div>
                 <div className="flex items-center gap-4" onClick={(e) => e.stopPropagation()}>
                   <div className="text-right">
-                    <p className="text-sm font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100">
+                    <p className="text-sm font-bold font-mono tabular-nums text-foreground">
                       {ret.amount > 0 ? formatHuf(ret.amount) : '–'}
                     </p>
                     {ret.deadline && (
-                      <p className="text-[10px] text-slate-400 flex items-center gap-1 justify-end">
+                      <p className="text-[10px] text-muted-foreground flex items-center gap-1 justify-end">
                         <Calendar className="w-3 h-3" />
                         Határidő: {new Date(ret.deadline).toLocaleDateString('hu-HU')}
                       </p>
@@ -449,7 +449,7 @@ export default function EvSzjaReturnPage() {
                     {ret.status !== 'submitted' && (
                       <button
                         onClick={() => handlePrepareAndDownload(ret)}
-                        className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 hover:bg-indigo-100 transition-colors"
+                        className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-indigo-100 transition-colors"
                         title="Benyújtás"
                       >
                         <Send className="w-4 h-4" />
@@ -478,7 +478,7 @@ export default function EvSzjaReturnPage() {
                           description: isOfficial ? 'Bevallás XML letöltve.' : 'Tervezet XML letöltve (ÁNYK/ONYA ellenőrzéshez).' 
                         });
                       }}
-                      className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-500 hover:bg-slate-100 transition-colors"
+                      className="p-2 rounded-lg bg-muted text-muted-foreground hover:bg-muted transition-colors"
                       title={ret.status === 'submitted' ? "Letöltés" : "Tervezet XML letöltése"}
                     >
                       <Download className="w-4 h-4" />
@@ -490,11 +490,11 @@ export default function EvSzjaReturnPage() {
 
             return (
               <div key={ret.id} className={cn(
-                'bg-card rounded-xl border shadow-soft overflow-hidden transition-all hover:shadow-md',
+                'bg-card rounded-lg border shadow-soft overflow-hidden transition-all hover:shadow-md',
                 ret.status === 'overdue' ? 'border-red-200 dark:border-red-800' : 'border-border'
               )}>
                 {linkPath ? (
-                  <Link to={linkPath} className="block hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">
+                  <Link to={linkPath} className="block hover:bg-muted/50 dark:hover:bg-muted/50/10 transition-colors">
                     {InnerContent}
                   </Link>
                 ) : (

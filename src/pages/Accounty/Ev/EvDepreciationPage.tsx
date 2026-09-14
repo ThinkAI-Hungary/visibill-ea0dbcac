@@ -15,6 +15,8 @@ import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { toast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -278,13 +280,13 @@ function AssetFormModal({ isOpen, onClose, onSave, initialValues, saving }: Asse
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-in fade-in duration-200">
-      <div className="bg-card rounded-xl border border-border shadow-xl p-6 max-w-lg w-full mx-4 space-y-4 animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 page-animate duration-200">
+      <div className="bg-card rounded-lg border border-border shadow-xl p-6 max-w-lg w-full mx-4 space-y-4 animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+          <h3 className="text-lg font-bold text-foreground">
             {initialValues ? 'Eszköz módosítása' : 'Új eszköz rögzítése'}
           </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
+          <button onClick={onClose} className="text-muted-foreground hover:text-muted-foreground transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -292,7 +294,7 @@ function AssetFormModal({ isOpen, onClose, onSave, initialValues, saving }: Asse
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Eszköz neve *</label>
+              <label className="text-xs font-semibold text-muted-foreground">Eszköz neve *</label>
               <Input
                 placeholder="Pl. Dell XPS 15 laptop"
                 value={form.asset_name}
@@ -302,17 +304,18 @@ function AssetFormModal({ isOpen, onClose, onSave, initialValues, saving }: Asse
             </div>
             
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Beszerzés dátuma *</label>
-              <Input
-                type="date"
+              <label className="text-xs font-semibold text-muted-foreground">Beszerzés dátuma *</label>
+              <DatePicker
                 value={form.acquisition_date}
-                onChange={e => setForm(f => ({ ...f, acquisition_date: e.target.value }))}
-                required
+                onChange={val => setForm(f => ({ ...f, acquisition_date: val }))}
+                placeholder="éééé. hh. nn."
+                clearable
+                className="w-full"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Bruttó érték (Ft) *</label>
+              <label className="text-xs font-semibold text-muted-foreground">Bruttó érték (Ft) *</label>
               <Input
                 type="number"
                 placeholder="Pl. 450000"
@@ -324,12 +327,12 @@ function AssetFormModal({ isOpen, onClose, onSave, initialValues, saving }: Asse
 
             <div className="space-y-1.5 sm:col-span-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Leírási módszer *</label>
+                <label className="text-xs font-semibold text-muted-foreground">Leírási módszer *</label>
                 <button
                   type="button"
                   onClick={runAiSuggestion}
                   disabled={isAiLoading || !form.asset_name}
-                  className="flex items-center gap-1 text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 disabled:opacity-40 transition-colors"
+                  className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:text-primary dark:text-primary dark:hover:text-indigo-300 disabled:opacity-40 transition-colors"
                 >
                   {isAiLoading ? (
                     <Loader2 className="w-3 h-3 animate-spin" />
@@ -363,8 +366,8 @@ function AssetFormModal({ isOpen, onClose, onSave, initialValues, saving }: Asse
             </div>
 
             {aiExplanation && (
-              <div className="sm:col-span-2 p-2.5 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/60 dark:border-indigo-900/30 rounded-lg text-xs text-indigo-600 dark:text-indigo-400 flex items-start gap-1.5 animate-in slide-in-from-top-1">
-                <Sparkles className="w-3.5 h-3.5 text-indigo-500 shrink-0 mt-0.5" />
+              <div className="sm:col-span-2 p-2.5 bg-primary/5 border border-indigo-100/60 dark:border-indigo-900/30 rounded-lg text-xs text-primary dark:text-primary flex items-start gap-1.5 animate-in slide-in-from-top-1">
+                <Sparkles className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
                 <div>
                   <span className="font-semibold">AI Javaslat indoklása:</span>{' '}
                   <span>{aiExplanation}</span>
@@ -374,7 +377,7 @@ function AssetFormModal({ isOpen, onClose, onSave, initialValues, saving }: Asse
 
             {form.depreciation_method !== 'absolute' && form.depreciation_method !== 'performance' && form.depreciation_method !== 'immediate' && (
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">ÉCS kulcs (%)</label>
+                <label className="text-xs font-semibold text-muted-foreground">ÉCS kulcs (%)</label>
                 <Input
                   type="number"
                   step="any"
@@ -386,7 +389,7 @@ function AssetFormModal({ isOpen, onClose, onSave, initialValues, saving }: Asse
             )}
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Halmozott ÉCS (Ft)</label>
+              <label className="text-xs font-semibold text-muted-foreground">Halmozott ÉCS (Ft)</label>
               <Input
                 type="number"
                 placeholder="Pl. 0"
@@ -398,7 +401,7 @@ function AssetFormModal({ isOpen, onClose, onSave, initialValues, saving }: Asse
             {form.depreciation_method === 'performance' && (
               <>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Tervezett teljesítmény (pl. km, óra, db) *</label>
+                  <label className="text-xs font-semibold text-muted-foreground">Tervezett teljesítmény (pl. km, óra, db) *</label>
                   <Input
                     type="number"
                     placeholder="Pl. 200000"
@@ -408,7 +411,7 @@ function AssetFormModal({ isOpen, onClose, onSave, initialValues, saving }: Asse
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Tárgyévi teljesítmény *</label>
+                  <label className="text-xs font-semibold text-muted-foreground">Tárgyévi teljesítmény *</label>
                   <Input
                     type="number"
                     placeholder="Pl. 15000"
@@ -422,14 +425,14 @@ function AssetFormModal({ isOpen, onClose, onSave, initialValues, saving }: Asse
 
             {form.depreciation_method === 'multiplier' && (
               <div className="space-y-1.5 sm:col-span-2">
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Éves szorzók (vesszővel elválasztva) *</label>
+                <label className="text-xs font-semibold text-muted-foreground">Éves szorzók (vesszővel elválasztva) *</label>
                 <Input
                   placeholder="Pl. 1.5, 1.2, 1.0, 0.8, 0.5"
                   value={form.multipliers}
                   onChange={e => setForm(f => ({ ...f, multipliers: e.target.value }))}
                   required
                 />
-                <span className="text-[10px] text-slate-400 block">
+                <span className="text-[10px] text-muted-foreground block">
                   A megadott szorzót alkalmazza a lineáris kulccsal számított amortizációra az eszköz életkora alapján.
                 </span>
               </div>
@@ -437,7 +440,7 @@ function AssetFormModal({ isOpen, onClose, onSave, initialValues, saving }: Asse
 
             {form.depreciation_method === 'absolute' && (
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Fix tárgyévi ÉCS összeg (Ft) *</label>
+                <label className="text-xs font-semibold text-muted-foreground">Fix tárgyévi ÉCS összeg (Ft) *</label>
                 <Input
                   type="number"
                   placeholder="Pl. 150000"
@@ -449,7 +452,7 @@ function AssetFormModal({ isOpen, onClose, onSave, initialValues, saving }: Asse
             )}
 
             <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Megjegyzés</label>
+              <label className="text-xs font-semibold text-muted-foreground">Megjegyzés</label>
               <Input
                 placeholder="Opcionális megjegyzés"
                 value={form.notes}
@@ -459,14 +462,12 @@ function AssetFormModal({ isOpen, onClose, onSave, initialValues, saving }: Asse
 
             {form.depreciation_method !== 'immediate' && (
               <div className="sm:col-span-2 flex items-center gap-2 pt-1">
-                <input
-                  type="checkbox"
+                <Checkbox
                   id="is_below_threshold"
                   checked={form.is_below_threshold}
-                  onChange={e => setForm(f => ({ ...f, is_below_threshold: e.target.checked }))}
-                  className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  onCheckedChange={checked => setForm(f => ({ ...f, is_below_threshold: !!checked }))}
                 />
-                <label htmlFor="is_below_threshold" className="text-xs font-medium text-slate-600 dark:text-slate-400 cursor-pointer">
+                <label htmlFor="is_below_threshold" className="text-xs font-medium text-muted-foreground cursor-pointer select-none">
                   Kisértékű tárgyi eszköz (100% azonnali amortizáció)
                 </label>
               </div>
@@ -498,15 +499,15 @@ interface DeleteConfirmModalProps {
 function DeleteConfirmModal({ isOpen, onClose, onConfirm, deleting }: DeleteConfirmModalProps) {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-in fade-in duration-200">
-      <div className="bg-card rounded-xl border border-border shadow-xl p-6 max-w-sm w-full mx-4 space-y-4 animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 page-animate duration-200">
+      <div className="bg-card rounded-lg border border-border shadow-xl p-6 max-w-sm w-full mx-4 space-y-4 animate-in zoom-in-95 duration-200">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center shrink-0">
             <AlertTriangle className="w-5 h-5 text-red-600" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Biztosan törli az eszközt?</h3>
-            <p className="text-xs text-slate-500">Ez a művelet nem vonható vissza.</p>
+            <h3 className="text-sm font-bold text-foreground">Biztosan törli az eszközt?</h3>
+            <p className="text-xs text-muted-foreground">Ez a művelet nem vonható vissza.</p>
           </div>
         </div>
         <div className="flex justify-end gap-2">
@@ -721,29 +722,29 @@ export default function EvDepreciationPage() {
   };
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to={`/eaisybooks?tab=ev&year=${taxYear}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link to={`/eaisybooks?tab=ev&year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-primary transition-colors">
           {client?.name || 'Ügyfél'}
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <span className="text-slate-900 dark:text-slate-100 font-medium">Értékcsökkenés</span>
+        <span className="text-foreground font-medium">Értékcsökkenés</span>
       </div>
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-xl shadow-lg shadow-teal-500/25">
+          <div className="p-2.5 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-lg shadow-lg shadow-teal-500/25">
             <BarChart3 className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Értékcsökkenési leírás (ÉCS)</h1>
-            <p className="text-sm text-slate-500">Szja tv. 11. sz. melléklet – tárgyi eszközök amortizációja</p>
+            <h1 className="text-2xl font-bold text-foreground">Értékcsökkenési leírás (ÉCS)</h1>
+            <p className="text-sm text-muted-foreground">Szja tv. 11. sz. melléklet – tárgyi eszközök amortizációja</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -767,44 +768,44 @@ export default function EvDepreciationPage() {
 
       {/* Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Bruttó érték összesen</p>
-          <p className="text-lg font-bold text-slate-900 dark:text-slate-100 tabular-nums">{formatHuf(totalAcquisition)}</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Bruttó érték összesen</p>
+          <p className="text-lg font-bold text-foreground tabular-nums">{formatHuf(totalAcquisition)}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Tárgyévi ÉCS</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Tárgyévi ÉCS</p>
           <p className="text-lg font-bold text-teal-600 tabular-nums">{formatHuf(totalCurrentYear)}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Halmozott ÉCS</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Halmozott ÉCS</p>
           <p className="text-lg font-bold text-amber-600 tabular-nums">{formatHuf(totalCumulative)}</p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Nettó könyv szerinti ért.</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Nettó könyv szerinti ért.</p>
           <p className="text-lg font-bold text-green-600 tabular-nums">{formatHuf(totalNetBook)}</p>
         </div>
       </div>
 
       {/* Assets table */}
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-slate-50/50 dark:bg-slate-800/30">
-                <th className="text-left py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Eszköz</th>
-                <th className="text-left py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Beszerzés</th>
-                <th className="text-right py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Bruttó érték</th>
-                <th className="text-left py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Módszer & Kulcs</th>
-                <th className="text-right py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Tárgyévi ÉCS</th>
-                <th className="text-right py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Halm. ÉCS</th>
-                <th className="text-right py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider">Nettó ért.</th>
-                <th className="text-center py-3 px-4 font-medium text-slate-500 text-xs uppercase tracking-wider w-20">Műv.</th>
+              <tr className="border-b border-border bg-muted/40/50 dark:bg-muted/30">
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Eszköz</th>
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Beszerzés</th>
+                <th className="text-right py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Bruttó érték</th>
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Módszer & Kulcs</th>
+                <th className="text-right py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Tárgyévi ÉCS</th>
+                <th className="text-right py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Halm. ÉCS</th>
+                <th className="text-right py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Nettó ért.</th>
+                <th className="text-center py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider w-20">Műv.</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="py-16 text-center text-sm text-slate-400">
+                  <td colSpan={8} className="py-16 text-center text-sm text-muted-foreground">
                     <Loader2 className="w-8 h-8 mx-auto mb-3 text-teal-400 animate-spin" />
                     Betöltés...
                   </td>
@@ -812,8 +813,8 @@ export default function EvDepreciationPage() {
               ) : assets.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-16 text-center">
-                    <BarChart3 className="w-10 h-10 mx-auto mb-3 text-slate-300" />
-                    <p className="text-sm text-slate-400 mb-3">Nincs még rögzített tárgyi eszköz</p>
+                    <BarChart3 className="w-10 h-10 mx-auto mb-3 text-muted-foreground/60" />
+                    <p className="text-sm text-muted-foreground mb-3">Nincs még rögzített tárgyi eszköz</p>
                     <button
                       onClick={() => setImportOpen(true)}
                       className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
@@ -828,51 +829,51 @@ export default function EvDepreciationPage() {
                     ? (asset.cumulativeDepreciation / asset.acquisitionCost) * 100
                     : 0;
                   return (
-                    <tr key={asset.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                    <tr key={asset.id} className="hover:bg-muted/50 dark:hover:bg-muted/50/30 transition-colors">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-1.5">
-                          <p className="font-semibold text-slate-900 dark:text-slate-100">{asset.name}</p>
+                          <p className="font-semibold text-foreground">{asset.name}</p>
                           {asset.isLinked && (
                             <span className="shrink-0 inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 border border-emerald-200 dark:border-emerald-800" title="Importálva a TÉNY nyilvántartásból">
                               TÉNY
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
+                        <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
                           <Tag className="w-3 h-3" /> {asset.category}
                         </p>
                       </td>
                       <td className="py-3 px-4">
-                        <span className="text-xs font-mono tabular-nums text-slate-600 dark:text-slate-400 flex items-center gap-1">
+                        <span className="text-xs font-mono tabular-nums text-muted-foreground flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
                           {new Date(asset.acquisitionDate).toLocaleDateString('hu-HU')}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-700 dark:text-slate-300">
+                      <td className="py-3 px-4 text-right font-mono tabular-nums text-foreground/90">
                         {formatHuf(asset.acquisitionCost)}
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          <span className="text-xs font-semibold text-foreground/90">
                             {asset.methodLabel}
                           </span>
                           {asset.method !== 'absolute' && asset.method !== 'performance' && asset.method !== 'immediate' && (
-                            <span className="text-[10px] text-slate-400 font-mono">
+                            <span className="text-[10px] text-muted-foreground font-mono">
                               Kulcs: {asset.annualRate}%
                             </span>
                           )}
                           {asset.method === 'performance' && (
-                            <span className="text-[10px] text-slate-400 font-mono">
+                            <span className="text-[10px] text-muted-foreground font-mono">
                               {asset._deserialized.current_performance?.toLocaleString('hu-HU')} / {asset._deserialized.total_performance?.toLocaleString('hu-HU')} egység
                             </span>
                           )}
                           {asset.method === 'multiplier' && (
-                            <span className="text-[10px] text-slate-400 font-mono">
+                            <span className="text-[10px] text-muted-foreground font-mono">
                               Szorzósor: [{asset._deserialized.multipliers}]
                             </span>
                           )}
                           {asset.method === 'absolute' && (
-                            <span className="text-[10px] text-slate-400 font-mono">
+                            <span className="text-[10px] text-muted-foreground font-mono">
                               Fix összeg: {formatHuf(asset._deserialized.annual_dep_amount)}
                             </span>
                           )}
@@ -883,13 +884,13 @@ export default function EvDepreciationPage() {
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center gap-2 justify-end">
-                          <div className="w-12 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                          <div className="w-12 h-1.5 bg-muted rounded-full overflow-hidden">
                             <div
                               className="h-full bg-amber-500 rounded-full"
                               style={{ width: `${Math.min(100, depPercentage)}%` }}
                             />
                           </div>
-                          <span className="text-xs font-mono tabular-nums text-slate-600 dark:text-slate-400">
+                          <span className="text-xs font-mono tabular-nums text-muted-foreground">
                             {formatHuf(asset.cumulativeDepreciation)}
                           </span>
                         </div>
@@ -904,14 +905,14 @@ export default function EvDepreciationPage() {
                               setEditingRow(asset._raw);
                               setFormOpen(true);
                             }}
-                            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-600"
+                            className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-muted-foreground"
                             title="Módosítás"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
                           <button 
                             onClick={() => setDeletingId(asset.id)}
-                            className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-slate-400 hover:text-red-600"
+                            className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-muted-foreground hover:text-red-600"
                             title="Törlés"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -925,9 +926,9 @@ export default function EvDepreciationPage() {
             </tbody>
             {assets.length > 0 && (
               <tfoot>
-                <tr className="border-t-2 border-border bg-slate-50/30 dark:bg-slate-800/20 font-bold">
-                  <td className="py-3 px-4 text-slate-900 dark:text-slate-100" colSpan={2}>Összesen</td>
-                  <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-900 dark:text-slate-100">{formatHuf(totalAcquisition)}</td>
+                <tr className="border-t-2 border-border bg-muted/40/30 dark:bg-muted/20 font-bold">
+                  <td className="py-3 px-4 text-foreground" colSpan={2}>Összesen</td>
+                  <td className="py-3 px-4 text-right font-mono tabular-nums text-foreground">{formatHuf(totalAcquisition)}</td>
                   <td className="py-3 px-4" />
                   <td className="py-3 px-4 text-right font-mono tabular-nums text-teal-600">{formatHuf(totalCurrentYear)}</td>
                   <td className="py-3 px-4 text-right font-mono tabular-nums text-amber-600">{formatHuf(totalCumulative)}</td>
@@ -954,7 +955,7 @@ export default function EvDepreciationPage() {
       </div>
 
       {/* Info */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
         <div className="flex items-start gap-2">
           <Info className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
           <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">

@@ -6,6 +6,7 @@ import {
   Settings, Check, X, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { type PayrollEmployee, type PayrollEmployment, useUpdateEmployment } from '@/hooks/usePayrollData';
 import { formatTajNumber, formatBankAccount, formatAmount, formatTajNumberOnType, formatBankAccountOnType } from '@/lib/payroll/validators';
@@ -46,15 +47,13 @@ export function EmployeeOverviewTab({ employee, isEditing, editForm, setEditForm
             <InfoSection title="Elérhetőség & Cím">
               <EditField label="E-mail" value={editForm.email || ''} onChange={v => setEditForm(f => ({ ...f, email: v || null }))} type="email" />
               <EditField label="Telefon" value={editForm.phone || ''} onChange={v => setEditForm(f => ({ ...f, phone: v || null }))} />
-              <div className="flex items-center gap-2 mt-3 p-2 border rounded-lg bg-slate-50 dark:bg-slate-900/30">
-                <input
-                  type="checkbox"
+              <div className="flex items-center gap-2 mt-3 p-2 border rounded-lg bg-background/30">
+                <Checkbox
                   id="has_no_hungarian_address"
                   checked={!!editForm.has_no_hungarian_address}
-                  onChange={e => setEditForm(f => ({ ...f, has_no_hungarian_address: e.target.checked }))}
-                  className="w-4 h-4 rounded border-slate-300"
+                  onCheckedChange={c => setEditForm(f => ({ ...f, has_no_hungarian_address: Boolean(c) }))}
                 />
-                <label htmlFor="has_no_hungarian_address" className="text-xs font-medium text-slate-700 dark:text-slate-300">Nincs magyar lakcíme</label>
+                <label htmlFor="has_no_hungarian_address" className="text-xs font-medium text-foreground/90 cursor-pointer select-none">Nincs magyar lakcíme</label>
               </div>
             </InfoSection>
 
@@ -65,7 +64,7 @@ export function EmployeeOverviewTab({ employee, isEditing, editForm, setEditForm
               <EditField label="Bankszámla" value={editForm.bank_account || ''} onChange={v => setEditForm(f => ({ ...f, bank_account: formatBankAccountOnType(v) || null }))} placeholder="00000000-00000000-00000000" />
               
               <div className="mt-3">
-                <label className="block text-xs font-medium text-slate-500 mb-1">Végzettség</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Végzettség</label>
                 <select
                   value={editForm.education_level || 'none'}
                   onChange={e => setEditForm(f => ({ ...f, education_level: e.target.value }))}
@@ -81,24 +80,20 @@ export function EmployeeOverviewTab({ employee, isEditing, editForm, setEditForm
 
               <div className="flex flex-col gap-2 mt-3">
                 <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     id="has_age_concession"
                     checked={!!editForm.has_age_concession}
-                    onChange={e => setEditForm(f => ({ ...f, has_age_concession: e.target.checked }))}
-                    className="w-4 h-4 rounded border-slate-300"
+                    onCheckedChange={c => setEditForm(f => ({ ...f, has_age_concession: Boolean(c) }))}
                   />
-                  <label htmlFor="has_age_concession" className="text-xs font-medium text-slate-700 dark:text-slate-300">Korkedvezmény</label>
+                  <label htmlFor="has_age_concession" className="text-xs font-medium text-foreground/90 cursor-pointer select-none">Korkedvezmény</label>
                 </div>
                 <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     id="has_union_fee"
                     checked={!!editForm.has_union_fee}
-                    onChange={e => setEditForm(f => ({ ...f, has_union_fee: e.target.checked }))}
-                    className="w-4 h-4 rounded border-slate-300"
+                    onCheckedChange={c => setEditForm(f => ({ ...f, has_union_fee: Boolean(c) }))}
                   />
-                  <label htmlFor="has_union_fee" className="text-xs font-medium text-slate-700 dark:text-slate-300">Szakszervezeti tagdíj</label>
+                  <label htmlFor="has_union_fee" className="text-xs font-medium text-foreground/90 cursor-pointer select-none">Szakszervezeti tagdíj</label>
                 </div>
               </div>
             </InfoSection>
@@ -107,7 +102,7 @@ export function EmployeeOverviewTab({ employee, isEditing, editForm, setEditForm
           <div className="border-t border-border pt-4">
             <InfoSection title="Státusz">
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">Foglalkoztatott státusza</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">Foglalkoztatott státusza</label>
                 <select
                   value={editForm.status || 'active'}
                   onChange={e => setEditForm(f => ({ ...f, status: e.target.value as PayrollEmployee['status'] }))}
@@ -153,7 +148,7 @@ export function EmployeeOverviewTab({ employee, isEditing, editForm, setEditForm
           {/* Leave quick view */}
           {leaveBalance && (
             <div className="border-t border-border pt-6">
-              <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Szabadság mérleg ({new Date().getFullYear()})</h3>
+              <h3 className="text-sm font-bold text-foreground/90 mb-3">Szabadság mérleg ({new Date().getFullYear()})</h3>
               <div className="grid grid-cols-4 gap-3">
                 <MiniStat label="Éves keret" value={`${leaveBalance.totalAnnual} nap`} />
                 <MiniStat label="Felhasznált" value={`${leaveBalance.used} nap`} />
@@ -259,25 +254,25 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
   return (
     <div className="p-6">
       {employments.length === 0 ? (
-        <div className="py-8 text-center text-sm text-slate-500">Nincs rögzített jogviszony</div>
+        <div className="py-8 text-center text-sm text-muted-foreground">Nincs rögzített jogviszony</div>
       ) : (
         <div className="space-y-3">
           {employments.map((emp) => (
             <div key={emp.id} className="p-4 rounded-lg border border-border hover:border-primary/30 transition-colors">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-slate-900 dark:text-slate-100">{emp.employment_type}</span>
-                  <span className="px-1.5 py-0.5 text-[10px] font-mono bg-slate-100 dark:bg-slate-800 rounded">{emp.job_code}</span>
+                  <span className="text-sm font-bold text-foreground">{emp.employment_type}</span>
+                  <span className="px-1.5 py-0.5 text-[10px] font-mono bg-muted rounded">{emp.job_code}</span>
                 </div>
                 <span className={cn(
                   'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase',
-                  emp.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/40' : 'bg-slate-100 text-slate-600 dark:bg-slate-800'
+                  emp.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/40' : 'bg-muted text-muted-foreground dark:bg-muted'
                 )}>
                   {emp.status === 'active' ? 'Aktív' : emp.status}
                 </span>
               </div>
               <div className="flex items-center justify-between mt-3 pt-2 border-t border-border/50">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-slate-500 dark:text-slate-400 flex-1">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-muted-foreground flex-1">
                   <span>Kezdés: {emp.start_date}</span>
                   <span>Munkakör: {emp.job_title || '–'}</span>
                   <span>FEOR: {emp.feor_code || '–'}</span>
@@ -297,10 +292,10 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex items-center gap-1.5 text-xs bg-slate-50 dark:bg-slate-900"
+                    className="flex items-center gap-1.5 text-xs bg-background"
                     onClick={() => handleEditClick(emp)}
                   >
-                    <Settings className="w-3 h-3 text-slate-500" /> Adózás
+                    <Settings className="w-3 h-3 text-muted-foreground" /> Adózás
                   </Button>
                   <Button
                     variant="outline"
@@ -315,10 +310,10 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
 
               {/* View Tax settings */}
               {editingId !== emp.id && (
-                <div className="mt-3 pt-3 border-t border-border/40 grid grid-cols-1 md:grid-cols-2 gap-3 bg-slate-50/50 dark:bg-slate-900/10 p-3 rounded-lg text-xs">
+                <div className="mt-3 pt-3 border-t border-border/40 grid grid-cols-1 md:grid-cols-2 gap-3 bg-muted/40/50 dark:bg-card/10 p-3 rounded-lg text-xs">
                   <div>
-                    <span className="font-bold text-slate-700 dark:text-slate-300">Minimális járulékalap szabály:</span>{' '}
-                    <span className="text-slate-600 dark:text-slate-400">
+                    <span className="font-bold text-foreground/90">Minimális járulékalap szabály:</span>{' '}
+                    <span className="text-muted-foreground">
                       {emp.minimum_contribution_base_rule === 'minimal_wage' 
                         ? 'Minimálbér' 
                         : emp.minimum_contribution_base_rule === 'guaranteed_minimum' 
@@ -326,7 +321,7 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
                         : 'Nincs'}
                     </span>
                     {emp.minimum_contribution_base_rule && emp.minimum_contribution_base_rule !== 'none' && (
-                      <div className="mt-1 pl-2 border-l border-border/60 space-y-0.5 text-[11px] text-slate-500">
+                      <div className="mt-1 pl-2 border-l border-border/60 space-y-0.5 text-[11px] text-muted-foreground">
                         <div>Máshol megfizetve: {emp.is_min_base_paid_elsewhere ? `Igen (${emp.other_company_name || '–'}, adószám: ${emp.other_company_tax_number || '–'})` : 'Nem'}</div>
                         {emp.is_min_base_exempt_gyes_gyed && <div>Mentesség: GYES/GYED</div>}
                         {emp.is_min_base_exempt_student && <div>Mentesség: Nappali tagozatos diák</div>}
@@ -334,8 +329,8 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
                     )}
                   </div>
                   <div>
-                    <span className="font-bold text-slate-700 dark:text-slate-300">Speciális adózás:</span>
-                    <div className="mt-1 space-y-0.5 text-[11px] text-slate-600 dark:text-slate-400">
+                    <span className="font-bold text-foreground/90">Speciális adózás:</span>
+                    <div className="mt-1 space-y-0.5 text-[11px] text-muted-foreground">
                       <div>Nyugdíjas: {emp.is_pensioner ? `Igen (${emp.pension_type === 'old_age' ? 'Öregségi' : emp.pension_type === 'rehab' ? 'Rehab' : emp.pension_type === 'disability' ? 'Rokkantsági' : 'Egyéb'})` : 'Nem'}</div>
                       <div>EKHO: {emp.is_ekho ? `Igen (Fizeti: ${emp.ekho_payer === 'employee' ? 'Dolgozó' : 'Munkáltató'}, kategória: ${emp.ekho_category === 'normal' ? 'Normál' : emp.ekho_category === 'athlete' ? 'Sportoló' : 'EGT'})` : 'Nem'}</div>
                       <div>SZOCHO kedvezmény: {emp.is_szocho_discount ? `Igen (${emp.szocho_discount_type === 'agriculture' ? 'Mezőgazdasági' : emp.szocho_discount_type === 'market_entry' ? 'Piacra lépő' : emp.szocho_discount_type === 'mother_market_entry' ? 'Anya piacra lépő' : emp.szocho_discount_type === 'fiatalkoru' ? '25 év alatti' : emp.szocho_discount_type === '55_feletti' ? '55 év feletti' : emp.szocho_discount_type === 'szakkepzetlen' ? 'Szakképzetlen (FEOR 9)' : 'PhD kutató'}, eltelt: ${emp.szocho_discount_start ? Math.max(0, (new Date().getFullYear() - new Date(emp.szocho_discount_start).getFullYear()) * 12 + (new Date().getMonth() - new Date(emp.szocho_discount_start).getMonth())) : 0} hó)` : 'Nem'}</div>
@@ -347,8 +342,8 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
 
               {/* Edit Tax form */}
               {editingId === emp.id && (
-                <div className="mt-4 pt-4 border-t border-border/80 space-y-4 bg-slate-50/70 dark:bg-slate-900/20 p-4 rounded-xl border border-border animate-in slide-in-from-top-1 duration-200">
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                <div className="mt-4 pt-4 border-t border-border/80 space-y-4 bg-muted/40/70 dark:bg-card/20 p-4 rounded-lg border border-border animate-in slide-in-from-top-1 duration-200">
+                  <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
                     <Settings className="w-3.5 h-3.5 text-primary" /> Adózási és Járulékfizetési Beállítások Szerkesztése
                   </h4>
                   
@@ -356,7 +351,7 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
                     {/* Minimális Járulékalap Szabály */}
                     <div className="p-3 border border-border bg-card rounded-lg space-y-3">
                       <div>
-                        <label className="block text-[11px] font-bold text-slate-500 mb-1">Minimális Járulékalap Szabály</label>
+                        <label className="block text-[11px] font-bold text-muted-foreground mb-1">Minimális Járulékalap Szabály</label>
                         <select
                           value={form.minimum_contribution_base_rule || 'none'}
                           onChange={e => setForm(f => ({ ...f, minimum_contribution_base_rule: e.target.value }))}
@@ -371,14 +366,12 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
                       {form.minimum_contribution_base_rule !== 'none' && (
                         <div className="space-y-2 border-t border-border/60 pt-2 text-xs">
                           <div className="flex items-center gap-2">
-                            <input
-                              type="checkbox"
+                            <Checkbox
                               id="is_min_base_paid_elsewhere"
                               checked={!!form.is_min_base_paid_elsewhere}
-                              onChange={e => setForm(f => ({ ...f, is_min_base_paid_elsewhere: e.target.checked }))}
-                              className="w-3.5 h-3.5 rounded border-slate-300"
+                              onCheckedChange={checked => setForm(f => ({ ...f, is_min_base_paid_elsewhere: !!checked }))}
                             />
-                            <label htmlFor="is_min_base_paid_elsewhere" className="font-semibold text-slate-700 dark:text-slate-300">
+                            <label htmlFor="is_min_base_paid_elsewhere" className="font-semibold text-foreground/90 cursor-pointer select-none">
                               Máshol megfizették a járulékot
                             </label>
                           </div>
@@ -386,7 +379,7 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
                           {form.is_min_base_paid_elsewhere && (
                             <div className="grid grid-cols-1 gap-2 pl-5 mt-1">
                               <div>
-                                <label className="block text-[10px] text-slate-400">Másik cég neve *</label>
+                                <label className="block text-[10px] text-muted-foreground">Másik cég neve *</label>
                                 <input
                                   type="text"
                                   value={form.other_company_name || ''}
@@ -396,7 +389,7 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
                                 />
                               </div>
                               <div>
-                                <label className="block text-[10px] text-slate-400">Másik cég adószáma *</label>
+                                <label className="block text-[10px] text-muted-foreground">Másik cég adószáma *</label>
                                 <input
                                   type="text"
                                   value={form.other_company_tax_number || ''}
@@ -409,27 +402,23 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
                           )}
 
                           <div className="flex items-center gap-2 pt-1">
-                            <input
-                              type="checkbox"
+                            <Checkbox
                               id="is_min_base_exempt_gyes_gyed"
                               checked={!!form.is_min_base_exempt_gyes_gyed}
-                              onChange={e => setForm(f => ({ ...f, is_min_base_exempt_gyes_gyed: e.target.checked }))}
-                              className="w-3.5 h-3.5 rounded border-slate-300"
+                              onCheckedChange={checked => setForm(f => ({ ...f, is_min_base_exempt_gyes_gyed: !!checked }))}
                             />
-                            <label htmlFor="is_min_base_exempt_gyes_gyed" className="font-semibold text-slate-700 dark:text-slate-300">
+                            <label htmlFor="is_min_base_exempt_gyes_gyed" className="font-semibold text-foreground/90 cursor-pointer select-none">
                               GYES/GYED mentesség
                             </label>
                           </div>
 
                           <div className="flex items-center gap-2">
-                            <input
-                              type="checkbox"
+                            <Checkbox
                               id="is_min_base_exempt_student"
                               checked={!!form.is_min_base_exempt_student}
-                              onChange={e => setForm(f => ({ ...f, is_min_base_exempt_student: e.target.checked }))}
-                              className="w-3.5 h-3.5 rounded border-slate-300"
+                              onCheckedChange={checked => setForm(f => ({ ...f, is_min_base_exempt_student: !!checked }))}
                             />
-                            <label htmlFor="is_min_base_exempt_student" className="font-semibold text-slate-700 dark:text-slate-300">
+                            <label htmlFor="is_min_base_exempt_student" className="font-semibold text-foreground/90 cursor-pointer select-none">
                               Nappali tagozatos tanuló mentesség
                             </label>
                           </div>
@@ -442,14 +431,12 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
                       {/* Nyugdíjas */}
                       <div className="border-b border-border/50 pb-2">
                         <div className="flex items-center gap-2 mb-1">
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             id="is_pensioner"
                             checked={!!form.is_pensioner}
-                            onChange={e => setForm(f => ({ ...f, is_pensioner: e.target.checked }))}
-                            className="w-3.5 h-3.5 rounded border-slate-300"
+                            onCheckedChange={checked => setForm(f => ({ ...f, is_pensioner: !!checked }))}
                           />
-                          <label htmlFor="is_pensioner" className="text-xs font-bold text-slate-700 dark:text-slate-300">Nyugdíjas státusz</label>
+                          <label htmlFor="is_pensioner" className="text-xs font-bold text-foreground/90 cursor-pointer select-none">Nyugdíjas státusz</label>
                         </div>
                         {form.is_pensioner && (
                           <select
@@ -469,19 +456,17 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
                       {/* EKHO */}
                       <div className="border-b border-border/50 pb-2">
                         <div className="flex items-center gap-2 mb-1">
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             id="is_ekho"
                             checked={!!form.is_ekho}
-                            onChange={e => setForm(f => ({ ...f, is_ekho: e.target.checked }))}
-                            className="w-3.5 h-3.5 rounded border-slate-300"
+                            onCheckedChange={checked => setForm(f => ({ ...f, is_ekho: !!checked }))}
                           />
-                          <label htmlFor="is_ekho" className="text-xs font-bold text-slate-700 dark:text-slate-300">EKHO választása</label>
+                          <label htmlFor="is_ekho" className="text-xs font-bold text-foreground/90 cursor-pointer select-none">EKHO választása</label>
                         </div>
                         {form.is_ekho && (
                           <div className="grid grid-cols-2 gap-2 mt-1">
                             <div>
-                              <label className="block text-[9px] text-slate-400">Ki fizeti?</label>
+                              <label className="block text-[9px] text-muted-foreground">Ki fizeti?</label>
                               <select
                                 value={form.ekho_payer || 'employee'}
                                 onChange={e => setForm(f => ({ ...f, ekho_payer: e.target.value }))}
@@ -492,7 +477,7 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
                               </select>
                             </div>
                             <div>
-                              <label className="block text-[9px] text-slate-400">Kategória</label>
+                              <label className="block text-[9px] text-muted-foreground">Kategória</label>
                               <select
                                 value={form.ekho_category || 'normal'}
                                 onChange={e => setForm(f => ({ ...f, ekho_category: e.target.value }))}
@@ -510,19 +495,17 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
                       {/* SZOCHO kedvezmény */}
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             id="is_szocho_discount"
                             checked={!!form.is_szocho_discount}
-                            onChange={e => setForm(f => ({ ...f, is_szocho_discount: e.target.checked }))}
-                            className="w-3.5 h-3.5 rounded border-slate-300"
+                            onCheckedChange={checked => setForm(f => ({ ...f, is_szocho_discount: !!checked }))}
                           />
-                          <label htmlFor="is_szocho_discount" className="text-xs font-bold text-slate-700 dark:text-slate-300">SZOCHO kedvezmény</label>
+                          <label htmlFor="is_szocho_discount" className="text-xs font-bold text-foreground/90 cursor-pointer select-none">SZOCHO kedvezmény</label>
                         </div>
                         {form.is_szocho_discount && (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-1">
                             <div>
-                              <label className="block text-[9px] text-slate-400">Kedvezmény típusa</label>
+                              <label className="block text-[9px] text-muted-foreground">Kedvezmény típusa</label>
                               <select
                                 value={form.szocho_discount_type || 'none'}
                                 onChange={e => setForm(f => ({ ...f, szocho_discount_type: e.target.value }))}
@@ -538,7 +521,7 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
                               </select>
                             </div>
                             <div>
-                              <label className="block text-[9px] text-slate-400">Eltelt hónapok</label>
+                              <label className="block text-[9px] text-muted-foreground">Eltelt hónapok</label>
                               <input
                                 type="number"
                                 value={form.szocho_discount_months_elapsed || 0}
@@ -554,12 +537,12 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
                     {/* Munkába Járás Utazási Költségtérítése */}
                     <div className="p-3 border border-border bg-card rounded-lg space-y-3 md:col-span-2">
                       <div className="flex items-center justify-between">
-                        <label className="block text-[11px] font-bold text-slate-500">Munkába Járás Utazási Költségtérítése (39/2010. Korm. rend.)</label>
+                        <label className="block text-[11px] font-bold text-muted-foreground">Munkába Járás Utazási Költségtérítése (39/2010. Korm. rend.)</label>
                         <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Adómentes</span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div>
-                          <label className="block text-[9px] text-slate-400 mb-1">Mód</label>
+                          <label className="block text-[9px] text-muted-foreground mb-1">Mód</label>
                           <select
                             value={form.commute_type || 'none'}
                             onChange={e => setForm(f => ({ ...f, commute_type: e.target.value as any }))}
@@ -572,7 +555,7 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
                         </div>
                         {form.commute_type === 'car' && (
                           <div className="md:col-span-2">
-                            <label className="block text-[9px] text-slate-400 mb-1">Napi oda-vissza távolság (km)</label>
+                            <label className="block text-[9px] text-muted-foreground mb-1">Napi oda-vissza távolság (km)</label>
                             <input
                               type="number"
                               value={form.commute_distance_km || 0}
@@ -580,7 +563,7 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
                               placeholder="pl. 24"
                               className="w-full px-2 py-1 h-8 rounded border border-border bg-background text-xs"
                             />
-                            <p className="text-[10px] text-slate-400 mt-1 italic">
+                            <p className="text-[10px] text-muted-foreground mt-1 italic">
                               * A havi számfejtéskor a ténylegesen ledolgozott munkanapok és a céges Ft/km ráta (30 Ft/km) alapján számolódik.
                             </p>
                           </div>
@@ -588,7 +571,7 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
                         {form.commute_type === 'public_transit' && (
                           <>
                             <div>
-                              <label className="block text-[9px] text-slate-400 mb-1">Havi bérlet bruttó ára (Ft)</label>
+                              <label className="block text-[9px] text-muted-foreground mb-1">Havi bérlet bruttó ára (Ft)</label>
                               <input
                                 type="number"
                                 value={form.commute_monthly_pass_cost || 0}
@@ -598,7 +581,7 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
                               />
                             </div>
                             <div>
-                              <label className="block text-[9px] text-slate-400 mb-1">Térítés mértéke</label>
+                              <label className="block text-[9px] text-muted-foreground mb-1">Térítés mértéke</label>
                               <select
                                 value={form.commute_reimbursement_pct || 86}
                                 onChange={e => setForm(f => ({ ...f, commute_reimbursement_pct: Number(e.target.value) || 86 }))}

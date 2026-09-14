@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, Clock, MoreVertical, FileText, Settings, Search, ChevronRight, Mail, Phone, CheckCircle2, X, CheckCircle, Loader2, TrendingUp, TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -10,6 +11,16 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useAccountyCompanySummary } from '@/hooks/accounty';
 import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
+import { PageHeader } from '@/components/ui/page-header';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { TableEmptyState } from '@/components/ui/table-empty-state';
 
 function AnimatedNumber({ value, duration = 1200 }: { value: number; duration?: number }) {
   const [display, setDisplay] = useState(0);
@@ -120,7 +131,7 @@ export default function MissingInvoicesPage() {
       case 'K\u00F6zepes':
         return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-800">K&#246;zepes</span>;
       case 'Alacsony':
-        return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-border">Alacsony</span>;
+        return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground border border-border">Alacsony</span>;
       default:
         return null;
     }
@@ -136,20 +147,20 @@ export default function MissingInvoicesPage() {
 
   if (isLoading) {
     return (
-      <div className="w-full space-y-6 animate-in fade-in duration-300">
-        <div className="h-8 w-48 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+      <div className="w-full space-y-6 page-animate">
+        <div className="h-8 w-48 bg-muted rounded animate-pulse" />
         <div className="grid grid-cols-4 gap-4">
           {[0,1,2,3].map(i => (
-            <div key={i} className="bg-card rounded-xl border border-border p-5 h-28 animate-pulse">
-              <div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded mb-6" />
-              <div className="h-7 w-12 bg-slate-200 dark:bg-slate-800 rounded" />
+            <div key={i} className="bg-card rounded-lg border border-border p-5 h-28 animate-pulse">
+              <div className="h-4 w-24 bg-muted rounded mb-6" />
+              <div className="h-7 w-12 bg-muted rounded" />
             </div>
           ))}
         </div>
-        <div className="bg-card rounded-xl border border-border overflow-hidden animate-pulse">
-          <div className="h-12 bg-slate-50 dark:bg-slate-900/50 border-b border-border" />
+        <div className="bg-card rounded-lg border border-border overflow-hidden animate-pulse">
+          <div className="h-12 bg-background/50 border-b border-border" />
           {[0,1,2,3,4].map(i => (
-            <div key={i} className="h-16 border-b border-slate-100 dark:border-slate-800" />
+            <div key={i} className="h-16 border-b border-border" />
           ))}
         </div>
       </div>
@@ -157,30 +168,29 @@ export default function MissingInvoicesPage() {
   }
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
-       {/* Header */}
-       <div className="flex justify-between items-start">
-         <div>
-           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Hi&#225;nyz&#243; sz&#225;ml&#225;k</h1>
-           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Hi&#225;nyz&#243; sz&#225;ml&#225;k bek&#233;r&#233;se</p>
-         </div>
-         <div className="flex gap-3">
-           <Button 
-             variant="outline" 
-             size="sm" 
-             className="gap-2 bg-card border-border text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 h-9 px-4"
-             onClick={() => navigate('/eaisybooks/reports/missing-invoices')}
-           >
-             <FileText className="w-4 h-4"/> Riportok
-           </Button>
-           <Button variant="outline" size="sm" className="gap-2 bg-card border-border text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 h-9 px-4">
-             <Settings className="w-4 h-4"/> Be&#225;ll&#237;t&#225;sok
-           </Button>
-         </div>
-       </div>
+    <div className="w-full space-y-6 page-animate">
+      <PageHeader 
+        title="Hiányzó számlák"
+        description="Hiányzó bizonylatok bekérése és partneri felszólítások kezelése"
+        actions={
+          <>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2 bg-card border-border text-foreground hover:bg-muted/50 h-9 px-4"
+              onClick={() => navigate('/eaisybooks/reports/missing-invoices')}
+            >
+              <FileText className="w-4 h-4"/> Riportok
+            </Button>
+            <Button variant="outline" size="sm" className="gap-2 bg-card border-border text-foreground hover:bg-muted/50 h-9 px-4">
+              <Settings className="w-4 h-4"/> Beállítások
+            </Button>
+          </>
+        }
+      />
 
        {totalCritical > 0 && (
-       <div className="border border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-900/20 rounded-xl p-4 flex gap-3 text-red-600 dark:text-red-400 shadow-soft">
+       <div className="border border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-900/20 rounded-lg p-4 flex gap-3 text-red-600 dark:text-red-400 shadow-soft">
          <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5 text-red-500" />
          <div>
            <h3 className="font-semibold text-sm">Kritikus hiányok!</h3>
@@ -194,12 +204,12 @@ export default function MissingInvoicesPage() {
          <div className="stagger-1">
           <button 
             onClick={() => setKpiModal('all')}
-            className="w-full bg-card rounded-xl border border-border p-5 shadow-soft flex flex-col justify-between text-left hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer card-ripple"
+            className="w-full bg-card rounded-lg border border-border p-5 shadow-soft flex flex-col justify-between text-left hover:border-muted-foreground/40 dark:hover:border-slate-600 hover:bg-muted/50 transition-all cursor-pointer card-ripple"
             onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`); e.currentTarget.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`); }}
           >
-            <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Összes hiányzó</h3>
+            <h3 className="text-sm font-medium text-muted-foreground">Összes hiányzó</h3>
             <div className="mt-4">
-              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100"><AnimatedNumber value={totalMissing} /></div>
+              <div className="text-2xl font-bold text-foreground"><AnimatedNumber value={totalMissing} /></div>
               <div className="flex items-center gap-1 mt-1">
                 <TrendingDown className="w-3 h-3 text-red-500" />
                 <p className="text-xs text-red-500">{data.length} ügyféltől</p>
@@ -210,7 +220,7 @@ export default function MissingInvoicesPage() {
          <div className="stagger-2">
           <button 
             onClick={() => setKpiModal('critical')}
-            className="w-full bg-card rounded-xl border border-red-200 dark:border-red-900/50 p-5 shadow-soft flex flex-col justify-between text-left hover:border-red-400 dark:hover:border-red-700 hover:bg-red-50/50 dark:hover:bg-red-900/20 transition-all cursor-pointer card-ripple"
+            className="w-full bg-card rounded-lg border border-red-200 dark:border-red-900/50 p-5 shadow-soft flex flex-col justify-between text-left hover:border-red-400 dark:hover:border-red-700 hover:bg-red-50/50 dark:hover:bg-red-900/20 transition-all cursor-pointer card-ripple"
             onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`); e.currentTarget.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`); }}
           >
             <h3 className="text-sm font-medium text-red-500">Kritikus</h3>
@@ -223,26 +233,26 @@ export default function MissingInvoicesPage() {
          <div className="stagger-3">
           <button 
             onClick={() => setKpiModal('sent')}
-            className="w-full bg-card rounded-xl border border-border p-5 shadow-soft flex flex-col justify-between text-left hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer card-ripple"
+            className="w-full bg-card rounded-lg border border-border p-5 shadow-soft flex flex-col justify-between text-left hover:border-muted-foreground/40 dark:hover:border-slate-600 hover:bg-muted/50 transition-all cursor-pointer card-ripple"
             onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`); e.currentTarget.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`); }}
           >
-            <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Küldött felszólítások</h3>
+            <h3 className="text-sm font-medium text-muted-foreground">Küldött felszólítások</h3>
             <div className="mt-4">
-             <div className="text-2xl font-bold text-slate-900 dark:text-slate-100"><AnimatedNumber value={totalNotified} /></div>
-               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">ez a hónap</p>
+             <div className="text-2xl font-bold text-foreground"><AnimatedNumber value={totalNotified} /></div>
+               <p className="text-xs text-muted-foreground mt-1">ez a hónap</p>
             </div>
           </button>
          </div>
          <div className="stagger-4">
           <button 
             onClick={() => setKpiModal('response')}
-            className="w-full bg-card rounded-xl border border-border p-5 shadow-soft flex flex-col justify-between text-left hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer card-ripple"
+            className="w-full bg-card rounded-lg border border-border p-5 shadow-soft flex flex-col justify-between text-left hover:border-muted-foreground/40 dark:hover:border-slate-600 hover:bg-muted/50 transition-all cursor-pointer card-ripple"
             onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`); e.currentTarget.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`); }}
           >
-            <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-4">Válaszadási arány</h3>
+            <h3 className="text-sm font-medium text-muted-foreground mb-4">Válaszadási arány</h3>
             <div>
-               <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2"><AnimatedNumber value={responseRate} />%</div>
-               <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+               <div className="text-2xl font-bold text-foreground mb-2"><AnimatedNumber value={responseRate} />%</div>
+               <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                  <div className="h-full bg-primary rounded-full transition-all duration-1000" style={{ width: `${responseRate}%` }}></div>
               </div>
             </div>
@@ -257,15 +267,15 @@ export default function MissingInvoicesPage() {
            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setKpiModal(null)} />
            
            {/* Modal */}
-           <div className="relative bg-card rounded-2xl border border-border shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col animate-in zoom-in-95 fade-in duration-200">
+           <div className="relative bg-card rounded-lg border border-border shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col animate-in zoom-in-95 fade-in duration-200">
              {/* Header */}
              <div className="flex items-center justify-between p-5 border-b border-border">
-               <h3 className="font-bold text-slate-900 dark:text-slate-100 text-lg">{modalData.title}</h3>
+               <h3 className="font-bold text-foreground text-lg">{modalData.title}</h3>
                <button 
                  onClick={() => setKpiModal(null)}
-                 className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                 className="p-1.5 hover:bg-muted rounded-lg transition-colors"
                >
-                 <X className="w-5 h-5 text-slate-400" />
+                 <X className="w-5 h-5 text-muted-foreground" />
                </button>
              </div>
              
@@ -275,22 +285,22 @@ export default function MissingInvoicesPage() {
                    <button
                      key={row.id}
                      onClick={() => { setKpiModal(null); navigate(`/eaisybooks/missing-invoices/${row.id}`); }}
-                     className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group text-left"
+                     className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group text-left"
                    >
                      <div className="flex items-center gap-3 min-w-0">
                        <div className={cn(
                          'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
-                         row.critical > 0 ? 'bg-red-100 dark:bg-red-900/40' : 'bg-slate-100 dark:bg-slate-800'
+                         row.critical > 0 ? 'bg-red-100 dark:bg-red-900/40' : 'bg-muted'
                        )}>
-                         <FileText className={cn('w-4 h-4', row.critical > 0 ? 'text-red-500' : 'text-slate-400')} />
+                         <FileText className={cn('w-4 h-4', row.critical > 0 ? 'text-red-500' : 'text-muted-foreground')} />
                        </div>
                        <div className="min-w-0">
-                         <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate group-hover:text-primary dark:group-hover:text-primary transition-colors">{row.name}</p>
+                         <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary dark:group-hover:text-primary transition-colors">{row.name}</p>
                          <div className="flex items-center gap-2 mt-0.5">
-                           <span className="text-[10px] text-slate-500 dark:text-slate-400">{row.missing} hiányzó</span>
+                           <span className="text-[10px] text-muted-foreground">{row.missing} hiányzó</span>
                            {row.critical > 0 && (
                              <>
-                               <span className="text-[10px] text-slate-400">•</span>
+                               <span className="text-[10px] text-muted-foreground">•</span>
                                <span className="text-[10px] text-red-500 font-semibold">{row.critical} kritikus</span>
                              </>
                            )}
@@ -302,15 +312,15 @@ export default function MissingInvoicesPage() {
                          'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider',
                          row.statusType === 'danger' ? 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400' :
                          row.statusType === 'warning' ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400' :
-                         'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                         'bg-muted text-muted-foreground'
                        )}>
                          {row.status}
                        </span>
-                       <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                       <ChevronRight className="w-4 h-4 text-muted-foreground/60 opacity-0 group-hover:opacity-100 transition-opacity" />
                      </div>
                    </button>
                )) : (
-                 <div className="text-center py-12 text-slate-500 dark:text-slate-400">Nincs adat</div>
+                 <div className="text-center py-12 text-muted-foreground">Nincs adat</div>
                )}
              </div>
              
@@ -318,7 +328,7 @@ export default function MissingInvoicesPage() {
              <div className="p-4 border-t border-border flex justify-end">
                <button 
                  onClick={() => setKpiModal(null)}
-                 className="px-4 py-2 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm font-semibold hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors"
+                 className="px-4 py-2 rounded-lg bg-slate-900 dark:bg-muted text-white dark:text-foreground text-sm font-semibold hover:bg-slate-800 dark:hover:bg-muted transition-colors"
                >
                  Bez&#225;r&#225;s
                </button>
@@ -333,106 +343,106 @@ export default function MissingInvoicesPage() {
            {selectedInvoiceForDetails && (
              <>
                <div className="px-6 py-4 flex items-center justify-between border-b border-border">
-                 <DialogTitle className="text-xl font-bold text-slate-900 dark:text-slate-100">{selectedInvoiceForDetails.subtext}</DialogTitle>
-                 <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-full mr-6">
+                 <DialogTitle className="text-xl font-bold text-foreground">{selectedInvoiceForDetails.subtext}</DialogTitle>
+                 <span className="px-3 py-1 bg-muted text-foreground/90 text-xs font-semibold rounded-full mr-6">
                    {selectedInvoiceForDetails.status}
                  </span>
                </div>
                
                <div className="px-6 py-5 grid grid-cols-2 gap-y-6 gap-x-4">
                  <div>
-                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Sz&#225;ll&#237;t&#243; neve</p>
-                   <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{selectedInvoiceForDetails.vendor}</p>
+                   <p className="text-xs text-muted-foreground mb-1">Sz&#225;ll&#237;t&#243; neve</p>
+                   <p className="text-sm font-medium text-foreground">{selectedInvoiceForDetails.vendor}</p>
                  </div>
                  <div>
-                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Azonos&#237;t&#225;s m&#243;dja</p>
-                   <span className="inline-block px-2.5 py-0.5 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-border rounded-md text-xs font-medium">
+                   <p className="text-xs text-muted-foreground mb-1">Azonos&#237;t&#225;s m&#243;dja</p>
+                   <span className="inline-block px-2.5 py-0.5 bg-muted text-muted-foreground border border-border rounded-md text-xs font-medium">
                      {selectedInvoiceForDetails.source}
                    </span>
                  </div>
                  <div>
-                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Becs&#252;lt &#246;sszeg</p>
-                   <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{selectedInvoiceForDetails.amount}</p>
+                   <p className="text-xs text-muted-foreground mb-1">Becs&#252;lt &#246;sszeg</p>
+                   <p className="text-sm font-medium text-foreground">{selectedInvoiceForDetails.amount}</p>
                  </div>
                  <div>
-                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">V&#225;rhat&#243; id&#337;szak</p>
-                   <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{selectedInvoiceForDetails.period}</p>
+                   <p className="text-xs text-muted-foreground mb-1">V&#225;rhat&#243; id&#337;szak</p>
+                   <p className="text-sm font-medium text-foreground">{selectedInvoiceForDetails.period}</p>
                  </div>
                  <div>
-                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Priorit&#225;s</p>
+                   <p className="text-xs text-muted-foreground mb-1">Priorit&#225;s</p>
                    {getPriorityBadge(selectedInvoiceForDetails.priority)}
                  </div>
                  <div>
-                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Hozz&#225;adva</p>
-                   <p className="text-sm font-medium text-slate-900 dark:text-slate-100">2024-01-10</p>
+                   <p className="text-xs text-muted-foreground mb-1">Hozz&#225;adva</p>
+                   <p className="text-sm font-medium text-foreground">2024-01-10</p>
                  </div>
                </div>
 
                <div className="px-6 py-5 border-t border-border">
-                 <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-4">NAV adatok</h3>
+                 <h3 className="text-sm font-bold text-foreground mb-4">NAV adatok</h3>
                  <div className="grid grid-cols-2 gap-4">
                    <div>
-                     <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">NAV sz&#225;mla azonos&#237;t&#243;</p>
-                     <p className="text-sm font-medium text-slate-900 dark:text-slate-100">N/A</p>
+                     <p className="text-xs text-muted-foreground mb-1">NAV sz&#225;mla azonos&#237;t&#243;</p>
+                     <p className="text-sm font-medium text-foreground">N/A</p>
                    </div>
                    <div>
-                     <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Sz&#225;ll&#237;t&#243; ad&#243;sz&#225;ma</p>
-                     <p className="text-sm font-medium text-slate-900 dark:text-slate-100">N/A</p>
+                     <p className="text-xs text-muted-foreground mb-1">Sz&#225;ll&#237;t&#243; ad&#243;sz&#225;ma</p>
+                     <p className="text-sm font-medium text-foreground">N/A</p>
                    </div>
                  </div>
                </div>
 
                <div className="px-6 py-5 border-t border-border">
-                 <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-4">Bek&#233;r&#233;si el&#337;zm&#233;nyek</h3>
+                 <h3 className="text-sm font-bold text-foreground mb-4">Bek&#233;r&#233;si el&#337;zm&#233;nyek</h3>
                  <div className="space-y-3">
-                   <div className="flex items-center justify-between p-3 bg-card border border-border rounded-xl shadow-soft">
+                   <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg shadow-soft">
                      <div className="flex items-center gap-3">
-                       <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-400 border border-border">
+                       <div className="p-2 bg-muted rounded-lg text-muted-foreground border border-border">
                          <Mail className="w-4 h-4" />
                        </div>
                        <div>
-                         <p className="text-sm font-medium text-slate-900 dark:text-slate-100">2024-02-10 14:30</p>
-                         <p className="text-xs text-slate-500 dark:text-slate-400">Email</p>
+                         <p className="text-sm font-medium text-foreground">2024-02-10 14:30</p>
+                         <p className="text-xs text-muted-foreground">Email</p>
                        </div>
                      </div>
                      <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full">
                        Megnyitva
                      </span>
                    </div>
-                   <div className="flex items-center justify-between p-3 bg-card border border-border rounded-xl shadow-soft">
+                   <div className="flex items-center justify-between p-3 bg-card border border-border rounded-lg shadow-soft">
                      <div className="flex items-center gap-3">
-                       <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-400 border border-border">
+                       <div className="p-2 bg-muted rounded-lg text-muted-foreground border border-border">
                          <Mail className="w-4 h-4" />
                        </div>
                        <div>
-                         <p className="text-sm font-medium text-slate-900 dark:text-slate-100">2024-02-05 09:15</p>
-                         <p className="text-xs text-slate-500 dark:text-slate-400">Email</p>
+                         <p className="text-sm font-medium text-foreground">2024-02-05 09:15</p>
+                         <p className="text-xs text-muted-foreground">Email</p>
                        </div>
                      </div>
-                     <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-semibold rounded-full border border-border">
+                     <span className="px-3 py-1 bg-muted text-muted-foreground text-xs font-semibold rounded-full border border-border">
                        Elk&#252;ldve
                      </span>
                    </div>
                  </div>
                </div>
 
-               <div className="px-6 py-4 bg-slate-50/80 dark:bg-slate-800/80 border-t border-border flex items-center justify-between">
+               <div className="px-6 py-4 bg-muted/40/80 dark:bg-muted/80 border-t border-border flex items-center justify-between">
                  <button 
-                   className="px-4 py-2.5 bg-card border border-border text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors shadow-soft"
+                   className="px-4 py-2.5 bg-card border border-border text-foreground/90 rounded-lg text-sm font-medium hover:bg-muted/50 transition-colors shadow-soft"
                    onClick={() => setSelectedInvoiceForDetails(null)}
                  >
                    T&#233;ves azonos&#237;t&#225;s
                  </button>
                  <div className="flex items-center gap-3">
                    <button 
-                     className="flex items-center gap-2 px-4 py-2.5 bg-card border border-border text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors shadow-soft"
+                     className="flex items-center gap-2 px-4 py-2.5 bg-card border border-border text-foreground/90 rounded-lg text-sm font-medium hover:bg-muted/50 transition-colors shadow-soft"
                      onClick={() => setSelectedInvoiceForDetails(null)}
                    >
-                     <CheckCircle className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                     <CheckCircle className="w-4 h-4 text-muted-foreground" />
                      Meg&#233;rkezett a sz&#225;mla
                    </button>
                    <button 
-                     className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors shadow-soft"
+                     className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors shadow-soft"
                      onClick={() => setSelectedInvoiceForDetails(null)}
                    >
                      <Mail className="w-4 h-4" />
@@ -448,7 +458,7 @@ export default function MissingInvoicesPage() {
        {/* Toolbar */}
        <div className="flex justify-between items-center py-2">
          <div className="w-72 relative">
-           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
            <Input 
              placeholder={"Keres\u00E9s \u00FCgyf\u00E9l..."} 
              className="pl-9 bg-card border-border" 
@@ -472,90 +482,86 @@ export default function MissingInvoicesPage() {
        </div>
 
        {/* Table */}
-       <div className="bg-card border border-border rounded-xl shadow-soft overflow-hidden">
-         <table className="w-full text-sm text-left">
-           <thead className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-border text-slate-500 dark:text-slate-400 font-medium text-xs uppercase tracking-wider">
-             <tr>
-               <th className="px-6 py-4 w-12 text-center"><input type="checkbox" className="rounded border-slate-300 w-4 h-4 accent-slate-900" /></th>
-               <th className="px-6 py-4">&#220;gyf&#233;l</th>
-               <th className="px-6 py-4 text-center">Hi&#225;nyz&#243;</th>
-               <th className="px-6 py-4 text-center">Kritikus</th>
-               <th className="px-6 py-4">Utols&#243; felsz&#243;l&#237;t&#225;s</th>
-               <th className="px-6 py-4">St&#225;tusz</th>
-               <th className="px-6 py-4 w-12 text-center"></th>
-             </tr>
-           </thead>
-           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+       <div className="bg-card border border-border rounded-lg overflow-hidden">
+         <Table className="compact-table min-w-[900px]">
+           <TableHeader>
+             <TableRow className="bg-muted/40 border-b border-border">
+               <TableHead className="px-6 py-4 w-12 text-center"><Checkbox /></TableHead>
+               <TableHead className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ügyfél</TableHead>
+               <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Hiányzó</TableHead>
+               <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Kritikus</TableHead>
+               <TableHead className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Utolsó felszólítás</TableHead>
+               <TableHead className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Státusz</TableHead>
+               <TableHead className="px-6 py-4 w-12 text-center"></TableHead>
+             </TableRow>
+           </TableHeader>
+           <TableBody>
              {filteredData.length > 0 ? (
                paginatedData.map((row) => (
-               <tr 
+               <TableRow 
                  key={row.id} 
                  onClick={() => navigate(`/eaisybooks/missing-invoices/${row.id}`)}
-                 className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
+                 className="hover:bg-muted/40 transition-colors group cursor-pointer border-l-2 border-l-transparent hover:border-l-primary"
                >
-                 <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}><input type="checkbox" className="rounded border-slate-300 w-4 h-4 accent-slate-900" /></td>
-                 <td className="px-6 py-4 font-semibold text-slate-900 dark:text-slate-100 hover:text-primary transition-colors">{row.name}</td>
-                 <td className="px-6 py-4 text-center">
-                   <span className="w-7 h-7 rounded-full border border-border bg-card shadow-soft flex items-center justify-center mx-auto text-xs font-semibold text-slate-700 dark:text-slate-300">{row.missing}</span>
-                 </td>
-                 <td className="px-6 py-4 text-center">
+                 <TableCell className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}><Checkbox /></TableCell>
+                 <TableCell className="px-6 py-4 font-semibold text-foreground hover:text-primary transition-colors">{row.name}</TableCell>
+                 <TableCell className="px-6 py-4 text-center">
+                   <span className="w-7 h-7 rounded-md border border-border bg-card flex items-center justify-center mx-auto text-xs font-mono tabular-nums text-foreground">{row.missing}</span>
+                 </TableCell>
+                 <TableCell className="px-6 py-4 text-center">
                    {row.critical > 0 ? (
-                     <span className="w-7 h-7 rounded-full bg-red-50 dark:bg-red-900/40 text-red-600 dark:text-red-400 flex items-center justify-center mx-auto text-xs font-semibold">{row.critical}</span>
-                   ) : <span className="text-slate-300">-</span>}
-                 </td>
-                 <td className="px-6 py-4 text-slate-500 dark:text-slate-400">
+                     <span className="w-7 h-7 rounded-md bg-destructive/10 text-destructive flex items-center justify-center mx-auto text-xs font-mono tabular-nums font-semibold">{row.critical}</span>
+                   ) : <span className="text-muted-foreground/60">-</span>}
+                 </TableCell>
+                 <TableCell className="px-6 py-4 text-muted-foreground">
                    {row.lastNotice !== '-' ? (
                      <div className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> {row.lastNotice}</div>
                    ) : '-'}
-                 </td>
-                 <td className="px-6 py-4">
+                 </TableCell>
+                 <TableCell className="px-6 py-4">
                    <span className={cn(
-                     "px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider",
-                     row.statusType === 'danger' && "bg-red-50 dark:bg-red-900/40 text-red-600 dark:text-red-400",
-                     row.statusType === 'warning' && "bg-amber-50 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400",
-                     row.statusType === 'neutral' && "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
+                     "px-2 py-0.5 rounded-sm text-[11px] font-semibold uppercase tracking-wider",
+                     row.statusType === 'danger' && "bg-destructive/10 text-destructive",
+                     row.statusType === 'warning' && "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+                     row.statusType === 'neutral' && "bg-muted text-muted-foreground"
                    )}>
                      {row.status}
                    </span>
-                 </td>
-                 <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
+                 </TableCell>
+                 <TableCell className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                    <DropdownMenu>
                      <DropdownMenuTrigger asChild>
-                       <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 dark:text-slate-400 p-1 transition-colors">
+                       <button className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted transition-colors">
                          <MoreVertical className="w-4 h-4" />
                        </button>
                      </DropdownMenuTrigger>
                      <DropdownMenuContent align="end" className="w-48">
                        <DropdownMenuItem onClick={() => navigate(`/eaisybooks/missing-invoices/${row.id}`)} className="cursor-pointer">
                          <ChevronRight className="w-4 h-4 mr-2" />
-                         R&#233;szletek
+                         Részletek
                        </DropdownMenuItem>
                        <DropdownMenuItem className="cursor-pointer">
                          <Mail className="w-4 h-4 mr-2" />
-                         Email k&#252;ld&#233;s
+                         Email küldés
                        </DropdownMenuItem>
                        <DropdownMenuItem className="cursor-pointer">
                          <Phone className="w-4 h-4 mr-2" />
-                         AI telefonh&#237;v&#225;s
+                         AI telefonhívás
                        </DropdownMenuItem>
                        <DropdownMenuItem className="cursor-pointer text-primary focus:text-primary focus:bg-accent-subtle">
                          <CheckCircle2 className="w-4 h-4 mr-2" />
-                         Meg&#233;rkezettnek jel&#246;l
+                         Megérkezettnek jelöl
                        </DropdownMenuItem>
                      </DropdownMenuContent>
                    </DropdownMenu>
-                 </td>
-               </tr>
+                 </TableCell>
+               </TableRow>
              ))
            ) : (
-             <tr>
-               <td colSpan={7} className="text-center py-12 text-slate-500 dark:text-slate-400">
-                 Nincs tal&#225;lat a keres&#233;sre.
-               </td>
-             </tr>
+             <TableEmptyState colSpan={7} title="Nincs találat" description="A megadott szűrők alapján nincs megjeleníthető ügyfél." />
            )}
-           </tbody>
-         </table>
+           </TableBody>
+         </Table>
        </div>
        {totalPages > 1 && (
          <div className="border-t border-border px-6 py-4 bg-card">

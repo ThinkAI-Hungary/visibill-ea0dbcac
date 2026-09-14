@@ -8,6 +8,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { parseFiling08Xml, readTextFileWithEncoding, type Parsed08Document } from '@/lib/payroll/nav08XmlParser';
@@ -152,7 +153,7 @@ export function PayrollReconstructionDialog({
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg text-white shadow-md">
+            <div className="p-2 bg-gradient-to-br from-blue-500 to-primary rounded-lg text-white shadow-md">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
@@ -166,7 +167,7 @@ export function PayrollReconstructionDialog({
                   </Badge>
                 )}
               </div>
-              <DialogDescription className="text-xs text-slate-500">
+              <DialogDescription className="text-xs text-muted-foreground">
                 Korábban beadott NAV 08 (2608 / 2508 / 2408) ÁNYK XML fájlok tömeges beolvasása és havi bérszámfejtési ciklusok felépítése
               </DialogDescription>
             </div>
@@ -178,10 +179,10 @@ export function PayrollReconstructionDialog({
           {/* Drag and Drop Zone */}
           <div
             className={cn(
-              'border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer bg-slate-50/50 dark:bg-slate-900/30',
+              'border-2 border-dashed rounded-lg p-8 text-center transition-all cursor-pointer bg-muted/40/50 dark:bg-card/30',
               dragging
                 ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20 scale-[1.01]'
-                : 'border-slate-300 dark:border-slate-700 hover:border-blue-400'
+                : 'border-border hover:border-blue-400'
             )}
             onDragOver={(e) => {
               e.preventDefault();
@@ -192,10 +193,10 @@ export function PayrollReconstructionDialog({
             onClick={() => fileInputRef.current?.click()}
           >
             <Upload className="w-10 h-10 mx-auto mb-3 text-blue-500" />
-            <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
+            <p className="font-semibold text-foreground text-sm">
               Húzd ide a havi 08-as ÁNYK XML fájlokat (egyszerre akár több hónapot is)
             </p>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Támogatott: 2608, 2508, 2408 ÁNYK és szoftver-export XML fájlok
             </p>
             <input
@@ -215,14 +216,14 @@ export function PayrollReconstructionDialog({
           {sortedDocs.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                   <Layers className="w-3.5 h-3.5" /> Beolvasott Havi Bevallások ({sortedDocs.length} hónap)
                 </h4>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setDocuments([])}
-                  className="h-7 text-xs text-slate-500 hover:text-red-600"
+                  className="h-7 text-xs text-muted-foreground hover:text-red-600"
                 >
                   Összes törlése
                 </Button>
@@ -237,19 +238,19 @@ export function PayrollReconstructionDialog({
                   return (
                     <div
                       key={idx}
-                      className="bg-card border border-border rounded-xl p-3.5 flex flex-col justify-between shadow-xs hover:border-blue-400 transition-colors"
+                      className="bg-card border border-border rounded-lg p-3.5 flex flex-col justify-between shadow-xs hover:border-blue-400 transition-colors"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                            <span className="font-bold text-sm text-foreground">
                               {doc.year}. {MONTH_NAMES[doc.month - 1] || `${doc.month}. hónap`}
                             </span>
                             <Badge variant="secondary" className="text-[10px] py-0 px-1.5 font-mono">
                               NAV {doc.filingType}
                             </Badge>
                           </div>
-                          <p className="text-[11px] text-slate-500 mt-0.5">
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
                             {doc.employeeCount} biztosított dolgozó
                           </p>
                         </div>
@@ -257,7 +258,7 @@ export function PayrollReconstructionDialog({
                           variant="ghost"
                           size="sm"
                           onClick={() => removeDoc(idx)}
-                          className="h-6 w-6 p-0 text-slate-400 hover:text-red-500"
+                          className="h-6 w-6 p-0 text-muted-foreground hover:text-red-500"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
@@ -265,13 +266,13 @@ export function PayrollReconstructionDialog({
 
                       <div className="mt-3 pt-2.5 border-t border-border grid grid-cols-2 gap-2 text-[11px]">
                         <div>
-                          <span className="text-slate-400">Bruttó Bér:</span>
-                          <p className="font-mono font-semibold text-slate-800 dark:text-slate-200">
+                          <span className="text-muted-foreground">Bruttó Bér:</span>
+                          <p className="font-mono font-semibold text-foreground">
                             {doc.totalGrossSalary.toLocaleString('hu-HU')} Ft
                           </p>
                         </div>
                         <div>
-                          <span className="text-slate-400">Kifizetendő Nettó:</span>
+                          <span className="text-muted-foreground">Kifizetendő Nettó:</span>
                           <p className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">
                             {doc.totalNetSalary.toLocaleString('hu-HU')} Ft
                           </p>
@@ -290,31 +291,31 @@ export function PayrollReconstructionDialog({
               </div>
 
               {/* Aggregated Totals Card */}
-              <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-xl p-4 shadow-md mt-4">
-                <div className="text-xs uppercase font-bold text-slate-400 tracking-wider mb-2">
+              <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-lg p-4 shadow-md mt-4">
+                <div className="text-xs uppercase font-bold text-muted-foreground tracking-wider mb-2">
                   Összesített Rekonstrukciós Hatás ({sortedDocs.length} hónap)
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                   <div>
-                    <span className="text-slate-400">Összesített Bruttó:</span>
+                    <span className="text-muted-foreground">Összesített Bruttó:</span>
                     <p className="text-sm font-bold font-mono text-white">
                       {totalGrossCombined.toLocaleString('hu-HU')} Ft
                     </p>
                   </div>
                   <div>
-                    <span className="text-slate-400">Összes Levont Közteher:</span>
+                    <span className="text-muted-foreground">Összes Levont Közteher:</span>
                     <p className="text-sm font-bold font-mono text-blue-300">
                       {totalTaxesCombined.toLocaleString('hu-HU')} Ft
                     </p>
                   </div>
                   <div>
-                    <span className="text-slate-400">Kifizetett Nettó:</span>
+                    <span className="text-muted-foreground">Kifizetett Nettó:</span>
                     <p className="text-sm font-bold font-mono text-emerald-400">
                       {totalNetCombined.toLocaleString('hu-HU')} Ft
                     </p>
                   </div>
                   <div>
-                    <span className="text-slate-400">Biztosítottak:</span>
+                    <span className="text-muted-foreground">Biztosítottak:</span>
                     <p className="text-sm font-bold text-white">
                       {totalEmployeesCombined} havi tétel
                     </p>
@@ -323,15 +324,13 @@ export function PayrollReconstructionDialog({
               </div>
 
               {/* Overwrite checkbox */}
-              <div className="flex items-center gap-2 pt-1 text-xs text-slate-600 dark:text-slate-400">
-                <input
-                  type="checkbox"
+              <div className="flex items-center gap-2 pt-1 text-xs text-muted-foreground">
+                <Checkbox
                   id="overwriteCycles"
                   checked={overwriteExisting}
-                  onChange={(e) => setOverwriteExisting(e.target.checked)}
-                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  onCheckedChange={(checked) => setOverwriteExisting(!!checked)}
                 />
-                <label htmlFor="overwriteCycles" className="cursor-pointer">
+                <label htmlFor="overwriteCycles" className="cursor-pointer select-none">
                   Meglévő bérszámfejtési ciklusok felülírása és újraszámolása a 08-as XML adatai alapján
                 </label>
               </div>
@@ -340,7 +339,7 @@ export function PayrollReconstructionDialog({
 
           {/* Progress loader while processing */}
           {isProcessing && (
-            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-4 text-center space-y-2">
+            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-center space-y-2">
               <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-600" />
               <p className="text-xs font-semibold text-blue-900 dark:text-blue-200">
                 {progress.message || 'Bérszámfejtési ciklusok felépítése...'}

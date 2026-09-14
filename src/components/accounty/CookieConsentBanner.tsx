@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Cookie, Settings, Check } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 
 const COOKIE_CONSENT_KEY = 'accounty_cookie_consent';
@@ -68,11 +69,11 @@ export default function CookieConsentBanner() {
       "fixed bottom-0 left-0 right-0 z-[9999] p-4 transition-all duration-500",
       visible ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
     )}>
-      <div className="max-w-2xl mx-auto bg-popover border border-border rounded-2xl shadow-xl overflow-hidden">
+      <div className="max-w-2xl mx-auto bg-popover border border-border rounded-lg shadow-xl overflow-hidden">
         {/* Main bar */}
         <div className="p-5">
           <div className="flex items-start gap-4">
-            <div className="p-2 bg-primary/15 rounded-xl shrink-0">
+            <div className="p-2 bg-primary/15 rounded-lg shrink-0">
               <Cookie className="w-5 h-5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
@@ -130,15 +131,14 @@ export default function CookieConsentBanner() {
                   cookie.disabled && "cursor-default"
                 )}
               >
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={cookie.checked}
                   disabled={cookie.disabled}
-                  onChange={() => {
+                  onCheckedChange={() => {
                     if (cookie.id === 'functional') setFunctional(!functional);
                     if (cookie.id === 'analytics') setAnalytics(!analytics);
                   }}
-                  className="mt-0.5 accent-primary"
+                  className="mt-0.5"
                 />
                 <div>
                   <p className="text-xs font-bold text-foreground flex items-center gap-2">

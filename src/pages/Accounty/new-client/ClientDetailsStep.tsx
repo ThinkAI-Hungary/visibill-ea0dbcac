@@ -73,37 +73,37 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
   } = props;
 
   return (
-    <div className="animate-in fade-in duration-500">
+    <div className="page-animate">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Add hozzá az első ügyfeledet</h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">Később bármikor hozzáadhatsz többet</p>
+        <h1 className="text-2xl font-bold text-foreground">Add hozzá az első ügyfeledet</h1>
+        <p className="text-muted-foreground mt-1">Később bármikor hozzáadhatsz többet</p>
       </div>
 
       {/* Prep Toggle */}
       <div className="flex p-1 bg-muted/80 rounded-full mb-8 max-w-sm mx-auto border border-border/60">
         <button 
           onClick={() => setUseVisibillAccount(true)}
-          className={cn("flex-1 py-2 px-4 text-sm font-medium rounded-full flex items-center justify-center gap-2 transition-all", useVisibillAccount ? "bg-card shadow-soft text-slate-900 dark:text-slate-100" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300")}
+          className={cn("flex-1 py-2 px-4 text-sm font-medium rounded-full flex items-center justify-center gap-2 transition-all", useVisibillAccount ? "bg-card shadow-soft text-foreground" : "text-muted-foreground hover:text-foreground/90 dark:hover:text-foreground dark:text-foreground/90")}
         >
           <svg className="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
           Van Visibill fiókja
         </button>
         <button 
           onClick={() => setUseVisibillAccount(false)}
-          className={cn("flex-1 py-2 px-4 text-sm font-medium rounded-full flex items-center justify-center gap-2 transition-all", !useVisibillAccount ? "bg-card shadow-soft text-slate-900 dark:text-slate-100" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300")}
+          className={cn("flex-1 py-2 px-4 text-sm font-medium rounded-full flex items-center justify-center gap-2 transition-all", !useVisibillAccount ? "bg-card shadow-soft text-foreground" : "text-muted-foreground hover:text-foreground/90 dark:hover:text-foreground dark:text-foreground/90")}
         >
           <Building2 className="w-4 h-4 opacity-70" /> Manuálisan adom hozzá
         </button>
       </div>
 
       {useVisibillAccount ? (
-        <div className="bg-card rounded-xl p-6 border border-border shadow-soft animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-1">Ügyfelemnek van Visibill fiókja</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Az ügyfeled eaisybill fiókjából generált meghívó kóddal tudod hozzáadni</p>
+        <div className="bg-card rounded-lg p-6 border border-border shadow-soft page-animate slide-in-from-bottom-2 duration-300">
+          <h2 className="text-xl font-bold text-foreground mb-1">Ügyfelemnek van Visibill fiókja</h2>
+          <p className="text-sm text-muted-foreground mb-6">Az ügyfeled eaisybill fiókjából generált meghívó kóddal tudod hozzáadni</p>
           
-          <div className="bg-slate-100 dark:bg-slate-800 rounded-lg p-5 mb-6">
-            <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">Így működik:</h3>
-            <ol className="space-y-1.5 text-sm text-slate-600 dark:text-slate-400">
+          <div className="bg-muted rounded-lg p-5 mb-6">
+            <h3 className="font-semibold text-foreground mb-2">Így működik:</h3>
+            <ol className="space-y-1.5 text-sm text-muted-foreground">
               <li>1. Kérd meg az ügyfelet, hogy generáljon meghívó kódot az eaisybill Beállításokban</li>
               <li>2. Írd be ide a kapott kódot és ellenőrizd</li>
               <li>3. Ha érvényes, add hozzá az ügyfelet</li>
@@ -111,12 +111,12 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
           </div>
 
           <div className="space-y-2 mb-8">
-            <Label className="text-sm font-medium text-slate-900 dark:text-slate-100">Meghívó kód</Label>
+            <Label className="text-sm font-medium text-foreground">Meghívó kód</Label>
             <Input 
               placeholder="pl. A1B2C3" 
               value={inviteCode}
               onChange={(e) => { setInviteCode(e.target.value.toUpperCase()); setCodeStatus('idle'); setLinkedCompany(null); }}
-              className="bg-slate-50/50 dark:bg-slate-900/50 border-border font-mono uppercase tracking-widest text-lg" 
+              className="bg-muted/40/50 dark:bg-card/50 border-border font-mono uppercase tracking-widest text-lg" 
             />
             {codeStatus === 'valid' && linkedCompany && (
               <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm mt-2 p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg border border-emerald-200 dark:border-emerald-800">
@@ -145,7 +145,7 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
           </div>
 
           <div className="flex justify-end gap-3 pt-2 border-t border-border mt-4">
-            <Button variant="outline" onClick={() => navigate('/eaisybooks')} className="border-border text-slate-700 dark:text-slate-300">
+            <Button variant="outline" onClick={() => navigate('/eaisybooks')} className="border-border text-foreground/90">
               Mégse
             </Button>
             {codeStatus === 'valid' ? (
@@ -176,15 +176,15 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
           </div>
         </div>
       ) : (
-      <form className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300" onSubmit={(e) => { e.preventDefault(); handleNext(); }}>
+      <form className="space-y-6 page-animate slide-in-from-bottom-2 duration-300" onSubmit={(e) => { e.preventDefault(); handleNext(); }}>
         {/* Section 1: Client Data */}
-        <div className="bg-card rounded-xl p-6 border border-border shadow-soft">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">Ügyfél adatai</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Az ügyfél nem használ Visibill-t</p>
+        <div className="bg-card rounded-lg p-6 border border-border shadow-soft">
+          <h2 className="text-lg font-semibold text-foreground mb-1">Ügyfél adatai</h2>
+          <p className="text-xs text-muted-foreground mb-6">Az ügyfél nem használ Visibill-t</p>
           
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-xs text-slate-700 dark:text-slate-300">Cégnév <span className="text-red-500">*</span></Label>
+              <Label className="text-xs text-foreground/90">Cégnév <span className="text-red-500">*</span></Label>
               <Input 
                 placeholder="" 
                 required 
@@ -195,7 +195,7 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
               {validationErrors.clientName && <p className="text-xs text-red-500 mt-1">{validationErrors.clientName}</p>}
             </div>
             <div className="space-y-2">
-              <Label className="text-xs text-slate-700 dark:text-slate-300">Adószám <span className="text-red-500">*</span></Label>
+              <Label className="text-xs text-foreground/90">Adószám <span className="text-red-500">*</span></Label>
               <Input 
                 value={taxNumber}
                 onChange={(e) => { setTaxNumber(e.target.value); setValidationErrors(prev => { const n = {...prev}; delete n.taxNumber; return n; }); }}
@@ -208,15 +208,15 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
               {validationErrors.taxNumber && <p className="text-xs text-red-500 mt-1">{validationErrors.taxNumber}</p>}
             </div>
             <div className="space-y-2 col-span-2">
-              <Label className="text-xs text-slate-700 dark:text-slate-300">Kapcsolattartó neve <span className="text-red-500">*</span></Label>
+              <Label className="text-xs text-foreground/90">Kapcsolattartó neve <span className="text-red-500">*</span></Label>
               <Input placeholder="" required className="bg-card border-border" value={contactName} onChange={(e) => setContactName(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label className="text-xs text-slate-700 dark:text-slate-300">E-mail cím <span className="text-red-500">*</span></Label>
+              <Label className="text-xs text-foreground/90">E-mail cím <span className="text-red-500">*</span></Label>
               <Input type="email" placeholder="" required className="bg-card border-border" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label className="text-xs text-slate-700 dark:text-slate-300">Telefonszám</Label>
+              <Label className="text-xs text-foreground/90">Telefonszám</Label>
               <Input 
                 type="tel" 
                 pattern="^[\+]?[0-9\s\-\(\)]+$" 
@@ -228,7 +228,7 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
               />
             </div>
             <div className="space-y-2 col-span-2">
-              <Label className="text-xs text-slate-700 dark:text-slate-300 font-medium">Elsődleges TEÁOR kód</Label>
+              <Label className="text-xs text-foreground/90 font-medium">Elsődleges TEÁOR kód</Label>
               <Input 
                 placeholder="Pl. 6201" 
                 maxLength={4}
@@ -239,7 +239,7 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
             </div>
             <div className="space-y-2 col-span-2">
               <div className="flex items-center justify-between">
-                <Label className="text-xs text-slate-700 dark:text-slate-300 font-medium">Cég tevékenységének bemutatása (AI alapú kontírozáshoz)</Label>
+                <Label className="text-xs text-foreground/90 font-medium">Cég tevékenységének bemutatása (AI alapú kontírozáshoz)</Label>
                 <Button
                   type="button"
                   variant="ghost"
@@ -264,9 +264,9 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
         </div>
 
         {/* Section 1.5: Personal Data & ID Upload */}
-        <div className="bg-card rounded-xl p-6 border border-border shadow-soft">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">Személyes adatok és okmányok</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Személyi igazolvány és lakcímkártya feltöltése az automatikus kitöltéshez</p>
+        <div className="bg-card rounded-lg p-6 border border-border shadow-soft">
+          <h2 className="text-lg font-semibold text-foreground mb-1">Személyes adatok és okmányok</h2>
+          <p className="text-xs text-muted-foreground mb-6">Személyi igazolvány és lakcímkártya feltöltése az automatikus kitöltéshez</p>
           
           {!docsUploaded ? (
             <>
@@ -280,31 +280,31 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
               />
               <div 
                 className={cn(
-                  "border-2 border-dashed rounded-xl p-8 text-center transition-colors flex flex-col items-center justify-center gap-3",
-                  isUploadingDocs ? "border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/50" : "border-slate-200 hover:border-slate-300 dark:border-slate-800 dark:hover:border-slate-700 hover:bg-slate-50 dark:bg-slate-900 cursor-pointer"
+                  "border-2 border-dashed rounded-lg p-8 text-center transition-colors flex flex-col items-center justify-center gap-3",
+                  isUploadingDocs ? "border-border bg-muted/40 dark:border-border dark:bg-muted/50" : "border-border hover:border-border dark:border-border dark:hover:border-border hover:bg-background cursor-pointer"
                 )}
                 onClick={handleUploadClick}
               >
               {isUploadingDocs ? (
                 <>
-                  <div className="w-10 h-10 border-4 border-slate-200 border-t-primary dark:border-slate-700 dark:border-t-slate-300 rounded-full animate-spin"></div>
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Okmányok feldolgozása (OCR)...</p>
+                  <div className="w-10 h-10 border-4 border-border border-t-primary dark:border-border dark:border-t-slate-300 rounded-full animate-spin"></div>
+                  <p className="text-sm font-medium text-muted-foreground">Okmányok feldolgozása (OCR)...</p>
                 </>
               ) : (
                 <>
-                  <div className="w-12 h-12 rounded-full bg-card border border-border flex items-center justify-center shadow-soft text-slate-400">
+                  <div className="w-12 h-12 rounded-full bg-card border border-border flex items-center justify-center shadow-soft text-muted-foreground">
                     <FileText className="w-6 h-6" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Kattints ide a feltöltéshez</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Személyi igazolvány és Lakcímkártya (JPG, PNG, PDF)</p>
+                    <p className="text-sm font-semibold text-foreground">Kattints ide a feltöltéshez</p>
+                    <p className="text-xs text-muted-foreground mt-1">Személyi igazolvány és Lakcímkártya (JPG, PNG, PDF)</p>
                   </div>
                 </>
               )}
             </div>
           </>
           ) : (
-            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="space-y-4 page-animate slide-in-from-top-2 duration-300">
               <div className="flex items-center gap-2 mb-4 text-primary bg-accent-subtle dark:bg-accent px-4 py-3 rounded-lg border border-accent dark:border-accent">
                 <Check className="w-5 h-5 shrink-0" />
                 <p className="text-sm font-medium">Okmányok sikeresen feldolgozva. Kérjük, ellenőrizze az adatokat!</p>
@@ -312,27 +312,27 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-xs text-slate-700 dark:text-slate-300">Név <span className="text-red-500">*</span></Label>
+                  <Label className="text-xs text-foreground/90">Név <span className="text-red-500">*</span></Label>
                   <Input value={personalData.fullName} onChange={(e) => setPersonalData({...personalData, fullName: e.target.value})} required className="bg-card border-border" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs text-slate-700 dark:text-slate-300">Születési név</Label>
+                  <Label className="text-xs text-foreground/90">Születési név</Label>
                   <Input value={personalData.birthName} onChange={(e) => setPersonalData({...personalData, birthName: e.target.value})} className="bg-card border-border" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs text-slate-700 dark:text-slate-300">Anyja neve</Label>
+                  <Label className="text-xs text-foreground/90">Anyja neve</Label>
                   <Input value={personalData.mothersName} onChange={(e) => setPersonalData({...personalData, mothersName: e.target.value})} className="bg-card border-border" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs text-slate-700 dark:text-slate-300">Születési hely és idő</Label>
+                  <Label className="text-xs text-foreground/90">Születési hely és idő</Label>
                   <Input value={personalData.birthPlaceDate} onChange={(e) => setPersonalData({...personalData, birthPlaceDate: e.target.value})} className="bg-card border-border" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs text-slate-700 dark:text-slate-300">Szig. szám</Label>
+                  <Label className="text-xs text-foreground/90">Szig. szám</Label>
                   <Input value={personalData.idCardNumber} onChange={(e) => setPersonalData({...personalData, idCardNumber: e.target.value})} className="bg-card border-border" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs text-slate-700 dark:text-slate-300">Lakcím</Label>
+                  <Label className="text-xs text-foreground/90">Lakcím</Label>
                   <Input value={personalData.address} onChange={(e) => setPersonalData({...personalData, address: e.target.value})} className="bg-card border-border" />
                 </div>
               </div>
@@ -346,7 +346,7 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
                     setDocsUploaded(false);
                     setPersonalData({ fullName: '', birthName: '', mothersName: '', birthPlaceDate: '', idCardNumber: '', address: '' });
                   }}
-                  className="text-xs text-slate-500 hover:text-slate-700 border-border"
+                  className="text-xs text-muted-foreground hover:text-foreground/90 border-border"
                 >
                   Újrafeltöltés
                 </Button>
@@ -356,25 +356,25 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
         </div>
 
         {/* Section 2: Communication Channels */}
-        <div className="bg-card rounded-xl p-6 border border-border shadow-soft">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">Kommunikációs csatornák</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Hogyan kommunikálsz az ügyféllel?</p>
+        <div className="bg-card rounded-lg p-6 border border-border shadow-soft">
+          <h2 className="text-lg font-semibold text-foreground mb-1">Kommunikációs csatornák</h2>
+          <p className="text-xs text-muted-foreground mb-4">Hogyan kommunikálsz az ügyféllel?</p>
           
           <div className="grid grid-cols-3 gap-3">
             <button type="button" onClick={() => toggleChannel('email')}
-              className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedChannels.includes('email') ? "border-primary bg-card text-foreground" : "border-border bg-card hover:border-primary/40 text-slate-600 dark:text-slate-400")}>
+              className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedChannels.includes('email') ? "border-primary bg-card text-foreground" : "border-border bg-card hover:border-primary/40 text-muted-foreground")}>
               {selectedChannels.includes('email') && <Check className="w-4 h-4 text-primary shrink-0" />}
               <Mail className={cn("w-4 h-4 shrink-0", selectedChannels.includes('email') ? "text-primary" : "text-muted-foreground/60")} />
               E-mail
             </button>
             <button type="button" onClick={() => toggleChannel('viber')}
-              className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedChannels.includes('viber') ? "border-primary bg-card text-foreground" : "border-border bg-card hover:border-primary/40 text-slate-600 dark:text-slate-400")}>
+              className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedChannels.includes('viber') ? "border-primary bg-card text-foreground" : "border-border bg-card hover:border-primary/40 text-muted-foreground")}>
               {selectedChannels.includes('viber') && <Check className="w-4 h-4 text-primary shrink-0" />}
               <Smartphone className={cn("w-4 h-4 shrink-0", selectedChannels.includes('viber') ? "text-primary" : "text-muted-foreground/60")} />
               Viber
             </button>
             <button type="button" onClick={() => toggleChannel('telegram')}
-              className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedChannels.includes('telegram') ? "border-primary bg-card text-foreground" : "border-border bg-card hover:border-primary/40 text-slate-600 dark:text-slate-400")}>
+              className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedChannels.includes('telegram') ? "border-primary bg-card text-foreground" : "border-border bg-card hover:border-primary/40 text-muted-foreground")}>
               {selectedChannels.includes('telegram') && <Check className="w-4 h-4 text-primary shrink-0" />}
               <Send className={cn("w-4 h-4 shrink-0", selectedChannels.includes('telegram') ? "text-primary" : "text-muted-foreground/60")} />
               Telegram
@@ -383,9 +383,9 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
         </div>
 
         {/* Section 3: Documents */}
-        <div className="bg-card rounded-xl p-6 border border-border shadow-soft">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">Bekérendő dokumentumok</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Milyen dokumentumokat kérsz be rendszeresen?</p>
+        <div className="bg-card rounded-lg p-6 border border-border shadow-soft">
+          <h2 className="text-lg font-semibold text-foreground mb-1">Bekérendő dokumentumok</h2>
+          <p className="text-xs text-muted-foreground mb-4">Milyen dokumentumokat kérsz be rendszeresen?</p>
           
           <div className="grid grid-cols-2 gap-3">
             {[
@@ -395,7 +395,7 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
               { id: 'berszamfejtes', label: 'Bérszámfejtési dokumentumok' },
             ].map(doc => (
               <button key={doc.id} type="button" onClick={() => toggleDoc(doc.id)}
-                className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedDocs.includes(doc.id) ? "border-primary bg-card text-foreground" : "border-border bg-card hover:border-primary/40 text-slate-600 dark:text-slate-400")}>
+                className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedDocs.includes(doc.id) ? "border-primary bg-card text-foreground" : "border-border bg-card hover:border-primary/40 text-muted-foreground")}>
                 <div className={cn("w-4 h-4 rounded-full flex items-center justify-center shrink-0", selectedDocs.includes(doc.id) ? "bg-primary text-primary-foreground" : "border border-border")}>
                   {selectedDocs.includes(doc.id) && <Check className="w-3 h-3" />}
                 </div>

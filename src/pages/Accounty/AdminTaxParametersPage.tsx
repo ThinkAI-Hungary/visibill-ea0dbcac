@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Calculator, Search, Edit3, Check, X, Copy, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/ui/page-header';
 import { Input } from '@/components/ui/input';
 import { useGlobalTaxParams, useUpdateGlobalTaxParam, useDuplicateTaxYear } from '@/hooks/useAdminData';
 import { useToast } from '@/hooks/use-toast';
@@ -78,67 +79,62 @@ export default function AdminTaxParametersPage() {
   const cancelEdit = () => setEditId(null);
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl shadow-lg shadow-orange-500/25">
-            <Calculator className="w-5 h-5 text-white" />
+      <PageHeader
+        title="Adómértékek és küszöbök"
+        description={`Globális paramétertábla — ${selectedYear}`}
+        actions={
+          <div className="flex items-center gap-2">
+            <select
+              value={selectedYear}
+              onChange={e => setSelectedYear(parseInt(e.target.value))}
+              className="rounded-lg border border-border bg-card px-3 py-2 text-sm"
+            >
+              {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => {
+                if (confirm(`${selectedYear}-es paraméterek másolása ${selectedYear + 1}-re?`)) {
+                  duplicateYear.mutate({ fromYear: selectedYear, toYear: selectedYear + 1 });
+                }
+              }}
+            >
+              <Copy className="w-4 h-4" />
+              {selectedYear + 1} előkészítése
+            </Button>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Adómértékek és küszöbök</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Globális paramétertábla — {selectedYear}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <select
-            value={selectedYear}
-            onChange={e => setSelectedYear(parseInt(e.target.value))}
-            className="rounded-lg border border-border bg-card px-3 py-2 text-sm"
-          >
-            {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
-          </select>
-          <Button
-            variant="outline"
-            className="gap-2"
-            onClick={() => {
-              if (confirm(`${selectedYear}-es paraméterek másolása ${selectedYear + 1}-re?`)) {
-                duplicateYear.mutate({ fromYear: selectedYear, toYear: selectedYear + 1 });
-              }
-            }}
-          >
-            <Copy className="w-4 h-4" />
-            {selectedYear + 1} előkészítése
-          </Button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Search */}
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input placeholder="Keresés paraméter neve..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 bg-card border-border" />
       </div>
 
       {/* Table */}
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-border dark:bg-slate-900/30">
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Paraméter</th>
-              <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Érték {selectedYear}</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Jogalap</th>
-              <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider"></th>
+            <tr className="border-b border-border dark:bg-card/30">
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Paraméter</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Érték {selectedYear}</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Jogalap</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/50">
             {isLoading ? (
               Array.from({ length: 10 }).map((_, i) => (
-                <tr key={i}><td colSpan={4} className="px-4 py-3"><div className="h-4 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" /></td></tr>
+                <tr key={i}><td colSpan={4} className="px-4 py-3"><div className="h-4 bg-muted rounded animate-pulse" /></td></tr>
               ))
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={4} className="py-16 text-center text-sm text-slate-400">
-                  <Calculator className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+                <td colSpan={4} className="py-16 text-center text-sm text-muted-foreground">
+                  <Calculator className="w-10 h-10 mx-auto mb-3 text-muted-foreground/60" />
                   {params.length === 0 ? `Nincs paraméter a(z) ${selectedYear}. évre` : 'Nincs találat'}
                 </td>
               </tr>
@@ -146,10 +142,10 @@ export default function AdminTaxParametersPage() {
               filtered.map((p: any) => {
                 const isEditing = editId === p.id;
                 return (
-                  <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                  <tr key={p.id} className="hover:bg-muted/50 transition-colors group">
                     <td className="px-4 py-3">
-                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{PARAM_LABELS[p.key] || p.key}</p>
-                      <p className="text-[10px] font-mono text-slate-400">{p.key}</p>
+                      <p className="text-sm font-medium text-foreground">{PARAM_LABELS[p.key] || p.key}</p>
+                      <p className="text-[10px] font-mono text-muted-foreground">{p.key}</p>
                     </td>
                     <td className="px-4 py-3 text-right">
                       {isEditing ? (
@@ -168,7 +164,7 @@ export default function AdminTaxParametersPage() {
                       {isEditing ? (
                         <Input value={editRef} onChange={e => setEditRef(e.target.value)} className="w-40 h-8 text-xs" placeholder="Jogszabály..." />
                       ) : (
-                        <span className="text-xs text-slate-500 italic">{p.legal_reference || '-'}</span>
+                        <span className="text-xs text-muted-foreground italic">{p.legal_reference || '-'}</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -179,7 +175,7 @@ export default function AdminTaxParametersPage() {
                         </div>
                       ) : (
                         <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => startEdit(p)}>
-                          <Edit3 className="w-3.5 h-3.5 text-slate-400" />
+                          <Edit3 className="w-3.5 h-3.5 text-muted-foreground" />
                         </Button>
                       )}
                     </td>

@@ -12,7 +12,7 @@ export default function ClientPayrollTab({ client }: ClientPayrollTabProps) {
   const navigate = useNavigate();
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-6 page-animate slide-in-from-bottom-4 duration-500">
       {/* SzochoAdvisor */}
       <SzochoAdvisor companyId={client.id} />
 
@@ -20,40 +20,40 @@ export default function ClientPayrollTab({ client }: ClientPayrollTabProps) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <button
           onClick={() => navigate(`/eaisybooks/payroll/${client.id}`)}
-          className="bg-card rounded-xl border border-border shadow-soft p-6 text-left hover:shadow-lg hover:border-primary/30 hover:-translate-y-0.5 transition-all group"
+          className="bg-card rounded-lg border border-border shadow-soft p-6 text-left hover:border-primary/30 hover:-translate-y-0.5 transition-all group"
         >
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
             <TrendingUp className="w-5 h-5 text-primary" />
           </div>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Bérszámfejtés Dashboard</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">KPI-k, ciklusok, foglalkoztatottak áttekintése</p>
+          <h3 className="text-sm font-bold text-foreground">Bérszámfejtés Dashboard</h3>
+          <p className="text-xs text-muted-foreground mt-1">KPI-k, ciklusok, foglalkoztatottak áttekintése</p>
         </button>
 
         <button
           onClick={() => navigate(`/eaisybooks/payroll/${client.id}/employees`)}
-          className="bg-card rounded-xl border border-border shadow-soft p-6 text-left hover:shadow-lg hover:border-primary/30 hover:-translate-y-0.5 transition-all group"
+          className="bg-card rounded-lg border border-border shadow-soft p-6 text-left hover:border-primary/30 hover:-translate-y-0.5 transition-all group"
         >
           <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
             <Settings className="w-5 h-5 text-blue-600" />
           </div>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Foglalkoztatottak</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Személyi nyilvántartás, jogviszonyok kezelése</p>
+          <h3 className="text-sm font-bold text-foreground">Foglalkoztatottak</h3>
+          <p className="text-xs text-muted-foreground mt-1">Személyi nyilvántartás, jogviszonyok kezelése</p>
         </button>
 
         <button
           onClick={() => navigate(`/eaisybooks/payroll/${client.id}/cycle/new`)}
-          className="bg-card rounded-xl border border-border shadow-soft p-6 text-left hover:shadow-lg hover:border-primary/30 hover:-translate-y-0.5 transition-all group"
+          className="bg-card rounded-lg border border-border shadow-soft p-6 text-left hover:border-primary/30 hover:-translate-y-0.5 transition-all group"
         >
           <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
             <Clock className="w-5 h-5 text-amber-600" />
           </div>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Új havi ciklus</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Bérszámfejtési időszak indítása</p>
+          <h3 className="text-sm font-bold text-foreground">Új havi ciklus</h3>
+          <p className="text-xs text-muted-foreground mt-1">Bérszámfejtési időszak indítása</p>
         </button>
       </div>
 
       {/* Info box */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 p-5">
+      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 p-5">
         <p className="text-sm text-blue-700 dark:text-blue-300">
           A bérszámfejtés modul teljes funkcionalitása az ügyfél-specifikus dashboard-on érhető el.
           Kattints a <strong>Bérszámfejtés Dashboard</strong> kártyára a teljes kezelőfelülethez.
@@ -61,8 +61,8 @@ export default function ClientPayrollTab({ client }: ClientPayrollTabProps) {
       </div>
 
       {/* Quick links */}
-      <div className="bg-card rounded-xl border border-border shadow-soft p-5">
-        <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Gyors navigáció</h3>
+      <div className="bg-card rounded-lg border border-border shadow-soft p-5">
+        <h3 className="text-sm font-bold text-foreground/90 mb-3">Gyors navigáció</h3>
         <div className="grid grid-cols-2 gap-2">
           {[
             { label: 'Paramétertábla 2026', path: `/eaisybooks/payroll/${client.id}/tax-params` },
@@ -76,9 +76,9 @@ export default function ClientPayrollTab({ client }: ClientPayrollTabProps) {
             <button
               key={link.label}
               onClick={() => navigate(link.path)}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-left text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+              className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-left text-foreground/90 hover:bg-muted/50 transition-colors"
             >
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
               {link.label}
             </button>
           ))}

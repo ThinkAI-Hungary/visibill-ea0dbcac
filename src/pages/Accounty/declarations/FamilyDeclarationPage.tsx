@@ -4,6 +4,8 @@ import {
   ArrowLeft, Users, Save, Calculator, Plus, Trash2, Info, CheckCircle, AlertTriangle, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { useAddDeclaration } from '@/hooks/usePayrollData';
 
@@ -75,23 +77,23 @@ export default function FamilyDeclarationPage() {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full max-w-4xl mx-auto space-y-6 page-animate">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link to={`/eaisybooks/payroll/${id}/declarations`} className="p-2 rounded-lg hover:bg-muted transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg shadow-blue-500/25">
+        <div className="p-2.5 bg-gradient-to-br from-blue-500 to-primary rounded-lg shadow-lg shadow-blue-500/25">
           <Users className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Családi kedvezmény nyilatkozat</h1>
-          <p className="text-sm text-slate-500">Szja tv. 29/A-29/B. § — 2026-os értékek (megduplázva)</p>
+          <h1 className="text-2xl font-bold text-foreground">Családi kedvezmény nyilatkozat</h1>
+          <p className="text-sm text-muted-foreground">Szja tv. 29/A-29/B. § — 2026-os értékek (megduplázva)</p>
         </div>
       </div>
 
       {/* Info banner */}
-      <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl p-4 text-sm text-blue-800 dark:text-blue-300 flex items-start gap-2">
+      <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-lg p-4 text-sm text-blue-800 dark:text-blue-300 flex items-start gap-2">
         <Info className="w-4 h-4 mt-0.5 shrink-0" />
         <div>
           <strong>2026-os változás:</strong> A családi kedvezmény összege megduplázódott az előző évhez képest.
@@ -100,50 +102,50 @@ export default function FamilyDeclarationPage() {
       </div>
 
       {/* Declarant data */}
-      <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-        <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Nyilatkozó adatai</h2>
+      <div className="bg-card rounded-lg border border-border p-6 space-y-4">
+        <h2 className="text-sm font-bold text-foreground/90">Nyilatkozó adatai</h2>
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className="text-xs text-slate-500 mb-1 block">Nyilatkozó neve</label>
+            <label className="text-xs text-muted-foreground mb-1 block">Nyilatkozó neve</label>
             <input type="text" value={declarantName} onChange={e => setDeclarantName(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Kovács Péter" />
           </div>
           <div>
-            <label className="text-xs text-slate-500 mb-1 block">Adóazonosító jel</label>
+            <label className="text-xs text-muted-foreground mb-1 block">Adóazonosító jel</label>
             <input type="text" value={declarantTaxId} onChange={e => setDeclarantTaxId(e.target.value)} maxLength={10} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none" placeholder="1234567890" />
           </div>
           <div>
-            <label className="text-xs text-slate-500 mb-1 block">Érvényesség kezdete</label>
-            <input type="date" value={effectiveFrom} onChange={e => setEffectiveFrom(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+            <label className="text-xs text-muted-foreground mb-1 block">Érvényesség kezdete</label>
+            <DatePicker value={effectiveFrom} onChange={setEffectiveFrom} placeholder="éééé. hh. nn." clearable className="w-full" />
           </div>
         </div>
       </div>
 
       {/* Children */}
-      <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+      <div className="bg-card rounded-lg border border-border p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Eltartottak adatai</h2>
+          <h2 className="text-sm font-bold text-foreground/90">Eltartottak adatai</h2>
           <Button variant="outline" size="sm" onClick={addChild} className="gap-1 text-xs">
             <Plus className="w-3 h-3" /> Gyermek hozzáadása
           </Button>
         </div>
         <div className="space-y-3">
           {children.map((child, i) => (
-            <div key={child.id} className="grid grid-cols-[auto,1fr,1fr,1fr,auto,auto] gap-3 items-end p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+            <div key={child.id} className="grid grid-cols-[auto,1fr,1fr,1fr,auto,auto] gap-3 items-end p-3 bg-muted/50 rounded-lg">
               <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-xs font-bold text-blue-700 dark:text-blue-400">{i + 1}</div>
               <div>
-                <label className="text-[10px] text-slate-400 mb-1 block">Gyermek neve</label>
+                <label className="text-[10px] text-muted-foreground mb-1 block">Gyermek neve</label>
                 <input type="text" value={child.name} onChange={e => updateChild(child.id, { name: e.target.value })} className="w-full px-2 py-1.5 rounded border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Kis Anna" />
               </div>
               <div>
-                <label className="text-[10px] text-slate-400 mb-1 block">Születési dátum</label>
-                <input type="date" value={child.birthDate} onChange={e => updateChild(child.id, { birthDate: e.target.value })} className="w-full px-2 py-1.5 rounded border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                <label className="text-[10px] text-muted-foreground mb-1 block">Születési dátum</label>
+                <DatePicker value={child.birthDate} onChange={val => updateChild(child.id, { birthDate: val })} placeholder="éééé. hh. nn." clearable className="w-full" />
               </div>
               <div>
-                <label className="text-[10px] text-slate-400 mb-1 block">Adóazonosító (ha van)</label>
+                <label className="text-[10px] text-muted-foreground mb-1 block">Adóazonosító (ha van)</label>
                 <input type="text" value={child.taxId} onChange={e => updateChild(child.id, { taxId: e.target.value })} className="w-full px-2 py-1.5 rounded border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none" placeholder="opcionális" />
               </div>
-              <label className="flex items-center gap-1 text-xs cursor-pointer pb-1">
-                <input type="checkbox" checked={child.disabled} onChange={e => updateChild(child.id, { disabled: e.target.checked })} className="rounded" />
+              <label className="flex items-center gap-1.5 text-xs cursor-pointer pb-2 select-none">
+                <Checkbox checked={child.disabled} onCheckedChange={checked => updateChild(child.id, { disabled: !!checked })} />
                 Fogy.
               </label>
               {children.length > 1 && (
@@ -155,14 +157,14 @@ export default function FamilyDeclarationPage() {
       </div>
 
       {/* Spouse sharing */}
-      <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-        <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Megosztás házastárssal</h2>
+      <div className="bg-card rounded-lg border border-border p-6 space-y-4">
+        <h2 className="text-sm font-bold text-foreground/90">Megosztás házastárssal</h2>
         <div className="flex items-center gap-4">
           <button
             onClick={() => setSpouseShares(!spouseShares)}
             className={cn(
               'relative w-12 h-6 rounded-full transition-colors',
-              spouseShares ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-600'
+              spouseShares ? 'bg-blue-500' : 'bg-muted-foreground/30'
             )}
           >
             <div className={cn('absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform', spouseShares ? 'translate-x-6' : 'translate-x-0.5')} />
@@ -171,7 +173,7 @@ export default function FamilyDeclarationPage() {
         </div>
         {spouseShares && (
           <div className="flex items-center gap-4 pl-16">
-            <label className="text-xs text-slate-500">Saját rész aránya:</label>
+            <label className="text-xs text-muted-foreground">Saját rész aránya:</label>
             <select value={spouseSharePercent} onChange={e => setSpouseSharePercent(e.target.value)} className="px-3 py-1.5 rounded border border-border bg-background text-sm">
               <option value="100">100% (teljes)</option>
               <option value="50">50% (fele-fele)</option>
@@ -182,26 +184,26 @@ export default function FamilyDeclarationPage() {
       </div>
 
       {/* Calculation preview */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-500/10 dark:to-indigo-500/10 rounded-xl border border-blue-200 dark:border-blue-500/20 p-6 space-y-3">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-500/10 dark:to-indigo-500/10 rounded-lg border border-blue-200 dark:border-blue-500/20 p-6 space-y-3">
         <h3 className="text-sm font-bold text-blue-800 dark:text-blue-300 flex items-center gap-2">
           <Calculator className="w-4 h-4" /> Kedvezmény kalkuláció
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-white dark:bg-slate-900 rounded-lg p-3 text-center">
+          <div className="bg-card rounded-lg p-3 text-center">
             <p className="text-2xl font-bold text-blue-600">{childCount}</p>
-            <p className="text-[10px] text-slate-500 uppercase font-bold">Eltartott</p>
+            <p className="text-[10px] text-muted-foreground uppercase font-bold">Eltartott</p>
           </div>
-          <div className="bg-white dark:bg-slate-900 rounded-lg p-3 text-center">
+          <div className="bg-card rounded-lg p-3 text-center">
             <p className="text-lg font-bold font-mono">{perChildBase.toLocaleString('hu-HU')}</p>
-            <p className="text-[10px] text-slate-500 uppercase font-bold">Ft/gyermek/hó alap</p>
+            <p className="text-[10px] text-muted-foreground uppercase font-bold">Ft/gyermek/hó alap</p>
           </div>
-          <div className="bg-white dark:bg-slate-900 rounded-lg p-3 text-center">
+          <div className="bg-card rounded-lg p-3 text-center">
             <p className="text-lg font-bold font-mono text-emerald-600">{actualSaving.toLocaleString('hu-HU')}</p>
-            <p className="text-[10px] text-slate-500 uppercase font-bold">Ft/hó megtakarítás</p>
+            <p className="text-[10px] text-muted-foreground uppercase font-bold">Ft/hó megtakarítás</p>
           </div>
-          <div className="bg-white dark:bg-slate-900 rounded-lg p-3 text-center">
-            <p className="text-lg font-bold font-mono text-indigo-600">{(actualSaving * 12).toLocaleString('hu-HU')}</p>
-            <p className="text-[10px] text-slate-500 uppercase font-bold">Ft/év megtakarítás</p>
+          <div className="bg-card rounded-lg p-3 text-center">
+            <p className="text-lg font-bold font-mono text-primary">{(actualSaving * 12).toLocaleString('hu-HU')}</p>
+            <p className="text-[10px] text-muted-foreground uppercase font-bold">Ft/év megtakarítás</p>
           </div>
         </div>
         {childCount === 0 && (

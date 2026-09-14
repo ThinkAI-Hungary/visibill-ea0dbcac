@@ -13,21 +13,21 @@ export type { AiAssistantChatProps } from '@/components/ai/AiAssistantChat';
  */
 export default function AiAssistantPage() {
   return (
-    <div className="w-full animate-in fade-in duration-500">
+    <div className="w-full page-animate">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-2.5 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-xl shadow-lg shadow-teal-500/25">
+        <div className="p-2.5 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-lg shadow-lg shadow-teal-500/25">
           <Bot className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+          <h1 className="text-2xl font-bold text-foreground">
             e<span className="text-primary font-bold">AI</span>sy asszisztens
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">applikáció támogatás</p>
+          <p className="text-sm text-muted-foreground">applikáció támogatás</p>
         </div>
       </div>
 
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
         <AiAssistantChat fullPage />
       </div>
     </div>

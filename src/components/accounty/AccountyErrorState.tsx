@@ -49,7 +49,7 @@ export function AccountyErrorState({
       <div className="space-y-1">
         <p
           className={cn(
-            'font-semibold text-slate-700 dark:text-slate-300',
+            'font-semibold text-foreground/90',
             compact ? 'text-sm' : 'text-base'
           )}
         >
@@ -57,7 +57,7 @@ export function AccountyErrorState({
         </p>
         <p
           className={cn(
-            'text-slate-500 dark:text-slate-400 max-w-sm',
+            'text-muted-foreground max-w-sm',
             compact ? 'text-xs' : 'text-sm'
           )}
         >

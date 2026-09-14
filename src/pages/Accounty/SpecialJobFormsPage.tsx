@@ -5,6 +5,8 @@ import {
   Clock, Shield, FileText, ChevronRight, CheckCircle, Info, Save, Loader2, Search, Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DatePicker } from '@/components/ui/date-picker';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -166,7 +168,7 @@ const JOB_TYPES: JobTypeConfig[] = [
   },
   {
     id: 'kozfoglalkoztatas', code: '1180', label: 'Közfoglalkoztatás', desc: 'Önkormányzati / állami közfoglalkoztatási jogviszony',
-    icon: Shield, color: 'from-slate-500 to-slate-600', legalRef: 'Kftvr. 1. §', category: 'special',
+    icon: Shield, color: 'from-muted-foreground/80 to-muted-foreground', legalRef: 'Kftvr. 1. §', category: 'special',
     tbStatus: 'Biztosított — speciális járulékszabályok',
     fields: [
       { key: 'programName', label: 'Közfoglalkoztatási program neve', type: 'text', required: true },
@@ -243,50 +245,59 @@ export default function SpecialJobFormsPage() {
   });
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full max-w-4xl mx-auto space-y-6 page-animate">
       <div className="flex items-center gap-3">
         <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
-        <div className={cn('p-2.5 bg-gradient-to-br rounded-xl shadow-lg', config.color)}><config.icon className="w-5 h-5 text-white" /></div>
+        <div className={cn('p-2.5 bg-gradient-to-br rounded-lg shadow-lg', config.color)}><config.icon className="w-5 h-5 text-white" /></div>
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">{config.code}</span>
+            <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">{config.code}</span>
             <h1 className="text-2xl font-bold">{config.label}</h1>
           </div>
-          <p className="text-sm text-slate-500">{config.legalRef}</p>
+          <p className="text-sm text-muted-foreground">{config.legalRef}</p>
         </div>
       </div>
 
-      <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl p-4 text-sm text-blue-800 dark:text-blue-300 flex items-start gap-2">
+      <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-lg p-4 text-sm text-blue-800 dark:text-blue-300 flex items-start gap-2">
         <Info className="w-4 h-4 mt-0.5 shrink-0" />
         <div><strong>TB státusz:</strong> {config.tbStatus}</div>
       </div>
 
-      <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-        <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Jogviszony adatai</h2>
+      <div className="bg-card rounded-lg border border-border p-6 space-y-4">
+        <h2 className="text-sm font-bold text-foreground/90">Jogviszony adatai</h2>
         <div className="grid grid-cols-2 gap-4">
           {config.fields.map(f => (
             <div key={f.key} className={f.type === 'checkbox' ? 'col-span-2' : ''}>
               {f.type === 'checkbox' ? (
-                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                  <input type="checkbox" checked={!!formData[f.key]} onChange={e => updateField(f.key, e.target.checked)} className="rounded" />
+                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-lg hover:bg-muted/50 select-none">
+                  <Checkbox
+                    checked={!!formData[f.key]}
+                    onCheckedChange={checked => updateField(f.key, Boolean(checked))}
+                  />
                   <div>
                     <span className="text-sm font-medium">{f.label}</span>
-                    {f.helpText && <p className="text-[10px] text-slate-400">{f.helpText}</p>}
+                    {f.helpText && <p className="text-[10px] text-muted-foreground">{f.helpText}</p>}
                   </div>
                 </label>
               ) : (
                 <>
-                  <label className="text-xs text-slate-500 mb-1 block">{f.label} {f.required && <span className="text-red-500">*</span>}</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">{f.label} {f.required && <span className="text-red-500">*</span>}</label>
                   {f.type === 'select' ? (
                     <select value={(formData[f.key] as string) || ''} onChange={e => updateField(f.key, e.target.value)} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                       <option value="">Válasszon...</option>
                       {f.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
+                  ) : f.type === 'date' ? (
+                    <DatePicker
+                      value={(formData[f.key] as string) || ''}
+                      onChange={v => updateField(f.key, v)}
+                      placeholder={f.placeholder || 'éééé. hh. nn.'}
+                    />
                   ) : (
                     <input type={f.type} value={(formData[f.key] as string) || ''} onChange={e => updateField(f.key, e.target.value)} placeholder={f.placeholder}
                       className={cn('w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none', f.type === 'number' && 'font-mono')} />
                   )}
-                  {f.helpText && <p className="text-[10px] text-slate-400 mt-1">{f.helpText}</p>}
+                  {f.helpText && <p className="text-[10px] text-muted-foreground mt-1">{f.helpText}</p>}
                 </>
               )}
             </div>
@@ -294,11 +305,11 @@ export default function SpecialJobFormsPage() {
         </div>
       </div>
 
-      <div className="bg-card rounded-xl border border-border p-5">
-        <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Tudnivalók</h3>
+      <div className="bg-card rounded-lg border border-border p-5">
+        <h3 className="text-sm font-bold text-foreground/90 mb-3">Tudnivalók</h3>
         <div className="space-y-1.5">
           {config.notes.map((n, i) => (
-            <div key={i} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-400">
+            <div key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
               <CheckCircle className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" /> {n}
             </div>
           ))}
@@ -372,20 +383,20 @@ function JobTypePicker({ id, empId }: { id: string; empId: string }) {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full max-w-4xl mx-auto space-y-6 page-animate">
       <div className="flex items-center gap-3 mb-4">
         <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
         <h1 className="text-2xl font-bold">Új jogviszony típusa</h1>
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <input
           type="text"
           placeholder="Keresés jogviszony neve, kódja alapján..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 text-sm bg-card border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary/30 text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+          className="w-full pl-10 pr-4 py-2.5 text-sm bg-card border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary/30 text-foreground placeholder:text-muted-foreground"
         />
       </div>
 
@@ -398,7 +409,7 @@ function JobTypePicker({ id, empId }: { id: string; empId: string }) {
               'px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
               activeGroup === g
                 ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary'
+                : 'bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary'
             )}
           >
             {g} {g !== 'Mind' ? `(${ALL_EMPLOYMENT_TYPES.filter(t => t.group === g).length})` : `(${ALL_EMPLOYMENT_TYPES.length})`}
@@ -411,12 +422,12 @@ function JobTypePicker({ id, empId }: { id: string; empId: string }) {
           <Link
             key={type.value}
             to={`/eaisybooks/payroll/${id}/employees/${empId}/special/${getFormId(type.value)}`}
-            className="relative flex items-start gap-3 p-4 rounded-xl border-2 border-border text-left transition-all duration-200 hover:border-primary/30 hover:shadow-md group"
+            className="relative flex items-start gap-3 p-4 rounded-lg border-2 border-border text-left transition-all duration-200 hover:border-primary/30 hover:shadow-md group"
           >
             <span className="text-2xl">{type.icon}</span>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <p className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-primary transition-colors">{type.label}</p>
+                <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{type.label}</p>
                 {(type as any).isNew && (
                   <span className="px-1.5 py-0.5 text-[9px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 rounded-full uppercase">ÚJ</span>
                 )}
@@ -424,14 +435,14 @@ function JobTypePicker({ id, empId }: { id: string; empId: string }) {
                   <span className="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 rounded-full uppercase">KEDV</span>
                 )}
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{type.desc}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{type.desc}</p>
               <p className="text-[10px] font-mono text-primary mt-1">Kód: {type.code}</p>
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 mt-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <ChevronRight className="w-4 h-4 text-muted-foreground/60 mt-1 opacity-0 group-hover:opacity-100 transition-opacity" />
           </Link>
         ))}
         {filtered.length === 0 && (
-          <p className="col-span-full text-center text-sm text-slate-400 py-8">Nincs találat a keresésre.</p>
+          <p className="col-span-full text-center text-sm text-muted-foreground py-8">Nincs találat a keresésre.</p>
         )}
       </div>
     </div>

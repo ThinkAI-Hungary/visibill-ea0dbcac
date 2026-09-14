@@ -280,11 +280,19 @@ export function ConversationSidebar({
             </div>
           ) : (
             sessions.map(session => (
-            <button
+            <div
               key={session.id}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onSelectSession(session.id);
+                }
+              }}
               onClick={() => onSelectSession(session.id)}
               className={cn(
-                "w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-all group relative",
+                "w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-all group relative cursor-pointer",
                 session.id === activeSessionId
                   ? "bg-primary/10 text-primary"
                   : "hover:bg-muted/80 text-foreground/80"
@@ -303,13 +311,14 @@ export function ConversationSidebar({
               </div>
               <CustomTooltip content="Beszélgetés törlése" side="left">
                 <button
+                  type="button"
                   onClick={(e) => { e.stopPropagation(); onDeleteSession(session.id); }}
                   className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded-md opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-all"
                 >
                   <Trash2 className="w-3 h-3" />
                 </button>
               </CustomTooltip>
-            </button>
+            </div>
           )))}
         </div>
       </div>

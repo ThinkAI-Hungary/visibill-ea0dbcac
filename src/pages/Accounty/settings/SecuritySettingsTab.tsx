@@ -77,38 +77,38 @@ export default function SecuritySettingsTab({
     <>
       <div key="security" className="p-6 space-y-6 tab-content-enter">
         <div className="border-b border-border pb-4">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Biztonság</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Jelszó, munkamenet és adatvédelem</p>
+          <h2 className="text-lg font-bold text-foreground">Biztonság</h2>
+          <p className="text-sm text-muted-foreground mt-1">Jelszó, munkamenet és adatvédelem</p>
         </div>
 
         <div className="space-y-3">
-          <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
-                <Key className="w-4 h-4 text-indigo-600" />
+                <Key className="w-4 h-4 text-primary" />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Jelszó módosítás</p>
-                <p className="text-xs text-slate-500">Utolsó módosítás: ismeretlen</p>
+                <p className="text-sm font-medium text-foreground">Jelszó módosítás</p>
+                <p className="text-xs text-muted-foreground">Utolsó módosítás: ismeretlen</p>
               </div>
             </div>
             <Button variant="outline" size="sm" className="text-xs" onClick={() => setPasswordDialogOpen(true)}>Módosítás</Button>
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
                 <Clock className="w-4 h-4 text-amber-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Munkamenet időtúllépés</p>
-                <p className="text-xs text-slate-500">Inaktivitás után automatikus kijelentkezés</p>
+                <p className="text-sm font-medium text-foreground">Munkamenet időtúllépés</p>
+                <p className="text-xs text-muted-foreground">Inaktivitás után automatikus kijelentkezés</p>
               </div>
             </div>
             <select
               value={sessionTimeout}
               onChange={e => setSessionTimeout(Number(e.target.value))}
-              className="text-sm font-medium bg-card border border-border rounded-lg px-3 py-1.5 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="text-sm font-medium bg-card border border-border rounded-lg px-3 py-1.5 text-foreground/90 focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
               <option value={5}>5 perc</option>
               <option value={15}>15 perc</option>
@@ -117,18 +117,18 @@ export default function SecuritySettingsTab({
             </select>
           </div>
 
-          <div className="rounded-xl overflow-hidden border border-border">
+          <div className="rounded-lg overflow-hidden border border-border">
             <button
               onClick={() => setGdprExpanded(!gdprExpanded)}
-              className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 w-full text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="flex items-center justify-between p-4 bg-muted/50 w-full text-left hover:bg-muted transition-colors"
             >
               <div className="flex items-center gap-3">
                 <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', gdprCompliant ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-amber-100 dark:bg-amber-900/40')}>
                   <Shield className={cn('w-4 h-4', gdprCompliant ? 'text-emerald-600' : 'text-amber-600')} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">GDPR megfelelőség</p>
-                  <p className="text-xs text-slate-500">{gdprCompleted}/{gdprTotal} követelmény teljesítve</p>
+                  <p className="text-sm font-medium text-foreground">GDPR megfelelőség</p>
+                  <p className="text-xs text-muted-foreground">{gdprCompleted}/{gdprTotal} követelmény teljesítve</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -140,12 +140,12 @@ export default function SecuritySettingsTab({
                 )}>
                   {gdprCompliant ? 'Megfelelő' : 'Ellenőrizendő'}
                 </span>
-                <ChevronDown className={cn('w-4 h-4 text-slate-400 transition-transform', gdprExpanded && 'rotate-180')} />
+                <ChevronDown className={cn('w-4 h-4 text-muted-foreground transition-transform', gdprExpanded && 'rotate-180')} />
               </div>
             </button>
 
             {/* Progress bar */}
-            <div className="h-1 bg-slate-200 dark:bg-slate-700">
+            <div className="h-1 bg-muted">
               <div
                 className={cn('h-full transition-all duration-500', gdprCompliant ? 'bg-emerald-500' : 'bg-amber-500')}
                 style={{ width: `${(gdprCompleted / gdprTotal) * 100}%` }}
@@ -157,7 +157,7 @@ export default function SecuritySettingsTab({
               'overflow-hidden transition-all duration-300',
               gdprExpanded ? 'max-h-[600px]' : 'max-h-0'
             )}>
-              <div className="p-4 space-y-2 dark:bg-slate-900/30">
+              <div className="p-4 space-y-2 dark:bg-card/30">
                 {gdprItems.map(item => {
                   const checked = gdprChecks[item.key];
                   return (
@@ -167,7 +167,7 @@ export default function SecuritySettingsTab({
                         'flex items-start gap-3 w-full text-left p-3 rounded-lg transition-all',
                         checked
                           ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800'
-                          : 'bg-white dark:bg-slate-800/50 border border-amber-200 dark:border-amber-800'
+                          : 'bg-card/50 border border-amber-200 dark:border-amber-800'
                       )}
                     >
                       {checked ? (
@@ -176,10 +176,10 @@ export default function SecuritySettingsTab({
                         <Circle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
                       )}
                       <div className="flex-1">
-                        <p className={cn('text-sm font-medium', checked ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-900 dark:text-slate-100')}>
+                        <p className={cn('text-sm font-medium', checked ? 'text-emerald-700 dark:text-emerald-400' : 'text-foreground')}>
                           {item.label}
                         </p>
-                        <p className="text-xs text-slate-500 mt-0.5">
+                        <p className="text-xs text-muted-foreground mt-0.5">
                           {checked ? (item.autoDesc || item.desc) : (item.missingDesc || item.desc)}
                         </p>
                         {!checked && item.actionPath && (

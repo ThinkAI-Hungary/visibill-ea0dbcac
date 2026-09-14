@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { formatHuf } from '@/lib/evCalculations';
 import type { EvTaxpayerForm, EvVatStatus } from '@/hooks/useEvData';
 
@@ -52,7 +53,7 @@ export const CASHBOOK_CATEGORIES: CategoryNode[] = [
     children: [
       { key: 'bevetel_adokoteles', label: 'I. Adóköteles bevétel', color: 'text-green-600', direction: 'bevetel', description: 'Tevékenységből származó bevétel' },
       { key: 'bevetel_fizetendo_afa', label: 'II. Fizetendő ÁFA', color: 'text-teal-600', direction: 'bevetel', description: 'Áthárított ÁFA' },
-      { key: 'bevetel_be_nem_szamito', label: 'III. Be nem számító bevétel', color: 'text-slate-500', direction: 'bevetel', description: 'Adóalapba be nem számító jövedelem (pl. alanyi mentes ÁFA)' },
+      { key: 'bevetel_be_nem_szamito', label: 'III. Be nem számító bevétel', color: 'text-muted-foreground', direction: 'bevetel', description: 'Adóalapba be nem számító jövedelem (pl. alanyi mentes ÁFA)' },
     ],
   },
   {
@@ -68,7 +69,7 @@ export const CASHBOOK_CATEGORIES: CategoryNode[] = [
       { key: 'kiadas_egyeb_koltseg', label: 'VIII. Egyéb költség', color: 'text-amber-600', direction: 'kiadas', description: 'Irodaszer, hosting, közüzem, stb.' },
       { key: 'kiadas_beruhazasi_koltseg', label: 'IX. Beruházási költség', color: 'text-rose-600', direction: 'kiadas', description: 'Tárgyi eszköz beszerzése (100e Ft felett)' },
       { key: 'kiadas_levonhato_afa', label: 'X. Levonható ÁFA', color: 'text-cyan-600', direction: 'kiadas', description: 'Beszerzésekre eső levonható ÁFA' },
-      { key: 'kiadas_egyeb_nem_koltseg', label: 'XI. Egyéb, költségként nem figyelembe vehető', color: 'text-slate-400', direction: 'kiadas', description: 'Nem elszámolható kiadások' },
+      { key: 'kiadas_egyeb_nem_koltseg', label: 'XI. Egyéb, költségként nem figyelembe vehető', color: 'text-muted-foreground', direction: 'kiadas', description: 'Nem elszámolható kiadások' },
     ],
   },
 ];
@@ -161,23 +162,23 @@ export default function CashbookEntryForm({
   };
 
   return (
-    <div className="bg-card rounded-xl border-2 border-indigo-200 dark:border-indigo-800 shadow-lg shadow-indigo-500/5 p-6 space-y-5 animate-in slide-in-from-top-2 duration-300">
+    <div className="bg-card rounded-lg border-2 border-indigo-200 dark:border-indigo-800 shadow-lg shadow-indigo-500/5 p-6 space-y-5 animate-in slide-in-from-top-2 duration-300">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
-            <Plus className="w-4 h-4 text-indigo-600" />
+            <Plus className="w-4 h-4 text-primary" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+            <h3 className="text-sm font-bold text-foreground">
               Új pénztárkönyv tétel
             </h3>
-            <p className="text-[10px] text-slate-400">Sorszám: #{nextSerialNumber}</p>
+            <p className="text-[10px] text-muted-foreground">Sorszám: #{nextSerialNumber}</p>
           </div>
         </div>
         <button
           onClick={onCancel}
-          className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-600"
+          className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-muted-foreground"
         >
           <X className="w-4 h-4" />
         </button>
@@ -185,9 +186,9 @@ export default function CashbookEntryForm({
 
       {/* Tax-form info banners */}
       {isAtalany && (
-        <div className="flex items-start gap-2.5 p-3 rounded-lg bg-indigo-50 dark:bg-indigo-900/15 border border-indigo-100 dark:border-indigo-800">
-          <Info className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
-          <div className="text-xs text-indigo-700 dark:text-indigo-400">
+        <div className="flex items-start gap-2.5 p-3 rounded-lg bg-primary/10 dark:bg-indigo-900/15 border border-indigo-100 dark:border-indigo-800">
+          <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+          <div className="text-xs text-indigo-700 dark:text-primary">
             <p className="font-semibold">Átalányadózó mód</p>
             <p className="mt-0.5">Csak bevételek rögzíthetők — a költségeket a költséghányad automatikusan számolja (Szja tv. 50–56. §).</p>
           </div>
@@ -209,10 +210,10 @@ export default function CashbookEntryForm({
         <button
           onClick={() => setForm(f => ({ ...f, direction: 'bevetel', category: '' }))}
           className={cn(
-            'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all border-2',
+            'flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold transition-all border-2',
             form.direction === 'bevetel'
               ? 'bg-green-50 dark:bg-green-900/20 border-green-500 text-green-700 dark:text-green-400 shadow-sm'
-              : 'bg-card border-border text-slate-400 hover:border-green-300'
+              : 'bg-card border-border text-muted-foreground hover:border-green-300'
           )}
         >
           <ArrowUpRight className="w-4 h-4" /> Bevétel
@@ -222,12 +223,12 @@ export default function CashbookEntryForm({
           onClick={() => !isAtalany && setForm(f => ({ ...f, direction: 'kiadas', category: '' }))}
           disabled={isAtalany}
           className={cn(
-            'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all border-2',
+            'flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold transition-all border-2',
             isAtalany
-              ? 'bg-slate-50 dark:bg-slate-800/30 border-border text-slate-300 dark:text-slate-600 cursor-not-allowed'
+              ? 'bg-muted/30 border-border text-muted-foreground/60 cursor-not-allowed'
               : form.direction === 'kiadas'
                 ? 'bg-red-50 dark:bg-red-900/20 border-red-500 text-red-700 dark:text-red-400 shadow-sm'
-                : 'bg-card border-border text-slate-400 hover:border-red-300'
+                : 'bg-card border-border text-muted-foreground hover:border-red-300'
           )}
         >
           <ArrowDownRight className="w-4 h-4" /> Kiadás
@@ -238,17 +239,18 @@ export default function CashbookEntryForm({
       {/* Form fields */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Dátum *</label>
-          <Input
-            type="date"
+          <label className="text-xs font-semibold text-muted-foreground">Dátum *</label>
+          <DatePicker
             value={form.entryDate}
-            onChange={e => setForm(f => ({ ...f, entryDate: e.target.value }))}
-            className={cn('bg-card', errors.entryDate && 'border-red-500')}
+            onChange={val => setForm(f => ({ ...f, entryDate: val }))}
+            placeholder="éééé. hh. nn."
+            clearable
+            className={cn('bg-card w-full', errors.entryDate && 'border-red-500')}
           />
           {errors.entryDate && <p className="text-[10px] text-red-500">{errors.entryDate}</p>}
         </div>
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Bizonylat szám *</label>
+          <label className="text-xs font-semibold text-muted-foreground">Bizonylat szám *</label>
           <Input
             value={form.documentNumber}
             onChange={e => setForm(f => ({ ...f, documentNumber: e.target.value }))}
@@ -258,7 +260,7 @@ export default function CashbookEntryForm({
           {errors.documentNumber && <p className="text-[10px] text-red-500">{errors.documentNumber}</p>}
         </div>
         <div className="sm:col-span-2 space-y-1.5">
-          <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Megnevezés *</label>
+          <label className="text-xs font-semibold text-muted-foreground">Megnevezés *</label>
           <Input
             value={form.description}
             onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
@@ -272,19 +274,19 @@ export default function CashbookEntryForm({
       {/* Category */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+          <label className="text-xs font-semibold text-muted-foreground">
             Pénztárkönyv-oszlop (kategória) *
           </label>
           <button
             onClick={() => setShowCategoryHelp(!showCategoryHelp)}
-            className="text-[10px] text-indigo-500 hover:text-indigo-600 flex items-center gap-0.5"
+            className="text-[10px] text-primary hover:text-primary flex items-center gap-0.5"
           >
             <HelpCircle className="w-3 h-3" /> Kategória segéd
           </button>
         </div>
 
         {showCategoryHelp && (
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-xs text-blue-600 dark:text-blue-400 animate-in fade-in duration-200">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-xs text-blue-600 dark:text-blue-400 page-animate duration-200">
             <p className="font-bold mb-1">Döntési fa:</p>
             <ul className="space-y-0.5 list-disc list-inside">
               <li>Számla ellenérték → <strong>I. Adóköteles bevétel</strong></li>
@@ -307,17 +309,17 @@ export default function CashbookEntryForm({
               className={cn(
                 'flex items-start gap-3 p-3 rounded-lg border-2 text-left transition-all',
                 form.category === cat.key
-                  ? cn('border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 ring-1 ring-indigo-500/20')
-                  : 'border-border hover:border-slate-300 dark:hover:border-slate-600'
+                  ? cn('border-primary bg-primary/10 ring-1 ring-indigo-500/20')
+                  : 'border-border hover:border-border dark:hover:border-slate-600'
               )}
             >
               <div className={cn('w-2 h-2 rounded-full mt-1.5 shrink-0',
-                form.category === cat.key ? 'bg-indigo-500' : 'bg-slate-300 dark:bg-slate-600'
+                form.category === cat.key ? 'bg-primary' : 'bg-muted-foreground/30'
               )} />
               <div>
                 <p className={cn('text-xs font-bold', cat.color)}>{cat.label}</p>
                 {cat.description && (
-                  <p className="text-[10px] text-slate-400 mt-0.5">{cat.description}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{cat.description}</p>
                 )}
               </div>
             </button>
@@ -329,7 +331,7 @@ export default function CashbookEntryForm({
       {/* Amount + VAT */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Bruttó összeg (Ft) *</label>
+          <label className="text-xs font-semibold text-muted-foreground">Bruttó összeg (Ft) *</label>
           <Input
             type="number"
             value={form.amount || ''}
@@ -340,9 +342,9 @@ export default function CashbookEntryForm({
           {errors.amount && <p className="text-[10px] text-red-500">{errors.amount}</p>}
         </div>
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+          <label className="text-xs font-semibold text-muted-foreground">
             ÁFA kulcs
-            {isAlanyiMentes && <span className="ml-1 text-[9px] text-slate-400">(alanyi mentes)</span>}
+            {isAlanyiMentes && <span className="ml-1 text-[9px] text-muted-foreground">(alanyi mentes)</span>}
           </label>
           <select
             value={isAlanyiMentes ? 0 : vatRate}
@@ -350,7 +352,7 @@ export default function CashbookEntryForm({
             disabled={isAlanyiMentes}
             className={cn(
               'w-full text-sm border border-border rounded-lg px-3 py-2 bg-card text-foreground',
-              isAlanyiMentes && 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-800/50'
+              isAlanyiMentes && 'opacity-50 cursor-not-allowed bg-muted/50'
             )}
           >
             {VAT_RATES.map(r => (
@@ -358,11 +360,11 @@ export default function CashbookEntryForm({
             ))}
           </select>
           {isAlanyiMentes && (
-            <p className="text-[10px] text-slate-400">Áfa tv. 188. § — alanyi mentesség</p>
+            <p className="text-[10px] text-muted-foreground">Áfa tv. 188. § — alanyi mentesség</p>
           )}
         </div>
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">ÁFA összeg (Ft)</label>
+          <label className="text-xs font-semibold text-muted-foreground">ÁFA összeg (Ft)</label>
           <Input
             type="number"
             value={form.vatAmount || ''}
@@ -374,25 +376,25 @@ export default function CashbookEntryForm({
               isAlanyiMentes && 'opacity-50 cursor-not-allowed'
             )}
           />
-          <p className="text-[10px] text-slate-400">Nettó: {formatHuf(form.amount - form.vatAmount)}</p>
+          <p className="text-[10px] text-muted-foreground">Nettó: {formatHuf(form.amount - form.vatAmount)}</p>
         </div>
       </div>
 
       {/* Actions */}
       <div className="flex items-center justify-between pt-2 border-t border-border">
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-muted-foreground">
           {form.direction === 'bevetel' ? '↗' : '↘'} {form.amount > 0 ? formatHuf(form.amount) : '—'}
         </p>
         <div className="flex items-center gap-2">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+            className="px-4 py-2 text-sm text-muted-foreground hover:bg-muted rounded-lg transition-colors"
           >
             Mégse
           </button>
           <button
             onClick={handleSubmit}
-            className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors shadow-sm"
           >
             <Save className="w-3.5 h-3.5" /> Mentés
           </button>

@@ -142,7 +142,7 @@ export default function CompanyPayrollSettingsPage() {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full max-w-4xl mx-auto space-y-6 page-animate">
       <Breadcrumb
         items={[
           { label: 'Portfólió', href: '/eaisybooks' },
@@ -156,17 +156,17 @@ export default function CompanyPayrollSettingsPage() {
         <Link to={`/eaisybooks/payroll/${companyId}`} className="p-2 rounded-lg hover:bg-muted transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <div className="p-2.5 bg-gradient-to-br from-slate-600 to-slate-800 rounded-xl shadow-lg">
+        <div className="p-2.5 bg-gradient-to-br from-muted to-card rounded-lg shadow-lg">
           <Settings className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Cég beállítások</h1>
-          <p className="text-sm text-slate-500">{companyName} — Bérszámfejtési konfiguráció</p>
+          <h1 className="text-2xl font-bold text-foreground">Cég beállítások</h1>
+          <p className="text-sm text-muted-foreground">{companyName} — Bérszámfejtési konfiguráció</p>
         </div>
       </div>
 
       <Tabs value={tab} onValueChange={v => setTab(v as Tab)} className="w-full space-y-6">
-        <TabsList className="grid w-full grid-cols-4 bg-slate-100 dark:bg-slate-800/50 p-1 rounded-xl">
+        <TabsList className="grid w-full grid-cols-4 bg-muted/50 p-1 rounded-lg">
           {TABS.map(t => (
             <TabsTrigger
               key={t.id}
@@ -179,27 +179,27 @@ export default function CompanyPayrollSettingsPage() {
         </TabsList>
 
         {/* ── Bérszámfejtés tab ── */}
-        <TabsContent value="payroll" className="space-y-6 animate-in fade-in duration-300 outline-none">
-          <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-            <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+        <TabsContent value="payroll" className="space-y-6 page-animate outline-none">
+          <div className="bg-card rounded-lg border border-border p-6 space-y-4">
+            <h2 className="text-sm font-bold text-foreground/90 flex items-center gap-2">
               <Clock className="w-4 h-4" /> Munkaidő & Kerekítés
             </h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">Heti munkaidő alapértelmezés (óra)</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Heti munkaidő alapértelmezés (óra)</label>
                 <input
                   type="number"
                   value={settings.defaultWeeklyHours}
                   onChange={e => update({ defaultWeeklyHours: Number(e.target.value) })}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none text-foreground"
                 />
               </div>
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">Kerekítés</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Kerekítés</label>
                 <select
                   value={settings.rounding}
                   onChange={e => update({ rounding: e.target.value as PayrollSettings['rounding'] })}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-foreground"
                 >
                   <option value="none">Nincs kerekítés</option>
                   <option value="1">1 Ft-ra kerekít</option>
@@ -208,11 +208,11 @@ export default function CompanyPayrollSettingsPage() {
                 </select>
               </div>
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">Munkanapok forrása</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Munkanapok forrása</label>
                 <select
                   value={settings.workDaysSource}
                   onChange={e => update({ workDaysSource: e.target.value as 'official' | 'custom' })}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-foreground"
                 >
                   <option value="official">Hivatalos munkarend</option>
                   <option value="custom">Egyéni munkanap-szám</option>
@@ -220,29 +220,29 @@ export default function CompanyPayrollSettingsPage() {
               </div>
               {settings.workDaysSource === 'custom' && (
                 <div>
-                  <label className="text-xs text-slate-500 mb-1 block">Egyéni munkanapok / hó</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">Egyéni munkanapok / hó</label>
                   <input
                     type="number"
                     value={settings.customWorkDays}
                     onChange={e => update({ customWorkDays: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none text-foreground"
                   />
                 </div>
               )}
             </div>
           </div>
 
-          <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-            <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+          <div className="bg-card rounded-lg border border-border p-6 space-y-4">
+            <h2 className="text-sm font-bold text-foreground/90 flex items-center gap-2">
               <Calculator className="w-4 h-4" /> Pótlék & Juttatás
             </h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">Pótlékszámítás</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Pótlékszámítás</label>
                 <select
                   value={settings.premiumRules}
                   onChange={e => update({ premiumRules: e.target.value as 'mt' | 'ksz' | 'custom' })}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-foreground"
                 >
                   <option value="mt">Munka Törvénykönyve (Mt.)</option>
                   <option value="ksz">Kollektív Szerződés (KSZ)</option>
@@ -250,11 +250,11 @@ export default function CompanyPayrollSettingsPage() {
                 </select>
               </div>
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">SZÉP-kártya szolgáltató</label>
+                <label className="text-xs text-muted-foreground mb-1 block">SZÉP-kártya szolgáltató</label>
                 <select
                   value={settings.szepProvider}
                   onChange={e => update({ szepProvider: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-foreground"
                 >
                   <option value="">— Nincs megadva —</option>
                   <option value="otp">OTP Bank</option>
@@ -263,46 +263,46 @@ export default function CompanyPayrollSettingsPage() {
                 </select>
               </div>
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">Távmunka átalány (Ft/hó)</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Távmunka átalány (Ft/hó)</label>
                 <input
                   type="number"
                   value={settings.remoteAllowanceDefault}
                   onChange={e => update({ remoteAllowanceDefault: Number(e.target.value) })}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none text-foreground"
                 />
-                <p className="text-[10px] text-slate-400 mt-0.5">2026: max 32 280 Ft/hó adómentes</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">2026: max 32 280 Ft/hó adómentes</p>
               </div>
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">Fizetési nap (hónap hányadika)</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Fizetési nap (hónap hányadika)</label>
                 <input
                   type="number"
                   min={1}
                   max={28}
                   value={settings.paymentDay}
                   onChange={e => update({ paymentDay: Number(e.target.value) })}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none text-foreground"
                 />
               </div>
             </div>
           </div>
 
-          <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-            <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Egyéb</h2>
+          <div className="bg-card rounded-lg border border-border p-6 space-y-4">
+            <h2 className="text-sm font-bold text-foreground/90">Egyéb</h2>
             <div className="space-y-3">
               {[
                 { key: 'costCenterEnabled' as const, label: 'Költséghely-kezelés engedélyezése', desc: 'Foglalkoztatottaknál költséghely mezők megjelenítése' },
                 { key: 'emailPayslips' as const, label: 'Bérjegyzék e-mailben', desc: 'Automatikus e-mail küldés a számfejtés lezárásakor' },
               ].map(item => (
-                <div key={item.key} className="flex items-center justify-between p-4 rounded-xl border border-border hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                <div key={item.key} className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50/30 transition-colors">
                   <div>
                     <p className="text-sm font-bold">{item.label}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{item.desc}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
                   </div>
                   <button
                     onClick={() => update({ [item.key]: !settings[item.key] } as Partial<PayrollSettings>)}
                     className={cn(
                       'relative w-12 h-6 rounded-full transition-colors',
-                      settings[item.key] ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'
+                      settings[item.key] ? 'bg-emerald-500' : 'bg-muted-foreground/30'
                     )}
                   >
                     <div className={cn(
@@ -317,18 +317,18 @@ export default function CompanyPayrollSettingsPage() {
         </TabsContent>
 
         {/* ── Telephelyek tab ── */}
-        <TabsContent value="locations" className="space-y-6 animate-in fade-in duration-300 outline-none">
-          <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-            <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+        <TabsContent value="locations" className="space-y-6 page-animate outline-none">
+          <div className="bg-card rounded-lg border border-border p-6 space-y-4">
+            <h2 className="text-sm font-bold text-foreground/90 flex items-center gap-2">
               <MapPin className="w-4 h-4" /> Telephelyek
             </h2>
-            <p className="text-xs text-slate-500">A telephelyek a jogviszony módosítás és eszköznyilvántartás modulokban jelennek meg.</p>
+            <p className="text-xs text-muted-foreground">A telephelyek a jogviszony módosítás és eszköznyilvántartás modulokban jelennek meg.</p>
 
             {locLoading ? (
               <div className="flex items-center justify-center py-8 text-muted-foreground gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Betöltés...</div>
             ) : locations.length === 0 ? (
-              <div className="py-8 text-center text-sm text-slate-400">
-                <MapPin className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+              <div className="py-8 text-center text-sm text-muted-foreground">
+                <MapPin className="w-8 h-8 mx-auto mb-2 text-muted-foreground/60" />
                 Nincs telephely felvéve
               </div>
             ) : (
@@ -338,13 +338,13 @@ export default function CompanyPayrollSettingsPage() {
                     <div className="flex items-center gap-3">
                       <div className={cn(
                         'w-8 h-8 rounded-lg flex items-center justify-center',
-                        loc.location_type === 'headquarters' ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-slate-100 dark:bg-slate-800'
+                        loc.location_type === 'headquarters' ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-muted'
                       )}>
-                        {loc.location_type === 'headquarters' ? <Building2 className="w-4 h-4 text-blue-600" /> : <MapPin className="w-4 h-4 text-slate-500" />}
+                        {loc.location_type === 'headquarters' ? <Building2 className="w-4 h-4 text-blue-600" /> : <MapPin className="w-4 h-4 text-muted-foreground" />}
                       </div>
                       <div>
                         <p className="text-sm font-semibold">{loc.name}</p>
-                        <p className="text-xs text-slate-500">{loc.address} · {loc.location_type === 'headquarters' ? 'Székhely' : 'Telephely'}</p>
+                        <p className="text-xs text-muted-foreground">{loc.address} · {loc.location_type === 'headquarters' ? 'Székhely' : 'Telephely'}</p>
                       </div>
                     </div>
                     <Button
@@ -362,37 +362,37 @@ export default function CompanyPayrollSettingsPage() {
           </div>
 
           {/* Add new location */}
-          <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-            <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+          <div className="bg-card rounded-lg border border-border p-6 space-y-4">
+            <h2 className="text-sm font-bold text-foreground/90 flex items-center gap-2">
               <Plus className="w-4 h-4" /> Új telephely hozzáadása
             </h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">Telephely neve</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Telephely neve</label>
                 <input
                   type="text"
                   value={newLocName}
                   onChange={e => setNewLocName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-foreground"
                   placeholder="Pl. Központi iroda"
                 />
               </div>
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">Cím</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Cím</label>
                 <input
                   type="text"
                   value={newLocAddress}
                   onChange={e => setNewLocAddress(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-foreground"
                   placeholder="Pl. 1052 Budapest, Váci u. 1."
                 />
               </div>
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">Típus</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Típus</label>
                 <select
                   value={newLocType}
                   onChange={e => setNewLocType(e.target.value as 'headquarters' | 'branch')}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-foreground"
                 >
                   <option value="headquarters">Székhely</option>
                   <option value="branch">Telephely</option>
@@ -411,9 +411,9 @@ export default function CompanyPayrollSettingsPage() {
         </TabsContent>
 
         {/* ── NAV / Integráció tab ── */}
-        <TabsContent value="nav" className="space-y-6 animate-in fade-in duration-300 outline-none">
-          <div className="bg-card rounded-xl border border-border p-6 space-y-5">
-            <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+        <TabsContent value="nav" className="space-y-6 page-animate outline-none">
+          <div className="bg-card rounded-lg border border-border p-6 space-y-5">
+            <h2 className="text-sm font-bold text-foreground/90 flex items-center gap-2">
               <Globe className="w-4 h-4" /> NAV Online kapcsolat
             </h2>
             <div className="bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/20 rounded-lg p-3 text-sm text-yellow-800 dark:text-yellow-300">
@@ -422,31 +422,31 @@ export default function CompanyPayrollSettingsPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">NAV technikai felhasználó</label>
+                <label className="text-xs text-muted-foreground mb-1 block">NAV technikai felhasználó</label>
                 <input
                   type="text"
                   value={navTechnicalUser}
                   onChange={e => setNavTechnicalUser(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none text-foreground"
                   placeholder="technikai_felhasznalo"
                 />
               </div>
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">NAV API kulcs</label>
+                <label className="text-xs text-muted-foreground mb-1 block">NAV API kulcs</label>
                 <input
                   type="password"
                   value={navApiKey}
                   onChange={e => setNavApiKey(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none text-foreground"
                   placeholder="••••••••"
                 />
               </div>
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">Környezet</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Környezet</label>
                 <select
                   value={navEnv}
                   onChange={e => setNavEnv(e.target.value as 'production' | 'sandbox')}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none text-foreground"
                 >
                   <option value="production"> Éles (production)</option>
                   <option value="sandbox"> Teszt (sandbox)</option>
@@ -455,43 +455,43 @@ export default function CompanyPayrollSettingsPage() {
             </div>
           </div>
 
-          <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-            <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Adózási profil</h2>
+          <div className="bg-card rounded-lg border border-border p-6 space-y-4">
+            <h2 className="text-sm font-bold text-foreground/90">Adózási profil</h2>
             <div className="grid grid-cols-3 gap-4">
-              <div className="p-4 rounded-xl border border-border text-center">
-                <p className="text-xs text-slate-500">ÁFA gyakoriság</p>
+              <div className="p-4 rounded-lg border border-border text-center">
+                <p className="text-xs text-muted-foreground">ÁFA gyakoriság</p>
                 <p className="text-sm font-bold mt-1">{taxProfile?.vatFrequency === 'monthly' ? 'Havi' : taxProfile?.vatFrequency === 'quarterly' ? 'Negyedéves' : taxProfile?.vatFrequency === 'annual' ? 'Éves' : '—'}</p>
               </div>
-              <div className="p-4 rounded-xl border border-border text-center">
-                <p className="text-xs text-slate-500">KATA</p>
+              <div className="p-4 rounded-lg border border-border text-center">
+                <p className="text-xs text-muted-foreground">KATA</p>
                 <p className="text-sm font-bold mt-1">{taxProfile?.isKata ? ' Igen' : ' Nem'}</p>
               </div>
-              <div className="p-4 rounded-xl border border-border text-center">
-                <p className="text-xs text-slate-500">KIVA</p>
+              <div className="p-4 rounded-lg border border-border text-center">
+                <p className="text-xs text-muted-foreground">KIVA</p>
                 <p className="text-sm font-bold mt-1">{taxProfile?.isKiva ? ' Igen' : ' Nem'}</p>
               </div>
             </div>
-            <p className="text-[10px] text-slate-400">Az adózási profilt az eaisybooks Portfólió → Cégadatok oldalon módosíthatod.</p>
+            <p className="text-[10px] text-muted-foreground">Az adózási profilt az eaisybooks Portfólió → Cégadatok oldalon módosíthatod.</p>
           </div>
         </TabsContent>
 
         {/* ── Dokumentumok tab ── */}
-        <TabsContent value="documents" className="space-y-6 animate-in fade-in duration-300 outline-none">
-          <div className="bg-card rounded-xl border border-border p-6 space-y-5">
-            <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+        <TabsContent value="documents" className="space-y-6 page-animate outline-none">
+          <div className="bg-card rounded-lg border border-border p-6 space-y-5">
+            <h2 className="text-sm font-bold text-foreground/90 flex items-center gap-2">
               <CreditCard className="w-4 h-4" /> Dokumentum beállítások
             </h2>
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-4 rounded-xl border border-border">
+              <div className="flex items-center justify-between p-4 rounded-lg border border-border">
                 <div>
                   <p className="text-sm font-bold">E-bérjegyzék engedélyezése</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Foglalkoztatottak e-mailben kapják a bérjegyzéket PDF-ben</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Foglalkoztatottak e-mailben kapják a bérjegyzéket PDF-ben</p>
                 </div>
                 <button
                   onClick={() => update({ emailPayslips: !settings.emailPayslips })}
                   className={cn(
                     'relative w-12 h-6 rounded-full transition-colors',
-                    settings.emailPayslips ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'
+                    settings.emailPayslips ? 'bg-emerald-500' : 'bg-muted-foreground/30'
                   )}
                 >
                   <div className={cn(
@@ -501,7 +501,7 @@ export default function CompanyPayrollSettingsPage() {
                 </button>
               </div>
             </div>
-            <p className="text-[10px] text-slate-400">További dokumentum-sablonok az Admin → Sablonok menüben kezelhetők.</p>
+            <p className="text-[10px] text-muted-foreground">További dokumentum-sablonok az Admin → Sablonok menüben kezelhetők.</p>
           </div>
         </TabsContent>
       </Tabs>
@@ -517,7 +517,7 @@ export default function CompanyPayrollSettingsPage() {
           <Button variant="outline" asChild>
             <Link to={`/eaisybooks/payroll/${companyId}`}>Vissza</Link>
           </Button>
-          <Button onClick={handleSave} disabled={saving} className="gap-1.5 bg-slate-900 dark:bg-slate-100 dark:text-slate-900 hover:bg-slate-800">
+          <Button onClick={handleSave} disabled={saving} className="gap-1.5 bg-slate-900 dark:bg-muted dark:text-foreground hover:bg-slate-800">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {saving ? 'Mentés...' : 'Beállítások mentése'}
           </Button>

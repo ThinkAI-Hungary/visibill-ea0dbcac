@@ -77,10 +77,10 @@ export default function ClientProfileTab({
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-6 page-animate slide-in-from-bottom-4 duration-500">
       <div className="grid grid-cols-2 gap-6">
         {/* Cég adatok */}
-        <div className="bg-card rounded-xl border border-border shadow-soft p-6">
+        <div className="bg-card rounded-lg border border-border shadow-soft p-6">
           <h3 className="text-lg font-bold text-foreground mb-4">Cég adatok</h3>
           <div className="space-y-4">
             <div>
@@ -105,7 +105,7 @@ export default function ClientProfileTab({
         </div>
 
         {/* Kapcsolattartó */}
-        <div className="bg-card rounded-xl border border-border shadow-soft p-6">
+        <div className="bg-card rounded-lg border border-border shadow-soft p-6">
           <h3 className="text-lg font-bold text-foreground mb-4">Kapcsolattartó</h3>
           <div className="space-y-4">
             <div>
@@ -152,7 +152,7 @@ export default function ClientProfileTab({
 
       {/* Tax profile summary */}
       {taxProfileData && (
-        <div className="bg-card rounded-xl border border-border shadow-soft p-6">
+        <div className="bg-card rounded-lg border border-border shadow-soft p-6">
           <h3 className="text-lg font-bold text-foreground mb-4">Adóprofil összefoglaló</h3>
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-muted/10 border border-border rounded-lg p-4">

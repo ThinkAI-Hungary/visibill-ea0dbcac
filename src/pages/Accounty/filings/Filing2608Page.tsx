@@ -218,14 +218,14 @@ export default function Filing2608Page() {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full max-w-5xl mx-auto space-y-6 page-animate">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
-          <div className="p-2.5 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-lg"><FileText className="w-5 h-5 text-white" /></div>
+          <div className="p-2.5 bg-gradient-to-br from-blue-600 to-primary rounded-lg shadow-lg"><FileText className="w-5 h-5 text-white" /></div>
           <div>
             <h1 className="text-2xl font-bold">2608-as bevallás</h1>
-            <p className="text-sm text-slate-500">{company?.name || '–'} — Havi járulékbevallás</p>
+            <p className="text-sm text-muted-foreground">{company?.name || '–'} — Havi járulékbevallás</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -247,47 +247,47 @@ export default function Filing2608Page() {
       {isLoading ? (
         <FinancialPageSkeleton title="2608-as bevallás betöltése..." />
       ) : calculations.length === 0 ? (
-        <div className="bg-card rounded-xl border border-border p-12 text-center space-y-3">
-          <Database className="w-10 h-10 mx-auto text-slate-400" />
-          <p className="text-sm text-slate-500">Nincs számfejtett adat a kiválasztott időszakra ({selectedYear}. {MONTHS[selectedMonth - 1]}).</p>
-          <p className="text-xs text-slate-400">A bevallás a számfejtés véglegesítése után kerül generálásra.</p>
+        <div className="bg-card rounded-lg border border-border p-12 text-center space-y-3">
+          <Database className="w-10 h-10 mx-auto text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Nincs számfejtett adat a kiválasztott időszakra ({selectedYear}. {MONTHS[selectedMonth - 1]}).</p>
+          <p className="text-xs text-muted-foreground">A bevallás a számfejtés véglegesítése után kerül generálásra.</p>
         </div>
       ) : (
         <>
           {/* Summary cards */}
           <div className="grid grid-cols-4 gap-3">
-            <div className="bg-card rounded-xl border border-border p-4 text-center">
-              <p className="text-[10px] text-slate-400 uppercase font-bold">Biztosítottak</p>
+            <div className="bg-card rounded-lg border border-border p-4 text-center">
+              <p className="text-[10px] text-muted-foreground uppercase font-bold">Biztosítottak</p>
               <p className="text-2xl font-bold text-blue-600">{calculations.length}</p>
             </div>
-            <div className="bg-card rounded-xl border border-border p-4 text-center">
-              <p className="text-[10px] text-slate-400 uppercase font-bold">Bruttó összesen</p>
+            <div className="bg-card rounded-lg border border-border p-4 text-center">
+              <p className="text-[10px] text-muted-foreground uppercase font-bold">Bruttó összesen</p>
               <p className="text-lg font-bold font-mono">{fmt(calculations.reduce((s, c) => s + (c.gross_salary || 0), 0))}</p>
             </div>
-            <div className="bg-card rounded-xl border border-border p-4 text-center">
-              <p className="text-[10px] text-slate-400 uppercase font-bold">Fizetendő közteher</p>
+            <div className="bg-card rounded-lg border border-border p-4 text-center">
+              <p className="text-[10px] text-muted-foreground uppercase font-bold">Fizetendő közteher</p>
               <p className="text-lg font-bold font-mono text-red-600">{fmt(calculations.reduce((s, c) => s + (c.szja_amount || 0) + (c.tb_amount || 0) + (c.szocho_amount || 0), 0))}</p>
             </div>
-            <div className="bg-card rounded-xl border border-border p-4 text-center">
-              <p className="text-[10px] text-slate-400 uppercase font-bold">Nettó összesen</p>
+            <div className="bg-card rounded-lg border border-border p-4 text-center">
+              <p className="text-[10px] text-muted-foreground uppercase font-bold">Nettó összesen</p>
               <p className="text-lg font-bold font-mono text-green-600">{fmt(calculations.reduce((s, c) => s + (c.net_salary || 0), 0))}</p>
             </div>
           </div>
 
           {/* A-lap */}
-          <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+          <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
             <div className="px-5 py-3 border-b border-border flex items-center justify-between">
               <h2 className="text-sm font-bold">A-lap — Munkáltatói összesítő</h2>
-              <span className="text-xs text-slate-400">Időszak: {selectedYear}. {MONTHS[selectedMonth - 1]}</span>
+              <span className="text-xs text-muted-foreground">Időszak: {selectedYear}. {MONTHS[selectedMonth - 1]}</span>
             </div>
             <table className="w-full text-sm">
               <tbody>
                 {alapData.map((row, i) => (
                   <tr key={i} className={cn(
-                    'border-b border-border/30 hover:bg-slate-50 dark:hover:bg-slate-800/50',
-                    i === alapData.length - 1 && 'font-bold bg-slate-50/80 dark:bg-slate-900/50'
+                    'border-b border-border/30 hover:bg-muted/50',
+                    i === alapData.length - 1 && 'font-bold bg-muted/40/80 dark:bg-card/50'
                   )}>
-                    <td className="px-5 py-2.5 text-xs text-slate-600 dark:text-slate-400">{row.label}</td>
+                    <td className="px-5 py-2.5 text-xs text-muted-foreground">{row.label}</td>
                     <td className="px-3 py-2.5 text-right font-mono text-xs font-bold">
                       {row.isCnt ? `${row.amount} fő` : fmt(row.amount)}
                     </td>
@@ -298,7 +298,7 @@ export default function Filing2608Page() {
           </div>
 
           {/* M-lapok */}
-          <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+          <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
             <div className="px-5 py-3 border-b border-border">
               <h2 className="text-sm font-bold">M-lapok — Személyi bontás ({mlapRows.length} fő)</h2>
             </div>
@@ -306,24 +306,24 @@ export default function Filing2608Page() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="text-left px-5 py-2 text-xs font-bold text-slate-500 uppercase">Név</th>
-                    <th className="text-left px-3 py-2 text-xs font-bold text-slate-500 uppercase">TAJ</th>
-                    <th className="text-right px-3 py-2 text-xs font-bold text-slate-500 uppercase">Bruttó</th>
-                    <th className="text-right px-3 py-2 text-xs font-bold text-slate-500 uppercase">SZJA</th>
-                    <th className="text-right px-3 py-2 text-xs font-bold text-slate-500 uppercase">TB</th>
-                    <th className="text-right px-3 py-2 text-xs font-bold text-slate-500 uppercase">SZOCHO</th>
-                    <th className="text-right px-3 py-2 text-xs font-bold text-slate-500 uppercase">Nettó</th>
+                    <th className="text-left px-5 py-2 text-xs font-bold text-muted-foreground uppercase">Név</th>
+                    <th className="text-left px-3 py-2 text-xs font-bold text-muted-foreground uppercase">TAJ</th>
+                    <th className="text-right px-3 py-2 text-xs font-bold text-muted-foreground uppercase">Bruttó</th>
+                    <th className="text-right px-3 py-2 text-xs font-bold text-muted-foreground uppercase">SZJA</th>
+                    <th className="text-right px-3 py-2 text-xs font-bold text-muted-foreground uppercase">TB</th>
+                    <th className="text-right px-3 py-2 text-xs font-bold text-muted-foreground uppercase">SZOCHO</th>
+                    <th className="text-right px-3 py-2 text-xs font-bold text-muted-foreground uppercase">Nettó</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedMlapRows.map((m) => (
                     <React.Fragment key={m.id}>
                       <tr
-                        className="border-b border-border/30 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
+                        className="border-b border-border/30 hover:bg-muted/50 cursor-pointer transition-colors"
                         onClick={() => setExpandedRow(expandedRow === m.id ? null : m.id)}
                       >
                         <td className="px-5 py-2.5 font-medium">{m.name}</td>
-                        <td className="px-3 py-2.5 font-mono text-xs text-slate-500">{m.tajNumber}</td>
+                        <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{m.tajNumber}</td>
                         <td className="px-3 py-2.5 text-right font-mono text-xs">{fmt(m.grossSalary)}</td>
                         <td className="px-3 py-2.5 text-right font-mono text-xs text-red-600">{fmt(m.szja)}</td>
                         <td className="px-3 py-2.5 text-right font-mono text-xs text-blue-600">{fmt(m.tb)}</td>
@@ -331,23 +331,23 @@ export default function Filing2608Page() {
                         <td className="px-3 py-2.5 text-right font-mono text-xs font-bold text-green-600">{fmt(m.netSalary)}</td>
                       </tr>
                       {expandedRow === m.id && (
-                        <tr className="bg-slate-50/50 dark:bg-slate-800/20">
+                        <tr className="bg-muted/40/50 dark:bg-muted/20">
                           <td colSpan={7} className="px-5 py-3">
-                            <div className="grid grid-cols-4 gap-4 text-xs animate-in fade-in slide-in-from-top-1 duration-200">
+                            <div className="grid grid-cols-4 gap-4 text-xs page-animate slide-in-from-top-1 duration-200">
                               <div>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase">SZOCHO alap</p>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase">SZOCHO alap</p>
                                 <p className="font-mono font-bold">{fmt(m.grossSalary)}</p>
                               </div>
                               <div>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase">Családi kedv.</p>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase">Családi kedv.</p>
                                 <p className="font-mono font-bold text-emerald-600">0 Ft</p>
                               </div>
                               <div>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase">Munkanapok</p>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase">Munkanapok</p>
                                 <p className="font-mono font-bold">22 nap</p>
                               </div>
                               <div>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase">Napi bér</p>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase">Napi bér</p>
                                 <p className="font-mono font-bold">{fmt(Math.round(m.grossSalary / 22))}</p>
                               </div>
                             </div>
@@ -357,9 +357,9 @@ export default function Filing2608Page() {
                     </React.Fragment>
                   ))}
                   {/* Totals */}
-                  <tr className="border-t-2 border-border bg-slate-50/80 dark:bg-slate-900/50 font-bold">
+                  <tr className="border-t-2 border-border bg-muted/40/80 dark:bg-card/50 font-bold">
                     <td className="px-5 py-2.5 text-xs">ÖSSZESEN</td>
-                    <td className="px-3 py-2.5 text-xs text-slate-400">{mlapRows.length} fő</td>
+                    <td className="px-3 py-2.5 text-xs text-muted-foreground">{mlapRows.length} fő</td>
                     <td className="px-3 py-2.5 text-right font-mono text-xs">{fmt(mlapRows.reduce((s, r) => s + r.grossSalary, 0))}</td>
                     <td className="px-3 py-2.5 text-right font-mono text-xs text-red-600">{fmt(mlapRows.reduce((s, r) => s + r.szja, 0))}</td>
                     <td className="px-3 py-2.5 text-right font-mono text-xs text-blue-600">{fmt(mlapRows.reduce((s, r) => s + r.tb, 0))}</td>

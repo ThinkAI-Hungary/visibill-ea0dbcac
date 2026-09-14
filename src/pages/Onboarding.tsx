@@ -997,7 +997,7 @@ const Onboarding = () => {
       {/* Edit category dialog */}
       <Dialog open={!!editingCategory} onOpenChange={(open) => !open && setEditingCategory(null)}>
         <DialogContent
-          className="sm:max-w-md bg-card/95 backdrop-blur-md border-border/50"
+          className="sm:max-w-2xl bg-card/95 backdrop-blur-md border-border/50"
           onOpenAutoFocus={(e) => {
             e.preventDefault();
             setTimeout(() => document.getElementById('edit-cat-name')?.focus(), 0);
@@ -1154,7 +1154,7 @@ const Onboarding = () => {
       {/* New category dialog */}
       <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
         <DialogContent
-          className="sm:max-w-md bg-card/95 backdrop-blur-md border-border/50"
+          className="sm:max-w-2xl bg-card/95 backdrop-blur-md border-border/50"
           onOpenAutoFocus={(e) => {
             e.preventDefault();
             setTimeout(() => document.getElementById('new-cat-name')?.focus(), 0);

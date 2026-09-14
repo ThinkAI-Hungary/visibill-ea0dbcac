@@ -83,9 +83,9 @@ export default function EmployeeDetailsPage() {
 
   if (empLoading) {
     return (
-      <div className="w-full space-y-6 animate-in fade-in">
-        <div className="h-8 w-64 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
-        <div className="h-48 bg-slate-200 dark:bg-slate-800 rounded-xl animate-pulse" />
+      <div className="w-full space-y-6 page-animate">
+        <div className="h-8 w-64 bg-muted rounded animate-pulse" />
+        <div className="h-48 bg-muted rounded-lg animate-pulse" />
       </div>
     );
   }
@@ -93,8 +93,8 @@ export default function EmployeeDetailsPage() {
   if (!employee) {
     return (
       <div className="w-full text-center py-16">
-        <AlertTriangle className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-        <p className="text-slate-500">Foglalkoztatott nem található</p>
+        <AlertTriangle className="w-12 h-12 mx-auto mb-3 text-muted-foreground/60" />
+        <p className="text-muted-foreground">Foglalkoztatott nem található</p>
       </div>
     );
   }
@@ -105,7 +105,7 @@ export default function EmployeeDetailsPage() {
   const statusColor: Record<string, string> = {
     active: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400',
     pending: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
-    terminated: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+    terminated: 'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground',
     suspended: 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400',
   };
 
@@ -168,7 +168,7 @@ export default function EmployeeDetailsPage() {
   };
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -180,7 +180,7 @@ export default function EmployeeDetailsPage() {
               {employee.last_name[0]}{employee.first_name[0]}
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+              <h1 className="text-2xl font-bold text-foreground">
                 {employee.last_name} {employee.first_name}
               </h1>
               <div className="flex items-center gap-3 mt-1">
@@ -188,7 +188,7 @@ export default function EmployeeDetailsPage() {
                   {statusLabel[employee.status] || employee.status}
                 </span>
                 {employee.taj_number && (
-                  <span className="text-xs text-slate-500 font-mono">TAJ: {formatTajNumber(employee.taj_number)}</span>
+                  <span className="text-xs text-muted-foreground font-mono">TAJ: {formatTajNumber(employee.taj_number)}</span>
                 )}
               </div>
             </div>
@@ -212,7 +212,7 @@ export default function EmployeeDetailsPage() {
       </div>
 
       {/* Tab bar */}
-      <div className="flex items-center gap-1 overflow-x-auto bg-muted/80 p-1 rounded-xl border border-border/60">
+      <div className="flex items-center gap-1 overflow-x-auto bg-muted/80 p-1 rounded-lg border border-border/60">
         {TABS.map((tab) => (
           <button
             key={tab.id}
@@ -220,8 +220,8 @@ export default function EmployeeDetailsPage() {
             className={cn(
               'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all',
               activeTab === tab.id
-                ? 'bg-card text-slate-900 dark:text-slate-100 shadow-soft'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+                ? 'bg-card text-foreground shadow-soft'
+                : 'text-muted-foreground hover:text-foreground/90'
             )}
           >
             <tab.icon className="w-4 h-4" />
@@ -231,7 +231,7 @@ export default function EmployeeDetailsPage() {
       </div>
 
       {/* Tab content */}
-      <div key={activeTab} className="bg-card rounded-xl border border-border shadow-soft tab-content-animate">
+      <div key={activeTab} className="bg-card rounded-lg border border-border shadow-soft tab-content-animate">
         {activeTab === 'overview' && (
           <EmployeeOverviewTab
             employee={employee}
@@ -279,21 +279,21 @@ export default function EmployeeDetailsPage() {
 
         {activeTab === 'documents' && (
           <div className="p-6 space-y-6">
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+            <p className="text-sm text-muted-foreground">
               Generáld és nyomtasd ki a dolgozó munkaviszonyával kapcsolatos kötelező bizonylatokat, vagy töltsd le a NAV ÁNYK kompatibilis bejelentő XML fájlokat.
             </p>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Printable documents block */}
-              <div className="p-4 rounded-xl border border-border bg-card space-y-4 shadow-sm">
-                <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <div className="p-4 rounded-lg border border-border bg-card space-y-4 shadow-sm">
+                <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
                   <Printer className="w-4 h-4 text-primary" /> Munkáltatói Igazolások és Bizonylatok
                 </h4>
                 <div className="divide-y divide-border/60 text-xs">
                   <div className="py-2.5 flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-slate-700 dark:text-slate-300">Foglalkoztatási Igazolás</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Hivatalos igazolás a fennálló munkaviszonyról.</p>
+                      <p className="font-semibold text-foreground/90">Foglalkoztatási Igazolás</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Hivatalos igazolás a fennálló munkaviszonyról.</p>
                     </div>
                     <Button
                       size="sm"
@@ -325,8 +325,8 @@ export default function EmployeeDetailsPage() {
 
                   <div className="py-2.5 flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-slate-700 dark:text-slate-300">Munkáltatói Jövedelemigazolás</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Havi nettó jövedelem igazolása (pl. hitelügyintézéshez).</p>
+                      <p className="font-semibold text-foreground/90">Munkáltatói Jövedelemigazolás</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Havi nettó jövedelem igazolása (pl. hitelügyintézéshez).</p>
                     </div>
                     <Button
                       size="sm"
@@ -448,8 +448,8 @@ export default function EmployeeDetailsPage() {
 
                   <div className="py-2.5 flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-slate-700 dark:text-slate-300">Jelenléti ív sablon</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Üres havi munkaidő nyilvántartó lap kézi kitöltéshez.</p>
+                      <p className="font-semibold text-foreground/90">Jelenléti ív sablon</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Üres havi munkaidő nyilvántartó lap kézi kitöltéshez.</p>
                     </div>
                     <Button
                       size="sm"
@@ -485,8 +485,8 @@ export default function EmployeeDetailsPage() {
 
                   <div className="py-2.5 flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-slate-700 dark:text-slate-300">Éves Bérkarton</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Összesített adókarton az adott adóév kifizetéseiről.</p>
+                      <p className="font-semibold text-foreground/90">Éves Bérkarton</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Összesített adókarton az adott adóév kifizetéseiről.</p>
                     </div>
                     <Button
                       size="sm"
@@ -520,15 +520,15 @@ export default function EmployeeDetailsPage() {
               </div>
 
               {/* Táppénz és Családtámogatás (TB) block */}
-              <div className="p-4 rounded-xl border border-border bg-card space-y-4 shadow-sm">
-                <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <div className="p-4 rounded-lg border border-border bg-card space-y-4 shadow-sm">
+                <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
                   <Heart className="w-4 h-4 text-primary" /> Táppénz és Családtámogatás (TB)
                 </h4>
                 <div className="divide-y divide-border/60 text-xs">
                   <div className="py-2.5 flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-slate-700 dark:text-slate-300">Munkáltatói Nyilatkozat Táppénzhez</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Igazolás keresőképtelen állományról táppénz kifizetéshez.</p>
+                      <p className="font-semibold text-foreground/90">Munkáltatói Nyilatkozat Táppénzhez</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Igazolás keresőképtelen állományról táppénz kifizetéshez.</p>
                     </div>
                     <Button
                       size="sm"
@@ -545,8 +545,8 @@ export default function EmployeeDetailsPage() {
 
                   <div className="py-2.5 flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-slate-700 dark:text-slate-300">Foglalkoztatói Igazolás CSED/GYED-hez</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Foglalkoztatói nyilatkozat gyermekgondozási díjak igényléséhez.</p>
+                      <p className="font-semibold text-foreground/90">Foglalkoztatói Igazolás CSED/GYED-hez</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Foglalkoztatói nyilatkozat gyermekgondozási díjak igényléséhez.</p>
                     </div>
                     <Button
                       size="sm"
@@ -563,8 +563,8 @@ export default function EmployeeDetailsPage() {
 
                   <div className="py-2.5 flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-slate-700 dark:text-slate-300">Veszélyeztetett Terhességi Nyilatkozat</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Igazolás 9-es kódú terhességi keresőképtelen állományról.</p>
+                      <p className="font-semibold text-foreground/90">Veszélyeztetett Terhességi Nyilatkozat</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Igazolás 9-es kódú terhességi keresőképtelen állományról.</p>
                     </div>
                     <Button
                       size="sm"
@@ -581,8 +581,8 @@ export default function EmployeeDetailsPage() {
 
                   <div className="py-2.5 flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-slate-700 dark:text-slate-300">Jegyzőkönyv Munkabalesetről</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Hivatalos jegyzőkönyv munkahelyi/üzemi baleset felvételéhez.</p>
+                      <p className="font-semibold text-foreground/90">Jegyzőkönyv Munkabalesetről</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Hivatalos jegyzőkönyv munkahelyi/üzemi baleset felvételéhez.</p>
                     </div>
                     <Button
                       size="sm"
@@ -600,15 +600,15 @@ export default function EmployeeDetailsPage() {
               </div>
 
               {/* NAV XML generation block */}
-              <div className="p-4 rounded-xl border border-border bg-card space-y-4 shadow-sm">
-                <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <div className="p-4 rounded-lg border border-border bg-card space-y-4 shadow-sm">
+                <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
                   <Download className="w-4 h-4 text-primary" /> Kormányzati NAV XML exportok (ÁNYK)
                 </h4>
                 <div className="divide-y divide-border/60 text-xs">
                   <div className="py-2.5 flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-slate-700 dark:text-slate-300">T1041 Biztosítotti bejelentés</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Biztosítási jogviszony kezdetének / végének bejelentése.</p>
+                      <p className="font-semibold text-foreground/90">T1041 Biztosítotti bejelentés</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Biztosítási jogviszony kezdetének / végének bejelentése.</p>
                     </div>
                     <Button
                       size="sm"
@@ -634,8 +634,8 @@ export default function EmployeeDetailsPage() {
 
                   <div className="py-2.5 flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-slate-700 dark:text-slate-300">T1042E EFO Alkalmi Munka</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Alkalmi / egyszerűsített foglalkoztatás napi bejelentője.</p>
+                      <p className="font-semibold text-foreground/90">T1042E EFO Alkalmi Munka</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Alkalmi / egyszerűsített foglalkoztatás napi bejelentője.</p>
                     </div>
                     <Button
                       size="sm"

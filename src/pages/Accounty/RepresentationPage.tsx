@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { useAccountyClient } from '@/hooks/accounty';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { useNavRepresentations, useAddNavRepresentation, useRevokeNavRepresentation, type NavRepresentation } from '@/hooks/accounty';
 import { useToast } from '@/hooks/use-toast';
@@ -149,7 +151,7 @@ export default function RepresentationPage() {
         return (
           <div className="space-y-4">
             <h3 className="text-lg font-bold">Meghatalmazott típusa</h3>
-            <p className="text-sm text-slate-500">Air. 17. § (1) g) pontja alapján 2025.02.01-től a könyvelőiroda szervezetet is be lehet jegyezni állandó meghatalmazottként.</p>
+            <p className="text-sm text-muted-foreground">Air. 17. § (1) g) pontja alapján 2025.02.01-től a könyvelőiroda szervezetet is be lehet jegyezni állandó meghatalmazottként.</p>
             <div className="grid grid-cols-2 gap-3">
               {[
                 { value: 'organization' as const, label: 'Könyvelőiroda (szervezet)', icon: Users, desc: 'A könyvelőiroda mint szervezet kerül bejegyzésre' },
@@ -159,7 +161,7 @@ export default function RepresentationPage() {
                   key={opt.value}
                   onClick={() => updateWizard({ type: opt.value })}
                   className={cn(
-                    'p-4 rounded-xl border-2 text-left transition-all',
+                    'p-4 rounded-lg border-2 text-left transition-all',
                     wizardData.type === opt.value
                       ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10'
                       : 'border-border hover:border-blue-300'
@@ -167,13 +169,13 @@ export default function RepresentationPage() {
                 >
                   <opt.icon className="w-5 h-5 mb-2 text-blue-600" />
                   <p className="text-sm font-bold">{opt.label}</p>
-                  <p className="text-xs text-slate-500 mt-1">{opt.desc}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{opt.desc}</p>
                 </button>
               ))}
             </div>
             <div className="grid grid-cols-2 gap-4 mt-4">
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">Meghatalmazott neve</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Meghatalmazott neve</label>
                 <input
                   type="text"
                   value={wizardData.name}
@@ -183,7 +185,7 @@ export default function RepresentationPage() {
                 />
               </div>
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">{wizardData.type === 'organization' ? 'Adószám' : 'Adóazonosító jel'}</label>
+                <label className="text-xs text-muted-foreground mb-1 block">{wizardData.type === 'organization' ? 'Adószám' : 'Adóazonosító jel'}</label>
                 <input
                   type="text"
                   value={wizardData.taxId}
@@ -209,26 +211,24 @@ export default function RepresentationPage() {
                   key={opt.value}
                   onClick={() => updateWizard({ scope: opt.value })}
                   className={cn(
-                    'w-full p-4 rounded-xl border-2 text-left transition-all',
+                    'w-full p-4 rounded-lg border-2 text-left transition-all',
                     wizardData.scope === opt.value
                       ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10'
                       : 'border-border hover:border-blue-300'
                   )}
                 >
                   <p className="text-sm font-bold">{opt.label}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">{opt.desc}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
                 </button>
               ))}
             </div>
             {wizardData.scope === 'custom' && (
-              <div className="grid grid-cols-2 gap-2 mt-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+              <div className="grid grid-cols-2 gap-2 mt-4 p-4 bg-muted/50 rounded-lg">
                 {SCOPE_OPTIONS.map(s => (
-                  <label key={s} className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input
-                      type="checkbox"
+                  <label key={s} className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                    <Checkbox
                       checked={wizardData.customScopes.includes(s)}
-                      onChange={() => toggleScope(s)}
-                      className="rounded border-border"
+                      onCheckedChange={() => toggleScope(s)}
                     />
                     {s}
                   </label>
@@ -243,32 +243,32 @@ export default function RepresentationPage() {
             <h3 className="text-lg font-bold">Időtartam</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">Kezdő dátum</label>
-                <input
-                  type="date"
+                <label className="text-xs text-muted-foreground mb-1 block">Kezdő dátum</label>
+                <DatePicker
                   value={wizardData.startDate}
-                  onChange={e => updateWizard({ startDate: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  onChange={val => updateWizard({ startDate: val })}
+                  placeholder="éééé. hh. nn."
+                  clearable
+                  className="w-full"
                 />
               </div>
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">Záró dátum</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Záró dátum</label>
                 <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input
-                      type="checkbox"
+                  <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                    <Checkbox
                       checked={wizardData.indefinite}
-                      onChange={e => updateWizard({ indefinite: e.target.checked })}
-                      className="rounded"
+                      onCheckedChange={checked => updateWizard({ indefinite: !!checked })}
                     />
                     Visszavonásig érvényes
                   </label>
                   {!wizardData.indefinite && (
-                    <input
-                      type="date"
+                    <DatePicker
                       value={wizardData.endDate}
-                      onChange={e => updateWizard({ endDate: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                      onChange={val => updateWizard({ endDate: val })}
+                      placeholder="éééé. hh. nn."
+                      clearable
+                      className="w-full"
                     />
                   )}
                 </div>
@@ -280,20 +280,20 @@ export default function RepresentationPage() {
         return (
           <div className="space-y-4">
             <h3 className="text-lg font-bold">UJEGYKE-űrlap előnézet</h3>
-            <div className="border border-border rounded-lg p-6 bg-white dark:bg-slate-900 space-y-3 text-sm">
+            <div className="border border-border rounded-lg p-6 bg-card space-y-3 text-sm">
               <div className="text-center border-b pb-3 mb-3">
                 <p className="font-bold text-base">UJEGYKE — Állandó meghatalmazás bejelentése</p>
-                <p className="text-xs text-slate-500">NAV — Nemzeti Adó- és Vámhivatal</p>
+                <p className="text-xs text-muted-foreground">NAV — Nemzeti Adó- és Vámhivatal</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-slate-500">Típus:</span> <strong>{wizardData.type === 'organization' ? 'Szervezet' : 'Magánszemély'}</strong></div>
-                <div><span className="text-slate-500">Név:</span> <strong>{wizardData.name || '—'}</strong></div>
-                <div><span className="text-slate-500">Azonosító:</span> <strong className="font-mono">{wizardData.taxId || '—'}</strong></div>
-                <div><span className="text-slate-500">Hatáskör:</span> <strong>
+                <div><span className="text-muted-foreground">Típus:</span> <strong>{wizardData.type === 'organization' ? 'Szervezet' : 'Magánszemély'}</strong></div>
+                <div><span className="text-muted-foreground">Név:</span> <strong>{wizardData.name || '—'}</strong></div>
+                <div><span className="text-muted-foreground">Azonosító:</span> <strong className="font-mono">{wizardData.taxId || '—'}</strong></div>
+                <div><span className="text-muted-foreground">Hatáskör:</span> <strong>
                   {wizardData.scope === 'all' ? 'Teljes körű' : wizardData.scope === 'payroll' ? 'Bérszámfejtés' : wizardData.customScopes.join(', ')}
                 </strong></div>
-                <div><span className="text-slate-500">Kezdete:</span> <strong>{wizardData.startDate}</strong></div>
-                <div><span className="text-slate-500">Vége:</span> <strong>{wizardData.indefinite ? 'Visszavonásig' : wizardData.endDate}</strong></div>
+                <div><span className="text-muted-foreground">Kezdete:</span> <strong>{wizardData.startDate}</strong></div>
+                <div><span className="text-muted-foreground">Vége:</span> <strong>{wizardData.indefinite ? 'Visszavonásig' : wizardData.endDate}</strong></div>
               </div>
             </div>
             <div className="bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/20 rounded-lg p-3 text-sm text-yellow-800 dark:text-yellow-300">
@@ -306,11 +306,11 @@ export default function RepresentationPage() {
         return (
           <div className="space-y-5 py-4">
             <div className="text-center">
-              <div className="p-4 bg-amber-50 dark:bg-amber-500/10 rounded-xl inline-block">
+              <div className="p-4 bg-amber-50 dark:bg-amber-500/10 rounded-lg inline-block">
                 <Shield className="w-12 h-12 text-amber-600" />
               </div>
               <h3 className="text-lg font-bold mt-3">AVDH aláírás és beküldés</h3>
-              <p className="text-sm text-slate-500 max-w-md mx-auto mt-1">
+              <p className="text-sm text-muted-foreground max-w-md mx-auto mt-1">
                 A meghatalmazás aláírásra és beküldésre kész. Az aláíró személynek hitelesítenie kell magát a kiválasztott KAÜ szolgáltatón keresztül.
               </p>
             </div>
@@ -320,14 +320,13 @@ export default function RepresentationPage() {
               <strong>Figyelem:</strong> Éles környezetben ez az aláírás a NAV AVDH rendszerén keresztül történik. Jelenleg a meghatalmazás rögzítése az eaisybooks nyilvántartásba történik, nem kerül beküldésre a NAV felé.
             </div>
 
-            <label className="flex items-start gap-3 p-4 rounded-xl border-2 border-border hover:border-indigo-300 transition-all cursor-pointer">
-              <input
-                type="checkbox"
+            <label className="flex items-start gap-3 p-4 rounded-lg border-2 border-border hover:border-primary/40 transition-all cursor-pointer select-none">
+              <Checkbox
                 checked={confirmed}
-                onChange={e => setConfirmed(e.target.checked)}
-                className="mt-0.5 rounded"
+                onCheckedChange={checked => setConfirmed(!!checked)}
+                className="mt-0.5"
               />
-              <span className="text-sm text-slate-700 dark:text-slate-300">
+              <span className="text-sm text-foreground/90">
                 Kijelentem, hogy az adatokat ellenőriztem, és hozzájárulok a meghatalmazás rögzítéséhez az eaisybooks rendszerben.
               </span>
             </label>
@@ -336,7 +335,7 @@ export default function RepresentationPage() {
               <Button
                 onClick={handleSubmit}
                 disabled={addMutation.isPending || !confirmed}
-                className={cn("gap-1.5 mt-2", confirmed ? "bg-emerald-600 hover:bg-emerald-700" : "bg-slate-400 cursor-not-allowed")}
+                className={cn("gap-1.5 mt-2", confirmed ? "bg-emerald-600 hover:bg-emerald-700" : "bg-muted-foreground/40 cursor-not-allowed")}
               >
                 {addMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
                 {addMutation.isPending ? 'Rögzítés...' : 'Megerősítés és rögzítés'}
@@ -348,33 +347,33 @@ export default function RepresentationPage() {
   };
 
   const renderRepCard = (rep: NavRepresentation) => (
-    <div key={rep.id} className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+    <div key={rep.id} className="flex items-center gap-4 px-5 py-4 hover:bg-muted/50 transition-colors">
       <div className={cn(
-        'w-10 h-10 rounded-xl flex items-center justify-center',
+        'w-10 h-10 rounded-lg flex items-center justify-center',
         rep.status === 'active' ? 'bg-emerald-100 dark:bg-emerald-500/20' :
         rep.status === 'revoked' ? 'bg-red-100 dark:bg-red-500/20' :
-        'bg-slate-100 dark:bg-slate-700'
+        'bg-muted'
       )}>
         {rep.repType === 'organization' ? <Users className="w-5 h-5 text-current" /> : <FileText className="w-5 h-5 text-current" />}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{rep.name}</p>
-        <p className="text-xs text-slate-500 font-mono">{rep.taxId}</p>
+        <p className="text-sm font-bold text-foreground">{rep.name}</p>
+        <p className="text-xs text-muted-foreground font-mono">{rep.taxId}</p>
       </div>
       <div className="text-right">
         <div className={cn(
           'px-2.5 py-1 rounded-full text-xs font-bold',
           rep.status === 'active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' :
           rep.status === 'revoked' ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400' :
-          'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
+          'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground'
         )}>
           {rep.status === 'active' ? 'Aktív' : rep.status === 'revoked' ? 'Visszavont' : 'Lejárt'}
         </div>
-        <p className="text-[10px] text-slate-400 mt-1">
+        <p className="text-[10px] text-muted-foreground mt-1">
           {rep.scope === 'all' ? 'Teljes körű' : rep.scope === 'payroll' ? 'Bérszámfejtés' : 'Egyedi'}
         </p>
       </div>
-      <div className="text-right text-xs text-slate-500">
+      <div className="text-right text-xs text-muted-foreground">
         <p>{rep.startDate} —</p>
         <p>{rep.endDate || 'visszavonásig'}</p>
       </div>
@@ -400,7 +399,7 @@ export default function RepresentationPage() {
 
   if (isLoading) {
     return (
-      <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300">
+      <div className="w-full max-w-5xl mx-auto space-y-6 page-animate">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
             <Skeleton className="w-8 h-8 rounded-lg bg-muted/50 mt-1.5" />
@@ -412,10 +411,10 @@ export default function RepresentationPage() {
           </div>
           <Skeleton className="h-10 w-36 bg-muted/50 rounded-lg" />
         </div>
-        <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 rounded-xl p-4">
+        <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 rounded-lg p-4">
           <Skeleton className="h-4 w-full bg-muted/50" />
         </div>
-        <div className="bg-card rounded-xl border border-border overflow-hidden">
+        <div className="bg-card rounded-lg border border-border overflow-hidden">
           <div className="px-5 py-3 border-b border-border flex items-center justify-between">
             <Skeleton className="h-4 w-36 bg-muted/50" />
             <Skeleton className="h-4 w-8 rounded-full bg-muted/50" />
@@ -423,7 +422,7 @@ export default function RepresentationPage() {
           <div className="divide-y divide-border/50">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="flex items-center gap-4 px-5 py-4">
-                <Skeleton className="w-10 h-10 rounded-xl bg-muted/50 shrink-0" />
+                <Skeleton className="w-10 h-10 rounded-lg bg-muted/50 shrink-0" />
                 <div className="flex-1 space-y-2">
                   <Skeleton className="h-4 w-48 bg-muted/50" />
                   <Skeleton className="h-3 w-32 bg-muted/50" />
@@ -445,7 +444,7 @@ export default function RepresentationPage() {
   }
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full max-w-5xl mx-auto space-y-6 page-animate">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
@@ -457,44 +456,44 @@ export default function RepresentationPage() {
                 navigate(`/eaisybooks/${companyId}/${dateRange}/overview`);
               }
             }}
-            className="flex items-center justify-center w-8 h-8 mt-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
+            className="flex items-center justify-center w-8 h-8 mt-1.5 rounded-lg border border-border bg-card hover:bg-muted transition-colors shadow-sm shrink-0"
             title="Vissza"
           >
-            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            <ChevronLeft className="w-5 h-5 text-muted-foreground" />
           </button>
           <div>
             <div className="flex items-center gap-1.5 mb-1">
               {clientLoading ? (
-                <div className="h-3.5 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+                <div className="h-3.5 w-32 bg-muted rounded animate-pulse" />
               ) : (
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{client?.name || 'Ügyfél'}</span>
+                <span className="text-xs font-semibold text-muted-foreground">{client?.name || 'Ügyfél'}</span>
               )}
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">NAV-meghatalmazás kezelés</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">UJEGYKE — Állandó meghatalmazások nyilvántartása</p>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">NAV-meghatalmazás kezelés</h1>
+            <p className="text-xs text-muted-foreground mt-1">UJEGYKE — Állandó meghatalmazások nyilvántartása</p>
           </div>
         </div>
-        <Button onClick={() => { setShowWizard(true); setWizardStep(1); }} className="gap-1.5 bg-indigo-600 hover:bg-indigo-700">
+        <Button onClick={() => { setShowWizard(true); setWizardStep(1); }} className="gap-1.5 bg-primary hover:bg-primary/90">
           <Plus className="w-4 h-4" /> Új meghatalmazás
         </Button>
       </div>
 
       {/* Info banner */}
-      <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl p-4 text-sm text-blue-800 dark:text-blue-300">
+      <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-lg p-4 text-sm text-blue-800 dark:text-blue-300">
         <strong>Air. 17. § (1) g):</strong> 2025.02.01-től a könyvelőiroda szervezetet is be lehet jegyezni állandó meghatalmazottként a NAV-nál.
       </div>
 
       {/* Active */}
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-        <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30 flex items-center justify-between">
-          <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Aktív meghatalmazások</h2>
+      <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
+        <div className="px-5 py-3 border-b border-border dark:bg-card/30 flex items-center justify-between">
+          <h2 className="text-sm font-bold text-foreground/90">Aktív meghatalmazások</h2>
           <span className="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold">
             {activeReps.length}
           </span>
         </div>
         <div className="divide-y divide-border/50">
           {activeReps.length === 0 ? (
-            <div className="py-12 text-center text-sm text-slate-400">Nincs aktív meghatalmazás</div>
+            <div className="py-12 text-center text-sm text-muted-foreground">Nincs aktív meghatalmazás</div>
           ) : (
             paginatedActiveReps.map(renderRepCard)
           )}
@@ -516,9 +515,9 @@ export default function RepresentationPage() {
 
       {/* Inactive */}
       {inactiveReps.length > 0 && (
-        <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-          <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30">
-            <h2 className="text-sm font-bold text-slate-400">Lejárt / Visszavont</h2>
+        <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
+          <div className="px-5 py-3 border-b border-border dark:bg-card/30">
+            <h2 className="text-sm font-bold text-muted-foreground">Lejárt / Visszavont</h2>
           </div>
           <div className="divide-y divide-border/50 opacity-60">
             {inactiveReps.map(renderRepCard)}
@@ -529,7 +528,7 @@ export default function RepresentationPage() {
       {/* Wizard Modal */}
       {showWizard && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowWizard(false)}>
-          <div className="bg-card rounded-2xl border border-border shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-card rounded-lg border border-border shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-auto" onClick={e => e.stopPropagation()}>
             {/* Stepper */}
             <div className="px-6 pt-6 pb-4 border-b border-border flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -538,18 +537,18 @@ export default function RepresentationPage() {
                     <div className={cn(
                       'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all',
                       wizardStep > step.num ? 'bg-emerald-500 text-white' :
-                      wizardStep === step.num ? 'bg-indigo-600 text-white ring-2 ring-indigo-300' :
-                      'bg-slate-200 dark:bg-slate-700 text-slate-500'
+                      wizardStep === step.num ? 'bg-primary text-white ring-2 ring-primary/40' :
+                      'bg-muted text-muted-foreground'
                     )}>
                       {wizardStep > step.num ? <CheckCircle className="w-4 h-4" /> : step.num}
                     </div>
                     {i < WIZARD_STEPS.length - 1 && (
-                      <div className={cn('w-8 h-0.5', wizardStep > step.num ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700')} />
+                      <div className={cn('w-8 h-0.5', wizardStep > step.num ? 'bg-emerald-500' : 'bg-muted')} />
                     )}
                   </React.Fragment>
                 ))}
               </div>
-              <button onClick={() => setShowWizard(false)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+              <button onClick={() => setShowWizard(false)} className="p-1.5 hover:bg-muted rounded-lg">
                 <X className="w-4 h-4" />
               </button>
             </div>

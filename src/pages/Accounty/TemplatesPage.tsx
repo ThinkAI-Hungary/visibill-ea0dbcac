@@ -65,16 +65,16 @@ export default function TemplatesPage() {
   };
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-xl shadow-lg shadow-violet-500/25">
+          <div className="p-2.5 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-lg shadow-lg shadow-violet-500/25">
             <FileText className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Sablonok</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Üzenet- és e-mail sablonok karbantartása</p>
+            <h1 className="text-2xl font-bold text-foreground">Sablonok</h1>
+            <p className="text-sm text-muted-foreground">Üzenet- és e-mail sablonok karbantartása</p>
           </div>
         </div>
         <Button className="gap-2" onClick={openCreate}>
@@ -84,15 +84,15 @@ export default function TemplatesPage() {
       </div>
 
       {/* Category tabs */}
-      <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/50 rounded-xl p-1 overflow-x-auto">
+      <div className="flex gap-1 bg-muted/50 rounded-lg p-1 overflow-x-auto">
         {CATEGORIES.map(c => (
           <button
             key={c.id}
             onClick={() => setSelectedCat(c.id)}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
               selectedCat === c.id
-                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                ? 'bg-card dark:bg-muted text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground/90 dark:hover:text-muted-foreground/60'
             }`}
           >
             {c.label}
@@ -104,39 +104,39 @@ export default function TemplatesPage() {
       <div className="grid gap-4">
         {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-24 bg-slate-200 dark:bg-slate-800 rounded-xl animate-pulse" />
+            <div key={i} className="h-24 bg-muted rounded-lg animate-pulse" />
           ))
         ) : templates.length === 0 ? (
-          <div className="py-16 text-center bg-card rounded-xl border border-border">
-            <FileText className="w-10 h-10 mx-auto mb-3 text-slate-300" />
-            <p className="text-sm text-slate-400 mb-4">Nincs sablon ebben a kategóriában</p>
+          <div className="py-16 text-center bg-card rounded-lg border border-border">
+            <FileText className="w-10 h-10 mx-auto mb-3 text-muted-foreground/60" />
+            <p className="text-sm text-muted-foreground mb-4">Nincs sablon ebben a kategóriában</p>
             <Button variant="outline" size="sm" onClick={openCreate}>Sablon létrehozása</Button>
           </div>
         ) : (
           templates.map((t: any) => (
-            <div key={t.id} className="bg-card rounded-xl border border-border shadow-soft p-4 hover:shadow-md transition-shadow">
+            <div key={t.id} className="bg-card rounded-lg border border-border shadow-soft p-4 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{t.name}</h3>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${t.is_active ? 'bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-500'}`}>
+                    <h3 className="text-sm font-bold text-foreground truncate">{t.name}</h3>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${t.is_active ? 'bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400' : 'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground'}`}>
                       {t.is_active ? 'Aktív' : 'Inaktív'}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-mono">v{t.version}</span>
+                    <span className="text-[10px] text-muted-foreground font-mono">v{t.version}</span>
                   </div>
-                  {t.subject && <p className="text-xs text-slate-500 mb-1">Tárgy: {t.subject}</p>}
-                  <p className="text-xs text-slate-400 line-clamp-2">{t.body_markdown?.slice(0, 200)}</p>
+                  {t.subject && <p className="text-xs text-muted-foreground mb-1">Tárgy: {t.subject}</p>}
+                  <p className="text-xs text-muted-foreground line-clamp-2">{t.body_markdown?.slice(0, 200)}</p>
                 </div>
                 <div className="flex items-center gap-1 ml-3">
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setVersionModal(t.id)}>
-                    <History className="w-4 h-4 text-slate-400" />
+                    <History className="w-4 h-4 text-muted-foreground" />
                   </Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(t)}>
-                    <Edit3 className="w-4 h-4 text-slate-400" />
+                    <Edit3 className="w-4 h-4 text-muted-foreground" />
                   </Button>
                 </div>
               </div>
-              <p className="text-[10px] text-slate-400 mt-2">Módosítva: {new Date(t.updated_at).toLocaleDateString('hu-HU')}</p>
+              <p className="text-[10px] text-muted-foreground mt-2">Módosítva: {new Date(t.updated_at).toLocaleDateString('hu-HU')}</p>
             </div>
           ))
         )}
@@ -150,15 +150,15 @@ export default function TemplatesPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Sablon neve</label>
+              <label className="text-sm font-medium text-foreground/90">Sablon neve</label>
               <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="mt-1" />
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Tárgy sor</label>
+              <label className="text-sm font-medium text-foreground/90">Tárgy sor</label>
               <Input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))} className="mt-1" placeholder="Email tárgy..." />
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">Változók</label>
+              <label className="text-sm font-medium text-foreground/90 mb-2 block">Változók</label>
               <div className="flex flex-wrap gap-1.5">
                 {VARIABLES.map(v => (
                   <button
@@ -172,7 +172,7 @@ export default function TemplatesPage() {
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Sablon szövege (Markdown)</label>
+              <label className="text-sm font-medium text-foreground/90">Sablon szövege (Markdown)</label>
               <textarea
                 value={form.body_markdown}
                 onChange={e => setForm(f => ({ ...f, body_markdown: e.target.value }))}
@@ -196,15 +196,15 @@ export default function TemplatesPage() {
           </DialogHeader>
           <div className="space-y-3 py-4 max-h-[400px] overflow-y-auto">
             {versions.length === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-6">Nincs korábbi verzió</p>
+              <p className="text-sm text-muted-foreground text-center py-6">Nincs korábbi verzió</p>
             ) : (
               versions.map((v: any) => (
-                <div key={v.id} className="p-3 rounded-lg border border-border bg-slate-50 dark:bg-slate-800/50">
+                <div key={v.id} className="p-3 rounded-lg border border-border bg-muted/50">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">v{v.version}</span>
-                    <span className="text-[10px] text-slate-400">{new Date(v.created_at).toLocaleDateString('hu-HU')}</span>
+                    <span className="text-xs font-semibold text-muted-foreground">v{v.version}</span>
+                    <span className="text-[10px] text-muted-foreground">{new Date(v.created_at).toLocaleDateString('hu-HU')}</span>
                   </div>
-                  <p className="text-xs text-slate-500 line-clamp-3 font-mono">{v.body_markdown?.slice(0, 200)}</p>
+                  <p className="text-xs text-muted-foreground line-clamp-3 font-mono">{v.body_markdown?.slice(0, 200)}</p>
                 </div>
               ))
             )}

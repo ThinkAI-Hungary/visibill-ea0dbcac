@@ -80,18 +80,18 @@ export default function ClientKanbanView({
           <div 
             key={col.status}
             className={cn(
-              "p-4 rounded-xl border flex flex-col gap-4 min-h-[500px] transition-all duration-200",
-              isOver ? col.bgOverClass : "bg-slate-100/60 dark:bg-slate-900/60 border-border/60"
+              "p-4 rounded-lg border flex flex-col gap-4 min-h-[500px] transition-all duration-200",
+              isOver ? col.bgOverClass : "bg-muted/60 dark:bg-card/60 border-border/60"
             )}
             onDragOver={(e) => handleDragOver(e, col.status)}
             onDrop={(e) => handleDrop(e, col.status)}
           >
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+              <h3 className="font-bold text-foreground flex items-center gap-2">
                 <span className={cn("w-2.5 h-2.5 rounded-full", col.dotColor)}></span>
                 {col.label}
               </h3>
-              <span className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold px-2 py-0.5 rounded-full">
+              <span className="bg-muted text-foreground/90 text-xs font-bold px-2 py-0.5 rounded-full">
                 {columnClients.length}
               </span>
             </div>
@@ -109,7 +109,7 @@ export default function ClientKanbanView({
             ))}
             
             {columnClients.length === 0 && (
-              <div className="text-center py-8 text-sm text-slate-400 border-2 border-dashed border-border rounded-lg">
+              <div className="text-center py-8 text-sm text-muted-foreground border-2 border-dashed border-border rounded-lg">
                 Nincs ügyfél
               </div>
             )}

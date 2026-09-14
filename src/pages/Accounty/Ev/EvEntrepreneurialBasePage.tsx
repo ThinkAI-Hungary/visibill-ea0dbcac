@@ -129,29 +129,29 @@ export default function EvEntrepreneurialBasePage() {
   };
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link to="/eaisybooks?tab=ev" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link to="/eaisybooks?tab=ev" className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-primary transition-colors">
           {client?.name || 'Ügyfél'}
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <span className="text-slate-900 dark:text-slate-100 font-medium">Vállalkozói SZJA – Adóalap</span>
+        <span className="text-foreground font-medium">Vállalkozói SZJA – Adóalap</span>
       </div>
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl shadow-lg shadow-violet-500/25">
+          <div className="p-2.5 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg shadow-lg shadow-violet-500/25">
             <TrendingUp className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Vállalkozói SZJA – Adóalap számítás</h1>
-            <p className="text-sm text-slate-500">Szja tv. 49/B.§ szerinti adóalap-megállapítás – {client?.name || 'Ügyfél'}</p>
+            <h1 className="text-2xl font-bold text-foreground">Vállalkozói SZJA – Adóalap számítás</h1>
+            <p className="text-sm text-muted-foreground">Szja tv. 49/B.§ szerinti adóalap-megállapítás – {client?.name || 'Ügyfél'}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -166,7 +166,7 @@ export default function EvEntrepreneurialBasePage() {
           <button
             onClick={handleGenerateReturn}
             disabled={saving}
-            className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors disabled:opacity-50"
           >
             <Send className="w-3.5 h-3.5" />
             Bevallás elkészítése (2553)
@@ -177,15 +177,15 @@ export default function EvEntrepreneurialBasePage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Inputs */}
         <div className="lg:col-span-1 space-y-4">
-          <div className="bg-card rounded-xl border border-border shadow-soft p-5 space-y-4">
-            <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <div className="bg-card rounded-lg border border-border shadow-soft p-5 space-y-4">
+            <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
               <Calculator className="w-4 h-4 text-violet-600" />
               Bemeneti adatok
             </h2>
 
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-medium text-slate-500 block mb-1">Vállalkozói bevétel (Ft)</label>
+                <label className="text-xs font-medium text-muted-foreground block mb-1">Vállalkozói bevétel (Ft)</label>
                 <input
                   type="number"
                   value={revenue}
@@ -194,7 +194,7 @@ export default function EvEntrepreneurialBasePage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-500 block mb-1">Elismert költségek (Ft)</label>
+                <label className="text-xs font-medium text-muted-foreground block mb-1">Elismert költségek (Ft)</label>
                 <input
                   type="number"
                   value={costs}
@@ -203,7 +203,7 @@ export default function EvEntrepreneurialBasePage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-500 block mb-1">Egyéb bevételek (Ft)</label>
+                <label className="text-xs font-medium text-muted-foreground block mb-1">Egyéb bevételek (Ft)</label>
                 <input
                   type="number"
                   value={otherIncome}
@@ -212,7 +212,7 @@ export default function EvEntrepreneurialBasePage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-500 block mb-1">Foglalkoztatói költségek (Ft)</label>
+                <label className="text-xs font-medium text-muted-foreground block mb-1">Foglalkoztatói költségek (Ft)</label>
                 <input
                   type="number"
                   value={employerCosts}
@@ -221,7 +221,7 @@ export default function EvEntrepreneurialBasePage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-500 block mb-1">Értékcsökkenési leírás (Ft)</label>
+                <label className="text-xs font-medium text-muted-foreground block mb-1">Értékcsökkenési leírás (Ft)</label>
                 <input
                   type="number"
                   value={depreciationTotal}
@@ -230,20 +230,20 @@ export default function EvEntrepreneurialBasePage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-500 block mb-1">Vállalkozói kivét (Ft)</label>
+                <label className="text-xs font-medium text-muted-foreground block mb-1">Vállalkozói kivét (Ft)</label>
                 <input
                   type="number"
                   value={kivet}
                   onChange={e => setKivet(Number(e.target.value) || 0)}
                   className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-card text-foreground font-mono tabular-nums text-right"
                 />
-                <p className="text-[10px] text-slate-400 mt-0.5">A vállalkozó személyes felhasználásra kivett összeg (SZJA-köteles jövedelem)</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">A vállalkozó személyes felhasználásra kivett összeg (SZJA-köteles jövedelem)</p>
               </div>
             </div>
           </div>
 
           {/* Info */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl p-4">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg p-4">
             <div className="flex items-start gap-2">
               <Info className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
               <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
@@ -263,32 +263,32 @@ export default function EvEntrepreneurialBasePage() {
         <div className="lg:col-span-2 space-y-4">
           {/* Summary cards */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-              <p className="text-xs text-slate-500 mb-1">Vállalkozói bevétel</p>
-              <p className="text-lg font-bold text-slate-900 dark:text-slate-100 tabular-nums">{formatHuf(revenue)}</p>
+            <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+              <p className="text-xs text-muted-foreground mb-1">Vállalkozói bevétel</p>
+              <p className="text-lg font-bold text-foreground tabular-nums">{formatHuf(revenue)}</p>
             </div>
-            <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-              <p className="text-xs text-slate-500 mb-1">Nettó jövedelem</p>
+            <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+              <p className="text-xs text-muted-foreground mb-1">Nettó jövedelem</p>
               <p className="text-lg font-bold text-green-600 tabular-nums">{formatHuf(netIncome)}</p>
             </div>
-            <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-              <p className="text-xs text-slate-500 mb-1">Adóalap</p>
+            <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+              <p className="text-xs text-muted-foreground mb-1">Adóalap</p>
               <p className="text-lg font-bold text-violet-600 tabular-nums">{formatHuf(taxableBase)}</p>
             </div>
-            <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-              <p className="text-xs text-slate-500 mb-1">Összes adóteher</p>
+            <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+              <p className="text-xs text-muted-foreground mb-1">Összes adóteher</p>
               <p className="text-lg font-bold text-red-500 tabular-nums">{formatHuf(totalTax)}</p>
             </div>
-            <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-              <p className="text-xs text-slate-500 mb-1">Effektív adóráta</p>
-              <p className="text-lg font-bold text-indigo-600 tabular-nums">{effectiveTaxRate.toFixed(1)}%</p>
+            <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+              <p className="text-xs text-muted-foreground mb-1">Effektív adóráta</p>
+              <p className="text-lg font-bold text-primary tabular-nums">{effectiveTaxRate.toFixed(1)}%</p>
             </div>
           </div>
 
           {/* Calculation breakdown */}
-          <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+          <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
             <div className="px-5 py-3 border-b border-border/50">
-              <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Adóalap részletezése</h2>
+              <h2 className="text-sm font-bold text-foreground">Adóalap részletezése</h2>
             </div>
             <div className="divide-y divide-border">
               <Row label="1. Vállalkozói bevétel" value={formatHuf(revenue)} />
@@ -302,9 +302,9 @@ export default function EvEntrepreneurialBasePage() {
           </div>
 
           {/* Tax calculation */}
-          <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+          <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
             <div className="px-5 py-3 border-b border-border/50">
-              <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Adószámítás</h2>
+              <h2 className="text-sm font-bold text-foreground">Adószámítás</h2>
             </div>
             <div className="divide-y divide-border">
               <Row label={`Vállalkozói SZJA (${formatPercent(params.vszjaRate)})`} value={formatHuf(result.entrepreneurialTax)} />
@@ -318,7 +318,7 @@ export default function EvEntrepreneurialBasePage() {
 
 
           {/* Dividend base hint */}
-          <div className="bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 rounded-xl p-4">
+          <div className="bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 rounded-lg p-4">
             <div className="flex items-start gap-3">
               <ArrowRight className="w-4 h-4 text-violet-600 mt-0.5 shrink-0" />
               <div>
@@ -355,14 +355,14 @@ function Row({ label, value, bold, negative, highlight }: {
     )}>
       <span className={cn(
         'text-sm',
-        bold ? 'font-bold text-slate-900 dark:text-slate-100' : 'text-slate-600 dark:text-slate-400'
+        bold ? 'font-bold text-foreground' : 'text-muted-foreground'
       )}>
         {label}
       </span>
       <span className={cn(
         'text-sm font-mono tabular-nums',
-        bold ? 'font-bold text-slate-900 dark:text-slate-100' : '',
-        negative ? 'text-red-600' : 'text-slate-700 dark:text-slate-300',
+        bold ? 'font-bold text-foreground' : '',
+        negative ? 'text-red-600' : 'text-foreground/90',
         highlight && 'text-violet-600 font-bold'
       )}>
         {negative ? `- ${value}` : value}

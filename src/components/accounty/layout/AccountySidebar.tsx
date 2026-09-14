@@ -1,17 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
-  Building2, 
   Search, 
   Sun, 
   Moon, 
   Settings, 
-  LogOut 
+  LogOut,
+  PanelLeft
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import AppModeSwitcher from '@/components/AppModeSwitcher';
 import AccountyNavSkeleton from './AccountyNavSkeleton';
@@ -40,6 +39,7 @@ export interface AccountySidebarProps {
   theme?: string;
   setTheme?: (t: string) => void;
   allClients?: any[] | null;
+  isClientsLoading?: boolean;
   expandedPayroll?: Set<string>;
   togglePayrollClient?: (id: string) => void;
   payrollSearch?: string;
@@ -127,6 +127,7 @@ function AccountySidebarStandalone(props: AccountySidebarProps) {
     canAccess: props.canAccess ?? (() => true),
     hasEaisybillAccess: props.hasEaisybillAccess ?? true,
     allClients: props.allClients ?? null,
+    isClientsLoading: props.isClientsLoading ?? false,
     kpis: props.kpis ?? {},
     unreadTicketCount: props.unreadTicketCount ?? 0,
     user: props.user ?? null,
@@ -184,6 +185,21 @@ function AccountySidebarInner({ shell, props }: { shell: AccountyShellContextTyp
   const setTheme = props.setTheme ?? shell.setTheme;
   const signOut = props.signOut ?? shell.signOut;
   const navigate = props.navigate ?? shell.navigate;
+  const toggleSidebarCollapse = props.toggleSidebarCollapse ?? shell.toggleSidebarCollapse;
+
+  const isDark = theme === 'dark';
+  const toggleTheme = () => setTheme(isDark ? 'light' : 'dark');
+  const handleSignOut = async () => {
+    try {
+      if (signOut) {
+        await signOut();
+      }
+    } finally {
+      if (navigate) {
+        navigate('/auth?app=eaisybooks');
+      }
+    }
+  };
 
   const {
     mode,
@@ -200,7 +216,8 @@ function AccountySidebarInner({ shell, props }: { shell: AccountyShellContextTyp
       "flex flex-col bg-sidebar text-sidebar-foreground transition-all duration-300 z-50",
       isCollapsed ? "w-12" : "w-64",
       "fixed inset-y-0 left-0 lg:static lg:translate-x-0",
-      sidebarOpen ? "translate-x-0" : "-translate-x-full"
+      sidebarOpen ? "translate-x-0" : "-translate-x-full",
+      "border-r border-border h-full"
     )}>
       {/* Logo Area */}
       <div 
@@ -217,43 +234,6 @@ function AccountySidebarInner({ shell, props }: { shell: AccountyShellContextTyp
         />
       </div>
 
-      {/* Company Selector Dropdown — placed and styled exactly like eaisyBill */}
-      {!isCollapsed && (
-        <div className="p-3 border-b border-border shrink-0 flex items-center gap-2" data-tour="company-selector">
-          <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
-          <Select
-            value={selectedClientId || '_portfolio'}
-            onValueChange={(val) => {
-              if (val === '_portfolio') {
-                handleBackToPortfolio();
-              } else {
-                navigate(`/eaisybooks/${val}/${currentDateRange}/overview`);
-              }
-            }}
-          >
-            <SelectTrigger className="flex-1 h-9 text-sm font-medium bg-transparent border-border hover:bg-sidebar-foreground/5 text-sidebar-foreground [&>span]:text-left [&>span]:flex-1 focus:ring-1 focus:ring-primary/30">
-              <SelectValue placeholder="Válassz céget">
-                {selectedClientId ? (selectedClient?.name || 'Ügyfél betöltése...') : 'Teljes Portfólió'}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent className="max-h-64 overflow-y-auto">
-              <SelectItem value="_portfolio" className="text-xs font-bold text-primary">
-                Teljes Portfólió
-              </SelectItem>
-              {selectedClientId && selectedClient && !allClients?.some(c => c.companyId === selectedClientId) && (
-                <SelectItem value={selectedClientId} className="text-xs">
-                  {selectedClient.name}
-                </SelectItem>
-              )}
-              {(allClients || []).map((client) => (
-                <SelectItem key={client.companyId} value={client.companyId} className="text-xs">
-                  {client.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
 
       {/* Navigation Area */}
       <nav className="flex-1 p-2 overflow-y-auto" data-sidebar-nav>
@@ -294,7 +274,7 @@ function AccountySidebarInner({ shell, props }: { shell: AccountyShellContextTyp
       </nav>
 
       {/* User Profile Footer */}
-      <div className="mt-auto border-t border-border shrink-0">
+      <div className="mt-auto shrink-0 border-t border-border">
         {isCollapsed ? (
           <div className="p-2 space-y-2 flex flex-col items-center">
             <Avatar className="h-8 w-8">
@@ -306,21 +286,21 @@ function AccountySidebarInner({ shell, props }: { shell: AccountyShellContextTyp
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} 
+                  onClick={toggleTheme} 
                   className="w-8 h-8 hover:bg-primary/10 hover:text-primary"
                 >
                   <div className="relative h-4 w-4">
-                    <Sun className={`h-4 w-4 absolute transition-all ${theme === 'dark' ? 'animate-rotate-out' : 'animate-rotate-in'}`} />
-                    <Moon className={`h-4 w-4 absolute transition-all ${theme === 'dark' ? 'animate-rotate-in' : 'animate-rotate-out'}`} />
+                    <Sun className={`h-4 w-4 absolute transition-all ${isDark ? 'animate-rotate-out' : 'animate-rotate-in'}`} />
+                    <Moon className={`h-4 w-4 absolute transition-all ${isDark ? 'animate-rotate-in' : 'animate-rotate-out'}`} />
                   </div>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="right">{theme === 'dark' ? 'Világos mód' : 'Sötét mód'}</TooltipContent>
+              <TooltipContent side="right">{isDark ? 'Világos mód' : 'Sötét mód'}</TooltipContent>
             </Tooltip>
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="outline" asChild className="w-8 h-8 p-0 hover:bg-primary/10 hover:text-primary hover:border-primary/30">
+                <Button data-tour="settings" variant="outline" asChild className="w-8 h-8 p-0 hover:bg-primary/10 hover:text-primary hover:border-primary/30">
                   <Link to="/eaisybooks/profile/settings">
                     <Settings className="h-4 w-4" />
                   </Link>
@@ -334,13 +314,13 @@ function AccountySidebarInner({ shell, props }: { shell: AccountyShellContextTyp
                 <Button 
                   variant="outline" 
                   size="icon" 
-                  onClick={async () => { await signOut(); navigate('/auth?app=eaisybooks'); }} 
+                  onClick={handleSignOut} 
                   className="w-8 h-8 hover:bg-primary/10 hover:text-primary hover:border-primary/30"
                 >
                   <LogOut className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="right">Kilépés</TooltipContent>
+              <TooltipContent side="right">Kijelentkezés</TooltipContent>
             </Tooltip>
           </div>
         ) : (
@@ -350,52 +330,70 @@ function AccountySidebarInner({ shell, props }: { shell: AccountyShellContextTyp
                 <AvatarImage src={user?.user_metadata?.avatar_url} />
                 <AvatarFallback className="text-xs">{getUserInitials()}</AvatarFallback>
               </Avatar>
-              <div className="flex flex-col min-w-0 flex-1">
-                <span className="text-xs font-semibold truncate text-foreground">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">
                   {user?.user_metadata?.name || user?.email?.split('@')[0] || 'Felhasználó'}
-                </span>
-                <span className="text-[10px] text-muted-foreground truncate">{user?.email}</span>
+                </p>
+                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={toggleTheme} 
+                  className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                  title={isDark ? 'Világos mód' : 'Sötét mód'}
+                >
+                  <div className="relative h-4 w-4">
+                    <Sun className={`h-4 w-4 absolute transition-all ${isDark ? 'animate-rotate-out' : 'animate-rotate-in'}`} />
+                    <Moon className={`h-4 w-4 absolute transition-all ${isDark ? 'animate-rotate-in' : 'animate-rotate-out'}`} />
+                  </div>
+                </Button>
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-1 border-t border-border/40">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} 
-                className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
-                title={theme === 'dark' ? 'Világos mód' : 'Sötét mód'}
-              >
-                <div className="relative h-4 w-4">
-                  <Sun className={`h-4 w-4 absolute transition-all ${theme === 'dark' ? 'animate-rotate-out' : 'animate-rotate-in'}`} />
-                  <Moon className={`h-4 w-4 absolute transition-all ${theme === 'dark' ? 'animate-rotate-in' : 'animate-rotate-out'}`} />
-                </div>
-              </Button>
+            <div className="grid grid-cols-2 gap-2 w-full">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button data-tour="settings" variant="outline" asChild className="w-full aspect-square justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/30">
+                    <Link to="/eaisybooks/profile/settings">
+                      <Settings className="h-5 w-5" />
+                    </Link>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Beállítások</TooltipContent>
+              </Tooltip>
 
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                asChild 
-                className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
-                title="Profilbeállítások"
-              >
-                <Link to="/eaisybooks/profile/settings">
-                  <Settings className="h-4 w-4" />
-                </Link>
-              </Button>
-
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={async () => { await signOut(); navigate('/auth?app=eaisybooks'); }} 
-                className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
-                title="Kijelentkezés"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleSignOut} 
+                    className="w-full aspect-square justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/30"
+                  >
+                    <LogOut className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Kijelentkezés</TooltipContent>
+              </Tooltip>
             </div>
           </div>
         )}
+
+        {/* Sidebar Toggle */}
+        <div className={cn("p-2 border-t border-border", isCollapsed ? "flex justify-center" : "")}>
+          <Button
+            data-tour="sidebar-trigger"
+            variant="ghost"
+            size="icon"
+            onClick={toggleSidebarCollapse}
+            className={cn("hover:bg-primary/10 hover:text-primary h-7", isCollapsed ? "w-7" : "w-full")}
+            title={isCollapsed ? "Oldalsáv kinyitása" : "Oldalsáv összecsukása"}
+          >
+            <PanelLeft className="h-4 w-4" />
+            <span className="sr-only">Toggle Sidebar</span>
+          </Button>
+        </div>
       </div>
     </aside>
   );

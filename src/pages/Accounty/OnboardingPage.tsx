@@ -60,7 +60,7 @@ function ConfettiBurst() {
       {particles.map((p) => (
         <div
           key={p.id}
-          className="absolute rounded-sm animate-in fade-in"
+          className="absolute rounded-sm page-animate"
           style={{
             left: `${p.x}%`,
             top: `${p.y}%`,
@@ -541,13 +541,13 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="w-full space-y-8 animate-in fade-in duration-500 max-w-4xl mx-auto relative pb-12">
+    <div className="w-full space-y-8 page-animate max-w-4xl mx-auto relative pb-12">
       {showCelebration && <ConfettiBurst />}
 
       {/* Header */}
-      <div className="text-center bg-card border border-border p-8 rounded-2xl shadow-soft relative overflow-hidden">
+      <div className="text-center bg-card border border-border p-8 rounded-lg shadow-soft relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-violet-500/5 pointer-events-none" />
-        <div className="p-3.5 bg-gradient-to-br from-primary to-violet-600 rounded-2xl shadow-lg shadow-primary/20 w-fit mx-auto mb-4">
+        <div className="p-3.5 bg-gradient-to-br from-primary to-violet-600 rounded-lg shadow-lg shadow-primary/20 w-fit mx-auto mb-4">
           <Rocket className="w-7 h-7 text-white" />
         </div>
         <h1 className="text-3xl font-extrabold text-foreground tracking-tight mb-2">Könyvelői fiók beállítása</h1>
@@ -557,10 +557,10 @@ export default function OnboardingPage() {
       </div>
 
       {/* Donut progress ring */}
-      <div className="bg-card rounded-2xl border border-border p-6 shadow-soft flex flex-col md:flex-row items-center gap-6">
+      <div className="bg-card rounded-lg border border-border p-6 shadow-soft flex flex-col md:flex-row items-center gap-6">
         <div className="relative shrink-0">
           <svg className="w-20 h-20 transform -rotate-90">
-            <circle cx="40" cy="40" r={radius} className="stroke-slate-100 dark:stroke-slate-800" strokeWidth="6" fill="transparent" />
+            <circle cx="40" cy="40" r={radius} className="stroke-muted" strokeWidth="6" fill="transparent" />
             <circle 
               cx="40" 
               cy="40" 
@@ -599,7 +599,7 @@ export default function OnboardingPage() {
             <div 
               key={step.id} 
               className={cn(
-                "bg-card rounded-2xl border border-border shadow-soft overflow-hidden transition-all duration-300",
+                "bg-card rounded-lg border border-border shadow-soft overflow-hidden transition-all duration-300",
                 isComplete && "border-green-200/60 dark:border-green-900/30 bg-green-50/10 dark:bg-green-950/5",
                 isExpanded && "ring-1 ring-primary/20 shadow-md"
               )}
@@ -611,8 +611,8 @@ export default function OnboardingPage() {
               >
                 <div className="flex items-center gap-4">
                   <div className={cn(
-                    "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-300",
-                    isComplete ? "bg-green-100 dark:bg-green-950 text-green-600 dark:text-green-400" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
+                    "w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-colors duration-300",
+                    isComplete ? "bg-green-100 dark:bg-green-950 text-green-600 dark:text-green-400" : "bg-muted text-muted-foreground"
                   )}>
                     {isComplete ? <Check className="w-5 h-5" /> : <span className="text-sm font-bold">{index + 1}</span>}
                   </div>
@@ -725,7 +725,7 @@ export default function OnboardingPage() {
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* Option 1: Code */}
-                        <div className="bg-slate-50 dark:bg-slate-900/40 p-5 rounded-2xl border border-border flex flex-col justify-between space-y-4">
+                        <div className="bg-background/40 p-5 rounded-lg border border-border flex flex-col justify-between space-y-4">
                           <div>
                             <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
                               <Shield className="w-4 h-4 text-primary" />
@@ -776,7 +776,7 @@ export default function OnboardingPage() {
                         </div>
 
                         {/* Option 2: Sync */}
-                        <div className="bg-slate-50 dark:bg-slate-900/40 p-5 rounded-2xl border border-border flex flex-col justify-between space-y-4">
+                        <div className="bg-background/40 p-5 rounded-lg border border-border flex flex-col justify-between space-y-4">
                           <div>
                             <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
                               <Rocket className="w-4 h-4 text-violet-500" />
@@ -799,7 +799,7 @@ export default function OnboardingPage() {
                         </div>
 
                         {/* Option 3: Manual */}
-                        <div className="bg-slate-50 dark:bg-slate-900/40 p-5 rounded-2xl border border-border flex flex-col justify-between space-y-4">
+                        <div className="bg-background/40 p-5 rounded-lg border border-border flex flex-col justify-between space-y-4">
                           <div>
                             <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
                               <Plus className="w-4 h-4 text-amber-500" />
@@ -828,7 +828,7 @@ export default function OnboardingPage() {
                   {/* Step 4: General Preferences */}
                   {step.id === 'preferences' && (
                     <div className="space-y-4 max-w-xl">
-                      <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-border">
+                      <div className="flex items-center justify-between p-4 bg-background/50 rounded-lg border border-border">
                         <div>
                           <h4 className="text-xs font-bold text-foreground">Automatikus ügyfél emlékeztetők</h4>
                           <p className="text-[10px] text-muted-foreground mt-0.5">Automatikus havi értesítések küldése a hiányzó bizonylatokról.</p>
@@ -867,7 +867,7 @@ export default function OnboardingPage() {
                   {/* Step 5: Invite colleagues */}
                   {step.id === 'colleagues' && (
                     <div className="space-y-4 max-w-xl">
-                      <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-border text-xs text-muted-foreground leading-relaxed">
+                      <div className="bg-background/50 p-4 rounded-lg border border-border text-xs text-muted-foreground leading-relaxed">
                         Ha nem egyedül dolgozol, hívj meg könyvelő asszisztenseket vagy senior kollégákat az irodai munkatérbe. E-mail alapján kapnak meghívót.
                       </div>
 
@@ -903,13 +903,13 @@ export default function OnboardingPage() {
                       </div>
 
                       {invitedColleagues.length > 0 && (
-                        <div className="space-y-2 animate-in fade-in duration-300">
+                        <div className="space-y-2 page-animate">
                           <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Kiküldött meghívók:</h4>
                           <div className="space-y-1.5">
                             {invitedColleagues.filter((c: any) => !c.skipped).map((c: any, i: number) => (
-                              <div key={i} className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-slate-50/50 dark:bg-slate-900/30 text-xs">
+                              <div key={i} className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-muted/40/50 dark:bg-card/30 text-xs">
                                 <span className="font-medium text-foreground">{c.email}</span>
-                                <span className="text-[10px] font-semibold text-muted-foreground uppercase px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-full">{c.role}</span>
+                                <span className="text-[10px] font-semibold text-muted-foreground uppercase px-2 py-0.5 bg-muted rounded-full">{c.role}</span>
                               </div>
                             ))}
                           </div>

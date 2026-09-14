@@ -15,18 +15,18 @@ export default function PayrollStep7({
 }: PayrollStep7Props) {
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-600 dark:text-slate-300">
+      <p className="text-sm text-muted-foreground dark:text-foreground/90">
         Letiltások, előleg-visszavonások, szakszervezeti tagdíj, önkéntes pénztárak.
       </p>
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-border dark:bg-slate-900/30">
-              <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Név</th>
-              <th className="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase">Letiltás</th>
-              <th className="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase">Előleg</th>
-              <th className="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase">Egyéb</th>
-              <th className="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase">Össz. levonás</th>
+            <tr className="border-b border-border dark:bg-card/30">
+              <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Név</th>
+              <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">Letiltás</th>
+              <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">Előleg</th>
+              <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">Egyéb</th>
+              <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">Össz. levonás</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/50">
@@ -41,17 +41,17 @@ export default function PayrollStep7({
               
               const total = letiltas + eloleg + egyeb;
               return (
-                <tr key={emp.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                  <td className="px-4 py-2.5 text-sm font-medium text-slate-900 dark:text-slate-100">
+                <tr key={emp.id} className="hover:bg-muted/50">
+                  <td className="px-4 py-2.5 text-sm font-medium text-foreground">
                     {emp.last_name} {emp.first_name}
                   </td>
-                  <td className="px-4 py-2.5 text-right text-sm font-mono text-slate-700 dark:text-slate-300">
+                  <td className="px-4 py-2.5 text-right text-sm font-mono text-foreground/90">
                     {letiltas.toLocaleString('hu-HU')} Ft
                   </td>
-                  <td className="px-4 py-2.5 text-right text-sm font-mono text-slate-700 dark:text-slate-300">
+                  <td className="px-4 py-2.5 text-right text-sm font-mono text-foreground/90">
                     {eloleg.toLocaleString('hu-HU')} Ft
                   </td>
-                  <td className="px-4 py-2.5 text-right text-sm font-mono text-slate-700 dark:text-slate-300">
+                  <td className="px-4 py-2.5 text-right text-sm font-mono text-foreground/90">
                     {egyeb.toLocaleString('hu-HU')} Ft
                   </td>
                   <td className="px-4 py-2.5 text-right text-sm font-bold font-mono text-red-600">

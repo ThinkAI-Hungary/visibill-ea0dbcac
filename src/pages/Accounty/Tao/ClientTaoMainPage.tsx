@@ -63,7 +63,7 @@ export default function ClientTaoMainPage() {
   ];
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 page-animate">
       {/* Header */}
       <div className="flex items-start gap-4">
         <button 
@@ -74,21 +74,21 @@ export default function ClientTaoMainPage() {
               navigate('/eaisybooks?tab=tao');
             }
           }}
-          className="flex items-center justify-center w-8 h-8 mt-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm shrink-0"
+          className="flex items-center justify-center w-8 h-8 mt-1.5 rounded-lg border border-border bg-card hover:bg-muted transition-colors shadow-sm shrink-0"
           title="Vissza"
         >
-          <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+          <ChevronLeft className="w-5 h-5 text-muted-foreground" />
         </button>
         <div>
           <div className="flex items-center gap-1.5 mb-1">
             {clientLoading ? (
-              <div className="h-3.5 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+              <div className="h-3.5 w-32 bg-muted rounded animate-pulse" />
             ) : (
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{client?.name || 'Ügyfél'}</span>
+              <span className="text-xs font-semibold text-muted-foreground">{client?.name || 'Ügyfél'}</span>
             )}
           </div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">
               Társasági adó (TAO)
             </h1>
             <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
@@ -103,20 +103,20 @@ export default function ClientTaoMainPage() {
                 KATA-alany
               </span>
             ) : (
-              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground">
                 {taxProfile?.taxGroup === 'SZJA' ? 'SZJA-alany' :
                  taxProfile?.taxGroup === 'Külföldi' ? 'Külföldi vállalkozó' :
                  taxProfile?.taxGroup === 'Nonprofit' ? 'Nonprofit TAO' : 'Általános 6.§'}
               </span>
             )}
           </div>
-          <p className="text-sm text-slate-500 mt-1">{taxYear}. adóév</p>
+          <p className="text-sm text-muted-foreground mt-1">{taxYear}. adóév</p>
         </div>
       </div>
 
       {/* KIVA warning banner */}
       {taxProfile?.isKiva && (
-        <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900/30 rounded-xl p-4 flex items-start gap-3">
+        <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900/30 rounded-lg p-4 flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400 shrink-0 mt-0.5" />
           <div className="space-y-1.5 text-left">
             <h4 className="text-sm font-bold text-orange-800 dark:text-orange-300">
@@ -137,32 +137,32 @@ export default function ClientTaoMainPage() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">AEE</p>
-          <p className="text-xl font-bold text-slate-900 dark:text-slate-100">
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">AEE</p>
+          <p className="text-xl font-bold text-foreground">
             {(aee / 1_000_000).toFixed(1)} M Ft
           </p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Adóalap</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Adóalap</p>
           <p className="text-xl font-bold text-emerald-600">
             {(taxBase / 1_000_000).toFixed(1)} M Ft
           </p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Számított adó (9%)</p>
-          <p className="text-xl font-bold text-slate-700 dark:text-slate-300">
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Számított adó (9%)</p>
+          <p className="text-xl font-bold text-foreground/90">
             {(calculatedTax / 1_000_000).toFixed(2)} M Ft
           </p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Fizetendő adó</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Fizetendő adó</p>
           <p className="text-xl font-bold text-emerald-600">
             {(payableTax / 1_000_000).toFixed(2)} M Ft
           </p>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
-          <p className="text-xs text-slate-500 mb-1">Kedvezmény</p>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground mb-1">Kedvezmény</p>
           <p className="text-xl font-bold text-blue-600">
             {(creditAmount / 1_000_000).toFixed(2)} M Ft
           </p>
@@ -179,7 +179,7 @@ export default function ClientTaoMainPage() {
               'flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px',
               tab.id === 'overview'
                 ? 'border-primary text-primary'
-                : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 hover:border-slate-300'
+                : 'border-transparent text-muted-foreground hover:text-foreground dark:hover:text-foreground hover:border-border'
             )}
           >
             <tab.icon className="w-4 h-4" />
@@ -189,9 +189,9 @@ export default function ClientTaoMainPage() {
       </div>
 
       {/* Year-end wizard progress */}
-      <div className="bg-card rounded-xl border border-border p-6 shadow-soft">
+      <div className="bg-card rounded-lg border border-border p-6 shadow-soft">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+          <h2 className="text-lg font-bold text-foreground">
             {taxYear}. adóévi TAO-zárás
           </h2>
           <Link to={`/eaisybooks/${companyId}/${dateRange}/tao/year-end/${taxYear}?step=${currentStep}`}>
@@ -213,7 +213,7 @@ export default function ClientTaoMainPage() {
                     'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all',
                     isDone ? 'bg-emerald-500 text-white' :
                     isCurrent ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 ring-2 ring-emerald-400' :
-                    'bg-slate-100 dark:bg-slate-800 text-slate-400'
+                    'bg-muted text-muted-foreground'
                   )}>
                     {isDone ? <CheckCircle className="w-4 h-4" /> : step.num}
                   </div>
@@ -221,7 +221,7 @@ export default function ClientTaoMainPage() {
                     'text-[10px] mt-1.5 text-center whitespace-nowrap',
                     isDone ? 'text-emerald-600 font-medium' :
                     isCurrent ? 'text-emerald-700 dark:text-emerald-300 font-bold' :
-                    'text-slate-400'
+                    'text-muted-foreground'
                   )}>
                     {step.label}
                   </span>
@@ -229,7 +229,7 @@ export default function ClientTaoMainPage() {
                 {i < WIZARD_STEPS.length - 1 && (
                   <div className={cn(
                     'flex-1 h-0.5 min-w-4 mt-[-12px]',
-                    step.num < currentStep ? 'bg-emerald-400' : 'bg-slate-200 dark:bg-slate-700'
+                    step.num < currentStep ? 'bg-emerald-400' : 'bg-muted'
                   )} />
                 )}
               </React.Fragment>
@@ -242,77 +242,77 @@ export default function ClientTaoMainPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
         <Link
           to={`/eaisybooks/${companyId}/${dateRange}/tao/master-data`}
-          className="bg-card rounded-xl border border-border p-5 shadow-soft hover:shadow-md hover:border-primary/30 transition-all group"
+          className="bg-card rounded-lg border border-border p-5 shadow-soft hover:shadow-md hover:border-primary/30 transition-all group"
         >
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
               <FileText className="w-5 h-5 text-blue-600" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-bold text-slate-900 dark:text-slate-100">Törzsadatok</p>
-              <p className="text-xs text-slate-500">GFO-kód, KKV-besorolás, Pillar Two</p>
+              <p className="text-sm font-bold text-foreground">Törzsadatok</p>
+              <p className="text-xs text-muted-foreground">GFO-kód, KKV-besorolás, Pillar Two</p>
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-primary transition-colors" />
+            <ChevronRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-primary transition-colors" />
           </div>
         </Link>
         <Link
           to={`/eaisybooks/${companyId}/${dateRange}/tao/setup`}
-          className="bg-card rounded-xl border border-border p-5 shadow-soft hover:shadow-md hover:border-primary/30 transition-all group"
+          className="bg-card rounded-lg border border-border p-5 shadow-soft hover:shadow-md hover:border-primary/30 transition-all group"
         >
           <div className="flex items-center gap-3">
             <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
               <Shield className="w-5 h-5 text-amber-600" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-bold text-slate-900 dark:text-slate-100">Adóalany-státusz</p>
-              <p className="text-xs text-slate-500">Besorolás wizard, adóalap-rezsim</p>
+              <p className="text-sm font-bold text-foreground">Adóalany-státusz</p>
+              <p className="text-xs text-muted-foreground">Besorolás wizard, adóalap-rezsim</p>
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-primary transition-colors" />
+            <ChevronRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-primary transition-colors" />
           </div>
         </Link>
         <Link
           to={`/eaisybooks/${companyId}/${dateRange}/tao/lifecycle`}
-          className="bg-card rounded-xl border border-border p-5 shadow-soft hover:shadow-md hover:border-primary/30 transition-all group"
+          className="bg-card rounded-lg border border-border p-5 shadow-soft hover:shadow-md hover:border-primary/30 transition-all group"
         >
           <div className="flex items-center gap-3">
             <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
               <Clock className="w-5 h-5 text-purple-600" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-bold text-slate-900 dark:text-slate-100">Életciklus</p>
-              <p className="text-xs text-slate-500">Keletkezés, megszűnés, KIVA-váltás</p>
+              <p className="text-sm font-bold text-foreground">Életciklus</p>
+              <p className="text-xs text-muted-foreground">Keletkezés, megszűnés, KIVA-váltás</p>
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-primary transition-colors" />
+            <ChevronRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-primary transition-colors" />
           </div>
         </Link>
         <Link
           to={`/eaisybooks/${companyId}/${dateRange}/tao/kiva`}
-          className="bg-card rounded-xl border border-border p-5 shadow-soft hover:shadow-md hover:border-orange-400/30 transition-all group"
+          className="bg-card rounded-lg border border-border p-5 shadow-soft hover:shadow-md hover:border-orange-400/30 transition-all group"
         >
           <div className="flex items-center gap-3">
             <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
               <Calculator className="w-5 h-5 text-orange-600" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-bold text-slate-900 dark:text-slate-100">KIVA kalkulátor</p>
-              <p className="text-xs text-slate-500">Kisvállalati adó szimuláció (10%)</p>
+              <p className="text-sm font-bold text-foreground">KIVA kalkulátor</p>
+              <p className="text-xs text-muted-foreground">Kisvállalati adó szimuláció (10%)</p>
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-orange-500 transition-colors" />
+            <ChevronRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-orange-500 transition-colors" />
           </div>
         </Link>
         <Link
           to={`/eaisybooks/${companyId}/${dateRange}/tao/compare`}
-          className="bg-card rounded-xl border border-border p-5 shadow-soft hover:shadow-md hover:border-violet-400/30 transition-all group"
+          className="bg-card rounded-lg border border-border p-5 shadow-soft hover:shadow-md hover:border-violet-400/30 transition-all group"
         >
           <div className="flex items-center gap-3">
             <div className="p-2 bg-violet-100 dark:bg-violet-900/30 rounded-lg">
               <BarChart2 className="w-5 h-5 text-violet-600" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-bold text-slate-900 dark:text-slate-100">TAO vs KIVA</p>
-              <p className="text-xs text-slate-500">Összehasonlító elemzés</p>
+              <p className="text-sm font-bold text-foreground">TAO vs KIVA</p>
+              <p className="text-xs text-muted-foreground">Összehasonlító elemzés</p>
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-violet-500 transition-colors" />
+            <ChevronRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-violet-500 transition-colors" />
           </div>
         </Link>
       </div>

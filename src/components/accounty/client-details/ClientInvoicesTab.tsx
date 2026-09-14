@@ -24,7 +24,7 @@ export default function ClientInvoicesTab({
       const statusColor = inv.status === 'Kontírozott' || inv.status === 'Exportálva' ? 'bg-emerald-100 text-emerald-700'
         : inv.status === 'Problémás' ? 'bg-red-100 text-red-700'
         : inv.status === 'Új' ? 'bg-amber-100 text-amber-700'
-        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400';
+        : 'bg-muted text-muted-foreground';
       const statusLabel = inv.status === 'Új' ? 'Feldolgozás alatt'
         : inv.status === 'Kontírozott' ? 'Könyvelve'
         : inv.status === 'Exportálva' ? 'Exportálva' : inv.status;
@@ -47,64 +47,64 @@ export default function ClientInvoicesTab({
   const totalVat = companyInvoices?.reduce((s, i) => s + i.vatAmount, 0) || 0;
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-6 page-animate slide-in-from-bottom-4 duration-500">
       {/* KPI Cards */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
-          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Összes számla</h3>
-          <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">{totalInvoices}</div>
+        <div className="bg-card rounded-lg border border-border p-5 shadow-sm">
+          <h3 className="text-sm font-medium text-muted-foreground mb-2">Összes számla</h3>
+          <div className="text-3xl font-bold text-foreground">{totalInvoices}</div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
-          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Feldolgozásra vár</h3>
+        <div className="bg-card rounded-lg border border-border p-5 shadow-sm">
+          <h3 className="text-sm font-medium text-muted-foreground mb-2">Feldolgozásra vár</h3>
           <div className="text-3xl font-bold text-amber-500">{processingInvoices}</div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
-          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Bruttó összesen</h3>
-          <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">
+        <div className="bg-card rounded-lg border border-border p-5 shadow-sm">
+          <h3 className="text-sm font-medium text-muted-foreground mb-2">Bruttó összesen</h3>
+          <div className="text-2xl font-bold text-foreground mt-1">
             {new Intl.NumberFormat('hu-HU').format(totalGross)} Ft
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
-          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">ÁFA összesen</h3>
-          <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">
+        <div className="bg-card rounded-lg border border-border p-5 shadow-sm">
+          <h3 className="text-sm font-medium text-muted-foreground mb-2">ÁFA összesen</h3>
+          <div className="text-2xl font-bold text-foreground mt-1">
             {new Intl.NumberFormat('hu-HU').format(totalVat)} Ft
           </div>
         </div>
       </div>
 
       {/* Invoices List */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
-        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900">
-          <h3 className="font-semibold text-slate-900 dark:text-slate-100">Legutóbbi számlák</h3>
+      <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden flex flex-col">
+        <div className="p-5 border-b border-border flex justify-between items-center bg-card">
+          <h3 className="font-semibold text-foreground">Legutóbbi számlák</h3>
           <Button 
             variant="outline" 
             size="sm" 
-            className="bg-white dark:bg-slate-900 text-xs text-slate-600 dark:text-slate-400 h-8"
+            className="bg-card text-xs text-muted-foreground h-8"
             onClick={() => navigate(`/eaisybooks/client/${clientId}/invoices`)}
           >
             Összes megtekintése <ChevronRight className="w-3 h-3 ml-1" />
           </Button>
         </div>
-        <div className="p-2 space-y-1 bg-white dark:bg-slate-900">
+        <div className="p-2 space-y-1 bg-card">
           {invoiceData.map((invoice) => (
             <div 
               key={invoice.id} 
-              className="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors cursor-pointer group"
+              className="flex items-center justify-between p-4 hover:bg-muted/50 rounded-lg transition-colors cursor-pointer group"
             >
               <div className="flex items-center gap-4">
                 <div className={`w-2 h-2 rounded-full ${invoice.dotColor}`}></div>
                 <div>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{invoice.number}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{invoice.company}</p>
+                  <p className="text-sm font-semibold text-foreground">{invoice.number}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{invoice.company}</p>
                 </div>
               </div>
               <div className="flex items-center gap-8">
                 <div className="text-right">
-                  <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{invoice.amount}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{invoice.date}</p>
+                  <p className="text-sm font-bold text-foreground">{invoice.amount}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{invoice.date}</p>
                 </div>
                 <div className={cn("px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider w-32 text-center", invoice.statusColor)}>
                   {invoice.status}

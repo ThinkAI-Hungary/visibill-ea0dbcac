@@ -68,7 +68,7 @@ export function ReportHistoryList({ reportHistory, reportTypes, onRedownload, on
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Legutóbbi riportok</h2>
+        <h2 className="text-lg font-semibold text-foreground">Legutóbbi riportok</h2>
         
         {/* Search & Filters */}
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-stretch sm:items-center">
@@ -100,19 +100,19 @@ export function ReportHistoryList({ reportHistory, reportTypes, onRedownload, on
         </div>
       </div>
 
-      <div className="bg-card border border-border rounded-xl shadow-soft overflow-hidden">
+      <div className="bg-card border border-border rounded-lg shadow-soft overflow-hidden">
         {reportHistory.length === 0 ? (
           <div className="p-12 text-center">
-            <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4">
-              <FileText className="w-6 h-6 text-slate-400" />
+            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+              <FileText className="w-6 h-6 text-muted-foreground" />
             </div>
-            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Még nincs generált riport</p>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">A generált riportok itt fognak megjelennem</p>
+            <p className="text-sm font-medium text-muted-foreground">Még nincs generált riport</p>
+            <p className="text-xs text-muted-foreground mt-1">A generált riportok itt fognak megjelennem</p>
           </div>
         ) : filteredHistory.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 dark:text-slate-400">
+          <div className="p-12 text-center text-muted-foreground">
             <p className="text-sm font-medium">Nincs a szűrésnek megfelelő riport</p>
-            <p className="text-xs text-slate-400 mt-1">Próbáld megváltoztatni a szűrőket vagy a keresőszót.</p>
+            <p className="text-xs text-muted-foreground mt-1">Próbáld megváltoztatni a szűrőket vagy a keresőszót.</p>
           </div>
         ) : (
           <div className="divide-y divide-border">
@@ -123,13 +123,13 @@ export function ReportHistoryList({ reportHistory, reportTypes, onRedownload, on
               const fromFmt = new Date(entry.dateFrom).toLocaleDateString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit' });
               const toFmt = new Date(entry.dateTo).toLocaleDateString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit' });
               return (
-                <div key={entry.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", icon?.bg || 'bg-slate-100')}>
-                    <IconComp className={cn("w-4.5 h-4.5", icon?.color || 'text-slate-500')} />
+                <div key={entry.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-muted/50 transition-colors">
+                  <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", icon?.bg || 'bg-muted')}>
+                    <IconComp className={cn("w-4.5 h-4.5", icon?.color || 'text-muted-foreground')} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">{entry.typeLabel}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    <p className="text-sm font-semibold text-foreground truncate">{entry.typeLabel}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       {fromFmt} – {toFmt} · {entry.invoiceCount} számla
                     </p>
                   </div>
@@ -141,23 +141,23 @@ export function ReportHistoryList({ reportHistory, reportTypes, onRedownload, on
                       {entry.format}
                     </span>
                     {entry.sentToApproval && (
-                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400">
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-primary">
                         ✉ Küldve
                       </span>
                     )}
-                    <span className="text-[11px] text-slate-400 dark:text-slate-500 tabular-nums">
+                    <span className="text-[11px] text-muted-foreground tabular-nums">
                       {genDate.toLocaleDateString('hu-HU')} {genDate.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                     <button
                       onClick={() => onRedownload(entry)}
-                      className="p-1.5 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/30 transition-colors"
+                      className="p-1.5 rounded-md text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/30 transition-colors"
                       title="Újra letöltés"
                     >
                       <Download className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => onDelete(entry.id)}
-                      className="p-1.5 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-900/30 transition-colors"
+                      className="p-1.5 rounded-md text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-900/30 transition-colors"
                       title="Törlés"
                     >
                       <Trash2 className="w-3.5 h-3.5" />

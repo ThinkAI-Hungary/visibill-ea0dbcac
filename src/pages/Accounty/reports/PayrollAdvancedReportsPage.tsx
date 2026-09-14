@@ -19,7 +19,7 @@ const REPORT_TYPES: { id: ReportType; title: string; icon: React.ElementType; de
   { id: 'leave', title: 'Szabadságkeret kimutatás', icon: Calendar, desc: 'Munkavállaló szintű szabadság/betegszabadság összesítés', color: 'from-pink-500 to-rose-500' },
   { id: 'garnishment', title: 'Letiltások összesítő', icon: FileSpreadsheet, desc: 'Aktív letiltások és levonások kimutatása', color: 'from-red-500 to-red-600' },
   { id: 'contributions', title: 'Járulék ellenőrzés', icon: PieChart, desc: 'Minimálbér alapú járulékellenőrzés', color: 'from-cyan-500 to-blue-500' },
-  { id: 'custom', title: 'Egyedi riport', icon: BarChart3, desc: 'Tetszőleges mezőválogatás és szűrőkkel', color: 'from-slate-500 to-slate-600' },
+  { id: 'custom', title: 'Egyedi riport', icon: BarChart3, desc: 'Tetszőleges mezőválogatás és szűrőkkel', color: 'from-muted-foreground/80 to-muted-foreground' },
 ];
 
 export default function PayrollReportsPage2() {
@@ -36,11 +36,11 @@ export default function PayrollReportsPage2() {
 
     // All reports show empty state until payroll data is processed
     return (
-      <div className="bg-card rounded-xl border border-border p-12 text-center space-y-3">
-        <Database className="w-12 h-12 mx-auto text-slate-300" />
-        <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300">{reportTitle}</h3>
-        <p className="text-sm text-slate-400">Nincsenek riport adatok a kiválasztott időszakra ({period}).</p>
-        <p className="text-xs text-slate-400">A riportok a bérszámfejtés véglegesítése és zárása után generálhatók.</p>
+      <div className="bg-card rounded-lg border border-border p-12 text-center space-y-3">
+        <Database className="w-12 h-12 mx-auto text-muted-foreground/60" />
+        <h3 className="text-lg font-bold text-foreground/90">{reportTitle}</h3>
+        <p className="text-sm text-muted-foreground">Nincsenek riport adatok a kiválasztott időszakra ({period}).</p>
+        <p className="text-xs text-muted-foreground">A riportok a bérszámfejtés véglegesítése és zárása után generálhatók.</p>
         <div className="flex gap-2 justify-center mt-3">
           <Button variant="outline" className="gap-1.5 text-sm"><RefreshCw className="w-4 h-4" /> Riport generálás</Button>
           <Button variant="outline" className="gap-1.5 text-sm" onClick={() => {
@@ -57,18 +57,18 @@ export default function PayrollReportsPage2() {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full max-w-6xl mx-auto space-y-6 page-animate">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
-          <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl shadow-lg shadow-indigo-500/25"><BarChart3 className="w-5 h-5 text-white" /></div>
+          <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-lg shadow-lg shadow-primary/20"><BarChart3 className="w-5 h-5 text-white" /></div>
           <div>
             <h1 className="text-2xl font-bold">Riportok és kimutatások</h1>
-            <p className="text-sm text-slate-500">Bérszámfejtési adatok elemzése és exportálása</p>
+            <p className="text-sm text-muted-foreground">Bérszámfejtési adatok elemzése és exportálása</p>
           </div>
         </div>
         <div className="flex gap-2 items-center">
-          <input type="month" value={period} onChange={e => setPeriod(e.target.value)} className="px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+          <input type="month" value={period} onChange={e => setPeriod(e.target.value)} className="px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-primary outline-none" />
           <select value={exportFormat} onChange={e => setExportFormat(e.target.value as any)} className="px-3 py-2 rounded-lg border border-border bg-background text-sm">
             <option value="xlsx">XLSX</option><option value="csv">CSV</option><option value="pdf">PDF</option>
           </select>
@@ -77,10 +77,10 @@ export default function PayrollReportsPage2() {
 
       <div className="grid grid-cols-4 gap-3">
         {REPORT_TYPES.map(r => (
-          <button key={r.id} onClick={() => setSelectedReport(r.id)} className={cn('p-4 rounded-xl border-2 text-left transition-all hover:-translate-y-0.5', selectedReport === r.id ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 shadow-lg' : 'border-border hover:border-indigo-300')}>
+          <button key={r.id} onClick={() => setSelectedReport(r.id)} className={cn('p-4 rounded-lg border-2 text-left transition-all hover:-translate-y-0.5', selectedReport === r.id ? 'border-primary bg-primary/10 dark:bg-primary/10 shadow-lg' : 'border-border hover:border-primary/40')}>
             <div className={cn('w-8 h-8 rounded-lg bg-gradient-to-br text-white flex items-center justify-center mb-2', r.color)}><r.icon className="w-4 h-4" /></div>
             <p className="text-xs font-bold">{r.title}</p>
-            <p className="text-[10px] text-slate-400 mt-0.5 line-clamp-2">{r.desc}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{r.desc}</p>
           </button>
         ))}
       </div>

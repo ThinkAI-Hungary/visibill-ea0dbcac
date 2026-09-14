@@ -269,7 +269,7 @@ export default function OutputDocumentsPage() {
 
   if (!config) {
     return (
-      <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
+      <div className="w-full max-w-5xl mx-auto space-y-6 page-animate">
         <div className="flex items-center gap-3">
           <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
           <h1 className="text-2xl font-bold">Kimeneti dokumentumok</h1>
@@ -277,12 +277,12 @@ export default function OutputDocumentsPage() {
         <div className="grid grid-cols-2 gap-3">
           {Object.entries(CONFIGS).map(([key, cfg]) => (
             <Link key={key} to={`/eaisybooks/payroll/${companyId}/documents/${key}`}
-              className="p-4 rounded-xl border border-border hover:border-blue-300 hover:shadow-lg hover:-translate-y-0.5 transition-all group bg-card">
+              className="p-4 rounded-lg border border-border hover:border-blue-300 hover:-translate-y-0.5 transition-all group bg-card">
               <div className={cn('w-8 h-8 rounded-lg bg-gradient-to-br text-white flex items-center justify-center mb-2', cfg.color)}>
                 <cfg.icon className="w-4 h-4" />
               </div>
               <p className="text-sm font-bold">{cfg.title}</p>
-              <p className="text-[10px] text-slate-400 mt-0.5">{cfg.subtitle}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">{cfg.subtitle}</p>
             </Link>
           ))}
         </div>
@@ -291,14 +291,14 @@ export default function OutputDocumentsPage() {
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full max-w-6xl mx-auto space-y-6 page-animate">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
-          <div className={cn('p-2.5 bg-gradient-to-br rounded-xl shadow-lg', config.color)}><config.icon className="w-5 h-5 text-white" /></div>
+          <div className={cn('p-2.5 bg-gradient-to-br rounded-lg shadow-lg', config.color)}><config.icon className="w-5 h-5 text-white" /></div>
           <div>
             <h1 className="text-xl font-bold">{config.title}</h1>
-            <p className="text-sm text-slate-500">{company?.name || '–'} — {config.subtitle}</p>
+            <p className="text-sm text-muted-foreground">{company?.name || '–'} — {config.subtitle}</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -323,24 +323,24 @@ export default function OutputDocumentsPage() {
       {isLoading ? (
         <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin" /> Betöltés...</div>
       ) : finalData.length === 0 ? (
-        <div className="bg-card rounded-xl border border-border p-12 text-center space-y-3">
-          <Database className="w-10 h-10 mx-auto text-slate-400" />
-          <p className="text-sm text-slate-500">Nincs adat a kiválasztott dokumentumtípushoz.</p>
-          <p className="text-xs text-slate-400">A dokumentumok a számfejtés véglegesítése után generálódnak.</p>
+        <div className="bg-card rounded-lg border border-border p-12 text-center space-y-3">
+          <Database className="w-10 h-10 mx-auto text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Nincs adat a kiválasztott dokumentumtípushoz.</p>
+          <p className="text-xs text-muted-foreground">A dokumentumok a számfejtés véglegesítése után generálódnak.</p>
         </div>
       ) : (
-        <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+        <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border">
                 {config.columns.map(col => (
-                  <th key={col.key} className={cn('px-5 py-2 text-xs font-bold text-slate-500', col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left')}>{col.label}</th>
+                  <th key={col.key} className={cn('px-5 py-2 text-xs font-bold text-muted-foreground', col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left')}>{col.label}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {paginatedData.map((row, ri) => (
-                <tr key={ri} className="border-b border-border/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer" onClick={() => handlePreview((currentPage - 1) * pageSize + ri)}>
+                <tr key={ri} className="border-b border-border/50 hover:bg-muted/50 cursor-pointer" onClick={() => handlePreview((currentPage - 1) * pageSize + ri)}>
                   {config.columns.map(col => (
                     <td key={col.key} className={cn('px-5 py-2.5', col.align === 'right' ? 'text-right font-mono' : col.align === 'center' ? 'text-center' : '', col.key === 'name' || col.key === 'item' ? 'font-medium' : '')}>{String(row[col.key] || '')}</td>
                   ))}
@@ -349,7 +349,7 @@ export default function OutputDocumentsPage() {
             </tbody>
             {footerData && (
               <tfoot>
-                <tr className="bg-slate-100 dark:bg-slate-800 font-bold">
+                <tr className="bg-muted font-bold">
                   <td colSpan={config.columns.length - 1} className="px-5 py-2 text-xs">{footerData.label}</td>
                   <td className="px-5 py-2 text-right font-mono text-xs">{footerData.value}</td>
                 </tr>
@@ -380,7 +380,7 @@ export default function OutputDocumentsPage() {
               {config.title}
             </DialogTitle>
           </DialogHeader>
-          <div className="flex-1 w-full bg-slate-200 dark:bg-slate-900">
+          <div className="flex-1 w-full bg-muted dark:bg-card">
             {previewUrl && (
               <iframe src={previewUrl} className="w-full h-full border-0" title={`${config.title} megtekintő`} />
             )}

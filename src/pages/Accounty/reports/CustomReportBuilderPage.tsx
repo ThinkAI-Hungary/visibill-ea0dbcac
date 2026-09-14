@@ -5,6 +5,7 @@ import {
   Save, Filter, Columns, CheckCircle, Table, BarChart3, Database
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ExportButton } from '@/components/accounty/ExportButton';
 import { cn } from '@/lib/utils';
 import { usePayrollEmployees } from '@/hooks/usePayrollData';
@@ -121,14 +122,14 @@ export default function CustomReportBuilderPage() {
   }, [reportRows.length]);
 
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full max-w-6xl mx-auto space-y-6 page-animate">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
-          <div className="p-2.5 bg-gradient-to-br from-slate-600 to-slate-800 rounded-xl shadow-lg"><Wrench className="w-5 h-5 text-white" /></div>
+          <div className="p-2.5 bg-gradient-to-br from-muted to-card rounded-lg shadow-lg"><Wrench className="w-5 h-5 text-white" /></div>
           <div>
             <input type="text" value={reportName} onChange={e => setReportName(e.target.value)} className="text-2xl font-bold bg-transparent border-none outline-none focus:underline" />
-            <p className="text-sm text-slate-500">Egyedi mezőválogatás és szűrők</p>
+            <p className="text-sm text-muted-foreground">Egyedi mezőválogatás és szűrők</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -139,7 +140,7 @@ export default function CustomReportBuilderPage() {
             getRows={() => reportRows}
             size="sm"
           />}
-          <Button onClick={handleGenerate} className="gap-1.5 bg-slate-900 dark:bg-slate-100 dark:text-slate-900 hover:bg-slate-800">
+          <Button onClick={handleGenerate} className="gap-1.5 bg-slate-900 dark:bg-muted dark:text-foreground hover:bg-slate-800">
             <Table className="w-4 h-4" /> Generálás
           </Button>
         </div>
@@ -148,12 +149,12 @@ export default function CustomReportBuilderPage() {
       <div className="grid grid-cols-[1fr,auto] gap-4">
         <div className="space-y-4">
           {/* Filters */}
-          <div className="bg-card rounded-xl border border-border p-5 space-y-3">
+          <div className="bg-card rounded-lg border border-border p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5"><Filter className="w-4 h-4" /> Szűrők</h3>
+              <h3 className="text-sm font-bold text-foreground/90 flex items-center gap-1.5"><Filter className="w-4 h-4" /> Szűrők</h3>
               <Button variant="outline" size="sm" onClick={addFilter} className="gap-1 text-xs"><Plus className="w-3 h-3" /> Szűrő</Button>
             </div>
-            {filters.length === 0 && <p className="text-xs text-slate-400">Nincs szűrő — minden adat megjelenik</p>}
+            {filters.length === 0 && <p className="text-xs text-muted-foreground">Nincs szűrő — minden adat megjelenik</p>}
             {filters.map((f, i) => (
               <div key={i} className="flex items-center gap-2">
                 <select value={f.column} onChange={e => setFilters(prev => prev.map((ff, ii) => ii === i ? { ...ff, column: e.target.value } : ff))} className="px-2 py-1.5 rounded border border-border bg-background text-xs flex-1">
@@ -171,31 +172,31 @@ export default function CustomReportBuilderPage() {
           {/* Generated report */}
           {generated && (
             reportRows.length === 0 ? (
-              <div className="bg-card rounded-xl border border-border p-12 text-center space-y-3">
-                <Database className="w-12 h-12 mx-auto text-slate-300" />
-                <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300">{reportName}</h3>
-                <p className="text-sm text-slate-400">Nincs riport adat a kiválasztott oszlopokhoz ({selectedColumns.length} oszlop).</p>
-                <p className="text-xs text-slate-400">A riport adatok a bérszámfejtés véglegesítése után állnak rendelkezésre.</p>
+              <div className="bg-card rounded-lg border border-border p-12 text-center space-y-3">
+                <Database className="w-12 h-12 mx-auto text-muted-foreground/60" />
+                <h3 className="text-lg font-bold text-foreground/90">{reportName}</h3>
+                <p className="text-sm text-muted-foreground">Nincs riport adat a kiválasztott oszlopokhoz ({selectedColumns.length} oszlop).</p>
+                <p className="text-xs text-muted-foreground">A riport adatok a bérszámfejtés véglegesítése után állnak rendelkezésre.</p>
               </div>
             ) : (
-              <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+              <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
                 <div className="px-4 py-3 border-b border-border">
-                  <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">{reportName} — {reportRows.length} sor</h3>
+                  <h3 className="text-sm font-bold text-foreground/90">{reportName} — {reportRows.length} sor</h3>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-border dark:bg-slate-900/30">
+                      <tr className="border-b border-border dark:bg-card/30">
                         {selectedColumns.map(col => (
-                          <th key={col.id} className="text-left px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{col.label}</th>
+                          <th key={col.id} className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">{col.label}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/50">
                       {paginatedReportRows.map((row, ri) => (
-                        <tr key={ri} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <tr key={ri} className="hover:bg-muted/50 transition-colors">
                           {row.map((cell, ci) => (
-                            <td key={ci} className="px-3 py-2 text-sm text-slate-700 dark:text-slate-300 whitespace-nowrap">{cell}</td>
+                            <td key={ci} className="px-3 py-2 text-sm text-foreground/90 whitespace-nowrap">{cell}</td>
                           ))}
                         </tr>
                       ))}
@@ -222,15 +223,15 @@ export default function CustomReportBuilderPage() {
 
         {/* Column picker */}
         {showColumnPicker && (
-          <div className="w-64 bg-card rounded-xl border border-border p-4 h-fit sticky top-4 space-y-3">
-            <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">Oszlopválasztó</h3>
+          <div className="w-64 bg-card rounded-lg border border-border p-4 h-fit sticky top-4 space-y-3">
+            <h3 className="text-sm font-bold text-foreground/90">Oszlopválasztó</h3>
             {categories.map(cat => (
               <div key={cat}>
-                <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">{cat}</p>
+                <p className="text-[10px] text-muted-foreground uppercase font-bold mb-1">{cat}</p>
                 <div className="space-y-0.5">
                   {columns.filter(c => c.category === cat).map(col => (
-                    <label key={col.id} className="flex items-center gap-2 py-1 px-2 rounded hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer text-xs">
-                      <input type="checkbox" checked={col.selected} onChange={() => toggleColumn(col.id)} className="rounded" />
+                    <label key={col.id} className="flex items-center gap-2 py-1 px-2 rounded hover:bg-muted/50 cursor-pointer text-xs select-none">
+                      <Checkbox checked={col.selected} onCheckedChange={() => toggleColumn(col.id)} />
                       {col.label}
                     </label>
                   ))}

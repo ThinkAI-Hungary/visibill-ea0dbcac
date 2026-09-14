@@ -21,7 +21,7 @@ import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/h
 
 export const CLIENT_COLORS = [
   'bg-accent text-primary', 'bg-amber-100 text-amber-600',
-  'bg-indigo-100 text-indigo-600', 'bg-pink-100 text-pink-600',
+  'bg-indigo-100 text-primary', 'bg-pink-100 text-pink-600',
   'bg-teal-100 text-teal-600', 'bg-sky-100 text-sky-600',
   'bg-violet-100 text-violet-600', 'bg-rose-100 text-rose-600',
 ];
@@ -80,8 +80,8 @@ export function KpiCard({
     <div
       onClick={onClick}
       className={cn(
-        "relative overflow-hidden bg-gradient-to-br rounded-xl p-5 border border-border/80 shadow-soft flex flex-col justify-between h-32 card-ripple bg-card/50 backdrop-blur-md",
-        "hover:scale-[1.02] hover:border-border/90 transition-all duration-300 group",
+        "relative overflow-hidden bg-gradient-to-br rounded-lg p-5 border border-border/80 shadow-soft flex flex-col justify-between h-32 card-ripple bg-card/50 backdrop-blur-md",
+        " hover:border-border/90 transition-all duration-300 group",
         onClick ? "cursor-pointer" : "cursor-default",
         colorMap[accentColor] || colorMap.emerald
       )}
@@ -291,9 +291,9 @@ export function ClientCard({
       onDragEnd={onDragEnd}
       onClick={() => navigate(`/eaisybooks/client/${client.id}`)}
       className={cn(
-        "bg-card/50 backdrop-blur-md rounded-xl border border-border/80 shadow-soft flex flex-col group cursor-pointer h-full overflow-hidden", 
+        "bg-card/50 backdrop-blur-md rounded-lg border border-border/80 shadow-soft flex flex-col group cursor-pointer h-full overflow-hidden", 
         "hover:border-border/90 hover:-translate-y-0.5 transition-all duration-300",
-        "animate-in fade-in slide-in-from-bottom-2 duration-300",
+        "page-animate slide-in-from-bottom-2 duration-300",
         draggable && "cursor-grab active:cursor-grabbing",
         isDragged && "opacity-50 scale-[0.98] shadow-none border-dashed border-2 ring-2 ring-primary/20"
       )}
@@ -379,7 +379,7 @@ export function WidgetWrapper({
   order: number;
 }) {
   return (
-    <div className={cn("relative transition-all duration-300", editingLayout && "p-4 border-2 border-dashed border-primary/40 rounded-xl bg-primary/5")} style={{ order }}>
+    <div className={cn("relative transition-all duration-300", editingLayout && "p-4 border-2 border-dashed border-primary/40 rounded-lg bg-primary/5")} style={{ order }}>
       {editingLayout && (
         <div className="absolute -left-3 top-1/2 -translate-y-1/2 flex flex-col gap-1 bg-card shadow-md rounded-lg p-1 z-10 border border-border">
           <button 

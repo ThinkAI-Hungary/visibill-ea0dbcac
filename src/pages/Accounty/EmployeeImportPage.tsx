@@ -6,6 +6,7 @@ import {
   FileText, Table, FileCode, CheckSquare, Calendar, Building2, Sparkles, ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
@@ -401,26 +402,26 @@ export default function EmployeeImportPage() {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500 pb-16">
+    <div className="w-full max-w-6xl mx-auto space-y-6 page-animate pb-16">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link to={`/eaisybooks/payroll/${id}/employees`} className="p-2 rounded-lg hover:bg-muted transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-lg shadow-emerald-500/25">
+          <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg shadow-lg shadow-emerald-500/25">
             <FileSpreadsheet className="w-5 h-5 text-white" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Dolgozói Tömeges Import Központ</h1>
+              <h1 className="text-2xl font-bold text-foreground">Dolgozói Tömeges Import Központ</h1>
               {isKiva && (
                 <Badge variant="outline" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 text-xs py-0.5">
                   KIVA adózó (0 Ft SZOCHO)
                 </Badge>
               )}
             </div>
-            <p className="text-sm text-slate-500">Munkavállalók, jogviszonyok és havi bérszámfejtések betöltése</p>
+            <p className="text-sm text-muted-foreground">Munkavállalók, jogviszonyok és havi bérszámfejtések betöltése</p>
           </div>
         </div>
 
@@ -436,30 +437,30 @@ export default function EmployeeImportPage() {
             {showTemplateMenu && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowTemplateMenu(false)} />
-                <div className="absolute right-0 top-full mt-1 w-56 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="absolute right-0 top-full mt-1 w-56 bg-card border border-border rounded-lg shadow-xl z-50 overflow-hidden page-animate slide-in-from-top-2 duration-150">
                   <button
                     onClick={downloadExcel}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-left hover:bg-muted/50 transition-colors"
                   >
                     <div className="p-1.5 bg-green-100 dark:bg-green-900/40 rounded-lg">
                       <Table className="w-4 h-4 text-green-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-slate-900 dark:text-slate-100">Excel sablon (.xls)</p>
-                      <p className="text-[11px] text-slate-400">Megnyitható Excelben</p>
+                      <p className="font-medium text-foreground">Excel sablon (.xls)</p>
+                      <p className="text-[11px] text-muted-foreground">Megnyitható Excelben</p>
                     </div>
                   </button>
                   <div className="border-t border-border" />
                   <button
                     onClick={downloadCSV}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-left hover:bg-muted/50 transition-colors"
                   >
                     <div className="p-1.5 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
                       <FileText className="w-4 h-4 text-blue-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-slate-900 dark:text-slate-100">CSV sablon (.csv)</p>
-                      <p className="text-[11px] text-slate-400">Pontosvesszővel elválasztva</p>
+                      <p className="font-medium text-foreground">CSV sablon (.csv)</p>
+                      <p className="text-[11px] text-muted-foreground">Pontosvesszővel elválasztva</p>
                     </div>
                   </button>
                 </div>
@@ -496,7 +497,7 @@ export default function EmployeeImportPage() {
           <TabsContent value="excel" className="space-y-4">
             <div
               className={cn(
-                'border-2 border-dashed rounded-2xl p-16 text-center transition-all cursor-pointer bg-card',
+                'border-2 border-dashed rounded-lg p-16 text-center transition-all cursor-pointer bg-card',
                 dragging ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 scale-[1.01]' : 'border-border hover:border-emerald-400'
               )}
               onDragOver={e => { e.preventDefault(); setDragging(true); }}
@@ -505,10 +506,10 @@ export default function EmployeeImportPage() {
               onClick={() => fileRef.current?.click()}
             >
               <Upload className="w-12 h-12 mx-auto mb-4 text-emerald-500" />
-              <p className="text-lg font-bold text-slate-700 dark:text-slate-300">
+              <p className="text-lg font-bold text-foreground/90">
                 Húzd ide az Excel vagy CSV fájlt
               </p>
-              <p className="text-sm text-slate-400 mt-2">
+              <p className="text-sm text-muted-foreground mt-2">
                 Támogatott: .xlsx, .xls, .csv — Automatikusan létrehozza a dolgozót és az aktív jogviszonyt
               </p>
               <input
@@ -529,7 +530,7 @@ export default function EmployeeImportPage() {
           <TabsContent value="nav08" className="space-y-4">
             <div
               className={cn(
-                'border-2 border-dashed rounded-2xl p-16 text-center transition-all cursor-pointer bg-card',
+                'border-2 border-dashed rounded-lg p-16 text-center transition-all cursor-pointer bg-card',
                 dragging ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10 scale-[1.01]' : 'border-border hover:border-blue-400'
               )}
               onDragOver={e => { e.preventDefault(); setDragging(true); }}
@@ -538,10 +539,10 @@ export default function EmployeeImportPage() {
               onClick={() => xmlFileRef.current?.click()}
             >
               <FileCode className="w-12 h-12 mx-auto mb-4 text-blue-500" />
-              <p className="text-lg font-bold text-slate-700 dark:text-slate-300">
+              <p className="text-lg font-bold text-foreground/90">
                 Húzd ide a NAV 08 (2608 / 2508 / 2408) ÁNYK XML fájlt
               </p>
-              <p className="text-sm text-slate-400 mt-2">
+              <p className="text-sm text-muted-foreground mt-2">
                 Kinyeri az összes dolgozót (08M lapok), jogviszonyt és a lejelentett havi bérszámfejtési adatokat
               </p>
               <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-xs text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
@@ -576,31 +577,29 @@ export default function EmployeeImportPage() {
         <div className="space-y-6">
           {/* NAV 08 Banner / Info if applicable */}
           {parsed08Doc && plan && (
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800/50 rounded-2xl p-6 shadow-sm">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800/50 rounded-lg p-6 shadow-sm">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-600 text-white font-mono">
                       NAV {parsed08Doc.filingType}
                     </span>
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                    <h3 className="text-lg font-bold text-foreground">
                       {parsed08Doc.companyName || 'Beolvasott cégadatok'} — {parsed08Doc.year}. {parsed08Doc.month}. hónap
                     </h3>
                   </div>
-                  <p className="text-xs text-slate-500 font-mono">
+                  <p className="text-xs text-muted-foreground font-mono">
                     Adószám: {parsed08Doc.companyTaxNumber || 'Nincs megadva'} | {parsed08Doc.employeeCount} biztosított M-lapja feldolgozva
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-3 rounded-xl border border-blue-200/60 dark:border-blue-800/40">
-                  <input
-                    type="checkbox"
+                <div className="flex items-center gap-3 bg-card p-3 rounded-lg border border-blue-200/60 dark:border-blue-800/40">
+                  <Checkbox
                     id="createCycleCheck"
                     checked={createCycleOption}
-                    onChange={e => setCreateCycleOption(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                    onCheckedChange={checked => setCreateCycleOption(!!checked)}
                   />
-                  <label htmlFor="createCycleCheck" className="text-sm font-medium text-slate-800 dark:text-slate-200 cursor-pointer">
+                  <label htmlFor="createCycleCheck" className="text-sm font-medium text-foreground cursor-pointer select-none">
                     Havi számfejtési ciklus felépítése erre a hónapra ({parsed08Doc.year}/{parsed08Doc.month})
                   </label>
                 </div>
@@ -608,20 +607,20 @@ export default function EmployeeImportPage() {
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-blue-200/60 dark:border-blue-800/40 text-xs">
                 <div>
-                  <span className="text-slate-500">Összes Bruttó Bér:</span>
-                  <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{parsed08Doc.totalGrossSalary.toLocaleString('hu-HU')} Ft</p>
+                  <span className="text-muted-foreground">Összes Bruttó Bér:</span>
+                  <p className="font-bold text-sm text-foreground">{parsed08Doc.totalGrossSalary.toLocaleString('hu-HU')} Ft</p>
                 </div>
                 <div>
-                  <span className="text-slate-500">Levont SZJA (15%):</span>
-                  <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{parsed08Doc.totalSzja.toLocaleString('hu-HU')} Ft</p>
+                  <span className="text-muted-foreground">Levont SZJA (15%):</span>
+                  <p className="font-bold text-sm text-foreground">{parsed08Doc.totalSzja.toLocaleString('hu-HU')} Ft</p>
                 </div>
                 <div>
-                  <span className="text-slate-500">Levont TB (18,5%):</span>
-                  <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{parsed08Doc.totalTb.toLocaleString('hu-HU')} Ft</p>
+                  <span className="text-muted-foreground">Levont TB (18,5%):</span>
+                  <p className="font-bold text-sm text-foreground">{parsed08Doc.totalTb.toLocaleString('hu-HU')} Ft</p>
                 </div>
                 <div>
-                  <span className="text-slate-500">Fizetendő SZOCHO (13%):</span>
-                  <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{parsed08Doc.totalSzocho.toLocaleString('hu-HU')} Ft</p>
+                  <span className="text-muted-foreground">Fizetendő SZOCHO (13%):</span>
+                  <p className="font-bold text-sm text-foreground">{parsed08Doc.totalSzocho.toLocaleString('hu-HU')} Ft</p>
                 </div>
               </div>
             </div>
@@ -629,33 +628,33 @@ export default function EmployeeImportPage() {
 
           {/* Stats Bar */}
           <div className="grid grid-cols-3 gap-3">
-            <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-3">
+            <div className="bg-card rounded-lg border border-border p-4 flex items-center gap-3">
               <Users className="w-5 h-5 text-blue-500" />
               <div>
                 <p className="text-2xl font-bold">{parsedEmployees.length}</p>
-                <p className="text-xs text-slate-500">Összes dolgozó</p>
+                <p className="text-xs text-muted-foreground">Összes dolgozó</p>
               </div>
             </div>
-            <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-3">
+            <div className="bg-card rounded-lg border border-border p-4 flex items-center gap-3">
               <CheckCircle className="w-5 h-5 text-emerald-500" />
               <div>
                 <p className="text-2xl font-bold text-emerald-600">{validCount}</p>
-                <p className="text-xs text-slate-500">Érvényes & menthető</p>
+                <p className="text-xs text-muted-foreground">Érvényes & menthető</p>
               </div>
             </div>
-            <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-3">
+            <div className="bg-card rounded-lg border border-border p-4 flex items-center gap-3">
               <XCircle className="w-5 h-5 text-red-500" />
               <div>
                 <p className="text-2xl font-bold text-red-600">{errorCount}</p>
-                <p className="text-xs text-slate-500">Hibás sor</p>
+                <p className="text-xs text-muted-foreground">Hibás sor</p>
               </div>
             </div>
           </div>
 
           {/* Table */}
-          <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-            <div className="px-5 py-3 border-b border-border flex items-center justify-between dark:bg-slate-900/30">
-              <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Importálandó Dolgozók és Jogviszonyok</h2>
+          <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
+            <div className="px-5 py-3 border-b border-border flex items-center justify-between dark:bg-card/30">
+              <h2 className="text-sm font-bold text-foreground/90">Importálandó Dolgozók és Jogviszonyok</h2>
               <Button
                 variant="outline"
                 size="sm"
@@ -673,18 +672,18 @@ export default function EmployeeImportPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border dark:bg-slate-900/20">
-                    <th className="px-3 py-2 text-xs font-bold text-slate-500 text-center">#</th>
-                    <th className="px-3 py-2 text-xs font-bold text-slate-500 text-left">Név</th>
-                    <th className="px-3 py-2 text-xs font-bold text-slate-500 text-left">Szül. dátum</th>
-                    <th className="px-3 py-2 text-xs font-bold text-slate-500 text-left">TAJ</th>
-                    <th className="px-3 py-2 text-xs font-bold text-slate-500 text-left">Adóaz.</th>
-                    <th className="px-3 py-2 text-xs font-bold text-slate-500 text-center">Jogv.</th>
-                    <th className="px-3 py-2 text-xs font-bold text-slate-500 text-left">Kezdés</th>
-                    <th className="px-3 py-2 text-xs font-bold text-slate-500 text-center">FEOR</th>
-                    <th className="px-3 py-2 text-xs font-bold text-slate-500 text-right">Bruttó Bér</th>
-                    <th className="px-3 py-2 text-xs font-bold text-slate-500 text-right">Nettó</th>
-                    <th className="px-3 py-2 text-xs font-bold text-slate-500 text-center">Státusz</th>
+                  <tr className="border-b border-border dark:bg-card/20">
+                    <th className="px-3 py-2 text-xs font-bold text-muted-foreground text-center">#</th>
+                    <th className="px-3 py-2 text-xs font-bold text-muted-foreground text-left">Név</th>
+                    <th className="px-3 py-2 text-xs font-bold text-muted-foreground text-left">Szül. dátum</th>
+                    <th className="px-3 py-2 text-xs font-bold text-muted-foreground text-left">TAJ</th>
+                    <th className="px-3 py-2 text-xs font-bold text-muted-foreground text-left">Adóaz.</th>
+                    <th className="px-3 py-2 text-xs font-bold text-muted-foreground text-center">Jogv.</th>
+                    <th className="px-3 py-2 text-xs font-bold text-muted-foreground text-left">Kezdés</th>
+                    <th className="px-3 py-2 text-xs font-bold text-muted-foreground text-center">FEOR</th>
+                    <th className="px-3 py-2 text-xs font-bold text-muted-foreground text-right">Bruttó Bér</th>
+                    <th className="px-3 py-2 text-xs font-bold text-muted-foreground text-right">Nettó</th>
+                    <th className="px-3 py-2 text-xs font-bold text-muted-foreground text-center">Státusz</th>
                     <th className="px-3 py-2" />
                   </tr>
                 </thead>
@@ -694,16 +693,16 @@ export default function EmployeeImportPage() {
                       key={idx}
                       className={cn(
                         'border-b border-border/50 transition-colors',
-                        row.valid ? 'hover:bg-slate-50 dark:hover:bg-slate-800/50' : 'bg-red-50/50 dark:bg-red-500/5'
+                        row.valid ? 'hover:bg-muted/50' : 'bg-red-50/50 dark:bg-red-500/5'
                       )}
                     >
-                      <td className="px-3 py-2.5 text-center text-xs text-slate-400">{idx + 1}</td>
+                      <td className="px-3 py-2.5 text-center text-xs text-muted-foreground">{idx + 1}</td>
                       <td className="px-3 py-2.5 font-medium">{row.lastName} {row.firstName}</td>
                       <td className="px-3 py-2.5 text-xs font-mono">{row.birthDate || '–'}</td>
                       <td className="px-3 py-2.5 text-xs font-mono">{row.tajNumber || '–'}</td>
                       <td className="px-3 py-2.5 text-xs font-mono">{row.taxId || '–'}</td>
                       <td className="px-3 py-2.5 text-center">
-                        <span className="bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-xs font-mono">{row.jobCode}</span>
+                        <span className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">{row.jobCode}</span>
                       </td>
                       <td className="px-3 py-2.5 text-xs">{row.startDate}</td>
                       <td className="px-3 py-2.5 text-center text-xs font-mono">{row.feorCode || '–'}</td>
@@ -778,10 +777,10 @@ export default function EmployeeImportPage() {
 
       {/* Importing Phase */}
       {phase === 'importing' && (
-        <div className="bg-card rounded-2xl border border-border p-16 text-center space-y-4">
+        <div className="bg-card rounded-lg border border-border p-16 text-center space-y-4">
           <Loader2 className="w-12 h-12 mx-auto text-emerald-500 animate-spin" />
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200">Importálás és Rekonstrukció folyamatban...</h2>
-          <p className="text-sm text-slate-400 max-w-md mx-auto">
+          <h2 className="text-xl font-bold text-foreground">Importálás és Rekonstrukció folyamatban...</h2>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto">
             {progress.message || `${validCount} dolgozó és kapcsolódó adatok rögzítése a rendszerben...`}
           </p>
         </div>
@@ -789,12 +788,12 @@ export default function EmployeeImportPage() {
 
       {/* Done Phase */}
       {phase === 'done' && (
-        <div className="bg-card rounded-2xl border border-border p-16 text-center space-y-5">
+        <div className="bg-card rounded-lg border border-border p-16 text-center space-y-5">
           <div className="p-4 bg-emerald-50 dark:bg-emerald-500/10 rounded-full inline-block">
             <CheckCircle className="w-12 h-12 text-emerald-600" />
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Sikeres Betöltés!</h2>
-          <p className="text-sm text-slate-500 max-w-md mx-auto">
+          <h2 className="text-2xl font-bold text-foreground">Sikeres Betöltés!</h2>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto">
             A dolgozói törzsadatok és az aktív jogviszonyok (alapbér, jogviszonykód, FEOR) sikeresen elmentve.
             {parsed08Doc && createCycleOption && ' A havi bérszámfejtési ciklus és a kalkulációs adatok is felépültek.'}
           </p>

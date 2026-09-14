@@ -39,7 +39,7 @@ const ROLE_COLORS: Record<string, string> = {
   'iroda_admin': 'bg-violet-500/15 text-violet-600 dark:text-violet-400',
   'senior_könyvelő': 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
   'könyvelő': 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
-  'asszisztens': 'bg-slate-500/15 text-slate-600 dark:text-slate-400',
+  'asszisztens': 'bg-muted-foreground/15 text-muted-foreground',
 };
 
 // ── Data hooks ──
@@ -545,7 +545,7 @@ export default function AccountantManagementPage() {
         {accountants.map(acc => {
           const isExpanded = expandedUser === acc.userId;
           return (
-            <div key={acc.userId} className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+            <div key={acc.userId} className="bg-card border border-border rounded-lg overflow-hidden shadow-sm">
               {/* Header row */}
               <button
                 onClick={() => setExpandedUser(isExpanded ? null : acc.userId)}
@@ -560,7 +560,7 @@ export default function AccountantManagementPage() {
                     {acc.assignedCompanies.length} cég hozzárendelve
                   </div>
                 </div>
-                <span className={`px-2.5 py-1 rounded-full text-[11px] font-medium ${ROLE_COLORS[acc.role] || 'bg-slate-100 text-slate-600'}`}>
+                <span className={`px-2.5 py-1 rounded-full text-[11px] font-medium ${ROLE_COLORS[acc.role] || 'bg-muted text-muted-foreground'}`}>
                   <Shield className="w-3 h-3 inline mr-1" />
                   {ROLE_LABELS[acc.role] || acc.role}
                 </span>

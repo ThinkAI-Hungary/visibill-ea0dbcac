@@ -9,9 +9,9 @@ import type { TaoStepProps, TaoFormData, TaoComputed } from '../taoWizardTypes';
 export function RenderStep7({ computed }: TaoStepProps) {
   return (
     <div className="space-y-5">
-      <div className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 rounded-xl p-6 border border-indigo-200 dark:border-indigo-800">
-        <p className="text-xs text-slate-500 mb-1">Módosított adóalap</p>
-        <p className={cn('text-4xl font-black', computed.taxBase > 0 ? 'text-indigo-600' : 'text-slate-400')}>
+      <div className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 rounded-lg p-6 border border-indigo-200 dark:border-indigo-800">
+        <p className="text-xs text-muted-foreground mb-1">Módosított adóalap</p>
+        <p className={cn('text-4xl font-black', computed.taxBase > 0 ? 'text-primary' : 'text-muted-foreground')}>
           {fmt(computed.taxBase)} Ft
         </p>
       </div>
@@ -22,15 +22,15 @@ export function RenderStep7({ computed }: TaoStepProps) {
           { label: '− 7.§ csökkentő tételek', value: -computed.decreasingTotal, color: 'text-emerald-500' },
           { label: '+ Kamatkorlát korrekció', value: computed.interestAdjustment, color: 'text-amber-500' },
         ].map((row, i) => (
-          <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50">
-            <span className="text-sm text-slate-600 dark:text-slate-400">{row.label}</span>
+          <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/50">
+            <span className="text-sm text-muted-foreground">{row.label}</span>
             <span className={cn('text-sm font-bold font-mono', row.color)}>{fmt(row.value)} Ft</span>
           </div>
         ))}
         <div className="border-t border-border pt-2 mt-2">
           <div className="flex items-center justify-between py-2 px-3">
-            <span className="text-sm font-bold text-slate-900 dark:text-slate-100">= Módosított adóalap</span>
-            <span className="text-lg font-black text-indigo-600">{fmt(computed.modifiedTaxBase)} Ft</span>
+            <span className="text-sm font-bold text-foreground">= Módosított adóalap</span>
+            <span className="text-lg font-black text-primary">{fmt(computed.modifiedTaxBase)} Ft</span>
           </div>
           {computed.modifiedTaxBase < 0 && (
             <div className="flex items-center justify-between py-2 px-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
@@ -49,7 +49,7 @@ export function RenderStep10({ data, computed, upd }: TaoStepProps) {
   return (
     <div className="space-y-5">
       <NumberInput label="Befizetett adóelőlegek" value={data.advance_payments} onChange={v => upd('advance_payments', v)} />
-      <div className="space-y-3 bg-card rounded-xl border border-border p-5">
+      <div className="space-y-3 bg-card rounded-lg border border-border p-5">
         {[
           { label: 'Adóalap', value: computed.taxBase },
           { label: '× 9% TAO kulcs', value: computed.calculatedTax },
@@ -58,14 +58,14 @@ export function RenderStep10({ data, computed, upd }: TaoStepProps) {
           { label: '− Adóelőlegek', value: -data.advance_payments },
         ].map((row, i) => (
           <div key={i} className="flex items-center justify-between py-1.5">
-            <span className="text-sm text-slate-600 dark:text-slate-400">{row.label}</span>
-            <span className="text-sm font-mono font-bold text-slate-700 dark:text-slate-300">{fmt(row.value)} Ft</span>
+            <span className="text-sm text-muted-foreground">{row.label}</span>
+            <span className="text-sm font-mono font-bold text-foreground/90">{fmt(row.value)} Ft</span>
           </div>
         ))}
         <div className="border-t-2 border-emerald-300 pt-3 mt-3">
           <div className="flex items-center justify-between">
-            <span className="text-base font-bold text-slate-900 dark:text-slate-100">= Fizetendő TAO</span>
-            <span className={cn('text-2xl font-black', computed.payableTax > 0 ? 'text-emerald-600' : 'text-slate-400')}>
+            <span className="text-base font-bold text-foreground">= Fizetendő TAO</span>
+            <span className={cn('text-2xl font-black', computed.payableTax > 0 ? 'text-emerald-600' : 'text-muted-foreground')}>
               {fmt(computed.payableTax)} Ft
             </span>
           </div>
@@ -196,28 +196,28 @@ export function RenderStep11({
 
   return (
     <div className="space-y-5">
-      <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-xl p-6 border border-emerald-200 dark:border-emerald-800 text-center">
+      <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-lg p-6 border border-emerald-200 dark:border-emerald-800 text-center">
         <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
-        <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-1">TAO Kalkuláció Kész</h3>
-        <p className="text-sm text-slate-500">A {taxYear}. adóévi társasági adó kiszámítása befejeződött.</p>
+        <h3 className="text-xl font-bold text-foreground mb-1">TAO Kalkuláció Kész</h3>
+        <p className="text-sm text-muted-foreground">A {taxYear}. adóévi társasági adó kiszámítása befejeződött.</p>
         <p className="text-3xl font-black text-emerald-600 mt-4">{fmt(computed.payableTax)} Ft</p>
-        <p className="text-xs text-slate-400 mt-1">fizetendő társasági adó</p>
+        <p className="text-xs text-muted-foreground mt-1">fizetendő társasági adó</p>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-card rounded-lg border border-border p-3">
-          <p className="text-[10px] text-slate-500">AEE</p>
+          <p className="text-[10px] text-muted-foreground">AEE</p>
           <p className="text-sm font-bold">{fmt(computed.aee)} Ft</p>
         </div>
         <div className="bg-card rounded-lg border border-border p-3">
-          <p className="text-[10px] text-slate-500">Adóalap</p>
+          <p className="text-[10px] text-muted-foreground">Adóalap</p>
           <p className="text-sm font-bold">{fmt(computed.taxBase)} Ft</p>
         </div>
         <div className="bg-card rounded-lg border border-border p-3">
-          <p className="text-[10px] text-slate-500">Számított adó</p>
+          <p className="text-[10px] text-muted-foreground">Számított adó</p>
           <p className="text-sm font-bold">{fmt(computed.calculatedTax)} Ft</p>
         </div>
         <div className="bg-card rounded-lg border border-border p-3">
-          <p className="text-[10px] text-slate-500">Kedvezmények</p>
+          <p className="text-[10px] text-muted-foreground">Kedvezmények</p>
           <p className="text-sm font-bold text-blue-600">{fmt(computed.creditsTotal + computed.effectiveDonations)} Ft</p>
         </div>
       </div>
@@ -233,7 +233,7 @@ export function RenderStep11({
             <FileCheck className="w-5 h-5 text-emerald-600" />
             <div>
               <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">Bevallás generálva</p>
-              <p className="text-xs text-slate-500">2929 TAO bevallás — {taxYear}. adóév</p>
+              <p className="text-xs text-muted-foreground">2929 TAO bevallás — {taxYear}. adóév</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">

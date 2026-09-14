@@ -3,6 +3,16 @@ import {
   CheckCircle, Eye, XCircle, MoreVertical, Trash2,
 } from 'lucide-react';
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { TableEmptyState } from "@/components/ui/table-empty-state";
+import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -45,68 +55,69 @@ export function MissingInvoicesTable({
   onPageChange,
 }: MissingInvoicesTableProps) {
   return (
-    <div className="bg-card border border-border rounded-xl shadow-soft overflow-hidden">
+    <div className="bg-card border border-border rounded-lg overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-border dark:bg-slate-900/50">
-              <th className="py-4 px-4 w-12">
-                <input 
-                  type="checkbox" 
+        <Table className="compact-table min-w-[900px]">
+          <TableHeader>
+            <TableRow className="border-b border-border bg-muted/40">
+              <TableHead className="w-12 px-4">
+                <Checkbox 
                   checked={isAllSelected}
-                  onChange={onSelectAll}
-                  className="rounded border-slate-300 text-primary focus:ring-primary cursor-pointer" 
+                  onCheckedChange={onSelectAll}
+                  className="cursor-pointer" 
                 />
-              </th>
-              <th className="py-4 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Szállító</th>
-              <th className="py-4 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Időszak</th>
-              <th className="py-4 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Becsült összeg</th>
-              <th className="py-4 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Forrás</th>
-              <th className="py-4 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Prioritás</th>
-              <th className="py-4 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider min-w-[130px]">Státusz</th>
-              <th className="py-4 px-4 w-12 text-center"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              </TableHead>
+              <TableHead className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Szállító</TableHead>
+              <TableHead className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Időszak</TableHead>
+              <TableHead className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Becsült összeg</TableHead>
+              <TableHead className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Forrás</TableHead>
+              <TableHead className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Prioritás</TableHead>
+              <TableHead className="text-xs font-semibold text-muted-foreground uppercase tracking-wider min-w-[130px]">Státusz</TableHead>
+              <TableHead className="w-12 text-center"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {filteredInvoices.length > 0 ? (
               filteredInvoices.map((invoice) => (
-                <tr key={invoice.id} className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors group ${selectedIds.includes(invoice.id) ? 'bg-slate-50 dark:bg-slate-800/30' : ''}`}>
-                  <td className="py-4 px-4">
-                    <input 
-                      type="checkbox" 
+                <TableRow 
+                  key={invoice.id} 
+                  className={`border-l-2 border-l-transparent hover:border-l-primary hover:bg-muted/40 transition-colors group ${selectedIds.includes(invoice.id) ? 'bg-muted/30 border-l-primary' : ''}`}
+                >
+                  <TableCell className="px-4">
+                    <Checkbox 
                       checked={selectedIds.includes(invoice.id)}
-                      onChange={() => onSelectItem(invoice.id)}
-                      className="rounded border-slate-300 text-primary focus:ring-primary cursor-pointer" 
+                      onCheckedChange={() => onSelectItem(invoice.id)}
+                      className="cursor-pointer" 
                     />
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="font-semibold text-slate-900 dark:text-slate-100 text-sm">{invoice.vendor}</div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400">{invoice.subtext}</div>
-                  </td>
-                  <td className="py-4 px-4 text-sm text-slate-600 dark:text-slate-400">{invoice.period}</td>
-                  <td className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-slate-100">{invoice.amount}</td>
-                  <td className="py-4 px-4 text-sm text-slate-600 dark:text-slate-400">{invoice.source}</td>
-                  <td className="py-4 px-4">{getPriorityBadge(invoice.priority)}</td>
-                  <td className="py-4 px-4">{getStatusBadge(invoice.status, invoice.statusVariant)}</td>
-                  <td className="py-4 px-4 text-center" onClick={(e) => e.stopPropagation()}>
+                  </TableCell>
+                  <TableCell className="px-4">
+                    <div className="font-semibold text-foreground text-sm">{invoice.vendor}</div>
+                    <div className="text-xs text-muted-foreground">{invoice.subtext}</div>
+                  </TableCell>
+                  <TableCell className="px-4 text-sm text-muted-foreground">{invoice.period}</TableCell>
+                  <TableCell className="px-4 text-sm font-mono tabular-nums text-foreground">{invoice.amount}</TableCell>
+                  <TableCell className="px-4 text-sm text-muted-foreground">{invoice.source}</TableCell>
+                  <TableCell className="px-4">{getPriorityBadge(invoice.priority)}</TableCell>
+                  <TableCell className="px-4">{getStatusBadge(invoice.status, invoice.statusVariant)}</TableCell>
+                  <TableCell className="px-4 text-center" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 dark:text-slate-400 p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-all outline-none">
-                          <MoreVertical className="w-5 h-5" />
+                        <button className="text-muted-foreground hover:text-foreground p-1.5 rounded-md hover:bg-muted transition-colors outline-none">
+                          <MoreVertical className="w-4 h-4" />
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-56 bg-card border-border">
                         <DropdownMenuItem 
-                          className="gap-2.5 cursor-pointer text-slate-700 dark:text-slate-300 py-2"
+                          className="gap-2.5 cursor-pointer text-foreground/90 py-2"
                           onClick={() => onViewDetails(invoice)}
                         >
-                          <Eye className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                          <Eye className="w-4 h-4 text-muted-foreground" />
                           <span className="font-medium text-sm">Részletek</span>
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
+                        <DropdownMenuSeparator className="bg-muted" />
                         {invoice.statusVariant === 'success' ? (
                           <DropdownMenuItem 
-                            className="gap-2.5 cursor-pointer text-red-500 dark:text-red-400 py-2"
+                            className="gap-2.5 cursor-pointer text-destructive py-2"
                             onClick={() => onUnresolve(invoice.id)}
                           >
                             <Trash2 className="w-4 h-4" />
@@ -114,22 +125,22 @@ export function MissingInvoicesTable({
                           </DropdownMenuItem>
                         ) : (
                           <DropdownMenuItem 
-                            className="gap-2.5 cursor-pointer text-slate-700 dark:text-slate-300 py-2"
+                            className="gap-2.5 cursor-pointer text-foreground/90 py-2"
                             onClick={() => onResolve(invoice.id)}
                           >
-                            <CheckCircle className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                            <CheckCircle className="w-4 h-4 text-muted-foreground" />
                             <span className="font-medium text-sm">Megérkezettnek jelöl</span>
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem 
-                          className="gap-2.5 cursor-pointer text-slate-700 dark:text-slate-300 py-2"
+                          className="gap-2.5 cursor-pointer text-foreground/90 py-2"
                           onClick={() => onDelete(invoice.id)}
                         >
-                          <XCircle className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                          <XCircle className="w-4 h-4 text-muted-foreground" />
                           <span className="font-medium text-sm">Téves találatnak jelöl</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem 
-                          className="gap-2.5 cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20 py-2"
+                          className="gap-2.5 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10 py-2"
                           onClick={() => onDelete(invoice.id)}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -137,18 +148,14 @@ export function MissingInvoicesTable({
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             ) : (
-              <tr>
-                <td colSpan={8} className="py-8 text-center text-slate-500 dark:text-slate-400">
-                  Nincs a keresésnek megfelelő találat.
-                </td>
-              </tr>
+              <TableEmptyState colSpan={8} title="Nincs hiányzó bizonylat" description="A megadott szűrők alapján nincs rögzített hiányzó bizonylat." />
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Pagination controls */}

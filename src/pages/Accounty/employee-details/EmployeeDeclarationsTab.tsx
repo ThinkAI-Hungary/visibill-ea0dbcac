@@ -30,7 +30,7 @@ export function EmployeeDeclarationsTab({
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">Adóelőleg-nyilatkozatok</h3>
+        <h3 className="text-sm font-bold text-foreground/90">Adóelőleg-nyilatkozatok</h3>
         <Button variant="outline" size="sm" className="flex items-center gap-1" onClick={() => setShowNewDeclaration(true)}>
           <Plus className="w-3 h-3" /> Új nyilatkozat
         </Button>
@@ -54,7 +54,7 @@ export function EmployeeDeclarationsTab({
       )}
 
       {declarations.length === 0 ? (
-        <div className="py-8 text-center text-sm text-slate-500">Nincs rögzített nyilatkozat</div>
+        <div className="py-8 text-center text-sm text-muted-foreground">Nincs rögzített nyilatkozat</div>
       ) : (
         <div className="space-y-2">
           {declarations.map((d) => (
@@ -66,19 +66,19 @@ export function EmployeeDeclarationsTab({
             )}>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  <p className="text-sm font-semibold text-foreground">
                     {DECLARATION_TYPES.find(t => t.value === d.declaration_type)?.label || d.declaration_type.replace(/_/g, ' ')}
                   </p>
                   <span className={cn(
                     'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase',
                     d.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' :
                     d.status === 'revoked' ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400' :
-                    'bg-slate-100 text-slate-600 dark:bg-slate-800'
+                    'bg-muted text-muted-foreground dark:bg-muted'
                   )}>
                     {d.status === 'active' ? 'Aktív' : d.status === 'revoked' ? 'Visszavont' : d.status === 'expired' ? 'Lejárt' : d.status}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   Érvényes: {d.valid_from}{d.valid_until ? ` – ${d.valid_until}` : ' –'}
                   {d.declaration_type === 'family' && (d.parameters as any)?.children_count && (
                     <span className="ml-2">· {(d.parameters as any).children_count} eltartott</span>
@@ -90,7 +90,7 @@ export function EmployeeDeclarationsTab({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-slate-400 hover:text-primary"
+                    className="h-8 w-8 text-muted-foreground hover:text-primary"
                     title="Szerkesztés"
                     onClick={() => setEditingDeclaration(d)}
                   >
@@ -99,7 +99,7 @@ export function EmployeeDeclarationsTab({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-slate-400 hover:text-red-500"
+                    className="h-8 w-8 text-muted-foreground hover:text-red-500"
                     title="Visszavonás"
                     disabled={revokeDeclaration.isPending}
                     onClick={() => {

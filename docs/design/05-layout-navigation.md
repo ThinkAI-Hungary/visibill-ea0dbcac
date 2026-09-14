@@ -61,15 +61,53 @@ Az eaisyBooks felületének navigációja a `AccountyShellContext` központi ál
 │  ├── AccountySidebar (Karcsú keret ~280 sor)               │
 │  │    ├── AppModeSwitcher (eaisyBill ↔ eaisyBooks)          │
 │  │    ├── mode === 'portfolio'  ──► <PortfolioNav />        │
-│  │    │                             (Portfólió, Naptár,     │
-│  │    │                              Riportok, Bérszámfejtés)│
+│  │    │                             (Teendők, Portfólió,    │
+│  │    │                              Segítség, Beállítások) │
 │  │    └── mode === 'client'     ──► <ClientNav />           │
 │  │                                  (← Vissza gomb, Profil, │
 │  │                                   Számlák, EV, TAO, Bér) │
-│  ├── AccountyHeader (0-prop, parancspaletta & súgó trigger) │
-│  └── AccountyErrorBoundary + <Outlet />                    │
-└─────────────────────────────────────────────────────────────┘
+│  │  ├── AccountyHeader (0-prop, parancspaletta & súgó trigger) │
+│  │  └── AccountyErrorBoundary + <Outlet />                    │
+│  └─────────────────────────────────────────────────────────────┘
 ```
+
+### eaisyBooks Portfólió Navigáció — 4 Munkafolyamat Kategória (PRD P-085)
+
+Az eaisyBooks portfólió nézet oldalsávja (`PortfolioNav.tsx`) 4 tiszta, szerepkör- és munkafolyamat-alapú kategóriába rendeződik:
+
+| Kategória | Tartalom & Fókusz | Elemek | Kiemelés / Viselkedés |
+|-----------|-------------------|--------|------------------------|
+| **1. Teendők** | Sürgős operatív feladatok, hibaelhárítás, határidők | Hiányzó számlák, Jóváhagyási sor, Riasztások, Adónaptár | Piros sürgősségi jelvény (`491`) hiány esetén |
+| **2. Portfólió** | Irodai ügyfélkezelés & szakmai modulok | Portfólió (főoldal), Bérszámfejtés Ciklusok, Irodai Riportok, Onboarding | Ügyfél portfólió és havi zárási állapotok |
+| **3. Segítség** | Támogatás, hibajegyek és AI asszisztens | AI Asszisztens, Hibajegyek, Segítség | Pulzáló vizuális AI pont, olvasatlan jegy számláló |
+| **4. Beállítások** | Iroda, szakmai törzsadatok és adatbiztonság | Iroda & Beállítások, Szakmai Törzsadatok, Biztonság & GDPR | Laposított, egyetlen szintű accordion trigger |
+
+* **Összecsukott (Collapsed) Mód:** Az ikon-nézetben logikai elválasztó vonalak (`divider`) tagolják a 4 csoportot; a badge-ek kompakt `9+` formátumban perzisztálnak, a tooltipek jobb oldalon jelennek meg.
+
+---
+
+## Hierarchikus Útvonalkövető (Breadcrumbs) Rendszer (PRD P-084)
+
+A több szintű eaisyBooks navigációban a felhasználó pillanatnyi kontextusát a fejlécekbe (`PageHeader`) integrált, kattintható útvonalkövető biztosítja.
+
+```
+Portfólió  /  Think Ai Kft  /  Pénztárkönyv
+(szülő)        (szülő)          (aktív - félkövér)
+```
+
+### 1. Komponens API (`src/components/ui/page-header.tsx`)
+* `breadcrumbs?: Array<BreadcrumbItem | string>` — Explicit útvonal lista átadása.
+* `autoBreadcrumbs?: boolean` (alapértelmezett: `true`) — Ha nincs explicit lista megadva, automatikusan feloldja a hierachiát az aktív útvonalból.
+* **100% Backwards Compatibility:** A legacy `companyName` és `breadcrumb` string propokat automatikusan integrálja.
+
+### 2. Tiszta Útvonal Feloldó (`src/hooks/useAccountyBreadcrumbs.ts`)
+* `getAccountyBreadcrumbs(pathname, clientName)`: Pure function, amely router kontextus nélkül is determinisztikusan generálja a kenyérmorzsákat.
+* `useAccountyBreadcrumbsOptional()`: Biztonságos hook wrapper, amely routeren kívül vagy nem-eaisyBooks oldalakon `null`-t ad vissza, kizárva a futási idejű hibákat.
+* **Hierarchia Szintek:**
+  1. `Portfólió` (`/eaisybooks`)
+  2. `[Ügyfél neve]` (`/eaisybooks/:companyId/:dateRange/overview`)
+  3. `[Aloldal neve]` (pl. Pénztárkönyv, Számlák, Foglalkoztatottak, Bevallások)
+  4. `[Mélyebb szint]` (pl. Bérszámfejtési ciklus `2026. március` vagy `Új havi ciklus`)
 
 ---
 
@@ -200,12 +238,13 @@ Az eaisyBooks a könyvelőirodák speciális igényeire tervezett **kétállapot
 ```
 ┌────────────────────────────────────────────────────────┐
 │ 1. Portfólió Mód (/eaisybooks/*)                       │
-│    ▸ Portfólió (Kanban / Grid / List)                 │
-│    ▸ Jóváhagyási sor (Approval Queue)                  │
-│    ▸ Hiányzó számlák & Felszólítások                  │
-│    ▸ Adónaptár & Riasztások                            │
-│    ▸ Riportok & AI Asszisztens                         │
-│    ▾ Adminisztráció (Mátrix, Könyvelők, Audit)         │
+│    ⚡ TEENDŐK (Hiányzó számlák [491], Jóváhagyás,     │
+│        Riasztások, Adónaptár)                          │
+│    💼 PORTFÓLIÓ (Portfólió, Bérszámfejtés Ciklusok,    │
+│        Irodai Riportok, Onboarding,                    │
+│        ▾ Szakmai Törzsadatok almenü)                   │
+│    ✨ SEGÍTSÉG (AI Asszisztens, Hibajegyek, Segítség)  │
+│    ⚙️ BEÁLLÍTÁSOK (Iroda & Beállítások, Biztonság/GDPR)│
 ├────────────────────────────────────────────────────────┤
 │ 2. Ügyfél Mód (/eaisybooks/:companyId/:dateRange/*)    │
 │    [← Vissza a portfólióhoz]                           │

@@ -320,6 +320,17 @@ All colors MUST be HSL.
     outline-offset: 2px;
   }
 
+  /* Global pattern: suppress outline & focus rings on combobox triggers, popover controls, and search inputs */
+  button[role="combobox"]:focus,
+  button[role="combobox"]:focus-visible,
+  button[role="combobox"]:active,
+  [cmdk-input]:focus,
+  [cmdk-input]:focus-visible {
+    outline: none !important;
+    outline-offset: 0 !important;
+    box-shadow: none !important;
+  }
+
   /* Prevent border/color changes on programmatic or mouse focus (e.g. password manager autofill).
      :focus-visible only activates on keyboard navigation, so this only suppresses mouse/JS focus. */
   input:focus:not(:focus-visible),

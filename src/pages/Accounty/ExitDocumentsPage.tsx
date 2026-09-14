@@ -55,7 +55,7 @@ const DOCUMENT_TEMPLATES: ExitDocument[] = [
 const STATUS_BADGE: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   generated: { label: 'Elkészült', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400', icon: CheckCircle },
   pending: { label: 'Készítendő', color: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400', icon: Clock },
-  na: { label: 'Nem alkalmazandó', color: 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400', icon: Clock },
+  na: { label: 'Nem alkalmazandó', color: 'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground', icon: Clock },
 };
 
 export default function ExitDocumentsPage() {
@@ -388,14 +388,14 @@ export default function ExitDocumentsPage() {
   if (isLoading) return <ContentSkeleton />;
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full max-w-5xl mx-auto space-y-6 page-animate">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
-          <div className="p-2.5 bg-gradient-to-br from-red-500 to-pink-600 rounded-xl shadow-lg shadow-red-500/25"><Package className="w-5 h-5 text-white" /></div>
+          <div className="p-2.5 bg-gradient-to-br from-red-500 to-pink-600 rounded-lg shadow-lg shadow-red-500/25"><Package className="w-5 h-5 text-white" /></div>
           <div>
             <h1 className="text-2xl font-bold">Kilépő dokumentumcsomag</h1>
-            <p className="text-sm text-slate-500">{empLabel}</p>
+            <p className="text-sm text-muted-foreground">{empLabel}</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -410,7 +410,7 @@ export default function ExitDocumentsPage() {
         </div>
       </div>
 
-      <div className="bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-500/10 dark:to-pink-500/10 rounded-xl border border-red-200 dark:border-red-500/20 p-5">
+      <div className="bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-500/10 dark:to-pink-500/10 rounded-lg border border-red-200 dark:border-red-500/20 p-5">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-bold text-red-800 dark:text-red-300">Kötelező dokumentumok</h3>
           <span className="text-sm font-bold">{requiredDoneCount}/{requiredCount}</span>
@@ -428,10 +428,21 @@ export default function ExitDocumentsPage() {
           const badge = STATUS_BADGE[doc.status];
           const isExpanded = expandedDoc === doc.id;
           return (
-            <div key={doc.id} className={cn('bg-card rounded-xl border shadow-soft overflow-hidden transition-all', doc.status === 'na' ? 'border-border/50 opacity-60' : 'border-border')}>
-              <button onClick={() => setExpandedDoc(isExpanded ? null : doc.id)} className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-left">
-                <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center shrink-0', doc.status === 'generated' ? 'bg-emerald-100 dark:bg-emerald-500/20' : doc.status === 'pending' ? 'bg-blue-100 dark:bg-blue-500/20' : 'bg-slate-100 dark:bg-slate-800')}>
-                  <FileText className={cn('w-4 h-4', doc.status === 'generated' ? 'text-emerald-600' : doc.status === 'pending' ? 'text-blue-600' : 'text-slate-400')} />
+            <div key={doc.id} className={cn('bg-card rounded-lg border shadow-soft overflow-hidden transition-all', doc.status === 'na' ? 'border-border/50 opacity-60' : 'border-border')}>
+              <div
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setExpandedDoc(isExpanded ? null : doc.id);
+                  }
+                }}
+                onClick={() => setExpandedDoc(isExpanded ? null : doc.id)}
+                className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-muted/50 transition-colors text-left cursor-pointer"
+              >
+                <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center shrink-0', doc.status === 'generated' ? 'bg-emerald-100 dark:bg-emerald-500/20' : doc.status === 'pending' ? 'bg-blue-100 dark:bg-blue-500/20' : 'bg-muted')}>
+                  <FileText className={cn('w-4 h-4', doc.status === 'generated' ? 'text-emerald-600' : doc.status === 'pending' ? 'text-blue-600' : 'text-muted-foreground')} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -439,7 +450,7 @@ export default function ExitDocumentsPage() {
                     {doc.required && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold">KÖTELEZŐ</span>}
                     <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold', badge.color)}>{badge.label}</span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5">{doc.legalRef} — {doc.description}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{doc.legalRef} — {doc.description}</p>
                 </div>
                 {doc.status === 'generated' && (
                   <div className="flex gap-1 shrink-0">
@@ -447,10 +458,10 @@ export default function ExitDocumentsPage() {
                     <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Letöltés" onClick={e => { e.stopPropagation(); handleDownload(doc); }}><Download className="w-3 h-3" /></Button>
                   </div>
                 )}
-              </button>
+              </div>
               {isExpanded && (
                 <div className="px-5 pb-4 pl-[68px] border-t border-border/50 pt-3">
-                  <p className="text-xs text-slate-600 dark:text-slate-400">{doc.template}</p>
+                  <p className="text-xs text-muted-foreground">{doc.template}</p>
                   {doc.status === 'pending' && (
                     <Button size="sm" className="mt-3 gap-1 text-xs bg-blue-600 hover:bg-blue-700" disabled={saving} onClick={async () => {
                       setSaving(true);
@@ -501,7 +512,7 @@ export default function ExitDocumentsPage() {
               {previewTitle}
             </DialogTitle>
           </DialogHeader>
-          <div className="flex-1 w-full bg-slate-200 dark:bg-slate-900">
+          <div className="flex-1 w-full bg-muted dark:bg-card">
             {previewUrl && (
               <iframe src={previewUrl} className="w-full h-full border-0" title={`${previewTitle} megtekintő`} />
             )}
