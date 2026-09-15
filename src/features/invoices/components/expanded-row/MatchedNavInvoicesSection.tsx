@@ -1,13 +1,13 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { FileText, CheckCircle2, Unlink } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { InlineTransactionList } from './InlineTransactionList';
-import { formatCurrency, cn } from '@/lib/utils';
-import { getPaymentStatusBadge } from '@/hooks/useComputedStatus';
-import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+import { computePaymentStatus } from '@/hooks/useComputedStatus';
+import { formatDateLocale, formatCurrencyLocale } from '@/lib/locale/formatters';
 import type { MatchedNavInvoice, MatchedTransaction } from './types';
 
 interface MatchedNavInvoicesSectionProps {
@@ -27,7 +27,29 @@ export function MatchedNavInvoicesSection({
   hideStandaloneTransactions = false,
   effectiveMatchedTransactions = [],
 }: MatchedNavInvoicesSectionProps) {
+  const { t } = useTranslation(['invoices', 'common']);
+
   if (!invoices || invoices.length === 0) return null;
+
+  const getStatusBadge = (txId: string | null | undefined, matchStatus?: string | null) => {
+    const status = computePaymentStatus(txId, matchStatus);
+    if (status === 'paid') {
+      return {
+        label: t('invoices:status.paid', 'Kifizetve'),
+        className: 'bg-emerald-500/15 text-emerald-500 border-emerald-500/20',
+      };
+    }
+    if (status === 'partially_paid') {
+      return {
+        label: t('invoices:status.partial', 'Részben fizetve'),
+        className: 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30',
+      };
+    }
+    return {
+      label: t('invoices:status.unpaid', 'Nyitott'),
+      className: 'bg-yellow-500/15 text-yellow-600 border-yellow-500/20',
+    };
+  };
 
   return (
     <>
@@ -37,7 +59,7 @@ export function MatchedNavInvoicesSection({
             <CardTitle className="text-xs font-medium flex items-center justify-between">
               <span className="flex items-center gap-1.5">
                 <FileText className="h-3 w-3 text-muted-foreground" />
-                Párosított NAV számla
+                {t('invoices:expanded_nav.title', 'Párosított NAV számla')}
               </span>
               <div
                 className="flex items-center gap-2"
@@ -55,17 +77,17 @@ export function MatchedNavInvoicesSection({
                     className="h-6 text-[10px] text-muted-foreground hover:text-destructive px-2 border border-border/40 hover:bg-destructive/10 rounded-md transition-colors gap-1"
                   >
                     <Unlink className="h-2.5 w-2.5" />
-                    Párosítás megszüntetése
+                    {t('invoices:expanded_nav.unmatch_btn', 'Párosítás megszüntetése')}
                   </Button>
                 )}
                 <Badge variant="success" className="gap-1 text-[10px] h-5">
                   <CheckCircle2 className="h-2.5 w-2.5" />
-                  Párosított
+                  {t('invoices:expanded_nav.matched_badge', 'Párosított')}
                 </Badge>
                 <div className="flex gap-1">
                   {(() => {
                     if (!inv.transaction_id && !(inv as any).match_status) return null;
-                    const badge = getPaymentStatusBadge(inv.transaction_id, (inv as any).match_status);
+                    const badge = getStatusBadge(inv.transaction_id, (inv as any).match_status);
                     return (
                       <Badge variant="outline" className={cn('text-[10px] h-5', badge.className)}>
                         {badge.label}
@@ -74,7 +96,7 @@ export function MatchedNavInvoicesSection({
                   })()}
                   {inv.submitted && (
                     <Badge variant="outline" className="text-[10px] h-5">
-                      Beküldve
+                      {t('invoices:expanded_nav.submitted_badge', 'Beküldve')}
                     </Badge>
                   )}
                 </div>
@@ -84,29 +106,29 @@ export function MatchedNavInvoicesSection({
           <CardContent className="p-3 pt-0">
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="col-span-2">
-                <span className="text-muted-foreground">Bizonylatsorszám:</span>
+                <span className="text-muted-foreground">{t('invoices:expanded_nav.invoice_number', 'Bizonylatsorszám:')}</span>
                 <span className="ml-1 font-mono font-medium">{inv.invoice_number}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Eladó:</span>
+                <span className="text-muted-foreground">{t('invoices:expanded_nav.supplier', 'Eladó:')}</span>
                 <span className="ml-1 font-medium">{inv.supplier_name || '-'}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Vevő:</span>
+                <span className="text-muted-foreground">{t('invoices:expanded_nav.customer', 'Vevő:')}</span>
                 <span className="ml-1 font-medium">{inv.customer_name || '-'}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Kiállítás:</span>
+                <span className="text-muted-foreground">{t('invoices:expanded_nav.issue_date', 'Kiállítás:')}</span>
                 <span className="ml-1">
                   {inv.invoice_issue_date
-                    ? format(new Date(inv.invoice_issue_date), 'yyyy.MM.dd', { locale: hu })
+                    ? formatDateLocale(inv.invoice_issue_date)
                     : '-'}
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground">Bruttó:</span>
+                <span className="text-muted-foreground">{t('invoices:expanded_nav.gross', 'Bruttó:')}</span>
                 <span className="ml-1 font-mono font-medium">
-                  {formatCurrency(inv.invoice_gross_amount || 0, inv.currency || 'HUF')}
+                  {formatCurrencyLocale(inv.invoice_gross_amount || 0, inv.currency || 'HUF')}
                 </span>
               </div>
             </div>

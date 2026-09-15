@@ -76,5 +76,48 @@
     "selected_items": "Kijelölt tételek:",
     "total": "Összesen:",
     "download_button": "Utalási lista letöltése"
+  },
+  "validation": {
+    "missing_account": "Hiányzó bankszámlaszám!",
+    "invalid_iban": "Hibás IBAN formátum vagy CDV kód!",
+    "digits_only": "Csak számjegyek és kötőjelek!",
+    "giro_length": "GIRO számlaszámnak 16 vagy 24 számjegyűnek kell lennie!",
+    "invalid_cdv_block1": "Hibás 1. blokk CDV!",
+    "invalid_cdv_block2": "Hibás 2. blokk CDV!",
+    "invalid_cdv_block3": "Hibás 3. blokk CDV!"
+  },
+  "toasts": {
+    "account_saved_title": "Bankszámlaszám mentve",
+    "account_saved_desc": "Bankszámlaszám rögzítve a(z) {{partner}} partnerhez.",
+    "account_save_error": "Nem sikerült elmenteni a bankszámlaszámot.",
+    "settle_success_title": "Sikeres rendezés",
+    "settle_success_desc": "{{count}} számla sikeresen rendezve lett (Kp / Magánszámla). Lekerült az átutalandó listáról.",
+    "settle_error": "Nem sikerült a számla rendezése.",
+    "delete_single_success": "A tétel sikeresen törölve lett az utalási előzményekből.",
+    "delete_single_error": "Nem sikerült a tétel törlése.",
+    "delete_batch_success": "{{count}} tétel sikeresen törölve lett az utalási előzményekből.",
+    "delete_batch_error": "Nem sikerült a tételek törlése.",
+    "missing_accounts_title": "Hiányzó bankszámlaszám",
+    "missing_accounts_desc": "Minden kijelölt tételhez meg kell adni a partner bankszámlaszámát a fájl generálásához.",
+    "select_sender_account": "Kérjük, válaszd ki a céges indító bankszámlát!"
+  },
+  "settle_dialog": {
+    "title": "Számla rendezése (Készpénz / Magánszámla)",
+    "desc": "Jelöld meg a számlát rendezettként, ha az készpénzből vagy magánszámláról lett kifizetve. A tétel lekerül az átutalandó listáról.",
+    "partner": "Partner:",
+    "invoices_count": "Számlák ({{count}} db):",
+    "total": "Összesen:",
+    "payment_method": "Fizetés jellege",
+    "payment_method_placeholder": "Válassz fizetési módot",
+    "opt_cash": "Készpénz / Házipénztár (381)",
+    "opt_private_card": "Privát számla / Tagi kölcsön",
+    "opt_other": "Egyéb manuális rendezés",
+    "payment_date": "Kifizetés dátuma",
+    "note": "Megjegyzés (opcionális)",
+    "note_placeholder": "pl. Privát számláról fizetve, pénztárból elszámolva",
+    "save": "Rendezés mentése",
+    "saving": "Rendezés mentése...",
+    "confirm": "Rendezés megerősítése",
+    "cancel": "Mégse"
   }
 }

@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { buttonVariants } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 interface ListDuplicateDialogProps {
   open: boolean;
@@ -25,17 +25,19 @@ export function ListDuplicateDialog({
   fileNames,
   onConfirm,
 }: ListDuplicateDialogProps) {
+  const { t } = useTranslation(['upload', 'common']);
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-md">
+      <AlertDialogContent className="sm:max-w-lg">
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-200">
             <AlertCircle className="h-5 w-5 text-indigo-600 shrink-0" />
-            Fájl már szerepel a listában
+            {t('upload:dialogs.list_duplicate.title', 'Fájl már szerepel a listában')}
           </AlertDialogTitle>
           <AlertDialogDescription className="text-left space-y-2">
             <span>
-              A kiválasztott fájlok közül az alábbiak már hozzá lettek adva a feltöltési listához:
+              {t('upload:dialogs.list_duplicate.description', 'A kiválasztott fájlok közül az alábbiak már hozzá lettek adva a feltöltési listához:')}
             </span>
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -48,24 +50,25 @@ export function ListDuplicateDialog({
           ))}
         </div>
 
-        <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+        <AlertDialogFooter className="flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:space-x-0">
           <AlertDialogCancel onClick={() => onOpenChange(false)}>
-            Mégse
+            {t('upload:dialogs.list_duplicate.cancel', 'Mégse')}
           </AlertDialogCancel>
           <AlertDialogAction
-            onClick={() => onConfirm('skip')}
-            className="bg-primary hover:bg-primary/90"
+            onClick={() => onConfirm('addAll')}
+            className="border border-border bg-background text-foreground hover:bg-accent/50 hover:text-accent-foreground shadow-sm"
           >
-            Duplikátumok kihagyása
+            {t('upload:dialogs.list_duplicate.add_all', 'Mind hozzáadása')}
           </AlertDialogAction>
           <AlertDialogAction
-            onClick={() => onConfirm('addAll')}
-            className={buttonVariants({ variant: 'outline' })}
+            onClick={() => onConfirm('skip')}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
           >
-            Mind hozzáadása
+            {t('upload:dialogs.list_duplicate.skip', 'Duplikátumok kihagyása')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   );
 }
+

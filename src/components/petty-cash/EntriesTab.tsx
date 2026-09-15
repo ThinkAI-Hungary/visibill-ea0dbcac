@@ -31,6 +31,7 @@ import { SOURCE_LABELS, SOURCE_COLORS, fmtAmount, fmtBalance, roundHuf } from '.
 import CashClosingDialog from './CashClosingDialog';
 import TransferDialog from './TransferDialog';
 import { getLocalizedRegisterName, getLocalizedEntryDescription } from '@/lib/pettyCashUtils';
+import { formatNumberLocale, formatDateLocale } from '@/lib/locale/formatters';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import SignatureDialog from './SignatureDialog';
 import { generateCashReceiptPdf } from '@/lib/cashReceiptPdf';
@@ -212,13 +213,13 @@ export default function EntriesTab() {
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashEntries(companyId) });
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashSummary(companyId) });
       toast({
-        title: 'Bizonylat jóváhagyva!',
-        description: 'A tétel bekerült az éles házipénztár sorok közé.',
+        title: t('pettyCash:toasts.approved_title'),
+        description: t('pettyCash:toasts.approved_desc'),
       });
     },
     onError: (error: any) => {
       toast({
-        title: 'Hiba a jóváhagyás során',
+        title: t('pettyCash:toasts.approve_error'),
         description: error.message,
         variant: 'destructive',
       });
@@ -315,13 +316,13 @@ export default function EntriesTab() {
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashSummary(companyId) });
       setEditingPendingInvoice(null);
       toast({
-        title: variables.approveAfterSave ? 'Tétel mentve és jóváhagyva' : 'Változtatások elmentve',
-        description: variables.approveAfterSave ? 'A bizonylat élesítve lett.' : 'A tétel továbbra is jóváhagyásra vár.',
+        title: variables.approveAfterSave ? t('pettyCash:toasts.saved_approved_title') : t('pettyCash:toasts.saved_pending_title'),
+        description: variables.approveAfterSave ? t('pettyCash:toasts.saved_approved_desc') : t('pettyCash:toasts.saved_pending_desc'),
       });
     },
     onError: (error: any) => {
       toast({
-        title: 'Mentési hiba',
+        title: t('pettyCash:toasts.save_error'),
         description: error.message,
         variant: 'destructive',
       });
@@ -484,9 +485,9 @@ export default function EntriesTab() {
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashEntries(companyId) });
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashSummary(companyId) });
       setMoveEntry(null);
-      toast({ title: 'Tétel áthelyezve' });
+      toast({ title: t('pettyCash:toasts.entry_moved') });
     },
-    onError: (e: any) => toast({ title: 'Hiba', description: e.message, variant: 'destructive' }),
+    onError: (e: any) => toast({ title: t('common:error', 'Hiba'), description: e.message, variant: 'destructive' }),
   });
 
   const allCurrencies = useMemo(() => {
@@ -513,9 +514,12 @@ export default function EntriesTab() {
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashSummary(companyId) });
       const row = Array.isArray(data) ? data[0] : data;
       const count = row?.inserted_count ?? 0;
-      toast({ title: `Szinkronizálás kész`, description: `${count} új tétel importálva` });
+      toast({
+        title: t('pettyCash:toasts.sync_done'),
+        description: t('pettyCash:toasts.sync_count', { count })
+      });
     },
-    onError: (e: any) => toast({ title: 'Hiba', description: e.message, variant: 'destructive' }),
+    onError: (e: any) => toast({ title: t('common:error', 'Hiba'), description: e.message, variant: 'destructive' }),
   });
 
   return (
@@ -771,19 +775,19 @@ export default function EntriesTab() {
                             )}
                             {(entry.source_type === 'manual' || entry.source_type === 'transfer') && writable && (
                               <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={() => { setEditingEntry(entry); setShowManualDialog(true); }} title="Szerkesztés">
+                                onClick={() => { setEditingEntry(entry); setShowManualDialog(true); }} title={t('common:edit', 'Szerkesztés')}>
                                 <Edit2 className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
                               </Button>
                             )}
                             {registers.length > 1 && !isOpening && (
                               <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={() => setMoveEntry(entry)} title="Áthelyezés másik pénztárba">
+                                onClick={() => setMoveEntry(entry)} title={t('pettyCash:move_dialog.title', 'Áthelyezés másik pénztárba')}>
                                 <ArrowRightLeft className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
                               </Button>
                             )}
                             {!isOpening && (
                               <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-primary hover:text-primary-foreground hover:bg-primary/20"
-                                onClick={() => handlePrintClick(entry)} title="Bizonylat nyomtatása (PDF)">
+                                onClick={() => handlePrintClick(entry)} title={t('pettyCash:closing_dialog.print_pdf', 'Bizonylat nyomtatása (PDF)')}>
                                 <FileDown className="w-3.5 h-3.5" />
                               </Button>
                             )}
@@ -855,8 +859,8 @@ export default function EntriesTab() {
         <Dialog open={!!moveEntry} onOpenChange={() => setMoveEntry(null)}>
           <DialogContent className="max-w-sm">
             <DialogHeader>
-              <DialogTitle>Tétel áthelyezése</DialogTitle>
-              <DialogDescription>Válaszd ki a cél pénztárat az áthelyezéshez.</DialogDescription>
+              <DialogTitle>{t('pettyCash:move_dialog.title')}</DialogTitle>
+              <DialogDescription>{t('pettyCash:move_dialog.desc')}</DialogDescription>
             </DialogHeader>
             <div className="space-y-2 py-2">
               {registers.filter(r => r.id !== moveEntry.register_id).map(r => (
@@ -898,15 +902,17 @@ export default function EntriesTab() {
                 <div>
                   <DialogTitle className="flex items-center gap-2">
                     <FileText className="w-5 h-5 text-primary" />
-                    Bizonylat ellenőrzése és javítása
+                    {t('pettyCash:verification_dialog.title')}
                   </DialogTitle>
                   <DialogDescription className="mt-1">
-                    Hasonlítsd össze az AI által kinyert adatokat a bal oldali bizonylatképpel, majd mentsd vagy élesítsd a javított tétel adatokat.
+                    {t('pettyCash:verification_dialog.desc')}
                   </DialogDescription>
                 </div>
                 <div className="mr-8">
                   <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20 font-medium">
-                    {editingPendingInvoice.confidence_score ? `${Math.round(editingPendingInvoice.confidence_score * 100)}% - AI Bizonyosság` : 'AI Bizonyosság'}
+                    {editingPendingInvoice.confidence_score
+                      ? t('pettyCash:verification_dialog.confidence_badge', { pct: Math.round(editingPendingInvoice.confidence_score * 100) })
+                      : t('pettyCash:approval_tab.table.confidence')}
                   </Badge>
                 </div>
               </div>
@@ -923,13 +929,13 @@ export default function EntriesTab() {
                       <iframe
                         src={editingPendingInvoice.image_url || editingPendingInvoice.melleklet_url}
                         className="w-full h-full border-0"
-                        title="Bizonylat kép"
+                        title={t('pettyCash:verification_dialog.image_title')}
                       />
                     ) : (
                       <div className="w-full h-full flex justify-center items-center p-2">
                         <img
                           src={editingPendingInvoice.image_url || editingPendingInvoice.melleklet_url}
-                          alt="Bizonylat kép"
+                          alt={t('pettyCash:verification_dialog.image_title')}
                           className="max-w-full max-h-full object-contain rounded shadow-md"
                         />
                       </div>
@@ -940,13 +946,13 @@ export default function EntriesTab() {
                       className="absolute bottom-3 right-3 bg-background/90 backdrop-blur-sm shadow hover:bg-background"
                       onClick={() => window.open(editingPendingInvoice.image_url || editingPendingInvoice.melleklet_url, '_blank')}
                     >
-                      <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> Megnyitás új lapon
+                      <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> {t('pettyCash:verification_dialog.open_new_tab')}
                     </Button>
                   </>
                 ) : (
                   <div className="text-center p-6 text-muted-foreground flex flex-col items-center gap-2">
                     <HelpCircle className="w-10 h-10 text-muted-foreground/30" />
-                    <p className="text-sm font-medium">Nincs elérhető kép ehhez a bizonylathoz</p>
+                    <p className="text-sm font-medium">{t('pettyCash:verification_dialog.no_image')}</p>
                   </div>
                 )}
               </div>
@@ -955,23 +961,23 @@ export default function EntriesTab() {
               <div className="overflow-y-auto pr-1 flex flex-col gap-4 max-h-[45vh] md:max-h-full">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="pending-direction">Tranzakció Iránya</Label>
+                    <Label htmlFor="pending-direction">{t('pettyCash:verification_dialog.direction_label')}</Label>
                     <Select
                       value={editPendingForm.invoice_direction}
                       onValueChange={(val) => setEditPendingForm(prev => ({ ...prev, invoice_direction: val }))}
                     >
                       <SelectTrigger id="pending-direction" className="h-9">
-                        <SelectValue placeholder="Válassz irányt" />
+                        <SelectValue placeholder={t('pettyCash:verification_dialog.direction_placeholder')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="INBOUND">Kiadás (Befizetés partnernek)</SelectItem>
-                        <SelectItem value="OUTBOUND">Bevétel (Partner befizetése)</SelectItem>
+                        <SelectItem value="INBOUND">{t('pettyCash:verification_dialog.direction_inbound')}</SelectItem>
+                        <SelectItem value="OUTBOUND">{t('pettyCash:verification_dialog.direction_outbound')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="pending-sorszam">Bizonylatszám / Sorszám</Label>
+                    <Label htmlFor="pending-sorszam">{t('pettyCash:verification_dialog.sequence_label')}</Label>
                     <Input
                       id="pending-sorszam"
                       className="h-9 font-mono"
@@ -984,7 +990,7 @@ export default function EntriesTab() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="pending-datum">Kibocsátás Dátuma</Label>
+                    <Label htmlFor="pending-datum">{t('pettyCash:verification_dialog.date_label')}</Label>
                     <Input
                       id="pending-datum"
                       type="date"
@@ -996,8 +1002,8 @@ export default function EntriesTab() {
 
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <Label htmlFor="pending-brutto">Bruttó Összeg</Label>
-                      <span className="text-[10px] text-muted-foreground">Készpénzes ÁFA: 0% / mentes</span>
+                      <Label htmlFor="pending-brutto">{t('pettyCash:verification_dialog.amount_label')}</Label>
+                      <span className="text-[10px] text-muted-foreground">{t('pettyCash:verification_dialog.vat_hint')}</span>
                     </div>
                     <div className="flex gap-2">
                       <Input
@@ -1012,7 +1018,7 @@ export default function EntriesTab() {
                         onValueChange={(val) => setEditPendingForm(prev => ({ ...prev, penznem: val }))}
                       >
                         <SelectTrigger className="w-24 h-9">
-                          <SelectValue placeholder="Pénznem" />
+                          <SelectValue placeholder={t('pettyCash:verification_dialog.currency_placeholder')} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="HUF">HUF</SelectItem>
@@ -1025,24 +1031,24 @@ export default function EntriesTab() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="pending-elado">Eladó (Pénzt kiadó vagy Számlát adó)</Label>
+                  <Label htmlFor="pending-elado">{t('pettyCash:verification_dialog.seller_label')}</Label>
                   <Input
                     id="pending-elado"
                     className="h-9"
                     value={editPendingForm.elado_nev}
                     onChange={(e) => setEditPendingForm(prev => ({ ...prev, elado_nev: e.target.value }))}
-                    placeholder="Eladó teljes neve..."
+                    placeholder={t('pettyCash:verification_dialog.seller_placeholder')}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="pending-vevo">Vevő (Pénzt átvevő vagy Befizető cég)</Label>
+                  <Label htmlFor="pending-vevo">{t('pettyCash:verification_dialog.buyer_label')}</Label>
                   <Input
                     id="pending-vevo"
                     className="h-9"
                     value={editPendingForm.vevo_nev}
                     onChange={(e) => setEditPendingForm(prev => ({ ...prev, vevo_nev: e.target.value }))}
-                    placeholder="Vevő teljes neve..."
+                    placeholder={t('pettyCash:verification_dialog.buyer_placeholder')}
                   />
                   {isPendingRelated && editPendingForm.penznem === 'HUF' && pendingTotalWithCurrent >= 1200000 && (
                     <div className={cn(
@@ -1055,15 +1061,15 @@ export default function EntriesTab() {
                       <div className="space-y-0.5">
                         <p className="font-bold">
                           {pendingTotalWithCurrent >= 1500000 
-                            ? "Kapcsolt vállalkozási limit túllépés!" 
-                            : "Kapcsolt vállalkozási limit figyelmeztetés!"}
+                            ? t('pettyCash:verification_dialog.related_party_exceeded') 
+                            : t('pettyCash:verification_dialog.related_party_warning')}
                         </p>
                         <p className="opacity-90">
-                          A partner havi halmozott készpénzforgalma ezzel a számlával együtt:{" "}
+                          {t('pettyCash:verification_dialog.related_party_prefix')}{" "}
                           <strong className="font-mono">{pendingTotalWithCurrent.toLocaleString('hu-HU')} Ft</strong>.
                           {pendingTotalWithCurrent >= 1500000 
-                            ? " Ez meghaladja a törvényileg megengedett 1.5 millió Ft-os havi limitet!" 
-                            : " Ez eléri a figyelmeztetési sávot (1.2 millió Ft)."}
+                            ? t('pettyCash:verification_dialog.related_party_exceeded_desc') 
+                            : t('pettyCash:verification_dialog.related_party_warning_desc')}
                         </p>
                       </div>
                     </div>
@@ -1071,14 +1077,14 @@ export default function EntriesTab() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="pending-leiras">Megjegyzés / Jogcím leírása</Label>
+                  <Label htmlFor="pending-leiras">{t('pettyCash:verification_dialog.description_label')}</Label>
                   <Textarea
                     id="pending-leiras"
                     rows={3}
                     className="resize-none text-sm"
                     value={editPendingForm.adojogi_megjegyzes}
                     onChange={(e) => setEditPendingForm(prev => ({ ...prev, adojogi_megjegyzes: e.target.value }))}
-                    placeholder="Írd le a pénztári tranzakció gazdasági eseményét vagy célját..."
+                    placeholder={t('pettyCash:verification_dialog.description_placeholder')}
                   />
                 </div>
               </div>
@@ -1087,7 +1093,7 @@ export default function EntriesTab() {
             <DialogFooter className="border-t border-border/20 pt-4 flex sm:justify-between items-center gap-2">
               <div className="text-xs text-muted-foreground flex items-center gap-1.5 shrink-0">
                 <AlertTriangle className="w-3.5 h-3.5 text-muted-foreground" />
-                A mentett értékek azonnal frissülnek az adatbázisban.
+                {t('pettyCash:verification_dialog.auto_save_hint')}
               </div>
               <div className="flex gap-2">
                 <Button 
@@ -1096,7 +1102,7 @@ export default function EntriesTab() {
                   disabled={savePendingMutation.isPending}
                   className="h-9"
                 >
-                  <X className="h-4 w-4 mr-1.5" /> Mégse
+                  <X className="h-4 w-4 mr-1.5" /> {t('pettyCash:verification_dialog.cancel')}
                 </Button>
                 <Button 
                   variant="secondary"
@@ -1104,7 +1110,7 @@ export default function EntriesTab() {
                   disabled={savePendingMutation.isPending}
                   className="h-9"
                 >
-                  <Save className="h-4 w-4 mr-1.5" /> Csak mentés
+                  <Save className="h-4 w-4 mr-1.5" /> {t('pettyCash:verification_dialog.save_only')}
                 </Button>
                 {writable && (
                   <Button 
@@ -1113,7 +1119,7 @@ export default function EntriesTab() {
                     disabled={savePendingMutation.isPending}
                     className="h-9 bg-emerald-600 hover:bg-emerald-500 text-white"
                   >
-                    <Check className="h-4 w-4 mr-1.5" /> Mentés és Élesítés
+                    <Check className="h-4 w-4 mr-1.5" /> {t('pettyCash:verification_dialog.save_and_approve')}
                   </Button>
                 )}
               </div>
@@ -1126,23 +1132,22 @@ export default function EntriesTab() {
           open={signatureOpen}
           onOpenChange={setSignatureOpen}
           isExpense={printingEntry.amount < 0}
-          onConfirm={({ payerSig, recipientSig }) => {
+          onConfirm={async ({ payerSig, recipientSig }) => {
             const regName = registerMap[printingEntry.register_id]?.name || 'Főpénztár';
             const receiptNo = receiptNumbers[printingEntry.id] || 'N/A';
-            const pdfUrl = generateCashReceiptPdf({
+            await generateCashReceiptPdf({
+              receiptNumber: receiptNo,
               companyName: selectedCompany?.name || '',
               companyAddress: selectedCompany?.address || '',
               companyTaxNumber: selectedCompany?.tax_number || '',
-              receiptNumber: receiptNo,
-              entryDate: printingEntry.entry_date,
-              registerName: regName,
-              description: printingEntry.description || '',
+              partnerName: payerSig || selectedCompany?.name || '',
               amount: printingEntry.amount,
               currency: printingEntry.currency,
-              payerSig,
-              recipientSig
+              paymentReason: printingEntry.description || '',
+              receiptDate: printingEntry.entry_date,
+              payeeName: recipientSig,
+              issuerName: payerSig,
             });
-            window.open(pdfUrl, '_blank');
             setPrintingEntry(null);
           }}
         />
@@ -1156,6 +1161,7 @@ export default function EntriesTab() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 function ExpandedEntryRow({ entry, colSpan }: { entry: PettyCashEntry; colSpan: number }) {
+  const { t } = useTranslation(['pettyCash', 'common']);
   const sourceTable = entry.source_table;
   const sourceId = entry.source_id;
 
@@ -1179,11 +1185,19 @@ function ExpandedEntryRow({ entry, colSpan }: { entry: PettyCashEntry; colSpan: 
     return (
       <TableRow className="bg-muted/10 hover:bg-muted/10 border-none">
         <TableCell colSpan={colSpan} className="py-3 px-8 text-xs text-muted-foreground italic">
-          Kézzel rögzített tétel, nincs közvetlen számla vagy banki tranzakció kapcsolat.
+          {t('pettyCash:details.manual_standalone')}
         </TableCell>
       </TableRow>
     );
   }
+
+  const sourceTypeLabel = sourceTable === 'invoices' 
+    ? t('pettyCash:details.header_invoice') 
+    : sourceTable === 'nav_invoices' 
+    ? t('pettyCash:details.header_nav_invoice') 
+    : sourceTable === 'petty_cash_entries' 
+    ? t('pettyCash:details.header_transfer') 
+    : t('pettyCash:details.header_bank');
 
   return (
     <TableRow className="bg-muted/10 hover:bg-muted/10 border-t border-b border-border/30">
@@ -1191,39 +1205,39 @@ function ExpandedEntryRow({ entry, colSpan }: { entry: PettyCashEntry; colSpan: 
         <div className="max-w-2xl bg-card border border-border/40 p-4 rounded-lg shadow-sm space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
           <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             <ArrowRightLeft className="h-3.5 w-3.5 text-primary" />
-            Kapcsolódó bizonylat részletei ({sourceTable === 'invoices' ? 'Számla' : sourceTable === 'nav_invoices' ? 'NAV számla' : sourceTable === 'petty_cash_entries' ? 'Pénztárközi átvezetés ellenoldala' : 'Banki tranzakció'})
+            {t('pettyCash:details.title_with_type', { type: sourceTypeLabel })}
           </div>
 
           {isLoading ? (
             <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Betöltés...
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> {t('pettyCash:details.loading')}
             </div>
           ) : error ? (
-            <div className="text-xs text-destructive py-2">Hiba az adatok lekérésekor.</div>
+            <div className="text-xs text-destructive py-2">{t('pettyCash:details.error')}</div>
           ) : !sourceData ? (
-            <div className="text-xs text-muted-foreground italic py-2">A kapcsolódó dokumentum nem található (lehetséges, hogy törölték).</div>
+            <div className="text-xs text-muted-foreground italic py-2">{t('pettyCash:details.not_found')}</div>
           ) : (
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
               {sourceTable === 'invoices' && (
                 <>
                   <div className="col-span-2">
-                    <span className="text-muted-foreground">Bizonylatsorszám:</span>
+                    <span className="text-muted-foreground">{t('pettyCash:details.invoice_number')}</span>
                     <span className="ml-1 font-mono font-medium">{sourceData.bizonylatsorszam || '-'}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Bruttó összeg:</span>
+                    <span className="text-muted-foreground">{t('pettyCash:details.gross_amount')}</span>
                     <span className="ml-1 font-mono font-medium">{fmtAmount(sourceData.brutto_vegosszeg, sourceData.penznem || 'HUF')}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Kiállítás dátuma:</span>
-                    <span className="ml-1">{sourceData.kibocsatas_datuma ? format(new Date(sourceData.kibocsatas_datuma), 'yyyy. MM. dd.') : '-'}</span>
+                    <span className="text-muted-foreground">{t('pettyCash:details.issue_date')}</span>
+                    <span className="ml-1">{sourceData.kibocsatas_datuma ? formatDateLocale(sourceData.kibocsatas_datuma, 'yyyy. MM. dd.') : '-'}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Kiállító:</span>
+                    <span className="text-muted-foreground">{t('pettyCash:details.issuer')}</span>
                     <span className="ml-1 font-medium">{sourceData.elado_nev || '-'}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Vevő:</span>
+                    <span className="text-muted-foreground">{t('pettyCash:details.buyer')}</span>
                     <span className="ml-1 font-medium">{sourceData.vevo_nev || '-'}</span>
                   </div>
                   {(sourceData.image_url || sourceData.melleklet_url) && (
@@ -1232,7 +1246,7 @@ function ExpandedEntryRow({ entry, colSpan }: { entry: PettyCashEntry; colSpan: 
                         onClick={() => setPreviewOpen(true)}
                         className="inline-flex items-center gap-1 text-primary hover:underline font-medium cursor-pointer"
                       >
-                        <Eye className="w-3.5 h-3.5" /> Bizonylat előnézete
+                        <Eye className="w-3.5 h-3.5" /> {t('pettyCash:details.view_preview')}
                       </button>
                       <a
                         href={sourceData.image_url || sourceData.melleklet_url}
@@ -1240,7 +1254,7 @@ function ExpandedEntryRow({ entry, colSpan }: { entry: PettyCashEntry; colSpan: 
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground hover:underline font-medium"
                       >
-                        <BookOpen className="w-3.5 h-3.5" /> Megnyitás új lapon
+                        <BookOpen className="w-3.5 h-3.5" /> {t('pettyCash:details.open_new_tab')}
                       </a>
                       {previewOpen && (
                         <InvoiceImageDialog
@@ -1257,23 +1271,23 @@ function ExpandedEntryRow({ entry, colSpan }: { entry: PettyCashEntry; colSpan: 
               {sourceTable === 'nav_invoices' && (
                 <>
                   <div className="col-span-2">
-                    <span className="text-muted-foreground">Bizonylatsorszám:</span>
+                    <span className="text-muted-foreground">{t('pettyCash:details.invoice_number')}</span>
                     <span className="ml-1 font-mono font-medium">{sourceData.invoice_number || '-'}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Bruttó összeg:</span>
+                    <span className="text-muted-foreground">{t('pettyCash:details.gross_amount')}</span>
                     <span className="ml-1 font-mono font-medium">{fmtAmount(sourceData.invoice_gross_amount, sourceData.currency || 'HUF')}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Kiállítás dátuma:</span>
-                    <span className="ml-1">{sourceData.invoice_issue_date ? format(new Date(sourceData.invoice_issue_date), 'yyyy. MM. dd.') : '-'}</span>
+                    <span className="text-muted-foreground">{t('pettyCash:details.issue_date')}</span>
+                    <span className="ml-1">{sourceData.invoice_issue_date ? formatDateLocale(sourceData.invoice_issue_date, 'yyyy. MM. dd.') : '-'}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Szállító:</span>
+                    <span className="text-muted-foreground">{t('pettyCash:details.supplier')}</span>
                     <span className="ml-1 font-medium">{sourceData.supplier_name || '-'}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Vevő:</span>
+                    <span className="text-muted-foreground">{t('pettyCash:details.buyer')}</span>
                     <span className="ml-1 font-medium">{sourceData.customer_name || '-'}</span>
                   </div>
                 </>
@@ -1282,20 +1296,20 @@ function ExpandedEntryRow({ entry, colSpan }: { entry: PettyCashEntry; colSpan: 
               {sourceTable === 'transactions' && (
                 <>
                   <div>
-                    <span className="text-muted-foreground">Tranzakció dátuma:</span>
-                    <span className="ml-1 font-medium">{sourceData.transaction_date ? format(new Date(sourceData.transaction_date), 'yyyy. MM. dd.') : '-'}</span>
+                    <span className="text-muted-foreground">{t('pettyCash:details.tx_date')}</span>
+                    <span className="ml-1 font-medium">{sourceData.transaction_date ? formatDateLocale(sourceData.transaction_date, 'yyyy. MM. dd.') : '-'}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Összeg:</span>
+                    <span className="text-muted-foreground">{t('pettyCash:details.amount')}</span>
                     <span className="ml-1 font-mono font-medium">{fmtAmount(sourceData.amount, sourceData.currency || 'HUF')}</span>
                   </div>
                   <div className="col-span-2">
-                    <span className="text-muted-foreground">Leírás:</span>
+                    <span className="text-muted-foreground">{t('pettyCash:details.desc')}</span>
                     <span className="ml-1 font-mono">{sourceData.description || '-'}</span>
                   </div>
                   {sourceData.partner_name && (
                     <div className="col-span-2">
-                      <span className="text-muted-foreground">Partner:</span>
+                      <span className="text-muted-foreground">{t('pettyCash:details.partner')}</span>
                       <span className="ml-1 font-medium">{sourceData.partner_name}</span>
                     </div>
                   )}
@@ -1305,19 +1319,19 @@ function ExpandedEntryRow({ entry, colSpan }: { entry: PettyCashEntry; colSpan: 
               {sourceTable === 'petty_cash_entries' && (
                 <>
                   <div className="col-span-2">
-                    <span className="text-muted-foreground">Átvezetés ellenláb:</span>
-                    <span className="ml-1 font-medium text-sky-600 dark:text-sky-400">Pénztárközi átvezetés</span>
+                    <span className="text-muted-foreground">{t('pettyCash:details.transfer_counterpart')}</span>
+                    <span className="ml-1 font-medium text-sky-600 dark:text-sky-400">{t('pettyCash:details.transfer_name')}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Összeg:</span>
+                    <span className="text-muted-foreground">{t('pettyCash:details.amount')}</span>
                     <span className="ml-1 font-mono font-medium">{fmtAmount(sourceData.amount, sourceData.currency || 'HUF')}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Dátum:</span>
-                    <span className="ml-1">{sourceData.entry_date ? format(new Date(sourceData.entry_date), 'yyyy. MM. dd.') : '-'}</span>
+                    <span className="text-muted-foreground">{t('pettyCash:details.date')}</span>
+                    <span className="ml-1">{sourceData.entry_date ? formatDateLocale(sourceData.entry_date, 'yyyy. MM. dd.') : '-'}</span>
                   </div>
                   <div className="col-span-2">
-                    <span className="text-muted-foreground">Leírás:</span>
+                    <span className="text-muted-foreground">{t('pettyCash:details.desc')}</span>
                     <span className="ml-1 font-mono">{sourceData.description || '-'}</span>
                   </div>
                 </>
@@ -1344,6 +1358,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
   onCancelEditing?: () => void;
   partners: any[];
 }) {
+  const { t } = useTranslation(['pettyCash', 'common']);
   const qc = useQueryClient();
   const defaultReg = registers.find(r => r.is_default) || registers[0];
   const [form, setForm] = useState({
@@ -1491,8 +1506,8 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
           console.error('Failed to mark invoices as paid:', updateError);
           // Don't throw — entry was created; notify user about partial failure
           toast({
-            title: 'Figyelem',
-            description: 'A pénztári tétel rögzítve, de a számla(k) fizetve jelölése sikertelen.',
+            title: t('pettyCash:toasts.warning_title'),
+            description: t('pettyCash:toasts.invoice_settle_partial_desc'),
             variant: 'destructive',
           });
         }
@@ -1546,19 +1561,28 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
       onOpenChange(false);
       if (onCancelEditing) onCancelEditing();
       if (result?.isInvoice) {
-        toast({ title: 'Számla rendezve', description: `${result.count} számla KP-ban rendezve és fizetve jelölve.` });
+        toast({
+          title: t('pettyCash:toasts.invoice_settled_title'),
+          description: t('pettyCash:toasts.invoice_settled_desc', { count: result.count })
+        });
       } else {
-        toast({ title: editingEntry ? 'Tétel módosítva' : 'Manuális tétel rögzítve' });
+        toast({
+          title: editingEntry ? t('pettyCash:toasts.entry_updated') : t('pettyCash:toasts.entry_created')
+        });
       }
     },
-    onError: (e: any) => toast({ title: 'Hiba', description: e.message, variant: 'destructive' }),
+    onError: (e: any) => toast({
+      title: t('pettyCash:toasts.error_title'),
+      description: e.message,
+      variant: 'destructive'
+    }),
   });
 
   const deleteEntry = useMutation({
     mutationFn: async () => {
       if (!editingEntry) return;
       if (editingEntry.source_type === 'transfer') {
-        const { error } = await supabase.rpc('delete_petty_cash_transfer', {
+        const { error } = await (supabase.rpc as any)('delete_petty_cash_transfer', {
           p_entry_id: editingEntry.id,
         });
         if (error) throw error;
@@ -1574,9 +1598,13 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashSummary(companyId) });
       onOpenChange(false);
       if (onCancelEditing) onCancelEditing();
-      toast({ title: 'Tétel törölve' });
+      toast({ title: t('pettyCash:toasts.entry_deleted') });
     },
-    onError: (e: any) => toast({ title: 'Hiba a törlés során', description: e.message, variant: 'destructive' }),
+    onError: (e: any) => toast({
+      title: t('pettyCash:toasts.delete_error'),
+      description: e.message,
+      variant: 'destructive'
+    }),
   });
 
   const handleClose = () => {
@@ -1588,10 +1616,17 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
     <Dialog open={open} onOpenChange={v => { if (!v) handleClose(); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{editingEntry ? 'Pénztári tétel szerkesztése' : invoiceMode ? 'Utalásos számla KP-ban rendezve' : 'Manuális pénztári tétel'}</DialogTitle>
-          <DialogDescription>{invoiceMode
-            ? 'Válaszd ki a nyitott kimenő számlákat, amelyeket készpénzben rendeztek.'
-            : 'Kézi bevétel vagy kiadás rögzítése vagy módosítása a házipénztárba.'}
+          <DialogTitle>
+            {editingEntry
+              ? t('pettyCash:manual_entry_dialog.title_edit')
+              : invoiceMode
+              ? t('pettyCash:manual_entry_dialog.title_invoice')
+              : t('pettyCash:manual_entry_dialog.title_manual')}
+          </DialogTitle>
+          <DialogDescription>
+            {invoiceMode
+              ? t('pettyCash:manual_entry_dialog.desc_invoice')
+              : t('pettyCash:manual_entry_dialog.desc_manual')}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
@@ -1618,11 +1653,11 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
                 <FileText className="w-3.5 h-3.5" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold">Utalásos számla KP-ban rendezve</p>
+                <p className="text-xs font-bold">{t('pettyCash:manual_entry_dialog.title_invoice')}</p>
                 <p className="text-[10px] opacity-70 mt-0.5">
                   {invoiceMode
-                    ? `${selectedInvoiceIds.size} számla kiválasztva`
-                    : `${openInvoices.length} nyitott kimenő számla érhető el`
+                    ? t('pettyCash:manual_entry_dialog.invoice_selected_count', { count: selectedInvoiceIds.size })
+                    : t('pettyCash:manual_entry_dialog.invoice_available_count', { count: openInvoices.length })
                   }
                 </p>
               </div>
@@ -1642,14 +1677,16 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
             <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
               <div className="flex items-center justify-between">
                 <Label className="text-xs">
-                  Számlák kiválasztása ({selectedInvoiceIds.size}/{openInvoices.length})
+                  {t('pettyCash:manual_entry_dialog.select_invoices_btn', {
+                    selected: selectedInvoiceIds.size,
+                    total: openInvoices.length
+                  })}
                 </Label>
                 {selectedInvoiceIds.size > 0 && (
                   <p className="text-xs font-bold text-blue-600 dark:text-blue-400 font-mono tabular-nums">
-                    Σ {openInvoices
+                    Σ {formatNumberLocale(openInvoices
                       .filter(inv => selectedInvoiceIds.has(inv.id))
-                      .reduce((s, inv) => s + (Number(inv.brutto_vegosszeg) || 0), 0)
-                      .toLocaleString('hu-HU')} HUF
+                      .reduce((s, inv) => s + (Number(inv.brutto_vegosszeg) || 0), 0))} HUF
                   </p>
                 )}
               </div>
@@ -1689,7 +1726,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
                             {inv.bizonylatsorszam}
                           </p>
                           <span className="text-[10px] text-muted-foreground">
-                            {inv.kibocsatas_datuma}
+                            {inv.kibocsatas_datuma ? formatDateLocale(inv.kibocsatas_datuma, 'yyyy. MM. dd.') : ''}
                           </span>
                         </div>
                         <p className="text-[10px] text-muted-foreground truncate mt-0.5">
@@ -1698,15 +1735,17 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-xs font-bold font-mono tabular-nums text-foreground">
-                          {amount.toLocaleString('hu-HU')} {inv.penznem || 'HUF'}
+                          {formatNumberLocale(amount)} {inv.penznem || 'HUF'}
                         </p>
                         {inv.fizetesi_hatarido && (
                           <p className={cn(
                             'text-[10px] font-mono tabular-nums',
                             new Date(inv.fizetesi_hatarido) < new Date() ? 'text-destructive' : 'text-muted-foreground'
                           )}>
-                            {new Date(inv.fizetesi_hatarido) < new Date() ? 'Lejárt: ' : 'Hat.idő: '}
-                            {inv.fizetesi_hatarido}
+                            {new Date(inv.fizetesi_hatarido) < new Date()
+                              ? t('pettyCash:manual_entry_dialog.due_expired') + ' '
+                              : t('pettyCash:manual_entry_dialog.due_date') + ' '}
+                            {formatDateLocale(inv.fizetesi_hatarido, 'yyyy. MM. dd.')}
                           </p>
                         )}
                       </div>
@@ -1722,7 +1761,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
             <>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Pénztár</Label>
+              <Label>{t('pettyCash:manual_entry_dialog.register_label')}</Label>
               <Select value={form.register_id} onValueChange={v => setForm(f => ({ ...f, register_id: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -1731,12 +1770,12 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
               </Select>
             </div>
             <div>
-              <Label>Dátum</Label>
+              <Label>{t('pettyCash:manual_entry_dialog.date_label')}</Label>
               <Input type="date" value={form.entry_date} onChange={e => setForm(f => ({ ...f, entry_date: e.target.value }))} />
             </div>
           </div>
           <div>
-            <Label htmlFor="manual-partner">Partner (opcionális)</Label>
+            <Label htmlFor="manual-partner">{t('pettyCash:manual_entry_dialog.partner_label')}</Label>
             <Select 
               value={form.partner_id || 'none'} 
               onValueChange={v => {
@@ -1744,7 +1783,9 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
                 setForm(f => {
                   const selected = partners.find(p => p.id === nextVal);
                   const updatedDesc = selected && !f.description
-                    ? (f.isExpense ? `Kiadás - ${selected.name}` : `Bevétel - ${selected.name}`)
+                    ? (f.isExpense
+                        ? t('pettyCash:manual_entry_dialog.desc_expense_partner', { partner: selected.name })
+                        : t('pettyCash:manual_entry_dialog.desc_income_partner', { partner: selected.name }))
                     : f.description;
                   return {
                     ...f,
@@ -1755,25 +1796,25 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
               }}
             >
               <SelectTrigger id="manual-partner" className="h-9">
-                <SelectValue placeholder="Válassz partnert" />
+                <SelectValue placeholder={t('pettyCash:manual_entry_dialog.partner_placeholder')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Nincs partner</SelectItem>
+                <SelectItem value="none">{t('pettyCash:manual_entry_dialog.no_partner')}</SelectItem>
                 {partners.filter(p => p.id != null).map(p => (
                   <SelectItem key={p.id} value={p.id}>
-                    {p.name} {p.related_party ? ' (Kapcsolt)' : ''}
+                    {p.name} {p.related_party ? ` ${t('pettyCash:manual_entry_dialog.related_tag')}` : ''}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div>
-            <Label>Leírás</Label>
-            <Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Pl. Irodaszer vásárlás" />
+            <Label>{t('pettyCash:manual_entry_dialog.desc_label')}</Label>
+            <Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder={t('pettyCash:manual_entry_dialog.desc_placeholder')} />
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <Label>Összeg</Label>
+              <Label>{t('pettyCash:manual_entry_dialog.amount_label')}</Label>
               <Input
                 type="number"
                 min="0"
@@ -1785,12 +1826,15 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
               {/* U5: Rounding hint */}
               {showRoundingHint && (
                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Kerekítve: {roundedPreview!.toLocaleString('hu-HU')} HUF
+                  {t('pettyCash:manual_entry_dialog.rounded_preview', {
+                    amount: formatNumberLocale(roundedPreview!),
+                    currency: 'HUF'
+                  })}
                 </p>
               )}
             </div>
             <div>
-              <Label>Valuta</Label>
+              <Label>{t('pettyCash:entries.currency_label', 'Pénznem')}</Label>
               <Select value={form.currency} onValueChange={v => setForm(f => ({ ...f, currency: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -1801,7 +1845,9 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
             <div className="flex items-end pb-1">
               <label className="flex items-center gap-2 text-sm cursor-pointer">
                 <Switch checked={form.isExpense} onCheckedChange={v => setForm(f => ({ ...f, isExpense: v }))} />
-                <span className={form.isExpense ? 'text-destructive' : 'text-emerald-500'}>{form.isExpense ? 'Kiadás' : 'Bevétel'}</span>
+                <span className={form.isExpense ? 'text-destructive' : 'text-emerald-500'}>
+                  {form.isExpense ? t('pettyCash:manual_entry_dialog.type_expense') : t('pettyCash:manual_entry_dialog.type_income')}
+                </span>
               </label>
             </div>
           </div>
@@ -1809,7 +1855,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
           {isLargeAmount && (
             <div className="flex items-center gap-2 p-2 rounded-md bg-amber-500/10 text-amber-600 text-xs">
               <AlertTriangle className="w-4 h-4 shrink-0" />
-              Szokatlanul nagy összeg — biztosan helyes?
+              {t('pettyCash:manual_entry_dialog.large_amount_warning')}
             </div>
           )}
 
@@ -1825,15 +1871,15 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
               <div className="space-y-0.5">
                 <p className="font-bold">
                   {totalWithCurrent >= 1500000 
-                    ? "Kapcsolt vállalkozási limit túllépés!" 
-                    : "Kapcsolt vállalkozási limit figyelmeztetés!"}
+                    ? t('pettyCash:manual_entry_dialog.related_party_exceeded') 
+                    : t('pettyCash:manual_entry_dialog.related_party_warning')}
                 </p>
                 <p className="opacity-90">
-                  A partner havi halmozott készpénzforgalma ezzel a tétellel együtt:{" "}
-                  <strong className="font-mono">{totalWithCurrent.toLocaleString('hu-HU')} Ft</strong>.
+                  {t('pettyCash:manual_entry_dialog.related_party_prefix')}{" "}
+                  <strong className="font-mono">{formatNumberLocale(totalWithCurrent)} Ft</strong>.
                   {totalWithCurrent >= 1500000 
-                    ? " Ez meghaladja a törvényileg megengedett 1.5 millió Ft-os havi limitet!" 
-                    : " Ez eléri a figyelmeztetési sávot (1.2 millió Ft)."}
+                    ? t('pettyCash:manual_entry_dialog.related_party_exceeded_desc') 
+                    : t('pettyCash:manual_entry_dialog.related_party_warning_desc')}
                 </p>
               </div>
             </div>
@@ -1845,7 +1891,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
           {invoiceMode && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Cél pénztár</Label>
+                <Label>{t('pettyCash:manual_entry_dialog.target_register_label')}</Label>
                 <Select value={form.register_id} onValueChange={v => setForm(f => ({ ...f, register_id: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -1854,7 +1900,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
                 </Select>
               </div>
               <div>
-                <Label>Rendezés dátuma</Label>
+                <Label>{t('pettyCash:manual_entry_dialog.settle_date_label')}</Label>
                 <Input type="date" value={form.entry_date} onChange={e => setForm(f => ({ ...f, entry_date: e.target.value }))} />
               </div>
             </div>
@@ -1869,17 +1915,17 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
               disabled={deleteEntry.isPending || save.isPending}
             >
               {deleteEntry.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
-              Törlés
+              {t('pettyCash:manual_entry_dialog.delete_btn')}
             </Button>
           ) : <div />}
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleClose}>Mégse</Button>
+            <Button variant="outline" onClick={handleClose}>{t('pettyCash:manual_entry_dialog.cancel_btn')}</Button>
             <Button
               onClick={() => save.mutate()}
               disabled={save.isPending || (invoiceMode ? selectedInvoiceIds.size === 0 : (!isAmountValid || !form.description))}
             >
               {save.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-              {editingEntry ? 'Mentés' : 'Rögzítés'}
+              {editingEntry ? t('pettyCash:manual_entry_dialog.save_btn') : t('pettyCash:manual_entry_dialog.record_btn')}
             </Button>
           </div>
         </DialogFooter>

@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-09-11  
-**Utoljára frissítve:** 2026-09-11  
+**Utoljára frissítve:** 2026-09-16  
 
 ---
 
@@ -19,8 +19,8 @@ A fejlesztés során három kritikus architekturális kihívás jelentkezett:
 ## Decision
 
 ### 1. i18next & react-i18next Keretrendszer Névterekkel (Namespaces)
-A lokalizációt az `i18next` és a `react-i18next` segítségével valósítottuk meg. A szótárakat moduláris, per-funkció JSON állományokra bontottuk szét (`src/locales/hu/*.json` és `src/locales/hr/*.json`):
-- `common`, `navigation`, `dashboard`, `invoices`, `receivables`, `transactions`, `pettyCash`, `transfers`, `accounting`, `hr`, `settings`, `tickets`, `categories`, `projects`, `partners`, `auth`.
+A lokalizációt az `i18next` és a `react-i18next` segítségével valósítottuk meg. A szótárakat moduláris, per-funkció JSON állományokra bontottuk szét (`src/locales/hu/*.json` és `src/locales/hr/*.json`), lefedve a rendszer mind a 19 névtérét:
+- `accounting`, `auth`, `categories`, `common`, `dashboard`, `exchangeRates`, `hr`, `invoices`, `navigation`, `notes`, `partners`, `pettyCash`, `projects`, `receivables`, `settings`, `tickets`, `transactions`, `transfers`, `upload`.
 - TypeScript típusdefinícióval (`src/types/i18next.d.ts`) biztosítottuk a típusbiztos fordítási kulcsokat és az automatikus kiegészítést.
 
 ### 2. Tiszta Útvonal-Vezérelt Nyelvmeghatározás (Zero LocalStorage Persistence)
@@ -45,42 +45,75 @@ A nyelvi állapotot 100%-ban az URL útvonala határozza meg, kizárva a böngé
 ### 4. Pénznem és Dátumkezelés Adaptációja
 - **`src/lib/utils.ts` (`formatCurrency`):**
   - Ha a pénznem nincs explicit megadva és az aktív nyelv `hr`, az automatikus fallback `EUR` és a horvát pénznemszimbólum (`€`), míg magyar nyelv esetén `HUF` (`Ft`).
-- **`src/lib/locale/dateLocale.ts`:**
-  - A dátumformázók dinamikusan váltanak a `date-fns/locale/hu` és `date-fns/locale/hr` között.
+- **`src/lib/locale/dateLocale.ts` (`getDateFnsLocale`):**
+  - A dátumformázók dinamikusan váltanak a `date-fns/locale/hu` és `date-fns/locale/hr` között. Statikus locale importok helyett a központi `getDateFnsLocale()` segédfüggvény biztosítja a runtime nyelvi igazodást.
+- **`src/lib/locale/formatters.ts` (`formatNumberLocale`):**
+  - A számformázó univerzálisan kezeli a törttizedesek számát, valamint a teljes `Intl.NumberFormatOptions` opciókat, garantálva a horvát és magyar számformázási szabványok hibátlan betartását.
 - **ÁFA Kimutatás (`VatSection.tsx`):**
   - Javításra került a devizaösszegek konverziója: a `navVatData` nyers objektumának átadása helyett a `vatBreakdown` tételeiből aggregált összegek kerülnek átváltásra, így elkerülhető a `NaN Ft` hiba, a fizetendő és visszaigényelhető ÁFA pedig dinamikusan jelenik meg.
 
 ### 5. Nyelvválasztó Kivezetése az Oldalsávról
 - A felhasználói felület tisztasága érdekében a `LanguageSwitcher` komponenst kivezettük a sidebar-ból. A demó tisztán és kizárólag a `/hr/` route beírásával és linkelésével mutatható be.
 
-### 6. Mérleg és Éves Beszámoló Lokalizáció & Automata Regressziós Tesztelés
-- **Mérleg (`BalanceSheet.tsx`, `BalanceSheetWidgets.tsx`):**
-  - A korábbi maradvány magyar szövegek átkerültek az `accounting:balance_sheet.*` névtérbe.
-  - Lokalizált komponensek: Mérleg-hinta widget (egyensúly és eltérés állapotok, összegzők), Egyezőségi Diagnosztika (besorolatlan számlák dinamikus riasztása, diagnosztikai jelentés dialógus), Likviditási Mutatók (arányok, minősítési skálák, célértékek), nézetvezérlő eszköztár (hivatalos nézet, nullás sorok, hagyományos nézet, deviza konszolidáció, export menü), táblázatfejlécek és hozzárendelés (mapping) fül.
-- **Éves Beszámoló Varázsló (`AnnualReportContainer.tsx`, `Step1Alapadatok.tsx`, `Step2Adatimport.tsx`, `Step3Validacio.tsx`):**
-  - Az `accounting:annual_report.*` névtérbe kerültek a lépéskapszulák (1–6. lépés címek és leírások), az előrehaladás-számláló, az 1. lépés cég- és képviselő űrlapjai, a 2. lépés dinamikus zárási dátumú adatbefagyasztó felülete és befagyasztott pénzügyi kártyái, valamint a 3. lépés validációs őrszem vezérlői.
+### 6. Teljes Frontend Lokalizáció (Batches 1–7) & Automata Regressziós Tesztelés
+A rendszer minden funkcionális modulját 7 különálló kötegben (Batch) lokalizáltuk:
+- **Batch 1: Munkaidő Nyilvántartás (Working Time):** `EmployeeListPanel`, `MonthlyBalanceCard` és kapcsolódó munkanap/túlóra kalkulációs felületek.
+- **Batch 2: Tárgyi Eszközök & Bérszámfejtés (Fixed Assets & Salaries):** `AssetDetailPanel`, `SalaryFilesTable`, bérjegyzék dokumentumtárak és leírásszámítások.
+- **Batch 3: Házipénztár (Petty Cash):** `EntriesTab`, `ApprovalTab`, `PettyCashUnifiedTable`, pénztárbizonylat nyomtatási és jóváhagyási folyamatok.
+- **Batch 4: Hibajegykezelés (Tickets):** `TicketDetailView`, `TicketResolutionBanner`, `TicketTimeline`, `TicketNotFoundView`, `ImageGalleryModal`.
+- **Batch 5: Jegyzetek (Notes):** `NotesPage`, `NoteModal`, szűrési és kategória címkék.
+- **Batch 6: Számlakezelés Kiterjesztett Panelei & Akciók:** `InvoiceBulkActionsBar`, folyamatos teljesítésű szerződések (`ContinuousServiceCardSection`), számlajegyzetek, összekapcsolt számlák, NAV és beküldött számla egyeztetési panelek, netting kompenzációk.
+- **Batch 7: Futárriportok, Főkönyv, Átvezetések & Közös UI:** `CourierReportTab`, `ReportFilesDialog`, `MatchedCourierReportsCard`, `GeneralLedgerTable`, `GlAccountCardView`, `JournalsPage`, `TransfersPage`, Éves beszámoló 4–6. lépés (`Step4KiegMelleklet`, `Step5Osztalek`, `Step6Export`), lebegő csoportos műveleti sávok (`floating-bulk-bar`), másolható táblázatcellák és üres állapot komponensek.
+- **Mérleg és Éves Beszámoló Alapjai:**
+  - Mérleg-hinta widget, Egyezőségi Diagnosztika, Likviditási Mutatók, nézetvezérlő eszköztár, táblázatfejlécek és mapping fül.
+  - Éves beszámoló varázsló 1–3. lépései (alapadatok, cégadatok, adatbefagyasztás és validáció).
 - **Autentikáció & Útvonal Megőrzés (`resolveAuthTarget`, `Auth.tsx`, `AuthCallback.tsx`, `redirects.tsx`, `ProtectedLayout.tsx`):**
-  - A `/hr/auth` bejelentkezés után a felhasználó megőrzi a `/hr` útvonalat a `resolveAuthTarget` segédfüggvényen keresztül, amely biztosítja, hogy mind az alapértelmezett, mind a scoped útvonalak (`returnTo`) megkapják a `/hr` előtagot horvát nyelvű munkamenetben.
+  - A `/hr/auth` bejelentkezés után a felhasználó megőrzi a `/hr` útvonalat a `resolveAuthTarget` segédfüggvényen keresztül mind az alapértelmezett, mind a scoped útvonalak esetén.
   - A Google OAuth visszatérési útvonala dinamikusan `/hr/auth/callback`-ra irányul horvát nyelv esetén.
-- **Moduláris Segédfüggvények & Teljes Körű Lokalizáció (Batches 1–7):**
-  - Létrehoztuk a funkcionálisan izolált lokalizációs segédfüggvényeket: `journalUtils.ts` (Dnevnici knjiženja), `bsUtils.ts` (Bilanca stanja), `pnlUtils.ts` (Račun dobiti i gubitka), `glUtils.ts` (Izvadak glavne knjige), `pettyCashUtils.ts` (Blagajna), `transactionUtils.ts` (Bankovne transakcije).
-  - 100%-os kétirányú kulcsparitás biztosított minden névtérben (`accounting`, `hr`, `invoices`, `pettyCash`, `settings`, `transactions`, `upload`).
 - **Automatizált Kulcsparitás és Regresszióvédelem (`src/test/i18n.test.ts`):**
-  - Vitest tesztcsomag bővítve: rekurzív `findMissingKeys` motor ellenőrzi a `hu` és `hr` szótárak közötti 100%-os mélységi egyezést minden névtérre.
-  - Dedikált regressziós tesztek futnak az `accounting:balance_sheet`, `accounting:annual_report`, `journalUtils`, `bsUtils`, `glUtils`, `pnlUtils`, `pettyCashUtils`, `transactionUtils` és `resolveAuthTarget` logikákra, meggátolva a fordítási kulcsok és útvonalak elcsúszását vagy hiányát a jövőbeli fejlesztések során.
+  - 25 önálló Vitest tesztcsomag fut le zölden: rekurzív `findMissingKeys` motor ellenőrzi a `hu` és `hr` szótárak közötti 100%-os mélységi egyezést mind a 19 névtérre.
+  - Dedikált regressziós tesztek futnak az `accounting:balance_sheet`, `accounting:annual_report`, standard főkönyvi számlák kulcsparitására (`general_ledger.accounts`), `journalUtils`, `bsUtils`, `glUtils`, `pnlUtils`, `pettyCashUtils`, `transactionUtils` és `resolveAuthTarget` logikákra, meggátolva a fordítási kulcsok és útvonalak elcsúszását a jövőbeli fejlesztések során.
+
+### 7. Standard Számlatükör és Főkönyvi Lokalizációs Motor (Chart of Accounts Localization Engine)
+A pénzügyi kimutatásokban (Mérleg, Eredménykimutatás, Főkönyvi kivonat, Karton nézet, Könyvelési naplók) a magyar számviteli törvény szerinti számlatükör számlái és számlacsoportjai korábban csak 1 számjegyű osztályszinten (0–9) fordultak le. A 2, 3 és 4 számjegyű számlák (pl. `41.`, `42.`, `311. Belföldi vevők`) nyers magyar adatbázis magként jelentek meg.
+
+Ennek feloldására egy többrétegű lokalizációs motort hoztunk létre:
+1. **374 Standard Számlatétel Kétnyelvű Katalógusa (`src/locales/{hu,hr}/accounting.json`):**
+   - Minden standard számlacsoport és alszámla felvételre került a `general_ledger.accounts.*` kulcsok alá (pl. `acc_311`, `acc_411`), horvát oldalon a hivatalos horvát standard számlatükör (HSFI / RRIF standard kontni plan) szerinti terminológiával.
+   - 100%-os mélységi kulcsparitást garantál a tesztcsomag a két nyelv között.
+2. **Normalizált Leképezési Szótár (`src/lib/glAccountDictionary.ts`):**
+   - `HU_GL_NAME_TO_KEY`: ~370 magyar számlamegnevezést és számlaszámot indexel kulcsokhoz.
+   - `normalizeGlAccountName` és `normalizeGlKey`: kezeli az ékezeteket, írásjeleket, pontokat, kettőspontokat és kis/nagybetűket, így a formázott vagy prefix nélküli adatbázis rekordokat is determinisztikusan azonosítja.
+3. **Többszintű Feloldási Lánc (`src/lib/glUtils.ts` -> `getLocalizedGlAccountName`):**
+   - 1. szint: 1 számjegyű főkönyvi osztályok (`accounting:general_ledger.classes.*`).
+   - 2. szint: Számlaszám szerinti keresés (`accounting:general_ledger.accounts.acc_<szám>`).
+   - 3. szint: Normalizált magyar név szerinti fallback feloldás (`HU_GL_NAME_TO_KEY`).
+   - 4. szint: Biztonságos fallback az eredeti névre, ha egyedi számla vagy nem standard tételről van szó.
+4. **Kétnyelvű Keresési Filter (`matchesGlSearch`):**
+   - A `GlSearchAutocomplete.tsx` és `AddManualJournalEntryModal.tsx` komponensek egyszerre hasonlítják össze a felhasználó által beírt keresőszót az eredeti magyar és a feloldott horvát megnevezéssel, lehetővé téve a gyorskeresést bármelyik nyelven.
+5. **Pénzügyi Exportok Szinkronizálása:**
+   - A `bsExport.ts` (Mérleg) és `pnlExport.ts` (Eredménykimutatás) Excel fájlgenerálók integrálták a `getLocalizedGlAccountName` feloldót, így az exportált munkafüzetek is az aktív nyelvnek megfelelő sor- és számlamegnevezéseket tartalmazzák.
+
+### 8. Bizonylatfeltöltési Duplikáció-védelem és Modál Stabilitás
+- A számlafeltöltési folyamat duplikáció-figyelmeztető dialógusait (`DbDuplicateDialog.tsx`, `ListDuplicateDialog.tsx`) leválasztottuk a hardkódolt magyar szövegekről, és bekötöttük az `upload:dialogs.db_duplicate.*` és `upload:dialogs.list_duplicate.*` névterekbe.
+- **Megjelenési Javítás:** A dialógus maximális szélességét (`max-w-xl`), a belső görgetést és a gombok elrendezését responzívvá tettük, megakadályozva a modál szétcsúszását kisebb vagy felbontás-váltott kijelzőkön.
+- **Light Mode Kontraszt:** A másodlagos műveleti gombokhoz explicit kontrasztos háttér- és betűszínt (`bg-muted/80 text-foreground hover:bg-muted font-medium border border-border/60`) rendeltünk, biztosítva az olvashatóságot világos felületi témában is.
 
 ---
 
 ## Consequences
 
 ### Pozitív
-- **Értékesítési Készség:** A teljes Eaisybill felület bemutatható horvát nyelven az ügyfeleknek a `/hr/` útvonalon.
+- **Értékesítési Készség:** A teljes Eaisybill felület bemutatható horvát nyelven az ügyfeleknek a `/hr/` útvonalon, beleértve a szakmai számlatükröt és pénzügyi kimutatásokat is.
+- **Szakmai Hitelesség:** A számlák nem félrefordított nyers kifejezésekkel, hanem a hivatalos horvát számviteli szabvány (HSFI / RRIF) terminus technicus-aival jelennek meg.
+- **Kétnyelvű Rugalmasság:** A főkönyvi keresés és kontírozás magyar és horvát kulcsszavakkal is azonnal működik.
 - **Nincs Beragadás:** Az URL-ből a `/hr` törlésével a felület determinisztikusan és azonnal visszavált a standard magyar működésre.
 - **Típusbiztonság:** A fordítási kulcsok TypeScript definícióval támogatottak, elkerülve az elírásokat.
-- **Nulla Adatbázis Változás:** A megoldás tiszta kliensoldali route- és i18n-réteg, nem igényel backend migrációt vagy adatbázis sémamódosítást.
+- **Nulla Adatbázis Változás:** A megoldás tiszta kliensoldali route-, i18n- és szótár-réteg, nem igényel backend migrációt vagy adatbázis sémamódosítást.
 
 ### Negatív / Kötöttségek
 - Új UI elemek, oldalak vagy űrlapmezők fejlesztésekor kötelező a szövegeket a `src/locales/hu/*.json` és `src/locales/hr/*.json` szótárakba is felvenni.
+- Egyedi céges számlatükör-bővítések esetén, ha nem standard számlaszámot használnak, a motor az eredeti elnevezést jeleníti meg fallbackként.
 
 ---
 
@@ -89,3 +122,4 @@ A nyelvi állapotot 100%-ban az URL útvonala határozza meg, kizárva a böngé
 - [A-013: Scoped URL Routing](./A-013-scoped-routing.md)
 - [A-060: Moduláris App Router Architektúra](./A-060-modular-app-router-and-bootstrap-shell.md)
 - [Information Architecture](../../product/information-architecture.md)
+

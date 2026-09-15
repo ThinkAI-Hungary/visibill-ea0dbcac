@@ -2,6 +2,7 @@ import React from 'react';
 import { Landmark } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BANK_HINT_OPTIONS } from '../../config/channelConfigs';
+import { useTranslation } from 'react-i18next';
 
 interface BankHintSelectorProps {
   value: string;
@@ -10,11 +11,13 @@ interface BankHintSelectorProps {
 }
 
 export function BankHintSelector({ value, onChange, disabled }: BankHintSelectorProps) {
+  const { t } = useTranslation(['upload']);
+
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 border rounded-lg bg-muted/20">
       <div className="flex items-center gap-2 text-sm font-medium text-foreground">
         <Landmark className="h-4 w-4 text-muted-foreground" />
-        <span>Bank formátum:</span>
+        <span>{t('upload:selectors.bank_format', 'Bank formátum:')}</span>
       </div>
       <Select
         value={value}
@@ -22,19 +25,20 @@ export function BankHintSelector({ value, onChange, disabled }: BankHintSelector
         disabled={disabled}
       >
         <SelectTrigger className="w-full sm:w-[260px] h-9 bg-background">
-          <SelectValue placeholder="Válassz bankot..." />
+          <SelectValue placeholder={t('upload:selectors.choose_bank', 'Válassz bankot...')} />
         </SelectTrigger>
         <SelectContent>
           {BANK_HINT_OPTIONS.map(opt => (
             <SelectItem key={opt.value} value={opt.value}>
-              {opt.label}
+              {opt.value === 'auto' ? t('upload:selectors.auto_detect', opt.label) : opt.label}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
       <span className="text-xs text-muted-foreground hidden sm:inline">
-        (Ha nem választasz, az AI automatikusan felismeri a formátumot)
+        {t('upload:selectors.ai_auto_hint', '(Ha nem választasz, az AI automatikusan felismeri a formátumot)')}
       </span>
     </div>
   );
 }
+

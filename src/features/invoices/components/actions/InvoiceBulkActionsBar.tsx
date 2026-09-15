@@ -1,11 +1,13 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Trash2, Tag, Folder } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrencyLocale } from '@/lib/locale/formatters';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 import { FloatingBulkBar } from '@/components/ui/floating-bulk-bar';
 
 export function InvoiceBulkActionsBar() {
+  const { t } = useTranslation(['invoices', 'common']);
   const {
     activeSelection,
     isSubmittedTab,
@@ -31,14 +33,14 @@ export function InvoiceBulkActionsBar() {
   }, [activeSelection.size]);
 
   const categoryOptions = React.useMemo(() => [
-    { value: 'none', label: 'Nincs kategória' },
+    { value: 'none', label: t('invoices:bulk_actions.category_none', 'Nincs kategória') },
     ...categories.map((c) => ({ value: c.id, label: c.name })),
-  ], [categories]);
+  ], [categories, t]);
 
   const projectOptions = React.useMemo(() => [
-    { value: 'none', label: 'Nincs projekt' },
+    { value: 'none', label: t('invoices:bulk_actions.project_none', 'Nincs projekt') },
     ...projects.map((p) => ({ value: p.id, label: p.name })),
-  ], [projects]);
+  ], [projects, t]);
 
   if (activeSelection.size === 0) return null;
 
@@ -48,7 +50,7 @@ export function InvoiceBulkActionsBar() {
     const currency = inv.currency || 'HUF';
     sums[currency] = (sums[currency] || 0) + (inv.gross_amount || 0);
   });
-  const sumStrings = Object.entries(sums).map(([ccy, amt]) => formatCurrency(amt, ccy));
+  const sumStrings = Object.entries(sums).map(([ccy, amt]) => formatCurrencyLocale(amt, ccy));
 
   const isDirty = stagedCategory !== null || stagedProject !== null;
 
@@ -78,16 +80,16 @@ export function InvoiceBulkActionsBar() {
   return (
     <FloatingBulkBar
       count={activeSelection.size}
-      label="Kijelölt számlák:"
+      label={t('invoices:bulk_actions.label', 'Kijelölt számlák:')}
       details={
         sumStrings.length > 0 ? (
           <span>
-            Összesen: <span className="font-bold text-foreground">{sumStrings.join(', ')}</span>
+            {t('invoices:bulk_actions.total_label', 'Összesen:')} <span className="font-bold text-foreground">{sumStrings.join(', ')}</span>
           </span>
         ) : undefined
       }
       onSave={handleSave}
-      saveLabel="Mentés"
+      saveLabel={t('invoices:bulk_actions.save', 'Mentés')}
       isDirty={isDirty}
       isSaving={isSaving}
       onCancel={handleCancel}
@@ -96,9 +98,9 @@ export function InvoiceBulkActionsBar() {
       <FloatingBulkBar.Select
         value={stagedCategory}
         onValueChange={(val) => setStagedCategory(val)}
-        placeholder="Kategória..."
-        searchPlaceholder="Keresés kategóriára..."
-        emptyText="Nincs ilyen kategória"
+        placeholder={t('invoices:bulk_actions.category_placeholder', 'Kategória...')}
+        searchPlaceholder={t('invoices:bulk_actions.category_search', 'Keresés kategóriára...')}
+        emptyText={t('invoices:bulk_actions.category_empty', 'Nincs ilyen kategória')}
         icon={<Tag className="w-3.5 h-3.5" />}
         options={categoryOptions}
         popoverWidth="w-[220px]"
@@ -108,9 +110,9 @@ export function InvoiceBulkActionsBar() {
       <FloatingBulkBar.Select
         value={stagedProject}
         onValueChange={(val) => setStagedProject(val)}
-        placeholder="Projekt..."
-        searchPlaceholder="Keresés projektre..."
-        emptyText="Nincs ilyen projekt"
+        placeholder={t('invoices:bulk_actions.project_placeholder', 'Projekt...')}
+        searchPlaceholder={t('invoices:bulk_actions.project_search', 'Keresés projektre...')}
+        emptyText={t('invoices:bulk_actions.project_empty', 'Nincs ilyen projekt')}
         icon={<Folder className="w-3.5 h-3.5" />}
         options={projectOptions}
         popoverWidth="w-[220px]"
@@ -125,7 +127,7 @@ export function InvoiceBulkActionsBar() {
           onClick={() => setBulkDeleteDialogOpen(true)}
         >
           <Trash2 className="w-3.5 h-3.5" />
-          Törlés
+          {t('invoices:bulk_actions.delete', 'Törlés')}
         </Button>
       )}
     </FloatingBulkBar>

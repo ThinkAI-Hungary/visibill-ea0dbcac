@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Download,
   Scale,
@@ -22,7 +23,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { formatHungarianNumber } from '@/lib/documents/encoding/hungarianEncoding';
+import { formatNumberLocale, formatDateLocale } from '@/lib/locale/formatters';
 import { generateAnnualReportPdf, generateAnnualReportPreviewUrl } from '@/lib/annualReportPdf';
 import { downloadAnnualReportXml } from '@/lib/annualReportXml';
 import { downloadEBeszamoloCsv, E_BESZAMOLO_PORTAL_URL } from '@/lib/annualReportCsv';
@@ -58,6 +59,7 @@ export function Step6Export({
   updateReport,
   setCurrentStep,
 }: Step6ExportProps) {
+  const { t } = useTranslation('accounting');
   const { toast } = useToast();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -76,42 +78,53 @@ export function Step6Export({
 
   const checks = [
     {
-      label: 'Alapadatok kitöltve',
+      label: t('annual_report.step6.checks.basic_data'),
       sublabel: `${report.representative_name || '—'} • ${report.report_date || '—'}`,
       ok: hasBasicData,
       step: 1,
     },
     {
-      label: 'Mérleg & EK befagyasztva',
+      label: t('annual_report.step6.checks.frozen_data'),
       sublabel: report.frozen_at
-        ? `Befagyasztva: ${new Date(report.frozen_at).toLocaleString('hu-HU')}`
-        : 'Még nincs befagyasztva',
+        ? t('annual_report.step6.checks.frozen_sublabel', {
+            time: formatDateLocale(report.frozen_at, 'yyyy.MM.dd. HH:mm'),
+          })
+        : t('annual_report.step6.checks.not_frozen'),
       ok: hasFrozenData,
       step: 2,
     },
     {
-      label: 'Validáció lefutott',
+      label: t('annual_report.step6.checks.validation'),
       sublabel: validationPassed
-        ? `${validationResults.length} szabály ellenőrizve — mind OK`
+        ? t('annual_report.step6.checks.validation_all_ok', { count: validationResults.length })
         : validationErrors.length > 0
-        ? `${validationErrors.length} hiba, ${validationWarnings.length} figyelmeztetés`
-        : 'Még nem futott le',
+        ? t('annual_report.step6.checks.validation_issues', {
+            errors: validationErrors.length,
+            warnings: validationWarnings.length,
+          })
+        : t('annual_report.step6.checks.not_validated'),
       ok: validationPassed,
       warn: hasValidation && !validationPassed,
       step: 3,
     },
     {
-      label: 'Kiegészítő melléklet',
-      sublabel: `${notesSections.length} egyéni szekció • ${notesTemplates?.length || 0} sablon`,
+      label: t('annual_report.step6.checks.notes'),
+      sublabel: t('annual_report.step6.checks.notes_sublabel', {
+        customCount: notesSections.length,
+        templateCount: notesTemplates?.length || 0,
+      }),
       ok: hasNotes,
       step: 4,
     },
     {
-      label: 'Eredményfelosztás',
+      label: t('annual_report.step6.checks.dividend'),
       sublabel:
         report.net_income > 0
-          ? `Osztalék: ${formatHungarianNumber(report.dividend_amount || 0)} Ft • Tartalék: ${formatHungarianNumber(report.retained_earnings || 0)} Ft`
-          : 'Nincs pozitív eredmény — nem szükséges',
+          ? t('annual_report.step6.checks.dividend_sublabel', {
+              dividend: formatNumberLocale(report.dividend_amount || 0),
+              retained: formatNumberLocale(report.retained_earnings || 0),
+            })
+          : t('annual_report.step6.checks.dividend_not_needed'),
       ok: hasDividend,
       step: 5,
     },
@@ -142,10 +155,10 @@ export function Step6Export({
     <div className="space-y-6">
       <h2 className="text-xl font-bold flex items-center gap-2">
         <Download className="w-5 h-5 text-primary" />
-        6. Zárás és Exportálás
+        {t('annual_report.step6.header')}
       </h2>
       <p className="text-sm text-muted-foreground -mt-3">
-        Ellenőrizd a beszámoló állapotát, töltsd le a végleges PDF-et, majd zárd le a dokumentumot.
+        {t('annual_report.step6.subtitle')}
       </p>
 
       {/* Wax Seal lock banner */}
@@ -158,13 +171,18 @@ export function Step6Export({
           </div>
           <div className="text-center mt-4">
             <h3 className="font-bold text-base text-foreground tracking-wide flex items-center gap-1.5 justify-center">
-              ⚖️ Hivatalos Zárópecsét
+              {t('annual_report.step6.seal_title')}
             </h3>
             <p className="text-xs text-muted-foreground mt-1">
-              A(z) {selectedCompany?.name} {report.fiscal_year}. évi beszámolója hivatalosan lezárva és hitelesítve.
+              {t('annual_report.step6.seal_desc', {
+                company: selectedCompany?.name,
+                year: report.fiscal_year,
+              })}
             </p>
             <p className="text-[10px] text-muted-foreground mt-0.5">
-              Hitelesítés ideje: {new Date(report.updated_at || '').toLocaleString('hu-HU')}
+              {t('annual_report.step6.seal_time', {
+                time: formatDateLocale(report.updated_at || '', 'yyyy.MM.dd. HH:mm'),
+              })}
             </p>
           </div>
           <div className="absolute inset-0 -z-10 bg-[linear-gradient(45deg,rgba(16,185,129,0.03)_25%,transparent_25%,transparent_50%,rgba(16,185,129,0.03)_50%,rgba(16,185,129,0.03)_75%,transparent_75%,transparent)] bg-[size:40px_40px]" />
@@ -176,14 +194,14 @@ export function Step6Export({
         <CardHeader className="pb-3 border-b border-border/40">
           <CardTitle className="text-base flex items-center gap-2">
             <ClipboardCheck className="w-4 h-4 text-primary" />
-            Beszámoló állapot
+            {t('annual_report.step6.checklist_title')}
             {allReady ? (
               <span className="ml-auto text-xs font-semibold bg-emerald-500/10 text-emerald-600 px-3 py-1 rounded-full">
-                ✓ Minden rendben
+                {t('annual_report.step6.all_ready')}
               </span>
             ) : (
               <span className="ml-auto text-xs font-semibold bg-amber-500/10 text-amber-600 px-3 py-1 rounded-full">
-                Teendők vannak
+                {t('annual_report.step6.pending_tasks')}
               </span>
             )}
           </CardTitle>
@@ -241,9 +259,9 @@ export function Step6Export({
                 <FileText className="w-6 h-6" />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="font-bold text-sm">Vezetői PDF</h3>
+                <h3 className="font-bold text-sm">{t('annual_report.step6.cards.pdf_title')}</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Nyomtatható, aláírható beszámoló — Mérleg, EK, Kiegészítő Melléklet, Osztalékhatározat
+                  {t('annual_report.step6.cards.pdf_desc')}
                 </p>
               </div>
             </div>
@@ -258,14 +276,14 @@ export function Step6Export({
                     setPreviewUrl(url);
                   } catch (err) {
                     toast({
-                      title: 'Hiba',
-                      description: 'Nem sikerült az előnézet generálás.',
+                      title: t('common.error'),
+                      description: t('annual_report.step6.toasts.pdf_preview_error'),
                       variant: 'destructive',
                     });
                   }
                 }}
               >
-                <Eye className="w-4 h-4" /> Előnézet
+                <Eye className="w-4 h-4" /> {t('annual_report.step6.cards.preview_btn')}
               </Button>
               <Button
                 variant="outline"
@@ -274,17 +292,20 @@ export function Step6Export({
                 onClick={() => {
                   try {
                     generateAnnualReportPdf(buildPdfPayload());
-                    toast({ title: 'PDF generálva', description: 'A letöltés megkezdődött.' });
+                    toast({
+                      title: t('annual_report.step6.toasts.pdf_success_title'),
+                      description: t('annual_report.step6.toasts.pdf_success_desc'),
+                    });
                   } catch (err) {
                     toast({
-                      title: 'Hiba',
-                      description: 'Nem sikerült a PDF generálás.',
+                      title: t('common.error'),
+                      description: t('annual_report.step6.toasts.pdf_error'),
                       variant: 'destructive',
                     });
                   }
                 }}
               >
-                <Download className="w-4 h-4" /> Letöltés
+                <Download className="w-4 h-4" /> {t('annual_report.step6.cards.download_btn')}
               </Button>
             </div>
           </CardContent>
@@ -303,9 +324,9 @@ export function Step6Export({
                 <Upload className="w-6 h-6" />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="font-bold text-sm">e-Beszámoló CSV</h3>
+                <h3 className="font-bold text-sm">{t('annual_report.step6.cards.csv_title')}</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Mérleg + EK adatok CSV formátumban — importálható az e-Beszámoló online kitöltőbe
+                  {t('annual_report.step6.cards.csv_desc')}
                 </p>
               </div>
             </div>
@@ -326,24 +347,27 @@ export function Step6Export({
                       dividendAmount: report.dividend_amount || 0,
                       retainedEarnings: report.retained_earnings || 0,
                     });
-                    toast({ title: 'CSV letöltve', description: '3 fájl: Mérleg, EK, Összefoglaló' });
+                    toast({
+                      title: t('annual_report.step6.toasts.csv_success_title'),
+                      description: t('annual_report.step6.toasts.csv_success_desc'),
+                    });
                   } catch (err) {
                     toast({
-                      title: 'Hiba',
-                      description: 'CSV generálás sikertelen.',
+                      title: t('common.error'),
+                      description: t('annual_report.step6.toasts.csv_error'),
                       variant: 'destructive',
                     });
                   }
                 }}
               >
-                <Download className="w-4 h-4" /> Letöltés
+                <Download className="w-4 h-4" /> {t('annual_report.step6.cards.download_btn')}
               </Button>
               <Button
                 variant="outline"
                 className="flex-1 gap-2"
                 onClick={() => window.open(E_BESZAMOLO_PORTAL_URL, '_blank')}
               >
-                <ExternalLink className="w-4 h-4" /> Portál
+                <ExternalLink className="w-4 h-4" /> {t('annual_report.step6.cards.portal_btn')}
               </Button>
             </div>
           </CardContent>
@@ -362,9 +386,9 @@ export function Step6Export({
                 <Database className="w-6 h-6" />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="font-bold text-sm">OBR XML Export</h3>
+                <h3 className="font-bold text-sm">{t('annual_report.step6.cards.xml_title')}</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Online Beszámoló Rendszer (OBR) sémának megfelelő hivatalos XML fájl letöltése
+                  {t('annual_report.step6.cards.xml_desc')}
                 </p>
               </div>
             </div>
@@ -392,19 +416,19 @@ export function Step6Export({
                     dividendResolutionDate: report.dividend_resolution_date || '',
                   });
                   toast({
-                    title: 'XML letöltve',
-                    description: 'Az OBR kompatibilis beszámoló fájl mentésre került.',
+                    title: t('annual_report.step6.toasts.xml_success_title'),
+                    description: t('annual_report.step6.toasts.xml_success_desc'),
                   });
                 } catch (err) {
                   toast({
-                    title: 'Hiba',
-                    description: 'XML generálás sikertelen.',
+                    title: t('common.error'),
+                    description: t('annual_report.step6.toasts.xml_error'),
                     variant: 'destructive',
                   });
                 }
               }}
             >
-              <Download className="w-4 h-4" /> XML Letöltés
+              <Download className="w-4 h-4" /> {t('annual_report.step6.cards.xml_download_btn')}
             </Button>
           </CardContent>
         </Card>
@@ -436,16 +460,18 @@ export function Step6Export({
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="font-bold text-sm">
-                  {report.status === 'finalized' ? 'Véglegesítve ✓' : 'Véglegesítés'}
+                  {report.status === 'finalized'
+                    ? t('annual_report.step6.cards.finalized_title')
+                    : t('annual_report.step6.cards.finalize_title')}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {report.status === 'finalized'
-                    ? 'Zárolva • Módosításhoz oldd fel'
+                    ? t('annual_report.step6.cards.status_finalized_desc')
                     : !report.frozen_at
-                    ? 'Előfeltétel: adat befagyasztás'
+                    ? t('annual_report.step6.cards.status_needs_freeze')
                     : !report.validated_at
-                    ? 'Előfeltétel: validáció lefuttatása'
-                    : 'Zárd le — ezután nem módosítható'}
+                    ? t('annual_report.step6.cards.status_needs_validation')
+                    : t('annual_report.step6.cards.status_ready_desc')}
                 </p>
               </div>
             </div>
@@ -456,12 +482,12 @@ export function Step6Export({
                 onClick={() => {
                   updateReport.mutate({ status: 'finalized' });
                   toast({
-                    title: '🎉 Beszámoló véglegesítve!',
-                    description: 'A beszámoló sikeresen zárolva. Gratulálunk!',
+                    title: t('annual_report.step6.toasts.finalized_title'),
+                    description: t('annual_report.step6.toasts.finalized_desc'),
                   });
                 }}
               >
-                <Lock className="w-4 h-4" /> Véglegesítés
+                <Lock className="w-4 h-4" /> {t('annual_report.step6.cards.finalize_btn')}
               </Button>
             ) : (
               <Button
@@ -470,12 +496,12 @@ export function Step6Export({
                 onClick={() => {
                   updateReport.mutate({ status: 'draft' });
                   toast({
-                    title: 'Zárolás feloldva',
-                    description: 'A beszámoló újra szerkeszthető.',
+                    title: t('annual_report.step6.toasts.unlocked_title'),
+                    description: t('annual_report.step6.toasts.unlocked_desc'),
                   });
                 }}
               >
-                <Unlock className="w-4 h-4" /> Zárolás feloldása
+                <Unlock className="w-4 h-4" /> {t('annual_report.step6.cards.unlock_btn')}
               </Button>
             )}
           </CardContent>
@@ -487,7 +513,7 @@ export function Step6Export({
         <CardHeader className="pb-3 border-b border-border/40">
           <CardTitle className="text-base flex items-center gap-2">
             <RefreshCw className="w-4 h-4 text-primary" />
-            Változás-napló
+            {t('annual_report.step6.audit_trail.title')}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -497,35 +523,35 @@ export function Step6Export({
             if (report.created_at)
               events.push({
                 date: report.created_at,
-                label: 'Beszámoló létrehozva',
+                label: t('annual_report.step6.audit_trail.created'),
                 icon: FileText,
                 color: 'text-blue-500 bg-blue-500/10',
               });
             if (report.frozen_at)
               events.push({
                 date: report.frozen_at,
-                label: 'Mérleg & EK adatok befagyasztva',
+                label: t('annual_report.step6.audit_trail.frozen'),
                 icon: Lock,
                 color: 'text-cyan-500 bg-cyan-500/10',
               });
             if (report.validated_at)
               events.push({
                 date: report.validated_at,
-                label: 'Validáció lefuttatva',
+                label: t('annual_report.step6.audit_trail.validated'),
                 icon: Shield,
                 color: 'text-amber-500 bg-amber-500/10',
               });
             if (report.status === 'finalized')
               events.push({
                 date: report.updated_at,
-                label: 'Beszámoló véglegesítve',
+                label: t('annual_report.step6.audit_trail.finalized'),
                 icon: CheckCircle2,
                 color: 'text-emerald-500 bg-emerald-500/10',
               });
             if (report.updated_at && report.updated_at !== report.created_at)
               events.push({
                 date: report.updated_at,
-                label: 'Utolsó módosítás',
+                label: t('annual_report.step6.audit_trail.modified'),
                 icon: RefreshCw,
                 color: 'text-muted-foreground bg-muted',
               });
@@ -553,13 +579,7 @@ export function Step6Export({
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium">{ev.label}</div>
                     <div className="text-xs text-muted-foreground tabular-nums">
-                      {new Date(ev.date).toLocaleString('hu-HU', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
+                      {formatDateLocale(ev.date, 'yyyy.MM.dd. HH:mm')}
                     </div>
                   </div>
                 </div>
@@ -573,8 +593,7 @@ export function Step6Export({
       <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 px-4 py-3 rounded-lg border border-border/40">
         <Info className="w-4 h-4 shrink-0" />
         <span>
-          A véglegesítés után a beszámoló nem módosítható. A PDF és CSV bármikor újra letölthető.
-          A CSV fájlokat az e-Beszámoló online kitöltőbe importálhatod.
+          {t('annual_report.step6.footer_info')}
         </span>
       </div>
 
@@ -592,7 +611,7 @@ export function Step6Export({
           <DialogHeader className="px-6 py-4 border-b border-border/40 bg-muted/30 shrink-0">
             <DialogTitle className="flex items-center gap-2 text-lg">
               <Eye className="w-5 h-5 text-primary" />
-              Beszámoló előnézet — {report.fiscal_year}. üzleti év
+              {t('annual_report.step6.dialog.preview_title', { year: report.fiscal_year })}
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-hidden">
@@ -600,7 +619,7 @@ export function Step6Export({
               <iframe
                 src={previewUrl}
                 className="w-full h-full border-0"
-                title="Éves Beszámoló Előnézet"
+                title={t('annual_report.step6.dialog.iframe_title')}
               />
             )}
           </div>

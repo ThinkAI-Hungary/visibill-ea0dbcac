@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Check, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 import { FloatingBulkSelect, type FloatingBulkSelectOption, type FloatingBulkSelectProps } from './floating-bulk-select';
 
 export interface FloatingBulkBarProps {
@@ -87,22 +88,28 @@ export interface FloatingBulkBarProps {
 export function FloatingBulkBar({
   open,
   count,
-  label = 'Kijelölt elemek:',
-  itemUnit = 'db',
+  label,
+  itemUnit,
   details,
   onSave,
-  saveLabel = 'Mentés',
+  saveLabel,
   isDirty = false,
   isSaving = false,
   canSave,
   hideSaveButton = false,
   showSaveButton = 'dirty-only',
   onCancel,
-  cancelLabel = 'Mégse',
+  cancelLabel,
   children,
   className,
   portal = true,
 }: FloatingBulkBarProps) {
+  const { t } = useTranslation(['common']);
+  const effectiveLabel = label ?? t('common:floating_bulk_bar.selected_items', 'Kijelölt elemek:');
+  const effectiveItemUnit = itemUnit ?? t('common:floating_bulk_bar.unit_db', 'db');
+  const effectiveSaveLabel = saveLabel ?? (isSaving ? t('common:floating_bulk_bar.saving', 'Mentés...') : t('common:floating_bulk_bar.save', 'Mentés'));
+  const effectiveCancelLabel = cancelLabel ?? t('common:floating_bulk_bar.cancel', 'Mégse');
+
   const isVisible = open !== undefined ? open : count > 0;
   if (!isVisible) return null;
 
@@ -127,7 +134,7 @@ export function FloatingBulkBar({
       <div className="flex items-center gap-3 shrink-0">
         <div className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse shrink-0" />
         <p className="text-sm font-semibold text-foreground whitespace-nowrap">
-          {label} <span className="font-extrabold text-primary tabular-nums">{count} {itemUnit}</span>
+          {effectiveLabel} <span className="font-extrabold text-primary tabular-nums">{count} {effectiveItemUnit}</span>
         </p>
 
         {details && (
@@ -163,7 +170,7 @@ export function FloatingBulkBar({
             ) : (
               <Check className="w-3.5 h-3.5" />
             )}
-            {saveLabel}
+            {effectiveSaveLabel}
           </Button>
         )}
 
@@ -179,7 +186,7 @@ export function FloatingBulkBar({
           onClick={onCancel}
         >
           <X className="w-3.5 h-3.5" />
-          {cancelLabel}
+          {effectiveCancelLabel}
         </Button>
       </div>
     </div>

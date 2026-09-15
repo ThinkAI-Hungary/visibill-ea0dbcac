@@ -9,14 +9,12 @@ import {
   Loader2,
   Clock,
   Send,
-  Sparkles,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 import { useRespondTicketResolution } from "@/hooks/useTickets";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { hu } from "date-fns/locale";
+import { getDateFnsLocale } from "@/lib/locale/formatters";
+import { useTranslation } from "react-i18next";
 import { ThinkAiIcon } from "./ThinkAiBadge";
 
 interface TicketResolutionBannerProps {
@@ -36,6 +34,7 @@ export function TicketResolutionBanner({
   resolutionRequestedAt,
   onSuccess,
 }: TicketResolutionBannerProps) {
+  const { t } = useTranslation('tickets');
   const { toast } = useToast();
   const { mutate: respondResolution, isPending } = useRespondTicketResolution();
   const [showRejectReason, setShowRejectReason] = useState(false);
@@ -50,21 +49,21 @@ export function TicketResolutionBanner({
       {
         onSuccess: () => {
           toast({
-            title: "Hibajegy lezárva",
-            description: "Köszönjük a visszajelzést! A hibajegyet sikeresen megoldottnak jelöltük és lezártuk.",
+            title: t('detail.resolution_banner.ticket_closed_title'),
+            description: t('detail.resolution_banner.ticket_closed_desc'),
           });
           onSuccess?.();
         },
         onError: (err: any) => {
           toast({
             variant: "destructive",
-            title: "Hiba történt",
-            description: err?.message || "Nem sikerült lezárni a hibajegyet.",
+            title: t('detail.resolution_banner.error_title'),
+            description: err?.message || t('detail.resolution_banner.close_error_desc'),
           });
         },
       }
     );
-  }, [ticketId, respondResolution, toast, onSuccess]);
+  }, [ticketId, respondResolution, toast, onSuccess, t]);
 
   const handleRejectSubmit = useCallback(() => {
     respondResolution(
@@ -76,8 +75,8 @@ export function TicketResolutionBanner({
       {
         onSuccess: () => {
           toast({
-            title: "Visszajelzés elküldve",
-            description: "A támogatási csapat értesült a problémáról és folytatja a hibajegy kezelését.",
+            title: t('detail.resolution_banner.feedback_sent_title'),
+            description: t('detail.resolution_banner.feedback_sent_desc'),
           });
           setShowRejectReason(false);
           setRejectComment("");
@@ -86,20 +85,20 @@ export function TicketResolutionBanner({
         onError: (err: any) => {
           toast({
             variant: "destructive",
-            title: "Hiba történt",
-            description: err?.message || "Nem sikerült elküldeni a visszajelzést.",
+            title: t('detail.resolution_banner.error_title'),
+            description: err?.message || t('detail.resolution_banner.feedback_error_desc'),
           });
         },
       }
     );
-  }, [ticketId, rejectComment, respondResolution, toast, onSuccess]);
+  }, [ticketId, rejectComment, respondResolution, toast, onSuccess, t]);
 
   if (!waitingForConfirmation) {
     return null;
   }
 
   const formattedRequestDate = resolutionRequestedAt
-    ? format(new Date(resolutionRequestedAt), "yyyy. MMM d. HH:mm", { locale: hu })
+    ? format(new Date(resolutionRequestedAt), "yyyy. MMM d. HH:mm", { locale: getDateFnsLocale() })
     : null;
 
   // 1. Ügyfél (bejelentő) felülete
@@ -114,15 +113,15 @@ export function TicketResolutionBanner({
               </div>
               <div>
                 <h4 className="text-sm font-semibold text-foreground leading-snug">
-                  Kérjük, jelezzen vissza:
+                  {t('detail.resolution_banner.reporter_title')}
                 </h4>
                 <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                  Megoldódott az Ön által jelentett probléma?
+                  {t('detail.resolution_banner.reporter_sub')}
                 </p>
                 {formattedRequestDate && (
                   <div className="flex items-center gap-1 text-[11px] text-muted-foreground/80 mt-1">
                     <Clock className="h-3 w-3" />
-                    <span>Javaslat elküldve: {formattedRequestDate}</span>
+                    <span>{t('detail.resolution_banner.proposal_sent_at', { date: formattedRequestDate })}</span>
                   </div>
                 )}
               </div>
@@ -140,7 +139,7 @@ export function TicketResolutionBanner({
                   className="flex-1 sm:flex-initial text-xs h-9 border-amber-500/30 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10 hover:text-amber-800 transition-colors"
                 >
                   <XCircle className="h-4 w-4 mr-1.5 text-amber-500" />
-                  Nem, még fennáll
+                  {t('detail.resolution_banner.still_persists_btn')}
                 </Button>
                 <Button
                   type="button"
@@ -154,7 +153,7 @@ export function TicketResolutionBanner({
                   ) : (
                     <CheckCircle2 className="h-4 w-4 text-white" />
                   )}
-                  Igen, megoldódott
+                  {t('detail.resolution_banner.resolved_btn')}
                 </Button>
               </div>
             )}
@@ -165,12 +164,12 @@ export function TicketResolutionBanner({
             <div className="mt-4 pt-3 border-t border-border/50 space-y-2.5 animate-in fade-in duration-200">
               <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
                 <HelpCircle className="h-3.5 w-3.5 text-amber-500" />
-                Kérjük, írja le röviden, miért áll még fenn a probléma:
+                {t('detail.resolution_banner.reject_reason_label')}
               </label>
               <Textarea
                 value={rejectComment}
                 onChange={(e) => setRejectComment(e.target.value)}
-                placeholder="Pl. a hiba még mindig jelentkezik bizonyos számláknál, vagy a következő hibaüzenetet kapom..."
+                placeholder={t('detail.resolution_banner.reject_placeholder')}
                 rows={3}
                 className="text-xs resize-none"
                 disabled={isPending}
@@ -187,7 +186,7 @@ export function TicketResolutionBanner({
                   disabled={isPending}
                   className="text-xs h-8"
                 >
-                  Mégse
+                  {t('detail.resolution_banner.cancel_btn')}
                 </Button>
                 <Button
                   type="button"
@@ -202,7 +201,7 @@ export function TicketResolutionBanner({
                   ) : (
                     <Send className="h-3.5 w-3.5" />
                   )}
-                  Visszajelzés küldése
+                  {t('detail.resolution_banner.send_feedback_btn')}
                 </Button>
               </div>
             </div>
@@ -225,15 +224,15 @@ export function TicketResolutionBanner({
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <h4 className="text-xs font-semibold text-sky-950 dark:text-sky-200 truncate">
-                    Megoldás-visszaigazolás kiküldve az ügyfélnek
+                    {t('detail.resolution_banner.admin_title')}
                   </h4>
                   <span className="inline-flex items-center px-2 py-0.2 rounded-full text-[10px] font-medium bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/20">
-                    Várakozás ügyfélre
+                    {t('detail.resolution_banner.admin_badge')}
                   </span>
                 </div>
                 <p className="text-[11px] text-muted-foreground truncate mt-0.5">
-                  Az ügyfél értesítést kapott. Ha megerősíti a megoldást, a hibajegy automatikusan lezárásra kerül.
-                  {formattedRequestDate && ` (Kiküldve: ${formattedRequestDate})`}
+                  {t('detail.resolution_banner.admin_desc')}
+                  {formattedRequestDate && ` (${t('detail.resolution_banner.proposal_sent_at', { date: formattedRequestDate })})`}
                 </p>
               </div>
             </div>
@@ -253,7 +252,7 @@ export function TicketResolutionBanner({
                 ) : (
                   <CheckCircle2 className="h-3 w-3 text-emerald-500" />
                 )}
-                Közvetlen lezárás
+                {t('detail.resolution_banner.admin_direct_close')}
               </Button>
             </div>
           </div>

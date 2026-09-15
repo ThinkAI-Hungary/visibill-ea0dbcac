@@ -19,6 +19,7 @@ import { generateGlAccountCardPdf, GlAccountCardPdfData } from '@/lib/ledgerCard
 import { GlDateBasis, GlPostingStatus } from '@/lib/glData';
 import { useTranslation } from 'react-i18next';
 import { getLocalizedJournalName } from '@/lib/journalUtils';
+import { getLocalizedGlAccountName } from '@/lib/glUtils';
 import * as XLSX from 'xlsx';
 
 interface GlAccountCardViewProps {
@@ -256,7 +257,7 @@ export function GlAccountCardView({
           journal_code: line.header?.journal?.code || 'VE',
           journal_name: line.header?.journal?.name || 'Vegyes',
           gl_number: line.gl_account?.gl_number,
-          gl_short_name: line.gl_account?.short_name,
+          gl_short_name: getLocalizedGlAccountName(line.gl_account?.gl_number, line.gl_account?.short_name, t),
           contra_gl_number: '-',
           contra_gl_name: '-',
           partner_name: line.header?.partner?.name || '-',
@@ -287,8 +288,8 @@ export function GlAccountCardView({
     await queryClient.invalidateQueries({ queryKey: ['glAccountCardItems'] });
     await refetch();
     toast({
-      title: 'Főkönyvi karton frissítve',
-      description: 'A könyvelési tételek sikeresen újratöltve.',
+      title: t('accounting:general_ledger.account_card.toast_refreshed_title'),
+      description: t('accounting:general_ledger.account_card.toast_refreshed_desc'),
     });
   };
 
@@ -359,17 +360,17 @@ export function GlAccountCardView({
   const handleExportExcel = () => {
     if (!filteredItems.length) return;
     const exportRows = filteredItems.map((item: any) => ({
-      'Könyvelés dátuma': item.posting_date,
-      'Teljesítés dátuma': item.document_date || '-',
-      'Bizonylatszám': item.document_id,
-      'Napló': item.journal_code,
-      'Főkönyvi számla': item.gl_number,
-      'Ellenszámla': item.contra_gl_number || '-',
-      'Partner': item.partner_name || '-',
-      'Megjegyzés / Szöveg': item.description,
-      'Tartozik (Ft)': Number(item.debit_amount || 0),
-      'Követel (Ft)': Number(item.credit_amount || 0),
-      'Göngyölt egyenleg (Ft)': Number(item.running_balance || 0),
+      [t('accounting:general_ledger.account_card.export_cols.posting_date')]: item.posting_date,
+      [t('accounting:general_ledger.account_card.export_cols.document_date')]: item.document_date || '-',
+      [t('accounting:general_ledger.account_card.export_cols.doc_id')]: item.document_id,
+      [t('accounting:general_ledger.account_card.export_cols.journal')]: item.journal_code,
+      [t('accounting:general_ledger.account_card.export_cols.gl_account')]: item.gl_number,
+      [t('accounting:general_ledger.account_card.export_cols.contra_gl')]: item.contra_gl_number || '-',
+      [t('accounting:general_ledger.account_card.export_cols.partner')]: item.partner_name || '-',
+      [t('accounting:general_ledger.account_card.export_cols.description')]: item.description,
+      [t('accounting:general_ledger.account_card.export_cols.debit', { currency: item.currency || 'HUF' })]: Number(item.debit_amount || 0),
+      [t('accounting:general_ledger.account_card.export_cols.credit', { currency: item.currency || 'HUF' })]: Number(item.credit_amount || 0),
+      [t('accounting:general_ledger.account_card.export_cols.running_balance', { currency: item.currency || 'HUF' })]: Number(item.running_balance || 0),
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportRows);
@@ -385,23 +386,23 @@ export function GlAccountCardView({
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
           {/* G/L Account Selector */}
           <div className="space-y-1.5 md:col-span-2">
-            <Label className="text-xs font-semibold">Főkönyvi számla kiválasztása *</Label>
+            <Label className="text-xs font-semibold">{t('accounting:general_ledger.account_card.select_gl_label')}</Label>
             <div className="flex gap-2">
               <Select
                 value={selectedGlNumber}
                 onValueChange={(val) => {
                   setSelectedGlNumber(val);
                   const found = glAccounts.find(g => g.gl_number === val);
-                  if (found) setSelectedGlName(found.short_name);
+                  if (found) setSelectedGlName(getLocalizedGlAccountName(found.gl_number, found.short_name, t));
                 }}
               >
                 <SelectTrigger className="w-full h-9 font-mono text-sm">
-                  <SelectValue placeholder="Válassz számlát..." />
+                  <SelectValue placeholder={t('accounting:general_ledger.account_card.select_gl_placeholder')} />
                 </SelectTrigger>
                 <SelectContent className="max-h-[320px]">
                   {glAccounts.map(a => (
                     <SelectItem key={a.id || a.gl_number} value={a.gl_number} className="font-mono text-xs">
-                      {a.gl_number} — {a.short_name}
+                      {a.gl_number} — {getLocalizedGlAccountName(a.gl_number, a.short_name, t)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -410,8 +411,8 @@ export function GlAccountCardView({
                 className="w-28 h-9 font-mono text-sm shrink-0"
                 value={selectedGlNumber}
                 onChange={e => setSelectedGlNumber(e.target.value)}
-                placeholder="pl. 311"
-                title="Kézi számlaszám vagy prefix megadása (pl. 311, 454)"
+                placeholder={t('accounting:general_ledger.account_card.gl_input_placeholder')}
+                title={t('accounting:general_ledger.account_card.gl_input_title')}
               />
             </div>
           </div>
@@ -437,13 +438,13 @@ export function GlAccountCardView({
 
           {/* Search Input */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">Keresés</Label>
+            <Label className="text-xs font-semibold">{t('accounting:general_ledger.account_card.search_label')}</Label>
             <div className="relative">
               <Search className="w-4 h-4 absolute left-2.5 top-2.5 text-muted-foreground" />
               <Input
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                placeholder="Bizonylatszám, partner..."
+                placeholder={t('accounting:general_ledger.account_card.search_placeholder')}
                 className="pl-8 h-9 text-xs"
               />
             </div>
@@ -459,19 +460,19 @@ export function GlAccountCardView({
               onCheckedChange={(v) => setIncludeOpening(!!v)}
             />
             <Label htmlFor="opening-check" className="text-xs cursor-pointer select-none">
-              Nyitó egyenleg megjelenítése a karton elején
+              {t('accounting:general_ledger.account_card.show_opening')}
             </Label>
           </div>
 
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isFetching} className="h-8 text-xs gap-1.5">
-              <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin' : ''}`} /> Frissítés
+              <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin' : ''}`} /> {t('accounting:general_ledger.account_card.refresh_btn')}
             </Button>
             <Button variant="outline" size="sm" onClick={handleExportExcel} className="h-8 text-xs gap-1.5">
-              <Download className="w-3.5 h-3.5" /> Excel export
+              <Download className="w-3.5 h-3.5" /> {t('accounting:general_ledger.account_card.export_excel_btn')}
             </Button>
             <Button size="sm" onClick={handleExportPdf} className="h-8 text-xs gap-1.5 bg-primary text-primary-foreground">
-              <Printer className="w-3.5 h-3.5" /> Karton PDF
+              <Printer className="w-3.5 h-3.5" /> {t('accounting:general_ledger.account_card.export_pdf_btn')}
             </Button>
           </div>
         </div>
@@ -480,25 +481,25 @@ export function GlAccountCardView({
       {/* ── Summary Cards Banner ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-card border border-border/60 rounded-xl p-3 flex flex-col justify-between">
-          <span className="text-xs text-muted-foreground font-medium">Nyitó egyenleg</span>
+          <span className="text-xs text-muted-foreground font-medium">{t('accounting:general_ledger.account_card.opening_balance')}</span>
           <span className={`text-base font-bold tabular-nums mt-1 ${cardData?.openingBalance && cardData.openingBalance < 0 ? 'text-destructive' : 'text-foreground'}`}>
             {formatCurrency(cardData?.openingBalance || 0)}
           </span>
         </div>
         <div className="bg-card border border-amber-500/20 bg-amber-500/5 rounded-xl p-3 flex flex-col justify-between">
-          <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">Időszaki Tartozik (T)</span>
+          <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">{t('accounting:general_ledger.account_card.period_debit')}</span>
           <span className="text-base font-bold tabular-nums text-amber-600 dark:text-amber-400 mt-1">
             +{formatCurrency(cardData?.totalDebit || 0)}
           </span>
         </div>
         <div className="bg-card border border-sky-500/20 bg-sky-500/5 rounded-xl p-3 flex flex-col justify-between">
-          <span className="text-xs text-sky-700 dark:text-sky-400 font-medium">Időszaki Követel (K)</span>
+          <span className="text-xs text-sky-700 dark:text-sky-400 font-medium">{t('accounting:general_ledger.account_card.period_credit')}</span>
           <span className="text-base font-bold tabular-nums text-sky-600 dark:text-sky-400 mt-1">
             -{formatCurrency(cardData?.totalCredit || 0)}
           </span>
         </div>
         <div className="bg-card border border-emerald-500/20 bg-emerald-500/5 rounded-xl p-3 flex flex-col justify-between">
-          <span className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">Záró egyenleg</span>
+          <span className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">{t('accounting:general_ledger.account_card.closing_balance')}</span>
           <span className="text-base font-bold tabular-nums text-emerald-600 dark:text-emerald-400 mt-1">
             {formatCurrency(cardData?.closingBalance || 0)}
           </span>
@@ -511,7 +512,7 @@ export function GlAccountCardView({
           <div className="flex items-center gap-2">
             <CardTitle className="text-sm font-bold flex items-center gap-2">
               <FileText className="w-4 h-4 text-primary" />
-              {selectedGlNumber} — {selectedGlName} Karton Tételei ({filteredItems.length} tétel)
+              {t('accounting:general_ledger.account_card.table_title', { glNumber: selectedGlNumber, glName: selectedGlName, count: filteredItems.length })}
             </CardTitle>
             <span className="text-xs font-mono text-muted-foreground hidden md:inline">
               ({dateFrom.replace(/-/g, '.')} – {dateTo.replace(/-/g, '.')})
@@ -521,7 +522,7 @@ export function GlAccountCardView({
           {/* ── Top Pagination Controls & Selector ── */}
           <div className="flex flex-wrap items-center gap-3 text-xs">
             <div className="flex items-center gap-1.5">
-              <span className="text-muted-foreground font-medium">Megjelenítés:</span>
+              <span className="text-muted-foreground font-medium">{t('accounting:general_ledger.account_card.per_page_label')}</span>
               <Select
                 value={String(pageSize)}
                 onValueChange={(val) => setPageSize(val === 'all' ? 'all' : Number(val))}
@@ -530,19 +531,23 @@ export function GlAccountCardView({
                   <SelectValue placeholder="50" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="50">50 / oldal</SelectItem>
-                  <SelectItem value="100">100 / oldal</SelectItem>
-                  <SelectItem value="200">200 / oldal</SelectItem>
-                  <SelectItem value="all">Összes tétel</SelectItem>
+                  <SelectItem value="50">{t('accounting:general_ledger.account_card.per_page_option', { count: 50 })}</SelectItem>
+                  <SelectItem value="100">{t('accounting:general_ledger.account_card.per_page_option', { count: 100 })}</SelectItem>
+                  <SelectItem value="200">{t('accounting:general_ledger.account_card.per_page_option', { count: 200 })}</SelectItem>
+                  <SelectItem value="all">{t('accounting:general_ledger.account_card.all_items_option')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <span className="text-muted-foreground font-mono">
               {pageSize === 'all' ? (
-                `1 – ${totalItems} tétel`
+                t('accounting:general_ledger.account_card.pagination_all', { total: totalItems })
               ) : (
-                `${(validCurrentPage - 1) * pageSize + 1} – ${Math.min(validCurrentPage * pageSize, totalItems)} / ${totalItems} tétel`
+                t('accounting:general_ledger.account_card.pagination_range', {
+                  from: (validCurrentPage - 1) * pageSize + 1,
+                  to: Math.min(validCurrentPage * pageSize, totalItems),
+                  total: totalItems
+                })
               )}
             </span>
 
@@ -554,7 +559,7 @@ export function GlAccountCardView({
                   className="h-7 w-7 bg-background"
                   disabled={validCurrentPage <= 1}
                   onClick={() => setCurrentPage(1)}
-                  title="Első oldal"
+                  title={t('accounting:general_ledger.account_card.first_page')}
                 >
                   <ChevronsLeft className="w-3.5 h-3.5" />
                 </Button>
@@ -564,7 +569,7 @@ export function GlAccountCardView({
                   className="h-7 w-7 bg-background"
                   disabled={validCurrentPage <= 1}
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  title="Előző oldal"
+                  title={t('accounting:general_ledger.account_card.prev_page')}
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </Button>
@@ -579,7 +584,7 @@ export function GlAccountCardView({
                   className="h-7 w-7 bg-background"
                   disabled={validCurrentPage >= totalPages}
                   onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  title="Következő oldal"
+                  title={t('accounting:general_ledger.account_card.next_page')}
                 >
                   <ChevronRight className="w-3.5 h-3.5" />
                 </Button>
@@ -589,7 +594,7 @@ export function GlAccountCardView({
                   className="h-7 w-7 bg-background"
                   disabled={validCurrentPage >= totalPages}
                   onClick={() => setCurrentPage(totalPages)}
-                  title="Utolsó oldal"
+                  title={t('accounting:general_ledger.account_card.last_page')}
                 >
                   <ChevronsRight className="w-3.5 h-3.5" />
                 </Button>
@@ -606,21 +611,21 @@ export function GlAccountCardView({
             </div>
           ) : filteredItems.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground text-sm italic">
-              Nincs megjeleníthető könyvelési tétel a megadott szűrési feltételekkel.
+              {t('accounting:general_ledger.account_card.empty_table')}
             </div>
           ) : (
             <table className="w-full text-xs text-left">
               <thead className="bg-muted/50 border-b text-muted-foreground font-semibold">
                 <tr>
-                  <th className="py-2.5 px-3">Dátum</th>
-                  <th className="py-2.5 px-3">Bizonylatszám</th>
-                  <th className="py-2.5 px-3 text-center">Napló</th>
-                  <th className="py-2.5 px-3">Ellenszámla (Kontírpár)</th>
-                  <th className="py-2.5 px-3">Partner</th>
-                  <th className="py-2.5 px-3">Megjegyzés / Szöveg</th>
-                  <th className="py-2.5 px-3 text-right">Tartozik (T)</th>
-                  <th className="py-2.5 px-3 text-right">Követel (K)</th>
-                  <th className="py-2.5 px-3 text-right font-bold">Göngyölt egyenleg</th>
+                  <th className="py-2.5 px-3">{t('accounting:general_ledger.account_card.col_date')}</th>
+                  <th className="py-2.5 px-3">{t('accounting:general_ledger.account_card.col_doc_id')}</th>
+                  <th className="py-2.5 px-3 text-center">{t('accounting:general_ledger.account_card.col_journal')}</th>
+                  <th className="py-2.5 px-3">{t('accounting:general_ledger.account_card.col_contra_gl')}</th>
+                  <th className="py-2.5 px-3">{t('accounting:general_ledger.account_card.col_partner')}</th>
+                  <th className="py-2.5 px-3">{t('accounting:general_ledger.account_card.col_description')}</th>
+                  <th className="py-2.5 px-3 text-right">{t('accounting:general_ledger.account_card.col_debit')}</th>
+                  <th className="py-2.5 px-3 text-right">{t('accounting:general_ledger.account_card.col_credit')}</th>
+                  <th className="py-2.5 px-3 text-right font-bold">{t('accounting:general_ledger.account_card.col_running_balance')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">

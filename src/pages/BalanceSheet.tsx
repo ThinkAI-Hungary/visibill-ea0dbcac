@@ -23,6 +23,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { exportBsExcel } from '@/lib/bsExport';
 import { getLocalizedBsRowName } from '@/lib/bsUtils';
+import { getLocalizedGlAccountName } from '@/lib/glUtils';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { reportError } from '@/lib/errorReporter';
 import { fetchAllGlCategorizedItems, fetchAllGlAccountsByPreset } from '@/lib/glData';
@@ -466,7 +467,9 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
                     </div>
                     {gl.gl_number}
                   </div>
-                  <div className={cn("col-span-4 text-sm truncate", gl.isRoot ? "uppercase" : "")} title={gl.short_name}>{gl.short_name}</div>
+                  <div className={cn("col-span-4 text-sm truncate", gl.isRoot ? "uppercase" : "")} title={getLocalizedGlAccountName(gl.gl_number, gl.short_name, t)}>
+                    {getLocalizedGlAccountName(gl.gl_number, gl.short_name, t)}
+                  </div>
                   <div className="col-span-5" onClick={e => e.stopPropagation()}>
                     <Select value={mappings[gl.id] || 'none'} onValueChange={(val) => handleSelectChange(gl.id, val)}>
                       <SelectTrigger className="h-8 text-xs"><SelectValue placeholder={t('accounting:balance_sheet.mapping_tab.select_row', 'Válassz sort...')} /></SelectTrigger>
@@ -563,7 +566,9 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
                       />
                     </td>
                     <td className="py-2.5 px-2 font-mono font-semibold">{s.gl_number}</td>
-                    <td className="py-2.5 px-2 truncate max-w-[150px]" title={s.short_name}>{s.short_name}</td>
+                    <td className="py-2.5 px-2 truncate max-w-[150px]" title={getLocalizedGlAccountName(s.gl_number, s.short_name, t)}>
+                      {getLocalizedGlAccountName(s.gl_number, s.short_name, t)}
+                    </td>
                     <td className="py-2.5 px-2 text-indigo-600 dark:text-indigo-400 font-semibold truncate max-w-[180px]" title={getLocalizedBsRowName(s.bs_row_name, s.bs_row_name, t)}>
                       {s.bs_row_code} {getLocalizedBsRowName(s.bs_row_name, s.bs_row_name, t)}
                     </td>
@@ -963,7 +968,7 @@ function BsViewTab({
                         )}
                       </div>
                       <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/70">{gl.gl_number}</span>
-                      <span className="truncate">{gl.short_name}</span>
+                      <span className="truncate">{getLocalizedGlAccountName(gl.gl_number, gl.short_name, t)}</span>
                     </div>
                     <div className="col-span-2"></div>
                     <div className="col-span-2"></div>

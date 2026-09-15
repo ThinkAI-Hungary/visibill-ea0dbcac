@@ -9,7 +9,8 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Note } from '../../types/notes';
 import { Loader2, Lock, Users, Search, FileText, X, Link, Plus, Trash2, Calendar as CalendarIcon, Wallet } from 'lucide-react';
 import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { getDateFnsLocale } from '@/lib/locale/formatters';
+import { useTranslation } from 'react-i18next';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -48,6 +49,7 @@ export function NoteModal({
   onSave,
   isSaving,
 }: NoteModalProps) {
+  const { t } = useTranslation('notes');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isPrivate, setIsPrivate] = useState(true); // Default to private
@@ -341,19 +343,19 @@ export function NoteModal({
       <Dialog open={open} onOpenChange={handleCloseAttempt}>
         <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-md border-border/50 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{note ? 'Jegyzet szerkesztése' : 'Új jegyzet rögzítése'}</DialogTitle>
+            <DialogTitle>{note ? t('modal.edit_title') : t('modal.create_title')}</DialogTitle>
             <DialogDescription>
-              Rögzíts személyes emlékeztetőt vagy a cég többi tagjával megosztható feljegyzést.
+              {t('modal.desc')}
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4 py-2">
             {/* Title */}
             <div className="space-y-1.5">
-              <Label htmlFor="note-title">Jegyzet címe</Label>
+              <Label htmlFor="note-title">{t('modal.title_label')}</Label>
               <Input
                 id="note-title"
-                placeholder="pl. NAV adóellenőrzés határideje, Hiányzó papír..."
+                placeholder={t('modal.title_placeholder')}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
@@ -363,10 +365,10 @@ export function NoteModal({
 
             {/* Content */}
             <div className="space-y-1.5">
-              <Label htmlFor="note-content">Tartalom</Label>
+              <Label htmlFor="note-content">{t('modal.content_label')}</Label>
               <Textarea
                 id="note-content"
-                placeholder="Írd ide a jegyzet szöveges tartalmát..."
+                placeholder={t('modal.content_placeholder')}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 required
@@ -377,7 +379,7 @@ export function NoteModal({
 
             {/* Privacy Selector Toggle (Light/Dark mode compliant) */}
             <div className="space-y-1.5">
-              <Label>Láthatóság</Label>
+              <Label>{t('modal.visibility_label')}</Label>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
@@ -390,8 +392,8 @@ export function NoteModal({
                 >
                   <Lock className="h-4 w-4 shrink-0" />
                   <div>
-                    <div className="font-semibold text-xs text-foreground">Privát</div>
-                    <div className="text-[10px] text-muted-foreground">Csak te látod</div>
+                    <div className="font-semibold text-xs text-foreground">{t('modal.private_title')}</div>
+                    <div className="text-[10px] text-muted-foreground">{t('modal.private_sub')}</div>
                   </div>
                 </button>
 
@@ -406,8 +408,8 @@ export function NoteModal({
                 >
                   <Users className="h-4 w-4 shrink-0" />
                   <div>
-                    <div className="font-semibold text-xs text-foreground">Közös</div>
-                    <div className="text-[10px] text-muted-foreground">Cégtagok látják</div>
+                    <div className="font-semibold text-xs text-foreground">{t('modal.shared_title')}</div>
+                    <div className="text-[10px] text-muted-foreground">{t('modal.shared_sub')}</div>
                   </div>
                 </button>
               </div>
@@ -416,7 +418,7 @@ export function NoteModal({
             {/* Linked Invoices Selector */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label>Kapcsolódó számlák ({selectedInvoices.length})</Label>
+                <Label>{t('modal.linked_invoices', { count: selectedInvoices.length })}</Label>
                 {selectedInvoices.length > 0 && (
                   <Button
                     type="button"
@@ -425,7 +427,7 @@ export function NoteModal({
                     onClick={() => setSearchOpen(true)}
                   >
                     <Plus className="h-3 w-3" />
-                    Számla hozzáadása
+                    {t('modal.add_invoice')}
                   </Button>
                 )}
               </div>
@@ -442,7 +444,7 @@ export function NoteModal({
                           <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
                           <div className="min-w-0 flex-1">
                             <div className="font-semibold text-foreground font-mono leading-tight truncate">
-                              {inv.invoice_number || 'Nincs sorszám'}
+                              {inv.invoice_number || t('list.no_invoice_number')}
                             </div>
                             <div className="text-[10px] text-muted-foreground leading-none">
                               {inv.supplier_name} • {inv.invoice_date}
@@ -478,7 +480,7 @@ export function NoteModal({
                       }}
                     >
                       <Trash2 className="h-3 w-3" />
-                      Összes csatolás megszüntetése
+                      {t('modal.unlink_all')}
                     </Button>
                   </div>
                 </div>
@@ -490,7 +492,7 @@ export function NoteModal({
                   onClick={() => setSearchOpen(true)}
                 >
                   <Link className="h-3.5 w-3.5 mr-2" />
-                  Számla összekapcsolása...
+                  {t('modal.link_invoice_btn')}
                 </Button>
               )}
             </div>
@@ -498,7 +500,7 @@ export function NoteModal({
             {/* Linked Transactions Selector */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label>Kapcsolódó tranzakciók ({selectedTransactions.length})</Label>
+                <Label>{t('modal.linked_transactions', { count: selectedTransactions.length })}</Label>
                 {selectedTransactions.length > 0 && (
                   <Button
                     type="button"
@@ -507,7 +509,7 @@ export function NoteModal({
                     onClick={() => setTxSearchOpen(true)}
                   >
                     <Plus className="h-3 w-3" />
-                    Tranzakció hozzáadása
+                    {t('modal.add_transaction')}
                   </Button>
                 )}
               </div>
@@ -524,7 +526,7 @@ export function NoteModal({
                           <Wallet className="h-3.5 w-3.5 text-primary shrink-0" />
                           <div className="min-w-0 flex-1">
                             <div className="font-semibold text-foreground truncate leading-tight">
-                              {tx.description || 'Nincs leírás'}
+                              {tx.description || t('list.no_tx_description')}
                             </div>
                             <div className="text-[10px] text-muted-foreground leading-none">
                               {tx.transaction_date}
@@ -560,7 +562,7 @@ export function NoteModal({
                       }}
                     >
                       <Trash2 className="h-3 w-3" />
-                      Összes csatolás megszüntetése
+                      {t('modal.unlink_all')}
                     </Button>
                   </div>
                 </div>
@@ -572,7 +574,7 @@ export function NoteModal({
                   onClick={() => setTxSearchOpen(true)}
                 >
                   <Link className="h-3.5 w-3.5 mr-2" />
-                  Tranzakció összekapcsolása...
+                  {t('modal.link_transaction_btn')}
                 </Button>
               )}
             </div>
@@ -584,11 +586,11 @@ export function NoteModal({
                 onClick={() => handleCloseAttempt(false)}
                 disabled={isSaving}
               >
-                Mégse
+                {t('modal.cancel_btn')}
               </Button>
               <Button type="submit" disabled={isSaving || !title.trim() || !content.trim()}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Mentés
+                {t('modal.save_btn')}
               </Button>
             </DialogFooter>
           </form>
@@ -601,10 +603,10 @@ export function NoteModal({
           <DialogHeader className="pb-4 border-b border-border/20">
             <DialogTitle className="flex items-center gap-2 text-sm font-semibold">
               <Search className="h-4 w-4" />
-              Számlák keresése és tömeges csatolása
+              {t('modal.search_invoices_title')}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Jelölj ki egy vagy több számlát a listából a csatoláshoz.
+              {t('modal.search_invoices_desc')}
             </DialogDescription>
           </DialogHeader>
 
@@ -613,7 +615,7 @@ export function NoteModal({
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
               <Input
-                placeholder="Számlaszám vagy partner neve..."
+                placeholder={t('modal.search_invoices_placeholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9 bg-background/50 text-xs h-9"
@@ -622,7 +624,7 @@ export function NoteModal({
             
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1 flex flex-col">
-                <Label className="text-[10px] text-muted-foreground">Kibocsátás kezdete</Label>
+                <Label className="text-[10px] text-muted-foreground">{t('modal.date_start_label')}</Label>
                 <div className="relative">
                   <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
                     <PopoverTrigger asChild>
@@ -634,7 +636,7 @@ export function NoteModal({
                       >
                         <CalendarIcon className="mr-1.5 h-3.5 w-3.5 text-muted-foreground shrink-0" />
                         <span className="truncate">
-                          {startDate ? format(startDate, "yyyy. MMM dd.", { locale: hu }) : "éééé. hh. nn."}
+                          {startDate ? format(startDate, "yyyy. MMM dd.", { locale: getDateFnsLocale() }) : t('modal.date_placeholder')}
                         </span>
                       </Button>
                     </PopoverTrigger>
@@ -665,7 +667,7 @@ export function NoteModal({
               </div>
 
               <div className="space-y-1 flex flex-col">
-                <Label className="text-[10px] text-muted-foreground">Kibocsátás vége</Label>
+                <Label className="text-[10px] text-muted-foreground">{t('modal.date_end_label')}</Label>
                 <div className="relative">
                   <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
                     <PopoverTrigger asChild>
@@ -677,7 +679,7 @@ export function NoteModal({
                       >
                         <CalendarIcon className="mr-1.5 h-3.5 w-3.5 text-muted-foreground shrink-0" />
                         <span className="truncate">
-                          {endDate ? format(endDate, "yyyy. MMM dd.", { locale: hu }) : "éééé. hh. nn."}
+                          {endDate ? format(endDate, "yyyy. MMM dd.", { locale: getDateFnsLocale() }) : t('modal.date_placeholder')}
                         </span>
                       </Button>
                     </PopoverTrigger>
@@ -713,7 +715,7 @@ export function NoteModal({
           {searchInvoices.length > 0 && (
             <div className="flex items-center justify-between px-1 pb-2">
               <span className="text-[10px] text-muted-foreground">
-                Keresési találatok ({searchInvoices.length} db)
+                {t('modal.search_results_count', { count: searchInvoices.length })}
               </span>
               <Button
                 type="button"
@@ -723,8 +725,8 @@ export function NoteModal({
                 onClick={handleSelectAllVisible}
               >
                 {searchInvoices.every((inv) => tempSelectedInvoices.some((temp) => temp.id === inv.id))
-                  ? 'Kijelölések megszüntetése'
-                  : 'Összes kijelölése ezen az oldalon'}
+                  ? t('modal.deselect_all')
+                  : t('modal.select_all_page')}
               </Button>
             </div>
           )}
@@ -734,11 +736,11 @@ export function NoteModal({
             {searchInvoicesLoading ? (
               <div className="flex flex-col items-center justify-center my-auto text-muted-foreground text-xs gap-2 py-12">
                 <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                <span>Számlák betöltése...</span>
+                <span>{t('modal.loading_invoices')}</span>
               </div>
             ) : searchInvoices.length === 0 ? (
               <div className="text-center my-auto text-muted-foreground text-xs py-12">
-                Nem található számla a megadott szűrők alapján.
+                {t('modal.no_invoices_found')}
               </div>
             ) : (
               <div className="space-y-1.5">
@@ -766,10 +768,10 @@ export function NoteModal({
                         </div>
                         <div className="min-w-0 flex-1">
                           <span className="font-mono font-semibold text-foreground block truncate">
-                            {inv.invoice_number || 'Nincs sorszám'}
+                            {inv.invoice_number || t('list.no_invoice_number')}
                           </span>
                           <span className="text-[10px] text-muted-foreground block truncate">
-                            {inv.supplier_name || 'Ismeretlen partner'}
+                            {inv.supplier_name || t('detail.unknown')}
                           </span>
                         </div>
                       </div>
@@ -795,7 +797,7 @@ export function NoteModal({
               size="sm"
               onClick={() => setSearchOpen(false)}
             >
-              Mégse
+              {t('modal.cancel_btn')}
             </Button>
             <Button
               type="button"
@@ -807,7 +809,7 @@ export function NoteModal({
                 setSearchOpen(false);
               }}
             >
-              Kijelöltek hozzáadása ({tempSelectedInvoices.length} db)
+              {t('modal.add_selected_count', { count: tempSelectedInvoices.length })}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -819,10 +821,10 @@ export function NoteModal({
           <DialogHeader className="pb-4 border-b border-border/20">
             <DialogTitle className="flex items-center gap-2 text-sm font-semibold">
               <Search className="h-4 w-4" />
-              Tranzakciók keresése és tömeges csatolása
+              {t('modal.search_tx_title')}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Jelölj ki egy vagy több tranzakciót a listából a csatoláshoz.
+              {t('modal.search_tx_desc')}
             </DialogDescription>
           </DialogHeader>
 
@@ -831,7 +833,7 @@ export function NoteModal({
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
               <Input
-                placeholder="Leírás vagy típus alapján..."
+                placeholder={t('modal.search_tx_placeholder')}
                 value={txSearchTerm}
                 onChange={(e) => setTxSearchTerm(e.target.value)}
                 className="pl-9 bg-background/50 text-xs h-9"
@@ -843,7 +845,7 @@ export function NoteModal({
           {searchTransactions.length > 0 && (
             <div className="flex items-center justify-between px-1 pb-2">
               <span className="text-[10px] text-muted-foreground">
-                Keresési találatok ({searchTransactions.length} db)
+                {t('modal.search_results_count', { count: searchTransactions.length })}
               </span>
               <Button
                 type="button"
@@ -853,8 +855,8 @@ export function NoteModal({
                 onClick={handleSelectAllVisibleTx}
               >
                 {searchTransactions.every((tx) => tempSelectedTransactions.some((temp) => temp.id === tx.id))
-                  ? 'Kijelölések megszüntetése'
-                  : 'Összes kijelölése ezen az oldalon'}
+                  ? t('modal.deselect_all')
+                  : t('modal.select_all_page')}
               </Button>
             </div>
           )}
@@ -864,11 +866,11 @@ export function NoteModal({
             {searchTransactionsLoading ? (
               <div className="flex flex-col items-center justify-center my-auto text-muted-foreground text-xs gap-2 py-12">
                 <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                <span>Tranzakciók betöltése...</span>
+                <span>{t('modal.loading_tx')}</span>
               </div>
             ) : searchTransactions.length === 0 ? (
               <div className="text-center my-auto text-muted-foreground text-xs py-12">
-                Nem található tranzakció a megadott szűrő alapján.
+                {t('modal.no_tx_found')}
               </div>
             ) : (
               <div className="space-y-1.5">
@@ -896,7 +898,7 @@ export function NoteModal({
                         </div>
                         <div className="min-w-0 flex-1">
                           <span className="font-semibold text-foreground block truncate">
-                            {tx.description || 'Nincs leírás'}
+                            {tx.description || t('list.no_tx_description')}
                           </span>
                           <span className="text-[10px] text-muted-foreground block font-mono">
                             {tx.transaction_date}
@@ -922,7 +924,7 @@ export function NoteModal({
               size="sm"
               onClick={() => setTxSearchOpen(false)}
             >
-              Mégse
+              {t('modal.cancel_btn')}
             </Button>
             <Button
               type="button"
@@ -934,7 +936,7 @@ export function NoteModal({
                 setTxSearchOpen(false);
               }}
             >
-              Kijelöltek hozzáadása ({tempSelectedTransactions.length} db)
+              {t('modal.add_selected_count', { count: tempSelectedTransactions.length })}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -943,13 +945,13 @@ export function NoteModal({
       <AlertDialog open={showConfirmClose} onOpenChange={setShowConfirmClose}>
         <AlertDialogContent className="bg-card/95 backdrop-blur-md border-border/50 z-[10000]">
           <AlertDialogHeader>
-            <AlertDialogTitle>Nem mentett változtatások</AlertDialogTitle>
+            <AlertDialogTitle>{t('modal.discard_title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Biztosan bezárod a jegyzetet? A nem mentett változtatások elvészek.
+              {t('modal.discard_desc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel type="button">Mégse</AlertDialogCancel>
+            <AlertDialogCancel type="button">{t('modal.cancel_btn')}</AlertDialogCancel>
             <AlertDialogAction
               type="button"
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
@@ -958,7 +960,7 @@ export function NoteModal({
                 onOpenChange(false);
               }}
             >
-              Bezárás
+              {t('modal.close_btn')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

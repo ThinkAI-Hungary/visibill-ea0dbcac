@@ -46,6 +46,8 @@ import type { EmployeeRate } from '@/lib/payrollUtils';
 import { cn, formatCurrency } from '@/lib/utils';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { toast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { getDateFnsLocale } from '@/lib/locale/formatters';
 
 interface EmployeeListPanelProps {
   employeeRates: EmployeeRate[];
@@ -89,6 +91,8 @@ function EmployeeCard({
   autoEditId?: string | null;
   onEditOpenChange?: (employeeId: string | null) => void;
 }) {
+  const { t: rawT } = useTranslation(['hr', 'common']);
+  const t = (key: string, opts?: any): any => rawT((key.includes(':') ? key : `hr:${key}`) as any, opts);
   const { copy } = useCopyToClipboard();
   const [expanded, setExpanded] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -110,7 +114,10 @@ function EmployeeCard({
   const handleCopyUrl = () => {
     if (registrationUrl) {
       copy(registrationUrl);
-      toast({ title: 'Másolva!', description: 'Regisztrációs link vágólapra másolva.' });
+      toast({
+        title: t('working_time.employee_panel.toast_copied_title'),
+        description: t('working_time.employee_panel.toast_copied_desc'),
+      });
     }
   };
 
@@ -189,12 +196,12 @@ function EmployeeCard({
             {isLinked ? (
               <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-500 border-emerald-500/20 whitespace-nowrap">
                 <UserCheck className="h-3 w-3 mr-1" />
-                Regisztrált
+                {t('working_time.employee_panel.status_registered')}
               </Badge>
             ) : (
               <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-500 border-amber-500/20 whitespace-nowrap">
                 <UserX className="h-3 w-3 mr-1" />
-                Regisztráció szükséges
+                {t('working_time.employee_panel.status_needs_registration')}
               </Badge>
             )}
           </div>
@@ -221,7 +228,7 @@ function EmployeeCard({
                     <Copy className="h-3.5 w-3.5" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Regisztrációs link másolása</TooltipContent>
+                <TooltipContent>{t('working_time.employee_panel.copy_link_tooltip')}</TooltipContent>
               </Tooltip>
             )}
             {employee.email && registrationUrl && (
@@ -231,7 +238,7 @@ function EmployeeCard({
                     <ExternalLink className="h-3.5 w-3.5" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Email küldés a regisztrációs linkkel</TooltipContent>
+                <TooltipContent>{t('working_time.employee_panel.send_email_tooltip')}</TooltipContent>
               </Tooltip>
             )}
             {/* Edit button */}
@@ -246,7 +253,7 @@ function EmployeeCard({
                   <Pencil className="h-3.5 w-3.5" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Szerkesztés</TooltipContent>
+              <TooltipContent>{t('working_time.employee_panel.edit_tooltip')}</TooltipContent>
             </Tooltip>
             {/* Delete button */}
             <Tooltip>
@@ -256,7 +263,7 @@ function EmployeeCard({
                   variant="ghost"
                   className="h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive"
                   onClick={() => {
-                    if (confirm(`Biztosan törölni szeretnéd: ${employee.employee_name}?`)) {
+                    if (confirm(t('working_time.employee_panel.delete_confirm', { name: employee.employee_name }))) {
                       onDelete(employee.id);
                     }
                   }}
@@ -265,7 +272,7 @@ function EmployeeCard({
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Törlés</TooltipContent>
+              <TooltipContent>{t('working_time.employee_panel.delete_tooltip')}</TooltipContent>
             </Tooltip>
           </div>
         </div>
@@ -275,46 +282,40 @@ function EmployeeCard({
           <div className="px-4 pb-4 pl-[72px] animate-in slide-in-from-top-2 fade-in duration-200">
             <div className="rounded-lg bg-muted/30 border border-border/30 p-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
-                <div className="text-xs text-muted-foreground mb-0.5">Email</div>
+                <div className="text-xs text-muted-foreground mb-0.5">{t('working_time.employee_panel.detail_email')}</div>
                 <div className="flex items-center gap-1.5">
                   <Mail className="h-3.5 w-3.5 text-muted-foreground" />
                   <span className="truncate">{employee.email || '—'}</span>
                 </div>
               </div>
               <div>
-                <div className="text-xs text-muted-foreground mb-0.5">Telefon</div>
+                <div className="text-xs text-muted-foreground mb-0.5">{t('working_time.employee_panel.detail_phone')}</div>
                 <div className="flex items-center gap-1.5">
                   <Phone className="h-3.5 w-3.5 text-muted-foreground" />
                   <span>{employee.phone || '—'}</span>
                 </div>
               </div>
               <div>
-                <div className="text-xs text-muted-foreground mb-0.5">Státusz</div>
+                <div className="text-xs text-muted-foreground mb-0.5">{t('working_time.employee_panel.detail_status')}</div>
                 <div className="flex items-center gap-1.5">
                   {isLinked ? (
                     <>
                       <UserCheck className="h-3.5 w-3.5 text-emerald-500" />
-                      <span className="text-emerald-500 font-medium">Regisztrált</span>
+                      <span className="text-emerald-500 font-medium">{t('working_time.employee_panel.status_registered')}</span>
                     </>
                   ) : (
                     <>
                       <UserX className="h-3.5 w-3.5 text-amber-500" />
-                      <span className="text-amber-500 font-medium">Regisztráció szükséges</span>
+                      <span className="text-amber-500 font-medium">{t('working_time.employee_panel.status_needs_registration')}</span>
                     </>
                   )}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-muted-foreground mb-0.5">Utoljára aktív</div>
+                <div className="text-xs text-muted-foreground mb-0.5">{t('working_time.employee_panel.detail_last_active')}</div>
                 <span>
                   {isLinked && employee.updated_at
-                    ? new Date(employee.updated_at).toLocaleDateString('hu-HU', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })
+                    ? format(new Date(employee.updated_at), 'yyyy.MM.dd HH:mm', { locale: getDateFnsLocale() })
                     : '—'}
                 </span>
               </div>
@@ -327,34 +328,38 @@ function EmployeeCard({
       <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) onEditOpenChange?.(null); }}>
         <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>
-            <DialogTitle>Dolgozó szerkesztése</DialogTitle>
+            <DialogTitle>{t('working_time.employee_panel.edit_title')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Név</Label>
-              <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Teljes név" />
+              <Label>{t('working_time.employee_panel.edit_name')}</Label>
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder={t('working_time.employee_panel.edit_name_placeholder')}
+              />
             </div>
             <div className="space-y-2">
-              <Label>Típus</Label>
+              <Label>{t('working_time.employee_panel.edit_type')}</Label>
               <Select value={editType} onValueChange={(v) => setEditType(v as 'employee' | 'contractor')}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="employee">Bejelentett dolgozó</SelectItem>
-                  <SelectItem value="contractor">Alvállalkozó</SelectItem>
+                  <SelectItem value="employee">{t('working_time.employee_panel.edit_type_employee')}</SelectItem>
+                  <SelectItem value="contractor">{t('working_time.employee_panel.edit_type_contractor')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Projekt (opcionális)</Label>
+              <Label>{t('working_time.employee_panel.edit_project')}</Label>
               <Select value={editProjectId} onValueChange={(v) => setEditProjectId(v === '__none__' ? '' : v)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Válassz projektet..." />
+                  <SelectValue placeholder={t('working_time.employee_panel.edit_project_placeholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">
-                    <span className="text-muted-foreground">Nincs projekthez rendelve</span>
+                    <span className="text-muted-foreground">{t('working_time.employee_panel.edit_no_project')}</span>
                   </SelectItem>
                   {projects.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
@@ -366,22 +371,22 @@ function EmployeeCard({
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Email</Label>
+                <Label>{t('working_time.employee_panel.edit_email')}</Label>
                 <Input value={editEmail} onChange={(e) => setEditEmail(e.target.value)} placeholder="email@example.com" type="email" />
               </div>
               <div className="space-y-2">
-                <Label>Telefon</Label>
+                <Label>{t('working_time.employee_panel.edit_phone')}</Label>
                 <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="+36..." />
               </div>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditOpen(false)}>
-              Mégse
+              {t('working_time.employee_panel.edit_cancel')}
             </Button>
             <Button onClick={handleSaveEdit} disabled={isEditing || !editName.trim()}>
               <Save className="h-4 w-4 mr-2" />
-              Mentés
+              {t('working_time.employee_panel.edit_save')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -391,21 +396,23 @@ function EmployeeCard({
 }
 
 function EmployeeListHeader() {
+  const { t: rawT } = useTranslation(['hr', 'common']);
+  const t = (key: string, opts?: any): any => rawT((key.includes(':') ? key : `hr:${key}`) as any, opts);
   return (
     <div className={`${EMP_GRID} px-4 py-2 border-b border-border/50`}>
       <div />
       <div />
       <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        Dolgozó
+        {t('working_time.employee_panel.col_employee')}
       </span>
       <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">
-        Státusz
+        {t('working_time.employee_panel.col_status')}
       </span>
       <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">
-        Bérköltség
+        {t('working_time.employee_panel.col_cost')}
       </span>
       <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">
-        Óradíj
+        {t('working_time.employee_panel.col_rate')}
       </span>
       <div />
     </div>
@@ -421,7 +428,8 @@ export function EmployeeListPanel({
   autoEditEmployeeId,
   onEditOpenChange,
 }: EmployeeListPanelProps) {
-  const { t } = useTranslation(['hr', 'common']);
+  const { t: rawT } = useTranslation(['hr', 'common']);
+  const t = (key: string, opts?: any): any => rawT((key.includes(':') ? key : `hr:${key}`) as any, opts);
   const employees = employeeRates.filter((r) => r.employee_type === 'employee');
   const contractors = employeeRates.filter((r) => r.employee_type === 'contractor');
 
@@ -432,14 +440,14 @@ export function EmployeeListPanel({
           <TabsList className="mb-4">
             <TabsTrigger value="employees" className="gap-2">
               <Users className="h-4 w-4" />
-              {t('hr:working_time.employee_tabs.registered_employees', 'Bejelentett dolgozók')}
+              {t('working_time.employee_tabs.registered_employees', 'Bejelentett dolgozók')}
               <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
                 {employees.length}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="contractors" className="gap-2">
               <Briefcase className="h-4 w-4" />
-              {t('hr:working_time.employee_tabs.contractors', 'Alvállalkozók')}
+              {t('working_time.employee_tabs.contractors', 'Alvállalkozók')}
               <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
                 {contractors.length}
               </Badge>
@@ -450,9 +458,9 @@ export function EmployeeListPanel({
             {employees.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Users className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                <p className="font-medium">{t('hr:working_time.employee_tabs.no_employees', 'Nincsenek bejelentett dolgozók')}</p>
+                <p className="font-medium">{t('working_time.employee_tabs.no_employees', 'Nincsenek bejelentett dolgozók')}</p>
                 <p className="text-sm mt-1">
-                  {t('hr:working_time.employee_tabs.no_employees_desc', 'A bérlista feltöltésekor automatikusan megjelennek itt, vagy adj hozzá manuálisan.')}
+                  {t('working_time.employee_tabs.no_employees_desc', 'A bérlista feltöltésekor automatikusan megjelennek itt, vagy adj hozzá manuálisan.')}
                 </p>
               </div>
             ) : (
@@ -469,9 +477,9 @@ export function EmployeeListPanel({
             {contractors.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Briefcase className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                <p className="font-medium">Nincsenek alvállalkozók</p>
+                <p className="font-medium">{t('working_time.employee_panel.no_contractors')}</p>
                 <p className="text-sm mt-1">
-                  Adj hozzá alvállalkozókat a "Dolgozó hozzáadása" gombbal.
+                  {t('working_time.employee_panel.no_contractors_desc')}
                 </p>
               </div>
             ) : (
@@ -488,3 +496,4 @@ export function EmployeeListPanel({
     </Card>
   );
 }
+

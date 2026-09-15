@@ -1,6 +1,6 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-09-14  
+> **Utoljára frissítve:** 2026-09-16  
 > **Összesen:** 80 döntés | ✅ Decided: 76 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---

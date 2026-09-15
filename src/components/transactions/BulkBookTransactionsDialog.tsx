@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -9,7 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useQueryClient } from '@tanstack/react-query';
-import { formatCurrency, cn } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { formatCurrencyLocale } from '@/lib/locale/formatters';
 import type { Transaction } from '@/hooks/useTransactionData';
 
 interface GlAccountItem {
@@ -36,6 +38,7 @@ export function BulkBookTransactionsDialog({
   presetId,
   onSuccess,
 }: BulkBookTransactionsDialogProps) {
+  const { t } = useTranslation(['transactions', 'common']);
   const { session } = useAuth();
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
@@ -77,8 +80,8 @@ export function BulkBookTransactionsDialog({
   const handleBook = async () => {
     if (!selectedGlId || !selectedGlItem || !session?.user?.id || !presetId || !selectedCompany?.id) {
       toast({
-        title: 'Hiányzó adatok',
-        description: 'Kérjük, válasszon ki egy érvényes főkönyvi számot a könyveléshez.',
+        title: t('transactions:bulk_book.toast_missing_data_title', 'Hiányzó adatok'),
+        description: t('transactions:bulk_book.toast_missing_data_desc', 'Kérjük, válasszon ki egy érvényes főkönyvi számot a könyveléshez.'),
         variant: 'destructive',
       });
       return;
@@ -123,8 +126,13 @@ export function BulkBookTransactionsDialog({
       queryClient.invalidateQueries({ queryKey: ['glItems'] });
 
       toast({
-        title: 'Sikeres tömeges kontírozás!',
-        description: `${selectedTransactions.length} db tranzakció lekönyvelve a(z) ${selectedGlItem.gl_number} ${selectedGlItem.short_name} számlára.`,
+        title: t('transactions:bulk_book.toast_success_title', 'Sikeres tömeges kontírozás!'),
+        description: t('transactions:bulk_book.toast_success_desc', {
+          count: selectedTransactions.length,
+          glNumber: selectedGlItem.gl_number,
+          glName: selectedGlItem.short_name,
+          defaultValue: `${selectedTransactions.length} db tranzakció lekönyvelve a(z) ${selectedGlItem.gl_number} ${selectedGlItem.short_name} számlára.`
+        }),
         className: 'bg-emerald-50 text-emerald-900 border-emerald-200',
       });
 
@@ -133,8 +141,8 @@ export function BulkBookTransactionsDialog({
     } catch (err: any) {
       console.error('Error in bulk booking:', err);
       toast({
-        title: 'Hiba a tömeges kontírozáskor',
-        description: err.message || 'Nem sikerült lekönyvelni a kijelölt tranzakciókat.',
+        title: t('transactions:bulk_book.toast_error_title', 'Hiba a tömeges kontírozáskor'),
+        description: err.message || t('transactions:bulk_book.toast_error_desc', 'Nem sikerült lekönyvelni a kijelölt tranzakciókat.'),
         variant: 'destructive',
       });
     } finally {
@@ -148,10 +156,13 @@ export function BulkBookTransactionsDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-foreground text-lg">
             <ClipboardCheck className="w-5 h-5 text-emerald-600 shrink-0" />
-            Tranzakciók tömeges kontírozása
+            {t('transactions:bulk_book.title', 'Tranzakciók tömeges kontírozása')}
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Közvetlen főkönyvi hozzárendelés {selectedTransactions.length} db kijelölt banki tételhez.
+            {t('transactions:bulk_book.desc', {
+              count: selectedTransactions.length,
+              defaultValue: `Közvetlen főkönyvi hozzárendelés ${selectedTransactions.length} db kijelölt banki tételhez.`
+            })}
           </DialogDescription>
         </DialogHeader>
 
@@ -159,13 +170,15 @@ export function BulkBookTransactionsDialog({
           {/* Summary Box */}
           <div className="p-4 rounded-lg border bg-muted/40 space-y-3 min-w-0 w-full">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>Kijelölt tranzakciók száma:</span>
-              <span className="font-bold text-foreground text-sm">{selectedTransactions.length} db</span>
+              <span>{t('transactions:bulk_book.selected_count', 'Kijelölt tranzakciók száma:')}</span>
+              <span className="font-bold text-foreground text-sm">
+                {t('transactions:bulk_book.count_suffix', { count: selectedTransactions.length, defaultValue: `${selectedTransactions.length} db` })}
+              </span>
             </div>
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>Összesített összeg:</span>
+              <span>{t('transactions:bulk_book.total_amount', 'Összesített összeg:')}</span>
               <span className={cn("font-bold font-mono text-sm", totalAmount < 0 ? "text-destructive" : "text-emerald-600")}>
-                {formatCurrency(totalAmount)}
+                {formatCurrencyLocale(totalAmount)}
               </span>
             </div>
 
@@ -175,22 +188,25 @@ export function BulkBookTransactionsDialog({
                 <div key={tx.id} className="p-2.5 rounded-md bg-background/70 border border-border/30 flex items-center justify-between gap-3 min-w-0 w-full">
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium text-foreground truncate" title={tx.description || ''}>
-                      {tx.description || 'Névtelen tranzakció'}
+                      {tx.description || t('transactions:bulk_book.unnamed_tx', 'Névtelen tranzakció')}
                     </p>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
-                      {tx.transaction_date || ''} • {tx.type || 'Tranzakció'}
+                      {tx.transaction_date || ''} • {tx.type || t('transactions:bulk_book.tx_fallback', 'Tranzakció')}
                     </p>
                   </div>
                   <div className="text-right shrink-0">
                     <span className={cn("font-mono font-bold text-xs whitespace-nowrap", tx.amount < 0 ? "text-destructive" : "text-emerald-600")}>
-                      {formatCurrency(tx.amount)}
+                      {formatCurrencyLocale(tx.amount)}
                     </span>
                   </div>
                 </div>
               ))}
               {selectedTransactions.length > 6 && (
                 <p className="text-[10px] text-muted-foreground/80 italic text-center pt-1">
-                  ...és további {selectedTransactions.length - 6} db tétel
+                  {t('transactions:bulk_book.more_items', {
+                    count: selectedTransactions.length - 6,
+                    defaultValue: `...és további ${selectedTransactions.length - 6} db tétel`
+                  })}
                 </p>
               )}
             </div>
@@ -199,7 +215,7 @@ export function BulkBookTransactionsDialog({
           {/* GL Account Selector */}
           <div className="space-y-2 min-w-0 w-full">
             <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Cél főkönyvi szám kiválasztása *
+              {t('transactions:bulk_book.select_target_gl', 'Cél főkönyvi szám kiválasztása *')}
             </label>
 
             <Popover open={glComboOpen} onOpenChange={setGlComboOpen}>
@@ -213,7 +229,7 @@ export function BulkBookTransactionsDialog({
                   <span className="truncate min-w-0 flex-1 text-left">
                     {selectedGlItem
                       ? `${selectedGlItem.gl_number} ${selectedGlItem.short_name}`
-                      : 'Válassz főkönyvi számot a listából...'}
+                      : t('transactions:bulk_book.placeholder_select', 'Válassz főkönyvi számot a listából...')}
                   </span>
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
@@ -221,12 +237,12 @@ export function BulkBookTransactionsDialog({
               <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[320px] p-0 z-[1200]" align="start">
                 <Command shouldFilter={false}>
                   <CommandInput
-                    placeholder="Keresés számlaszám vagy név alapján..."
+                    placeholder={t('transactions:bulk_book.search_placeholder', 'Keresés számlaszám vagy név alapján...')}
                     value={glSearchQuery}
                     onValueChange={setGlSearchQuery}
                   />
                   <CommandList className="max-h-60">
-                    <CommandEmpty>Nincs találat a számlatükörben.</CommandEmpty>
+                    <CommandEmpty>{t('transactions:bulk_book.no_results', 'Nincs találat a számlatükörben.')}</CommandEmpty>
                     <CommandGroup>
                       {leafGlAccounts.map(gl => (
                         <CommandItem
@@ -260,7 +276,7 @@ export function BulkBookTransactionsDialog({
 
         <DialogFooter className="flex flex-row items-center justify-end gap-2 pt-3">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-            Mégse
+            {t('common:cancel', 'Mégse')}
           </Button>
           <Button
             onClick={handleBook}
@@ -268,7 +284,7 @@ export function BulkBookTransactionsDialog({
             className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 shrink-0"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardCheck className="w-4 h-4" />}
-            Kontírozás jóváhagyása
+            {t('transactions:bulk_book.confirm_btn', 'Kontírozás jóváhagyása')}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -23,6 +23,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { exportPnlExcel } from '@/lib/pnlExport';
+import { getLocalizedGlAccountName } from '@/lib/glUtils';
 import { isSameDay, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear } from 'date-fns';
 
 import { useScopedNavigate } from '@/lib/navigation';
@@ -465,13 +466,13 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
                     </div>
                     {gl.gl_number}
                   </div>
-                  <div className={cn("col-span-4 text-sm truncate flex items-center gap-1.5", gl.isRoot ? "uppercase" : "")} title={gl.short_name}>
+                  <div className={cn("col-span-4 text-sm truncate flex items-center gap-1.5", gl.isRoot ? "uppercase" : "")} title={getLocalizedGlAccountName(gl.gl_number, gl.short_name, t)}>
                     {!gl.hasChildren && (
                       mappings[gl.id]
                         ? <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title={t('accounting:profit_and_loss.mapping_tab.assigned', 'Besorolva')} />
                         : <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" title={t('accounting:profit_and_loss.mapping_tab.unassigned', 'Nincs besorolva')} />
                     )}
-                    {gl.short_name}
+                    {getLocalizedGlAccountName(gl.gl_number, gl.short_name, t)}
                   </div>
                   <div className="col-span-5" onClick={e => e.stopPropagation()}>
                     <Select 
@@ -549,7 +550,7 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
                       />
                     </td>
                     <td className="py-2.5 px-2 font-mono font-semibold">{s.gl_number}</td>
-                    <td className="py-2.5 px-2 font-medium" title={s.short_name}>{s.short_name}</td>
+                    <td className="py-2.5 px-2 font-medium" title={getLocalizedGlAccountName(s.gl_number, s.short_name, t)}>{getLocalizedGlAccountName(s.gl_number, s.short_name, t)}</td>
                     <td className="py-2.5 px-2 text-indigo-600 dark:text-indigo-400 font-semibold" title={s.pnl_row_name}>
                       {s.pnl_row_code} {getLocalizedPnlRowName(s.pnl_row_code, s.pnl_row_name, t)}
                     </td>
@@ -869,7 +870,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
     }
 
     try {
-      await exportPnlExcel(processedData, dbItems, inThousands, selectedCompany?.name);
+      await exportPnlExcel(processedData, dbItems, inThousands, selectedCompany?.name, t);
       toast({ 
         title: t('accounting:profit_and_loss.toasts.export_success_title', 'Sikeres exportálás'), 
         description: t('accounting:profit_and_loss.toasts.export_success', 'Az eredménykimutatás letöltése megkezdődött.') 
@@ -1260,7 +1261,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                                   )}
                                 </div>
                                 <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/70">{gl.gl_number}</span>
-                                <span className="truncate">{gl.short_name}</span>
+                                <span className="truncate">{getLocalizedGlAccountName(gl.gl_number, gl.short_name, t)}</span>
                               </div>
                               <div className="col-span-2"></div>
                               <div className="col-span-2 text-right text-muted-foreground tabular-nums">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,6 +37,7 @@ export function TransactionRuleQuickSaveDialog({
   glAccount,
   onRuleCreated,
 }: TransactionRuleQuickSaveDialogProps) {
+  const { t } = useTranslation(['transactions', 'common']);
   const { session } = useAuth();
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
@@ -79,7 +81,7 @@ export function TransactionRuleQuickSaveDialog({
       const companyId = scope === 'company' ? (transaction.company_id || selectedCompany?.id) : null;
 
       const newRule: any = {
-        name: ruleName.trim() || `${pattern} szabály`,
+        name: ruleName.trim() || t('transactions:quick_rule.rule_name_suffix', { pattern }),
         description_pattern: pattern.trim(),
         pattern_type: 'contains',
         direction,
@@ -97,10 +99,10 @@ export function TransactionRuleQuickSaveDialog({
       if (error) throw error;
 
       toast({
-        title: 'Könyvelési szabály elmentve!',
+        title: t('transactions:quick_rule.toast_success_title'),
         description: scope === 'tenant'
-          ? `A szabály mostantól minden általad kezelt cégnél automatikusan érvényesül.`
-          : `A szabály a jövőbeli bankkivonatoknál automatikusan kontírozni fogja az azonos tételeket.`,
+          ? t('transactions:quick_rule.toast_success_tenant_desc')
+          : t('transactions:quick_rule.toast_success_company_desc'),
       });
 
       queryClient.invalidateQueries({ queryKey: ['transaction_rules'] });
@@ -109,8 +111,8 @@ export function TransactionRuleQuickSaveDialog({
     } catch (err: any) {
       console.error('Error saving quick rule:', err);
       toast({
-        title: 'Hiba a szabály mentésekor',
-        description: err.message || 'Ismeretlen hiba történt.',
+        title: t('transactions:quick_rule.toast_error_title'),
+        description: err.message || t('transactions:quick_rule.toast_error_desc'),
         variant: 'destructive',
       });
     } finally {
@@ -126,33 +128,34 @@ export function TransactionRuleQuickSaveDialog({
         <DialogHeader>
           <div className="flex items-center gap-2 text-primary font-semibold text-sm mb-1">
             <Sparkles className="w-4 h-4 text-amber-500" />
-            <span>Automatikus könyvelési szabály</span>
+            <span>{t('transactions:quick_rule.badge')}</span>
           </div>
           <DialogTitle className="text-base font-bold">
-            Szeretnéd automatizálni a jövőbeli hasonló tételeket?
+            {t('transactions:quick_rule.title')}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            A rendszer a következő bankkivonat importálásakor automatikusan a(z){' '}
-            <strong className="text-foreground font-mono">{glAccount.gl_number} {glAccount.short_name}</strong>{' '}
-            főkönyvi számra fogja kontírozni a megfelelő tranzakciókat.
+            {t('transactions:quick_rule.desc', {
+              glNumber: glAccount.gl_number,
+              glName: glAccount.short_name,
+            })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           {/* Pattern input */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium">Illeszkedő szövegrészlet a leírásból:</Label>
+            <Label className="text-xs font-medium">{t('transactions:quick_rule.pattern_label')}</Label>
             <Input
               value={pattern}
               onChange={(e) => setPattern(e.target.value)}
-              placeholder="pl. MUNKABÉR, NAV ÁFA..."
+              placeholder={t('transactions:quick_rule.pattern_placeholder')}
               className="text-xs font-mono h-8"
             />
           </div>
 
           {/* Scope Selector */}
           <div className="space-y-2">
-            <Label className="text-xs font-medium">Szabály érvényessége (Hatókör):</Label>
+            <Label className="text-xs font-medium">{t('transactions:quick_rule.scope_label')}</Label>
             <RadioGroup
               value={scope}
               onValueChange={(val: any) => setScope(val)}
@@ -168,10 +171,10 @@ export function TransactionRuleQuickSaveDialog({
                 <div className="space-y-0.5">
                   <label htmlFor="scope-company" className="text-xs font-semibold flex items-center gap-1.5 cursor-pointer">
                     <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span>Csak ennél a cégnél ({selectedCompany?.name || 'Aktuális cég'})</span>
+                    <span>{t('transactions:quick_rule.scope_company_title', { company: selectedCompany?.name || t('transactions:quick_rule.current_company') })}</span>
                   </label>
                   <p className="text-[11px] text-muted-foreground">
-                    Kizárólag ennek a cégnek a bankszámláira vonatkozik.
+                    {t('transactions:quick_rule.scope_company_desc')}
                   </p>
                 </div>
               </div>
@@ -186,10 +189,10 @@ export function TransactionRuleQuickSaveDialog({
                 <div className="space-y-0.5">
                   <label htmlFor="scope-tenant" className="text-xs font-semibold flex items-center gap-1.5 cursor-pointer">
                     <Globe className="w-3.5 h-3.5 text-amber-500" />
-                    <span>Minden általam kezelt cégnél (Könyvelőirodai szabály)</span>
+                    <span>{t('transactions:quick_rule.scope_tenant_title')}</span>
                   </label>
                   <p className="text-[11px] text-muted-foreground">
-                    A mostani és a jövőben nyitott összes cégednél automatikusan erre a főkönyvi számra ({glAccount.gl_number}) kontírozódik!
+                    {t('transactions:quick_rule.scope_tenant_desc', { glNumber: glAccount.gl_number })}
                   </p>
                 </div>
               </div>
@@ -200,10 +203,10 @@ export function TransactionRuleQuickSaveDialog({
           <div className="flex items-center justify-between p-2 rounded-md bg-muted/20 border border-border/40">
             <div className="space-y-0.5">
               <Label className="text-xs font-medium cursor-pointer" htmlFor="auto-verify-switch">
-                Automatikus jóváhagyás
+                {t('transactions:quick_rule.auto_verify_title')}
               </Label>
               <p className="text-[10px] text-muted-foreground">
-                Egyezés esetén azonnal lekönyvelt státuszba helyezi a tételt.
+                {t('transactions:quick_rule.auto_verify_desc')}
               </p>
             </div>
             <Switch
@@ -222,7 +225,7 @@ export function TransactionRuleQuickSaveDialog({
             disabled={saving}
             className="text-xs"
           >
-            Most nem, csak ezt a tételt
+            {t('transactions:quick_rule.cancel_btn')}
           </Button>
           <Button
             size="sm"
@@ -231,7 +234,7 @@ export function TransactionRuleQuickSaveDialog({
             className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
           >
             {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Check className="w-3.5 h-3.5 mr-1" />}
-            Szabály mentése
+            {t('transactions:quick_rule.save_btn')}
           </Button>
         </DialogFooter>
       </DialogContent>

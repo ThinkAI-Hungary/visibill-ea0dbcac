@@ -19,28 +19,60 @@
   "channels_config": {
     "invoices": {
       "card_title": "Számlafájlok feltöltése",
-      "card_description": "Válassz PDF vagy kép fájlokat, amelyek számlákat tartalmaznak. A rendszer automatikusan kinyeri az adatokat és rögzíti a számlákat."
+      "card_description": "Válassz PDF vagy kép fájlokat, amelyek számlákat tartalmaznak. A rendszer automatikusan kinyeri az adatokat és rögzíti a számlákat.",
+      "action_button": "{{count}} számlafájl feltöltése"
     },
     "vouchers": {
       "card_title": "Pénztárbizonylat fájlok feltöltése",
-      "card_description": "Válassz PDF vagy kép fájlokat, amelyek kiadási vagy bevételi pénztárbizonylatokat tartalmaznak. Támogatott formátumok: PDF, JPG, PNG, WebP"
+      "card_description": "Válassz PDF vagy kép fájlokat, amelyek kiadási vagy bevételi pénztárbizonylatokat tartalmaznak. Támogatott formátumok: PDF, JPG, PNG, WebP",
+      "action_button": "{{count}} pénztárbizonylat feltöltése"
     },
     "transactions": {
       "card_title": "Tranzakciós fájlok feltöltése",
-      "card_description": "Válassz PDF, CSV vagy Excel fájlokat, amelyek banki vagy egyéb pénzügyi tranzakciókat tartalmaznak. A rendszer automatikusan kinyeri az adatokat és rögzíti a tranzakciókat."
+      "card_description": "Válassz PDF, CSV vagy Excel fájlokat, amelyek banki vagy egyéb pénzügyi tranzakciókat tartalmaznak. A rendszer automatikusan kinyeri az adatokat és rögzíti a tranzakciókat.",
+      "action_button": "{{count}} tranzakciós fájl feltöltése"
     },
     "salaries": {
       "card_title": "Bérek és járulékok feltöltése",
-      "card_description": "Tölts fel bérlistát, bérszámfejtési összesítőt, járulékbevallást vagy NAV határozatot PDF, CSV vagy Excel formátumban. A rendszer automatikusan feldolgozza és kategóriába rendezi."
+      "card_description": "Tölts fel bérlistát, bérszámfejtési összesítőt, járulékbevallást vagy NAV határozatot PDF, CSV vagy Excel formátumban. A rendszer automatikusan feldolgozza és kategóriába rendezi.",
+      "action_button": "{{count}} bérfájl feltöltése"
     },
     "reports": {
       "card_title": "Futár riportok feltöltése",
-      "card_description": "Válassz futár riport fájlokat (GLS, MPL, Mixpack). A rendszer automatikusan párosítja a csomagokat a kiállított számlákkal."
+      "card_description": "Válassz futár riport fájlokat (GLS, MPL, Mixpack). A rendszer automatikusan párosítja a csomagokat a kiállított számlákkal.",
+      "action_button": "{{count}} riportfájl feltöltése"
     }
   },
   "file_list": {
     "selected_files": "Kiválasztott fájlok ({{count}})",
-    "clear_all": "Összes törlése"
+    "clear_all": "Összes törlése",
+    "remove_file": "Fájl eltávolítása"
+  },
+  "dialogs": {
+    "list_duplicate": {
+      "title": "Fájl már szerepel a listában",
+      "description": "A kiválasztott fájlok közül az alábbiak már hozzá lettek adva a feltöltési listához:",
+      "cancel": "Mégse",
+      "skip": "Duplikátumok kihagyása",
+      "add_all": "Mind hozzáadása"
+    },
+    "db_duplicate": {
+      "title": "Már feltöltött fájlok észlelve",
+      "description": "A kiválasztott fájlok közül az alábbiak már korábban fel lettek töltve ehhez a céghez. Jelöld be azokat a fájlokat, amelyeket szándékosan újra szeretnél tölteni:",
+      "select_all": "Összes duplikátum kijelölése újrafeltöltésre",
+      "cancel": "Mégse",
+      "upload_count": "Feltöltés ({{count}} fájl)",
+      "upload_new_only": "Csak az új fájlok feltöltése ({{count}})",
+      "none_selected": "Nincs kijelölve"
+    }
+  },
+  "selectors": {
+    "bank_format": "Bank formátum:",
+    "choose_bank": "Válassz bankot...",
+    "ai_auto_hint": "(Ha nem választasz, az AI automatikusan felismeri a formátumot)",
+    "auto_detect": "Automatikus felismerés",
+    "courier_service": "Futárszolgálat:",
+    "choose_courier": "Válassz futárt..."
   },
   "history_table": {
     "title_invoices": "Számla feltöltési előzmények",

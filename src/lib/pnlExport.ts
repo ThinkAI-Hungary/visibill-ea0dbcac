@@ -1,8 +1,12 @@
+import { getLocalizedPnlRowName } from './pnlUtils';
+import { getLocalizedGlAccountName } from './glUtils';
+
 export const exportPnlExcel = async (
   processedData: any[],
   dbItems: any[] | null | undefined,
   inThousands: boolean,
-  companyName: string = 'Vállalkozás'
+  companyName: string = 'Vállalkozás',
+  t?: (key: any, ...args: any[]) => any
 ) => {
   const { default: ExcelJS } = await import('exceljs');
   const workbook = new ExcelJS.Workbook();
@@ -54,7 +58,7 @@ export const exportPnlExcel = async (
     // Add the main PnL row
     const pnlRow = worksheet.addRow({
       sor: row.row_code,
-      nev: row.name,
+      nev: t ? getLocalizedPnlRowName(row.row_code, row.name, t) : row.name,
       elozo: row.previousYear ? formatValue(row.previousYear) : null,
       targy: formatValue(row.displayBalance)
     });
@@ -84,7 +88,7 @@ export const exportPnlExcel = async (
         // Add GL Account row
         const glRow = worksheet.addRow({
           sor: '',
-          nev: `   [${gl.gl_number}] ${gl.short_name}`,
+          nev: `   [${gl.gl_number}] ${getLocalizedGlAccountName(gl.gl_number, gl.short_name, t)}`,
           elozo: null,
           targy: formatValue(gl.balance * (row.multiplier || 1))
         });

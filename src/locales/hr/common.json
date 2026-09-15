@@ -204,6 +204,36 @@
     "next_page": "Sljedeća stranica",
     "last_page": "Zadnja stranica",
     "page_size": "Veličina stranice"
+  },
+  "floating_bulk_bar": {
+    "selected_items": "Odabrane stavke:",
+    "unit_db": "kom",
+    "save": "Spremi",
+    "cancel": "Odustani",
+    "saving": "Spremanje...",
+    "select_placeholder": "Odaberite...",
+    "search_placeholder": "Pretraživanje...",
+    "empty_text": "Nema rezultata"
+  },
+  "table_empty_state": {
+    "title": "Nema podataka za prikaz",
+    "description": "Pokušajte promijeniti filtre ili kriterije pretraživanja.",
+    "clear_filters": "Očisti filtre"
+  },
+  "file_preview": {
+    "pdf_title": "Pregled PDF-a: {{name}}",
+    "excel_title": "Pregled Excela: {{name}}",
+    "unsupported": "Vrsta datoteke ({{ext}}) ne može se prikazati u pretpregledu.",
+    "csv_error": "Nije uspjelo učitavanje CSV sadržaja.",
+    "first_100_rows": "Samo prvih 100 redaka prikazano je u pretpregledu.",
+    "download": "Preuzmi",
+    "open_new_tab": "Otvori u novoj kartici",
+    "close": "Zatvori"
+  },
+  "copy": {
+    "copied": "Kopirano",
+    "failed": "Kopiranje nije uspjelo.",
+    "click_to_copy": "Kliknite za kopiranje"
   }
 }
 

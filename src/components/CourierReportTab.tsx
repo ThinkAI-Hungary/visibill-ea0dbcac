@@ -18,7 +18,8 @@ import {
 import { RefreshCw, Search, X, CheckCircle2, AlertCircle, MinusCircle, Eye, FileText, Landmark, RotateCcw, Link2, Check, Sparkles, CalendarDays, ArrowUpDown, ArrowUp, ArrowDown, Trash2, TrendingUp, Loader2, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { getDateFnsLocale, formatDateLocale, formatCurrencyLocale } from '@/lib/locale/formatters';
+import { useTranslation } from 'react-i18next';
 import { useCourierReportData, type CourierReport } from '@/hooks/useCourierReportData';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -42,43 +43,45 @@ const REPORT_LABELS: Record<string, string> = {
   mixpack: 'Mixpack',
 };
 
-const STATUS_CONFIG: Record<string, {
+function getStatusConfig(t: any): Record<string, {
   label: string;
   icon: typeof CheckCircle2;
   color: string;
   rowBg: string;
-}> = {
-  full: {
-    label: 'Párosított',
-    icon: CheckCircle2,
-    color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
-    rowBg: 'bg-emerald-100/70 dark:bg-emerald-950/40',
-  },
-  partial_trx: {
-    label: 'Tranzakció ✓',
-    icon: AlertCircle,
-    color: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
-    rowBg: 'bg-amber-100/60 dark:bg-amber-950/40',
-  },
-  partial_nav: {
-    label: 'NAV ✓',
-    icon: AlertCircle,
-    color: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
-    rowBg: 'bg-amber-100/60 dark:bg-amber-950/40',
-  },
-  unmatched: {
-    label: 'Párosítatlan',
-    icon: MinusCircle,
-    color: 'bg-red-500/10 text-red-600 border-red-500/20',
-    rowBg: 'bg-rose-100/60 dark:bg-rose-950/30',
-  },
-  total: {
-    label: 'Összesítő',
-    icon: FileText,
-    color: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
-    rowBg: 'bg-blue-50/50 dark:bg-blue-950/20',
-  },
-};
+}> {
+  return {
+    full: {
+      label: t('transactions:courier_tab.status.full', 'Párosított'),
+      icon: CheckCircle2,
+      color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+      rowBg: 'bg-emerald-100/70 dark:bg-emerald-950/40',
+    },
+    partial_trx: {
+      label: t('transactions:courier_tab.status.partial_trx', 'Tranzakció ✓'),
+      icon: AlertCircle,
+      color: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+      rowBg: 'bg-amber-100/60 dark:bg-amber-950/40',
+    },
+    partial_nav: {
+      label: t('transactions:courier_tab.status.partial_nav', 'NAV ✓'),
+      icon: AlertCircle,
+      color: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+      rowBg: 'bg-amber-100/60 dark:bg-amber-950/40',
+    },
+    unmatched: {
+      label: t('transactions:courier_tab.status.unmatched', 'Párosítatlan'),
+      icon: MinusCircle,
+      color: 'bg-red-500/10 text-red-600 border-red-500/20',
+      rowBg: 'bg-rose-100/60 dark:bg-rose-950/30',
+    },
+    total: {
+      label: t('transactions:courier_tab.status.total', 'Összesítő'),
+      icon: FileText,
+      color: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+      rowBg: 'bg-blue-50/50 dark:bg-blue-950/20',
+    },
+  };
+}
 
 interface CourierReportTabProps {
   reportType: 'gls' | 'mpl' | 'mixpack';
@@ -103,6 +106,7 @@ function CourierInvoiceDialog({
   handleRematch: (id: string) => void;
   onManualMatch: () => void;
 }) {
+  const { t } = useTranslation(['transactions', 'common']);
   const [details, setDetails] = useState<MatchDetails>({ transaction: null, navInvoice: null });
   const [loading, setLoading] = useState(false);
   const [showManualMatch, setShowManualMatch] = useState(false);
@@ -239,11 +243,11 @@ function CourierInvoiceDialog({
         })
         .eq('id', report.id);
       if (error) throw error;
-      toast({ title: 'Számla párosítva!' });
+      toast({ title: t('transactions:courier_tab.dialog.toast_match_success', 'Számla párosítva!') });
       onManualMatch();
       onOpenChange(false);
     } catch (err: any) {
-      toast({ title: 'Hiba', description: err.message, variant: 'destructive' });
+      toast({ title: t('transactions:courier_tab.dialog.toast_error', 'Hiba'), description: err.message, variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -274,11 +278,11 @@ function CourierInvoiceDialog({
         .update(updates)
         .eq('id', report.id);
       if (error) throw error;
-      toast({ title: 'Párosítás megszüntetve!' });
+      toast({ title: t('transactions:courier_tab.dialog.toast_unmatch_success', 'Párosítás megszüntetve!') });
       onManualMatch();
       onOpenChange(false);
     } catch (err: any) {
-      toast({ title: 'Hiba', description: err.message, variant: 'destructive' });
+      toast({ title: t('transactions:courier_tab.dialog.toast_error', 'Hiba'), description: err.message, variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -322,17 +326,18 @@ function CourierInvoiceDialog({
 
   const formatAmount = (amount: number | null, currency?: string) => {
     if (amount == null) return '-';
-    return new Intl.NumberFormat('hu-HU', { style: 'currency', currency: currency || 'HUF', maximumFractionDigits: 0 }).format(amount);
+    return formatCurrencyLocale(amount, currency);
   };
 
   const formatDate = (date: string | null) => {
     if (!date) return '-';
-    return new Date(date).toLocaleDateString('hu-HU');
+    return formatDateLocale(date);
   };
 
   if (!report) return null;
   const isCompensation = report.row_type === 'compensation' || (!!report.match_reason && report.match_reason.toLowerCase().includes('kompenzáció'));
-  const statusCfg = STATUS_CONFIG[report.match_status] || STATUS_CONFIG.unmatched;
+  const statusConfig = getStatusConfig(t);
+  const statusCfg = statusConfig[report.match_status] || statusConfig.unmatched;
   const codAmount = Math.abs(report.cod_amount ?? 0);
 
   return (
@@ -341,10 +346,12 @@ function CourierInvoiceDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Eye className="h-5 w-5" />
-            {isCompensation ? 'Kompenzációs értesítő részletei' : 'Riport sor részletei'}
+            {isCompensation ? t('transactions:courier_tab.dialog.title_compensation', 'Kompenzációs értesítő részletei') : t('transactions:courier_tab.dialog.title_report', 'Riport sor részletei')}
           </DialogTitle>
           <DialogDescription>
-            {isCompensation ? `Számlaszám: ${report.package_number || '-'}` : `Csomagszám: ${report.package_number || '-'}`} — {formatDate(report.delivery_date)}
+            {isCompensation
+              ? t('transactions:courier_tab.dialog.desc_compensation', { number: report.package_number || '-', date: formatDate(report.delivery_date), defaultValue: `Számlaszám: ${report.package_number || '-'} — ${formatDate(report.delivery_date)}` })
+              : t('transactions:courier_tab.dialog.desc_report', { number: report.package_number || '-', date: formatDate(report.delivery_date), defaultValue: `Csomagszám: ${report.package_number || '-'} — ${formatDate(report.delivery_date)}` })}
           </DialogDescription>
         </DialogHeader>
 
@@ -354,10 +361,14 @@ function CourierInvoiceDialog({
               <Info className="h-4 w-4 shrink-0 mt-0.5 text-purple-600 dark:text-purple-400" />
               <div className="space-y-1 leading-relaxed">
                 <p className="font-semibold text-purple-950 dark:text-purple-100">
-                  GLS Utánvét-kompenzáció (Beszámítás)
+                  {t('transactions:courier_tab.dialog.comp_banner_title', 'GLS Utánvét-kompenzáció (Beszámítás)')}
                 </p>
                 <p>
-                  A futárcég a beszedett utánvétekből kompenzálta ezt a kiállított fuvardíjszámlát ({details.navInvoice.invoice_number}, {formatAmount(details.navInvoice.invoice_gross_amount, details.navInvoice.currency)}). A számla a számlalistában automatikusan kiegyenlítettként szerepel.
+                  {t('transactions:courier_tab.dialog.comp_banner_text', {
+                    number: details.navInvoice.invoice_number,
+                    amount: formatAmount(details.navInvoice.invoice_gross_amount, details.navInvoice.currency),
+                    defaultValue: `A futárcég a beszedett utánvétekből kompenzálta ezt a kiállított fuvardíjszámlát (${details.navInvoice.invoice_number}, ${formatAmount(details.navInvoice.invoice_gross_amount, details.navInvoice.currency)}). A számla a számlalistában automatikusan kiegyenlítettként szerepel.`,
+                  })}
                 </p>
               </div>
             </div>
@@ -368,18 +379,18 @@ function CourierInvoiceDialog({
             <div className="flex items-center gap-2 mb-2">
               <FileText className="h-4 w-4 text-muted-foreground" />
               <h4 className="font-semibold text-sm">
-                {isCompensation ? 'Kompenzációs értesítő adatai' : 'Riport adatok'}
+                {isCompensation ? t('transactions:courier_tab.dialog.report_data_title_comp', 'Kompenzációs értesítő adatai') : t('transactions:courier_tab.dialog.report_data_title', 'Riport adatok')}
               </h4>
               <Badge variant="outline" className={cn('text-xs ml-auto', statusCfg.color)}>
                 {statusCfg.label}
               </Badge>
             </div>
             <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
-              <div className="text-muted-foreground">{isCompensation ? 'Érintett cég' : 'Címzett'}</div>
+              <div className="text-muted-foreground">{isCompensation ? t('transactions:courier_tab.dialog.company_involved', 'Érintett cég') : t('transactions:courier_tab.dialog.recipient', 'Címzett')}</div>
               <div className="font-medium">{report.recipient_name || '-'}</div>
-              <div className="text-muted-foreground">{isCompensation ? 'Kompenzált számla' : 'Hivatkozás'}</div>
+              <div className="text-muted-foreground">{isCompensation ? t('transactions:courier_tab.dialog.compensated_invoice', 'Kompenzált számla') : t('transactions:courier_tab.dialog.reference', 'Hivatkozás')}</div>
               <div className="font-mono text-xs font-semibold">{report.package_number || report.reference_number || '-'}</div>
-              <div className="text-muted-foreground">{isCompensation ? 'Kompenzációs keretösszeg' : 'Utánvét összeg'}</div>
+              <div className="text-muted-foreground">{isCompensation ? t('transactions:courier_tab.dialog.comp_pool_amount', 'Kompenzációs keretösszeg') : t('transactions:courier_tab.dialog.cod_amount', 'Utánvét összeg')}</div>
               <div className="font-semibold">{formatAmount(report.cod_amount)}</div>
             </div>
             {/* AI match reason */}
@@ -387,7 +398,7 @@ function CourierInvoiceDialog({
               <div className="mt-2 pt-2 border-t border-border/50">
                 <div className="flex items-center gap-2 mb-1">
                   <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                  <span className="text-xs font-medium text-muted-foreground">AI párosítási indoklás</span>
+                  <span className="text-xs font-medium text-muted-foreground">{t('transactions:courier_tab.dialog.ai_reason_title', 'AI párosítási indoklás')}</span>
                   {report.match_confidence != null && (
                     <Badge 
                       variant="outline" 
@@ -398,7 +409,7 @@ function CourierInvoiceDialog({
                         'border-red-500/40 text-red-600'
                       )}
                     >
-                      {Math.round(report.match_confidence * 100)}% konfidencia
+                      {t('transactions:courier_tab.dialog.confidence', { percent: Math.round(report.match_confidence * 100), defaultValue: `${Math.round(report.match_confidence * 100)}% konfidencia` })}
                     </Badge>
                   )}
                 </div>
@@ -415,13 +426,13 @@ function CourierInvoiceDialog({
               <Info className="h-4 w-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
               <div className="space-y-1 leading-relaxed">
                 <p className="font-semibold text-amber-900 dark:text-amber-200">
-                  NAV számla párosítva · Banki tranzakcióra vár
+                  {t('transactions:courier_tab.dialog.status_partial_nav_title', 'NAV számla párosítva · Banki tranzakcióra vár')}
                 </p>
                 <p>
-                  A csomag sikeresen össze van kötve a kiállított NAV számlával. A tétel teljes (zöld) státuszához a futárcég banki gyűjtőjóváírása szükséges.
+                  {t('transactions:courier_tab.dialog.status_partial_nav_desc', 'A csomag sikeresen össze van kötve a kiállított NAV számlával. A tétel teljes (zöld) státuszához a futárcég banki gyűjtőjóváírása szükséges.')}
                 </p>
                 <p className="text-[11px] opacity-90">
-                  Tipp: Ha a számlát banki kivonattól függetlenül szeretnéd lezárni, a Számlák menüpontban a számlát lenyitva a <strong>„Kézi fizetés”</strong> gombbal rögzítheted a kiegyenlítést.
+                  {t('transactions:courier_tab.dialog.status_partial_nav_tip', 'Tipp: Ha a számlát banki kivonattól függetlenül szeretnéd lezárni, a Számlák menüpontban a számlát lenyitva a „Kézi fizetés” gombbal rögzítheted a kiegyenlítést.')}
                 </p>
               </div>
             </div>
@@ -431,10 +442,10 @@ function CourierInvoiceDialog({
               <Info className="h-4 w-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
               <div className="space-y-1 leading-relaxed">
                 <p className="font-semibold text-amber-900 dark:text-amber-200">
-                  Banki tranzakció párosítva · NAV számlára vár
+                  {t('transactions:courier_tab.dialog.status_partial_trx_title', 'Banki tranzakció párosítva · NAV számlára vár')}
                 </p>
                 <p>
-                  A banki utalás párosítva van a csomaghoz. A teljes (zöld) lezáráshoz válaszd ki a hozzá tartozó kiállított NAV számlát a <strong>„Számla párosítása”</strong> gombra kattintva.
+                  {t('transactions:courier_tab.dialog.status_partial_trx_desc', 'A banki utalás párosítva van a csomaghoz. A teljes (zöld) lezáráshoz válaszd ki a hozzá tartozó kiállított NAV számlát a „Számla párosítása” gombra kattintva.')}
                 </p>
               </div>
             </div>
@@ -444,7 +455,7 @@ function CourierInvoiceDialog({
           <div className="rounded-lg border p-3 space-y-2">
             <div className="flex items-center gap-2 mb-2">
               <Landmark className="h-4 w-4 text-muted-foreground" />
-              <h4 className="font-semibold text-sm">Párosított tranzakció</h4>
+              <h4 className="font-semibold text-sm">{t('transactions:courier_tab.dialog.trx_title', 'Párosított tranzakció')}</h4>
               {report.matched_transaction_id ? (
                 <CheckCircle2 className="h-4 w-4 text-emerald-500 ml-auto" />
               ) : (
@@ -455,17 +466,17 @@ function CourierInvoiceDialog({
               <div className="h-12 bg-muted animate-pulse rounded" />
             ) : details.transaction ? (
               <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
-                <div className="text-muted-foreground">Dátum</div>
+                <div className="text-muted-foreground">{t('transactions:courier_tab.dialog.trx_date', 'Dátum')}</div>
                 <div>{formatDate(details.transaction.transaction_date)}</div>
-                <div className="text-muted-foreground">Leírás</div>
+                <div className="text-muted-foreground">{t('transactions:courier_tab.dialog.trx_desc', 'Leírás')}</div>
                 <div className="truncate max-w-[200px]" title={details.transaction.description}>{details.transaction.description || '-'}</div>
-                <div className="text-muted-foreground">Összeg</div>
+                <div className="text-muted-foreground">{t('transactions:courier_tab.dialog.trx_amount', 'Összeg')}</div>
                 <div className="font-semibold">{formatAmount(details.transaction.amount, details.transaction.currency)}</div>
-                <div className="text-muted-foreground">Típus</div>
+                <div className="text-muted-foreground">{t('transactions:courier_tab.dialog.trx_type', 'Típus')}</div>
                 <div>{details.transaction.type || '-'}</div>
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground">Nincs párosított tranzakció</p>
+              <p className="text-xs text-muted-foreground">{t('transactions:courier_tab.dialog.trx_none', 'Nincs párosított tranzakció')}</p>
             )}
           </div>
 
@@ -474,7 +485,7 @@ function CourierInvoiceDialog({
             <div className="rounded-lg border p-3 space-y-2">
               <div className="flex items-center gap-2 mb-2">
                 <FileText className="h-4 w-4 text-muted-foreground" />
-                <h4 className="font-semibold text-sm">Párosított NAV számla</h4>
+                <h4 className="font-semibold text-sm">{t('transactions:courier_tab.dialog.nav_title', 'Párosított NAV számla')}</h4>
                 {report.matched_nav_invoice_id ? (
                   <CheckCircle2 className="h-4 w-4 text-emerald-500 ml-auto" />
                 ) : (
@@ -485,19 +496,19 @@ function CourierInvoiceDialog({
                 <div className="h-12 bg-muted animate-pulse rounded" />
               ) : details.navInvoice ? (
                 <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
-                  <div className="text-muted-foreground">Számlaszám</div>
+                  <div className="text-muted-foreground">{t('transactions:courier_tab.dialog.nav_number', 'Számlaszám')}</div>
                   <div className="font-mono text-xs">{details.navInvoice.invoice_number}</div>
-                  <div className="text-muted-foreground">Dátum</div>
+                  <div className="text-muted-foreground">{t('transactions:courier_tab.dialog.nav_date', 'Dátum')}</div>
                   <div>{formatDate(details.navInvoice.invoice_issue_date)}</div>
-                  <div className="text-muted-foreground">Partner</div>
+                  <div className="text-muted-foreground">{t('transactions:courier_tab.dialog.nav_partner', 'Partner')}</div>
                   <div>{details.navInvoice.invoice_direction === 'INBOUND' ? (details.navInvoice.supplier_name || '-') : (details.navInvoice.customer_name || '-')}</div>
-                  <div className="text-muted-foreground">Bruttó összeg</div>
+                  <div className="text-muted-foreground">{t('transactions:courier_tab.dialog.nav_gross', 'Bruttó összeg')}</div>
                   <div className="font-semibold">{formatAmount(details.navInvoice.invoice_gross_amount, details.navInvoice.currency)}</div>
-                  <div className="text-muted-foreground">Irány</div>
-                  <div><Badge variant="outline" className="text-xs">{details.navInvoice.invoice_direction === 'INBOUND' ? 'Bejövő' : 'Kimenő'}</Badge></div>
+                  <div className="text-muted-foreground">{t('transactions:courier_tab.dialog.nav_direction', 'Irány')}</div>
+                  <div><Badge variant="outline" className="text-xs">{details.navInvoice.invoice_direction === 'INBOUND' ? t('transactions:courier_tab.dialog.nav_inbound', 'Bejövő') : t('transactions:courier_tab.dialog.nav_outbound', 'Kimenő')}</Badge></div>
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground">Nincs párosított NAV számla</p>
+                <p className="text-xs text-muted-foreground">{t('transactions:courier_tab.dialog.nav_none', 'Nincs párosított NAV számla')}</p>
               )}
             </div>
           )}
@@ -508,18 +519,18 @@ function CourierInvoiceDialog({
               <div className="flex items-center justify-between mb-2">
                 <h4 className="font-semibold text-sm flex items-center gap-1.5">
                   <Link2 className="h-4 w-4" />
-                  {report.matched_nav_invoice_id ? 'Másik NAV számla' : 'NAV számla párosítás'}
+                  {report.matched_nav_invoice_id ? t('transactions:courier_tab.dialog.manual_title_change', 'Másik NAV számla') : t('transactions:courier_tab.dialog.manual_title_link', 'NAV számla párosítás')}
                 </h4>
                 {report.matched_nav_invoice_id && (
                   <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setShowManualMatch(false)}>
-                    Vissza
+                    {t('transactions:courier_tab.dialog.back', 'Vissza')}
                   </Button>
                 )}
               </div>
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                 <Input
-                  placeholder="Keresés számlaszám, partner, összeg..."
+                  placeholder={t('transactions:courier_tab.dialog.search_placeholder', 'Keresés számlaszám, partner, összeg...')}
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   className="pl-8 pr-8 h-8 text-xs"
@@ -538,7 +549,7 @@ function CourierInvoiceDialog({
                 ) : filteredInvoices.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-16 text-muted-foreground">
                     <FileText className="h-4 w-4 mb-1" />
-                    <p className="text-xs">Nincs elérhető számla a megadott keresésre vagy időszakban</p>
+                    <p className="text-xs">{t('transactions:courier_tab.dialog.no_invoices', 'Nincs elérhető számla a megadott keresésre vagy időszakban')}</p>
                   </div>
                 ) : (
                   <div className="p-1.5 space-y-1">
@@ -563,7 +574,7 @@ function CourierInvoiceDialog({
                             </div>
                             <div className="text-right">
                               <p className="font-mono font-medium">{formatAmount(inv.invoice_gross_amount, inv.currency)}</p>
-                              {isExact && <Badge variant="outline" className="text-[9px] h-4 border-emerald-500/40 text-emerald-600">Egyező összeg</Badge>}
+                              {isExact && <Badge variant="outline" className="text-[9px] h-4 border-emerald-500/40 text-emerald-600">{t('transactions:courier_tab.dialog.exact_amount', 'Egyező összeg')}</Badge>}
                             </div>
                           </div>
                         </div>
@@ -580,7 +591,7 @@ function CourierInvoiceDialog({
                   onClick={handleSaveMatch}
                 >
                   <Check className="h-3.5 w-3.5 mr-1.5" />
-                  {saving ? 'Mentés...' : selectedNavId ? 'Párosítás mentése' : 'Válassz ki egy számlát a párosításhoz'}
+                  {saving ? t('transactions:courier_tab.dialog.saving', 'Mentés...') : selectedNavId ? t('transactions:courier_tab.dialog.save_match', 'Párosítás mentése') : t('transactions:courier_tab.dialog.select_invoice_hint', 'Válassz ki egy számlát a párosításhoz')}
                 </Button>
               </div>
             </div>
@@ -592,7 +603,7 @@ function CourierInvoiceDialog({
               {/* Unmatch options */}
               {showUnmatchOptions && !showManualMatch && (report.matched_nav_invoice_id || report.matched_transaction_id) && (
                 <div className="rounded-md border p-2 space-y-1.5 bg-muted/30">
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Melyik párosítást szeretnéd megszüntetni?</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">{t('transactions:courier_tab.dialog.unmatch_prompt', 'Melyik párosítást szeretnéd megszüntetni?')}</p>
                   {report.matched_transaction_id && (
                     <Button
                       variant="outline"
@@ -602,7 +613,7 @@ function CourierInvoiceDialog({
                       onClick={() => handleUnmatch('trx')}
                     >
                       <Landmark className="h-3 w-3 mr-1.5" />
-                      Tranzakció párosítás törlése
+                      {t('transactions:courier_tab.dialog.unmatch_trx', 'Tranzakció párosítás törlése')}
                     </Button>
                   )}
                   {report.matched_nav_invoice_id && (
@@ -614,7 +625,7 @@ function CourierInvoiceDialog({
                       onClick={() => handleUnmatch('nav')}
                     >
                       <FileText className="h-3 w-3 mr-1.5" />
-                      NAV számla párosítás törlése
+                      {t('transactions:courier_tab.dialog.unmatch_nav', 'NAV számla párosítás törlése')}
                     </Button>
                   )}
                   {report.matched_transaction_id && report.matched_nav_invoice_id && (
@@ -626,11 +637,11 @@ function CourierInvoiceDialog({
                       onClick={() => handleUnmatch('both')}
                     >
                       <X className="h-3 w-3 mr-1.5" />
-                      Mindkettő törlése
+                      {t('transactions:courier_tab.dialog.unmatch_both', 'Mindkettő törlése')}
                     </Button>
                   )}
                   <Button variant="ghost" size="sm" className="w-full text-xs h-6" onClick={() => setShowUnmatchOptions(false)}>
-                    Mégse
+                    {t('transactions:courier_tab.dialog.cancel', 'Mégse')}
                   </Button>
                 </div>
               )}
@@ -644,7 +655,7 @@ function CourierInvoiceDialog({
                     disabled={saving}
                     onClick={() => setShowUnmatchOptions(!showUnmatchOptions)}
                   >
-                    Párosítás megszüntetése
+                    {t('transactions:courier_tab.dialog.unmatch_btn', 'Párosítás megszüntetése')}
                   </Button>
                 )}
                 {!showManualMatch && report.match_status !== 'full' && (
@@ -655,7 +666,7 @@ function CourierInvoiceDialog({
                     onClick={() => { fetchAvailableInvoices(); setShowManualMatch(true); }}
                   >
                     <Link2 className="h-3.5 w-3.5 mr-1.5" />
-                    {report.matched_nav_invoice_id ? 'Másik számla választása' : 'Számla párosítása'}
+                    {report.matched_nav_invoice_id ? t('transactions:courier_tab.dialog.change_invoice_btn', 'Másik számla választása') : t('transactions:courier_tab.dialog.link_invoice_btn', 'Számla párosítása')}
                   </Button>
                 )}
                 <Button
@@ -665,7 +676,7 @@ function CourierInvoiceDialog({
                   onClick={async () => { await handleRematch(report.id); onOpenChange(false); }}
                 >
                   <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
-                  Auto párosítás
+                  {t('transactions:courier_tab.dialog.auto_match_btn', 'Auto párosítás')}
                 </Button>
               </div>
             </div>
@@ -679,6 +690,9 @@ function CourierInvoiceDialog({
 // ── Main component ──
 
 const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
+  const { t } = useTranslation(['transactions', 'common']);
+  const statusConfig = getStatusConfig(t);
+
   // Local date override (undefined = follow global date range)
   const [localDateFrom, setLocalDateFrom] = useState<Date | null | undefined>(undefined);
   const [localDateTo, setLocalDateTo] = useState<Date | null | undefined>(undefined);
@@ -761,19 +775,19 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
   if (!selectedCompany) {
     return (
       <div className="flex items-center justify-center h-[30vh]">
-        <p className="text-muted-foreground">Válassz egy céget a folytatáshoz</p>
+        <p className="text-muted-foreground">{t('courier_tab.dialog.select_company_prompt', 'Válassz egy céget a folytatáshoz')}</p>
       </div>
     );
   }
 
   const formatAmount = (amount: number | null, currency = 'HUF') => {
     if (amount == null) return '-';
-    return new Intl.NumberFormat('hu-HU', { style: 'currency', currency: currency || 'HUF', maximumFractionDigits: 0 }).format(amount);
+    return formatCurrencyLocale(amount, currency);
   };
 
   const formatDate = (date: string | null) => {
     if (!date) return '-';
-    return new Date(date).toLocaleDateString('hu-HU');
+    return formatDateLocale(date);
   };
 
   return (
@@ -785,8 +799,8 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
             <FileText className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-lg font-bold tabular-nums">{totalCount.toLocaleString('hu-HU')}</div>
-            <div className="text-[11px] text-muted-foreground">Összes tétel</div>
+            <div className="text-lg font-bold tabular-nums">{totalCount.toLocaleString(getDateFnsLocale().code)}</div>
+            <div className="text-[11px] text-muted-foreground">{t('courier_tab.kpis.total_items', 'Összes tétel')}</div>
           </div>
         </div>
         <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
@@ -794,8 +808,8 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
             <CheckCircle2 className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-lg font-bold tabular-nums text-emerald-600">{stats.matched.toLocaleString('hu-HU')}</div>
-            <div className="text-[11px] text-muted-foreground">Párosított</div>
+            <div className="text-lg font-bold tabular-nums text-emerald-600">{stats.matched.toLocaleString(getDateFnsLocale().code)}</div>
+            <div className="text-[11px] text-muted-foreground">{t('courier_tab.kpis.matched', 'Párosított')}</div>
           </div>
         </div>
         <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
@@ -803,8 +817,8 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
             <AlertCircle className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-lg font-bold tabular-nums text-amber-600">{stats.partial.toLocaleString('hu-HU')}</div>
-            <div className="text-[11px] text-muted-foreground">Részleges</div>
+            <div className="text-lg font-bold tabular-nums text-amber-600">{stats.partial.toLocaleString(getDateFnsLocale().code)}</div>
+            <div className="text-[11px] text-muted-foreground">{t('courier_tab.kpis.partial', 'Részleges')}</div>
           </div>
         </div>
         <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
@@ -812,8 +826,8 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
             <MinusCircle className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-lg font-bold tabular-nums text-red-500">{stats.unmatched.toLocaleString('hu-HU')}</div>
-            <div className="text-[11px] text-muted-foreground">Párosítatlan</div>
+            <div className="text-lg font-bold tabular-nums text-red-500">{stats.unmatched.toLocaleString(getDateFnsLocale().code)}</div>
+            <div className="text-[11px] text-muted-foreground">{t('courier_tab.kpis.unmatched', 'Párosítatlan')}</div>
           </div>
         </div>
         <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
@@ -822,7 +836,7 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
           </div>
           <div>
             <div className="text-lg font-bold tabular-nums text-emerald-600">{formatAmount(stats.total)}</div>
-            <div className="text-[11px] text-muted-foreground">Összes utánvét (Ft)</div>
+            <div className="text-[11px] text-muted-foreground">{t('courier_tab.kpis.total_cod', 'Összes utánvét')}</div>
           </div>
         </div>
       </div>
@@ -832,11 +846,11 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
               <CardTitle className="text-xl font-bold">
-                {REPORT_LABELS[reportType]} Riportok
+                {t('courier_tab.card_title', { report: REPORT_LABELS[reportType] || reportType.toUpperCase(), defaultValue: `${REPORT_LABELS[reportType]} Riportok` })}
               </CardTitle>
               <CardDescription>
-                {totalCount} sor — Párosított: {stats.matched} | Részleges: {stats.partial} | Párosítatlan: {stats.unmatched}
-                {stats.total > 0 && ` — Összesen: ${formatAmount(stats.total)}`}
+                {t('courier_tab.card_desc', { totalCount, matched: stats.matched, partial: stats.partial, unmatched: stats.unmatched, defaultValue: `${totalCount} sor — Párosított: ${stats.matched} | Részleges: ${stats.partial} | Párosítatlan: ${stats.unmatched}` })}
+                {stats.total > 0 && t('courier_tab.card_desc_total', { total: formatAmount(stats.total), defaultValue: ` — Összesen: ${formatAmount(stats.total)}` })}
               </CardDescription>
             </div>
             <div className="flex gap-2">
@@ -845,10 +859,10 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                   <TooltipTrigger asChild>
                     <Button variant="outline" size="sm" onClick={handleSync}>
                       <RefreshCw className="h-4 w-4 mr-2" />
-                      Frissítés
+                      {t('courier_tab.actions.refresh', 'Frissítés')}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Riport adatok frissítése</TooltipContent>
+                  <TooltipContent>{t('courier_tab.actions.refresh_tooltip', 'Riport adatok frissítése')}</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
               <TooltipProvider>
@@ -862,10 +876,10 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                       className="border-emerald-500/40 hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                     >
                       <Sparkles className={cn("h-4 w-4 mr-2", rematchingAll && "animate-spin")} />
-                      {rematchingAll ? 'Párosítás...' : 'Újrapárosítás'}
+                      {rematchingAll ? t('courier_tab.actions.rematching', 'Párosítás...') : t('courier_tab.actions.rematch_all', 'Újrapárosítás')}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Összes nyitott tétel automatikus újrapárosítása banki tranzakciókkal és NAV számlákkal</TooltipContent>
+                  <TooltipContent>{t('courier_tab.actions.rematch_tooltip', 'Összes nyitott tétel automatikus újrapárosítása banki tranzakciókkal és NAV számlákkal')}</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
               <ReportFilesDialog reportType={reportType} />
@@ -879,7 +893,7 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Keresés (hivatkozás, csomagszám, címzett...)"
+                placeholder={t('courier_tab.filters.search_placeholder', 'Keresés (hivatkozás, csomagszám, címzett...)')}
                 value={filters.search}
                 onChange={e => setFilters(prev => ({ ...prev, search: e.target.value }))}
                 className="pl-9"
@@ -890,14 +904,14 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
               onValueChange={v => setFilters(prev => ({ ...prev, matchStatus: v }))}
             >
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Státusz" />
+                <SelectValue placeholder={t('courier_tab.filters.status_placeholder', 'Státusz')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Összes státusz</SelectItem>
-                <SelectItem value="full">Párosított</SelectItem>
-                <SelectItem value="partial_trx">Tranzakció ✓</SelectItem>
-                <SelectItem value="partial_nav">NAV ✓</SelectItem>
-                <SelectItem value="unmatched">Párosítatlan</SelectItem>
+                <SelectItem value="all">{t('courier_tab.filters.status_all', 'Összes státusz')}</SelectItem>
+                <SelectItem value="full">{statusConfig.full.label}</SelectItem>
+                <SelectItem value="partial_trx">{statusConfig.partial_trx.label}</SelectItem>
+                <SelectItem value="partial_nav">{statusConfig.partial_nav.label}</SelectItem>
+                <SelectItem value="unmatched">{statusConfig.unmatched.label}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -915,8 +929,8 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                   >
                     <CalendarDays className="mr-1.5 h-3 w-3" />
                     {localDateFrom
-                      ? format(localDateFrom, "yyyy. MMM dd.", { locale: hu })
-                      : "Dátum-tól"}
+                      ? format(localDateFrom, "yyyy. MMM dd.", { locale: getDateFnsLocale() })
+                      : t('courier_tab.filters.date_from', 'Dátum-tól')}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -947,8 +961,8 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                   >
                     <CalendarDays className="mr-1.5 h-3 w-3" />
                     {localDateTo
-                      ? format(localDateTo, "yyyy. MMM dd.", { locale: hu })
-                      : "Dátum-ig"}
+                      ? format(localDateTo, "yyyy. MMM dd.", { locale: getDateFnsLocale() })
+                      : t('courier_tab.filters.date_to', 'Dátum-ig')}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="end">
@@ -972,7 +986,7 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                   className="h-7 px-2 text-xs text-amber-600"
                   onClick={() => { setLocalDateFrom(undefined); setLocalDateTo(undefined); }}
                 >
-                  <X className="h-3.5 w-3.5 mr-1" /> Globális
+                  <X className="h-3.5 w-3.5 mr-1" /> {t('courier_tab.filters.global', 'Globális')}
                 </Button>
               )}
             </div>
@@ -983,7 +997,7 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                 setLocalDateFrom(undefined);
                 setLocalDateTo(undefined);
               }}>
-                <X className="h-4 w-4 mr-1" /> Szűrők törlése
+                <X className="h-4 w-4 mr-1" /> {t('courier_tab.filters.clear_filters', 'Szűrők törlése')}
               </Button>
             )}
           </div>
@@ -1001,7 +1015,9 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
           {/* Bulk action bar */}
           {selectedIds.size > 0 && (
             <div className="flex items-center gap-3 p-2.5 rounded-lg bg-destructive/10 border border-destructive/20">
-              <span className="text-sm font-medium">{selectedIds.size} sor kijelölve</span>
+              <span className="text-sm font-medium">
+                {t('courier_tab.bulk.selected_count', { count: selectedIds.size, defaultValue: `${selectedIds.size} sor kijelölve` })}
+              </span>
               <Button
                 variant="destructive"
                 size="sm"
@@ -1009,7 +1025,7 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                 onClick={() => setShowDeleteConfirm(true)}
               >
                 <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                Törlés
+                {t('courier_tab.bulk.delete', 'Törlés')}
               </Button>
               <Button
                 variant="ghost"
@@ -1017,7 +1033,7 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                 className="h-7 text-xs ml-auto"
                 onClick={() => setSelectedIds(new Set())}
               >
-                Kijelölés törlése
+                {t('courier_tab.bulk.clear_selection', 'Kijelölés törlése')}
               </Button>
             </div>
           )}
@@ -1035,7 +1051,7 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                   </th>
                   <th className="px-3 py-2 text-left font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('delivery_date')}>
                     <span className="inline-flex items-center gap-1">
-                      Dátum
+                      {t('courier_tab.table.col_date', 'Dátum')}
                       {sortField === 'delivery_date' ? (
                         sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
                       ) : (
@@ -1043,11 +1059,11 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                       )}
                     </span>
                   </th>
-                  <th className="px-3 py-2 text-left font-medium">Csomagszám / Bizonylat</th>
-                  <th className="px-3 py-2 text-left font-medium">Hivatkozás</th>
+                  <th className="px-3 py-2 text-left font-medium">{t('courier_tab.table.col_package', 'Csomagszám / Bizonylat')}</th>
+                  <th className="px-3 py-2 text-left font-medium">{t('courier_tab.table.col_ref', 'Hivatkozás')}</th>
                   <th className="px-3 py-2 text-right font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('cod_amount')}>
                     <span className="inline-flex items-center justify-end gap-1 w-full">
-                      Összeg
+                      {t('courier_tab.table.col_amount', 'Összeg')}
                       {sortField === 'cod_amount' ? (
                         sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
                       ) : (
@@ -1055,11 +1071,11 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                       )}
                     </span>
                   </th>
-                  <th className="px-3 py-2 text-left font-medium">Címzett / Partner</th>
-                  <th className="px-3 py-2 text-center font-medium">Tranzakció</th>
-                  <th className="px-3 py-2 text-center font-medium">NAV Számla</th>
-                  <th className="px-3 py-2 text-center font-medium">Státusz</th>
-                  <th className="px-3 py-2 text-center font-medium">Művelet</th>
+                  <th className="px-3 py-2 text-left font-medium">{t('courier_tab.table.col_recipient', 'Címzett / Partner')}</th>
+                  <th className="px-3 py-2 text-center font-medium">{t('courier_tab.table.col_transaction', 'Tranzakció')}</th>
+                  <th className="px-3 py-2 text-center font-medium">{t('courier_tab.table.col_nav_invoice', 'NAV Számla')}</th>
+                  <th className="px-3 py-2 text-center font-medium">{t('courier_tab.table.col_status', 'Státusz')}</th>
+                  <th className="px-3 py-2 text-center font-medium">{t('courier_tab.table.col_action', 'Művelet')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1076,14 +1092,14 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                 ) : filteredReports.length === 0 ? (
                   <tr>
                     <td colSpan={10} className="px-3 py-8 text-center text-muted-foreground">
-                      {hasActiveFilters ? 'Nincs találat a szűrőkkel' : 'Még nincsenek feltöltött riportok'}
+                      {hasActiveFilters ? t('courier_tab.table.empty_filtered', 'Nincs találat a szűrőkkel') : t('courier_tab.table.empty_no_data', 'Még nincsenek feltöltött riportok')}
                     </td>
                   </tr>
                 ) : (
                   filteredReports.map(row => {
                     const isTotal = row.row_type === 'total' || row.match_status === 'total';
                     const isCompensation = row.row_type === 'compensation' || (!!row.match_reason && row.match_reason.toLowerCase().includes('kompenzáció'));
-                    const statusCfg = STATUS_CONFIG[row.match_status] || STATUS_CONFIG.unmatched;
+                    const statusCfg = statusConfig[row.match_status] || statusConfig.unmatched;
                     const StatusIcon = statusCfg.icon;
                     return (
                       <tr
@@ -1108,7 +1124,7 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                                 variant="outline" 
                                 className="text-[10px] px-1.5 py-0 h-4 bg-purple-100/90 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300 border-purple-300 dark:border-purple-700 font-medium"
                               >
-                                Kompenzáció
+                                {t('courier_tab.table.compensation', 'Kompenzáció')}
                               </Badge>
                               <span className="font-mono text-xs font-semibold text-foreground flex items-center gap-1" title="Kompenzált számlaszám">
                                 <FileText className="h-3 w-3 text-purple-600 dark:text-purple-400 shrink-0" />
@@ -1121,7 +1137,7 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                         </td>
                         <td className="px-3 py-2 font-mono text-xs max-w-[180px] truncate" title={row.reference_number || ''}>
                           {isCompensation && (!row.reference_number || row.reference_number === row.package_number) ? (
-                            <span className="text-muted-foreground text-[11px] italic">Beszámított számla</span>
+                            <span className="text-muted-foreground text-[11px] italic">{t('courier_tab.table.offset_invoice', 'Beszámított számla')}</span>
                           ) : (
                             row.reference_number || '-'
                           )}
@@ -1133,7 +1149,7 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                                 {formatAmount(row.matched_nav_invoice.invoice_gross_amount, row.matched_nav_invoice.currency || 'HUF')}
                               </span>
                               <span className="text-[10px] text-muted-foreground" title={`A futárcég által beszedett ${formatAmount(row.cod_amount)} utánvét-keretből beszámítva`}>
-                                keretből: {formatAmount(row.cod_amount)}
+                                {t('courier_tab.table.from_frame', { amount: formatAmount(row.cod_amount), defaultValue: `keretből: ${formatAmount(row.cod_amount)}` })}
                               </span>
                             </div>
                           ) : (
@@ -1142,14 +1158,14 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                         </td>
                         <td className="px-3 py-2 max-w-[200px] truncate" title={row.recipient_address || row.recipient_name || ''}>
                           {isTotal ? (
-                            <span className="text-blue-600 font-bold">Összesítő (Total COD)</span>
+                            <span className="text-blue-600 font-bold">{t('courier_tab.table.total_cod', 'Összesítő (Total COD)')}</span>
                           ) : isCompensation ? (
                             <div className="flex flex-col">
                               <span className="text-xs font-medium truncate">
                                 {row.matched_nav_invoice?.supplier_name || 'GLS General Logistics'}
                               </span>
                               <span className="text-[10px] text-muted-foreground truncate">
-                                {row.recipient_name ? `Beszámítás: ${row.recipient_name}` : 'Beszámítás (Kompenzálás)'}
+                                {row.recipient_name ? t('courier_tab.table.offset_with_name', { name: row.recipient_name, defaultValue: `Beszámítás: ${row.recipient_name}` }) : t('courier_tab.table.offset_general', 'Beszámítás (Kompenzálás)')}
                               </span>
                             </div>
                           ) : (
@@ -1189,10 +1205,10 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                                   onClick={() => handleOpenDetails(row)}
                                 >
                                   <Eye className="h-3 w-3 mr-1" />
-                                  Részletek
+                                  {t('courier_tab.table.details', 'Részletek')}
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent>Párosított számlák és tranzakciók megtekintése, szerkesztése</TooltipContent>
+                              <TooltipContent>{t('courier_tab.table.details_tooltip', 'Párosított számlák és tranzakciók megtekintése, szerkesztése')}</TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         </td>
@@ -1227,15 +1243,15 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Biztosan törölni szeretnéd?</AlertDialogTitle>
+            <AlertDialogTitle>{t('courier_tab.dialog.delete_confirm_title', 'Biztosan törölni szeretnéd?')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {selectedIds.size} riport sor véglegesen törlésre kerül. Ez a művelet nem vonható vissza.
+              {t('courier_tab.dialog.delete_confirm_desc', { count: selectedIds.size, defaultValue: `${selectedIds.size} riport sor véglegesen törlésre kerül. Ez a művelet nem vonható vissza.` })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Mégse</AlertDialogCancel>
+            <AlertDialogCancel>{t('courier_tab.dialog.delete_confirm_cancel', 'Mégse')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Törlés
+              {t('courier_tab.dialog.delete_confirm_action', 'Törlés')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

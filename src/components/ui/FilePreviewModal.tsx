@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { FileText, Download, ExternalLink, X, AlertCircle, Loader } from 'lucide-react';
+import { Download, ExternalLink, X, FileText, Loader, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from 'react-i18next';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -97,6 +98,7 @@ function CsvPreviewComponent({ url }: { url: string }) {
 // Supported: PDF (native iframe), image, Excel (Office Online), CSV (table), fallback (download link).
 
 export function FilePreviewContent({ previewFile }: { previewFile: PreviewFile }) {
+  const { t } = useTranslation(['common']);
   const ext = (previewFile.name.split('.').pop() || '').toLowerCase();
   const isPdf = ext === 'pdf';
   const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(ext);
@@ -108,7 +110,7 @@ export function FilePreviewContent({ previewFile }: { previewFile: PreviewFile }
       <iframe
         src={`${previewFile.url}#toolbar=1`}
         className="w-full h-full border-0"
-        title={`PDF előnézet: ${previewFile.name}`}
+        title={t('common:file_preview.pdf_title', { name: previewFile.name, defaultValue: `PDF előnézet: ${previewFile.name}` })}
       />
     );
   }
@@ -132,7 +134,7 @@ export function FilePreviewContent({ previewFile }: { previewFile: PreviewFile }
       <iframe
         src={officeUrl}
         className="w-full h-full border-0 bg-background"
-        title={`Excel előnézet: ${previewFile.name}`}
+        title={t('common:file_preview.excel_title', { name: previewFile.name, defaultValue: `Excel előnézet: ${previewFile.name}` })}
       />
     );
   }
@@ -144,14 +146,16 @@ export function FilePreviewContent({ previewFile }: { previewFile: PreviewFile }
   return (
     <div className="w-full h-full flex flex-col items-center justify-center gap-4 text-muted-foreground">
       <FileText className="h-16 w-16 opacity-30" />
-      <p className="text-sm">A fájl típusa ({ext || 'ismeretlen'}) nem jeleníthető meg előnézetben.</p>
+      <p className="text-sm">
+        {t('common:file_preview.unsupported', { ext: ext || 'ismeretlen', defaultValue: `A fájl típusa (${ext || 'ismeretlen'}) nem jeleníthető meg előnézetben.` })}
+      </p>
       <div className="flex gap-2">
         <a
           href={previewFile.url}
           download={previewFile.name}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
         >
-          <Download className="h-4 w-4" /> Letöltés
+          <Download className="h-4 w-4" /> {t('common:file_preview.download', 'Letöltés')}
         </a>
       </div>
     </div>
@@ -178,6 +182,7 @@ export function FilePreviewModal({
   previewFile: PreviewFile | null;
   onClose: () => void;
 }) {
+  const { t } = useTranslation(['common']);
   if (!previewFile) return null;
 
   const ext = (previewFile.name.split('.').pop() || '').toLowerCase();
@@ -203,7 +208,7 @@ export function FilePreviewModal({
               href={previewFile.url}
               download={previewFile.name}
               className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
-              title="Letöltés"
+              title={t('common:file_preview.download', 'Letöltés')}
               onClick={e => e.stopPropagation()}
             >
               <Download className="h-4 w-4" />
@@ -213,7 +218,7 @@ export function FilePreviewModal({
               target="_blank"
               rel="noopener noreferrer"
               className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
-              title="Megnyitás új lapon"
+              title={t('common:file_preview.open_new_tab', 'Megnyitás új lapon')}
               onClick={e => e.stopPropagation()}
             >
               <ExternalLink className="h-4 w-4" />
@@ -221,7 +226,7 @@ export function FilePreviewModal({
             <button
               className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
               onClick={onClose}
-              title="Bezárás"
+              title={t('common:file_preview.close', 'Bezárás')}
             >
               <X className="h-4 w-4" />
             </button>

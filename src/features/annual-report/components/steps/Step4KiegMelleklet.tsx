@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BookOpen, Plus, RotateCcw, Trash2, Eye, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { formatHungarianNumber } from '@/lib/documents/encoding/hungarianEncoding';
+import { formatNumberLocale } from '@/lib/locale/formatters';
 import type {
   AnnualReport,
   NotesTemplateItem,
@@ -53,28 +54,29 @@ export function Step4KiegMelleklet({
   iframeRef,
   iframeScrollRef,
 }: Step4KiegMellekletProps) {
+  const { t } = useTranslation('accounting');
   const { toast } = useToast();
   const [newSectionTitle, setNewSectionTitle] = useState('');
   const debounceRef = React.useRef<ReturnType<typeof setTimeout>>();
 
-  const templates = (notesTemplates || []).map((t) => ({
-    key: t.section_key,
-    title: t.section_title,
+  const templates = (notesTemplates || []).map((tItem) => ({
+    key: tItem.section_key,
+    title: tItem.section_title,
     isCustom: false,
-    isRequired: t.is_required,
-    defaultText: t.default_text,
+    isRequired: tItem.is_required,
+    defaultText: tItem.default_text,
   }));
   const custom = (((report?.notes_sections as any[]) || []).filter((s: any) => s.is_custom) || []).map(
     (s: any) => ({
       key: s.section_key,
-      title: s.title || 'Egyéni szekció',
+      title: s.title || t('annual_report.step4.custom_section_title'),
       isCustom: true,
       isRequired: false,
       defaultText: '',
     })
   );
   const allNotesTabs = [...templates, ...custom];
-  const activeTab = allNotesTabs.find((t) => t.key === activeSectionKey);
+  const activeTab = allNotesTabs.find((tab) => tab.key === activeSectionKey);
 
   return (
     <div className="space-y-6">
@@ -82,10 +84,10 @@ export function Step4KiegMelleklet({
         <div>
           <h2 className="text-xl font-bold flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-primary" />
-            4. Kiegészítő Melléklet
+            {t('annual_report.step4.header')}
           </h2>
           <p className="text-muted-foreground text-xs mt-0.5">
-            Jogszabályi szöveges sablonok és egyéni mellékletek szerkesztése élő PDF előnézettel.
+            {t('annual_report.step4.subtitle')}
           </p>
         </div>
       </div>
@@ -97,7 +99,7 @@ export function Step4KiegMelleklet({
             {/* Vertical tab buttons */}
             <div className="flex flex-col gap-1 md:w-48 shrink-0">
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 pl-2">
-                Szekciók
+                {t('annual_report.step4.sections_title')}
               </p>
               {allNotesTabs.map((tab) => {
                 const isActive = activeSectionKey === tab.key;
@@ -124,11 +126,11 @@ export function Step4KiegMelleklet({
               {/* Add custom section button in sidebar */}
               <div className="border-t border-border/40 pt-3 mt-2 space-y-2">
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider pl-2">
-                  Egyéni szekció
+                  {t('annual_report.step4.custom_section_title')}
                 </p>
                 <div className="flex flex-col gap-1.5 px-2">
                   <Input
-                    placeholder="Új címe..."
+                    placeholder={t('annual_report.step4.new_title_placeholder')}
                     value={newSectionTitle}
                     onChange={(e) => setNewSectionTitle(e.target.value)}
                     className="h-7 text-xs"
@@ -152,10 +154,10 @@ export function Step4KiegMelleklet({
                       updateReport.mutate({ notes_sections: sections });
                       setActiveSectionKey(key);
                       setNewSectionTitle('');
-                      toast({ title: 'Szekció hozzáadva', description: newSectionTitle.trim() });
+                      toast({ title: t('annual_report.step4.toast_added_title'), description: newSectionTitle.trim() });
                     }}
                   >
-                    <Plus className="w-3 h-3" /> Hozzáadás
+                    <Plus className="w-3 h-3" /> {t('annual_report.step4.add_btn')}
                   </Button>
                 </div>
               </div>
@@ -165,7 +167,7 @@ export function Step4KiegMelleklet({
             <div className="flex-1 min-w-0 bg-background border border-border/30 rounded-xl overflow-hidden shadow-sm p-4 space-y-4">
               {!activeTab ? (
                 <div className="text-center py-8 text-muted-foreground text-xs">
-                  Válassz ki egy szekciót a szerkesztéshez a bal oldali menüből.
+                  {t('annual_report.step4.empty_selection')}
                 </div>
               ) : (
                 (() => {
@@ -193,13 +195,13 @@ export function Step4KiegMelleklet({
                                 updateReport.mutate({ notes_sections: sections });
                                 setResetCounter((prev) => prev + 1);
                                 toast({
-                                  title: 'Visszaállítva',
-                                  description: `${activeTab.title} alapértelmezettre állítva.`,
+                                  title: t('annual_report.step4.toast_reset_title'),
+                                  description: t('annual_report.step4.toast_reset_desc', { title: activeTab.title }),
                                 });
                               }}
                             >
                               <RotateCcw className="w-3 h-3" />
-                              Visszaállítás
+                              {t('annual_report.step4.reset_btn')}
                             </Button>
                           )}
                           {activeTab.isCustom && (
@@ -213,23 +215,23 @@ export function Step4KiegMelleklet({
                                 ).filter((s: any) => s.section_key !== activeTab.key);
                                 updateReport.mutate({ notes_sections: sections });
                                 toast({
-                                  title: 'Törölve',
-                                  description: `${activeTab.title} eltávolítva.`,
+                                  title: t('annual_report.step4.toast_deleted_title'),
+                                  description: t('annual_report.step4.toast_deleted_desc', { title: activeTab.title }),
                                 });
                               }}
                             >
                               <Trash2 className="w-3 h-3" />
-                              Törlés
+                              {t('annual_report.step4.delete_btn')}
                             </Button>
                           )}
                           {(isAssetSection || isEquitySection || isSalarySection) && (
                             <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 font-semibold select-none">
-                              Auto-fill
+                              {t('annual_report.step4.autofill_badge')}
                             </span>
                           )}
                           {activeTab.isRequired && (
                             <span className="text-[9px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-semibold select-none">
-                              Kötelező
+                              {t('annual_report.step4.required_badge')}
                             </span>
                           )}
                         </div>
@@ -241,39 +243,39 @@ export function Step4KiegMelleklet({
                           <table className="w-full text-xs">
                             <thead>
                               <tr className="bg-muted/50 font-bold border-b text-[10px] uppercase text-muted-foreground">
-                                <th className="p-2 text-left">Mutató</th>
-                                <th className="p-2 text-right">Érték</th>
+                                <th className="p-2 text-left">{t('annual_report.step4.asset_table.metric')}</th>
+                                <th className="p-2 text-right">{t('annual_report.step4.asset_table.value')}</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-border/10">
                               <tr>
-                                <td className="p-2">Összes eszköz (db)</td>
+                                <td className="p-2">{t('annual_report.step4.asset_table.total_assets')}</td>
                                 <td className="p-2 text-right font-mono font-medium">
                                   {assetMovement.total}
                                 </td>
                               </tr>
                               <tr>
-                                <td className="p-2">Aktív eszközök</td>
+                                <td className="p-2">{t('annual_report.step4.asset_table.active_assets')}</td>
                                 <td className="p-2 text-right font-mono font-medium">
                                   {assetMovement.active}
                                 </td>
                               </tr>
                               <tr>
-                                <td className="p-2">Kivezetett eszközök</td>
+                                <td className="p-2">{t('annual_report.step4.asset_table.disposed_assets')}</td>
                                 <td className="p-2 text-right font-mono font-medium">
                                   {assetMovement.disposed}
                                 </td>
                               </tr>
                               <tr className="font-semibold">
-                                <td className="p-2">Bruttó érték összesen</td>
+                                <td className="p-2">{t('annual_report.step4.asset_table.gross_total')}</td>
                                 <td className="p-2 text-right font-mono text-primary">
-                                  {formatHungarianNumber(assetMovement.totalAcquisition)} Ft
+                                  {formatNumberLocale(assetMovement.totalAcquisition)} Ft
                                 </td>
                               </tr>
                               <tr>
-                                <td className="p-2">Aktív eszközök bruttó értéke</td>
+                                <td className="p-2">{t('annual_report.step4.asset_table.active_gross')}</td>
                                 <td className="p-2 text-right font-mono font-medium">
-                                  {formatHungarianNumber(assetMovement.activeAcquisition)} Ft
+                                  {formatNumberLocale(assetMovement.activeAcquisition)} Ft
                                 </td>
                               </tr>
                             </tbody>
@@ -286,33 +288,33 @@ export function Step4KiegMelleklet({
                           <table className="w-full text-xs">
                             <thead>
                               <tr className="bg-muted/50 font-bold border-b text-[10px] uppercase text-muted-foreground">
-                                <th className="p-2 text-left">Sor</th>
-                                <th className="p-2 text-left">Megnevezés</th>
-                                <th className="p-2 text-right">Előző év</th>
-                                <th className="p-2 text-right">Tárgyév</th>
+                                <th className="p-2 text-left">{t('annual_report.step4.equity_table.row')}</th>
+                                <th className="p-2 text-left">{t('annual_report.step4.equity_table.name')}</th>
+                                <th className="p-2 text-right">{t('annual_report.step4.equity_table.prev_year')}</th>
+                                <th className="p-2 text-right">{t('annual_report.step4.equity_table.curr_year')}</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-border/10">
                               {equityRows.map((r: any) => (
                                 <tr key={r.bs_structure_id || r.row_code}>
-                                  <td className="p-2 font-mono text-[10px] text-muted-foreground">
-                                    {r.row_code}
-                                  </td>
-                                  <td className="p-2 font-medium">{r.name}</td>
-                                  <td className="p-2 text-right font-mono">
-                                    {formatHungarianNumber(
-                                      Math.round((Number(r.prior_year_balance) || 0) / 1000)
-                                    )}{' '}
-                                    E
-                                  </td>
-                                  <td className="p-2 text-right font-mono font-semibold text-primary">
-                                    {formatHungarianNumber(
-                                      Math.round((Number(r.current_balance) || 0) / 1000)
-                                    )}{' '}
-                                    E
-                                  </td>
-                                </tr>
-                              ))}
+                                <td className="p-2 font-mono text-[10px] text-muted-foreground">
+                                  {r.row_code}
+                                </td>
+                                <td className="p-2 font-medium">{r.name}</td>
+                                <td className="p-2 text-right font-mono">
+                                  {formatNumberLocale(
+                                    Math.round((Number(r.prior_year_balance) || 0) / 1000)
+                                  )}{' '}
+                                  {t('annual_report.step4.equity_table.thousands_unit')}
+                                </td>
+                                <td className="p-2 text-right font-mono font-semibold text-primary">
+                                  {formatNumberLocale(
+                                    Math.round((Number(r.current_balance) || 0) / 1000)
+                                  )}{' '}
+                                  {t('annual_report.step4.equity_table.thousands_unit')}
+                                </td>
+                              </tr>
+                            ))}
                             </tbody>
                           </table>
                         </div>
@@ -323,33 +325,33 @@ export function Step4KiegMelleklet({
                           <table className="w-full text-xs">
                             <thead>
                               <tr className="bg-muted/50 font-bold border-b text-[10px] uppercase text-muted-foreground">
-                                <th className="p-2 text-left">Mutató</th>
-                                <th className="p-2 text-right">Érték</th>
+                                <th className="p-2 text-left">{t('annual_report.step4.salary_table.metric')}</th>
+                                <th className="p-2 text-right">{t('annual_report.step4.salary_table.value')}</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-border/10">
                               <tr>
-                                <td className="p-2">Átlagos létszám</td>
+                                <td className="p-2">{t('annual_report.step4.salary_table.headcount')}</td>
                                 <td className="p-2 text-right font-mono font-medium">
-                                  {salaryMetrics.headcount} fő
+                                  {salaryMetrics.headcount} {t('annual_report.step4.salary_table.headcount_unit')}
                                 </td>
                               </tr>
                               <tr>
-                                <td className="p-2">Bérköltség</td>
+                                <td className="p-2">{t('annual_report.step4.salary_table.wages')}</td>
                                 <td className="p-2 text-right font-mono font-medium">
-                                  {formatHungarianNumber(salaryMetrics.totalWages)} Ft
+                                  {formatNumberLocale(salaryMetrics.totalWages)} Ft
                                 </td>
                               </tr>
                               <tr>
-                                <td className="p-2">Bérjárulékok</td>
+                                <td className="p-2">{t('annual_report.step4.salary_table.contributions')}</td>
                                 <td className="p-2 text-right font-mono font-medium">
-                                  {formatHungarianNumber(salaryMetrics.totalContrib)} Ft
+                                  {formatNumberLocale(salaryMetrics.totalContrib)} Ft
                                 </td>
                               </tr>
                               <tr className="font-semibold">
-                                <td className="p-2">Összes személyi jellegű ráfordítás</td>
+                                <td className="p-2">{t('annual_report.step4.salary_table.total_personnel')}</td>
                                 <td className="p-2 text-right font-mono text-primary">
-                                  {formatHungarianNumber(salaryMetrics.total)} Ft
+                                  {formatNumberLocale(salaryMetrics.total)} Ft
                                 </td>
                               </tr>
                             </tbody>
@@ -359,7 +361,7 @@ export function Step4KiegMelleklet({
 
                       {activeTab.isCustom ? (
                         <div className="space-y-1.5">
-                          <Label className="text-xs">Szekció szövege</Label>
+                          <Label className="text-xs">{t('annual_report.step4.section_text')}</Label>
                           <Textarea
                             value={
                               draftFields[`note_${activeTab.key}`] !== undefined
@@ -396,7 +398,7 @@ export function Step4KiegMelleklet({
                         </div>
                       ) : (
                         <div className="space-y-1.5">
-                          <Label className="text-xs">Szerkesztő (sablon változókkal)</Label>
+                          <Label className="text-xs">{t('annual_report.step4.editor_label')}</Label>
                           <RichTextEditor
                             key={`rte_${activeTab.key}_${resetCounter}`}
                             initialContent={saved?.text || activeTab.defaultText}
@@ -454,10 +456,10 @@ export function Step4KiegMelleklet({
             <div className="bg-muted/40 px-4 py-3 text-xs font-bold border-b border-border/60 flex items-center justify-between shrink-0 select-none">
               <span className="flex items-center gap-1.5">
                 <Eye className="w-3.5 h-3.5 text-primary" />
-                Éves Beszámoló Élő PDF Előnézet
+                {t('annual_report.step4.preview.title')}
               </span>
               <span className="text-[9px] text-muted-foreground font-normal">
-                Gépelésre automatikusan frissül
+                {t('annual_report.step4.preview.auto_update')}
               </span>
             </div>
             <div className="flex-1 bg-white dark:bg-slate-900">
@@ -466,7 +468,7 @@ export function Step4KiegMelleklet({
                   ref={iframeRef}
                   src={livePreviewUrl}
                   className="w-full h-full border-0"
-                  title="Éves Beszámoló Élő PDF Előnézet"
+                  title={t('annual_report.step4.preview.title')}
                   onLoad={() => {
                     if (iframeRef.current && iframeRef.current.contentWindow) {
                       try {
@@ -480,7 +482,7 @@ export function Step4KiegMelleklet({
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-xs text-muted-foreground p-4 text-center">
                   <Loader2 className="w-6 h-6 animate-spin text-primary/50 mb-2" />
-                  <span>Előnézet betöltése...</span>
+                  <span>{t('annual_report.step4.preview.loading')}</span>
                 </div>
               )}
             </div>

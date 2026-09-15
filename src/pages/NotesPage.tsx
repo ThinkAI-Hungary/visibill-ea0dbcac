@@ -96,20 +96,20 @@ export default function NotesPage() {
   };
 
   const handleDeleteNote = async (noteId: string) => {
-    if (!window.confirm('Biztosan törölni szeretnéd ezt a jegyzetet?')) return;
+    if (!window.confirm(t('toast.delete_confirm', { defaultValue: 'Biztosan törölni szeretnéd ezt a jegyzetet?' }))) return;
     try {
       await deleteNote.mutateAsync(noteId);
       toast({
-        title: 'Sikeres törlés',
-        description: 'Jegyzet sikeresen eltávolítva.',
+        title: t('toast.deleted_title', { defaultValue: 'Sikeres törlés' }),
+        description: t('toast.deleted_desc', { defaultValue: 'Jegyzet sikeresen eltávolítva.' }),
       });
       if (selectedNoteId === noteId) {
         setSelectedNoteId(null);
       }
     } catch (err: any) {
       toast({
-        title: 'Hiba történt',
-        description: err.message || 'Nem sikerült törölni a jegyzetet.',
+        title: t('toast.error_title', { defaultValue: 'Hiba történt' }),
+        description: err.message || t('toast.delete_failed', { defaultValue: 'Nem sikerült törölni a jegyzetet.' }),
         variant: 'destructive',
       });
     }
@@ -131,14 +131,14 @@ export default function NotesPage() {
           ...params,
         });
         toast({
-          title: 'Sikeres módosítás',
-          description: 'A jegyzet sikeresen frissítve lett.',
+          title: t('toast.saved_title', { defaultValue: 'Sikeres módosítás' }),
+          description: t('toast.saved_desc', { defaultValue: 'A jegyzet sikeresen frissítve lett.' }),
         });
       } else {
         const newNote = await addNote.mutateAsync(params);
         toast({
-          title: 'Sikeres rögzítés',
-          description: 'Új jegyzet sikeresen rögzítve.',
+          title: t('toast.created_title', { defaultValue: 'Sikeres rögzítés' }),
+          description: t('toast.created_desc', { defaultValue: 'Új jegyzet sikeresen rögzítve.' }),
         });
         if (newNote?.id) {
           setSelectedNoteId(newNote.id);
@@ -147,8 +147,8 @@ export default function NotesPage() {
       setModalOpen(false);
     } catch (err: any) {
       toast({
-        title: 'Mentési hiba',
-        description: err.message || 'Hiba történt a mentés során.',
+        title: t('toast.error_title', { defaultValue: 'Mentési hiba' }),
+        description: err.message || t('toast.save_failed', { defaultValue: 'Hiba történt a mentés során.' }),
         variant: 'destructive',
       });
     }

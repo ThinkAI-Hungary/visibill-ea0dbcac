@@ -49,6 +49,8 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { reportError } from '@/lib/errorReporter';
 
+import { formatNumberLocale } from '@/lib/locale/formatters';
+
 interface LedgerItem {
   id: string; // Fők.szám
   name: string; // Megnevezés
@@ -84,10 +86,10 @@ interface LedgerItem {
 
 const formatCurrency = (value: number) => {
   if (value === 0) return '0,00';
-  return new Intl.NumberFormat('hu-HU', {
+  return formatNumberLocale(value, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(value);
+  });
 };
 
 function cleanIdVal(val: any): string {
@@ -1541,7 +1543,6 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                 </div>
               </div>
             </div>
-          )}
           <div className="flex-1 overflow-auto print:overflow-visible w-full relative">
             <div className={cn("w-full flex flex-col min-h-full pb-2 print:pb-0", viewLayout === 'classic' && "min-w-[840px]")}>
               
@@ -2015,17 +2016,17 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       <ContextMenuContent className="w-56">
         <ContextMenuItem onClick={handleExpandAll} className="gap-2 cursor-pointer">
           <Maximize2 className="h-4 w-4" />
-          <span>Mind kinyitása</span>
+          <span>{t('accounting:general_ledger.context_menu.expand_all')}</span>
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleCollapseAll} className="gap-2 cursor-pointer">
           <Minimize2 className="h-4 w-4" />
-          <span>Mind összecsukása</span>
+          <span>{t('accounting:general_ledger.context_menu.collapse_all')}</span>
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleRefetchAll} disabled={isFetching} className="gap-2 cursor-pointer">
           <RefreshCw className={cn("h-4 w-4", isFetching ? "animate-spin text-muted-foreground" : "")} />
-          <span>{isFetching ? 'Frissítés folyamatban...' : 'Adatok frissítése'}</span>
+          <span>{isFetching ? t('accounting:general_ledger.context_menu.refreshing') : t('accounting:general_ledger.context_menu.refresh')}</span>
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
@@ -2034,35 +2035,39 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>
-              {editingItem ? 'Főkönyvi szám módosítása' : 'Átkontírozás másik számlára'}
+              {editingItem 
+                ? t('accounting:general_ledger.edit_category_modal.single_title', 'Főkönyvi szám módosítása') 
+                : t('accounting:general_ledger.edit_category_modal.bulk_title', 'Átkontírozás másik számlára')}
             </DialogTitle>
             <DialogDescription>
-              {editingItem ? 'Egy tétel módosítása' : `${selectedItemIds.size} kijelölt tétel tömeges átkontírozása másik főkönyvi számra`}
+              {editingItem 
+                ? t('accounting:general_ledger.edit_category_modal.single_desc', 'Egy tétel módosítása') 
+                : t('accounting:general_ledger.edit_category_modal.bulk_desc', { count: selectedItemIds.size, defaultValue: `${selectedItemIds.size} kijelölt tétel tömeges átkontírozása másik főkönyvi számra` })}
             </DialogDescription>
           </DialogHeader>
           <div className="py-2 flex flex-col gap-4 w-full overflow-hidden">
             <div className="bg-muted p-3 rounded-md border text-sm flex items-center justify-between w-full overflow-hidden gap-2">
-              <span className="font-medium text-muted-foreground whitespace-nowrap">Új kategória:</span>
+              <span className="font-medium text-muted-foreground whitespace-nowrap">{t('accounting:general_ledger.edit_category_modal.new_category')}</span>
               <span className="font-bold text-foreground bg-background px-3 py-1.5 rounded border border-border shadow-sm truncate max-w-full">
-                {selectedNewGL === 'UNCLASSIFIED' ? <span className="text-muted-foreground italic">Besorolatlan tétel (Kategória eltávolítva)</span> :
+                {selectedNewGL === 'UNCLASSIFIED' ? <span className="text-muted-foreground italic">{t('accounting:general_ledger.edit_category_modal.unclassified_removed')}</span> :
                   (selectedNewGL && dbData
                   ? (() => {
                       const gl = dbData.find(g => g.gl_account_id === selectedNewGL);
-                      return gl ? `${gl.gl_number} ${gl.short_name}` : "Válassz a listából...";
+                      return gl ? `${gl.gl_number} ${getLocalizedGlAccountName(gl.gl_number, gl.short_name, t)}` : t('accounting:general_ledger.edit_category_modal.choose_from_list');
                     })()
-                  : "Válassz a listából...")}
+                  : t('accounting:general_ledger.edit_category_modal.choose_from_list'))}
               </span>
             </div>
 
             <Command className="rounded-lg border shadow-sm w-full overflow-hidden h-[350px]" shouldFilter={false}>
               <CommandInput 
-                placeholder="Keresés főkönyvi szám vagy név alapján..." 
+                placeholder={t('accounting:general_ledger.edit_category_modal.search_placeholder')} 
                 value={dialogSearchQuery}
                 onValueChange={setDialogSearchQuery}
                 className="w-full"
               />
               <CommandList className="h-[300px] max-h-[300px] overflow-y-auto w-full overflow-x-hidden">
-                <CommandEmpty>Nincs találat.</CommandEmpty>
+                <CommandEmpty>{t('accounting:general_ledger.edit_category_modal.no_results')}</CommandEmpty>
                 <CommandGroup>
                   <CommandItem
                     key="unclassified"
@@ -2077,11 +2082,17 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                       )}
                     />
                     <span className={cn("truncate block w-full", selectedNewGL === 'UNCLASSIFIED' ? "font-bold text-foreground" : "font-medium")}>
-                      Besorolatlan (Kategória eltávolítása)
+                      {t('accounting:general_ledger.edit_category_modal.unclassified_option')}
                     </span>
                   </CommandItem>
                   {dbData
-                    ?.filter(gl => !dialogSearchQuery || `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(dialogSearchQuery.toLowerCase()))
+                    ?.filter(gl => {
+                      if (!dialogSearchQuery) return true;
+                      const q = dialogSearchQuery.toLowerCase();
+                      const locName = getLocalizedGlAccountName(gl.gl_number, gl.short_name, t);
+                      return `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(q) ||
+                             `${gl.gl_number} ${locName}`.toLowerCase().includes(q);
+                    })
                     .slice()
                     .sort((a,b) => cleanIdVal(a.gl_number).localeCompare(cleanIdVal(b.gl_number)))
                     .map(gl => {
@@ -2102,7 +2113,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                             )}
                           />
                           <span className={cn("truncate block w-full", selectedNewGL === gl.gl_account_id ? "font-bold text-foreground" : "")}>
-                            {gl.gl_number} {gl.short_name}
+                            {gl.gl_number} {getLocalizedGlAccountName(gl.gl_number, gl.short_name, t)}
                           </span>
                         </CommandItem>
                       );
@@ -2112,10 +2123,12 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
             </Command>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditOpen(false)} disabled={isSubmitting}>Mégse</Button>
+            <Button variant="outline" onClick={() => setIsEditOpen(false)} disabled={isSubmitting}>{t('accounting:general_ledger.edit_category_modal.cancel')}</Button>
             <Button onClick={handleSaveOverride} disabled={!selectedNewGL || isSubmitting || (editingItem && selectedNewGL === (editingItem.originalGlId || 'UNCLASSIFIED'))}>
               {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              {editingItem ? 'Mentés' : 'Átkontírozás végrehajtása'}
+              {editingItem 
+                ? t('accounting:general_ledger.edit_category_modal.save', 'Mentés') 
+                : t('accounting:general_ledger.edit_category_modal.execute_bulk', 'Átkontírozás végrehajtása')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2126,10 +2139,10 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
           <SheetHeader className="pb-4 border-b">
             <SheetTitle className="text-lg font-bold flex items-center gap-2">
               <FileText className="w-5 h-5 text-primary" />
-              Naplóbejegyzések: {selectedLeafAccount?.code}
+              {t('accounting:general_ledger.entries_sheet.title', { code: selectedLeafAccount?.code })}
             </SheetTitle>
             <SheetDescription className="text-xs">
-              {selectedLeafAccount?.name} – Könyvelési tételek részletes listája az aktív főkönyvből.
+              {t('accounting:general_ledger.entries_sheet.desc', { name: selectedLeafAccount?.name })}
             </SheetDescription>
           </SheetHeader>
 
@@ -2137,11 +2150,11 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
             {isLoadingEntries ? (
               <div className="flex justify-center items-center h-48 text-muted-foreground">
                 <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                <span className="ml-2 text-sm">Tételek betöltése...</span>
+                <span className="ml-2 text-sm">{t('accounting:general_ledger.entries_sheet.loading')}</span>
               </div>
             ) : !journalEntries?.length ? (
               <div className="text-center py-12 text-muted-foreground text-xs">
-                Nincs könyvelési tétel ehhez a számlaszámhoz az aktív importban.
+                {t('accounting:general_ledger.entries_sheet.no_entries')}
               </div>
             ) : (
               <div className="space-y-3">
@@ -2159,9 +2172,9 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                       
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <p className="font-semibold text-foreground">{entry.description || 'Névtelen tétel'}</p>
+                          <p className="font-semibold text-foreground">{entry.description || t('accounting:general_ledger.entries_sheet.untitled_item')}</p>
                           <p className="text-[10px] text-muted-foreground mt-0.5">
-                            Bizonylatszám: <span className="font-medium text-foreground">{entry.voucher_number || '-'}</span>
+                            {t('accounting:general_ledger.entries_sheet.doc_id', { num: entry.voucher_number || '-' })}
                           </p>
                         </div>
                         <div className="text-right">
@@ -2170,32 +2183,32 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                           </p>
                           {entry.foreign_currency && entry.foreign_currency !== 'HUF' && entry.foreign_amount && (
                             <p className="text-[10px] font-medium text-muted-foreground tabular-nums">
-                              {Number(entry.foreign_amount).toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {entry.foreign_currency}
-                              {entry.exchange_rate ? ` (@${Number(entry.exchange_rate).toLocaleString('hu-HU')} Ft)` : ''}
+                              {formatNumberLocale(Number(entry.foreign_amount), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {entry.foreign_currency}
+                              {entry.exchange_rate ? ` (@${formatNumberLocale(Number(entry.exchange_rate))} Ft)` : ''}
                             </p>
                           )}
                           <p className={cn(
                             "text-[10px] font-semibold mt-0.5",
                             isDebit ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
                           )}>
-                            {isDebit ? 'Tartozik (Debet)' : 'Követel (Kredit)'}
+                            {isDebit ? t('accounting:general_ledger.entries_sheet.debit') : t('accounting:general_ledger.entries_sheet.credit')}
                           </p>
                         </div>
                       </div>
 
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2 border-t border-border/40 text-[10px] text-muted-foreground">
                         <div>
-                          <span className="block opacity-75">Partner</span>
+                          <span className="block opacity-75">{t('accounting:general_ledger.entries_sheet.partner')}</span>
                           <span className="font-medium text-foreground truncate block">{entry.partner_name || '-'}</span>
                         </div>
                         <div>
-                          <span className="block opacity-75">Ellenszámla</span>
+                          <span className="block opacity-75">{t('accounting:general_ledger.entries_sheet.contra_gl')}</span>
                           <span className="font-medium text-foreground block font-mono">
                             {isDebit ? entry.credit_account : entry.debit_account}
                           </span>
                         </div>
                         <div>
-                          <span className="block opacity-75">Kelt / Teljesítés</span>
+                          <span className="block opacity-75">{t('accounting:general_ledger.entries_sheet.date_fulfillment')}</span>
                           <span className="font-medium text-foreground block">
                             {entry.voucher_date?.replace(/-/g, '.')} / {entry.service_date?.replace(/-/g, '.')}
                           </span>

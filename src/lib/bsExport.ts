@@ -1,4 +1,5 @@
 import { getLocalizedBsRowName } from './bsUtils';
+import { getLocalizedGlAccountName } from './glUtils';
 
 export const exportBsExcel = async (
   assets: any[],
@@ -107,7 +108,7 @@ export const exportBsExcel = async (
         if (!gl.gl_account_id) continue;
         const glRow = worksheet.addRow({
           sor: '',
-          nev: `         [${gl.gl_number}] ${gl.short_name}`,
+          nev: `         [${gl.gl_number}] ${getLocalizedGlAccountName(gl.gl_number, gl.short_name, t)}`,
           elozo: null,
           modositas: null,
           targy: formatValue(gl.balance || 0),

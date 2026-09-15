@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, TicketX } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { useTranslation } from "react-i18next";
 
 interface TicketNotFoundViewProps {
   onBack: () => void;
@@ -10,6 +11,8 @@ interface TicketNotFoundViewProps {
 }
 
 export function TicketNotFoundView({ onBack }: TicketNotFoundViewProps) {
+  const { t } = useTranslation('tickets');
+
   return (
     <div className="space-y-6 p-2 sm:p-0 page-animate">
       {/* Top back navigation */}
@@ -19,13 +22,13 @@ export function TicketNotFoundView({ onBack }: TicketNotFoundViewProps) {
           size="icon"
           onClick={onBack}
           className="shrink-0 h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-card/60"
-          aria-label="Vissza"
+          aria-label={t('detail.not_found.back_aria')}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground border-border/60">
-            Hibajegy
+            {t('detail.not_found.badge')}
           </Badge>
           <span className="text-xs text-muted-foreground font-medium">/</span>
           <span className="text-xs text-muted-foreground">404</span>
@@ -51,14 +54,14 @@ export function TicketNotFoundView({ onBack }: TicketNotFoundViewProps) {
                   variant="outline"
                   className="text-[11px] font-semibold uppercase tracking-wider px-2.5 py-0.5 border-destructive/30 text-destructive bg-destructive/5"
                 >
-                  404 • Nem található
+                  {t('detail.not_found.status_badge')}
                 </Badge>
               </div>
               <h2 className="text-2xl font-bold tracking-tight text-foreground pt-1">
-                A hibajegy nem található
+                {t('detail.not_found.title')}
               </h2>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                A keresett hibajegy nem létezik, időközben törlésre került, vagy nincs megfelelő jogosultsága a megtekintéséhez.
+                {t('detail.not_found.desc')}
               </p>
             </div>
 
@@ -70,7 +73,7 @@ export function TicketNotFoundView({ onBack }: TicketNotFoundViewProps) {
                 className="w-full sm:w-auto gap-2 shadow-sm font-medium px-5"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Vissza a hibajegyekhez
+                {t('detail.not_found.back_btn')}
               </Button>
             </div>
           </CardContent>

@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/command';
 import { Check, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 export interface FloatingBulkSelectOption {
   value: string;
@@ -34,22 +35,27 @@ export interface FloatingBulkSelectProps {
 export function FloatingBulkSelect({
   value,
   onValueChange,
-  placeholder = 'Kiválasztás...',
-  searchPlaceholder = 'Keresés...',
-  emptyText = 'Nincs találat',
+  placeholder,
+  searchPlaceholder,
+  emptyText,
   icon,
   options,
   className,
   popoverWidth = 'w-[200px]',
   disabled = false,
 }: FloatingBulkSelectProps) {
+  const { t } = useTranslation(['common']);
+  const effectivePlaceholder = placeholder ?? t('common:floating_bulk_bar.select_placeholder', 'Kiválasztás...');
+  const effectiveSearchPlaceholder = searchPlaceholder ?? t('common:floating_bulk_bar.search_placeholder', 'Keresés...');
+  const effectiveEmptyText = emptyText ?? t('common:floating_bulk_bar.empty_text', 'Nincs találat');
+
   const [open, setOpen] = React.useState(false);
 
   const selectedOption = React.useMemo(() => {
     return options.find((opt) => opt.value === value);
   }, [options, value]);
 
-  const displayLabel = selectedOption ? selectedOption.label : placeholder;
+  const displayLabel = selectedOption ? selectedOption.label : effectivePlaceholder;
   const isPlaceholder = !selectedOption;
 
   return (
@@ -97,12 +103,12 @@ export function FloatingBulkSelect({
       >
         <Command>
           <CommandInput
-            placeholder={searchPlaceholder}
+            placeholder={effectiveSearchPlaceholder}
             className="h-9 text-xs outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0"
           />
           <CommandList className="max-h-[220px] overflow-y-auto">
             <CommandEmpty className="py-3 text-center text-xs text-muted-foreground">
-              {emptyText}
+              {effectiveEmptyText}
             </CommandEmpty>
             <CommandGroup>
               {options.map((opt) => {

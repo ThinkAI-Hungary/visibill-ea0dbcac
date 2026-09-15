@@ -7,6 +7,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useTranslation } from "react-i18next";
 
 interface ImageGalleryModalProps {
   images: string[];
@@ -21,6 +22,8 @@ export function ImageGalleryModal({
   open,
   onClose,
 }: ImageGalleryModalProps) {
+  const { t: rawT } = useTranslation(['tickets', 'common']);
+  const t = (key: string, opts?: any): any => rawT((key.includes(':') ? key : `tickets:${key}`) as any, opts);
   const [currentIndex, setCurrentIndex] = React.useState(initialIndex);
 
   // Sync initialIndex when modal opens
@@ -97,7 +100,7 @@ export function ImageGalleryModal({
                 </a>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-xs">
-                Letöltés
+                {t('detail.gallery.download')}
               </TooltipContent>
             </Tooltip>
             <Tooltip>
@@ -113,7 +116,7 @@ export function ImageGalleryModal({
                 </button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-xs">
-                Bezárás (Esc)
+                {t('detail.gallery.close')}
               </TooltipContent>
             </Tooltip>
           </div>
@@ -127,7 +130,7 @@ export function ImageGalleryModal({
           <img
             key={currentIndex}
             src={currentImage}
-            alt={`Csatolmány ${currentIndex + 1}`}
+            alt={`Attachment ${currentIndex + 1}`}
             className="max-w-full max-h-[85vh] object-contain rounded-lg select-none animate-in fade-in zoom-in-95 duration-200 shadow-2xl"
             draggable={false}
           />
@@ -149,7 +152,7 @@ export function ImageGalleryModal({
                 </button>
               </TooltipTrigger>
               <TooltipContent side="right" className="text-xs">
-                Előző kép (Bal nyíl)
+                {t('detail.gallery.prev')}
               </TooltipContent>
             </Tooltip>
 
@@ -166,7 +169,7 @@ export function ImageGalleryModal({
                 </button>
               </TooltipTrigger>
               <TooltipContent side="left" className="text-xs">
-                Következő kép (Jobb nyíl)
+                {t('detail.gallery.next')}
               </TooltipContent>
             </Tooltip>
           </>

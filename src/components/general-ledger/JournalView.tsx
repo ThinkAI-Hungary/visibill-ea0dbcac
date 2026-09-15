@@ -14,6 +14,8 @@ import { toast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CustomTooltip } from '@/components/ui/custom-tooltip';
 import { fetchAllGlBalances, fetchAllGlCategorizedItems, GlDateBasis, GlPostingStatus } from '@/lib/glData';
+import { useTranslation } from 'react-i18next';
+import { getLocalizedGlAccountName } from '@/lib/glUtils';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  F7: JOURNAL VIEW (Naplófőkönyv)
@@ -88,6 +90,7 @@ export function getLogicalTypeLabel(sourceTable?: string | null, itemType?: stri
 }
 
 export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'kibocsatas', postingStatus = 'all' }: JournalViewProps) {
+  const { t } = useTranslation();
   const { selectedCompany } = useCompany();
   const { data: exchangeRates } = useExchangeRates();
   const [search, setSearch] = useState('');
@@ -167,9 +170,13 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
           ? 'Besorolatlan'
           : (gl?.gl_number || item.gl_number || 'Besorolatlan');
 
-        const glName = isUnclassified
-          ? 'Besorolatlan tétel'
+        const rawName = isUnclassified
+          ? t('accounting:general_ledger.unclassified_item', 'Besorolatlan tétel')
           : (gl?.short_name || item.gl_name || 'Besorolatlan tétel');
+
+        const glName = isUnclassified
+          ? rawName
+          : getLocalizedGlAccountName(glNumber, rawName, t);
 
         const logicalType = getLogicalTypeLabel(item.source_table, item.item_type);
 

@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useTranslation } from 'react-i18next';
+import { getLocalizedGlAccountName } from '@/lib/glUtils';
 import { Loader2, Plus, Sparkles, BookOpen } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -218,7 +219,7 @@ export function AddManualJournalEntryModal({
 
   const getGlLabel = (code: string) => {
     const acc = leafAccounts.find(gl => gl.gl_number === code);
-    return acc ? `${acc.gl_number} ${acc.short_name}` : code || t('accounting:dialogs.manual_journal_gl.choose_account');
+    return acc ? `${acc.gl_number} ${getLocalizedGlAccountName(acc.gl_number, acc.short_name, t)}` : code || t('accounting:dialogs.manual_journal_gl.choose_account');
   };
 
   return (
@@ -292,7 +293,13 @@ export function AddManualJournalEntryModal({
                       <CommandEmpty>{t('accounting:dialogs.manual_journal_gl.no_match')}</CommandEmpty>
                       <CommandGroup>
                         {leafAccounts
-                          ?.filter(gl => !debitSearch || `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(debitSearch.toLowerCase()))
+                          ?.filter(gl => {
+                            if (!debitSearch) return true;
+                            const q = debitSearch.toLowerCase();
+                            const loc = getLocalizedGlAccountName(gl.gl_number, gl.short_name, t);
+                            return `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(q) ||
+                                   `${gl.gl_number} ${loc}`.toLowerCase().includes(q);
+                          })
                           .map(gl => (
                             <CommandItem
                               key={gl.id}
@@ -302,7 +309,7 @@ export function AddManualJournalEntryModal({
                                 setDebitComboOpen(false);
                               }}
                             >
-                              {gl.gl_number} {gl.short_name}
+                              {gl.gl_number} {getLocalizedGlAccountName(gl.gl_number, gl.short_name, t)}
                             </CommandItem>
                           ))}
                       </CommandGroup>
@@ -345,7 +352,13 @@ export function AddManualJournalEntryModal({
                       <CommandEmpty>{t('accounting:dialogs.manual_journal_gl.no_match')}</CommandEmpty>
                       <CommandGroup>
                         {leafAccounts
-                          ?.filter(gl => !creditSearch || `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(creditSearch.toLowerCase()))
+                          ?.filter(gl => {
+                            if (!creditSearch) return true;
+                            const q = creditSearch.toLowerCase();
+                            const loc = getLocalizedGlAccountName(gl.gl_number, gl.short_name, t);
+                            return `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(q) ||
+                                   `${gl.gl_number} ${loc}`.toLowerCase().includes(q);
+                          })
                           .map(gl => (
                             <CommandItem
                               key={gl.id}
@@ -355,7 +368,7 @@ export function AddManualJournalEntryModal({
                                 setCreditComboOpen(false);
                               }}
                             >
-                              {gl.gl_number} {gl.short_name}
+                              {gl.gl_number} {getLocalizedGlAccountName(gl.gl_number, gl.short_name, t)}
                             </CommandItem>
                           ))}
                       </CommandGroup>

@@ -40,6 +40,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { extractStoragePath } from '@/lib/utils';
+import { formatCurrencyLocale, formatNumberLocale } from '@/lib/locale/formatters';
 import { InvoiceDetailPopup } from '@/components/InvoiceDetailPopup';
 import AddManualJournalEntryModal from '@/components/journals/AddManualJournalEntryModal';
 import OpeningJournalWizardModal from '@/components/journals/OpeningJournalWizardModal';
@@ -147,12 +148,7 @@ const renderSourceBadge = (source: string, t?: any) => {
 };
 
 const formatCurrency = (val: number, currency: string = 'HUF') => {
-  const isHuf = currency === 'HUF';
-  return new Intl.NumberFormat('hu-HU', {
-    style: 'currency',
-    currency,
-    maximumFractionDigits: isHuf ? 0 : 2
-  }).format(val);
+  return formatCurrencyLocale(val, currency, { maximumFractionDigits: currency === 'HUF' ? 0 : 2 });
 };
 
 export default function JournalsPage() {
@@ -177,10 +173,17 @@ export default function JournalsPage() {
     onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
       queryClient.invalidateQueries({ queryKey: ['acc-munkalista-count'] });
-      toast({ title: "Javaslatok sikeresen legenerálva", description: `${count} db könyvelési tétel javaslat jött létre a meglévő adatokból.` });
+      toast({
+        title: t('accounting:journals.toasts.drafts_generated_title'),
+        description: t('accounting:journals.toasts.drafts_generated_desc', { count })
+      });
     },
     onError: (err: any) => {
-      toast({ title: "Hiba a javaslatok generálásakor", description: err?.message || "Ismeretlen hiba történt", variant: "destructive" });
+      toast({
+        title: t('accounting:journals.toasts.drafts_error_title'),
+        description: err?.message || t('common:unknown_error', 'Ismeretlen hiba történt'),
+        variant: "destructive"
+      });
     }
   });
 
@@ -539,7 +542,10 @@ export default function JournalsPage() {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            toast({ title: 'Sikeres letöltés', description: `${fileName} letöltve.` });
+            toast({
+              title: t('accounting:journals.toasts.download_success_title'),
+              description: t('accounting:journals.toasts.download_success_desc', { fileName })
+            });
             return;
           }
         }
@@ -551,17 +557,20 @@ export default function JournalsPage() {
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      toast({ title: 'Sikeres letöltés', description: `${fileName} letöltve.` });
+      toast({
+        title: t('accounting:journals.toasts.download_success_title'),
+        description: t('accounting:journals.toasts.download_success_desc', { fileName })
+      });
     } catch (e: any) {
       toast({
-        title: 'Hiba a letöltés során',
-        description: e?.message || 'Nem sikerült letölteni a fájlt.',
+        title: t('accounting:journals.toasts.download_error_title'),
+        description: e?.message || t('accounting:journals.toasts.download_error_desc'),
         variant: 'destructive',
       });
     } finally {
       setDownloadingSourceDoc(false);
     }
-  }, [toast]);
+  }, [toast, t]);
 
   // Canonical helper to invalidate all related caches across journals, GL, and VAT
   const invalidateGlAndJournalQueries = useCallback(() => {
@@ -591,10 +600,10 @@ export default function JournalsPage() {
     },
     onSuccess: () => {
       invalidateGlAndJournalQueries();
-      toast({ title: "Tétel sikeresen lekönyvelve" });
+      toast({ title: t('accounting:journals.toasts.posted_success_title') });
     },
     onError: (err) => {
-      toast({ title: "Könyvelési hiba", description: err.message, variant: "destructive" });
+      toast({ title: t('accounting:journals.toasts.posted_error_title'), description: err.message, variant: "destructive" });
     }
   });
 
@@ -628,25 +637,25 @@ export default function JournalsPage() {
     onSuccess: ({ successes, failures, total }) => {
       if (failures.length === 0) {
         setSelectedEntryIds(new Set());
-        toast({ title: `${total} tétel sikeresen lekönyvelve` });
+        toast({ title: t('accounting:journals.toasts.bulk_post_success_title', { total }) });
       } else if (successes.length > 0) {
         // Keep only failed IDs selected so user can easily retry or review
         setSelectedEntryIds(new Set(failures.map(f => f.id)));
         toast({
-          title: `Részleges könyvelés: ${successes.length} sikeres, ${failures.length} hibás`,
-          description: `A hibás tételek kijelölve maradtak. Első hiba: ${failures[0].error}`,
+          title: t('accounting:journals.toasts.bulk_post_partial_title', { success: successes.length, fail: failures.length }),
+          description: t('accounting:journals.toasts.bulk_post_partial_desc', { error: failures[0].error }),
           variant: "destructive"
         });
       } else {
         toast({
-          title: "Könyvelési hiba",
-          description: `Egyetlen tétel sem került lekönyvelésre. Hiba: ${failures[0].error}`,
+          title: t('accounting:journals.toasts.posted_error_title'),
+          description: t('accounting:journals.toasts.bulk_post_none_desc', { error: failures[0].error }),
           variant: "destructive"
         });
       }
     },
     onError: (err) => {
-      toast({ title: "Könyvelési hiba", description: err.message, variant: "destructive" });
+      toast({ title: t('accounting:journals.toasts.posted_error_title'), description: err.message, variant: "destructive" });
     }
   });
   
@@ -663,10 +672,10 @@ export default function JournalsPage() {
       invalidateGlAndJournalQueries();
       setSelectedEntryIds(new Set());
       const label = STATUS_LABELS[variables.status]?.label || variables.status;
-      toast({ title: `Kijelölt tételek állapota frissítve: ${label}` });
+      toast({ title: t('accounting:journals.toasts.bulk_status_title', { label }) });
     },
     onError: (err) => {
-      toast({ title: "Hiba a tömeges módosítás során", description: err.message, variant: "destructive" });
+      toast({ title: t('accounting:journals.toasts.bulk_status_error_title'), description: err.message, variant: "destructive" });
     }
   });
 
@@ -687,14 +696,14 @@ export default function JournalsPage() {
     },
     onSuccess: (res) => {
       invalidateGlAndJournalQueries();
-      toast({ title: res.correct ? "Sztornózva és javító másolat elkészítve" : "Tétel sztornózva" });
+      toast({ title: res.correct ? t('accounting:journals.toasts.storno_copy_title') : t('accounting:journals.toasts.storno_success_title') });
       if (res.correct && res.id) {
         setEditingEntryId(res.id);
         setManualEntryOpen(true);
       }
     },
     onError: (err) => {
-      toast({ title: "Sztornózási hiba", description: err.message, variant: "destructive" });
+      toast({ title: t('accounting:journals.toasts.storno_error_title'), description: err.message, variant: "destructive" });
     }
   });
 
@@ -715,14 +724,14 @@ export default function JournalsPage() {
     onSuccess: (headerId) => {
       invalidateGlAndJournalQueries();
       toast({
-        title: "Tétel visszanyitva piszkozattá",
-        description: "A tétel sikeresen visszanyílt kézi piszkozattá. Az eredeti naplósorszám megmaradt, most közvetlenül szerkesztheti."
+        title: t('accounting:journals.toasts.unpost_success_title'),
+        description: t('accounting:journals.toasts.unpost_success_desc')
       });
       setEditingEntryId(headerId);
       setManualEntryOpen(true);
     },
     onError: (err: any) => {
-      toast({ title: "Visszanyitási hiba", description: err.message, variant: "destructive" });
+      toast({ title: t('accounting:journals.toasts.unpost_error_title'), description: err.message, variant: "destructive" });
     }
   });
 
@@ -757,10 +766,10 @@ export default function JournalsPage() {
         setSelectedEntry(null);
       }
       invalidateGlAndJournalQueries();
-      toast({ title: "Piszkozat törölve" });
+      toast({ title: t('accounting:journals.toasts.delete_success_title') });
     },
     onError: (err: any) => {
-      toast({ title: "Törlési hiba", description: err.message, variant: "destructive" });
+      toast({ title: t('accounting:journals.toasts.delete_error_title'), description: err.message, variant: "destructive" });
     }
   });
 
@@ -797,15 +806,15 @@ export default function JournalsPage() {
       invalidateGlAndJournalQueries();
       if (skippedCount > 0) {
         toast({
-          title: `${deletedIds.length} piszkozat törölve`,
-          description: `${skippedCount} db tétel megőrzésre került, mivel hivatalos naplósorszámmal rendelkezik (sorszámfolytonosság védelme).`
+          title: t('accounting:journals.toasts.bulk_delete_partial_title', { deleted: deletedIds.length }),
+          description: t('accounting:journals.toasts.bulk_delete_partial_desc', { skipped: skippedCount })
         });
       } else {
-        toast({ title: "Kijelölt piszkozatok sikeresen törölve" });
+        toast({ title: t('accounting:journals.toasts.bulk_delete_success_title') });
       }
     },
     onError: (err: any) => {
-      toast({ title: "Törlési hiba", description: err.message, variant: "destructive" });
+      toast({ title: t('accounting:journals.toasts.delete_error_title'), description: err.message, variant: "destructive" });
     }
   });
 
@@ -1259,7 +1268,7 @@ export default function JournalsPage() {
                                   <Checkbox
                                     checked={selectedEntryIds.has(e.id)}
                                     onCheckedChange={() => toggleSelectEntry(e.id)}
-                                    aria-label={`Tétel kijelölése: ${e.document_id || e.id}`}
+                                    aria-label={t('accounting:journals.table.select_item_aria', { id: e.document_id || e.id })}
                                   />
                                 </div>
                               ) : (
@@ -1267,7 +1276,7 @@ export default function JournalsPage() {
                                   {(() => {
                                     if (e.status === 'SZTORNOZOTT') {
                                       return (
-                                        <CustomTooltip content="Sztornózott tétel (lezárt, nem jelölhető ki tömeges műveletre)">
+                                        <CustomTooltip content={t('accounting:journals.table.lock_stornoed')}>
                                           <span className="inline-flex items-center justify-center cursor-help text-muted-foreground/35 hover:text-muted-foreground/60 transition-colors">
                                             <Lock className="w-3.5 h-3.5" />
                                           </span>
@@ -1277,7 +1286,7 @@ export default function JournalsPage() {
                                     const lock = checkEntryLock(e);
                                     if (lock.locked) {
                                       return (
-                                        <CustomTooltip content={`Lekönyvelt zárt tétel (${lock.reason}). Közvetlenül nem módosítható, kizárólag számviteli sztornózással helyesbíthető.`}>
+                                        <CustomTooltip content={t('accounting:journals.table.lock_closed', { reason: lock.reason })}>
                                           <span className="inline-flex items-center justify-center cursor-help text-amber-500/80 hover:text-amber-600 transition-colors">
                                             <Lock className="w-3.5 h-3.5" />
                                           </span>
@@ -1285,7 +1294,7 @@ export default function JournalsPage() {
                                       );
                                     }
                                     return (
-                                      <CustomTooltip content="Lekönyvelt tétel nyitott időszakban. A sorvégi műveleteknél közvetlenül visszanyitható és szerkeszthető, vagy sztornózható.">
+                                      <CustomTooltip content={t('accounting:journals.table.lock_open')}>
                                         <span className="inline-flex items-center justify-center cursor-help text-muted-foreground/35 hover:text-muted-foreground/60 transition-colors">
                                           <Lock className="w-3.5 h-3.5" />
                                         </span>
@@ -1302,12 +1311,12 @@ export default function JournalsPage() {
                               <div>{journalNum}</div>
                               {isStornoEntry && (
                                 <span className="text-[9px] text-amber-600 dark:text-amber-400 font-mono block leading-tight truncate">
-                                  ↩ {origRefEntry ? `${origRefEntry.journal?.code}/${origRefEntry.journal_number}` : 'eredeti'}
+                                  ↩ {origRefEntry ? `${origRefEntry.journal?.code}/${origRefEntry.journal_number}` : t('accounting:journals.table.storno_original_ref')}
                                 </span>
                               )}
                               {isStornoedOriginal && (
                                 <span className="text-[9px] text-rose-500 dark:text-rose-400 font-mono block leading-tight truncate">
-                                  ❌ {stornoRefEntry ? `${stornoRefEntry.journal?.code}/${stornoRefEntry.journal_number}` : 'sztornózva'}
+                                  ❌ {stornoRefEntry ? `${stornoRefEntry.journal?.code}/${stornoRefEntry.journal_number}` : t('accounting:journals.table.storno_stornoed_ref')}
                                 </span>
                               )}
                             </TableCell>
@@ -1318,7 +1327,7 @@ export default function JournalsPage() {
                                   displayValue={e.document_id}
                                   className="font-mono text-xs"
                                   maxWidth="135px"
-                                  ariaLabel={`${e.document_id} másolása`}
+                                  ariaLabel={t('accounting:journals.table.copy_aria', { val: e.document_id })}
                                 />
                               ) : (
                                 <span className="text-muted-foreground">—</span>
@@ -1332,7 +1341,7 @@ export default function JournalsPage() {
                                   truncate
                                   maxWidth="165px"
                                   className="font-medium text-xs text-foreground"
-                                  ariaLabel={`${e.partner.name} másolása`}
+                                  ariaLabel={t('accounting:journals.table.copy_aria', { val: e.partner.name })}
                                 />
                               ) : (
                                 <span className="text-muted-foreground">—</span>
@@ -1364,7 +1373,7 @@ export default function JournalsPage() {
                                     </TooltipTrigger>
                                     <TooltipContent side="left" className="text-xs">
                                       <p className="font-medium">{t('accounting:journals.table.daily_rate_tooltip_title', { date: e.posting_date.replace(/-/g, '.'), defaultValue: `Napi MNB árfolyam (${e.posting_date.replace(/-/g, '.')})` })}:</p>
-                                      <p className="text-muted-foreground font-mono">1 {e.currency} = {rate.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} Ft</p>
+                                      <p className="text-muted-foreground font-mono">1 {e.currency} = {formatNumberLocale(rate, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} Ft</p>
                                     </TooltipContent>
                                   </Tooltip>
                                 )}
@@ -1531,9 +1540,15 @@ export default function JournalsPage() {
             <>
               <SheetHeader className="border-b pb-4">
                 <SheetTitle className="flex justify-between items-center text-base">
-                  <span>Bizonylat tételek: {selectedEntry.journal_number ? `${selectedEntry.journal?.code}/${selectedEntry.journal_number}` : 'Könyveletlen piszkozat'}</span>
-                  <Badge variant="outline" className={cn("px-2 py-0.5 text-[10px] font-medium border uppercase", STATUS_LABELS[selectedEntry.status]?.color)}>
-                    {STATUS_LABELS[selectedEntry.status]?.label}
+                  <span>
+                    {t('accounting:journals.drawer.title', {
+                      docNum: selectedEntry.journal_number
+                        ? `${selectedEntry.journal?.code}/${selectedEntry.journal_number}`
+                        : t('accounting:journals.drawer.unposted_draft')
+                    })}
+                  </span>
+                  <Badge variant="outline" className={cn("px-2 py-0.5 text-[10px] font-medium border uppercase", getStatusInfo(selectedEntry.status, t).color)}>
+                    {getStatusInfo(selectedEntry.status, t).label}
                   </Badge>
                 </SheetTitle>
               </SheetHeader>
@@ -1543,12 +1558,12 @@ export default function JournalsPage() {
                   <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2.5">
                     <RotateCcw className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                     <div>
-                      <span className="font-bold block">SZTORNÓ BIZONYLAT</span>
+                      <span className="font-bold block">{t('accounting:journals.drawer.storno_title')}</span>
                       <p className="text-[11px] mt-0.5 leading-relaxed">
-                        Ez a bizonylat ellentétes előjellel sztornózza és kivezeti a kapcsolódó eredeti bizonylatot.
+                        {t('accounting:journals.drawer.storno_desc')}
                         {(() => {
                           const orig = entriesById.get(selectedEntry.stornoed_entry_id || selectedEntry.original_entry_id);
-                          return orig ? ` Hivatkozott eredeti tétel: ${orig.journal?.code}/${orig.journal_number} (${orig.document_id})` : '';
+                          return orig ? t('accounting:journals.drawer.storno_ref_orig', { code: orig.journal?.code, num: orig.journal_number, docId: orig.document_id }) : '';
                         })()}
                       </p>
                     </div>
@@ -1559,12 +1574,12 @@ export default function JournalsPage() {
                   <div className="bg-rose-500/10 border border-rose-500/30 rounded-lg p-3 text-xs text-rose-800 dark:text-rose-300 flex items-start gap-2.5">
                     <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                     <div>
-                      <span className="font-bold block">SZTORNÓZOTT (ÉRVÉNYTELENÍTETT) BIZONYLAT</span>
+                      <span className="font-bold block">{t('accounting:journals.drawer.stornoed_title')}</span>
                       <p className="text-[11px] mt-0.5 leading-relaxed">
-                        Ezt a bizonylatot hivatalosan sztornózták. A könyvelésből kivezetésre került egy ellentétes sztornó bizonylattal.
+                        {t('accounting:journals.drawer.stornoed_desc')}
                         {(() => {
                           const st = stornoMap.get(selectedEntry.id);
-                          return st ? ` Sztornó bizonylat száma: ${st.journal?.code}/${st.journal_number}` : '';
+                          return st ? t('accounting:journals.drawer.stornoed_ref_storno', { code: st.journal?.code, num: st.journal_number }) : '';
                         })()}
                       </p>
                     </div>
@@ -1574,32 +1589,32 @@ export default function JournalsPage() {
                 {/* General Info */}
                 <div className="grid grid-cols-2 gap-4 text-xs bg-muted/30 p-4 rounded-lg border">
                   <div>
-                    <span className="text-muted-foreground block">Partner</span>
+                    <span className="text-muted-foreground block">{t('accounting:journals.drawer.partner')}</span>
                     <span className="font-semibold text-foreground text-sm">{selectedEntry.partner?.name || '—'}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground block">Megnevezés</span>
+                    <span className="text-muted-foreground block">{t('accounting:journals.drawer.description')}</span>
                     <span className="font-semibold text-foreground text-sm">{selectedEntry.description}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground block">Teljesítés dátuma</span>
+                    <span className="text-muted-foreground block">{t('accounting:journals.drawer.fulfillment_date')}</span>
                     <span className="font-medium text-foreground flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-muted-foreground" />{selectedEntry.posting_date.replace(/-/g, '.')}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground block">Bizonylatszám</span>
+                    <span className="text-muted-foreground block">{t('accounting:journals.drawer.document_number')}</span>
                     <span className="font-mono font-medium text-foreground">{selectedEntry.document_id}</span>
                   </div>
                   {selectedEntry.currency && selectedEntry.currency !== 'HUF' && (
                     <div>
-                      <span className="text-muted-foreground block">Napi MNB árfolyam</span>
+                      <span className="text-muted-foreground block">{t('accounting:journals.drawer.daily_rate')}</span>
                       <span className="font-mono font-medium text-foreground">
-                        1 {selectedEntry.currency} = {(Number(selectedEntry.exchange_rate) > 1 ? Number(selectedEntry.exchange_rate) : getDailyRate(selectedEntry.currency, selectedEntry.posting_date)).toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} Ft
+                        1 {selectedEntry.currency} = {formatNumberLocale((Number(selectedEntry.exchange_rate) > 1 ? Number(selectedEntry.exchange_rate) : getDailyRate(selectedEntry.currency, selectedEntry.posting_date)), { minimumFractionDigits: 2, maximumFractionDigits: 4 })} Ft
                       </span>
                     </div>
                   )}
                   {selectedEntry.justification && (
                     <div className="col-span-2 border-t pt-2 mt-2">
-                      <span className="text-muted-foreground block">Indoklás / Megjegyzés</span>
+                      <span className="text-muted-foreground block">{t('accounting:journals.drawer.justification')}</span>
                       <span className="italic text-foreground">{selectedEntry.justification}</span>
                     </div>
                   )}
@@ -1618,7 +1633,7 @@ export default function JournalsPage() {
                       </div>
                       <div className="min-w-0">
                         <span className="text-[11px] font-medium text-muted-foreground block">
-                          {sourceDocument.type === 'bank' ? 'Csatolt eredeti bankkivonat' : 'Csatolt bizonylat / számla'}
+                          {sourceDocument.type === 'bank' ? t('accounting:journals.drawer.source_bank') : t('accounting:journals.drawer.source_invoice')}
                         </span>
                         <span className="text-xs font-semibold text-foreground truncate block" title={sourceDocument.title}>
                           {sourceDocument.title}
@@ -1634,7 +1649,7 @@ export default function JournalsPage() {
                           onClick={() => setPreviewInvoiceId(sourceDocument.invoiceId!)}
                         >
                           <Eye className="w-3.5 h-3.5" />
-                          Részletek
+                          {t('accounting:journals.drawer.details_btn')}
                         </Button>
                       )}
                       {sourceDocument.fileUrl && (
@@ -1646,7 +1661,7 @@ export default function JournalsPage() {
                             onClick={() => window.open(sourceDocument.fileUrl, '_blank')}
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
-                            Megnyitás
+                            {t('accounting:journals.drawer.open_btn')}
                           </Button>
                           <Button
                             size="sm"
@@ -1660,7 +1675,7 @@ export default function JournalsPage() {
                             ) : (
                               <Download className="w-3.5 h-3.5" />
                             )}
-                            Letöltés
+                            {t('accounting:journals.drawer.download_btn')}
                           </Button>
                         </>
                       )}
@@ -1670,18 +1685,18 @@ export default function JournalsPage() {
 
                 {/* Double entry lines */}
                 <div className="space-y-2">
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Kontírozott tételek (Tétel sorok)</h4>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('accounting:journals.drawer.lines_title')}</h4>
                   <div className="border rounded-lg overflow-hidden bg-card">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
                         <tr className="bg-muted/50 border-b border-border/40 font-semibold text-[10px] uppercase text-muted-foreground">
-                          <th className="p-2.5">Sorsz.</th>
-                          <th className="p-2.5">Főkönyvi szám</th>
-                          <th className="p-2.5">Főkönyvi megnevezés</th>
-                          <th className="p-2.5 text-center">T/K</th>
-                          <th className="p-2.5 text-right">Összeg</th>
-                          <th className="p-2.5">Projekt</th>
-                          <th className="p-2.5">Jegyzet</th>
+                          <th className="p-2.5">{t('accounting:journals.drawer.seq')}</th>
+                          <th className="p-2.5">{t('accounting:journals.drawer.gl_number')}</th>
+                          <th className="p-2.5">{t('accounting:journals.drawer.gl_name')}</th>
+                          <th className="p-2.5 text-center">{t('accounting:journals.drawer.dc')}</th>
+                          <th className="p-2.5 text-right">{t('accounting:journals.drawer.amount')}</th>
+                          <th className="p-2.5">{t('accounting:journals.drawer.project')}</th>
+                          <th className="p-2.5">{t('accounting:journals.drawer.note')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border/20">

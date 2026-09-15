@@ -204,6 +204,36 @@
     "next_page": "Következő oldal",
     "last_page": "Utolsó oldal",
     "page_size": "Oldalméret"
+  },
+  "floating_bulk_bar": {
+    "selected_items": "Kijelölt elemek:",
+    "unit_db": "db",
+    "save": "Mentés",
+    "cancel": "Mégse",
+    "saving": "Mentés...",
+    "select_placeholder": "Kiválasztás...",
+    "search_placeholder": "Keresés...",
+    "empty_text": "Nincs találat"
+  },
+  "table_empty_state": {
+    "title": "Nincs megjeleníthető adat",
+    "description": "Próbáld módosítani a szűrőket vagy keresési feltételeket.",
+    "clear_filters": "Szűrők törlése"
+  },
+  "file_preview": {
+    "pdf_title": "PDF előnézet: {{name}}",
+    "excel_title": "Excel előnézet: {{name}}",
+    "unsupported": "A fájl típusa ({{ext}}) nem jeleníthető meg előnézetben.",
+    "csv_error": "Nem sikerült betölteni a CSV tartalmát.",
+    "first_100_rows": "Csak az első 100 sor jelenik meg előnézetben.",
+    "download": "Letöltés",
+    "open_new_tab": "Megnyitás új lapon",
+    "close": "Bezárás"
+  },
+  "copy": {
+    "copied": "Másolva",
+    "failed": "Nem sikerült másolni.",
+    "click_to_copy": "Kattints a másoláshoz"
   }
 }
 

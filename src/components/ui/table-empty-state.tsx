@@ -1,6 +1,7 @@
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { SearchX, FileQuestion, type LucideIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface TableEmptyStateProps {
     colSpan: number;
@@ -14,11 +15,16 @@ interface TableEmptyStateProps {
 export function TableEmptyState({
     colSpan,
     icon: Icon = SearchX,
-    title = 'Nincs megjeleníthető adat',
-    description = 'Próbáld módosítani a szűrőket vagy keresési feltételeket.',
+    title,
+    description,
     onClearFilters,
-    clearLabel = 'Szűrők törlése',
+    clearLabel,
 }: TableEmptyStateProps) {
+    const { t } = useTranslation(['common']);
+    const effectiveTitle = title ?? t('common:table_empty_state.title', 'Nincs megjeleníthető adat');
+    const effectiveDescription = description ?? t('common:table_empty_state.description', 'Próbáld módosítani a szűrőket vagy keresési feltételeket.');
+    const effectiveClearLabel = clearLabel ?? t('common:table_empty_state.clear_filters', 'Szűrők törlése');
+
     return (
         <TableRow className="hover:bg-transparent">
             <TableCell colSpan={colSpan} className="h-48">
@@ -28,10 +34,10 @@ export function TableEmptyState({
                     </div>
                     <div className="text-center space-y-1">
                         <h3 className="text-base font-bold tracking-tight text-foreground">
-                            {title}
+                            {effectiveTitle}
                         </h3>
                         <p className="text-sm text-muted-foreground max-w-sm">
-                            {description}
+                            {effectiveDescription}
                         </p>
                     </div>
                     {onClearFilters && (
@@ -41,7 +47,7 @@ export function TableEmptyState({
                             onClick={onClearFilters}
                             className="mt-2 text-primary border-primary/30 hover:bg-primary/10 hover:text-primary"
                         >
-                            {clearLabel}
+                            {effectiveClearLabel}
                         </Button>
                     )}
                 </div>

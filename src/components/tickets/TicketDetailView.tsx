@@ -85,8 +85,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useScopedBasePath } from "@/lib/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-import { hu } from "date-fns/locale";
+import { getDateFnsLocale } from "@/lib/locale/formatters";
 
 interface TicketDetailViewProps {
   feedbackId: string;
@@ -95,6 +96,8 @@ interface TicketDetailViewProps {
 }
 
 export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetailViewProps) {
+  const { t: rawT } = useTranslation(['tickets', 'common']);
+  const t = (key: string, opts?: any): any => rawT((key.includes(':') ? key : `tickets:${key}`) as any, opts);
   const navigate = useNavigate();
   const location = useLocation();
   const eaisybillBasePath = useScopedBasePath();
@@ -215,16 +218,16 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
               markRead(feedbackId);
               shouldScrollRef.current = true;
               toast({
-                title: isTextEmpty && !hasFiles ? "Megerősítés-kérés elküldve" : "Válasz és megerősítés-kérés elküldve",
+                title: isTextEmpty && !hasFiles ? t('detail.toasts.res_req_sent_title') : t('detail.toasts.reply_and_res_req_title'),
                 description: isTextEmpty && !hasFiles
-                  ? "A hibajegy állapota visszaigazolásra váróra váltott."
-                  : "A felhasználó értesítést kapott a javasolt megoldásról.",
+                  ? t('detail.toasts.res_req_sent_desc')
+                  : t('detail.toasts.reply_and_res_req_desc'),
               });
             },
             onError: (err: any) => {
               toast({
                 variant: "destructive",
-                title: "Hiba a küldéskor",
+                title: t('detail.toasts.error_send'),
                 description: err?.message || "Nem sikerült elküldeni a kérést.",
               });
             },
@@ -247,7 +250,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
         );
       }
     } catch (err: any) {
-      toast({ variant: "destructive", title: "Kép feltöltési hiba", description: err?.message || "Ismeretlen hiba" });
+      toast({ variant: "destructive", title: t('detail.toasts.upload_error'), description: err?.message || "Ismeretlen hiba" });
     }
   };
 
@@ -266,13 +269,13 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
         attachments: [...existing, ...newUrls],
       });
       toast({
-        title: "Csatolmány hozzáadva",
-        description: `${newUrls.length} fájl sikeresen csatolva a hibajegyhez.`,
+        title: t('detail.toasts.attachment_added'),
+        description: t('detail.toasts.attachment_added_desc', { count: newUrls.length }),
       });
     } catch (err: any) {
       toast({
         variant: "destructive",
-        title: "Feltöltési hiba",
+        title: t('detail.toasts.upload_error'),
         description: err?.message || "Nem sikerült feltölteni a csatolmányt.",
       });
     } finally {
@@ -289,12 +292,12 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
         attachments: updated,
       });
       toast({
-        title: "Csatolmány eltávolítva",
+        title: t('detail.toasts.attachment_removed'),
       });
     } catch (err: any) {
       toast({
         variant: "destructive",
-        title: "Hiba az eltávolításkor",
+        title: t('detail.toasts.error_send'),
         description: err?.message,
       });
     }
@@ -322,7 +325,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
 
   const formatDate = (date: string | null) => {
     if (!date) return "—";
-    return format(new Date(date), "yyyy. MMM d. HH:mm", { locale: hu });
+    return format(new Date(date), "yyyy. MMM d. HH:mm", { locale: getDateFnsLocale() });
   };
 
   // Collect ALL image URLs across ticket + comments for unified gallery
@@ -615,7 +618,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
               disabled={isDeleting}
             >
               {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Trash2 className="h-4 w-4 mr-1.5" />}
-              Jegy törlése
+              {t('detail.delete_button')}
             </Button>
           )}
         </div>
@@ -624,14 +627,13 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
         <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Hibajegy végleges törlése</AlertDialogTitle>
+              <AlertDialogTitle>{t('detail.delete_title')}</AlertDialogTitle>
               <AlertDialogDescription>
-                Biztosan törölni szeretnéd a <strong>{ticket.ticket_number}</strong> hibajegyet?
-                Ez a művelet nem visszavonható — az összes hozzászólás, csatolmány és előzmény is törlődik.
+                {t('detail.delete_desc', { number: ticket.ticket_number })}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting}>Mégse</AlertDialogCancel>
+              <AlertDialogCancel disabled={isDeleting}>{t('detail.delete_cancel')}</AlertDialogCancel>
               <AlertDialogAction
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 disabled={isDeleting}
@@ -640,8 +642,8 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                   try {
                     await deleteTicket(feedbackId);
                     toast({
-                      title: "Hibajegy törölve",
-                      description: `${ticket.ticket_number} sikeresen törölve.`,
+                      title: t('detail.toasts.ticket_deleted_title'),
+                      description: t('detail.toasts.ticket_deleted_desc', { number: ticket.ticket_number }),
                     });
                     setShowDeleteConfirm(false);
                     if (onDeleted) {
@@ -652,14 +654,14 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                   } catch (err: any) {
                     toast({
                       variant: "destructive",
-                      title: "Törlési hiba",
+                      title: t('detail.toasts.error_send'),
                       description: err?.message || "Nem sikerült törölni a hibajegyet.",
                     });
                   }
                 }}
               >
                 {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Trash2 className="h-4 w-4 mr-1.5" />}
-                Véglegesen törlöm
+                {t('detail.delete_confirm')}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -698,7 +700,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
                       <Paperclip className="h-3.5 w-3.5" />
-                      Csatolmányok ({ticket.attachments?.length || 0})
+                      {t('detail.attachments_title', { count: ticket.attachments?.length || 0 })}
                     </span>
                     <div className="flex items-center gap-1.5">
                       <input
@@ -727,7 +729,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                         ) : (
                           <Plus className="h-3 w-3" />
                         )}
-                        Csatolmány hozzáadása
+                        {t('detail.add_attachment')}
                       </Button>
                     </div>
                   </div>
@@ -767,7 +769,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                                   </button>
                                 </TooltipTrigger>
                                 <TooltipContent side="top" className="text-xs">
-                                  Csatolmány törlése
+                                  {t('detail.delete_attachment_tooltip')}
                                 </TooltipContent>
                               </Tooltip>
                             )}
@@ -795,7 +797,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                                   </button>
                                 </TooltipTrigger>
                                 <TooltipContent side="top" className="text-xs">
-                                  Csatolmány törlése
+                                  {t('detail.delete_attachment_tooltip')}
                                 </TooltipContent>
                               </Tooltip>
                             )}
@@ -819,7 +821,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
                   <MessageSquare className="h-3.5 w-3.5" />
-                  <span>{comments.length} hozzászólás</span>
+                  <span>{t('detail.comments_count', { count: comments.length })}</span>
                   <Separator className="flex-1" />
                 </div>
 
@@ -846,7 +848,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                           </div>
                           <span className="text-xs font-medium text-emerald-950 dark:text-emerald-200">
-                            Az ügyfél megerősítette: a probléma megoldódott. A hibajegy automatikusan lezárásra került.
+                            {t('detail.resolution_confirmed_banner')}
                           </span>
                         </div>
                         <span className="text-[11px] text-muted-foreground shrink-0 whitespace-nowrap">
@@ -887,7 +889,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                               </p>
                               {c.is_internal ? (
                                 <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 font-medium">
-                                  Belső feljegyzés (kliens elől rejtve)
+                                  {t('detail.internal_note_badge')}
                                 </span>
                               ) : c.is_admin ? (
                                 <ThinkAiBadge size="xs" />
@@ -970,7 +972,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                   <div className="flex flex-col items-center gap-1.5 text-muted-foreground">
                     <MessageSquare className="h-5 w-5" />
                     <p className="text-sm text-center">
-                      Sajnos a már lezárt hibajegyhez további hozzászólás nem lehetséges.
+                      {t('detail.ticket_resolved_notice')}
                     </p>
                     {isAdmin && (
                       <Button
@@ -990,7 +992,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                         ) : (
                           <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
                         )}
-                        Hibajegy újra megnyitása
+                        {t('detail.reopen_ticket')}
                       </Button>
                     )}
                   </div>
@@ -1004,8 +1006,8 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                       <div className="flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-none text-xs font-medium leading-relaxed">
                         <ShieldAlert className="h-4.5 w-4.5 shrink-0 mt-0.5" />
                         <div>
-                          A hozzászóláshoz a hibajegynek rendelkeznie kell felelőssel.
-                          {isAdmin ? " Kérjük, jelöljön ki egy felelőst a jobb oldali panelen." : " Kérjük, várja meg, amíg egy support munkatárs elvállalja a hibajegyet."}
+                          {t('detail.need_assignee_alert')}
+                          {isAdmin ? ` ${t('detail.need_assignee_admin')}` : ` ${t('detail.need_assignee_user')}`}
                         </div>
                       </div>
                     )}
@@ -1015,7 +1017,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                     >
                       <RichTextEditor
                         key={editorKey}
-                        placeholder={ticket?.assigned_to ? "Hozzászólás... (Ctrl+Enter a küldéshez)" : "A hozzászólás zárolva van, amíg nincs felelőse a jegynek."}
+                        placeholder={ticket?.assigned_to ? t('detail.comment_placeholder_active') : t('detail.comment_placeholder_locked')}
                         initialContent=""
                         onChange={(html) => setComment(html)}
                         onSubmit={handleSubmit}
@@ -1054,7 +1056,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                                         </button>
                                       </TooltipTrigger>
                                       <TooltipContent side="top" className="text-xs">
-                                        Megtekintés
+                                        {t('detail.preview_tooltip')}
                                       </TooltipContent>
                                     </Tooltip>
                                     <Tooltip>
@@ -1068,7 +1070,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                                         </button>
                                       </TooltipTrigger>
                                       <TooltipContent side="top" className="text-xs">
-                                        Törlés
+                                        {t('detail.delete_tooltip')}
                                       </TooltipContent>
                                     </Tooltip>
                                   </div>
@@ -1094,7 +1096,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                                         </button>
                                       </TooltipTrigger>
                                       <TooltipContent side="top" className="text-xs">
-                                        Törlés
+                                        {t('detail.delete_tooltip')}
                                       </TooltipContent>
                                     </Tooltip>
                                   </div>
@@ -1142,7 +1144,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent side="top" className="text-xs">
-                            Fájl csatolása (kép, PDF, CSV, Excel, XML)
+                            {t('detail.attach_file_tooltip')}
                           </TooltipContent>
                         </Tooltip>
                         {commentFiles.length > 0 && (
@@ -1161,7 +1163,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                                 className="rounded border-amber-500/30 accent-amber-500"
                                 disabled={!ticket?.assigned_to}
                               />
-                              Belső feljegyzés
+                              {t('detail.internal_note_checkbox')}
                             </label>
 
                             {!ticket?.waiting_for_user_confirmation && (
@@ -1176,7 +1178,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                                   className="rounded border-emerald-500/30 accent-emerald-500"
                                   disabled={!ticket?.assigned_to || isInternal}
                                 />
-                                Megoldás visszaigazolás kérése
+                                {t('detail.request_resolution_checkbox')}
                               </label>
                             )}
                           </div>
@@ -1200,7 +1202,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                         ) : (
                           <Send className="h-3.5 w-3.5" />
                         )}
-                        {requestResolutionChecked ? "Küldés és megerősítés kérése" : "Küldés"}
+                        {requestResolutionChecked ? t('detail.submit_and_request_resolution') : t('detail.submit_button')}
                       </Button>
                     </div>
                   </div>
@@ -1213,15 +1215,15 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
           <div className="lg:col-span-5 xl:col-span-4 2xl:col-span-4 space-y-4 min-w-0 xl:sticky xl:top-[3.75rem]">
             <Card className="rounded-none shadow-none">
               <CardContent className="pt-6 space-y-4">
-                <h3 className="text-sm font-semibold">Részletek</h3>
+                <h3 className="text-sm font-semibold">{t('detail.sidebar_title')}</h3>
 
                 {/* Status Banner — Layout 3 */}
                 {(() => {
                   const bannerConfig = {
                     created: {
-                      label: "Nyitott",
-                      title: "Jegy állapota: Nyitott",
-                      sub: "Várakozik a feldolgozásra",
+                      label: t('status.created'),
+                      title: t('detail.status_banner.created_title'),
+                      sub: t('detail.status_banner.created_sub'),
                       icon: CircleDot,
                       bgClass: "bg-gradient-to-br from-sky-500/[0.08] to-cyan-500/[0.04] border-sky-500/25",
                       iconBubbleClass: "bg-sky-500 text-white shadow-sm shadow-sky-500/20",
@@ -1230,9 +1232,9 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                       triggerClass: "border-sky-500/30 text-sky-600 dark:text-sky-400 bg-sky-500/10",
                     },
                     assigned: {
-                      label: "Hozzárendelt",
-                      title: "Jegy állapota: Hozzárendelt",
-                      sub: "Felelős munkatárs kijelölve",
+                      label: t('status.assigned'),
+                      title: t('detail.status_banner.assigned_title'),
+                      sub: t('detail.status_banner.assigned_sub'),
                       icon: UserCheck,
                       bgClass: "bg-gradient-to-br from-blue-600/[0.12] to-indigo-600/[0.05] border-blue-500/30",
                       iconBubbleClass: "bg-blue-600 text-white shadow-sm shadow-blue-600/20",
@@ -1241,9 +1243,9 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                       triggerClass: "border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-600/15",
                     },
                     in_progress: {
-                      label: "Folyamatban",
-                      title: "Jegy állapota: Folyamatban",
-                      sub: "A support csapat dolgozik rajta",
+                      label: t('status.in_progress'),
+                      title: t('detail.status_banner.in_progress_title'),
+                      sub: t('detail.status_banner.in_progress_sub'),
                       icon: Loader2,
                       bgClass: "bg-gradient-to-br from-teal-500/[0.08] to-emerald-500/[0.04] border-teal-500/25",
                       iconBubbleClass: "bg-teal-500 text-white shadow-sm shadow-teal-500/20",
@@ -1252,9 +1254,9 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                       triggerClass: "border-teal-500/30 text-teal-600 dark:text-teal-400 bg-teal-500/10",
                     },
                     resolved: {
-                      label: "Megoldva",
-                      title: "Jegy állapota: Megoldva",
-                      sub: "A hibajegy lezárásra került",
+                      label: t('status.resolved'),
+                      title: t('detail.status_banner.resolved_title'),
+                      sub: t('detail.status_banner.resolved_sub'),
                       icon: CheckCircle2,
                       bgClass: "bg-gradient-to-br from-emerald-500/[0.08] to-teal-500/[0.04] border-emerald-500/25",
                       iconBubbleClass: "bg-emerald-500 text-white shadow-sm shadow-emerald-500/20",
@@ -1263,9 +1265,9 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                       triggerClass: "border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
                     },
                   }[ticket.status as TicketStatus] || {
-                    label: "Nyitott",
-                    title: "Jegy állapota: Nyitott",
-                    sub: "Várakozik a feldolgozásra",
+                    label: t('status.created'),
+                    title: t('detail.status_banner.created_title'),
+                    sub: t('detail.status_banner.created_sub'),
                     icon: CircleDot,
                     bgClass: "bg-gradient-to-br from-sky-500/[0.08] to-cyan-500/[0.04] border-sky-500/25",
                     iconBubbleClass: "bg-sky-500 text-white shadow-sm shadow-sky-500/20",
@@ -1288,7 +1290,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                           </p>
                           <p className={`text-[11px] leading-tight truncate mt-0.5 ${ticket.waiting_for_user_confirmation && ticket.status !== "resolved" ? "text-sky-600 dark:text-sky-400 font-medium" : bannerConfig.subClass}`}>
                             {ticket.waiting_for_user_confirmation && ticket.status !== "resolved"
-                              ? "Megoldás visszaigazolásra vár az ügyféltől"
+                              ? t('detail.status_banner.waiting_sub')
                               : bannerConfig.sub}
                           </p>
                         </div>
@@ -1310,10 +1312,10 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="created">Nyitott</SelectItem>
-                              <SelectItem value="assigned">Hozzárendelt</SelectItem>
-                              <SelectItem value="in_progress">Folyamatban</SelectItem>
-                              <SelectItem value="resolved">Megoldva</SelectItem>
+                              <SelectItem value="created">{t('status.created')}</SelectItem>
+                              <SelectItem value="assigned">{t('status.assigned')}</SelectItem>
+                              <SelectItem value="in_progress">{t('status.in_progress')}</SelectItem>
+                              <SelectItem value="resolved">{t('status.resolved')}</SelectItem>
                             </SelectContent>
                           </Select>
                         ) : (
@@ -1331,7 +1333,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                       <div className="flex items-center justify-between p-2 rounded-none bg-sky-500/10 border border-sky-500/25 text-xs text-sky-700 dark:text-sky-300">
                         <span className="flex items-center gap-1.5 font-medium">
                           <Clock className="h-3.5 w-3.5 text-sky-500" />
-                          Visszaigazolásra vár
+                          {t('detail.waiting_for_confirmation')}
                         </span>
                         <Button
                           type="button"
@@ -1346,7 +1348,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                             })
                           }
                         >
-                          Kérés visszavonása
+                          {t('detail.cancel_resolution_request')}
                         </Button>
                       </div>
                     ) : (
@@ -1362,8 +1364,8 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                             {
                               onSuccess: () => {
                                 toast({
-                                  title: "Megerősítés-kérés elküldve",
-                                  description: "A hibajegy állapota visszaigazolásra váróra váltott.",
+                                  title: t('detail.toasts.res_req_sent_title'),
+                                  description: t('detail.toasts.res_req_sent_desc'),
                                 });
                               },
                               onError: (err: any) => {
@@ -1382,7 +1384,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                         ) : (
                           <Sparkles className="h-3.5 w-3.5 text-emerald-500" />
                         )}
-                        Megoldás visszaigazolás kérése
+                        {t('detail.request_resolution_btn')}
                       </Button>
                     )}
                   </div>
@@ -1446,7 +1448,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                           onClick={() => {
                             const url = `${window.location.origin}/tickets/${ticket.id}`;
                             navigator.clipboard.writeText(url);
-                            toast({ title: "Link másolva!", description: "A hibajegy közvetlen linkje a vágólapra került." });
+                            toast({ title: t('detail.copy_link_toast_title'), description: t('detail.copy_link_toast_desc') });
                           }}
                           className="truncate text-xs text-primary hover:underline cursor-pointer text-left"
                         >
@@ -1454,7 +1456,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                         </button>
                       </TooltipTrigger>
                       <TooltipContent side="top" className="text-xs">
-                        Kattints a link másolásához
+                        {t('detail.copy_link_tooltip')}
                       </TooltipContent>
                     </Tooltip>
                   </div>
@@ -1468,23 +1470,23 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                   <div className="flex items-center justify-between p-2.5 px-3 gap-2">
                     <span className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
                       <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
-                      Típus
+                      {t('detail.prop_type')}
                     </span>
                     <div>
                       {ticket.type === "bug" ? (
                         <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-0.5 rounded-full bg-red-500/10 text-red-600 border border-red-500/20">
                           <Bug className="h-3 w-3 text-red-500" />
-                          Hibajelentés
+                          {t('types.bug')}
                         </span>
                       ) : ticket.type === "question" ? (
                         <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-0.5 rounded-full bg-sky-500/10 text-sky-600 border border-sky-500/20">
                           <HelpCircle className="h-3 w-3 text-sky-500" />
-                          Kérdés
+                          {t('types.question')}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
                           <Lightbulb className="h-3 w-3 text-amber-500" />
-                          Visszajelzés
+                          {t('types.feedback')}
                         </span>
                       )}
                     </div>
@@ -1494,7 +1496,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                   <div className="flex items-center justify-between p-2.5 px-3 gap-2">
                     <span className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
                       <ShieldAlert className="h-3.5 w-3.5 text-muted-foreground" />
-                      Prioritás
+                      {t('detail.prop_priority')}
                     </span>
                     <div>
                       {isAdmin ? (
@@ -1511,10 +1513,10 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="low">Alacsony</SelectItem>
-                            <SelectItem value="medium">Közepes</SelectItem>
-                            <SelectItem value="high">Magas</SelectItem>
-                            <SelectItem value="critical">Kritikus</SelectItem>
+                            <SelectItem value="low">{t('priority.low')}</SelectItem>
+                            <SelectItem value="medium">{t('priority.medium')}</SelectItem>
+                            <SelectItem value="high">{t('priority.high')}</SelectItem>
+                            <SelectItem value="critical">{t('priority.critical')}</SelectItem>
                           </SelectContent>
                         </Select>
                       ) : (
@@ -1527,7 +1529,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                   <div className="flex items-center justify-between p-2.5 px-3 gap-2">
                     <span className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
                       <Headset className="h-3.5 w-3.5 text-muted-foreground" />
-                      Felelős
+                      {t('detail.prop_assignee')}
                     </span>
                     <div className="max-w-[65%]">
                       {isAdmin ? (
@@ -1545,8 +1547,8 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                                 onError: (err: any) => {
                                   if (err?.message === "ALREADY_ASSIGNED") {
                                     toast({
-                                      title: "Jegy már kiosztva",
-                                      description: "Ezt a hibajegyet egy másik support munkatárs már magához rendelte.",
+                                      title: t('detail.toasts.ticket_already_assigned_title'),
+                                      description: t('detail.toasts.ticket_already_assigned_desc'),
                                       variant: "destructive",
                                     });
                                   }
@@ -1556,10 +1558,10 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                           }}
                         >
                           <SelectTrigger className="h-7 text-xs px-2.5 border-border/80 bg-background truncate">
-                            <SelectValue placeholder="Nincs hozzárendelve" />
+                            <SelectValue placeholder={t('detail.prop_unassigned')} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="unassigned">Nincs hozzárendelve</SelectItem>
+                            <SelectItem value="unassigned">{t('detail.prop_unassigned')}</SelectItem>
                             {supportAgents.map((agent: any) => (
                               <SelectItem key={agent.user_id} value={agent.user_id}>
                                 {agent.name}
@@ -1577,7 +1579,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                             </div>
                           </div>
                         ) : (
-                          <span className="text-xs text-muted-foreground italic">Nincs hozzárendelve</span>
+                          <span className="text-xs text-muted-foreground italic">{t('detail.prop_unassigned')}</span>
                         )
                       )}
                     </div>

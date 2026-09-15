@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatFileSize } from '@/lib/utils';
 import type { ChannelConfig, SelectedFileItem } from '../../types';
+import { useTranslation } from 'react-i18next';
 
 interface UploadFileItemProps {
   item: SelectedFileItem;
@@ -20,6 +21,7 @@ export function UploadFileItem({
   onRemove,
   disabled,
 }: UploadFileItemProps) {
+  const { t } = useTranslation(['upload']);
   const { file } = item;
   const Icon = config.icon;
 
@@ -50,7 +52,7 @@ export function UploadFileItem({
         onClick={() => onRemove(index)}
         disabled={disabled}
         className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground shrink-0"
-        title="Fájl eltávolítása"
+        title={t('upload:file_list.remove_file', 'Fájl eltávolítása')}
       >
         <X className="h-4 w-4" />
       </Button>

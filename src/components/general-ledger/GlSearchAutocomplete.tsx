@@ -6,6 +6,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { CustomTooltip } from '@/components/ui/custom-tooltip';
 import { searchGlEntities, GlSearchResult } from '@/lib/glData';
+import { useTranslation } from 'react-i18next';
+import { getLocalizedGlAccountName } from '@/lib/glUtils';
 
 export interface GlSearchAutocompleteProps {
   companyId?: string | null;
@@ -26,8 +28,10 @@ export const GlSearchAutocomplete: React.FC<GlSearchAutocompleteProps> = ({
   onQueryChange,
   onSearchResultsChange,
   className,
-  placeholder = 'Keresés a főkönyvben (szám, név, partner)...',
+  placeholder,
 }) => {
+  const { t } = useTranslation();
+  const effectivePlaceholder = placeholder || t('accounting:general_ledger.search_placeholder', 'Keresés a főkönyvben (szám, név, partner)...');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<GlSearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -164,7 +168,7 @@ export const GlSearchAutocomplete: React.FC<GlSearchAutocompleteProps> = ({
           <div className="relative flex items-center">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <Input
-              placeholder={placeholder}
+              placeholder={effectivePlaceholder}
               className="w-[260px] sm:w-[320px] h-9 pl-9 pr-14 text-xs bg-background transition-all focus-visible:ring-1"
               value={query}
               onChange={handleInputChange}
@@ -238,7 +242,7 @@ export const GlSearchAutocomplete: React.FC<GlSearchAutocompleteProps> = ({
                         <span className="font-mono font-bold text-[11px] px-1.5 py-0.5 rounded bg-primary/10 text-primary shrink-0">
                           {item.gl_number}
                         </span>
-                        <span className="truncate">{item.title}</span>
+                        <span className="truncate">{getLocalizedGlAccountName(item.gl_number, item.title, t)}</span>
                       </div>
                       <ChevronRight className="w-3.5 h-3.5 opacity-40 shrink-0" />
                     </button>

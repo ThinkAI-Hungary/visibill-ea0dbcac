@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -23,6 +24,7 @@ import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 
 export default function ApprovalTab() {
+  const { t } = useTranslation(['pettyCash', 'common']);
   const { selectedCompany } = useCompany();
   const companyId = selectedCompany?.id || '';
   const qc = useQueryClient();
@@ -83,13 +85,13 @@ export default function ApprovalTab() {
       qc.invalidateQueries({ queryKey: ['pettyCashPendingInvoices', companyId] });
       qc.invalidateQueries({ queryKey: ['pettyCashEntries', companyId] });
       toast({
-        title: 'Bizonylat sikeresen jóváhagyva!',
-        description: 'A tétel bekerült az éles házipénztár sorok közé.',
+        title: t('pettyCash:toasts.approved_title'),
+        description: t('pettyCash:toasts.approved_desc'),
       });
     },
     onError: (error) => {
       toast({
-        title: 'Hiba történt a jóváhagyás során',
+        title: t('pettyCash:toasts.approve_error'),
         description: error.message,
         variant: 'destructive',
       });
@@ -127,13 +129,13 @@ export default function ApprovalTab() {
       qc.invalidateQueries({ queryKey: ['pettyCashEntries', companyId] });
       setEditingInvoice(null);
       toast({
-        title: variables.approveAfterSave ? 'Tétel mentve és jóváhagyva' : 'Változtatások sikeresen elmentve',
-        description: variables.approveAfterSave ? 'A bizonylat élesítve lett.' : 'A tétel továbbra is jóváhagyásra vár.',
+        title: variables.approveAfterSave ? t('pettyCash:toasts.saved_approved_title') : t('pettyCash:toasts.saved_pending_title'),
+        description: variables.approveAfterSave ? t('pettyCash:toasts.saved_approved_desc') : t('pettyCash:toasts.saved_pending_desc'),
       });
     },
     onError: (error) => {
       toast({
-        title: 'Nem sikerült menteni a változtatásokat',
+        title: t('pettyCash:toasts.save_error'),
         description: error.message,
         variant: 'destructive',
       });
@@ -185,19 +187,19 @@ export default function ApprovalTab() {
     if (actualScore >= 0.9) {
       return (
         <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 font-medium">
-          {pct}% - Jó minőség
+          {t('pettyCash:approval_tab.quality_good', { pct })}
         </Badge>
       );
     } else if (actualScore >= 0.7) {
       return (
         <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20 font-medium">
-          {pct}% - Kérdéses
+          {t('pettyCash:approval_tab.quality_questionable', { pct })}
         </Badge>
       );
     } else {
       return (
         <Badge variant="outline" className="bg-rose-500/10 text-rose-500 border-rose-500/20 font-medium animate-pulse">
-          {pct}% - Olvashatatlan
+          {t('pettyCash:approval_tab.quality_unreadable', { pct })}
         </Badge>
       );
     }
@@ -205,9 +207,9 @@ export default function ApprovalTab() {
 
   const getInvoiceTypeBadge = (type: string) => {
     if (type === 'penztarbizonylat') {
-      return <Badge className="bg-blue-500/15 text-blue-400 hover:bg-blue-500/15 border-transparent font-normal">Készpénz bizonylat</Badge>;
+      return <Badge className="bg-blue-500/15 text-blue-400 hover:bg-blue-500/15 border-transparent font-normal">{t('pettyCash:approval_tab.badge_cash_receipt')}</Badge>;
     }
-    return <Badge className="bg-purple-500/15 text-purple-400 hover:bg-purple-500/15 border-transparent font-normal">Nyugta / Blokk</Badge>;
+    return <Badge className="bg-purple-500/15 text-purple-400 hover:bg-purple-500/15 border-transparent font-normal">{t('pettyCash:approval_tab.badge_receipt_slip')}</Badge>;
   };
 
   return (
@@ -217,11 +219,9 @@ export default function ApprovalTab() {
         <CardContent className="p-4 flex gap-3 items-start">
           <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
           <div className="space-y-1">
-            <h4 className="font-semibold text-sm text-amber-500">Manuális jóváhagyásra váró bizonylatok</h4>
+            <h4 className="font-semibold text-sm text-amber-500">{t('pettyCash:approval_tab.title')}</h4>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Az AI által bizonytalanul vagy kézírás miatt alacsony megbízhatósággal kinyert tételek itt kerülnek összegyűjtésre.
-              Ellenőrizd a beolvasott adatokat a bizonylat képével összevetve, javítsd az esetleges hibákat, majd hagyd jóvá őket,
-              hogy bekerülhessenek az éles házipénztár egyenlegbe.
+              {t('pettyCash:approval_tab.desc')}
             </p>
           </div>
         </CardContent>
@@ -232,7 +232,7 @@ export default function ApprovalTab() {
         <div className="relative w-full sm:max-w-md">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Keresés sorszám, partner vagy összeg alapján..."
+            placeholder={t('pettyCash:approval_tab.search_placeholder')}
             className="pl-9 h-9"
             value={searchTerm}
             onChange={(e) => {
@@ -242,7 +242,7 @@ export default function ApprovalTab() {
           />
         </div>
         <div className="flex gap-2 shrink-0 items-center text-xs text-muted-foreground">
-          <span>Összesen: <strong className="text-foreground">{filtered.length} db</strong> bizonylat</span>
+          <span>{t('pettyCash:approval_tab.total_count', { count: filtered.length })}</span>
           <Button variant="ghost" size="icon" onClick={() => refetch()} className="h-8 w-8 hover:bg-muted">
             <RefreshCw className="h-3.5 w-3.5" />
           </Button>
@@ -254,15 +254,15 @@ export default function ApprovalTab() {
         <Table>
           <TableHeader className="bg-muted/30">
             <TableRow>
-              <TableHead className="w-12 text-center">Nézet</TableHead>
-              <TableHead className="w-44">AI Bizonyosság</TableHead>
-              <TableHead className="w-32">Kibocsátás</TableHead>
-              <TableHead className="w-44">Típus</TableHead>
-              <TableHead className="w-40">Bizonylatszám</TableHead>
-              <TableHead className="min-w-[180px]">Eladó (Kibocsátó)</TableHead>
-              <TableHead className="min-w-[180px]">Vevő</TableHead>
-              <TableHead className="w-[180px] text-right font-semibold">Összeg</TableHead>
-              <TableHead className="w-24 text-center">Művelet</TableHead>
+              <TableHead className="w-12 text-center">{t('pettyCash:approval_tab.table.view')}</TableHead>
+              <TableHead className="w-44">{t('pettyCash:approval_tab.table.confidence')}</TableHead>
+              <TableHead className="w-32">{t('pettyCash:approval_tab.table.date')}</TableHead>
+              <TableHead className="w-44">{t('pettyCash:approval_tab.table.type')}</TableHead>
+              <TableHead className="w-40">{t('pettyCash:approval_tab.table.sequence')}</TableHead>
+              <TableHead className="min-w-[180px]">{t('pettyCash:approval_tab.table.issuer')}</TableHead>
+              <TableHead className="min-w-[180px]">{t('pettyCash:approval_tab.table.customer')}</TableHead>
+              <TableHead className="w-[180px] text-right font-semibold">{t('pettyCash:approval_tab.table.amount')}</TableHead>
+              <TableHead className="w-24 text-center">{t('pettyCash:approval_tab.table.actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -271,7 +271,7 @@ export default function ApprovalTab() {
                 <TableCell colSpan={9} className="text-center py-16 text-muted-foreground">
                   <div className="flex flex-col items-center gap-3">
                     <span className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-                    <p className="text-sm">Bizonylatok betöltése...</p>
+                    <p className="text-sm">{t('pettyCash:approval_tab.loading')}</p>
                   </div>
                 </TableCell>
               </TableRow>
@@ -280,8 +280,8 @@ export default function ApprovalTab() {
                 <TableCell colSpan={9} className="text-center py-12 text-muted-foreground text-sm">
                   <div className="flex flex-col items-center gap-2 py-4">
                     <CheckCircle2 className="w-10 h-10 text-emerald-500/40" />
-                    <p className="font-medium text-foreground">Nincs jóváhagyásra váró bizonylat</p>
-                    <p className="text-xs">Minden beolvasott cash bizonylat sikeresen feldolgozásra került!</p>
+                    <p className="font-medium text-foreground">{t('pettyCash:approval_tab.empty_title')}</p>
+                    <p className="text-xs">{t('pettyCash:approval_tab.empty_desc')}</p>
                   </div>
                 </TableCell>
               </TableRow>
@@ -364,6 +364,7 @@ export default function ApprovalTab() {
           currentPage={currentPage}
           totalPages={totalPages}
           pageSize={pageSize}
+          totalItems={filtered.length}
           onPageChange={setCurrentPage}
           onPageSizeChange={(newSize) => {
             setPageSize(newSize);
@@ -390,10 +391,10 @@ export default function ApprovalTab() {
                 <div>
                   <DialogTitle className="flex items-center gap-2">
                     <FileText className="w-5 h-5 text-primary" />
-                    Bizonylat ellenőrzése és javítása
+                    {t('pettyCash:verification_dialog.title')}
                   </DialogTitle>
                   <DialogDescription className="mt-1">
-                    Hasonlítsd össze az AI által kinyert adatokat a bal oldali bizonylatképpel, majd mentsd vagy élesítsd a javított tétel adatokat.
+                    {t('pettyCash:verification_dialog.desc')}
                   </DialogDescription>
                 </div>
                 <div className="mr-8">
@@ -414,13 +415,13 @@ export default function ApprovalTab() {
                         <iframe
                           src={editingInvoice.image_url || editingInvoice.melleklet_url}
                           className="w-full h-full border-0"
-                          title="Bizonylat kép"
+                          title={t('pettyCash:verification_dialog.image_title')}
                         />
                       ) : (
                         <div className="w-full h-full flex justify-center items-center p-2">
                           <img
                             src={editingInvoice.image_url || editingInvoice.melleklet_url}
-                            alt="Bizonylat kép"
+                            alt={t('pettyCash:verification_dialog.image_title')}
                             className="max-w-full max-h-full object-contain rounded shadow-md"
                           />
                         </div>
@@ -432,13 +433,13 @@ export default function ApprovalTab() {
                       className="absolute bottom-3 right-3 bg-background/90 backdrop-blur-sm shadow hover:bg-background"
                       onClick={() => window.open(editingInvoice.image_url || editingInvoice.melleklet_url, '_blank')}
                     >
-                      <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> Megnyitás új lapon
+                      <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> {t('pettyCash:verification_dialog.open_new_tab')}
                     </Button>
                   </>
                 ) : (
                   <div className="text-center p-6 text-muted-foreground flex flex-col items-center gap-2">
                     <HelpCircle className="w-10 h-10 text-muted-foreground/30" />
-                    <p className="text-sm font-medium">Nincs elérhető kép ehhez a bizonylathoz</p>
+                    <p className="text-sm font-medium">{t('pettyCash:verification_dialog.no_image')}</p>
                   </div>
                 )}
               </div>
@@ -447,23 +448,23 @@ export default function ApprovalTab() {
               <div className="overflow-y-auto pr-1 flex flex-col gap-4 max-h-[45vh] md:max-h-full">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="direction">Tranzakció Iránya</Label>
+                    <Label htmlFor="direction">{t('pettyCash:verification_dialog.direction_label')}</Label>
                     <Select
                       value={editForm.invoice_direction}
                       onValueChange={(val) => setEditForm(prev => ({ ...prev, invoice_direction: val }))}
                     >
                       <SelectTrigger id="direction" className="h-9">
-                        <SelectValue placeholder="Válassz irányt" />
+                        <SelectValue placeholder={t('pettyCash:verification_dialog.direction_placeholder')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="INBOUND">Kiadás (Befizetés partnernek)</SelectItem>
-                        <SelectItem value="OUTBOUND">Bevétel (Partner befizetése)</SelectItem>
+                        <SelectItem value="INBOUND">{t('pettyCash:verification_dialog.direction_inbound')}</SelectItem>
+                        <SelectItem value="OUTBOUND">{t('pettyCash:verification_dialog.direction_outbound')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="sorszam">Bizonylatszám / Sorszám</Label>
+                    <Label htmlFor="sorszam">{t('pettyCash:verification_dialog.sequence_label')}</Label>
                     <Input
                       id="sorszam"
                       className="h-9 font-mono"
@@ -476,7 +477,7 @@ export default function ApprovalTab() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="datum">Kibocsátás Dátuma</Label>
+                    <Label htmlFor="datum">{t('pettyCash:verification_dialog.date_label')}</Label>
                     <Input
                       id="datum"
                       type="date"
@@ -488,8 +489,8 @@ export default function ApprovalTab() {
 
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <Label htmlFor="brutto">Bruttó Összeg</Label>
-                      <span className="text-[10px] text-muted-foreground">Készpénzes ÁFA: 0% / mentes</span>
+                      <Label htmlFor="brutto">{t('pettyCash:verification_dialog.amount_label')}</Label>
+                      <span className="text-[10px] text-muted-foreground">{t('pettyCash:verification_dialog.vat_hint')}</span>
                     </div>
                     <div className="flex gap-2">
                       <Input
@@ -504,7 +505,7 @@ export default function ApprovalTab() {
                         onValueChange={(val) => setEditForm(prev => ({ ...prev, penznem: val }))}
                       >
                         <SelectTrigger className="w-24 h-9">
-                          <SelectValue placeholder="Pénznem" />
+                          <SelectValue placeholder={t('pettyCash:verification_dialog.currency_placeholder')} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="HUF">HUF</SelectItem>
@@ -517,36 +518,36 @@ export default function ApprovalTab() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="elado">Eladó (Pénzt kiadó vagy Számlát adó)</Label>
+                  <Label htmlFor="elado">{t('pettyCash:verification_dialog.seller_label')}</Label>
                   <Input
                     id="elado"
                     className="h-9"
                     value={editForm.elado_nev}
                     onChange={(e) => setEditForm(prev => ({ ...prev, elado_nev: e.target.value }))}
-                    placeholder="Eladó teljes neve..."
+                    placeholder={t('pettyCash:verification_dialog.seller_placeholder')}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="vevo">Vevő (Pénzt átvevő vagy Befizető cég)</Label>
+                  <Label htmlFor="vevo">{t('pettyCash:verification_dialog.buyer_label')}</Label>
                   <Input
                     id="vevo"
                     className="h-9"
                     value={editForm.vevo_nev}
                     onChange={(e) => setEditForm(prev => ({ ...prev, vevo_nev: e.target.value }))}
-                    placeholder="Vevő teljes neve..."
+                    placeholder={t('pettyCash:verification_dialog.buyer_placeholder')}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="leiras">Megjegyzés / Jogcím leírása</Label>
+                  <Label htmlFor="leiras">{t('pettyCash:verification_dialog.description_label')}</Label>
                   <Textarea
                     id="leiras"
                     rows={3}
                     className="resize-none text-sm"
                     value={editForm.adojogi_megjegyzes}
                     onChange={(e) => setEditForm(prev => ({ ...prev, adojogi_megjegyzes: e.target.value }))}
-                    placeholder="Írd le a pénztári tranzakció gazdasági eseményét vagy célját..."
+                    placeholder={t('pettyCash:verification_dialog.description_placeholder')}
                   />
                 </div>
               </div>
@@ -555,7 +556,7 @@ export default function ApprovalTab() {
             <DialogFooter className="border-t border-border/20 pt-4 flex sm:justify-between items-center gap-2">
               <div className="text-xs text-muted-foreground flex items-center gap-1.5 shrink-0">
                 <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" />
-                A mentett értékek azonnal frissülnek az adatbázisban.
+                {t('pettyCash:verification_dialog.auto_save_hint')}
               </div>
               <div className="flex gap-2">
                 <Button 
@@ -564,7 +565,7 @@ export default function ApprovalTab() {
                   disabled={saveMutation.isPending}
                   className="h-9"
                 >
-                  <X className="h-4 w-4 mr-1.5" /> Mégse
+                  <X className="h-4 w-4 mr-1.5" /> {t('pettyCash:verification_dialog.cancel')}
                 </Button>
                 <Button 
                   variant="secondary"
@@ -572,7 +573,7 @@ export default function ApprovalTab() {
                   disabled={saveMutation.isPending}
                   className="h-9"
                 >
-                  <Save className="h-4 w-4 mr-1.5" /> Csak mentés
+                  <Save className="h-4 w-4 mr-1.5" /> {t('pettyCash:verification_dialog.save_only')}
                 </Button>
                 {writable && (
                   <Button 
@@ -581,7 +582,7 @@ export default function ApprovalTab() {
                     disabled={saveMutation.isPending}
                     className="h-9 bg-emerald-600 hover:bg-emerald-500 text-white"
                   >
-                    <Check className="h-4 w-4 mr-1.5" /> Mentés és Élesítés
+                    <Check className="h-4 w-4 mr-1.5" /> {t('pettyCash:verification_dialog.save_and_approve')}
                   </Button>
                 )}
               </div>

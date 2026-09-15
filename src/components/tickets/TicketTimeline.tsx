@@ -14,16 +14,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useTicketEvents, type TicketEvent } from "@/hooks/useTickets";
 import { ThinkAiBadge } from "./ThinkAiBadge";
 import { format } from "date-fns";
-import { hu } from "date-fns/locale";
-
-const STATUS_LABELS: Record<string, string> = {
-  new: "Nyitott",
-  created: "Nyitott",
-  open: "Nyitott",
-  assigned: "Hozzárendelt",
-  in_progress: "Folyamatban",
-  resolved: "Megoldva",
-};
+import { getDateFnsLocale } from "@/lib/locale/formatters";
+import { useTranslation } from "react-i18next";
 
 const STATUS_COLORS: Record<string, string> = {
   new: "text-blue-500",
@@ -85,8 +77,22 @@ function EventContent({
   event: TicketEvent;
   isStaffInitiatedTicket?: boolean;
 }) {
-  const actorName = event.actor_name || event.actor_email || "Rendszer";
+  const { t: rawT } = useTranslation(['tickets', 'common']);
+  const t = (key: string, opts?: any): any => rawT((key.includes(':') ? key : `tickets:${key}`) as any, opts);
+  const actorName = event.actor_name || event.actor_email || t('detail.timeline.system');
   const isAdmin = event.metadata?.is_admin === true;
+
+  const getStatusLabel = (status: string) => {
+    const map: Record<string, string> = {
+      new: t('status.created'),
+      created: t('status.created'),
+      open: t('status.created'),
+      assigned: t('status.assigned'),
+      in_progress: t('status.in_progress'),
+      resolved: t('status.resolved'),
+    };
+    return map[status] || status;
+  };
 
   switch (event.event_type) {
     case "created": {
@@ -105,7 +111,7 @@ function EventContent({
               <ThinkAiBadge size="xs" className="ml-1.5" />
             )}{" "}
             <span className="text-muted-foreground">
-              létrehozta a hibajegyet
+              {t('detail.timeline.created_ticket')}
             </span>
           </p>
           {event.new_value && (
@@ -122,15 +128,15 @@ function EventContent({
         <div>
           <p className="text-sm">
             <span className="font-medium">{actorName}</span>{" "}
-            <span className="text-muted-foreground">módosította a státuszt</span>
+            <span className="text-muted-foreground">{t('detail.timeline.changed_status')}</span>
           </p>
           <div className="flex items-center gap-1.5 mt-1">
             <span className={`text-xs font-medium ${STATUS_COLORS[event.old_value || ""] || "text-muted-foreground"}`}>
-              {STATUS_LABELS[event.old_value || ""] || event.old_value}
+              {getStatusLabel(event.old_value || "")}
             </span>
             <ArrowRight className="h-3 w-3 text-muted-foreground" />
             <span className={`text-xs font-medium ${STATUS_COLORS[event.new_value || ""] || "text-muted-foreground"}`}>
-              {STATUS_LABELS[event.new_value || ""] || event.new_value}
+              {getStatusLabel(event.new_value || "")}
             </span>
           </div>
         </div>
@@ -144,7 +150,7 @@ function EventContent({
             {isAdmin && (
               <ThinkAiBadge size="xs" className="ml-1.5" />
             )}{" "}
-            <span className="text-muted-foreground">hozzászólást írt</span>
+            <span className="text-muted-foreground">{t('detail.timeline.added_comment')}</span>
           </p>
         </div>
       );
@@ -154,15 +160,15 @@ function EventContent({
         <div>
           <p className="text-sm">
             <span className="font-medium">{actorName}</span>{" "}
-            <span className="text-muted-foreground">módosította a felelőst</span>
+            <span className="text-muted-foreground">{t('detail.timeline.changed_assignee')}</span>
           </p>
           <div className="flex items-center gap-1.5 mt-1">
             <span className="text-xs text-muted-foreground font-medium">
-              {event.old_value || "Nincs felelős"}
+              {event.old_value || t('detail.timeline.no_assignee')}
             </span>
             <ArrowRight className="h-3 w-3 text-muted-foreground" />
             <span className="text-xs text-primary font-medium">
-              {event.new_value || "Nincs felelős"}
+              {event.new_value || t('detail.timeline.no_assignee')}
             </span>
           </div>
         </div>
@@ -175,10 +181,10 @@ function EventContent({
             <span className="font-medium">{actorName}</span>
             {isAdmin && <ThinkAiBadge size="xs" className="ml-1.5" />}
             {" "}
-            <span className="text-muted-foreground">megoldás-visszaigazolást kért</span>
+            <span className="text-muted-foreground">{t('detail.timeline.requested_resolution')}</span>
           </p>
           <p className="text-xs text-sky-600 dark:text-sky-400 mt-0.5">
-            Várakozás az ügyfél megerősítésére
+            {t('detail.timeline.waiting_client_confirm')}
           </p>
         </div>
       );
@@ -188,10 +194,10 @@ function EventContent({
         <div>
           <p className="text-sm">
             <span className="font-medium">{actorName}</span>{" "}
-            <span className="text-emerald-600 dark:text-emerald-400 font-medium">megerősítette a megoldást</span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-medium">{t('detail.timeline.confirmed_resolution')}</span>
           </p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            A hibajegy automatikusan lezárásra került
+            {t('detail.timeline.ticket_auto_closed')}
           </p>
         </div>
       );
@@ -201,10 +207,10 @@ function EventContent({
         <div>
           <p className="text-sm">
             <span className="font-medium">{actorName}</span>{" "}
-            <span className="text-amber-600 dark:text-amber-400">jelezte, hogy a probléma még fennáll</span>
+            <span className="text-amber-600 dark:text-amber-400">{t('detail.timeline.reported_still_persists')}</span>
           </p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            A vizsgálat folytatódik
+            {t('detail.timeline.investigation_continues')}
           </p>
         </div>
       );
@@ -217,6 +223,8 @@ interface TicketTimelineProps {
 }
 
 export function TicketTimeline({ feedbackId, isStaffInitiated }: TicketTimelineProps) {
+  const { t: rawT } = useTranslation(['tickets', 'common']);
+  const t = (key: string, opts?: any): any => rawT((key.includes(':') ? key : `tickets:${key}`) as any, opts);
   const { data: events = [], isLoading } = useTicketEvents(feedbackId);
 
   // Deduplicate events: keep only 1 'created' event (prefer staff metadata), remove duplicate IDs,
@@ -288,7 +296,7 @@ export function TicketTimeline({ feedbackId, isStaffInitiated }: TicketTimelineP
   if (displayEvents.length === 0) return null;
 
   const formatDate = (date: string) => {
-    return format(new Date(date), "MMM d. HH:mm", { locale: hu });
+    return format(new Date(date), "MMM d. HH:mm", { locale: getDateFnsLocale() });
   };
 
   return (
@@ -296,7 +304,7 @@ export function TicketTimeline({ feedbackId, isStaffInitiated }: TicketTimelineP
       <CardContent className="pt-6">
         <div className="flex items-center gap-2 mb-4">
           <Clock className="h-4 w-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold">Jegy története</h3>
+          <h3 className="text-sm font-semibold">{t('detail.timeline.title')}</h3>
         </div>
 
         {/* Timeline */}

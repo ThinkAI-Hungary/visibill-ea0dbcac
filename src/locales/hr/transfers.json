@@ -76,5 +76,48 @@
     "selected_items": "Označene stavke:",
     "total": "Ukupno:",
     "download_button": "Preuzmi listu za plaćanje"
+  },
+  "validation": {
+    "missing_account": "Nedostaje broj bankovnog računa!",
+    "invalid_iban": "Neispravan IBAN format ili CDV kontrolni broj!",
+    "digits_only": "Dozvoljene su samo znamenke i crtice!",
+    "giro_length": "Broj žiro računa mora imati 16 ili 24 znamenke!",
+    "invalid_cdv_block1": "Neispravan CDV 1. bloka!",
+    "invalid_cdv_block2": "Neispravan CDV 2. bloka!",
+    "invalid_cdv_block3": "Neispravan CDV 3. bloka!"
+  },
+  "toasts": {
+    "account_saved_title": "Broj računa spremljen",
+    "account_saved_desc": "Broj računa spremljen za partnera {{partner}}.",
+    "account_save_error": "Spremanje broja bankovnog računa nije uspjelo.",
+    "settle_success_title": "Uspješno podmireno",
+    "settle_success_desc": "{{count}} računa je uspješno podmireno (Gotovina / Privatni račun). Uklonjeno s popisa za prijenos.",
+    "settle_error": "Podmirenje računa nije uspjelo.",
+    "delete_single_success": "Stavka je uspješno obrisana iz povijesti prijenosa.",
+    "delete_single_error": "Brisanje stavke nije uspjelo.",
+    "delete_batch_success": "{{count}} stavki je uspješno obrisano iz povijesti prijenosa.",
+    "delete_batch_error": "Brisanje stavki nije uspjelo.",
+    "missing_accounts_title": "Nedostaje broj bankovnog računa",
+    "missing_accounts_desc": "Za generiranje datoteke potrebno je unijeti broj bankovnog računa partnera za sve odabrane stavke.",
+    "select_sender_account": "Molimo odaberite polazni bankovni račun tvrtke!"
+  },
+  "settle_dialog": {
+    "title": "Podmirenje računa (Gotovina / Privatni račun)",
+    "desc": "Označite račun podmirenim ako je plaćen gotovinom ili s privatnog računa. Stavka se uklanja s popisa za prijenos.",
+    "partner": "Partner:",
+    "invoices_count": "Računi ({{count}} kom):",
+    "total": "Ukupno:",
+    "payment_method": "Način podmirenja",
+    "payment_method_placeholder": "Odaberite način plaćanja",
+    "opt_cash": "Gotovina / Blagajna",
+    "opt_private_card": "Privatni račun / Pozajmica člana",
+    "opt_other": "Ostalo ručno podmirenje",
+    "payment_date": "Datum plaćanja",
+    "note": "Napomena (neobavezno)",
+    "note_placeholder": "npr. Plaćeno s privatnog računa, podmireno iz blagajne",
+    "save": "Spremi podmirenje",
+    "saving": "Spremanje podmirenja...",
+    "confirm": "Potvrdi podmirenje",
+    "cancel": "Odustani"
   }
 }

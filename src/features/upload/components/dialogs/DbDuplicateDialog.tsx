@@ -11,6 +11,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useTranslation } from 'react-i18next';
 
 interface DbDuplicateDialogProps {
   open: boolean;
@@ -33,21 +34,21 @@ export function DbDuplicateDialog({
   onConfirm,
   nonDuplicateCount,
 }: DbDuplicateDialogProps) {
+  const { t } = useTranslation(['upload', 'common']);
   const allSelected = duplicateFileNames.length > 0 && duplicateFileNames.every(name => selectedDuplicates.has(name));
   const totalFilesToUpload = nonDuplicateCount + selectedDuplicates.size;
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-md">
+      <AlertDialogContent className="sm:max-w-lg">
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2 text-amber-600 dark:text-amber-500">
             <AlertTriangle className="h-5 w-5 shrink-0" />
-            Már feltöltött fájlok észlelve
+            {t('upload:dialogs.db_duplicate.title', 'Már feltöltött fájlok észlelve')}
           </AlertDialogTitle>
           <AlertDialogDescription className="text-left space-y-2">
             <span>
-              A kiválasztott fájlok közül az alábbiak már korábban fel lettek töltve ehhez a céghez.
-              Jelöld be azokat a fájlokat, amelyeket szándékosan <strong>újra szeretnél tölteni</strong>:
+              {t('upload:dialogs.db_duplicate.description', 'A kiválasztott fájlok közül az alábbiak már korábban fel lettek töltve ehhez a céghez. Jelöld be azokat a fájlokat, amelyeket szándékosan újra szeretnél tölteni:')}
             </span>
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -64,7 +65,7 @@ export function DbDuplicateDialog({
                 htmlFor="select-all-duplicates"
                 className="text-xs font-semibold cursor-pointer select-none"
               >
-                Összes duplikátum kijelölése újrafeltöltésre
+                {t('upload:dialogs.db_duplicate.select_all', 'Összes duplikátum kijelölése újrafeltöltésre')}
               </label>
             </div>
           )}
@@ -87,23 +88,24 @@ export function DbDuplicateDialog({
           ))}
         </div>
 
-        <AlertDialogFooter>
+        <AlertDialogFooter className="flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:space-x-0">
           <AlertDialogCancel onClick={() => onOpenChange(false)}>
-            Mégse
+            {t('upload:dialogs.db_duplicate.cancel', 'Mégse')}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={() => onConfirm(selectedDuplicates)}
             disabled={totalFilesToUpload === 0}
-            className="bg-primary hover:bg-primary/90"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
           >
             {selectedDuplicates.size > 0
-              ? `Feltöltés (${totalFilesToUpload} fájl)`
+              ? t('upload:dialogs.db_duplicate.upload_count', { count: totalFilesToUpload, defaultValue: `Feltöltés (${totalFilesToUpload} fájl)` })
               : nonDuplicateCount > 0
-              ? `Csak az új fájlok feltöltése (${nonDuplicateCount})`
-              : 'Nincs kijelölve'}
+              ? t('upload:dialogs.db_duplicate.upload_new_only', { count: nonDuplicateCount, defaultValue: `Csak az új fájlok feltöltése (${nonDuplicateCount})` })
+              : t('upload:dialogs.db_duplicate.none_selected', 'Nincs kijelölve')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   );
 }
+

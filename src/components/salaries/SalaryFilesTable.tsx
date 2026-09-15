@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { extractStoragePath } from '@/lib/utils';
@@ -17,7 +18,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Trash2, FileText, Loader2, Search, User } from 'lucide-react';
 import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { getDateFnsLocale } from '@/lib/locale/formatters';
 import { useToast } from '@/hooks/use-toast';
 
 interface SalaryFileRow {
@@ -38,6 +39,8 @@ interface SalaryFilesDialogProps {
 }
 
 export function SalaryFilesDialog({ open: externalOpen, onOpenChange: externalOnOpenChange }: SalaryFilesDialogProps = {}) {
+  const { t: rawT } = useTranslation(['hr', 'common']);
+  const t = (key: string, opts?: any): any => rawT((key.includes(':') ? key : `hr:${key}`) as any, opts);
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -106,7 +109,7 @@ export function SalaryFilesDialog({ open: externalOpen, onOpenChange: externalOn
   }, [companyMembers]);
 
   const getUserName = (userId: string): string => {
-    return profileMap.get(userId) || 'Ismeretlen felhasználó';
+    return profileMap.get(userId) || t('salaries.files_dialog.unknown_user');
   };
 
   // Group by file_name
@@ -114,13 +117,13 @@ export function SalaryFilesDialog({ open: externalOpen, onOpenChange: externalOn
     const grouped = salaryFiles.reduce<Map<string, { fileName: string; createdAt: string; userId: string; ids: string[] }>>((acc, file) => {
       const key = file.file_name || file.id;
       if (!acc.has(key)) {
-        acc.set(key, { fileName: file.file_name || 'Ismeretlen fájl', createdAt: file.created_at, userId: file.user_id, ids: [] });
+        acc.set(key, { fileName: file.file_name || t('salaries.files_dialog.unknown_file'), createdAt: file.created_at, userId: file.user_id, ids: [] });
       }
       acc.get(key)!.ids.push(file.id);
       return acc;
     }, new Map());
     return Array.from(grouped.values());
-  }, [salaryFiles]);
+  }, [salaryFiles, t]);
 
   // Client-side filtering
   const filteredUploads = useMemo(() => {
@@ -156,12 +159,20 @@ export function SalaryFilesDialog({ open: externalOpen, onOpenChange: externalOn
         }
       }
 
-      toast({ title: 'Sikeres törlés', description: 'A dokumentum és a hozzá tartozó adatok törölve lettek.', duration: 3000 });
+      toast({
+        title: t('salaries.files_dialog.toast_deleted_title'),
+        description: t('salaries.files_dialog.toast_deleted_desc'),
+        duration: 3000,
+      });
       queryClient.invalidateQueries({ queryKey: ['salary_files', companyId] });
       queryClient.invalidateQueries({ queryKey: ['salaries', companyId] });
       queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
     } catch (err: any) {
-      toast({ title: 'Hiba', description: err.message || 'A törlés sikertelen.', variant: 'destructive' });
+      toast({
+        title: t('salaries.files_dialog.toast_error_title'),
+        description: err.message || t('salaries.files_dialog.toast_error_desc'),
+        variant: 'destructive',
+      });
     } finally {
       setDeleting(false);
       setDeleteIds(null);
@@ -175,16 +186,15 @@ export function SalaryFilesDialog({ open: externalOpen, onOpenChange: externalOn
           <DialogTrigger asChild>
             <Button variant="outline">
               <FileText className="mr-2 h-4 w-4" />
-              Feltöltött fájlok
+              {t('salaries.files_dialog.button')}
             </Button>
           </DialogTrigger>
         )}
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Feltöltött bérjegyzékek és összesítők</DialogTitle>
+            <DialogTitle>{t('salaries.files_dialog.title')}</DialogTitle>
             <DialogDescription>
-              Itt tekintheti meg és törölheti a korábban feltöltött dokumentumokat.
-              A törlés eltávolítja a fájlból származó összes béradatot is.
+              {t('salaries.files_dialog.description')}
             </DialogDescription>
           </DialogHeader>
 
@@ -193,7 +203,7 @@ export function SalaryFilesDialog({ open: externalOpen, onOpenChange: externalOn
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 dark:text-muted-foreground" />
               <Input
-                placeholder="Keresés fájlnév alapján..."
+                placeholder={t('salaries.files_dialog.search_placeholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10 focus:border-primary"
@@ -202,13 +212,13 @@ export function SalaryFilesDialog({ open: externalOpen, onOpenChange: externalOn
             <Select value={uploaderFilter} onValueChange={setUploaderFilter}>
               <SelectTrigger className="h-9 w-[220px] bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
                 <User className="h-3.5 w-3.5 mr-1.5 text-slate-500 dark:text-muted-foreground" />
-                <SelectValue placeholder="Feltöltő" />
+                <SelectValue placeholder={t('salaries.files_dialog.uploader_placeholder')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Összes feltöltő</SelectItem>
+                <SelectItem value="all">{t('salaries.files_dialog.all_uploaders')}</SelectItem>
                 {companyMembers.map(member => (
                   <SelectItem key={member.user_id} value={member.user_id}>
-                    {member.name || 'Névtelen felhasználó'}
+                    {member.name || t('salaries.files_dialog.anonymous_user')}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -221,17 +231,17 @@ export function SalaryFilesDialog({ open: externalOpen, onOpenChange: externalOn
             </div>
           ) : filteredUploads.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {allUploads.length === 0 ? 'Nincs feltöltött dokumentum.' : 'Nincs találat a megadott szűrőkkel.'}
+              {allUploads.length === 0 ? t('salaries.files_dialog.empty') : t('salaries.files_dialog.no_match')}
             </div>
           ) : (
             <div className="rounded-lg border border-border/50 overflow-x-auto">
               <Table className="compact-table">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[40%]">Fájlnév</TableHead>
-                    <TableHead className="w-[25%]">Feltöltés dátuma</TableHead>
-                    <TableHead className="w-[20%]">Feltöltötte</TableHead>
-                    <TableHead className="w-[15%] text-right">Művelet</TableHead>
+                    <TableHead className="w-[40%]">{t('salaries.files_dialog.col_filename')}</TableHead>
+                    <TableHead className="w-[25%]">{t('salaries.files_dialog.col_upload_date')}</TableHead>
+                    <TableHead className="w-[20%]">{t('salaries.files_dialog.col_uploader')}</TableHead>
+                    <TableHead className="w-[15%] text-right">{t('salaries.files_dialog.col_action')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -241,7 +251,7 @@ export function SalaryFilesDialog({ open: externalOpen, onOpenChange: externalOn
                         {upload.fileName}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {format(new Date(upload.createdAt), 'yyyy. MMM dd. HH:mm', { locale: hu })}
+                        {format(new Date(upload.createdAt), 'yyyy. MMM dd. HH:mm', { locale: getDateFnsLocale() })}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {getUserName(upload.userId)}
@@ -268,21 +278,20 @@ export function SalaryFilesDialog({ open: externalOpen, onOpenChange: externalOn
       <AlertDialog open={!!deleteIds} onOpenChange={(open) => { if (!open) setDeleteIds(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Dokumentum törlése</AlertDialogTitle>
+            <AlertDialogTitle>{t('salaries.files_dialog.delete_title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Biztosan törlöd ezt a dokumentumot? Minden belőle kinyert bér és járulék adat is törlődni fog.
-              Ez a művelet nem vonható vissza.
+              {t('salaries.files_dialog.delete_desc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Mégse</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>{t('salaries.files_dialog.delete_cancel')}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700 text-white"
               disabled={deleting}
               onClick={() => { if (deleteIds) handleDelete(deleteIds); }}
             >
               {deleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
-              Törlés
+              {t('salaries.files_dialog.delete_confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

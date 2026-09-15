@@ -368,6 +368,30 @@ describe('i18n and Localization Suite', () => {
       expect(getLocalizedGlAccountName('5.', 'SZÁMLAOSZTÁLY: KÖLTSÉGNEMEK', tHr)).toBe('RAZRED KONTA: TROŠKOVI PREMA VRSTAMA');
     });
 
+    it('correctly localizes standard general ledger groups and accounts into Croatian', async () => {
+      await i18n.changeLanguage('hu');
+      const tHu = i18n.t as any;
+      expect(getLocalizedGlAccountName('41.', 'SAJÁT TŐKE', tHu)).toBe('SAJÁT TŐKE');
+      expect(getLocalizedGlAccountName('411.', 'Jegyzett tőke', tHu)).toBe('Jegyzett tőke');
+      expect(getLocalizedGlAccountName('311.', 'Belföldi vevő követelések (forintban)', tHu)).toBe('Belföldi vevő követelések (forintban)');
+
+      await i18n.changeLanguage('hr');
+      const tHr = i18n.t as any;
+      expect(getLocalizedGlAccountName('41.', 'SAJÁT TŐKE', tHr)).toBe('KAPITAL I REZERVE (VLASTITI IZVORI)');
+      expect(getLocalizedGlAccountName('42.', 'CÉLTARTALÉKOK', tHr)).toBe('REZERVIRANJA');
+      expect(getLocalizedGlAccountName('411.', 'Jegyzett tőke', tHr)).toBe('Temeljni (upisani) kapital');
+      expect(getLocalizedGlAccountName('412.', 'Tőketartalék', tHr)).toBe('Kapitalne rezerve');
+      expect(getLocalizedGlAccountName('413.', 'Eredménytartalék', tHr)).toBe('Zadržana dobit (preneseni dobitak)');
+      expect(getLocalizedGlAccountName('414.', 'Lekötött tartalék', tHr)).toBe('Zakonske i statutarne rezerve');
+      expect(getLocalizedGlAccountName('417.', 'Értékelési tartalék', tHr)).toBe('Rezerve iz revalorizacije i fer vrijednosti');
+      expect(getLocalizedGlAccountName('419.', 'Mérleg szerinti eredmény', tHr)).toBe('Dobit / gubitak poslovne godine');
+      expect(getLocalizedGlAccountName('311.', 'Belföldi vevő követelések (forintban)', tHr)).toBe('Potraživanja od tuzemnih kupaca (forinti)');
+      expect(getLocalizedGlAccountName('312.', 'Belföldi vevő követelések (devizában)', tHr)).toBe('Potraživanja od tuzemnih kupaca (devize)');
+      expect(getLocalizedGlAccountName('315.', 'Belföldi vevő követelések értékvesztése és annak visszaírása', tHr)).toBe('Vrijednosno usklađenje potraživanja od tuzemnih kupaca');
+      expect(getLocalizedGlAccountName('319.', 'Külföldi vevő követelések értékvesztése és annak visszaírása', tHr)).toBe('Vrijednosno usklađenje potraživanja od inozemnih kupaca');
+      expect(getLocalizedGlAccountName(null, 'Vevők', tHr)).toBe('Potraživanja od tuzemnih kupaca (forinti)');
+    });
+
     it('correctly localizes statutory profit and loss rows I-X and A-D', async () => {
       await i18n.changeLanguage('hu');
       const tHu = i18n.t as any;

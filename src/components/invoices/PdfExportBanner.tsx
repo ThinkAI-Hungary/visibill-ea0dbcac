@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Loader2, X, Check, AlertCircle } from 'lucide-react';
 import type { PdfExportJob } from '@/hooks/usePdfExport';
 
@@ -16,6 +17,7 @@ function formatBytes(bytes: number): string {
 }
 
 export function PdfExportBanner({ job, progress, onCancel, onDismiss, onRetryDownload }: PdfExportBannerProps) {
+  const { t } = useTranslation(['invoices', 'common']);
   const isProcessing = job.status === 'queued' || job.status === 'processing';
   const isCompleted = job.status === 'completed';
   const isError = job.status === 'error';
@@ -28,7 +30,7 @@ export function PdfExportBanner({ job, progress, onCancel, onDismiss, onRetryDow
           <div className="flex items-center justify-between mb-1.5">
             <div className="flex items-center gap-2">
               <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" />
-              <span className="text-xs font-semibold">PDF export készül...</span>
+              <span className="text-xs font-semibold">{t('invoices:pdf_export_banner.processing_title', 'PDF export készül...')}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground tabular-nums font-medium">
@@ -37,7 +39,7 @@ export function PdfExportBanner({ job, progress, onCancel, onDismiss, onRetryDow
               <button
                 onClick={onCancel}
                 className="text-muted-foreground hover:text-destructive transition-colors p-0.5 rounded hover:bg-destructive/10"
-                aria-label="Mégse"
+                aria-label={t('invoices:pdf_export_banner.cancel_aria', 'Mégse')}
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -55,7 +57,7 @@ export function PdfExportBanner({ job, progress, onCancel, onDismiss, onRetryDow
           {/* Footer row */}
           <div className="flex items-center justify-between mt-1.5">
             <span className="text-[11px] text-muted-foreground truncate max-w-[200px]">
-              {job.current_invoice_name || 'Feldolgozás...'}
+              {job.current_invoice_name || t('invoices:pdf_export_banner.processing_default', 'Feldolgozás...')}
             </span>
             <span className="text-[11px] text-primary font-bold tabular-nums">
               {progress}%
@@ -77,13 +79,13 @@ export function PdfExportBanner({ job, progress, onCancel, onDismiss, onRetryDow
             <div className="flex items-center gap-2 min-w-0">
               <Check className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
               <div className="min-w-0">
-                <span className="text-xs font-semibold">PDF export kész!</span>
+                <span className="text-xs font-semibold">{t('invoices:pdf_export_banner.completed_title', 'PDF export kész!')}</span>
                 <div className="text-[11px] text-muted-foreground truncate">
-                  {job.total_invoices} számla →{' '}
+                  {t('invoices:pdf_export_banner.invoices_count', { count: job.total_invoices, defaultValue: `${job.total_invoices} számla → ` })}
                   {fileCount === 1 ? (
                     <span className="font-medium">{job.result_urls?.[0]?.split('/').pop()}</span>
                   ) : (
-                    <span className="font-medium">{fileCount} PDF fájl</span>
+                    <span className="font-medium">{t('invoices:pdf_export_banner.files_count', { count: fileCount, defaultValue: `${fileCount} PDF fájl` })}</span>
                   )}
                   {' '}({formatBytes(totalSize)})
                 </div>
@@ -92,7 +94,7 @@ export function PdfExportBanner({ job, progress, onCancel, onDismiss, onRetryDow
             <button
               onClick={onDismiss}
               className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded flex-shrink-0"
-              aria-label="Bezárás"
+              aria-label={t('invoices:pdf_export_banner.close_aria', 'Bezárás')}
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -102,7 +104,7 @@ export function PdfExportBanner({ job, progress, onCancel, onDismiss, onRetryDow
               onClick={onRetryDownload}
               className="text-[11px] text-primary hover:underline"
             >
-              Ha a letöltés nem indult el, kattints ide
+              {t('invoices:pdf_export_banner.retry_download', 'Ha a letöltés nem indult el, kattints ide')}
             </button>
           </div>
         </div>
@@ -118,16 +120,16 @@ export function PdfExportBanner({ job, progress, onCancel, onDismiss, onRetryDow
             <div className="flex items-center gap-2 min-w-0">
               <AlertCircle className="h-3.5 w-3.5 text-destructive flex-shrink-0" />
               <div className="min-w-0">
-                <span className="text-xs font-semibold">PDF export hiba</span>
+                <span className="text-xs font-semibold">{t('invoices:pdf_export_banner.error_title', 'PDF export hiba')}</span>
                 <div className="text-[11px] text-muted-foreground truncate max-w-[260px]">
-                  {job.error_message || 'Ismeretlen hiba.'}
+                  {job.error_message || t('invoices:pdf_export_banner.error_default', 'Ismeretlen hiba.')}
                 </div>
               </div>
             </div>
             <button
               onClick={onDismiss}
               className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded flex-shrink-0"
-              aria-label="Bezárás"
+              aria-label={t('invoices:pdf_export_banner.close_aria', 'Bezárás')}
             >
               <X className="h-3.5 w-3.5" />
             </button>

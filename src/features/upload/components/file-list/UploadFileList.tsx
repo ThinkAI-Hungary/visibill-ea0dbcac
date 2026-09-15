@@ -71,7 +71,10 @@ export function UploadFileList({
         ) : (
           <>
             <Upload className="h-4 w-4 mr-2" />
-            {config.actionButtonLabel(files.length)}
+            {t(`upload:channels_config.${config.id}.action_button`, {
+              count: files.length,
+              defaultValue: config.actionButtonLabel(files.length),
+            })}
           </>
         )}
       </Button>

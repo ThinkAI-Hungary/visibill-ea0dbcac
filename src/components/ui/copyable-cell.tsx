@@ -2,6 +2,7 @@ import { Copy, Check } from 'lucide-react';
 import { useState, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 import {
   Tooltip,
   TooltipContent,
@@ -28,6 +29,7 @@ export function CopyableCell({
   ariaLabel,
   align = 'left',
 }: CopyableCellProps) {
+  const { t } = useTranslation(['common']);
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async (e: React.MouseEvent) => {
@@ -35,8 +37,8 @@ export function CopyableCell({
 
     if (!navigator?.clipboard) {
       toast({
-        title: "Hiba",
-        description: "Nem sikerült másolni.",
+        title: t('common:status.error', 'Hiba'),
+        description: t('common:copy.failed', 'Nem sikerült másolni.'),
         variant: "destructive",
       });
       return;
@@ -46,17 +48,17 @@ export function CopyableCell({
       await navigator.clipboard.writeText(value);
       setCopied(true);
       toast({
-        title: "Másolva",
+        title: t('common:copy.copied', 'Másolva'),
       });
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast({
-        title: "Hiba",
-        description: "Nem sikerült másolni.",
+        title: t('common:status.error', 'Hiba'),
+        description: t('common:copy.failed', 'Nem sikerült másolni.'),
         variant: "destructive",
       });
     }
-  }, [value]);
+  }, [value, t]);
 
   const display = displayValue || value;
 
@@ -108,7 +110,7 @@ export function CopyableCell({
               </button>
             </TooltipTrigger>
             <TooltipContent side="top">
-              <p className="text-xs">Kattints a másoláshoz</p>
+              <p className="text-xs">{t('common:copy.click_to_copy', 'Kattints a másoláshoz')}</p>
             </TooltipContent>
           </Tooltip>
         </div>

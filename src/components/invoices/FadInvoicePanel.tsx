@@ -1,9 +1,11 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { ShieldAlert, Scale, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getFadCategory, type ReverseChargeCategory } from '@/lib/fad/fadTypes';
 import { validateFadInvoice, getOverallSeverity, type FadValidationResult } from '@/lib/fad/fadValidation';
 import { cn } from '@/lib/utils';
+import { formatCurrencyLocale } from '@/lib/locale/formatters';
 
 interface FadInvoicePanelProps {
   invoice: {
@@ -38,6 +40,7 @@ const severityBg: Record<string, string> = {
 };
 
 export default function FadInvoicePanel({ invoice, className }: FadInvoicePanelProps) {
+  const { t } = useTranslation(['invoices', 'common']);
   const isFad = invoice.forditott_adozas === true || invoice.is_reverse_charge === true;
   if (!isFad) return null;
 
@@ -48,8 +51,7 @@ export default function FadInvoicePanel({ invoice, className }: FadInvoicePanelP
   const netAmount = Number(invoice.adoalap_osszesen || invoice.invoice_net_amount || 0);
   const estimatedVat = Math.round(netAmount * 0.27);
 
-  const fmtAmount = (v: number) =>
-    new Intl.NumberFormat('hu-HU', { style: 'currency', currency, minimumFractionDigits: 0 }).format(v);
+  const fmtAmount = (v: number) => formatCurrencyLocale(v, currency);
 
   return (
     <div className={cn(
@@ -63,8 +65,8 @@ export default function FadInvoicePanel({ invoice, className }: FadInvoicePanelP
             <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-amber-800 dark:text-amber-300">Fordított adózás</h3>
-            <p className="text-[10px] text-amber-600/70 dark:text-amber-400/60">Az áfát a vevő fizeti</p>
+            <h3 className="text-sm font-bold text-amber-800 dark:text-amber-300">{t('invoices:fad_panel.title', 'Fordított adózás')}</h3>
+            <p className="text-[10px] text-amber-600/70 dark:text-amber-400/60">{t('invoices:fad_panel.subtitle', 'Az áfát a vevő fizeti')}</p>
           </div>
         </div>
         {overallSeverity && (
@@ -77,7 +79,11 @@ export default function FadInvoicePanel({ invoice, className }: FadInvoicePanelP
               overallSeverity === 'info' && 'border-blue-300 text-blue-600 bg-blue-50 dark:bg-blue-950/20',
             )}
           >
-            {overallSeverity === 'error' ? 'Hibás' : overallSeverity === 'warning' ? 'Figyelem' : 'OK'}
+            {overallSeverity === 'error'
+              ? t('invoices:fad_panel.status_error', 'Hibás')
+              : overallSeverity === 'warning'
+              ? t('invoices:fad_panel.status_warning', 'Figyelem')
+              : t('invoices:fad_panel.status_ok', 'OK')}
           </Badge>
         )}
       </div>
@@ -98,10 +104,10 @@ export default function FadInvoicePanel({ invoice, className }: FadInvoicePanelP
       ) : (
         <div className="rounded-lg px-3 py-2 border border-amber-200 dark:border-amber-800 bg-amber-100/30 dark:bg-amber-950/20">
           <div className="text-xs text-amber-700 dark:text-amber-400 font-medium">
-            ⚠ Kategória meghatározás szükséges
+            {t('invoices:fad_panel.category_required', '⚠ Kategória meghatározás szükséges')}
           </div>
           <div className="text-[10px] text-amber-600/70 dark:text-amber-400/60 mt-0.5">
-            A pontos könyveléshez határozza meg a fordított adózás típusát
+            {t('invoices:fad_panel.category_required_desc', 'A pontos könyveléshez határozza meg a fordított adózás típusát')}
           </div>
         </div>
       )}
@@ -110,11 +116,11 @@ export default function FadInvoicePanel({ invoice, className }: FadInvoicePanelP
       <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-white/60 dark:bg-slate-900/40 border border-amber-200/30 dark:border-amber-800/30">
         <Scale className="w-4 h-4 text-amber-600/70 dark:text-amber-400/60 shrink-0" />
         <div className="flex-1">
-          <div className="text-[10px] text-muted-foreground">Becsült fizetendő ÁFA (27%)</div>
+          <div className="text-[10px] text-muted-foreground">{t('invoices:fad_panel.estimated_vat', 'Becsült fizetendő ÁFA (27%)')}</div>
           <div className="text-sm font-bold text-amber-800 dark:text-amber-300">{fmtAmount(estimatedVat)}</div>
         </div>
         <div>
-          <div className="text-[10px] text-muted-foreground text-right">Adóalap</div>
+          <div className="text-[10px] text-muted-foreground text-right">{t('invoices:fad_panel.tax_base', 'Adóalap')}</div>
           <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">{fmtAmount(netAmount)}</div>
         </div>
       </div>
@@ -137,7 +143,7 @@ export default function FadInvoicePanel({ invoice, className }: FadInvoicePanelP
       {validationResults.length === 0 && (
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 text-[11px]">
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-          <span className="text-emerald-700 dark:text-emerald-400 font-medium">Minden validáció rendben</span>
+          <span className="text-emerald-700 dark:text-emerald-400 font-medium">{t('invoices:fad_panel.all_validations_ok', 'Minden validáció rendben')}</span>
         </div>
       )}
     </div>

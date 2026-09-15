@@ -20,7 +20,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Trash2, FileText, Loader2, Search, User, Download } from 'lucide-react';
 import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { getDateFnsLocale } from '@/lib/locale/formatters';
+import { useTranslation } from 'react-i18next';
 import { useToast } from '@/hooks/use-toast';
 
 interface ReportUploadWithRows {
@@ -49,6 +50,7 @@ interface ReportFilesDialogProps {
 }
 
 export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange: externalOnOpenChange }: ReportFilesDialogProps) {
+  const { t } = useTranslation(['transactions', 'common']);
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -98,9 +100,16 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
           document.body.removeChild(a);
         }
       }
-      toast({ title: 'Sikeres letöltés', description: `${targets.length} fájl letöltése elindítva.` });
+      toast({
+        title: t('transactions:courier_files.toast_download_success_title', 'Sikeres letöltés'),
+        description: t('transactions:courier_files.toast_download_success_desc', { count: targets.length, defaultValue: `${targets.length} fájl letöltése elindítva.` }),
+      });
     } catch (err: any) {
-      toast({ title: 'Hiba a letöltés során', description: err.message || 'Ismeretlen hiba történt.', variant: 'destructive' });
+      toast({
+        title: t('transactions:courier_files.toast_download_error_title', 'Hiba a letöltés során'),
+        description: err.message || t('common:errors.unknown', 'Ismeretlen hiba történt.'),
+        variant: 'destructive',
+      });
     } finally {
       setDownloading(false);
     }
@@ -149,11 +158,13 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
         const uploadIds = uploadsWithoutMetadata.map(u => u.id);
         
         // Use our RPC to fetch counts aggregated in DB (extremely fast and lag-free!)
-        const { data: reportCounts, error: reportError } = await supabase
-          .rpc('get_courier_reports_counts_by_upload', { p_upload_ids: uploadIds });
+        const { data: reportCounts, error: reportError } = await (supabase.rpc as any)(
+          'get_courier_reports_counts_by_upload',
+          { p_upload_ids: uploadIds }
+        );
         if (reportError) throw reportError;
 
-        (reportCounts || []).forEach((r: any) => {
+        ((reportCounts as any[]) || []).forEach((r: any) => {
           countsByUpload.set(r.upload_id, {
             total: Number(r.total_count) || 0,
             matched: Number(r.matched_count) || 0
@@ -306,12 +317,20 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
         }
       }
 
-      toast({ title: 'Sikeres törlés', description: 'A fájl törölve lett. A riport adatok megmaradtak.', duration: 3000 });
+      toast({
+        title: t('transactions:courier_files.toast_delete_success_title', 'Sikeres törlés'),
+        description: t('transactions:courier_files.toast_delete_file_only_single', 'A fájl törölve lett. A riport adatok megmaradtak.'),
+        duration: 3000,
+      });
       queryClient.invalidateQueries({ queryKey: ['report_uploads_with_rows', companyId] });
       queryClient.invalidateQueries({ queryKey: ['courier-reports'] });
       queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
     } catch (err: any) {
-      toast({ title: 'Hiba', description: err.message || 'A törlés sikertelen.', variant: 'destructive' });
+      toast({
+        title: t('transactions:courier_files.toast_error_title', 'Hiba'),
+        description: err.message || t('transactions:courier_files.toast_delete_failed', 'A törlés sikertelen.'),
+        variant: 'destructive',
+      });
     } finally {
       setDeleting(false);
       setDeleteTarget(null);
@@ -350,12 +369,20 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
         }
       }
 
-      toast({ title: 'Sikeres törlés', description: 'A dokumentum és a hozzá tartozó riport sorok törölve lettek.', duration: 3000 });
+      toast({
+        title: t('transactions:courier_files.toast_delete_success_title', 'Sikeres törlés'),
+        description: t('transactions:courier_files.toast_delete_all_single', 'A dokumentum és a hozzá tartozó riport sorok törölve lettek.'),
+        duration: 3000,
+      });
       queryClient.invalidateQueries({ queryKey: ['report_uploads_with_rows', companyId] });
       queryClient.invalidateQueries({ queryKey: ['courier-reports'] });
       queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
     } catch (err: any) {
-      toast({ title: 'Hiba', description: err.message || 'A törlés sikertelen.', variant: 'destructive' });
+      toast({
+        title: t('transactions:courier_files.toast_error_title', 'Hiba'),
+        description: err.message || t('transactions:courier_files.toast_delete_failed', 'A törlés sikertelen.'),
+        variant: 'destructive',
+      });
     } finally {
       setDeleting(false);
       setDeleteTarget(null);
@@ -397,13 +424,21 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
         await supabase.storage.from('report-uploads').remove(storagePaths);
       }
 
-      toast({ title: 'Sikeres törlés', description: `${uploadsToDelete.length} fájl törölve lett. A riport adatok megmaradtak.`, duration: 3000 });
+      toast({
+        title: t('transactions:courier_files.toast_delete_success_title', 'Sikeres törlés'),
+        description: t('transactions:courier_files.toast_delete_file_only_bulk', { count: uploadsToDelete.length, defaultValue: `${uploadsToDelete.length} fájl törölve lett. A riport adatok megmaradtak.` }),
+        duration: 3000,
+      });
       setSelectedIds(new Set());
       queryClient.invalidateQueries({ queryKey: ['report_uploads_with_rows', companyId] });
       queryClient.invalidateQueries({ queryKey: ['courier-reports'] });
       queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
     } catch (err: any) {
-      toast({ title: 'Hiba', description: err.message || 'A törlés sikertelen.', variant: 'destructive' });
+      toast({
+        title: t('transactions:courier_files.toast_error_title', 'Hiba'),
+        description: err.message || t('transactions:courier_files.toast_delete_failed', 'A törlés sikertelen.'),
+        variant: 'destructive',
+      });
     } finally {
       setDeleting(false);
       setBulkDeleteTarget(null);
@@ -446,13 +481,21 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
         await supabase.storage.from('report-uploads').remove(storagePaths);
       }
 
-      toast({ title: 'Sikeres törlés', description: `A kijelölt dokumentumok és a hozzájuk tartozó riport sorok törölve lettek.`, duration: 3000 });
+      toast({
+        title: t('transactions:courier_files.toast_delete_success_title', 'Sikeres törlés'),
+        description: t('transactions:courier_files.toast_delete_all_bulk', 'A kijelölt dokumentumok és a hozzájuk tartozó riport sorok törölve lettek.'),
+        duration: 3000,
+      });
       setSelectedIds(new Set());
       queryClient.invalidateQueries({ queryKey: ['report_uploads_with_rows', companyId] });
       queryClient.invalidateQueries({ queryKey: ['courier-reports'] });
       queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
     } catch (err: any) {
-      toast({ title: 'Hiba', description: err.message || 'A törlés sikertelen.', variant: 'destructive' });
+      toast({
+        title: t('transactions:courier_files.toast_error_title', 'Hiba'),
+        description: err.message || t('transactions:courier_files.toast_delete_failed', 'A törlés sikertelen.'),
+        variant: 'destructive',
+      });
     } finally {
       setDeleting(false);
       setBulkDeleteTarget(null);
@@ -477,16 +520,15 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
           <DialogTrigger asChild>
             <Button variant="outline" size="sm">
               <FileText className="h-4 w-4 mr-2" />
-              Feltöltött fájlok
+              {t('transactions:courier_files.btn_label', 'Feltöltött fájlok')}
             </Button>
           </DialogTrigger>
         )}
         <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col border-border bg-card">
           <DialogHeader className="shrink-0">
-            <DialogTitle>Feltöltött riport dokumentumok</DialogTitle>
+            <DialogTitle>{t('transactions:courier_files.dialog_title', 'Feltöltött riport dokumentumok')}</DialogTitle>
             <DialogDescription>
-              Itt tekintheti meg és törölheti a korábban feltöltött futárszolgálat riportokat.
-              A törlés eltávolítja a fájlból származó összes riport adatot is.
+              {t('transactions:courier_files.dialog_desc', 'Itt tekintheti meg és törölheti a korábban feltöltött futárszolgálat riportokat. A törlés eltávolítja a fájlból származó összes riport adatot is.')}
             </DialogDescription>
           </DialogHeader>
 
@@ -497,7 +539,7 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 dark:text-muted-foreground" />
               <Input
-                placeholder="Keresés fájlnév alapján..."
+                placeholder={t('transactions:courier_files.search_placeholder', 'Keresés fájlnév alapján...')}
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-9 h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10 focus:border-primary"
@@ -506,13 +548,13 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
             <Select value={uploaderFilter} onValueChange={handleUploaderFilterChange}>
               <SelectTrigger className="h-9 w-[220px] bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
                 <User className="h-3.5 w-3.5 mr-1.5 text-slate-500 dark:text-muted-foreground" />
-                <SelectValue placeholder="Feltöltő" />
+                <SelectValue placeholder={t('transactions:courier_files.uploader_placeholder', 'Feltöltő')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Összes feltöltő</SelectItem>
+                <SelectItem value="all">{t('transactions:courier_files.all_uploaders', 'Összes feltöltő')}</SelectItem>
                 {companyMembers.map(member => (
                   <SelectItem key={member.user_id} value={member.user_id}>
-                    {member.name || 'Névtelen felhasználó'}
+                    {member.name || t('transactions:courier_files.anonymous_user', 'Névtelen felhasználó')}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -522,7 +564,9 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
           {/* Bulk Action Bar */}
           {selectedIds.size > 0 && (
             <div className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/20 text-foreground animate-in fade-in duration-200">
-              <span className="text-sm font-semibold">{selectedIds.size} kijelölt elem</span>
+              <span className="text-sm font-semibold">
+                {t('transactions:courier_files.selected_items', { count: selectedIds.size, defaultValue: `${selectedIds.size} kijelölt elem` })}
+              </span>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -536,7 +580,7 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
                   ) : (
                     <Download className="h-4 w-4" />
                   )}
-                  Letöltés
+                  {t('transactions:courier_files.btn_download', 'Letöltés')}
                 </Button>
                 <Button
                   variant="destructive"
@@ -549,7 +593,7 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
                   disabled={downloading}
                 >
                   <Trash2 className="h-4 w-4" />
-                  Törlés
+                  {t('transactions:courier_files.btn_delete', 'Törlés')}
                 </Button>
               </div>
             </div>
@@ -561,7 +605,9 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
             </div>
           ) : filteredUploads.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {uploads.length === 0 ? 'Nincs feltöltött riport dokumentum.' : 'Nincs találat a megadott szűrőkkel.'}
+              {uploads.length === 0
+                ? t('transactions:courier_files.empty_no_files', 'Nincs feltöltött riport dokumentum.')
+                : t('transactions:courier_files.empty_filtered', 'Nincs találat a megadott szűrőkkel.')}
             </div>
           ) : (
             <div className="space-y-4">
@@ -573,17 +619,17 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
                         <Checkbox
                           checked={allVisibleSelected}
                           onCheckedChange={toggleSelectAll}
-                          aria-label="Összes kijelölése az oldalon"
+                          aria-label={t('transactions:courier_files.col_select_all', 'Összes kijelölése az oldalon')}
                           className="data-[state=indeterminate]:opacity-70"
                           {...(someVisibleSelected && !allVisibleSelected ? { 'data-state': 'indeterminate' } : {})}
                         />
                       </TableHead>
-                      <TableHead className="w-[30%]">Fájl neve</TableHead>
-                      <TableHead className="w-[10%]">Típus</TableHead>
-                      <TableHead className="w-[15%]">Sorok</TableHead>
-                      <TableHead className="w-[18%]">Feltöltés dátuma</TableHead>
-                      <TableHead className="w-[15%]">Feltöltötte</TableHead>
-                      <TableHead className="w-[10%] text-right">Művelet</TableHead>
+                      <TableHead className="w-[30%]">{t('transactions:courier_files.col_file_name', 'Fájl neve')}</TableHead>
+                      <TableHead className="w-[10%]">{t('transactions:courier_files.col_type', 'Típus')}</TableHead>
+                      <TableHead className="w-[15%]">{t('transactions:courier_files.col_rows', 'Sorok')}</TableHead>
+                      <TableHead className="w-[18%]">{t('transactions:courier_files.col_upload_date', 'Feltöltés dátuma')}</TableHead>
+                      <TableHead className="w-[15%]">{t('transactions:courier_files.col_uploaded_by', 'Feltöltötte')}</TableHead>
+                      <TableHead className="w-[10%] text-right">{t('transactions:courier_files.col_action', 'Művelet')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -610,11 +656,15 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {upload.rowCount > 0
-                            ? `${upload.matchedCount}/${upload.rowCount} párosítva`
+                            ? t('transactions:courier_files.matched_progress', {
+                                matched: upload.matchedCount,
+                                total: upload.rowCount,
+                                defaultValue: `${upload.matchedCount}/${upload.rowCount} párosítva`,
+                              })
                             : '—'}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {format(new Date(upload.created_at), 'yyyy. MMM dd. HH:mm', { locale: hu })}
+                          {format(new Date(upload.created_at), 'yyyy. MMM dd. HH:mm', { locale: getDateFnsLocale() })}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {getUserName(upload.user_id)}
@@ -668,12 +718,14 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
         <AlertDialogContent className="max-w-md border-border bg-card">
           <AlertDialogHeader className="w-full min-w-0">
             <AlertDialogTitle>
-              {deleteTarget ? 'Riport dokumentum törlése' : 'Kijelölt riport dokumentumok törlése'}
+              {deleteTarget
+                ? t('transactions:courier_files.delete_title_single', 'Riport dokumentum törlése')
+                : t('transactions:courier_files.delete_title_bulk', 'Kijelölt riport dokumentumok törlése')}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3 w-full min-w-0">
-                <p>Válaszd ki a törlés módját:</p>
-                <p className="text-xs text-muted-foreground">Ez a művelet nem vonható vissza.</p>
+                <p>{t('transactions:courier_files.delete_prompt', 'Válaszd ki a törlés módját:')}</p>
+                <p className="text-xs text-muted-foreground">{t('transactions:courier_files.delete_irreversible', 'Ez a művelet nem vonható vissza.')}</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -694,16 +746,22 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-foreground">
-                    Csak a fájl törlése
+                    {t('transactions:courier_files.opt_file_only_title', 'Csak a fájl törlése')}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {deleteTarget ? (
                       <>
-                        A <span className="font-medium text-foreground break-all">{deleteTarget.file_name}</span> fájl törlődik, de a feldolgozott riport adatok megmaradnak.
+                        {t('transactions:courier_files.opt_file_only_desc_single', {
+                          fileName: deleteTarget.file_name,
+                          defaultValue: `A ${deleteTarget.file_name} fájl törlődik, de a feldolgozott riport adatok megmaradnak.`,
+                        })}
                       </>
                     ) : (
                       <>
-                        A kijelölt <span className="font-medium text-foreground">{bulkDeleteTarget?.length} fájl</span> törlődik, de a feldolgozott riport adatok megmaradnak.
+                        {t('transactions:courier_files.opt_file_only_desc_bulk', {
+                          count: bulkDeleteTarget?.length,
+                          defaultValue: `A kijelölt ${bulkDeleteTarget?.length} fájl törlődik, de a feldolgozott riport adatok megmaradnak.`,
+                        })}
                       </>
                     )}
                   </p>
@@ -726,24 +784,24 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-red-600 dark:text-red-400">
-                    Fájl és riport adatok törlése
+                    {t('transactions:courier_files.opt_all_title', 'Fájl és riport adatok törlése')}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {deleteTarget ? (
                       <>
-                        A <span className="font-medium text-foreground break-all">{deleteTarget.file_name}</span> fájl és a hozzátartozó{' '}
-                        <span className="font-medium text-foreground">
-                          {deleteTarget.rowCount} riport sor
-                        </span>{' '}
-                        is véglegesen törlődik.
+                        {t('transactions:courier_files.opt_all_desc_single', {
+                          fileName: deleteTarget.file_name,
+                          count: deleteTarget.rowCount,
+                          defaultValue: `A ${deleteTarget.file_name} fájl és a hozzátartozó ${deleteTarget.rowCount} riport sor is véglegesen törlődik.`,
+                        })}
                       </>
                     ) : (
                       <>
-                        A kijelölt <span className="font-medium text-foreground">{bulkDeleteTarget?.length} fájl</span> és a hozzájuk tartozó összesen{' '}
-                        <span className="font-medium text-foreground">
-                          {bulkDeleteTarget?.reduce((acc, u) => acc + u.rowCount, 0)} riport sor
-                        </span>{' '}
-                        is véglegesen törlődik.
+                        {t('transactions:courier_files.opt_all_desc_bulk', {
+                          fileCount: bulkDeleteTarget?.length,
+                          rowCount: bulkDeleteTarget?.reduce((acc, u) => acc + u.rowCount, 0),
+                          defaultValue: `A kijelölt ${bulkDeleteTarget?.length} fájl és a hozzájuk tartozó összesen ${bulkDeleteTarget?.reduce((acc, u) => acc + u.rowCount, 0)} riport sor is véglegesen törlődik.`,
+                        })}
                       </>
                     )}
                   </p>
@@ -755,12 +813,12 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
           {deleting && (
             <div className="flex items-center justify-center py-2">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-sm text-muted-foreground">Törlés folyamatban...</span>
+              <span className="ml-2 text-sm text-muted-foreground">{t('transactions:courier_files.deleting_in_progress', 'Törlés folyamatban...')}</span>
             </div>
           )}
 
           <AlertDialogFooter className="w-full min-w-0">
-            <AlertDialogCancel disabled={deleting}>Mégsem</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>{t('transactions:courier_files.cancel', 'Mégsem')}</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

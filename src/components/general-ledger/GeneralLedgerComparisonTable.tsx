@@ -13,6 +13,8 @@ import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { exportToFile } from '@/lib/exportUtils';
 import { toast } from '@/hooks/use-toast';
 import { fetchAllGlBalances, GlDateBasis, GlPostingStatus } from '@/lib/glData';
+import { useTranslation } from 'react-i18next';
+import { getLocalizedGlAccountName } from '@/lib/glUtils';
 
 interface GeneralLedgerComparisonTableProps {
   presetId?: string;
@@ -31,6 +33,7 @@ export function GeneralLedgerComparisonTable({
   dateBasis = 'kibocsatas',
   postingStatus = 'all',
 }: GeneralLedgerComparisonTableProps) {
+  const { t } = useTranslation();
   const { data: exchangeRates } = useExchangeRates();
   const [search, setSearch] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'changed' | 'increased' | 'decreased'>('all');
@@ -117,7 +120,10 @@ export function GeneralLedgerComparisonTable({
       const c = currMap.get(key);
       const p = prevMap.get(key);
       const displayGlNumber = key === 'UNCLASSIFIED' ? 'Besorolatlan' : key;
-      const name = c?.short_name || p?.short_name || 'Besorolatlan';
+      const rawName = c?.short_name || p?.short_name || 'Besorolatlan';
+      const name = displayGlNumber === 'Besorolatlan'
+        ? t('accounting:general_ledger.unclassified_item', 'Besorolatlan')
+        : getLocalizedGlAccountName(displayGlNumber, rawName, t);
       const valCurr = c?.total_balance ?? 0;
       const valPrev = p?.total_balance ?? 0;
       const diff = valCurr - valPrev;

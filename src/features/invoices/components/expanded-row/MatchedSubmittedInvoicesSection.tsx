@@ -1,12 +1,12 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { FileText, Eye, CheckCircle2, Unlink } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { InlineTransactionList } from './InlineTransactionList';
-import { formatCurrency, cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+import { formatDateLocale, formatCurrencyLocale } from '@/lib/locale/formatters';
 import { INVOICE_TYPE_LABELS } from '@/types/invoices';
 import type { MatchedSubmittedInvoice, MatchedTransaction } from './types';
 
@@ -22,10 +22,6 @@ interface MatchedSubmittedInvoicesSectionProps {
   effectiveMatchedTransactions?: MatchedTransaction[];
 }
 
-function getInvoiceTypeLabel(rawType: string): string {
-  return INVOICE_TYPE_LABELS[rawType] || rawType.replace(/_/g, ' ');
-}
-
 export function MatchedSubmittedInvoicesSection({
   invoices,
   onViewInvoice,
@@ -37,7 +33,13 @@ export function MatchedSubmittedInvoicesSection({
   hideStandaloneTransactions = false,
   effectiveMatchedTransactions = [],
 }: MatchedSubmittedInvoicesSectionProps) {
+  const { t } = useTranslation(['invoices', 'common']);
+
   if (!invoices || invoices.length === 0) return null;
+
+  const getInvoiceTypeLabel = (rawType: string): string => {
+    return t(`invoices:types.${rawType}`, INVOICE_TYPE_LABELS[rawType] || rawType.replace(/_/g, ' '));
+  };
 
   return (
     <>
@@ -58,7 +60,7 @@ export function MatchedSubmittedInvoicesSection({
             <CardTitle className="text-xs font-medium flex items-center justify-between">
               <span className="flex items-center gap-1.5 flex-wrap">
                 <FileText className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                Párosított beküldött számla
+                {t('invoices:expanded_submitted.title', 'Párosított beküldött számla')}
                 {inv.invoice_type && (
                   <Badge
                     variant="outline"
@@ -129,17 +131,17 @@ export function MatchedSubmittedInvoicesSection({
                     className="h-6 text-[10px] text-muted-foreground hover:text-destructive px-2 border border-border/40 hover:bg-destructive/10 rounded-md transition-colors gap-1"
                   >
                     <Unlink className="h-2.5 w-2.5" />
-                    Párosítás megszüntetése
+                    {t('invoices:expanded_submitted.unmatch_btn', 'Párosítás megszüntetése')}
                   </Button>
                 )}
                 <Badge variant="success" className="gap-1 text-[10px] h-5">
                   <CheckCircle2 className="h-2.5 w-2.5" />
-                  Párosított
+                  {t('invoices:expanded_submitted.matched_badge', 'Párosított')}
                 </Badge>
                 {(inv.image_url || inv.melleklet_url) && onViewInvoice && (
                   <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                     <Eye className="h-3 w-3" />
-                    Kattints a részletekért
+                    {t('invoices:expanded_submitted.click_details', 'Kattints a részletekért')}
                   </span>
                 )}
               </div>
@@ -148,27 +150,27 @@ export function MatchedSubmittedInvoicesSection({
           <CardContent className="p-3 pt-0">
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="col-span-2">
-                <span className="text-muted-foreground">Bizonylatsorszám:</span>
+                <span className="text-muted-foreground">{t('invoices:expanded_submitted.invoice_number', 'Bizonylatsorszám:')}</span>
                 <span className="ml-1 font-mono font-medium">{inv.bizonylatsorszam || '-'}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Eladó:</span>
+                <span className="text-muted-foreground">{t('invoices:expanded_submitted.supplier', 'Eladó:')}</span>
                 <span className="ml-1 font-medium">{inv.elado_nev}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Vevő:</span>
+                <span className="text-muted-foreground">{t('invoices:expanded_submitted.customer', 'Vevő:')}</span>
                 <span className="ml-1 font-medium">{inv.vevo_nev}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Kiállítás:</span>
+                <span className="text-muted-foreground">{t('invoices:expanded_submitted.issue_date', 'Kiállítás:')}</span>
                 <span className="ml-1">
-                  {format(new Date(inv.kibocsatas_datuma), 'yyyy.MM.dd', { locale: hu })}
+                  {formatDateLocale(inv.kibocsatas_datuma)}
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground">Bruttó:</span>
+                <span className="text-muted-foreground">{t('invoices:expanded_submitted.gross', 'Bruttó:')}</span>
                 <span className="ml-1 font-mono font-medium">
-                  {formatCurrency(inv.brutto_vegosszeg, inv.penznem || 'HUF')}
+                  {formatCurrencyLocale(inv.brutto_vegosszeg, inv.penznem || 'HUF')}
                 </span>
               </div>
             </div>

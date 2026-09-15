@@ -82,10 +82,12 @@ export const formatCurrency = formatCurrencyLocale;
  */
 export function formatNumberLocale(
   amount: number,
-  maxFractionDigits: number = 2
+  digitsOrOptions: number | Intl.NumberFormatOptions = 2
 ): string {
   const localeCode = getActiveLocale() === 'hr' ? 'hr-HR' : 'hu-HU';
-  return new Intl.NumberFormat(localeCode, {
-    maximumFractionDigits: maxFractionDigits,
-  }).format(amount);
+  const options: Intl.NumberFormatOptions =
+    typeof digitsOrOptions === 'number'
+      ? { maximumFractionDigits: digitsOrOptions }
+      : digitsOrOptions;
+  return new Intl.NumberFormat(localeCode, options).format(amount);
 }

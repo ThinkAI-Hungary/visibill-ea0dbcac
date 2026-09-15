@@ -19,28 +19,60 @@
   "channels_config": {
     "invoices": {
       "card_title": "Učitavanje datoteka računa",
-      "card_description": "Odaberite PDF ili slikovne datoteke koje sadrže račune. Sustav automatski izdvaja podatke i evidentira račune."
+      "card_description": "Odaberite PDF ili slikovne datoteke koje sadrže račune. Sustav automatski izdvaja podatke i evidentira račune.",
+      "action_button": "Učitaj račune ({{count}})"
     },
     "vouchers": {
       "card_title": "Učitavanje blagajničkih dokumenata",
-      "card_description": "Odaberite PDF ili slikovne datoteke koje sadrže izdatnice ili uplatnice. Podržani formati: PDF, JPG, PNG, WebP"
+      "card_description": "Odaberite PDF ili slikovne datoteke koje sadrže izdatnice ili uplatnice. Podržani formati: PDF, JPG, PNG, WebP",
+      "action_button": "Učitaj blagajničke dokumente ({{count}})"
     },
     "transactions": {
       "card_title": "Učitavanje datoteka transakcija",
-      "card_description": "Odaberite PDF, CSV ili Excel datoteke koje sadrže bankovne ili druge financijske transakcije. Sustav automatski izdvaja podatke i evidentira transakcije."
+      "card_description": "Odaberite PDF, CSV ili Excel datoteke koje sadrže bankovne ili druge financijske transakcije. Sustav automatski izdvaja podatke i evidentira transakcije.",
+      "action_button": "Učitaj transakcije ({{count}})"
     },
     "salaries": {
       "card_title": "Učitavanje plaća i doprinosa",
-      "card_description": "Učitajte platne liste, sažetke obračuna plaća, prijave doprinosa ili porezna rješenja u PDF, CSV ili Excel formatu. Sustav ih automatski obrađuje i kategorizira."
+      "card_description": "Učitajte platne liste, sažetke obračuna plaća, prijave doprinosa ili porezna rješenja u PDF, CSV ili Excel formatu. Sustav ih automatski obrađuje i kategorizira.",
+      "action_button": "Učitaj podatke o plaćama ({{count}})"
     },
     "reports": {
       "card_title": "Učitavanje izvještaja dostavljača",
-      "card_description": "Odaberite datoteke izvještaja dostavljača (GLS, Pošta, Mixpack). Sustav automatski uparuje pakete s izdanim računima."
+      "card_description": "Odaberite datoteke izvještaja dostavljača (GLS, Pošta, Mixpack). Sustav automatski uparuje pakete s izdanim računima.",
+      "action_button": "Učitaj izvještaje ({{count}})"
     }
   },
   "file_list": {
     "selected_files": "Odabrane datoteke ({{count}})",
-    "clear_all": "Obriši sve"
+    "clear_all": "Obriši sve",
+    "remove_file": "Ukloni datoteku"
+  },
+  "dialogs": {
+    "list_duplicate": {
+      "title": "Datoteka je već na popisu",
+      "description": "Među odabranim datotekama sljedeće su već dodane na popis za učitavanje:",
+      "cancel": "Odustani",
+      "skip": "Preskoči duplikate",
+      "add_all": "Dodaj sve"
+    },
+    "db_duplicate": {
+      "title": "Otkrivene su već učitane datoteke",
+      "description": "Među odabranim datotekama sljedeće su već ranije učitane za ovu tvrtku. Označite datoteke koje namjerno želite ponovno učitati:",
+      "select_all": "Označi sve duplikate za ponovno učitavanje",
+      "cancel": "Odustani",
+      "upload_count": "Učitavanje ({{count}} datoteka)",
+      "upload_new_only": "Učitaj samo nove datoteke ({{count}})",
+      "none_selected": "Ništa nije odabrano"
+    }
+  },
+  "selectors": {
+    "bank_format": "Format banke:",
+    "choose_bank": "Odaberite banku...",
+    "ai_auto_hint": "(Ako ne odaberete, AI automatski prepoznaje format)",
+    "auto_detect": "Automatsko prepoznavanje",
+    "courier_service": "Dostavna služba:",
+    "choose_courier": "Odaberite dostavljača..."
   },
   "history_table": {
     "title_invoices": "Povijest učitavanja računa",

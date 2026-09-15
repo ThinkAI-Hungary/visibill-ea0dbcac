@@ -79,7 +79,7 @@ export const MatchedCourierReportsCard: React.FC<MatchedCourierReportsCardProps>
                 <span>{t('transactions:dialogs.details.courier.summary_frame', 'Futár összesítő jóváírás:')}</span>
               </div>
               <span className="font-semibold font-mono text-foreground">
-                {formatCurrency(summaryReport.cod_amount || 0, 'HUF')}
+                {formatCurrency(summaryReport.cod_amount || 0)}
               </span>
             </div>
           )}
@@ -137,7 +137,7 @@ export const MatchedCourierReportsCard: React.FC<MatchedCourierReportsCardProps>
                 {report.invoice_number && (
                   <div className="flex items-center gap-1.5 text-[11px] font-mono font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded">
                     <FileText className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                    <span>Számla: {report.invoice_number}</span>
+                    <span>{t('transactions:dialogs.details.courier.invoice_prefix', 'Számla: ')}{report.invoice_number}</span>
                   </div>
                 )}
 
@@ -160,7 +160,7 @@ export const MatchedCourierReportsCard: React.FC<MatchedCourierReportsCardProps>
                     <div>
                       <span>{t('transactions:dialogs.details.courier.cod_amount')}: </span>
                       <span className="font-medium text-foreground font-mono">
-                        {formatCurrency(report.cod_amount, 'HUF')}
+                        {formatCurrency(report.cod_amount)}
                       </span>
                     </div>
                   )}
@@ -174,7 +174,7 @@ export const MatchedCourierReportsCard: React.FC<MatchedCourierReportsCardProps>
                   )}
                   {report.reference_number && (
                     <div className="col-span-2 font-mono text-[10px]">
-                      <span>Webshop hivatkozás: </span>
+                      <span>{t('transactions:dialogs.details.courier.webshop_ref', 'Webshop hivatkozás: ')}</span>
                       <span className="text-foreground">{report.reference_number}</span>
                     </div>
                   )}

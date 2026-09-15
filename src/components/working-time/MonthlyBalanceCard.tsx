@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   startOfMonth,
   endOfMonth,
@@ -7,7 +8,7 @@ import {
   isSameMonth,
   format,
 } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { getDateFnsLocale } from '@/lib/locale/formatters';
 import { cn } from '@/lib/utils';
 import {
   Clock,
@@ -45,6 +46,8 @@ export function MonthlyBalanceCard({
   timeEntries,
   dailyHours = 8,
 }: MonthlyBalanceProps) {
+  const { t: rawT } = useTranslation(['hr', 'common']);
+  const t = (key: string, opts?: any): any => rawT((key.includes(':') ? key : `hr:${key}`) as any, opts);
   const stats = useMemo(() => {
     const businessDays = getBusinessDaysInMonth(monthDate);
     const requiredHours = businessDays * dailyHours;
@@ -106,8 +109,9 @@ export function MonthlyBalanceCard({
       {/* Title */}
       <div className="flex items-center gap-2">
         <Timer className="h-4 w-4 text-primary" />
-        <h3 className="text-sm font-semibold">
-          {format(monthDate, 'MMMM', { locale: hu })} összesítő
+        <h3 className="text-sm font-semibold capitalize">
+          {format(monthDate, 'MMMM', { locale: getDateFnsLocale() })}{' '}
+          {t('working_time.monthly_balance.summary_suffix')}
         </h3>
       </div>
 
@@ -115,7 +119,8 @@ export function MonthlyBalanceCard({
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-xs">
           <span className="text-muted-foreground">
-            {stats.totalWorked} óra / {stats.requiredHours} óra
+            {stats.totalWorked} {t('working_time.monthly_balance.hours_unit')} /{' '}
+            {stats.requiredHours} {t('working_time.monthly_balance.hours_unit')}
           </span>
           <span
             className={cn(
@@ -150,34 +155,39 @@ export function MonthlyBalanceCard({
         {/* Required hours */}
         <StatItem
           icon={<Target className="h-3.5 w-3.5" />}
-          label="Norma"
-          value={`${stats.requiredHours} óra`}
-          sublabel={`${stats.businessDays} munkanap × ${dailyHours} óra`}
+          label={t('working_time.monthly_balance.norm')}
+          value={`${stats.requiredHours} ${t('working_time.monthly_balance.hours_unit')}`}
+          sublabel={t('working_time.monthly_balance.norm_sublabel', {
+            days: stats.businessDays,
+            hours: dailyHours,
+          })}
         />
 
         {/* Hours worked */}
         <StatItem
           icon={<Clock className="h-3.5 w-3.5" />}
-          label="Rögzített"
-          value={`${stats.totalWorked} óra`}
-          sublabel={`${stats.workedDays} napon`}
+          label={t('working_time.monthly_balance.logged')}
+          value={`${stats.totalWorked} ${t('working_time.monthly_balance.hours_unit')}`}
+          sublabel={t('working_time.monthly_balance.logged_sublabel', {
+            days: stats.workedDays,
+          })}
         />
 
         {/* Remaining or overtime */}
         {isOvertime ? (
           <StatItem
             icon={<TrendingUp className="h-3.5 w-3.5" />}
-            label="Túlóra"
-            value={`+${stats.overtime} óra`}
-            sublabel="Norma felett"
+            label={t('working_time.monthly_balance.overtime')}
+            value={`+${stats.overtime} ${t('working_time.monthly_balance.hours_unit')}`}
+            sublabel={t('working_time.monthly_balance.overtime_sublabel')}
             variant="warning"
           />
         ) : (
           <StatItem
             icon={<TrendingDown className="h-3.5 w-3.5" />}
-            label="Hátralévő"
-            value={`${stats.remaining} óra`}
-            sublabel="Normáig hiányzik"
+            label={t('working_time.monthly_balance.remaining')}
+            value={`${stats.remaining} ${t('working_time.monthly_balance.hours_unit')}`}
+            sublabel={t('working_time.monthly_balance.remaining_sublabel')}
             variant={stats.remaining <= dailyHours * 2 ? 'success' : 'default'}
           />
         )}
@@ -185,9 +195,9 @@ export function MonthlyBalanceCard({
         {/* Days worked */}
         <StatItem
           icon={<CalendarCheck className="h-3.5 w-3.5" />}
-          label="Napok"
+          label={t('working_time.monthly_balance.days')}
           value={`${stats.workedDays} / ${stats.businessDays}`}
-          sublabel="Ledolgozva / összes"
+          sublabel={t('working_time.monthly_balance.days_sublabel')}
         />
       </div>
 
@@ -200,9 +210,9 @@ export function MonthlyBalanceCard({
             <div className="flex items-center gap-1 text-[11px]">
               <span className="h-2 w-2 rounded-full bg-muted-foreground/60" />
               <span className="text-muted-foreground">
-                Piszkozat:{' '}
+                {t('working_time.monthly_balance.draft_label')}{' '}
                 <span className="font-medium text-foreground tabular-nums">
-                  {stats.draftHours} óra
+                  {stats.draftHours} {t('working_time.monthly_balance.hours_unit')}
                 </span>
               </span>
             </div>
@@ -211,9 +221,9 @@ export function MonthlyBalanceCard({
             <div className="flex items-center gap-1 text-[11px]">
               <span className="h-2 w-2 rounded-full bg-blue-500" />
               <span className="text-muted-foreground">
-                Leadva:{' '}
+                {t('working_time.monthly_balance.submitted_label')}{' '}
                 <span className="font-medium text-foreground tabular-nums">
-                  {stats.submittedHours} óra
+                  {stats.submittedHours} {t('working_time.monthly_balance.hours_unit')}
                 </span>
               </span>
             </div>
@@ -222,9 +232,9 @@ export function MonthlyBalanceCard({
             <div className="flex items-center gap-1 text-[11px]">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
               <span className="text-muted-foreground">
-                Jóváhagyva:{' '}
+                {t('working_time.monthly_balance.approved_label')}{' '}
                 <span className="font-medium text-foreground tabular-nums">
-                  {stats.approvedHours} óra
+                  {stats.approvedHours} {t('working_time.monthly_balance.hours_unit')}
                 </span>
               </span>
             </div>
@@ -237,9 +247,10 @@ export function MonthlyBalanceCard({
         <div className="flex items-start gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2">
           <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
           <p className="text-xs text-amber-600 dark:text-amber-400">
-            Ebben a hónapban{' '}
-            <span className="font-bold">{stats.overtime} óra túlóra</span>{' '}
-            keletkezett a {stats.requiredHours} órás norma felett.
+            {t('working_time.monthly_balance.overtime_alert', {
+              overtime: stats.overtime,
+              required: stats.requiredHours,
+            })}
           </p>
         </div>
       )}

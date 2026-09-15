@@ -3,8 +3,8 @@ import { CheckCircle2, Info } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils';
-import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { formatDate } from '@/lib/locale/formatters';
+import { useTranslation } from 'react-i18next';
 import type { MatchedCourierReport } from './types';
 
 interface MatchedCourierReportsSectionProps {
@@ -16,6 +16,8 @@ export function MatchedCourierReportsSection({
   courierReports,
   isInvoiceSettled = false,
 }: MatchedCourierReportsSectionProps) {
+  const { t } = useTranslation(['invoices']);
+
   if (!courierReports || courierReports.length === 0) return null;
 
   return (
@@ -31,12 +33,12 @@ export function MatchedCourierReportsSection({
                 >
                   {cr.report_type}
                 </Badge>
-                Futárjelentés tétel
+                {t('invoices:expanded_courier.title', 'Futárjelentés tétel')}
               </span>
               {isInvoiceSettled ? (
                 <Badge variant="success" className="gap-1 text-[10px] h-5">
                   <CheckCircle2 className="h-2.5 w-2.5" />
-                  Csomag párosítva · Kiegyenlítve
+                  {t('invoices:expanded_courier.settled_badge', 'Csomag párosítva · Kiegyenlítve')}
                 </Badge>
               ) : (
                 <div className="flex items-center gap-1.5 flex-wrap">
@@ -45,13 +47,13 @@ export function MatchedCourierReportsSection({
                     className="gap-1 text-[10px] h-5 border-emerald-500/40 text-emerald-600 bg-emerald-500/10"
                   >
                     <CheckCircle2 className="h-2.5 w-2.5" />
-                    Csomag párosítva
+                    {t('invoices:expanded_courier.matched_badge', 'Csomag párosítva')}
                   </Badge>
                   <Badge
                     variant="outline"
                     className="text-[9px] h-5 border-amber-500/40 text-amber-600 bg-amber-500/10 font-normal"
                   >
-                    Banki jóváírásra vár
+                    {t('invoices:expanded_courier.waiting_payout_badge', 'Banki jóváírásra vár')}
                   </Badge>
                 </div>
               )}
@@ -60,30 +62,28 @@ export function MatchedCourierReportsSection({
           <CardContent className="p-3 pt-0">
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
-                <span className="text-muted-foreground">Csomagszám:</span>
+                <span className="text-muted-foreground">{t('invoices:expanded_courier.package_number', 'Csomagszám:')}</span>
                 <span className="ml-1 font-mono font-medium">{cr.package_number || '-'}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Utánvét összeg:</span>
+                <span className="text-muted-foreground">{t('invoices:expanded_courier.cod_amount', 'Utánvét összeg:')}</span>
                 <span className="ml-1 font-mono font-medium">
-                  {formatCurrency(cr.cod_amount || 0, 'HUF')}
+                  {formatCurrency(cr.cod_amount || 0)}
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground">Kézbesítés:</span>
+                <span className="text-muted-foreground">{t('invoices:expanded_courier.delivery', 'Kézbesítés:')}</span>
                 <span className="ml-1 font-medium">
-                  {cr.delivery_date
-                    ? format(new Date(cr.delivery_date), 'yyyy.MM.dd', { locale: hu })
-                    : '-'}
+                  {cr.delivery_date ? formatDate(cr.delivery_date) : '-'}
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground">Címzett:</span>
+                <span className="text-muted-foreground">{t('invoices:expanded_courier.recipient', 'Címzett:')}</span>
                 <span className="ml-1 font-medium">{cr.recipient_name || '-'}</span>
               </div>
               {cr.reference_number && (
                 <div className="col-span-2">
-                  <span className="text-muted-foreground">Hivatkozási szám:</span>
+                  <span className="text-muted-foreground">{t('invoices:expanded_courier.reference_number', 'Hivatkozási szám:')}</span>
                   <span className="ml-1 font-mono">{cr.reference_number}</span>
                 </div>
               )}
@@ -91,7 +91,7 @@ export function MatchedCourierReportsSection({
                 <div className="col-span-2 mt-1 pt-1.5 border-t border-border/40 flex items-start gap-1.5 text-[11px] text-muted-foreground">
                   <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-amber-500" />
                   <span>
-                    A csomagtétel a számlához van rendelve. A számla kifizetettségéhez a futárcég banki jóváírása (vagy a fenti <strong>„Kézi fizetés”</strong> gomb) szükséges.
+                    {t('invoices:expanded_courier.info_hint', 'A csomagtétel a számlához van rendelve. A számla kifizetettségéhez a futárcég banki jóváírása (vagy a fenti „Kézi fizetés” gomb) szükséges.')}
                   </span>
                 </div>
               )}

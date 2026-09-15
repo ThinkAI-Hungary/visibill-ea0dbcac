@@ -21,8 +21,7 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { formatDateLocale } from '@/lib/locale/formatters';
 import { cn } from '@/lib/utils';
 import type { InvoiceNote, MatchedSubmittedInvoice, MatchedNavInvoice } from './types';
 
@@ -191,7 +190,7 @@ export function InvoiceNotesSection({
                       </Badge>
                     )}
                     <span className="text-[9px] text-muted-foreground font-mono">
-                      {format(new Date(note.created_at), 'yyyy.MM.dd', { locale: hu })}
+                      {formatDateLocale(note.created_at)}
                     </span>
                   </div>
                 </CardTitle>

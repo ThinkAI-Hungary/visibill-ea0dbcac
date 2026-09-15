@@ -64,7 +64,7 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn, formatCurrency } from '@/lib/utils';
-import { getActiveLocale } from '@/lib/locale/formatters';
+import { getActiveLocale, formatNumberLocale } from '@/lib/locale/formatters';
 import {
   Table,
   TableHeader,
@@ -196,16 +196,16 @@ export default function TransfersPage() {
 
   // Hungarian CDV & Format Check
   const getAccountError = (account: string): string | null => {
-    if (!account) return 'Hiányzó bankszámlaszám!';
+    if (!account) return t('transfers:validation.missing_account');
     const clean = account.replace(/[\s-]/g, '').toUpperCase();
-    if (!clean) return 'Hiányzó bankszámlaszám!';
+    if (!clean) return t('transfers:validation.missing_account');
     if (/^[A-Z]/.test(clean)) {
-      if (!validateIban(clean)) return 'Hibás IBAN formátum vagy CDV kód!';
+      if (!validateIban(clean)) return t('transfers:validation.invalid_iban');
       return null;
     }
-    if (!/^\d+$/.test(clean)) return 'Csak számjegyek és kötőjelek!';
+    if (!/^\d+$/.test(clean)) return t('transfers:validation.digits_only');
     if (clean.length !== 16 && clean.length !== 24) {
-      return 'GIRO számlaszámnak 16 vagy 24 számjegyűnek kell lennie!';
+      return t('transfers:validation.giro_length');
     }
     const digits = clean.split('').map(Number);
     const checkBlock = (block: number[]) => {
@@ -214,9 +214,9 @@ export default function TransfersPage() {
       for (let i = 0; i < 8; i++) sum += block[i] * weights[i];
       return sum % 10 === 0;
     };
-    if (!checkBlock(digits.slice(0, 8))) return 'Hibás 1. blokk CDV!';
-    if (!checkBlock(digits.slice(8, 16))) return 'Hibás 2. blokk CDV!';
-    if (clean.length === 24 && !checkBlock(digits.slice(16, 24))) return 'Hibás 3. blokk CDV!';
+    if (!checkBlock(digits.slice(0, 8))) return t('transfers:validation.invalid_cdv_block1');
+    if (!checkBlock(digits.slice(8, 16))) return t('transfers:validation.invalid_cdv_block2');
+    if (clean.length === 24 && !checkBlock(digits.slice(16, 24))) return t('transfers:validation.invalid_cdv_block3');
     return null;
   };
 
@@ -912,12 +912,12 @@ export default function TransfersPage() {
       }
 
       toast({
-        title: 'Mentve',
-        description: `Bankszámlaszám rögzítve a(z) ${invoice.partner_name} partnerhez.`
+        title: t('transfers:toasts.account_saved_title'),
+        description: t('transfers:toasts.account_saved_desc', { partner: invoice.partner_name })
       });
     } catch (err) {
       reportError({ type: 'db_query', component: 'TransfersPage', action: 'handleBankBlur', message: 'Failed to update partner bank account', error: err });
-      toast({ title: 'Hiba', description: 'Nem sikerült elmenteni a bankszámlaszámot.', variant: 'destructive' });
+      toast({ title: t('common:error', 'Hiba'), description: t('transfers:toasts.account_save_error'), variant: 'destructive' });
     }
 
     // Update query cache inline so we don't have to trigger a full refresh
@@ -971,8 +971,8 @@ export default function TransfersPage() {
       }
 
       toast({
-        title: 'Sikeres rendezés',
-        description: `${invoicesToSettle.length} számla sikeresen rendezve lett (Kp / Magánszámla). Lekerült az átutalandó listáról.`
+        title: t('transfers:toasts.settle_success_title'),
+        description: t('transfers:toasts.settle_success_desc', { count: invoicesToSettle.length })
       });
 
       setSettleDialogOpen(false);
@@ -982,8 +982,8 @@ export default function TransfersPage() {
     } catch (err: any) {
       reportError({ type: 'db_query', component: 'TransfersPage', action: 'handleConfirmSettle', message: 'Failed to settle invoices manually', error: err });
       toast({
-        title: 'Hiba',
-        description: 'Nem sikerült a számla rendezése.',
+        title: t('common:error', 'Hiba'),
+        description: t('transfers:toasts.settle_error'),
         variant: 'destructive'
       });
     } finally {
@@ -1001,16 +1001,16 @@ export default function TransfersPage() {
       if (error) throw error;
 
       toast({
-        title: 'Sikeres törlés',
-        description: 'A tétel sikeresen törölve lett az utalási előzményekből.',
+        title: t('common:success', 'Sikeres művelet'),
+        description: t('transfers:toasts.delete_single_success'),
       });
 
       refetchTransferHistory();
     } catch (err: any) {
       reportError({ type: 'db_query', component: 'TransfersPage', action: 'handleDeleteTransfer', message: 'Failed to delete payment transfer', error: err });
       toast({
-        title: 'Hiba',
-        description: 'Nem sikerült a tétel törlése.',
+        title: t('common:error', 'Hiba'),
+        description: t('transfers:toasts.delete_single_error'),
         variant: 'destructive'
       });
     }
@@ -1027,8 +1027,8 @@ export default function TransfersPage() {
       if (error) throw error;
 
       toast({
-        title: 'Sikeres törlés',
-        description: `${selectedHistoryIds.length} tétel sikeresen törölve lett az utalási előzményekből.`,
+        title: t('common:success', 'Sikeres művelet'),
+        description: t('transfers:toasts.delete_batch_success', { count: selectedHistoryIds.length }),
       });
 
       setSelectedHistoryIds([]);
@@ -1036,8 +1036,8 @@ export default function TransfersPage() {
     } catch (err: any) {
       reportError({ type: 'db_query', component: 'TransfersPage', action: 'handleBulkDeleteTransfers', message: 'Failed to bulk delete payment transfers', error: err });
       toast({
-        title: 'Hiba',
-        description: 'Nem sikerült a tételek törlése.',
+        title: t('common:error', 'Hiba'),
+        description: t('transfers:toasts.delete_batch_error'),
         variant: 'destructive'
       });
     }
@@ -1268,8 +1268,8 @@ export default function TransfersPage() {
     if (selectedIds.length === 0) return;
     if (hasMissingBankAccounts) {
       toast({
-        title: 'Hiányzó bankszámlaszám',
-        description: 'Minden kijelölt tételhez meg kell adni a partner bankszámlaszámát a fájl generálásához.',
+        title: t('transfers:toasts.missing_accounts_title'),
+        description: t('transfers:toasts.missing_accounts_desc'),
         variant: 'destructive'
       });
       return;
@@ -1302,7 +1302,7 @@ export default function TransfersPage() {
 
     const sender = displayBankAccounts.find(acc => acc.id === activeSenderId);
     if (!sender) {
-      toast({ title: 'Hiba', description: 'Kérjük, válaszd ki a céges indító bankszámlát!', variant: 'destructive' });
+      toast({ title: t('common:error', 'Hiba'), description: t('transfers:toasts.select_sender_account'), variant: 'destructive' });
       return;
     }
 
@@ -2536,10 +2536,10 @@ export default function TransfersPage() {
           <DialogHeader>
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-              Számla rendezése (Készpénz / Magánszámla)
+              {t('transfers:settle_dialog.title')}
             </DialogTitle>
             <DialogDescription>
-              Jelöld meg a számlát rendezettként, ha az készpénzből vagy magánszámláról lett kifizetve. A tétel lekerül az átutalandó listáról.
+              {t('transfers:settle_dialog.desc')}
             </DialogDescription>
           </DialogHeader>
 
@@ -2547,46 +2547,46 @@ export default function TransfersPage() {
             <div className="space-y-4 py-2">
               <div className="p-3 bg-muted/60 rounded-xl border border-border/60 space-y-1">
                 <div className="flex justify-between items-center text-xs text-muted-foreground">
-                  <span>Partner:</span>
+                  <span>{t('transfers:settle_dialog.partner')}</span>
                   <span className="font-semibold text-foreground">{settleItem.partner_name}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs text-muted-foreground">
-                  <span>Számlák ({settleItem.original_invoices.length} db):</span>
+                  <span>{t('transfers:settle_dialog.invoices_count', { count: settleItem.original_invoices.length })}</span>
                   <span className="font-mono font-medium text-foreground">
                     {settleItem.original_invoices.map(i => i.invoice_number).join(', ')}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-sm font-bold pt-1 border-t border-border/40">
-                  <span>Összesen:</span>
+                  <span>{t('transfers:settle_dialog.total')}</span>
                   <span className="font-mono text-emerald-600 dark:text-emerald-400">
-                    {settleItem.amount.toLocaleString('hu-HU')} {settleItem.currency}
+                    {formatNumberLocale(settleItem.amount)} {settleItem.currency}
                   </span>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs font-semibold">Fizetés jellege</Label>
+                <Label className="text-xs font-semibold">{t('transfers:settle_dialog.payment_method')}</Label>
                 <Select value={settlePaymentType} onValueChange={setSettlePaymentType}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Válassz fizetési módot" />
+                    <SelectValue placeholder={t('transfers:settle_dialog.payment_method_placeholder')} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="cash">
                       <div className="flex items-center gap-2">
                         <Banknote className="h-4 w-4 text-emerald-600" />
-                        <span>Készpénz / Házipénztár (381)</span>
+                        <span>{t('transfers:settle_dialog.opt_cash')}</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="private_card">
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-blue-500" />
-                        <span>Privát számla / Tagi kölcsön</span>
+                        <span>{t('transfers:settle_dialog.opt_private_card')}</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="other">
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-amber-500" />
-                        <span>Egyéb manuális rendezés</span>
+                        <span>{t('transfers:settle_dialog.opt_other')}</span>
                       </div>
                     </SelectItem>
                   </SelectContent>
@@ -2594,7 +2594,7 @@ export default function TransfersPage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs font-semibold">Kifizetés dátuma</Label>
+                <Label className="text-xs font-semibold">{t('transfers:settle_dialog.payment_date')}</Label>
                 <Input
                   type="date"
                   value={settlePaymentDate}
@@ -2604,11 +2604,11 @@ export default function TransfersPage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs font-semibold">Megjegyzés (opcionális)</Label>
+                <Label className="text-xs font-semibold">{t('transfers:settle_dialog.note')}</Label>
                 <Textarea
                   value={settleNote}
                   onChange={(e) => setSettleNote(e.target.value)}
-                  placeholder="Pl. Joó Kristóf privát számlájáról fizetve, pénztárból elszámolva"
+                  placeholder={t('transfers:settle_dialog.note_placeholder')}
                   rows={2}
                   className="text-xs resize-none"
                 />
@@ -2626,7 +2626,7 @@ export default function TransfersPage() {
               }}
               disabled={settling}
             >
-              Mégse
+              {t('transfers:settle_dialog.cancel')}
             </Button>
             <Button
               onClick={handleConfirmSettle}
@@ -2636,12 +2636,12 @@ export default function TransfersPage() {
               {settling ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Rendezés mentése...
+                  {t('transfers:settle_dialog.saving')}
                 </>
               ) : (
                 <>
                   <CheckCircle2 className="h-4 w-4" />
-                  Rendezés megerősítése
+                  {t('transfers:settle_dialog.confirm')}
                 </>
               )}
             </Button>

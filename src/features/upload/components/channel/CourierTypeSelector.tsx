@@ -3,6 +3,7 @@ import { Package } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { COURIER_OPTIONS } from '../../config/channelConfigs';
 import type { CourierReportType } from '../../types';
+import { useTranslation } from 'react-i18next';
 
 interface CourierTypeSelectorProps {
   value: CourierReportType;
@@ -11,11 +12,13 @@ interface CourierTypeSelectorProps {
 }
 
 export function CourierTypeSelector({ value, onChange, disabled }: CourierTypeSelectorProps) {
+  const { t } = useTranslation(['upload']);
+
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 border rounded-lg bg-muted/20">
       <div className="flex items-center gap-2 text-sm font-medium text-foreground">
         <Package className="h-4 w-4 text-muted-foreground" />
-        <span>Futárszolgálat:</span>
+        <span>{t('upload:selectors.courier_service', 'Futárszolgálat:')}</span>
       </div>
       <Select
         value={value}
@@ -23,7 +26,7 @@ export function CourierTypeSelector({ value, onChange, disabled }: CourierTypeSe
         disabled={disabled}
       >
         <SelectTrigger className="w-full sm:w-[220px] h-9 bg-background">
-          <SelectValue placeholder="Válassz futárt..." />
+          <SelectValue placeholder={t('upload:selectors.choose_courier', 'Válassz futárt...')} />
         </SelectTrigger>
         <SelectContent>
           {COURIER_OPTIONS.map(opt => (
@@ -36,3 +39,4 @@ export function CourierTypeSelector({ value, onChange, disabled }: CourierTypeSe
     </div>
   );
 }
+

@@ -1,6 +1,7 @@
 import { useState, useEffect, lazy, Suspense, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { getDateFnsLocale } from '@/lib/locale/formatters';
 import { formatCurrency } from '@/lib/utils';
 import { DepreciationCards } from './DepreciationCards';
 import type { FixedAsset, AssetEvent } from '@/types/fixed-assets';
@@ -62,6 +63,8 @@ const EVENT_LABELS: Record<string, string> = {
 };
 
 export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
+  const { t: rawT } = useTranslation(['hr', 'common']);
+  const t = (key: string, opts?: any): any => rawT((key.includes(':') ? key : `hr:${key}`) as any, opts);
   const [transferOpen, setTransferOpen] = useState(false);
   const [reactivationOpen, setReactivationOpen] = useState(false);
   const [disposalOpen, setDisposalOpen] = useState(false);
@@ -81,11 +84,11 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
     setGeneratingProtocol(true);
     try {
       await generateAndAttachAssetProtocolPdf(asset.id, asset.company_id);
-      toast({ title: 'Aktiválási jegyzőkönyv generálva és csatolva!' });
+      toast({ title: t('fixed_assets.detail.toast_protocol_success') });
       queryClient.invalidateQueries({ queryKey: ['fixedAssetDetail', asset.id] });
       queryClient.invalidateQueries({ queryKey: ['fixedAssets', asset.company_id] });
     } catch (err: any) {
-      toast({ title: 'Hiba a generálás során', description: err?.message || 'Nem sikerült a PDF generálás', variant: 'destructive' });
+      toast({ title: t('fixed_assets.detail.toast_protocol_error'), description: err?.message || 'Nem sikerült a PDF generálás', variant: 'destructive' });
     } finally {
       setGeneratingProtocol(false);
     }
@@ -126,14 +129,14 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
 
       if (error) throw error;
 
-      toast({ title: 'Teljesítmény sikeresen rögzítve' });
+      toast({ title: t('fixed_assets.detail.toast_perf_success') });
       setPerfOpen(false);
       
       queryClient.invalidateQueries({ queryKey: ['fixedAssets', asset.company_id] });
       queryClient.invalidateQueries({ queryKey: ['fixedAssetDetail', asset.id] });
       queryClient.invalidateQueries({ queryKey: ['fixed-asset-detail', asset.id] });
     } catch (err: any) {
-      toast({ title: 'Hiba a mentés során', description: err.message, variant: 'destructive' });
+      toast({ title: t('fixed_assets.detail.toast_perf_error'), description: err.message, variant: 'destructive' });
     } finally {
       setSubmittingPerf(false);
     }
@@ -174,7 +177,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
 
     const maxSize = 10 * 1024 * 1024; // 10 MB
     if (file.size > maxSize) {
-      toast({ title: 'A fájl mérete meghaladja a 10MB korlátot', variant: 'destructive' });
+      toast({ title: t('fixed_assets.detail.toast_upload_size_error'), variant: 'destructive' });
       return;
     }
 
@@ -204,8 +207,8 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
 
       if (dbError) throw dbError;
 
-      const label = uploadCategory === 'warranty' ? 'Garanciajegy' : 'Számla';
-      toast({ title: `${label} feltöltve`, description: file.name });
+      const label = uploadCategory === 'warranty' ? t('fixed_assets.detail.type_warranty') : t('fixed_assets.detail.type_invoice');
+      toast({ title: t('fixed_assets.detail.toast_upload_success', { label }), description: file.name });
 
       // Record event in asset timeline
       if (user?.id) {
@@ -222,7 +225,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
       queryClient.invalidateQueries({ queryKey: ['fixed-asset-detail', asset.id] });
     } catch (err: any) {
       reportError({ type: 'db_query', component: 'AssetDetailPanel', action: 'error', message: 'Upload error:', error: err });
-      toast({ title: 'Hiba a feltöltés során', description: err.message, variant: 'destructive' });
+      toast({ title: t('fixed_assets.detail.toast_upload_error'), description: err.message, variant: 'destructive' });
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -247,10 +250,10 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
 
       if (error) throw error;
 
-      toast({ title: 'Dokumentum törölve' });
+      toast({ title: t('fixed_assets.detail.toast_delete_success') });
       queryClient.invalidateQueries({ queryKey: ['fixed-asset-detail', asset.id] });
     } catch (err: any) {
-      toast({ title: 'Hiba a törlés során', description: err.message, variant: 'destructive' });
+      toast({ title: t('fixed_assets.detail.toast_delete_error'), description: err.message, variant: 'destructive' });
     }
   };
 
@@ -267,10 +270,10 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
             <TooltipTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2 shrink-0" onClick={() => setQrOpen(true)}>
                 <QrCode className="h-4 w-4" />
-                Címke QR
+                {t('fixed_assets.detail.qr_btn')}
               </Button>
             </TooltipTrigger>
-            <TooltipContent>QR címke generálása nyomtatáshoz</TooltipContent>
+            <TooltipContent>{t('fixed_assets.detail.qr_tooltip')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
@@ -278,30 +281,30 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
       {/* Metadata Grid */}
       <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
         <div>
-          <span className="text-muted-foreground">Bruttó bekerülési érték:</span>
+          <span className="text-muted-foreground">{t('fixed_assets.detail.gross_acquisition_value')}</span>
           <p className="font-semibold">{formatCurrency(asset.acquisition_value, asset.currency)}</p>
         </div>
         <div>
-          <span className="text-muted-foreground">Beszerzés dátuma:</span>
-          <p className="font-semibold">{format(parseLocalDate(asset.purchase_date), 'yyyy.MM.dd.', { locale: hu })}</p>
+          <span className="text-muted-foreground">{t('fixed_assets.detail.purchase_date')}</span>
+          <p className="font-semibold">{format(parseLocalDate(asset.purchase_date), 'yyyy.MM.dd.', { locale: getDateFnsLocale() })}</p>
         </div>
         <div>
-          <span className="text-muted-foreground">Aktiválás dátuma:</span>
-          <p className="font-semibold">{format(parseLocalDate(asset.activation_date), 'yyyy.MM.dd.', { locale: hu })}</p>
+          <span className="text-muted-foreground">{t('fixed_assets.detail.activation_date')}</span>
+          <p className="font-semibold">{format(parseLocalDate(asset.activation_date), 'yyyy.MM.dd.', { locale: getDateFnsLocale() })}</p>
         </div>
         <div>
-          <span className="text-muted-foreground">Szállító:</span>
+          <span className="text-muted-foreground">{t('fixed_assets.detail.supplier')}</span>
           <p className="font-semibold">{asset.supplier_name || '-'}</p>
         </div>
         <div>
-          <span className="text-muted-foreground">Helyszín:</span>
+          <span className="text-muted-foreground">{t('fixed_assets.detail.location')}</span>
           <p className="font-semibold">{asset.location?.name || '-'}</p>
           {asset.location?.address && (
             <p className="text-xs text-muted-foreground">{asset.location.address}</p>
           )}
         </div>
         <div>
-          <span className="text-muted-foreground">Projekt:</span>
+          <span className="text-muted-foreground">{t('fixed_assets.detail.project')}</span>
           {asset.project ? (
             <div className="flex items-center gap-1.5 mt-0.5">
               <span
@@ -316,29 +319,29 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
               </span>
             </div>
           ) : (
-            <p className="font-semibold text-muted-foreground">-</p>
+            <p className="font-semibold text-muted-foreground">{t('fixed_assets.detail.no_project')}</p>
           )}
         </div>
         <div>
-          <span className="text-muted-foreground">Aktiválta:</span>
+          <span className="text-muted-foreground">{t('fixed_assets.detail.activated_by')}</span>
           <p className="font-semibold">{asset.activated_by_name || '-'}</p>
         </div>
         <div>
-          <span className="text-muted-foreground">Státusz:</span>
+          <span className="text-muted-foreground">{t('fixed_assets.detail.status')}</span>
           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ASSET_STATUS_COLORS[asset.status]}`}>
-            {ASSET_STATUS_LABELS[asset.status]}
+            {t(`fixed_assets.status.${asset.status}`, ASSET_STATUS_LABELS[asset.status])}
           </span>
         </div>
         {asset.gl_account && (
           <div>
-            <span className="text-muted-foreground">Főkönyvi számla:</span>
+            <span className="text-muted-foreground">{t('fixed_assets.detail.gl_account')}</span>
             <p className="font-semibold font-mono text-sm">{asset.gl_account.gl_number} — {asset.gl_account.short_name}</p>
           </div>
         )}
         {asset.disposal_date && (
           <div>
-            <span className="text-muted-foreground">Kivezetés dátuma:</span>
-            <p className="font-semibold">{format(parseLocalDate(asset.disposal_date), 'yyyy.MM.dd.', { locale: hu })}</p>
+            <span className="text-muted-foreground">{t('fixed_assets.detail.disposal_date')}</span>
+            <p className="font-semibold">{format(parseLocalDate(asset.disposal_date), 'yyyy.MM.dd.', { locale: getDateFnsLocale() })}</p>
           </div>
         )}
       </div>
@@ -356,7 +359,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
       {asset.depreciation_method === 'performance' && (
         <div className="space-y-3 border-t pt-4">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Teljesítmény Napló</h4>
+            <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('fixed_assets.detail.perf_log_title')}</h4>
             <Button
               variant="outline"
               size="sm"
@@ -370,7 +373,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
               disabled={!isActive}
             >
               <PlusCircle className="h-3.5 w-3.5" />
-              Teljesítmény rögzítése
+              {t('fixed_assets.detail.btn_record_perf')}
             </Button>
           </div>
 
@@ -378,17 +381,17 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
             <table className="w-full text-xs text-left">
               <thead className="bg-muted/50 border-b text-muted-foreground">
                 <tr>
-                  <th className="py-2 px-3 font-medium">Dátum</th>
-                  <th className="py-2 px-3 font-medium text-right">Időszaki érték</th>
-                  <th className="py-2 px-3 font-medium text-right">Számlálóállás</th>
-                  <th className="py-2 px-3 font-medium text-right">Elszámolt ÉCS</th>
+                  <th className="py-2 px-3 font-medium">{t('fixed_assets.detail.col_date')}</th>
+                  <th className="py-2 px-3 font-medium text-right">{t('fixed_assets.detail.col_period_value')}</th>
+                  <th className="py-2 px-3 font-medium text-right">{t('fixed_assets.detail.col_counter_value')}</th>
+                  <th className="py-2 px-3 font-medium text-right">{t('fixed_assets.detail.col_depreciation')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {events.filter(e => e.event_type === 'performance_log').length === 0 ? (
                   <tr>
                     <td colSpan={4} className="py-4 text-center text-muted-foreground italic">
-                      Nincs még rögzített teljesítmény bejegyzés.
+                      {t('fixed_assets.detail.no_perf_logs')}
                     </td>
                   </tr>
                 ) : (
@@ -401,7 +404,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
                       return (
                         <tr key={event.id} className="hover:bg-muted/20">
                           <td className="py-2 px-3 font-mono">
-                            {format(parseLocalDate(event.event_date), 'yyyy.MM.dd.', { locale: hu })}
+                            {format(parseLocalDate(event.event_date), 'yyyy.MM.dd.', { locale: getDateFnsLocale() })}
                           </td>
                           <td className="py-2 px-3 text-right tabular-nums">
                             {pVal.toLocaleString('hu-HU')} {asset.performance_unit}
@@ -426,14 +429,17 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
       <Dialog open={perfOpen} onOpenChange={setPerfOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Új Teljesítmény Rögzítése</DialogTitle>
+            <DialogTitle>{t('fixed_assets.detail.perf_modal_title')}</DialogTitle>
             <DialogDescription>
-              Add meg az eszköz által teljesített egységet a leíráshoz (Tervezett összesen: {asset.total_planned_performance?.toLocaleString('hu-HU')} {asset.performance_unit}).
+              {t('fixed_assets.detail.perf_modal_desc', {
+                total: asset.total_planned_performance?.toLocaleString('hu-HU'),
+                unit: asset.performance_unit,
+              })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-3 text-sm">
             <div className="space-y-2">
-              <Label>Dátum *</Label>
+              <Label>{t('fixed_assets.detail.perf_modal_date')}</Label>
               <Input
                 type="date"
                 value={perfDate}
@@ -442,7 +448,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Időszaki érték ({asset.performance_unit || 'egység'}) *</Label>
+                <Label>{t('fixed_assets.detail.perf_modal_period', { unit: asset.performance_unit || 'egység' })}</Label>
                 <Input
                   type="number"
                   value={perfAmount}
@@ -454,7 +460,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Vagy új állás ({asset.performance_unit || 'egység'})</Label>
+                <Label>{t('fixed_assets.detail.perf_modal_counter', { unit: asset.performance_unit || 'egység' })}</Label>
                 <Input
                   type="number"
                   value={perfCumulative}
@@ -474,7 +480,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPerfOpen(false)} disabled={submittingPerf}>
-              Mégse
+              {t('fixed_assets.detail.perf_modal_cancel')}
             </Button>
             <Button
               onClick={handleSavePerf}
@@ -482,7 +488,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
               className="gap-2"
             >
               {submittingPerf ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              Mentés
+              {t('fixed_assets.detail.perf_modal_save')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -498,7 +504,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
           onClick={() => setReactivationOpen(true)}
         >
           <PlusCircle className="h-4 w-4" />
-          Ráaktiválás
+          {t('fixed_assets.detail.btn_reactivation')}
         </Button>
 
         <Button
@@ -509,7 +515,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
           onClick={() => setDisposalOpen(true)}
         >
           <Trash2 className="h-4 w-4" />
-          Selejtezés / Kivezetés
+          {t('fixed_assets.detail.btn_disposal')}
         </Button>
 
         <Button
@@ -520,23 +526,23 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
           onClick={() => setTransferOpen(true)}
         >
           <ArrowRightLeft className="h-4 w-4" />
-          Áthelyezés
+          {t('fixed_assets.detail.btn_transfer')}
         </Button>
       </div>
 
       {/* Timeline */}
       {events.length > 0 && (
         <div className="space-y-3">
-          <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Életút</h4>
+          <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('fixed_assets.detail.timeline_title')}</h4>
           <div className="space-y-2">
             {events.map((event) => (
               <div key={event.id} className="flex items-center gap-3 text-sm">
                 <div className="flex-shrink-0">{EVENT_ICONS[event.event_type] || <CheckCircle className="h-3.5 w-3.5" />}</div>
                 <span className="text-muted-foreground font-mono text-xs">
-                  {format(parseLocalDate(event.event_date), 'yyyy.MM.dd', { locale: hu })}
+                  {format(parseLocalDate(event.event_date), 'yyyy.MM.dd', { locale: getDateFnsLocale() })}
                 </span>
                 <span className="font-medium">
-                  {EVENT_LABELS[event.event_type] || event.event_type}
+                  {t(`fixed_assets.detail.events.${event.event_type}`, EVENT_LABELS[event.event_type] || event.event_type)}
                 </span>
                 {event.description && (
                   <span className="text-muted-foreground text-xs truncate">— {event.description}</span>
@@ -550,7 +556,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
       {/* Documents */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Dokumentumtár</h4>
+          <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('fixed_assets.detail.docs_title')}</h4>
           <div>
             <input
               ref={fileInputRef}
@@ -567,7 +573,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
               disabled={uploading}
             >
               {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
-              Dokumentum feltöltés
+              {t('fixed_assets.detail.btn_upload_doc')}
             </Button>
           </div>
         </div>
@@ -577,7 +583,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
           <div className="space-y-1.5 rounded-lg border border-primary/20 bg-primary/5 p-3">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold text-primary flex items-center gap-1.5">
-                <FileCheck className="h-4 w-4 text-primary" /> Tárgyi Eszköz Aktiválási Jegyzőkönyv
+                <FileCheck className="h-4 w-4 text-primary" /> {t('fixed_assets.detail.protocol_section_title')}
               </p>
               <Button
                 variant="ghost"
@@ -585,10 +591,10 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
                 className="h-6 text-[11px] px-2 text-primary hover:bg-primary/10 gap-1"
                 onClick={handleGenerateProtocol}
                 disabled={generatingProtocol}
-                title="Jegyzőkönyv újra-generálása a legfrissebb adatokkal"
+                title={t('fixed_assets.detail.btn_regenerate_protocol')}
               >
                 {generatingProtocol ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-                {asset.documents?.some(d => d.type === 'protocol') ? 'Újra-generálás' : 'Jegyzőkönyv generálása'}
+                {asset.documents?.some(d => d.type === 'protocol') ? t('fixed_assets.detail.btn_regenerate_protocol') : t('fixed_assets.detail.btn_generate_protocol')}
               </Button>
             </div>
 
@@ -604,7 +610,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
 
             {!asset.documents?.some(d => d.type === 'protocol') && (
               <p className="text-xs text-muted-foreground italic px-1">
-                Kattints a "Jegyzőkönyv generálása" gombra a hivatalos aktiválási jegyzőkönyv elkészítéséhez.
+                {t('fixed_assets.detail.protocol_generate_hint')}
               </p>
             )}
           </div>
@@ -612,7 +618,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
           {/* ── Számlák szekció ── */}
           <div className="space-y-1.5">
             <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 px-1">
-              <Receipt className="h-3.5 w-3.5" /> Számlák
+              <Receipt className="h-3.5 w-3.5" /> {t('fixed_assets.detail.invoices_section_title')}
             </p>
             {/* Source Invoice PDF — only for submitted invoices */}
             {asset.source_invoice_type === 'submitted' && asset.source_invoice_number && (
@@ -625,7 +631,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
                 onClick={() => sourceInvoiceUrl && window.open(sourceInvoiceUrl, '_blank')}
               >
                 <FileText className="h-4 w-4 flex-shrink-0" />
-                <span className="flex-1 truncate">Eredeti Számla PDF — {asset.source_invoice_number}</span>
+                <span className="flex-1 truncate">{t('fixed_assets.detail.original_invoice_pdf', { number: asset.source_invoice_number })}</span>
                 {sourceInvoiceUrl && <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 opacity-60" />}
               </div>
             )}
@@ -639,14 +645,14 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
             ))}
             {/* Empty state for invoices */}
             {!(asset.source_invoice_type === 'submitted' && asset.source_invoice_number) && !(asset.documents || []).some(d => d.type === 'invoice') && (
-              <p className="text-xs text-muted-foreground italic px-2.5">Nincs számla dokumentum.</p>
+              <p className="text-xs text-muted-foreground italic px-2.5">{t('fixed_assets.detail.no_invoices')}</p>
             )}
           </div>
 
           {/* ── Garanciajegyek szekció ── */}
           <div className="space-y-1.5">
             <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 px-1">
-              <ShieldOff className="h-3.5 w-3.5" /> Garanciajegyek
+              <ShieldOff className="h-3.5 w-3.5" /> {t('fixed_assets.detail.warranties_section_title')}
             </p>
             {(asset.documents || []).map((doc, i) => doc.type === 'warranty' && (
               <div key={i} className="flex items-center gap-2 text-sm rounded-md px-2.5 py-1.5 group hover:bg-muted/50 transition-colors">
@@ -656,7 +662,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
               </div>
             ))}
             {!(asset.documents || []).some(d => d.type === 'warranty') && (
-              <p className="text-xs text-muted-foreground italic px-2.5">Nincs garanciajegy.</p>
+              <p className="text-xs text-muted-foreground italic px-2.5">{t('fixed_assets.detail.no_warranties')}</p>
             )}
           </div>
 
@@ -678,8 +684,8 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
       <Dialog open={uploadModalOpen} onOpenChange={setUploadModalOpen}>
         <DialogContent className="max-w-xs">
           <DialogHeader>
-            <DialogTitle>Dokumentum típusa</DialogTitle>
-            <DialogDescription>Válaszd ki a feltöltendő dokumentum típusát.</DialogDescription>
+            <DialogTitle>{t('fixed_assets.detail.modal_doc_type_title')}</DialogTitle>
+            <DialogDescription>{t('fixed_assets.detail.modal_doc_type_desc')}</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-3 py-2">
             <button
@@ -687,14 +693,14 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
               className="flex flex-col items-center gap-2 p-4 rounded-lg border border-border hover:border-primary hover:bg-primary/5 transition-colors group"
             >
               <Receipt className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
-              <span className="text-sm font-medium">Számla</span>
+              <span className="text-sm font-medium">{t('fixed_assets.detail.type_invoice')}</span>
             </button>
             <button
               onClick={() => startUpload('warranty')}
               className="flex flex-col items-center gap-2 p-4 rounded-lg border border-border hover:border-amber-500 hover:bg-amber-500/5 transition-colors group"
             >
               <ShieldOff className="h-6 w-6 text-muted-foreground group-hover:text-amber-500 transition-colors" />
-              <span className="text-sm font-medium">Garanciajegy</span>
+              <span className="text-sm font-medium">{t('fixed_assets.detail.type_warranty')}</span>
             </button>
           </div>
         </DialogContent>
