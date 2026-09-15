@@ -115,7 +115,8 @@ export function InvoiceItemsDrillDown({ invoiceNumber, companyId }: { invoiceNum
 /*  VAT Row Drill-Down                        */
 /* ────────────────────────────────────────── */
 /** Drill-down: shows which invoices/items make up a given VAT return row */
-export function VatRowDrillDown({ sourceVatCodes, companyId, year, month, frequency }: {
+export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, month, frequency }: {
+  rowNumber?: string;
   sourceVatCodes: string[];
   companyId: string;
   year: number;
@@ -167,50 +168,94 @@ export function VatRowDrillDown({ sourceVatCodes, companyId, year, month, freque
     staleTime: 60_000,
   });
 
-  // Filter to matching VAT codes
-  const matchingCodes = useMemo(() =>
-    vatCodes.filter(c => sourceVatCodes.includes(c.code)),
-  [vatCodes, sourceVatCodes]);
-
   // Query invoices matching these VAT codes in the period
+  const queryKeyStr = `${companyId}_${dateFrom}_${dateTo}_${rowNumber || ''}_${(sourceVatCodes || []).join(',')}`;
   const { data: invoices = [], isLoading } = useQuery({
-    queryKey: ['vat_row_drill', companyId, dateFrom, dateTo, sourceVatCodes.join(',')],
+    queryKey: ['vat_row_drill', queryKeyStr],
     queryFn: async () => {
-      if (matchingCodes.length === 0) return [];
+      let directions: string[] = [];
+      let vatPercents: number[] = [];
 
-      // Get unique directions and rates
-      const directions = [...new Set(matchingCodes.map(c => c.direction))];
-      const vatPercents = [...new Set(matchingCodes.map(c => c.vat_percent))];
+      // 1. Direct resolution by standard NAV 65 rowNumber
+      if (rowNumber === '01') { directions = ['OUTBOUND']; vatPercents = [0]; }
+      else if (rowNumber === '03') { directions = ['OUTBOUND']; vatPercents = [5]; }
+      else if (rowNumber === '05') { directions = ['OUTBOUND']; vatPercents = [18]; }
+      else if (rowNumber === '07') { directions = ['OUTBOUND']; vatPercents = [27]; }
+      else if (rowNumber === '18' || rowNumber === '27') { directions = ['INBOUND']; vatPercents = [27]; }
+      else if (rowNumber === '64') { directions = ['INBOUND']; vatPercents = [5]; }
+      else if (rowNumber === '65') { directions = ['INBOUND']; vatPercents = [18]; }
+      else if (rowNumber === '66' || rowNumber === '67') { directions = ['INBOUND']; vatPercents = [27]; }
+      else if (rowNumber === '91' || rowNumber === '92') { directions = ['OUTBOUND']; vatPercents = [0]; }
+
+      // 2. If rowNumber not recognized, match via vat_codes or sourceVatCodes
+      if (directions.length === 0) {
+        const matching = vatCodes.filter(c => 
+          (sourceVatCodes || []).includes(c.code) ||
+          (c.target_rows && Array.isArray(c.target_rows) && c.target_rows.some((tr: any) => (sourceVatCodes || []).includes(tr.row) || tr.row === rowNumber))
+        );
+        if (matching.length > 0) {
+          directions = [...new Set(matching.map(c => c.direction))];
+          vatPercents = [...new Set(matching.map(c => Number(c.vat_percent)))];
+        } else {
+          const codes = sourceVatCodes || [];
+          const has27 = codes.some(s => s === '25' || s === '27%' || s === '27' || s === '0.27' || s === 'KIM_27' || s === 'BE_27');
+          const has18 = codes.some(s => s === '18' || s === '18%' || s === '0.18' || s === 'KIM_18' || s === 'BE_18');
+          const has5 = codes.some(s => s === '05' || s === '5%' || s === '5' || s === '0.05' || s === 'KIM_5' || s === 'BE_5');
+          if (has27) vatPercents.push(27);
+          if (has18) vatPercents.push(18);
+          if (has5) vatPercents.push(5);
+          const isInbound = codes.some(s => s.startsWith('BE_')) || (rowNumber && ['64','65','66','67'].includes(rowNumber));
+          directions = [isInbound ? 'INBOUND' : 'OUTBOUND'];
+        }
+      }
+
+      if (directions.length === 0) return [];
 
       // Build vat_rate filter values
       const rateFilters: string[] = [];
       for (const pct of vatPercents) {
-        if (pct === 27) rateFilters.push('0.27', '27', '27.0', '27.00');
-        else if (pct === 18) rateFilters.push('0.18', '18', '18.0', '18.00');
-        else if (pct === 5) rateFilters.push('0.05', '5', '5.0', '5.00');
-        else if (pct === 0) rateFilters.push('0', '0.0', '0.00', 'TAM', 'AAM', 'DOMESTIC_REVERSE_CHARGE');
+        if (Number(pct) === 27) rateFilters.push('0.27', '27', '27.0', '27.00', '27%');
+        else if (Number(pct) === 18) rateFilters.push('0.18', '18', '18.0', '18.00', '18%');
+        else if (Number(pct) === 5) rateFilters.push('0.05', '5', '5.0', '5.00', '5%');
+        else if (Number(pct) === 0) rateFilters.push('0', '0.0', '0.00', '0%', 'TAM', 'AAM', 'DOMESTIC_REVERSE_CHARGE');
       }
 
-      // Query nav_invoices with their items
+      // Query nav_invoices with left join on items
       let query = supabase
         .from('nav_invoices')
         .select(`
           id, invoice_number, supplier_name, customer_name, invoice_direction,
-          invoice_delivery_date, currency,
-          nav_invoice_items!inner(id, line_number, line_description, net_amount, vat_amount, vat_rate, quantity, unit_price, deductible_percentage)
+          invoice_delivery_date, currency, invoice_net_amount, invoice_vat_amount,
+          nav_invoice_items(id, line_number, line_description, net_amount, vat_amount, vat_rate, quantity, unit_price, deductible_percentage)
         `)
         .eq('company_id', companyId)
         .gte('invoice_delivery_date', dateFrom)
         .lte('invoice_delivery_date', dateTo)
         .in('invoice_direction', directions)
-        .in('nav_invoice_items.vat_rate', rateFilters)
         .order('invoice_delivery_date', { ascending: true });
 
       const { data, error } = await query;
       if (error) { reportError({ type: 'db_query', component: 'VatRowDrillDown', action: 'error', message: 'drill error:', error: error }); return []; }
-      return (data || []) as any[];
+
+      // Filter in memory to match either item vat_rates or header-level rates if items aren't fetched yet
+      return (data || []).filter((inv: any) => {
+        const items = inv.nav_invoice_items || [];
+        if (items.length > 0) {
+          return items.some((it: any) => rateFilters.includes(String(it.vat_rate)));
+        }
+        const net = Number(inv.invoice_net_amount || 0);
+        const vat = Number(inv.invoice_vat_amount || 0);
+        if (net > 0 && vat > 0) {
+          const calcRate = Math.round((vat / net) * 100);
+          return vatPercents.some((p: any) => Math.abs(Number(p) - calcRate) <= 1);
+        }
+        if (vatPercents.some((p: any) => Number(p) === 0) && vat === 0) {
+          return true;
+        }
+        return false;
+      });
     },
-    enabled: matchingCodes.length > 0,
+    enabled: !!companyId,
     staleTime: 30_000,
   });
 
@@ -237,10 +282,12 @@ export function VatRowDrillDown({ sourceVatCodes, companyId, year, month, freque
     const rate = getRate(currency);
     const items = inv.nav_invoice_items || [];
     const isInbound = inv.invoice_direction === 'INBOUND';
-    const netSum = items.reduce((is: number, i: any) => {
-      const ratio = isInbound ? (Number(i.deductible_percentage ?? 100) / 100.0) : 1.0;
-      return is + ((Number(i.net_amount) || 0) * ratio);
-    }, 0);
+    const netSum = items.length > 0
+      ? items.reduce((is: number, i: any) => {
+          const ratio = isInbound ? (Number(i.deductible_percentage ?? 100) / 100.0) : 1.0;
+          return is + ((Number(i.net_amount) || 0) * ratio);
+        }, 0)
+      : Number(inv.invoice_net_amount || 0);
     return s + (netSum * rate);
   }, 0);
 
@@ -249,10 +296,12 @@ export function VatRowDrillDown({ sourceVatCodes, companyId, year, month, freque
     const rate = getRate(currency);
     const items = inv.nav_invoice_items || [];
     const isInbound = inv.invoice_direction === 'INBOUND';
-    const vatSum = items.reduce((is: number, i: any) => {
-      const ratio = isInbound ? (Number(i.deductible_percentage ?? 100) / 100.0) : 1.0;
-      return is + ((Number(i.vat_amount) || 0) * ratio);
-    }, 0);
+    const vatSum = items.length > 0
+      ? items.reduce((is: number, i: any) => {
+          const ratio = isInbound ? (Number(i.deductible_percentage ?? 100) / 100.0) : 1.0;
+          return is + ((Number(i.vat_amount) || 0) * ratio);
+        }, 0)
+      : Number(inv.invoice_vat_amount || 0);
     return s + (vatSum * rate);
   }, 0);
 
@@ -275,14 +324,18 @@ export function VatRowDrillDown({ sourceVatCodes, companyId, year, month, freque
         const rate = getRate(currency);
         const isForeign = currency.toUpperCase() !== 'HUF';
 
-        const origNet = items.reduce((s: number, i: any) => {
-          const ratio = isInbound ? (Number(i.deductible_percentage ?? 100) / 100.0) : 1.0;
-          return s + ((Number(i.net_amount) || 0) * ratio);
-        }, 0);
-        const origVat = items.reduce((s: number, i: any) => {
-          const ratio = isInbound ? (Number(i.deductible_percentage ?? 100) / 100.0) : 1.0;
-          return s + ((Number(i.vat_amount) || 0) * ratio);
-        }, 0);
+        const origNet = items.length > 0
+          ? items.reduce((s: number, i: any) => {
+              const ratio = isInbound ? (Number(i.deductible_percentage ?? 100) / 100.0) : 1.0;
+              return s + ((Number(i.net_amount) || 0) * ratio);
+            }, 0)
+          : Number(inv.invoice_net_amount || 0);
+        const origVat = items.length > 0
+          ? items.reduce((s: number, i: any) => {
+              const ratio = isInbound ? (Number(i.deductible_percentage ?? 100) / 100.0) : 1.0;
+              return s + ((Number(i.vat_amount) || 0) * ratio);
+            }, 0)
+          : Number(inv.invoice_vat_amount || 0);
 
         const totalNet = Math.round(origNet * rate);
         const totalVat = Math.round(origVat * rate);

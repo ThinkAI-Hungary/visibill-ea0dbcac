@@ -38,11 +38,11 @@ export function VatCollectorAnalyticsView({ year = new Date().getFullYear(), per
       const [navInvsRes, subInvsRes] = await Promise.all([
         supabase
           .from('nav_invoices')
-          .select('id, invoice_number, supplier_name, customer_name, invoice_delivery_date, invoice_issue_date')
+          .select('id, invoice_number, supplier_name, customer_name, invoice_delivery_date, invoice_issue_date, invoice_net_amount, invoice_vat_amount')
           .eq('company_id', selectedCompany.id),
         supabase
           .from('invoices')
-          .select('id, bizonylatsorszam, elado_nev, vevo_nev, teljesites_datuma, kibocsatas_datuma')
+          .select('id, bizonylatsorszam, elado_nev, vevo_nev, teljesites_datuma, kibocsatas_datuma, netto_ar, afa_ertek')
           .eq('company_id', selectedCompany.id),
       ]);
 
@@ -76,15 +76,17 @@ export function VatCollectorAnalyticsView({ year = new Date().getFullYear(), per
         if (!rate) return '25';
         const u = rate.toUpperCase();
         if (u.includes('FAD')) return 'FAD';
-        if (rate === '0.27' || rate === '27' || rate === '27.0' || rate === '27.00') return '25';
-        if (rate === '0.05' || rate === '5' || rate === '5.0' || rate === '5.00') return '05';
-        if (rate === '0.18' || rate === '18' || rate === '18.0' || rate === '18.00') return '18';
+        if (rate === '0.27' || rate === '27' || rate === '27.0' || rate === '27.00' || rate === '27%') return '25';
+        if (rate === '0.05' || rate === '5' || rate === '5.0' || rate === '5.00' || rate === '5%') return '05';
+        if (rate === '0.18' || rate === '18' || rate === '18.0' || rate === '18.00' || rate === '18%') return '18';
         if (u.includes('AAM')) return 'AAM';
         if (u.includes('TAM')) return 'TAM';
         return '25';
       };
 
+      const processedNavIds = new Set<string>();
       (navItemsRes.data || []).forEach((i: any) => {
+        processedNavIds.add(i.nav_invoice_id);
         const inv = navMap.get(i.nav_invoice_id);
         const dateStr = inv?.invoice_delivery_date || inv?.invoice_issue_date || '';
         items.push({
@@ -99,7 +101,32 @@ export function VatCollectorAnalyticsView({ year = new Date().getFullYear(), per
         });
       });
 
+      // Fallback for nav_invoices without item records yet
+      navInvs.forEach((inv: any) => {
+        if (!processedNavIds.has(inv.id)) {
+          const net = Number(inv.invoice_net_amount || 0);
+          const vat = Number(inv.invoice_vat_amount || 0);
+          if (net !== 0 || vat !== 0) {
+            const rate = net > 0 ? vat / net : 0;
+            const code = Math.round(rate * 100) === 27 ? '25' : Math.round(rate * 100) === 18 ? '18' : Math.round(rate * 100) === 5 ? '05' : vat === 0 ? 'AAM' : '25';
+            const dateStr = inv.invoice_delivery_date || inv.invoice_issue_date || '';
+            items.push({
+              id: `nav_inv_${inv.id}`,
+              code,
+              invoice_number: inv.invoice_number || 'Névtelen',
+              partner_name: inv.supplier_name || inv.customer_name || 'Ismeretlen partner',
+              fulfillment_date: dateStr,
+              net_amount: net,
+              vat_amount: vat,
+              gross_amount: net + vat,
+            });
+          }
+        }
+      });
+
+      const processedSubIds = new Set<string>();
       (subItemsRes.data || []).forEach((i: any) => {
+        processedSubIds.add(i.invoice_id);
         const inv = subMap.get(i.invoice_id);
         const dateStr = inv?.teljesites_datuma || inv?.kibocsatas_datuma || '';
         items.push({
@@ -112,6 +139,29 @@ export function VatCollectorAnalyticsView({ year = new Date().getFullYear(), per
           vat_amount: Number(i.vat_amount) || 0,
           gross_amount: (Number(i.net_amount) || 0) + (Number(i.vat_amount) || 0),
         });
+      });
+
+      // Fallback for manual invoices without item records yet
+      subInvs.forEach((inv: any) => {
+        if (!processedSubIds.has(inv.id)) {
+          const net = Number(inv.netto_ar || 0);
+          const vat = Number(inv.afa_ertek || 0);
+          if (net !== 0 || vat !== 0) {
+            const rate = net > 0 ? vat / net : 0;
+            const code = Math.round(rate * 100) === 27 ? '25' : Math.round(rate * 100) === 18 ? '18' : Math.round(rate * 100) === 5 ? '05' : vat === 0 ? 'AAM' : '25';
+            const dateStr = inv.teljesites_datuma || inv.kibocsatas_datuma || '';
+            items.push({
+              id: `sub_inv_${inv.id}`,
+              code,
+              invoice_number: inv.bizonylatsorszam || 'Névtelen',
+              partner_name: inv.elado_nev || inv.vevo_nev || 'Ismeretlen partner',
+              fulfillment_date: dateStr,
+              net_amount: net,
+              vat_amount: vat,
+              gross_amount: net + vat,
+            });
+          }
+        }
       });
 
       return items;

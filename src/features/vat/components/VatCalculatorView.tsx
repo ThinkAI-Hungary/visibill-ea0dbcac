@@ -798,7 +798,8 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                           </div>
                           {isDrillExpanded && selectedCompany?.id && (
                             <VatRowDrillDown
-                              sourceVatCodes={line!.source_vat_codes!}
+                              rowNumber={row.row_number}
+                              sourceVatCodes={line?.source_vat_codes || []}
                               companyId={selectedCompany.id}
                               year={year}
                               month={month}
