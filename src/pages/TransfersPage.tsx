@@ -1073,7 +1073,7 @@ export default function TransfersPage() {
         return inv.due_date > today;
       }
       if (filterTab === 'all') {
-        return inv.due_date <= today || (inv.has_skonto && !inv.is_skonto_expired && inv.skonto_due_date && inv.skonto_due_date <= today);
+        return inv.due_date <= today || (inv.has_skonto && !inv.is_skonto_expired);
       }
       return true;
     });
@@ -1514,8 +1514,6 @@ export default function TransfersPage() {
         });
 
         const { error: logErr } = await supabase
-          .from('payment_transfers')
-          .insert(insertRows);
           .from('payment_transfers')
           .insert(insertRows);
 

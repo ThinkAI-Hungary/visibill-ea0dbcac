@@ -1579,7 +1579,7 @@ export default function PartnersPage() {
                     {t('partners:modal.skonto_title', 'Gyorsfizetési kedvezmény (Skontó)')}
                   </Label>
                   <p className="text-[11px] text-muted-foreground">
-                    {t('partners:modal.skonto_subtitle', 'Kettős fizetési határidő és kedvezményes összeg (pl. Yamaha, GEWA).')}
+                    {t('partners:modal.skonto_subtitle', 'Kettős fizetési határidő és kedvezményes összeg.')}
                   </p>
                 </div>
                 <Switch
@@ -1647,7 +1647,7 @@ export default function PartnersPage() {
                         {t('partners:modal.skonto_excludes_shipping', 'Szállítási költség kizárása a kedvezményalapból')}
                       </Label>
                       <p className="text-[10px] text-muted-foreground">
-                        {t('partners:modal.skonto_excludes_shipping_hint', 'GEWA-szabály: a fuvardíjból nem vonható le a skontó, csak a termékek árából.')}
+                        {t('partners:modal.skonto_excludes_shipping_hint', 'A fuvardíjból nem vonható le a skontó, csak a termékek árából.')}
                       </p>
                     </div>
                   </div>
