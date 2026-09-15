@@ -52,4 +52,29 @@ export interface MLine {
 
 export const MONTHS = ['Január','Február','Március','Április','Május','Június','Július','Augusztus','Szeptember','Október','November','December'];
 
-export const fmtEft = (v: number | null | undefined) => (v === null || v === undefined) ? '—' : `${v.toLocaleString('hu-HU')} eFt`;
+export const formatThousands = (
+  v: number | string | null | undefined,
+  options?: { decimals?: number; fallback?: string }
+): string => {
+  if (v === null || v === undefined || v === '') return options?.fallback ?? '0';
+  const n = typeof v === 'number' ? v : Number(String(v).replace(/\s+/g, '').replace(',', '.'));
+  if (isNaN(n)) return options?.fallback ?? '0';
+  const isNegative = n < 0;
+  const absNum = Math.abs(n);
+  if (options?.decimals !== undefined) {
+    const parts = absNum.toFixed(options.decimals).split('.');
+    const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    const formatted = parts.length > 1 ? `${intPart},${parts[1]}` : intPart;
+    return `${isNegative ? '-' : ''}${formatted}`;
+  }
+  const rounded = Math.round(absNum).toString();
+  const formatted = rounded.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return `${isNegative ? '-' : ''}${formatted}`;
+};
+
+export const fmtEft = (v: number | string | null | undefined): string => {
+  if (v === null || v === undefined || v === '') return '—';
+  const n = typeof v === 'number' ? v : Number(String(v).replace(/\s+/g, '').replace(',', '.'));
+  if (isNaN(n)) return '—';
+  return `${formatThousands(n)} eFt`;
+};

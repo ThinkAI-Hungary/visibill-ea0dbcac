@@ -12,10 +12,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { cn, formatCurrency } from "@/lib/utils";
+import { calculateSkonto, detectShippingAmount } from "@/lib/skontoUtils";
 import {
   Table,
   TableBody,
@@ -44,7 +46,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { toast } from "@/hooks/use-toast";
-import { Search, Plus, Pencil, Trash2, Info, RotateCcw, ChevronDown, BarChart3, Calendar } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Info, RotateCcw, ChevronDown, BarChart3, Calendar, Banknote, Percent, Clock, Truck } from "lucide-react";
 import { format } from "date-fns";
 import { hu } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
@@ -94,6 +96,10 @@ interface Partner {
   custom_color?: string | null;
   custom_bg_color?: string | null;
   related_party?: boolean;
+  has_skonto?: boolean;
+  skonto_days?: number | null;
+  skonto_percent?: number | null;
+  skonto_excludes_shipping?: boolean;
 }
 
 // Partner-specific getInitials with HTML entity decoding
@@ -485,6 +491,10 @@ export default function PartnersPage() {
         user_id: user.id,
         company_id: selectedCompany?.id || null,
         related_party: data.related_party || false,
+        has_skonto: data.has_skonto || false,
+        skonto_days: data.has_skonto ? (data.skonto_days ? Number(data.skonto_days) : 8) : null,
+        skonto_percent: data.has_skonto ? (data.skonto_percent ? Number(data.skonto_percent) : 2.0) : null,
+        skonto_excludes_shipping: data.skonto_excludes_shipping ?? true,
       };
 
       if (data.id) {
@@ -499,10 +509,121 @@ export default function PartnersPage() {
           .insert(partnerData);
         if (error) throw error;
       }
+
+      // Retroactive calculation for open unpaid inbound invoices if skonto is enabled
+      if (selectedCompany?.id && data.has_skonto) {
+        const partnerName = data.name.trim();
+        const partnerTax = data.tax_number.trim();
+        const sDays = Number(data.skonto_days) || 8;
+        const sPercent = Number(data.skonto_percent) || 2.0;
+
+        // 1. Manual / uploaded invoices
+        let invQuery = supabase
+          .from("invoices")
+          .select("id, brutto_vegosszeg, kibocsatas_datuma, fizetve, transaction_id")
+          .eq("company_id", selectedCompany.id)
+          .eq("invoice_direction", "INBOUND")
+          .is("transaction_id", null)
+          .eq("fizetve", false);
+
+        if (partnerTax && !isForeignPartner(partnerTax)) {
+          invQuery = invQuery.or(`elado_vat_id.eq.${partnerTax},elado_nev.ilike.%${partnerName}%`);
+        } else {
+          invQuery = invQuery.ilike("elado_nev", `%${partnerName}%`);
+        }
+
+        const { data: openInvs } = await invQuery;
+        if (openInvs && openInvs.length > 0) {
+          for (const inv of openInvs) {
+            let shipping = 0;
+            if (data.skonto_excludes_shipping) {
+              const { data: items } = await supabase
+                .from("invoice_items")
+                .select("line_description, termek_nev, gross_amount, brutto_ar, net_amount, unit_price")
+                .eq("invoice_id", inv.id);
+              shipping = detectShippingAmount(items as any);
+            }
+
+            const calc = calculateSkonto({
+              grossAmount: inv.brutto_vegosszeg,
+              issueDate: inv.kibocsatas_datuma,
+              skontoDays: sDays,
+              skontoPercent: sPercent,
+              shippingAmount: shipping,
+            });
+
+            await supabase
+              .from("invoices")
+              .update({
+                has_skonto: true,
+                skonto_days: sDays,
+                skonto_percent: sPercent,
+                skonto_due_date: calc.skontoDueDate,
+                skonto_amount: calc.skontoAmount,
+                skonto_shipping_amount: shipping,
+                skonto_selected: !calc.isExpired,
+              })
+              .eq("id", inv.id);
+          }
+        }
+
+        // 2. NAV inbound invoices
+        let navQuery = supabase
+          .from("nav_invoices")
+          .select("id, invoice_gross_amount, invoice_issue_date, paid, transaction_id")
+          .eq("company_id", selectedCompany.id)
+          .eq("invoice_direction", "INBOUND")
+          .is("transaction_id", null)
+          .eq("paid", false);
+
+        if (partnerTax && !isForeignPartner(partnerTax)) {
+          navQuery = navQuery.or(`supplier_tax_number.eq.${partnerTax},supplier_name.ilike.%${partnerName}%`);
+        } else {
+          navQuery = navQuery.ilike("supplier_name", `%${partnerName}%`);
+        }
+
+        const { data: openNavs } = await navQuery;
+        if (openNavs && openNavs.length > 0) {
+          for (const nav of openNavs) {
+            let shipping = 0;
+            if (data.skonto_excludes_shipping) {
+              const { data: items } = await supabase
+                .from("nav_invoice_items")
+                .select("line_description, gross_amount, net_amount, unit_price")
+                .eq("nav_invoice_id", nav.id);
+              shipping = detectShippingAmount(items as any);
+            }
+
+            const calc = calculateSkonto({
+              grossAmount: nav.invoice_gross_amount || 0,
+              issueDate: nav.invoice_issue_date || new Date().toISOString(),
+              skontoDays: sDays,
+              skontoPercent: sPercent,
+              shippingAmount: shipping,
+            });
+
+            await supabase
+              .from("nav_invoices")
+              .update({
+                has_skonto: true,
+                skonto_days: sDays,
+                skonto_percent: sPercent,
+                skonto_due_date: calc.skontoDueDate,
+                skonto_amount: calc.skontoAmount,
+                skonto_shipping_amount: shipping,
+                skonto_selected: !calc.isExpired,
+              })
+              .eq("id", nav.id);
+          }
+        }
+      }
     },
     onSuccess: () => {
       if (selectedCompany?.id) {
         invalidatePartnerQueries(queryClient, selectedCompany.id);
+        queryClient.invalidateQueries({ queryKey: ['due-transfer-invoices'] });
+        queryClient.invalidateQueries({ queryKey: ['inbound-invoices'] });
+        queryClient.invalidateQueries({ queryKey: ['nav-invoices'] });
       }
       toast({
         title: editingPartner ? t('partners:toasts.partner_updated', "Partner frissítve") : t('partners:toasts.partner_created', "Partner létrehozva"),
@@ -620,6 +741,10 @@ export default function PartnersPage() {
         custom_color: partner.custom_color || "",
         custom_bg_color: partner.custom_bg_color || "",
         related_party: partner.related_party || false,
+        has_skonto: partner.has_skonto || false,
+        skonto_days: partner.skonto_days ?? 8,
+        skonto_percent: partner.skonto_percent ?? 2.0,
+        skonto_excludes_shipping: partner.skonto_excludes_shipping ?? true,
       });
     } else {
       setEditingPartner(null);
@@ -633,6 +758,10 @@ export default function PartnersPage() {
         custom_color: "",
         custom_bg_color: "",
         related_party: false,
+        has_skonto: false,
+        skonto_days: 8,
+        skonto_percent: 2.0,
+        skonto_excludes_shipping: true,
       });
     }
     setEmailError("");
@@ -653,6 +782,10 @@ export default function PartnersPage() {
       custom_color: "",
       custom_bg_color: "",
       related_party: false,
+      has_skonto: false,
+      skonto_days: 8,
+      skonto_percent: 2.0,
+      skonto_excludes_shipping: true,
     });
   };
 
@@ -954,6 +1087,11 @@ export default function PartnersPage() {
                                         {t('partners:badges.related_party', 'Kapcsolt')}
                                       </Badge>
                                     )}
+                                    {partner.has_skonto && (
+                                      <Badge variant="outline" className="text-[9px] h-4 px-1 gap-0.5 bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400 font-semibold shrink-0" title={`Skontó: ${partner.skonto_percent}% (${partner.skonto_days} nap)`}>
+                                        Skontó: {partner.skonto_percent}% ({partner.skonto_days} nap)
+                                      </Badge>
+                                    )}
                                   </div>
                                   {partner.address && (
                                     <p className="text-xs text-muted-foreground truncate max-w-[200px]">
@@ -1153,6 +1291,51 @@ export default function PartnersPage() {
                     className="h-5 w-5"
                     disabled={!writable}
                   />
+                </div>
+              </div>
+
+              {/* Skonto details */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <Banknote className="h-3.5 w-3.5 text-emerald-600" />
+                    {t('partners:details.skonto_setting', 'Gyorsfizetési kedvezmény (Skontó)')}
+                  </h4>
+                  {selectedPartner.has_skonto && (
+                    <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 border-emerald-500/20 font-semibold">
+                      Aktív
+                    </Badge>
+                  )}
+                </div>
+                <div className="border border-border/30 rounded-xl p-4 bg-muted/10 space-y-2.5">
+                  {selectedPartner.has_skonto ? (
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <span className="text-[10px] text-muted-foreground font-semibold block">Kedvezményes határidő</span>
+                        <span className="font-semibold text-foreground">{selectedPartner.skonto_days ?? 8} nap</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-muted-foreground font-semibold block">Kedvezmény mértéke</span>
+                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">{selectedPartner.skonto_percent ?? 2}%</span>
+                      </div>
+                      <div className="col-span-2 pt-1 border-t border-border/20 text-[11px] text-muted-foreground">
+                        {selectedPartner.skonto_excludes_shipping ? '✅ Szállítási költség kizárva a kedvezményalapból' : '⚠️ Teljes bruttó összegre érvényes'}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Nincs beállítva skontó ennél a partnernél.</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOpenDialog(selectedPartner)}
+                        className="h-7 text-xs gap-1 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                        disabled={!writable}
+                      >
+                        <Plus className="h-3 w-3" /> Beállítás
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1385,6 +1568,91 @@ export default function PartnersPage() {
                   {t('partners:modal.related_party_hint', 'A céggel kapcsolt vállalkozási viszonyban álló partner (limit ellenőrzéshez).')}
                 </p>
               </div>
+            </div>
+
+            {/* ── Gyorsfizetési kedvezmény (Skontó) ── */}
+            <div className="space-y-3 pt-3 border-t border-border/50">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="has_skonto" className="text-xs font-semibold text-foreground flex items-center gap-1.5 cursor-pointer">
+                    <Banknote className="h-3.5 w-3.5 text-emerald-600" />
+                    {t('partners:modal.skonto_title', 'Gyorsfizetési kedvezmény (Skontó)')}
+                  </Label>
+                  <p className="text-[11px] text-muted-foreground">
+                    {t('partners:modal.skonto_subtitle', 'Kettős fizetési határidő és kedvezményes összeg (pl. Yamaha, GEWA).')}
+                  </p>
+                </div>
+                <Switch
+                  id="has_skonto"
+                  checked={formData.has_skonto}
+                  onCheckedChange={(checked) => setFormData({ ...formData, has_skonto: checked })}
+                />
+              </div>
+
+              {formData.has_skonto && (
+                <div className="space-y-3 p-3 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 animate-in fade-in-50 duration-200">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="skonto_days" className="text-xs flex items-center gap-1 text-emerald-900 dark:text-emerald-200">
+                        <Clock className="h-3 w-3" />
+                        {t('partners:modal.skonto_days', 'Kedvezményes napok')}
+                      </Label>
+                      <Input
+                        id="skonto_days"
+                        type="number"
+                        min={1}
+                        max={90}
+                        value={formData.skonto_days}
+                        onChange={(e) => setFormData({ ...formData, skonto_days: Number(e.target.value) || 0 })}
+                        placeholder="8 vagy 14"
+                        className="h-8 text-xs bg-background"
+                      />
+                      <p className="text-[10px] text-muted-foreground">Számla kibocsátásától számítva</p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="skonto_percent" className="text-xs flex items-center gap-1 text-emerald-900 dark:text-emerald-200">
+                        <Percent className="h-3 w-3" />
+                        {t('partners:modal.skonto_percent', 'Kedvezmény mértéke')}
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="skonto_percent"
+                          type="number"
+                          step="0.1"
+                          min={0.1}
+                          max={50}
+                          value={formData.skonto_percent}
+                          onChange={(e) => setFormData({ ...formData, skonto_percent: Number(e.target.value) || 0 })}
+                          placeholder="2.0"
+                          className="h-8 text-xs pr-7 bg-background"
+                        />
+                        <span className="absolute right-2 top-2 text-xs text-muted-foreground pointer-events-none">%</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">Pl. 2% vagy 3% engedmény</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-2 pt-1 border-t border-emerald-200/40 dark:border-emerald-800/30">
+                    <Checkbox
+                      id="skonto_excludes_shipping"
+                      checked={formData.skonto_excludes_shipping}
+                      onCheckedChange={(checked) => setFormData({ ...formData, skonto_excludes_shipping: !!checked })}
+                      className="mt-0.5"
+                    />
+                    <div className="grid gap-0.5 leading-none">
+                      <Label
+                        htmlFor="skonto_excludes_shipping"
+                        className="text-xs font-medium cursor-pointer text-emerald-950 dark:text-emerald-100"
+                      >
+                        {t('partners:modal.skonto_excludes_shipping', 'Szállítási költség kizárása a kedvezményalapból')}
+                      </Label>
+                      <p className="text-[10px] text-muted-foreground">
+                        {t('partners:modal.skonto_excludes_shipping_hint', 'GEWA-szabály: a fuvardíjból nem vonható le a skontó, csak a termékek árából.')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* ── Avatar customization ── */}

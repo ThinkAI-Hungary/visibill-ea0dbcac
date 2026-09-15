@@ -68,7 +68,13 @@ export function filterAndSortInvoiceCandidates({
           ? txAmt
           : toHuf(txAmt, txCcy);
 
-        const diff = Math.abs(invAmt - txComp);
+        const diffRegular = Math.abs(invAmt - txComp);
+        const skontoAmt = (inv.has_skonto && inv.skonto_amount)
+          ? (isSameCcy ? Math.abs(inv.skonto_amount) : Math.abs(toHuf(inv.skonto_amount, inv.penznem)))
+          : null;
+        const diffSkonto = skontoAmt !== null ? Math.abs(skontoAmt - txComp) : Infinity;
+        const diff = Math.min(diffRegular, diffSkonto);
+
         const tolerance = isSameCcy ? 0.30 : 0.50;
         return diff / txComp <= tolerance;
       });
@@ -85,7 +91,14 @@ export function filterAndSortInvoiceCandidates({
           const aAmt = aSame ? Math.abs(a.brutto_vegosszeg || 0) : toHuf(Math.abs(a.brutto_vegosszeg || 0), a.penznem);
           const bAmt = bSame ? Math.abs(b.brutto_vegosszeg || 0) : toHuf(Math.abs(b.brutto_vegosszeg || 0), b.penznem);
           const txComp = aSame ? txAmt : toHuf(txAmt, txCcy);
-          return Math.abs(aAmt - txComp) - Math.abs(bAmt - txComp);
+
+          const aSkonto = (a.has_skonto && a.skonto_amount) ? (aSame ? Math.abs(a.skonto_amount) : toHuf(Math.abs(a.skonto_amount), a.penznem)) : null;
+          const bSkonto = (b.has_skonto && b.skonto_amount) ? (bSame ? Math.abs(b.skonto_amount) : toHuf(Math.abs(b.skonto_amount), b.penznem)) : null;
+
+          const aDiff = Math.min(Math.abs(aAmt - txComp), aSkonto !== null ? Math.abs(aSkonto - txComp) : Infinity);
+          const bDiff = Math.min(Math.abs(bAmt - txComp), bSkonto !== null ? Math.abs(bSkonto - txComp) : Infinity);
+
+          return aDiff - bDiff;
         });
         list = sorted.slice(0, Math.max(minShowCount, filtered.length));
       }
@@ -109,6 +122,15 @@ export function filterAndSortInvoiceCandidates({
       if (amtStr.includes(searchNormalized) || amtFixed2.includes(searchNormalized) || amtInt.includes(searchNormalized)) return true;
       if (amtStr.includes(query) || amtFixed2.includes(query)) return true;
     }
+
+    if (inv.has_skonto && inv.skonto_amount != null) {
+      const sAmt = inv.skonto_amount;
+      const sAmtStr = sAmt.toString();
+      const sAmtFixed2 = sAmt.toFixed(2);
+      const sAmtInt = Math.round(sAmt).toString();
+      if (sAmtStr.includes(searchNormalized) || sAmtFixed2.includes(searchNormalized) || sAmtInt.includes(searchNormalized)) return true;
+      if (sAmtStr.includes(query) || sAmtFixed2.includes(query)) return true;
+    }
     return false;
   });
 
@@ -131,8 +153,12 @@ export function filterAndSortInvoiceCandidates({
     const aAmt = aSame ? Math.abs(a.brutto_vegosszeg || 0) : toHuf(Math.abs(a.brutto_vegosszeg || 0), a.penznem);
     const bAmt = bSame ? Math.abs(b.brutto_vegosszeg || 0) : toHuf(Math.abs(b.brutto_vegosszeg || 0), b.penznem);
     const txComp = aSame ? txAmt : toHuf(txAmt, txCcy);
-    const diffA = Math.abs(aAmt - txComp);
-    const diffB = Math.abs(bAmt - txComp);
+
+    const aSkonto = (a.has_skonto && a.skonto_amount) ? (aSame ? Math.abs(a.skonto_amount) : toHuf(Math.abs(a.skonto_amount), a.penznem)) : null;
+    const bSkonto = (b.has_skonto && b.skonto_amount) ? (bSame ? Math.abs(b.skonto_amount) : toHuf(Math.abs(b.skonto_amount), b.penznem)) : null;
+
+    const diffA = Math.min(Math.abs(aAmt - txComp), aSkonto !== null ? Math.abs(aSkonto - txComp) : Infinity);
+    const diffB = Math.min(Math.abs(bAmt - txComp), bSkonto !== null ? Math.abs(bSkonto - txComp) : Infinity);
     return diffA - diffB;
   });
 

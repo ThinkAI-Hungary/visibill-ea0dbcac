@@ -50,7 +50,7 @@ import { VatA60Table } from './VatA60Table';
 import { VatXmlValidationDialog } from './VatXmlValidationDialog';
 import { VatProRataSettingsCard } from './VatProRataSettingsCard';
 import { VatProRataCalculatorModal } from './VatProRataCalculatorModal';
-import { fmtEft } from '../types';
+import { fmtEft, formatThousands } from '../types';
 import type { useVatReturnData } from '../hooks/useVatReturnData';
 
 type VatDataReturn = ReturnType<typeof useVatReturnData>;
@@ -300,9 +300,9 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                     </span>
                     <span className="text-muted-foreground font-mono">
                       {t('accounting:vat_return.banners.reverse_charge_net', {
-                        net: Math.round(inv.net / 1000).toLocaleString('hu-HU'),
-                        vat: Math.round(inv.vat / 1000).toLocaleString('hu-HU'),
-                        defaultValue: `Nettó: ${Math.round(inv.net / 1000).toLocaleString('hu-HU')} eFt — ÁFA: ${Math.round(inv.vat / 1000).toLocaleString('hu-HU')} eFt`,
+                        net: formatThousands(Math.round(inv.net / 1000)),
+                        vat: formatThousands(Math.round(inv.vat / 1000)),
+                        defaultValue: `Nettó: ${formatThousands(Math.round(inv.net / 1000))} eFt — ÁFA: ${formatThousands(Math.round(inv.vat / 1000))} eFt`,
                       })}
                     </span>
                   </div>
@@ -791,7 +791,7 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                                 )}
                               >
                                 {line && prevLine && delta !== 0
-                                  ? `${delta > 0 ? '+' : ''}${delta.toLocaleString('hu-HU')}`
+                                  ? `${delta > 0 ? '+' : ''}${formatThousands(delta)}`
                                   : ''}
                               </div>
                             )}
@@ -1022,10 +1022,10 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                                     {inv.delivery_date?.substring(0, 10)}
                                   </div>
                                   <div className="col-span-2 text-right tabular-nums">
-                                    {Math.round((inv.net || 0) / 1000).toLocaleString('hu-HU')} eFt
+                                    {fmtEft(Math.round((inv.net || 0) / 1000))}
                                   </div>
                                   <div className="col-span-2 text-right tabular-nums">
-                                    {Math.round((inv.vat || 0) / 1000).toLocaleString('hu-HU')} eFt
+                                    {fmtEft(Math.round((inv.vat || 0) / 1000))}
                                   </div>
                                   <div className="col-span-3 text-right font-medium">
                                     {inv.vat_rate === '0.27'

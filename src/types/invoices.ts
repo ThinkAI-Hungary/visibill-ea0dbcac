@@ -38,6 +38,13 @@ export interface BaseInvoice {
   penznem?: string;
   reference_number?: string;
   transaction_id?: string | null;
+  has_skonto?: boolean | null;
+  skonto_days?: number | null;
+  skonto_percent?: number | null;
+  skonto_due_date?: string | null;
+  skonto_amount?: number | null;
+  skonto_shipping_amount?: number | null;
+  skonto_selected?: boolean | null;
 }
 
 export interface SimaInvoice extends BaseInvoice {

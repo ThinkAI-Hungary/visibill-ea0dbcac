@@ -24,6 +24,7 @@ import {
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import type { PettyCashRegister, PettyCashEntry, OpenOutboundInvoice, SummaryRow } from './types';
 import { SOURCE_LABELS, SOURCE_COLORS, fmtAmount, fmtBalance, roundHuf } from './types';
@@ -82,6 +83,7 @@ export default function EntriesTab() {
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
   const [editingEntry, setEditingEntry] = useState<PettyCashEntry | null>(null);
   const [previewInvoicePending, setPreviewInvoicePending] = useState<any | null>(null);
+  const [previewInvoice, setPreviewInvoice] = useState<any | null>(null);
   const [printingEntry, setPrintingEntry] = useState<PettyCashEntry | null>(null);
   const [signatureOpen, setSignatureOpen] = useState(false);
 
@@ -139,6 +141,38 @@ export default function EntriesTab() {
       return (data || []) as unknown as PettyCashEntry[];
     },
     enabled: !!companyId,
+  });
+
+  // Find linked invoices that have uploaded images or attachments
+  const invoiceIds = useMemo(() => {
+    return Array.from(new Set(
+      entries
+        .filter(e => e.source_table === 'invoices' && e.source_id)
+        .map(e => e.source_id as string)
+    ));
+  }, [entries]);
+
+  const { data: invoiceImagesMap = {} } = useQuery({
+    queryKey: ['pettyCashInvoiceImages', companyId, invoiceIds],
+    queryFn: async () => {
+      if (invoiceIds.length === 0) return {};
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('id, bizonylatsorszam, image_url, melleklet_url, elado_nev, vevo_nev, brutto_vegosszeg, penznem, kibocsatas_datuma')
+        .in('id', invoiceIds);
+      if (error) {
+        console.error('Error fetching petty cash invoice images:', error);
+        return {};
+      }
+      const map: Record<string, any> = {};
+      (data || []).forEach(inv => {
+        if (inv.image_url || inv.melleklet_url) {
+          map[inv.id] = inv;
+        }
+      });
+      return map;
+    },
+    enabled: !!companyId && invoiceIds.length > 0,
   });
 
   // Fetch pending invoices
@@ -611,12 +645,36 @@ export default function EntriesTab() {
                             {t('pettyCash:entries.badges.pending_approval', 'Jóváhagyásra vár')}
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className={cn(
-                            'font-mono text-[10px]',
-                            entry.amount >= 0 ? 'text-emerald-600 border-emerald-500/30' : 'text-destructive border-destructive/30'
-                          )}>
-                            {receiptNo}
-                          </Badge>
+                          <div className="flex items-center gap-1.5">
+                            <Badge variant="outline" className={cn(
+                              'font-mono text-[10px]',
+                              entry.amount >= 0 ? 'text-emerald-600 border-emerald-500/30' : 'text-destructive border-destructive/30'
+                            )}>
+                              {receiptNo}
+                            </Badge>
+                            {entry.source_id && invoiceImagesMap[entry.source_id] && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-5 w-5 text-primary hover:bg-primary/10 hover:text-primary p-0 cursor-pointer"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setPreviewInvoice(invoiceImagesMap[entry.source_id!]);
+                                      }}
+                                    >
+                                      <Eye className="w-3 h-3" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="text-xs">
+                                    {t('pettyCash:entries.actions.view_invoice_image', 'Számlakép megtekintése')} ({invoiceImagesMap[entry.source_id].bizonylatsorszam || 'Számla'})
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
                         )}
                       </TableCell>
                       <TableCell className="whitespace-nowrap text-sm tabular-nums">
@@ -700,6 +758,17 @@ export default function EntriesTab() {
                           </div>
                         ) : (
                           <div className="flex items-center gap-1 justify-end">
+                            {entry.source_id && invoiceImagesMap[entry.source_id] && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-primary hover:bg-primary/10 hover:text-primary"
+                                onClick={() => setPreviewInvoice(invoiceImagesMap[entry.source_id!])}
+                                title={t('pettyCash:entries.actions.view_invoice_image', 'Számlakép megtekintése')}
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
                             {(entry.source_type === 'manual' || entry.source_type === 'transfer') && writable && (
                               <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
                                 onClick={() => { setEditingEntry(entry); setShowManualDialog(true); }} title="Szerkesztés">
@@ -808,6 +877,15 @@ export default function EntriesTab() {
           invoice={previewInvoicePending}
           open={!!previewInvoicePending}
           onClose={() => setPreviewInvoicePending(null)}
+        />
+      )}
+
+      {/* Booked Entry Linked Invoice Preview */}
+      {previewInvoice && (
+        <InvoiceImageDialog
+          invoice={previewInvoice}
+          open={!!previewInvoice}
+          onClose={() => setPreviewInvoice(null)}
         />
       )}
 

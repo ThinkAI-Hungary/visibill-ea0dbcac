@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
-import type { A60CalculationsResult } from '../types';
+import { type A60CalculationsResult, fmtEft, formatThousands } from '../types';
 
 interface VatA60TableProps {
   a60Calculations: A60CalculationsResult;
@@ -111,23 +111,20 @@ export function VatA60Table({
               <div>
                 <span className="text-muted-foreground">Számlák alapján:</span>
                 <p className="font-bold font-mono text-sm mt-0.5">
-                  {a60Calculations.goodsSum.toLocaleString('hu-HU')} eFt
+                  {fmtEft(a60Calculations.goodsSum)}
                 </p>
               </div>
               <div>
                 <span className="text-muted-foreground">Bevallás (91+92. sor):</span>
                 <p className="font-bold font-mono text-sm mt-0.5">
-                  {a60Calculations.expectedGoods.toLocaleString('hu-HU')} eFt
+                  {fmtEft(a60Calculations.expectedGoods)}
                 </p>
               </div>
             </div>
             {a60Calculations.goodsMismatch && (
               <p className="text-[10px] text-amber-600 dark:text-amber-300 pt-1 border-t border-amber-500/10">
                 Eltérés:{' '}
-                {Math.abs(a60Calculations.goodsSum - a60Calculations.expectedGoods).toLocaleString(
-                  'hu-HU'
-                )}{' '}
-                eFt
+                {fmtEft(Math.abs(a60Calculations.goodsSum - a60Calculations.expectedGoods))}
               </p>
             )}
           </div>
@@ -158,23 +155,20 @@ export function VatA60Table({
               <div>
                 <span className="text-muted-foreground">Számlák alapján:</span>
                 <p className="font-bold font-mono text-sm mt-0.5">
-                  {a60Calculations.servicesSum.toLocaleString('hu-HU')} eFt
+                  {fmtEft(a60Calculations.servicesSum)}
                 </p>
               </div>
               <div>
                 <span className="text-muted-foreground">Bevallás (93+94. sor):</span>
                 <p className="font-bold font-mono text-sm mt-0.5">
-                  {a60Calculations.expectedServices.toLocaleString('hu-HU')} eFt
+                  {fmtEft(a60Calculations.expectedServices)}
                 </p>
               </div>
             </div>
             {a60Calculations.servicesMismatch && (
               <p className="text-[10px] text-amber-600 dark:text-amber-300 pt-1 border-t border-amber-500/10">
                 Eltérés:{' '}
-                {Math.abs(
-                  a60Calculations.servicesSum - a60Calculations.expectedServices
-                ).toLocaleString('hu-HU')}{' '}
-                eFt
+                {fmtEft(Math.abs(a60Calculations.servicesSum - a60Calculations.expectedServices))}
               </p>
             )}
           </div>
@@ -252,9 +246,9 @@ export function VatA60Table({
                       </div>
                     </TableCell>
                     <TableCell className="text-right font-mono font-semibold">
-                      {item.invoice_net_amount.toLocaleString('hu-HU')} {item.currency}
+                      {formatThousands(item.invoice_net_amount, { decimals: 2 })} {item.currency}
                       <span className="block text-[10px] text-muted-foreground">
-                        ({item.amountEft.toLocaleString('hu-HU')} eFt)
+                        ({fmtEft(item.amountEft)})
                       </span>
                     </TableCell>
                     <TableCell className="text-right">

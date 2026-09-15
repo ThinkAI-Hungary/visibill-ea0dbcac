@@ -15,10 +15,15 @@ interface VatReturnPdfData {
   mLines: { partner_name: string; partner_tax_number: string; invoice_count: number; base_amount_rounded: number; tax_amount_rounded: number; tax_5_amount: number; tax_18_amount: number; tax_27_amount: number }[];
 }
 
-const fmtEft = (v: number | null | undefined): string => {
-  if (v === null || v === undefined) return '';
-  if (v === 0) return '0';
-  return new Intl.NumberFormat('hu-HU').format(v);
+const fmtEft = (v: number | string | null | undefined): string => {
+  if (v === null || v === undefined || v === '') return '';
+  const n = typeof v === 'number' ? v : Number(String(v).replace(/\s+/g, '').replace(',', '.'));
+  if (isNaN(n)) return '';
+  if (n === 0) return '0';
+  const isNegative = n < 0;
+  const absStr = Math.abs(Math.round(n)).toString();
+  const formatted = absStr.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return `${isNegative ? '-' : ''}${formatted}`;
 };
 
 import { escapeXml } from './documents/encoding/xmlSanitizer';

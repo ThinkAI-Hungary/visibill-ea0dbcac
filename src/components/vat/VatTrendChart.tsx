@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
+import { formatThousands } from '@/features/vat/types';
 
 /* ────────────────────────────────────────── */
 /*  V6: VAT Trend Chart (12 months)            */
@@ -43,7 +44,7 @@ export function VatTrendChart({ companyId }: { companyId: string }) {
     };
   });
 
-  const fmtTooltip = (v: number) => `${v.toLocaleString('hu-HU')} eFt`;
+  const fmtTooltip = (v: number) => `${formatThousands(v)} eFt`;
 
   const payableLabel = t('accounting:vat_return.chart.payable', 'Fizetendő');
   const deductibleLabel = t('accounting:vat_return.chart.deductible', 'Levonható');
@@ -82,7 +83,7 @@ export function VatTrendChart({ companyId }: { companyId: string }) {
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.4} />
               <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.5} />
-              <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.5} tickFormatter={(v: number) => `${v}`} />
+              <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.5} tickFormatter={(v: number) => formatThousands(v)} />
               <RechartsTooltip
                 contentStyle={{ fontSize: '11px', borderRadius: '8px', border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))' }}
                 formatter={(value: number, name: string) => [fmtTooltip(value), name]}

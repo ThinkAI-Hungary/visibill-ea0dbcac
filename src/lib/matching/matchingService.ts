@@ -100,6 +100,10 @@ export async function buildAvailableInvoicesList(
       kibocsatas_datuma: inv.kibocsatas_datuma,
       already_paid: alreadyPaid,
       remaining: Math.abs(inv.brutto_vegosszeg || 0) - alreadyPaid,
+      has_skonto: inv.has_skonto,
+      skonto_amount: inv.skonto_amount,
+      skonto_percent: inv.skonto_percent,
+      skonto_due_date: inv.skonto_due_date,
     });
   }
 
@@ -123,6 +127,10 @@ export async function buildAvailableInvoicesList(
       kibocsatas_datuma: nav.invoice_issue_date || '',
       already_paid: navAlreadyPaid,
       remaining: navBrutto - navAlreadyPaid,
+      has_skonto: nav.has_skonto,
+      skonto_amount: nav.skonto_amount,
+      skonto_percent: nav.skonto_percent,
+      skonto_due_date: nav.skonto_due_date,
     });
   }
 
@@ -349,14 +357,14 @@ export async function searchServerInvoices(
     const [{ data: invoices, error: invError }, { data: navInvoices, error: navError }] = await Promise.all([
       supabase
         .from('invoices')
-        .select('id, bizonylatsorszam, brutto_vegosszeg, elado_nev, vevo_nev, penznem, kibocsatas_datuma')
+        .select('id, bizonylatsorszam, brutto_vegosszeg, elado_nev, vevo_nev, penznem, kibocsatas_datuma, has_skonto, skonto_amount, skonto_percent, skonto_due_date')
         .eq('company_id', companyId)
         .or(`bizonylatsorszam.ilike.%${cleanTerm}%,elado_nev.ilike.%${cleanTerm}%,vevo_nev.ilike.%${cleanTerm}%`)
         .order('kibocsatas_datuma', { ascending: false })
         .limit(50),
       supabase
         .from('nav_invoices')
-        .select('id, invoice_number, invoice_gross_amount, supplier_name, customer_name, currency, invoice_issue_date, invoice_direction')
+        .select('id, invoice_number, invoice_gross_amount, supplier_name, customer_name, currency, invoice_issue_date, invoice_direction, has_skonto, skonto_amount, skonto_percent, skonto_due_date')
         .eq('company_id', companyId)
         .or(`invoice_number.ilike.%${cleanTerm}%,supplier_name.ilike.%${cleanTerm}%,customer_name.ilike.%${cleanTerm}%`)
         .order('invoice_issue_date', { ascending: false })

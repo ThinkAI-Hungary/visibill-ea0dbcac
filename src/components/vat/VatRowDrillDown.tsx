@@ -5,6 +5,7 @@ import { Loader2, ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { reportError } from '@/lib/errorReporter';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
+import { formatThousands } from '@/features/vat/types';
 
 
 /* ────────────────────────────────────────── */
@@ -85,21 +86,21 @@ export function InvoiceItemsDrillDown({ invoiceNumber, companyId }: { invoiceNum
                 </span>
               )}
             </div>
-            <div className="col-span-2 text-right tabular-nums">{item.quantity != null ? Number(item.quantity).toLocaleString('hu-HU') : '—'}</div>
-            <div className="col-span-2 text-right tabular-nums">{item.unit_price != null ? Number(item.unit_price).toLocaleString('hu-HU') : '—'}</div>
+            <div className="col-span-2 text-right tabular-nums">{item.quantity != null ? formatThousands(Number(item.quantity)) : '—'}</div>
+            <div className="col-span-2 text-right tabular-nums">{item.unit_price != null ? formatThousands(Number(item.unit_price)) : '—'}</div>
             <div className="col-span-2 text-right tabular-nums">
-              <div>{effectiveNet.toLocaleString('hu-HU')} Ft</div>
+              <div>{formatThousands(effectiveNet)} Ft</div>
               {isPartial && (
                 <div className="text-[9px] text-muted-foreground/50 line-through">
-                  {Number(item.net_amount || 0).toLocaleString('hu-HU')} Ft
+                  {formatThousands(Number(item.net_amount || 0))} Ft
                 </div>
               )}
             </div>
             <div className="col-span-2 text-right tabular-nums font-medium">
-              <div>{effectiveVat.toLocaleString('hu-HU')} Ft</div>
+              <div>{formatThousands(effectiveVat)} Ft</div>
               {isPartial && (
                 <div className="text-[9px] text-muted-foreground/50 line-through font-normal">
-                  {Number(item.vat_amount || 0).toLocaleString('hu-HU')} Ft
+                  {formatThousands(Number(item.vat_amount || 0))} Ft
                 </div>
               )}
             </div>
@@ -275,7 +276,7 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
     );
   }
 
-  const fmtHuf = (v: number) => `${Math.round(v).toLocaleString('hu-HU')} Ft`;
+  const fmtHuf = (v: number) => `${formatThousands(v)} Ft`;
 
   const grandNet = invoices.reduce((s: number, inv: any) => {
     const currency = inv.currency || 'HUF';
@@ -362,7 +363,7 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
                 <div>{fmtHuf(totalNet)}</div>
                 {isForeign && (
                   <div className="text-[9px] text-muted-foreground/60 font-normal">
-                    {origNet.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}
+                    {formatThousands(origNet, { decimals: 2 })} {currency}
                   </div>
                 )}
               </div>
@@ -370,7 +371,7 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
                 <div>{fmtHuf(totalVat)}</div>
                 {isForeign && (
                   <div className="text-[9px] text-muted-foreground/60 font-normal text-muted-foreground/50">
-                    {origVat.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}
+                    {formatThousands(origVat, { decimals: 2 })} {currency}
                   </div>
                 )}
               </div>
@@ -392,13 +393,13 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
                   return (
                     <div key={j} className="grid grid-cols-12 gap-2 px-3 py-0.5 text-[10px] text-muted-foreground hover:bg-muted/15 transition-colors">
                       <div className="col-span-4 truncate" title={item.line_description}>{item.line_description || '—'}</div>
-                      <div className="col-span-2 text-right tabular-nums">{item.quantity != null ? Number(item.quantity).toLocaleString('hu-HU') : '—'}</div>
-                      <div className="col-span-2 text-right tabular-nums">{item.unit_price != null ? Number(item.unit_price).toLocaleString('hu-HU') : '—'}</div>
+                      <div className="col-span-2 text-right tabular-nums">{item.quantity != null ? formatThousands(Number(item.quantity)) : '—'}</div>
+                      <div className="col-span-2 text-right tabular-nums">{item.unit_price != null ? formatThousands(Number(item.unit_price)) : '—'}</div>
                       <div className="col-span-2 text-right tabular-nums font-normal">
                         <div>{fmtHuf(itemNetHuf)}</div>
                         {isForeign && (
                           <div className="text-[8px] text-muted-foreground/50">
-                            {itemNet.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}
+                            {formatThousands(itemNet, { decimals: 2 })} {currency}
                           </div>
                         )}
                       </div>
@@ -406,7 +407,7 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
                         <div>{fmtHuf(itemVatHuf)}</div>
                         {isForeign && (
                           <div className="text-[8px] text-muted-foreground/50">
-                            {itemVat.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}
+                            {formatThousands(itemVat, { decimals: 2 })} {currency}
                           </div>
                         )}
                       </div>

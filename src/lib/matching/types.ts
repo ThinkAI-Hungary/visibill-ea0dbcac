@@ -70,6 +70,10 @@ export interface AvailableInvoice {
   kibocsatas_datuma: string;
   already_paid: number;
   remaining: number;
+  has_skonto?: boolean | null;
+  skonto_amount?: number | null;
+  skonto_percent?: number | null;
+  skonto_due_date?: string | null;
 }
 
 export interface AvailableTransaction {

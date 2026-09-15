@@ -6,6 +6,7 @@ import type {
   MLine,
   VatFrequency,
 } from '../types';
+import { formatThousands } from '../types';
 
 /**
  * Validates a Hungarian tax number (8-digit törzsszám or 11-digit XXXXXXXX-X-XX)
@@ -170,8 +171,8 @@ export function runXmlValidation(
   // Check 3: Form sums match transaction details
   const sumCheckOk = deductibleTaxEft === 0 || mSheetTaxEft === deductibleTaxEft;
   const sumCheckMsg = sumCheckOk
-    ? `A főlapon szereplő levonható ÁFA (${deductibleTaxEft.toLocaleString('hu-HU')} eFt) megegyezik a részletező lapok (M-lap) összesítésével (${mSheetTaxEft.toLocaleString('hu-HU')} eFt).`
-    : `Összegzési eltérés! Főlap levonható ÁFA: ${deductibleTaxEft.toLocaleString('hu-HU')} eFt. Részletező M-lapok összege: ${mSheetTaxEft.toLocaleString('hu-HU')} eFt.`;
+    ? `A főlapon szereplő levonható ÁFA (${formatThousands(deductibleTaxEft)} eFt) megegyezik a részletező lapok (M-lap) összesítésével (${formatThousands(mSheetTaxEft)} eFt).`
+    : `Összegzési eltérés! Főlap levonható ÁFA: ${formatThousands(deductibleTaxEft)} eFt. Részletező M-lapok összege: ${formatThousands(mSheetTaxEft)} eFt.`;
 
   checks.push({
     id: 'sum_match',

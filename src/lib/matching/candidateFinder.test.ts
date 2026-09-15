@@ -72,6 +72,42 @@ describe('candidateFinder', () => {
 
       expect(result.some(inv => inv.brutto_vegosszeg === 60000)).toBe(true);
     });
+
+    it('prioritizes skonto discounted amount when matching transaction amount', () => {
+      const skontoInvoice: AvailableInvoice = {
+        id: 'inv-skonto-1',
+        bizonylatsorszam: 'YAM-2026-001',
+        brutto_vegosszeg: 235496,
+        elado_nev: 'Yamaha Music Europe GmbH',
+        penznem: 'HUF',
+        kibocsatas_datuma: '2026-09-01',
+        already_paid: 0,
+        remaining: 235496,
+        has_skonto: true,
+        skonto_amount: 230786, // 2% discount
+        skonto_percent: 2,
+      };
+
+      const otherInvoice: AvailableInvoice = {
+        id: 'inv-other-1',
+        bizonylatsorszam: 'OTHER-001',
+        brutto_vegosszeg: 231000,
+        elado_nev: 'Other Partner',
+        penznem: 'HUF',
+        kibocsatas_datuma: '2026-09-01',
+        already_paid: 0,
+        remaining: 231000,
+      };
+
+      const result = filterAndSortInvoiceCandidates({
+        availableInvoices: [otherInvoice, skontoInvoice],
+        transactionAmount: 230786,
+        transactionCurrency: 'HUF',
+      });
+
+      // The skonto invoice matches exactly 230786 and should be first
+      expect(result[0].id).toBe('inv-skonto-1');
+    });
   });
 
   describe('filterAndSortTransactionCandidates', () => {

@@ -33,8 +33,10 @@ import {
   Eye,
   Package,
   Loader2,
-  Banknote
+  Banknote,
+  Percent
 } from 'lucide-react';
+import { calculateSkonto, formatTransferNarrative } from '@/lib/skontoUtils';
 import {
   Dialog,
   DialogContent,
@@ -94,12 +96,23 @@ interface TransferInvoice {
   invoice_number: string;
   partner_name: string;
   partner_tax_number?: string;
+  issue_date?: string;
   due_date: string;
   amount: number;
   currency: string;
   partner_bank_account: string;
   image_url?: string;
   melleklet_url?: string;
+  has_skonto?: boolean;
+  skonto_days?: number;
+  skonto_percent?: number;
+  skonto_due_date?: string;
+  skonto_amount?: number;
+  skonto_shipping_amount?: number;
+  skonto_saved_amount?: number;
+  days_remaining?: number;
+  is_skonto_expired?: boolean;
+  skonto_selected?: boolean;
 }
 
 interface CompanyBankAccount {
@@ -119,10 +132,50 @@ export default function TransfersPage() {
   const navigate = useNavigate();
 
   const [search, setSearch] = useState('');
-  const [filterTab, setFilterTab] = useState<'all' | 'overdue' | 'due_today' | 'future'>('all');
+  const [filterTab, setFilterTab] = useState<'all' | 'overdue' | 'due_today' | 'future' | 'skonto'>('all');
   const [groupByPartner, setGroupByPartner] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [editingBankAccounts, setEditingBankAccounts] = useState<Record<string, string>>({});
+  const [skontoOverrides, setSkontoOverrides] = useState<Record<string, boolean>>({});
+
+  const isSkontoActive = (inv: TransferInvoice | any): boolean => {
+    if (!inv || !inv.has_skonto || !inv.skonto_amount) return false;
+    if (skontoOverrides[inv.id] !== undefined) {
+      return skontoOverrides[inv.id];
+    }
+    if (inv.skonto_selected !== undefined && inv.skonto_selected !== null) {
+      return inv.skonto_selected;
+    }
+    return !inv.is_skonto_expired;
+  };
+
+  const getEffectiveAmount = (inv: TransferInvoice | any): number => {
+    if (isSkontoActive(inv) && inv.skonto_amount) {
+      return inv.skonto_amount;
+    }
+    return inv.amount;
+  };
+
+  const handleToggleSkonto = async (itemKey: string, invoiceId: string, source: 'manual' | 'nav', newSelected: boolean) => {
+    setSkontoOverrides(prev => ({ ...prev, [itemKey]: newSelected, [invoiceId]: newSelected }));
+    const targetTable = source === 'nav' ? 'nav_invoices' : 'invoices';
+    supabase
+      .from(targetTable)
+      .update({ skonto_selected: newSelected })
+      .eq('id', invoiceId)
+      .then(({ error }) => {
+        if (error) console.warn("Failed to persist skonto_selected:", error);
+      });
+  };
+
+  const getItemNarrative = (item: any) => {
+    if (!item.original_invoices || item.original_invoices.length === 0) return '';
+    if (item.original_invoices.length === 1) {
+      const inv = item.original_invoices[0];
+      return formatTransferNarrative(inv.invoice_number, isSkontoActive(inv), inv.skonto_percent);
+    }
+    return `Szamlak: ${item.original_invoices.map((inv: any) => formatTransferNarrative(inv.invoice_number, isSkontoActive(inv), inv.skonto_percent)).join(', ')}`;
+  };
 
   // IBAN Validation Modulo 97 check
   const validateIban = (iban: string): boolean => {
@@ -249,13 +302,13 @@ export default function TransfersPage() {
       // Fetch partner records for bank account lookup
       const { data: partnersData } = await supabase
         .from('partners')
-        .select('id, name, tax_number, bank_account_number')
+        .select('id, name, tax_number, bank_account_number, has_skonto, skonto_days, skonto_percent, skonto_excludes_shipping')
         .eq('company_id', selectedCompany.id);
 
       // Fetch manual inbound invoices
       const { data: manualData, error: manualErr } = await supabase
         .from('invoices')
-        .select('id, bizonylatsorszam, elado_nev, elado_vat_id, fizetesi_hatarido, kibocsatas_datuma, teljesites_datuma, brutto_vegosszeg, penznem, bankszamlaszam_iban, fizetesi_mod, reference_number, elolegszamla_hivatkozas, is_manual_payment, image_url, melleklet_url')
+        .select('id, bizonylatsorszam, elado_nev, elado_vat_id, fizetesi_hatarido, kibocsatas_datuma, teljesites_datuma, brutto_vegosszeg, penznem, bankszamlaszam_iban, fizetesi_mod, reference_number, elolegszamla_hivatkozas, is_manual_payment, image_url, melleklet_url, has_skonto, skonto_days, skonto_percent, skonto_due_date, skonto_amount, skonto_shipping_amount, skonto_selected')
         .eq('company_id', selectedCompany.id)
         .eq('invoice_direction', 'INBOUND')
         .is('transaction_id', null)
@@ -266,7 +319,7 @@ export default function TransfersPage() {
       // Fetch NAV inbound invoices
       const { data: navData, error: navErr } = await supabase
         .from('nav_invoices')
-        .select('id, invoice_number, supplier_name, supplier_tax_number, payment_date, invoice_issue_date, invoice_delivery_date, invoice_gross_amount, currency, transaction_id, paid, payment_method, is_manual_payment')
+        .select('id, invoice_number, supplier_name, supplier_tax_number, payment_date, invoice_issue_date, invoice_delivery_date, invoice_gross_amount, currency, transaction_id, paid, payment_method, is_manual_payment, has_skonto, skonto_days, skonto_percent, skonto_due_date, skonto_amount, skonto_shipping_amount, skonto_selected')
         .eq('company_id', selectedCompany.id)
         .eq('invoice_direction', 'INBOUND')
         .is('transaction_id', null)
@@ -314,7 +367,14 @@ export default function TransfersPage() {
 
       // Build lookup map from saved partner master records FIRST
       const bankAccountLookupMap: Record<string, string> = {};
-      (partnersData || []).forEach(p => {
+      const partnerSkontoMap: Record<string, {
+        has_skonto: boolean;
+        skonto_days: number;
+        skonto_percent: number;
+        skonto_excludes_shipping: boolean;
+      }> = {};
+
+      (partnersData || []).forEach((p: any) => {
         if (p.bank_account_number) {
           if (p.tax_number) {
             bankAccountLookupMap[p.tax_number] = p.bank_account_number;
@@ -322,6 +382,16 @@ export default function TransfersPage() {
           if (p.name) {
             bankAccountLookupMap[p.name.toLowerCase()] = p.bank_account_number;
           }
+        }
+        if (p.has_skonto) {
+          const rule = {
+            has_skonto: true,
+            skonto_days: p.skonto_days ?? 8,
+            skonto_percent: p.skonto_percent ?? 2.0,
+            skonto_excludes_shipping: p.skonto_excludes_shipping ?? true,
+          };
+          if (p.tax_number) partnerSkontoMap[p.tax_number] = rule;
+          if (p.name) partnerSkontoMap[p.name.toLowerCase().trim()] = rule;
         }
       });
 
@@ -534,12 +604,29 @@ export default function TransfersPage() {
           (inv.elado_vat_id ? bankAccountLookupMap[inv.elado_vat_id] : '') || 
           (inv.elado_nev ? bankAccountLookupMap[inv.elado_nev.toLowerCase()] : '') || '';
 
+        const pRule = (inv.elado_vat_id ? partnerSkontoMap[inv.elado_vat_id] : null) ||
+          (inv.elado_nev ? partnerSkontoMap[inv.elado_nev.toLowerCase().trim()] : null);
+        const hasSkonto = inv.has_skonto ?? pRule?.has_skonto ?? false;
+        const skontoDays = inv.skonto_days ?? pRule?.skonto_days ?? 8;
+        const skontoPercent = inv.skonto_percent ?? pRule?.skonto_percent ?? 2;
+        const skontoShipping = inv.skonto_shipping_amount ?? 0;
+        const issueDate = inv.kibocsatas_datuma || inv.teljesites_datuma || inv.fizetesi_hatarido || today;
+
+        const calc = hasSkonto ? calculateSkonto({
+          grossAmount: inv.brutto_vegosszeg || 0,
+          issueDate,
+          skontoDays,
+          skontoPercent,
+          shippingAmount: skontoShipping,
+        }) : null;
+
         return {
           id: inv.id,
           source: 'manual',
           invoice_number: inv.bizonylatsorszam || '',
           partner_name: inv.elado_nev || 'Ismeretlen partner',
           partner_tax_number: inv.elado_vat_id || undefined,
+          issue_date: inv.kibocsatas_datuma || undefined,
           due_date: inv.fizetesi_hatarido
             ? new Date(inv.fizetesi_hatarido).toISOString().split('T')[0]
             : (inv.kibocsatas_datuma
@@ -549,7 +636,17 @@ export default function TransfersPage() {
           currency: inv.penznem || 'HUF',
           partner_bank_account: resolvedAccount,
           image_url: inv.image_url || undefined,
-          melleklet_url: inv.melleklet_url || undefined
+          melleklet_url: inv.melleklet_url || undefined,
+          has_skonto: hasSkonto,
+          skonto_days: skontoDays,
+          skonto_percent: skontoPercent,
+          skonto_due_date: inv.skonto_due_date || calc?.skontoDueDate,
+          skonto_amount: inv.skonto_amount ?? calc?.skontoAmount,
+          skonto_shipping_amount: skontoShipping,
+          skonto_saved_amount: calc?.savedAmount ?? Math.round((inv.brutto_vegosszeg || 0) * (skontoPercent / 100)),
+          days_remaining: calc?.daysRemaining,
+          is_skonto_expired: calc?.isExpired ?? false,
+          skonto_selected: inv.skonto_selected ?? undefined,
         };
       });
 
@@ -560,12 +657,29 @@ export default function TransfersPage() {
 
         const matchedManual = manualByNumber.get(normalizeInvNum(inv.invoice_number))?.[0];
 
+        const pRule = (taxNumber ? partnerSkontoMap[taxNumber] : null) ||
+          (inv.supplier_name ? partnerSkontoMap[inv.supplier_name.toLowerCase().trim()] : null);
+        const hasSkonto = inv.has_skonto ?? pRule?.has_skonto ?? false;
+        const skontoDays = inv.skonto_days ?? pRule?.skonto_days ?? 8;
+        const skontoPercent = inv.skonto_percent ?? pRule?.skonto_percent ?? 2;
+        const skontoShipping = inv.skonto_shipping_amount ?? 0;
+        const issueDate = inv.invoice_issue_date || inv.invoice_delivery_date || inv.payment_date || today;
+
+        const calc = hasSkonto ? calculateSkonto({
+          grossAmount: inv.invoice_gross_amount || 0,
+          issueDate,
+          skontoDays,
+          skontoPercent,
+          shippingAmount: skontoShipping,
+        }) : null;
+
         return {
           id: inv.id,
           source: 'nav',
           invoice_number: inv.invoice_number || '',
           partner_name: inv.supplier_name || 'Ismeretlen partner',
           partner_tax_number: taxNumber || undefined,
+          issue_date: inv.invoice_issue_date || undefined,
           due_date: inv.payment_date
             ? new Date(inv.payment_date).toISOString().split('T')[0]
             : (inv.invoice_issue_date
@@ -575,7 +689,17 @@ export default function TransfersPage() {
           currency: inv.currency || 'HUF',
           partner_bank_account: resolvedAccount,
           image_url: matchedManual?.image_url || undefined,
-          melleklet_url: matchedManual?.melleklet_url || undefined
+          melleklet_url: matchedManual?.melleklet_url || undefined,
+          has_skonto: hasSkonto,
+          skonto_days: skontoDays,
+          skonto_percent: skontoPercent,
+          skonto_due_date: inv.skonto_due_date || calc?.skontoDueDate,
+          skonto_amount: inv.skonto_amount ?? calc?.skontoAmount,
+          skonto_shipping_amount: skontoShipping,
+          skonto_saved_amount: calc?.savedAmount ?? Math.round((inv.invoice_gross_amount || 0) * (skontoPercent / 100)),
+          days_remaining: calc?.daysRemaining,
+          is_skonto_expired: calc?.isExpired ?? false,
+          skonto_selected: inv.skonto_selected ?? undefined,
         };
       });
 
@@ -936,17 +1060,20 @@ export default function TransfersPage() {
         return true;
       }
 
+      if (filterTab === 'skonto') {
+        return inv.has_skonto && !inv.is_skonto_expired;
+      }
       if (filterTab === 'overdue') {
         return inv.due_date < today;
       }
       if (filterTab === 'due_today') {
-        return inv.due_date === today;
+        return inv.due_date === today || (inv.has_skonto && !inv.is_skonto_expired && inv.skonto_due_date === today);
       }
       if (filterTab === 'future') {
         return inv.due_date > today;
       }
       if (filterTab === 'all') {
-        return inv.due_date <= today;
+        return inv.due_date <= today || (inv.has_skonto && !inv.is_skonto_expired && inv.skonto_due_date && inv.skonto_due_date <= today);
       }
       return true;
     });
@@ -955,18 +1082,35 @@ export default function TransfersPage() {
   // 4. Compute grouped invoices if checked
   const displayItems = useMemo(() => {
     if (!groupByPartner) {
-      const items = filteredInvoices.map(inv => ({
-        key: inv.id,
-        invoice_ids: [inv.id],
-        invoice_sources: [inv.source],
-        invoice_numbers: [inv.invoice_number],
-        partner_name: inv.partner_name,
-        due_date: inv.due_date,
-        amount: inv.amount,
-        currency: inv.currency,
-        partner_bank_account: editingBankAccounts[inv.id] !== undefined ? editingBankAccounts[inv.id] : inv.partner_bank_account,
-        original_invoices: [inv]
-      }));
+      const items = filteredInvoices.map(inv => {
+        const skontoActive = isSkontoActive(inv);
+        const effectiveAmount = getEffectiveAmount(inv);
+        const savedAmount = skontoActive ? (inv.skonto_saved_amount || (inv.amount - effectiveAmount)) : 0;
+
+        return {
+          key: inv.id,
+          invoice_ids: [inv.id],
+          invoice_sources: [inv.source],
+          invoice_numbers: [inv.invoice_number],
+          partner_name: inv.partner_name,
+          due_date: skontoActive && inv.skonto_due_date ? inv.skonto_due_date : inv.due_date,
+          standard_due_date: inv.due_date,
+          amount: effectiveAmount,
+          gross_amount: inv.amount,
+          currency: inv.currency,
+          partner_bank_account: editingBankAccounts[inv.id] !== undefined ? editingBankAccounts[inv.id] : inv.partner_bank_account,
+          original_invoices: [inv],
+          has_skonto: inv.has_skonto,
+          skonto_percent: inv.skonto_percent,
+          skonto_days: inv.skonto_days,
+          skonto_due_date: inv.skonto_due_date,
+          skonto_amount: inv.skonto_amount,
+          skonto_saved_amount: savedAmount,
+          days_remaining: inv.days_remaining,
+          is_skonto_expired: inv.is_skonto_expired,
+          is_skonto_active: skontoActive,
+        };
+      });
 
       // Sort individual items by due_date ascending, then partner_name alphabetically
       return items.sort((a, b) => {
@@ -986,13 +1130,18 @@ export default function TransfersPage() {
     });
 
     const mappedGroups = Object.values(groups).map((group, idx) => {
-      const totalAmount = group.reduce((sum, inv) => sum + inv.amount, 0);
+      const totalAmount = group.reduce((sum, inv) => sum + getEffectiveAmount(inv), 0);
+      const totalGrossAmount = group.reduce((sum, inv) => sum + inv.amount, 0);
+      const totalSaved = group.reduce((sum, inv) => {
+        return sum + (isSkontoActive(inv) ? (inv.skonto_saved_amount || (inv.amount - (inv.skonto_amount || inv.amount))) : 0);
+      }, 0);
+      const anyHasSkonto = group.some(inv => inv.has_skonto);
       const invoiceNumbers = group.map(inv => inv.invoice_number);
       const invoiceIds = group.map(inv => inv.id);
       const invoiceSources = group.map(inv => inv.source);
-      // Pick earliest due date
-      const earliestDue = group.map(inv => inv.due_date).sort()[0];
-      // Pick bank account (prefer first non-empty)
+      // Pick earliest due date (considering skonto for active ones)
+      const earliestDue = group.map(inv => (isSkontoActive(inv) && inv.skonto_due_date) ? inv.skonto_due_date : inv.due_date).sort()[0];
+      const earliestStandardDue = group.map(inv => inv.due_date).sort()[0];
       const bankAccount = group.find(inv => inv.partner_bank_account)?.partner_bank_account || '';
 
       const key = `group_${idx}_${group[0].partner_name}`;
@@ -1004,10 +1153,14 @@ export default function TransfersPage() {
         invoice_numbers: invoiceNumbers,
         partner_name: group[0].partner_name,
         due_date: earliestDue,
+        standard_due_date: earliestStandardDue,
         amount: totalAmount,
+        gross_amount: totalGrossAmount,
         currency: group[0].currency,
         partner_bank_account: editingBankAccounts[key] !== undefined ? editingBankAccounts[key] : bankAccount,
-        original_invoices: group
+        original_invoices: group,
+        has_skonto: anyHasSkonto,
+        skonto_saved_amount: totalSaved,
       };
     });
 
@@ -1018,7 +1171,7 @@ export default function TransfersPage() {
       }
       return a.partner_name.localeCompare(b.partner_name);
     });
-  }, [filteredInvoices, groupByPartner, editingBankAccounts]);
+  }, [filteredInvoices, groupByPartner, editingBankAccounts, skontoOverrides]);
 
   const paginatedActiveItems = useMemo(() => {
     const start = (activePage - 1) * activePageSize;
@@ -1046,6 +1199,8 @@ export default function TransfersPage() {
     let overdueSum = 0;
     let todayCount = 0;
     let todaySum = 0;
+    let skontoCount = 0;
+    let skontoPotentialSum = 0;
 
     invoices.forEach(inv => {
       if (inv.currency === 'HUF') {
@@ -1056,17 +1211,23 @@ export default function TransfersPage() {
           todayCount++;
           todaySum += inv.amount;
         }
+        if (inv.has_skonto && !inv.is_skonto_expired) {
+          skontoCount++;
+          skontoPotentialSum += (inv.skonto_saved_amount || 0);
+        }
       }
     });
 
     // Count selected values
     let selectedCount = 0;
     let selectedSumHuf = 0;
+    let selectedSkontoSavings = 0;
     const selectedList = displayItems.filter(item => selectedIds.includes(item.key));
     selectedList.forEach(item => {
       selectedCount += item.invoice_ids.length;
       if (item.currency === 'HUF') {
         selectedSumHuf += item.amount;
+        selectedSkontoSavings += (item.skonto_saved_amount || 0);
       }
     });
 
@@ -1075,8 +1236,11 @@ export default function TransfersPage() {
       overdueSum,
       todayCount,
       todaySum,
+      skontoCount,
+      skontoPotentialSum,
       selectedCount,
-      selectedSumHuf
+      selectedSumHuf,
+      selectedSkontoSavings,
     };
   }, [invoices, displayItems, selectedIds]);
 
@@ -1169,6 +1333,7 @@ export default function TransfersPage() {
         let trfInfos = '';
         selectedItems.forEach((item, idx) => {
           const cleanIban = item.partner_bank_account.replace(/[^A-Z0-9]/ig, '');
+          const narrative = getItemNarrative(item);
           trfInfos += `
       <CdtTrfTxInf>
         <PmtId>
@@ -1188,7 +1353,7 @@ export default function TransfersPage() {
           </Id>
         </CdtrAcct>
         <RmtInf>
-          <Ustrd>Szamlak: ${item.invoice_numbers.join(', ').slice(0, 140)}</Ustrd>
+          <Ustrd>${narrative.slice(0, 140)}</Ustrd>
         </RmtInf>
       </CdtTrfTxInf>`;
         });
@@ -1243,7 +1408,7 @@ export default function TransfersPage() {
         selectedItems.forEach(item => {
           const cleanSender = sender.account_number.replace(/[^0-9]/g, '');
           const cleanPartner = item.partner_bank_account.replace(/[^0-9]/g, '');
-          const narrative = `Szamlak: ${item.invoice_numbers.join(', ')}`.slice(0, 140);
+          const narrative = getItemNarrative(item).slice(0, 140);
           
           // Columns: 1.Terhelendo szamla, 2.Kedvezmenyezett nev, 3.Kedvezmenyezett szamla, 4.Osszeg (egeszresz), 5.Kozlemeny, 6-19.Ures
           fileContent += `${cleanSender};${item.partner_name.slice(0, 70)};${cleanPartner};${item.amount.toFixed(0)};${narrative};;;;;;;;;;;;;;\r\n`;
@@ -1256,7 +1421,7 @@ export default function TransfersPage() {
 
         selectedItems.forEach(item => {
           const cleanPartner = item.partner_bank_account.replace(/[^0-9]/g, '');
-          const narrative = `Szamlak: ${item.invoice_numbers.join(', ')}`.slice(0, 140);
+          const narrative = getItemNarrative(item).slice(0, 140);
           const name = `Utalas - ${item.partner_name.slice(0, 20)}`;
           const comment = 'Visibill atutalas';
           
@@ -1274,7 +1439,7 @@ export default function TransfersPage() {
           const cleanSender = sender.account_number.replace(/[^0-9]/g, '');
           const cleanPartner = item.partner_bank_account.replace(/[^0-9]/g, '');
           const formattedDate = todayStr.replace(/-/g, ''); // YYYYMMDD
-          const narrative = `Szamlak: ${item.invoice_numbers.join(', ')}`;
+          const narrative = getItemNarrative(item);
 
           const refNum = (item.invoice_numbers[0] || `UT${idx}`).slice(0, 20).padEnd(20, ' ');
           const txCode = '410';
@@ -1307,7 +1472,7 @@ export default function TransfersPage() {
           const cleanSender = sender.account_number.replace(/[^0-9]/g, '');
           const cleanPartner = item.partner_bank_account.replace(/[^0-9]/g, '');
           const formattedDate = todayStr.replace(/-/g, ''); // YYYYMMDD format
-          const narrative = `Szamlak: ${item.invoice_numbers.join(', ')}`.slice(0, 140);
+          const narrative = getItemNarrative(item).slice(0, 140);
           fileContent += `${cleanSender};${cleanPartner};${item.partner_name};${item.amount.toFixed(0)};${item.currency};${formattedDate};${narrative}\r\n`;
         });
         filename += '.csv';
@@ -1329,20 +1494,28 @@ export default function TransfersPage() {
 
       // 7. Save transfers logs to Supabase (only if it's a real bank account, not the dummy test ID)
       if (activeSenderId !== 'dummy-test-id') {
-        const insertRows = selectedItems.map(item => ({
-          company_id: selectedCompany!.id,
-          bank_account_id: activeSenderId,
-          partner_name: item.partner_name,
-          partner_account: item.partner_bank_account,
-          amount: item.amount,
-          currency: item.currency,
-          narrative: `Szamlak: ${item.invoice_numbers.join(', ')}`,
-          invoice_ids: item.invoice_ids,
-          invoice_sources: item.invoice_sources,
-          status: 'pending'
-        }));
+        const insertRows = selectedItems.map(item => {
+          const isSkonto = item.original_invoices.some((inv: any) => isSkontoActive(inv));
+          return {
+            company_id: selectedCompany!.id,
+            bank_account_id: activeSenderId,
+            partner_name: item.partner_name,
+            partner_account: item.partner_bank_account,
+            amount: item.amount,
+            currency: item.currency,
+            narrative: getItemNarrative(item).slice(0, 140),
+            invoice_ids: item.invoice_ids,
+            invoice_sources: item.invoice_sources,
+            status: 'pending',
+            is_skonto: isSkonto,
+            original_gross_amount: item.gross_amount || item.amount,
+            skonto_saved_amount: item.skonto_saved_amount || 0,
+          };
+        });
 
         const { error: logErr } = await supabase
+          .from('payment_transfers')
+          .insert(insertRows);
           .from('payment_transfers')
           .insert(insertRows);
 
@@ -1393,7 +1566,7 @@ export default function TransfersPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className={cn("grid grid-cols-1 gap-6", stats.skontoCount > 0 ? "md:grid-cols-4" : "md:grid-cols-3")}>
         <Card className="border-border/60 bg-gradient-to-br from-card to-destructive/5 hover:shadow-md transition-all duration-300">
           <CardHeader className="pb-2">
             <CardDescription className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('transfers:stats.overdue', 'Lejárt fizetési határidejű')}</CardDescription>
@@ -1422,6 +1595,27 @@ export default function TransfersPage() {
           </CardContent>
         </Card>
 
+        {stats.skontoCount > 0 && (
+          <Card className="border-emerald-500/30 bg-gradient-to-br from-card to-emerald-500/10 hover:shadow-md transition-all duration-300">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardDescription className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                  Skontó megtakarítás
+                </CardDescription>
+                <Percent className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <CardTitle className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
+                +{stats.skontoPotentialSum.toLocaleString('hu-HU')} Ft
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm font-medium text-muted-foreground">
+                <span className="font-bold text-foreground">{stats.skontoCount} db</span> gyorsan utalható számlán
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         <Card className="border-primary/20 bg-primary/5 hover:shadow-md transition-all duration-300 relative overflow-hidden">
           {/* Glass effect */}
           <div className="absolute right-[-10px] bottom-[-10px] w-24 h-24 bg-primary/10 rounded-full blur-xl pointer-events-none" />
@@ -1432,9 +1626,16 @@ export default function TransfersPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex justify-between items-end">
-            <p className="text-sm font-medium text-muted-foreground">
-              Összesen: <span className="font-bold text-foreground">{stats.selectedSumHuf.toLocaleString('hu-HU')} Ft</span>
-            </p>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">
+                Összesen: <span className="font-bold text-foreground">{stats.selectedSumHuf.toLocaleString('hu-HU')} Ft</span>
+              </p>
+              {stats.selectedSkontoSavings > 0 && (
+                <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                  +{stats.selectedSkontoSavings.toLocaleString('hu-HU')} Ft megtakarítva
+                </p>
+              )}
+            </div>
             {selectedIds.length > 0 && (
               <Button size="sm" onClick={triggerFileExport} className="gap-1.5 shadow-md z-10">
                 {t('transfers:stats.download', 'Letöltés')}
@@ -1500,6 +1701,15 @@ export default function TransfersPage() {
                     >
                       {t('transfers:filters.future', 'Jövőbeli')}
                     </button>
+                    {stats.skontoCount > 0 && (
+                      <button
+                        onClick={() => setFilterTab('skonto')}
+                        className={`px-3 py-1.5 rounded-md font-medium transition-all flex items-center gap-1.5 ${filterTab === 'skonto' ? 'bg-emerald-600 text-white shadow' : 'text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 hover:bg-emerald-500/10'}`}
+                      >
+                        <Percent className="h-3.5 w-3.5" />
+                        <span>Skontós ({stats.skontoCount})</span>
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -1551,7 +1761,7 @@ export default function TransfersPage() {
                 </div>
               ) : (
                 <>
-                  <div className="rounded-lg border border-border/50 overflow-x-auto">
+                  <div className="rounded-lg border border-border/50">
                     <Table className="compact-table min-w-max">
                       <TableHeader>
                         <TableRow className="bg-muted/40 text-muted-foreground font-medium text-xs select-none hover:bg-muted/40">
@@ -1566,7 +1776,7 @@ export default function TransfersPage() {
                           <TableHead className="w-32 whitespace-nowrap">{t('transfers:table.due_date', 'Határidő')}</TableHead>
                           <TableHead className="w-40 text-right whitespace-nowrap">{t('transfers:table.amount', 'Összeg')}</TableHead>
                           <TableHead className="w-72">{t('transfers:table.partner_bank_account', 'Partner Bankszámlaszáma')}</TableHead>
-                          <TableHead className="w-28 text-center whitespace-nowrap">{t('transfers:history.actions', 'Művelet')}</TableHead>
+                          <TableHead className="w-28 text-center whitespace-nowrap sticky right-0 bg-muted/95 backdrop-blur-xs z-10 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">{t('transfers:history.actions', 'Művelet')}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1580,15 +1790,15 @@ export default function TransfersPage() {
                               key={item.key}
                               className={isSelected ? 'bg-primary/10 hover:bg-primary/15' : ''}
                             >
-                              <TableCell className="text-center">
+                              <TableCell className="text-center !align-top pt-3.5">
                                 <Checkbox
                                   checked={isSelected}
                                   onCheckedChange={() => handleSelectRow(item.key)}
                                 />
                               </TableCell>
-                              <TableCell>
+                              <TableCell className="!align-top pt-3">
                                 <div className="flex items-center gap-2">
-                                  <User className="h-4 w-4 text-muted-foreground/80" />
+                                  <User className="h-4 w-4 text-muted-foreground/80 shrink-0" />
                                   <CopyableCell
                                     value={item.partner_name}
                                     displayValue={item.partner_name.length > 13 ? item.partner_name.slice(0, 13) + '…' : item.partner_name}
@@ -1598,11 +1808,11 @@ export default function TransfersPage() {
                                     ariaLabel={`${item.partner_name} másolása`}
                                   />
                                 </div>
-                                <div className="text-[10px] text-muted-foreground font-mono mt-1 max-w-[200px] truncate" title={`Szamlak: ${item.invoice_numbers.join(', ')}`}>
-                                  {t('transfers:table.narrative_prefix', 'Közlemény: Szamlak:')} {item.invoice_numbers.join(', ').slice(0, 140)}
-                                </div>
+                                <div className="text-[10px] text-muted-foreground font-mono mt-1 max-w-[200px] truncate" title={getItemNarrative(item)}>
+                                   {t('transfers:table.narrative_prefix', 'Közlemény:')} {getItemNarrative(item).slice(0, 140)}
+                                 </div>
                               </TableCell>
-                              <TableCell className="min-w-[220px] whitespace-nowrap">
+                              <TableCell className="min-w-[220px] whitespace-nowrap !align-top pt-3">
                                 <TooltipProvider>
                                   <div className="flex flex-wrap gap-1.5 max-w-sm">
                                     {item.original_invoices.map((inv, i) => (
@@ -1671,16 +1881,120 @@ export default function TransfersPage() {
                                   </div>
                                 </TooltipProvider>
                               </TableCell>
-                              <TableCell className="whitespace-nowrap">
-                                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-semibold ${isOverdue ? 'bg-destructive/10 text-destructive' : 'bg-amber-500/10 text-amber-700'}`}>
-                                  <Calendar className="h-3.5 w-3.5" />
-                                  {new Date(item.due_date).toLocaleDateString(localeCode)}
-                                </span>
-                              </TableCell>
-                              <TableCell className="font-mono tabular-nums text-right whitespace-nowrap font-bold text-foreground">
-                                {formatCurrency(item.amount, item.currency)}
-                              </TableCell>
-                              <TableCell>
+                              <TableCell className="whitespace-nowrap !align-top pt-3.5">
+                                 {item.has_skonto && item.original_invoices.length === 1 && isSkontoActive(item.original_invoices[0]) ? (
+                                   <div className="flex flex-col gap-0.5">
+                                     <span className={cn(
+                                       "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-semibold",
+                                       item.original_invoices[0].is_skonto_expired
+                                         ? "bg-destructive/10 text-destructive border border-destructive/20"
+                                         : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
+                                     )}>
+                                       <Calendar className="h-3.5 w-3.5" />
+                                       {new Date(item.due_date).toLocaleDateString(localeCode)}
+                                     </span>
+                                     <span className="text-[10px] text-muted-foreground font-medium pl-0.5">
+                                       Normál: {new Date(item.standard_due_date || item.due_date).toLocaleDateString(localeCode)}
+                                     </span>
+                                   </div>
+                                 ) : (
+                                   <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-semibold ${isOverdue ? 'bg-destructive/10 text-destructive' : 'bg-amber-500/10 text-amber-700'}`}>
+                                     <Calendar className="h-3.5 w-3.5" />
+                                     {new Date(item.due_date).toLocaleDateString(localeCode)}
+                                   </span>
+                                 )}
+                               </TableCell>
+                               <TableCell className="text-right whitespace-nowrap !align-top pt-2.5">
+                                 {!item.has_skonto ? (
+                                   <div className="font-mono tabular-nums font-bold text-foreground pt-1">
+                                     {formatCurrency(item.amount, item.currency)}
+                                   </div>
+                                 ) : item.original_invoices.length === 1 ? (
+                                   (() => {
+                                     const inv = item.original_invoices[0];
+                                     const active = isSkontoActive(inv);
+                                     const isExpired = inv.is_skonto_expired;
+                                     const daysLeft = inv.days_remaining ?? 0;
+                                     const percent = inv.skonto_percent ?? 2;
+                                     const savedFt = inv.skonto_saved_amount ?? (inv.amount - (inv.skonto_amount || inv.amount));
+
+                                     return (
+                                       <div className="flex flex-col items-end gap-1">
+                                         <div className="inline-flex p-0.5 rounded-lg bg-muted/70 border border-border/70 shadow-xs">
+                                           <button
+                                             type="button"
+                                             onClick={(e) => {
+                                               e.stopPropagation();
+                                               handleToggleSkonto(item.key, inv.id, inv.source, true);
+                                             }}
+                                             title={isExpired ? 'A skontó határidő lejárt, de kézzel még kiválasztható' : `Skontó kedvezmény: -${percent}% (-${savedFt.toLocaleString('hu-HU')} Ft)`}
+                                             className={cn(
+                                               "px-2.5 py-1 rounded-md text-xs font-mono font-bold transition-all flex items-center gap-1 cursor-pointer",
+                                               active
+                                                 ? "bg-emerald-600 text-white shadow-sm"
+                                                 : "text-muted-foreground hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-500/10"
+                                             )}
+                                           >
+                                             <Percent className="h-3 w-3 shrink-0" />
+                                             <span>{formatCurrency(inv.skonto_amount || inv.amount, inv.currency)}</span>
+                                           </button>
+
+                                           <button
+                                             type="button"
+                                             onClick={(e) => {
+                                               e.stopPropagation();
+                                               handleToggleSkonto(item.key, inv.id, inv.source, false);
+                                             }}
+                                             title="Normál bruttó összeg fizetése kedvezmény nélkül"
+                                             className={cn(
+                                               "px-2.5 py-1 rounded-md text-xs font-mono transition-all cursor-pointer",
+                                               !active
+                                                 ? "bg-background text-foreground shadow-xs font-bold"
+                                                 : "text-muted-foreground hover:text-foreground hover:bg-background/50 font-medium"
+                                             )}
+                                           >
+                                             <span>{formatCurrency(inv.amount, inv.currency)}</span>
+                                           </button>
+                                         </div>
+
+                                         <div className="flex items-center gap-1.5 text-[10.5px]">
+                                           {active ? (
+                                             <>
+                                               <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                                                 -{percent}% (-{savedFt.toLocaleString('hu-HU')} Ft)
+                                               </span>
+                                               <span className="text-muted-foreground">•</span>
+                                               {isExpired ? (
+                                                 <span className="text-destructive font-semibold">Lejárt</span>
+                                               ) : daysLeft === 0 ? (
+                                                 <span className="text-amber-600 font-bold animate-pulse">Ma lejár!</span>
+                                               ) : (
+                                                 <span className="text-emerald-600 dark:text-emerald-400 font-medium">Még {daysLeft} nap</span>
+                                               )}
+                                             </>
+                                           ) : (
+                                             <span className="text-muted-foreground font-medium">
+                                               Teljes bruttó összeg
+                                             </span>
+                                           )}
+                                         </div>
+                                       </div>
+                                     );
+                                   })()
+                                 ) : (
+                                   <div className="flex flex-col items-end gap-1">
+                                     <div className="font-mono tabular-nums font-bold text-foreground pt-1">
+                                       {formatCurrency(item.amount, item.currency)}
+                                     </div>
+                                     {item.skonto_saved_amount > 0 && (
+                                       <span className="text-[10.5px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                         Skontó megtakarítás: -{item.skonto_saved_amount.toLocaleString('hu-HU')} Ft
+                                       </span>
+                                     )}
+                                   </div>
+                                 )}
+                               </TableCell>
+                              <TableCell className="!align-top pt-2.5">
                                 <div className="flex flex-col gap-1 w-full max-w-[240px]">
                                   <div className="relative flex items-center">
                                     <Input
@@ -1705,31 +2019,33 @@ export default function TransfersPage() {
                                   })()}
                                 </div>
                               </TableCell>
-                              <TableCell className="text-center whitespace-nowrap">
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-8 px-2.5 text-xs gap-1.5 border-emerald-600/30 hover:border-emerald-600 hover:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-medium transition-all"
-                                        onClick={() => {
-                                          setSettleItem(item);
-                                          setSettlePaymentType('cash');
-                                          setSettlePaymentDate(new Date().toISOString().split('T')[0]);
-                                          setSettleNote('');
-                                          setSettleDialogOpen(true);
-                                        }}
-                                      >
-                                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                                        {t('transfers:table.manual_settle', 'Kézi rendezés')}
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="left" className="text-xs">
-                                      {t('transfers:table.manual_settle_tooltip', 'Készpénz / Magánszámla / Pénztári kifizetés rögzítése')}
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
+                              <TableCell className="text-center whitespace-nowrap !align-top pt-2.5 sticky right-0 bg-background/95 backdrop-blur-xs z-10 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">
+                                <div className="flex items-start justify-center pt-0.5">
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="h-8 px-2.5 text-xs gap-1.5 border-emerald-600/30 hover:border-emerald-600 hover:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-medium transition-all"
+                                          onClick={() => {
+                                            setSettleItem(item);
+                                            setSettlePaymentType('cash');
+                                            setSettlePaymentDate(new Date().toISOString().split('T')[0]);
+                                            setSettleNote('');
+                                            setSettleDialogOpen(true);
+                                          }}
+                                        >
+                                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                                          {t('transfers:table.manual_settle', 'Kézi rendezés')}
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="left" className="text-xs">
+                                        {t('transfers:table.manual_settle_tooltip', 'Készpénz / Magánszámla / Pénztári kifizetés rögzítése')}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </div>
                               </TableCell>
                             </TableRow>
                           );

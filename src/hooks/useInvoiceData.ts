@@ -62,6 +62,13 @@ export interface NavInvoice {
   match_status?: string;
   paid_amount?: number | null;
   remaining_amount?: number | null;
+  has_skonto?: boolean | null;
+  skonto_days?: number | null;
+  skonto_percent?: number | null;
+  skonto_due_date?: string | null;
+  skonto_amount?: number | null;
+  skonto_shipping_amount?: number | null;
+  skonto_selected?: boolean | null;
 }
 
 export interface SubmittedInvoice {
@@ -95,6 +102,13 @@ export interface SubmittedInvoice {
   nav_status?: 'verified' | 'missing_nav' | 'not_applicable';
   approval_note?: string | null;
   approved_at?: string | null;
+  has_skonto?: boolean | null;
+  skonto_days?: number | null;
+  skonto_percent?: number | null;
+  skonto_due_date?: string | null;
+  skonto_amount?: number | null;
+  skonto_shipping_amount?: number | null;
+  skonto_selected?: boolean | null;
 }
 
 export interface Partner {

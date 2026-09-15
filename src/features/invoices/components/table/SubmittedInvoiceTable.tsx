@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
@@ -6,6 +6,7 @@ import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { TableSkeleton } from '@/components/ui/table-skeleton';
 import { TableEmptyState } from '@/components/ui/table-empty-state';
 import { TablePlaceholderRows } from '@/components/ui/table-placeholder-rows';
+import { StickyHorizontalScrollbar } from '@/components/ui/sticky-horizontal-scrollbar';
 import { ArrowUpDown, ChevronsUpDown, ChevronsDownUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { SubmittedInvoiceRow } from './SubmittedInvoiceRow';
@@ -28,6 +29,7 @@ export function SubmittedInvoiceTable({
   const { t } = useTranslation(['invoices', 'common']);
   const {
     activeTab,
+    activeSelection,
     loading,
     tabFetching,
     paginatedSubmittedInvoices,
@@ -44,6 +46,14 @@ export function SubmittedInvoiceTable({
     expandAllRows,
     collapseAllRows,
   } = useInvoiceContext();
+
+  const [tableContainerEl, setTableContainerEl] = React.useState<HTMLDivElement | null>(null);
+  const tableContainerRef = useRef<HTMLDivElement | null>(null);
+
+  const setTableRef = React.useCallback((node: HTMLDivElement | null) => {
+    tableContainerRef.current = node;
+    setTableContainerEl(node);
+  }, []);
 
   return (
     <>
@@ -83,8 +93,11 @@ export function SubmittedInvoiceTable({
       {/* Submitted Invoice Table */}
       <ContextMenu>
         <ContextMenuTrigger asChild>
-          <div className="rounded-lg border border-border/50 overflow-x-auto">
-            <Table className="compact-table w-full tight-table">
+          <div
+            ref={setTableRef}
+            className="rounded-lg border border-border/50 overflow-hidden"
+          >
+            <Table className="compact-table w-full tight-table" hideScrollbar>
               <TableHeader>
                 <TableRow className="bg-muted/30 hover:bg-muted/30">
                   <TableHead className="w-[40px] pl-2">
@@ -229,6 +242,14 @@ export function SubmittedInvoiceTable({
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
+
+      {/* Sticky horizontal scrollbar for wide zoom/resolutions */}
+      <StickyHorizontalScrollbar
+        target={tableContainerEl}
+        targetRef={tableContainerRef}
+        dependencies={[paginatedSubmittedInvoices.length, loading, tabFetching]}
+        bottomOffset={activeSelection.size > 0 ? 76 : 0}
+      />
 
       <UnifiedPagination
         currentPage={submittedCurrentPage}
