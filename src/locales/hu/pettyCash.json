@@ -4,7 +4,8 @@
   "tabs": {
     "entries": "Tételek",
     "registers": "Pénztárak",
-    "rules": "Routing szabályok"
+    "rules": "Routing szabályok",
+    "approvals": "Jóváhagyások"
   },
   "total_summary": "Összesítés",
   "default_badge": "Alapértelmezett",

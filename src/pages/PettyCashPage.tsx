@@ -15,6 +15,7 @@ import type { SummaryRow } from '@/components/petty-cash/types';
 import RegistersTab from '@/components/petty-cash/RegistersTab';
 import EntriesTab from '@/components/petty-cash/EntriesTab';
 import RoutingRulesTab from '@/components/petty-cash/RoutingRulesTab';
+import ApprovalTab from '@/components/petty-cash/ApprovalTab';
 import DenominationCalculatorDialog from '@/components/petty-cash/DenominationCalculatorDialog';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -54,6 +55,22 @@ const PettyCashPage = () => {
     setCalcRegister({ id: regId, name: regName, balance, currency });
     setCalcOpen(true);
   };
+
+  // Count of pending approval invoices for badge
+  const { data: pendingCount = 0 } = useQuery({
+    queryKey: ['pettyCashPendingCount', companyId],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('invoices')
+        .select('*', { count: 'exact', head: true })
+        .eq('company_id', companyId)
+        .eq('statusz', 'jovahagyasra_var')
+        .in('invoice_type', ['penztarbizonylat', 'egyszerusitett_szla', 'penztargep_zaras']);
+      if (error) return 0;
+      return count || 0;
+    },
+    enabled: !!companyId,
+  });
 
   // P3: Summary computed from DB RPC get_petty_cash_summary
   // P3: Added staleTime: 30s to avoid unnecessary re-fetches (mutations invalidate)
@@ -271,6 +288,14 @@ const PettyCashPage = () => {
             <TabsTrigger value="entries" className="gap-1.5">
               <Banknote className="w-4 h-4" /> {t('pettyCash:tabs.entries', 'Tételek')}
             </TabsTrigger>
+            <TabsTrigger value="approvals" className="gap-1.5">
+              <ClipboardCheck className="w-4 h-4" /> {t('pettyCash:tabs.approvals', 'Jóváhagyások')}
+              {pendingCount > 0 && (
+                <Badge variant="secondary" className="ml-1 px-1.5 py-0 h-4 text-[10px] bg-amber-500/15 text-amber-500 border border-amber-500/30 font-semibold">
+                  {pendingCount}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="registers" className="gap-1.5">
               <Settings2 className="w-4 h-4" /> {t('pettyCash:tabs.registers', 'Pénztárak')}
             </TabsTrigger>
@@ -281,6 +306,9 @@ const PettyCashPage = () => {
 
           <TabsContent value="entries" className="mt-4">
             <EntriesTab />
+          </TabsContent>
+          <TabsContent value="approvals" className="mt-4">
+            <ApprovalTab />
           </TabsContent>
           <TabsContent value="registers" className="mt-4">
             <RegistersTab />

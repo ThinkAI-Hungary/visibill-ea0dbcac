@@ -186,7 +186,7 @@ export default function EntriesTab() {
         .select('*')
         .eq('company_id', companyId)
         .eq('statusz', 'jovahagyasra_var')
-        .in('invoice_type', ['penztarbizonylat', 'egyszerusitett_szla'])
+        .in('invoice_type', ['penztarbizonylat', 'egyszerusitett_szla', 'penztargep_zaras'])
         .order('kibocsatas_datuma', { ascending: false })
         .order('letrehozva', { ascending: false });
 
@@ -207,6 +207,13 @@ export default function EntriesTab() {
         .update({ statusz: 'feldolgozott' })
         .eq('id', id);
       if (error) throw error;
+      if (companyId) {
+        try {
+          await (supabase.rpc as any)('sync_petty_cash_entries', { p_company_id: companyId });
+        } catch {
+          // Non-critical: sync runs on next tab view as well
+        }
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['pettyCashPendingInvoices', companyId] });
@@ -376,12 +383,14 @@ export default function EntriesTab() {
       company_id: companyId,
       register_id: registers.find(r => r.is_default)?.id || registers[0]?.id || '',
       entry_date: inv.kibocsatas_datuma,
-      description: inv.invoice_direction === 'OUTBOUND' 
-        ? t('pettyCash:entries.auto_desc_outbound', { partner: inv.vevo_nev || t('pettyCash:entries.unknown_partner', { defaultValue: 'Ismeretlen' }), defaultValue: `Pénztári bevétel - ${inv.vevo_nev || 'Ismeretlen'}` })
-        : t('pettyCash:entries.auto_desc_inbound', { partner: inv.elado_nev || t('pettyCash:entries.unknown_partner', { defaultValue: 'Ismeretlen' }), defaultValue: `Pénztári kiadás - ${inv.elado_nev || 'Ismeretlen'}` }),
+      description: inv.invoice_type === 'penztargep_zaras'
+        ? `Pénztárgép napi zárás (${inv.bizonylatsorszam || 'Zárás'})`
+        : inv.invoice_direction === 'OUTBOUND' 
+          ? t('pettyCash:entries.auto_desc_outbound', { partner: inv.vevo_nev || t('pettyCash:entries.unknown_partner', { defaultValue: 'Ismeretlen' }), defaultValue: `Pénztári bevétel - ${inv.vevo_nev || 'Ismeretlen'}` })
+          : t('pettyCash:entries.auto_desc_inbound', { partner: inv.elado_nev || t('pettyCash:entries.unknown_partner', { defaultValue: 'Ismeretlen' }), defaultValue: `Pénztári kiadás - ${inv.elado_nev || 'Ismeretlen'}` }),
       amount: inv.invoice_direction === 'OUTBOUND' ? inv.brutto_vegosszeg : -inv.brutto_vegosszeg,
       currency: inv.penznem || 'HUF',
-      source_type: inv.invoice_direction === 'OUTBOUND' ? 'cash_sale' : 'cash_expense',
+      source_type: inv.invoice_type === 'penztargep_zaras' ? 'cash_sale' : (inv.invoice_direction === 'OUTBOUND' ? 'cash_sale' : 'cash_expense'),
       source_id: inv.id,
       source_table: 'invoices',
       created_at: inv.letrehozva,
@@ -437,8 +446,9 @@ export default function EntriesTab() {
         const desc = (e.description || '').toLowerCase();
         const amt = Math.abs(e.amount).toString();
         const receiptNo = (receiptNumbers[e.id] || '').toLowerCase();
+        const invNumber = ((e as any).raw_invoice?.bizonylatsorszam || '').toLowerCase();
         
-        return desc.includes(term) || amt.includes(term) || receiptNo.includes(term);
+        return desc.includes(term) || amt.includes(term) || receiptNo.includes(term) || invNumber.includes(term);
       });
     }
 
@@ -691,7 +701,9 @@ export default function EntriesTab() {
                         <span className={cn('px-2 py-0.5 rounded text-[10px] font-medium', 
                           isPending ? 'bg-amber-500/10 text-amber-500' : (SOURCE_COLORS[entry.source_type] || 'bg-muted text-muted-foreground')
                         )}>
-                          {isPending ? t('pettyCash:entries.badges.cash_receipt', 'Pénztárbizonylat') : t(`pettyCash:entries.source_types.${entry.source_type}`, { defaultValue: DISPLAY_SOURCE_LABELS[entry.source_type] || entry.source_type })}
+                          {isPending 
+                            ? ((entry as any).raw_invoice?.invoice_type === 'penztargep_zaras' ? 'Pénztárgép zárás' : t('pettyCash:entries.badges.cash_receipt', 'Pénztárbizonylat'))
+                            : t(`pettyCash:entries.source_types.${entry.source_type}`, { defaultValue: DISPLAY_SOURCE_LABELS[entry.source_type] || entry.source_type })}
                         </span>
                       </TableCell>
                       <TableCell className="max-w-[250px] truncate text-sm">

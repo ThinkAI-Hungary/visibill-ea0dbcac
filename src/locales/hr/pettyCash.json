@@ -4,7 +4,8 @@
   "tabs": {
     "entries": "Stavke",
     "registers": "Blagajne",
-    "rules": "Pravila usmjeravanja"
+    "rules": "Pravila usmjeravanja",
+    "approvals": "Odobrenja"
   },
   "total_summary": "Ukupno",
   "default_badge": "Zadano",
