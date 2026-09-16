@@ -275,6 +275,28 @@ export function SubmittedInvoiceRow({
                 {t('invoices:expanded.not_booked', 'Nem könyvelt')}
               </span>
             )}
+            {((invoice as any).is_cross_year || (
+              invoice.teljesites_datuma && invoice.kibocsatas_datuma &&
+              new Date(invoice.teljesites_datuma).getFullYear() < new Date(invoice.kibocsatas_datuma).getFullYear()
+            )) && (
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-300/40 whitespace-nowrap cursor-help">
+                      ⏳ Áthúzódó
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="max-w-[280px]">
+                    <div className="text-xs space-y-1">
+                      <p className="font-semibold">{t('invoices:expanded.cross_year_title', 'Áthúzódó gazdasági teljesítés')}</p>
+                      <p className="text-muted-foreground">
+                        {t('invoices:expanded.cross_year_desc', 'A számla gazdasági teljesítése korábbi üzleti évre esik, mint a bizonylatkelt. A folyó évi eredményt és ÁFA-t közvetlenül nem terheli.')}
+                      </p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
         </TableCell>
 

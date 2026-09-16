@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +12,7 @@ import { useInvoiceContext } from '../../context/useInvoiceContext';
 import type { TransactionRecord } from '../../types';
 
 export function InvoiceTableContainer() {
+  const queryClient = useQueryClient();
   const {
     activeTab,
     isSubmittedTab,
@@ -223,17 +224,40 @@ export function InvoiceTableContainer() {
   // 5. Handle Toggle Exclude from accounting
   const handleToggleExclude = useCallback(
     async (invoiceId: string, currentValue: boolean) => {
-      const table = isSubmittedTab ? 'invoices' : 'nav_invoices';
       const newValue = !currentValue;
-      const { error } = await supabase
-        .from(table)
-        .update({ exclude_from_accounting: newValue })
-        .eq('id', invoiceId);
-      if (!error) {
-        invalidateInvoiceData();
+      if (companyId) {
+        const { error } = await supabase.rpc('toggle_invoice_exclude_from_accounting', {
+          p_company_id: companyId,
+          p_invoice_id: invoiceId,
+          p_is_submitted: isSubmittedTab,
+          p_exclude: newValue,
+        });
+
+        if (error) {
+          console.error('Error in toggle_invoice_exclude_from_accounting RPC:', error);
+          // Fallback to table update if RPC returns error
+          const table = isSubmittedTab ? 'invoices' : 'nav_invoices';
+          await supabase
+            .from(table)
+            .update({ exclude_from_accounting: newValue })
+            .eq('id', invoiceId);
+        }
+      } else {
+        const table = isSubmittedTab ? 'invoices' : 'nav_invoices';
+        await supabase
+          .from(table)
+          .update({ exclude_from_accounting: newValue })
+          .eq('id', invoiceId);
       }
+
+      invalidateInvoiceData();
+      queryClient.invalidateQueries({ queryKey: ['gl_balances'] });
+      queryClient.invalidateQueries({ queryKey: ['gl_categorized_items'] });
+      queryClient.invalidateQueries({ queryKey: ['gl_account_card'] });
+      queryClient.invalidateQueries({ queryKey: ['partner_ledger_card'] });
+      queryClient.invalidateQueries({ queryKey: ['acc_journal_headers'] });
     },
-    [isSubmittedTab, invalidateInvoiceData]
+    [companyId, isSubmittedTab, invalidateInvoiceData, queryClient]
   );
 
   return (
