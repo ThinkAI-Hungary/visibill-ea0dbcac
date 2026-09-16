@@ -25,7 +25,7 @@ export function getDateFnsLocale() {
 export function formatCurrencyLocale(
   amount: number,
   currency?: string,
-  compact?: boolean
+  compactOrOptions?: boolean | Intl.NumberFormatOptions
 ): string {
   const currentLang = getActiveLocale();
   const isHr = currentLang === 'hr';
@@ -34,7 +34,10 @@ export function formatCurrencyLocale(
   const targetCurrency = currency || (isHr ? 'EUR' : 'HUF');
   const isHUF = targetCurrency.toUpperCase() === 'HUF';
 
-  if (compact && Math.abs(amount) >= 1000000) {
+  const isCompact = typeof compactOrOptions === 'boolean' ? compactOrOptions : false;
+  const options = typeof compactOrOptions === 'object' ? compactOrOptions : {};
+
+  if (isCompact && Math.abs(amount) >= 1000000) {
     const val = (amount / 1000000).toFixed(2).replace('.', ',');
     return isHr ? `${val} M €` : `${val} M Ft`;
   }
@@ -45,6 +48,7 @@ export function formatCurrencyLocale(
     currency: targetCurrency,
     minimumFractionDigits: isHUF ? 0 : 2,
     maximumFractionDigits: isHUF ? 0 : 2,
+    ...options,
   }).format(amount);
 }
 

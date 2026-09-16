@@ -51,7 +51,8 @@ export default function AppModeSwitcher({ activeMode, isCollapsed = false, showT
 
   // Extract currently active company ID in eaisybooks from URL or fallback to storage
   const activeBooksCompanyId = useMemo(() => {
-    const parts = location.pathname.split('/').filter(Boolean);
+    const clean = location.pathname.startsWith('/hr') ? location.pathname.replace(/^\/hr/, '') : location.pathname;
+    const parts = clean.split('/').filter(Boolean);
     if (parts.length >= 2 && (parts[0] === 'eaisybooks' || parts[0] === 'accounty')) {
       const uuidRegex = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
       if (uuidRegex.test(parts[1])) {
@@ -65,43 +66,46 @@ export default function AppModeSwitcher({ activeMode, isCollapsed = false, showT
     }
   }, [location.pathname]);
 
+  const isHr = location.pathname.startsWith('/hr');
+  const prefix = isHr ? '/hr' : '';
+
   // Direct target for eaisyBooks: prioritize active company if enabled, then last viewed or first eligible company
   const booksTarget = useMemo(() => {
     if (selectedCompany && eaisybooksCompanyIds?.includes(selectedCompany.id)) {
-      return `/eaisybooks/${selectedCompany.id}/${currentDateRange}/overview`;
+      return `${prefix}/eaisybooks/${selectedCompany.id}/${currentDateRange}/overview`;
     }
     try {
       const lastBooksCompanyId = localStorage.getItem('eaisybooks_selected_company_id');
       if (lastBooksCompanyId && eaisybooksCompanyIds?.includes(lastBooksCompanyId)) {
-        return `/eaisybooks/${lastBooksCompanyId}/${currentDateRange}/overview`;
+        return `${prefix}/eaisybooks/${lastBooksCompanyId}/${currentDateRange}/overview`;
       }
       const firstEligible = companies?.find(c => eaisybooksCompanyIds?.includes(c.id));
       if (firstEligible) {
-        return `/eaisybooks/${firstEligible.id}/${currentDateRange}/overview`;
+        return `${prefix}/eaisybooks/${firstEligible.id}/${currentDateRange}/overview`;
       }
     } catch { /* ignore */ }
-    return '/eaisybooks';
-  }, [selectedCompany, eaisybooksCompanyIds, companies, currentDateRange]);
+    return `${prefix}/eaisybooks`;
+  }, [selectedCompany, eaisybooksCompanyIds, companies, currentDateRange, prefix]);
 
   // Direct target for eaisyBill: prioritize currently viewed company in books, then active company, then last viewed eaisybill company
   const billTarget = useMemo(() => {
     if (activeBooksCompanyId && companies?.some(c => c.id === activeBooksCompanyId)) {
-      return `/${activeBooksCompanyId}/${currentDateRange}/`;
+      return `${prefix}/${activeBooksCompanyId}/${currentDateRange}/`;
     }
     if (selectedCompany) {
-      return `/${selectedCompany.id}/${currentDateRange}/`;
+      return `${prefix}/${selectedCompany.id}/${currentDateRange}/`;
     }
     try {
       const lastBillCompanyId = localStorage.getItem('eaisybill_selected_company_id');
       if (lastBillCompanyId && companies?.some(c => c.id === lastBillCompanyId)) {
-        return `/${lastBillCompanyId}/${currentDateRange}/`;
+        return `${prefix}/${lastBillCompanyId}/${currentDateRange}/`;
       }
       if (companies && companies.length > 0) {
-        return `/${companies[0].id}/${currentDateRange}/`;
+        return `${prefix}/${companies[0].id}/${currentDateRange}/`;
       }
     } catch { /* ignore */ }
-    return '/';
-  }, [activeBooksCompanyId, selectedCompany, companies, currentDateRange]);
+    return `${prefix}/`;
+  }, [activeBooksCompanyId, selectedCompany, companies, currentDateRange, prefix]);
 
   const handleSwitchToBooks = () => {
     try {

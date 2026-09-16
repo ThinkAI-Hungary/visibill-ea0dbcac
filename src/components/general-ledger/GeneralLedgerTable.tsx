@@ -1543,6 +1543,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                 </div>
               </div>
             </div>
+          )}
           <div className="flex-1 overflow-auto print:overflow-visible w-full relative">
             <div className={cn("w-full flex flex-col min-h-full pb-2 print:pb-0", viewLayout === 'classic' && "min-w-[840px]")}>
               

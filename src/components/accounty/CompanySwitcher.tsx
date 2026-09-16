@@ -86,12 +86,14 @@ export function CompanySwitcher() {
 
   // Navigate to the selected company, maintaining the current sub-route pattern
   function handleSelect(client: AccountyClient) {
+    const isHr = location.pathname.startsWith('/hr');
+    const prefix = isHr ? '/hr' : '';
     const uuidRegex = /[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i;
     if (uuidRegex.test(location.pathname)) {
       const newPath = location.pathname.replace(uuidRegex, client.id);
       navigate(newPath);
     } else {
-      navigate(`/eaisybooks/client/${client.id}`);
+      navigate(`${prefix}/eaisybooks/client/${client.id}`);
     }
     setOpen(false);
     setSearchQuery('');
@@ -133,7 +135,8 @@ export function CompanySwitcher() {
             type="button"
             style={{ outline: 'none' }}
             onClick={() => {
-              navigate('/eaisybooks');
+              const isHr = location.pathname.startsWith('/hr');
+              navigate(isHr ? '/hr/eaisybooks' : '/eaisybooks');
               setOpen(false);
               setSearchQuery('');
             }}
@@ -221,7 +224,11 @@ export function CompanySwitcher() {
           <button
             type="button"
             style={{ outline: 'none' }}
-            onClick={() => { navigate('/eaisybooks'); setOpen(false); }}
+            onClick={() => {
+              const isHr = location.pathname.startsWith('/hr');
+              navigate(isHr ? '/hr/eaisybooks' : '/eaisybooks');
+              setOpen(false);
+            }}
             className="w-full text-center text-xs font-medium text-primary hover:text-primary/80 transition-colors py-1 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 [outline:none!important] [box-shadow:none!important]"
           >
             ← Vissza a portfólióhoz

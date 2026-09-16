@@ -17,12 +17,15 @@ export function generateScopedPath(
   dateFrom: string,
   dateTo: string,
   page: string = '',
-  isHr: boolean = false,
+  isHr?: boolean,
 ): string {
+  const resolvedHr = isHr !== undefined
+    ? isHr
+    : (typeof window !== 'undefined' && window.location?.pathname?.startsWith('/hr'));
   const dateRange = `${dateFrom}_${dateTo}`;
   const cleanPage = page.startsWith('/') ? page.slice(1) : page;
   const suffix = cleanPage ? `/${cleanPage}` : '';
-  const prefix = isHr ? '/hr' : '';
+  const prefix = resolvedHr ? '/hr' : '';
   return `${prefix}/${companyId}/${dateRange}${suffix}`;
 }
 

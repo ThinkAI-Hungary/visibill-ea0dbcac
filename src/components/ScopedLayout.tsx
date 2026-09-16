@@ -79,7 +79,8 @@ export function ScopedLayout() {
       } else {
         // No companies at all (last one was deleted) → redirect to onboarding
         syncingFromUrl.current = false;
-        navigate('/', { replace: true });
+        const isHr = location.pathname.startsWith('/hr');
+        navigate(isHr ? '/hr' : '/', { replace: true });
         return;
       }
     } else {
@@ -114,8 +115,10 @@ export function ScopedLayout() {
     if (accessDeniedRef.current) return; // Don't redirect away from access-denied screen
     if (!selectedCompany) return;
 
+    const isHr = location.pathname.startsWith('/hr');
+    const prefix = isHr ? '/hr' : '';
     const currentDateRange = `${dateFromFormatted}_${dateToFormatted}`;
-    const expectedPrefix = `/${selectedCompany.id}/${currentDateRange}`;
+    const expectedPrefix = `${prefix}/${selectedCompany.id}/${currentDateRange}`;
 
     // Only update if the URL doesn't already match
     if (!location.pathname.startsWith(expectedPrefix)) {
@@ -126,10 +129,11 @@ export function ScopedLayout() {
           dateFromFormatted,
           dateToFormatted,
           page === '/' ? '' : page.slice(1),
+          isHr,
         ) + location.search + location.hash;
       navigate(newPath, { replace: true });
     }
-  }, [selectedCompany?.id, dateFromFormatted, dateToFormatted]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedCompany?.id, dateFromFormatted, dateToFormatted, location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Access Denied Screen ──
   if (accessDenied) {
@@ -183,12 +187,14 @@ export function ScopedLayout() {
   const pageModule = URL_TO_MODULE[pageSegment];
   const readyToGuard = !isSyncing && !!selectedCompany && !permissionsLoading;
   if (readyToGuard && pageModule && !canAccess(pageModule) && pageSegment !== '/') {
+    const isHr = location.pathname.startsWith('/hr');
     const fallbackPage = isEmployee ? 'working-time' : '';
     const redirectPath = generateScopedPath(
       selectedCompany?.id || urlCompanyId || '',
       dateFromFormatted,
       dateToFormatted,
       fallbackPage,
+      isHr,
     );
     return <Navigate to={redirectPath} replace />;
   }

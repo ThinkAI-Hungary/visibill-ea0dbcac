@@ -78,6 +78,7 @@ const CompanySelector = () => {
     const company = companies.find(c => c.id === companyId);
     if (!company || company.id === selectedCompany?.id) return;
 
+    const isHr = location.pathname.startsWith('/hr');
     const page = extractPageSegment(location.pathname);
     const newPath =
       generateScopedPath(
@@ -85,6 +86,7 @@ const CompanySelector = () => {
         dateFromFormatted,
         dateToFormatted,
         page === '/' ? '' : page.slice(1),
+        isHr,
       ) + location.search + location.hash;
 
     setSelectedCompany(company);
@@ -263,20 +265,23 @@ const CompanySelector = () => {
         // Switch to another company
         if (selectedCompany?.id === deletingCompany.id) {
           setSelectedCompany(remainingCompanies[0]);
+          const isHr = location.pathname.startsWith('/hr');
           const page = extractPageSegment(location.pathname);
           const newPath = generateScopedPath(
             remainingCompanies[0].id,
             dateFromFormatted,
             dateToFormatted,
             page === '/' ? '' : page.slice(1),
+            isHr,
           );
           navigate(newPath, { replace: true });
         }
       } else {
         // No companies left — clear selection and go to root (onboarding)
+        const isHr = location.pathname.startsWith('/hr');
         setSelectedCompany(null);
         localStorage.removeItem('visibill_selected_company_id');
-        navigate('/', { replace: true });
+        navigate(isHr ? '/hr' : '/', { replace: true });
       }
 
       toast({ title: 'Cég sikeresen törölve!' });

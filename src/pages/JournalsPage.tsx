@@ -464,7 +464,7 @@ export default function JournalsPage() {
         if (importKey) {
           const { data: invById } = await supabase
             .from('invoices')
-            .select('id, bizonylatsorszam, pdf_file_url, image_url')
+            .select('id, bizonylatsorszam, melleklet_url, image_url')
             .eq('id', importKey)
             .maybeSingle();
 
@@ -472,7 +472,7 @@ export default function JournalsPage() {
             return {
               type: 'invoice' as const,
               title: `Számla: ${invById.bizonylatsorszam}`,
-              fileUrl: invById.pdf_file_url || invById.image_url,
+              fileUrl: invById.melleklet_url || invById.image_url,
               bucket: 'invoice-uploads',
               fileName: `${invById.bizonylatsorszam || 'szamla'}.pdf`,
               invoiceId: invById.id,
@@ -483,7 +483,7 @@ export default function JournalsPage() {
         if (docId) {
           const { data: invByDoc } = await supabase
             .from('invoices')
-            .select('id, bizonylatsorszam, pdf_file_url, image_url')
+            .select('id, bizonylatsorszam, melleklet_url, image_url')
             .eq('bizonylatsorszam', docId)
             .maybeSingle();
 
@@ -491,7 +491,7 @@ export default function JournalsPage() {
             return {
               type: 'invoice' as const,
               title: `Számla: ${invByDoc.bizonylatsorszam}`,
-              fileUrl: invByDoc.pdf_file_url || invByDoc.image_url,
+              fileUrl: invByDoc.melleklet_url || invByDoc.image_url,
               bucket: 'invoice-uploads',
               fileName: `${invByDoc.bizonylatsorszam || 'szamla'}.pdf`,
               invoiceId: invByDoc.id,
@@ -501,7 +501,7 @@ export default function JournalsPage() {
           // Try nav_invoices table (by invoice_number)
           const { data: navInv } = await supabase
             .from('nav_invoices')
-            .select('id, invoice_number, invoice_pdf_url')
+            .select('id, invoice_number')
             .eq('invoice_number', docId)
             .maybeSingle();
 
@@ -509,7 +509,7 @@ export default function JournalsPage() {
             return {
               type: 'invoice' as const,
               title: `NAV Számla: ${navInv.invoice_number}`,
-              fileUrl: navInv.invoice_pdf_url,
+              fileUrl: null,
               bucket: 'invoice-uploads',
               fileName: `${navInv.invoice_number}.pdf`,
               invoiceId: navInv.id,

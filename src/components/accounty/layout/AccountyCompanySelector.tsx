@@ -67,12 +67,14 @@ export default function AccountyCompanySelector({
     const targetId = client.companyId || (client as any).id;
     if (!targetId) return;
 
+    const isHr = location.pathname.startsWith('/hr');
+    const prefix = isHr ? '/hr' : '';
     const uuidRegex = /[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i;
     if (uuidRegex.test(location.pathname)) {
       const newPath = location.pathname.replace(uuidRegex, targetId);
       navigate(newPath);
     } else {
-      navigate(`/eaisybooks/${targetId}/${currentDateRange}/overview`);
+      navigate(`${prefix}/eaisybooks/${targetId}/${currentDateRange}/overview`);
     }
 
     setOpen(false);

@@ -6981,6 +6981,7 @@ export type Database = {
           gl_classifications: Json | null
           gl_is_manually_overridden: boolean | null
           gl_reasoning: string | null
+          has_skonto: boolean | null
           id: string
           image_url: string | null
           intermediary_service: boolean
@@ -7004,6 +7005,12 @@ export type Database = {
           reverse_charge_category: string | null
           selexped_registry_number: string | null
           shipment_match_status: string | null
+          skonto_amount: number | null
+          skonto_days: number | null
+          skonto_due_date: string | null
+          skonto_percent: number | null
+          skonto_selected: boolean | null
+          skonto_shipping_amount: number | null
           statusz: string | null
           teljesites_datuma: string | null
           termek_szolgaltatas_tipusa: string | null
@@ -7045,6 +7052,7 @@ export type Database = {
           gl_classifications?: Json | null
           gl_is_manually_overridden?: boolean | null
           gl_reasoning?: string | null
+          has_skonto?: boolean | null
           id?: string
           image_url?: string | null
           intermediary_service?: boolean
@@ -7068,6 +7076,12 @@ export type Database = {
           reverse_charge_category?: string | null
           selexped_registry_number?: string | null
           shipment_match_status?: string | null
+          skonto_amount?: number | null
+          skonto_days?: number | null
+          skonto_due_date?: string | null
+          skonto_percent?: number | null
+          skonto_selected?: boolean | null
+          skonto_shipping_amount?: number | null
           statusz?: string | null
           teljesites_datuma?: string | null
           termek_szolgaltatas_tipusa?: string | null
@@ -7109,6 +7123,7 @@ export type Database = {
           gl_classifications?: Json | null
           gl_is_manually_overridden?: boolean | null
           gl_reasoning?: string | null
+          has_skonto?: boolean | null
           id?: string
           image_url?: string | null
           intermediary_service?: boolean
@@ -7132,6 +7147,12 @@ export type Database = {
           reverse_charge_category?: string | null
           selexped_registry_number?: string | null
           shipment_match_status?: string | null
+          skonto_amount?: number | null
+          skonto_days?: number | null
+          skonto_due_date?: string | null
+          skonto_percent?: number | null
+          skonto_selected?: boolean | null
+          skonto_shipping_amount?: number | null
           statusz?: string | null
           teljesites_datuma?: string | null
           termek_szolgaltatas_tipusa?: string | null
@@ -7520,6 +7541,7 @@ export type Database = {
           gl_classifications: Json | null
           gl_is_manually_overridden: boolean | null
           gl_reasoning: string | null
+          has_skonto: boolean | null
           id: string
           invoice_delivery_date: string | null
           invoice_direction: string | null
@@ -7546,6 +7568,12 @@ export type Database = {
           reverse_charge_category: string | null
           service_period_end: string | null
           service_period_start: string | null
+          skonto_amount: number | null
+          skonto_days: number | null
+          skonto_due_date: string | null
+          skonto_percent: number | null
+          skonto_selected: boolean | null
+          skonto_shipping_amount: number | null
           submitted: boolean | null
           supplier_address: string | null
           supplier_name: string | null
@@ -7574,6 +7602,7 @@ export type Database = {
           gl_classifications?: Json | null
           gl_is_manually_overridden?: boolean | null
           gl_reasoning?: string | null
+          has_skonto?: boolean | null
           id?: string
           invoice_delivery_date?: string | null
           invoice_direction?: string | null
@@ -7600,6 +7629,12 @@ export type Database = {
           reverse_charge_category?: string | null
           service_period_end?: string | null
           service_period_start?: string | null
+          skonto_amount?: number | null
+          skonto_days?: number | null
+          skonto_due_date?: string | null
+          skonto_percent?: number | null
+          skonto_selected?: boolean | null
+          skonto_shipping_amount?: number | null
           submitted?: boolean | null
           supplier_address?: string | null
           supplier_name?: string | null
@@ -7628,6 +7663,7 @@ export type Database = {
           gl_classifications?: Json | null
           gl_is_manually_overridden?: boolean | null
           gl_reasoning?: string | null
+          has_skonto?: boolean | null
           id?: string
           invoice_delivery_date?: string | null
           invoice_direction?: string | null
@@ -7654,6 +7690,12 @@ export type Database = {
           reverse_charge_category?: string | null
           service_period_end?: string | null
           service_period_start?: string | null
+          skonto_amount?: number | null
+          skonto_days?: number | null
+          skonto_due_date?: string | null
+          skonto_percent?: number | null
+          skonto_selected?: boolean | null
+          skonto_shipping_amount?: number | null
           submitted?: boolean | null
           supplier_address?: string | null
           supplier_name?: string | null
@@ -7937,10 +7979,14 @@ export type Database = {
           default_project_id: string | null
           email: string | null
           exclude_from_accounting: boolean
+          has_skonto: boolean | null
           id: string
           name: string
           partner_type: string
           related_party: boolean | null
+          skonto_days: number | null
+          skonto_excludes_shipping: boolean | null
+          skonto_percent: number | null
           tax_number: string
           updated_at: string
           user_id: string | null
@@ -7956,10 +8002,14 @@ export type Database = {
           default_project_id?: string | null
           email?: string | null
           exclude_from_accounting?: boolean
+          has_skonto?: boolean | null
           id?: string
           name: string
           partner_type?: string
           related_party?: boolean | null
+          skonto_days?: number | null
+          skonto_excludes_shipping?: boolean | null
+          skonto_percent?: number | null
           tax_number: string
           updated_at?: string
           user_id?: string | null
@@ -7975,10 +8025,14 @@ export type Database = {
           default_project_id?: string | null
           email?: string | null
           exclude_from_accounting?: boolean
+          has_skonto?: boolean | null
           id?: string
           name?: string
           partner_type?: string
           related_party?: boolean | null
+          skonto_days?: number | null
+          skonto_excludes_shipping?: boolean | null
+          skonto_percent?: number | null
           tax_number?: string
           updated_at?: string
           user_id?: string | null
@@ -8010,10 +8064,13 @@ export type Database = {
           id: string
           invoice_ids: string[]
           invoice_sources: string[]
+          is_skonto: boolean | null
           matched_transaction_id: string | null
           narrative: string | null
+          original_gross_amount: number | null
           partner_account: string
           partner_name: string
+          skonto_saved_amount: number | null
           status: string
           updated_at: string
         }
@@ -8026,10 +8083,13 @@ export type Database = {
           id?: string
           invoice_ids: string[]
           invoice_sources: string[]
+          is_skonto?: boolean | null
           matched_transaction_id?: string | null
           narrative?: string | null
+          original_gross_amount?: number | null
           partner_account: string
           partner_name: string
+          skonto_saved_amount?: number | null
           status?: string
           updated_at?: string
         }
@@ -8042,10 +8102,13 @@ export type Database = {
           id?: string
           invoice_ids?: string[]
           invoice_sources?: string[]
+          is_skonto?: boolean | null
           matched_transaction_id?: string | null
           narrative?: string | null
+          original_gross_amount?: number | null
           partner_account?: string
           partner_name?: string
+          skonto_saved_amount?: number | null
           status?: string
           updated_at?: string
         }

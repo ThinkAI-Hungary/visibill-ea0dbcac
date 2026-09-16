@@ -292,9 +292,10 @@ export function AccountyShellProvider({ children }: { children: React.ReactNode 
       localStorage.removeItem('visibill_switch_pending');
       localStorage.removeItem('eaisybooks_selected_company_id');
     } catch { /* ignore */ }
-    navigate('/eaisybooks');
+    const isHr = pathname.startsWith('/hr');
+    navigate(isHr ? '/hr/eaisybooks' : '/eaisybooks');
     const timer = setTimeout(() => setIsNavigatingToPortfolio(false), 250);
-  }, [navigate]);
+  }, [navigate, pathname]);
 
   // Collapsible section states
   const [expandedSections, setExpandedSections] = useState<Set<string>>(() => new Set(['portfolio']));
@@ -562,7 +563,8 @@ export function createDefaultAccountyShellContext(): AccountyShellContextType {
     isPathActive: () => false,
     handlePrefetch: () => {},
     handleBackToPortfolio: () => {
-      if (typeof window !== 'undefined') window.location.href = '/eaisybooks';
+      const isHr = typeof window !== 'undefined' && window.location?.pathname?.startsWith('/hr');
+      if (typeof window !== 'undefined') window.location.href = isHr ? '/hr/eaisybooks' : '/eaisybooks';
     },
     navigate: () => {},
     isCollapsed: false,

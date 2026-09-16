@@ -138,6 +138,10 @@ export default function PartnersPage() {
     custom_color: "",
     custom_bg_color: "",
     related_party: false,
+    has_skonto: false,
+    skonto_days: 8,
+    skonto_percent: 2.0,
+    skonto_excludes_shipping: true,
   });
   const [emailError, setEmailError] = useState("");
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);

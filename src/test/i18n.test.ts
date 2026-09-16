@@ -55,6 +55,40 @@ describe('i18n and Localization Suite', () => {
       expect(path).toBe(`/hr/${companyId}/${dateFrom}_${dateTo}/invoices`);
     });
 
+    it('auto-resolves /hr from window.location.pathname when isHr is omitted', () => {
+      const originalPathname = window.location.pathname;
+      try {
+        Object.defineProperty(window, 'location', {
+          value: { ...window.location, pathname: `/hr/${companyId}/${dateFrom}_${dateTo}/invoices` },
+          writable: true,
+        });
+        const path = generateScopedPath('new-company-uuid', dateFrom, dateTo, 'invoices');
+        expect(path).toBe(`/hr/new-company-uuid/${dateFrom}_${dateTo}/invoices`);
+      } finally {
+        Object.defineProperty(window, 'location', {
+          value: { ...window.location, pathname: originalPathname },
+          writable: true,
+        });
+      }
+    });
+
+    it('auto-resolves standard path from window.location.pathname when not on /hr', () => {
+      const originalPathname = window.location.pathname;
+      try {
+        Object.defineProperty(window, 'location', {
+          value: { ...window.location, pathname: `/${companyId}/${dateFrom}_${dateTo}/invoices` },
+          writable: true,
+        });
+        const path = generateScopedPath('new-company-uuid', dateFrom, dateTo, 'invoices');
+        expect(path).toBe(`/new-company-uuid/${dateFrom}_${dateTo}/invoices`);
+      } finally {
+        Object.defineProperty(window, 'location', {
+          value: { ...window.location, pathname: originalPathname },
+          writable: true,
+        });
+      }
+    });
+
     it('extracts page segment correctly from standard path', () => {
       const segment = extractPageSegment(`/${companyId}/${dateFrom}_${dateTo}/invoices`);
       expect(segment).toBe('/invoices');

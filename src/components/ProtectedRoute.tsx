@@ -97,12 +97,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   //   - canAccess() returns false by default for shipment modules
   //   → without this check, the user would be kicked to dashboard on every refresh.
   if (!permissionsLoading && pageModule && !canAccess(pageModule) && selectedCompany) {
+    const isHr = location.pathname.startsWith('/hr');
     const fallbackPage = isEmployee ? 'working-time' : '';
     const target = generateScopedPath(
       selectedCompany.id,
       dateFromFormatted,
       dateToFormatted,
       fallbackPage,
+      isHr,
     );
     return <Navigate to={target} replace />;
   }
