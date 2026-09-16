@@ -103,3 +103,23 @@ export function parseTaxNumber(taxNum: string | null | undefined): ParsedTaxNumb
   };
 }
 
+/**
+ * Ellenőrzi, hogy az adott adószám csoportos ÁFA-alanyiság tagjához tartozik-e (4-es áfakód).
+ * Pl. "23108594-4-15" vagy 11 jegyű "23108594415".
+ */
+export function isGroupVatMember(taxNum: string | null | undefined): boolean {
+  if (!taxNum) return false;
+  const parsed = parseTaxNumber(taxNum);
+  return parsed.vat === '4';
+}
+
+/**
+ * Ellenőrzi, hogy az adott adószám maga a csoportos ÁFA-alany (csoportazonosító szám, 5-ös áfakód).
+ * Pl. "17781234-5-42" vagy 11 jegyű "17781234542".
+ */
+export function isGroupVatEntity(taxNum: string | null | undefined): boolean {
+  if (!taxNum) return false;
+  const parsed = parseTaxNumber(taxNum);
+  return parsed.vat === '5';
+}
+

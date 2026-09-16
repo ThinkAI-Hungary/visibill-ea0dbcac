@@ -5,6 +5,8 @@ import {
   isNotBlank,
   isValidTaxId,
   parseTaxNumber,
+  isGroupVatMember,
+  isGroupVatEntity,
 } from "./validationUtils";
 
 // ─── EMAIL ─────────────────────────────────────────────
@@ -155,4 +157,46 @@ describe("parseTaxNumber", () => {
     expect(parseTaxNumber(undefined)).toEqual({ raw: "", base: "", vat: "", county: "", fullFormatted: "" });
   });
 });
+
+// ─── CSOPORTOS ÁFA (GROUP VAT) ──────────────────────────
+describe("isGroupVatMember", () => {
+  it("felismeri a csoportos áfa-tagot kötőjeles formátumból (4-es áfakód)", () => {
+    expect(isGroupVatMember("23108594-4-15")).toBe(true);
+    expect(isGroupVatMember("12345678-4-42")).toBe(true);
+  });
+
+  it("felismeri a csoportos áfa-tagot 11 jegyű egybefüggő formátumból", () => {
+    expect(isGroupVatMember("23108594415")).toBe(true);
+  });
+
+  it("elutasítja a normál (2-es), AAM (1-es) vagy EVA (3-as) áfakódokat", () => {
+    expect(isGroupVatMember("13086905-2-08")).toBe(false);
+    expect(isGroupVatMember("12345678-1-42")).toBe(false);
+    expect(isGroupVatMember("12345678-3-42")).toBe(false);
+  });
+
+  it("elutasítja a magát a csoportot jelölő (5-ös) áfakódot", () => {
+    expect(isGroupVatMember("17781234-5-42")).toBe(false);
+  });
+
+  it("kezeli az üres vagy hibás bemeneteket", () => {
+    expect(isGroupVatMember("")).toBe(false);
+    expect(isGroupVatMember(null)).toBe(false);
+    expect(isGroupVatMember(undefined)).toBe(false);
+    expect(isGroupVatMember("12345678")).toBe(false);
+  });
+});
+
+describe("isGroupVatEntity", () => {
+  it("felismeri a csoportazonosító számot (5-ös áfakód)", () => {
+    expect(isGroupVatEntity("17781234-5-42")).toBe(true);
+    expect(isGroupVatEntity("17781234542")).toBe(true);
+  });
+
+  it("elutasítja a tagi (4-es) és egyéb kódokat", () => {
+    expect(isGroupVatEntity("23108594-4-15")).toBe(false);
+    expect(isGroupVatEntity("13086905-2-08")).toBe(false);
+  });
+});
+
 

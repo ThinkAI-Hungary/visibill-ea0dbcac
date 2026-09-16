@@ -4,12 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, CheckCircle, Shield, Key, RefreshCw, XCircle, Clock, Loader2 } from 'lucide-react';
+import { AlertCircle, AlertTriangle, CheckCircle, Shield, Key, RefreshCw, XCircle, Clock, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { reportError } from '@/lib/errorReporter';
+import { isGroupVatMember } from '@/lib/validationUtils';
 import { useTranslation } from 'react-i18next';
 
 interface NavCredentialsFormProps {
@@ -34,6 +35,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
     software_id: string | null;
     nav_tax_number: string | null;
   } | null>(null);
+  const [companyTaxNumber, setCompanyTaxNumber] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     nav_username: '',
@@ -78,19 +80,33 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
     setInitialLoading(true);
     if (!companyId) {
       setCredentialInfo(null);
+      setCompanyTaxNumber(null);
       setInitialLoading(false);
       return;
     }
     try {
-      const { data, error } = await supabase
-        .from('user_nav_credentials')
-        .select('validation_status, last_validated_at, validation_error, software_id, nav_tax_number')
-        .eq('company_id', companyId)
-        .maybeSingle();
+      const [credRes, compRes] = await Promise.all([
+        supabase
+          .from('user_nav_credentials')
+          .select('validation_status, last_validated_at, validation_error, software_id, nav_tax_number')
+          .eq('company_id', companyId)
+          .maybeSingle(),
+        supabase
+          .from('companies')
+          .select('tax_number')
+          .eq('id', companyId)
+          .maybeSingle(),
+      ]);
       
-      if (!error && data) {
-        setCredentialInfo(data);
-        setValidationStatus(data.validation_status as any);
+      if (!compRes.error && compRes.data?.tax_number) {
+        setCompanyTaxNumber(compRes.data.tax_number);
+      } else {
+        setCompanyTaxNumber(null);
+      }
+
+      if (!credRes.error && credRes.data) {
+        setCredentialInfo(credRes.data);
+        setValidationStatus(credRes.data.validation_status as any);
       } else {
         setCredentialInfo(null);
       }
@@ -518,6 +534,32 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
                   )}
                 </div>
 
+                {isGroupVatMember(companyTaxNumber) && (
+                  <Alert className="mt-3 bg-amber-500/10 text-amber-900 dark:text-amber-300 border-amber-300/40">
+                    <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <div>
+                      <AlertTitle className="font-semibold text-sm">
+                        {t('settings:integrations.nav.group_vat_warning_title', 'Csoportos ÁFA-alanyiság észlelve')}
+                      </AlertTitle>
+                      <AlertDescription className="text-xs space-y-1 mt-1 leading-relaxed">
+                        <p>
+                          {t(
+                            'settings:integrations.nav.group_vat_warning_desc_1',
+                            'Ez a cég a nyilvántartás szerint csoportos ÁFA-alany tagja (adószám: {{taxNumber}}).',
+                            { taxNumber: companyTaxNumber }
+                          )}
+                        </p>
+                        <p>
+                          {t(
+                            'settings:integrations.nav.group_vat_warning_desc_2',
+                            'A csoportos ÁFA szabályai szerint a számlák a Csoport adószámára érkeznek, és a számlázóprogram is a csoportazonosítót jelenti le a NAV felé. Amennyiben a számlák hiányosan szinkronizálódnak, a technikai felhasználót a NAV Online Számla felületén a Csoportos ÁFA-alany (csoportazonosító szám) alatt kell létrehozni és itt bekötni.'
+                          )}
+                        </p>
+                      </AlertDescription>
+                    </div>
+                  </Alert>
+                )}
+
                 {isInvalid && credentialInfo.validation_error && (
                   <Alert variant="destructive" className="mt-3">
                     <AlertCircle className="h-4 w-4" />
@@ -639,6 +681,32 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
             </p>
           </AlertDescription>
         </Alert>
+
+        {(isGroupVatMember(companyTaxNumber) || isGroupVatMember(formData.nav_tax_number)) && (
+          <Alert className="bg-amber-500/10 text-amber-900 dark:text-amber-300 border-amber-300/40">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <div>
+              <AlertTitle className="font-semibold text-sm">
+                {t('settings:integrations.nav.group_vat_form_title', 'Fontos tudnivaló csoportos ÁFA-tagoknak')}
+              </AlertTitle>
+              <AlertDescription className="text-xs space-y-1 mt-1 leading-relaxed">
+                <p>
+                  {t(
+                    'settings:integrations.nav.group_vat_form_desc_1',
+                    'A cég adószáma{{taxInfo}} alapján csoportos ÁFA-alanyiság tagja (4-es ÁFA-kód).',
+                    { taxInfo: companyTaxNumber ? ` (${companyTaxNumber})` : '' }
+                  )}
+                </p>
+                <p>
+                  {t(
+                    'settings:integrations.nav.group_vat_form_desc_2',
+                    'A számlák (különösen a kimenő és a beszállítói számlák) zöme a Csoport azonosítójára érkezik a NAV-ba. Kérjük, győződj meg róla, hogy a technikai felhasználót a NAV Online Számla felületén a Csoportos ÁFA-alanyhoz hoztad létre, és annak a csoportos adószámát adod meg itt!'
+                  )}
+                </p>
+              </AlertDescription>
+            </div>
+          </Alert>
+        )}
 
         {/* Basic Credentials */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

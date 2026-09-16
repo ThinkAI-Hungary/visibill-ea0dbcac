@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Euro, TrendingUp, PieChart, Building2, ArrowRight, ArrowLeft, Check, Plus, X, FolderOpen, Tags, Shield, RefreshCw, CheckCircle, Users, LogOut, Sparkles } from 'lucide-react';
+import { FileText, Euro, TrendingUp, PieChart, Building2, ArrowRight, ArrowLeft, Check, Plus, X, FolderOpen, Tags, Shield, RefreshCw, CheckCircle, Users, LogOut, Sparkles, AlertTriangle } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -15,6 +15,8 @@ import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { isGroupVatMember } from '@/lib/validationUtils';
 import { reportError } from '@/lib/errorReporter';
 
 interface OnboardingProject {
@@ -848,6 +850,20 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
 
       {/* NAV form fields */}
       <div className="space-y-3 p-4 border border-dashed border-border rounded-lg">
+        {(isGroupVatMember(companyTaxNumber) || isGroupVatMember(navCredentials.nav_tax_number)) && (
+          <Alert className="bg-amber-500/10 text-amber-900 dark:text-amber-300 border-amber-300/40">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <div className="space-y-1">
+              <AlertTitle className="font-semibold text-xs">
+                Csoportos ÁFA-alanyiság észlelve
+              </AlertTitle>
+              <AlertDescription className="text-xs leading-relaxed">
+                A megadott adószám{companyTaxNumber ? ` (${companyTaxNumber})` : ''} csoportos ÁFA-taghoz tartozik (4-es ÁFA-kód). Kérjük, győződj meg róla, hogy a technikai felhasználót a NAV Online Számla felületén a <strong>Csoportos ÁFA-alanyhoz (csoportazonosító számhoz)</strong> hoztad létre, és annak a törzsszámát adod meg itt, hogy a csoportos számlák is szinkronizálódjanak!
+              </AlertDescription>
+            </div>
+          </Alert>
+        )}
+
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
             <Label className="text-xs">NAV felhasználónév *</Label>
