@@ -9,6 +9,7 @@ import { SubmittedInvoiceTable } from './SubmittedInvoiceTable';
 import { InvoiceFilterBar } from '../filters/InvoiceFilterBar';
 import { buildNavToSubmittedMap, buildSubmittedToNavMap, buildNavToSuggestedSubmittedMap } from '../../utils/invoiceRelations';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
+import { toast } from '@/hooks/use-toast';
 import type { TransactionRecord } from '../../types';
 
 export function InvoiceTableContainer() {
@@ -225,37 +226,77 @@ export function InvoiceTableContainer() {
   const handleToggleExclude = useCallback(
     async (invoiceId: string, currentValue: boolean) => {
       const newValue = !currentValue;
-      if (companyId) {
-        const { error } = await supabase.rpc('toggle_invoice_exclude_from_accounting', {
-          p_company_id: companyId,
-          p_invoice_id: invoiceId,
-          p_is_submitted: isSubmittedTab,
-          p_exclude: newValue,
-        });
 
-        if (error) {
-          console.error('Error in toggle_invoice_exclude_from_accounting RPC:', error);
-          // Fallback to table update if RPC returns error
+      // Optimistically update React Query cache so the UI updates instantly with zero flicker or jumping
+      const updateList = (old: any) => {
+        if (!Array.isArray(old)) return old;
+        return old.map((inv: any) =>
+          inv.id === invoiceId ? { ...inv, exclude_from_accounting: newValue } : inv
+        );
+      };
+
+      if (companyId) {
+        queryClient.setQueriesData({ queryKey: ['filteredNavInvoices', companyId] }, updateList);
+        queryClient.setQueriesData({ queryKey: ['filteredSubmittedInvoices', companyId] }, updateList);
+        queryClient.setQueriesData({ queryKey: ['submittedInvoices', companyId] }, updateList);
+        queryClient.setQueriesData({ queryKey: ['page-matched-nav-invoices', companyId] }, updateList);
+      }
+
+      try {
+        if (companyId) {
+          const { error } = await supabase.rpc('toggle_invoice_exclude_from_accounting', {
+            p_company_id: companyId,
+            p_invoice_id: invoiceId,
+            p_is_submitted: isSubmittedTab,
+            p_exclude: newValue,
+          });
+
+          if (error) {
+            console.error('Error in toggle_invoice_exclude_from_accounting RPC:', error);
+            // Fallback to table update if RPC returns error
+            const table = isSubmittedTab ? 'invoices' : 'nav_invoices';
+            const { error: fallbackError } = await supabase
+              .from(table)
+              .update({ exclude_from_accounting: newValue })
+              .eq('id', invoiceId);
+            if (fallbackError) throw fallbackError;
+          }
+        } else {
           const table = isSubmittedTab ? 'invoices' : 'nav_invoices';
-          await supabase
+          const { error } = await supabase
             .from(table)
             .update({ exclude_from_accounting: newValue })
             .eq('id', invoiceId);
+          if (error) throw error;
         }
-      } else {
-        const table = isSubmittedTab ? 'invoices' : 'nav_invoices';
-        await supabase
-          .from(table)
-          .update({ exclude_from_accounting: newValue })
-          .eq('id', invoiceId);
-      }
 
-      invalidateInvoiceData();
-      queryClient.invalidateQueries({ queryKey: ['gl_balances'] });
-      queryClient.invalidateQueries({ queryKey: ['gl_categorized_items'] });
-      queryClient.invalidateQueries({ queryKey: ['gl_account_card'] });
-      queryClient.invalidateQueries({ queryKey: ['partner_ledger_card'] });
-      queryClient.invalidateQueries({ queryKey: ['acc_journal_headers'] });
+        invalidateInvoiceData();
+        queryClient.invalidateQueries({ queryKey: ['gl_balances'] });
+        queryClient.invalidateQueries({ queryKey: ['gl_categorized_items'] });
+        queryClient.invalidateQueries({ queryKey: ['gl_account_card'] });
+        queryClient.invalidateQueries({ queryKey: ['partner_ledger_card'] });
+        queryClient.invalidateQueries({ queryKey: ['acc_journal_headers'] });
+      } catch (err: any) {
+        console.error('Failed to toggle exclude_from_accounting:', err);
+        // Rollback optimistic update
+        const rollbackList = (old: any) => {
+          if (!Array.isArray(old)) return old;
+          return old.map((inv: any) =>
+            inv.id === invoiceId ? { ...inv, exclude_from_accounting: currentValue } : inv
+          );
+        };
+        if (companyId) {
+          queryClient.setQueriesData({ queryKey: ['filteredNavInvoices', companyId] }, rollbackList);
+          queryClient.setQueriesData({ queryKey: ['filteredSubmittedInvoices', companyId] }, rollbackList);
+          queryClient.setQueriesData({ queryKey: ['submittedInvoices', companyId] }, rollbackList);
+          queryClient.setQueriesData({ queryKey: ['page-matched-nav-invoices', companyId] }, rollbackList);
+        }
+        toast({
+          title: 'Hiba történt a könyvelési státusz módosításakor',
+          description: err?.message || 'Kérjük próbáld újra később.',
+          variant: 'destructive',
+        });
+      }
     },
     [companyId, isSubmittedTab, invalidateInvoiceData, queryClient]
   );

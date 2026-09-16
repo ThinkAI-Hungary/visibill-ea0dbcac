@@ -193,7 +193,7 @@ export function SubmittedInvoiceTable({
               </TableHeader>
 
               <TableBody>
-                {loading || tabFetching ? (
+                {(loading || tabFetching) && paginatedSubmittedInvoices.length === 0 ? (
                   <TableSkeleton rows={10} columns={13} />
                 ) : paginatedSubmittedInvoices.length === 0 ? (
                   <TableEmptyState

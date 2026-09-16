@@ -229,7 +229,7 @@ export function NavInvoiceTable({
               </TableHeader>
 
               <TableBody>
-                {loading || tabFetching ? (
+                {(loading || tabFetching) && paginatedNavInvoices.length === 0 ? (
                   <TableSkeleton rows={10} columns={colSpan} />
                 ) : paginatedNavInvoices.length === 0 ? (
                   <TableEmptyState

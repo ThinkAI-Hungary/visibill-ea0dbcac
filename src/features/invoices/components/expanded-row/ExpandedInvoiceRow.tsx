@@ -419,6 +419,7 @@ export function ExpandedInvoiceRow({
                           <button
                             type="button"
                             onClick={(e) => {
+                              e.preventDefault();
                               e.stopPropagation();
                               onToggleExclude();
                             }}
