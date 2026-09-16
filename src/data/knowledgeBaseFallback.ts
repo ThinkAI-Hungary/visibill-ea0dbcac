@@ -55,7 +55,7 @@ export const FALLBACK_KNOWLEDGE_CATEGORIES: KnowledgeCategory[] = [
     "description": "API kapcsolatok, árfolyamok, audit napló és cégbeállítások",
     "icon": "Settings",
     "order_index": 70,
-    "article_count": 6
+    "article_count": 7
   },
   {
     "id": "books_portfolio",
@@ -653,6 +653,40 @@ export const FALLBACK_KNOWLEDGE_ARTICLES: KnowledgeArticle[] = [
     "icon": "HelpCircle",
     "estimated_read_time": "5 perc",
     "order_num": 6,
+    "is_published": true
+  },
+  {
+    "id": "nav-group-vat-sync",
+    "category_id": "system",
+    "title": "Csoportos ÁFA-alanyok és NAV szinkronizáció beállítása",
+    "summary": "Útmutató csoportos ÁFA-tagok (4-es ÁFA-kód) NAV Online Számla szinkronizációjához: miért hiányoznak vagy nem töltődnek le a számlák egyéni technikai felhasználó esetén, és hogyan köthető be a csoportos technikai felhasználó.",
+    "content": "# 🏢 Csoportos ÁFA-alanyok és NAV Online Számla Szinkronizáció\n\n> **Alkalmazás:** eaisyBill / Visibill  \n> **Menücsoport:** Rendszer  \n> **Elérési útvonal:** `/integrations` (vagy Beállítások -> Integrációk -> NAV Online Számla)  \n> **Szükséges szerepkör:** Tulajdonos (Owner), Adminisztrátor, Főkönyvelő  \n\n---\n\n## 1. Miért hiányosak a számlák csoportos ÁFA-alanyoknál?\n\nGyakori jelenség, hogy egy csoportos ÁFA-tag vállalkozás (pl. holding tag, leányvállalat) NAV Online Számla kapcsolatának beállítása után a szinkronizáció látszólag sikeres, ám **csupán néhány számla (vagy 0 db számla)** érkezik meg a Visibill rendszerbe, miközben a valóságban több tucat vagy több száz bizonylatnak kellene szerepelnie.\n\n### A probléma jogszabályi és technikai háttere:\n1. **Két különböző adószám létezése:**\n   - **Egyéni tagi adószám:** A tag cégbírósági adószáma, ahol a 9. karakter (ÁFA-kód) **4-es** (pl. `12345678-4-42`). Ez a társaság társasági adó (TAO), helyi iparűzési adó (HIPA) és bérügyi azonosítója.\n   - **Csoportazonosító szám (csoportos adószám):** A Nemzeti Adó- és Vámhivatal által képzett csoportos adóalanyi szám, ahol a 9. karakter **5-ös** (pl. `17799999-5-42`). Az Áfa tv. 8. § alapján az általános forgalmi adó alanya maga a **Csoport**, nem pedig az egyes tagok külön-külön.\n2. **NAV 3.0 API működése:**\n   - A partnerek (szállítók és vevők) a számlákat a jogszabályoknak megfelelően a **csoportazonosító számra (5-ös kód)** állítják ki, a számla XML állományában vevőként vagy kibocsátóként a csoport szerepel.\n   - Amikor a Visibillben rögzített NAV technikai felhasználót az ügyfél a **saját egyéni adószámán (4-es kód)** hozta létre az `onlineszamla.nav.gov.hu` felületen, a NAV API lekérdezés (`/queryInvoiceData`, `/queryInvoiceDigest`) **kizárólag azokat a számlákat adja vissza**, amelyeken a kiállító tévedésből az egyéni adószámot szerepeltette vevőként.\n   - Az összes szabályosan, a csoportazonosítóra kiállított bejövő és kimenő számla **láthatatlan marad** az egyéni technikai felhasználó számára!\n\n---\n\n## 2. A megoldás: Technikai felhasználó a CSOPORT alatt\n\nA teljes körű és hibátlan szinkronizációhoz a NAV Online Számla technikai felhasználót **nem a tagi profil alatt, hanem a Csoport (csoportos adóalany) felületén** kell létrehozni.\n\n### Lépésről lépésre útmutató:\n\n#### 1. Lépés: Belépés a NAV Online Számla rendszerbe\n1. Nyissa meg a **[onlineszamla.nav.gov.hu](https://onlineszamla.nav.gov.hu)** felületet.\n2. Jelentkezzen be Ügyfélkapus / KAÜ azonosítással (olyan személlyel, aki a Csoport vagy a Csoportképviselő cég törvényes képviselője, vagy rendelkezik megfelelő UJEGYKE meghatalmazással).\n\n#### 2. Lépés: Adózó kiválasztása (A Csoport kijelölése!)\n- A belépést követően a rendszer felkínálja a képviselt adózók listáját.\n- **Fontos:** Ne a tagvállalatot (4-es kódú adószám) válassza ki, hanem a **Csoportot** (ahol az adószám középső jegye **5-ös**, a névben általában szerepel a „csoport” kifejezés vagy a csoportképviselő neve)!\n\n#### 3. Lépés: Technikai felhasználó létrehozása\n1. A bal oldali menüben kattintson a **Felhasználók** menüpontra.\n2. Válassza az **Új felhasználó** -> **Technikai felhasználó** lehetőséget.\n3. Adjon meg egy jelszót (jegyezze meg vagy mentse el jelszókezelőbe).\n4. **Jogosultságok megadása:**\n   - Jelölje be a **Számlák kezelése** (számlaadatok feltöltése és lekérdezése) ÉS a **Számlák lekérdezése** opciót.\n5. Kattintson a **Mentés** gombra.\n\n#### 4. Lépés: Kulcsok generálása\n1. A létrehozott technikai felhasználó adatlapján kattintson a **Kulcsgenerálás** gombra.\n2. Megjelenik a:\n   - **Felhasználónév** (pl. `tech_user_abc123`)\n   - **XML aláírókulcs** (`XML signing key`)\n   - **XML cserekulcs** (`XML replacement key`)\n\n#### 5. Lépés: Adatok rögzítése a Visibillben\n1. Nyissa meg a Visibill felületén a **Beállítások** -> **Integrációk** menüpontot (vagy navigáljon az `/integrations` útvonalra).\n2. A **NAV Online Számla kapcsolat** kártyán kattintson a **Módosítás** vagy **Új kapcsolat** gombra.\n3. Töltse ki a mezőket a Csoport alatt generált adatokkal:\n   - **Technikai felhasználó név**\n   - **Jelszó**\n   - **XML aláírókulcs**\n   - **XML cserekulcs**\n4. Kattintson a **Kapcsolat tesztelése és mentés** gombra.\n5. A zöld pipa jelzi a sikeres kapcsolatot.\n\n#### 6. Lépés: Számlák újraszinkronizálása\n- A sikeres mentés után kattintson az **Azonnali szinkronizálás** gombra.\n- Ha korábbi időszakok (pl. elmúlt hónapok) hiányzó számláit is be kell tölteni, futtasson egy **Időszakos visszamenőleges szinkronizációt** a kívánt kezdő dátumtól.\n\n---\n\n## 3. Gyakran Ismételt Kérdések (GYIK)\n\n### Mi a teendő, ha a cégem több leányvállalatból álló csoport tagja?\nA csoport összes tagjánál a Csoport szintjén létrehozott technikai felhasználót kell beállítani. A Visibill intelligens számlaszűrője a letöltött csoportos számlák közül automatikusan hozzárendeli a bizonylatokat a megfelelő taghoz a számlán szereplő név, telephely és egyéb azonosítók alapján.\n\n### Hogyan jelzi a Visibill, ha egy cég csoportos ÁFA-tag?\nA rendszer automatikusan észleli az adószám 9. karakterét. Amennyiben az ÁFA-kód **4-es** (csoporttag), a NAV beállítások és az Onboarding képernyőn egy sárga figyelmeztető sáv jelenik meg, felhívva a figyelmet a csoportos technikai felhasználó használatának szükségességére.\n\n### Befolyásolja-e a csoportos NAV szinkron a társasági adót (TAO) vagy a bérszámfejtést?\nNem. A csoportos adóalanyiság kizárólag az általános forgalmi adóra (ÁFA) vonatkozik. A bérszámfejtési bevallások (2608), a helyi iparűzési adó (HIPA) és a társasági adó (2629) továbbra is a cég saját egyéni adószámán (4-es kód) futnak, amelyeket az eaisyBooks moduljai változatlanul kezelnek.\n\n### Miért töltött le a rendszer korábban pontosan 2 db számlát?\nAz a két számla azért érkezett meg, mert a számlát kiállító partnerek tévedésből az Ön egyéni adószámát (4-es kód) írták rá a bizonylatra a csoportos adószám (5-ös kód) helyett. A csoportos felhasználó bekötése után az összes többi, szabályosan kiállított számla is hiánytalanul be fog kerülni.",
+    "tags": [
+      "csoportos áfa",
+      "csoportos áfa-tag",
+      "csoportos áfaalany",
+      "csoportazonosító",
+      "csoportos adószám",
+      "4-es áfakód",
+      "5-ös áfakód",
+      "nav szinkronizáció",
+      "hiányzó számlák",
+      "hiányos szinkronizáció",
+      "nem jönnek le a számlák",
+      "nem talál számlát",
+      "csak 2 számla",
+      "onlineszamla",
+      "technikai felhasználó",
+      "nav technikai felhasználó",
+      "csoportképviselő",
+      "adószám",
+      "számla letöltés",
+      "integrációk"
+    ],
+    "menu_path": "/integrations",
+    "icon": "ShieldCheck",
+    "estimated_read_time": "4 perc",
+    "order_num": 7,
     "is_published": true
   },
   {
