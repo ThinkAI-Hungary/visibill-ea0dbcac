@@ -182,3 +182,36 @@
 
 ---
 
+### `api_request_logs`
+
+> Külső gép-gép (M2M) Customer REST API kérések és cégadat-módosítások strukturált audit naplója.
+
+**RLS:** ✅ | **Sorok:** Dinamikus
+
+| Oszlop | Típus | Null | Default | Leírás |
+|--------|-------|------|---------|--------|
+| `id` | uuid | — | `gen_random_uuid()` | Elsődleges kulcs |
+| `api_key_id` | uuid | ✓ | — | FK → `api_keys.id (ON DELETE SET NULL)` |
+| `user_id` | uuid | ✓ | — | FK → `auth.users.id (ON DELETE SET NULL)` |
+| `company_id` | uuid | ✓ | — | FK → `companies.id (ON DELETE SET NULL)` |
+| `endpoint` | text | — | — | Hívott végpont és query string |
+| `method` | text | — | — | HTTP metódus (`GET`, `POST`, `PATCH`) |
+| `status_code` | integer | — | — | HTTP státuszkód (200, 400, 401, 403, 429, 500) |
+| `ip_address` | text | ✓ | — | Kliens IP cím |
+| `user_agent` | text | ✓ | — | Kliens User-Agent (curl, Python, Node, stb.) |
+| `request_params` | jsonb | — | `'{}'` | Kérés paraméterei |
+| `request_body` | jsonb | ✓ | — | Kérés törzse |
+| `response_summary` | jsonb | ✓ | — | Válasz összefoglaló |
+| `error_message` | text | ✓ | — | Hibaüzenet ha a státusz >= 400 |
+| `duration_ms` | integer | ✓ | — | Végrehajtási idő milliszekundumban |
+| `created_at` | timestamptz | — | `now()` | Kérés beérkezésének ideje |
+
+**Indexek:**
+* `api_request_logs_pkey` (PRIMARY KEY)
+* `idx_api_request_logs_api_key` on `(api_key_id)`
+* `idx_api_request_logs_company` on `(company_id)`
+* `idx_api_request_logs_user` on `(user_id)`
+* `idx_api_request_logs_created_at` on `(created_at DESC)`
+
+---
+

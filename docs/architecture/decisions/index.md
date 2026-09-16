@@ -30,7 +30,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | A-004 | PGMQ mint aszinkron queue | ✅ Decided | [A-004](./A-004-pgmq-queue.md) |
-| A-005 | Edge Functions (Deno) — 59 function teljes katalógus | ✅ Decided | [A-005](./A-005-edge-functions.md) |
+| A-005 | Edge Functions (Deno) — 60 function teljes katalógus | ✅ Decided | [A-005](./A-005-edge-functions.md) |
 | A-023 | Upload Dedup Védelem (DB Trigger + Frontend Mutex) | ✅ Decided | [A-023](./A-023-upload-dedup-protection.md) |
 | A-074 | PDF Export Edge Function Invocation Resilience | ✅ Decided | [A-074](./A-074-pdf-export-edge-function-invocation-resilience.md) |
 
@@ -191,6 +191,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-075 | Management Overview Null-Safety in SQL JSON Aggregations | ✅ Decided | [A-075](./A-075-management-overview-null-safety-in-rpc-aggregations.md) |
 | A-077 | Management Stats Edge Function & Telemetry Decomposition | ✅ Decided | [A-077](./A-077-management-stats-edge-function-and-telemetry-decomposition.md) |
 | A-088 | Management Dashboard Adatkonzisztencia, Dedublikáció és Worker Fallback Ciklusvédelem | ✅ Decided | [A-088](./A-088-management-dashboard-dedup-and-worker-fallback-loop-prevention.md) |
+| A-117 | Hivatalos Ügyfél REST API (Customer API), Többcéges API Kulcs Kezelés és Auditált M2M Átjáró | ✅ Decided | [A-117](./A-117-customer-rest-api-and-multi-company-keys.md) |
 
 
 

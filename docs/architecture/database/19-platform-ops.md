@@ -149,14 +149,15 @@
 
 ### `api_keys`
 
-> API kulcsok külső integrációkhoz (OpenClaw). A nyers kulcs soha nem tárolódik, csak SHA-256 hash.
+> API kulcsok külső integrációkhoz (OpenClaw és ügyfél Customer REST API). A nyers kulcs soha nem tárolódik, csak SHA-256 hash. Támogatja az egyetlen cégre szóló (`company_id`), illetve a felhasználói szintű többcéges (`user_id`) hatáskört.
 
-**RLS:** ✅ | **Sorok:** ~1
+**RLS:** ✅ | **Sorok:** Dinamikus
 
 | Oszlop | Típus | Null | Default |
 |--------|-------|------|---------|
 | id | uuid | — | `gen_random_uuid()` |
 | company_id | uuid | ✓ |  |
+| user_id | uuid | ✓ |  |
 | created_by | uuid | ✓ |  |
 | key_hash | text | — |  |
 | key_prefix | text | — |  |
@@ -169,9 +170,9 @@
 | created_at | timestamp with time zone | — | `now()` |
 | updated_at | timestamp with time zone | — | `now()` |
 
-**FK:** `company_id` → `companies.id`
+**FK:** `company_id` → `companies.id (ON DELETE CASCADE)`, `user_id` → `auth.users.id (ON DELETE CASCADE)`
 
-**Indexek:** `idx_api_keys_company_id`, `idx_api_keys_key_hash`
+**Indexek:** `idx_api_keys_company_id`, `idx_api_keys_key_hash`, `idx_api_keys_user_id`, `idx_api_keys_active_lookup`
 
 ---
 

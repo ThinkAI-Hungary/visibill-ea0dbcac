@@ -123,6 +123,8 @@ export const queryKeys = {
   // ── Integrations ──
   integrations: (companyId: string) =>
     ['integrations', companyId] as const,
+  apiKeys: (userId?: string) =>
+    ['apiKeys', userId] as const,
   emailSettings: (companyId: string) =>
     ['emailSettings', companyId] as const,
   emailAccounts: (companyId: string) =>

@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Shield, FileText, Download, PenTool, Upload, CheckCircle2, AlertTriangle, Clock, ExternalLink } from 'lucide-react';
+import { ApiKeysCard } from './ApiKeysCard';
 
 interface Props {
   onChangePassword: () => void;
@@ -67,6 +68,9 @@ export function SecuritySection({ onChangePassword, onChangeEmail, onExportData,
           </div>
         </CardContent>
       </Card>
+
+      {/* Programozói hozzáférés & API kulcsok */}
+      <ApiKeysCard />
 
       {/* AVDH Certificate Card — only in Accounty */}
       {showAvdh && (

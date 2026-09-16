@@ -460,8 +460,8 @@
     "semantic_hash": ""
   },
   "src/components/settings/SecuritySection.tsx": {
-    "mtime": 1789080097.8576841,
-    "ast_hash": "a02108e9635195b23d0f0ad53814b71a",
+    "mtime": 1789559473.112603,
+    "ast_hash": "88a9a9c012893bb3e21c30104d150ce4",
     "semantic_hash": ""
   },
   "src/components/settings/SystemSection.tsx": {
@@ -1060,8 +1060,8 @@
     "semantic_hash": ""
   },
   "src/integrations/supabase/types.ts": {
-    "mtime": 1789516009.7422366,
-    "ast_hash": "83459ddd98c71f115147010ad5fe6e7d",
+    "mtime": 1789559418.5903187,
+    "ast_hash": "ed4971fe052447734e1a3dc8dcb6df1f",
     "semantic_hash": ""
   },
   "src/lib/annualReportPdf.ts": {
@@ -1235,8 +1235,8 @@
     "semantic_hash": ""
   },
   "src/lib/queryKeys.ts": {
-    "mtime": 1789159282.6107397,
-    "ast_hash": "23047176fde13be56e01a7acf3333be9",
+    "mtime": 1789559429.414594,
+    "ast_hash": "53a67cea2e38d2f590ea0a75e33409c1",
     "semantic_hash": ""
   },
   "src/lib/salary-helpers.ts": {
@@ -3015,8 +3015,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-005-edge-functions.md": {
-    "mtime": 1788792349.7300346,
-    "ast_hash": "bd2866355db6f47780b16b73e20e9454",
+    "mtime": 1789560800.139077,
+    "ast_hash": "489d76dcfef61d9853c7204476d2fa07",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-006-python-worker.md": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1789515572.9577825,
-    "ast_hash": "eaecfdd50218aaa2c50d9964c56ae493",
+    "mtime": 1789560827.3486066,
+    "ast_hash": "c72ab081623f405a1efac917f1c02f01",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3275,8 +3275,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/030-api-access.md": {
-    "mtime": 1788712364.6435225,
-    "ast_hash": "86a2cbf2e7fab2e553b65e550ebc27f4",
+    "mtime": 1789559543.107191,
+    "ast_hash": "bd0132c599ec143b7446b33229c43ba3",
     "semantic_hash": ""
   },
   "docs/business/decisions/031-accounty-module.md": {
@@ -3505,8 +3505,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-025-settings-structure.md": {
-    "mtime": 1780305936.253679,
-    "ast_hash": "55d5405a06f6723d91127f3cb4e8d322",
+    "mtime": 1789560862.1785357,
+    "ast_hash": "c76c38d3114c18a254965255ca8ff4bb",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-026-company-profile.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1789515572.9592872,
-    "ast_hash": "c9f788c68af500677f22817ca63c26f1",
+    "mtime": 1789560874.9070392,
+    "ast_hash": "cc0fad79003e1555cf1c490d44e7cd9e",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -5020,8 +5020,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database-schema.md": {
-    "mtime": 1789159282.4875672,
-    "ast_hash": "7d6f9100247d2d07307ae4cab587a0ca",
+    "mtime": 1789560851.224277,
+    "ast_hash": "d5bf254a7914f772e476e4bc85c651e5",
     "semantic_hash": ""
   },
   "docs/architecture/database/01-auth-users.md": {
@@ -5030,8 +5030,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/02-companies.md": {
-    "mtime": 1788642257.1568415,
-    "ast_hash": "c72dfe32f851c364dc8ee4b2ffdbe140",
+    "mtime": 1789559553.7568097,
+    "ast_hash": "a6e4f999a433c5ebd57c8706a1968156",
     "semantic_hash": ""
   },
   "docs/architecture/database/03-permissions.md": {
@@ -5115,8 +5115,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/19-platform-ops.md": {
-    "mtime": 1788979939.218482,
-    "ast_hash": "acf40f5d95fbb4e97c23c67735f58df6",
+    "mtime": 1789560835.818215,
+    "ast_hash": "17fa43163d9df24fe9917c418bd76555",
     "semantic_hash": ""
   },
   "docs/architecture/database/20-tickets.md": {
@@ -9315,8 +9315,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/edge-functions.md": {
-    "mtime": 1788792341.427894,
-    "ast_hash": "63a8598f5edd392e0acb4f4826ef6ac3",
+    "mtime": 1789560819.5497794,
+    "ast_hash": "5f78404468848e89b897b68d64c841e2",
     "semantic_hash": ""
   },
   "docs/architecture/rpc-catalog.md": {
@@ -10872,6 +10872,36 @@
   "supabase/migrations/20260916000003_auto_apply_skonto_trigger.sql": {
     "mtime": 1789515572.6959705,
     "ast_hash": "c5468fe9300ef4b3a34ea7afe9130e48",
+    "semantic_hash": ""
+  },
+  "src/components/settings/ApiKeysCard.tsx": {
+    "mtime": 1789559450.8824599,
+    "ast_hash": "2f34bfb7c8f6f809fc79ee48a9dab2df",
+    "semantic_hash": ""
+  },
+  "supabase/functions/customer-api/index.ts": {
+    "mtime": 1789560381.035186,
+    "ast_hash": "5e02c65dbfc24192283479c4d65e4c04",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260916140000_customer_api_and_keys.sql": {
+    "mtime": 1789560365.746609,
+    "ast_hash": "bb3e75d1ff2cd5a62b6312c3fd889c05",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-117-customer-rest-api-and-multi-company-keys.md": {
+    "mtime": 1789560883.514513,
+    "ast_hash": "285c76ad5c3a9a935faf9d4576924583",
+    "semantic_hash": ""
+  },
+  "src/test/settings/apiKeysCard.test.tsx": {
+    "mtime": 1789560108.6874292,
+    "ast_hash": "8d562847e2909a18efc62cee0b134437",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-086-customer-api-keys-management-ux.md": {
+    "mtime": 1789560779.3278747,
+    "ast_hash": "8729a6e36ecfb817fcb587ba2b3cd56e",
     "semantic_hash": ""
   }
 }
