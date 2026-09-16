@@ -18,12 +18,25 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Trash2, FileText, Loader2, Search, User, Landmark, Download, Copy, AlertCircle } from 'lucide-react';
+import { Trash2, FileText, Loader2, Search, User, Landmark, Download, Copy, AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { getDateFnsLocale, formatCurrency } from '@/lib/locale/formatters';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
+
+interface BalanceReconciliationMeta {
+  opening_balance: number;
+  closing_balance: number;
+  expected_turnover: number;
+  calculated_turnover: number;
+  discrepancy: number;
+  is_balanced: boolean;
+  total_debits?: number | null;
+  total_credits?: number | null;
+  currency?: string;
+  bank?: string;
+}
 
 interface UploadWithTransactions {
   id: string;
@@ -34,6 +47,10 @@ interface UploadWithTransactions {
   detected_bank: string | null;
   processing_status?: string | null;
   error_message?: string | null;
+  metadata?: {
+    balance_reconciliation?: BalanceReconciliationMeta;
+    [key: string]: any;
+  } | null;
   transactionCount: number;
 }
 
@@ -147,7 +164,7 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
     queryFn: async () => {
       const { data: uploadData, error: uploadError } = await supabase
         .from('transaction_uploads')
-        .select('id, file_name, file_url, created_at, user_id, detected_bank, processing_status, error_message')
+        .select('id, file_name, file_url, created_at, user_id, detected_bank, processing_status, error_message, metadata')
         .eq('company_id', companyId!)
         .order('created_at', { ascending: false })
         .order('id', { ascending: false });
@@ -581,16 +598,56 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
                         </TableCell>
                         <TableCell className="text-sm">
                           {upload.transactionCount > 0 ? (
-                            <button
-                              type="button"
-                              onClick={() => setViewingUpload(upload)}
-                              className="flex items-center gap-1.5 hover:underline text-left cursor-pointer group focus:outline-none"
-                            >
-                              <span className="font-semibold text-primary">{getBankLabel(upload.detected_bank)}</span>
-                              <span className="text-xs text-muted-foreground group-hover:text-primary">
-                                {t('transactions:dialogs.files.tx_count_suffix', { count: upload.transactionCount })}
-                              </span>
-                            </button>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <button
+                                type="button"
+                                onClick={() => setViewingUpload(upload)}
+                                className="flex items-center gap-1.5 hover:underline text-left cursor-pointer group focus:outline-none"
+                              >
+                                <span className="font-semibold text-primary">{getBankLabel(upload.detected_bank)}</span>
+                                <span className="text-xs text-muted-foreground group-hover:text-primary">
+                                  {t('transactions:dialogs.files.tx_count_suffix', { count: upload.transactionCount })}
+                                </span>
+                              </button>
+                              {upload.metadata?.balance_reconciliation && (
+                                <TooltipProvider delayDuration={150}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      {upload.metadata.balance_reconciliation.is_balanced ? (
+                                        <Badge
+                                          variant="outline"
+                                          className="text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 gap-1 px-1.5 py-0.5 cursor-help"
+                                        >
+                                          <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                                          <span>Egyenleg egyezik</span>
+                                        </Badge>
+                                      ) : (
+                                        <Badge
+                                          variant="outline"
+                                          className="text-[11px] font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30 gap-1 px-1.5 py-0.5 cursor-help"
+                                        >
+                                          <AlertTriangle className="h-3 w-3 text-rose-500" />
+                                          <span>Eltérés: {upload.metadata.balance_reconciliation.discrepancy > 0 ? `+${upload.metadata.balance_reconciliation.discrepancy}` : upload.metadata.balance_reconciliation.discrepancy} {upload.metadata.balance_reconciliation.currency || 'HUF'}</span>
+                                        </Badge>
+                                      )}
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-xs text-xs p-2.5">
+                                      <p className={`font-semibold mb-1 ${upload.metadata.balance_reconciliation.is_balanced ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                                        {upload.metadata.balance_reconciliation.is_balanced ? 'Kivonat egyenlegellenőrzés: Rendben' : 'Figyelem: Egyenlegeltérés!'}
+                                      </p>
+                                      <div className="space-y-0.5 text-muted-foreground">
+                                        <div>Nyitó egyenleg: <span className="font-medium text-foreground">{formatCurrency(upload.metadata.balance_reconciliation.opening_balance, upload.metadata.balance_reconciliation.currency || 'HUF')}</span></div>
+                                        <div>Könyvelt forgalom: <span className="font-medium text-foreground">{formatCurrency(upload.metadata.balance_reconciliation.calculated_turnover, upload.metadata.balance_reconciliation.currency || 'HUF')}</span></div>
+                                        <div>Záró egyenleg: <span className="font-medium text-foreground">{formatCurrency(upload.metadata.balance_reconciliation.closing_balance, upload.metadata.balance_reconciliation.currency || 'HUF')}</span></div>
+                                        <div className={`font-medium pt-0.5 border-t border-border/50 ${upload.metadata.balance_reconciliation.is_balanced ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                                          Eltérés: {upload.metadata.balance_reconciliation.discrepancy > 0 ? `+${upload.metadata.balance_reconciliation.discrepancy}` : upload.metadata.balance_reconciliation.discrepancy} {upload.metadata.balance_reconciliation.currency || 'HUF'}
+                                        </div>
+                                      </div>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                            </div>
                           ) : upload.error_message && /duplikát|duplicate/i.test(upload.error_message) ? (
                             <TooltipProvider delayDuration={150}>
                               <Tooltip>
@@ -854,6 +911,33 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto min-h-0 space-y-4 pr-1 mt-2">
+            {viewingUpload?.metadata?.balance_reconciliation && (
+              <div className={`p-3 rounded-lg border text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
+                viewingUpload.metadata.balance_reconciliation.is_balanced
+                  ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-950 dark:text-emerald-200'
+                  : 'bg-rose-500/5 border-rose-500/20 text-rose-950 dark:text-rose-200'
+              }`}>
+                <div className="flex items-start sm:items-center gap-2.5">
+                  {viewingUpload.metadata.balance_reconciliation.is_balanced ? (
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5 sm:mt-0" />
+                  ) : (
+                    <AlertTriangle className="h-4 w-4 text-rose-500 shrink-0 mt-0.5 sm:mt-0" />
+                  )}
+                  <div>
+                    <span className="font-semibold">
+                      {viewingUpload.metadata.balance_reconciliation.is_balanced
+                        ? 'Kivonat egyenlegellenőrzés egyezik (0 Ft eltérés)'
+                        : `Figyelem: Egyenlegeltérés (${viewingUpload.metadata.balance_reconciliation.discrepancy > 0 ? '+' : ''}${viewingUpload.metadata.balance_reconciliation.discrepancy} ${viewingUpload.metadata.balance_reconciliation.currency || 'HUF'})`}
+                    </span>
+                    <div className="text-[11px] text-muted-foreground mt-0.5 flex flex-wrap gap-x-3">
+                      <span>Nyitó: <strong>{formatCurrency(viewingUpload.metadata.balance_reconciliation.opening_balance, viewingUpload.metadata.balance_reconciliation.currency || 'HUF')}</strong></span>
+                      <span>Könyvelt forgalom: <strong>{formatCurrency(viewingUpload.metadata.balance_reconciliation.calculated_turnover, viewingUpload.metadata.balance_reconciliation.currency || 'HUF')}</strong></span>
+                      <span>Záró: <strong>{formatCurrency(viewingUpload.metadata.balance_reconciliation.closing_balance, viewingUpload.metadata.balance_reconciliation.currency || 'HUF')}</strong></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             {isLoadingTransactions ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
