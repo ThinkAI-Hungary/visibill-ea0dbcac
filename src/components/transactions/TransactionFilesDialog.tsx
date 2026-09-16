@@ -18,11 +18,12 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Trash2, FileText, Loader2, Search, User, Landmark, Download } from 'lucide-react';
+import { Trash2, FileText, Loader2, Search, User, Landmark, Download, Copy, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { getDateFnsLocale, formatCurrency } from '@/lib/locale/formatters';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '@/hooks/use-toast';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 
 interface UploadWithTransactions {
   id: string;
@@ -31,6 +32,8 @@ interface UploadWithTransactions {
   created_at: string;
   user_id: string | null;
   detected_bank: string | null;
+  processing_status?: string | null;
+  error_message?: string | null;
   transactionCount: number;
 }
 
@@ -144,7 +147,7 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
     queryFn: async () => {
       const { data: uploadData, error: uploadError } = await supabase
         .from('transaction_uploads')
-        .select('id, file_name, file_url, created_at, user_id, detected_bank')
+        .select('id, file_name, file_url, created_at, user_id, detected_bank, processing_status, error_message')
         .eq('company_id', companyId!)
         .order('created_at', { ascending: false })
         .order('id', { ascending: false });
@@ -588,6 +591,48 @@ export function TransactionFilesDialog({ open: externalOpen, onOpenChange: exter
                                 {t('transactions:dialogs.files.tx_count_suffix', { count: upload.transactionCount })}
                               </span>
                             </button>
+                          ) : upload.error_message && /duplikát|duplicate/i.test(upload.error_message) ? (
+                            <TooltipProvider delayDuration={150}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="flex items-center gap-1.5 cursor-help">
+                                    <span className="text-muted-foreground">{getBankLabel(upload.detected_bank)}</span>
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 gap-1 px-1.5 py-0.5"
+                                    >
+                                      <Copy className="h-3 w-3" />
+                                      <span>Duplikátum (0 új)</span>
+                                    </Badge>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs text-xs p-2.5">
+                                  <p className="font-semibold text-amber-600 dark:text-amber-400 mb-0.5">Már létező tranzakciók</p>
+                                  <p className="text-muted-foreground leading-relaxed">{upload.error_message}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ) : (upload.processing_status === 'error' || (upload.error_message && upload.error_message !== 'job completed')) ? (
+                            <TooltipProvider delayDuration={150}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="flex items-center gap-1.5 cursor-help text-rose-500">
+                                    <span>{getBankLabel(upload.detected_bank)}</span>
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[11px] font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30 gap-1 px-1.5 py-0.5"
+                                    >
+                                      <AlertCircle className="h-3 w-3" />
+                                      <span>Feldolgozási hiba</span>
+                                    </Badge>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs text-xs p-2.5">
+                                  <p className="font-semibold text-rose-600 dark:text-rose-400 mb-0.5">Feldolgozási hiba</p>
+                                  <p className="text-muted-foreground leading-relaxed">{upload.error_message || 'A fájl feldolgozása sikertelen volt.'}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           ) : (
                             <div className="flex items-center gap-1.5 text-muted-foreground">
                               <span>{getBankLabel(upload.detected_bank)}</span>
