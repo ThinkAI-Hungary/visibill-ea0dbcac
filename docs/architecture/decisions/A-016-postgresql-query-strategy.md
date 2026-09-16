@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2025-Q3 (implementálva) → Folyamatosan bővül  
-**Utoljára frissítve:** 2026-09-11
+**Utoljára frissítve:** 2026-09-17
 
 ## Context
 
@@ -47,7 +47,7 @@ await supabase.from('invoices').update({ status: 'verified' }).eq('id', invoiceI
 
 ### 2. Teljes RPC Function Katalógus Áttekintés
 
-**Összesen: 133 hívható RPC function** és **72 trigger function** a `public` sémában (részletesen: [rpc-catalog.md](../rpc-catalog.md)).
+**Összesen: 133 hívható RPC function** és **73 trigger function** a `public` sémában (részletesen: [rpc-catalog.md](../rpc-catalog.md)).
 
 ---
 
@@ -88,6 +88,7 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 | `seed_default_vat_codes(p_company_id)` | INVOKER | VatReturnPage.tsx | ÁFA kódok inicializálás |
 | `assign_supplier_default_projects(p_company_id)` | DEFINER | ProjectsPage.tsx | Szállítók alapértelmezett projektjének beállítása |
 | `delete_upload_with_data(p_upload_id, p_upload_type)` | DEFINER | InvoiceFilesDialog, UploadedFilesModal | Feltöltés cascade törlés (B mód) — töröl: invoices/transactions/transport_docs/shipment_matches/costs. `p_upload_type`: `'invoice'\|'transaction'\|'report'`. Returns: `{deleted_invoices, deleted_transactions, deleted_transport_docs}` |
+| `recalculate_partner_skonto(p_company_id, p_partner_name, p_partner_tax, p_has_skonto, p_skonto_days, p_skonto_percent, p_excludes_shipping)` | DEFINER | PartnersPage.tsx | Partner nyitott bejövő számlák és NAV számlák skontó kedvezményének atomi újraszámolása és frissítése ([A-118](./A-118-atomic-partner-skonto-recalculation.md)) |
 | `delete_chart_of_accounts_preset(p_preset_id, p_target_preset_id?)` | DEFINER | ManagePresetsModal.tsx | Számlatükör sablon tranzakcionális törlése automatikus tétel-átkötéssel (remapping), hierarchia-feloldással és FK védelemmel |
 | `settle_storno_invoice_group(p_company_id, p_invoice_ids, p_sources, p_note)` | DEFINER | InvoiceTable / NAV table | Sztornó számlaláncolat manuális lezárása |
 | `reopen_storno_invoice_group(p_company_id, p_invoice_ids, p_sources)` | DEFINER | InvoiceTable / NAV table | Lezárt sztornó számlaláncolat újranyitása |

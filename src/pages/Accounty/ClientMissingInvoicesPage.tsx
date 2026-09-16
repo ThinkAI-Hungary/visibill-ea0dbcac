@@ -315,8 +315,8 @@ export default function ClientMissingInvoicesPage() {
   });
 
 
-  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.checked) {
+  const handleSelectAll = (checked: boolean | 'indeterminate') => {
+    if (checked === true) {
       setSelectedIds(filteredInvoices.map(inv => inv.id));
     } else {
       setSelectedIds([]);

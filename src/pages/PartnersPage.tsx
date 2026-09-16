@@ -17,7 +17,6 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { cn, formatCurrency } from "@/lib/utils";
-import { calculateSkonto, detectShippingAmount } from "@/lib/skontoUtils";
 import {
   Table,
   TableBody,
@@ -514,111 +513,19 @@ export default function PartnersPage() {
         if (error) throw error;
       }
 
-      // Retroactive calculation for open unpaid inbound invoices if skonto is enabled
-      if (selectedCompany?.id && data.has_skonto) {
-        const partnerName = data.name.trim();
-        const partnerTax = data.tax_number.trim();
-        const sDays = Number(data.skonto_days) || 8;
-        const sPercent = Number(data.skonto_percent) || 2.0;
-
-        // 1. Manual / uploaded invoices
-        let invQuery = supabase
-          .from("invoices")
-          .select("id, brutto_vegosszeg, kibocsatas_datuma, fizetve, transaction_id")
-          .eq("company_id", selectedCompany.id)
-          .eq("invoice_direction", "INBOUND")
-          .is("transaction_id", null)
-          .eq("fizetve", false);
-
-        if (partnerTax && !isForeignPartner(partnerTax)) {
-          invQuery = invQuery.or(`elado_vat_id.eq.${partnerTax},elado_nev.ilike.%${partnerName}%`);
-        } else {
-          invQuery = invQuery.ilike("elado_nev", `%${partnerName}%`);
-        }
-
-        const { data: openInvs } = await invQuery;
-        if (openInvs && openInvs.length > 0) {
-          for (const inv of openInvs) {
-            let shipping = 0;
-            if (data.skonto_excludes_shipping) {
-              const { data: items } = await supabase
-                .from("invoice_items")
-                .select("line_description, termek_nev, gross_amount, brutto_ar, net_amount, unit_price")
-                .eq("invoice_id", inv.id);
-              shipping = detectShippingAmount(items as any);
-            }
-
-            const calc = calculateSkonto({
-              grossAmount: inv.brutto_vegosszeg,
-              issueDate: inv.kibocsatas_datuma,
-              skontoDays: sDays,
-              skontoPercent: sPercent,
-              shippingAmount: shipping,
-            });
-
-            await supabase
-              .from("invoices")
-              .update({
-                has_skonto: true,
-                skonto_days: sDays,
-                skonto_percent: sPercent,
-                skonto_due_date: calc.skontoDueDate,
-                skonto_amount: calc.skontoAmount,
-                skonto_shipping_amount: shipping,
-                skonto_selected: !calc.isExpired,
-              })
-              .eq("id", inv.id);
-          }
-        }
-
-        // 2. NAV inbound invoices
-        let navQuery = supabase
-          .from("nav_invoices")
-          .select("id, invoice_gross_amount, invoice_issue_date, paid, transaction_id")
-          .eq("company_id", selectedCompany.id)
-          .eq("invoice_direction", "INBOUND")
-          .is("transaction_id", null)
-          .eq("paid", false);
-
-        if (partnerTax && !isForeignPartner(partnerTax)) {
-          navQuery = navQuery.or(`supplier_tax_number.eq.${partnerTax},supplier_name.ilike.%${partnerName}%`);
-        } else {
-          navQuery = navQuery.ilike("supplier_name", `%${partnerName}%`);
-        }
-
-        const { data: openNavs } = await navQuery;
-        if (openNavs && openNavs.length > 0) {
-          for (const nav of openNavs) {
-            let shipping = 0;
-            if (data.skonto_excludes_shipping) {
-              const { data: items } = await supabase
-                .from("nav_invoice_items")
-                .select("line_description, gross_amount, net_amount, unit_price")
-                .eq("nav_invoice_id", nav.id);
-              shipping = detectShippingAmount(items as any);
-            }
-
-            const calc = calculateSkonto({
-              grossAmount: nav.invoice_gross_amount || 0,
-              issueDate: nav.invoice_issue_date || new Date().toISOString(),
-              skontoDays: sDays,
-              skontoPercent: sPercent,
-              shippingAmount: shipping,
-            });
-
-            await supabase
-              .from("nav_invoices")
-              .update({
-                has_skonto: true,
-                skonto_days: sDays,
-                skonto_percent: sPercent,
-                skonto_due_date: calc.skontoDueDate,
-                skonto_amount: calc.skontoAmount,
-                skonto_shipping_amount: shipping,
-                skonto_selected: !calc.isExpired,
-              })
-              .eq("id", nav.id);
-          }
+      // Atomic server-side recalculation for open unpaid inbound invoices (both manual invoices & NAV invoices)
+      if (selectedCompany?.id) {
+        const { error: rpcError } = await supabase.rpc('recalculate_partner_skonto' as any, {
+          p_company_id: selectedCompany.id,
+          p_partner_name: data.name.trim(),
+          p_partner_tax: data.tax_number?.trim() || null,
+          p_has_skonto: !!data.has_skonto,
+          p_skonto_days: Number(data.skonto_days) || 8,
+          p_skonto_percent: Number(data.skonto_percent) || 2.0,
+          p_excludes_shipping: !!data.skonto_excludes_shipping,
+        });
+        if (rpcError) {
+          console.error("Failed to recalculate partner skonto via RPC:", rpcError);
         }
       }
     },

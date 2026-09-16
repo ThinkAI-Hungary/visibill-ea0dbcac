@@ -1,0 +1,17 @@
+{
+  "skill_name": "visibill-error-hunter",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Nézd meg a rendszerben lévő hibákat az összes hibatáblából, állíts fel egy listát róluk, és mondd el mi igényel javítást!",
+      "expected_output": "Lekérdezi az app_error_logs, nav_sync_logs, api_request_logs, feltöltési táblákat és a cron futásokat, majd egy strukturált táblázatban bemutatja a kategorizált hibákat actionable / environment / benign bontásban.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "/visibill-error-hunter",
+      "expected_output": "Lefuttatja a teljes log auditot, feltárja a valós bugokat, és megáll a felhasználói döntési kapunál jóváhagyást kérve a javítási prioritásokra.",
+      "files": []
+    }
+  ]
+}

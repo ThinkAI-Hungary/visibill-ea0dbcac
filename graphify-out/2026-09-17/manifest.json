@@ -3070,8 +3070,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-016-postgresql-query-strategy.md": {
-    "mtime": 1789602764.1118731,
-    "ast_hash": "3303f49a6e2d77f12088811fe6a1f9d2",
+    "mtime": 1789159282.4887176,
+    "ast_hash": "e82fe05ea83c1984f788c6cccb34dc69",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-017-security-architecture.md": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1789602742.2966106,
-    "ast_hash": "733edc35d3f0e9757fdd677f4c90cde4",
+    "mtime": 1789561119.029359,
+    "ast_hash": "c72ab081623f405a1efac917f1c02f01",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -5125,8 +5125,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/21-master-data.md": {
-    "mtime": 1789602778.1558495,
-    "ast_hash": "d81680da2acdb5e95b04b7db94b97160",
+    "mtime": 1789159282.4875672,
+    "ast_hash": "1c6391706047ea75081e545138a0ca18",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-022-categories-projects-sync.md": {
@@ -9320,8 +9320,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/rpc-catalog.md": {
-    "mtime": 1789602752.8205462,
-    "ast_hash": "2480f855522df04767d15074229c63d4",
+    "mtime": 1789159282.4907186,
+    "ast_hash": "8503650c8a6d1838a7e66ebe9324d32f",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-073-ev-bookkeeping-and-cashbook-ux.md": {
@@ -10972,11 +10972,6 @@
   "supabase/migrations/20260917120000_add_recalculate_partner_skonto_rpc.sql": {
     "mtime": 1789602243.9331274,
     "ast_hash": "8b0d08cf696f5c7a025c26c395c52248",
-    "semantic_hash": ""
-  },
-  "docs/architecture/decisions/A-118-atomic-partner-skonto-recalculation.md": {
-    "mtime": 1789602730.737786,
-    "ast_hash": "cfc79dc6f3c7fc4a089e68317761af5e",
     "semantic_hash": ""
   }
 }

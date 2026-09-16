@@ -295,7 +295,7 @@ function cleanAndUnescapeUrl(rawUrl: string): string {
 
 async function processBillingoAndSzamlazzLinks(
   supabase: any,
-  alias: { user_id: string; company_id: string; company_name: string; mailgun_route_id?: string },
+  alias: { user_id: string | null; company_id: string | null; company_name: string; mailgun_route_id?: string },
   subject: string | null,
   bodyPlain: string | null,
   bodyHtml: string | null,
@@ -303,6 +303,9 @@ async function processBillingoAndSzamlazzLinks(
   messageId: string | null,
   bodyMime: string | null = null,
 ): Promise<number> {
+  const cleanUserId = alias.user_id && String(alias.user_id).trim() !== '' ? String(alias.user_id).trim() : null;
+  const cleanCompanyId = alias.company_id && String(alias.company_id).trim() !== '' ? String(alias.company_id).trim() : null;
+  const userFolder = cleanUserId || cleanCompanyId || 'system';
   let downloadedCount = 0;
   const combinedText = `${subject || ''}\n${bodyPlain || ''}\n${bodyHtml || ''}\n${bodyMime || ''}`;
 
@@ -415,7 +418,7 @@ async function processBillingoAndSzamlazzLinks(
         fileName = `${fileName}.pdf`;
       }
 
-      const storagePath = `${alias.user_id}/${Date.now()}-${sanitizeFileName(fileName)}`;
+      const storagePath = `${userFolder}/${Date.now()}-${sanitizeFileName(fileName)}`;
 
       const { error: uploadErr } = await supabase.storage
         .from('invoice-uploads')
@@ -435,8 +438,8 @@ async function processBillingoAndSzamlazzLinks(
         };
 
         const { error: dbErr } = await supabase.from('invoice_uploads').insert({
-          user_id: alias.user_id,
-          company_id: alias.company_id,
+          user_id: cleanUserId,
+          company_id: cleanCompanyId,
           file_name: fileName,
           file_type: 'application/pdf',
           file_size: finalBytes.length,
@@ -459,8 +462,8 @@ async function processBillingoAndSzamlazzLinks(
         component: 'process-mailgun-webhook',
         action: 'extract_billingo_pdf',
         message: `Billingo link nem tartalmazott érvényes PDF fájlt: ${cleanUrl}`,
-        user_id: alias.user_id,
-        company_id: alias.company_id,
+        user_id: cleanUserId,
+        company_id: cleanCompanyId,
         context: { cleanUrl, sender, subject },
       });
     }
@@ -528,7 +531,7 @@ async function processBillingoAndSzamlazzLinks(
 
             if (textResponse.includes('%PDF')) {
               const fileName = `szamlazz_${invNum.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-              const storagePath = `${alias.user_id}/${Date.now()}-${sanitizeFileName(fileName)}`;
+              const storagePath = `${userFolder}/${Date.now()}-${sanitizeFileName(fileName)}`;
 
               const { error: uploadErr } = await supabase.storage
                 .from('invoice-uploads')
@@ -548,8 +551,8 @@ async function processBillingoAndSzamlazzLinks(
                 };
 
                 const { error: dbErr } = await supabase.from('invoice_uploads').insert({
-                  user_id: alias.user_id,
-                  company_id: alias.company_id,
+                  user_id: cleanUserId,
+                  company_id: cleanCompanyId,
                   file_name: fileName,
                   file_type: 'application/pdf',
                   file_size: bytes.length,
@@ -682,7 +685,7 @@ async function processBillingoAndSzamlazzLinks(
               fileName = `${fileName}.pdf`;
             }
 
-            const storagePath = `${alias.user_id}/${Date.now()}-${sanitizeFileName(fileName)}`;
+            const storagePath = `${userFolder}/${Date.now()}-${sanitizeFileName(fileName)}`;
 
             const { error: uploadErr } = await supabase.storage
               .from('invoice-uploads')
@@ -702,8 +705,8 @@ async function processBillingoAndSzamlazzLinks(
               };
 
               const { error: dbErr } = await supabase.from('invoice_uploads').insert({
-                user_id: alias.user_id,
-                company_id: alias.company_id,
+                user_id: cleanUserId,
+                company_id: cleanCompanyId,
                 file_name: fileName,
                 file_type: 'application/pdf',
                 file_size: finalBytes.length,
@@ -726,8 +729,8 @@ async function processBillingoAndSzamlazzLinks(
               component: 'process-mailgun-webhook',
               action: 'extract_szamlazz_pdf',
               message: `Számlázz.hu link nem tartalmazott érvényes PDF fájlt: ${cleanUrl}`,
-              user_id: alias.user_id,
-              company_id: alias.company_id,
+              user_id: cleanUserId,
+              company_id: cleanCompanyId,
               context: { cleanUrl, sender, subject },
             });
           }
@@ -738,8 +741,8 @@ async function processBillingoAndSzamlazzLinks(
             component: 'process-mailgun-webhook',
             action: 'fetch_szamlazz_link',
             message: `Számlázz.hu link letöltés meghiúsult (HTTP ${res.status}): ${cleanUrl}`,
-            user_id: alias.user_id,
-            company_id: alias.company_id,
+            user_id: cleanUserId,
+            company_id: cleanCompanyId,
             context: { cleanUrl, status: res.status, sender, subject },
           });
         }
@@ -751,8 +754,8 @@ async function processBillingoAndSzamlazzLinks(
           component: 'process-mailgun-webhook',
           action: 'fetch_szamlazz_link',
           message: `Hiba Számlázz.hu számlalink letöltése közben: ${err.message || err}`,
-          user_id: alias.user_id,
-          company_id: alias.company_id,
+          user_id: cleanUserId,
+          company_id: cleanCompanyId,
           context: { cleanUrl, sender, subject, error: String(err) },
         });
       }
@@ -1034,6 +1037,8 @@ serve(async (req) => {
     }
 
     console.log('Found alias for user:', alias.user_id, 'company:', alias.company_name, 'company_id:', alias.company_id);
+    alias.user_id = alias.user_id && String(alias.user_id).trim() !== '' ? String(alias.user_id).trim() : null;
+    alias.company_id = alias.company_id && String(alias.company_id).trim() !== '' ? String(alias.company_id).trim() : null;
 
     // Helper: Érvényes számla csatolmány-e?
     const isValidInvoiceAttachment = (file: File): boolean => {
@@ -1489,7 +1494,7 @@ serve(async (req) => {
                 : 'invoice-uploads';
 
           const sanitizedAttachmentName = sanitizeFileName(ef.name);
-          const storagePath = `${alias.user_id}/${Date.now()}-${sanitizedAttachmentName}`;
+          const storagePath = `${alias.user_id || alias.company_id || 'system'}/${Date.now()}-${sanitizedAttachmentName}`;
 
           // Upload to Supabase storage
           const { data: uploadData, error: uploadError } = await supabase.storage
@@ -1734,7 +1739,7 @@ serve(async (req) => {
                     : 'invoice-uploads';
                 
                 const sanitizedName = sanitizeFileName(ef.name);
-                const storagePath = `${alias.user_id}/${Date.now()}-${sanitizedName}`;
+                const storagePath = `${alias.user_id || alias.company_id || 'system'}/${Date.now()}-${sanitizedName}`;
                 
                 const { data: uploadData, error: uploadError } = await supabase.storage
                   .from(storageBucket)
