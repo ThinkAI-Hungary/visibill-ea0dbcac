@@ -315,10 +315,10 @@ export function useInvoiceMutations({
         invoice.invoice_delivery_date || '',
         getInvoicePartnerName(invoice),
         partnerTaxNumber || '',
-        invoice.invoice_net_amount?.toString() || '0',
-        invoice.invoice_gross_amount?.toString() || '0',
-        invoice.invoice_vat_amount?.toString() || '0',
         invoice.currency || 'HUF',
+        invoice.invoice_net_amount?.toString() || '0',
+        invoice.invoice_vat_amount?.toString() || '0',
+        invoice.invoice_gross_amount?.toString() || '0',
         invoice.match_status === 'partially_paid' ? 'Részben fizetve' : (invoice.paid || invoice.transaction_id ? 'Igen' : 'Nem'),
         invoice.submitted ? 'Igen' : 'Nem'
       ];
@@ -326,8 +326,8 @@ export function useInvoiceMutations({
 
     const headers = [
       'Irány', 'Bizonylatsorszám', 'Kibocsátás dátuma', 'Teljesítés dátuma',
-      'Partner név', 'Partner adószám', 'Nettó összeg', 'Bruttó összeg',
-      'ÁFA összeg', 'Pénznem', 'Fizetve', 'Beküldve'
+      'Partner név', 'Partner adószám', 'Pénznem', 'Nettó összeg (deviza)',
+      'ÁFA összeg (deviza)', 'Bruttó összeg (deviza)', 'Fizetve', 'Beküldve'
     ];
 
     const exportData = filteredAndSortedNavInvoices.map(invoice => getExportData(invoice));
@@ -341,10 +341,10 @@ export function useInvoiceMutations({
         invoice.teljesites_datuma || '',
         invoice.elado_nev || '',
         invoice.vevo_nev || '',
-        invoice.adoalap_osszesen?.toString() || '0',
-        invoice.brutto_vegosszeg?.toString() || '0',
-        invoice.afa_osszeg_osszesen?.toString() || '0',
         invoice.penznem || 'HUF',
+        invoice.adoalap_osszesen?.toString() || '0',
+        invoice.afa_osszeg_osszesen?.toString() || '0',
+        invoice.brutto_vegosszeg?.toString() || '0',
         getCategoryName(invoice.category_id),
         getProjectName(invoice.project_id)
       ];
@@ -352,7 +352,7 @@ export function useInvoiceMutations({
 
     const headers = [
       'Kibocsátás dátuma', 'Teljesítés dátuma', 'Eladó', 'Vevő',
-      'Nettó összeg', 'Bruttó összeg', 'ÁFA összeg', 'Pénznem',
+      'Pénznem', 'Nettó összeg (deviza)', 'ÁFA összeg (deviza)', 'Bruttó összeg (deviza)',
       'Kategória', 'Projekt'
     ];
 

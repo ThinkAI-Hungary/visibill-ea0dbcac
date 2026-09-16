@@ -592,6 +592,20 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
           });
         }
 
+        const tabFilePrefixMap: Record<InvoiceTab, string> = {
+          INBOUND: 'bejovo_szamlak',
+          OUTBOUND: 'kimeno_szamlak',
+          SUBMITTED_INBOUND: 'bekuldott_bejovo_szamlak',
+          SUBMITTED_OUTBOUND: 'bekuldott_kimeno_szamlak',
+        };
+
+        const tabLabelMap: Record<InvoiceTab, string> = {
+          INBOUND: 'Bejövő számlák (NAV)',
+          OUTBOUND: 'Kimenő számlák (NAV)',
+          SUBMITTED_INBOUND: 'Beküldött bejövő számlák',
+          SUBMITTED_OUTBOUND: 'Beküldött kimenő számlák',
+        };
+
         const headers = [
           'Számlaszám',
           'Irány',
@@ -603,12 +617,12 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
           'Tétel megnevezése',
           'Mennyiség',
           'Mennyiségi egység',
-          'Nettó egységár',
-          'Nettó összeg',
-          'ÁFA kulcs',
-          'ÁFA összeg',
-          'Bruttó összeg',
           'Pénznem',
+          'Nettó egységár (deviza)',
+          'Nettó összeg (deviza)',
+          'ÁFA kulcs',
+          'ÁFA összeg (deviza)',
+          'Bruttó összeg (deviza)',
           'Kategória',
           'Projekt',
           'Fizetve',
@@ -632,12 +646,12 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
               'Főszámla összesítő (nincs tételes adat)',
               1,
               'db',
+              inv.currency,
               inv.net_amount,
               inv.net_amount,
               '-',
               inv.vat_amount,
               inv.gross_amount,
-              inv.currency,
               inv.category_name || '',
               inv.project_name || '',
               inv.match_status === 'partially_paid' ? 'Részben fizetve' : (inv.paid ? 'Igen' : 'Nem'),
@@ -665,12 +679,12 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
                 itemName,
                 qty,
                 unit,
+                inv.currency,
                 netUnit,
                 netTotal,
                 vatRate,
                 vatAmount,
                 grossTotal,
-                inv.currency,
                 inv.category_name || '',
                 inv.project_name || '',
                 inv.match_status === 'partially_paid' ? 'Részben fizetve' : (inv.paid ? 'Igen' : 'Nem'),
@@ -680,12 +694,29 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
           }
         });
 
-        const filename = `teteles_kontirozo_export_${selectedCompany?.name || 'ceg'}_${new Date().toISOString().split('T')[0]}`;
-        await exportToFile(headers, rows, format, filename, 'Tételes Kontírozó Export');
+        const tabPrefix = tabFilePrefixMap[activeTab] || 'szamlak';
+        const safeCompanyName = (selectedCompany?.name || 'ceg').replace(/[^a-zA-Z0-9áéíóöőúüűÁÉÍÓÖŐÚÜŰ_-]/g, '_');
+        const dateStr = new Date().toISOString().split('T')[0];
+        const filename = `teteles_kontirozo_${tabPrefix}_${safeCompanyName}_${dateStr}.${format}`;
+        await exportToFile(headers, rows, format, filename, `Tételes Kontírozó Export (${tabLabelMap[activeTab] || 'Számlák'})`);
         return;
       }
 
       // Summary Export
+      const tabFilePrefixMap: Record<InvoiceTab, string> = {
+        INBOUND: 'bejovo_szamlak',
+        OUTBOUND: 'kimeno_szamlak',
+        SUBMITTED_INBOUND: 'bekuldott_bejovo_szamlak',
+        SUBMITTED_OUTBOUND: 'bekuldott_kimeno_szamlak',
+      };
+
+      const tabLabelMap: Record<InvoiceTab, string> = {
+        INBOUND: 'Bejövő számlák (NAV)',
+        OUTBOUND: 'Kimenő számlák (NAV)',
+        SUBMITTED_INBOUND: 'Beküldött bejövő számlák',
+        SUBMITTED_OUTBOUND: 'Beküldött kimenő számlák',
+      };
+
       const headers = [
         'Számlaszám',
         'Irány',
@@ -693,10 +724,10 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
         'Partner adószáma',
         'Kibocsátás kelte',
         'Teljesítés kelte',
-        'Nettó összeg',
-        'ÁFA összeg',
-        'Bruttó összeg',
         'Pénznem',
+        'Nettó összeg (deviza)',
+        'ÁFA összeg (deviza)',
+        'Bruttó összeg (deviza)',
         'Kategória',
         'Projekt',
         'Fizetve',
@@ -711,10 +742,10 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
         inv.partner_tax_number || '',
         inv.issue_date,
         inv.delivery_date,
+        inv.currency,
         inv.net_amount,
         inv.vat_amount,
         inv.gross_amount,
-        inv.currency,
         inv.category_name || '',
         inv.project_name || '',
         inv.match_status === 'partially_paid' ? 'Részben fizetve' : (inv.paid ? 'Igen' : 'Nem'),
@@ -722,10 +753,13 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
         inv.source === 'nav' ? 'NAV Online' : 'Feltöltött bizonylat',
       ]);
 
-      const filename = `szamlak_export_${selectedCompany?.name || 'ceg'}_${new Date().toISOString().split('T')[0]}`;
-      await exportToFile(headers, rows, format, filename, 'Számlák Exportálása');
+      const tabPrefix = tabFilePrefixMap[activeTab] || 'szamlak';
+      const safeCompanyName = (selectedCompany?.name || 'ceg').replace(/[^a-zA-Z0-9áéíóöőúüűÁÉÍÓÖŐÚÜŰ_-]/g, '_');
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `${tabPrefix}_export_${safeCompanyName}_${dateStr}.${format}`;
+      await exportToFile(headers, rows, format, filename, `${tabLabelMap[activeTab] || 'Számlák'} Exportálása`);
     },
-    [selectedCompany, pdfExport]
+    [selectedCompany, pdfExport, activeTab]
   );
 
   // Subcontext 1: Filter Context Value
