@@ -62,7 +62,7 @@ export default function ApprovalTab() {
         .select('*')
         .eq('company_id', companyId)
         .eq('statusz', 'jovahagyasra_var')
-        .in('invoice_type', ['penztarbizonylat', 'egyszerusitett_szla'])
+        .in('invoice_type', ['penztarbizonylat', 'egyszerusitett_szla', 'penztargep_zaras'])
         .order('kibocsatas_datuma', { ascending: false })
         .order('letrehozva', { ascending: false });
 
@@ -80,6 +80,13 @@ export default function ApprovalTab() {
         .update({ statusz: 'feldolgozott' })
         .eq('id', id);
       if (error) throw error;
+      if (companyId) {
+        try {
+          await (supabase.rpc as any)('sync_petty_cash_entries', { p_company_id: companyId });
+        } catch {
+          // Non-critical: petty cash sync runs on next tab view as well
+        }
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['pettyCashPendingInvoices', companyId] });
@@ -208,6 +215,9 @@ export default function ApprovalTab() {
   const getInvoiceTypeBadge = (type: string) => {
     if (type === 'penztarbizonylat') {
       return <Badge className="bg-blue-500/15 text-blue-400 hover:bg-blue-500/15 border-transparent font-normal">{t('pettyCash:approval_tab.badge_cash_receipt')}</Badge>;
+    }
+    if (type === 'penztargep_zaras') {
+      return <Badge className="bg-amber-500/15 text-amber-400 hover:bg-amber-500/15 border-transparent font-normal">Pénztárgép zárás</Badge>;
     }
     return <Badge className="bg-purple-500/15 text-purple-400 hover:bg-purple-500/15 border-transparent font-normal">{t('pettyCash:approval_tab.badge_receipt_slip')}</Badge>;
   };

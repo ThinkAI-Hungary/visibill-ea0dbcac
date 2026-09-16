@@ -1,4 +1,4 @@
-export type InvoiceType = 'sima_szamla' | 'sima_szla' | 'vegszamla' | 'proforma' | 'dijbekero' | 'dijbekero_proforma' | 'egyszerusitett_szamla' | 'egyszerusitett_szla' | 'elolegszamla' | 'sztorno_szla' | 'garanciajegy' | 'nem_beazonosithato' | 'penztarbizonylat' | 'vamhatarozat';
+export type InvoiceType = 'sima_szamla' | 'sima_szla' | 'vegszamla' | 'proforma' | 'dijbekero' | 'dijbekero_proforma' | 'egyszerusitett_szamla' | 'egyszerusitett_szla' | 'elolegszamla' | 'sztorno_szla' | 'garanciajegy' | 'nem_beazonosithato' | 'penztarbizonylat' | 'vamhatarozat' | 'penztargep_zaras';
 
 /**
  * Central label map for ALL invoice types (covers both legacy and current DB key formats).
@@ -19,6 +19,7 @@ export const INVOICE_TYPE_LABELS: Record<string, string> = {
   nem_beazonosithato: 'Nem beazonosítható',
   penztarbizonylat: 'Pénztárbizonylat',
   vamhatarozat: 'Vámhatározat',
+  penztargep_zaras: 'Pénztárgép zárás',
 };
 
 export interface BaseInvoice {
