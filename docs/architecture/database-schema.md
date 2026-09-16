@@ -63,6 +63,8 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 | `accounty_data_contracts` | 📘 eaisyBooks — Adó & Jogi | 0 | Adatfeldolgozási és könyvelési szerződések. |
 | `accounty_deadlines` | 📘 eaisyBooks — Alap | 3728 | Könyvelési és adóügyi határidők cégenként. |
 | `accounty_declarations` | 📘 eaisyBooks — Bérszámfejtés | 0 | Adóelőleg-nyilatkozatok kedvezmény-típusonként. |
+| `api_keys` | 🛠️ Platform & Üzemeltetés | 2 | API kulcsok külső integrációkhoz (OpenClaw és ügyfél Customer REST API) SHA-256 hash hitelesítéssel |
+| `api_request_logs` | 🏢 Cégek & Tagság | 5 | Külső gép-gép (M2M) Customer REST API kérések és cégadat-módosítások strukturált audit naplója |
 | `accounty_departments` | 📘 eaisyBooks — Szervezet | 5 | Szervezeti egységek. |
 | `accounty_dependents` | 📘 eaisyBooks — Bérszámfejtés | 0 | Eltartottak és kedvezményezett gyermekek nyilvántartása. |
 | `accounty_documents` | 📘 eaisyBooks — Alap | 53 | Ügyfél dokumentumtár. |

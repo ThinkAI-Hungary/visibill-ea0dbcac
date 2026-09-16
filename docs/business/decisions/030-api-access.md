@@ -52,8 +52,26 @@ Minden külső gépi integrációhoz és automatizációhoz hivatalos, jóváhag
 - Table allowlist/blocklist → szenzitív adatok védelme
 - Szigorú API határok: a felhasználók a webes bejelentkezésüket nem használhatják kontrolálatlan automatizált adatleszívásra
 
+### 🚀 Ügyfél REST API (Customer REST API — 2026-09-16)
+
+Az ügyfelek (elsőként Mauroni Marco, 7 cég tulajdonosa) számára kiépítettük a dedikált, auditált és többcéges hozzáférést biztosító REST API-t ([A-117](../../architecture/decisions/A-117-customer-rest-api-and-multi-company-keys.md)):
+
+| Elem | Megoldás |
+|---|---|
+| Edge Function | `customer-api` (verify_jwt: false, saját API key auth) |
+| Auth | `Authorization: Bearer <api_key>` — SHA-256 hash lookup |
+| Multi-tenancy | `user_id` kapcsolat: automatikusan feloldja az összes olyan céget, ahol a felhasználó `owner` vagy `admin` |
+| Végpont | `https://vxxgvdlqvvchtlmqnrqf.supabase.co/functions/v1/customer-api` |
+| Akciók | `companies` (lista), `company` (részletek), `update_company` (cégadatok), `update_settings` (beállítások atomi upsert) |
+| Módosítás védelem | Szigorú whitelist (`name`, `tax_number`, `address`, `description`, `primary_teaor`, `vat_regime`, `work_start_time`, `gl_date_basis`), tiltott mezők védelme |
+| Audit napló | `api_request_logs` tábla minden hívást és módosítást rögzít IP-vel, kéréssel, válasszal és latency-vel |
+| Felület | `Settings -> Biztonság -> ApiKeysCard` kulcskezelő komponens |
+
 **Kapcsolódó:**
-- [A-005: Edge Functions](../../architecture/decisions/A-005-edge-functions.md) — `openclaw-api` EF
-- [A-016: PostgreSQL Query Strategy](../../architecture/decisions/A-016-postgresql-query-strategy.md) — `generate_api_key`, `revoke_api_key` RPC
+- [A-005: Edge Functions](../../architecture/decisions/A-005-edge-functions.md) — `openclaw-api`, `customer-api` EF
+- [A-016: PostgreSQL Query Strategy](../../architecture/decisions/A-016-postgresql-query-strategy.md) — `generate_api_key`, `revoke_api_key`, `authenticate_customer_api_key` RPC
 - [A-017: Security Architecture](../../architecture/decisions/A-017-security-architecture.md) — 4. réteg: API Key Auth, 9. réteg: Script Automation Shield
+- [A-093: Atomi Cégbeállítások Upsert](../../architecture/decisions/A-093-atomic-company-settings-upsert-and-partial-update-isolation.md) — Beállítások atomi mentése
 - [A-101: Közvetlen Szkript-Automatizációk Letiltása és Kettős Védelmi Retesz](../../architecture/decisions/A-101-direct-script-automation-restriction.md)
+- [A-117: Hivatalos Ügyfél REST API és Többcéges API Kulcs Kezelés](../../architecture/decisions/A-117-customer-rest-api-and-multi-company-keys.md)
+

@@ -4817,6 +4817,7 @@ export type Database = {
           rate_limit_per_minute: number
           scope: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           company_id?: string | null
@@ -4832,6 +4833,7 @@ export type Database = {
           rate_limit_per_minute?: number
           scope?: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           company_id?: string | null
@@ -4847,6 +4849,7 @@ export type Database = {
           rate_limit_per_minute?: number
           scope?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -10952,8 +10955,19 @@ export type Database = {
         }
         Returns: Json
       }
+      authenticate_customer_api_key: {
+        Args: {
+          p_key_hash: string
+        }
+        Returns: Json
+      }
       generate_api_key: {
-        Args: { p_company_id?: string; p_name?: string }
+        Args: {
+          p_company_id?: string | null
+          p_name?: string
+          p_scope?: string
+          p_user_id?: string | null
+        }
         Returns: Json
       }
       get_accounty_company_names: {

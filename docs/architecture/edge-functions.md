@@ -1,7 +1,7 @@
 # Supabase Edge Functions Katalógus
 
-> **Utoljára frissítve:** 2026-09-07  
-> **Összesen:** 59 Deno Edge Function + `_shared/` közös modulok | **Runtime:** Deno (TypeScript) | **Platform:** Supabase Cloud
+> **Utoljára frissítve:** 2026-09-16  
+> **Összesen:** 60 Deno Edge Function + `_shared/` közös modulok | **Runtime:** Deno (TypeScript) | **Platform:** Supabase Cloud
 
 Ez a dokumentáció az eaisybill-prod rendszer összes Supabase Edge Function-jének hivatalos, autoritatív katalógusa. Részletezi az egyes funkciók célját, jogosultsági modelljét (`verify_jwt`), meghívási kontextusát (Frontend, pg_cron, Webhook, Postgres Trigger) és környezeti változóit.
 A funkciók forráskódja a [`supabase/functions/`](../../supabase/functions/) könyvtárban található. A technikai architektúra döntést az [A-005: Edge Functions a Serverless Logikához](./decisions/A-005-edge-functions.md), az adatbázis sémát a [database-schema.md](./database-schema.md), az eljárásokat pedig az [rpc-catalog.md](./rpc-catalog.md) írja le.
@@ -172,13 +172,14 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 
 ---
 
-## 10. 🔌 Külső Integrációk & API (1 db)
+## 10. 🔌 Külső Integrációk & API (2 db)
 
 > Harmadik felek és külső rendszerek biztonságos integrációs végpontja.
 
 | Edge Function | JWT Auth | Meghívó Réteg | Szükséges Környezeti Változók | Leírás és Üzleti Szerepkör |
 |---|:---:|---|---|---|
 | [`openclaw-api`](../../supabase/functions/openclaw-api/index.ts) | ❌ Nyilvános / Belső | Külső integrációs kliensek (OpenClaw) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Szigorúan korlátozott, olvasási jogú REST API végpont SHA-256 hash-elt API kulcs hitelesítéssel (`api_keys` tábla). |
+| [`customer-api`](../../supabase/functions/customer-api/index.ts) | ❌ Nyilvános / API Key | Külső ügyfél integrációk (M2M, curl, Python, ERP) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Hivatalos ügyfél REST API cégadatok és konfigurációs beállítások lekérdezéséhez és módosításához (`api_keys` SHA-256 hash hitelesítés, többcéges hatáskör feloldás, sliding window rate limiting, `api_request_logs` teljes audit naplózás). |
 
 ---
 

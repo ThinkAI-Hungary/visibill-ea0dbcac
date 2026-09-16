@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-16  
-> **Összesen:** 80 döntés | ✅ Decided: 76 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 81 döntés | ✅ Decided: 77 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -73,6 +73,7 @@
 | P-027 | Csapattagok kezelés (share token) | ✅ Decided | [P-027](./P-027-team-management.md) |
 | P-048 | IMAP/SMTP Levelező Beállítások és Tabs UX | ⛔ Superseded | [P-048](./P-048-imap-smtp-settings-tabs-ux.md) |
 | P-051 | Többprofilos Levelező Fiókok (Multi-Profile IMAP/SMTP) Kezelése UX | ✅ Decided | [P-051](./P-051-multi-profile-email-accounts-management-ux.md) |
+| P-086 | Programozói Hozzáférés & API Kulcsok Kezelése (ApiKeysCard) UX | ✅ Decided | [P-086](./P-086-customer-api-keys-management-ux.md) |
 
 ## 💳 Előfizetés & Pricing
 
