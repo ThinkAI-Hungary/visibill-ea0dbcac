@@ -1290,8 +1290,8 @@
     "semantic_hash": ""
   },
   "src/lib/vatReturnXml.ts": {
-    "mtime": 1788775185.5750768,
-    "ast_hash": "ab65f42f3fa5833afa0fda6270456c8e",
+    "mtime": 1789614399.1550717,
+    "ast_hash": "79516b0a72acd32cfa9f8fdc0f14d621",
     "semantic_hash": ""
   },
   "src/main.tsx": {
@@ -7710,8 +7710,8 @@
     "semantic_hash": ""
   },
   "src/lib/documents/__tests__/documentEngine.test.ts": {
-    "mtime": 1788786303.984347,
-    "ast_hash": "897c8dc1db3887a489e45d2c11f10eb2",
+    "mtime": 1789613827.302878,
+    "ast_hash": "da9ba1cf6cd2c3535cbb6d9fbe3aa635",
     "semantic_hash": ""
   },
   "src/lib/documents/__tests__/hungarianEncoding.test.ts": {
@@ -7805,8 +7805,8 @@
     "semantic_hash": ""
   },
   "src/lib/documents/templates/vatReturnTemplate.ts": {
-    "mtime": 1788784267.8355134,
-    "ast_hash": "37906aaa052247600330891654a311d6",
+    "mtime": 1789613734.3419192,
+    "ast_hash": "a8c379a1b7da38a9b21ca902e8153b3d",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-061-decompose-management-dashboard.md": {
@@ -8300,13 +8300,13 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/VatReturnViewTab.tsx": {
-    "mtime": 1789159283.0046315,
-    "ast_hash": "9059a2badca578363d69bd23c1ceafa6",
+    "mtime": 1789613863.6290092,
+    "ast_hash": "a5574206c79432e1f80e470f117b748b",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatXmlValidationDialog.tsx": {
-    "mtime": 1789159283.0046315,
-    "ast_hash": "39ee99f5ff02773e0cd1d824e52b006c",
+    "mtime": 1789613872.4340346,
+    "ast_hash": "44873af615943223c42c9d3f8a0c453f",
     "semantic_hash": ""
   },
   "src/features/vat/core/vatEngine.ts": {
@@ -8640,13 +8640,13 @@
     "semantic_hash": ""
   },
   "src/lib/__tests__/vatReturnXml.test.ts": {
-    "mtime": 1788775356.462128,
-    "ast_hash": "c041ca42b1b35a83d821141509581ce6",
+    "mtime": 1789614440.8201106,
+    "ast_hash": "ef1c89a1d57f9984822663acf1e7e133",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-080-nav-anyk-vat-return-xml-standardization.md": {
-    "mtime": 1788784887.4230852,
-    "ast_hash": "df87c85b86099c5e3a6c6410c29e0586",
+    "mtime": 1789614459.86392,
+    "ast_hash": "eccf9c9b1b87574bb6813fe82edfed04",
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/PayrollReconstructionDialog.tsx": {

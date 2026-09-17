@@ -1,49 +1,57 @@
-# A-080: NAV ÁNYK 2665 ÁFA-Bevallás és 65M Összesítő Jelentés Szabványos XML Export Architektúra
+# A-080: NAV ÁNYK 2665 ÁFA-Bevallás (2665A) és 65M Összesítő Jelentés (2665M) Szabványos XML Export Architektúra
 
 **Status:** Decided  
 **Date:** 2026-09-01  
-**Utoljára frissítve:** 2026-09-07  
+**Utoljára frissítve:** 2026-09-17 (EB-0044: AbevJava 65A/65M Pozíciókód és Alnyomtatvány Szabványosítás)
 
 ## Context
-A Visibill / eaisyBooks rendszer ÁFA moduljában a 65-ös ÁFA-bevallás XML letöltése korábban egyedi hierarchikus címkéket használt (`<nyomtatvany><fejlec><fobevallas>...`), továbbá az `XmlDocumentAdapter` a számmal kezdődő mezőnevekből érvénytelen XML elemcímkéket generált (pl. `<01_adoszam_torzs>`), ami sértette a W3C XML szabványt és az ÁNYK (Általános Nyomtatványkitöltő / AbevJava) beolvasáskor azonnali hibát (*„hibás a file”*) eredményezett.
+A Visibill / eaisyBooks rendszer ÁFA moduljában a 65-ös ÁFA-bevallás XML letöltése korábban fiktív szöveges mezőneveket használt (`sor_01_alap`, `01_0001_adoszam_torzs`), és az azonosítója `2665` volt az ÁNYK által megkövetelt `2665A` (Főlap) és `2665M` (Alnyomtatványok) helyett. Továbbá az M-lapok belföldi összesítő adatai nem önálló `<nyomtatvany>` blokkokként, hanem a főnyomtatvány mezői közé ágyazva jelentek meg.
 
-Szükségessé vált az ÁFA-bevallási XML export teljes szabványosítása a NAV ÁNYK hivatalos AbevJava sémája és az A-063 Dokumentum Motor (`DocumentEngine`) architektúrája szerint.
+Ennek következtében az Általános Nyomtatványkitöltő (ÁNYK / AbevJava) a fájl importálásakor azonnali elutasítást adott (EB-0044 hibajegy):  
+> *„Hibás típusú adatfile! Az alnyomtatvány nem a főnyomtatványhoz tartozik!”*
+
+A hiteles NAV ÁNYK XML referenciaminta (`docs/think_ai_2465_11.xml`) alapján a teljes generálási architektúra szabványosításra került.
 
 ## Decision
-1. **Hivatalos ÁNYK Burkoló (Envelope) és Mezőkódolás:**
-   - A generált XML gyökéreleme a `<nyomtatvanyok xmlns="http://iop.gov.hu/2007/01/nyk/altalanosnyomtatvany">`.
-   - A fejléc a `<nyomtatvanyinformacio>` blokkban tartalmazza a dinamikus nyomtatványazonosítót (`${periodYear % 100}65`, pl. 2026-ra `2665`, 2025-re `2565`, 2024-re `2465`) és a nyomtatványverziót (`<nyomtatvanyverzio>1.0</nyomtatvanyverzio>`).
-   - Minden adatmező kötelezően a `<mezok>` blokkon belül, `<mezo eazon="KULCS">ÉRTÉK</mezo>` formátumban kerül kódolásra, elkerülve a W3C XML számmal kezdődő tag hibáit.
+1. **Hivatalos ÁNYK Burkoló (Envelope) és Névtér:**
+   - A generált XML gyökéreleme: `<nyomtatvanyok xmlns="http://www.apeh.hu/abev/nyomtatvanyok/2005/01">`.
+   - Kötelező `<abev>` blokk beépítése: `<hibakszama>0</hibakszama>`, `<hash>...</hash>`, `<programverzio>v.3.50.0</programverzio>`.
+   - **Főnyomtatvány azonosító:** `${periodYear % 100}65A` (pl. 2026-ra `2665A`, 2025-re `2565A`, 2024-re `2465A`), nyomtatványverzió: `4.0`.
+   - **Alnyomtatvány azonosító:** `${periodYear % 100}65M` (pl. 2026-ra `2665M`), nyomtatványverzió: `4.0`.
+   - **Dátumformátum:** Szigorúan kötőjel nélküli 8 számjegyű dátum: `YYYYMMDD` (pl. `20260701`, `20260731`).
 
-2. **Főlap, Bevallási Sorok és 65M Belföldi Összesítő Lapok:**
-   - **Főlap adatok:** `01_0001_adoszam_torzs`, `01_0002_adoszam_afa`, `01_0003_adoszam_megye`, `01_0004_adoszam_teljes`, `01_0006_adozo_nev`, `01_0007_szekhely_cim`, `01_0010_adoev`, `01_0011_idoszak_tol`, `01_0012_idoszak_ig`, `01_0013_gyakorisag`.
-   - **Főbevallási sorok (01..85):** `sor_${row}_alap`, `sor_${row}_ado` ezer Ft-ra kerekített formátumban.
-   - **M-lapok (Belföldi Összesítő):** `M_partner_osszesen`, valamint partnerenként `M_${idx}_0001_adoszam`, `M_${idx}_0002_nev`, `M_${idx}_0003_szamlak_szama`, `M_${idx}_0004_alap`, `M_${idx}_0005_afa`, `M_${idx}_0006_afa_5`, `M_${idx}_0007_afa_18`, `M_${idx}_0008_afa_27`.
-   - **Nyilatkozat:** `03_0001_nyilatkozat_adat_valos`, `03_0002_kelt_hely`, `03_0003_kelt_datum`.
+2. **Hivatalos Pozíció-alapú Mezőkódolás (`eazon`):**
+   - **0A lap (Főlap azonosítás & keltezés):**  
+     `0A0001E001A` (11 jegyű adószám), `0A0001E006A` (cégnév), `0A0001E007A` (képviselő), `0A0001E008A` (telefon), `0A0001F001A` (időszak tól), `0A0001F002A` (időszak ig), `0A0001F006A` (gyakoriság: H/N/E), `0A0001F021A` (M-lapok száma), `0A0001I001A` (keltezés helye), `0A0001I002A` (keltezés ideje).
+   - **0B lap (Fizetendő adó - 01..36. sorok):**  
+     Fejléc `0B0001B001A`. Adóalap: `0B0001C` + `padStart(sor, 4, '0')` + `BA`. Adó: `0B0001C` + `padStart(sor, 4, '0')` + `CA` (pl. 07. sor: `0B0001C0007BA` és `0B0001C0007CA`).
+   - **0C lap (Levonható adó - 37..75. sorok):**  
+     Fejléc `0C0001B001A`. Adóalap: `0C0001C` + `padStart(sor, 4, '0')` + `BA`. Adó: `0C0001C` + `padStart(sor, 4, '0')` + `CA` (pl. 64. sor: `0C0001C0064BA` és `0C0001C0064CA`).
+   - **0D lap (Elszámolás - 76..86. sorok):**  
+     Fejléc `0D0001B001A`. 76. sor: `0D0001C0076BA` (alap), `0D0001C0076CA` (adó). 82..86. sorok: `0D0001D` + `padStart(sor, 4, '0')` + `CA` (pl. 83. sor különbözet: `0D0001D0083CA`, 84. fizetendő: `0D0001D0084CA`).
+   - **0F lap (M-lap Összesítő a Főlapon):**  
+     Fejléc `0F0001B001A`. 105. sor (összes számlatétel): `0F0001D0105BA` (partnerek száma), `0F0001D0105CA` (számlák darabszáma), `0F0001D0105DA` (összes alap eFt), `0F0001D0105EA` (összes adó eFt). 106. sor (korrekciók: 0). 108. sor (mindösszesen: 105 + 106).
+   - **Záró lapok:** `0E`, `0K`, `0N` lapok szabályos fejléc-regisztrációja.
 
-3. **DocumentEngine Integráció, Fájlnév Sanitization & Egységes Export:**
-   - Az `XmlDocumentAdapter` és a `vatReturnTemplate` szinkronizálva lett az ÁNYK mezőleképezéssel.
-   - A letöltési fájlnév szabványosítva lett a dedikált `getVatReturnFilename` függvénnyel:  
-     `NAV_${formId}_${year}_${monthStr}_${safeName}.xml` (pl. `NAV_2665_2026_07_TS_Consult_Kft.xml`).
-   - **Dupla pont (`..xml`) és útvonal védelem:** A cégnevek végén található pontok (`Kft.`, `Bt.`) és írásjelek automatikusan eltávolításra kerülnek, így megelőzi a Java / AbevJava `JFileChooser` szülőkönyvtár félreértelmezéseit és a Windows kettős kiterjesztésből eredő importálási hibáit.
-   - Export indításakor a felület egyértelmű Toast visszajelzést ad és ellenőrzi az adószám meglétét.
+3. **65M Alnyomtatványok Strukturális Elkülönítése & Oldaltördelés:**
+   - Minden belföldi partner önálló `<nyomtatvany>` blokként kerül kódolásra a gyökérelemben.
+   - Fejléc tartalmazza az `<albizonylatazonositas>` blokkot a partner nevével és 8 számjegyű törzsszámával.
+   - **0A lap (M-01):** Partner-szintű összesítés (`0A0001C001A` adózó adószám, `0A0001C005A` partner törzsszám, `0A0001E0004BA`..`DA` és `0A0001E0007BA`..`DA`).
+   - **0B lap (M-02) Tételes Számlák és 36 Soros Oldaltördelés:** Tételes számlasorok a `vat_return_m_lines.invoice_details` rekordból. Az ÁNYK fizikai lapkorlátjának megfelelően 36 számlánként új M-02 oldal nyílik (`0B0001`, `0B0002` stb.), oldalankénti záró összesítő sorral (`0B{pagePad}C0037CA` és `DA`).
+   - **Mértékegység & Mikroszámla Kezelés (`convertToEFt`):** Az adatbázisban tárolt valós Forint összegeket a `convertToEFt` kerekíti E Ft-ra. A mikroszámlák (< 500 Ft) szabályosan 0 E Ft értéket kapnak ahelyett, hogy heurisztikusan tévesen százezer forintos nagyságrendűnek minősülnének. Támogatott az explicit `amount_unit: 'E_FT'` / `is_e_ft: true` jelölő is.
+   - **Számtani Koherencia:** Az M-02 oldalak 37. sorainak összege garantáltan és matematikailag megegyezik az M-01 lap (0A) 04. és 07. soraival, valamint a főlap (65A) 0F lapjának 105. és 108. soraival.
 
-4. **Adószám Normalizálás és Karakterkódolási Védelem (Hibatűrés):**
-   - A `parseTaxNumber` univerzális segédfüggvénnyel a rendszer automatikusan kezeli mind a standard kötőjeles (`13086905-2-08`), mind az egybefüggő 11 jegyű (`13086905208`), mind a szóközös vagy csak törzsszámot tartalmazó adószámokat.
-   - A normalizálás kiterjesztésre került valamennyi export és bevallási modulra: `vatReturnXml.ts`, `vatReturnTemplate.ts`, `contrib2658Xml.ts`, `t101Xml.ts`, `EvKataReturnPage.tsx`, `EvHipaReturnPage.tsx`, `EvKataPage.tsx`, és `accounty-generate-xml`.
-   - A főlapon a törzsszám (`01_0001`), áfakód (`01_0002`), megyekód (`01_0003`) és formázott teljes adószám (`01_0004`) garantáltan konzisztens és érvényes hosszúságú marad.
-   - A 65M összesítő lapokon a partnerek adószámából mind a közvetlen XML építőben, mind a DocumentEngine sablonban automatikusan kinyerésre kerül a NAV által megkövetelt 8 számjegyű törzsszám (`M_XXXX_0001_adoszam`).
-   - A `vatEngine.ts` adószám-validációja szinkronizálva lett: a korábbi szigorú kötőjeles regex mellett elfogadja az egybefüggő 11 számjegyű formátumot (`/^\d{11}$/`) is, feloldva az űrlapok és a kalkulációs motor közötti validációs inkonzisztenciát.
-   - Az XML kimenet tiszta UTF-8 kódolással (BOM-mentesen, `<?xml version="1.0" encoding="UTF-8"?>` fejléccel) generálódik, ami garantálja a magyar ékezetes karakterek (`á, é, í, ó, ö, ő, ú, ü, ű`) hibátlan megjelenítését és megakadályozza a Java Xerces parser `Content is not allowed in prolog` típusú indítási hibáit.
+4. **DocumentEngine & Felületi Integráció:**
+   - A `vatReturnTemplate.ts` DocumentEngine sablon közvetlenül a szabványos `buildVatReturnXml` motort futtatja, garantálva a 100%-os séma-egyezséget mind a közvetlen letöltésnél, mind a DocumentEngine exportnál.
+   - A letöltési fájlnév szabványosított: `NAV_${formId}_${year}_${monthStr}_${safeName}.xml` (pl. `NAV_2665_2026_07_TS_Consult_Kft.xml`).
 
 ## Consequences
 **Pozitív:**
-- Az exportált XML fájlok azonnal, hiba nélkül importálhatók az ÁNYK 2665 / 2565 / 2465 nyomtatványába.
-- W3C XML validitás garantált, nincsenek szintaktikai parser hibák.
-- Az M-lapok és a főlapi sorok számszakilag egyeznek a könyvelési kalkulációval.
-
-**Negatív:**
-- Egy jövőbeli NAV ÁNYK nyomtatvány-struktúra változás (pl. új kötelező mezőkódok) esetén a mezőkód-táblázat frissítése szükséges.
+- Az exportált XML fájlok hiba nélkül, azonnal importálhatók az ÁNYK 2665 / 2565 / 2465 nyomtatványába.
+- Megszűnt az *„alnyomtatvány nem a főnyomtatványhoz tartozik”* importálási hiba.
+- A 65M lapok tételes számlaszintű részletezést kapnak a NAV előírásai szerint, 36 számlánként automatikus oldaltördeléssel.
+- A mikroszámlák és kisösszegű tételek matematikai kerekítése hibátlan, kizárva a téves E Ft felülértékelést.
+- Teljes számszaki összhang a főlap 0F összesítő lapja, az M-01 lapok és az M-02 oldalak között.
 
 ## Kapcsolódó
 - [A-063: Egységes DocumentEngine & Export Architektúra](./A-063-unified-document-engine-architecture.md)

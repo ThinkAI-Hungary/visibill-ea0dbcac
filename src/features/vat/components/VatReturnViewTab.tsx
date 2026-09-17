@@ -239,6 +239,8 @@ export function VatReturnViewTab() {
                       periodYear: year,
                       periodMonth: month,
                       frequency,
+                      representativeName: (selectedCompany as any).representative_name || (selectedCompany as any).contact_name || undefined,
+                      phone: (selectedCompany as any).phone || undefined,
                       lines: lines as any[],
                       mLines: mLines as any[],
                     });
