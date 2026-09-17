@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1789611994.0219133,
-    "ast_hash": "de3ce63d661f116138baa6b4a47f30fe",
+    "mtime": 1789641780.7980714,
+    "ast_hash": "7ee6cd3e0e3330ce105febf5dbebdf2d",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3325,8 +3325,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/index.md": {
-    "mtime": 1789608881.6964357,
-    "ast_hash": "1c7f5ff96e532603395330724b4ac0bf",
+    "mtime": 1789641780.7990706,
+    "ast_hash": "9928048dc303e915490ef0f9aab8bc4d",
     "semantic_hash": ""
   },
   "docs/business/overview.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1789608932.1434767,
-    "ast_hash": "a8baf7e647d44a1b358c6dd07c1347c2",
+    "mtime": 1789641780.8000696,
+    "ast_hash": "452e8c4a0d6513fcf201aa28cc3d84d2",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -7665,8 +7665,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/NavInvoiceRow.tsx": {
-    "mtime": 1789597341.7858489,
-    "ast_hash": "f1dc65f5421f63b7215c555fe63d3439",
+    "mtime": 1789641795.6168876,
+    "ast_hash": "bc2b5ebc12ec0fc7b33bc9869d4b4734",
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/NavInvoiceTable.tsx": {
@@ -7675,8 +7675,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/SubmittedInvoiceRow.tsx": {
-    "mtime": 1789597341.7873573,
-    "ast_hash": "8496173a04ca3c4117850870cab49ec5",
+    "mtime": 1789641803.6000848,
+    "ast_hash": "63571a5789cdb7d659cfb117955b7bb0",
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/SubmittedInvoiceTable.tsx": {
@@ -9435,13 +9435,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-105-knowledge-base-schema-and-fts.md": {
-    "mtime": 1788800563.3106182,
-    "ast_hash": "193a32a72c0a1f9d519520992233dd68",
+    "mtime": 1789641780.79607,
+    "ast_hash": "1c69d266d741c9847b730abd839738da",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-078-knowledge-base-ux-and-navigation.md": {
-    "mtime": 1788797121.106221,
-    "ast_hash": "a45b2e9f8627722e4a485611db03c04e",
+    "mtime": 1789641780.7990706,
+    "ast_hash": "20fff23646f9599ec3a9cb5816d52ca0",
     "semantic_hash": ""
   },
   "src/test/knowledgeBaseRag.test.ts": {
@@ -11022,6 +11022,46 @@
   "supabase/migrations/20260917032000_transactions_a8_fields.sql": {
     "mtime": 1789609616.9180126,
     "ast_hash": "41eafcde0adc683c98674cd48943a1c4",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-120-group-vat-entity-detection-and-technical-user-guidance.md": {
+    "mtime": 1789641780.797073,
+    "ast_hash": "86a6b494895c5b12f13a2ad91c13826e",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-121-cross-year-delivery-vat-and-general-ledger-guard.md": {
+    "mtime": 1789641780.797073,
+    "ast_hash": "33480dbfeb38f5497ed8ea5d51ec54e0",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-122-exclude-from-accounting-sync-and-optimistic-ui.md": {
+    "mtime": 1789641780.7980714,
+    "ast_hash": "c05f58ba933e3c597b50c898d98f4cf8",
+    "semantic_hash": ""
+  },
+  "docs/business/decisions/056-group-vat-entity-sync-policy.md": {
+    "mtime": 1789641780.7980714,
+    "ast_hash": "9b65c1de1f5615bc88825b76585b7d28",
+    "semantic_hash": ""
+  },
+  "docs/business/decisions/057-cross-year-delivery-accounting-rules.md": {
+    "mtime": 1789641780.7980714,
+    "ast_hash": "a727cc7fbdaa2bb5ac3f681366dcb70a",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-088-group-vat-nav-credentials-detection-and-sync-ux.md": {
+    "mtime": 1789641780.7990706,
+    "ast_hash": "5a223039f69f66f503238357803fa1d0",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-089-invoice-exclude-from-accounting-optimistic-toggle-ux.md": {
+    "mtime": 1789641780.8000696,
+    "ast_hash": "b36047b2f45cb797f5e8813caf7c28c6",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-090-transaction-uploaded-files-management-dialog-ux.md": {
+    "mtime": 1789641780.8000696,
+    "ast_hash": "06bea33ae6a49baf90f4f7b0bcbae100",
     "semantic_hash": ""
   }
 }

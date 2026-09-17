@@ -1290,8 +1290,8 @@
     "semantic_hash": ""
   },
   "src/lib/vatReturnXml.ts": {
-    "mtime": 1789613719.0162785,
-    "ast_hash": "2be73eb65be53f9a9920c34f62b54eef",
+    "mtime": 1789614399.1550717,
+    "ast_hash": "79516b0a72acd32cfa9f8fdc0f14d621",
     "semantic_hash": ""
   },
   "src/main.tsx": {
@@ -8640,13 +8640,13 @@
     "semantic_hash": ""
   },
   "src/lib/__tests__/vatReturnXml.test.ts": {
-    "mtime": 1789613759.1120815,
-    "ast_hash": "c6bab1756c51ceb4bdf8690ba128fff7",
+    "mtime": 1789614440.8201106,
+    "ast_hash": "ef1c89a1d57f9984822663acf1e7e133",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-080-nav-anyk-vat-return-xml-standardization.md": {
-    "mtime": 1789613897.3971994,
-    "ast_hash": "b3006dc0d2e20a3edde4e3061d5e2866",
+    "mtime": 1789614459.86392,
+    "ast_hash": "eccf9c9b1b87574bb6813fe82edfed04",
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/PayrollReconstructionDialog.tsx": {

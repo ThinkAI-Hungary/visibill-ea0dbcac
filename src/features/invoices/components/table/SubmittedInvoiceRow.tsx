@@ -247,11 +247,19 @@ export function SubmittedInvoiceRow({
                     checked={invoice.is_accountant_reviewed === true}
                     onCheckedChange={async (checked) => {
                       const nextVal = !!checked;
-                      await supabase
-                        .from('invoices')
-                        .update({ is_accountant_reviewed: nextVal } as any)
-                        .eq('id', invoice.id);
-                      invalidateInvoiceData?.();
+                      try {
+                        const { error } = await supabase
+                          .from('invoices')
+                          .update({ is_accountant_reviewed: nextVal } as any)
+                          .eq('id', invoice.id);
+                        if (error) {
+                          console.error('Failed to update invoice accountant reviewed status:', error);
+                          return;
+                        }
+                        invalidateInvoiceData?.();
+                      } catch (err) {
+                        console.error('Error updating invoice accountant reviewed status:', err);
+                      }
                     }}
                     className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 cursor-pointer"
                     aria-label="Kikontírozva statusz valtoztatasa"

@@ -69,6 +69,7 @@ export interface NavInvoice {
   skonto_amount?: number | null;
   skonto_shipping_amount?: number | null;
   skonto_selected?: boolean | null;
+  is_accountant_reviewed?: boolean | null;
 }
 
 export interface SubmittedInvoice {
@@ -109,6 +110,7 @@ export interface SubmittedInvoice {
   skonto_amount?: number | null;
   skonto_shipping_amount?: number | null;
   skonto_selected?: boolean | null;
+  is_accountant_reviewed?: boolean | null;
 }
 
 export interface Partner {

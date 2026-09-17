@@ -18,6 +18,7 @@ import { hu } from 'date-fns/locale';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 import type { NavInvoice, SubmittedInvoice, TransactionRecord } from '../../types';
 import type { SuggestedSubmittedInvoiceWithScore } from '../../utils/invoiceRelations';
+import { supabase } from '@/integrations/supabase/client';
 
 interface NavInvoiceRowProps {
   invoice: NavInvoice;
@@ -367,11 +368,19 @@ export function NavInvoiceRow({
                     }
                     onCheckedChange={async (checked) => {
                       const nextVal = !!checked;
-                      await supabase
-                        .from('nav_invoices')
-                        .update({ is_accountant_reviewed: nextVal } as any)
-                        .eq('id', invoice.id);
-                      invalidateInvoiceData?.();
+                      try {
+                        const { error } = await supabase
+                          .from('nav_invoices')
+                          .update({ is_accountant_reviewed: nextVal } as any)
+                          .eq('id', invoice.id);
+                        if (error) {
+                          console.error('Failed to update nav invoice accountant reviewed status:', error);
+                          return;
+                        }
+                        invalidateInvoiceData?.();
+                      } catch (err) {
+                        console.error('Error updating nav invoice accountant reviewed status:', err);
+                      }
                     }}
                     className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 cursor-pointer"
                     aria-label="Kikontírozva statusz valtoztatasa"
