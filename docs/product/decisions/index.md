@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-17  
-> **Összesen:** 85 döntés | ✅ Decided: 81 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 86 döntés | ✅ Decided: 82 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -158,6 +158,7 @@
 | P-048-storno | Sztornó Számla Kézi Lezárás UX — toggle gomb, confirm dialog, visszavonható | ✅ Decided | [P-048](./P-048-storno-settle-ux.md) |
 | P-053 | Szigorított Számlakép Előnézet és Párosítás UX (Strict Invoice Attachment Pairing) | ✅ Decided | [P-053](./P-053-strict-invoice-attachment-pairing-ux.md) |
 | P-089 | Számla Könyvelési Kizárás ("Nem könyvelt") Optimista Kapcsoló és Zökkenőmentes UX | ✅ Decided | [P-089](./P-089-invoice-exclude-from-accounting-optimistic-toggle-ux.md) |
+| P-091 | Téves Vevőre Szóló Számlák Figyelmeztető Jelzése és Jóváhagyási Dialógus UX | ✅ Decided | [P-091](./P-091-buyer-tax-mismatch-warning-ux.md) |
 
 ## 🔗 NAV Integráció
 
