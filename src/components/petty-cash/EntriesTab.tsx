@@ -26,7 +26,7 @@ import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import type { PettyCashRegister, PettyCashEntry, OpenOutboundInvoice, SummaryRow } from './types';
-import { SOURCE_LABELS, SOURCE_COLORS, fmtAmount, fmtBalance, roundHuf } from './types';
+import { SOURCE_LABELS, SOURCE_COLORS, fmtAmount, fmtBalance, roundHuf, sanitizePartnerId, validatePettyCashEntryPayload } from './types';
 import CashClosingDialog from './CashClosingDialog';
 import TransferDialog from './TransferDialog';
 import { getLocalizedRegisterName, getLocalizedEntryDescription } from '@/lib/pettyCashUtils';
@@ -502,8 +502,11 @@ export default function EntriesTab() {
 
   const moveEntryMutation = useMutation({
     mutationFn: async ({ entryId, targetRegisterId }: { entryId: string; targetRegisterId: string }) => {
+      if (!targetRegisterId || targetRegisterId.trim() === '') {
+        throw new Error('Cél pénztár kiválasztása kötelező!');
+      }
       const { error } = await supabase.from('petty_cash_entries')
-        .update({ register_id: targetRegisterId, routed_by: 'manual' })
+        .update({ register_id: targetRegisterId.trim(), routed_by: 'manual' })
         .eq('id', entryId);
       if (error) throw error;
     },
@@ -1397,7 +1400,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
     entry_date: format(new Date(), 'yyyy-MM-dd'),
     description: '',
     amount: '',
-    currency: 'HUF',
+    currency: defaultReg?.currencies[0] || 'HUF',
     isExpense: false,
     partner_id: '',
   });
@@ -1441,19 +1444,34 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
           isExpense: editingEntry.amount < 0,
           partner_id: editingEntry.partner_id || '',
         });
-      } else if (defaultReg) {
+      } else {
+        const activeReg = (registers.length > 0 && registers.find(r => r.id === form.register_id)) || defaultReg || registers[0];
         setForm({
-          register_id: defaultReg.id,
+          register_id: activeReg?.id || '',
           entry_date: format(new Date(), 'yyyy-MM-dd'),
           description: '',
           amount: '',
-          currency: defaultReg.currencies[0] || 'HUF',
+          currency: activeReg?.currencies[0] || 'HUF',
           isExpense: false,
           partner_id: '',
         });
       }
     }
-  }, [open, editingEntry, defaultReg]);
+  }, [open, editingEntry, defaultReg, registers]);
+
+  // If registers load asynchronously while dialog is open and register_id is currently empty
+  React.useEffect(() => {
+    if (open && !editingEntry && !form.register_id && registers.length > 0) {
+      const activeReg = defaultReg || registers[0];
+      if (activeReg?.id) {
+        setForm(f => ({
+          ...f,
+          register_id: activeReg.id,
+          currency: activeReg.currencies[0] || f.currency || 'HUF',
+        }));
+      }
+    }
+  }, [open, editingEntry, form.register_id, registers, defaultReg]);
 
   const selectedReg = registers.find(r => r.id === form.register_id);
 
@@ -1503,61 +1521,51 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
 
   const save = useMutation({
     mutationFn: async () => {
+      const rawAmount = parseFloat(form.amount) || 0;
+      const validation = validatePettyCashEntryPayload({
+        register_id: form.register_id,
+        amount: rawAmount,
+        description: form.description,
+        invoiceMode,
+        selectedInvoiceCount: selectedInvoiceIds.size,
+      });
+
+      if (!validation.valid) {
+        toast({
+          title: t('common:error', 'Hiba'),
+          description: validation.error,
+          variant: 'destructive',
+        });
+        throw new Error(validation.error);
+      }
+
+      const validRegisterId = form.register_id.trim();
+
       if (invoiceMode) {
-        // Invoice settlement mode — create entry from selected invoices
-        const selectedInvs = openInvoices.filter(inv => selectedInvoiceIds.has(inv.id));
-        const totalAmount = selectedInvs.reduce((sum, inv) => sum + (Number(inv.brutto_vegosszeg) || 0), 0);
-        const bizSorszamok = selectedInvs.map(inv => inv.bizonylatsorszam).join(', ');
-        const description = `Utalásos számla KP-ban rendezve: ${bizSorszamok}`;
-        const rounded = roundHuf(totalAmount, 'HUF');
-
-        // 1. Insert petty cash entry
-        const { error: insertError } = await supabase.from('petty_cash_entries')
-          .insert({
-            company_id: companyId,
-            register_id: form.register_id,
-            entry_date: form.entry_date,
-            description,
-            amount: rounded,
-            currency: 'HUF',
-            source_type: 'invoice_settlement',
-            source_id: selectedInvs.length === 1 ? selectedInvs[0].id : null,
-            source_table: selectedInvs.length === 1 ? 'invoices' : null,
-            routed_by: 'manual',
-            created_by: userId,
-          });
-        if (insertError) throw insertError;
-
-        // 2. Mark invoices as paid
-        const { error: updateError } = await supabase
-          .from('invoices')
-          .update({ fizetve: true })
-          .in('id', Array.from(selectedInvoiceIds));
-        if (updateError) {
-          console.error('Failed to mark invoices as paid:', updateError);
-          // Don't throw — entry was created; notify user about partial failure
-          toast({
-            title: t('pettyCash:toasts.warning_title'),
-            description: t('pettyCash:toasts.invoice_settle_partial_desc'),
-            variant: 'destructive',
-          });
-        }
-        return { isInvoice: true, count: selectedInvs.length };
+        // Atomic invoice settlement via PostgreSQL RPC transaction
+        const { data, error: rpcError } = await (supabase.rpc as any)('settle_invoices_via_petty_cash', {
+          p_company_id: companyId,
+          p_register_id: validRegisterId,
+          p_entry_date: form.entry_date,
+          p_invoice_ids: Array.from(selectedInvoiceIds),
+          p_description: form.description?.trim() || null,
+        });
+        if (rpcError) throw rpcError;
+        return { isInvoice: true, count: selectedInvoiceIds.size, data };
       }
 
       // Regular manual entry
-      const rawAmount = parseFloat(form.amount) || 0;
       const signed = form.isExpense ? -Math.abs(rawAmount) : Math.abs(rawAmount);
       const rounded = roundHuf(signed, form.currency);
-      const finalPartnerId = form.partner_id && form.partner_id !== 'none' ? form.partner_id : null;
+      const finalPartnerId = sanitizePartnerId(form.partner_id);
       
       if (editingEntry) {
         // UPDATE
         const { error } = await supabase.from('petty_cash_entries')
           .update({
-            register_id: form.register_id,
+            register_id: validRegisterId,
             entry_date: form.entry_date,
-            description: form.description,
+            description: form.description.trim(),
             amount: rounded,
             currency: form.currency,
             partner_id: finalPartnerId,
@@ -1569,9 +1577,9 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
         const { error } = await supabase.from('petty_cash_entries')
           .insert({
             company_id: companyId,
-            register_id: form.register_id,
+            register_id: validRegisterId,
             entry_date: form.entry_date,
-            description: form.description,
+            description: form.description.trim(),
             amount: rounded,
             currency: form.currency,
             source_type: 'manual',
@@ -1588,6 +1596,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashSummary(companyId) });
       if (result?.isInvoice) {
         qc.invalidateQueries({ queryKey: ['open-outbound-invoices', companyId] });
+        qc.invalidateQueries({ queryKey: ['invoices'] });
       }
       onOpenChange(false);
       if (onCancelEditing) onCancelEditing();
@@ -1668,7 +1677,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
       } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
         const rawAmount = parseFloat(form.amount) || 0;
-        const isValid = invoiceMode ? selectedInvoiceIds.size > 0 : (rawAmount > 0 && !!form.description);
+        const isValid = Boolean(form.register_id?.trim()) && registers.length > 0 && (invoiceMode ? selectedInvoiceIds.size > 0 : (rawAmount > 0 && !!form.description?.trim()));
         if (isValid && !save.isPending) {
           save.mutate();
         }
@@ -1677,7 +1686,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, invoiceMode, selectedInvoiceIds.size, form.amount, form.description, save]);
+  }, [open, invoiceMode, selectedInvoiceIds.size, form.amount, form.description, form.register_id, registers.length, save]);
 
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) handleClose(); }}>
@@ -1697,6 +1706,13 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
+          {registers.length === 0 && (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs font-medium">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>{t('pettyCash:manual_entry_dialog.no_registers_warning', 'Nincs elérhető házipénztár. Először hozz létre egy pénztárat a Pénztárak lapfülön.')}</span>
+            </div>
+          )}
+
           {/* Invoice settlement toggle — only for new entries */}
           {!editingEntry && openInvoices.length > 0 && (
             <button
@@ -1830,7 +1846,9 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
             <div>
               <Label>{t('pettyCash:manual_entry_dialog.register_label')}</Label>
               <Select value={form.register_id} onValueChange={v => setForm(f => ({ ...f, register_id: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className={cn(!form.register_id && 'border-destructive/60')}>
+                  <SelectValue placeholder={t('pettyCash:manual_entry_dialog.choose_register', 'Válassz pénztárat...')} />
+                </SelectTrigger>
                 <SelectContent>
                   {registers.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
                 </SelectContent>
@@ -1989,7 +2007,9 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
               <div>
                 <Label>{t('pettyCash:manual_entry_dialog.target_register_label')}</Label>
                 <Select value={form.register_id} onValueChange={v => setForm(f => ({ ...f, register_id: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className={cn(!form.register_id && 'border-destructive/60')}>
+                    <SelectValue placeholder={t('pettyCash:manual_entry_dialog.choose_register', 'Válassz pénztárat...')} />
+                  </SelectTrigger>
                   <SelectContent>
                     {registers.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
                   </SelectContent>
@@ -2018,7 +2038,12 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
             <Button variant="outline" onClick={handleClose}>{t('pettyCash:manual_entry_dialog.cancel_btn')}</Button>
             <Button
               onClick={() => save.mutate()}
-              disabled={save.isPending || (invoiceMode ? selectedInvoiceIds.size === 0 : (!isAmountValid || !form.description))}
+              disabled={
+                save.isPending ||
+                !form.register_id?.trim() ||
+                registers.length === 0 ||
+                (invoiceMode ? selectedInvoiceIds.size === 0 : (!isAmountValid || !form.description.trim()))
+              }
             >
               {save.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
               {editingEntry ? t('pettyCash:manual_entry_dialog.save_btn') : t('pettyCash:manual_entry_dialog.record_btn')}

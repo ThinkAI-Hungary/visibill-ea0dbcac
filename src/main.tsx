@@ -4,17 +4,52 @@ import App from "./App.tsx";
 import "./index.css";
 import { reportError } from "./lib/errorReporter.ts";
 
+// ── Filter benign browser extensions & system noise ──
+function isExternalNoise(msg: string, err?: any): boolean {
+  const lowerMsg = (msg || '').toLowerCase();
+  const stack = typeof err?.stack === 'string' ? err.stack : '';
+  const lowerStack = stack.toLowerCase();
+
+  if (
+    lowerMsg.includes('reportallchanges') || 
+    (lowerMsg.includes('starttime') && lowerMsg.includes('undefined')) ||
+    lowerMsg.includes('dev-sw') ||
+    lowerMsg.includes('serviceworker') ||
+    lowerMsg.includes('service worker')
+  ) {
+    return true;
+  }
+
+  // Browser extensions & injected scripts (e.g. window.__go, chrome-extension://)
+  if (
+    lowerStack.includes('chrome-extension://') ||
+    lowerStack.includes('moz-extension://') ||
+    lowerStack.includes('safari-extension://') ||
+    lowerStack.includes('window.__go') ||
+    lowerMsg.includes('window.__go')
+  ) {
+    return true;
+  }
+
+  // Anonymous scripts not part of our application assets
+  if (
+    stack.includes('<anonymous>') &&
+    !stack.includes('/src/') &&
+    !stack.includes('/assets/') &&
+    !stack.includes('localhost') &&
+    !stack.includes('eaisybill') &&
+    (lowerMsg.includes('slice') || lowerStack.includes('__go'))
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 // ── Global error catchers → app_error_logs ──
 window.addEventListener('unhandledrejection', (event) => {
   const msg = event.reason?.message || String(event.reason || '');
-  const lower = msg.toLowerCase();
-  if (
-    lower.includes('reportallchanges') || 
-    (lower.includes('starttime') && lower.includes('undefined')) ||
-    lower.includes('dev-sw') ||
-    lower.includes('serviceworker') ||
-    lower.includes('service worker')
-  ) {
+  if (isExternalNoise(msg, event.reason)) {
     return;
   }
   reportError({
@@ -28,14 +63,7 @@ window.addEventListener('unhandledrejection', (event) => {
 
 window.addEventListener('error', (event) => {
   const msg = event.message || '';
-  const lower = msg.toLowerCase();
-  if (
-    lower.includes('reportallchanges') || 
-    (lower.includes('starttime') && lower.includes('undefined')) ||
-    lower.includes('dev-sw') ||
-    lower.includes('serviceworker') ||
-    lower.includes('service worker')
-  ) {
+  if (isExternalNoise(msg, event.error)) {
     return;
   }
   reportError({

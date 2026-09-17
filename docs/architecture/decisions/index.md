@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-09-17  
-> **Összesen:** 130 döntés | ✅ Decided: 128 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-09-18  
+> **Összesen:** 131 döntés | ✅ Decided: 129 | ⛔ Superseded: 2
 
 ---
 
@@ -169,6 +169,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-122 | Nem Könyvelt Státusz Kétirányú Szinkronizációja és Optimista UI Állapotkezelés | ✅ Decided | [A-122](./A-122-exclude-from-accounting-sync-and-optimistic-ui.md) |
 | A-123 | Vevő Adószám Inkonzisztencia Detektálás és Könyvelői Jóváhagyási Figyelmeztetés | ✅ Decided | [A-123](./A-123-buyer-tax-mismatch-detection-and-approval-guard.md) |
 | A-124 | Többoldalas Számlák Folytatás-Felismerése és Téves Multi-Invoice Split Megelőzés | ✅ Decided | [A-124](./A-124-multi-page-invoice-continuation-guard-and-split-suppression.md) |
+| A-125 | Atomi Házipénztári Számlakiegyenlítés, Számlaszinkron Trigger Védelem és Auth Életciklus Védelmek | ✅ Decided | [A-125](./A-125-atomic-petty-cash-invoice-settlement-and-auth-resilience.md) |
 
 ## 💳 Fizetés
 

@@ -39,4 +39,36 @@ describe('errorReporter exclusions and environment guards', () => {
 
     expect(fromSpy).not.toHaveBeenCalled();
   });
+
+  it('filters out browser extension and window.__go errors from DB logging', async () => {
+    const fromSpy = vi.spyOn(supabase, 'from');
+    await reportError({
+      type: 'unhandled',
+      component: 'global',
+      action: 'unhandled_rejection',
+      message: "Cannot read properties of undefined (reading 'slice')",
+      error: {
+        name: 'TypeError',
+        message: "Cannot read properties of undefined (reading 'slice')",
+        stack: "TypeError: Cannot read properties of undefined (reading 'slice')\n    at <anonymous>:5:209\n    at Array.forEach (<anonymous>)\n    at window.__go (<anonymous>:5:87)",
+      },
+    });
+
+    expect(fromSpy).not.toHaveBeenCalled();
+  });
+
+  it('filters out chrome-extension stack errors from DB logging', async () => {
+    const fromSpy = vi.spyOn(supabase, 'from');
+    await reportError({
+      type: 'unhandled',
+      component: 'global',
+      action: 'uncaught_error',
+      message: 'Extension context invalidated',
+      error: {
+        stack: 'Error: Extension context invalidated\n    at chrome-extension://abcdefg/content.js:12:34',
+      },
+    });
+
+    expect(fromSpy).not.toHaveBeenCalled();
+  });
 });

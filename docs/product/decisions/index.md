@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-09-17  
-> **Összesen:** 86 döntés | ✅ Decided: 82 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Utoljára frissítve:** 2026-09-18  
+> **Összesen:** 87 döntés | ✅ Decided: 83 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -38,6 +38,7 @@
 | P-057 | Számla Kezelő Moduláris Felület (Invoices Feature Slice) UX | ✅ Decided | [P-057](./P-057-invoices-feature-slice-ux.md) |
 | P-058 | Egységes Export & Dokumentumgeneráló Motor (DocumentEngine) UX | ✅ Decided | [P-058](./P-058-unified-document-engine-ux.md) |
 | P-064 | Részben Fizetett Számlák Státusz, Badge & Szűrés UX | ✅ Decided | [P-064](./P-064-partially-paid-invoice-status-ux.md) |
+| P-092 | Házipénztár Bizonylat Validáció, 0-Kassza Védelem és Számlakiegyenlítés UX | ✅ Decided | [P-092](./P-092-petty-cash-manual-entry-validation-and-settlement-ux.md) |
 
 ## 🔄 Tranzakció & Párosítás
 

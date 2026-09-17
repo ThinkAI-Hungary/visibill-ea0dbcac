@@ -107,13 +107,14 @@ export function usePdfExport(): PdfExportState {
   const autoDismissRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const companyId = selectedCompany?.id;
+  const userId = user?.id;
 
   // ── Query: Active job for this company ────────────────────
 
   const { data: activeJob } = useQuery<PdfExportJob | null>({
-    queryKey: ['pdf-export-job', companyId],
+    queryKey: ['pdf-export-job', companyId, userId],
     queryFn: async () => {
-      if (!companyId) return null;
+      if (!companyId || !userId) return null;
 
       // First check for active (running) jobs
       const { data: activeJobs, error } = await supabase
@@ -125,6 +126,10 @@ export function usePdfExport(): PdfExportState {
         .limit(1);
 
       if (error) {
+        if (error.code === '42501' || error.message?.includes('permission denied')) {
+          console.warn('[usePdfExport] Unauthenticated or permission denied querying active jobs');
+          return null;
+        }
         reportError({ type: 'db_query', component: 'usePdfExport', action: 'error', message: 'Failed to query active jobs', error });
         return null;
       }
@@ -135,7 +140,7 @@ export function usePdfExport(): PdfExportState {
 
       // Check for completed jobs within 24h that haven't been marked as 'downloaded'
       const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      const { data: recentJobs } = await supabase
+      const { data: recentJobs, error: recentError } = await supabase
         .from('pdf_export_jobs' as any)
         .select('*')
         .eq('company_id', companyId)
@@ -143,6 +148,15 @@ export function usePdfExport(): PdfExportState {
         .gte('completed_at', twentyFourHoursAgo)
         .order('completed_at', { ascending: false })
         .limit(1);
+
+      if (recentError) {
+        if (recentError.code === '42501' || recentError.message?.includes('permission denied')) {
+          console.warn('[usePdfExport] Unauthenticated or permission denied querying recent jobs');
+          return null;
+        }
+        reportError({ type: 'db_query', component: 'usePdfExport', action: 'error', message: 'Failed to query recent jobs', error: recentError });
+        return null;
+      }
 
       if (recentJobs && recentJobs.length > 0) {
         const job = recentJobs[0] as unknown as PdfExportJob;
@@ -153,7 +167,7 @@ export function usePdfExport(): PdfExportState {
 
       return null;
     },
-    enabled: !!companyId,
+    enabled: Boolean(companyId && userId),
     staleTime: 0, // Always refetch on mount — critical for navigation back
     refetchOnMount: 'always',
     refetchInterval: (query) => {
@@ -203,7 +217,7 @@ export function usePdfExport(): PdfExportState {
   // ── Realtime subscription ─────────────────────────────────
 
   useEffect(() => {
-    if (!companyId) return;
+    if (!companyId || !userId) return;
     let cancelled = false;
     let activeChannel: ReturnType<typeof supabase.channel> | null = null;
 
@@ -224,7 +238,7 @@ export function usePdfExport(): PdfExportState {
             filter: `company_id=eq.${companyId}`,
           },
           () => {
-            queryClient.invalidateQueries({ queryKey: ['pdf-export-job', companyId] });
+            queryClient.invalidateQueries({ queryKey: ['pdf-export-job', companyId, userId] });
           }
         )
         .subscribe();
@@ -244,7 +258,7 @@ export function usePdfExport(): PdfExportState {
         supabase.removeChannel(activeChannel);
       }
     };
-  }, [companyId, queryClient]);
+  }, [companyId, userId, queryClient]);
 
   // ── Download helper (reusable for auto + manual retry) ────
 
@@ -409,7 +423,7 @@ export function usePdfExport(): PdfExportState {
       startedExportInSessionRef.current = true;
 
       // Invalidate to pick up the new job
-      queryClient.invalidateQueries({ queryKey: ['pdf-export-job', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['pdf-export-job', companyId, userId] });
 
       toast({
         title: 'PDF export elindítva',
@@ -426,7 +440,7 @@ export function usePdfExport(): PdfExportState {
     } finally {
       setIsStarting(false);
     }
-  }, [companyId, user, isStarting, toast, queryClient]);
+  }, [companyId, userId, isStarting, toast, queryClient]);
 
   const cancelExport = useCallback(async () => {
     if (!activeJob) return;
@@ -438,12 +452,12 @@ export function usePdfExport(): PdfExportState {
         .eq('id', activeJob.id);
 
       setShowBanner(false);
-      queryClient.invalidateQueries({ queryKey: ['pdf-export-job', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['pdf-export-job', companyId, userId] });
       toast({ title: 'PDF export megszakítva' });
     } catch (error) {
       reportError({ type: 'db_query', component: 'usePdfExport', action: 'error', message: 'Cancel failed', error });
     }
-  }, [activeJob, companyId, toast, queryClient]);
+  }, [activeJob, companyId, userId, toast, queryClient]);
 
   const dismissBanner = useCallback(async () => {
     setShowBanner(false);

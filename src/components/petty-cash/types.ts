@@ -112,3 +112,36 @@ export const fmtBalance = (amount: number, currency: string): string => {
   const locale = getActiveLocale() === 'hr' ? 'hr-HR' : 'hu-HU';
   return `${rounded.toLocaleString(locale, { maximumFractionDigits: currency === 'HUF' ? 0 : 2 })} ${currency}`;
 };
+
+/** Sanitize partner ID to avoid passing empty strings or 'none' to UUID columns */
+export function sanitizePartnerId(partnerId: string | null | undefined): string | null {
+  if (!partnerId || partnerId === 'none' || partnerId.trim() === '') return null;
+  return partnerId.trim();
+}
+
+/** Validate petty cash manual entry and invoice settlement payloads before database mutation */
+export function validatePettyCashEntryPayload(params: {
+  register_id: string | null | undefined;
+  amount: number;
+  description: string | null | undefined;
+  invoiceMode?: boolean;
+  selectedInvoiceCount?: number;
+}): { valid: boolean; error?: string } {
+  if (!params.register_id || params.register_id.trim() === '') {
+    return { valid: false, error: 'Pénztár kiválasztása kötelező!' };
+  }
+  if (params.invoiceMode) {
+    if (!params.selectedInvoiceCount || params.selectedInvoiceCount === 0) {
+      return { valid: false, error: 'Legalább egy számla kiválasztása kötelező!' };
+    }
+  } else {
+    if (!params.amount || params.amount <= 0) {
+      return { valid: false, error: 'Az összegnek 0-nál nagyobbnak kell lennie!' };
+    }
+    if (!params.description || params.description.trim() === '') {
+      return { valid: false, error: 'A leírás megadása kötelező!' };
+    }
+  }
+  return { valid: true };
+}
+

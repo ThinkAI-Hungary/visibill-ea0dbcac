@@ -131,9 +131,10 @@ export async function reportError(opts: ReportErrorOptions): Promise<void> {
     return;
   }
 
-  // 1.5 Filter out expected client-side validation errors, chunk loading errors, and transient network errors from DB logs
+  // 1.5 Filter out expected client-side validation errors, chunk loading errors, transient network errors, and browser extensions from DB logs
   const errDetails = extractErrorDetails(opts.error);
   const errMsg = ((opts.message || '') + ' ' + (errDetails.message || '') + ' ' + (errDetails.name || '')).toLowerCase();
+  const stack = ((errDetails.stack || '') + ' ' + (opts.error instanceof Error ? opts.error.stack || '' : '')).toLowerCase();
   const isExcluded = 
     errMsg.includes('failed to fetch dynamically imported module') ||
     errMsg.includes('chunkloaderror') ||
@@ -147,6 +148,20 @@ export async function reportError(opts: ReportErrorOptions): Promise<void> {
     errMsg.includes('dev-sw') ||
     errMsg.includes('serviceworker') ||
     errMsg.includes('service worker') ||
+    // Browser extensions and injected third-party scripts (e.g. window.__go, chrome-extension://)
+    stack.includes('chrome-extension://') ||
+    stack.includes('moz-extension://') ||
+    stack.includes('safari-extension://') ||
+    stack.includes('window.__go') ||
+    errMsg.includes('window.__go') ||
+    (
+      stack.includes('<anonymous>') &&
+      !stack.includes('/src/') &&
+      !stack.includes('/assets/') &&
+      !stack.includes('localhost') &&
+      !stack.includes('eaisybill') &&
+      (errMsg.includes('slice') || stack.includes('__go'))
+    ) ||
     // Transient client network drops / offline / aborted requests
     errMsg.includes('networkerror when attempting to fetch resource') ||
     errMsg.includes('failed to fetch') ||

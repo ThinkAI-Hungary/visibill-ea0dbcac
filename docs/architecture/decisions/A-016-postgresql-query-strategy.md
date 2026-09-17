@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2025-Q3 (implementálva) → Folyamatosan bővül  
-**Utoljára frissítve:** 2026-09-17
+**Utoljára frissítve:** 2026-09-18
 
 ## Context
 
@@ -12,7 +12,7 @@ A Supabase PostgREST automatikusan REST API-t generál minden táblához. Egysze
 
 **Kettős query stratégia:** PostgREST direkt query + PostgreSQL RPC funkciók.
 
-> 📖 **Teljes, részletes specifikáció:** A rendszerben elérhető mind a 132 hívható RPC és 73 trigger függvény tételes listáját és leírását az autoritatív [PostgreSQL RPC Katalógus](../rpc-catalog.md) tartalmazza.
+> 📖 **Teljes, részletes specifikáció:** A rendszerben elérhető mind a 133 hívható RPC és 73 trigger függvény tételes listáját és leírását az autoritatív [PostgreSQL RPC Katalógus](../rpc-catalog.md) tartalmazza.
 
 ---
 
@@ -101,6 +101,7 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 | `acc_validate_and_post_opening_entry(p_header_id, p_user_id)` | DEFINER | OpeningJournalWizardModal.tsx | Nyitó napló tétel validálása (491 technikai számla egyensúly, 1-4 számlaosztály) és véglegesítése |
 | `acc_generate_post_opening_reconciliations(p_company_id, p_year, p_user_id)` | DEFINER | OpeningJournalWizardModal.tsx | Nyitás utáni automatikus rendező tételek (419 átvezetés, ÁFA összevezetés) generálása |
 | `acc_check_opening_subledger_reconciliation(p_company_id, p_year)` | DEFINER | OpeningJournalWizardModal.tsx | Vevő/szállító analitika és 311/454 főkönyvi nyitó egyeztetés (több NY bizonylat aggregálással és időtálló kifizetettségi állapotkezeléssel) |
+| `settle_invoices_via_petty_cash(p_company_id, p_register_id, p_entry_date, p_invoice_ids, p_description?)` | DEFINER | EntriesTab.tsx | Nyitott kimenő számlák készpénzes kiegyenlítése és bizonylat létrehozása egyetlen atomi ACID tranzakcióban ([A-125](./A-125-atomic-petty-cash-invoice-settlement-and-auth-resilience.md)) |
 
 #### 🔑 2.3 Auth & Credential RPC-k
 
