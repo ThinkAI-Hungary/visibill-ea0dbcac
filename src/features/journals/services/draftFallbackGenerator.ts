@@ -488,8 +488,34 @@ export async function generateDraftsFallback(
   }
 
   // 5. Generate drafts for Petty Cash entries (P1 Journal)
+  const pceCount = await generatePettyCashDrafts(companyId, activePresetId);
+  createdCount += pceCount;
+
+  return createdCount;
+}
+
+/**
+ * Standalone generator for Petty Cash accounting drafts (P1 Journal).
+ * Deletes unposted GEPI_JAVASLAT in P1 before recreating to keep it fresh.
+ */
+export async function generatePettyCashDrafts(
+  companyId: string,
+  activePresetId: string,
+  cleanExisting: boolean = false
+): Promise<number> {
+  const { data: journals } = await supabase
+    .from('acc_journals')
+    .select('id, code, name, type, connected_gl_account, currency')
+    .eq('company_id', companyId);
+
   const p1Journal = journals?.find(j => j.code === 'P1' || j.type === 'PETTY_CASH' || j.type === 'CASH') || journals?.[0];
   const p1JournalId = p1Journal?.id;
+  if (!p1JournalId) return 0;
+
+  const { data: glAccounts } = await supabase
+    .from('gl_accounts')
+    .select('id, gl_number')
+    .or(`preset_id.eq.${activePresetId},company_id.eq.${companyId}`);
 
   let glCashId: string | undefined;
   if (p1Journal?.connected_gl_account) {
@@ -501,70 +527,119 @@ export async function generateDraftsFallback(
             || glAccounts?.[0]?.id;
   }
 
-  if (glCashId && p1JournalId) {
-    const { data: rawPce } = await supabase
-      .from('petty_cash_entries')
-      .select('id, entry_date, description, amount, currency, source_type')
-      .eq('company_id', companyId);
+  const glCustId = glAccounts?.find(g => g.gl_number === '3111')?.id || glAccounts?.find(g => g.gl_number.startsWith('311'))?.id || glAccounts?.[0]?.id;
+  const glSuppId = glAccounts?.find(g => g.gl_number === '4541')?.id || glAccounts?.find(g => g.gl_number.startsWith('454'))?.id || glAccounts?.[0]?.id;
+  const glRevId = glAccounts?.find(g => g.gl_number === '9111')?.id || glAccounts?.find(g => g.gl_number.startsWith('91'))?.id || glCashId;
+  const glExpId = glAccounts?.find(g => g.gl_number === '529')?.id || glAccounts?.find(g => g.gl_number.startsWith('52'))?.id || glCashId;
+  const glPayrollId = glAccounts?.find(g => g.gl_number === '4711')?.id || glAccounts?.find(g => g.gl_number.startsWith('471'))?.id || glExpId;
 
-    const { data: existingPostings } = await supabase
+  if (!glCashId) return 0;
+
+  if (cleanExisting) {
+    await supabase
       .from('acc_journal_headers')
-      .select('import_key')
-      .eq('company_id', companyId);
+      .delete()
+      .eq('company_id', companyId)
+      .eq('status', 'GEPI_JAVASLAT');
+  }
 
-    const postedKeys = new Set((existingPostings || []).map(h => h.import_key));
+  const { data: rawPce } = await supabase
+    .from('petty_cash_entries')
+    .select('id, entry_date, description, amount, currency, source_type, source_table, source_id, partner_id, is_opening')
+    .eq('company_id', companyId);
 
-    for (const pce of (rawPce || [])) {
-      if (postedKeys.has(pce.id)) continue;
-      if (!pce.amount || Math.abs(Number(pce.amount)) === 0) continue;
+  const { data: existingPostings } = await supabase
+    .from('acc_journal_headers')
+    .select('import_key')
+    .eq('company_id', companyId);
 
-      const itemDate = pce.entry_date ? pce.entry_date.substring(0, 10) : new Date().toISOString().substring(0, 10);
-      const year = Number(itemDate.substring(0, 4)) || new Date().getFullYear();
-      const currency = pce.currency || 'HUF';
-      const amount = Math.abs(Number(pce.amount));
-      const docId = `KP-${pce.id.substring(0, 8).toUpperCase()}`;
+  const postedKeys = new Set((existingPostings || []).map(h => h.import_key));
 
-      // Target expense/revenue account or default 52/91
-      const glCounterId = Number(pce.amount) >= 0 
-        ? (glAccounts?.find(g => g.gl_number.startsWith('91'))?.id || glCashId)
-        : (glAccounts?.find(g => g.gl_number.startsWith('52'))?.id || glCashId);
+  const invoiceSourceIds = (rawPce || [])
+    .filter(p => p.source_table === 'invoices' && p.source_id)
+    .map(p => p.source_id as string);
 
-      const { data: header, error: hErr } = await supabase
-        .from('acc_journal_headers')
-        .insert({
-          company_id: companyId,
-          journal_id: p1JournalId,
-          accounting_year: year,
-          status: 'GEPI_JAVASLAT',
-          entry_type: 'NORMAL',
-          source: 'AUTO_RENDSZER',
-          posting_date: itemDate,
-          document_date: itemDate,
-          document_id: docId,
-          description: pce.description || 'Pénztárbizonylat javaslat',
-          currency: currency,
-          exchange_rate: 1,
-          exchange_rate_date: itemDate,
-          import_key: pce.id.toString()
-        })
-        .select('id')
-        .single();
-
-      if (hErr) continue;
-
-      let line1: any;
-      let line2: any;
-      if (Number(pce.amount) >= 0) {
-        line1 = { header_id: header.id, sequence_number: 1, gl_account_id: glCashId, dc_type: 'T', amount, description: pce.description };
-        line2 = { header_id: header.id, sequence_number: 2, gl_account_id: glCounterId, dc_type: 'K', amount, description: pce.description };
-      } else {
-        line1 = { header_id: header.id, sequence_number: 1, gl_account_id: glCounterId, dc_type: 'T', amount, description: pce.description };
-        line2 = { header_id: header.id, sequence_number: 2, gl_account_id: glCashId, dc_type: 'K', amount, description: pce.description };
-      }
-
-      await supabase.from('acc_journal_lines').insert([line1, line2]);
-      createdCount++;
+  const invoiceMap: Record<string, any> = {};
+  if (invoiceSourceIds.length > 0) {
+    const { data: invList } = await supabase
+      .from('invoices')
+      .select('id, invoice_direction, bizonylatsorszam, partner_id')
+      .in('id', invoiceSourceIds);
+    for (const inv of (invList || [])) {
+      invoiceMap[inv.id] = inv;
     }
+  }
+
+  let createdCount = 0;
+  for (const pce of (rawPce || [])) {
+    if (pce.is_opening || pce.source_type === 'opening_balance') continue;
+    if (postedKeys.has(`PCE-${pce.id}`) || postedKeys.has(pce.id)) continue;
+    if (!pce.amount || Math.abs(Number(pce.amount)) === 0) continue;
+
+    const itemDate = pce.entry_date ? pce.entry_date.substring(0, 10) : new Date().toISOString().substring(0, 10);
+    const year = Number(itemDate.substring(0, 4)) || new Date().getFullYear();
+    const currency = pce.currency || 'HUF';
+    const amount = Math.abs(Number(pce.amount));
+    const docId = `KP-${pce.id.substring(0, 8).toUpperCase()}`;
+
+    const linkedInv = pce.source_id ? invoiceMap[pce.source_id] : null;
+    const partnerId = pce.partner_id || linkedInv?.partner_id || null;
+    const isExpense = Number(pce.amount) < 0;
+
+    let line1: any;
+    let line2: any;
+    let desc = pce.description || 'Pénztárbizonylat javaslat';
+
+    if (linkedInv) {
+      const isOutbound = linkedInv.invoice_direction === 'OUTBOUND' || linkedInv.invoice_direction === 'outbound';
+      if (isOutbound) {
+        line1 = { sequence_number: 1, gl_account_id: glCashId, dc_type: 'T', amount, description: desc };
+        line2 = { sequence_number: 2, gl_account_id: glCustId, dc_type: 'K', amount, description: `Vevő követelés kiegyenlítése - ${linkedInv.bizonylatsorszam || ''}` };
+        desc = `Készpénzes vevői kiegyenlítés - ${linkedInv.bizonylatsorszam || desc}`;
+      } else {
+        line1 = { sequence_number: 1, gl_account_id: glSuppId, dc_type: 'T', amount, description: `Szállító tartozás kiegyenlítése - ${linkedInv.bizonylatsorszam || ''}` };
+        line2 = { sequence_number: 2, gl_account_id: glCashId, dc_type: 'K', amount, description: desc };
+        desc = `Készpénzes szállítói kiegyenlítés - ${linkedInv.bizonylatsorszam || desc}`;
+      }
+    } else if (!isExpense) {
+      line1 = { sequence_number: 1, gl_account_id: glCashId, dc_type: 'T', amount, description: desc };
+      line2 = { sequence_number: 2, gl_account_id: glRevId, dc_type: 'K', amount, description: desc };
+    } else {
+      const lower = (pce.description || '').toLowerCase();
+      const targetExpGl = (lower.includes('bér') || lower.includes('fizetés')) ? glPayrollId : glExpId;
+      line1 = { sequence_number: 1, gl_account_id: targetExpGl, dc_type: 'T', amount, description: desc };
+      line2 = { sequence_number: 2, gl_account_id: glCashId, dc_type: 'K', amount, description: desc };
+    }
+
+    const { data: header, error: hErr } = await supabase
+      .from('acc_journal_headers')
+      .insert({
+        company_id: companyId,
+        journal_id: p1JournalId,
+        accounting_year: year,
+        status: 'GEPI_JAVASLAT',
+        entry_type: 'NORMAL',
+        source: 'AUTO_PENZTAR',
+        posting_date: itemDate,
+        document_date: itemDate,
+        document_id: docId,
+        partner_id: partnerId,
+        description: desc,
+        currency: currency,
+        exchange_rate: 1,
+        exchange_rate_date: itemDate,
+        import_key: `PCE-${pce.id}`
+      })
+      .select('id')
+      .single();
+
+    if (hErr) continue;
+
+    line1.header_id = header.id;
+    line2.header_id = header.id;
+
+    await supabase.from('acc_journal_lines').insert([line1, line2]);
+    createdCount++;
   }
 
   return createdCount;

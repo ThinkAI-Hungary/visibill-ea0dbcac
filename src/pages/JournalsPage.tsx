@@ -48,6 +48,7 @@ import PeriodClosingSettings from '@/components/journals/PeriodClosingSettings';
 import AuditTrailDialog from '@/components/journals/AuditTrailDialog';
 import { getLocalizedJournalName } from '@/lib/journalUtils';
 import { useActivePreset } from '@/hooks/useActivePreset';
+import { generatePettyCashDrafts } from '@/features/journals/services/draftFallbackGenerator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
@@ -163,12 +164,24 @@ export default function JournalsPage() {
   const generateDraftsMutation = useMutation({
     mutationFn: async () => {
       if (!selectedCompany?.id || !activePresetId) return 0;
-      const { data, error } = await supabase.rpc('acc_generate_drafts_from_ledger', {
-        p_company_id: selectedCompany.id,
-        p_preset_id: activePresetId
-      });
-      if (error) throw error;
-      return data;
+      let count = 0;
+      try {
+        const { data, error } = await supabase.rpc('acc_generate_drafts_from_ledger', {
+          p_company_id: selectedCompany.id,
+          p_preset_id: activePresetId
+        });
+        if (error) throw error;
+        count = Number(data) || 0;
+      } catch (rpcErr) {
+        console.warn('acc_generate_drafts_from_ledger warning:', rpcErr);
+      }
+      try {
+        const p1Count = await generatePettyCashDrafts(selectedCompany.id, activePresetId);
+        count += p1Count;
+      } catch (p1Err) {
+        console.warn('generatePettyCashDrafts warning:', p1Err);
+      }
+      return count;
     },
     onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });

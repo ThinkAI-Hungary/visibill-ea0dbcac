@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
@@ -14,7 +14,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import {
@@ -87,6 +86,23 @@ export default function EntriesTab() {
   const [previewInvoice, setPreviewInvoice] = useState<any | null>(null);
   const [printingEntry, setPrintingEntry] = useState<PettyCashEntry | null>(null);
   const [signatureOpen, setSignatureOpen] = useState(false);
+
+  // Keyboard shortcut: Insert key opens manual entry modal
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Insert' && writable && !showManualDialog && !showClosingDialog && !showTransferDialog && !signatureOpen) {
+        const target = e.target as HTMLElement | null;
+        const isInput = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable;
+        if (!isInput) {
+          e.preventDefault();
+          setEditingEntry(null);
+          setShowManualDialog(true);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [writable, showManualDialog, showClosingDialog, showTransferDialog, signatureOpen]);
 
   // Summary for transfer dialog balances
   const { data: summary = [] } = useQuery({
@@ -595,8 +611,11 @@ export default function EntriesTab() {
               {t('pettyCash:entries.transfer', 'Pénztárközi átvezetés')}
             </Button>
           )}
-          <Button size="sm" onClick={() => { setEditingEntry(null); setShowManualDialog(true); }} disabled={!writable} className="bg-primary hover:bg-primary/95 text-primary-foreground shadow-sm">
+          <Button size="sm" onClick={() => { setEditingEntry(null); setShowManualDialog(true); }} disabled={!writable} className="shadow-sm">
             <Plus className="w-4 h-4 mr-1" /> {t('pettyCash:entries.manual_entry', 'Manuális tétel')}
+            <kbd className="ml-1.5 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono font-medium rounded border border-current/25 bg-current/10 text-current opacity-90">
+              Ins
+            </kbd>
           </Button>
         </div>
       </div>
@@ -1624,9 +1643,45 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
     if (onCancelEditing) onCancelEditing();
   };
 
+  // Keyboard shortcuts: B = Bevétel, K = Kiadás, Ctrl+Enter = Mentés
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const keyLower = e.key.toLowerCase();
+      const isAltB = e.altKey && keyLower === 'b';
+      const isAltK = e.altKey && keyLower === 'k';
+      const isBareB = !e.altKey && !e.ctrlKey && !e.metaKey && keyLower === 'b';
+      const isBareK = !e.altKey && !e.ctrlKey && !e.metaKey && keyLower === 'k';
+
+      const target = e.target as HTMLElement | null;
+      // Do not trigger bare B/K when typing inside free-text inputs (description, textareas)
+      const isFreeTextInput = target?.tagName === 'TEXTAREA' || 
+        (target?.tagName === 'INPUT' && (target as HTMLInputElement).type === 'text');
+
+      if (isAltB || (isBareB && !isFreeTextInput)) {
+        e.preventDefault();
+        setForm(f => ({ ...f, isExpense: false }));
+      } else if (isAltK || (isBareK && !isFreeTextInput)) {
+        e.preventDefault();
+        setForm(f => ({ ...f, isExpense: true }));
+      } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        const rawAmount = parseFloat(form.amount) || 0;
+        const isValid = invoiceMode ? selectedInvoiceIds.size > 0 : (rawAmount > 0 && !!form.description);
+        if (isValid && !save.isPending) {
+          save.mutate();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, invoiceMode, selectedInvoiceIds.size, form.amount, form.description, save]);
+
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) handleClose(); }}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-lg max-w-md">
         <DialogHeader>
           <DialogTitle>
             {editingEntry
@@ -1825,7 +1880,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
             <Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder={t('pettyCash:manual_entry_dialog.desc_placeholder')} />
           </div>
           <div className="grid grid-cols-3 gap-3">
-            <div>
+            <div className="col-span-2">
               <Label>{t('pettyCash:manual_entry_dialog.amount_label')}</Label>
               <Input
                 type="number"
@@ -1854,13 +1909,42 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-end pb-1">
-              <label className="flex items-center gap-2 text-sm cursor-pointer">
-                <Switch checked={form.isExpense} onCheckedChange={v => setForm(f => ({ ...f, isExpense: v }))} />
-                <span className={form.isExpense ? 'text-destructive' : 'text-emerald-500'}>
-                  {form.isExpense ? t('pettyCash:manual_entry_dialog.type_expense') : t('pettyCash:manual_entry_dialog.type_income')}
-                </span>
-              </label>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">{t('pettyCash:entries.columns.type', 'Típus')}</Label>
+            <div className="grid grid-cols-2 gap-2 p-1 bg-muted/60 rounded-lg border border-border/50">
+              <button
+                type="button"
+                onClick={() => setForm(f => ({ ...f, isExpense: false }))}
+                className={cn(
+                  "flex items-center justify-center gap-2 py-2 px-3 rounded-md text-xs font-medium transition-all",
+                  !form.isExpense
+                    ? "bg-emerald-600 text-white shadow-sm font-semibold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                )}
+              >
+                <kbd className={cn(
+                  "px-1.5 py-0.5 rounded text-[10px] font-mono",
+                  !form.isExpense ? "bg-emerald-700 text-white" : "bg-muted text-muted-foreground border border-border/50"
+                )}>B</kbd>
+                {t('pettyCash:manual_entry_dialog.type_income', 'Bevétel')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm(f => ({ ...f, isExpense: true }))}
+                className={cn(
+                  "flex items-center justify-center gap-2 py-2 px-3 rounded-md text-xs font-medium transition-all",
+                  form.isExpense
+                    ? "bg-destructive text-destructive-foreground shadow-sm font-semibold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                )}
+              >
+                <kbd className={cn(
+                  "px-1.5 py-0.5 rounded text-[10px] font-mono",
+                  form.isExpense ? "bg-red-700 text-white" : "bg-muted text-muted-foreground border border-border/50"
+                )}>K</kbd>
+                {t('pettyCash:manual_entry_dialog.type_expense', 'Kiadás')}
+              </button>
             </div>
           </div>
           {/* U5: Large amount warning */}
