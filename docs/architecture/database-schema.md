@@ -1,7 +1,7 @@
 # eaisybill-prod — Adatbázis Séma Áttekintés
 
-> **Utoljára frissítve:** 2026-09-11  
-> **Összesen:** 180 aktív alkalmazás-tábla (181 sémában) | **RLS:** mind engedélyezve (100% InitPlan & Single-Permissive optimalizált) | **FK Indexek:** 100% lefedettség | **Supabase PostgreSQL**
+> **Utoljára frissítve:** 2026-09-17  
+> **Összesen:** 183 aktív alkalmazás-tábla (184 sémában) | **RLS:** mind engedélyezve (100% InitPlan & Single-Permissive optimalizált) | **FK Indexek:** 100% lefedettség | **Supabase PostgreSQL**
 
 Ez a dokumentáció az eaisybill-prod Supabase projekt teljes adatbázis sémáját tartalmazza. Célja, hogy bármely fejlesztő és AI agent azonnal megértse a táblastruktúrát, kapcsolatokat és felhasználási kontextust.
 A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [PostgreSQL RPC Katalógus](./rpc-catalog.md), a serverless függvényeket az [Edge Functions Katalógus](./edge-functions.md), a biztonsági és indexelési irányelveket pedig az [A-092: Teljes Adatbázis Biztonsági és Teljesítménybeli Audit & Optimalizáció](./decisions/A-092-database-security-and-performance-optimization.md) dokumentálja.
@@ -15,7 +15,7 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 - [🔑 Jogosultságok & Hozzáférés](./database/03-permissions.md) — 3 tábla, ~189 sor
 - [📄 Számlák & Bizonylatok](./database/04-invoices.md) — 8 tábla, ~30556 sor
 - [🏛️ NAV Integráció](./database/05-nav.md) — 3 tábla, ~164208 sor
-- [💳 Tranzakciók & Bank](./database/06-transactions-bank.md) — 10 tábla, ~7945 sor
+- [💳 Tranzakciók & Bank](./database/06-transactions-bank.md) — 13 tábla, ~7945 sor
 - [📊 Főkönyv (General Ledger)](./database/07-general-ledger.md) — 9 tábla, ~30771 sor
 - [💰 Bér & Munkaidő](./database/08-salary-hr.md) — 5 tábla, ~341 sor
 - [🏦 Házipénztár](./database/09-petty-cash.md) — 5 tábla, ~1227 sor
@@ -35,7 +35,7 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 
 **Kiegészítő katalógusok:**
 - [⚡ PostgreSQL RPC Katalógus (132 RPC + 73 Trigger)](./rpc-catalog.md) — Teljes tárolt eljárás és aggregációs motor katalógus
-- [🌐 Supabase Edge Functions Katalógus (59 Deno EF)](./edge-functions.md) — NAV szinkron, email, AI és webhook szervermentes funkciók
+- [🌐 Supabase Edge Functions Katalógus (62 Deno EF)](./edge-functions.md) — NAV szinkron, email, AI, Open Banking és webhook szervermentes funkciók
 
 ---
 
@@ -128,6 +128,9 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 | `accounty_uploads` | 📘 eaisyBooks — Alap | 0 | Ügyfél által feltöltött dokumentumok. |
 | `accounty_year_end_tasks` | 📘 eaisyBooks — Szervezet | 0 | Év végi zárási ellenőrzőlista feladatai. |
 | `accrual_entries` | 📊 Főkönyv | 0 | Időbeli elhatárolások nyilvántartása. |
+| `aggreg8_accounts` | 💳 Tranzakciók & Bank | 0 | Az Aggreg8 PSD2 Open Banking-on keresztül csatlakoztatott bankszámlák és egyenlegek |
+| `aggreg8_consents` | 💳 Tranzakciók & Bank | 0 | Aggreg8 PSD2 felhasználói banki hozzájárulások, tokenek és 180 napos érvényesség |
+| `aggreg8_settings` | 💳 Tranzakciók & Bank | 0 | Rendszerszintű Aggreg8 AIS partner hitelesítő token gyorsítótár (sandbox / prod) |
 | `annual_report_notes_templates` | 📋 Éves Beszámoló & ÁFA | 0 | Kiegészítő melléklet szöveges sablonok. |
 | `annual_reports` | 📋 Éves Beszámoló & ÁFA | 1 | Éves beszámolók állapota és véglegesített adatai. |
 | `api_keys` | 🛠️ Platform & Üzemeltetés | 0 | OpenClaw külső REST API hozzáférési kulcsok. |

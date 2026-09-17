@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Landmark, Plus, Trash2, Shield, CreditCard } from 'lucide-react';
 import { reportError } from '@/lib/errorReporter';
 import { useTranslation } from 'react-i18next';
+import { Aggreg8BankConnections } from '@/components/banking/Aggreg8BankConnections';
 
 interface BankAccount {
   id: string;
@@ -106,7 +107,13 @@ export function BankAccountsTab({ companyId }: Props) {
       setShowAddForm(false);
       queryClient.invalidateQueries({ queryKey: ['company-bank-accounts', companyId] });
     } catch (err: any) {
-      reportError({ type: 'db_query', component: 'BankAccountsTab', action: 'handleAddAccount', error: err });
+      reportError({
+        type: 'db_query',
+        component: 'BankAccountsTab',
+        action: 'handleAddAccount',
+        message: err?.message || 'Nem sikerült hozzáadni a bankszámlát.',
+        error: err,
+      });
       toast({ title: 'Hiba', description: 'Nem sikerült hozzáadni a bankszámlát.', variant: 'destructive' });
     } finally {
       setSaving(false);
@@ -127,13 +134,22 @@ export function BankAccountsTab({ companyId }: Props) {
       toast({ title: 'Siker', description: 'Bankszámla törölve.' });
       queryClient.invalidateQueries({ queryKey: ['company-bank-accounts', companyId] });
     } catch (err: any) {
-      reportError({ type: 'db_query', component: 'BankAccountsTab', action: 'handleDeleteAccount', error: err });
+      reportError({
+        type: 'db_query',
+        component: 'BankAccountsTab',
+        action: 'handleDeleteAccount',
+        message: err?.message || 'Nem sikerült törölni a bankszámlát.',
+        error: err,
+      });
       toast({ title: 'Hiba', description: 'Nem sikerült törölni a bankszámlát.', variant: 'destructive' });
     }
   };
 
   return (
     <div className="space-y-6">
+      {/* Aggreg8 Open Banking (PSD2) Integráció */}
+      <Aggreg8BankConnections companyId={companyId} />
+
       <Card className="border-border/60 shadow-lg">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div>

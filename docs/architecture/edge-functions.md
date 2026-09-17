@@ -1,7 +1,7 @@
 # Supabase Edge Functions Katalógus
 
-> **Utoljára frissítve:** 2026-09-16  
-> **Összesen:** 60 Deno Edge Function + `_shared/` közös modulok | **Runtime:** Deno (TypeScript) | **Platform:** Supabase Cloud
+> **Utoljára frissítve:** 2026-09-17  
+> **Összesen:** 62 Deno Edge Function + `_shared/` közös modulok | **Runtime:** Deno (TypeScript) | **Platform:** Supabase Cloud
 
 Ez a dokumentáció az eaisybill-prod rendszer összes Supabase Edge Function-jének hivatalos, autoritatív katalógusa. Részletezi az egyes funkciók célját, jogosultsági modelljét (`verify_jwt`), meghívási kontextusát (Frontend, pg_cron, Webhook, Postgres Trigger) és környezeti változóit.
 A funkciók forráskódja a [`supabase/functions/`](../../supabase/functions/) könyvtárban található. A technikai architektúra döntést az [A-005: Edge Functions a Serverless Logikához](./decisions/A-005-edge-functions.md), az adatbázis sémát a [database-schema.md](./database-schema.md), az eljárásokat pedig az [rpc-catalog.md](./rpc-catalog.md) írja le.
@@ -33,6 +33,7 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 10. [🔌 Külső Integrációk & API (1 db)](#10-külső-integrációk--api)
 11. [🗓️ MNB & Jogi Frissítések (2 db)](#11-mnb--jogi-frissítések)
 12. [🚚 Szállítmányozás / HRTSPED (1 db)](#12-szállítmányozás--hrtsped)
+13. [🏦 Open Banking & Aggreg8 Integráció (2 db)](#13-open-banking--aggreg8-integráció)
 
 ---
 
@@ -204,12 +205,23 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 
 ---
 
+## 13. 🏦 Open Banking & Aggreg8 Integráció (2 db)
+
+> PSD2 AISP banki kapcsolat, automatikus és on-demand számlatörténet szinkronizáció.
+
+| Edge Function | JWT Auth | Meghívó Réteg | Szükséges Környezeti Változók | Leírás és Üzleti Szerepkör |
+|---|:---:|---|---|---|
+| [`aggreg8-api`](../../supabase/functions/aggreg8-api/index.ts) | ✅ Kötelező | Frontend (`useAggreg8.ts`, BankAccountsTab) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, A8_AIS_API_KEY, A8_ENVIRONMENT` | Aggreg8 PSD2 AISP API átjáró — Token cache (`aggreg8_settings`), felhasználó regisztráció, SyncUI user-flow indítás (`ADD_BANK`, `ON_DEMAND`, `EXTEND_CONSENT`, `DELETE_INFO_SHARING_CONSENT`), banklista lekérdezés (`GET /banks`). |
+| [`aggreg8-callback`](../../supabase/functions/aggreg8-callback/index.ts) | ❌ Nyilvános / Webhook | Aggreg8 Webhook szerverek | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, A8_AIS_API_KEY, A8_ENVIRONMENT` | Nyilvános webhook végpont az Aggreg8 felé — Hozzájárulások perzisztálása (`aggreg8_consents`, `aggreg8_accounts`), többoldalas tranzakció-letöltés (`syncAccountTransactions`), upsert a `bank_transactions` és `transactions` táblákba. |
+
+---
+
 ## Jogosultsági és JWT Összefoglaló
 
 | Típus | Darabszám | Szabályzat |
 |---|:---:|---|
-| `verify_jwt: true` | 14 | Közvetlenül a bejelentkezett felhasználó böngészőjéből, érvényes Bearer JWT token kíséretében hívható végpontok. |
-| `verify_jwt: false` | 45 | Időzített feladatok (`pg_cron`), külső webhookok (Mailgun, Nylas, Twilio), admin műveletek (`service_role`), API kulcsos hívások, vagy bejelentkezés előtti publikus végpontok (pl. jelszó-visszaállítás, email ellenőrzés). |
+| `verify_jwt: true` | 15 | Közvetlenül a bejelentkezett felhasználó böngészőjéből, érvényes Bearer JWT token kíséretében hívható végpontok. |
+| `verify_jwt: false` | 47 | Időzített feladatok (`pg_cron`), külső webhookok (Mailgun, Nylas, Twilio, Aggreg8), admin műveletek (`service_role`), API kulcsos hívások, vagy bejelentkezés előtti publikus végpontok (pl. jelszó-visszaállítás, email ellenőrzés). |
 
 ---
 

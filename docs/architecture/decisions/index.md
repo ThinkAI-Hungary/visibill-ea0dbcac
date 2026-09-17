@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-17  
-> **Összesen:** 122 döntés | ✅ Decided: 120 | ⛔ Superseded: 2
+> **Összesen:** 125 döntés | ✅ Decided: 123 | ⛔ Superseded: 2
 
 ---
 
@@ -50,6 +50,8 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-059 | Tranzakció Párosítási Mag & Moduláris UI Architektúra (TransactionMatchingCore) | ✅ Decided | [A-059](./A-059-transaction-matching-core-and-modular-ui.md) |
 | A-096 | Hivatalos NAV Tételsor Védőháló, Sorszám Szinkronizáció és 23505 Ütközésvédelem | ✅ Decided | [A-096](./A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md) |
 | A-116 | K&H Bankkivonatok (.xls / .csv) Robusztus Feldolgozása, Tabulátor Detektálás és Tranzakció Pipeline Intercept Védelem | ✅ Decided | [A-116](./A-116-kh-bank-statement-parsing-and-pipeline-routing-safeguards.md) |
+| A-118 | Skontó és Partner Fizetési Határidő Atomi Újraszámítás | ✅ Decided | [A-118](./A-118-atomic-partner-skonto-recalculation.md) |
+| A-119 | Aggreg8 PSD2 Open Banking AISP Integráció, Hosted SyncUI és Valós Idejű Tranzakció Szinkronizáció | ✅ Decided | [A-119](./A-119-aggreg8-psd2-open-banking-integration.md) |
 
 ## 🔒 Biztonság & Auth
 
@@ -113,6 +115,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-110 | Bérszámfejtési Főkönyvi Számlatükör Pagináció, Cégprofilos Kontírozás Perzisztencia és Kattintási Outline Védelem | ✅ Decided | [A-110](./A-110-payroll-gl-preset-pagination-and-mapping-persistence.md) |
 | A-111 | Közvetlen Bizonylat-visszanyitás (Unpost), Főkönyvi Sztornó Kioltás és Sorszámfolytonossági Védelem | ✅ Decided | [A-111](./A-111-accounting-journal-unpost-gl-storno-and-numbering-integrity.md) |
 | A-118 | Atomi Partner Skontó Újraszámolás és Kliensoldali Ciklusok Felszámolása | ✅ Decided | [A-118](./A-118-atomic-partner-skonto-recalculation.md) |
+| A-119 | Aggreg8 PSD2 Open Banking AISP Integráció, Hosted SyncUI és Valós Idejű Tranzakció Szinkronizáció | ✅ Decided | [A-119](./A-119-aggreg8-psd2-open-banking-integration.md) |
 
 ## 🖥️ Frontend
 
