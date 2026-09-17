@@ -13,6 +13,8 @@ beforeAll(() => {
   window.HTMLElement.prototype.scrollIntoView = vi.fn();
 });
 
+let mockExistingEntry: any = null;
+
 vi.mock('@/integrations/supabase/client', () => {
   const createQueryBuilder = (table?: string) => {
     const builder: any = {
@@ -30,6 +32,7 @@ vi.mock('@/integrations/supabase/client', () => {
           }
           return Promise.resolve({ data: [], error: null });
         }),
+        maybeSingle: vi.fn().mockImplementation(() => Promise.resolve({ data: mockExistingEntry, error: null })),
         then: (resolve: any) => {
           if (table === 'acc_journals') {
             return resolve({ data: [{ id: 'j-1', code: 'VE', name: 'Vegyes' }], error: null });
@@ -38,7 +41,7 @@ vi.mock('@/integrations/supabase/client', () => {
         },
       })),
       order: vi.fn().mockResolvedValue({ data: [], error: null }),
-      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+      maybeSingle: vi.fn().mockImplementation(() => Promise.resolve({ data: mockExistingEntry, error: null })),
       insert: vi.fn().mockReturnThis(),
       update: vi.fn().mockReturnThis(),
       delete: vi.fn().mockReturnThis(),
@@ -288,5 +291,52 @@ describe('AddManualJournalEntryModal - Layout and Keyboard Navigation', () => {
     // Clicking again should close it
     fireEvent.click(glTrigger!);
     expect(screen.queryByText('5411')).not.toBeInTheDocument();
+  });
+
+  it('correctly populates foreign currency amount when editing a foreign currency entry', async () => {
+    mockExistingEntry = {
+      id: 'entry-eur-1',
+      journal_id: 'j-1',
+      posting_date: '2026-08-19',
+      document_date: '2026-08-19',
+      document_id: 'PNUZPLUG-0004',
+      partner_id: 'none',
+      description: 'Anthropic Claude Pro',
+      currency: 'EUR',
+      exchange_rate: 365.03,
+      lines: [
+        {
+          id: 'line-1',
+          gl_account_id: 'gl-1',
+          dc_type: 'T',
+          amount: 6570.54,
+          foreign_amount: 18.00,
+          description: 'Claude Pro',
+        },
+        {
+          id: 'line-2',
+          gl_account_id: 'gl-2',
+          dc_type: 'K',
+          amount: 6570.54,
+          foreign_amount: 18.00,
+          description: 'Claude Pro',
+        },
+      ],
+    };
+
+    renderModal({ entryId: 'entry-eur-1' });
+
+    // Amount input for first line should show 18 (EUR) rather than 6570.54 (HUF)
+    const amountInputs = await screen.findAllByRole('spinbutton');
+    expect(amountInputs[0]).toHaveValue(18);
+
+    // Table header should indicate Összeg (EUR)
+    expect(screen.getByText('Összeg (EUR)')).toBeInTheDocument();
+
+    // Footer should display EUR amount for debit and credit
+    const eurBadges = screen.getAllByText(/18,00\s*EUR/i);
+    expect(eurBadges.length).toBeGreaterThanOrEqual(2);
+
+    mockExistingEntry = null;
   });
 });

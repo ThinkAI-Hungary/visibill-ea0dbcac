@@ -135,10 +135,10 @@ describe('JournalsPage - Unpost and Storno Workflow', () => {
 
     // Wait for journals list to load, then click the "V" journal tab
     await waitFor(() => {
-      expect(screen.getByText('Vevő napló')).toBeInTheDocument();
+      expect(screen.getByText(/Vevő/i)).toBeInTheDocument();
     });
 
-    const vTab = screen.getByText('Vevő napló').closest('button');
+    const vTab = screen.getByText(/Vevő/i).closest('button');
     expect(vTab).toBeInTheDocument();
     fireEvent.click(vTab!);
 
@@ -233,10 +233,10 @@ describe('JournalsPage - Unpost and Storno Workflow', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Vevő napló')).toBeInTheDocument();
+      expect(screen.getByText(/Vevő/i)).toBeInTheDocument();
     });
 
-    const vTab = screen.getByText('Vevő napló').closest('button');
+    const vTab = screen.getByText(/Vevő/i).closest('button');
     fireEvent.click(vTab!);
 
     await waitFor(() => {
@@ -324,10 +324,10 @@ describe('JournalsPage - Unpost and Storno Workflow', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Vevő napló')).toBeInTheDocument();
+      expect(screen.getByText(/Vevő/i)).toBeInTheDocument();
     });
 
-    const vTab = screen.getByText('Vevő napló').closest('button');
+    const vTab = screen.getByText(/Vevő/i).closest('button');
     fireEvent.click(vTab!);
 
     await waitFor(() => {

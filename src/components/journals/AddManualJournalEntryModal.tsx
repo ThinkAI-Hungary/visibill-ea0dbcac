@@ -34,6 +34,7 @@ interface JournalLineInput {
   gl_account_id: string;
   dc_type: 'T' | 'K';
   amount: number;
+  foreign_amount?: number | null;
   project_id: string | null;
   description: string;
 }
@@ -177,14 +178,29 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
       setDescription(existingEntry.description);
       setJustification(existingEntry.justification || '');
       if (existingEntry.lines && existingEntry.lines.length > 0) {
-        setLines(existingEntry.lines.map((l: any) => ({
-          id: l.id,
-          gl_account_id: l.gl_account_id || '',
-          dc_type: l.dc_type,
-          amount: Number(l.amount),
-          project_id: l.project_id || null,
-          description: l.description || '',
-        })));
+        const isForeign = existingEntry.currency && existingEntry.currency !== 'HUF';
+        const headerRate = Number(existingEntry.exchange_rate) || 1;
+        setLines(existingEntry.lines.map((l: any) => {
+          let displayAmount = Number(l.amount);
+          let fAmount = l.foreign_amount != null ? Number(l.foreign_amount) : null;
+          if (isForeign) {
+            if (fAmount != null && fAmount > 0) {
+              displayAmount = fAmount;
+            } else if (headerRate > 1 && Number(l.amount) > 0) {
+              displayAmount = Number((Number(l.amount) / headerRate).toFixed(2));
+              fAmount = displayAmount;
+            }
+          }
+          return {
+            id: l.id,
+            gl_account_id: l.gl_account_id || '',
+            dc_type: l.dc_type,
+            amount: displayAmount,
+            foreign_amount: fAmount,
+            project_id: l.project_id || null,
+            description: l.description || '',
+          };
+        }));
       }
     }
   }, [existingEntry]);
@@ -274,7 +290,10 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error(t('accounting:dialogs.manual_journal.validation.login_required'));
 
-      const headerData = {
+      const isForeign = existingEntry?.currency && existingEntry.currency !== 'HUF';
+      const headerRate = Number(existingEntry?.exchange_rate) || 1;
+
+      const headerData: Record<string, any> = {
         company_id: selectedCompany!.id,
         journal_id: journalId,
         accounting_year: Number(postingDate.substring(0, 4)),
@@ -287,6 +306,12 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
         justification: justification || null,
         created_by: user.id,
       };
+
+      if (existingEntry?.currency) {
+        headerData.currency = existingEntry.currency;
+        headerData.exchange_rate = existingEntry.exchange_rate ?? 1.0;
+        headerData.exchange_rate_date = existingEntry.exchange_rate_date ?? postingDate;
+      }
 
       let headerIdResult = entryId;
 
@@ -327,15 +352,22 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
       }
 
       // Insert new lines
-      const linesData = lines.map((line, index) => ({
-        header_id: headerIdResult!,
-        sequence_number: index + 1,
-        gl_account_id: (line.gl_account_id && line.gl_account_id !== '00000000-0000-0000-0000-000000000000') ? line.gl_account_id : null,
-        dc_type: line.dc_type,
-        amount: line.amount,
-        project_id: line.project_id || null,
-        description: line.description || null,
-      }));
+      const linesData = lines.map((line, index) => {
+        const lineAmt = Number(line.amount);
+        const baseAmt = isForeign && headerRate > 1 
+          ? Number((lineAmt * headerRate).toFixed(2)) 
+          : lineAmt;
+        return {
+          header_id: headerIdResult!,
+          sequence_number: index + 1,
+          gl_account_id: (line.gl_account_id && line.gl_account_id !== '00000000-0000-0000-0000-000000000000') ? line.gl_account_id : null,
+          dc_type: line.dc_type,
+          amount: baseAmt,
+          foreign_amount: isForeign ? lineAmt : null,
+          project_id: line.project_id || null,
+          description: line.description || null,
+        };
+      });
 
       const { error: linesErr } = await supabase
         .from('acc_journal_lines')
@@ -630,7 +662,11 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                     <tr className="border-b border-border/40 font-semibold text-muted-foreground uppercase text-[10px]">
                       <th className="p-2.5 w-[300px] bg-muted">{t('accounting:dialogs.manual_journal.table_headers.gl_account')}</th>
                       <th className="p-2.5 w-[115px] text-center bg-muted">{t('accounting:dialogs.manual_journal.table_headers.dc_type')}</th>
-                      <th className="p-2.5 w-[155px] text-right bg-muted">{t('accounting:dialogs.manual_journal.table_headers.amount')}</th>
+                      <th className="p-2.5 w-[155px] text-right bg-muted">
+                        {existingEntry?.currency && existingEntry.currency !== 'HUF'
+                          ? `${t('accounting:dialogs.manual_journal.table_headers.amount').replace(/\s*\(HUF\)/i, '')} (${existingEntry.currency})`
+                          : t('accounting:dialogs.manual_journal.table_headers.amount')}
+                      </th>
                       <th className="p-2.5 w-[150px] bg-muted">{t('accounting:dialogs.manual_journal.table_headers.project')}</th>
                       <th className="p-2.5 min-w-[160px] bg-muted">{t('accounting:dialogs.manual_journal.table_headers.comment')}</th>
                       <th className="p-2.5 w-[45px] text-center bg-muted"></th>
@@ -850,16 +886,26 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
               <div className="flex gap-4">
                 <div>
                   <span className="text-muted-foreground block">{t('accounting:dialogs.manual_journal.total_debit')}</span>
-                  <span className="font-bold text-emerald-600 text-sm">{formatCurrency(totalDebit)}</span>
+                  <span className="font-bold text-emerald-600 text-sm">{formatCurrency(totalDebit, existingEntry?.currency || 'HUF')}</span>
+                  {existingEntry?.currency && existingEntry.currency !== 'HUF' && (Number(existingEntry.exchange_rate) || 1) > 1 && (
+                    <span className="text-[10px] text-muted-foreground block">
+                      ≈ {formatCurrency(Math.round(totalDebit * Number(existingEntry.exchange_rate)), 'HUF')}
+                    </span>
+                  )}
                 </div>
                 <div>
                   <span className="text-muted-foreground block">{t('accounting:dialogs.manual_journal.total_credit')}</span>
-                  <span className="font-bold text-rose-600 text-sm">{formatCurrency(totalCredit)}</span>
+                  <span className="font-bold text-rose-600 text-sm">{formatCurrency(totalCredit, existingEntry?.currency || 'HUF')}</span>
+                  {existingEntry?.currency && existingEntry.currency !== 'HUF' && (Number(existingEntry.exchange_rate) || 1) > 1 && (
+                    <span className="text-[10px] text-muted-foreground block">
+                      ≈ {formatCurrency(Math.round(totalCredit * Number(existingEntry.exchange_rate)), 'HUF')}
+                    </span>
+                  )}
                 </div>
                 <div>
                   <span className="text-muted-foreground block">{t('accounting:dialogs.manual_journal.difference')}</span>
                   <span className={cn("font-bold text-sm", isBalanced ? "text-foreground" : "text-destructive")}>
-                    {formatCurrency(difference)}
+                    {formatCurrency(difference, existingEntry?.currency || 'HUF')}
                   </span>
                 </div>
               </div>

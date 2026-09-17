@@ -1230,26 +1230,39 @@ export default function JournalsPage() {
                         const isForeign = e.currency && e.currency !== 'HUF';
                         const isStornoEntry = e.entry_type === 'SZTORNO';
                         const isStornoedOriginal = e.status === 'SZTORNOZOTT';
-                        const rawTotalAmount = e.lines?.reduce((acc: number, l: any) => {
-                          if (l.dc_type !== 'T') return acc;
-                          const val = isForeign ? (l.foreign_amount || l.amount) : l.amount;
-                          return acc + Number(val);
-                        }, 0) || 0;
-                        const totalAmount = isStornoEntry ? -Math.abs(rawTotalAmount) : rawTotalAmount;
-
                         // Resolve daily exchange rate for the posting date
                         const headerRate = Number(e.exchange_rate) || 0;
                         const rate = headerRate > 1 ? headerRate : getDailyRate(e.currency, e.posting_date);
 
+                        const rawTotalAmount = e.lines?.reduce((acc: number, l: any) => {
+                          if (l.dc_type !== 'T') return acc;
+                          let val: number;
+                          if (isForeign) {
+                            if (l.foreign_amount != null && Number(l.foreign_amount) > 0) {
+                              val = Number(l.foreign_amount);
+                            } else if (rate > 1 && Number(l.amount) > 0) {
+                              val = Number((Number(l.amount) / rate).toFixed(2));
+                            } else {
+                              val = Number(l.amount);
+                            }
+                          } else {
+                            val = Number(l.amount);
+                          }
+                          return acc + val;
+                        }, 0) || 0;
+                        const totalAmount = isStornoEntry ? -Math.abs(rawTotalAmount) : rawTotalAmount;
+
                         // Calculate HUF amount:
-                        // 1. If line amounts in DB are already converted (differ from foreign amount), sum them
+                        // 1. If line amounts in DB are already converted, sum them
                         const linesHufSum = isForeign
                           ? e.lines?.reduce((acc: number, l: any) => l.dc_type === 'T' ? acc + Number(l.amount) : acc, 0) || 0
                           : 0;
 
                         // 2. If lines were already converted, use linesHufSum. Otherwise calculate directly using that day's exchange rate
                         const rawHufAmount = isForeign
-                          ? (linesHufSum > 0 && Math.abs(linesHufSum - rawTotalAmount) > 0.01 ? linesHufSum : rawTotalAmount * rate)
+                          ? (linesHufSum > 0 && Math.abs(linesHufSum - rawTotalAmount) > 0.01 
+                              ? linesHufSum 
+                              : (rate > 1 && linesHufSum > 0 ? linesHufSum : rawTotalAmount * rate))
                           : 0;
                         const hufAmount = isStornoEntry ? -Math.abs(rawHufAmount) : rawHufAmount;
 
@@ -1558,9 +1571,9 @@ export default function JournalsPage() {
                   <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2.5">
                     <RotateCcw className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                     <div>
-                      <span className="font-bold block">{t('accounting:journals.drawer.storno_title')}</span>
+                      <span className="font-bold block">{t('accounting:journals.drawer.storno_title', 'SZTORNÓ BIZONYLAT')}</span>
                       <p className="text-[11px] mt-0.5 leading-relaxed">
-                        {t('accounting:journals.drawer.storno_desc')}
+                        {t('accounting:journals.drawer.storno_desc', 'Ez a bizonylat ellentétes előjellel sztornózza')}
                         {(() => {
                           const orig = entriesById.get(selectedEntry.stornoed_entry_id || selectedEntry.original_entry_id);
                           return orig ? t('accounting:journals.drawer.storno_ref_orig', { code: orig.journal?.code, num: orig.journal_number, docId: orig.document_id }) : '';
@@ -1574,9 +1587,9 @@ export default function JournalsPage() {
                   <div className="bg-rose-500/10 border border-rose-500/30 rounded-lg p-3 text-xs text-rose-800 dark:text-rose-300 flex items-start gap-2.5">
                     <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                     <div>
-                      <span className="font-bold block">{t('accounting:journals.drawer.stornoed_title')}</span>
+                      <span className="font-bold block">{t('accounting:journals.drawer.stornoed_title', 'SZTORNÓZOTT (ÉRVÉNYTELENÍTETT) BIZONYLAT')}</span>
                       <p className="text-[11px] mt-0.5 leading-relaxed">
-                        {t('accounting:journals.drawer.stornoed_desc')}
+                        {t('accounting:journals.drawer.stornoed_desc', 'Ezt a bizonylatot hivatalosan sztornózták.')}
                         {(() => {
                           const st = stornoMap.get(selectedEntry.id);
                           return st ? t('accounting:journals.drawer.stornoed_ref_storno', { code: st.journal?.code, num: st.journal_number }) : '';
@@ -1713,16 +1726,28 @@ export default function JournalsPage() {
                             <td className="p-2.5 text-right font-semibold tabular-nums">
                               {(() => {
                                 const isForeign = selectedEntry.currency && selectedEntry.currency !== 'HUF';
-                                const amtVal = isForeign ? (line.foreign_amount || line.amount) : line.amount;
+                                const lineRate = Number(selectedEntry.exchange_rate) > 1 
+                                  ? Number(selectedEntry.exchange_rate) 
+                                  : getDailyRate(selectedEntry.currency, selectedEntry.posting_date);
+
+                                let amtVal: number;
+                                if (isForeign) {
+                                  if (line.foreign_amount != null && Number(line.foreign_amount) > 0) {
+                                    amtVal = Number(line.foreign_amount);
+                                  } else if (lineRate > 1 && Number(line.amount) > 0) {
+                                    amtVal = Number((Number(line.amount) / lineRate).toFixed(2));
+                                  } else {
+                                    amtVal = Number(line.amount);
+                                  }
+                                } else {
+                                  amtVal = Number(line.amount);
+                                }
                                 const formatted = formatCurrency(amtVal, selectedEntry.currency || 'HUF');
                                 
                                 if (isForeign) {
-                                  const lineRate = Number(selectedEntry.exchange_rate) > 1 
-                                    ? Number(selectedEntry.exchange_rate) 
-                                    : getDailyRate(selectedEntry.currency, selectedEntry.posting_date);
                                   const lineHuf = (Number(line.amount) > 0 && Math.abs(Number(line.amount) - amtVal) > 0.01)
                                     ? Number(line.amount)
-                                    : amtVal * lineRate;
+                                    : (lineRate > 1 && Number(line.amount) > 0 ? Number(line.amount) : amtVal * lineRate);
                                   const formattedHuf = formatCurrency(lineHuf, 'HUF');
                                   return (
                                     <div className="flex flex-col items-end">

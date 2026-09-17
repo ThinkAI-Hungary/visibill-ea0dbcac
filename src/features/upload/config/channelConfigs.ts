@@ -138,6 +138,8 @@ export const BANK_HINT_OPTIONS = [
   { value: 'granit', label: 'Gránit Bank' },
   { value: 'revolut', label: 'Revolut' },
   { value: 'wise', label: 'Wise' },
+  { value: 'zaba', label: 'Zagrebačka banka (ZABA)' },
+  { value: 'minimax', label: 'Minimax / e-racuni' },
 ];
 
 export const COURIER_OPTIONS = [
