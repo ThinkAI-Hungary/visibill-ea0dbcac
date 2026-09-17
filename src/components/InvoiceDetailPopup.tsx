@@ -10,7 +10,7 @@ import { formatCurrency, cn } from '@/lib/utils';
 import { getDateFnsLocale } from '@/lib/locale/formatters';
 import { getPaymentStatusBadge } from '@/hooks/useComputedStatus';
 import { format } from 'date-fns';
-import { FileText, ExternalLink, Lock, Users, Plus, Loader2, Pencil, Check, X } from 'lucide-react';
+import { FileText, ExternalLink, Lock, Users, Plus, Loader2, Pencil, Check, X, AlertOctagon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { INVOICE_TYPE_LABELS } from '@/types/invoices';
 import { reportError } from '@/lib/errorReporter';
@@ -18,6 +18,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { useCompany } from '@/contexts/CompanyContext';
+import { checkBuyerTaxMismatch } from '@/lib/invoiceMatchingUtils';
 
 interface InvoiceDetailPopupProps {
   open: boolean;
@@ -101,8 +103,11 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
   const { t } = useTranslation(['invoices', 'common']);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { selectedCompany } = useCompany();
   const [invoice, setInvoice] = useState<FullInvoice | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const buyerMismatch = checkBuyerTaxMismatch(invoice, selectedCompany);
 
   // Bizonylatsorszám inline editing
   const [editingBizonylat, setEditingBizonylat] = useState(false);
@@ -384,8 +389,24 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
 
             {/* Vevő */}
             <div>
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{t('invoices:dialogs.detail.buyer')}</h4>
-              <div className="bg-muted/30 rounded-md p-3 border border-border/30">
+              <div className="flex items-center justify-between mb-1">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('invoices:dialogs.detail.buyer')}</h4>
+                {buyerMismatch.isMismatch && (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-sans font-semibold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-300/60 dark:border-rose-700/60">
+                    <AlertOctagon className="h-3 w-3" />
+                    Eltérő vevő
+                  </span>
+                )}
+              </div>
+              <div className={cn("rounded-md p-3 border", buyerMismatch.isMismatch ? "bg-rose-50/50 dark:bg-rose-950/20 border-rose-300/70 dark:border-rose-800/70" : "bg-muted/30 border-border/30")}>
+                {buyerMismatch.isMismatch && (
+                  <div className="mb-2 p-2 rounded bg-rose-100/70 dark:bg-rose-900/30 text-[11px] text-rose-800 dark:text-rose-200 border border-rose-200 dark:border-rose-800/50 flex items-start gap-1.5">
+                    <AlertOctagon className="h-3.5 w-3.5 shrink-0 text-rose-600 mt-0.5" />
+                    <div>
+                      <strong>Figyelem:</strong> A számla vevője nem egyezik az aktív céggel ({selectedCompany?.name || '-'}, {selectedCompany?.tax_number || '-'})!
+                    </div>
+                  </div>
+                )}
                 <DetailRow label={t('invoices:dialogs.detail.name')} value={invoice.vevo_nev} />
                 <DetailRow label={t('invoices:dialogs.detail.address')} value={invoice.vevo_cim} />
                 <DetailRow label={t('invoices:dialogs.detail.tax_number')} value={invoice.vevo_vat_id} mono />

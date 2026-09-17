@@ -451,3 +451,80 @@ export function evaluateNavAndSubmittedSuggestedMatch(
   return result;
 }
 
+export interface BuyerMismatchResult {
+  isMismatch: boolean;
+  buyerName?: string;
+  buyerTax?: string;
+  companyName?: string;
+  companyTax?: string;
+}
+
+/**
+ * Ellenőrzi, hogy egy bejövő (INBOUND) számlán a vevő adószáma (vagy neve)
+ * eltér-e a kiválasztott aktív cég adószámától.
+ *
+ * Szabályok:
+ * - Csak bejövő számlákra (INBOUND vagy nem OUTBOUND) vonatkozik (kimenő számlánál a vevő külső fél).
+ * - Ha mindkét oldalon rendelkezésre áll a legalább 7-8 jegyű alapadószám és azok különböznek -> isMismatch = true.
+ * - Ha nincs adószám, de a vevő neve szerepel és szignifikánsan eltér a cég nevétől -> isMismatch = true.
+ */
+export function checkBuyerTaxMismatch(
+  invoice: {
+    invoice_direction?: string | null;
+    vevo_vat_id?: string | null;
+    vevo_nev?: string | null;
+  } | null | undefined,
+  company: {
+    tax_number?: string | null;
+    name?: string | null;
+  } | null | undefined
+): BuyerMismatchResult {
+  if (!invoice || !company) {
+    return { isMismatch: false };
+  }
+
+  // Kimenő számláknál a vevő külső partner, nem az aktuális cég
+  const direction = (invoice.invoice_direction || '').toUpperCase();
+  if (direction === 'OUTBOUND') {
+    return { isMismatch: false };
+  }
+
+  const invoiceBuyerTax = extractBaseTax(invoice.vevo_vat_id);
+  const companyBaseTax = extractBaseTax(company.tax_number);
+
+  // 1. Elsődleges vizsgálat: 8 jegyű törzsszámok összehasonlítása
+  if (invoiceBuyerTax && companyBaseTax && invoiceBuyerTax.length >= 7 && companyBaseTax.length >= 7) {
+    if (invoiceBuyerTax !== companyBaseTax) {
+      return {
+        isMismatch: true,
+        buyerName: invoice.vevo_nev?.trim() || undefined,
+        buyerTax: invoice.vevo_vat_id?.trim() || undefined,
+        companyName: company.name?.trim() || undefined,
+        companyTax: company.tax_number?.trim() || undefined,
+      };
+    }
+    // Ha az adószám megegyezik, garantáltan a céghez tartozik
+    return { isMismatch: false };
+  }
+
+  // 2. Másodlagos vizsgálat (ha a számlán nem szerepel vevői adószám, de a vevő neve igen)
+  if (invoice.vevo_nev && company.name) {
+    const trimmedBuyer = invoice.vevo_nev.trim();
+    if (trimmedBuyer.length >= 4 && !isPartnerNameMatch(trimmedBuyer, company.name)) {
+      const normBuyer = normalizePartnerName(trimmedBuyer);
+      if (normBuyer.length >= 4 && normBuyer !== 'ismeretlen' && normBuyer !== 'ugyfel') {
+        return {
+          isMismatch: true,
+          buyerName: trimmedBuyer,
+          buyerTax: invoice.vevo_vat_id?.trim() || undefined,
+          companyName: company.name.trim(),
+          companyTax: company.tax_number?.trim() || undefined,
+        };
+      }
+    }
+  }
+
+  return { isMismatch: false };
+}
+
+

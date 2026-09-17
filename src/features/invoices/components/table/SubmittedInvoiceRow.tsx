@@ -8,10 +8,10 @@ import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/h
 import { CopyableCell } from '@/components/ui/copyable-cell';
 import { InvoiceImagePreview } from '@/components/InvoiceImagePreview';
 import ExpandedInvoiceRow from '@/components/ExpandedInvoiceRow';
-import { ChevronDown, FileText, Package, Pencil, AlertTriangle, Check } from 'lucide-react';
+import { ChevronDown, FileText, Package, Pencil, AlertTriangle, AlertOctagon, Check } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 import { getInitials, getAvatarColor } from '@/lib/helpers';
-import { normalizeInvoiceNumber } from '@/lib/invoiceMatchingUtils';
+import { normalizeInvoiceNumber, checkBuyerTaxMismatch } from '@/lib/invoiceMatchingUtils';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
@@ -36,6 +36,7 @@ export function SubmittedInvoiceRow({
   const {
     activeTab,
     companyId,
+    selectedCompany,
     categories,
     projects,
     writable,
@@ -63,6 +64,11 @@ export function SubmittedInvoiceRow({
   const isPartiallyPaid = matchStatus === 'partially_paid';
   const isSuggested = matchStatus === 'suggested';
   const partnerName = activeTab === 'SUBMITTED_INBOUND' ? invoice.elado_nev || '-' : invoice.vevo_nev || '-';
+
+  const buyerMismatch = React.useMemo(
+    () => checkBuyerTaxMismatch(invoice, selectedCompany),
+    [invoice, selectedCompany]
+  );
 
   const getSubmittedInvoiceMatches = (subInvoice: SubmittedInvoice) => {
     const matchedNav = subInvoice.bizonylatsorszam
@@ -155,6 +161,32 @@ export function SubmittedInvoiceRow({
               value={invoice.bizonylatsorszam || '-'}
               ariaLabel={`${invoice.bizonylatsorszam} bizonylatsorszám másolása`}
             />
+
+            {/* Buyer mismatch warning badge */}
+            {buyerMismatch.isMismatch && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-sans font-semibold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-300/60 dark:border-rose-700/60 shrink-0 cursor-help">
+                      <AlertOctagon className="h-3 w-3" />
+                      Eltérő vevő
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs text-xs font-sans">
+                    <p className="font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                      <AlertOctagon className="h-3.5 w-3.5" /> A számla vevője eltér az aktív cégtől!
+                    </p>
+                    <p className="mt-1 text-foreground">
+                      Számlán szereplő vevő: <strong>{buyerMismatch.buyerName || 'Ismeretlen vevő'}</strong>
+                      {buyerMismatch.buyerTax ? ` (${buyerMismatch.buyerTax})` : ''}
+                    </p>
+                    <p className="text-muted-foreground mt-0.5">
+                      Aktív cég: {buyerMismatch.companyName || '-'} ({buyerMismatch.companyTax || '-'})
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
 
             {/* NAV missing warning icon right after bizonylatsorszám */}
             {(invoice.nav_status === 'missing_nav' || invoice.statusz === 'jovahagyasra_var') && (
