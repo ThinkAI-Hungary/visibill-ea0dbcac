@@ -273,4 +273,20 @@ describe('AddManualJournalEntryModal - Layout and Keyboard Navigation', () => {
     const parentItem = badge.closest('[role="option"]') || badge.closest('div');
     expect(parentItem).toBeInTheDocument();
   });
+
+  it('opens GL account popover cleanly on single click without needing to hold mouse down', async () => {
+    renderModal();
+
+    const glTrigger = document.getElementById('gl-account-trigger-0');
+    expect(glTrigger).toBeInTheDocument();
+
+    // Simple single click should open dropdown and show the search input
+    fireEvent.click(glTrigger!);
+    const option = await screen.findByText('5411');
+    expect(option).toBeInTheDocument();
+
+    // Clicking again should close it
+    fireEvent.click(glTrigger!);
+    expect(screen.queryByText('5411')).not.toBeInTheDocument();
+  });
 });

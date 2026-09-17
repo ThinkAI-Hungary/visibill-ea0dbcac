@@ -62,7 +62,6 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
   const [openDropdownIndex, setOpenDropdownIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [pendingFocusIndex, setPendingFocusIndex] = useState<number | null>(null);
-  const justClosedRef = useRef(false);
 
   // Fetch Lookups
   const { data: journals = [] } = useQuery({
@@ -649,9 +648,7 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                                 setOpenDropdownIndex(index);
                                 setSearchQuery('');
                               } else {
-                                justClosedRef.current = true;
                                 setOpenDropdownIndex(null);
-                                setTimeout(() => { justClosedRef.current = false; }, 200);
                               }
                             }}
                           >
@@ -660,12 +657,6 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                                 id={`gl-account-trigger-${index}`}
                                 variant="outline"
                                 role="combobox"
-                                onFocus={() => {
-                                  if (!justClosedRef.current && openDropdownIndex !== index) {
-                                    setOpenDropdownIndex(index);
-                                    setSearchQuery('');
-                                  }
-                                }}
                                 className="h-8 w-full justify-between font-mono text-xs text-left px-2 border border-input bg-background hover:bg-muted/50 overflow-hidden outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus:border-primary focus-visible:border-primary transition-colors"
                               >
                                 <span className="truncate flex-1 min-w-0">
