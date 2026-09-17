@@ -1,7 +1,7 @@
 # Visibill — Business Requirement Decisions
 
 > **Utoljára frissítve:** 2026-09-17  
-> **Összesen:** 57 döntés | ✅ Decided: 42 | 🟡 Partially Decided: 8 | ⛔ Superseded: 1 | 🔴 Open: 6
+> **Összesen:** 57 döntés | ✅ Decided: 43 | 🟡 Partially Decided: 8 | ⛔ Superseded: 1 | 🔴 Open: 5
 
 ---
 
@@ -82,7 +82,7 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| 026 | Banki integráció jövője | 🔴 Open | [026-banking-integration.md](./026-banking-integration.md) |
+| 026 | Banki integráció jövője (Aggreg8 PSD2 AISP) | ✅ Decided | [026-banking-integration.md](./026-banking-integration.md) |
 | 027 | LLM költség kezelés | 🟡 Partially Decided | [027-llm-cost-management.md](./027-llm-cost-management.md) |
 
 ## 🔒 Biztonság & Compliance

@@ -1,10 +1,10 @@
-# P-088: Számla Könyvelési Kizárás ("Nem könyvelt") Optimista Kapcsoló és Zökkenőmentes UX
+# P-089: Számla Könyvelési Kizárás ("Nem könyvelt") Optimista Kapcsoló és Zökkenőmentes UX
 
 **Status:** Decided  
 **Date:** 2026-09-16  
 **Category:** UI / UX / Invoices / Table Interaction / Performance  
 **Érintett komponensek:** `InvoiceTableContainer.tsx`, `NavInvoiceRow.tsx`, `SubmittedInvoiceRow.tsx`, `ExpandedInvoiceRow.tsx`  
-**Kapcsolódó döntések:** [P-010: Számlalista UX](./P-010-invoice-list.md), [P-057: Számla Feature Szelet UX](./P-057-invoices-feature-slice-ux.md), [A-120: Nem Könyvelt Szinkron és Optimista UI](../../architecture/decisions/A-120-exclude-from-accounting-sync-and-optimistic-ui.md), [BRD 045: Számla Feature Szelet](../../business/decisions/045-invoices-feature-slice.md)
+**Kapcsolódó döntések:** [P-010: Számlalista UX](./P-010-invoice-list.md), [P-057: Számla Feature Szelet UX](./P-057-invoices-feature-slice-ux.md), [A-122: Nem Könyvelt Szinkron és Optimista UI](../../architecture/decisions/A-122-exclude-from-accounting-sync-and-optimistic-ui.md), [BRD 045: Számla Feature Szelet](../../business/decisions/045-invoices-feature-slice.md)
 
 ---
 

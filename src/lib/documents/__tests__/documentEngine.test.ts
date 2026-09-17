@@ -139,17 +139,17 @@ describe('DocumentEngine', () => {
       });
 
       expect(descriptor.type).toBe('vat_return');
-      expect(descriptor.rawPayload?.anykOptions?.formId).toBe('2665');
-      expect(descriptor.rawPayload?.fields['01_0001_adoszam_torzs']).toBe('11223344');
-      expect(descriptor.rawPayload?.fields['M_1_0001_adoszam']).toBe('99887766');
+      expect(descriptor.rawPayload?.anykOptions?.formId).toBe('2665A');
 
       const { contentString, mimeType } = await DocumentEngine.render(descriptor, 'xml');
       expect(mimeType).toBe('application/xml;charset=utf-8');
-      expect(contentString).toContain('<nyomtatvanyok xmlns="http://iop.gov.hu/2007/01/nyk/altalanosnyomtatvany">');
-      expect(contentString).toContain('<nyomtatvanyazonosito>2665</nyomtatvanyazonosito>');
-      expect(contentString).toContain('<mezo eazon="01_0001_adoszam_torzs">11223344</mezo>');
-      expect(contentString).toContain('<mezo eazon="01_0006_adozo_nev">Példa &amp; Társa Kft.</mezo>');
-      expect(contentString).toContain('<mezo eazon="sor_01_alap">1000</mezo>');
+      expect(contentString).toContain('<nyomtatvanyok xmlns="http://www.apeh.hu/abev/nyomtatvanyok/2005/01">');
+      expect(contentString).toContain('<nyomtatvanyazonosito>2665A</nyomtatvanyazonosito>');
+      expect(contentString).toContain('<mezo eazon="0A0001E001A">11223344241</mezo>');
+      expect(contentString).toContain('<mezo eazon="0A0001E006A">Példa &amp; Társa Kft.</mezo>');
+      expect(contentString).toContain('<mezo eazon="0B0001C0001BA">1000</mezo>');
+      expect(contentString).toContain('<nyomtatvanyazonosito>2665M</nyomtatvanyazonosito>');
+      expect(contentString).toContain('<mezo eazon="0A0001C005A">99887766</mezo>');
     });
 
     it('builds a valid Annual Report descriptor', () => {

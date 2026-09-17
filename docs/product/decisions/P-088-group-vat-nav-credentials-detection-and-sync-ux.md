@@ -1,10 +1,10 @@
-# P-087: Csoportos ÁFA-tagok NAV Online Számla Beállítási Figyelmeztetése és Varázsló UX
+# P-088: Csoportos ÁFA-tagok NAV Online Számla Beállítási Figyelmeztetése és Varázsló UX
 
 **Status:** Decided  
 **Date:** 2026-09-16  
 **Category:** UI / Onboarding / NAV Integration / Error Prevention  
 **Érintett komponensek:** `src/components/nav/NavCredentialsForm.tsx`, `src/components/dashboard/EmptyStateDashboard.tsx`, `src/lib/validationUtils.ts`  
-**Kapcsolódó döntések:** [P-049: NAV Szinkronizálás UX](./P-049-nav-sync-dialog-ux.md), [A-118: Csoportos ÁFA Észlelés és Útmutatás](../../architecture/decisions/A-118-group-vat-entity-detection-and-technical-user-guidance.md), [BRD 056: Csoportos ÁFA Szabályzat](../../business/decisions/056-group-vat-entity-sync-policy.md)
+**Kapcsolódó döntések:** [P-049: NAV Szinkronizálás UX](./P-049-nav-sync-dialog-ux.md), [A-120: Csoportos ÁFA Észlelés és Útmutatás](../../architecture/decisions/A-120-group-vat-entity-detection-and-technical-user-guidance.md), [BRD 056: Csoportos ÁFA Szabályzat](../../business/decisions/056-group-vat-entity-sync-policy.md)
 
 ---
 

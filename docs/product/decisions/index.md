@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-17  
-> **Összesen:** 84 döntés | ✅ Decided: 80 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 85 döntés | ✅ Decided: 81 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -46,7 +46,7 @@
 | P-016 | Tranzakció lista + futár tab | ✅ Decided | [P-016](./P-016-transaction-list.md) |
 | P-017 | AI párosítás megjelenítés (confidence + reason) | ✅ Decided | [P-017](./P-017-matching-display.md) |
 | P-018 | Manuális párosítás felülírás + ML tanulás + deviza-tudatos | ✅ Decided | [P-018](./P-018-manual-matching.md) |
-| P-089 | Banki Tranzakciós Fájlok és Kivonatok Kezelő Dialógus (TransactionFilesDialog) UX | ✅ Decided | [P-089](./P-089-transaction-uploaded-files-management-dialog-ux.md) |
+| P-090 | Banki Tranzakciós Fájlok és Kivonatok Kezelő Dialógus (TransactionFilesDialog) UX | ✅ Decided | [P-090](./P-090-transaction-uploaded-files-management-dialog-ux.md) |
 
 ## 📒 Főkönyv & Riportok
 
@@ -75,6 +75,7 @@
 | P-048 | IMAP/SMTP Levelező Beállítások és Tabs UX | ⛔ Superseded | [P-048](./P-048-imap-smtp-settings-tabs-ux.md) |
 | P-051 | Többprofilos Levelező Fiókok (Multi-Profile IMAP/SMTP) Kezelése UX | ✅ Decided | [P-051](./P-051-multi-profile-email-accounts-management-ux.md) |
 | P-086 | Programozói Hozzáférés & API Kulcsok Kezelése (ApiKeysCard) UX | ✅ Decided | [P-086](./P-086-customer-api-keys-management-ux.md) |
+| P-087 | Aggreg8 Bankcsatlakozás, SyncUI Felugró Ablak és Élő Szinkronizáció UX | ✅ Decided | [P-087](./P-087-aggreg8-bank-connections-and-sync-ui-ux.md) |
 
 ## 💳 Előfizetés & Pricing
 
@@ -156,14 +157,14 @@
 |---|--------|---------|------|
 | P-048-storno | Sztornó Számla Kézi Lezárás UX — toggle gomb, confirm dialog, visszavonható | ✅ Decided | [P-048](./P-048-storno-settle-ux.md) |
 | P-053 | Szigorított Számlakép Előnézet és Párosítás UX (Strict Invoice Attachment Pairing) | ✅ Decided | [P-053](./P-053-strict-invoice-attachment-pairing-ux.md) |
-| P-088 | Számla Könyvelési Kizárás ("Nem könyvelt") Optimista Kapcsoló és Zökkenőmentes UX | ✅ Decided | [P-088](./P-088-invoice-exclude-from-accounting-optimistic-toggle-ux.md) |
+| P-089 | Számla Könyvelési Kizárás ("Nem könyvelt") Optimista Kapcsoló és Zökkenőmentes UX | ✅ Decided | [P-089](./P-089-invoice-exclude-from-accounting-optimistic-toggle-ux.md) |
 
 ## 🔗 NAV Integráció
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | P-049 | NAV Szinkronizálás Dátumtartomány Választó Modal UX (preset gombok, progress bar) | ✅ Decided | [P-049](./P-049-nav-sync-dialog-ux.md) |
-| P-087 | Csoportos ÁFA-tagok NAV Online Számla Beállítási Figyelmeztetése és Varázsló UX | ✅ Decided | [P-087](./P-087-group-vat-nav-credentials-detection-and-sync-ux.md) |
+| P-088 | Csoportos ÁFA-tagok NAV Online Számla Beállítási Figyelmeztetése és Varázsló UX | ✅ Decided | [P-088](./P-088-group-vat-nav-credentials-detection-and-sync-ux.md) |
 
 ## 💼 Projektek & Tárgyi Eszközök
 

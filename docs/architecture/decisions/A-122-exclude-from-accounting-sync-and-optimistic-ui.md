@@ -1,10 +1,10 @@
-# A-120: Nem Könyvelt Státusz Kétirányú Szinkronizációja és Optimista UI Állapotkezelés
+# A-122: Nem Könyvelt Státusz Kétirányú Szinkronizációja és Optimista UI Állapotkezelés
 
 **Status:** Decided  
 **Date:** 2026-09-16  
 **Category:** Architecture / Database / Invoices / Accounting / Frontend / State Management  
 **Érintett komponensek:** `supabase/migrations/20260916160000_exclude_from_accounting_sync_and_gl_fix.sql`, `sync_nav_item_exclude_from_accounting`, `auto_apply_exclude_from_accounting_to_journals`, `InvoiceTableContainer.tsx`, `NavInvoiceRow.tsx`, `SubmittedInvoiceRow.tsx`, `ExpandedInvoiceRow.tsx`  
-**Kapcsolódó döntések:** [A-107: ÁFA Levonhatóság Szinkronizálása a Főkönyvvel](./A-107-vat-deductibility-journal-and-gl-sync.md), [P-088: Nem Könyvelt Kapcsoló Optimista UX](../product/decisions/P-088-invoice-exclude-from-accounting-optimistic-toggle-ux.md), [BRD 045: Számla Feature Szelet](../../business/decisions/045-invoices-feature-slice.md)
+**Kapcsolódó döntések:** [A-107: ÁFA Levonhatóság Szinkronizálása a Főkönyvvel](./A-107-vat-deductibility-journal-and-gl-sync.md), [P-089: Nem Könyvelt Kapcsoló Optimista UX](../product/decisions/P-089-invoice-exclude-from-accounting-optimistic-toggle-ux.md), [BRD 045: Számla Feature Szelet](../../business/decisions/045-invoices-feature-slice.md)
 
 ---
 

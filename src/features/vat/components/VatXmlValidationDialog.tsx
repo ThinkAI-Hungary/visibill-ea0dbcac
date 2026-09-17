@@ -59,6 +59,8 @@ export function VatXmlValidationDialog({
                 frequency,
                 lines: lines as any[],
                 mLines: mLines as any[],
+                representativeName: (selectedCompany as any).representative_name || (selectedCompany as any).contact_name || undefined,
+                phone: (selectedCompany as any).phone || undefined,
               });
               runXmlValidationLocal(xml);
             }}

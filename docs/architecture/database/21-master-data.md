@@ -76,6 +76,10 @@
 | email | text | ✓ |  |
 | exclude_from_accounting | boolean | — | `false` |
 | bank_account_number | text | ✓ |  | ← Alapértelmezett bankszámlaszám utalási csomag generálásához (Transfers) |
+| has_skonto | boolean | — | `false` | ← Partnerre vonatkozó skontó kedvezmény aktív-e |
+| skonto_days | integer | ✓ |  | ← Skontó fizetési határidő (napok száma a számla kibocsátásától) |
+| skonto_percent | numeric | ✓ |  | ← Skontó kedvezmény mértéke százalékban (pl. 2.0%) |
+| skonto_excludes_shipping | boolean | — | `true` | ← Szállítási/fuvardíj kizárása a kedvezményalapból |
 
 **FK:** `company_id` → `companies.id`, `default_project_id` → `projects.id`
 
@@ -89,6 +93,10 @@
 - A frontend elrejti a `FOREIGN:` prefixes értékeket — lásd [P-044](../../product/decisions/P-044-foreign-partner-display.md)
 
 **partner_type logika:** Automatikus upgrade `'both'`-ra ha eltérő irányú számlán jelenik meg (worker + NAV sync) — lásd [A-024](../decisions/A-024-partner-upsert-strategy.md)
+
+**💰 Skontó fizetési kedvezmény logika:**
+- A beszállítói partnerekhez rögzíthető skontó kedvezmény a partner űrlapon ([`PartnersPage.tsx`](../../src/pages/PartnersPage.tsx)).
+- Partner mentésekor a `public.recalculate_partner_skonto` RPC ([A-118](../decisions/A-118-atomic-partner-skonto-recalculation.md)) atomi tranzakcióban újraszámolja az összes még kifizetetlen nyitott bejövő számla (`invoices` és `nav_invoices`) skontó kedvezményét és határidejét, levonva a szállítási tételeket ha `skonto_excludes_shipping = true`, illetve törölve a skontót ha `has_skonto = false`.
 
 ---
 

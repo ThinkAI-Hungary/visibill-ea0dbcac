@@ -4,7 +4,7 @@
 **Date:** 2026-09-16  
 **Category:** Business Rule / Tax Law / NAV Integration / Multi-Company  
 **Érintett területek:** Adóalanyiság, NAV Online Számla szinkron, számlázási kötelezettség, könyvelési integráció  
-**Kapcsolódó döntések:** [A-118: Csoportos ÁFA Észlelés és Útmutatás](../../architecture/decisions/A-118-group-vat-entity-detection-and-technical-user-guidance.md), [P-087: Csoportos ÁFA NAV UI](../../product/decisions/P-087-group-vat-nav-credentials-detection-and-sync-ux.md), [BRD 015: NAV Integráció](./015-nav-integration.md)
+**Kapcsolódó döntések:** [A-120: Csoportos ÁFA Észlelés és Útmutatás](../../architecture/decisions/A-120-group-vat-entity-detection-and-technical-user-guidance.md), [P-088: Csoportos ÁFA NAV UI](../../product/decisions/P-088-group-vat-nav-credentials-detection-and-sync-ux.md), [BRD 015: NAV Integráció](./015-nav-integration.md)
 
 ---
 

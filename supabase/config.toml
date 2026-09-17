@@ -86,3 +86,9 @@ verify_jwt = false
 
 [functions.accounty-generate-deadlines]
 verify_jwt = false
+
+[functions.aggreg8-api]
+verify_jwt = true
+
+[functions.aggreg8-callback]
+verify_jwt = false

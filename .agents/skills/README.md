@@ -42,6 +42,7 @@ Get-ChildItem "$env:USERPROFILE\.gemini\config\skills\visibill-*" | Select-Objec
 | **codebase-audit** | Kódbázis átvizsgálás | ~7K token |
 | **scalability-audit** | Skálázhatósági audit | ~6K token |
 | **visibill-db-audit** | DB séma/RLS audit | ~2.5K token |
+| **visibill-error-hunter** | Hibatáblák, logok, triage & javítási terv | ~3K token |
 | **visibill-doc-audit** | Dokumentáció audit | ~1.5K token |
 | **visibill-doc-sync** | Dokumentáció szinkronizálás | ~1.5K token |
 | **visibill-adr-navigator** | ADR navigáció | ~1.5K token |

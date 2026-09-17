@@ -1,4 +1,4 @@
-# A-119: Évek Közötti Áthúzódó Teljesítésű Számlák Főkönyvi és ÁFA Védőhálója (Cross-Year Delivery Guard)
+# A-121: Évek Közötti Áthúzódó Teljesítésű Számlák Főkönyvi és ÁFA Védőhálója (Cross-Year Delivery Guard)
 
 **Status:** Decided  
 **Date:** 2026-09-16  

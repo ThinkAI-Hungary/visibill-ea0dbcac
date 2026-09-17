@@ -4,7 +4,7 @@
 **Date:** 2026-09-16  
 **Category:** Business Rule / Accounting / General Ledger / Tax Compliance  
 **Érintett területek:** Főkönyv, évzárás, ÁFA analitika (2665), időbeli elhatárolások, 46671 karton  
-**Kapcsolódó döntések:** [A-119: Cross-Year Delivery Guard](../../architecture/decisions/A-119-cross-year-delivery-vat-and-general-ledger-guard.md), [BRD 043: Könyvelési Naplók](./043-accounting-journals.md), [BRD 049: Főkönyvi Dátum Alap](./049-gl-date-basis-fulfillment-vs-issue.md), [BRD 050: Főkönyvi Könyvelési Státusz](./050-gl-posting-status-and-journal-governance.md)
+**Kapcsolódó döntések:** [A-121: Cross-Year Delivery Guard](../../architecture/decisions/A-121-cross-year-delivery-vat-and-general-ledger-guard.md), [BRD 043: Könyvelési Naplók](./043-accounting-journals.md), [BRD 049: Főkönyvi Dátum Alap](./049-gl-date-basis-fulfillment-vs-issue.md), [BRD 050: Főkönyvi Könyvelési Státusz](./050-gl-posting-status-and-journal-governance.md)
 
 ---
 

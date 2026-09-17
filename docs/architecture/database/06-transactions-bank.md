@@ -2,7 +2,7 @@
 
 > Banki tranzakciók, számla-tranzakció párosítás, bankkivonatok, SZÉP kártya.
 
-**Táblák ebben a csoportban:** 10
+**Táblák ebben a csoportban:** 13
 
 ---
 
@@ -32,10 +32,11 @@
 | gl_reasoning | text | ✓ |  |
 | gl_classifications | jsonb | ✓ | `'{}'::jsonb` |
 | terheles_datuma | date | ✓ |  |
+| a8_transaction_id | text | ✓ | NULL (A-119: Aggreg8 PSD2 API egyedi azonosító) |
 
 **FK:** `company_id` → `companies.id`, `gl_account_id` → `gl_accounts.id`, `upload_id` → `transaction_uploads.id`
 
-**Indexek:** `idx_transactions_cash_types`, `idx_transactions_company_date`, `idx_transactions_company_date_currency`, `idx_transactions_company_matched`, `idx_transactions_company_type`, `idx_transactions_gl_account_id`, `idx_transactions_upload_id`, `unique_transaction_entry` (UNIQUE: `company_id, transaction_date, description, amount`)
+**Indexek:** `idx_transactions_a8_tx_id` (UNIQUE parciális), `idx_transactions_cash_types`, `idx_transactions_company_date`, `idx_transactions_company_date_currency`, `idx_transactions_company_matched`, `idx_transactions_company_type`, `idx_transactions_gl_account_id`, `idx_transactions_upload_id`, `unique_transaction_entry` (UNIQUE: `company_id, transaction_date, description, amount`)
 
 ---
 
@@ -153,7 +154,7 @@
 | Oszlop | Típus | Null | Default |
 |--------|-------|------|---------|
 | id | uuid | — | `gen_random_uuid()` |
-| bank_statement_id | uuid | — |  |
+| bank_statement_id | uuid | ✓ | NULL (A-119: PSD2 Open Bankingnél opcionális) |
 | transaction_date | date | — |  |
 | value_date | date | ✓ |  |
 | description | text | — |  |
@@ -165,12 +166,14 @@
 | counterparty_name | text | ✓ |  |
 | counterparty_account | text | ✓ |  |
 | currency | text | ✓ | `'HUF'::text` |
+| company_id | uuid | ✓ | NULL (FK → companies.id) |
+| a8_transaction_id | text | ✓ | NULL (A-119: Aggreg8 PSD2 API egyedi azonosító) |
 | created_at | timestamp with time zone | — | `now()` |
 | updated_at | timestamp with time zone | — | `now()` |
 
-**FK:** `bank_statement_id` → `bank_statements.id`
+**FK:** `bank_statement_id` → `bank_statements.id`, `company_id` → `companies.id`
 
-**Indexek:** `idx_bank_transactions_statement_id`
+**Indexek:** `idx_bank_transactions_a8_id`, `idx_bank_transactions_company_id`, `idx_bank_transactions_ordinal`, `idx_bank_transactions_statement_id`
 
 ---
 
@@ -285,4 +288,74 @@
 **FK:** `category_id` → `categories.id`, `company_id` → `companies.id`, `gl_account_id` → `gl_accounts.id`
 
 ---
+
+### `aggreg8_consents`
+
+> Aggreg8 PSD2 Open Banking felhasználói hozzájárulások (180 napos érvényesség, banki kapcsolat).
+
+**RLS:** ✅ | **Sorok:** Dinamikus
+
+| Oszlop | Típus | Null | Default | Leírás |
+|--------|-------|------|---------|--------|
+| `id` | uuid | — | `gen_random_uuid()` | Elsődleges kulcs |
+| `company_id` | uuid | — | — | FK → `companies.id` (CASCADE) |
+| `info_sharing_consent_id` | text | — | — | Aggreg8 egyedi hozzájárulás azonosító (UNIQUE) |
+| `a8_user_id` | text | ✓ | NULL | Aggreg8 felhasználó azonosító |
+| `bank_id` | text | ✓ | NULL | Bank kódja / neve (pl. OTP, Erste) |
+| `status` | text | — | `'active'` | Státusz: `'active'`, `'expired'`, `'deleted'` |
+| `valid_until` | timestamp with time zone | ✓ | NULL | 180 napos PSD2 engedély lejárata |
+| `access_token` | text | ✓ | NULL | Banki hozzáférési token |
+| `refresh_token` | text | ✓ | NULL | Banki frissítő token |
+| `token_expires_at` | timestamp with time zone | ✓ | NULL | Token érvényességi ideje |
+| `metadata` | jsonb | ✓ | `'{}'::jsonb` | További banki metaadatok |
+| `created_at` | timestamp with time zone | — | `now()` | Létrehozás ideje |
+| `updated_at` | timestamp with time zone | — | `now()` | Módosítás ideje |
+
+**FK:** `company_id` → `companies.id`
+
+**Indexek:** `idx_aggreg8_consents_company`, `idx_aggreg8_consents_consent_id`
+
+---
+
+### `aggreg8_accounts`
+
+> Az Aggreg8-on keresztül csatlakoztatott bankszámlák és egyenlegek.
+
+**RLS:** ✅ | **Sorok:** Dinamikus
+
+| Oszlop | Típus | Null | Default | Leírás |
+|--------|-------|------|---------|--------|
+| `id` | uuid | — | `gen_random_uuid()` | Elsődleges kulcs |
+| `company_id` | uuid | — | — | FK → `companies.id` (CASCADE) |
+| `consent_id` | uuid | — | — | FK → `aggreg8_consents.id` (CASCADE) |
+| `account_id` | text | — | — | Aggreg8 belső számlaazonosító |
+| `account_number` | text | ✓ | NULL | Bankszámlaszám / IBAN |
+| `currency` | text | — | `'HUF'` | Számla devizaneme |
+| `account_name` | text | ✓ | NULL | Számla elnevezése |
+| `balance` | numeric | ✓ | NULL | Aktuális könyvelt egyenleg |
+| `available_balance` | numeric | ✓ | NULL | Rendelkezésre álló egyenleg |
+| `last_synced_at` | timestamp with time zone | ✓ | NULL | Utolsó sikeres szinkronizáció ideje |
+| `created_at` | timestamp with time zone | — | `now()` | Létrehozás ideje |
+| `updated_at` | timestamp with time zone | — | `now()` | Módosítás ideje |
+
+**FK:** `company_id` → `companies.id`, `consent_id` → `aggreg8_consents.id`
+
+**Indexek:** `idx_aggreg8_accounts_company`, `idx_aggreg8_accounts_consent`, `unique_aggreg8_account_per_consent`
+
+---
+
+### `aggreg8_settings`
+
+> Rendszerszintű Aggreg8 AIS partner hitelesítő token gyorsítótár.
+
+**RLS:** ✅ | **Sorok:** 1-2 (sandbox / prod)
+
+| Oszlop | Típus | Null | Default | Leírás |
+|--------|-------|------|---------|--------|
+| `id` | uuid | — | `gen_random_uuid()` | Elsődleges kulcs |
+| `environment` | text | — | `'sandbox'` | Környezet: `'sandbox'` vagy `'prod'` |
+| `customer_token` | text | ✓ | NULL | Érvényes partner customer token |
+| `token_expires_at` | timestamp with time zone | ✓ | NULL | Partner token lejárati ideje (~175 perc) |
+| `created_at` | timestamp with time zone | — | `now()` | Létrehozás ideje |
+| `updated_at` | timestamp with time zone | — | `now()` | Módosítás ideje |
 

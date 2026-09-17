@@ -24,7 +24,7 @@ interface MissingInvoicesTableProps {
   filteredInvoices: InvoiceItem[];
   selectedIds: string[];
   isAllSelected: boolean;
-  onSelectAll: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSelectAll: (checked: boolean | 'indeterminate') => void;
   onSelectItem: (id: string) => void;
   onViewDetails: (invoice: InvoiceItem) => void;
   onResolve: (id: string) => void;

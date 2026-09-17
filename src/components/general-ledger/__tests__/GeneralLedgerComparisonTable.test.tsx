@@ -86,6 +86,6 @@ describe('GeneralLedgerComparisonTable', () => {
     fireEvent.click(page2Button);
 
     // Verify Besorolatlan is present on page 2
-    expect(screen.getByText('Besorolatlan')).toBeInTheDocument();
+    expect(screen.getAllByText('Besorolatlan').length).toBeGreaterThan(0);
   });
 });

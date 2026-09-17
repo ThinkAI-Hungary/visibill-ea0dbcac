@@ -1,10 +1,10 @@
-# A-118: Csoportos ÁFA-alanyok Észlelése, Technikai Felhasználó Útmutatás és Szinkronizációs Védőháló
+# A-120: Csoportos ÁFA-alanyok Észlelése, Technikai Felhasználó Útmutatás és Szinkronizációs Védőháló
 
 **Status:** Decided  
 **Date:** 2026-09-16  
 **Category:** Architecture / NAV Integration / Multi-Tenancy / Validation / UI  
 **Érintett komponensek:** `src/lib/validationUtils.ts`, `NavCredentialsForm.tsx`, `EmptyStateDashboard.tsx`, `src/data/knowledgeBaseFallback.ts`, `knowledge_base_articles`  
-**Kapcsolódó döntések:** [A-010: Credential Titkosítás](./A-010-credential-encryption.md), [A-096: Hivatalos NAV Tételsor Védőháló](./A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md), [P-087: Csoportos ÁFA NAV UI](../product/decisions/P-087-group-vat-nav-credentials-detection-and-sync-ux.md), [BRD 056: Csoportos ÁFA Szabályzat](../../business/decisions/056-group-vat-entity-sync-policy.md)
+**Kapcsolódó döntések:** [A-010: Credential Titkosítás](./A-010-credential-encryption.md), [A-096: Hivatalos NAV Tételsor Védőháló](./A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md), [P-088: Csoportos ÁFA NAV UI](../product/decisions/P-088-group-vat-nav-credentials-detection-and-sync-ux.md), [BRD 056: Csoportos ÁFA Szabályzat](../../business/decisions/056-group-vat-entity-sync-policy.md)
 
 ---
 
