@@ -32,7 +32,7 @@ vi.mock('react-i18next', async (importOriginal) => {
   return {
     ...actual,
     useTranslation: () => ({
-      t: (k: string, fallback?: string) => fallback || k,
+      t: (k: string, options?: any) => (typeof options === 'string' ? options : options?.defaultValue || k),
       i18n: { language: 'hu' },
     }),
   };

@@ -208,17 +208,24 @@ export default function TicketsPage({
 
   // Filters and Sorting for Global Tickets List
   const filteredTickets = useMemo(() => {
+    const isSearchActive = Boolean(search && search.trim().length > 0);
+
     const filtered = tickets.filter((t) => {
       const matchesSearch = matchTicketSearch(t, search);
 
       const matchesPriority = priorityFilter === "all" || t.priority === priorityFilter;
       const matchesService = serviceFilter === "all" || t.service === serviceFilter;
-      const matchesStatus = selectedStatuses.length === 0
-        ? t.status !== "resolved"
-        : selectedStatuses.some((s) => {
-            if (s === "created") return t.status === "created" || t.status === "new" || t.status === "open";
-            return t.status === s;
-          });
+      
+      // Unread tickets or explicit text searches should never be hidden by the active status filter
+      const matchesStatus = 
+        t.has_unread || 
+        isSearchActive ||
+        (selectedStatuses.length === 0
+          ? t.status !== "resolved"
+          : selectedStatuses.some((s) => {
+              if (s === "created") return t.status === "created" || t.status === "new" || t.status === "open";
+              return t.status === s;
+            }));
 
       // Support admins default to showing only own, unassigned & open tickets
       const isNyitott = t.status === "created" || t.status === "new" || t.status === "open";
@@ -233,8 +240,9 @@ export default function TicketsPage({
 
   // Tickets for Console View (Unresolved tickets filtered by search and owner, sorted with unread first)
   const consoleTickets = useMemo(() => {
+    const isSearchActive = Boolean(search && search.trim().length > 0);
     const filtered = tickets
-      .filter((t) => t.status !== "resolved")
+      .filter((t) => t.has_unread || isSearchActive || t.status !== "resolved")
       .filter((t) => {
         const isNyitott = t.status === "created" || t.status === "new" || t.status === "open";
         const matchesOwner = !isAdmin || showAllTickets || !user ||
@@ -621,12 +629,18 @@ export default function TicketsPage({
               <div className="flex flex-wrap gap-2.5">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-[195px] h-10 justify-between text-left font-normal">
+                    <Button variant="outline" className="min-w-[195px] w-auto h-10 justify-between text-left font-normal px-3">
                       <span className="truncate">
                         {selectedStatuses.length === 3 && ACTIVE_TICKET_STATUSES.every(s => selectedStatuses.includes(s))
-                          ? t('tickets:status_filter.active_count', { count: 3, defaultValue: 'Aktív jegyek (3)' })
+                          ? (() => {
+                              const res = t('tickets:status_filter.active_count', { count: 3, defaultValue: 'Aktív jegyek (3)' });
+                              return typeof res === 'string' ? res.replace('{{count}}', '3') : 'Aktív jegyek (3)';
+                            })()
                           : selectedStatuses.length === 4
-                          ? t('tickets:status_filter.all_count', { count: 4, defaultValue: 'Összes státusz (4)' })
+                          ? (() => {
+                              const res = t('tickets:status_filter.all_count', { count: 4, defaultValue: 'Összes státusz (4)' });
+                              return typeof res === 'string' ? res.replace('{{count}}', '4') : 'Összes státusz (4)';
+                            })()
                           : selectedStatuses.length === 0
                           ? t('tickets:status_filter.active', 'Aktív jegyek')
                           : selectedStatuses

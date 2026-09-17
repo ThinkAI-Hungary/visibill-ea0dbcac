@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Download, UploadCloud, Database, Bot, Loader2, Search, FileText, ChevronDown, Eye, Printer, Maximize2, Minimize2, FileUp, Trash2, BookOpen, Table2, Calendar, CalendarCheck, Layers, ShieldCheck, Plus, LayoutGrid, Columns } from 'lucide-react';
+import { Download, UploadCloud, Database, Bot, Loader2, Search, FileText, ChevronDown, Eye, Printer, Maximize2, Minimize2, FileUp, Trash2, BookOpen, Table2, Calendar, CalendarCheck, Layers, ShieldCheck, Plus, LayoutGrid, Columns, Filter } from 'lucide-react';
 import { UploadAuditXmlModal } from '@/components/general-ledger/UploadAuditXmlModal';
 import { AuditImportHistoryModal } from '@/components/general-ledger/AuditImportHistoryModal';
 import GeneralLedgerTable, { GeneralLedgerTableRef } from '@/components/general-ledger/GeneralLedgerTable';
@@ -108,6 +108,18 @@ export default function GeneralLedgerPage() {
     return 'all';
   });
 
+  const urlHideZero = searchParams.get('hide_zero');
+  const [hideZeroBalances, setHideZeroBalances] = useState<boolean>(() => {
+    if (urlHideZero !== null) return urlHideZero === 'true';
+    if (selectedCompany?.id) {
+      try {
+        const stored = localStorage.getItem(`visibill_gl_hide_zero_${selectedCompany.id}`);
+        if (stored !== null) return stored === 'true';
+      } catch (e) {}
+    }
+    return false;
+  });
+
   const [viewLayout, setViewLayout] = useState<'summary' | 'classic'>('summary');
 
   // Keep in sync with company default if no explicit URL parameter was provided
@@ -117,6 +129,22 @@ export default function GeneralLedgerPage() {
       setDateBasis(effectiveSettings.gl_date_basis as GlDateBasis);
     }
   }, [effectiveSettings?.gl_date_basis, searchParams]);
+
+  // Keep hideZeroBalances in sync with URL parameter or company change
+  useEffect(() => {
+    if (!selectedCompany?.id) return;
+    const urlVal = searchParams.get('hide_zero');
+    if (urlVal !== null) {
+      setHideZeroBalances(urlVal === 'true');
+    } else {
+      try {
+        const stored = localStorage.getItem(`visibill_gl_hide_zero_${selectedCompany.id}`);
+        if (stored !== null) {
+          setHideZeroBalances(stored === 'true');
+        }
+      } catch (e) {}
+    }
+  }, [selectedCompany?.id, searchParams]);
 
   // Keep postingStatus in sync with URL parameter if changed externally or via back/forward
   useEffect(() => {
@@ -254,6 +282,59 @@ export default function GeneralLedgerPage() {
         >
           <Columns className="w-3.5 h-3.5 shrink-0" />
           <span>Klasszikus</span>
+        </button>
+      </CustomTooltip>
+    </div>
+  );
+
+  const handleHideZeroChange = useCallback((hide: boolean) => {
+    setHideZeroBalances(hide);
+    if (selectedCompany?.id) {
+      try {
+        localStorage.setItem(`visibill_gl_hide_zero_${selectedCompany.id}`, String(hide));
+      } catch (e) {}
+    }
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (hide) {
+        next.set('hide_zero', 'true');
+      } else {
+        next.delete('hide_zero');
+      }
+      return next;
+    }, { replace: true });
+  }, [selectedCompany?.id, setSearchParams]);
+
+  const renderHideZeroToggle = () => (
+    <div className="inline-flex h-9 items-center rounded-lg border border-border/80 bg-muted/40 p-1 shadow-2xs text-xs select-none">
+      <CustomTooltip content={t('accounting:general_ledger.hide_zero.all_tooltip', 'A teljes számlatükör megjelenítése forgalomtól függetlenül')} side="bottom">
+        <button
+          type="button"
+          onClick={() => handleHideZeroChange(false)}
+          className={cn(
+            "inline-flex w-[82px] h-7 items-center justify-center gap-1.5 rounded-md text-xs transition-all cursor-pointer border",
+            !hideZeroBalances
+              ? "bg-background text-foreground shadow-xs border-border/60 font-semibold"
+              : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
+          )}
+        >
+          <Layers className="w-3.5 h-3.5 shrink-0" />
+          <span>{t('accounting:general_ledger.hide_zero.all', 'Összes')}</span>
+        </button>
+      </CustomTooltip>
+      <CustomTooltip content={t('accounting:general_ledger.hide_zero.active_tooltip', 'Csak azok a számlák és hierarchikus összesítők jelennek meg, ahol könyvelési tétel vagy forgalom van')} side="bottom">
+        <button
+          type="button"
+          onClick={() => handleHideZeroChange(true)}
+          className={cn(
+            "inline-flex w-[104px] h-7 items-center justify-center gap-1.5 rounded-md text-xs transition-all cursor-pointer border",
+            hideZeroBalances
+              ? "bg-background text-foreground shadow-xs border-border/60 font-semibold text-primary"
+              : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
+          )}
+        >
+          <Filter className="w-3.5 h-3.5 shrink-0 text-primary" />
+          <span>{t('accounting:general_ledger.hide_zero.active_only', 'Csak forgalom')}</span>
         </button>
       </CustomTooltip>
     </div>
@@ -729,6 +810,8 @@ export default function GeneralLedgerPage() {
                 {renderDateBasisToggle()}
                 {/* Státusz szűrő kapcsoló (Összes tétel vs Csak lekönyvelt) */}
                 {renderPostingStatusToggle()}
+                {/* Nullás sorok kapcsoló (Összes vs Csak forgalom) */}
+                {renderHideZeroToggle()}
                 {/* Nézet elrendezés kapcsoló (Összesítő vs Klasszikus) */}
                 {renderViewLayoutToggle()}
                 <span className="text-xs font-semibold text-muted-foreground bg-background px-3 py-1.5 rounded-full border border-border flex items-center gap-2 shadow-sm">
@@ -746,6 +829,7 @@ export default function GeneralLedgerPage() {
               dateTo={dateTo}
               dateBasis={dateBasis}
               postingStatus={postingStatus}
+              hideZeroBalances={hideZeroBalances}
               viewLayout={viewLayout}
               searchQuery={glSearchQuery}
               searchResults={glSearchResults}

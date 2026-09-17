@@ -113,6 +113,7 @@ interface GeneralLedgerTableProps {
   dateTo?: string;
   dateBasis?: GlDateBasis;
   postingStatus?: GlPostingStatus;
+  hideZeroBalances?: boolean;
   globalSearch?: string;
   searchQuery?: string;
   searchResults?: GlSearchResult[];
@@ -190,6 +191,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     dateTo,
     dateBasis = 'kibocsatas',
     postingStatus = 'all',
+    hideZeroBalances = false,
     searchQuery = '',
     searchResults = [],
     isPolling,
@@ -585,6 +587,55 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         });
       }
 
+      // ── Zero balances filter computation ──
+      let activeAccountCids: Set<string> | null = null;
+      if (hideZeroBalances) {
+        activeAccountCids = new Set<string>();
+
+        const isDirectlyActive = (d: LedgerItem) => {
+          const hasDirectItems = (d.directItemCount !== undefined && d.directItemCount > 0) ||
+            ((loadedAccountItems.get(d.cid)?.length ?? 0) > 0);
+          const hasDirectBalance = Math.abs(d.directFinalBalance || 0) > 0.001 ||
+            Math.abs(d.directTempBalance || 0) > 0.001 ||
+            (!d.hasAccountChildren && Math.abs(d.balance || 0) > 0.001);
+          const hasTurnover = !d.hasAccountChildren && (
+            (d.debitTurnover !== undefined && d.debitTurnover > 0.001) ||
+            (d.creditTurnover !== undefined && d.creditTurnover > 0.001)
+          );
+          return hasDirectItems || hasDirectBalance || hasTurnover;
+        };
+
+        rolledUpData.forEach(d => {
+          if (isDirectlyActive(d)) {
+            activeAccountCids!.add(d.cid);
+            // Include all ancestor account prefixes
+            rolledUpData.forEach(candidate => {
+              if (candidate.cid !== d.cid && d.cid.startsWith(candidate.cid)) {
+                activeAccountCids!.add(candidate.cid);
+              }
+            });
+          }
+        });
+
+        // If search returned matches, also ensure their parent tree is active
+        if (searchResults && searchResults.length > 0) {
+          searchResults.forEach(res => {
+            const targetGl = res.target_gl_number || res.gl_number;
+            if (targetGl) {
+              const cid = targetGl === 'UNCLASSIFIED' ? 'UNCLASSIFIED' : cleanId(targetGl);
+              if (cid) {
+                activeAccountCids!.add(cid);
+                rolledUpData.forEach(candidate => {
+                  if (candidate.cid !== cid && cid.startsWith(candidate.cid)) {
+                    activeAccountCids!.add(candidate.cid);
+                  }
+                });
+              }
+            }
+          });
+        }
+      }
+
       // ── Build hierarchical tree and flatten in depth-first order ──
       const compareGlAccounts = (a: LedgerItem, b: LedgerItem) => {
         if (a.cid === 'UNCLASSIFIED') return 1;
@@ -626,13 +677,37 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       const combinedData: LedgerItem[] = [];
 
       const traverseTree = (node: LedgerItem) => {
+        // If hideZeroBalances is active and this node is not in activeAccountCids, skip it!
+        if (activeAccountCids && !activeAccountCids.has(node.cid)) {
+          return;
+        }
+
         // If search is active and this node is not in visibleAccountCids, skip it!
         if (visibleAccountCids && !visibleAccountCids.has(node.cid)) {
           return;
         }
 
+        // Filter child accounts by active and search visibility
+        const childAccounts = childrenMap.get(node.cid);
+        const visibleChildAccounts = childAccounts
+          ? childAccounts.filter(c => {
+              if (activeAccountCids && !activeAccountCids.has(c.cid)) return false;
+              if (visibleAccountCids && !visibleAccountCids.has(c.cid)) return false;
+              return true;
+            })
+          : [];
+
+        const hasVisibleAccountChildren = visibleChildAccounts.length > 0;
+        const nodeToEmit = hideZeroBalances
+          ? {
+              ...node,
+              hasAccountChildren: hasVisibleAccountChildren,
+              hasChildren: hasVisibleAccountChildren || node.hasItemChildren
+            }
+          : node;
+
         // 1. Emit the account node itself
-        combinedData.push(node);
+        combinedData.push(nodeToEmit);
 
         // 2. Emit direct transaction items booked to this account
         const shouldExpandItems = isSearchActive 
@@ -744,10 +819,9 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         }
 
         // 3. Emit direct child accounts (sorted by compareGlAccounts)
-        const childAccounts = childrenMap.get(node.cid);
-        if (childAccounts && childAccounts.length > 0) {
-          childAccounts.sort(compareGlAccounts);
-          childAccounts.forEach(child => traverseTree(child));
+        if (visibleChildAccounts.length > 0) {
+          visibleChildAccounts.sort(compareGlAccounts);
+          visibleChildAccounts.forEach(child => traverseTree(child));
         }
       };
 
@@ -757,7 +831,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       return combinedData;
     }
     return [];
-  }, [dbData, loadedAccountItems, loadingAccountCids, hasMoreAccountCids, loadingMoreAccountCids, expandedRowIds, searchQuery, searchResults, normalizeText, t]);
+  }, [dbData, loadedAccountItems, loadingAccountCids, hasMoreAccountCids, loadingMoreAccountCids, expandedRowIds, searchQuery, searchResults, hideZeroBalances, normalizeText, t]);
 
   const orphanItem = dbData?.find(d => d.gl_number === 'UNCLASSIFIED');
   const orphanCount = orphanItem ? Number(orphanItem.item_count || 0) : 0;
@@ -981,7 +1055,27 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         });
 
         const fullExportRows: any[] = [];
+        let activeExportCids: Set<string> | null = null;
+        if (hideZeroBalances) {
+          activeExportCids = new Set<string>();
+          rawAccounts.forEach(acc => {
+            const hasItems = itemsByGL.has(acc.cid) && (itemsByGL.get(acc.cid)?.length ?? 0) > 0;
+            const hasBalance = Math.abs(acc.balance || 0) > 0.001;
+            if (hasItems || hasBalance) {
+              activeExportCids!.add(acc.cid);
+              rawAccounts.forEach(cand => {
+                if (cand.cid !== acc.cid && acc.cid.startsWith(cand.cid)) {
+                  activeExportCids!.add(cand.cid);
+                }
+              });
+            }
+          });
+        }
+
         const traverse = (node: any, depth = 0) => {
+          if (activeExportCids && !activeExportCids.has(node.cid)) {
+            return;
+          }
           fullExportRows.push({ ...node, depth, isRoot: depth === 0 });
           const directItems = itemsByGL.get(node.cid);
           if (directItems && directItems.length > 0) {
@@ -989,9 +1083,12 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
             directItems.forEach(item => fullExportRows.push({ ...item, depth: depth + 1 }));
           }
           const children = childrenMap.get(node.cid);
-          if (children && children.length > 0) {
-            children.sort(compareGlAccounts);
-            children.forEach(child => traverse(child, depth + 1));
+          const visibleChildren = children
+            ? children.filter(c => !activeExportCids || activeExportCids.has(c.cid))
+            : [];
+          if (visibleChildren.length > 0) {
+            visibleChildren.sort(compareGlAccounts);
+            visibleChildren.forEach(child => traverse(child, depth + 1));
           }
         };
 

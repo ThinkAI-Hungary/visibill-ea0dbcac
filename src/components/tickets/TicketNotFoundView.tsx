@@ -22,13 +22,13 @@ export function TicketNotFoundView({ onBack }: TicketNotFoundViewProps) {
           size="icon"
           onClick={onBack}
           className="shrink-0 h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-card/60"
-          aria-label={t('detail.not_found.back_aria')}
+          aria-label={t('detail.not_found.back_aria', 'Vissza')}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground border-border/60">
-            {t('detail.not_found.badge')}
+            {t('detail.not_found.badge', 'HIBAJEGY')}
           </Badge>
           <span className="text-xs text-muted-foreground font-medium">/</span>
           <span className="text-xs text-muted-foreground">404</span>
@@ -54,14 +54,14 @@ export function TicketNotFoundView({ onBack }: TicketNotFoundViewProps) {
                   variant="outline"
                   className="text-[11px] font-semibold uppercase tracking-wider px-2.5 py-0.5 border-destructive/30 text-destructive bg-destructive/5"
                 >
-                  {t('detail.not_found.status_badge')}
+                  {t('detail.not_found.status_badge', '404 • Nem található')}
                 </Badge>
               </div>
               <h2 className="text-2xl font-bold tracking-tight text-foreground pt-1">
-                {t('detail.not_found.title')}
+                {t('detail.not_found.title', 'A hibajegy nem található')}
               </h2>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                {t('detail.not_found.desc')}
+                {t('detail.not_found.desc', 'A keresett hibajegy nem létezik, időközben törlésre került, vagy nincs megfelelő jogosultsága a megtekintéséhez.')}
               </p>
             </div>
 
@@ -73,7 +73,7 @@ export function TicketNotFoundView({ onBack }: TicketNotFoundViewProps) {
                 className="w-full sm:w-auto gap-2 shadow-sm font-medium px-5"
               >
                 <ArrowLeft className="h-4 w-4" />
-                {t('detail.not_found.back_btn')}
+                {t('detail.not_found.back_btn', 'Vissza a hibajegyekhez')}
               </Button>
             </div>
           </CardContent>

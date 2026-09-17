@@ -25,6 +25,12 @@
       "posted": "Samo proknjiženo",
       "posted_tooltip": "Prikaz isključivo službeno evidentiranih i zatvorenih dokumenata (zatvoreno knjiženje)"
     },
+    "hide_zero": {
+      "all": "Sve",
+      "all_tooltip": "Prikaz cjelokupnog kontnog plana bez obzira na promet",
+      "active_only": "Samo promet",
+      "active_tooltip": "Prikazuju se samo konta i hijerarhijski zbrojevi koji imaju knjiženja ili promet"
+    },
     "table": {
       "gl_account": "Konto",
       "name": "Naziv",

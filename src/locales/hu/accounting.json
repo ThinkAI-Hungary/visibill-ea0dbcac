@@ -25,6 +25,12 @@
       "posted": "Csak lekönyvelt",
       "posted_tooltip": "Kizárólag a hivatalosan naplózott és lezárt bizonylatok megjelenítése (Sztv. szerinti zárt könyvelés)"
     },
+    "hide_zero": {
+      "all": "Összes",
+      "all_tooltip": "A teljes számlatükör megjelenítése forgalomtól függetlenül",
+      "active_only": "Csak forgalom",
+      "active_tooltip": "Csak azok a számlák és hierarchikus összesítők jelennek meg, ahol könyvelési tétel vagy forgalom van"
+    },
     "table": {
       "gl_account": "Fők. szám",
       "name": "Megnevezés",

@@ -32,7 +32,17 @@ vi.mock('react-i18next', async (importOriginal) => {
   return {
     ...actual,
     useTranslation: () => ({
-      t: (k: string) => k,
+      t: (k: string, options?: any) => {
+        if (typeof options === 'string') return options;
+        if (options && typeof options === 'object') {
+          if (options.defaultValue) return options.defaultValue;
+          if (options.count !== undefined) {
+            if (k.includes('active_count')) return `Aktív jegyek (${options.count})`;
+            if (k.includes('all_count')) return `Összes státusz (${options.count})`;
+          }
+        }
+        return k;
+      },
       i18n: { language: 'hu' },
     }),
   };
@@ -148,5 +158,81 @@ describe('TicketsPage Active Status Filter (Exclude Resolved by default)', () =>
 
     // Active tickets are now hidden because only 'resolved' is selected
     expect(screen.queryByText(/Nyitott hiba jegy/)).not.toBeInTheDocument();
+  });
+
+  it('displays resolved ticket by default if it has an unread message', async () => {
+    const ticketsWithUnreadResolved = [
+      ...mockTickets.slice(0, 2),
+      {
+        ...mockTickets[2], // TCK-003, resolved
+        has_unread: true,
+      },
+    ];
+
+    vi.mocked(useTickets).mockReturnValue({
+      data: ticketsWithUnreadResolved,
+      isLoading: false,
+      refetch: vi.fn(),
+    } as any);
+    vi.mocked(useIsSupportAdmin).mockReturnValue({ data: true } as any);
+    vi.mocked(useSupportAgents).mockReturnValue({ data: [] } as any);
+
+    renderPage();
+
+    // Even though it is resolved, because has_unread is true, it MUST be visible to the user!
+    expect(screen.getByText(/Már megoldott jegy/)).toBeInTheDocument();
+  });
+
+  it('displays resolved ticket when user actively searches for it', async () => {
+    vi.mocked(useTickets).mockReturnValue({
+      data: mockTickets,
+      isLoading: false,
+      refetch: vi.fn(),
+    } as any);
+    vi.mocked(useIsSupportAdmin).mockReturnValue({ data: true } as any);
+    vi.mocked(useSupportAgents).mockReturnValue({ data: [] } as any);
+
+    renderPage();
+
+    const searchInput = screen.getByPlaceholderText(/Keresés/);
+    fireEvent.change(searchInput, { target: { value: 'TCK-003' } });
+
+    // Resolved ticket TCK-003 must be found when searching explicitly
+    expect(screen.getByText(/Már megoldott jegy/)).toBeInTheDocument();
+  });
+
+  it('does NOT display other agents in-progress tickets by default for support admin', async () => {
+    const ticketsWithOtherAgent = [
+      ...mockTickets.slice(0, 2),
+      {
+        id: 't-other',
+        ticket_number: 'TCK-999',
+        type: 'bug',
+        service: 'eaisybill',
+        message: 'Másik kolléga jegye',
+        status: 'in_progress',
+        priority: 'high',
+        company_name: 'Other Kft',
+        user_email: 'other@test.com',
+        user_name: 'Másik Felhasználó',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        assigned_to: 'other-agent-id',
+        has_unread: true,
+      },
+    ];
+
+    vi.mocked(useTickets).mockReturnValue({
+      data: ticketsWithOtherAgent,
+      isLoading: false,
+      refetch: vi.fn(),
+    } as any);
+    vi.mocked(useIsSupportAdmin).mockReturnValue({ data: true } as any);
+    vi.mocked(useSupportAgents).mockReturnValue({ data: [] } as any);
+
+    renderPage();
+
+    // The other agent's ticket must NOT appear in the admin's personal queue
+    expect(screen.queryByText(/Másik kolléga jegye/)).not.toBeInTheDocument();
   });
 });
