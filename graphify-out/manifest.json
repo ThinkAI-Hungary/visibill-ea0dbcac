@@ -330,8 +330,8 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/VatSection.tsx": {
-    "mtime": 1789080097.8556836,
-    "ast_hash": "fef8bfb9ea1b197c58bbe653bdbe64d2",
+    "mtime": 1789684517.3657238,
+    "ast_hash": "2682161547fc70fd478054a8de10d893",
     "semantic_hash": ""
   },
   "src/components/fixed-assets/AssetDetailPanel.tsx": {
@@ -1440,8 +1440,8 @@
     "semantic_hash": ""
   },
   "src/pages/Analytics.tsx": {
-    "mtime": 1787753315.8424995,
-    "ast_hash": "5b67ce8475d003e2e2dd7c68627e3209",
+    "mtime": 1789684526.2195761,
+    "ast_hash": "89956212815bf232660a439ad4d6a1fa",
     "semantic_hash": ""
   },
   "src/pages/AnnualReportPage.tsx": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1789682801.8336616,
-    "ast_hash": "b1634055e949879d0d9201c891c568e3",
+    "mtime": 1789684962.81477,
+    "ast_hash": "5aaa189034d4f15d2cecd3235d53f933",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -10130,8 +10130,8 @@
     "semantic_hash": ""
   },
   "src/locales/hr/dashboard.json": {
-    "mtime": 1789159283.0081377,
-    "ast_hash": "70d3d7db65a471685e35d22a2e0b52ce",
+    "mtime": 1789684507.952819,
+    "ast_hash": "df2e1c5e48b4d8276387b7e4da8cf96a",
     "semantic_hash": ""
   },
   "src/locales/hr/invoices.json": {
@@ -10170,8 +10170,8 @@
     "semantic_hash": ""
   },
   "src/locales/hu/dashboard.json": {
-    "mtime": 1789159283.0126512,
-    "ast_hash": "f3f04d732bd2f9c9dfd5efcfd33073bc",
+    "mtime": 1789684503.3461187,
+    "ast_hash": "0e3cc0e085c19f9f8505c9d9cc6498a8",
     "semantic_hash": ""
   },
   "src/locales/hu/invoices.json": {
@@ -11122,6 +11122,16 @@
   "docs/product/decisions/P-092-petty-cash-manual-entry-validation-and-settlement-ux.md": {
     "mtime": 1789682772.7672944,
     "ast_hash": "84ede2e8054a540f174198b03a8808e1",
+    "semantic_hash": ""
+  },
+  "src/test/vatSectionColumns.test.tsx": {
+    "mtime": 1789684579.570042,
+    "ast_hash": "4ceaaf201063a4e750a56b8b38c5642a",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-093-vat-analytics-net-revenue-and-column-layout-ux.md": {
+    "mtime": 1789684948.7949317,
+    "ast_hash": "52c5efe7cc06b65d7793ce978f118250",
     "semantic_hash": ""
   }
 }

@@ -3070,8 +3070,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-016-postgresql-query-strategy.md": {
-    "mtime": 1789602764.1118731,
-    "ast_hash": "3303f49a6e2d77f12088811fe6a1f9d2",
+    "mtime": 1789682793.7013478,
+    "ast_hash": "6fbb79ed5061ec6e6fe4d9beac5a08e1",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-017-security-architecture.md": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1789676945.9662445,
-    "ast_hash": "8f169100911c67b67d020397cfd757a5",
+    "mtime": 1789682782.6077518,
+    "ast_hash": "c3b6ebc3fac3c98d4d391a0be1099e11",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1789676945.9672444,
-    "ast_hash": "de8e3e394ceed5c0fc91729a821dd282",
+    "mtime": 1789682801.8336616,
+    "ast_hash": "b1634055e949879d0d9201c891c568e3",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -11112,6 +11112,16 @@
   "supabase/migrations/20260918001000_atomic_settle_invoices_via_petty_cash.sql": {
     "mtime": 1789682583.8948488,
     "ast_hash": "e8b793e3568af091bae1398cf547c63e",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-125-atomic-petty-cash-invoice-settlement-and-auth-resilience.md": {
+    "mtime": 1789682764.569095,
+    "ast_hash": "76c9411a9ac93329c0299e8204541533",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-092-petty-cash-manual-entry-validation-and-settlement-ux.md": {
+    "mtime": 1789682772.7672944,
+    "ast_hash": "84ede2e8054a540f174198b03a8808e1",
     "semantic_hash": ""
   }
 }

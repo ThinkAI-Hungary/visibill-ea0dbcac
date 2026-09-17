@@ -108,8 +108,10 @@
     "outbound_vat_content": "Sadržaj PDV-a u prihodima",
     "inbound_vat_content": "Sadržaj PDV-a u rashodima",
     "categories": "Kategorije PDV-a:",
-    "revenue": "Prihodi:",
-    "costs": "Troškovi:",
+    "revenue": "NETO Prihodi:",
+    "net_revenue": "NETO Prihodi:",
+    "costs": "NETO Troškovi:",
+    "net_costs": "NETO Troškovi:",
     "total": "Ukupno:",
     "no_data": "Nema podataka",
     "regimes": {

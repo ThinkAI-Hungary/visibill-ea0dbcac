@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-18  
-> **Összesen:** 87 döntés | ✅ Decided: 83 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 88 döntés | ✅ Decided: 84 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -23,6 +23,7 @@
 | P-009 | Dashboard testreszabhatóság | ✅ Decided | [P-009](./P-009-dashboard-customization.md) |
 | P-081 | Eaisybill Horvát Lokalizáció, /hr/ Route Prefix és Demó Navigáció UX | ✅ Decided | [P-081](./P-081-eaisybill-croatia-localization-and-demo-ux.md) |
 | P-083 | eaisyBooks ↔ eaisyBill Alkalmazásváltó (AppModeSwitcher) és Hideg/Meleg (Cold/Warm) Átmenet UX | ✅ Decided | [P-083](./P-083-eaisybooks-eaisybill-app-mode-switcher-and-cold-warm-transition-ux.md) |
+| P-093 | ÁFA Analitika Oszlopelrendezés és Valós Nettó Megjelenítés UX | ✅ Decided | [P-093](./P-093-vat-analytics-net-revenue-and-column-layout-ux.md) |
 
 ## 📄 Számla Kezelés
 

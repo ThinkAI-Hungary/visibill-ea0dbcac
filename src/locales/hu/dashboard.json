@@ -108,8 +108,10 @@
     "outbound_vat_content": "Bevételek ÁFA tartalma",
     "inbound_vat_content": "Kiadások ÁFA tartalma",
     "categories": "ÁFA kategóriák:",
-    "revenue": "Árbevétel:",
-    "costs": "Költségek:",
+    "revenue": "NETTÓ Árbevétel:",
+    "net_revenue": "NETTÓ Árbevétel:",
+    "costs": "NETTÓ Költségek:",
+    "net_costs": "NETTÓ Költségek:",
     "total": "Összesen:",
     "no_data": "Nincs adat",
     "regimes": {

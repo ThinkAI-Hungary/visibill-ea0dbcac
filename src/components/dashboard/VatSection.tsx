@@ -168,8 +168,8 @@ const VatSection = React.memo(function VatSection({
                       <thead>
                         <tr className="text-muted-foreground">
                           <th className="text-left py-2">{t('vat.categories', 'ÁFA kategóriák:')}</th>
+                          <th className="text-right py-2">{t('vat.net_revenue', 'NETTÓ Árbevétel:')}</th>
                           <th className="text-right py-2">{t('vat.total_vat', 'Összes ÁFA:')}</th>
-                          <th className="text-right py-2">{t('vat.revenue', 'Árbevétel:')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -178,14 +178,14 @@ const VatSection = React.memo(function VatSection({
                             {outboundVatCategories.map(cat => (
                               <tr key={cat.rate}>
                                 <td className="py-1">{cat.rate}:</td>
+                                <td className="text-right">{formatCurrency(convertToSelectedCurrency(cat.netAmount, 'HUF', selectedCurrency), selectedCurrency)}</td>
                                 <td className="text-right">{formatCurrency(convertToSelectedCurrency(cat.vatAmount, 'HUF', selectedCurrency), selectedCurrency)}</td>
-                                <td className="text-right">{formatCurrency(convertToSelectedCurrency(cat.netAmount + cat.vatAmount, 'HUF', selectedCurrency), selectedCurrency)}</td>
                               </tr>
                             ))}
                             <tr className="font-medium border-t">
                               <td className="py-1">{t('vat.total', 'Összesen:')}</td>
+                              <td className="text-right">{formatCurrency(convertToSelectedCurrency(outboundTotalNet, 'HUF', selectedCurrency), selectedCurrency)}</td>
                               <td className="text-right">{formatCurrency(convertToSelectedCurrency(outboundTotalVat, 'HUF', selectedCurrency), selectedCurrency)}</td>
-                              <td className="text-right">{formatCurrency(convertToSelectedCurrency(outboundTotalNet + outboundTotalVat, 'HUF', selectedCurrency), selectedCurrency)}</td>
                             </tr>
                           </>
                         ) : (
@@ -209,8 +209,8 @@ const VatSection = React.memo(function VatSection({
                       <thead>
                         <tr className="text-muted-foreground">
                           <th className="text-left py-2">{t('vat.categories', 'ÁFA kategóriák:')}</th>
+                          <th className="text-right py-2">{t('vat.net_costs', 'NETTÓ Költségek:')}</th>
                           <th className="text-right py-2">{t('vat.deductible_vat', 'Levonható ÁFA:')}</th>
-                          <th className="text-right py-2">{t('vat.costs', 'Költségek:')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -219,14 +219,14 @@ const VatSection = React.memo(function VatSection({
                             {inboundVatCategories.map(cat => (
                               <tr key={cat.rate}>
                                 <td className="py-1">{cat.rate}:</td>
+                                <td className="text-right">{formatCurrency(convertToSelectedCurrency(cat.netAmount, 'HUF', selectedCurrency), selectedCurrency)}</td>
                                 <td className="text-right">{formatCurrency(convertToSelectedCurrency(cat.vatAmount, 'HUF', selectedCurrency), selectedCurrency)}</td>
-                                <td className="text-right">{formatCurrency(convertToSelectedCurrency(cat.netAmount + cat.vatAmount, 'HUF', selectedCurrency), selectedCurrency)}</td>
                               </tr>
                             ))}
                             <tr className="font-medium border-t">
                               <td className="py-1">{t('vat.total', 'Összesen:')}</td>
+                              <td className="text-right">{formatCurrency(convertToSelectedCurrency(inboundTotalNet, 'HUF', selectedCurrency), selectedCurrency)}</td>
                               <td className="text-right">{formatCurrency(convertToSelectedCurrency(inboundTotalVat, 'HUF', selectedCurrency), selectedCurrency)}</td>
-                              <td className="text-right">{formatCurrency(convertToSelectedCurrency(inboundTotalNet + inboundTotalVat, 'HUF', selectedCurrency), selectedCurrency)}</td>
                             </tr>
                           </>
                         ) : (

@@ -471,8 +471,8 @@ export default function Analytics() {
                           <thead>
                             <tr className="text-muted-foreground">
                               <th className="text-left py-2">ÁFA kategóriák:</th>
+                              <th className="text-right py-2">NETTÓ Árbevétel:</th>
                               <th className="text-right py-2">Fizetendő ÁFA:</th>
-                              <th className="text-right py-2">Árbevétel:</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -481,14 +481,14 @@ export default function Analytics() {
                                 {outboundVatCategories.map(cat => (
                                   <tr key={cat.rate}>
                                     <td className="py-1">{cat.rate}:</td>
+                                    <td className="text-right">{formatCurrency(cat.netAmount)}</td>
                                     <td className="text-right">{formatCurrency(cat.vatAmount)}</td>
-                                    <td className="text-right">{formatCurrency(cat.netAmount + cat.vatAmount)}</td>
                                   </tr>
                                 ))}
                                 <tr className="font-medium border-t">
                                   <td className="py-1">Összesen:</td>
+                                  <td className="text-right">{formatCurrency(outboundTotalNet)}</td>
                                   <td className="text-right">{formatCurrency(outboundTotalVat)}</td>
-                                  <td className="text-right">{formatCurrency(outboundTotalNet + outboundTotalVat)}</td>
                                 </tr>
                               </>
                             ) : (
@@ -514,8 +514,8 @@ export default function Analytics() {
                           <thead>
                             <tr className="text-muted-foreground">
                               <th className="text-left py-2">ÁFA kategóriák:</th>
+                              <th className="text-right py-2">NETTÓ Költségek:</th>
                               <th className="text-right py-2">Levonható ÁFA:</th>
-                              <th className="text-right py-2">Költségek:</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -524,14 +524,14 @@ export default function Analytics() {
                                 {inboundVatCategories.map(cat => (
                                   <tr key={cat.rate}>
                                     <td className="py-1">{cat.rate}:</td>
+                                    <td className="text-right">{formatCurrency(cat.netAmount)}</td>
                                     <td className="text-right">{formatCurrency(cat.vatAmount)}</td>
-                                    <td className="text-right">{formatCurrency(cat.netAmount + cat.vatAmount)}</td>
                                   </tr>
                                 ))}
                                 <tr className="font-medium border-t">
                                   <td className="py-1">Összesen:</td>
+                                  <td className="text-right">{formatCurrency(inboundTotalNet)}</td>
                                   <td className="text-right">{formatCurrency(inboundTotalVat)}</td>
-                                  <td className="text-right">{formatCurrency(inboundTotalNet + inboundTotalVat)}</td>
                                 </tr>
                               </>
                             ) : (
