@@ -30,7 +30,7 @@ A Tudástár a bal oldali fő navigációban közvetlenül a **Hibajegyek** men�
   - Valós idejű, azonnali (0ms) keresés a címekben, összefoglalókban, címkékben és a cikkek teljes szövegében.
   - Keresési kifejezés törlése egyetlen kattintással.
 - **Kategória fülek (Category Pills):**
-  - "Összes téma" dinamikus darabszám-jelzővel (50 cikk).
+  - "Összes téma" dinamikus darabszám-jelzővel (64 cikk).
   - 10 hierarchikus kategória fül (Alapok & Vezérlőpult, Bizonylatok & Számlák, Pénzügyek & Bank, Könyvelés & Adózás, Bérszámfejtés & HR, Szállítmányozás & Fuvarok, Integrációk & Rendszer, eaisyBooks Portfólió, eaisyBooks Szakmai Modulok, eaisyBooks Adminisztráció & AI) kontextuális ikonokkal és darabszám-számlálókkal.
 - **Kártyarács (Article Grid):**
   - Kategória jelvény, olvasási idő (pl. `3 perc`).

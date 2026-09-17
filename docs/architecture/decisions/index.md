@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-09-16  
-> **Összesen:** 121 döntés | ✅ Decided: 119 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-09-17  
+> **Összesen:** 124 döntés | ✅ Decided: 122 | ⛔ Superseded: 2
 
 ---
 
@@ -50,6 +50,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-059 | Tranzakció Párosítási Mag & Moduláris UI Architektúra (TransactionMatchingCore) | ✅ Decided | [A-059](./A-059-transaction-matching-core-and-modular-ui.md) |
 | A-096 | Hivatalos NAV Tételsor Védőháló, Sorszám Szinkronizáció és 23505 Ütközésvédelem | ✅ Decided | [A-096](./A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md) |
 | A-116 | K&H Bankkivonatok (.xls / .csv) Robusztus Feldolgozása, Tabulátor Detektálás és Tranzakció Pipeline Intercept Védelem | ✅ Decided | [A-116](./A-116-kh-bank-statement-parsing-and-pipeline-routing-safeguards.md) |
+| A-118 | Csoportos ÁFA-alanyok Észlelése, Technikai Felhasználó Útmutatás és Szinkronizációs Védőháló | ✅ Decided | [A-118](./A-118-group-vat-entity-detection-and-technical-user-guidance.md) |
 
 ## 🔒 Biztonság & Auth
 
@@ -160,6 +161,8 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-112 | Futárszolgálati Kompenzációs Értesítők Kétirányú Automatikus Számlarendezése és Futárriport UI Párosítás | ✅ Decided | [A-112](./A-112-courier-compensation-inbound-invoice-auto-settlement.md) |
 | A-114 | eaisyBooks Kettős Működési Módú Navigációs Héj Összevonása (Collapse Dual-Mode Navigation Shell) és Seam Hardening | ✅ Decided | [A-114](./A-114-collapse-dual-mode-navigation-shell.md) |
 | A-115 | eaisyBooks ↔ eaisyBill Szimmetrikus Hideg/Meleg (Cold/Warm) Hibrid Életciklus Átmenet és Szinkron Útvonal Feloldás | ✅ Decided | [A-115](./A-115-eaisybooks-eaisybill-cold-warm-hybrid-transition-and-route-resolution.md) |
+| A-119 | Évek Közötti Áthúzódó Teljesítésű Számlák Főkönyvi és ÁFA Védőhálója (Cross-Year Delivery Guard) | ✅ Decided | [A-119](./A-119-cross-year-delivery-vat-and-general-ledger-guard.md) |
+| A-120 | Nem Könyvelt Státusz Kétirányú Szinkronizációja és Optimista UI Állapotkezelés | ✅ Decided | [A-120](./A-120-exclude-from-accounting-sync-and-optimistic-ui.md) |
 
 ## 💳 Fizetés
 

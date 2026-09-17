@@ -1,7 +1,7 @@
 # Visibill — Business Requirement Decisions
 
-> **Utoljára frissítve:** 2026-09-11  
-> **Összesen:** 55 döntés | ✅ Decided: 40 | 🟡 Partially Decided: 8 | ⛔ Superseded: 1 | 🔴 Open: 6
+> **Utoljára frissítve:** 2026-09-17  
+> **Összesen:** 57 döntés | ✅ Decided: 42 | 🟡 Partially Decided: 8 | ⛔ Superseded: 1 | 🔴 Open: 6
 
 ---
 
@@ -140,3 +140,5 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 | 048 | NAV Online Számla Megfelelőség és Könyvelői Zárlat Üzleti Szabálya | ✅ Decided | [048-nav-crosscheck-approval-gate.md](./048-nav-crosscheck-approval-gate.md) |
 | 049 | Főkönyvi Dátum Alap (Teljesítés vs. Kibocsátás Kelte) Üzleti Szabály | ✅ Decided | [049-gl-date-basis-fulfillment-vs-issue.md](./049-gl-date-basis-fulfillment-vs-issue.md) |
 | 050 | Főkönyvi Könyvelési Státusz (Csak Lekönyvelt) és Naplózási Kormányzás | ✅ Decided | [050-gl-posting-status-and-journal-governance.md](./050-gl-posting-status-and-journal-governance.md) |
+| 056 | Csoportos ÁFA-alanyok és NAV Szinkronizáció Üzleti Szabályzata | ✅ Decided | [056-group-vat-entity-sync-policy.md](./056-group-vat-entity-sync-policy.md) |
+| 057 | Évek Közötti Áthúzódó Teljesítésű Számlák Számviteli és ÁFA Üzleti Szabályzata | ✅ Decided | [057-cross-year-delivery-accounting-rules.md](./057-cross-year-delivery-accounting-rules.md) |

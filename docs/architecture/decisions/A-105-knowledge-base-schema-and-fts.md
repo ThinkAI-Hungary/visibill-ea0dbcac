@@ -99,4 +99,4 @@ A gyors (<10ms) és költségmentes RAG retrieval kiszolgálására elkészült 
 
 A `src/data/knowledgeBaseFallback.ts` és `src/hooks/useKnowledgeBase.ts` modulok hibrid működést valósítanak meg:
 - React Query gyorsítótár: `staleTime: 5 perc`, `gcTime: 20 perc`.
-- Adatbázis hiba, hálózati kimaradás vagy tábla hiány esetén automatikusan a statikus fallback adatkészletből szolgálja ki a 10 kategóriát és mind az 50 részletes szakmai útmutatót, amelyek hierarchikusan fedik le az eaisyBill és eaisyBooks teljes menürendszerét.
+- Adatbázis hiba, hálózati kimaradás vagy tábla hiány esetén automatikusan a statikus fallback adatkészletből szolgálja ki a 10 kategóriát és a 64 részletes szakmai útmutatót (beleértve a csoportos ÁFA-alanyok szinkronizációját leíró `nav-group-vat-sync` cikket a `system` kategóriában), amelyek hierarchikusan fedik le az eaisyBill és eaisyBooks teljes menürendszerét.
