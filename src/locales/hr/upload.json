@@ -71,6 +71,9 @@
     "choose_bank": "Odaberite banku...",
     "ai_auto_hint": "(Ako ne odaberete, AI automatski prepoznaje format)",
     "auto_detect": "Automatsko prepoznavanje",
+    "group_hungarian_banks": "Mađarske banke",
+    "group_fintech": "Fintech",
+    "group_other": "Kartice / Ostalo",
     "courier_service": "Dostavna služba:",
     "choose_courier": "Odaberite dostavljača..."
   },

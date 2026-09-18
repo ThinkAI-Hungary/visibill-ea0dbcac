@@ -126,20 +126,29 @@ export const CHANNEL_CONFIGS: Record<UploadChannelId, ChannelConfig> = {
   },
 };
 
-export const BANK_HINT_OPTIONS = [
-  { value: 'auto', label: 'Automatikus felismerés' },
-  { value: 'otp', label: 'OTP Bank' },
-  { value: 'erste', label: 'Erste Bank' },
-  { value: 'kh', label: 'K&H Bank' },
-  { value: 'raiffeisen', label: 'Raiffeisen Bank' },
-  { value: 'mbh', label: 'MBH Bank' },
-  { value: 'cib', label: 'CIB Bank' },
-  { value: 'unicredit', label: 'UniCredit Bank' },
-  { value: 'granit', label: 'Gránit Bank' },
-  { value: 'revolut', label: 'Revolut' },
-  { value: 'wise', label: 'Wise' },
-  { value: 'zaba', label: 'Zagrebačka banka (ZABA)' },
-  { value: 'minimax', label: 'Minimax / e-racuni' },
+export interface BankHintOption {
+  value: string;
+  label: string;
+  group: 'auto' | 'hungary' | 'fintech' | 'other';
+  hint?: string;
+}
+
+export const BANK_HINT_OPTIONS: BankHintOption[] = [
+  { value: 'auto', label: 'Automatikus felismerés', group: 'auto', hint: '(fájlnév alapján)' },
+  { value: 'otp', label: 'OTP Bank', group: 'hungary' },
+  { value: 'erste', label: 'Erste Bank', group: 'hungary' },
+  { value: 'kh', label: 'K&H Bank', group: 'hungary' },
+  { value: 'raiffeisen', label: 'Raiffeisen Bank', group: 'hungary' },
+  { value: 'mbh', label: 'MBH Bank', group: 'hungary' },
+  { value: 'cib', label: 'CIB Bank', group: 'hungary' },
+  { value: 'unicredit', label: 'UniCredit Bank', group: 'hungary' },
+  { value: 'granit', label: 'Gránit Bank', group: 'hungary' },
+  { value: 'magnet', label: 'MagNet Bank', group: 'hungary' },
+  { value: 'revolut', label: 'Revolut', group: 'fintech' },
+  { value: 'wise', label: 'Wise', group: 'fintech' },
+  { value: 'szep', label: 'SZÉP Kártya', group: 'other', hint: '(elfogadóhelyi)' },
+  { value: 'zaba', label: 'Zagrebačka banka (ZABA)', group: 'other' },
+  { value: 'minimax', label: 'Minimax / e-racuni', group: 'other' },
 ];
 
 export const COURIER_OPTIONS = [

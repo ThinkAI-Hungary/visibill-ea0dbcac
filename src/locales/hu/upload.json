@@ -71,6 +71,9 @@
     "choose_bank": "Válassz bankot...",
     "ai_auto_hint": "(Ha nem választasz, az AI automatikusan felismeri a formátumot)",
     "auto_detect": "Automatikus felismerés",
+    "group_hungarian_banks": "Magyar bankok",
+    "group_fintech": "Fintech",
+    "group_other": "Kártya / Egyéb",
     "courier_service": "Futárszolgálat:",
     "choose_courier": "Válassz futárt..."
   },
