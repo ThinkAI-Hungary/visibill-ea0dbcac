@@ -232,7 +232,7 @@ serve(async (req) => {
   });
 
   // 2. Help action (No auth required)
-  if (resource === "help" || resource === "docs" || (pathSegments.length === 0 && req.method === "GET")) {
+  if (resource === "help" || resource === "docs" || (pathSegments.length === 0 && !url.searchParams.get("action") && req.method === "GET")) {
     return json({
       success: true,
       data: getApiDocumentation(),

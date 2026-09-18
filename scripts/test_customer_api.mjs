@@ -105,7 +105,8 @@ async function testCustomerApi() {
 
   // 4. Test Retrocompatibility Query-Param Action
   console.log('\n--- Retrocompatibility Checks (?action=companies) ---');
-  await testEndpoint('GET ?action=companies', '?action=companies');
+  const compRes = await testEndpoint('GET ?action=companies', '?action=companies');
+  console.log('   Companies in response:', compRes.body?.data?.companies?.map(c => c.name));
 
   // 5. Cleanup: Revoke Test Key
   console.log('\n--- Cleanup ---');
