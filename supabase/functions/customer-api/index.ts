@@ -480,6 +480,12 @@ serve(async (req) => {
                   id: inv.id,
                   invoice_number: inv.bizonylatsorszam,
                   direction: (inv.invoice_direction || "INBOUND").toLowerCase(),
+                  partner_name: (inv.invoice_direction || "").toUpperCase() === "OUTBOUND" ? (inv.vevo_nev || "") : (inv.elado_nev || ""),
+                  partner_tax_number: (inv.invoice_direction || "").toUpperCase() === "OUTBOUND" ? inv.vevo_vat_id : inv.elado_vat_id,
+                  gross_amount: inv.brutto_vegosszeg,
+                  net_amount: inv.adoalap_osszesen,
+                  currency: inv.penznem || "HUF",
+                  is_paid: inv.fizetve || false,
                   issue_date: inv.kibocsatas_datuma,
                   fulfillment_date: inv.teljesites_datuma,
                   due_date: inv.fizetesi_hatarido,
@@ -606,6 +612,12 @@ serve(async (req) => {
               id: inv.id,
               invoice_number: inv.bizonylatsorszam,
               direction: (inv.invoice_direction || "inbound").toLowerCase(),
+              partner_name: (inv.invoice_direction || "").toUpperCase() === "OUTBOUND" ? (inv.vevo_nev || "") : (inv.elado_nev || ""),
+              partner_tax_number: (inv.invoice_direction || "").toUpperCase() === "OUTBOUND" ? inv.vevo_vat_id : inv.elado_vat_id,
+              gross_amount: inv.brutto_vegosszeg,
+              net_amount: inv.adoalap_osszesen,
+              currency: inv.penznem || "HUF",
+              is_paid: inv.fizetve || false,
               issue_date: inv.kibocsatas_datuma,
               fulfillment_date: inv.teljesites_datuma,
               due_date: inv.fizetesi_hatarido,
@@ -805,10 +817,27 @@ serve(async (req) => {
 
           if (txErr) { response = errorResponse("QUERY_FAILED", txErr.message, 500); }
           else {
+            const normalizedTxs = (txs || []).map((tx: any) => ({
+              id: tx.id,
+              transaction_date: tx.transaction_date,
+              booking_date: tx.transaction_date,
+              date: tx.transaction_date,
+              description: tx.description,
+              comment: tx.description,
+              amount: tx.amount,
+              currency: tx.currency,
+              type: tx.type,
+              matched_invoice_id: tx.matched_invoice_id,
+              is_matched: Boolean(tx.matched_invoice_id),
+              match_type: tx.match_type,
+              is_verified: tx.is_verified,
+              created_at: tx.created_at,
+            }));
+
             response = json({
               success: true,
               data: {
-                transactions: txs || [],
+                transactions: normalizedTxs,
                 pagination: { page, page_size: pageSize, total_items: count || 0, total_pages: Math.ceil((count || 0) / pageSize) },
               },
             });
@@ -943,15 +972,20 @@ serve(async (req) => {
               }
             });
 
+            const pnlData = {
+              year: parseInt(year, 10),
+              revenue_net: Math.round(totalRevenueHuf),
+              expense_net: Math.round(totalExpenseHuf),
+              operating_result_net: Math.round(totalRevenueHuf - totalExpenseHuf),
+              currency: "HUF",
+              invoice_count: invs?.length || 0,
+            };
+
             response = json({
               success: true,
               data: {
-                year: parseInt(year, 10),
-                revenue_net: Math.round(totalRevenueHuf),
-                expense_net: Math.round(totalExpenseHuf),
-                operating_result_net: Math.round(totalRevenueHuf - totalExpenseHuf),
-                currency: "HUF",
-                invoice_count: invs?.length || 0,
+                ...pnlData,
+                pnl: pnlData,
               },
             });
           }
