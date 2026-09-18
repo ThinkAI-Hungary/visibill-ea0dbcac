@@ -12,7 +12,7 @@ A Supabase PostgREST automatikusan REST API-t generál minden táblához. Egysze
 
 **Kettős query stratégia:** PostgREST direkt query + PostgreSQL RPC funkciók.
 
-> 📖 **Teljes, részletes specifikáció:** A rendszerben elérhető mind a 133 hívható RPC és 73 trigger függvény tételes listáját és leírását az autoritatív [PostgreSQL RPC Katalógus](../rpc-catalog.md) tartalmazza.
+> 📖 **Teljes, részletes specifikáció:** A rendszerben elérhető mind a 133 hívható RPC és 74 trigger függvény tételes listáját és leírását az autoritatív [PostgreSQL RPC Katalógus](../rpc-catalog.md) tartalmazza.
 
 ---
 

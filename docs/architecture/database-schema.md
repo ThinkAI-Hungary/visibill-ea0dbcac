@@ -34,7 +34,7 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 - [📄 Könyvelési Naplók](./database/22-accounting-journals.md) — 6 tábla, ~58702 sor
 
 **Kiegészítő katalógusok:**
-- [⚡ PostgreSQL RPC Katalógus (132 RPC + 73 Trigger)](./rpc-catalog.md) — Teljes tárolt eljárás és aggregációs motor katalógus
+- [⚡ PostgreSQL RPC Katalógus (133 RPC + 74 Trigger)](./rpc-catalog.md) — Teljes tárolt eljárás és aggregációs motor katalógus
 - [🌐 Supabase Edge Functions Katalógus (62 Deno EF)](./edge-functions.md) — NAV szinkron, email, AI, Open Banking és webhook szervermentes funkciók
 
 ---

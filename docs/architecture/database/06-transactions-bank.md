@@ -38,6 +38,10 @@
 
 **Indexek:** `idx_transactions_a8_tx_id` (UNIQUE parciális), `idx_transactions_cash_types`, `idx_transactions_company_date`, `idx_transactions_company_date_currency`, `idx_transactions_company_matched`, `idx_transactions_company_type`, `idx_transactions_gl_account_id`, `idx_transactions_upload_id`, `unique_transaction_entry` (UNIQUE: `company_id, transaction_date, description, amount`)
 
+**Triggerek:**
+- `reset_paid_on_transaction_unmatch` (`BEFORE UPDATE OF matched_invoice_id`): Számla lekapcsolásakor vagy átkapcsolásakor (`NEW IS NULL OR NEW <> OLD`) rendezi az előző számla státuszát (`paid = false, transaction_id = NULL`), ha nincs egyéb kapcsolata (A-128).
+- `trg_reset_paid_on_transaction_delete` (`BEFORE DELETE`): Tranzakció törlésekor rendezi a korábban hozzá kapcsolt számla státuszát (`paid = false, transaction_id = NULL`).
+
 ---
 
 ### `transaction_uploads`
@@ -84,6 +88,10 @@
 **FK:** `transaction_id` → `transactions.id`
 
 **Indexek:** `idx_tim_invoice_id`, `idx_tim_transaction_id`, `transaction_invoice_matches_transaction_id_invoice_id_key`
+
+**Triggerek:**
+- `trg_mark_invoice_paid_on_multi_match` (`AFTER INSERT`): Multi-match létrejöttekor beállítja a `paid = true` állapotot a számlán.
+- `trg_reset_paid_on_multi_match_delete` (`BEFORE DELETE`): Multi-match törlésekor/lekapcsolásakor visszaállítja a számla állapotát (`paid = false, transaction_id = NULL`), amennyiben más tranzakció nem kapcsolódik hozzá (A-128).
 
 ---
 

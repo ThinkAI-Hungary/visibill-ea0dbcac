@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-18  
-> **Összesen:** 138 döntés | ✅ Decided: 136 | ⛔ Superseded: 2
+> **Összesen:** 139 döntés | ✅ Decided: 137 | ⛔ Superseded: 2
 
 ---
 
@@ -53,6 +53,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-118 | Skontó és Partner Fizetési Határidő Atomi Újraszámítás | ✅ Decided | [A-118](./A-118-atomic-partner-skonto-recalculation.md) |
 | A-119 | Aggreg8 PSD2 Open Banking AISP Integráció, Hosted SyncUI és Valós Idejű Tranzakció Szinkronizáció | ✅ Decided | [A-119](./A-119-aggreg8-psd2-open-banking-integration.md) |
 | A-120 | Csoportos ÁFA-alanyok Észlelése, Technikai Felhasználó Útmutatás és Szinkronizációs Védőháló | ✅ Decided | [A-120](./A-120-group-vat-entity-detection-and-technical-user-guidance.md) |
+| A-128 | Szigorított Számlaszám Határ-illesztés (Boundary Matching), Részhalmaz Kiszűrés (Subsumption Filter) és Többszörös Párosítási Jóváhagyási Kapu | ✅ Decided | [A-128](./A-128-strict-invoice-number-boundary-matching-and-subsumption-guard.md) |
 
 ## 🔒 Biztonság & Auth
 
@@ -88,7 +89,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| A-016 | PostgreSQL query stratégia — 132 RPC + 73 trigger function teljes katalógus | ✅ Decided | [A-016](./A-016-postgresql-query-strategy.md) |
+| A-016 | PostgreSQL query stratégia — 133 RPC + 74 trigger function teljes katalógus | ✅ Decided | [A-016](./A-016-postgresql-query-strategy.md) |
 | A-022 | Kategóriák és projektek dual-table szinkronizációja | ✅ Decided | [A-022](./A-022-categories-projects-sync.md) |
 | A-036 | Pénztárbizonylat (Cash Voucher) Processing | ✅ Decided | [A-036](./A-036-penztarbizonylat-processing.md) |
 | A-037 | Jegyzetek Rendszer Architektúra (Notes System Architecture) | ✅ Decided | [A-037](./A-037-notes-architecture.md) |

@@ -1,7 +1,7 @@
 # PostgreSQL RPC és Függvény Katalógus
 
-> **Utoljára frissítve:** 2026-09-17  
-> **Összesen:** 133 hívható RPC függvény | 73 PostgreSQL trigger függvény | `public` séma | **Supabase PostgreSQL**
+> **Utoljára frissítve:** 2026-09-18  
+> **Összesen:** 133 hívható RPC függvény | 74 PostgreSQL trigger függvény | `public` séma | **Supabase PostgreSQL**
 
 Ez a dokumentáció az eaisybill-prod és eaisyBooks rendszerekben használt összes PostgreSQL tárolt eljárást és RPC (Remote Procedure Call) függvényt tartalmazza. Részletezi a függvény szignatúráját, biztonsági környezetét (`SECURITY DEFINER` vs `INVOKER`), hívó komponensét és funkcionális szerepét.
 A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-schema.md), a szervermentes funkciókat az [Edge Functions Katalógus](./edge-functions.md), a lekérdezési stratégiát pedig az [A-016: PostgreSQL Query Stratégia](./decisions/A-016-postgresql-query-strategy.md) mutatja be.
@@ -18,7 +18,7 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 6. [⚡ Queue, Worker és Job Management (PGMQ) RPC-k (14 db)](#6-️-queue-worker-és-job-management-pgmq-rpc-k)
 7. [🛠️ Platform és Management Üzemeltetési RPC-k (13 db)](#7-️-platform-és-management-üzemeltetési-rpc-k)
 8. [📧 Email Fiókok, Vault és Hitelesítő Adatok (15 db)](#8--email-fiókok-vault-és-hitelesítő-adatok)
-9. [⚙️ PostgreSQL Trigger Függvények (73 db)](#9-️-postgresql-trigger-függvények)
+9. [⚙️ PostgreSQL Trigger Függvények (74 db)](#9-️-postgresql-trigger-függvények)
 
 ---
 
@@ -255,8 +255,9 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 | `match_payment_transfers_on_invoice_match()` | `DEFINER` | `trigger` | Táblák közötti automatikus státusz, párosítás vagy FK szinkronizáció. |
 | `on_company_created()` | `DEFINER` | `trigger` | Integritás és automatikus üzleti szabály trigger. |
 | `reset_nav_submitted_on_invoice_delete()` | `DEFINER` | `trigger` | Számla, fizetés vagy feltöltés státuszának tranzakcionális állapotgép kezelése. |
+| `reset_paid_on_multi_match_delete()` | `DEFINER` | `trigger` | Többszörös párosítás (transaction_invoice_matches) törlésekor a számla fizetetlen státuszának helyreállítása (A-128). |
 | `reset_paid_on_transaction_delete()` | `DEFINER` | `trigger` | Számla, fizetés vagy feltöltés státuszának tranzakcionális állapotgép kezelése. |
-| `reset_paid_on_transaction_unmatch()` | `DEFINER` | `trigger` | Táblák közötti automatikus státusz, párosítás vagy FK szinkronizáció. |
+| `reset_paid_on_transaction_unmatch()` | `DEFINER` | `trigger` | Tranzakció lekapcsolásakor vagy számlaváltáskor (NEW IS NULL OR NEW <> OLD) a korábbi számla fizetetlen státuszának helyreállítása (A-128). |
 | `rls_auto_enable()` | `DEFINER` | `event_trigger` | Integritás és automatikus üzleti szabály trigger. |
 | `set_invoice_feldolgozva_on_upload_link()` | `DEFINER` | `trigger` | Számla, fizetés vagy feltöltés státuszának tranzakcionális állapotgép kezelése. |
 | `set_nav_invoice_items_company_id()` | `DEFINER` | `trigger` | Számla, fizetés vagy feltöltés státuszának tranzakcionális állapotgép kezelése. |
