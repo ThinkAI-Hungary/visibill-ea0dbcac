@@ -187,6 +187,20 @@ Deno.serve(async (req) => {
       const responseText = await response.text();
       console.log(`[TRIGGER-NAV-CATEGORIZATION] Webhook response - Status: ${response.status}, Body: ${responseText.slice(0, 200)}`);
       
+      if (!response.ok) {
+        console.error(`[TRIGGER-NAV-CATEGORIZATION] Webhook failed with status ${response.status}: ${responseText.slice(0, 200)}`);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            webhookTriggered: true,
+            webhookStatus: response.status,
+            error: `A kategorizáló webhook hibát adott vissza (HTTP ${response.status})`,
+            details: responseText.slice(0, 200)
+          }),
+          { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       return new Response(
         JSON.stringify({ 
           success: true, 

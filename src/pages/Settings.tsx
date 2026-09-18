@@ -383,12 +383,14 @@ const VAT_REGIME_LABELS: Record<VatRegime, string> = {
   normal: 'Általános ÁFA',
   penzforgalmi: 'Pénzforgalmi elszámolás',
   alanyi_mentes: 'Alanyi adómentesség',
+  targyi_mentes: 'Tárgyi adómentesség (TAM)',
 };
 
 const VAT_REGIME_COLORS: Record<VatRegime, string> = {
   normal: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
   penzforgalmi: 'bg-violet-500/10 text-violet-600 border-violet-500/20',
   alanyi_mentes: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  targyi_mentes: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
 };
 
 function VatRegimeCard({ companyId, currentRegime, toast, onSaved }: {
@@ -447,19 +449,20 @@ function VatRegimeCard({ companyId, currentRegime, toast, onSaved }: {
       <CardContent className="space-y-4">
         <div className="flex items-center gap-3">
           <span className="text-sm text-muted-foreground">Jelenlegi:</span>
-          <Badge variant="outline" className={VAT_REGIME_COLORS[currentRegime]}>
-            {VAT_REGIME_LABELS[currentRegime]}
+          <Badge variant="outline" className={VAT_REGIME_COLORS[currentRegime] || VAT_REGIME_COLORS.normal}>
+            {VAT_REGIME_LABELS[currentRegime] || currentRegime}
           </Badge>
         </div>
         <div className="flex items-center gap-3">
           <Select value={currentRegime} onValueChange={handleRegimeChange}>
-            <SelectTrigger className="max-w-xs">
+            <SelectTrigger className="max-w-md">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="normal">Általános ÁFA</SelectItem>
               <SelectItem value="penzforgalmi">Pénzforgalmi elszámolás</SelectItem>
               <SelectItem value="alanyi_mentes">Alanyi adómentesség</SelectItem>
+              <SelectItem value="targyi_mentes">Tárgyi adómentesség (TAM - sport, oktatás, Áfa tv. 85-86. §)</SelectItem>
             </SelectContent>
           </Select>
         </div>

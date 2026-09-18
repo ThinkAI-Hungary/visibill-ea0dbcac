@@ -88,6 +88,7 @@
     "vat_regime_normal": "Általános ÁFA",
     "vat_regime_cash": "Pénzforgalmi elszámolás",
     "vat_regime_exempt": "Alanyi adómentesség",
+    "vat_regime_targyi": "Tárgyi adómentesség (TAM)",
     "vat_regime_hint": "Ez az adóévre érvényes beállítás. Később a cég beállításaiban módosítható.",
     "create_button": "Cég létrehozása",
     "creating": "Létrehozás...",

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, AlertTriangle, CheckCircle, Shield, Key, RefreshCw, XCircle, Clock, Loader2 } from 'lucide-react';
+import { AlertCircle, AlertTriangle, CheckCircle, Shield, Key, RefreshCw, XCircle, Clock, Loader2, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
@@ -35,6 +35,23 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
     software_id: string | null;
     nav_tax_number: string | null;
   } | null>(null);
+  const [directionalStatus, setDirectionalStatus] = useState<{
+    outbound?: {
+      status: string;
+      completed_at?: string | null;
+      created_at?: string;
+      error_message?: string | null;
+      invoices_fetched?: number | null;
+    };
+    inbound?: {
+      status: string;
+      completed_at?: string | null;
+      created_at?: string;
+      error_message?: string | null;
+      invoices_fetched?: number | null;
+    };
+  }>({});
+  const [manualSyncing, setManualSyncing] = useState(false);
   const [companyTaxNumber, setCompanyTaxNumber] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
@@ -81,11 +98,12 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
     if (!companyId) {
       setCredentialInfo(null);
       setCompanyTaxNumber(null);
+      setDirectionalStatus({});
       setInitialLoading(false);
       return;
     }
     try {
-      const [credRes, compRes] = await Promise.all([
+      const [credRes, compRes, syncLogsRes] = await Promise.all([
         supabase
           .from('user_nav_credentials')
           .select('validation_status, last_validated_at, validation_error, software_id, nav_tax_number')
@@ -96,6 +114,12 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
           .select('tax_number')
           .eq('id', companyId)
           .maybeSingle(),
+        supabase
+          .from('nav_sync_logs')
+          .select('invoice_direction, status, error_message, completed_at, created_at, invoices_fetched')
+          .eq('company_id', companyId)
+          .order('created_at', { ascending: false })
+          .limit(20)
       ]);
       
       if (!compRes.error && compRes.data?.tax_number) {
@@ -109,6 +133,30 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
         setValidationStatus(credRes.data.validation_status as any);
       } else {
         setCredentialInfo(null);
+      }
+
+      if (syncLogsRes.data && syncLogsRes.data.length > 0) {
+        const outboundLog = syncLogsRes.data.find((l: any) => l.invoice_direction === 'OUTBOUND');
+        const inboundLog = syncLogsRes.data.find((l: any) => l.invoice_direction === 'INBOUND');
+
+        setDirectionalStatus({
+          outbound: outboundLog ? {
+            status: outboundLog.status,
+            completed_at: outboundLog.completed_at || outboundLog.created_at,
+            created_at: outboundLog.created_at,
+            error_message: outboundLog.error_message,
+            invoices_fetched: outboundLog.invoices_fetched
+          } : undefined,
+          inbound: inboundLog ? {
+            status: inboundLog.status,
+            completed_at: inboundLog.completed_at || inboundLog.created_at,
+            created_at: inboundLog.created_at,
+            error_message: inboundLog.error_message,
+            invoices_fetched: inboundLog.invoices_fetched
+          } : undefined
+        });
+      } else {
+        setDirectionalStatus({});
       }
     } catch (error) {
       reportError({ type: 'api_call', component: 'NavCredentialsForm', action: 'error', message: 'Error loading credential info:', error: error });
@@ -331,23 +379,37 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
 
   const triggerInitialSync = async (accessToken: string) => {
     try {
-      
-      // Calculate date range for 1 month back (30 days)
+      // Dynamic sync window: look back to the latest successful sync date (minus 2 days), up to 365 days ago, default 90 days
       const dateTo = new Date();
       const dateFrom = new Date();
-      dateFrom.setDate(dateFrom.getDate() - 30);
+      const lastCompletedStr = directionalStatus.inbound?.completed_at || directionalStatus.outbound?.completed_at;
+      if (lastCompletedStr) {
+        const lastDate = new Date(lastCompletedStr);
+        if (!isNaN(lastDate.getTime())) {
+          lastDate.setDate(lastDate.getDate() - 2);
+          const maxLookback = new Date(dateTo);
+          maxLookback.setDate(maxLookback.getDate() - 365);
+          const effectiveDate = lastDate < maxLookback ? maxLookback : lastDate;
+          dateFrom.setTime(effectiveDate.getTime());
+        } else {
+          dateFrom.setDate(dateFrom.getDate() - 90);
+        }
+      } else {
+        dateFrom.setDate(dateFrom.getDate() - 90);
+      }
       
       const dateToStr = dateTo.toISOString().split('T')[0];
       const dateFromStr = dateFrom.toISOString().split('T')[0];
       
       toast({
         title: 'Adatok szinkronizálása',
-        description: 'NAV számlák letöltése az elmúlt 30 napra, minden tétellel együtt...',
+        description: `NAV számlák letöltése (${dateFromStr} – ${dateToStr})...`,
       });
 
       let totalOutbound = 0;
       let totalInbound = 0;
-      let hasError = false;
+      let outboundErrorMsg: string | null = null;
+      let inboundErrorMsg: string | null = null;
 
       // Sync OUTBOUND invoices
       const { data: outboundData, error: outboundError } = await supabase.functions.invoke('nav-query-outbound-invoices', {
@@ -363,8 +425,8 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
       });
 
       if (outboundError || outboundData?.error) {
-        reportError({ type: 'api_call', component: 'NavCredentialsForm', action: 'error', message: '[NavCredentialsForm] OUTBOUND sync failed:', error: outboundError || outboundData?.error });
-        hasError = true;
+        outboundErrorMsg = outboundError?.message || outboundData?.error || 'Kimenő lekérdezés sikertelen';
+        reportError({ type: 'api_call', component: 'NavCredentialsForm', action: 'error', message: '[NavCredentialsForm] OUTBOUND sync failed:', error: outboundErrorMsg });
       } else {
         totalOutbound = outboundData?.totalInvoices || 0;
       }
@@ -383,14 +445,14 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
       });
 
       if (inboundError || inboundData?.error) {
-        reportError({ type: 'api_call', component: 'NavCredentialsForm', action: 'error', message: '[NavCredentialsForm] INBOUND sync failed:', error: inboundError || inboundData?.error });
-        hasError = true;
+        inboundErrorMsg = inboundError?.message || inboundData?.error || 'Bejövő lekérdezés sikertelen';
+        reportError({ type: 'api_call', component: 'NavCredentialsForm', action: 'error', message: '[NavCredentialsForm] INBOUND sync failed:', error: inboundErrorMsg });
       } else {
         totalInbound = inboundData?.totalInvoices || 0;
       }
 
-      // Trigger categorization webhook only if we got invoices
-      if (!hasError && (totalOutbound > 0 || totalInbound > 0) && companyId) {
+      // Trigger categorization webhook only if we got invoices and categorization webhook is configured
+      if (!outboundErrorMsg && !inboundErrorMsg && (totalOutbound > 0 || totalInbound > 0) && companyId) {
         try {
           await supabase.functions.invoke('trigger-nav-categorization', {
             body: {
@@ -406,22 +468,37 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
         }
       }
       
+      // Reload credential and directional logs
+      await loadCredentialInfo();
+
       // Show appropriate toast based on actual results
-      if (hasError) {
+      if (outboundErrorMsg && inboundErrorMsg) {
         toast({
           title: 'Szinkronizálási hiba',
-          description: 'Az adatok letöltése részlegesen sikertelen. Próbálja újra később.',
+          description: `Mindkét irány hibára futott. Bejövő: ${inboundErrorMsg}`,
+          variant: 'destructive'
+        });
+      } else if (inboundErrorMsg) {
+        toast({
+          title: 'Részleges szinkronizáció',
+          description: `Kimenő számlák rendben (${totalOutbound} db), de a bejövő számlák sikertelenek: ${inboundErrorMsg}`,
+          variant: 'destructive'
+        });
+      } else if (outboundErrorMsg) {
+        toast({
+          title: 'Részleges szinkronizáció',
+          description: `Bejövő számlák rendben (${totalInbound} db), de a kimenő számlák sikertelenek: ${outboundErrorMsg}`,
           variant: 'destructive'
         });
       } else if (totalOutbound === 0 && totalInbound === 0) {
         toast({
           title: 'Nincs új adat',
-          description: 'Az elmúlt 30 napban nem találhatók NAV számlák.',
+          description: `A megadott időszakban (${dateFromStr} – ${dateToStr}) nem találhatók új NAV számlák.`,
         });
       } else {
         toast({
           title: 'Szinkronizálás kész',
-          description: `Az elmúlt 30 nap NAV számlái sikeresen letöltve: ${totalOutbound} kimenő, ${totalInbound} bejövő számla.`,
+          description: `NAV számlák sikeresen letöltve: ${totalOutbound} kimenő, ${totalInbound} bejövő számla.`,
         });
       }
       
@@ -429,9 +506,23 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
       reportError({ type: 'api_call', component: 'NavCredentialsForm', action: 'error', message: '[NavCredentialsForm] Initial sync error:', error: error });
       toast({
         title: 'Szinkronizálási hiba',
-        description: 'Az adatok letöltése részlegesen sikertelen. Próbálja újra később.',
+        description: error.message || 'Az adatok letöltése sikertelen. Próbálja újra később.',
         variant: 'destructive'
       });
+    }
+  };
+
+  const handleManualSync = async () => {
+    if (!companyId) return;
+    setManualSyncing(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+      await triggerInitialSync(session.access_token);
+    } catch (err: any) {
+      reportError({ type: 'api_call', component: 'NavCredentialsForm', action: 'error', message: 'Manual sync error:', error: err });
+    } finally {
+      setManualSyncing(false);
     }
   };
 
@@ -498,25 +589,43 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
     const isPending = credentialInfo.validation_status === 'pending';
     const isInvalid = credentialInfo.validation_status === 'invalid' || credentialInfo.validation_status === 'error';
 
+    const outboundStatus = directionalStatus.outbound?.status;
+    const inboundStatus = directionalStatus.inbound?.status;
+    const outboundFailed = outboundStatus === 'failed';
+    const inboundFailed = inboundStatus === 'failed';
+    const hasDirectionalFailure = isValid && (outboundFailed || inboundFailed);
+    const bothFailed = isValid && outboundFailed && inboundFailed;
+
     return (
-      <Card className={`border-2 ${isValid ? 'border-green-500 bg-green-50 dark:bg-green-950/20' : isInvalid ? 'border-red-500 bg-red-50 dark:bg-red-950/20' : 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20'}`}>
+      <Card className={`border-2 transition-colors ${
+        isValid && !hasDirectionalFailure
+          ? 'border-green-500 bg-green-50/60 dark:bg-green-950/20'
+          : isValid && hasDirectionalFailure && !bothFailed
+          ? 'border-amber-500 bg-amber-50/60 dark:bg-amber-950/20'
+          : isInvalid || bothFailed
+          ? 'border-red-500 bg-red-50/60 dark:bg-red-950/20'
+          : 'border-yellow-500 bg-yellow-50/60 dark:bg-yellow-950/20'
+      }`}>
         <CardContent className="pt-6">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3 flex-1">
-              {isValid && <CheckCircle className="w-6 h-6 text-green-600 mt-0.5" />}
-              {isPending && <Clock className="w-6 h-6 text-yellow-600 mt-0.5" />}
-              {isInvalid && <XCircle className="w-6 h-6 text-red-600 mt-0.5" />}
+              {isValid && !hasDirectionalFailure && <CheckCircle className="w-6 h-6 text-green-600 mt-0.5 shrink-0" />}
+              {isValid && hasDirectionalFailure && !bothFailed && <AlertTriangle className="w-6 h-6 text-amber-600 mt-0.5 shrink-0" />}
+              {(isInvalid || bothFailed) && <XCircle className="w-6 h-6 text-red-600 mt-0.5 shrink-0" />}
+              {isPending && <Clock className="w-6 h-6 text-yellow-600 mt-0.5 shrink-0" />}
               
-              <div className="flex-1 space-y-2">
+              <div className="flex-1 space-y-3">
                 <div>
                   <h3 className="font-semibold text-lg">
-                    {isValid && 'Élő NAV Kapcsolat'}
+                    {isValid && !hasDirectionalFailure && 'Élő NAV Kapcsolat'}
+                    {isValid && hasDirectionalFailure && !bothFailed && 'NAV Kapcsolat: Részleges működés'}
+                    {isValid && bothFailed && 'NAV Kapcsolat: Szinkronizáció sikertelen'}
                     {isPending && 'Kapcsolat Ellenőrzése Szükséges'}
                     {isInvalid && 'Nincs NAV Kapcsolat'}
                   </h3>
                   {credentialInfo.last_validated_at && (
                     <p className="text-sm text-muted-foreground">
-                      Utolsó ellenőrzés: {new Date(credentialInfo.last_validated_at).toLocaleString('hu-HU')}
+                      Utolsó token-ellenőrzés: {new Date(credentialInfo.last_validated_at).toLocaleString('hu-HU')}
                     </p>
                   )}
                 </div>
@@ -533,6 +642,103 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
                     </div>
                   )}
                 </div>
+
+                {/* Irányonkénti szinkronizációs állapot (OUTBOUND / INBOUND) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  {/* Kimenő számlák (OUTBOUND) */}
+                  <div className={`p-3 rounded-lg border text-xs flex flex-col justify-between space-y-2 ${
+                    outboundFailed 
+                      ? 'bg-red-100/50 dark:bg-red-950/40 border-red-200 dark:border-red-900/50' 
+                      : outboundStatus === 'completed'
+                      ? 'bg-green-100/40 dark:bg-green-950/20 border-green-200 dark:border-green-900/50'
+                      : 'bg-background/80 border-border'
+                  }`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <ArrowUpRight className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                        <span>Kimenő számlák (OUTBOUND)</span>
+                      </div>
+                      {outboundFailed ? (
+                        <Badge variant="destructive" className="text-[11px] px-2 py-0.5">Sikertelen</Badge>
+                      ) : outboundStatus === 'completed' ? (
+                        <Badge className="bg-green-600 hover:bg-green-700 text-white text-[11px] px-2 py-0.5">Aktív / Sikeres</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[11px] px-2 py-0.5">Nincs adat</Badge>
+                      )}
+                    </div>
+                    {directionalStatus.outbound?.completed_at && (
+                      <div className="text-[11px] text-muted-foreground">
+                        Utolsó szinkron: {new Date(directionalStatus.outbound.completed_at).toLocaleString('hu-HU')}
+                        {typeof directionalStatus.outbound.invoices_fetched === 'number' && ` (${directionalStatus.outbound.invoices_fetched} számla)`}
+                      </div>
+                    )}
+                    {directionalStatus.outbound?.error_message && (
+                      <div className="text-[11px] text-red-600 dark:text-red-400 bg-red-100/50 dark:bg-red-900/30 p-1.5 rounded font-mono break-words">
+                        {directionalStatus.outbound.error_message}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Bejövő számlák (INBOUND) */}
+                  <div className={`p-3 rounded-lg border text-xs flex flex-col justify-between space-y-2 ${
+                    inboundFailed 
+                      ? 'bg-red-100/50 dark:bg-red-950/40 border-red-200 dark:border-red-900/50' 
+                      : inboundStatus === 'completed'
+                      ? 'bg-green-100/40 dark:bg-green-950/20 border-green-200 dark:border-green-900/50'
+                      : 'bg-background/80 border-border'
+                  }`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <ArrowDownLeft className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
+                        <span>Bejövő számlák (INBOUND)</span>
+                      </div>
+                      {inboundFailed ? (
+                        <Badge variant="destructive" className="text-[11px] px-2 py-0.5">Sikertelen</Badge>
+                      ) : inboundStatus === 'completed' ? (
+                        <Badge className="bg-green-600 hover:bg-green-700 text-white text-[11px] px-2 py-0.5">Aktív / Sikeres</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[11px] px-2 py-0.5">Nincs adat</Badge>
+                      )}
+                    </div>
+                    {directionalStatus.inbound?.completed_at && (
+                      <div className="text-[11px] text-muted-foreground">
+                        Utolsó szinkron: {new Date(directionalStatus.inbound.completed_at).toLocaleString('hu-HU')}
+                        {typeof directionalStatus.inbound.invoices_fetched === 'number' && ` (${directionalStatus.inbound.invoices_fetched} számla)`}
+                      </div>
+                    )}
+                    {directionalStatus.inbound?.error_message && (
+                      <div className="text-[11px] text-red-600 dark:text-red-400 bg-red-100/50 dark:bg-red-900/30 p-1.5 rounded font-mono break-words">
+                        {directionalStatus.inbound.error_message}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Bejövő számla jogosultsági figyelmeztetés ha hibára fut */}
+                {inboundFailed && (
+                  <Alert className="mt-2 bg-amber-500/10 text-amber-900 dark:text-amber-300 border-amber-300/40">
+                    <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <div>
+                      <AlertTitle className="font-semibold text-sm">
+                        Bejövő számlák szinkronizálása sikertelen
+                      </AlertTitle>
+                      <AlertDescription className="text-xs space-y-1 mt-1 leading-relaxed">
+                        <p>
+                          {directionalStatus.inbound?.error_message?.toLowerCase().includes('forbidden') ||
+                           directionalStatus.inbound?.error_message?.toLowerCase().includes('403') ||
+                           directionalStatus.inbound?.error_message?.toLowerCase().includes('jogosult') ? (
+                            <span>A NAV Online Számla felületén a technikai felhasználó számára <strong>nincs engedélyezve a „Számlák lekérdezése” jogosultság</strong> (HTTP 403 Forbidden).</span>
+                          ) : (
+                            <span>Hiba: {directionalStatus.inbound?.error_message}</span>
+                          )}
+                        </p>
+                        <p className="font-medium text-amber-800 dark:text-amber-200">
+                          Megoldás: Lépj be a nav.gov.hu Online Számla felületre az Elsődleges felhasználóval, nyisd meg a Technikai felhasználók listáját, kattints a felhasználóra, és engedélyezd a „Számlák lekérdezése” opciót!
+                        </p>
+                      </AlertDescription>
+                    </div>
+                  </Alert>
+                )}
 
                 {isGroupVatMember(companyTaxNumber) && (
                   <Alert className="mt-3 bg-amber-500/10 text-amber-900 dark:text-amber-300 border-amber-300/40">
@@ -578,6 +784,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
               onClick={handleValidate}
               disabled={validating}
               className="ml-2"
+              title="Hitelesítő adatok újratesztelése"
             >
               <RefreshCw className={`w-4 h-4 ${validating ? 'animate-spin' : ''}`} />
             </Button>
@@ -597,7 +804,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
     );
   }
 
-  // If connection is valid, show only status card and disconnect button
+  // If connection is valid, show status card, manual sync, and disconnect button
   if (credentialInfo?.validation_status === 'valid') {
     return (
       <div className="space-y-6">
@@ -605,12 +812,30 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
         
         {isOwner ? (
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 flex flex-col sm:flex-row gap-3">
+              <Button
+                variant="outline"
+                onClick={handleManualSync}
+                disabled={loading || validating || manualSyncing}
+                className="flex-1"
+              >
+                {manualSyncing ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Szinkronizálás folyamatban...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    NAV számlák szinkronizálása most
+                  </>
+                )}
+              </Button>
               <Button
                 variant="destructive"
                 onClick={handleDisconnect}
-                disabled={loading}
-                className="w-full"
+                disabled={loading || validating || manualSyncing}
+                className="flex-1 sm:flex-initial"
               >
                 {loading ? (
                   <>

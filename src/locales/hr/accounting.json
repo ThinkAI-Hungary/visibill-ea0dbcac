@@ -1085,6 +1085,7 @@
     "banners": {
       "cash_accounting": "Ova tvrtka primjenjuje obračun PDV-a prema naplaćenim naknadama — obveza PDV-a i pravo na odbitak nastaju tek nakon stvarne uplate.",
       "tax_exempt": "Ova tvrtka primjenjuje oslobođenje od PDV-a za male porezne obveznike — nema obveze obračuna ni podnošenja prijave PDV-a.",
+      "tam_exempt": "Ova organizacija obavlja djelatnosti oslobođene PDV-a (čl. 85.–86. Zakona o PDV-u) — PDV na nabave povezane s oslobođenim djelatnostima ne može se odbiti, dok je komercijalna djelatnost oporeziva.",
       "reverse_charge_title": "Provjera prijenosa porezne obveze (Reverse Charge) ({{count}})",
       "reverse_charge_desc": "Sljedeći partneri imaju obračunat PDV, ali naziv ili djelatnost upućuju na sumnju na građevinske/metalurške djelatnosti. Provjerite treba li primijeniti prijenos porezne obveze:",
       "reverse_charge_net": "Neto: {{net}} eFt — PDV: {{vat}} eFt"

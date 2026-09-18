@@ -137,16 +137,26 @@ export default function ClientInvoicesPage() {
       const totalInbound = inboundData?.totalInvoices || 0;
 
       // 3. Webhook/Categorization call (optional)
+      let categorizationWarning = false;
       if (totalOutbound > 0 || totalInbound > 0) {
-        await supabase.functions.invoke('trigger-nav-categorization', {
-          body: {
-            companyId: id,
-            syncType: 'manual'
-          },
-          headers: {
-            Authorization: `Bearer ${session.access_token}`
+        try {
+          const { data: catData, error: catErr } = await supabase.functions.invoke('trigger-nav-categorization', {
+            body: {
+              companyId: id,
+              syncType: 'manual'
+            },
+            headers: {
+              Authorization: `Bearer ${session.access_token}`
+            }
+          });
+          if (catErr || catData?.success === false) {
+            console.warn('Categorization failed or webhook unreachable:', catErr || catData);
+            categorizationWarning = true;
           }
-        }).catch(err => console.error('Categorization webhook failed:', err));
+        } catch (err) {
+          console.error('Categorization webhook failed:', err);
+          categorizationWarning = true;
+        }
       }
 
       // 4. Invalidate caches
@@ -154,10 +164,17 @@ export default function ClientInvoicesPage() {
       queryClient.invalidateQueries({ queryKey: ['navInvoices', id] });
       queryClient.invalidateQueries({ queryKey: ['filteredNavInvoices', id] });
 
-      toast({
-        title: 'Sikeres szinkronizálás',
-        description: `NAV számlák sikeresen importálva: ${totalOutbound} kimenő, ${totalInbound} bejövő.`,
-      });
+      if (categorizationWarning) {
+        toast({
+          title: 'Szinkronizálás befejezve (figyelmeztetéssel)',
+          description: `NAV számlák sikeresen importálva (${totalOutbound} kimenő, ${totalInbound} bejövő), de az automatikus kategorizáló szolgáltatás jelenleg nem érhető el.`,
+        });
+      } else {
+        toast({
+          title: 'Sikeres szinkronizálás',
+          description: `NAV számlák sikeresen importálva: ${totalOutbound} kimenő, ${totalInbound} bejövő.`,
+        });
+      }
 
       setIsNavSyncOpen(false);
     } catch (err: any) {

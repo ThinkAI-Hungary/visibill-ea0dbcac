@@ -57,7 +57,7 @@ const sections = [
   },
   {
     title: '8. Kapcsolat',
-    content: 'Adatvédelmi kérdésekkel kapcsolatban forduljon hozzánk:\n• E-mail: support@eaisybooks.hu\n• Az alkalmazáson belül: Beállítások → Biztonság → GDPR',
+    content: 'Adatvédelmi kérdésekkel kapcsolatban forduljon hozzánk:\n• E-mail: support@visibill.hu\n• Az alkalmazáson belül: Beállítások → Biztonság → GDPR',
   },
 ];
 

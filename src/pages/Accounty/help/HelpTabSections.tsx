@@ -147,9 +147,9 @@ export function HelpOverviewSection({ filteredFaqs, searchActive }: OverviewProp
             Kapcsolat
           </h3>
           <div className="space-y-3">
-            <a href="mailto:info@eaisybooks.hu" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors group">
+            <a href="mailto:support@visibill.hu" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors group">
               <div>
-                <p className="text-sm font-medium text-foreground">info@eaisybooks.hu</p>
+                <p className="text-sm font-medium text-foreground">support@visibill.hu</p>
                 <p className="text-xs text-muted-foreground">Email támogatás</p>
               </div>
             </a>

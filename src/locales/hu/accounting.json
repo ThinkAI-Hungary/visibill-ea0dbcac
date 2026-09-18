@@ -1085,6 +1085,7 @@
     "banners": {
       "cash_accounting": "Ez a cég pénzforgalmi ÁFA elszámolást alkalmaz (Áfa tv. XIII/A. fejezet) — az ÁFA fizetési kötelezettség és levonási jog csak a tényleges kifizetéskor keletkezik.",
       "tax_exempt": "Ez a cég alanyi adómentességet alkalmaz (Áfa tv. XIII. fejezet) — ÁFA felszámítási és bevallási kötelezettség nem áll fenn.",
+      "tam_exempt": "Ez a szervezet tárgyi adómentes tevékenységet végez (Áfa tv. 85–86. §) — a mentes tevékenységhez kapcsolódó beszerzések ÁFA-ja nem vonható le, az esetleges gazdasági/kereskedelmi tevékenység adóköteles.",
       "reverse_charge_title": "Fordított adózás (Reverse Charge) ellenőrzés ({{count}})",
       "reverse_charge_desc": "Az alábbi partnereknél felszámított ÁFA szerepel, de a cég/partner neve vagy tevékenysége alapján építőipari/fémkereskedelmi tevékenység gyanúja merül fel. Ellenőrizd, hogy nem fordított adózást (Áfa tv. 142. §) kellene-e alkalmazni:",
       "reverse_charge_net": "Nettó: {{net}} eFt — ÁFA: {{vat}} eFt"

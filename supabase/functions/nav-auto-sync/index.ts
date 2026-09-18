@@ -6,6 +6,51 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+async function calculateDynamicDateFrom(
+  supabase: any,
+  companyId: string,
+  direction: 'OUTBOUND' | 'INBOUND',
+  requestedDateFrom?: string
+): Promise<string> {
+  if (requestedDateFrom) return requestedDateFrom;
+
+  const now = new Date();
+  const maxLookbackDate = new Date(now);
+  maxLookbackDate.setDate(maxLookbackDate.getDate() - 365); // maximum 365 days lookback
+
+  const defaultLookbackDate = new Date(now);
+  defaultLookbackDate.setDate(defaultLookbackDate.getDate() - 90); // default 90 days
+
+  try {
+    const { data: lastSuccessLog, error } = await supabase
+      .from('nav_sync_logs')
+      .select('date_to, completed_at, created_at')
+      .eq('company_id', companyId)
+      .eq('invoice_direction', direction)
+      .eq('status', 'completed')
+      .order('completed_at', { ascending: false, nullsFirst: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!error && lastSuccessLog) {
+      const rawDate = lastSuccessLog.date_to || lastSuccessLog.completed_at || lastSuccessLog.created_at;
+      if (rawDate) {
+        const lastDate = new Date(rawDate);
+        if (!isNaN(lastDate.getTime())) {
+          // Safety overlap of 2 days to capture any invoices arriving later on the sync date
+          lastDate.setDate(lastDate.getDate() - 2);
+          const effectiveDate = lastDate < maxLookbackDate ? maxLookbackDate : lastDate;
+          return effectiveDate.toISOString().split('T')[0];
+        }
+      }
+    }
+  } catch (err) {
+    console.warn(`[NAV-AUTO-SYNC] Could not calculate dynamic dateFrom for ${companyId} / ${direction}:`, err);
+  }
+
+  return defaultLookbackDate.toISOString().split('T')[0];
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -77,78 +122,110 @@ Deno.serve(async (req) => {
     };
 
     const dateTo = new Date();
-    const dateFrom = new Date();
-    dateFrom.setDate(dateFrom.getDate() - 90);
     const dateToStr = dateTo.toISOString().split('T')[0];
-    const dateFromStr = dateFrom.toISOString().split('T')[0];
 
     for (const company of activeCompanies) {
       console.log(`[NAV-AUTO-SYNC] Processing company: ${company.company_id} (user: ${company.user_id})`);
 
       try {
-        // Frequency check (skip if already synced recently, unless forceSync is set)
+        // Frequency check: only skip if BOTH OUTBOUND and INBOUND succeeded recently
         if (!detailsOnly && !requestBody.forceSync) {
           const frequency = company.sync_frequency || 'daily';
-          const { data: lastSyncLogs } = await supabase
+          const { data: recentCompletedLogs } = await supabase
             .from('nav_sync_logs')
-            .select('completed_at')
+            .select('invoice_direction, completed_at')
             .eq('company_id', company.company_id)
             .eq('status', 'completed')
             .order('completed_at', { ascending: false })
-            .limit(1);
+            .limit(10);
 
-          if (lastSyncLogs && lastSyncLogs.length > 0 && lastSyncLogs[0].completed_at) {
-            const lastSyncTime = new Date(lastSyncLogs[0].completed_at).getTime();
-            const hoursSinceLastSync = (Date.now() - lastSyncTime) / (1000 * 60 * 60);
+          const lastOutbound = recentCompletedLogs?.find((l: any) => l.invoice_direction === 'OUTBOUND');
+          const lastInbound = recentCompletedLogs?.find((l: any) => l.invoice_direction === 'INBOUND');
 
-            if (frequency === 'daily' && hoursSinceLastSync < 20) {
-              results.details.push({
-                company_id: company.company_id,
-                status: 'skipped',
-                reason: 'daily limit (synced less than 20h ago)'
-              });
-              continue;
-            }
+          const nowMs = Date.now();
+          const outboundHours = lastOutbound?.completed_at ? (nowMs - new Date(lastOutbound.completed_at).getTime()) / (1000 * 60 * 60) : Infinity;
+          const inboundHours = lastInbound?.completed_at ? (nowMs - new Date(lastInbound.completed_at).getTime()) / (1000 * 60 * 60) : Infinity;
 
-            if (frequency === 'weekly' && hoursSinceLastSync < 24 * 6) {
-              results.details.push({
-                company_id: company.company_id,
-                status: 'skipped',
-                reason: 'weekly limit (synced less than 6d ago)'
-              });
-              continue;
-            }
+          const limitHours = frequency === 'weekly' ? 24 * 6 : 20;
+
+          if (outboundHours < limitHours && inboundHours < limitHours) {
+            results.details.push({
+              company_id: company.company_id,
+              status: 'skipped',
+              reason: `${frequency} limit (both directions synced less than ${limitHours}h ago)`
+            });
+            continue;
           }
         }
 
-        // Execute OUTBOUND & INBOUND sync
-        const outboundResult = await ingestionService.executeSync({
-          userId: company.user_id,
-          companyId: company.company_id,
-          direction: 'OUTBOUND',
-          dateFrom: dateFromStr,
-          dateTo: dateToStr,
-          fetchDetailedItems: true,
-          syncType: 'cron'
-        });
+        // Calculate dynamic dateFrom independently per direction (up to 365 days lookback)
+        const outboundDateFromStr = await calculateDynamicDateFrom(supabase, company.company_id, 'OUTBOUND', requestBody.dateFrom);
+        const inboundDateFromStr = await calculateDynamicDateFrom(supabase, company.company_id, 'INBOUND', requestBody.dateFrom);
 
-        const inboundResult = await ingestionService.executeSync({
-          userId: company.user_id,
-          companyId: company.company_id,
-          direction: 'INBOUND',
-          dateFrom: dateFromStr,
-          dateTo: dateToStr,
-          fetchDetailedItems: true,
-          syncType: 'cron'
-        });
+        console.log(`[NAV-AUTO-SYNC] Company ${company.company_id} date ranges - OUTBOUND: ${outboundDateFromStr} to ${dateToStr}, INBOUND: ${inboundDateFromStr} to ${dateToStr}`);
 
-        results.successful++;
-        results.details.push({
-          company_id: company.company_id,
-          status: 'success',
-          outbound_count: outboundResult.totalFetched,
-          inbound_count: inboundResult.totalFetched
-        });
+        // Execute OUTBOUND sync
+        let outboundResult: any = null;
+        let outboundError: any = null;
+        try {
+          outboundResult = await ingestionService.executeSync({
+            userId: company.user_id,
+            companyId: company.company_id,
+            direction: 'OUTBOUND',
+            dateFrom: outboundDateFromStr,
+            dateTo: dateToStr,
+            fetchDetailedItems: true,
+            syncType: 'cron'
+          });
+        } catch (oErr: any) {
+          outboundError = oErr;
+          console.error(`[NAV-AUTO-SYNC] Outbound sync failed for company ${company.company_id}:`, oErr);
+        }
+
+        // Execute INBOUND sync
+        let inboundResult: any = null;
+        let inboundError: any = null;
+        try {
+          inboundResult = await ingestionService.executeSync({
+            userId: company.user_id,
+            companyId: company.company_id,
+            direction: 'INBOUND',
+            dateFrom: inboundDateFromStr,
+            dateTo: dateToStr,
+            fetchDetailedItems: true,
+            syncType: 'cron'
+          });
+        } catch (iErr: any) {
+          inboundError = iErr;
+          console.error(`[NAV-AUTO-SYNC] Inbound sync failed for company ${company.company_id}:`, iErr);
+        }
+
+        if (outboundError && inboundError) {
+          results.failed++;
+          results.details.push({
+            company_id: company.company_id,
+            status: 'error',
+            error: `Both directions failed. Outbound: ${outboundError?.message || outboundError}, Inbound: ${inboundError?.message || inboundError}`
+          });
+        } else if (outboundError || inboundError) {
+          results.successful++; // partial success
+          results.details.push({
+            company_id: company.company_id,
+            status: 'partial',
+            outbound_count: outboundResult?.totalFetched ?? 0,
+            inbound_count: inboundResult?.totalFetched ?? 0,
+            outbound_error: outboundError ? (outboundError.message || String(outboundError)) : null,
+            inbound_error: inboundError ? (inboundError.message || String(inboundError)) : null
+          });
+        } else {
+          results.successful++;
+          results.details.push({
+            company_id: company.company_id,
+            status: 'success',
+            outbound_count: outboundResult?.totalFetched ?? 0,
+            inbound_count: inboundResult?.totalFetched ?? 0
+          });
+        }
 
       } catch (companyErr: any) {
         console.error(`[NAV-AUTO-SYNC] Error syncing company ${company.company_id}:`, companyErr);

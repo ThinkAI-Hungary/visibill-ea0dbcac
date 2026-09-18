@@ -384,6 +384,7 @@ const CompanySelector = () => {
                     <SelectItem value="normal">{t('company_selector.vat_regime_normal')}</SelectItem>
                     <SelectItem value="penzforgalmi">{t('company_selector.vat_regime_cash')}</SelectItem>
                     <SelectItem value="alanyi_mentes">{t('company_selector.vat_regime_exempt')}</SelectItem>
+                    <SelectItem value="targyi_mentes">{t('company_selector.vat_regime_targyi')}</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">{t('company_selector.vat_regime_hint')}</p>

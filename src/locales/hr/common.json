@@ -88,6 +88,7 @@
     "vat_regime_normal": "Redoviti sustav PDV-a",
     "vat_regime_cash": "Prema naplaćenim naknadama",
     "vat_regime_exempt": "Mali porezni obveznik (oslobođeno)",
+    "vat_regime_targyi": "Predmetno oslobođenje (TAM)",
     "vat_regime_hint": "Ova postavka vrijedi za poreznu godinu. Može se naknadno promijeniti u postavkama tvrtke.",
     "create_button": "Izradi tvrtku",
     "creating": "Izrada...",

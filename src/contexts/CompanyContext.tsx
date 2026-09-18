@@ -7,7 +7,7 @@ import { queryKeys } from '@/lib/queryKeys';
 import { safeStorage } from '@/lib/storage';
 import { reportError } from '@/lib/errorReporter';
 
-export type VatRegime = 'normal' | 'penzforgalmi' | 'alanyi_mentes';
+export type VatRegime = 'normal' | 'penzforgalmi' | 'alanyi_mentes' | 'targyi_mentes';
 
 export interface Company {
   id: string;

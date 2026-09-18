@@ -290,6 +290,16 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
         </div>
       )}
 
+      {/* Tárgyi adómentes banner (TAM / Áfa tv. 85-86. §) */}
+      {selectedCompany?.vat_regime === 'targyi_mentes' && (
+        <div className="flex items-center gap-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-4 py-2.5 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          <span className="text-sm font-medium">
+            {t('accounting:vat_return.banners.tam_exempt', 'Ez a szervezet tárgyi adómentes tevékenységet végez (Áfa tv. 85–86. §) — a mentes tevékenységhez kapcsolódó beszerzések ÁFA-ja nem vonható le, az esetleges gazdasági/kereskedelmi tevékenység adóköteles.')}
+          </span>
+        </div>
+      )}
+
       {/* Reverse-Charge Auditing Warnings */}
       {reverseChargeSuspiciousInvoices.length > 0 && (
         <Card className="border-amber-500/30 bg-amber-500/5 print:hidden rounded-xl">
