@@ -102,6 +102,7 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
     a60Calculations,
     partnerValidations,
     reverseChargeSuspiciousInvoices,
+    calculate,
     validateReturn,
     finalizeReturn,
     reopenReturn,
@@ -773,37 +774,30 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                                   <Pencil className="w-3 h-3" />
                                 </button>
                               )}
-                              {line && !isSummary && (
-                                line.is_calculated ? (
-                                  <span className="shrink-0 inline-flex items-center px-1 py-0.5 rounded text-[9px] font-medium bg-muted/50 text-muted-foreground/60">
-                                    ⚡ auto
+                              {line && !isSummary && line.is_calculated === false && (
+                                <div className="inline-flex items-center gap-1 shrink-0">
+                                  <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                                    ✏️ kézi
                                   </span>
-                                ) : (
-                                  <div className="inline-flex items-center gap-1 shrink-0">
-                                    <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20">
-                                      ✏️ kézi
-                                    </span>
-                                    <button
-                                      type="button"
-                                      className="text-[9px] text-muted-foreground/60 hover:text-destructive underline"
-                                      onClick={async (e) => {
-                                        e.stopPropagation();
-                                        if (vatReturn?.id) {
-                                          await supabase
-                                            .from('vat_return_lines')
-                                            .delete()
-                                            .eq('vat_return_id', vatReturn.id)
-                                            .eq('row_number', row.row_number);
-                                          qc.invalidateQueries({ queryKey: ['vat_return_lines'] });
-                                          qc.invalidateQueries({ queryKey: ['vat_return'] });
-                                        }
-                                      }}
-                                      title="Kézi felülbírálás törlése és automata újraszámítás"
-                                    >
-                                      visszaállítás
-                                    </button>
-                                  </div>
-                                )
+                                  <button
+                                    type="button"
+                                    className="text-[9px] text-muted-foreground/60 hover:text-destructive underline"
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      if (vatReturn?.id) {
+                                        await supabase
+                                          .from('vat_return_lines')
+                                          .update({ is_calculated: true })
+                                          .eq('vat_return_id', vatReturn.id)
+                                          .eq('row_number', row.row_number);
+                                        calculate.mutate();
+                                      }
+                                    }}
+                                    title="Kézi felülbírálás törlése és automata újraszámítás"
+                                  >
+                                    visszaállítás
+                                  </button>
+                                </div>
                               )}
                             </div>
                             {row.has_base && (
