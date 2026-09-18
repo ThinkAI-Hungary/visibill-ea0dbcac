@@ -61,7 +61,11 @@ import {
   Terminal,
   FileCode2,
   BookOpen,
+  Play,
+  Sparkles,
+  ExternalLink,
 } from 'lucide-react';
+import { ApiDocsExplorer, ApiDocsView } from './ApiDocsExplorer';
 
 interface ApiKeyItem {
   id: string;
@@ -90,6 +94,7 @@ export function ApiKeysCard() {
 
   const [revokeTarget, setRevokeTarget] = useState<ApiKeyItem | null>(null);
   const [showCurlExample, setShowCurlExample] = useState(false);
+  const [showDocsExplorer, setShowDocsExplorer] = useState(false);
 
   // Fetch API keys
   const { data: apiKeys = [], isLoading, isError, refetch } = useQuery<ApiKeyItem[]>({
@@ -217,9 +222,18 @@ export function ApiKeysCard() {
             Biztonságos REST API hozzáférés külső rendszerek, ERP-k és szkriptek integrációjához.
           </CardDescription>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button
-            variant="outline"
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowDocsExplorer(true)}
+            className="text-xs gap-1.5 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            Élő Végpont Tesztelő
+          </Button>
+          <Button
+            variant={showCurlExample ? 'secondary' : 'outline'}
             size="sm"
             onClick={() => setShowCurlExample(!showCurlExample)}
             className="text-xs gap-1.5"
@@ -235,129 +249,14 @@ export function ApiKeysCard() {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Quick Docs Banner */}
+        {/* Full API Documentation & Explorer (Inline) */}
         {showCurlExample && (
           <div className="rounded-lg border border-primary/20 bg-card p-4 space-y-3 text-xs shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-border/50">
-              <div className="flex items-center gap-2">
-                <FileCode2 className="h-4 w-4 text-primary shrink-0" />
-                <span className="font-semibold text-foreground">Hivatalos Ügyfél REST API v1</span>
-                <Badge variant="outline" className="text-[10px] text-primary border-primary/30">RESTful JSON</Badge>
-              </div>
-              <div className="text-[11px] text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded select-all">
-                Base URL: https://vxxgvdlqvvchtlmqnrqf.supabase.co/functions/v1/customer-api
-              </div>
-            </div>
-
-            <p className="text-muted-foreground text-[11px]">
-              Hitelesítés: Küldd el a generált kulcsodat minden kérésnél a <code className="text-foreground font-semibold">Authorization: Bearer vb_...</code> HTTP fejlécben.
-              A kérések sebességkorlátja: <strong>120 kérés / perc</strong>.
-            </p>
-
-            <Tabs defaultValue="invoices" className="w-full pt-1">
-              <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full h-8 text-[11px]">
-                <TabsTrigger value="invoices" className="text-xs">Számlák</TabsTrigger>
-                <TabsTrigger value="partners" className="text-xs">Partnerek & Bank</TabsTrigger>
-                <TabsTrigger value="ledger" className="text-xs">Főkönyv & Riportok</TabsTrigger>
-                <TabsTrigger value="companies" className="text-xs">Cégek & Profil</TabsTrigger>
-              </TabsList>
-
-              {/* Invoices Tab */}
-              <TabsContent value="invoices" className="mt-3 space-y-2">
-                <p className="text-[11px] text-muted-foreground">
-                  Számlák lekérdezése tételekkel, szűrés bejövő/kimenő irányra, fizetettségi állapotra, új számla felvitele (vagy PDF csatolmány feltöltése).
-                </p>
-                <pre className="bg-zinc-950 text-zinc-100 p-3 rounded font-mono text-[11px] overflow-x-auto select-all leading-relaxed">
-{`# 1. Számlák listázása (bejövő, kifizetetlen, tételekkel együtt):
-curl -H "Authorization: Bearer <API_KEY>" \\
-     "https://vxxgvdlqvvchtlmqnrqf.supabase.co/functions/v1/customer-api/v1/invoices?direction=inbound&status=unpaid&include_items=true&limit=25"
-
-# 2. Számla státusz / fizetettség módosítása:
-curl -X PATCH -H "Authorization: Bearer <API_KEY>" -H "Content-Type: application/json" \\
-     -d '{"status": "PAID", "comment": "Banki kivonat alapján rendezve"}' \\
-     "https://vxxgvdlqvvchtlmqnrqf.supabase.co/functions/v1/customer-api/v1/invoices/<INVOICE_ID>"
-
-# 3. Új bejövő számla beküldése (opcionális base64 PDF melléklettel):
-curl -X POST -H "Authorization: Bearer <API_KEY>" -H "Content-Type: application/json" \\
-     -d '{
-       "direction": "inbound",
-       "invoice_number": "INV-2026-001",
-       "partner_name": "Dropbox International",
-       "issue_date": "2026-08-23",
-       "due_date": "2026-09-05",
-       "gross_amount": 15.74,
-       "currency": "EUR",
-       "items": [
-         {"description": "Dropbox Plus előfizetés", "net_amount": 15.74, "vat_rate": 0, "gross_amount": 15.74}
-       ]
-     }' \\
-     "https://vxxgvdlqvvchtlmqnrqf.supabase.co/functions/v1/customer-api/v1/invoices"`}
-                </pre>
-              </TabsContent>
-
-              {/* Partners & Bank Tab */}
-              <TabsContent value="partners" className="mt-3 space-y-2">
-                <p className="text-[11px] text-muted-foreground">
-                  Partnerek kezelése, banki tranzakciók lekérdezése és számlával való automatikus vagy manuális párosítása.
-                </p>
-                <pre className="bg-zinc-950 text-zinc-100 p-3 rounded font-mono text-[11px] overflow-x-auto select-all leading-relaxed">
-{`# 1. Partnerek listázása:
-curl -H "Authorization: Bearer <API_KEY>" \\
-     "https://vxxgvdlqvvchtlmqnrqf.supabase.co/functions/v1/customer-api/v1/partners?search=Dropbox"
-
-# 2. Új partner létrehozása:
-curl -X POST -H "Authorization: Bearer <API_KEY>" -H "Content-Type: application/json" \\
-     -d '{"name": "Dropbox International", "tax_number": "IE9852882W", "partner_type": "supplier", "email": "billing@dropbox.com"}' \\
-     "https://vxxgvdlqvvchtlmqnrqf.supabase.co/functions/v1/customer-api/v1/partners"
-
-# 3. Banki tranzakciók lekérése:
-curl -H "Authorization: Bearer <API_KEY>" \\
-     "https://vxxgvdlqvvchtlmqnrqf.supabase.co/functions/v1/customer-api/v1/transactions?unmatched_only=true"
-
-# 4. Banki tranzakció párosítása számlával:
-curl -X POST -H "Authorization: Bearer <API_KEY>" -H "Content-Type: application/json" \\
-     -d '{"invoice_id": "<INVOICE_ID>"}' \\
-     "https://vxxgvdlqvvchtlmqnrqf.supabase.co/functions/v1/customer-api/v1/transactions/<TRANSACTION_ID>/match"`}
-                </pre>
-              </TabsContent>
-
-              {/* Ledger & Reports Tab */}
-              <TabsContent value="ledger" className="mt-3 space-y-2">
-                <p className="text-[11px] text-muted-foreground">
-                  Kettős könyvviteli főkönyvi napló ERP rendszerekhez, valamint aggregált ÁFA- és Eredménykimutatás adatok.
-                </p>
-                <pre className="bg-zinc-950 text-zinc-100 p-3 rounded font-mono text-[11px] overflow-x-auto select-all leading-relaxed">
-{`# 1. Főkönyvi napló és könyvelési tételek (ERP szinkronhoz):
-curl -H "Authorization: Bearer <API_KEY>" \\
-     "https://vxxgvdlqvvchtlmqnrqf.supabase.co/functions/v1/customer-api/v1/ledger?period=2026-08"
-
-# 2. ÁFA kimutatás és kalkulációk lekérdezése:
-curl -H "Authorization: Bearer <API_KEY>" \\
-     "https://vxxgvdlqvvchtlmqnrqf.supabase.co/functions/v1/customer-api/v1/reports/vat?year=2026&period_type=monthly"
-
-# 3. Eredménykimutatás (P&L - bevételek, költségek, árrés):
-curl -H "Authorization: Bearer <API_KEY>" \\
-     "https://vxxgvdlqvvchtlmqnrqf.supabase.co/functions/v1/customer-api/v1/reports/pnl?year=2026"`}
-                </pre>
-              </TabsContent>
-
-              {/* Companies & Profile Tab */}
-              <TabsContent value="companies" className="mt-3 space-y-2">
-                <p className="text-[11px] text-muted-foreground">
-                  Elérhető cégek lekérdezése és cégprofil adatok módosítása (retrokompatibilis action paraméterekkel is).
-                </p>
-                <pre className="bg-zinc-950 text-zinc-100 p-3 rounded font-mono text-[11px] overflow-x-auto select-all leading-relaxed">
-{`# 1. Elérhető cégek lekérdezése:
-curl -H "Authorization: Bearer <API_KEY>" \\
-     "https://vxxgvdlqvvchtlmqnrqf.supabase.co/functions/v1/customer-api/v1/companies"
-
-# 2. Cégprofil módosítása:
-curl -X PATCH -H "Authorization: Bearer <API_KEY>" -H "Content-Type: application/json" \\
-     -d '{"description": "Új leírás", "primary_teaor": "9329"}' \\
-     "https://vxxgvdlqvvchtlmqnrqf.supabase.co/functions/v1/customer-api/v1/companies/<COMPANY_ID>"`}
-                </pre>
-              </TabsContent>
-            </Tabs>
+            <ApiDocsView
+              defaultApiKey={generatedKey || (apiKeys.length > 0 ? 'vb_...' : '')}
+              isInline={true}
+              onMaximize={() => setShowDocsExplorer(true)}
+            />
           </div>
         )}
 
@@ -620,6 +519,13 @@ curl -X PATCH -H "Authorization: Bearer <API_KEY>" -H "Content-Type: application
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── Modal: Comprehensive API Documentation & Interactive Live Tester ── */}
+      <ApiDocsExplorer
+        open={showDocsExplorer}
+        onOpenChange={setShowDocsExplorer}
+        defaultApiKey={generatedKey || ''}
+      />
     </Card>
   );
 }
