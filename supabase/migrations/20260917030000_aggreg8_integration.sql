@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS public.aggreg8_settings (
 ALTER TABLE public.aggreg8_settings ENABLE ROW LEVEL SECURITY;
 
 -- Only service role can access settings by default
+DROP POLICY IF EXISTS "Service role full access on aggreg8_settings" ON public.aggreg8_settings;
 CREATE POLICY "Service role full access on aggreg8_settings"
   ON public.aggreg8_settings
   FOR ALL
@@ -48,6 +49,7 @@ CREATE INDEX IF NOT EXISTS idx_aggreg8_consents_status ON public.aggreg8_consent
 
 ALTER TABLE public.aggreg8_consents ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Company members can view aggreg8 consents" ON public.aggreg8_consents;
 CREATE POLICY "Company members can view aggreg8 consents"
   ON public.aggreg8_consents
   FOR SELECT
@@ -59,6 +61,7 @@ CREATE POLICY "Company members can view aggreg8 consents"
     )
   );
 
+DROP POLICY IF EXISTS "Company managers can manage aggreg8 consents" ON public.aggreg8_consents;
 CREATE POLICY "Company managers can manage aggreg8 consents"
   ON public.aggreg8_consents
   FOR ALL
@@ -104,6 +107,7 @@ CREATE INDEX IF NOT EXISTS idx_aggreg8_accounts_a8_id ON public.aggreg8_accounts
 
 ALTER TABLE public.aggreg8_accounts ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Company members can view aggreg8 accounts" ON public.aggreg8_accounts;
 CREATE POLICY "Company members can view aggreg8 accounts"
   ON public.aggreg8_accounts
   FOR SELECT
@@ -115,6 +119,7 @@ CREATE POLICY "Company members can view aggreg8 accounts"
     )
   );
 
+DROP POLICY IF EXISTS "Company managers can manage aggreg8 accounts" ON public.aggreg8_accounts;
 CREATE POLICY "Company managers can manage aggreg8 accounts"
   ON public.aggreg8_accounts
   FOR ALL
@@ -154,6 +159,7 @@ CREATE INDEX IF NOT EXISTS idx_aggreg8_webhook_logs_isc_id ON public.aggreg8_web
 
 ALTER TABLE public.aggreg8_webhook_logs ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Service role full access on aggreg8_webhook_logs" ON public.aggreg8_webhook_logs;
 CREATE POLICY "Service role full access on aggreg8_webhook_logs"
   ON public.aggreg8_webhook_logs
   FOR ALL
@@ -183,16 +189,19 @@ CREATE INDEX IF NOT EXISTS idx_bank_transactions_a8_id
   ON public.bank_transactions(a8_transaction_id);
 
 -- 6. Updated at triggers
+DROP TRIGGER IF EXISTS update_aggreg8_settings_updated_at ON public.aggreg8_settings;
 CREATE TRIGGER update_aggreg8_settings_updated_at
   BEFORE UPDATE ON public.aggreg8_settings
   FOR EACH ROW
   EXECUTE FUNCTION public.update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_aggreg8_consents_updated_at ON public.aggreg8_consents;
 CREATE TRIGGER update_aggreg8_consents_updated_at
   BEFORE UPDATE ON public.aggreg8_consents
   FOR EACH ROW
   EXECUTE FUNCTION public.update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_aggreg8_accounts_updated_at ON public.aggreg8_accounts;
 CREATE TRIGGER update_aggreg8_accounts_updated_at
   BEFORE UPDATE ON public.aggreg8_accounts
   FOR EACH ROW

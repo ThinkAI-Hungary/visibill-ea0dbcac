@@ -25,6 +25,7 @@ WHERE bt.a8_account_id = aa.a8_account_id
   AND bt.company_id IS NULL;
 
 -- 3. Company member RLS for bank_transactions when company_id is present
+DROP POLICY IF EXISTS "Company members can view company bank_transactions" ON public.bank_transactions;
 CREATE POLICY "Company members can view company bank_transactions"
   ON public.bank_transactions
   FOR SELECT
@@ -35,3 +36,4 @@ CREATE POLICY "Company members can view company bank_transactions"
         AND company_members.user_id = auth.uid()
     )
   );
+

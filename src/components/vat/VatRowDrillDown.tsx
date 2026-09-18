@@ -182,10 +182,13 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
       else if (rowNumber === '03') { directions = ['OUTBOUND']; vatPercents = [5]; }
       else if (rowNumber === '05') { directions = ['OUTBOUND']; vatPercents = [18]; }
       else if (rowNumber === '07') { directions = ['OUTBOUND']; vatPercents = [27]; }
+      else if (rowNumber === '45') { directions = ['OUTBOUND']; vatPercents = [27, 18, 5]; }
       else if (rowNumber === '18' || rowNumber === '27') { directions = ['INBOUND']; vatPercents = [27]; }
       else if (rowNumber === '64') { directions = ['INBOUND']; vatPercents = [5]; }
       else if (rowNumber === '65') { directions = ['INBOUND']; vatPercents = [18]; }
-      else if (rowNumber === '66' || rowNumber === '67') { directions = ['INBOUND']; vatPercents = [27]; }
+      else if (rowNumber === '66') { directions = ['INBOUND']; vatPercents = [27]; }
+      else if (rowNumber === '67') { directions = ['INBOUND']; vatPercents = [27]; }
+      else if (rowNumber === '77') { directions = ['INBOUND']; vatPercents = [27, 18, 5]; }
       else if (rowNumber === '91' || rowNumber === '92') { directions = ['OUTBOUND']; vatPercents = [0]; }
 
       // 2. If rowNumber not recognized, match via vat_codes or sourceVatCodes
@@ -205,7 +208,7 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
           if (has27) vatPercents.push(27);
           if (has18) vatPercents.push(18);
           if (has5) vatPercents.push(5);
-          const isInbound = codes.some(s => s.startsWith('BE_')) || (rowNumber && ['64','65','66','67'].includes(rowNumber));
+          const isInbound = codes.some(s => s.startsWith('BE_')) || (rowNumber && ['64','65','66','67','77'].includes(rowNumber));
           directions = [isInbound ? 'INBOUND' : 'OUTBOUND'];
         }
       }
@@ -221,11 +224,33 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
         else if (Number(pct) === 0) rateFilters.push('0', '0.0', '0.00', '0%', 'TAM', 'AAM', 'DOMESTIC_REVERSE_CHARGE');
       }
 
+      // Fetch advance and tangible asset references from invoices table if row 45 or 77
+      const advanceNumbers = new Set<string>();
+      const tangibleNumbers = new Set<string>();
+      if (rowNumber === '45' || rowNumber === '77') {
+        const { data: appInvs } = await supabase
+          .from('invoices')
+          .select('bizonylatsorszam, invoice_type, invoice_items(line_description, gl_classifications)')
+          .eq('company_id', companyId);
+        (appInvs || []).forEach((inv: any) => {
+          const isAdv = inv.invoice_type === 'elolegszamla' || 
+            (inv.invoice_items || []).some((ii: any) => 
+              (ii.line_description && ii.line_description.toLowerCase().includes('előleg')) ||
+              (ii.gl_classifications && JSON.stringify(ii.gl_classifications).includes('"gl_number": "453'))
+            );
+          const isTan = (inv.invoice_items || []).some((ii: any) =>
+            ii.gl_classifications && /"gl_number":\s*"1[0-9]{2}/.test(JSON.stringify(ii.gl_classifications))
+          );
+          if (isAdv && inv.bizonylatsorszam) advanceNumbers.add(inv.bizonylatsorszam);
+          if (isTan && inv.bizonylatsorszam) tangibleNumbers.add(inv.bizonylatsorszam);
+        });
+      }
+
       // Query nav_invoices with left join on items
       let query = supabase
         .from('nav_invoices')
         .select(`
-          id, invoice_number, supplier_name, customer_name, invoice_direction,
+          id, invoice_number, supplier_name, customer_name, supplier_tax_number, customer_tax_number, invoice_direction,
           invoice_delivery_date, currency, invoice_net_amount, invoice_vat_amount,
           nav_invoice_items(id, line_number, line_description, net_amount, vat_amount, vat_rate, quantity, unit_price, deductible_percentage)
         `)
@@ -240,6 +265,20 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
 
       // Filter in memory to match either item vat_rates or header-level rates if items aren't fetched yet
       return (data || []).filter((inv: any) => {
+        const suppTax = (inv.supplier_tax_number || '').trim().toUpperCase();
+        const isEuSupplier = /^[A-Z]{2}/.test(suppTax) && !suppTax.startsWith('HU');
+        const isForeign = isEuSupplier || (inv.currency && inv.currency !== 'HUF') || (suppTax !== '' && !suppTax.startsWith('HU') && !suppTax.includes('-') && !/^[0-9]{8}$/.test(suppTax));
+
+        if (rowNumber === '66' && isForeign) return false;
+        if (rowNumber === '67' && !isForeign) return false;
+        if (rowNumber === '45') {
+          const hasAdvItem = (inv.nav_invoice_items || []).some((it: any) => (it.line_description || '').toLowerCase().includes('előleg'));
+          if (!hasAdvItem && !advanceNumbers.has(inv.invoice_number)) return false;
+        }
+        if (rowNumber === '77') {
+          if (!tangibleNumbers.has(inv.invoice_number)) return false;
+        }
+
         const items = inv.nav_invoice_items || [];
         if (items.length > 0) {
           return items.some((it: any) => rateFilters.includes(String(it.vat_rate)));
