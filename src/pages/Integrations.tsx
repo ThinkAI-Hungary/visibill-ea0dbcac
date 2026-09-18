@@ -9,6 +9,7 @@ import EmailAliasManager from '@/components/EmailAliasManager';
 import EmailSettingsForm from '@/components/integrations/EmailSettingsForm';
 import NavCredentialsForm from '@/components/nav/NavCredentialsForm';
 import SzamlazzAgentForm from '@/components/integrations/SzamlazzAgentForm';
+import { ApiKeysCard } from '@/components/settings/ApiKeysCard';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
@@ -544,6 +545,9 @@ const Integrations = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* ── ROW 4: Hivatalos REST API & Programozói Hozzáférés ── */}
+        <ApiKeysCard />
       </div>
     </TooltipProvider>
   );
