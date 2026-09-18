@@ -25,4 +25,27 @@ describe('DatePicker', () => {
     fireEvent.click(trigger);
     expect(document.querySelector('.rdp')).toBeInTheDocument();
   });
+
+  it('supports direct text typing when allowInput is true', () => {
+    const handleChange = vi.fn();
+    render(<DatePicker value="2026-05-31" allowInput={true} onChange={handleChange} />);
+    const input = screen.getByRole('textbox');
+    expect(input).toHaveValue('2026-05-31');
+
+    fireEvent.change(input, { target: { value: '2026.06.15' } });
+    fireEvent.blur(input);
+
+    expect(handleChange).toHaveBeenCalledWith('2026-06-15');
+  });
+
+  it('parses Hungarian dot-delimited and 8-digit dates correctly when typed', () => {
+    const handleChange = vi.fn();
+    render(<DatePicker allowInput={true} onChange={handleChange} />);
+    const input = screen.getByRole('textbox');
+
+    fireEvent.change(input, { target: { value: '20260131' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(handleChange).toHaveBeenCalledWith('2026-01-31');
+  });
 });

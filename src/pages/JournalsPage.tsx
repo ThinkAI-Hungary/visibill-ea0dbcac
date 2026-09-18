@@ -37,7 +37,8 @@ import {
   RotateCcw,
   Undo2,
   Download,
-  ExternalLink
+  ExternalLink,
+  Copy
 } from 'lucide-react';
 import { extractStoragePath } from '@/lib/utils';
 import { formatCurrencyLocale, formatNumberLocale } from '@/lib/locale/formatters';
@@ -46,7 +47,7 @@ import AddManualJournalEntryModal from '@/components/journals/AddManualJournalEn
 import OpeningJournalWizardModal from '@/components/journals/OpeningJournalWizardModal';
 import PeriodClosingSettings from '@/components/journals/PeriodClosingSettings';
 import AuditTrailDialog from '@/components/journals/AuditTrailDialog';
-import { getLocalizedJournalName } from '@/lib/journalUtils';
+import { getLocalizedJournalName, getNextDocumentId } from '@/lib/journalUtils';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { generatePettyCashDrafts } from '@/features/journals/services/draftFallbackGenerator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -222,6 +223,7 @@ export default function JournalsPage() {
   const [periodClosingOpen, setPeriodClosingOpen] = useState(false);
   const [auditEntryId, setAuditEntryId] = useState<string | null>(null);
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
+  const [cloneData, setCloneData] = useState<any | null>(null);
 
   // Storno / Correction dialog state
   const [stornoOpen, setStornoOpen] = useState(false);
@@ -436,6 +438,35 @@ export default function JournalsPage() {
     },
     enabled: !!selectedCompany?.id && !!selectedJournalId,
   });
+
+  // Suggested next document ID based on the latest entry
+  const suggestedNextDocumentId = React.useMemo(() => {
+    const docIds = entries
+      .map((e: any) => e.document_id)
+      .filter(Boolean);
+    if (docIds.length > 0) {
+      return getNextDocumentId(docIds[0]);
+    }
+    return '';
+  }, [entries]);
+
+  // Keyboard shortcut: Insert key opens manual entry modal
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Insert' && !manualEntryOpen && !openingWizardOpen && !periodClosingOpen && !bulkDeleteDialogOpen) {
+        const target = e.target as HTMLElement | null;
+        const isInput = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable;
+        if (!isInput) {
+          e.preventDefault();
+          setEditingEntryId(null);
+          setCloneData(null);
+          setManualEntryOpen(true);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [manualEntryOpen, openingWizardOpen, periodClosingOpen, bulkDeleteDialogOpen]);
 
   // Source document query for selected entry (original bank statement PDF or invoice)
   const { data: sourceDocument } = useQuery({
@@ -956,9 +987,10 @@ export default function JournalsPage() {
             <Button
               size="sm"
               className="gap-1.5 shadow-sm"
-              onClick={() => { setEditingEntryId(null); setManualEntryOpen(true); }}
+              onClick={() => { setEditingEntryId(null); setCloneData(null); setManualEntryOpen(true); }}
             >
               <Plus className="w-4 h-4" /> {t('accounting:journals.new_manual_entry', 'Új vegyes bizonylat')}
+              <kbd className="hidden sm:inline-flex ml-1 px-1.5 py-0.5 text-[10px] font-mono rounded bg-primary-foreground/20 text-primary-foreground">Ins</kbd>
             </Button>
           </div>
         }
@@ -1474,6 +1506,21 @@ export default function JournalsPage() {
                                         <CornerDownRight className="w-3.5 h-3.5" />
                                       </Button>
                                     </CustomTooltip>
+                                    <CustomTooltip content={t('accounting:journals.actions.clone_entry', 'Bizonylat klónozása (másolása új tételként)')}>
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="w-6 h-6 text-indigo-600 hover:bg-indigo-500/10 dark:hover:bg-indigo-950/30"
+                                        onClick={() => {
+                                          setEditingEntryId(null);
+                                          setCloneData(e);
+                                          setManualEntryOpen(true);
+                                        }}
+                                        aria-label={t('accounting:journals.actions.clone_entry', 'Bizonylat klónozása')}
+                                      >
+                                        <Copy className="w-3.5 h-3.5" />
+                                      </Button>
+                                    </CustomTooltip>
                                   </>
                                 )}
 
@@ -1496,10 +1543,25 @@ export default function JournalsPage() {
                                         size="icon"
                                         variant="ghost"
                                         className="w-6 h-6 text-primary"
-                                        onClick={() => { setEditingEntryId(e.id); setManualEntryOpen(true); }}
+                                        onClick={() => { setEditingEntryId(e.id); setCloneData(null); setManualEntryOpen(true); }}
                                         aria-label={t('accounting:journals.actions.edit_entry_aria', 'Bizonylat szerkesztése')}
                                       >
                                         <FileSpreadsheet className="w-3.5 h-3.5" />
+                                      </Button>
+                                    </CustomTooltip>
+                                    <CustomTooltip content={t('accounting:journals.actions.clone_entry', 'Bizonylat klónozása (másolása új tételként)')}>
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="w-6 h-6 text-indigo-600 hover:bg-indigo-500/10 dark:hover:bg-indigo-950/30"
+                                        onClick={() => {
+                                          setEditingEntryId(null);
+                                          setCloneData(e);
+                                          setManualEntryOpen(true);
+                                        }}
+                                        aria-label={t('accounting:journals.actions.clone_entry', 'Bizonylat klónozása')}
+                                      >
+                                        <Copy className="w-3.5 h-3.5" />
                                       </Button>
                                     </CustomTooltip>
                                     {e.journal_number ? (
@@ -2101,8 +2163,17 @@ export default function JournalsPage() {
       {/* Modals */}
       <AddManualJournalEntryModal
         open={manualEntryOpen}
-        onOpenChange={setManualEntryOpen}
+        onOpenChange={(isOpen) => {
+          setManualEntryOpen(isOpen);
+          if (!isOpen) {
+            setCloneData(null);
+            setEditingEntryId(null);
+          }
+        }}
         entryId={editingEntryId}
+        cloneData={cloneData}
+        defaultJournalId={selectedJournalId !== 'munkalista' ? selectedJournalId : undefined}
+        suggestedDocumentId={suggestedNextDocumentId}
         onOpenOpeningWizard={() => setOpeningWizardOpen(true)}
       />
 

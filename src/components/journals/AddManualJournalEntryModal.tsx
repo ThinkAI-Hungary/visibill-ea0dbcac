@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2, Loader2, AlertCircle, ChevronsUpDown, Check } from 'lucide-react';
+import { Plus, Trash2, Loader2, AlertCircle, ChevronsUpDown, Check, Sparkles, Copy } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/locale/formatters';
@@ -20,12 +20,15 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { NumberInput } from '@/components/ui/number-input';
 import { CustomTooltip } from '@/components/ui/custom-tooltip';
 import { Badge } from '@/components/ui/badge';
-import { getLocalizedJournalName } from '@/lib/journalUtils';
+import { getLocalizedJournalName, getNextDocumentId, COMMON_JOURNAL_DESCRIPTIONS } from '@/lib/journalUtils';
 
 interface AddManualJournalEntryModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   entryId?: string | null;
+  cloneData?: any | null;
+  defaultJournalId?: string | null;
+  suggestedDocumentId?: string;
   onOpenOpeningWizard?: () => void;
 }
 
@@ -39,7 +42,15 @@ interface JournalLineInput {
   description: string;
 }
 
-export default function AddManualJournalEntryModal({ open, onOpenChange, entryId, onOpenOpeningWizard }: AddManualJournalEntryModalProps) {
+export default function AddManualJournalEntryModal({
+  open,
+  onOpenChange,
+  entryId,
+  cloneData,
+  defaultJournalId,
+  suggestedDocumentId,
+  onOpenOpeningWizard
+}: AddManualJournalEntryModalProps) {
   const { t } = useTranslation(['accounting', 'common']);
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
@@ -79,25 +90,102 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
     enabled: !!selectedCompany?.id,
   });
 
-  // Set default journal to VE (Vegyes) if available (avoid default NY)
+  // Reset / Clone initialization when modal opens
+  const prevOpenRef = useRef(false);
+
   useEffect(() => {
-    if (journals.length > 0 && !journalId && !entryId) {
-      const veJournal = journals.find((j: any) => j.code === 'VE');
-      const defaultJ = veJournal || journals.find((j: any) => j.code !== 'NY') || journals[0];
-      setJournalId(defaultJ.id);
+    if (open && !prevOpenRef.current) {
+      if (cloneData) {
+        // Mode 1: Clone existing entry (prefills lines & fields, generates next doc ID)
+        const cloneJId = cloneData.journal_id || (defaultJournalId && defaultJournalId !== 'munkalista' ? defaultJournalId : '');
+        if (cloneJId) setJournalId(cloneJId);
+        setPostingDate(cloneData.posting_date || new Date().toISOString().substring(0, 10));
+        setDocumentDate(cloneData.document_date || new Date().toISOString().substring(0, 10));
+        setDocumentId(getNextDocumentId(cloneData.document_id) || suggestedDocumentId || '');
+        setPartnerId(cloneData.partner_id || 'none');
+        setDescription(cloneData.description || '');
+        setJustification(cloneData.justification || '');
+        if (cloneData.lines && cloneData.lines.length > 0) {
+          const isForeign = cloneData.currency && cloneData.currency !== 'HUF';
+          const headerRate = Number(cloneData.exchange_rate) || 1;
+          setLines(cloneData.lines.map((l: any) => {
+            let displayAmount = Number(l.amount || 0);
+            let fAmount = l.foreign_amount != null ? Number(l.foreign_amount) : null;
+            if (isForeign) {
+              if (fAmount != null && fAmount > 0) {
+                displayAmount = fAmount;
+              } else if (headerRate > 1 && Number(l.amount) > 0) {
+                displayAmount = Number((Number(l.amount) / headerRate).toFixed(2));
+                fAmount = displayAmount;
+              }
+            }
+            return {
+              gl_account_id: l.gl_account_id || '',
+              dc_type: (l.dc_type === 'K' ? 'K' : 'T') as 'T' | 'K',
+              amount: displayAmount,
+              foreign_amount: fAmount,
+              project_id: l.project_id || null,
+              description: l.description || '',
+            };
+          }));
+        } else {
+          setLines([
+            { gl_account_id: '', dc_type: 'T', amount: 0, project_id: null, description: '' },
+            { gl_account_id: '', dc_type: 'K', amount: 0, project_id: null, description: '' },
+          ]);
+        }
+      } else if (!entryId) {
+        // Mode 2: Fresh new entry -> ALWAYS clean slate reset!
+        let targetJournalId = '';
+        if (defaultJournalId && defaultJournalId !== 'munkalista' && journals.some((j: any) => j.id === defaultJournalId)) {
+          targetJournalId = defaultJournalId;
+        } else if (journals.length > 0) {
+          const veJournal = journals.find((j: any) => j.code === 'VE');
+          const defaultJ = veJournal || journals.find((j: any) => j.code !== 'NY') || journals[0];
+          targetJournalId = defaultJ.id;
+        }
+        if (targetJournalId) setJournalId(targetJournalId);
+
+        setPostingDate(new Date().toISOString().substring(0, 10));
+        setDocumentDate(new Date().toISOString().substring(0, 10));
+        setDocumentId(suggestedDocumentId || '');
+        setPartnerId('none');
+        setDescription('');
+        setJustification('');
+        setLines([
+          { gl_account_id: '', dc_type: 'T', amount: 0, project_id: null, description: '' },
+          { gl_account_id: '', dc_type: 'K', amount: 0, project_id: null, description: '' },
+        ]);
+        setOpenDropdownIndex(null);
+        setSearchQuery('');
+      }
     }
-  }, [journals, journalId, entryId]);
+    prevOpenRef.current = open;
+  }, [open, entryId, cloneData, defaultJournalId, suggestedDocumentId, journals]);
+
+  // Set default journal if lookup resolves after open
+  useEffect(() => {
+    if (journals.length > 0 && !journalId && !entryId && !cloneData) {
+      if (defaultJournalId && defaultJournalId !== 'munkalista' && journals.some((j: any) => j.id === defaultJournalId)) {
+        setJournalId(defaultJournalId);
+      } else {
+        const veJournal = journals.find((j: any) => j.code === 'VE');
+        const defaultJ = veJournal || journals.find((j: any) => j.code !== 'NY') || journals[0];
+        setJournalId(defaultJ.id);
+      }
+    }
+  }, [journals, journalId, entryId, cloneData, defaultJournalId]);
 
   // Automatically launch Opening Wizard only when creating a NEW entry in NY journal (not when editing existing entryId)
   useEffect(() => {
-    if (!entryId && open && journalId && journals.length > 0) {
+    if (!entryId && !cloneData && open && journalId && journals.length > 0) {
       const selectedJ = journals.find((j: any) => j.id === journalId);
       if (selectedJ?.code === 'NY' && onOpenOpeningWizard) {
         onOpenChange(false);
         onOpenOpeningWizard();
       }
     }
-  }, [open, journalId, journals, onOpenOpeningWizard, onOpenChange, entryId]);
+  }, [open, journalId, journals, onOpenOpeningWizard, onOpenChange, entryId, cloneData]);
 
   const { data: glAccounts = [] } = useQuery({
     queryKey: ['gl-accounts-lookup', activePresetId],
@@ -229,25 +317,73 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
   const difference = totalDebit - totalCredit;
   const isBalanced = difference === 0;
 
-  // Add line
-  const handleAddLine = () => {
-    const nextIndex = lines.length;
-    // Intelligent default dc_type:
-    // If Debit > Credit, balance needs Credit ('K')
-    // If Credit > Debit, balance needs Debit ('T')
-    // If balanced, alternate from the last line (if last was 'K', start with 'T', else 'K')
-    let defaultDcType: 'T' | 'K' = 'T';
-    if (totalDebit > totalCredit) {
-      defaultDcType = 'K';
-    } else if (totalCredit > totalDebit) {
-      defaultDcType = 'T';
-    } else if (lines.length > 0) {
-      const lastDcType = lines[lines.length - 1].dc_type;
-      defaultDcType = lastDcType === 'K' ? 'T' : 'K';
-    }
+  // Add line with automatic balancing calculation (Auto-balancing)
+  const handleAddLine = useCallback(() => {
+    setLines(prev => {
+      const nextIndex = prev.length;
+      const currentDebit = prev.reduce((sum, line) => (line.dc_type === 'T' ? sum + Number(line.amount || 0) : sum), 0);
+      const currentCredit = prev.reduce((sum, line) => (line.dc_type === 'K' ? sum + Number(line.amount || 0) : sum), 0);
+      const diff = currentDebit - currentCredit;
 
-    setLines(prev => [...prev, { gl_account_id: '', dc_type: defaultDcType, amount: 0, project_id: null, description: '' }]);
-    setPendingFocusIndex(nextIndex);
+      let defaultDcType: 'T' | 'K' = 'T';
+      let defaultAmount = 0;
+
+      if (diff > 0) {
+        // Debit is larger -> need Credit ('K') of diff
+        defaultDcType = 'K';
+        defaultAmount = diff;
+      } else if (diff < 0) {
+        // Credit is larger -> need Debit ('T') of |diff|
+        defaultDcType = 'T';
+        defaultAmount = Math.abs(diff);
+      } else if (prev.length > 0) {
+        const lastDcType = prev[prev.length - 1].dc_type;
+        defaultDcType = lastDcType === 'K' ? 'T' : 'K';
+        defaultAmount = 0;
+      }
+
+      setPendingFocusIndex(nextIndex);
+      return [
+        ...prev,
+        {
+          gl_account_id: '',
+          dc_type: defaultDcType,
+          amount: defaultAmount,
+          project_id: null,
+          description: '',
+        },
+      ];
+    });
+  }, []);
+
+  // Keyboard shortcut: Insert key inside modal adds a new line
+  useEffect(() => {
+    if (!open) return;
+    const handleModalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Insert') {
+        e.preventDefault();
+        handleAddLine();
+      }
+    };
+    window.addEventListener('keydown', handleModalKeyDown);
+    return () => window.removeEventListener('keydown', handleModalKeyDown);
+  }, [open, handleAddLine]);
+
+  // Update line amount with auto-mirroring for paired entries
+  const handleAmountChange = (index: number, newAmount: number) => {
+    setLines(prev => {
+      const next = [...prev];
+      const oldAmount = next[index].amount;
+      next[index] = { ...next[index], amount: newAmount };
+
+      // Requirement 8: If modifying row 0 and only 2 rows exist, and row 1 is 0 or equal to oldAmount, mirror it
+      if (index === 0 && next.length === 2) {
+        if (next[1].amount === 0 || next[1].amount === oldAmount) {
+          next[1] = { ...next[1], amount: newAmount };
+        }
+      }
+      return next;
+    });
   };
 
   // Focus the newly added row's GL account trigger button and open popover for immediate typing
@@ -468,7 +604,18 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-5xl lg:max-w-6xl w-[95vw] max-h-[88vh] flex flex-col p-6 overflow-hidden">
         <DialogHeader className="shrink-0">
-          <DialogTitle>{entryId ? t('accounting:dialogs.manual_journal.title_edit') : t('accounting:dialogs.manual_journal.title_new')}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            {cloneData ? (
+              <>
+                <Copy className="w-5 h-5 text-primary" />
+                <span>{t('accounting:dialogs.manual_journal.title_clone', 'Bizonylat klónozása (új tételként kerül rögzítésre)')}</span>
+              </>
+            ) : entryId ? (
+              t('accounting:dialogs.manual_journal.title_edit')
+            ) : (
+              t('accounting:dialogs.manual_journal.title_new')
+            )}
+          </DialogTitle>
         </DialogHeader>
 
         {entryId && loadingEntry ? (
@@ -514,6 +661,7 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                   value={documentId}
                   onChange={e => setDocumentId(e.target.value)}
                   placeholder={t('accounting:dialogs.manual_journal.document_id_placeholder')}
+                  autoComplete="off"
                 />
               </div>
 
@@ -600,6 +748,7 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                 <DatePicker
                   id="postingDate"
                   value={postingDate}
+                  allowInput={true}
                   onChange={(val) => setPostingDate(val || new Date().toISOString().substring(0, 10))}
                   placeholder={t('accounting:dialogs.manual_journal.choose_date')}
                 />
@@ -610,18 +759,52 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                 <DatePicker
                   id="documentDate"
                   value={documentDate}
+                  allowInput={true}
                   onChange={(val) => setDocumentDate(val || new Date().toISOString().substring(0, 10))}
                   placeholder={t('accounting:dialogs.manual_journal.choose_date')}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="description">{t('accounting:dialogs.manual_journal.description')}</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="description">{t('accounting:dialogs.manual_journal.description')}</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-5 px-1.5 text-[11px] text-primary hover:bg-primary/10 gap-1"
+                      >
+                        <Sparkles className="w-3 h-3" /> Sablonok
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-60 p-1.5 z-[1200]" align="end">
+                      <div className="text-[11px] font-semibold text-muted-foreground px-2 py-1">Gyakori jogcímek</div>
+                      <div className="space-y-0.5">
+                        {COMMON_JOURNAL_DESCRIPTIONS.map((desc) => (
+                          <button
+                            key={desc}
+                            type="button"
+                            className="w-full text-left px-2 py-1 text-xs rounded hover:bg-muted transition-colors truncate"
+                            onClick={() => setDescription(desc)}
+                          >
+                            {desc}
+                          </button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
                 <Input
                   id="description"
                   value={description}
                   onChange={e => setDescription(e.target.value)}
                   placeholder={t('accounting:dialogs.manual_journal.description_placeholder')}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  data-lpignore="true"
                 />
               </div>
 
@@ -632,6 +815,7 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                   value={justification}
                   onChange={e => setJustification(e.target.value)}
                   placeholder={t('accounting:dialogs.manual_journal.justification_placeholder')}
+                  autoComplete="off"
                 />
               </div>
             </div>
@@ -640,8 +824,9 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
             <div className="space-y-2 flex-1 min-h-0 flex flex-col overflow-hidden">
               <div className="flex justify-between items-center shrink-0">
                 <h4 className="text-sm font-semibold text-foreground">{t('accounting:dialogs.manual_journal.items_title')}</h4>
-                <Button type="button" variant="outline" size="sm" onClick={handleAddLine} className="gap-1">
+                <Button type="button" variant="outline" size="sm" onClick={handleAddLine} className="gap-1.5">
                   <Plus className="w-3.5 h-3.5" /> {t('accounting:dialogs.manual_journal.add_row')}
+                  <kbd className="text-[10px] font-mono px-1 py-0.2 rounded bg-muted text-muted-foreground border">Ins</kbd>
                 </Button>
               </div>
 
@@ -693,6 +878,13 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                                 id={`gl-account-trigger-${index}`}
                                 variant="outline"
                                 role="combobox"
+                                onKeyDown={(e) => {
+                                  if (/^[0-9a-zA-Z]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                                    e.preventDefault();
+                                    setOpenDropdownIndex(index);
+                                    setSearchQuery(e.key);
+                                  }
+                                }}
                                 className="h-8 w-full justify-between font-mono text-xs text-left px-2 border border-input bg-background hover:bg-muted/50 overflow-hidden outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus:border-primary focus-visible:border-primary transition-colors"
                               >
                                 <span className="truncate flex-1 min-w-0">
@@ -800,7 +992,7 @@ export default function AddManualJournalEntryModal({ open, onOpenChange, entryId
                           <NumberInput
                             id={`amount-input-${index}`}
                             value={line.amount || ''}
-                            onChange={e => handleUpdateLine(index, 'amount', Number(e.target.value))}
+                            onChange={e => handleAmountChange(index, Number(e.target.value))}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
                                 e.preventDefault();

@@ -153,3 +153,37 @@ export function getLocalizedJournalName(
 
   return fallback;
 }
+
+/**
+ * Computes the next document identifier by incrementing any trailing numeric sequence.
+ * Examples:
+ * - "2026/005" -> "2026/006"
+ * - "VE-2026-01" -> "VE-2026-02"
+ * - "BÉR/009" -> "BÉR/010"
+ * - "1" -> "2"
+ * - "" or undefined -> ""
+ */
+export function getNextDocumentId(lastId: string | null | undefined): string {
+  if (!lastId) return '';
+  const trimmed = lastId.trim();
+  const match = trimmed.match(/^(.*?)(\d+)$/);
+  if (!match) return trimmed;
+  const prefix = match[1];
+  const numStr = match[2];
+  const nextNum = parseInt(numStr, 10) + 1;
+  const paddedNum = String(nextNum).padStart(numStr.length, '0');
+  return `${prefix}${paddedNum}`;
+}
+
+export const COMMON_JOURNAL_DESCRIPTIONS = [
+  'Bérfeladás',
+  'Bérjárulékok elszámolása',
+  'Év végi zárás / rendezés',
+  'Árfolyam-különbözet elszámolása',
+  'Kerekítési különbözet',
+  'Tárgyi eszköz értékcsökkenés',
+  'Adóátvezetés',
+  'Tagi kölcsön elszámolása',
+  'Késedelmi kamat / kötbér',
+  'Nyitó rendezés',
+];
