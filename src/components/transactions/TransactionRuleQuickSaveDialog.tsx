@@ -53,25 +53,55 @@ export function TransactionRuleQuickSaveDialog({
   useEffect(() => {
     if (transaction?.description) {
       const raw = transaction.description.trim();
-      // Look for keywords: if NAV, MUNKABÉR, SZÉP KÁRTYA, or partner name
       let extracted = raw;
+
       if (/munkabér/i.test(raw)) {
         extracted = 'MUNKABÉR';
       } else if (/szép kártya/i.test(raw)) {
         extracted = 'SZÉP KÁRTYA';
       } else if (/nav/i.test(raw)) {
-        const match = raw.match(/NAV\s+[^,]+/i) || raw.match(/10032000-\d+/);
-        extracted = match ? match[0] : 'NAV';
+        // Prefer exact NAV tax name (e.g. "NAV TB járulék", "NAV SZJA 290", "NAV ÁFA")
+        const match = raw.match(/NAV\s+[^,;\t]+/i) || raw.match(/10032000-\d+(-\d+)?/);
+        extracted = match ? match[0].trim() : 'NAV';
       } else {
-        // Take the first or second segment before comma or take up to 30 chars
+        // Look for Hungarian bank account numbers (e.g. 10032000-..., 11732064-...)
+        const accMatch = raw.match(/\b\d{8}-\d{8}(-\d{8})?\b/);
+
+        // Split by comma / semicolon / tab and clean up
         const parts = raw.split(/[,;\t]/).map(p => p.trim()).filter(Boolean);
-        extracted = parts[1] || parts[0] || raw.substring(0, 30);
+
+        // Filter out bank technical codes and noise
+        const filtered = parts.filter(p => {
+          // Exclude transaction type labels
+          if (/^(napközi|napkozbeni|napközbeni|azonnali|atutalas|átutalás|qvik|giro|bankon belüli|bankon belul)/i.test(p)) return false;
+          // Exclude batch / technical IDs like F.9923, F.3200, MW_12345
+          if (/^F\.\d+/i.test(p)) return false;
+          if (/^MW_/i.test(p)) return false;
+          // Exclude SWIFT BIC codes (e.g. OTPVHUHB, MKKBHUHB)
+          if (/^[A-Z]{4}HU[A-Z0-9]{2,5}$/i.test(p)) return false;
+          // Exclude bank tags like (2.)NOTPROVIDED, (5.)ADÓSZÁM..., (8.)KÖLCSÖN
+          if (/^\(\d+\)/.test(p)) return false;
+          if (/^(notprovided|ámb|amb|credtranid|latestdttm|n)$/i.test(p)) return false;
+          // Exclude tax numbers like 13739830-2-03
+          if (/^\d{8}-\d-\d{2}$/.test(p)) return false;
+          // Exclude raw numeric transaction refs (e.g. 11732064202609149380371, dates 2026.09.14)
+          if (/^\d{15,}$/.test(p)) return false;
+          if (/^\d{4}\.\d{2}\.\d{2}$/.test(p)) return false;
+          // Exclude account number if we want to prefer partner name in parts
+          if (/^\d{8}-\d{8}(-\d{8})?$/.test(p) || /^\d{16,24}$/.test(p)) return false;
+          // Exclude own company name if known
+          if (selectedCompany?.name && p.toLowerCase() === selectedCompany.name.toLowerCase()) return false;
+          return true;
+        });
+
+        // Prefer clean partner name from filtered list, fallback to account number, then first part
+        extracted = filtered[0] || (accMatch ? accMatch[0] : parts[0] || raw.substring(0, 30));
       }
 
       setPattern(extracted);
       setRuleName(`${extracted} -> ${glAccount?.gl_number || ''}`);
     }
-  }, [transaction, glAccount]);
+  }, [transaction, glAccount, selectedCompany?.name]);
 
   const handleSaveRule = async () => {
     if (!transaction || !glAccount || !session?.user?.id) return;
