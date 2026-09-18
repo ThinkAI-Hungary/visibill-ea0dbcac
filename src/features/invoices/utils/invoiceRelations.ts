@@ -1,5 +1,6 @@
 import { 
   normalizeInvoiceNumber, 
+  extractBaseTax,
   isNavAndSubmittedInvoiceMatch,
   evaluateNavAndSubmittedSuggestedMatch,
   isForeignSubmittedInvoice,
@@ -98,6 +99,20 @@ export function buildNavToSuggestedSubmittedMap(
   );
   if (pool.length === 0) return map;
 
+  // Index candidate pool by base tax number for instant O(1) candidate lookup
+  // INBOUND: external partner is seller (elado_vat_id)
+  // OUTBOUND: external partner is buyer (vevo_vat_id)
+  const poolByTax = new Map<string, SubmittedInvoice[]>();
+  for (const sub of pool) {
+    const isOutbound = sub.invoice_direction === 'OUTBOUND';
+    const tax = extractBaseTax(isOutbound ? sub.vevo_vat_id : sub.elado_vat_id);
+    if (tax) {
+      const list = poolByTax.get(tax) || [];
+      list.push(sub);
+      poolByTax.set(tax, list);
+    }
+  }
+
   paginatedNavInvoices.forEach((nav) => {
     const navKey = normalizeInvoiceNumber(nav.invoice_number);
     // If exact match already exists for this NAV invoice, no suggestions needed
@@ -105,9 +120,16 @@ export function buildNavToSuggestedSubmittedMap(
       return;
     }
 
+    const isOutbound = nav.invoice_direction === 'OUTBOUND';
+    const navTax = extractBaseTax(isOutbound ? nav.customer_tax_number : nav.supplier_tax_number);
+    if (!navTax) return;
+
+    const candidates = poolByTax.get(navTax);
+    if (!candidates || candidates.length === 0) return;
+
     const suggestions: SuggestedSubmittedInvoiceWithScore[] = [];
 
-    for (const sub of pool) {
+    for (const sub of candidates) {
       const evalResult = evaluateNavAndSubmittedSuggestedMatch(
         {
           id: nav.id,

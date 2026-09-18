@@ -270,26 +270,25 @@ export function ExpandedInvoiceRow({
               from { grid-template-rows: 0fr; }
               to { grid-template-rows: 1fr; }
             }
-            @keyframes accordionFadeIn {
-              from { opacity: 0; transform: translateY(-6px); }
-              to { opacity: 1; transform: translateY(0); }
-            }
             .accordion-grid-animate {
               display: grid;
-              animation: accordionSlideDown 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+              animation: accordionSlideDown 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
             }
             .accordion-grid-animate > .accordion-overflow {
               overflow: hidden;
+              min-height: 0;
             }
-            .expand-animate { animation: accordionFadeIn 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-            .expand-stagger-1 { animation: accordionFadeIn 250ms cubic-bezier(0.16, 1, 0.3, 1) 60ms forwards; opacity: 0; }
-            .expand-stagger-2 { animation: accordionFadeIn 250ms cubic-bezier(0.16, 1, 0.3, 1) 120ms forwards; opacity: 0; }
-            .expand-stagger-3 { animation: accordionFadeIn 250ms cubic-bezier(0.16, 1, 0.3, 1) 180ms forwards; opacity: 0; }
-            .expand-stagger-4 { animation: accordionFadeIn 250ms cubic-bezier(0.16, 1, 0.3, 1) 240ms forwards; opacity: 0; }
+            .expand-animate,
+            .expand-stagger-1,
+            .expand-stagger-2,
+            .expand-stagger-3,
+            .expand-stagger-4 {
+              opacity: 1;
+            }
           `}</style>
           <div className="accordion-grid-animate">
             <div className="accordion-overflow">
-              <div className="py-6 px-8 space-y-4 max-w-5xl ml-4">
+              <div className="pt-3 pb-5 px-8 space-y-4 max-w-5xl ml-4">
                 {/* General Ledger numbers */}
                 <GeneralLedgerBadgeSection
                   glNumbers={glNumbers}

@@ -2,7 +2,7 @@
 
 > **Verzió:** 1.6 | **Dátum:** 2026-09-13  
 > **Forrás:** [AppSidebar.tsx](../../src/components/AppSidebar.tsx) · [App.tsx](../../src/App.tsx) · [AppModeSwitcher.tsx](../../src/components/AppModeSwitcher.tsx)  
-> **Kapcsolódó döntés:** [P-006 Sidebar Structure](./decisions/P-006-sidebar-structure.md) · [A-109 Horvát Lokalizáció & Route Architektúra](../architecture/decisions/A-109-eaisybill-i18n-croatia-localization-and-route-architecture.md) · [P-081 Horvát Demó UX](./decisions/P-081-eaisybill-croatia-localization-and-demo-ux.md) · [A-114 eaisyBooks Shell Collapse](../architecture/decisions/A-114-collapse-dual-mode-navigation-shell.md) · [A-115 Cold/Warm Hibrid Navigáció](../architecture/decisions/A-115-eaisybooks-eaisybill-cold-warm-hybrid-transition-and-route-resolution.md) · [P-083 AppModeSwitcher UX](./decisions/P-083-eaisybooks-eaisybill-app-mode-switcher-and-cold-warm-transition-ux.md)
+> **Kapcsolódó döntés:** [P-006 Sidebar Structure](./decisions/P-006-sidebar-structure.md) · [A-109 Horvát Lokalizáció & Route Architektúra](../architecture/decisions/A-109-eaisybill-i18n-croatia-localization-and-route-architecture.md) · [P-081 Horvát Demó UX](./decisions/P-081-eaisybill-croatia-localization-and-demo-ux.md) · [A-114 eaisyBooks Shell Collapse](../architecture/decisions/A-114-collapse-dual-mode-navigation-shell.md) · [A-115 Cold/Warm Hibrid Navigáció](../architecture/decisions/A-115-eaisybooks-eaisybill-cold-warm-hybrid-transition-and-route-resolution.md) · [P-083 AppModeSwitcher UX](./decisions/P-083-eaisybooks-eaisybill-app-mode-switcher-and-cold-warm-transition-ux.md) · [P-095 NAV OSA Tabok & Render UX](./decisions/P-095-nav-osa-tabs-performance-and-immediate-row-expansion-ux.md)
 
 ---
 
@@ -189,7 +189,7 @@ A sidebar 6 logikai, összecsukható (collapsible) csoportba rendezi a modulokat
 - **Partnertörzs** (`/partners`) – Vevők és szállítók nyilvántartása
 
 ### 2. 🏦 Pénzügyek (`finance`)
-- **Számlák** (`/invoices`) – Bejövő/kimenő kézi és NAV számlák
+- **Számlák** (`/invoices`) – NAV OSA Kimenő / NAV OSA Bejövő és beküldött számlák, lusta táblázat-vezérlők és azonnali expanzió ([P-095](./decisions/P-095-nav-osa-tabs-performance-and-immediate-row-expansion-ux.md))
 - **Kintlévőség** (`/kintlevo`) – Vevői követelések és fizetési felszólítások
 - **Tranzakciók** (`/transactions`) – Banki tranzakciók és futár elszámolások
 - **Házipénztár** (`/petty-cash`) – Készpénz bevételek és kiadások

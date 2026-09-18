@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useRef, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { TabsContent } from '@/components/ui/tabs';
@@ -26,6 +26,15 @@ export function InvoiceTableContainer() {
   } = useInvoiceContext();
 
   const [, setSearchParams] = useSearchParams();
+  const searchParamsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (searchParamsTimeoutRef.current) {
+        clearTimeout(searchParamsTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // 1. Fetch matching NAV invoices for the submitted invoices displayed on the current page
   const pageSubmittedNumbers = useMemo(() => {
@@ -204,20 +213,25 @@ export function InvoiceTableContainer() {
         return next;
       });
 
-      setSearchParams(
-        sp => {
-          const p = new URLSearchParams(sp);
-          if (isExpanding) {
-            p.set('invoice', invoiceId);
-            p.delete('action');
-          } else {
-            p.delete('invoice');
-            p.delete('action');
-          }
-          return p;
-        },
-        { replace: true }
-      );
+      if (searchParamsTimeoutRef.current) {
+        clearTimeout(searchParamsTimeoutRef.current);
+      }
+      searchParamsTimeoutRef.current = setTimeout(() => {
+        setSearchParams(
+          sp => {
+            const p = new URLSearchParams(sp);
+            if (isExpanding) {
+              p.set('invoice', invoiceId);
+              p.delete('action');
+            } else {
+              p.delete('invoice');
+              p.delete('action');
+            }
+            return p;
+          },
+          { replace: true }
+        );
+      }, isExpanding ? 200 : 0);
     },
     [setExpandedRowIds, setSearchParams]
   );

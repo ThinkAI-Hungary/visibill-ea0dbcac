@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-18  
-> **Összesen:** 131 döntés | ✅ Decided: 129 | ⛔ Superseded: 2
+> **Összesen:** 138 döntés | ✅ Decided: 136 | ⛔ Superseded: 2
 
 ---
 
@@ -170,6 +170,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-123 | Vevő Adószám Inkonzisztencia Detektálás és Könyvelői Jóváhagyási Figyelmeztetés | ✅ Decided | [A-123](./A-123-buyer-tax-mismatch-detection-and-approval-guard.md) |
 | A-124 | Többoldalas Számlák Folytatás-Felismerése és Téves Multi-Invoice Split Megelőzés | ✅ Decided | [A-124](./A-124-multi-page-invoice-continuation-guard-and-split-suppression.md) |
 | A-125 | Atomi Házipénztári Számlakiegyenlítés, Számlaszinkron Trigger Védelem és Auth Életciklus Védelmek | ✅ Decided | [A-125](./A-125-atomic-petty-cash-invoice-settlement-and-auth-resilience.md) |
+| A-127 | Számlatáblázat Tab-Váltási Render-Skálázás (Lazy Combobox / DOM Pruning) és CSS Grid Accordion Re-Render Retesz | ✅ Decided | [A-127](./A-127-invoice-table-tab-switch-scaling-and-accordion-re-render-latch.md) |
 
 ## 💳 Fizetés
 
@@ -202,6 +203,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-077 | Management Stats Edge Function & Telemetry Decomposition | ✅ Decided | [A-077](./A-077-management-stats-edge-function-and-telemetry-decomposition.md) |
 | A-088 | Management Dashboard Adatkonzisztencia, Dedublikáció és Worker Fallback Ciklusvédelem | ✅ Decided | [A-088](./A-088-management-dashboard-dedup-and-worker-fallback-loop-prevention.md) |
 | A-117 | Hivatalos Ügyfél REST API (Customer API), Többcéges API Kulcs Kezelés és Auditált M2M Átjáró | ✅ Decided | [A-117](./A-117-customer-rest-api-and-multi-company-keys.md) |
+| A-126 | Műveleti Napló E-mail Metaadatok Megőrzése és Retrospektív Számla-Összekapcsolás | ✅ Decided | [A-126](./A-126-audit-trail-email-ingestion-and-invoice-linking.md) |
 
 
 

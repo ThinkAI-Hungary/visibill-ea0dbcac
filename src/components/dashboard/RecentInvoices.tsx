@@ -37,10 +37,14 @@ const RecentInvoices = ({
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'feldolgozott':
+      case 'feldolgozva':
+      case 'jovahagyva':
         return 'success';
+      case 'jovahagyasra_var':
       case 'feldolgozas_alatt':
         return 'warning';
       case 'hiba':
+      case 'elutasitva':
         return 'destructive';
       default:
         return 'secondary';
@@ -50,9 +54,14 @@ const RecentInvoices = ({
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'feldolgozott':
+      case 'feldolgozva':
         return t('dashboard:recent_invoices.status.processed', 'Feldolgozva');
       case 'feldolgozas_alatt':
         return t('dashboard:recent_invoices.status.processing', 'Feldolgozás alatt');
+      case 'jovahagyasra_var':
+        return t('dashboard:recent_invoices.status.pending_approval', 'Jóváhagyásra vár');
+      case 'jovahagyva':
+        return t('dashboard:recent_invoices.status.approved', 'Jóváhagyva');
       case 'hiba':
         return t('dashboard:recent_invoices.status.error', 'Hiba');
       default:

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useDeferredValue, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { NavInvoice, SubmittedInvoice, Partner, Category, Project } from './useInvoiceData';
 import { useActivePreset } from './useActivePreset';
@@ -236,9 +236,130 @@ export function useInvoiceFilters(
       };
     },
     enabled: enabled && !!companyId,
-    placeholderData: keepPreviousData,
-    staleTime: 30000,
+    placeholderData: (previousData, previousQuery) => {
+      const prevDirection = previousQuery?.queryKey?.[4];
+      const currentDirection = isNavTab ? navDirection : submittedDirection;
+      if (prevDirection && prevDirection !== currentDirection) {
+        return undefined;
+      }
+      return previousData;
+    },
+    staleTime: 60000,
   });
+
+  const queryClient = useQueryClient();
+
+  // Prefetch opposite NAV direction so tab switching between OUTBOUND & INBOUND is instantaneous (0ms)
+  useEffect(() => {
+    if (!enabled || !companyId || !isNavTab) return;
+    const oppositeDirection = navDirection === 'OUTBOUND' ? 'INBOUND' : 'OUTBOUND';
+
+    // 1. Prefetch opposite KPIs
+    queryClient.prefetchQuery({
+      queryKey: [
+        'invoiceKpis', companyId, dateFromFormatted, dateToFormatted,
+        oppositeDirection, 'nav',
+        deferredSearch, filters.currency, filters.project, filters.category,
+        filters.paymentMethod, filters.amountMin, filters.amountMax,
+        issueDateFrom, issueDateTo, filters.continuous, filters.submitted
+      ],
+      queryFn: async () => {
+        const { data, error } = await supabase.rpc('get_invoice_kpis', {
+          p_company_id: companyId,
+          p_date_from: dateFromFormatted,
+          p_date_to: dateToFormatted,
+          p_direction: oppositeDirection,
+          p_source: 'nav',
+          p_search: deferredSearch || undefined,
+          p_currency: filters.currency === 'all' ? undefined : filters.currency,
+          p_project_id: filters.project === 'all' ? undefined : filters.project,
+          p_category_id: filters.category === 'all' ? undefined : filters.category,
+          p_payment_method: filters.paymentMethod === 'all' ? undefined : filters.paymentMethod,
+          p_amount_min: filters.amountMin ? parseFloat(filters.amountMin) : undefined,
+          p_amount_max: filters.amountMax ? parseFloat(filters.amountMax) : undefined,
+          p_issue_date_from: issueDateFrom || undefined,
+          p_issue_date_to: issueDateTo || undefined,
+          p_continuous: filters.continuous === 'all' ? undefined : filters.continuous,
+          p_submitted: filters.submitted === 'all' ? undefined : filters.submitted,
+        });
+        if (error) throw error;
+        const res = data?.[0] || { total: 0, matched: 0, suggested: 0, unmatched: 0 };
+        return {
+          total: Number(res.total || 0),
+          matched: Number(res.matched || 0),
+          suggested: Number(res.suggested || 0),
+          unmatched: Number(res.unmatched || 0),
+        };
+      },
+      staleTime: 60000,
+    });
+
+    // 2. Prefetch opposite invoices
+    queryClient.prefetchQuery({
+      queryKey: [
+        'filteredNavInvoices', companyId, dateFromFormatted, dateToFormatted,
+        oppositeDirection, deferredSearch, filters.currency, filters.paid,
+        filters.submitted, filters.project, filters.category,
+        filters.paymentMethod, filters.amountMin, filters.amountMax,
+        sortField, sortDirection, 1, navPageSize,
+        issueDateFrom, issueDateTo, activePresetId, filters.continuous, kpiFilter
+      ],
+      queryFn: async () => {
+        const { data, error } = await supabase.rpc('get_filtered_nav_invoices', {
+          p_company_id: companyId,
+          p_date_from: dateFromFormatted,
+          p_date_to: dateToFormatted,
+          p_direction: oppositeDirection,
+          p_search: deferredSearch || undefined,
+          p_currency: filters.currency === 'all' ? undefined : filters.currency,
+          p_paid: filters.paid === 'all' ? undefined : filters.paid,
+          p_submitted: filters.submitted === 'all' ? undefined : filters.submitted,
+          p_project_id: filters.project === 'all' ? undefined : filters.project,
+          p_category_id: filters.category === 'all' ? undefined : filters.category,
+          p_payment_method: filters.paymentMethod === 'all' ? undefined : filters.paymentMethod,
+          p_amount_min: filters.amountMin ? parseFloat(filters.amountMin) : undefined,
+          p_amount_max: filters.amountMax ? parseFloat(filters.amountMax) : undefined,
+          p_sort_field: sortField,
+          p_sort_dir: sortDirection,
+          p_page: 1,
+          p_page_size: navPageSize,
+          p_issue_date_from: issueDateFrom || undefined,
+          p_issue_date_to: issueDateTo || undefined,
+          p_preset_id: activePresetId || undefined,
+          p_continuous: filters.continuous === 'all' ? undefined : filters.continuous,
+          p_kpi_filter: kpiFilter,
+        });
+        if (error) throw error;
+        return (data || []) as (NavInvoice & { match_status: string; total_count: number })[];
+      },
+      staleTime: 60000,
+    });
+  }, [
+    enabled,
+    companyId,
+    isNavTab,
+    navDirection,
+    dateFromFormatted,
+    dateToFormatted,
+    deferredSearch,
+    filters.currency,
+    filters.paid,
+    filters.submitted,
+    filters.project,
+    filters.category,
+    filters.paymentMethod,
+    filters.amountMin,
+    filters.amountMax,
+    filters.continuous,
+    sortField,
+    sortDirection,
+    navPageSize,
+    issueDateFrom,
+    issueDateTo,
+    activePresetId,
+    kpiFilter,
+    queryClient,
+  ]);
 
   // ── Server-side NAV invoices query (with server-side p_kpi_filter) ──
   const { data: navResult = [], isLoading: navLoading, isFetching: navFetching } = useQuery({
@@ -279,7 +400,14 @@ export function useInvoiceFilters(
       return (data || []) as (NavInvoice & { match_status: string; total_count: number })[];
     },
     enabled: enabled && isNavTab,
-    placeholderData: keepPreviousData,
+    placeholderData: (previousData, previousQuery) => {
+      const prevDirection = previousQuery?.queryKey?.[4];
+      if (prevDirection && prevDirection !== navDirection) {
+        return undefined;
+      }
+      return previousData;
+    },
+    staleTime: 60000,
   });
 
   // ── Server-side submitted invoices query (with server-side p_kpi_filter) ──
@@ -318,7 +446,14 @@ export function useInvoiceFilters(
       return (data || []) as (SubmittedInvoice & { match_status: string; total_count: number })[];
     },
     enabled: enabled && isSubmittedTab,
-    placeholderData: keepPreviousData,
+    placeholderData: (previousData, previousQuery) => {
+      const prevDirection = previousQuery?.queryKey?.[4];
+      if (prevDirection && prevDirection !== submittedDirection) {
+        return undefined;
+      }
+      return previousData;
+    },
+    staleTime: 60000,
   });
 
   // Extract paginated data and total counts directly from server
@@ -377,6 +512,214 @@ export function useInvoiceFilters(
     navCurrentPage,
     navResult.length,
     navTotalPages,
+  ]);
+
+  // ── Prefetch adjacent pages (P+1, P-1) for 0ms instant pagination ──
+  useEffect(() => {
+    if (!enabled || !companyId) return;
+
+    if (isNavTab) {
+      if (navCurrentPage < navTotalPages) {
+        const nextPage = navCurrentPage + 1;
+        queryClient.prefetchQuery({
+          queryKey: [
+            'filteredNavInvoices', companyId, dateFromFormatted, dateToFormatted,
+            navDirection, deferredSearch, filters.currency, filters.paid,
+            filters.submitted, filters.project, filters.category,
+            filters.paymentMethod, filters.amountMin, filters.amountMax,
+            sortField, sortDirection, nextPage, navPageSize,
+            issueDateFrom, issueDateTo, activePresetId, filters.continuous, kpiFilter
+          ],
+          queryFn: async () => {
+            const { data, error } = await supabase.rpc('get_filtered_nav_invoices', {
+              p_company_id: companyId,
+              p_date_from: dateFromFormatted,
+              p_date_to: dateToFormatted,
+              p_direction: navDirection,
+              p_search: deferredSearch || undefined,
+              p_currency: filters.currency === 'all' ? undefined : filters.currency,
+              p_paid: filters.paid === 'all' ? undefined : filters.paid,
+              p_submitted: filters.submitted === 'all' ? undefined : filters.submitted,
+              p_project_id: filters.project === 'all' ? undefined : filters.project,
+              p_category_id: filters.category === 'all' ? undefined : filters.category,
+              p_payment_method: filters.paymentMethod === 'all' ? undefined : filters.paymentMethod,
+              p_amount_min: filters.amountMin ? parseFloat(filters.amountMin) : undefined,
+              p_amount_max: filters.amountMax ? parseFloat(filters.amountMax) : undefined,
+              p_sort_field: sortField,
+              p_sort_dir: sortDirection,
+              p_page: nextPage,
+              p_page_size: navPageSize,
+              p_issue_date_from: issueDateFrom || undefined,
+              p_issue_date_to: issueDateTo || undefined,
+              p_preset_id: activePresetId || undefined,
+              p_continuous: filters.continuous === 'all' ? undefined : filters.continuous,
+              p_kpi_filter: kpiFilter,
+            });
+            if (error) throw error;
+            return (data || []) as (NavInvoice & { match_status: string; total_count: number })[];
+          },
+          staleTime: 60000,
+        });
+      }
+
+      if (navCurrentPage > 1) {
+        const prevPage = navCurrentPage - 1;
+        queryClient.prefetchQuery({
+          queryKey: [
+            'filteredNavInvoices', companyId, dateFromFormatted, dateToFormatted,
+            navDirection, deferredSearch, filters.currency, filters.paid,
+            filters.submitted, filters.project, filters.category,
+            filters.paymentMethod, filters.amountMin, filters.amountMax,
+            sortField, sortDirection, prevPage, navPageSize,
+            issueDateFrom, issueDateTo, activePresetId, filters.continuous, kpiFilter
+          ],
+          queryFn: async () => {
+            const { data, error } = await supabase.rpc('get_filtered_nav_invoices', {
+              p_company_id: companyId,
+              p_date_from: dateFromFormatted,
+              p_date_to: dateToFormatted,
+              p_direction: navDirection,
+              p_search: deferredSearch || undefined,
+              p_currency: filters.currency === 'all' ? undefined : filters.currency,
+              p_paid: filters.paid === 'all' ? undefined : filters.paid,
+              p_submitted: filters.submitted === 'all' ? undefined : filters.submitted,
+              p_project_id: filters.project === 'all' ? undefined : filters.project,
+              p_category_id: filters.category === 'all' ? undefined : filters.category,
+              p_payment_method: filters.paymentMethod === 'all' ? undefined : filters.paymentMethod,
+              p_amount_min: filters.amountMin ? parseFloat(filters.amountMin) : undefined,
+              p_amount_max: filters.amountMax ? parseFloat(filters.amountMax) : undefined,
+              p_sort_field: sortField,
+              p_sort_dir: sortDirection,
+              p_page: prevPage,
+              p_page_size: navPageSize,
+              p_issue_date_from: issueDateFrom || undefined,
+              p_issue_date_to: issueDateTo || undefined,
+              p_preset_id: activePresetId || undefined,
+              p_continuous: filters.continuous === 'all' ? undefined : filters.continuous,
+              p_kpi_filter: kpiFilter,
+            });
+            if (error) throw error;
+            return (data || []) as (NavInvoice & { match_status: string; total_count: number })[];
+          },
+          staleTime: 60000,
+        });
+      }
+    }
+
+    if (isSubmittedTab) {
+      if (submittedCurrentPage < submittedTotalPages) {
+        const nextPage = submittedCurrentPage + 1;
+        queryClient.prefetchQuery({
+          queryKey: [
+            'filteredSubmittedInvoices', companyId, dateFromFormatted, dateToFormatted,
+            submittedDirection, deferredSearch, filters.currency, filters.project,
+            filters.category, filters.paymentMethod, filters.amountMin, filters.amountMax,
+            sortField, sortDirection, nextPage, submittedPageSize,
+            issueDateFrom, issueDateTo, activePresetId, filters.navStatus, kpiFilter
+          ],
+          queryFn: async () => {
+            const { data, error } = await supabase.rpc('get_filtered_submitted_invoices', {
+              p_company_id: companyId,
+              p_date_from: dateFromFormatted,
+              p_date_to: dateToFormatted,
+              p_direction: submittedDirection,
+              p_search: deferredSearch || undefined,
+              p_currency: filters.currency === 'all' ? undefined : filters.currency,
+              p_project_id: filters.project === 'all' ? undefined : filters.project,
+              p_category_id: filters.category === 'all' ? undefined : filters.category,
+              p_payment_method: filters.paymentMethod === 'all' ? undefined : filters.paymentMethod,
+              p_amount_min: filters.amountMin ? parseFloat(filters.amountMin) : undefined,
+              p_amount_max: filters.amountMax ? parseFloat(filters.amountMax) : undefined,
+              p_sort_field: sortField,
+              p_sort_dir: sortDirection,
+              p_page: nextPage,
+              p_page_size: submittedPageSize,
+              p_issue_date_from: issueDateFrom || undefined,
+              p_issue_date_to: issueDateTo || undefined,
+              p_preset_id: activePresetId || undefined,
+              p_nav_status: filters.navStatus === 'all' ? undefined : filters.navStatus,
+              p_kpi_filter: kpiFilter,
+            });
+            if (error) throw error;
+            return (data || []) as (SubmittedInvoice & { match_status: string; total_count: number })[];
+          },
+          staleTime: 60000,
+        });
+      }
+
+      if (submittedCurrentPage > 1) {
+        const prevPage = submittedCurrentPage - 1;
+        queryClient.prefetchQuery({
+          queryKey: [
+            'filteredSubmittedInvoices', companyId, dateFromFormatted, dateToFormatted,
+            submittedDirection, deferredSearch, filters.currency, filters.project,
+            filters.category, filters.paymentMethod, filters.amountMin, filters.amountMax,
+            sortField, sortDirection, prevPage, submittedPageSize,
+            issueDateFrom, issueDateTo, activePresetId, filters.navStatus, kpiFilter
+          ],
+          queryFn: async () => {
+            const { data, error } = await supabase.rpc('get_filtered_submitted_invoices', {
+              p_company_id: companyId,
+              p_date_from: dateFromFormatted,
+              p_date_to: dateToFormatted,
+              p_direction: submittedDirection,
+              p_search: deferredSearch || undefined,
+              p_currency: filters.currency === 'all' ? undefined : filters.currency,
+              p_project_id: filters.project === 'all' ? undefined : filters.project,
+              p_category_id: filters.category === 'all' ? undefined : filters.category,
+              p_payment_method: filters.paymentMethod === 'all' ? undefined : filters.paymentMethod,
+              p_amount_min: filters.amountMin ? parseFloat(filters.amountMin) : undefined,
+              p_amount_max: filters.amountMax ? parseFloat(filters.amountMax) : undefined,
+              p_sort_field: sortField,
+              p_sort_dir: sortDirection,
+              p_page: prevPage,
+              p_page_size: submittedPageSize,
+              p_issue_date_from: issueDateFrom || undefined,
+              p_issue_date_to: issueDateTo || undefined,
+              p_preset_id: activePresetId || undefined,
+              p_nav_status: filters.navStatus === 'all' ? undefined : filters.navStatus,
+              p_kpi_filter: kpiFilter,
+            });
+            if (error) throw error;
+            return (data || []) as (SubmittedInvoice & { match_status: string; total_count: number })[];
+          },
+          staleTime: 60000,
+        });
+      }
+    }
+  }, [
+    enabled,
+    companyId,
+    isNavTab,
+    isSubmittedTab,
+    navDirection,
+    submittedDirection,
+    navCurrentPage,
+    navTotalPages,
+    submittedCurrentPage,
+    submittedTotalPages,
+    dateFromFormatted,
+    dateToFormatted,
+    deferredSearch,
+    filters.currency,
+    filters.paid,
+    filters.submitted,
+    filters.project,
+    filters.category,
+    filters.paymentMethod,
+    filters.amountMin,
+    filters.amountMax,
+    filters.continuous,
+    filters.navStatus,
+    sortField,
+    sortDirection,
+    navPageSize,
+    submittedPageSize,
+    issueDateFrom,
+    issueDateTo,
+    activePresetId,
+    kpiFilter,
+    queryClient,
   ]);
 
   // Toggle KPI filter

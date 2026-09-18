@@ -58,6 +58,8 @@
     "status": {
       "processed": "Obrađeno",
       "processing": "U obradi",
+      "pending_approval": "Čeka odobrenje",
+      "approved": "Odobreno",
       "error": "Greška"
     }
   },

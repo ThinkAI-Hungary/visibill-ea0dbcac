@@ -2,8 +2,8 @@
   "title": "Számlák",
   "subtitle": "Bejövő és kimenő bizonylatok nyilvántartása",
   "tabs": {
-    "incoming": "Bejövő számlák",
-    "outgoing": "Kimenő számlák",
+    "incoming": "NAV OSA Bejövő",
+    "outgoing": "NAV OSA Kimenő",
     "submitted_incoming": "Beküldött (Bejövő)",
     "submitted_outgoing": "Beküldött (Kimenő)",
     "proforma": "Díjbekérők",
@@ -26,7 +26,14 @@
     "paid": "Fizetve",
     "unpaid": "Nyitott",
     "partial": "Részben fizetve",
-    "overdue": "Késedelmes"
+    "overdue": "Késedelmes",
+    "jovahagyasra_var": "Jóváhagyásra vár",
+    "feldolgozott": "Feldolgozva",
+    "feldolgozva": "Feldolgozva",
+    "feldolgozas_alatt": "Feldolgozás alatt",
+    "jovahagyva": "Jóváhagyva",
+    "elutasitva": "Elutasítva",
+    "hiba": "Hiba"
   },
   "actions": {
     "new_invoice": "Új számla rögzítése",

@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-18  
-> **Összesen:** 88 döntés | ✅ Decided: 84 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 90 döntés | ✅ Decided: 86 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -40,6 +40,7 @@
 | P-058 | Egységes Export & Dokumentumgeneráló Motor (DocumentEngine) UX | ✅ Decided | [P-058](./P-058-unified-document-engine-ux.md) |
 | P-064 | Részben Fizetett Számlák Státusz, Badge & Szűrés UX | ✅ Decided | [P-064](./P-064-partially-paid-invoice-status-ux.md) |
 | P-092 | Házipénztár Bizonylat Validáció, 0-Kassza Védelem és Számlakiegyenlítés UX | ✅ Decided | [P-092](./P-092-petty-cash-manual-entry-validation-and-settlement-ux.md) |
+| P-095 | NAV OSA Tabok Elnevezése, Gyorsítótárazott Tab-Váltás és Azonnali Sorlenyitási Animáció UX | ✅ Decided | [P-095](./P-095-nav-osa-tabs-performance-and-immediate-row-expansion-ux.md) |
 
 ## 🔄 Tranzakció & Párosítás
 
@@ -131,6 +132,7 @@
 | P-036 | Management Dashboard UI és navigáció | ✅ Decided | [P-036](./P-036-management-dashboard.md) |
 | P-061 | Management Worker Telemetry Decomposition & Calendar Month LLM UX | ✅ Decided | [P-061](./P-061-management-worker-telemetry-and-monthly-llm-ux.md) |
 | P-069 | Management Dashboard Hiba Dedublikáció, Fallback Lánc és Állapot Kormányzás UX | ✅ Decided | [P-069](./P-069-management-dashboard-error-dedup-and-fallback-chain-ux.md) |
+| P-094 | Műveleti Napló E-mail Események Megjelenítése és Számla Összekapcsolás UX | ✅ Decided | [P-094](./P-094-activity-log-email-ingestion-and-invoice-linking-ux.md) |
 
 ## 👥 Partnertörzs
 

@@ -1,7 +1,7 @@
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
-import { useCallback } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 
 // ─── URL format: /:companyId/:dateRange/page ───
 // dateRange format: YYYY-MM-DD_YYYY-MM-DD (from_to)
@@ -154,29 +154,33 @@ export function useUrlTab<T extends string>(
   const basePath = useScopedBasePath();
   const location = useLocation();
 
-  const currentTab = (tab && (validTabs as readonly string[]).includes(tab))
+  const urlTab = (tab && (validTabs as readonly string[]).includes(tab))
     ? (tab as T)
     : defaultTab;
 
+  const [optimisticTab, setOptimisticTab] = useState<T>(urlTab);
+
+  // Sync optimistic tab if the URL changes externally (e.g. browser back/forward or deep linking)
+  useEffect(() => {
+    setOptimisticTab(urlTab);
+  }, [urlTab]);
+
   const setTab = useCallback(
     (newTab: T) => {
-      // Defer to microtask so this never runs during a render phase
-      // (e.g. Radix Tabs may invoke onValueChange synchronously in some
-      // edge cases, which would trigger a BrowserRouter setState mid-render).
-      queueMicrotask(() => {
-        navigate(
-          {
-            pathname: `${basePath}/${pagePath}/${newTab}`,
-            search: location.search, // preserve ?invoice= etc.
-          },
-          { replace: true },
-        );
-      });
+      if (newTab === optimisticTab) return;
+      setOptimisticTab(newTab);
+      navigate(
+        {
+          pathname: `${basePath}/${pagePath}/${newTab}`,
+          search: location.search, // preserve ?invoice= etc.
+        },
+        { replace: true },
+      );
     },
-    [navigate, basePath, pagePath, location.search],
+    [navigate, basePath, pagePath, location.search, optimisticTab],
   );
 
-  return [currentTab, setTab];
+  return [optimisticTab, setTab];
 }
 
 /**

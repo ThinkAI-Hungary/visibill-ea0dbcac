@@ -1,0 +1,138 @@
+-- Migration: Enhance global_audit_trigger_func with email metadata and processing tracking
+-- ADR Reference: A-045, P-094
+-- Date: 2026-09-18
+
+CREATE OR REPLACE FUNCTION public.global_audit_trigger_func()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    current_user_id UUID := auth.uid();
+    v_entity_type audit_entity_type;
+    v_entity_name TEXT;
+    v_company_id UUID;
+    v_action audit_action_type;
+    v_details JSONB;
+    v_upload_source TEXT;
+BEGIN
+    IF (TG_OP = 'INSERT') THEN
+        v_action := 'feltöltés'::audit_action_type;
+        v_company_id := NEW.company_id;
+        
+        IF (TG_TABLE_NAME = 'invoices') THEN
+            v_entity_type := 'számla'::audit_entity_type;
+            v_entity_name := NEW.bizonylatsorszam;
+        ELSIF (TG_TABLE_NAME IN ('invoice_uploads', 'transaction_uploads', 'report_uploads', 'salary_files')) THEN
+            v_entity_type := 'dokumentum'::audit_entity_type;
+            v_entity_name := NEW.file_name;
+        ELSIF (TG_TABLE_NAME = 'transactions') THEN
+            v_entity_type := 'tranzakció'::audit_entity_type;
+            v_entity_name := COALESCE(NEW.description, 'Új tranzakció');
+        END IF;
+
+        -- Extract upload source from metadata (email_alias, manual, etc.)
+        IF (TG_TABLE_NAME IN ('invoice_uploads', 'transaction_uploads', 'report_uploads')) THEN
+            v_upload_source := NEW.metadata->>'source';
+        END IF;
+
+    ELSIF (TG_OP = 'DELETE') THEN
+        v_action := 'törlés'::audit_action_type;
+        v_company_id := OLD.company_id;
+        
+        IF (TG_TABLE_NAME = 'invoices') THEN
+            v_entity_type := 'számla'::audit_entity_type;
+            v_entity_name := OLD.bizonylatsorszam;
+        ELSIF (TG_TABLE_NAME IN ('invoice_uploads', 'transaction_uploads', 'report_uploads', 'salary_files')) THEN
+            v_entity_type := 'dokumentum'::audit_entity_type;
+            v_entity_name := OLD.file_name;
+        ELSIF (TG_TABLE_NAME = 'transactions') THEN
+            v_entity_type := 'tranzakció'::audit_entity_type;
+            v_entity_name := COALESCE(OLD.description, 'Törölt tranzakció');
+        END IF;
+
+    ELSIF (TG_OP = 'UPDATE') THEN
+        v_company_id := NEW.company_id;
+        
+        IF (TG_TABLE_NAME = 'invoices') THEN
+            IF (OLD.statusz IS DISTINCT FROM NEW.statusz AND NEW.statusz = 'feldolgozott') THEN
+                v_action := 'módosítás'::audit_action_type;
+                v_entity_type := 'számla'::audit_entity_type;
+                v_entity_name := NEW.bizonylatsorszam;
+            ELSE RETURN NEW; END IF;
+        ELSIF (TG_TABLE_NAME = 'invoice_uploads') THEN
+            IF (OLD.processing_status IS DISTINCT FROM NEW.processing_status 
+                AND NEW.processing_status = 'processed') THEN
+                v_action := 'módosítás'::audit_action_type;
+                v_entity_type := 'dokumentum'::audit_entity_type;
+                v_entity_name := NEW.file_name;
+            ELSE RETURN NEW; END IF;
+        ELSIF (TG_TABLE_NAME = 'salary_files') THEN
+            IF (OLD.status IS DISTINCT FROM NEW.status AND NEW.status = 'completed') THEN
+                v_action := 'módosítás'::audit_action_type;
+                v_entity_type := 'dokumentum'::audit_entity_type;
+                v_entity_name := NEW.file_name;
+            ELSE RETURN NEW; END IF;
+        ELSE RETURN NEW; END IF;
+    END IF;
+
+    -- Build details JSON
+    v_details := jsonb_build_object('source', 'trigger', 'table', TG_TABLE_NAME, 'op', TG_OP);
+    
+    -- Add upload source info (email_alias, manual, etc.) and rich email metadata
+    IF v_upload_source IS NOT NULL THEN
+        v_details := v_details || jsonb_build_object('upload_source', v_upload_source);
+        IF (v_upload_source = 'email_alias' AND NEW.metadata IS NOT NULL) THEN
+            v_details := v_details || jsonb_build_object(
+                'sender', NEW.metadata->>'sender',
+                'subject', NEW.metadata->>'subject',
+                'received_at', NEW.metadata->>'received_at',
+                'upload_id', NEW.id
+            );
+        END IF;
+    END IF;
+    
+    -- For processing completion, add is_system flag and rich invoice/email info
+    IF (TG_OP = 'UPDATE' AND TG_TABLE_NAME = 'invoice_uploads') THEN
+        v_details := v_details || jsonb_build_object(
+            'is_system', true,
+            'processing_type', 'invoice_processed',
+            'upload_id', NEW.id,
+            'upload_source', COALESCE(NEW.metadata->>'source', 'manual'),
+            'sender', NEW.metadata->>'sender',
+            'subject', NEW.metadata->>'subject',
+            'ai_invoice_number', NEW.metadata->>'ai_invoice_number'
+        );
+    END IF;
+
+    -- Write to audit_logs if:
+    --   a) caller is NOT service_role (regular frontend actions), OR
+    --   b) caller IS service_role BUT this is an email_alias INSERT
+    --      (Mailgun webhook EF runs as service_role; TG_OP guard prevents
+    --       UPDATE/DELETE service_role operations from bypassing the guard)
+    --   c) caller IS service_role AND this is invoice_uploads UPDATE to processed
+    --      (Worker runs as service_role when marking processing as completed)
+    IF (
+        v_company_id IS NOT NULL
+        AND v_entity_name IS NOT NULL
+        AND (
+            auth.role() <> 'service_role'
+            OR (TG_OP = 'INSERT' AND v_upload_source = 'email_alias')
+            OR (TG_OP = 'UPDATE' AND TG_TABLE_NAME = 'invoice_uploads' AND NEW.processing_status = 'processed')
+        )
+    ) THEN
+        INSERT INTO public.audit_logs (company_id, user_id, action, entity, entity_name, details)
+        VALUES (
+            v_company_id, 
+            current_user_id, 
+            v_action, 
+            v_entity_type, 
+            v_entity_name,
+            v_details
+        );
+    END IF;
+
+    IF (TG_OP = 'DELETE') THEN RETURN OLD; ELSE RETURN NEW; END IF;
+END;
+$function$;

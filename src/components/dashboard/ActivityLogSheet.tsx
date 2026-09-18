@@ -4,27 +4,23 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { InvoiceDetailPopup } from '@/components/InvoiceDetailPopup';
+import { Skeleton } from '@/components/ui/skeleton';
 
 import {
   Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger,
 } from '@/components/ui/sheet';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import {
-  History, Plus, Pencil, Trash2, Upload, Link2, FileText, Banknote,
-  ArrowLeftRight, Tag, ClipboardList, Search, User, CalendarDays, CheckCircle2, Bot, ExternalLink, AlertCircle, Filter, ListFilter, Check, ChevronRight, Mail,
-  Download, FileSpreadsheet, FileArchive
-} from 'lucide-react';
-import { format, startOfDay, endOfDay, subDays, startOfWeek } from 'date-fns';
-import { formatDistanceToNow } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { History } from 'lucide-react';
+import { endOfDay } from 'date-fns';
 import { UserActivityDialog } from './UserActivityDialog';
-import { reportError } from '@/lib/errorReporter';
+import { ActivityLogFilters, AVAILABLE_ACTIONS } from './ActivityLogFilters';
+import { ActivityLogTimelineItem } from './ActivityLogTimelineItem';
+import { ActivityLogPdfDialog } from './ActivityLogPdfDialog';
+
+export { AVAILABLE_ACTIONS };
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
-interface AuditLogRow {
+export interface AuditLogRow {
   id: string;
   company_id: string;
   user_id: string | null;
@@ -40,35 +36,72 @@ interface CompanyMember {
   name: string | null;
 }
 
-type TimePeriod = 'today' | 'yesterday' | 'week' | 'custom' | 'all';
+interface EnrichedUploadInfo {
+  id: string;
+  source: string | null;
+  sender: string | null;
+  subject: string | null;
+  received_at: string | null;
+  file_name: string;
+  table: string;
+}
 
-// ─── Config maps ───────────────────────────────────────────────────────────────
-const ACTION_CONFIG: Record<string, { icon: typeof Plus; color: string; label: string }> = {
-  'létrehozás': { icon: Plus, color: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-950/30', label: 'létrehozott' },
-  'módosítás': { icon: Pencil, color: 'text-blue-500 bg-blue-50 dark:bg-blue-950/30', label: 'módosított' },
-  'törlés': { icon: Trash2, color: 'text-red-500 bg-red-50 dark:bg-red-950/30', label: 'törölt' },
-  'feltöltés': { icon: Upload, color: 'text-cyan-500 bg-cyan-50 dark:bg-cyan-950/30', label: 'feltöltött' },
-  'párosítás': { icon: Link2, color: 'text-purple-500 bg-purple-50 dark:bg-purple-950/30', label: 'párosított' },
-};
+export interface EnrichedInvoiceInfo {
+  id: string;
+  bizonylatsorszam: string;
+  elado_nev: string | null;
+  vevo_nev: string | null;
+  brutto_vegosszeg: number | null;
+  penznem: string | null;
+  invoice_uploads_id: string | null;
+}
 
-const AVAILABLE_ACTIONS = [
-  { id: 'feltöltés', label: 'Feltöltések', icon: Upload, color: 'text-cyan-500 bg-cyan-50 dark:bg-cyan-950/30' },
-  { id: 'feldolgozás', label: 'Feldolgozások', icon: CheckCircle2, color: 'text-green-600 bg-green-50 dark:bg-green-950/30' },
-  { id: 'törlés', label: 'Törlések', icon: Trash2, color: 'text-red-500 bg-red-50 dark:bg-red-950/30' },
-  { id: 'módosítás', label: 'Módosítások', icon: Pencil, color: 'text-blue-500 bg-blue-50 dark:bg-blue-950/30' },
-  { id: 'létrehozás', label: 'Létrehozások', icon: Plus, color: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-950/30' },
-  { id: 'párosítás', label: 'Párosítások', icon: Link2, color: 'text-purple-500 bg-purple-50 dark:bg-purple-950/30' }
-];
+export interface GroupedEmailAttachment {
+  log: AuditLogRow;
+  displayName: string;
+  linkedInvoice: EnrichedInvoiceInfo | null;
+}
 
-const ENTITY_CONFIG: Record<string, { icon: typeof FileText; label: string }> = {
-  'számla': { icon: FileText, label: 'számlát' },
-  'bérjegyzék': { icon: Banknote, label: 'bérjegyzéket' },
-  'tranzakció': { icon: ArrowLeftRight, label: 'tranzakciót' },
-  'kategória': { icon: Tag, label: 'kategóriát' },
-  'dokumentum': { icon: ClipboardList, label: 'dokumentumot' },
-};
+export interface GroupedEmailUploadItem {
+  type: 'grouped_email';
+  isGroupedEmail: true;
+  isProcessedDoc: false;
+  id: string;
+  created_at: string;
+  user_id: null;
+  sender: string | null;
+  subject: string | null;
+  files: GroupedEmailAttachment[];
+  primaryLog: AuditLogRow;
+}
 
-// Removed PERIOD_BUTTONS array
+export interface ProcessedDocumentItem {
+  type: 'processed_doc';
+  isGroupedEmail: false;
+  isProcessedDoc: true;
+  id: string;
+  created_at: string;
+  user_id: null;
+  displayName: string;
+  sourceLog: AuditLogRow;
+  linkedInvoice: EnrichedInvoiceInfo | null;
+  sender: string | null;
+  subject: string | null;
+}
+
+export interface RegularAuditLogItem {
+  type: 'regular_log';
+  isGroupedEmail: false;
+  isProcessedDoc: false;
+  id: string;
+  created_at: string;
+  log: AuditLogRow;
+}
+
+export type TimelineItem =
+  | GroupedEmailUploadItem
+  | ProcessedDocumentItem
+  | RegularAuditLogItem;
 
 // ─── Date helpers ──────────────────────────────────────────────────────────────
 function getDateRange(customFrom: string, customTo: string): { from: string; to: string } {
@@ -79,14 +112,16 @@ function getDateRange(customFrom: string, customTo: string): { from: string; to:
   };
 }
 
-// ─── Processing detection ──────────────────────────────────────────────────────
-function isProcessingComplete(log: AuditLogRow): boolean {
+// ─── Processing detection & helpers ───────────────────────────────────────────
+export const normalize = (s: string) => s.replace(/[^a-zA-Z0-9\u00C0-\u024F]/g, '').toLowerCase();
+
+export function isProcessingComplete(log: AuditLogRow): boolean {
   // Case 1: explicit is_system flag from trigger (módosítás on invoice_uploads)
   if (log.action === 'módosítás') {
     const details = log.details;
     if (!details || typeof details !== 'object') return false;
     const d = details as Record<string, any>;
-    return d.is_system === true;
+    return d.is_system === true || d.processing_type === 'invoice_processed';
   }
   // Case 2: invoice created by system (worker creates számla record after processing)
   if (log.action === 'feltöltés' && log.entity === 'számla' && !log.user_id) {
@@ -95,13 +130,13 @@ function isProcessingComplete(log: AuditLogRow): boolean {
   return false;
 }
 
-function isInvoiceProcessed(log: AuditLogRow): boolean {
+export function isInvoiceProcessed(log: AuditLogRow): boolean {
   if (!isProcessingComplete(log)) return false;
   const d = log.details as Record<string, any>;
   return d.processing_type === 'invoice_processed';
 }
 
-function isMailgunUpload(log: AuditLogRow): boolean {
+export function isMailgunUpload(log: AuditLogRow): boolean {
   if (log.action !== 'feltöltés') return false;
   // Explicit email_alias source from trigger details
   const d = log.details as Record<string, any> | null;
@@ -112,146 +147,358 @@ function isMailgunUpload(log: AuditLogRow): boolean {
   return false;
 }
 
-// ─── Component ─────────────────────────────────────────────────────────────────
-// ─── Custom Selects (Bypass Portals) ──────────────────────────────────────────
-const CURRENT_YEAR = new Date().getFullYear();
-const YEAR_OPTIONS = Array.from({length: CURRENT_YEAR - 2000 + 1}, (_, i) => {
-  const y = CURRENT_YEAR - i;
-  return { label: y.toString(), value: y.toString() };
-});
-const MONTH_OPTIONS = Array.from({length: 12}, (_, i) => ({ label: (i+1).toString().padStart(2, '0'), value: (i+1).toString().padStart(2, '0') }));
-const DAY_OPTIONS = Array.from({length: 31}, (_, i) => ({ label: (i+1).toString().padStart(2, '0'), value: (i+1).toString().padStart(2, '0') }));
-const HOUR_OPTIONS = Array.from({length: 24}, (_, i) => ({ value: i.toString().padStart(2, '0'), label: i.toString().padStart(2, '0') }));
-const MIN_OPTIONS = Array.from({length: 12}, (_, i) => ({ value: (i * 5).toString().padStart(2, '0'), label: (i * 5).toString().padStart(2, '0') }));
-
-function LocalSelect({ 
-  value, 
-  onChange, 
-  options, 
-  placeholder, 
-  className = '',
-  onOpenChange
-}: { 
-  value: string, 
-  onChange: (v: string) => void, 
-  options: {value: string, label: string}[], 
-  placeholder: string,
-  className?: string,
-  onOpenChange?: (open: boolean) => void
-}) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  // Always-fresh ref so the document mousedown handler can read current search
-  const searchRef = useRef('');
-
-  const updateSearch = (v: string) => {
-    setSearch(v);
-    searchRef.current = v;
-  };
-
-  const tryAutoSelect = () => {
-    const currentSearch = searchRef.current;
-    if (!currentSearch) return;
-    const matched = options.filter(o => o.label.toLowerCase().includes(currentSearch.toLowerCase()));
-    if (matched.length === 1) {
-      onChange(matched[0].value);
-    }
-  };
-
-  const closeSelect = () => {
-    setOpen(false);
-    onOpenChange?.(false);
-    searchRef.current = '';
-    setSearch('');
-  };
-
-  const openSelect = () => {
-    setOpen(true);
-    onOpenChange?.(true);
-    setTimeout(() => inputRef.current?.focus(), 0);
-  };
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        // Auto-select before closing if exactly one option matches
-        tryAutoSelect();
-        closeSelect();
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open, options, onChange]);
-
-  const filteredOptions = options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()));
-  
-  return (
-    <div ref={containerRef} className={`relative ${className}`}>
-      <div 
-        className="flex h-8 w-full items-center justify-between rounded-md border border-input bg-background/50 px-2 py-1 text-xs shadow-sm cursor-text hover:bg-accent/50 transition-colors"
-        onClick={() => { if (!open) openSelect(); }}
-      >
-        {open ? (
-          <input
-            ref={inputRef}
-            type="text"
-            className="w-full bg-transparent outline-none truncate font-medium placeholder:text-muted-foreground leading-none"
-            value={search}
-            onChange={(e) => updateSearch(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && filteredOptions.length === 1) {
-                e.preventDefault();
-                onChange(filteredOptions[0].value);
-                closeSelect();
-              }
-              if (e.key === 'Escape') closeSelect();
-            }}
-            placeholder={options.find(o => o.value === value)?.label || placeholder}
-            onBlur={() => {
-              // Fallback: fires when the entire browser window loses focus
-              tryAutoSelect();
-              closeSelect();
-            }}
-          />
-        ) : (
-          <span className="truncate font-medium leading-none">{options.find(o => o.value === value)?.label || placeholder}</span>
-        )}
-      </div>
-      {open && (
-        <div className="absolute z-[100] top-full mt-1 left-0 w-full min-w-[60px] rounded-md border bg-popover text-popover-foreground shadow-lg font-medium outline-none animate-in fade-in-0 zoom-in-95">
-          <div 
-            className="max-h-48 flex flex-col overflow-y-auto p-1 pointer-events-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full"
-            onWheel={(e) => e.stopPropagation()} 
-          >
-            {filteredOptions.length > 0 ? filteredOptions.map(o => (
-              <div 
-                key={o.value} 
-                className={`flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 px-2 text-xs outline-none hover:bg-accent hover:text-accent-foreground ${value === o.value ? 'bg-accent/40 font-bold' : ''}`}
-                onMouseDown={(e) => { 
-                  e.preventDefault();
-                  e.stopPropagation(); 
-                  onChange(o.value); 
-                  closeSelect(); 
-                }}
-              >
-                {o.label}
-              </div>
-            )) : (
-              <div className="py-1.5 px-2 text-xs text-muted-foreground text-center">
-                Nincs találat
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  )
+export function isLikelyPdf(log: AuditLogRow): boolean {
+  const name = log.entity_name?.toLowerCase() || '';
+  return name.endsWith('.pdf') ||
+    name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg') ||
+    name.endsWith('.xlsx') || name.endsWith('.xls') ||
+    log.entity === 'számla' ||
+    log.entity === 'bérjegyzék' ||
+    log.action === 'feltöltés';
 }
 
+export function getDisplayName(log: AuditLogRow): string {
+  if (!log.entity_name) return '';
+  const name = log.entity_name;
+  const lower = name.toLowerCase();
+  // Only append .pdf for számla entity (bizonylatsorszám has no extension)
+  if (log.entity === 'számla' && !lower.match(/\.\w{2,5}$/)) {
+    return `${name}.pdf`;
+  }
+  return name;
+}
 
+export function decodeSenderEmail(sender: string | null): string | null {
+  if (!sender) return null;
+  const trimmed = sender.trim();
+
+  // Extract address if enclosed in angle brackets: "Name <email@domain.com>"
+  const bracketMatch = trimmed.match(/<([^>]+)>/);
+  const candidate = (bracketMatch ? bracketMatch[1] : trimmed).trim();
+
+  // SRS0 format: SRS0=hash=timestamp=domain=localpart@forwarder
+  // e.g. SRS0=z+7H=FJ=taxology.hu=david.jambor@srs.websupport.sk -> david.jambor@taxology.hu
+  // e.g. SRS0=XiaJ=HH=skyrocketgroup.hu=balazs.lederer@srs.websupport.sk -> balazs.lederer@skyrocketgroup.hu
+  const srs0Match = candidate.match(/^SRS0[=+-][^=]+[=+-][^=]+[=+]([^=]+)[=+]([^@]+)@/i);
+  if (srs0Match) {
+    const domain = srs0Match[1];
+    const user = srs0Match[2];
+    return `${user}@${domain}`;
+  }
+
+  // SRS1 format: SRS1=hash=forwarder=...=domain=localpart@...
+  const srs1Match = candidate.match(/^SRS1[=+-][^=]+[=+-][^=]+[=+]([^=]+)[=+]([^@]+)@/i);
+  if (srs1Match) {
+    const domain = srs1Match[1];
+    const user = srs1Match[2];
+    return `${user}@${domain}`;
+  }
+
+  return candidate;
+}
+
+export function groupEmailTimelineItems(
+  logs: AuditLogRow[],
+  getEmailInfo: (log: AuditLogRow) => { isEmail: boolean; sender: string | null; subject: string | null },
+  getLinkedInvoice: (log: AuditLogRow) => EnrichedInvoiceInfo | null,
+  isProcessingCompleteFn: (log: AuditLogRow) => boolean = isProcessingComplete,
+  getDisplayNameFn: (log: AuditLogRow) => string = getDisplayName
+): TimelineItem[] {
+  const items: TimelineItem[] = [];
+
+  // Track invoice IDs and numbers that already have an explicit processing event in logs
+  const existingProcessedInvoiceIds = new Set<string>();
+  for (const log of logs) {
+    if (isProcessingCompleteFn(log)) {
+      const inv = getLinkedInvoice(log);
+      if (inv?.id) existingProcessedInvoiceIds.add(inv.id);
+      if (inv?.bizonylatsorszam) existingProcessedInvoiceIds.add(inv.bizonylatsorszam);
+      if (log.entity_name) existingProcessedInvoiceIds.add(log.entity_name);
+    }
+  }
+
+  for (const log of logs) {
+    const processed = isProcessingCompleteFn(log);
+    const emailInfo = getEmailInfo(log);
+
+    if (processed) {
+      const linkedInvoice = getLinkedInvoice(log);
+      const logDisplayName = getDisplayNameFn(log) || log.entity_name || 'Dokumentum';
+      items.push({
+        type: 'processed_doc',
+        isGroupedEmail: false,
+        isProcessedDoc: true,
+        id: log.id,
+        created_at: log.created_at,
+        user_id: null,
+        displayName: logDisplayName,
+        sourceLog: log,
+        linkedInvoice,
+        sender: emailInfo.sender,
+        subject: emailInfo.subject,
+      });
+      continue;
+    }
+
+    const isEmailUpload = log.action === 'feltöltés' && emailInfo.isEmail;
+
+    if (!isEmailUpload) {
+      items.push({
+        type: 'regular_log',
+        isGroupedEmail: false,
+        isProcessedDoc: false,
+        id: log.id,
+        created_at: log.created_at,
+        log,
+      });
+      continue;
+    }
+
+    const logTime = new Date(log.created_at).getTime();
+    const logDisplayName = getDisplayNameFn(log) || log.entity_name || 'Dokumentum';
+    const linkedInvoice = getLinkedInvoice(log);
+
+    // Search for an existing matching email group in recently added items (within 10 minutes)
+    let matchedGroup: GroupedEmailUploadItem | null = null;
+    for (let i = items.length - 1; i >= 0; i--) {
+      const item = items[i];
+      if (!item.isGroupedEmail) continue;
+
+      const groupTime = new Date(item.created_at).getTime();
+      const diffMs = Math.abs(groupTime - logTime);
+      if (diffMs > 10 * 60 * 1000) continue;
+
+      // Fallback deduplication check: same file name within 10 min window
+      const sameFile = item.files.some(
+        f => normalize(f.displayName) === normalize(logDisplayName) ||
+             (f.log.entity_name && log.entity_name && normalize(f.log.entity_name) === normalize(log.entity_name))
+      );
+      if (sameFile) {
+        matchedGroup = item;
+        break;
+      }
+
+      // Conflict checks
+      const hasConflictingSender =
+        emailInfo.sender && item.sender &&
+        emailInfo.sender.trim().toLowerCase() !== item.sender.trim().toLowerCase();
+
+      const hasConflictingSubject =
+        emailInfo.subject && item.subject &&
+        normalize(emailInfo.subject) !== normalize(item.subject);
+
+      if (hasConflictingSender || hasConflictingSubject) {
+        continue; // Different senders or different subjects -> definitely different emails
+      }
+
+      // Proximity check:
+      // If both have explicit matching senders: allow up to 10 minutes
+      // If one or both has null sender (e.g. fallback retry or missing metadata): allow up to 5 minutes
+      const maxAllowedDiffMs = (emailInfo.sender && item.sender) ? 10 * 60 * 1000 : 5 * 60 * 1000;
+      if (diffMs <= maxAllowedDiffMs) {
+        matchedGroup = item;
+        break;
+      }
+    }
+
+    if (matchedGroup) {
+      // Update sender/subject if matched group was missing it
+      if (!matchedGroup.sender && emailInfo.sender) matchedGroup.sender = emailInfo.sender;
+      if (!matchedGroup.subject && emailInfo.subject) matchedGroup.subject = emailInfo.subject;
+
+      // Keep the earliest created_at as group timestamp so it reflects the actual email arrival
+      if (logTime < new Date(matchedGroup.created_at).getTime()) {
+        matchedGroup.created_at = log.created_at;
+        matchedGroup.primaryLog = log;
+      }
+
+      // Deduplication: check if this file is already in matchedGroup.files
+      const existingFileIndex = matchedGroup.files.findIndex(
+        f => normalize(f.displayName) === normalize(logDisplayName) ||
+             (f.log.entity_name && log.entity_name && normalize(f.log.entity_name) === normalize(log.entity_name))
+      );
+
+      if (existingFileIndex >= 0) {
+        // Fallback duplicate! Upgrade linkedInvoice or details if missing
+        if (linkedInvoice && !matchedGroup.files[existingFileIndex].linkedInvoice) {
+          matchedGroup.files[existingFileIndex].linkedInvoice = linkedInvoice;
+        }
+        if (!(matchedGroup.files[existingFileIndex].log.details as any)?.upload_id && (log.details as any)?.upload_id) {
+          matchedGroup.files[existingFileIndex].log = log;
+        }
+      } else {
+        // Distinct attachment from the same email: add to group
+        matchedGroup.files.push({
+          log,
+          displayName: logDisplayName,
+          linkedInvoice,
+        });
+      }
+    } else {
+      // New email group
+      items.push({
+        type: 'grouped_email',
+        isGroupedEmail: true,
+        isProcessedDoc: false,
+        id: log.id,
+        created_at: log.created_at,
+        user_id: null,
+        sender: emailInfo.sender,
+        subject: emailInfo.subject,
+        primaryLog: log,
+        files: [
+          {
+            log,
+            displayName: logDisplayName,
+            linkedInvoice,
+          }
+        ]
+      });
+    }
+  }
+
+  // Consolidation pass: merge any grouped email items within 5 minutes that have no conflicting sender or subject
+  const consolidatedItems: TimelineItem[] = [];
+  for (let i = 0; i < items.length; i++) {
+    const current = items[i];
+    if (!current.isGroupedEmail) {
+      consolidatedItems.push(current);
+      continue;
+    }
+
+    // Check if current group can be merged into an earlier grouped_email in consolidatedItems
+    let mergedInto: GroupedEmailUploadItem | null = null;
+    for (let j = consolidatedItems.length - 1; j >= 0; j--) {
+      const existing = consolidatedItems[j];
+      if (!existing.isGroupedEmail) continue;
+
+      const diffMs = Math.abs(new Date(existing.created_at).getTime() - new Date(current.created_at).getTime());
+      if (diffMs > 10 * 60 * 1000) continue;
+
+      const hasConflictingSender =
+        current.sender && existing.sender &&
+        current.sender.trim().toLowerCase() !== existing.sender.trim().toLowerCase();
+
+      const hasConflictingSubject =
+        current.subject && existing.subject &&
+        normalize(current.subject) !== normalize(existing.subject);
+
+      if (hasConflictingSender || hasConflictingSubject) continue;
+
+      const maxDiff = (current.sender && existing.sender) ? 10 * 60 * 1000 : 5 * 60 * 1000;
+      if (diffMs <= maxDiff) {
+        mergedInto = existing;
+        break;
+      }
+    }
+
+    if (mergedInto) {
+      if (!mergedInto.sender && current.sender) mergedInto.sender = current.sender;
+      if (!mergedInto.subject && current.subject) mergedInto.subject = current.subject;
+      if (new Date(current.created_at).getTime() < new Date(mergedInto.created_at).getTime()) {
+        mergedInto.created_at = current.created_at;
+        mergedInto.primaryLog = current.primaryLog;
+      }
+      for (const cf of current.files) {
+        const exists = mergedInto.files.some(
+          ef => normalize(ef.displayName) === normalize(cf.displayName) ||
+                (ef.log.entity_name && cf.log.entity_name && normalize(ef.log.entity_name) === normalize(cf.log.entity_name))
+        );
+        if (!exists) {
+          mergedInto.files.push(cf);
+        } else {
+          // Upgrade linkedInvoice if current has it
+          const idx = mergedInto.files.findIndex(
+            ef => normalize(ef.displayName) === normalize(cf.displayName) ||
+                  (ef.log.entity_name && cf.log.entity_name && normalize(ef.log.entity_name) === normalize(cf.log.entity_name))
+          );
+          if (idx >= 0 && cf.linkedInvoice && !mergedInto.files[idx].linkedInvoice) {
+            mergedInto.files[idx].linkedInvoice = cf.linkedInvoice;
+          }
+        }
+      }
+    } else {
+      consolidatedItems.push(current);
+    }
+  }
+
+  // Generate separate "A rendszer feldolgozott egy dokumentumot" entries for each processed attachment
+  const generatedProcessedDocs: ProcessedDocumentItem[] = [];
+  for (const item of consolidatedItems) {
+    if (!item.isGroupedEmail) continue;
+    for (const file of item.files) {
+      if (file.linkedInvoice) {
+        const invId = file.linkedInvoice.id;
+        const invNum = file.linkedInvoice.bizonylatsorszam;
+        if (!existingProcessedInvoiceIds.has(invId) && (!invNum || !existingProcessedInvoiceIds.has(invNum))) {
+          existingProcessedInvoiceIds.add(invId);
+          if (invNum) existingProcessedInvoiceIds.add(invNum);
+
+          // Option A: Stable chronological timestamp (no synthetic 15s offset)
+          const processedTime = file.log.created_at;
+          generatedProcessedDocs.push({
+            type: 'processed_doc',
+            isGroupedEmail: false,
+            isProcessedDoc: true,
+            id: `processed-${file.log.id}`,
+            created_at: processedTime,
+            user_id: null,
+            displayName: file.displayName,
+            sourceLog: file.log,
+            linkedInvoice: file.linkedInvoice,
+            sender: item.sender,
+            subject: item.subject,
+          });
+        }
+      }
+    }
+  }
+
+  if (generatedProcessedDocs.length > 0) {
+    consolidatedItems.push(...generatedProcessedDocs);
+  }
+
+  // Cross-enrich processed_doc items with sender/subject from matching grouped_email if missing
+  for (const doc of consolidatedItems) {
+    if (!doc.isProcessedDoc) continue;
+    if (doc.sender && doc.subject) continue;
+
+    for (const group of consolidatedItems) {
+      if (!group.isGroupedEmail) continue;
+      const matchesFile = group.files.some(
+        f => normalize(f.displayName) === normalize(doc.displayName) ||
+             (f.log.entity_name && doc.sourceLog.entity_name && normalize(f.log.entity_name) === normalize(doc.sourceLog.entity_name))
+      );
+      const diffMs = Math.abs(new Date(group.created_at).getTime() - new Date(doc.created_at).getTime());
+      if (matchesFile || diffMs <= 5 * 60 * 1000) {
+        if (!doc.sender && group.sender) doc.sender = group.sender;
+        if (!doc.subject && group.subject) doc.subject = group.subject;
+        if (doc.sender && doc.subject) break;
+      }
+    }
+  }
+
+  // Hierarchical chronological sort (Option A: Primary order = timestamp descending; Secondary order = step_type priority)
+  // When an email and its processed document share the same timestamp, 'processed_doc' sorts above 'grouped_email',
+  // eliminating any race condition or artificial leapfrogging over other rapid successive emails.
+  const getStepPriority = (item: TimelineItem): number => {
+    if (item.type === 'processed_doc') return 2;
+    return 1;
+  };
+
+  consolidatedItems.sort((a, b) => {
+    const timeA = new Date(a.created_at).getTime();
+    const timeB = new Date(b.created_at).getTime();
+    if (timeB !== timeA) {
+      return timeB - timeA;
+    }
+    return getStepPriority(b) - getStepPriority(a);
+  });
+
+  return consolidatedItems;
+}
+
+// ─── Component ─────────────────────────────────────────────────────────────────
 export function ActivityLogSheet() {
   const { t } = useTranslation(['dashboard']);
   const { selectedCompany } = useCompany();
@@ -259,12 +506,6 @@ export function ActivityLogSheet() {
 
   // ── Filter state ─────────────────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Unified filter menu
-  const [isMainFilterOpen, setIsMainFilterOpen] = useState(false);
-  const [activeSubPanel, setActiveSubPanel] = useState<'actions' | 'time' | 'users' | 'docs' | null>(null);
-  const mainFilterTimeoutRef = useRef<NodeJS.Timeout>();
-  const [userSearch, setUserSearch] = useState('');
 
   // Action filter
   const [selectedActions, setSelectedActions] = useState<string[]>([]);
@@ -274,18 +515,6 @@ export function ActivityLogSheet() {
   const [customFrom, setCustomFrom] = useState<string>('');
   const [customTo, setCustomTo] = useState<string>('');
   const [isFilterActive, setIsFilterActive] = useState(false);
-  const [tempYearFrom, setTempYearFrom] = useState<string>('');
-  const [tempMonthFrom, setTempMonthFrom] = useState<string>('');
-  const [tempDayFrom, setTempDayFrom] = useState<string>('');
-  const [tempHourFrom, setTempHourFrom] = useState('');
-  const [tempMinFrom, setTempMinFrom] = useState('');
-  const [tempYearTo, setTempYearTo] = useState<string>('');
-  const [tempMonthTo, setTempMonthTo] = useState<string>('');
-  const [tempDayTo, setTempDayTo] = useState<string>('');
-  const [tempHourTo, setTempHourTo] = useState('');
-  const [tempMinTo, setTempMinTo] = useState('');
-  const [activeDropdowns, setActiveDropdowns] = useState(0);
-  const filterTimeoutRef = useRef<NodeJS.Timeout>();
 
   // User filter (multi-select, client-side)
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
@@ -295,59 +524,10 @@ export function ActivityLogSheet() {
   const [docSearchQuery, setDocSearchQuery] = useState('');
   const [isDocFilterActive, setIsDocFilterActive] = useState(false);
 
+  // Selected invoice for detail popup
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
+
   const [isOpen, setIsOpen] = useState(false);
-
-  // Time sub-panel: populate temp values when panel opens
-  const handleTimeSubPanelOpen = () => {
-    if (customFrom) {
-      const d = new Date(customFrom);
-      setTempYearFrom(format(d, 'yyyy'));
-      setTempMonthFrom(format(d, 'MM'));
-      setTempDayFrom(format(d, 'dd'));
-      setTempHourFrom(format(d, 'HH'));
-      setTempMinFrom((Math.round(d.getMinutes() / 5) * 5).toString().padStart(2, '0'));
-    }
-    if (customTo) {
-      const d = new Date(customTo);
-      setTempYearTo(format(d, 'yyyy'));
-      setTempMonthTo(format(d, 'MM'));
-      setTempDayTo(format(d, 'dd'));
-      setTempHourTo(format(d, 'HH'));
-      setTempMinTo((Math.round(d.getMinutes() / 5) * 5).toString().padStart(2, '0'));
-    }
-  };
-
-  const handleMainFilterMouseEnter = () => {
-    if (mainFilterTimeoutRef.current) clearTimeout(mainFilterTimeoutRef.current);
-    setIsMainFilterOpen(true);
-  };
-
-  const handleMainFilterMouseLeave = () => {
-    if (activeDropdowns > 0) return;
-    mainFilterTimeoutRef.current = setTimeout(() => {
-      setIsMainFilterOpen(false);
-      setActiveSubPanel(null);
-    }, 600);
-  };
-
-  // Build customFrom/customTo from temp values whenever time sub-panel is active
-  useEffect(() => {
-    if (activeSubPanel !== 'time') return;
-    if (tempYearFrom && tempMonthFrom && tempDayFrom) {
-      const fromD = new Date(`${tempYearFrom}-${tempMonthFrom}-${tempDayFrom}T00:00:00`);
-      fromD.setHours(tempHourFrom ? parseInt(tempHourFrom, 10) : 0, tempMinFrom ? parseInt(tempMinFrom, 10) : 0, 0, 0);
-      setCustomFrom(fromD.toISOString());
-    } else {
-      setCustomFrom('');
-    }
-    if (tempYearTo && tempMonthTo && tempDayTo) {
-      const toD = new Date(`${tempYearTo}-${tempMonthTo}-${tempDayTo}T00:00:00`);
-      toD.setHours(tempHourTo ? parseInt(tempHourTo, 10) : 23, tempMinTo ? parseInt(tempMinTo, 10) : 59, 59, 999);
-      setCustomTo(toD.toISOString());
-    } else {
-      setCustomTo('');
-    }
-  }, [tempYearFrom, tempMonthFrom, tempDayFrom, tempYearTo, tempMonthTo, tempDayTo, tempHourFrom, tempHourTo, tempMinFrom, tempMinTo, activeSubPanel]);
 
   // Auto-activate time filter when values are set
   useEffect(() => {
@@ -438,8 +618,275 @@ export function ActivityLogSheet() {
     return profileMap.get(userId) || 'Felhasználó';
   }, [profileMap]);
 
-  // Strips everything that isn't a letter or digit — ignores dots, dashes, underscores, spaces, etc.
-  const normalize = (s: string) => s.replace(/[^a-zA-Z0-9\u00C0-\u024F]/g, '').toLowerCase();
+  // ── Batch enrichment for document uploads & linked invoices (retrospective support) ──
+  const { data: enrichment, isLoading: isEnrichmentLoading } = useQuery({
+    queryKey: ['audit_logs_enrichment', companyId, logs.map(l => l.id).join(',')],
+    queryFn: async () => {
+      if (!companyId || logs.length === 0) {
+        return {
+          uploadMap: new Map<string, EnrichedUploadInfo>(),
+          invoiceByUploadId: new Map<string, EnrichedInvoiceInfo>(),
+          invoiceByFileName: new Map<string, EnrichedInvoiceInfo>(),
+          invoiceByNumber: new Map<string, EnrichedInvoiceInfo>(),
+        };
+      }
+
+      // Collect doc filenames, upload IDs, invoice numbers
+      const docFileNames = Array.from(
+        new Set(
+          logs
+            .filter(l => l.entity_name && (l.entity === 'dokumentum' || l.action === 'feltöltés' || l.action === 'módosítás'))
+            .map(l => l.entity_name!)
+        )
+      );
+
+      const knownUploadIds = Array.from(
+        new Set(
+          logs
+            .map(l => (l.details as any)?.upload_id)
+            .filter((id): id is string => typeof id === 'string' && id.length > 20)
+        )
+      );
+
+      const invoiceNumbers = Array.from(
+        new Set(
+          logs
+            .filter(l => (l.entity === 'számla' && l.entity_name) || (l.details as any)?.ai_invoice_number)
+            .map(l => (l.entity === 'számla' ? l.entity_name! : (l.details as any)?.ai_invoice_number))
+            .filter(Boolean)
+        )
+      );
+
+      // Query upload tables
+      const minLogTime = logs.length > 0 ? logs[logs.length - 1].created_at : null;
+      const maxLogTime = logs.length > 0 ? logs[0].created_at : null;
+
+      const [invUploadsRes, transUploadsRes, reportUploadsRes, timeRangeUploadsRes] = await Promise.all([
+        docFileNames.length > 0
+          ? supabase
+              .from('invoice_uploads')
+              .select('id, file_name, metadata, processing_status')
+              .eq('company_id', companyId)
+              .in('file_name', docFileNames)
+          : Promise.resolve({ data: [] }),
+        docFileNames.length > 0
+          ? supabase
+              .from('transaction_uploads')
+              .select('id, file_name, metadata')
+              .eq('company_id', companyId)
+              .in('file_name', docFileNames)
+          : Promise.resolve({ data: [] }),
+        docFileNames.length > 0
+          ? supabase
+              .from('report_uploads')
+              .select('id, file_name, metadata')
+              .eq('company_id', companyId)
+              .in('file_name', docFileNames)
+          : Promise.resolve({ data: [] }),
+        minLogTime && maxLogTime
+          ? supabase
+              .from('invoice_uploads')
+              .select('id, file_name, metadata, processing_status')
+              .eq('company_id', companyId)
+              .gte('created_at', new Date(new Date(minLogTime).getTime() - 15 * 60 * 1000).toISOString())
+              .lte('created_at', new Date(new Date(maxLogTime).getTime() + 15 * 60 * 1000).toISOString())
+              .limit(50)
+          : Promise.resolve({ data: [] }),
+      ]);
+
+      let allInvUploads = (invUploadsRes.data || []) as any[];
+      const foundIds = new Set(allInvUploads.map(u => u.id));
+      const missingUploadIds = knownUploadIds.filter(id => !foundIds.has(id));
+      if (missingUploadIds.length > 0) {
+        const { data: byId } = await supabase
+          .from('invoice_uploads')
+          .select('id, file_name, metadata, processing_status')
+          .eq('company_id', companyId)
+          .in('id', missingUploadIds);
+        if (byId && byId.length > 0) {
+          allInvUploads = [...allInvUploads, ...byId];
+          byId.forEach(u => foundIds.add(u.id));
+        }
+      }
+
+      // Merge time range uploads (adds any other email uploads for the company around this time)
+      const timeRangeUploads = (timeRangeUploadsRes.data || []) as any[];
+      timeRangeUploads.forEach(u => {
+        if (!foundIds.has(u.id)) {
+          allInvUploads.push(u);
+          foundIds.add(u.id);
+        }
+      });
+
+      const uploadMap = new Map<string, EnrichedUploadInfo>();
+      const emailUploadsByTime: EnrichedUploadInfo[] = [];
+
+      allInvUploads.forEach(u => {
+        const meta = (u.metadata || {}) as Record<string, any>;
+        const info: EnrichedUploadInfo = {
+          id: u.id,
+          source: meta.source || null,
+          sender: meta.sender || null,
+          subject: meta.subject || null,
+          received_at: meta.received_at || u.created_at || null,
+          file_name: u.file_name,
+          table: 'invoice_uploads',
+        };
+        uploadMap.set(u.id, info);
+        if (u.file_name) uploadMap.set(u.file_name, info);
+        if (info.source === 'email_alias' || !!info.sender) {
+          emailUploadsByTime.push(info);
+        }
+      });
+
+      (transUploadsRes.data || []).forEach(u => {
+        const meta = ((u as any).metadata || {}) as Record<string, any>;
+        const info: EnrichedUploadInfo = {
+          id: u.id,
+          source: meta.source || null,
+          sender: meta.sender || null,
+          subject: meta.subject || null,
+          received_at: meta.received_at || (u as any).created_at || null,
+          file_name: u.file_name,
+          table: 'transaction_uploads',
+        };
+        uploadMap.set(u.id, info);
+        if (u.file_name) uploadMap.set(u.file_name, info);
+        if (info.source === 'email_alias' || !!info.sender) {
+          emailUploadsByTime.push(info);
+        }
+      });
+
+      (reportUploadsRes.data || []).forEach(u => {
+        const meta = ((u as any).metadata || {}) as Record<string, any>;
+        const info: EnrichedUploadInfo = {
+          id: u.id,
+          source: meta.source || null,
+          sender: meta.sender || null,
+          subject: meta.subject || null,
+          received_at: meta.received_at || (u as any).created_at || null,
+          file_name: u.file_name,
+          table: 'report_uploads',
+        };
+        uploadMap.set(u.id, info);
+        if (u.file_name) uploadMap.set(u.file_name, info);
+        if (info.source === 'email_alias' || !!info.sender) {
+          emailUploadsByTime.push(info);
+        }
+      });
+
+      // Query invoices
+      const allUploadIds = allInvUploads.map(u => u.id);
+      const [byUploadRes, byNumRes] = await Promise.all([
+        allUploadIds.length > 0
+          ? supabase
+              .from('invoices')
+              .select('id, bizonylatsorszam, elado_nev, vevo_nev, brutto_vegosszeg, penznem, invoice_uploads_id')
+              .eq('company_id', companyId)
+              .in('invoice_uploads_id', allUploadIds)
+          : Promise.resolve({ data: [] }),
+        invoiceNumbers.length > 0
+          ? supabase
+              .from('invoices')
+              .select('id, bizonylatsorszam, elado_nev, vevo_nev, brutto_vegosszeg, penznem, invoice_uploads_id')
+              .eq('company_id', companyId)
+              .in('bizonylatsorszam', invoiceNumbers)
+          : Promise.resolve({ data: [] }),
+      ]);
+
+      const invoiceResults = [byUploadRes, byNumRes];
+      const invoiceByUploadId = new Map<string, EnrichedInvoiceInfo>();
+      const invoiceByFileName = new Map<string, EnrichedInvoiceInfo>();
+      const invoiceByNumber = new Map<string, EnrichedInvoiceInfo>();
+
+      const uploadIdToFileName = new Map<string, string>();
+      allInvUploads.forEach(u => uploadIdToFileName.set(u.id, u.file_name));
+
+      invoiceResults.forEach(res => {
+        (res.data || []).forEach((inv: any) => {
+          const info: EnrichedInvoiceInfo = {
+            id: inv.id,
+            bizonylatsorszam: inv.bizonylatsorszam,
+            elado_nev: inv.elado_nev,
+            vevo_nev: inv.vevo_nev,
+            brutto_vegosszeg: inv.brutto_vegosszeg != null ? Number(inv.brutto_vegosszeg) : null,
+            penznem: inv.penznem,
+            invoice_uploads_id: inv.invoice_uploads_id,
+          };
+          if (inv.invoice_uploads_id) {
+            invoiceByUploadId.set(inv.invoice_uploads_id, info);
+            const fn = uploadIdToFileName.get(inv.invoice_uploads_id);
+            if (fn) invoiceByFileName.set(fn, info);
+          }
+          if (inv.bizonylatsorszam) {
+            invoiceByNumber.set(inv.bizonylatsorszam, info);
+          }
+        });
+      });
+
+      return { uploadMap, invoiceByUploadId, invoiceByFileName, invoiceByNumber, emailUploadsByTime };
+    },
+    enabled: !!companyId && isOpen && logs.length > 0,
+    staleTime: 60_000,
+  });
+
+  // Gated loading: ensure both raw audit logs and batch metadata enrichment (senders, subjects, linked invoices)
+  // are fully resolved before revealing the timeline, preventing any jarring pop-in layout shift.
+  const isEnriching = logs.length > 0 && isEnrichmentLoading && !enrichment;
+  const isTimelineLoading = isLoading || isEnriching;
+
+  const getEmailInfo = useCallback((log: AuditLogRow) => {
+    const d = (log.details || {}) as Record<string, any>;
+    const upload = log.entity_name ? enrichment?.uploadMap.get(log.entity_name) : (d?.upload_id ? enrichment?.uploadMap.get(d.upload_id) : null);
+
+    let sender = d?.sender || upload?.sender || null;
+    let subject = d?.subject || upload?.subject || null;
+    const isEmail =
+      d?.upload_source === 'email_alias' ||
+      upload?.source === 'email_alias' ||
+      (!log.user_id && (log.entity === 'dokumentum' || d?.table === 'invoice_uploads' || d?.table === 'transaction_uploads' || d?.table === 'report_uploads')) ||
+      !!sender;
+
+    // Temporal fallback: if it is an email upload but missing sender/subject,
+    // look for the closest email upload within 5 minutes in enrichment
+    if (isEmail && (!sender || !subject) && enrichment?.emailUploadsByTime) {
+      const logTime = new Date(log.created_at).getTime();
+      let bestDiff = 5 * 60 * 1000;
+      for (const eu of enrichment.emailUploadsByTime) {
+        if (!eu.sender && !eu.subject) continue;
+        const uploadTime = eu.received_at ? new Date(eu.received_at).getTime() : 0;
+        const diff = Math.abs(uploadTime - logTime);
+        if (diff <= bestDiff) {
+          bestDiff = diff;
+          if (!sender && eu.sender) sender = eu.sender;
+          if (!subject && eu.subject) subject = eu.subject;
+        }
+      }
+    }
+
+    return { isEmail, sender, subject };
+  }, [enrichment]);
+
+  const getLinkedInvoice = useCallback((log: AuditLogRow) => {
+    const d = (log.details || {}) as Record<string, any>;
+    const uploadId = d?.upload_id;
+    if (uploadId && enrichment?.invoiceByUploadId.has(uploadId)) {
+      return enrichment.invoiceByUploadId.get(uploadId)!;
+    }
+    if (log.entity_name) {
+      if (enrichment?.invoiceByFileName.has(log.entity_name)) {
+        return enrichment.invoiceByFileName.get(log.entity_name)!;
+      }
+      if (enrichment?.invoiceByNumber.has(log.entity_name)) {
+        return enrichment.invoiceByNumber.get(log.entity_name)!;
+      }
+    }
+    if (d?.ai_invoice_number && enrichment?.invoiceByNumber.has(d.ai_invoice_number)) {
+      return enrichment.invoiceByNumber.get(d.ai_invoice_number)!;
+    }
+    return null;
+  }, [enrichment]);
+
 
   const filteredLogs = useMemo(() => {
     let result = logs;
@@ -448,7 +895,9 @@ export function ActivityLogSheet() {
     if (isActionFilterActive && selectedActions.length > 0) {
       result = result.filter(log => {
         const isProcessed = isProcessingComplete(log);
-        if (isProcessed) return selectedActions.includes('feldolgozás');
+        const email = getEmailInfo(log);
+        if (selectedActions.includes('email') && email.isEmail) return true;
+        if (selectedActions.includes('feldolgozás') && isProcessed) return true;
         return selectedActions.includes(log.action);
       });
     }
@@ -494,37 +943,38 @@ export function ActivityLogSheet() {
         const action = normalize(log.action);
         const entity = normalize(log.entity);
         const user = normalize(getUserName(log.user_id));
-        return name.includes(q) || nameWithPdf.includes(q) || action.includes(q) || entity.includes(q) || user.includes(q);
+
+        const email = getEmailInfo(log);
+        const sender = email.sender ? normalize(email.sender) : '';
+        const subject = email.subject ? normalize(email.subject) : '';
+
+        const invoice = getLinkedInvoice(log);
+        const invNumber = invoice?.bizonylatsorszam ? normalize(invoice.bizonylatsorszam) : '';
+        const supplier = invoice?.elado_nev ? normalize(invoice.elado_nev) : '';
+
+        return (
+          name.includes(q) ||
+          nameWithPdf.includes(q) ||
+          action.includes(q) ||
+          entity.includes(q) ||
+          user.includes(q) ||
+          sender.includes(q) ||
+          subject.includes(q) ||
+          invNumber.includes(q) ||
+          supplier.includes(q)
+        );
       });
     }
 
     return result;
-  }, [logs, searchQuery, selectedActions, isActionFilterActive, selectedUserIds, isUserFilterActive, docSearchQuery, isDocFilterActive, isFilterActive, customFrom, customTo, getUserName]);
+  }, [logs, searchQuery, selectedActions, isActionFilterActive, selectedUserIds, isUserFilterActive, docSearchQuery, isDocFilterActive, isFilterActive, customFrom, customTo, getUserName, getEmailInfo, getLinkedInvoice]);
 
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
-
-  const isLikelyPdf = (log: AuditLogRow) => {
-    const name = log.entity_name?.toLowerCase() || '';
-    return name.endsWith('.pdf') ||
-      name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg') ||
-      name.endsWith('.xlsx') || name.endsWith('.xls') ||
-      log.entity === 'számla' ||
-      log.entity === 'bérjegyzék' ||
-      log.action === 'feltöltés';
-  };
-
-  const getDisplayName = (log: AuditLogRow) => {
-    if (!log.entity_name) return '';
-    const name = log.entity_name;
-    const lower = name.toLowerCase();
-    // Only append .pdf for számla entity (bizonylatsorszám has no extension)
-    if (log.entity === 'számla' && !lower.match(/\.\w{2,5}$/)) {
-      return `${name}.pdf`;
-    }
-    return name;
-  };
+  const timelineItems = useMemo(() => {
+    return groupEmailTimelineItems(filteredLogs, getEmailInfo, getLinkedInvoice, isProcessingComplete, getDisplayName);
+  }, [filteredLogs, getEmailInfo, getLinkedInvoice]);
 
   const handlePdfClick = async (log: AuditLogRow) => {
     if (!isLikelyPdf(log)) return;
@@ -559,10 +1009,13 @@ export function ActivityLogSheet() {
       if (!url) {
         const details = log.details as any;
         const sourceTable = details?.table;
-        const uploadId = details?.upload_id || details?.id;
+        const enrichedUpload = log.entity_name ? enrichment?.uploadMap.get(log.entity_name) : null;
+        const uploadId = details?.upload_id || details?.id || enrichedUpload?.id;
         const tablesToCheck = sourceTable
           ? [sourceTable]
-          : ['invoice_uploads', 'transaction_uploads', 'report_uploads', 'salary_files', 'bank_statement_uploads'];
+          : enrichedUpload?.table
+            ? [enrichedUpload.table, 'invoice_uploads', 'transaction_uploads', 'report_uploads', 'salary_files', 'bank_statement_uploads']
+            : ['invoice_uploads', 'transaction_uploads', 'report_uploads', 'salary_files', 'bank_statement_uploads'];
 
         for (const t of tablesToCheck) {
           if (uploadId) {
@@ -684,323 +1137,77 @@ export function ActivityLogSheet() {
           </SheetHeader>
 
           {/* ── STICKY HEADER (search + filter) ─────────────────────────────── */}
-          <div className="sticky top-0 z-20 bg-background border-b border-border/50 px-12 py-3 space-y-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                placeholder="Keresés név, művelet..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 h-8 text-sm bg-secondary/30 border-border/50"
-              />
-            </div>
-
-
-
-            {/* Unified filter button + indicators */}
-            <div className="flex flex-col px-3">
-              {/* Filter button row — at icon column position */}
-              <div className="flex items-center">
-                <div className="w-[42px] flex justify-center shrink-0">
-                  <Popover open={isMainFilterOpen} onOpenChange={(open) => { setIsMainFilterOpen(open); if (!open) setActiveSubPanel(null); }}>
-                    <PopoverTrigger asChild>
-                      <div
-                        onMouseEnter={handleMainFilterMouseEnter}
-                        onMouseLeave={handleMainFilterMouseLeave}
-                      >
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={`h-9 w-9 rounded-full flex items-center justify-center transition-none ${
-                            (isActionFilterActive && selectedActions.length > 0) || (isFilterActive && (customFrom || customTo)) || (isUserFilterActive && selectedUserIds.length > 0) || (isDocFilterActive && docSearchQuery.trim())
-                              ? 'bg-primary/20 text-primary'
-                              : 'text-muted-foreground hover:bg-secondary'
-                          }`}
-                        >
-                          <Filter className={`h-[18px] w-[18px] ${
-                            (isActionFilterActive && selectedActions.length > 0) || (isFilterActive && (customFrom || customTo)) || (isUserFilterActive && selectedUserIds.length > 0) || (isDocFilterActive && docSearchQuery.trim())
-                              ? 'fill-primary' : ''
-                          }`} />
-                        </Button>
-                      </div>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="w-[180px] p-0 z-[200] overflow-visible"
-                      align="start"
-                      sideOffset={4}
-                      onMouseEnter={handleMainFilterMouseEnter}
-                      onMouseLeave={handleMainFilterMouseLeave}
-                    >
-                      <div className="relative">
-                        {/* Left panel: category list — fixed width, matches popover */}
-                        <div className="w-full py-1">
-                          {([
-                            { id: 'actions' as const, label: 'Műveletek szűrése', active: isActionFilterActive && selectedActions.length > 0 },
-                            { id: 'time' as const, label: 'Időszak szűrése', active: isFilterActive && !!(customFrom || customTo) },
-                            { id: 'users' as const, label: 'Felhasználók szűrése', active: isUserFilterActive && selectedUserIds.length > 0 },
-                            { id: 'docs' as const, label: 'Dokumentumok szűrése', active: isDocFilterActive && !!docSearchQuery.trim() },
-                          ] as const).map(item => (
-                            <div
-                              key={item.id}
-                              className={`flex items-center justify-between px-3 py-2 cursor-pointer text-xs transition-colors ${activeSubPanel === item.id ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/60'}`}
-                              onMouseEnter={() => {
-                                setActiveSubPanel(item.id);
-                                if (item.id === 'time') handleTimeSubPanelOpen();
-                              }}
-                            >
-                              <span className={item.active ? 'font-semibold text-primary' : ''}>{item.label}</span>
-                              <div className="flex items-center gap-1">
-                                {item.active && <div className="h-1.5 w-1.5 rounded-full bg-primary" />}
-                                <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Right panel: sub-content — floats absolutely to the right */}
-                        {activeSubPanel && (
-                          <div className="absolute left-full top-0 border border-border/50 rounded-md bg-popover shadow-lg max-w-[540px]">
-
-                            {/* Actions sub-panel */}
-                            {activeSubPanel === 'actions' && (
-                              <div className="p-2 space-y-1">
-                                <div className="px-2 pt-1 pb-2 flex items-center justify-between">
-                                  <h4 className="font-medium text-xs leading-none">Műveletek</h4>
-                                  {selectedActions.length > 0 && (
-                                    <button className="text-[10px] text-muted-foreground hover:text-destructive" onClick={() => { setSelectedActions([]); setIsActionFilterActive(false); }}>Törlés</button>
-                                  )}
-                                </div>
-                                {AVAILABLE_ACTIONS.map(action => {
-                                  const isSelected = selectedActions.includes(action.id);
-                                  return (
-                                    <div
-                                      key={action.id}
-                                      className={`flex items-center justify-between px-2 py-1.5 rounded-md cursor-pointer hover:bg-accent ${isSelected ? 'bg-accent/50' : ''}`}
-                                      onClick={() => {
-                                        setSelectedActions(prev => {
-                                          const next = isSelected ? prev.filter(id => id !== action.id) : [...prev, action.id];
-                                          setIsActionFilterActive(next.length > 0);
-                                          return next;
-                                        });
-                                      }}
-                                    >
-                                      <div className="flex items-center gap-2">
-                                        <div className={`h-4 w-4 rounded-full flex items-center justify-center ${action.color}`}>
-                                          <action.icon className="h-2 w-2" />
-                                        </div>
-                                        <span className={`text-xs ${isSelected ? 'font-medium' : ''}`}>{action.label}</span>
-                                      </div>
-                                      {isSelected && <Check className="h-3 w-3 shrink-0" />}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-
-                            {/* Time sub-panel */}
-                            {activeSubPanel === 'time' && (
-                              <div className="p-2 space-y-2 w-[280px]">
-                                <div className="px-1 pt-1 flex items-center justify-between">
-                                  <h4 className="font-medium text-xs leading-none">Időszak</h4>
-                                  {(customFrom || customTo) && (
-                                    <button className="text-[10px] text-muted-foreground hover:text-destructive" onClick={() => {
-                                      setIsFilterActive(false);
-                                      setCustomFrom(''); setCustomTo('');
-                                      setTempYearFrom(''); setTempMonthFrom(''); setTempDayFrom(''); setTempHourFrom(''); setTempMinFrom('');
-                                      setTempYearTo(''); setTempMonthTo(''); setTempDayTo(''); setTempHourTo(''); setTempMinTo('');
-                                    }}>Törlés</button>
-                                  )}
-                                </div>
-                                <div className="space-y-2 bg-secondary/10 p-2.5 rounded-md border border-border/50">
-                                  <label className="text-xs font-semibold text-foreground">Mettől</label>
-                                  <div className="space-y-1.5">
-                                    <div className="flex justify-center">
-                                      <LocalSelect value={tempYearFrom} onChange={(v) => { setTempYearFrom(v); if (!tempMonthFrom) setTempMonthFrom('01'); if (!tempDayFrom) setTempDayFrom('01'); }} options={YEAR_OPTIONS} placeholder="Év" className="w-[90px]" onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))} />
-                                    </div>
-                                    <div className="flex gap-1.5 items-center">
-                                      <LocalSelect value={tempMonthFrom} onChange={setTempMonthFrom} options={MONTH_OPTIONS} placeholder="Hó" className="flex-1" onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))} />
-                                      <LocalSelect value={tempDayFrom} onChange={setTempDayFrom} options={DAY_OPTIONS} placeholder="Nap" className="flex-1" onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))} />
-                                    </div>
-                                    <div className="flex gap-1.5 items-center">
-                                      <LocalSelect value={tempHourFrom} onChange={setTempHourFrom} options={HOUR_OPTIONS} placeholder="Óra" className="flex-1" onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))} />
-                                      <span className="font-bold text-muted-foreground pb-0.5">:</span>
-                                      <LocalSelect value={tempMinFrom} onChange={setTempMinFrom} options={MIN_OPTIONS} placeholder="Perc" className="flex-1" onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))} />
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="space-y-2 bg-secondary/10 p-2.5 rounded-md border border-border/50">
-                                  <label className="text-xs font-semibold text-foreground">Meddig</label>
-                                  <div className="space-y-1.5">
-                                    <div className="flex justify-center">
-                                      <LocalSelect value={tempYearTo} onChange={(v) => { setTempYearTo(v); if (!tempMonthTo) setTempMonthTo('01'); if (!tempDayTo) setTempDayTo('01'); }} options={YEAR_OPTIONS} placeholder="Év" className="w-[90px]" onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))} />
-                                    </div>
-                                    <div className="flex gap-1.5 items-center">
-                                      <LocalSelect value={tempMonthTo} onChange={setTempMonthTo} options={MONTH_OPTIONS} placeholder="Hó" className="flex-1" onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))} />
-                                      <LocalSelect value={tempDayTo} onChange={setTempDayTo} options={DAY_OPTIONS} placeholder="Nap" className="flex-1" onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))} />
-                                    </div>
-                                    <div className="flex gap-1.5 items-center">
-                                      <LocalSelect value={tempHourTo} onChange={setTempHourTo} options={HOUR_OPTIONS} placeholder="Óra" className="flex-1" onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))} />
-                                      <span className="font-bold text-muted-foreground pb-0.5">:</span>
-                                      <LocalSelect value={tempMinTo} onChange={setTempMinTo} options={MIN_OPTIONS} placeholder="Perc" className="flex-1" onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))} />
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Users sub-panel */}
-                            {activeSubPanel === 'users' && (() => {
-                              const normalizedUserSearch = userSearch.toLowerCase();
-                              const sortedMembers = [...companyMembers].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'hu'));
-                              const filteredMembers = sortedMembers.filter(m => (m.name || 'Névtelen').toLowerCase().includes(normalizedUserSearch));
-                              const showSystem = 'rendszer'.includes(normalizedUserSearch);
-                              return (
-                                <div className="p-2 space-y-1 w-[220px]">
-                                  <div className="px-2 pt-1 pb-1 flex items-center justify-between">
-                                    <h4 className="font-medium text-xs leading-none">Felhasználók</h4>
-                                    {selectedUserIds.length > 0 && (
-                                      <button className="text-[10px] text-muted-foreground hover:text-destructive" onClick={() => { setSelectedUserIds([]); setIsUserFilterActive(false); }}>Törlés</button>
-                                    )}
-                                  </div>
-                                  <div className="relative px-1 pb-1">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-                                    <input
-                                      type="text"
-                                      placeholder="Keresés..."
-                                      value={userSearch}
-                                      onChange={e => setUserSearch(e.target.value)}
-                                      className="w-full pl-6 pr-2 py-1 text-xs bg-secondary/30 border border-border/50 rounded-md outline-none focus:ring-1 focus:ring-primary/40"
-                                    />
-                                  </div>
-                                  <div className="max-h-[220px] overflow-y-auto space-y-0.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full">
-                                    {showSystem && (() => {
-                                      const isSelected = selectedUserIds.includes('__system__');
-                                      return (
-                                        <div
-                                          className={`flex items-center justify-between px-2 py-1.5 rounded-md cursor-pointer hover:bg-accent ${isSelected ? 'bg-accent/50' : ''}`}
-                                          onClick={() => { setSelectedUserIds(prev => { const next = isSelected ? prev.filter(id => id !== '__system__') : [...prev, '__system__']; setIsUserFilterActive(next.length > 0); return next; }); }}
-                                        >
-                                          <div className="flex items-center gap-2"><Bot className="h-3.5 w-3.5 text-muted-foreground" /><span className={`text-xs ${isSelected ? 'font-medium' : ''}`}>Rendszer</span></div>
-                                          {isSelected && <Check className="h-3 w-3 shrink-0" />}
-                                        </div>
-                                      );
-                                    })()}
-                                    {filteredMembers.map(member => {
-                                      const isSelected = selectedUserIds.includes(member.user_id);
-                                      return (
-                                        <div
-                                          key={member.user_id}
-                                          className={`flex items-center justify-between px-2 py-1.5 rounded-md cursor-pointer hover:bg-accent ${isSelected ? 'bg-accent/50' : ''}`}
-                                          onClick={() => { setSelectedUserIds(prev => { const next = isSelected ? prev.filter(id => id !== member.user_id) : [...prev, member.user_id]; setIsUserFilterActive(next.length > 0); return next; }); }}
-                                        >
-                                          <div className="flex items-center gap-2"><User className="h-3.5 w-3.5 text-muted-foreground" /><span className={`text-xs ${isSelected ? 'font-medium' : ''}`}>{member.name || 'Névtelen'}</span></div>
-                                          {isSelected && <Check className="h-3 w-3 shrink-0" />}
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              );
-                            })()}
-
-                            {/* Docs sub-panel */}
-                            {activeSubPanel === 'docs' && (
-                              <div className="p-3 w-[180px] min-h-[152px] space-y-2">
-                                <div className="flex items-center justify-between">
-                                  <h4 className="font-medium text-xs leading-none">Dokumentumok</h4>
-                                  {docSearchQuery && (
-                                    <button className="text-[10px] text-muted-foreground hover:text-destructive" onClick={() => { setDocSearchQuery(''); setIsDocFilterActive(false); }}>Törlés</button>
-                                  )}
-                                </div>
-                                <div className="relative">
-                                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-                                  <Input
-                                    placeholder="Fájlnév keresése..."
-                                    value={docSearchQuery}
-                                    onChange={(e) => { setDocSearchQuery(e.target.value); setIsDocFilterActive(!!e.target.value.trim()); }}
-                                    className="pl-6 h-7 text-xs bg-secondary/30 border-border/50"
-                                    autoFocus
-                                  />
-                                </div>
-                                {docSearchQuery.trim() && (
-                                  <div className="space-y-0.5 max-h-[160px] overflow-y-auto">
-                                    {logs
-                                      .filter(l => l.entity_name && normalize(l.entity_name).includes(normalize(docSearchQuery)))
-                                      .slice(0, 8)
-                                      .map((l, i) => (
-                                        <div key={i} className="px-2 py-1 text-xs text-muted-foreground rounded hover:bg-accent truncate">{l.entity_name}</div>
-                                      ))}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                {/* Indicator rows — each filter category on its own row, to the right of the icon */}
-                {((isActionFilterActive && selectedActions.length > 0) || (isFilterActive && (customFrom || customTo)) || (isUserFilterActive && selectedUserIds.length > 0) || (isDocFilterActive && docSearchQuery.trim())) && (
-                  <div className="flex flex-col gap-1 ml-2 self-start pt-2">
-
-                    {/* 1. Time row — single line: from - to */}
-                    {(isFilterActive && (customFrom || customTo)) && (
-                      <div className="text-[9px] font-bold text-primary/70 tracking-wider whitespace-nowrap leading-tight">
-                        {customFrom ? format(new Date(customFrom), 'yyyy MM.dd. HH:mm') : '??'}{' - '}{customTo ? format(new Date(customTo), 'yyyy MM.dd. HH:mm') : '??'}
-                      </div>
-                    )}
-
-                    {/* 2. Actions row */}
-                    {(isActionFilterActive && selectedActions.length > 0) && (
-                      <div className="flex flex-wrap gap-0.5 items-center">
-                        {selectedActions.map(id => {
-                          const action = AVAILABLE_ACTIONS.find(a => a.id === id);
-                          if (!action) return null;
-                          const iconColorClass = action.color.split(' ').find(c => c.startsWith('text-')) || 'text-primary';
-                          return <action.icon key={id} className={`h-5 w-5 ${iconColorClass}`} />;
-                        })}
-                      </div>
-                    )}
-
-                    {/* 3. Users row */}
-                    {(isUserFilterActive && selectedUserIds.length > 0) && (
-                      <div className="flex flex-wrap gap-0.5">
-                        {selectedUserIds.map(uid => (
-                          <span key={uid} className="text-[9px] font-bold text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                            {uid === '__system__' ? 'Rendszer' : (profileMap.get(uid) || 'Felh.')}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* 4. Docs row */}
-                    {(isDocFilterActive && docSearchQuery.trim()) && (
-                      <span className="text-[9px] font-bold text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded-full whitespace-nowrap max-w-[200px] truncate">
-                        📄 {docSearchQuery}
-                      </span>
-                    )}
-
-                  </div>
-                )}
-              </div>
-
-          </div>
-
-          </div>
+          <ActivityLogFilters
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            selectedActions={selectedActions}
+            setSelectedActions={setSelectedActions}
+            isActionFilterActive={isActionFilterActive}
+            setIsActionFilterActive={setIsActionFilterActive}
+            customFrom={customFrom}
+            setCustomFrom={setCustomFrom}
+            customTo={customTo}
+            setCustomTo={setCustomTo}
+            isFilterActive={isFilterActive}
+            setIsFilterActive={setIsFilterActive}
+            selectedUserIds={selectedUserIds}
+            setSelectedUserIds={setSelectedUserIds}
+            isUserFilterActive={isUserFilterActive}
+            setIsUserFilterActive={setIsUserFilterActive}
+            companyMembers={companyMembers}
+            profileMap={profileMap}
+            docSearchQuery={docSearchQuery}
+            setDocSearchQuery={setDocSearchQuery}
+            isDocFilterActive={isDocFilterActive}
+            setIsDocFilterActive={setIsDocFilterActive}
+            logs={logs}
+          />
 
           {/* ── TIMELINE CONTENT ──────────────────────────────────────────── */}
           <div className="flex-1 overflow-y-auto px-12 py-4">
 
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12 text-muted-foreground text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="h-4 w-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                  Betöltés...
-                </div>
+            {isTimelineLoading ? (
+              <div className="space-y-3 py-1">
+                {[1, 2, 3, 4, 5].map((idx) => (
+                  <div
+                    key={idx}
+                    className="relative flex items-start gap-4 py-3 px-3 rounded-lg border-b border-border/40"
+                  >
+                    {/* Icon circle skeleton */}
+                    <div className="shrink-0 mt-0.5">
+                      <Skeleton className="h-[42px] w-[42px] rounded-full" />
+                    </div>
+
+                    {/* Time/Date column skeleton */}
+                    <div className="shrink-0 flex flex-col items-center justify-center min-w-[48px] gap-1 mt-0.5">
+                      <Skeleton className="h-4 w-12 rounded" />
+                      <Skeleton className="h-2.5 w-8 rounded" />
+                      <Skeleton className="h-2.5 w-8 rounded" />
+                      <Skeleton className="h-2.5 w-10 rounded" />
+                    </div>
+
+                    {/* Content skeleton */}
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <Skeleton className="h-4 w-52 rounded" />
+                      <div className="p-2.5 rounded-md border border-border/30 bg-muted/10 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="h-3.5 w-14 rounded" />
+                          <Skeleton className="h-3.5 w-44 rounded" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="h-3.5 w-14 rounded" />
+                          <Skeleton className="h-3.5 w-56 rounded" />
+                        </div>
+                        <div className="flex items-center gap-2 pt-1 border-t border-border/15">
+                          <Skeleton className="h-3.5 w-24 rounded" />
+                          <Skeleton className="h-6 w-56 rounded-md" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ) : filteredLogs.length === 0 ? (
+            ) : timelineItems.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                 <History className="h-10 w-10 mb-3 opacity-30" />
                 <p className="text-sm font-medium">
@@ -1013,113 +1220,23 @@ export function ActivityLogSheet() {
             ) : (
               <div className="relative">
                 <div className="space-y-1">
-                  {filteredLogs.map((log, index) => {
-                    const processed = isProcessingComplete(log);
-                    const mailgun = isMailgunUpload(log);
-                    const actionCfg = processed
-                      ? { icon: CheckCircle2, color: 'text-green-600 bg-green-50 dark:bg-green-950/30', label: 'feldolgozta' }
-                      : mailgun
-                        ? { icon: Mail, color: 'text-amber-500 bg-amber-50 dark:bg-amber-950/30', label: 'e-mailből érkezett' }
-                        : (ACTION_CONFIG[log.action] || ACTION_CONFIG['módosítás']);
-                    const entityCfg = ENTITY_CONFIG[log.entity] || { label: log.entity, icon: FileText };
-                    const userName = getUserName(log.user_id);
-                    const ActionIcon = actionCfg.icon;
-                    const isSystemAction = processed || mailgun; // system-originated events
-
-                    return (
-                      <div key={log.id} className={`relative flex items-center gap-4 py-3 px-3 rounded-lg transition-colors border-b border-border/60 ${index % 2 === 0 ? 'bg-slate-100 dark:bg-secondary/30' : 'bg-white dark:bg-transparent'}`}>
-                        {/* Icon dot */}
-                        <div className="relative z-10 shrink-0">
-                          <div className={`flex h-[42px] w-[42px] items-center justify-center rounded-full border border-border/50 ${actionCfg.color}`}>
-                            <ActionIcon className="h-5 w-5" />
-                          </div>
-                          <button
-                            onClick={() => setSelectedUserDialog({ userId: log.user_id, userName, isSystem: !log.user_id || isSystemAction })}
-                            className={`absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background transition-transform hover:scale-110 outline-none ${(!log.user_id || isSystemAction) ? 'bg-indigo-100 text-indigo-600' : 'bg-blue-100 text-blue-600'}`}
-                            title={`Kattints a részletekért: ${userName}`}
-                          >
-                            {(!log.user_id || isSystemAction) ? (
-                              <Bot className="h-[10px] w-[10px]" />
-                            ) : (
-                              <User className="h-[10px] w-[10px]" />
-                            )}
-                          </button>
-                        </div>
-
-                        {/* Time & Date */}
-                        <div className="shrink-0 flex flex-col items-center justify-center min-w-[48px] text-center">
-                          <span className="text-[15px] font-bold text-foreground tracking-tight leading-none mb-1">
-                            {format(new Date(log.created_at), 'HH:mm', { locale: hu })}
-                          </span>
-                          <div className="flex flex-col items-center text-[10px] text-muted-foreground font-medium uppercase tracking-wide leading-tight mt-0.5">
-                            <span>{format(new Date(log.created_at), 'MMM', { locale: hu })}</span>
-                            <span>{format(new Date(log.created_at), 'd.', { locale: hu })}</span>
-                            <span>{format(new Date(log.created_at), 'yyyy', { locale: hu })}</span>
-                          </div>
-                        </div>
-
-                        {/* Content — two rows */}
-                        <div className="min-w-0 flex-1">
-                          {/* Row 1: action sentence */}
-                          <p className="text-sm leading-snug">
-                            {processed ? (
-                              <>
-                                <span className="text-muted-foreground">A </span>
-                                <button
-                                  onClick={() => setSelectedUserDialog({ userId: null, userName: 'Rendszer', isSystem: true })}
-                                  className="font-semibold hover:text-primary transition-colors hover:underline outline-none"
-                                >
-                                  rendszer
-                                </button>
-                                <span className="text-muted-foreground"> sikeresen feldolgozott egy dokumentumot</span>
-                              </>
-                            ) : mailgun ? (
-                              <>
-                                <span className="text-muted-foreground">A </span>
-                                <button
-                                  onClick={() => setSelectedUserDialog({ userId: null, userName: 'Rendszer', isSystem: true })}
-                                  className="font-semibold hover:text-primary transition-colors hover:underline outline-none"
-                                >
-                                  rendszer
-                                </button>
-                                <span className="text-muted-foreground"> felé érkezett egy dokumentum e-mailből</span>
-                              </>
-                            ) : (
-                              <>
-                                <button
-                                  onClick={() => setSelectedUserDialog({ userId: log.user_id, userName, isSystem: !log.user_id })}
-                                  className="font-semibold hover:text-primary transition-colors hover:underline outline-none"
-                                >
-                                  {userName}
-                                </button>
-                                {' '}
-                                <span className="text-muted-foreground">{actionCfg.label} egy {entityCfg.label}</span>
-                              </>
-                            )}
-                          </p>
-                          {/* Row 2: filename */}
-                          {getDisplayName(log) && (
-                            <p className="text-xs mt-0.5">
-                              {isLikelyPdf(log) ? (
-                                <button onClick={() => handlePdfClick(log)} className={`font-medium hover:underline inline-flex items-center gap-1 transition-colors ${processed ? 'text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300' : mailgun ? 'text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300' : 'text-blue-500 hover:text-blue-600'}`}>
-                                  <FileText className="h-3 w-3 shrink-0" />
-                                  {getDisplayName(log)}
-                                </button>
-                              ) : (
-                                <span className="font-medium text-foreground">{getDisplayName(log)}</span>
-                              )}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {timelineItems.map((item, index) => (
+                    <ActivityLogTimelineItem
+                      key={item.id}
+                      item={item}
+                      index={index}
+                      getUserName={getUserName}
+                      onUserClick={setSelectedUserDialog}
+                      onPdfClick={handlePdfClick}
+                      onInvoiceClick={setSelectedInvoiceId}
+                    />
+                  ))}
                 </div>
 
                 {/* Result count */}
                 <div className="mt-4 pt-3 border-t border-border/30 text-center">
                   <p className="text-xs text-muted-foreground">
-                    {filteredLogs.length} esemény{filteredLogs.length !== logs.length ? ` (${logs.length} összesen)` : ''}
+                    {timelineItems.length} esemény{timelineItems.length !== logs.length ? ` (${logs.length} összesen)` : ''}
                   </p>
                 </div>
               </div>
@@ -1129,126 +1246,22 @@ export function ActivityLogSheet() {
       </Sheet>
 
       {/* Custom PDF Preview Dialog specific to Audit Logs */}
-      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-6">
-          <DialogHeader className="mb-2">
-            <DialogTitle className="truncate pr-8" title={previewTitle || ''}>{previewTitle}</DialogTitle>
-            {previewIsImage && previewActualExt && (
-              <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-md px-2.5 py-1.5 mt-1 w-fit">
-                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                Ez a fájl nem PDF, hanem <span className="font-semibold">.{previewActualExt}</span> formátumú.
-              </div>
-            )}
-          </DialogHeader>
-
-          <div className="flex-1 overflow-auto min-h-[50vh] flex flex-col relative w-full items-center justify-center p-0 rounded-md border bg-muted/20">
-            {isLoadingPdf && (
-              <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10 backdrop-blur-sm">
-                <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                  <div className="h-6 w-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                  <p className="text-sm font-medium">Dokumentum keresése és betöltése...</p>
-                </div>
-              </div>
-            )}
-
-            {pdfError ? (
-              <div className="text-center p-8 text-muted-foreground flex flex-col items-center max-w-sm gap-3">
-                <AlertCircle className="h-10 w-10 text-destructive mb-1" />
-                {pdfErrorType === 'not_found' ? (
-                  <>
-                    <p className="font-medium text-foreground">A fájl nem található.</p>
-                    <p className="text-sm opacity-80">Ez a fájl már nem létezik a rendszerben — valószínűleg törölve lett, vagy soha nem került feltöltésre.</p>
-                  </>
-                ) : pdfErrorType === 'invalid_format' ? (
-                  <>
-                    <p className="font-medium text-foreground">A fájl nem PDF formátumú.</p>
-                    <p className="text-sm opacity-80">A fájl neve .pdf-re végződik, de a tartalma nem PDF dokumentum, ezért nem jeleníthető meg.</p>
-                  </>
-                ) : pdfErrorType === 'unreachable' ? (
-                  <>
-                    <p className="font-medium text-foreground">A fájl jelenleg nem elérhető.</p>
-                    <p className="text-sm opacity-80">A rendszer megtalálta a fájlt, de nem sikerült letölteni. Ellenőrizd az internetkapcsolatot, vagy próbáld újra később.</p>
-                  </>
-                ) : (
-                  <>
-                    <p className="font-medium text-foreground">A dokumentum nem tölthető be.</p>
-                    <p className="text-sm opacity-80">Ismeretlen hiba történt a fájl betöltése közben.</p>
-                  </>
-                )}
-                {currentPreviewLog && pdfErrorType !== 'not_found' && pdfErrorType !== 'invalid_format' && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePdfClick(currentPreviewLog)}
-                    className="mt-1"
-                  >
-                    Újratöltés
-                  </Button>
-                )}
-              </div>
-            ) : previewIsDownloadOnly ? (
-              <div className="flex flex-col items-center justify-center p-8 text-center max-w-md gap-4">
-                <div className="p-4 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-                  {['xlsx', 'xls', 'csv'].includes(previewActualExt || '') ? (
-                    <FileSpreadsheet className="h-12 w-12" />
-                  ) : ['zip', 'tar', 'gz', 'rar', '7z'].includes(previewActualExt || '') ? (
-                    <FileArchive className="h-12 w-12" />
-                  ) : (
-                    <FileText className="h-12 w-12" />
-                  )}
-                </div>
-                <div className="space-y-1">
-                  <h4 className="font-semibold text-foreground text-base truncate max-w-xs">{previewTitle}</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Ez a fájl ({previewActualExt ? `.${previewActualExt.toUpperCase()}` : 'táblázat'}) közvetlenül a számítógépre tölthető le megtekintésre vagy feldolgozásra.
-                  </p>
-                </div>
-                <Button
-                  onClick={() => {
-                    const downloadLink = document.createElement('a');
-                    downloadLink.href = previewDirectUrl || previewUrl || '';
-                    downloadLink.download = previewTitle || 'letoltes';
-                    downloadLink.target = '_blank';
-                    downloadLink.rel = 'noopener noreferrer';
-                    document.body.appendChild(downloadLink);
-                    downloadLink.click();
-                    document.body.removeChild(downloadLink);
-                  }}
-                  className="mt-2 gap-2 shadow-sm"
-                >
-                  <Download className="h-4 w-4" />
-                  Fájl letöltése
-                </Button>
-              </div>
-            ) : previewUrl ? (
-              previewIsImage ? (
-                <img
-                  src={previewUrl}
-                  alt={previewTitle || ''}
-                  className={`max-w-full max-h-[65vh] object-contain transition-opacity duration-300 ${isLoadingPdf ? 'opacity-0' : 'opacity-100'}`}
-                  onLoad={() => setIsLoadingPdf(false)}
-                />
-              ) : (
-                <embed
-                  src={previewUrl}
-                  type="application/pdf"
-                  className={`w-full h-[65vh] transition-opacity duration-300 ${isLoadingPdf ? 'opacity-0' : 'opacity-100'}`}
-                  onLoad={() => setIsLoadingPdf(false)}
-                />
-              )
-            ) : null}
-          </div>
-
-          {previewUrl && !pdfError && !isLoadingPdf && (
-            <div className="flex justify-center mt-4">
-              <Button onClick={() => window.open(previewUrl, '_blank')} variant="outline" size="sm">
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Megnyitás új ablakban
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <ActivityLogPdfDialog
+        open={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
+        previewTitle={previewTitle}
+        previewIsImage={previewIsImage}
+        previewActualExt={previewActualExt}
+        isLoadingPdf={isLoadingPdf}
+        setIsLoadingPdf={setIsLoadingPdf}
+        pdfError={pdfError}
+        pdfErrorType={pdfErrorType}
+        previewIsDownloadOnly={previewIsDownloadOnly}
+        previewDirectUrl={previewDirectUrl}
+        previewUrl={previewUrl || ''}
+        currentPreviewLog={currentPreviewLog}
+        onRetry={handlePdfClick}
+      />
 
       {selectedUserDialog && (
         <UserActivityDialog
@@ -1260,6 +1273,16 @@ export function ActivityLogSheet() {
           onOpenChange={(open) => {
             if (!open) setSelectedUserDialog(null);
           }}
+        />
+      )}
+
+      {selectedInvoiceId && (
+        <InvoiceDetailPopup
+          open={!!selectedInvoiceId}
+          onOpenChange={(open) => {
+            if (!open) setSelectedInvoiceId(null);
+          }}
+          invoiceId={selectedInvoiceId}
         />
       )}
     </>

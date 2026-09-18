@@ -58,6 +58,8 @@
     "status": {
       "processed": "Feldolgozva",
       "processing": "Feldolgozás alatt",
+      "pending_approval": "Jóváhagyásra vár",
+      "approved": "Jóváhagyva",
       "error": "Hiba"
     }
   },

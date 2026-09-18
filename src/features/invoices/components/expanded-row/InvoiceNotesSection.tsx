@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ClipboardCheck,
@@ -50,9 +50,18 @@ export function InvoiceNotesSection({
   const [newNotePrivate, setNewNotePrivate] = useState(true);
   const [addingNote, setAddingNote] = useState(false);
 
+  const subIdsKey = useMemo(
+    () => matchedSubmittedInvoices.map((inv) => inv.id).sort().join(','),
+    [matchedSubmittedInvoices]
+  );
+  const navIdsKey = useMemo(
+    () => matchedNavInvoices.map((inv) => inv.id).sort().join(','),
+    [matchedNavInvoices]
+  );
+
   // Fetch linked notes
   const { data: notes = [] } = useQuery<InvoiceNote[]>({
-    queryKey: ['invoice-notes', invoiceId, matchedSubmittedInvoices, matchedNavInvoices],
+    queryKey: ['invoice-notes', invoiceId, subIdsKey, navIdsKey],
     queryFn: async () => {
       if (!invoiceId) return [];
 

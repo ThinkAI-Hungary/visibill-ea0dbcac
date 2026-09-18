@@ -9,6 +9,7 @@ import { TablePlaceholderRows } from '@/components/ui/table-placeholder-rows';
 import { StickyHorizontalScrollbar } from '@/components/ui/sticky-horizontal-scrollbar';
 import { ArrowUpDown, ChevronsUpDown, ChevronsDownUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { cn } from '@/lib/utils';
 import { SubmittedInvoiceRow } from './SubmittedInvoiceRow';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 import type { NavInvoice, TransactionRecord } from '../../types';
@@ -95,8 +96,13 @@ export function SubmittedInvoiceTable({
         <ContextMenuTrigger asChild>
           <div
             ref={setTableRef}
-            className="rounded-lg border border-border/50 overflow-hidden"
+            className="rounded-lg border border-border/50 overflow-hidden relative"
           >
+            {tabFetching && paginatedSubmittedInvoices.length > 0 && (
+              <div className="absolute top-0 left-0 right-0 h-0.5 z-20 overflow-hidden bg-primary/20">
+                <div className="h-full bg-primary animate-pulse w-full" />
+              </div>
+            )}
             <Table className="compact-table w-full tight-table" hideScrollbar>
               <TableHeader>
                 <TableRow className="bg-muted/30 hover:bg-muted/30">
@@ -192,7 +198,10 @@ export function SubmittedInvoiceTable({
                 </TableRow>
               </TableHeader>
 
-              <TableBody>
+              <TableBody className={cn(
+                "transition-opacity duration-150",
+                tabFetching && paginatedSubmittedInvoices.length > 0 && "opacity-60 pointer-events-none"
+              )}>
                 {(loading || tabFetching) && paginatedSubmittedInvoices.length === 0 ? (
                   <TableSkeleton rows={10} columns={13} />
                 ) : paginatedSubmittedInvoices.length === 0 ? (

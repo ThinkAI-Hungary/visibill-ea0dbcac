@@ -26,7 +26,14 @@
     "paid": "Plaćeno",
     "unpaid": "Otvoreno",
     "partial": "Djelomično plaćeno",
-    "overdue": "Dospjelo"
+    "overdue": "Dospjelo",
+    "jovahagyasra_var": "Čeka odobrenje",
+    "feldolgozott": "Obrađeno",
+    "feldolgozva": "Obrađeno",
+    "feldolgozas_alatt": "U obradi",
+    "jovahagyva": "Odobreno",
+    "elutasitva": "Odbijeno",
+    "hiba": "Greška"
   },
   "actions": {
     "new_invoice": "Unos novog računa",

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -29,7 +29,62 @@ interface NavInvoiceRowProps {
   onToggleExclude: (invoiceId: string, currentValue: boolean) => Promise<void>;
 }
 
-export function NavInvoiceRow({
+interface LazyRowSelectProps {
+  value: string | null;
+  placeholder?: string;
+  items: Array<{ id: string; name: string }>;
+  onChange: (value: string) => void;
+  className?: string;
+}
+
+const LazyRowSelect = React.memo(function LazyRowSelect({
+  value,
+  placeholder = 'Válassz...',
+  items,
+  onChange,
+  className,
+}: LazyRowSelectProps) {
+  const [open, setOpen] = useState(false);
+  const selectedItem = useMemo(() => items.find((i) => i.id === value), [items, value]);
+
+  const displayLabel = value && value !== 'none'
+    ? selectedItem?.name || placeholder
+    : value === 'none'
+    ? '-'
+    : undefined;
+
+  return (
+    <Select
+      value={value || 'none'}
+      onValueChange={onChange}
+      open={open}
+      onOpenChange={setOpen}
+    >
+      <SelectTrigger
+        className={cn(
+          "w-[100px] h-8 mx-auto bg-transparent border-transparent hover:border-border/50 focus:border-primary/50 transition-colors [&>span]:truncate [&>span]:flex-1 [&>svg]:shrink-0",
+          className
+        )}
+      >
+        <SelectValue placeholder={placeholder}>
+          {displayLabel}
+        </SelectValue>
+      </SelectTrigger>
+      {open && (
+        <SelectContent>
+          <SelectItem value="none">-</SelectItem>
+          {items.map((item) => (
+            <SelectItem key={item.id} value={item.id}>
+              {item.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      )}
+    </Select>
+  );
+});
+
+function NavInvoiceRowComponent({
   invoice,
   navToSubmittedMap,
   navToSuggestedSubmittedMap,
@@ -65,6 +120,11 @@ export function NavInvoiceRow({
     setSelectedSuggestedLinkPair,
   } = useInvoiceContext();
 
+  const navKey = useMemo(() => normalizeInvoiceNumber(invoice.invoice_number), [invoice.invoice_number]);
+  const submittedMatches = useMemo(() => navToSubmittedMap.get(navKey) || [], [navToSubmittedMap, navKey]);
+  const effectiveCategoryId = invoice.category_id || submittedMatches[0]?.category_id || null;
+  const effectiveProjectId = invoice.project_id || submittedMatches[0]?.project_id || null;
+
   const partnerName = getInvoicePartnerName(invoice);
   const matchStatus = (invoice as any).match_status || (invoice.paid ? 'matched' : 'unmatched');
   const isPaid = matchStatus === 'matched';
@@ -76,7 +136,7 @@ export function NavInvoiceRow({
 
   const getNavInvoiceMatches = (navInvoice: NavInvoice) => {
     const matchedSubmitted = navInvoice.invoice_number
-      ? navToSubmittedMap.get(normalizeInvoiceNumber(navInvoice.invoice_number)) || []
+      ? navToSubmittedMap.get(navKey) || []
       : [];
     const allTxMap = new Map<string, TransactionRecord>();
     (pageInvoiceIdToTransactionsMap.get(navInvoice.id) || []).forEach(tx => allTxMap.set(tx.id, tx));
@@ -394,55 +454,22 @@ export function NavInvoiceRow({
           </TooltipProvider>
         </TableCell>
 
-        {activeTab === 'INBOUND' &&
-          (() => {
-            const submittedMatches = navToSubmittedMap.get(normalizeInvoiceNumber(invoice.invoice_number)) || [];
-            const effectiveCategoryId = invoice.category_id || submittedMatches[0]?.category_id || null;
-            return (
-              <TableCell className="text-center">
-                <Select
-                  value={effectiveCategoryId || 'none'}
-                  onValueChange={(value) => handleCategoryChange(invoice.id, value, invoice.invoice_number)}
-                >
-                  <SelectTrigger className="w-[100px] h-8 mx-auto bg-transparent border-transparent hover:border-border/50 focus:border-primary/50 transition-colors [&>span]:truncate [&>span]:flex-1 [&>svg]:shrink-0">
-                    <SelectValue placeholder="Válassz..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">-</SelectItem>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </TableCell>
-            );
-          })()}
+        {activeTab === 'INBOUND' && (
+          <TableCell className="text-center">
+            <LazyRowSelect
+              value={effectiveCategoryId}
+              items={categories}
+              onChange={(value) => handleCategoryChange(invoice.id, value, invoice.invoice_number)}
+            />
+          </TableCell>
+        )}
 
         <TableCell className="text-center">
-          {(() => {
-            const submittedMatches = navToSubmittedMap.get(normalizeInvoiceNumber(invoice.invoice_number)) || [];
-            const effectiveProjectId = invoice.project_id || submittedMatches[0]?.project_id || null;
-            return (
-              <Select
-                value={effectiveProjectId || 'none'}
-                onValueChange={(value) => handleProjectChange(invoice.id, value)}
-              >
-                <SelectTrigger className="w-[100px] h-8 mx-auto bg-transparent border-transparent hover:border-border/50 focus:border-primary/50 transition-colors [&>span]:truncate [&>span]:flex-1 [&>svg]:shrink-0">
-                  <SelectValue placeholder="Válassz..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">-</SelectItem>
-                  {projects.map((project) => (
-                    <SelectItem key={project.id} value={project.id}>
-                      {project.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            );
-          })()}
+          <LazyRowSelect
+            value={effectiveProjectId}
+            items={projects}
+            onChange={(value) => handleProjectChange(invoice.id, value)}
+          />
         </TableCell>
 
         <TableCell className="text-center">
@@ -453,9 +480,7 @@ export function NavInvoiceRow({
 
         <TableCell className="text-center">
           {(() => {
-            const navKey = normalizeInvoiceNumber(invoice.invoice_number);
-            const matchedSubs = navToSubmittedMap.get(navKey);
-            const sub = matchedSubs?.find(s => s.image_url || s.melleklet_url);
+            const sub = submittedMatches.find(s => s.image_url || s.melleklet_url);
             if (sub) {
               return (
                 <HoverCard openDelay={200} closeDelay={100}>
@@ -597,3 +622,6 @@ export function NavInvoiceRow({
     </React.Fragment>
   );
 }
+
+export const NavInvoiceRow = React.memo(NavInvoiceRowComponent);
+
