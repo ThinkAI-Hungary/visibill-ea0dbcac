@@ -712,9 +712,8 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                       const hasDrillData =
                         !!line &&
                         !isSummary &&
-                        !line.is_calculated &&
-                        line.source_vat_codes &&
-                        line.source_vat_codes.length > 0;
+                        ((line.source_vat_codes && line.source_vat_codes.length > 0) ||
+                          ['01', '03', '05', '07', '18', '27', '45', '64', '65', '66', '67', '77', '91', '92'].includes(row.row_number));
                       const isDrillExpanded = expandedFormRow === row.row_number;
 
                       const isRowEditable =
