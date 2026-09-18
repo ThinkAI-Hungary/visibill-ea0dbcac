@@ -38,6 +38,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useCompany } from '@/contexts/CompanyContext';
 import { checkBuyerTaxMismatch } from '@/lib/invoiceMatchingUtils';
+import { InvoiceVatCodeSelector } from '@/components/vat/InvoiceVatCodeSelector';
 
 interface InvoiceDetailPopupProps {
   open: boolean;
@@ -83,6 +84,8 @@ interface FullInvoice {
   letrehozva: string;
   frissitve: string;
   feldolgozva: string | null;
+  vat_code_id?: string | null;
+  vat_row_override?: string | null;
 }
 
 const invoiceTypeLabels = INVOICE_TYPE_LABELS;
@@ -311,7 +314,7 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
     try {
       const { data, error } = await supabase
         .from('invoices')
-        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, elado_cim, elado_vat_id, vevo_nev, vevo_cim, vevo_vat_id, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, fizetesi_mod, fizetesi_hatarido, fizetve, statusz, image_url, melleklet_url, invoice_direction, reference_number, category_id, project_id, transaction_id, afa_kulcsok_bontasban, forditott_adozas, onszamlazas, penzforgalmi_elszamolas, bankszamlaszam_iban, fizetendo_osszeg, invoice_type, termek_szolgaltatas_tipusa, adojogi_megjegyzes, adomentesseg_hivatkozas, dokumentum_azonosito, elolegszamla_hivatkozas, elszamolt_eloleg_osszeg, letrehozva, frissitve, company_id, email_uzenet_id, feldolgozva, invoice_uploads_id, user_id')
+        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, elado_cim, elado_vat_id, vevo_nev, vevo_cim, vevo_vat_id, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, fizetesi_mod, fizetesi_hatarido, fizetve, statusz, image_url, melleklet_url, invoice_direction, reference_number, category_id, project_id, transaction_id, afa_kulcsok_bontasban, forditott_adozas, onszamlazas, penzforgalmi_elszamolas, bankszamlaszam_iban, fizetendo_osszeg, invoice_type, termek_szolgaltatas_tipusa, adojogi_megjegyzes, adomentesseg_hivatkozas, dokumentum_azonosito, elolegszamla_hivatkozas, elszamolt_eloleg_osszeg, letrehozva, frissitve, company_id, email_uzenet_id, feldolgozva, invoice_uploads_id, user_id, vat_code_id, vat_row_override')
         .eq('id', invoiceId)
         .maybeSingle();
 
@@ -414,6 +417,19 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
               {invoice.forditott_adozas && <Badge variant="outline">{t('invoices:dialogs.detail.reverse_charge')}</Badge>}
               {invoice.onszamlazas && <Badge variant="outline">{t('invoices:dialogs.detail.self_billing')}</Badge>}
               {invoice.penzforgalmi_elszamolas && <Badge variant="outline">{t('invoices:dialogs.detail.cash_accounting')}</Badge>}
+              
+              <div className="ml-auto flex items-center gap-1.5">
+                <span className="text-[11px] text-muted-foreground font-medium">ÁFA bevallás:</span>
+                <InvoiceVatCodeSelector
+                  invoiceId={invoice.id}
+                  companyId={invoice.company_id}
+                  invoiceNumber={invoice.bizonylatsorszam}
+                  currentVatCodeId={invoice.vat_code_id}
+                  currentVatRowOverride={invoice.vat_row_override}
+                  direction={invoice.invoice_direction === 'outbound' ? 'OUTBOUND' : 'INBOUND'}
+                  onUpdated={fetchInvoice}
+                />
+              </div>
             </div>
 
             {/* Scrollable multi-column content */}
@@ -603,6 +619,19 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
                       {invoice.afa_kulcsok_bontasban && (
                         <DetailRow label={t('invoices:dialogs.detail.vat_rates_breakdown')} value={invoice.afa_kulcsok_bontasban} />
                       )}
+                      
+                      <div className="flex justify-between items-center py-1 border-b border-border/15 last:border-0 gap-2">
+                        <span className="text-muted-foreground text-xs shrink-0">ÁFA kód / 2665 sor</span>
+                        <InvoiceVatCodeSelector
+                          invoiceId={invoice.id}
+                          companyId={invoice.company_id}
+                          invoiceNumber={invoice.bizonylatsorszam}
+                          currentVatCodeId={invoice.vat_code_id}
+                          currentVatRowOverride={invoice.vat_row_override}
+                          direction={invoice.invoice_direction === 'outbound' ? 'OUTBOUND' : 'INBOUND'}
+                          onUpdated={fetchInvoice}
+                        />
+                      </div>
                     </div>
                   </div>
 

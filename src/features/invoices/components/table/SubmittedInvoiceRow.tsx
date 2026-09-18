@@ -12,6 +12,7 @@ import { ChevronDown, FileText, Package, Pencil, AlertTriangle, AlertOctagon, Ch
 import { cn, formatCurrency } from '@/lib/utils';
 import { getInitials, getAvatarColor } from '@/lib/helpers';
 import { normalizeInvoiceNumber, checkBuyerTaxMismatch } from '@/lib/invoiceMatchingUtils';
+import { InvoiceVatCodeSelector } from '@/components/vat/InvoiceVatCodeSelector';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
@@ -267,7 +268,20 @@ export function SubmittedInvoiceRow({
         </TableCell>
 
         <TableCell className="text-right font-mono tabular-nums text-muted-foreground whitespace-nowrap">
-          {formatCurrency(invoice.afa_osszeg_osszesen || 0, invoice.penznem || 'HUF')}
+          <div className="flex flex-col items-end gap-1">
+            <span>{formatCurrency(invoice.afa_osszeg_osszesen || 0, invoice.penznem || 'HUF')}</span>
+            <div onClick={(e) => e.stopPropagation()}>
+              <InvoiceVatCodeSelector
+                invoiceId={invoice.id}
+                invoiceNumber={invoice.bizonylatsorszam || undefined}
+                companyId={companyId}
+                currentVatCodeId={invoice.vat_code_id}
+                currentVatRowOverride={invoice.vat_row_override}
+                direction={activeTab === 'SUBMITTED_OUTBOUND' ? 'OUTBOUND' : 'INBOUND'}
+                onUpdated={invalidateInvoiceData}
+              />
+            </div>
+          </div>
         </TableCell>
 
         <TableCell className="text-center">
@@ -455,6 +469,9 @@ export function SubmittedInvoiceRow({
           onMatchUpdate={invalidateInvoiceData}
           categories={categories}
           projects={projects}
+          vatCodeId={invoice.vat_code_id}
+          vatRowOverride={invoice.vat_row_override}
+          invoiceType={activeTab === 'SUBMITTED_OUTBOUND' ? 'outbound' : 'inbound'}
         />
       )}
     </React.Fragment>

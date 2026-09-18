@@ -70,6 +70,8 @@ export interface NavInvoice {
   skonto_shipping_amount?: number | null;
   skonto_selected?: boolean | null;
   is_accountant_reviewed?: boolean | null;
+  vat_code_id?: string | null;
+  vat_row_override?: string | null;
 }
 
 export interface SubmittedInvoice {
@@ -111,6 +113,8 @@ export interface SubmittedInvoice {
   skonto_shipping_amount?: number | null;
   skonto_selected?: boolean | null;
   is_accountant_reviewed?: boolean | null;
+  vat_code_id?: string | null;
+  vat_row_override?: string | null;
 }
 
 export interface Partner {

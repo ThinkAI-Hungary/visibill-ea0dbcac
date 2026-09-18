@@ -136,4 +136,8 @@ export interface ExpandedInvoiceRowProps {
   approvedAt?: string | null;
   approvalNote?: string | null;
   onOpenApprovalDialog?: () => void;
+  // ── Manual VAT code & 2665 declaration row override ──
+  vatCodeId?: string | null;
+  vatRowOverride?: string | null;
+  invoiceType?: 'inbound' | 'outbound' | 'INBOUND' | 'OUTBOUND';
 }

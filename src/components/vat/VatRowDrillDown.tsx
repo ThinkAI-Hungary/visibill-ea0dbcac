@@ -30,8 +30,9 @@ interface VatCode {
 /* ────────────────────────────────────────── */
 export function InvoiceItemsDrillDown({ invoiceNumber, companyId }: { invoiceNumber: string; companyId: string }) {
   const { data: items = [], isLoading } = useQuery({
-    queryKey: ['nav_invoice_items_drill', companyId, invoiceNumber],
+    queryKey: ['invoice_items_drill', companyId, invoiceNumber],
     queryFn: async () => {
+      // 1. Check nav_invoices
       const { data: inv } = await supabase
         .from('nav_invoices')
         .select('id')
@@ -39,13 +40,33 @@ export function InvoiceItemsDrillDown({ invoiceNumber, companyId }: { invoiceNum
         .eq('invoice_number', invoiceNumber)
         .limit(1)
         .maybeSingle();
-      if (!(inv as any)?.id) return [];
-      const { data: items } = await supabase
-        .from('nav_invoice_items')
-        .select('line_number, line_description, quantity, unit_price, net_amount, vat_amount, vat_rate, deductible_percentage')
-        .eq('nav_invoice_id', (inv as any).id)
-        .order('line_number');
-      return (items || []) as any[];
+      if ((inv as any)?.id) {
+        const { data: navItems } = await supabase
+          .from('nav_invoice_items')
+          .select('line_number, line_description, quantity, unit_price, net_amount, vat_amount, vat_rate, deductible_percentage')
+          .eq('nav_invoice_id', (inv as any).id)
+          .order('line_number');
+        if (navItems && navItems.length > 0) return navItems as any[];
+      }
+
+      // 2. Fallback to invoices / invoice_items
+      const { data: appInv } = await supabase
+        .from('invoices')
+        .select('id')
+        .eq('company_id', companyId)
+        .eq('bizonylatsorszam', invoiceNumber)
+        .limit(1)
+        .maybeSingle();
+      if ((appInv as any)?.id) {
+        const { data: appItems } = await supabase
+          .from('invoice_items')
+          .select('line_number, line_description, quantity, unit_price, net_amount, vat_amount, vat_rate, deductible_percentage')
+          .eq('invoice_id', (appInv as any).id)
+          .order('line_number');
+        if (appItems && appItems.length > 0) return appItems as any[];
+      }
+
+      return [];
     },
     staleTime: 60_000,
   });
@@ -263,8 +284,33 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
       const { data, error } = await query;
       if (error) { reportError({ type: 'db_query', component: 'VatRowDrillDown', action: 'error', message: 'drill error:', error: error }); return []; }
 
+      // Fetch items from invoices table for any invoices that have empty nav_invoice_items
+      const invNumbers = (data || []).map((d: any) => d.invoice_number).filter(Boolean);
+      const appItemsMap: Record<string, any[]> = {};
+      if (invNumbers.length > 0) {
+        const { data: appInvs } = await supabase
+          .from('invoices')
+          .select('bizonylatsorszam, invoice_items(id, line_number, line_description, net_amount, vat_amount, vat_rate, quantity, unit_price, deductible_percentage, gl_classifications)')
+          .eq('company_id', companyId)
+          .in('bizonylatsorszam', invNumbers);
+        (appInvs || []).forEach((ai: any) => {
+          if (ai.bizonylatsorszam && ai.invoice_items && ai.invoice_items.length > 0) {
+            appItemsMap[ai.bizonylatsorszam] = ai.invoice_items;
+          }
+        });
+      }
+
+      const enrichedInvoices = (data || []).map((inv: any) => {
+        const navItems = inv.nav_invoice_items || [];
+        const appItems = appItemsMap[inv.invoice_number] || [];
+        return {
+          ...inv,
+          nav_invoice_items: navItems.length > 0 ? navItems : appItems,
+        };
+      });
+
       // Filter in memory to match either item vat_rates or header-level rates if items aren't fetched yet
-      return (data || []).filter((inv: any) => {
+      return enrichedInvoices.filter((inv: any) => {
         const suppTax = (inv.supplier_tax_number || '').trim().toUpperCase();
         const isEuSupplier = /^[A-Z]{2}/.test(suppTax) && !suppTax.startsWith('HU');
         const isForeign = isEuSupplier || (inv.currency && inv.currency !== 'HUF') || (suppTax !== '' && !suppTax.startsWith('HU') && !suppTax.includes('-') && !/^[0-9]{8}$/.test(suppTax));
@@ -425,13 +471,35 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
                   <div className="col-span-2 text-right">ÁFA</div>
                 </div>
                 {items.map((item: any, j: number) => {
+                  const deductible = Number(item.deductible_percentage ?? 100);
+                  const isPartial = deductible < 100;
                   const itemNet = Number(item.net_amount || 0);
                   const itemVat = Number(item.vat_amount || 0);
-                  const itemNetHuf = Math.round(itemNet * rate);
-                  const itemVatHuf = Math.round(itemVat * rate);
+                  const itemNetHuf = Math.round(itemNet * rate * (deductible / 100.0));
+                  const itemVatHuf = Math.round(itemVat * rate * (deductible / 100.0));
+                  
+                  let glNum: string | null = null;
+                  if (item.gl_classifications) {
+                    const str = JSON.stringify(item.gl_classifications);
+                    const match = str.match(/"gl_number":\s*"([^"]+)"/);
+                    if (match) glNum = match[1];
+                  }
+
                   return (
-                    <div key={j} className="grid grid-cols-12 gap-2 px-3 py-0.5 text-[10px] text-muted-foreground hover:bg-muted/15 transition-colors">
-                      <div className="col-span-4 truncate" title={item.line_description}>{item.line_description || '—'}</div>
+                    <div key={j} className="grid grid-cols-12 gap-2 px-3 py-1 text-[10px] text-muted-foreground hover:bg-muted/15 transition-colors items-center">
+                      <div className="col-span-4 flex items-center gap-1.5 truncate" title={item.line_description}>
+                        <span className="truncate font-medium text-foreground/80">{item.line_description || '—'}</span>
+                        {isPartial && (
+                          <span className="shrink-0 text-[9px] font-medium px-1 py-0.2 rounded bg-amber-500/15 text-amber-600 border border-amber-500/30">
+                            {deductible}% lev.
+                          </span>
+                        )}
+                        {glNum && (
+                          <span className="shrink-0 text-[9px] font-mono px-1 py-0.2 rounded bg-primary/10 text-primary border border-primary/20">
+                            {glNum}
+                          </span>
+                        )}
+                      </div>
                       <div className="col-span-2 text-right tabular-nums">{item.quantity != null ? formatThousands(Number(item.quantity)) : '—'}</div>
                       <div className="col-span-2 text-right tabular-nums">{item.unit_price != null ? formatThousands(Number(item.unit_price)) : '—'}</div>
                       <div className="col-span-2 text-right tabular-nums font-normal">
@@ -453,6 +521,11 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
                     </div>
                   );
                 })}
+              </div>
+            )}
+            {isExpanded && items.length === 0 && (
+              <div className="bg-muted/10 border border-dashed border-border/40 rounded mx-6 mb-2 px-4 py-2.5 text-xs text-muted-foreground italic flex items-center gap-2 animate-in fade-in duration-150">
+                <span>Ehhez a bizonylathoz nincsenek részletező tételsorok rögzítve (fejléc-szintű összesítés).</span>
               </div>
             )}
           </React.Fragment>

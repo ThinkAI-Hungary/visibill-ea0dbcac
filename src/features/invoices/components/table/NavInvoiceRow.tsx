@@ -13,6 +13,7 @@ import { ChevronDown, Scale, FileText, Package, Sparkles } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 import { getInitials, getAvatarColor } from '@/lib/helpers';
 import { normalizeInvoiceNumber } from '@/lib/invoiceMatchingUtils';
+import { InvoiceVatCodeSelector } from '@/components/vat/InvoiceVatCodeSelector';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
@@ -258,7 +259,20 @@ function NavInvoiceRowComponent({
         </TableCell>
 
         <TableCell className="text-right font-mono tabular-nums text-muted-foreground whitespace-nowrap">
-          {formatCurrency(invoice.invoice_vat_amount || 0, invoice.currency || 'HUF')}
+          <div className="flex flex-col items-end gap-1">
+            <span>{formatCurrency(invoice.invoice_vat_amount || 0, invoice.currency || 'HUF')}</span>
+            <div onClick={(e) => e.stopPropagation()}>
+              <InvoiceVatCodeSelector
+                navInvoiceId={invoice.id}
+                invoiceNumber={invoice.invoice_number}
+                companyId={companyId}
+                currentVatCodeId={invoice.vat_code_id}
+                currentVatRowOverride={invoice.vat_row_override}
+                direction={activeTab === 'OUTBOUND' ? 'OUTBOUND' : 'INBOUND'}
+                onUpdated={invalidateInvoiceData}
+              />
+            </div>
+          </div>
         </TableCell>
 
         <TableCell className="text-center">
@@ -617,6 +631,9 @@ function NavInvoiceRowComponent({
           invoiceOperation={invoice.invoice_operation}
           isManualPayment={invoice.is_manual_payment}
           invoiceNumber={invoice.invoice_number}
+          vatCodeId={invoice.vat_code_id}
+          vatRowOverride={invoice.vat_row_override}
+          invoiceType={activeTab === 'OUTBOUND' ? 'outbound' : 'inbound'}
         />
       )}
     </React.Fragment>

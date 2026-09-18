@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link2, Plus, CreditCard, RotateCcw, XCircle, AlertTriangle, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Link2, Plus, CreditCard, RotateCcw, XCircle, AlertTriangle, CheckCircle2, ShieldCheck, Tag } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import { StornoSettleDialog } from '@/components/invoices/StornoSettleDialog';
 
 // Subcomponents
 import { GeneralLedgerBadgeSection } from './GeneralLedgerBadgeSection';
+import { InvoiceVatCodeSelector } from '@/components/vat/InvoiceVatCodeSelector';
 import { NettingCardSection } from './NettingCardSection';
 import { ContinuousServiceCardSection } from './ContinuousServiceCardSection';
 import { LinkedInvoicesSection } from './LinkedInvoicesSection';
@@ -70,6 +71,9 @@ export function ExpandedInvoiceRow({
   approvedAt,
   approvalNote,
   onOpenApprovalDialog,
+  vatCodeId,
+  vatRowOverride,
+  invoiceType,
 }: ExpandedInvoiceRowProps) {
   const { t } = useTranslation(['invoices', 'common']);
   const queryClient = useQueryClient();
@@ -289,11 +293,34 @@ export function ExpandedInvoiceRow({
           <div className="accordion-grid-animate">
             <div className="accordion-overflow">
               <div className="pt-3 pb-5 px-8 space-y-4 max-w-5xl ml-4">
-                {/* General Ledger numbers */}
-                <GeneralLedgerBadgeSection
-                  glNumbers={glNumbers}
-                  hasSubmittedMatch={hasSubmittedMatch}
-                />
+                {/* General Ledger & VAT classification section */}
+                <div className="flex flex-wrap items-start gap-4">
+                  {/* General Ledger numbers */}
+                  <GeneralLedgerBadgeSection
+                    glNumbers={glNumbers}
+                    hasSubmittedMatch={hasSubmittedMatch}
+                  />
+
+                  {/* Manual VAT code & 2665 declaration target row override card */}
+                  <div className="mb-4 expand-animate bg-card border border-border/40 p-3 rounded-lg flex flex-col gap-2 min-w-[240px]">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      <Tag className="h-3.5 w-3.5 text-primary" />
+                      <span>ÁFA kód & 2665 bevallási sor</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <InvoiceVatCodeSelector
+                        invoiceId={invoiceSource === 'submitted' ? invoiceId : undefined}
+                        navInvoiceId={invoiceSource === 'nav' ? invoiceId : undefined}
+                        invoiceNumber={invoiceNumber}
+                        companyId={companyId}
+                        currentVatCodeId={vatCodeId}
+                        currentVatRowOverride={vatRowOverride}
+                        direction={invoiceType ? (invoiceType.toUpperCase() as 'INBOUND' | 'OUTBOUND') : 'INBOUND'}
+                        onUpdated={onMatchUpdate}
+                      />
+                    </div>
+                  </div>
+                </div>
 
                 {/* Netting (kompenzálás) card */}
                 <NettingCardSection nettingGroup={nettingGroup} />
