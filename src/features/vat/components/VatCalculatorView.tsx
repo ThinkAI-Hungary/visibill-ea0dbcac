@@ -48,6 +48,7 @@ import { cn } from '@/lib/utils';
 import { VatTrendChart } from '@/components/vat/VatTrendChart';
 import { ReturnHistoryTable } from '@/components/vat/ReturnHistoryTable';
 import { VatRowDrillDown, InvoiceItemsDrillDown } from '@/components/vat/VatRowDrillDown';
+import { VatMLineDrillDown } from './VatMLineDrillDown';
 import { VatA60Table } from './VatA60Table';
 import { VatXmlValidationDialog } from './VatXmlValidationDialog';
 import { VatProRataSettingsCard } from './VatProRataSettingsCard';
@@ -1062,66 +1063,16 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                           {Math.round(ml.tax_5_amount / 1000)}
                         </div>
                       </div>
-                      {expandedPartners.has(ml.id) && ml.invoice_details?.length > 0 && (
-                        <div className="bg-muted/30 px-6 py-2 border-t border-border/20">
-                          <div className="text-xs font-medium text-muted-foreground mb-1.5">
-                            Számlák:
-                          </div>
-                          <div className="grid grid-cols-12 gap-2 text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wider pb-1 mb-1 border-b border-border/20 pl-4">
-                            <div className="col-span-3">Számlaszám</div>
-                            <div className="col-span-2">Teljesítés</div>
-                            <div className="col-span-2 text-right">Nettó (eFt)</div>
-                            <div className="col-span-2 text-right">ÁFA (eFt)</div>
-                            <div className="col-span-3 text-right">ÁFA kulcs</div>
-                          </div>
-                          {(ml.invoice_details as any[]).map((inv: any, i: number) => {
-                            const invKey = `${ml.id}_${inv.invoice_number}_${i}`;
-                            const isInvExpanded = expandedInvoice === invKey;
-                            return (
-                              <React.Fragment key={i}>
-                                <div
-                                  className="grid grid-cols-12 gap-2 text-xs py-1.5 pl-4 transition-colors cursor-pointer hover:bg-muted/40 text-muted-foreground hover:text-foreground"
-                                  onClick={() =>
-                                    setExpandedInvoice(isInvExpanded ? null : invKey)
-                                  }
-                                >
-                                  <div className="col-span-3 font-mono flex items-center gap-1">
-                                    {isInvExpanded ? (
-                                      <ChevronDown className="w-2.5 h-2.5 shrink-0" />
-                                    ) : (
-                                      <ChevronRight className="w-2.5 h-2.5 shrink-0" />
-                                    )}
-                                    {inv.invoice_number}
-                                  </div>
-                                  <div className="col-span-2">
-                                    {inv.delivery_date?.substring(0, 10)}
-                                  </div>
-                                  <div className="col-span-2 text-right tabular-nums">
-                                    {fmtEft(Math.round((inv.net || 0) / 1000))}
-                                  </div>
-                                  <div className="col-span-2 text-right tabular-nums">
-                                    {fmtEft(Math.round((inv.vat || 0) / 1000))}
-                                  </div>
-                                  <div className="col-span-3 text-right font-medium">
-                                    {inv.vat_rate === '0.27'
-                                      ? '27%'
-                                      : inv.vat_rate === '0.18'
-                                      ? '18%'
-                                      : inv.vat_rate === '0.05'
-                                      ? '5%'
-                                      : inv.vat_rate}
-                                  </div>
-                                </div>
-                                {isInvExpanded && selectedCompany?.id && (
-                                  <InvoiceItemsDrillDown
-                                    invoiceNumber={inv.invoice_number}
-                                    companyId={selectedCompany.id}
-                                  />
-                                )}
-                              </React.Fragment>
-                            );
-                          })}
-                        </div>
+                      {expandedPartners.has(ml.id) && (
+                        <VatMLineDrillDown
+                          mLine={ml}
+                          companyId={selectedCompany?.id || ''}
+                          year={year}
+                          month={month}
+                          frequency={frequency}
+                          expandedInvoice={expandedInvoice}
+                          setExpandedInvoice={setExpandedInvoice}
+                        />
                       )}
                     </React.Fragment>
                   ))}
