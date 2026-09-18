@@ -57,11 +57,12 @@ export const ENDPOINTS: EndpointDef[] = [
     path: '/v1/invoices',
     category: 'invoices',
     categoryTitle: 'Számlák (Invoices)',
-    title: 'Számlák listázása és keresése',
-    description: 'Bejövő és kimenő (NAV szinkronizált és manuálisan rögzített) számlák lekérdezése lapozással, szűréssel és opcionális tételsorokkal.',
+    title: 'Számlák listázása, szűrése & Hiánylista (has_image=false)',
+    description: 'Bejövő és kimenő (NAV szinkronizált és rögzített) számlák lekérdezése lapozással. A has_image=false szűrővel gépileg azonnal lekérhető a számlaképpel még nem rendelkező tételek hiánylistája!',
     scope: 'read',
     queryParams: [
       { name: 'direction', type: 'string', required: false, description: 'all | inbound | outbound (alapértelmezett: all)' },
+      { name: 'has_image', type: 'boolean', required: false, description: 'true: csak képpel rendelkező | false: HIÁNYLISTA (kép nélküli NAV számlák)' },
       { name: 'status', type: 'string', required: false, description: 'paid (fizetve) | unpaid (kifizetetlen) | all' },
       { name: 'date_from', type: 'string (YYYY-MM-DD)', required: false, description: 'Kibocsátás dátuma -tól szűrő' },
       { name: 'date_to', type: 'string (YYYY-MM-DD)', required: false, description: 'Kibocsátás dátuma -ig szűrő' },
@@ -72,28 +73,72 @@ export const ENDPOINTS: EndpointDef[] = [
       { name: 'company_id', type: 'uuid', required: false, description: 'Cég azonosító (többcéges kulcsnál opcionálisan felülírható)' },
     ],
     curlExample: `curl -H "Authorization: Bearer <API_KEY>" \\
-     "${BASE_URL}/v1/invoices?direction=inbound&status=unpaid&limit=10"`,
+     "${BASE_URL}/v1/invoices?direction=inbound&has_image=false&limit=10"`,
     sampleResponse: JSON.stringify({
       success: true,
       data: {
         invoices: [
           {
-            id: "e5654ff2-1771-43e9-ac83-5a124e1b86e3",
-            invoice_number: "JJKMINX4-0016",
+            id: "a79a5eb7-e683-4c8c-be76-b9afef3f50e1",
+            invoice_number: "FBADS-070-105702620",
             direction: "inbound",
-            partner_name: "Anthropic, PBC",
-            partner_tax_number: "US982341",
-            gross_amount: 228.6,
-            net_amount: 180.0,
-            currency: "EUR",
-            is_paid: false,
-            issue_date: "2026-09-17",
-            fulfillment_date: "2026-09-17",
-            due_date: "2026-10-01",
-            amounts: { net: 180, vat: 48.6, gross: 228.6, currency: "EUR" }
+            partner_name: "Meta Platforms Ireland Ltd.",
+            partner_tax_number: "IE9692928F",
+            gross_amount: 45200,
+            net_amount: 45200,
+            currency: "HUF",
+            is_paid: true,
+            issue_date: "2026-08-31",
+            has_image: false,
+            attachment_url: null,
+            is_nav_synced: true,
+            nav_status: "verified",
+            processing_status: "feldolgozott"
           }
         ],
-        pagination: { page: 1, page_size: 50, total_items: 296, total_pages: 6 }
+        pagination: { page: 1, page_size: 50, total_items: 12, total_pages: 1 }
+      }
+    }, null, 2)
+  },
+  {
+    id: 'post-invoice-upload',
+    method: 'POST',
+    path: '/v1/invoices/upload',
+    category: 'invoices',
+    categoryTitle: 'Számlák (Invoices)',
+    title: 'Számlakép feltöltése + Azonnali NAV párosítás',
+    description: 'Számla PDF / kép feltöltése Base64 kódolással. A nav_invoice_number megadásával a rendszer automatikusan megkeresi és hozzárendeli a képet a meglévő NAV Online Számla tételhez!',
+    scope: 'read_write',
+    bodyParams: [
+      { name: 'file_base64', type: 'string (base64)', required: true, description: 'A számla PDF vagy képfájl Base64 kódolású tartalma' },
+      { name: 'nav_invoice_number', type: 'string', required: false, description: 'NAV bizonylatszám (ha megadod, azonnal összekapcsolja a tétellel)' },
+      { name: 'file_name', type: 'string', required: false, description: 'Eredeti fájlnév (pl. szamla_202608.pdf)' },
+      { name: 'direction', type: 'string', required: false, description: 'INBOUND | OUTBOUND (alapértelmezett: INBOUND)' },
+      { name: 'company_id', type: 'uuid', required: false, description: 'Cég azonosítója' }
+    ],
+    curlExample: `curl -X POST -H "Authorization: Bearer <API_KEY>" -H "Content-Type: application/json" \\
+     -d '{
+       "file_base64": "JVBERi0xLjQKJcTl8uXr...",
+       "nav_invoice_number": "FBADS-070-105702620",
+       "file_name": "facebook_hirdetes_augusztus.pdf"
+     }' \\
+     "${BASE_URL}/v1/invoices/upload"`,
+    sampleBody: JSON.stringify({
+      file_base64: "JVBERi0xLjQKJcTl8uXr...",
+      nav_invoice_number: "FBADS-070-105702620",
+      file_name: "facebook_hirdetes_augusztus.pdf"
+    }, null, 2),
+    sampleResponse: JSON.stringify({
+      success: true,
+      message: "Számlakép sikeresen feltöltve és azonnal összekapcsolva a meglévő NAV-tétellel.",
+      data: {
+        matched: true,
+        invoice_id: "a79a5eb7-e683-4c8c-be76-b9afef3f50e1",
+        invoice_number: "FBADS-070-105702620",
+        has_image: true,
+        attachment_url: "https://.../storage/v1/object/public/invoice-uploads/.../facebook_hirdetes_augusztus.pdf",
+        status: "feldolgozott",
+        nav_status: "verified"
       }
     }, null, 2)
   },
@@ -104,7 +149,7 @@ export const ENDPOINTS: EndpointDef[] = [
     category: 'invoices',
     categoryTitle: 'Számlák (Invoices)',
     title: 'Számla részletei és tételsorai',
-    description: 'Egyetlen számla összes fejlécadata és tételsorai (mennyiség, egységár, ÁFA kulcs, nettó és bruttó sorösszegek).',
+    description: 'Egyetlen számla összes fejlécadata, számlakép URL-je és tételsorai (mennyiség, egységár, ÁFA kulcs, nettó és bruttó sorösszegek).',
     scope: 'read',
     queryParams: [
       { name: 'company_id', type: 'uuid', required: false, description: 'Cég azonosítója' }
@@ -122,11 +167,13 @@ export const ENDPOINTS: EndpointDef[] = [
           gross_amount: 228.6,
           currency: "EUR",
           is_paid: false,
+          has_image: true,
+          attachment_url: "https://.../sample.pdf",
           items: [
             {
               id: "66ff0e32-4b8a-45e5-96c0-2c3d9e1b14b3",
               line_number: 1,
-              description: "Max plan - 20x (Időszak: Aug 3–Sep 3, 2026)",
+              description: "Max plan - 20x",
               quantity: 1,
               unit: "db",
               unit_price: 180,
@@ -146,23 +193,65 @@ export const ENDPOINTS: EndpointDef[] = [
     path: '/v1/invoices/:id',
     category: 'invoices',
     categoryTitle: 'Számlák (Invoices)',
-    title: 'Számla státuszának és fizetettségének frissítése',
-    description: 'Számla fizetettségi állapotának (is_paid), fizetés dátumának, kategóriájának vagy projektjének módosítása.',
+    title: 'Bizonylatszám javítása (OCR hiba) & Kép csatolása',
+    description: 'Bizonylatszám javítása (pl. OCR félreolvasás korrekciója), számlakép hozzárendelése (attachment_url vagy közvetlen file_base64 feltöltés), fizetettségi állapot módosítása.',
     scope: 'read_write',
     bodyParams: [
+      { name: 'invoice_number', type: 'string', required: false, description: 'Bizonylatszám javítása / módosítása (OCR korrekció)' },
+      { name: 'attachment_url', type: 'string (URL)', required: false, description: 'Meglévő számlakép URL hozzárendelése' },
+      { name: 'file_base64', type: 'string (base64)', required: false, description: 'Közvetlen PDF/kép feltöltése és csatolása a számlához' },
       { name: 'is_paid', type: 'boolean', required: false, description: 'Fizetett státusz (true vagy false)' },
       { name: 'payment_date', type: 'string (YYYY-MM-DD)', required: false, description: 'Kifizetés napja' },
       { name: 'category_id', type: 'uuid', required: false, description: 'Költség- vagy bevételi kategória' },
       { name: 'project_id', type: 'uuid', required: false, description: 'Projekt azonosító' }
     ],
     curlExample: `curl -X PATCH -H "Authorization: Bearer <API_KEY>" -H "Content-Type: application/json" \\
-     -d '{"is_paid": true, "payment_date": "2026-09-18"}' \\
+     -d '{"invoice_number": "INV-2026-001", "attachment_url": "https://.../szamla.pdf"}' \\
      "${BASE_URL}/v1/invoices/<INVOICE_ID>"`,
-    sampleBody: JSON.stringify({ is_paid: true, payment_date: "2026-09-18" }, null, 2),
+    sampleBody: JSON.stringify({ invoice_number: "INV-2026-001", is_paid: true }, null, 2),
     sampleResponse: JSON.stringify({
       success: true,
-      message: "Számla sikeresen frissítve.",
-      data: { invoice: { id: "e5654ff2-...", bizonylatsorszam: "JJKMINX4-0016", fizetve: true } }
+      message: "Számla adatai / bizonylatszáma / számlaképe sikeresen frissítve.",
+      data: { invoice: { id: "e5654ff2-...", invoice_number: "INV-2026-001", has_image: true } }
+    }, null, 2)
+  },
+  {
+    id: 'post-invoice-link',
+    method: 'POST',
+    path: '/v1/invoices/link',
+    category: 'invoices',
+    categoryTitle: 'Számlák (Invoices)',
+    title: 'Számlakép és NAV-tétel összekötése',
+    description: 'Meglévő számlakép (dokumentum URL) és NAV bizonylatszám közvetlen összekötése és opcionális bizonylatszám korrekció.',
+    scope: 'read_write',
+    bodyParams: [
+      { name: 'invoice_id', type: 'uuid', required: false, description: 'Cél számla azonosítója (ha ismert)' },
+      { name: 'invoice_number', type: 'string', required: false, description: 'Cél bizonylatszám (pl. NAV számlaszám)' },
+      { name: 'attachment_url', type: 'string (URL)', required: false, description: 'Hozzárendelendő számlakép URL-je' },
+      { name: 'source_invoice_id', type: 'uuid', required: false, description: 'Másik számla azonosítója, ahonnan át kell venni a számlaképet' }
+    ],
+    curlExample: `curl -X POST -H "Authorization: Bearer <API_KEY>" -H "Content-Type: application/json" \\
+     -d '{
+       "invoice_number": "FBADS-070-105702620",
+       "attachment_url": "https://vxxgvdlqvvchtlmqnrqf.supabase.co/storage/v1/object/public/invoice-uploads/sample.pdf"
+     }' \\
+     "${BASE_URL}/v1/invoices/link"`,
+    sampleBody: JSON.stringify({
+      invoice_number: "FBADS-070-105702620",
+      attachment_url: "https://vxxgvdlqvvchtlmqnrqf.supabase.co/storage/v1/object/public/invoice-uploads/sample.pdf"
+    }, null, 2),
+    sampleResponse: JSON.stringify({
+      success: true,
+      message: "Számlakép és NAV-tétel sikeresen összekötve / bizonylatszám javítva.",
+      data: {
+        invoice: {
+          id: "a79a5eb7-e683-4c8c-be76-b9afef3f50e1",
+          invoice_number: "FBADS-070-105702620",
+          has_image: true,
+          status: "feldolgozott",
+          attachment_url: "https://.../sample.pdf"
+        }
+      }
     }, null, 2)
   },
   {
@@ -171,8 +260,8 @@ export const ENDPOINTS: EndpointDef[] = [
     path: '/v1/invoices',
     category: 'invoices',
     categoryTitle: 'Számlák (Invoices)',
-    title: 'Új számla rögzítése vagy Base64 PDF feltöltése',
-    description: 'Új számla adatrekord felvitele tételekkel, vagy számla dokumentum feltöltése Base64 kódolással automatikus OCR feldolgozásra.',
+    title: 'Új számla rögzítése tételekkel',
+    description: 'Új számla adatrekord felvitele strukturált tételsorokkal és összegekkel.',
     scope: 'read_write',
     bodyParams: [
       { name: 'direction', type: 'string', required: true, description: 'inbound | outbound' },
@@ -183,8 +272,7 @@ export const ENDPOINTS: EndpointDef[] = [
       { name: 'due_date', type: 'string (YYYY-MM-DD)', required: false, description: 'Fizetési határidő' },
       { name: 'gross_amount', type: 'number', required: true, description: 'Bruttó végösszeg' },
       { name: 'currency', type: 'string', required: false, description: 'Pénznem (HUF, EUR, USD - alap: HUF)' },
-      { name: 'items', type: 'array of objects', required: false, description: 'Tételsorok (description, net_amount, vat_rate, gross_amount)' },
-      { name: 'file_base64', type: 'string', required: false, description: 'Opcionális Base64 PDF/kép csatolmány' }
+      { name: 'items', type: 'array of objects', required: false, description: 'Tételsorok (description, net_amount, vat_rate, gross_amount)' }
     ],
     curlExample: `curl -X POST -H "Authorization: Bearer <API_KEY>" -H "Content-Type: application/json" \\
      -d '{

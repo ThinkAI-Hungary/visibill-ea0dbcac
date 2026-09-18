@@ -123,21 +123,26 @@ function getApiDocumentation() {
     rate_limit: "Alapértelmezett 120 kérés/perc csúszóablakos korlát.",
     endpoints: {
       "GET /v1/invoices": {
-        description: "Számlák listázása szűréssel és lapozással (kimenő és bejövő/NAV számlák normalizált sémában).",
-        query_params: ["company_id (kötelező)", "direction (all|inbound|outbound)", "date_from (YYYY-MM-DD)", "date_to (YYYY-MM-DD)", "status (paid|unpaid|all)", "partner_tax_number", "page (default: 1)", "page_size (default: 50, max: 100)"],
+        description: "Számlák listázása szűréssel és lapozással (kimenő és bejövő/NAV számlák normalizált sémában). Támogatja a hiánylista lekérdezést has_image=false szűrővel.",
+        query_params: ["company_id (kötelező)", "direction (all|inbound|outbound)", "date_from (YYYY-MM-DD)", "date_to (YYYY-MM-DD)", "has_image (true|false - false esetén HIÁNYLISTA)", "status (paid|unpaid|all)", "nav_status", "partner_tax_number", "page (default: 1)", "page_size (default: 50, max: 100)"],
       },
       "GET /v1/invoices/:id": {
-        description: "Egy konkrét számla összes adata tételsorokkal (items) együtt.",
+        description: "Egy konkrét számla összes adata és számlaképe tételsorokkal (items) együtt.",
         query_params: ["company_id (kötelező)"],
       },
       "PATCH /v1/invoices/:id": {
-        description: "Számla adatainak módosítása (fizetettség, kategória, projekt).",
-        body_params: ["company_id", "is_paid (boolean)", "payment_date (YYYY-MM-DD)", "category_id (uuid)", "project_id (uuid)"],
+        description: "Számla adatainak módosítása (bizonylatszám OCR-hiba javítása, számlakép és NAV tétel összekötése, fizetettség, kategória, projekt).",
+        body_params: ["company_id", "invoice_number (bizonylatszám javítása)", "attachment_url (számlakép csatolása)", "file_base64 (közvetlen PDF feltöltés)", "is_paid (boolean)", "payment_date (YYYY-MM-DD)", "category_id (uuid)", "project_id (uuid)"],
         required_scope: "read_write",
       },
       "POST /v1/invoices/upload": {
-        description: "Számla PDF / kép feltöltése automatikus OCR feldolgozásra.",
-        body_params: ["company_id", "file_base64", "file_name", "direction (INBOUND|OUTBOUND)"],
+        description: "Számlakép (PDF vagy kép) feltöltése Base64 formátumban és opcionális azonnali párosítása meglévő NAV-tételhez.",
+        body_params: ["company_id", "file_base64 (kötelező)", "nav_invoice_number (opcionális, azonnali NAV párosításhoz)", "file_name", "direction (INBOUND|OUTBOUND)"],
+        required_scope: "read_write",
+      },
+      "POST /v1/invoices/link": {
+        description: "Számlakép (dokumentum) és NAV-tétel közvetlen összekötése és bizonylatszám korrekció.",
+        body_params: ["company_id", "invoice_id (vagy invoice_number)", "attachment_url (vagy source_invoice_id)", "target_invoice_number (opcionális)"],
         required_scope: "read_write",
       },
       "GET /v1/partners": {
@@ -379,12 +384,79 @@ serve(async (req) => {
       // ──────────────────────────────────────────────────
       // DOMAIN: INVOICES
       // ──────────────────────────────────────────────────
-      const invoiceId = (subResource && subResource !== "upload" && subResource !== "upload-url") 
+      const invoiceId = (subResource && subResource !== "upload" && subResource !== "upload-url" && subResource !== "link") 
         ? subResource 
         : (url.searchParams.get("invoice_id") || (requestBody?.invoice_id as string));
 
-      // CASE: Upload invoice PDF / image for OCR
-      if (req.method === "POST" && (subResource === "upload" || resource === "upload_invoice")) {
+      // CASE: Link attachment / fix invoice pairing (POST /v1/invoices/link or /v1/invoices/:id/link)
+      if (req.method === "POST" && (subResource === "link" || subAction === "link" || resource === "link_invoice")) {
+        const scopeErr = requireWriteScope();
+        if (scopeErr) { response = scopeErr; }
+        else {
+          const accessErr = verifyCompanyAccess(targetCompanyId);
+          if (accessErr) { response = accessErr; }
+          else {
+            const targetId = (invoiceId && invoiceId !== "link") ? invoiceId : requestBody.invoice_id;
+            const invoiceNumber = requestBody.invoice_number || requestBody.nav_invoice_number;
+            const attachmentUrl = requestBody.attachment_url || requestBody.melleklet_url;
+            const sourceInvoiceId = requestBody.source_invoice_id;
+
+            let effectiveAttachmentUrl = attachmentUrl;
+            if (!effectiveAttachmentUrl && sourceInvoiceId) {
+              const { data: srcInv } = await admin
+                .from("invoices")
+                .select("melleklet_url, image_url")
+                .eq("id", sourceInvoiceId)
+                .maybeSingle();
+              effectiveAttachmentUrl = srcInv?.melleklet_url || srcInv?.image_url;
+            }
+
+            const updates: Record<string, any> = { frissitve: new Date().toISOString() };
+            if (requestBody.invoice_number !== undefined) updates.bizonylatsorszam = String(requestBody.invoice_number).trim();
+            if (effectiveAttachmentUrl !== undefined) updates.melleklet_url = effectiveAttachmentUrl;
+            if (requestBody.status !== undefined || requestBody.statusz !== undefined) {
+              updates.statusz = requestBody.status || requestBody.statusz;
+            }
+
+            if (!targetId && !invoiceNumber) {
+              response = errorResponse("MISSING_TARGET", "Add meg az 'invoice_id'-t vagy 'invoice_number'-t az összekötéshez.", 400);
+            } else {
+              let query = admin.from("invoices").update(updates).eq("company_id", targetCompanyId);
+              if (targetId) {
+                query = query.eq("id", targetId);
+              } else if (invoiceNumber) {
+                query = query.ilike("bizonylatsorszam", String(invoiceNumber).trim());
+              }
+
+              const { data: linkedInv, error: linkErr } = await query
+                .select("id, bizonylatsorszam, statusz, nav_status, melleklet_url, image_url, frissitve")
+                .maybeSingle();
+
+              if (linkErr || !linkedInv) {
+                response = errorResponse("LINK_FAILED", linkErr?.message || "Nem található a cél számla a megadott azonosítóval.", 404);
+              } else {
+                response = json({
+                  success: true,
+                  message: "Számlakép és NAV-tétel sikeresen összekötve / bizonylatszám javítva.",
+                  data: {
+                    invoice: {
+                      id: linkedInv.id,
+                      invoice_number: linkedInv.bizonylatsorszam,
+                      status: linkedInv.statusz,
+                      nav_status: linkedInv.nav_status,
+                      has_image: Boolean(linkedInv.melleklet_url || linkedInv.image_url),
+                      attachment_url: linkedInv.melleklet_url || linkedInv.image_url || null,
+                      updated_at: linkedInv.frissitve,
+                    }
+                  },
+                });
+              }
+            }
+          }
+        }
+      }
+      // CASE: Upload invoice PDF / image for OCR or direct NAV pairing
+      else if (req.method === "POST" && (subResource === "upload" || resource === "upload_invoice")) {
         const scopeErr = requireWriteScope();
         if (scopeErr) { response = scopeErr; }
         else {
@@ -392,8 +464,10 @@ serve(async (req) => {
           if (accessErr) { response = accessErr; }
           else {
             const fileBase64 = requestBody.file_base64;
-            const fileName = requestBody.file_name || `api_upload_${Date.now()}.pdf`;
+            const fileName = requestBody.file_name || `upload_${Date.now()}.pdf`;
             const direction = (requestBody.direction || "INBOUND").toUpperCase();
+            const navInvoiceNumber = (requestBody.nav_invoice_number || requestBody.invoice_number || "").toString().trim();
+            const targetInvoiceId = (requestBody.invoice_id || "").toString().trim();
 
             if (!fileBase64) {
               response = errorResponse("MISSING_FILE", "A 'file_base64' paraméter megadása kötelező.", 400);
@@ -406,41 +480,150 @@ serve(async (req) => {
                   bytes[i] = binaryStr.charCodeAt(i);
                 }
 
-                const storagePath = `${targetCompanyId}/${Date.now()}_${fileName.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+                const storagePath = `${auth.user_id}/${Date.now()}_${fileName.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
                 const { data: uploadData, error: uploadErr } = await admin.storage
-                  .from("documents")
+                  .from("invoice-uploads")
                   .upload(storagePath, bytes, { contentType: "application/pdf", upsert: true });
 
                 if (uploadErr) {
                   response = errorResponse("UPLOAD_FAILED", uploadErr.message, 500);
                 } else {
-                  // Insert placeholder in invoices table
-                  const { data: newInv, error: insertErr } = await admin
-                    .from("invoices")
-                    .insert({
-                      company_id: targetCompanyId,
-                      user_id: auth.user_id,
-                      invoice_direction: direction,
-                      statusz: "feldolgozas_alatt",
-                      melleklet_url: uploadData?.path,
-                      bizonylatsorszam: `UPLOAD-${Date.now().toString().slice(-6)}`,
-                      kibocsatas_datuma: new Date().toISOString().slice(0, 10),
-                      teljesites_datuma: new Date().toISOString().slice(0, 10),
-                      adoalap_osszesen: 0,
-                      afa_osszeg_osszesen: 0,
-                      brutto_vegosszeg: 0,
-                    })
-                    .select("id, bizonylatsorszam, statusz, invoice_direction, created_at")
-                    .single();
+                  const publicUrl = `${supabaseUrl}/storage/v1/object/public/invoice-uploads/${storagePath}`;
 
-                  if (insertErr) {
-                    response = errorResponse("DB_INSERT_FAILED", insertErr.message, 500);
-                  } else {
-                    response = json({
-                      success: true,
-                      message: "Számla sikeresen feltöltve, feldolgozás indítva.",
-                      data: { invoice: newInv, storage_path: uploadData?.path },
-                    }, 201);
+                  // Scenario 1: Target invoice ID explicitly given
+                  if (targetInvoiceId) {
+                    const { data: updatedById, error: updateByIdErr } = await admin
+                      .from("invoices")
+                      .update({ melleklet_url: publicUrl, frissitve: new Date().toISOString() })
+                      .eq("id", targetInvoiceId)
+                      .eq("company_id", targetCompanyId)
+                      .select("id, bizonylatsorszam, statusz, nav_status, invoice_direction, melleklet_url, letrehozva")
+                      .maybeSingle();
+
+                    if (updatedById) {
+                      response = json({
+                        success: true,
+                        message: "Számlakép sikeresen feltöltve és hozzárendelve a megadott számlához.",
+                        data: {
+                          matched: true,
+                          invoice_id: updatedById.id,
+                          invoice_number: updatedById.bizonylatsorszam,
+                          has_image: true,
+                          attachment_url: publicUrl,
+                          status: updatedById.statusz,
+                          nav_status: updatedById.nav_status,
+                        },
+                      }, 200);
+                    } else {
+                      response = errorResponse("INVOICE_NOT_FOUND", "A megadott számla nem található a cégnél.", 404);
+                    }
+                  }
+                  // Scenario 2: NAV invoice number provided -> Attempt immediate matching
+                  else if (navInvoiceNumber) {
+                    const { data: existingInv } = await admin
+                      .from("invoices")
+                      .select("id, bizonylatsorszam, statusz, nav_status, invoice_direction, melleklet_url, letrehozva")
+                      .eq("company_id", targetCompanyId)
+                      .ilike("bizonylatsorszam", navInvoiceNumber)
+                      .maybeSingle();
+
+                    if (existingInv) {
+                      const { data: updatedInv } = await admin
+                        .from("invoices")
+                        .update({ melleklet_url: publicUrl, frissitve: new Date().toISOString() })
+                        .eq("id", existingInv.id)
+                        .select("id, bizonylatsorszam, statusz, nav_status, invoice_direction, melleklet_url, letrehozva")
+                        .single();
+
+                      response = json({
+                        success: true,
+                        message: "Számlakép sikeresen feltöltve és azonnal összekapcsolva a meglévő NAV-tétellel.",
+                        data: {
+                          matched: true,
+                          invoice_id: (updatedInv || existingInv).id,
+                          invoice_number: (updatedInv || existingInv).bizonylatsorszam,
+                          has_image: true,
+                          attachment_url: publicUrl,
+                          status: (updatedInv || existingInv).statusz,
+                          nav_status: (updatedInv || existingInv).nav_status,
+                        },
+                      }, 200);
+                    } else {
+                      // Pre-insert invoice with that invoice_number ready for future NAV sync
+                      const { data: newInv, error: insertErr } = await admin
+                        .from("invoices")
+                        .insert({
+                          company_id: targetCompanyId,
+                          user_id: auth.user_id,
+                          invoice_direction: direction,
+                          statusz: "feldolgozas_alatt",
+                          nav_status: "pending_match",
+                          melleklet_url: publicUrl,
+                          bizonylatsorszam: navInvoiceNumber,
+                          kibocsatas_datuma: new Date().toISOString().slice(0, 10),
+                          teljesites_datuma: new Date().toISOString().slice(0, 10),
+                          adoalap_osszesen: 0,
+                          afa_osszeg_osszesen: 0,
+                          brutto_vegosszeg: 0,
+                        })
+                        .select("id, bizonylatsorszam, statusz, nav_status, invoice_direction, melleklet_url, letrehozva")
+                        .single();
+
+                      if (insertErr) {
+                        response = errorResponse("DB_INSERT_FAILED", insertErr.message, 500);
+                      } else {
+                        response = json({
+                          success: true,
+                          message: "Számlakép rögzítve a megadott bizonylatszámmal (NAV szinkronizációra előkészítve).",
+                          data: {
+                            matched: false,
+                            invoice_id: newInv.id,
+                            invoice_number: newInv.bizonylatsorszam,
+                            has_image: true,
+                            attachment_url: publicUrl,
+                            status: newInv.statusz,
+                            nav_status: newInv.nav_status,
+                          },
+                        }, 201);
+                      }
+                    }
+                  }
+                  // Scenario 3: Standard unlinked upload for OCR
+                  else {
+                    const { data: newInv, error: insertErr } = await admin
+                      .from("invoices")
+                      .insert({
+                        company_id: targetCompanyId,
+                        user_id: auth.user_id,
+                        invoice_direction: direction,
+                        statusz: "feldolgozas_alatt",
+                        melleklet_url: publicUrl,
+                        bizonylatsorszam: `UPLOAD-${Date.now().toString().slice(-6)}`,
+                        kibocsatas_datuma: new Date().toISOString().slice(0, 10),
+                        teljesites_datuma: new Date().toISOString().slice(0, 10),
+                        adoalap_osszesen: 0,
+                        afa_osszeg_osszesen: 0,
+                        brutto_vegosszeg: 0,
+                      })
+                      .select("id, bizonylatsorszam, statusz, nav_status, invoice_direction, melleklet_url, letrehozva")
+                      .single();
+
+                    if (insertErr) {
+                      response = errorResponse("DB_INSERT_FAILED", insertErr.message, 500);
+                    } else {
+                      response = json({
+                        success: true,
+                        message: "Számla sikeresen feltöltve, feldolgozás indítva.",
+                        data: {
+                          matched: false,
+                          invoice_id: newInv.id,
+                          invoice_number: newInv.bizonylatsorszam,
+                          has_image: true,
+                          attachment_url: publicUrl,
+                          status: newInv.statusz,
+                        },
+                      }, 201);
+                    }
                   }
                 }
               } catch (decodeErr: any) {
@@ -473,6 +656,9 @@ serve(async (req) => {
             response = errorResponse("INVOICE_NOT_FOUND", "A számla nem található a megadott cégnél.", 404);
           } else {
             const inv = invRes.data;
+            const attachment = inv.melleklet_url || inv.image_url || null;
+            const isNavSynced = Boolean(inv.nav_status && inv.nav_status !== "missing_nav");
+
             response = json({
               success: true,
               data: {
@@ -489,6 +675,11 @@ serve(async (req) => {
                   issue_date: inv.kibocsatas_datuma,
                   fulfillment_date: inv.teljesites_datuma,
                   due_date: inv.fizetesi_hatarido,
+                  has_image: Boolean(attachment),
+                  attachment_url: attachment,
+                  is_nav_synced: isNavSynced,
+                  nav_status: inv.nav_status || null,
+                  processing_status: inv.statusz || "feldolgozott",
                   supplier: {
                     name: inv.elado_nev,
                     tax_number: inv.elado_vat_id,
@@ -514,7 +705,6 @@ serve(async (req) => {
                   category_id: inv.category_id,
                   project_id: inv.project_id,
                   status: inv.statusz,
-                  nav_status: inv.nav_status,
                   created_at: inv.letrehozva,
                   items: (itemsRes.data || []).map((it: any) => ({
                     id: it.id,
@@ -535,7 +725,7 @@ serve(async (req) => {
           }
         }
       }
-      // CASE: Update invoice status / category / project (PATCH /v1/invoices/:id)
+      // CASE: Update invoice details / fix OCR errors / pair image (PATCH /v1/invoices/:id)
       else if (req.method === "PATCH" && invoiceId) {
         const scopeErr = requireWriteScope();
         if (scopeErr) { response = scopeErr; }
@@ -551,13 +741,54 @@ serve(async (req) => {
             }
             if (requestBody.category_id !== undefined) updates.category_id = requestBody.category_id || null;
             if (requestBody.project_id !== undefined) updates.project_id = requestBody.project_id || null;
+            
+            // Fix OCR typo in invoice number
+            if (requestBody.invoice_number !== undefined) {
+              const num = String(requestBody.invoice_number).trim();
+              if (!num) {
+                response = errorResponse("VALIDATION_ERROR", "A bizonylatszám nem lehet üres.", 400);
+                return;
+              }
+              updates.bizonylatsorszam = num;
+            }
+
+            // Link image URL
+            if (requestBody.attachment_url !== undefined) {
+              updates.melleklet_url = requestBody.attachment_url || null;
+            }
+            if (requestBody.status !== undefined || requestBody.statusz !== undefined) {
+              updates.statusz = requestBody.status || requestBody.statusz;
+            }
+
+            // Direct base64 upload & link inside PATCH
+            if (requestBody.file_base64) {
+              try {
+                const binaryStr = atob(requestBody.file_base64);
+                const bytes = new Uint8Array(binaryStr.length);
+                for (let i = 0; i < binaryStr.length; i++) {
+                  bytes[i] = binaryStr.charCodeAt(i);
+                }
+                const fileName = requestBody.file_name || `patch_${Date.now()}.pdf`;
+                const storagePath = `${auth.user_id}/${Date.now()}_${fileName.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+                const { error: uploadErr } = await admin.storage
+                  .from("invoice-uploads")
+                  .upload(storagePath, bytes, { contentType: "application/pdf", upsert: true });
+
+                if (!uploadErr) {
+                  updates.melleklet_url = `${supabaseUrl}/storage/v1/object/public/invoice-uploads/${storagePath}`;
+                }
+              } catch {
+                response = errorResponse("INVALID_BASE64", "Hibás base64 kép adat.", 400);
+                return;
+              }
+            }
 
             const { data: updatedInv, error: patchErr } = await admin
               .from("invoices")
               .update(updates)
               .eq("id", invoiceId)
               .eq("company_id", targetCompanyId)
-              .select("id, bizonylatsorszam, fizetve, category_id, project_id, frissitve")
+              .select("id, bizonylatsorszam, fizetve, category_id, project_id, statusz, nav_status, melleklet_url, image_url, frissitve")
               .maybeSingle();
 
             if (patchErr || !updatedInv) {
@@ -565,14 +796,27 @@ serve(async (req) => {
             } else {
               response = json({
                 success: true,
-                message: "Számla sikeresen frissítve.",
-                data: { invoice: updatedInv },
+                message: "Számla adatai / bizonylatszáma / számlaképe sikeresen frissítve.",
+                data: {
+                  invoice: {
+                    id: updatedInv.id,
+                    invoice_number: updatedInv.bizonylatsorszam,
+                    is_paid: updatedInv.fizetve,
+                    category_id: updatedInv.category_id,
+                    project_id: updatedInv.project_id,
+                    status: updatedInv.statusz,
+                    nav_status: updatedInv.nav_status,
+                    has_image: Boolean(updatedInv.melleklet_url || updatedInv.image_url),
+                    attachment_url: updatedInv.melleklet_url || updatedInv.image_url || null,
+                    updated_at: updatedInv.frissitve,
+                  }
+                },
               });
             }
           }
         }
       }
-      // CASE: List invoices (GET /v1/invoices)
+      // CASE: List invoices (GET /v1/invoices) with Missing-Image (Hiánylista) support
       else if (req.method === "GET") {
         const accessErr = verifyCompanyAccess(targetCompanyId);
         if (accessErr) { response = accessErr; }
@@ -582,13 +826,15 @@ serve(async (req) => {
           const dateTo = url.searchParams.get("date_to");
           const status = url.searchParams.get("status")?.toLowerCase();
           const partnerTaxNumber = url.searchParams.get("partner_tax_number");
+          const hasImageParam = url.searchParams.get("has_image")?.toLowerCase();
+          const navStatusParam = url.searchParams.get("nav_status")?.toLowerCase();
           const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
           const pageSize = Math.min(100, Math.max(1, parseInt(url.searchParams.get("page_size") || "50", 10)));
           const offset = (page - 1) * pageSize;
 
           let query = admin
             .from("invoices")
-            .select("id, bizonylatsorszam, invoice_direction, kibocsatas_datuma, teljesites_datuma, fizetesi_hatarido, elado_nev, elado_vat_id, elado_cim, vevo_nev, vevo_vat_id, vevo_cim, adoalap_osszesen, afa_osszeg_osszesen, brutto_vegosszeg, fizetendo_osszeg, penznem, fizetve, fizetesi_mod, category_id, project_id, statusz, nav_status, letrehozva", { count: "exact" })
+            .select("id, bizonylatsorszam, invoice_direction, kibocsatas_datuma, teljesites_datuma, fizetesi_hatarido, elado_nev, elado_vat_id, elado_cim, vevo_nev, vevo_vat_id, vevo_cim, adoalap_osszesen, afa_osszeg_osszesen, brutto_vegosszeg, fizetendo_osszeg, penznem, fizetve, fizetesi_mod, category_id, project_id, statusz, nav_status, melleklet_url, image_url, letrehozva", { count: "exact" })
             .eq("company_id", targetCompanyId);
 
           if (direction === "inbound") query = query.ilike("invoice_direction", "inbound");
@@ -601,6 +847,17 @@ serve(async (req) => {
             query = query.or(`elado_vat_id.ilike.%${partnerTaxNumber}%,vevo_vat_id.ilike.%${partnerTaxNumber}%`);
           }
 
+          // Requirement b: Hiánylista (számlakép nélküli számlák szűrése)
+          if (hasImageParam === "false" || url.searchParams.get("missing_image") === "true") {
+            query = query.is("melleklet_url", null).is("image_url", null);
+          } else if (hasImageParam === "true") {
+            query = query.or("melleklet_url.not.is.null,image_url.not.is.null");
+          }
+
+          if (navStatusParam) {
+            query = query.eq("nav_status", navStatusParam);
+          }
+
           const { data: invoices, count, error: listErr } = await query
             .order("kibocsatas_datuma", { ascending: false })
             .range(offset, offset + pageSize - 1);
@@ -608,46 +865,54 @@ serve(async (req) => {
           if (listErr) {
             response = errorResponse("QUERY_FAILED", listErr.message, 500);
           } else {
-            const normalizedInvoices = (invoices || []).map((inv: any) => ({
-              id: inv.id,
-              invoice_number: inv.bizonylatsorszam,
-              direction: (inv.invoice_direction || "inbound").toLowerCase(),
-              partner_name: (inv.invoice_direction || "").toUpperCase() === "OUTBOUND" ? (inv.vevo_nev || "") : (inv.elado_nev || ""),
-              partner_tax_number: (inv.invoice_direction || "").toUpperCase() === "OUTBOUND" ? inv.vevo_vat_id : inv.elado_vat_id,
-              gross_amount: inv.brutto_vegosszeg,
-              net_amount: inv.adoalap_osszesen,
-              currency: inv.penznem || "HUF",
-              is_paid: inv.fizetve || false,
-              issue_date: inv.kibocsatas_datuma,
-              fulfillment_date: inv.teljesites_datuma,
-              due_date: inv.fizetesi_hatarido,
-              supplier: {
-                name: inv.elado_nev,
-                tax_number: inv.elado_vat_id,
-                address: inv.elado_cim,
-              },
-              customer: {
-                name: inv.vevo_nev,
-                tax_number: inv.vevo_vat_id,
-                address: inv.vevo_cim,
-              },
-              amounts: {
-                net: inv.adoalap_osszesen,
-                vat: inv.afa_osszeg_osszesen,
-                gross: inv.brutto_vegosszeg,
-                payable: inv.fizetendo_osszeg ?? inv.brutto_vegosszeg,
+            const normalizedInvoices = (invoices || []).map((inv: any) => {
+              const attachment = inv.melleklet_url || inv.image_url || null;
+              const isNavSynced = Boolean(inv.nav_status && inv.nav_status !== "missing_nav");
+              return {
+                id: inv.id,
+                invoice_number: inv.bizonylatsorszam,
+                direction: (inv.invoice_direction || "inbound").toLowerCase(),
+                partner_name: (inv.invoice_direction || "").toUpperCase() === "OUTBOUND" ? (inv.vevo_nev || "") : (inv.elado_nev || ""),
+                partner_tax_number: (inv.invoice_direction || "").toUpperCase() === "OUTBOUND" ? inv.vevo_vat_id : inv.elado_vat_id,
+                gross_amount: inv.brutto_vegosszeg,
+                net_amount: inv.adoalap_osszesen,
                 currency: inv.penznem || "HUF",
-              },
-              payment: {
                 is_paid: inv.fizetve || false,
-                payment_method: inv.fizetesi_mod,
-              },
-              category_id: inv.category_id,
-              project_id: inv.project_id,
-              status: inv.statusz,
-              nav_status: inv.nav_status,
-              created_at: inv.letrehozva,
-            }));
+                issue_date: inv.kibocsatas_datuma,
+                fulfillment_date: inv.teljesites_datuma,
+                due_date: inv.fizetesi_hatarido,
+                has_image: Boolean(attachment),
+                attachment_url: attachment,
+                is_nav_synced: isNavSynced,
+                nav_status: inv.nav_status || null,
+                processing_status: inv.statusz || "feldolgozott",
+                supplier: {
+                  name: inv.elado_nev,
+                  tax_number: inv.elado_vat_id,
+                  address: inv.elado_cim,
+                },
+                customer: {
+                  name: inv.vevo_nev,
+                  tax_number: inv.vevo_vat_id,
+                  address: inv.vevo_cim,
+                },
+                amounts: {
+                  net: inv.adoalap_osszesen,
+                  vat: inv.afa_osszeg_osszesen,
+                  gross: inv.brutto_vegosszeg,
+                  payable: inv.fizetendo_osszeg ?? inv.brutto_vegosszeg,
+                  currency: inv.penznem || "HUF",
+                },
+                payment: {
+                  is_paid: inv.fizetve || false,
+                  payment_method: inv.fizetesi_mod,
+                },
+                category_id: inv.category_id,
+                project_id: inv.project_id,
+                status: inv.statusz,
+                created_at: inv.letrehozva,
+              };
+            });
 
             response = json({
               success: true,
