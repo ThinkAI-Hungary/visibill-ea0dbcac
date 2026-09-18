@@ -23,7 +23,7 @@ import { format, parseISO } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { getDateFnsLocale } from '@/lib/locale/formatters';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Trash2, FileText, ListOrdered, Loader2 } from 'lucide-react';
+import { Plus, Trash2, FileText, ListOrdered, Loader2, Calculator } from 'lucide-react';
 import { reportError } from '@/lib/errorReporter';
 
 interface Category {
@@ -98,13 +98,14 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
     teljesites_datuma: undefined as Date | undefined,
     elado_nev: '',
     vevo_nev: '',
-    adoalap_osszesen: 0,
-    brutto_vegosszeg: 0,
-    afa_osszeg_osszesen: 0,
+    adoalap_osszesen: '' as string | number,
+    brutto_vegosszeg: '' as string | number,
+    afa_osszeg_osszesen: '' as string | number,
     penznem: 'HUF',
     category_id: 'none',
     project_id: 'none',
   });
+  const [isHeaderAmountsDirty, setIsHeaderAmountsDirty] = useState(false);
 
   // ── Image & File Deletion State ──
   const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
@@ -141,13 +142,14 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
         teljesites_datuma: invoice.teljesites_datuma ? parseISO(invoice.teljesites_datuma) : undefined,
         elado_nev: invoice.elado_nev || '',
         vevo_nev: invoice.vevo_nev || '',
-        adoalap_osszesen: invoice.adoalap_osszesen || 0,
-        brutto_vegosszeg: invoice.brutto_vegosszeg || 0,
-        afa_osszeg_osszesen: invoice.afa_osszeg_osszesen || 0,
+        adoalap_osszesen: invoice.adoalap_osszesen ?? 0,
+        brutto_vegosszeg: invoice.brutto_vegosszeg ?? 0,
+        afa_osszeg_osszesen: invoice.afa_osszeg_osszesen ?? 0,
         penznem: invoice.penznem || 'HUF',
         category_id: invoice.category_id || 'none',
         project_id: invoice.project_id || 'none',
       });
+      setIsHeaderAmountsDirty(false);
       setCurrentImageUrl(invoice.image_url ?? null);
       setCurrentMellekletUrl(invoice.melleklet_url ?? null);
       setCurrentInvoiceUploadsId((invoice as any).invoice_uploads_id ?? null);
@@ -243,15 +245,49 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
 
     setIsSaving(true);
     try {
-      // 1. Save invoice metadata (bizonylatsorszam + category + project)
+      // Line items change detection
+      const toDelete = editableItems.filter(i => i._isDeleted && !i._isNew);
+      const toInsert = editableItems.filter(i => i._isNew && !i._isDeleted);
+      const toUpdate = editableItems.filter(i => i._isDirty && !i._isNew && !i._isDeleted);
+      const itemsModified = toInsert.length > 0 || toUpdate.length > 0 || toDelete.length > 0;
+      const hasItems = visibleItems.length > 0;
+
+      // Parse amounts from formData or fallback to itemTotals
+      let finalNet = typeof formData.adoalap_osszesen === 'number'
+        ? formData.adoalap_osszesen
+        : parseFloat(String(formData.adoalap_osszesen).replace(',', '.')) || 0;
+      let finalVat = typeof formData.afa_osszeg_osszesen === 'number'
+        ? formData.afa_osszeg_osszesen
+        : parseFloat(String(formData.afa_osszeg_osszesen).replace(',', '.')) || 0;
+      let finalGross = typeof formData.brutto_vegosszeg === 'number'
+        ? formData.brutto_vegosszeg
+        : parseFloat(String(formData.brutto_vegosszeg).replace(',', '.')) || 0;
+
+      // If items were modified and the user did NOT manually override header fields, sync from item totals
+      if (hasItems && itemsModified && !isHeaderAmountsDirty) {
+        finalNet = Math.round(itemTotals.net * 100) / 100;
+        finalVat = Math.round(itemTotals.vat * 100) / 100;
+        finalGross = Math.round(itemTotals.gross * 100) / 100;
+      }
+
+      // 1. Save invoice metadata + amounts (bizonylatsorszam + category + project + header totals)
+      const invoiceUpdatePayload: Record<string, any> = {
+        bizonylatsorszam: formData.bizonylatsorszam.trim() || null,
+        category_id: formData.category_id === 'none' ? null : formData.category_id,
+        project_id: formData.project_id === 'none' ? null : formData.project_id,
+        frissitve: new Date().toISOString(),
+      };
+
+      if (isHeaderAmountsDirty || hasItems || itemsModified) {
+        invoiceUpdatePayload.adoalap_osszesen = finalNet;
+        invoiceUpdatePayload.afa_osszeg_osszesen = finalVat;
+        invoiceUpdatePayload.brutto_vegosszeg = finalGross;
+        invoiceUpdatePayload.fizetendo_osszeg = finalGross;
+      }
+
       const { error: invoiceError } = await supabase
         .from('invoices')
-        .update({
-          bizonylatsorszam: formData.bizonylatsorszam.trim() || null,
-          category_id: formData.category_id === 'none' ? null : formData.category_id,
-          project_id: formData.project_id === 'none' ? null : formData.project_id,
-          frissitve: new Date().toISOString(),
-        })
+        .update(invoiceUpdatePayload)
         .eq('id', invoice.id);
 
       if (invoiceError) {
@@ -262,10 +298,6 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
       }
 
       // 2. Save line items
-      const toDelete = editableItems.filter(i => i._isDeleted && !i._isNew);
-      const toInsert = editableItems.filter(i => i._isNew && !i._isDeleted);
-      const toUpdate = editableItems.filter(i => i._isDirty && !i._isNew && !i._isDeleted);
-
       // Delete removed items
       if (toDelete.length > 0) {
         const { error } = await supabase
@@ -321,8 +353,12 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
       queryClient.invalidateQueries({ queryKey: ['invoiceItems', 'submitted', invoice.id] });
       queryClient.invalidateQueries({ queryKey: ['company-invoices'] });
       queryClient.invalidateQueries({ queryKey: ['submittedInvoices'] });
+      queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['nav-invoices'] });
       queryClient.invalidateQueries({ queryKey: ['recentInvoices'] });
+      queryClient.invalidateQueries({ queryKey: ['invoice-kpis'] });
+      queryClient.invalidateQueries({ queryKey: ['invoiceKpis'] });
 
       toast({ title: t('invoices:dialogs.full_edit.toast_success', 'Számla sikeresen frissítve') });
       onSave();
@@ -516,6 +552,22 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
     };
   }, [visibleItems]);
 
+  // ── Recalculate header amounts from visible line items ──
+  const handleRecalculateFromItems = useCallback(() => {
+    if (visibleItems.length === 0) return;
+    setFormData(prev => ({
+      ...prev,
+      adoalap_osszesen: Math.round(itemTotals.net * 100) / 100,
+      afa_osszeg_osszesen: Math.round(itemTotals.vat * 100) / 100,
+      brutto_vegosszeg: Math.round(itemTotals.gross * 100) / 100,
+    }));
+    setIsHeaderAmountsDirty(true);
+    toast({
+      title: t('invoices:dialogs.full_edit.totals_recalculated_title', 'Összegek újraszámolva'),
+      description: t('invoices:dialogs.full_edit.totals_recalculated_desc', 'A fejléc összegeit sikeresen frissítettük a tételek alapján.'),
+    });
+  }, [visibleItems.length, itemTotals, t]);
+
   const formatAmount = (val: number) => val.toLocaleString(i18n.language === 'hr' ? 'hr-HR' : 'hu-HU', { maximumFractionDigits: 2 });
 
   return (
@@ -604,28 +656,83 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
 
               {/* Right column */}
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-muted-foreground">{t('invoices:columns.net_amount', 'Nettó összeg')}</Label>
-                  <div className="text-sm py-2 px-3 rounded-md bg-muted/30 border border-border/30 font-mono">
-                    {formData.adoalap_osszesen != null ? formatAmount(formData.adoalap_osszesen) : '0'} {formData.penznem}
-                  </div>
+                <div className="flex items-center justify-between pb-1">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    {t('invoices:dialogs.full_edit.amounts_section', 'Összegek')}
+                  </span>
+                  {visibleItems.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs text-primary hover:text-primary gap-1 px-2 -mr-1"
+                      onClick={handleRecalculateFromItems}
+                      title={t('invoices:dialogs.full_edit.recalculate_tooltip', 'Fejléc összegek újraszámolása a tételek összegéből')}
+                    >
+                      <Calculator className="h-3.5 w-3.5" />
+                      {t('invoices:dialogs.full_edit.recalculate_btn', 'Újraszámolás a tételekből')}
+                    </Button>
+                  )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-muted-foreground">{t('invoices:columns.gross_amount', 'Bruttó összeg')}</Label>
-                  <div className="text-sm py-2 px-3 rounded-md bg-muted/30 border border-border/30 font-mono">
-                    {formData.brutto_vegosszeg != null ? formatAmount(formData.brutto_vegosszeg) : '0'} {formData.penznem}
-                  </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-adoalap" className="text-foreground font-medium flex items-center justify-between">
+                    <span>{t('invoices:columns.net_amount', 'Nettó összeg')}</span>
+                    <span className="text-xs text-muted-foreground font-mono">{formData.penznem}</span>
+                  </Label>
+                  <Input
+                    id="edit-adoalap"
+                    type="text"
+                    inputMode="decimal"
+                    value={formData.adoalap_osszesen ?? ''}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, adoalap_osszesen: e.target.value }));
+                      setIsHeaderAmountsDirty(true);
+                    }}
+                    className="font-mono text-sm"
+                    placeholder="0.00"
+                  />
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-muted-foreground">{t('invoices:columns.vat_amount', 'ÁFA összeg')}</Label>
-                  <div className="text-sm py-2 px-3 rounded-md bg-muted/30 border border-border/30 font-mono">
-                    {formData.afa_osszeg_osszesen != null ? formatAmount(formData.afa_osszeg_osszesen) : '0'} {formData.penznem}
-                  </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-afa" className="text-foreground font-medium flex items-center justify-between">
+                    <span>{t('invoices:columns.vat_amount', 'ÁFA összeg')}</span>
+                    <span className="text-xs text-muted-foreground font-mono">{formData.penznem}</span>
+                  </Label>
+                  <Input
+                    id="edit-afa"
+                    type="text"
+                    inputMode="decimal"
+                    value={formData.afa_osszeg_osszesen ?? ''}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, afa_osszeg_osszesen: e.target.value }));
+                      setIsHeaderAmountsDirty(true);
+                    }}
+                    className="font-mono text-sm"
+                    placeholder="0.00"
+                  />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-brutto" className="text-foreground font-medium flex items-center justify-between">
+                    <span>{t('invoices:columns.gross_amount', 'Bruttó összeg')}</span>
+                    <span className="text-xs text-muted-foreground font-mono">{formData.penznem}</span>
+                  </Label>
+                  <Input
+                    id="edit-brutto"
+                    type="text"
+                    inputMode="decimal"
+                    value={formData.brutto_vegosszeg ?? ''}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, brutto_vegosszeg: e.target.value }));
+                      setIsHeaderAmountsDirty(true);
+                    }}
+                    className="font-mono text-sm font-semibold text-primary"
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
                   <Label className="text-muted-foreground">{t('invoices:columns.currency', 'Pénznem')}</Label>
                   <div className="text-sm py-2 px-3 rounded-md bg-muted/30 border border-border/30">
                     {formData.penznem}
@@ -834,6 +941,16 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
                           </span>
                         </div>
                       </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full mt-3 gap-1.5 text-xs border-primary/30 text-primary hover:bg-primary/10"
+                        onClick={handleRecalculateFromItems}
+                      >
+                        <Calculator className="h-3.5 w-3.5" />
+                        {t('invoices:dialogs.full_edit.sync_to_header', 'Fejléc összegek frissítése a tételekből')}
+                      </Button>
                     </div>
                   )}
                 </div>
