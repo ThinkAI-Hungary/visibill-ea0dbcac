@@ -59,6 +59,20 @@ A `Beállítások` (`Settings.tsx`) felületen, a `Biztonság` szekcióban elhel
 
 ---
 
+## Addendum (2026-09-18) — Customer REST API v2 Bővítés (Pénzügyi Domainek & Path-Based Routing)
+
+A Mauroni Group (7 entitás) és külső ERP integrációk igényei alapján az API v2 architektúrája az alábbi elvekkel bővült:
+1. **Path-Based REST Útvonalak (`/v1/...`):** A korábbi query paraméteres `?action=` mellett bevezetésre került a valódi RESTful útvonalkezelés (`GET /v1/invoices`, `POST /v1/invoices`, `GET /v1/partners`, `GET /v1/transactions`, `GET /v1/ledger`, `GET /v1/reports/*`).
+2. **Normalizált Számla Adatmodell:** Egyetlen egységes JSON sémába szervezi a kimenő és bejövő (NAV) számlákat (`direction: 'inbound' | 'outbound'`), szűrési és lapozási lehetőségekkel.
+3. **Kettős Főkönyv & Riport Struktúra:**
+   - `/v1/ledger`: Sorszintű, kontírozott könyvelési tételek az ERP-be történő importáláshoz.
+   - `/v1/reports/*`: Időszakilag aggregált ÁFA és Eredménykimutatás.
+4. **Hibrid Feltöltés:** Közvetlen multipart kisebb számlákhoz, pre-signed Storage URL nagy méretű PDF kötegekhez (védve a Deno 150 MB-os memóriakorlátját).
+5. **UI Elhelyezés:** Az API kulcskezelő felület a `Beállítások > Integrációk` oldalra is beágyazásra kerül a külső rendszerek (NAV, bankok, Számlázz.hu) mellé.
+6. **Webhook Ütemezés:** A PGMQ-alapú aszinkron webhook alrendszer külön 2. fázisban valósul meg a core REST API élesítése után.
+
+---
+
 ## Consequences
 
 - **Pozitív:**
