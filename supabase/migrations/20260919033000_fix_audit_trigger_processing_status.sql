@@ -1,6 +1,7 @@
--- Migration: Enhance global_audit_trigger_func with email metadata and processing tracking
--- ADR Reference: A-045, P-094
--- Date: 2026-09-18
+-- Migration: Fix global_audit_trigger_func polymorphic NEW.processing_status runtime error (42703)
+-- Issue: Trigger failed when inserting into `invoices` table because NEW had no field `processing_status`
+-- Fix: Use local boolean variable v_is_invoice_upload_processed set only when TG_TABLE_NAME = 'invoice_uploads'
+-- Date: 2026-09-19
 
 CREATE OR REPLACE FUNCTION public.global_audit_trigger_func()
  RETURNS trigger
@@ -108,13 +109,7 @@ BEGIN
         );
     END IF;
 
-    -- Write to audit_logs if:
-    --   a) caller is NOT service_role (regular frontend actions), OR
-    --   b) caller IS service_role BUT this is an email_alias INSERT
-    --      (Mailgun webhook EF runs as service_role; TG_OP guard prevents
-    --       UPDATE/DELETE service_role operations from bypassing the guard)
-    --   c) caller IS service_role AND this is invoice_uploads UPDATE to processed
-    --      (Worker runs as service_role when marking processing as completed)
+    -- Write to audit_logs
     IF (
         v_company_id IS NOT NULL
         AND v_entity_name IS NOT NULL
