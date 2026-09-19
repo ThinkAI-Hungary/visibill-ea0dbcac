@@ -1,14 +1,18 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import {
+  Coffee, Gift, Home, Smartphone, User, Sparkles, Loader2, UtensilsCrossed, Info
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { Coffee, Smartphone, Home, Gift, User, Loader2, Sparkles, UtensilsCrossed } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { payrollQueryKeys } from '@/hooks/usePayrollData';
 
 interface PayrollStep4Props {
   activeEmployees: any[];
   allEmployments: any[];
   items?: any[];
   cafeteriaItems?: any[];
-  setCafeteriaItems?: React.Dispatch<React.SetStateAction<any[]>>;
+  setCafeteriaItems?: (items: any[]) => void;
 }
 
 export default function PayrollStep4({
@@ -16,90 +20,68 @@ export default function PayrollStep4({
   allEmployments,
   items = [],
   cafeteriaItems: propCafeteriaItems,
-  setCafeteriaItems: propSetCafeteriaItems,
+  setCafeteriaItems: setPropCafeteriaItems,
 }: PayrollStep4Props) {
-  const [localCafeteriaItems, setLocalCafeteriaItems] = React.useState<any[]>([]);
-  const cafeteriaItems = propCafeteriaItems ?? localCafeteriaItems;
-  const setCafeteriaItems = propSetCafeteriaItems ?? setLocalCafeteriaItems;
+  const queryClient = useQueryClient();
+  const [loading, setLoading] = useState(false);
+  const [internalCafeteria, setInternalCafeteria] = useState<any[]>([]);
+  const [localHoInputs, setLocalHoInputs] = useState<Record<string, string>>({});
+  const [localPhoneInputs, setLocalPhoneInputs] = useState<Record<string, string>>({});
 
-  const [loading, setLoading] = React.useState(false);
-  const [localHoInputs, setLocalHoInputs] = React.useState<Record<string, string>>({});
+  const cafeteriaItems = propCafeteriaItems !== undefined ? propCafeteriaItems : internalCafeteria;
 
-  const activeEmploymentIdsKey = React.useMemo(() => {
+  // Active employment IDs
+  const activeEmploymentIds = React.useMemo(() => {
     return allEmployments
       .filter(e => activeEmployees.some(emp => emp.id === e.employee_id))
-      .map(e => e.id)
-      .sort()
-      .join(',');
+      .map(e => e.id);
   }, [allEmployments, activeEmployees]);
 
-  React.useEffect(() => {
-    // If parent already provided cafeteriaItems, skip duplicate network call
-    if (propCafeteriaItems !== undefined) return;
+  const fetchCafeteria = async () => {
+    if (activeEmploymentIds.length === 0) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('accounty_cafeteria')
+        .select('*')
+        .in('employment_id', activeEmploymentIds);
 
-    if (!activeEmploymentIdsKey) {
-      setCafeteriaItems([]);
-      return;
+      if (error) throw error;
+      const res = data || [];
+      if (setPropCafeteriaItems) setPropCafeteriaItems(res);
+      else setInternalCafeteria(res);
+    } catch (err) {
+      console.error('Error fetching cafeteria items:', err);
+    } finally {
+      setLoading(false);
     }
-
-    let isMounted = true;
-    const fetchCafeteria = async () => {
-      const ids = activeEmploymentIdsKey.split(',');
-      if (cafeteriaItems.length === 0) setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('accounty_cafeteria')
-          .select('*')
-          .in('employment_id', ids);
-        
-        if (error) throw error;
-        if (isMounted) setCafeteriaItems(data || []);
-      } catch (err) {
-        console.error('Error fetching cafeteria items:', err);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    fetchCafeteria();
-    return () => { isMounted = false; };
-  }, [activeEmploymentIdsKey, propCafeteriaItems]);
-
-  // Aggregate totals
-  const szepHospitality = React.useMemo(() => cafeteriaItems
-    .filter(i => i.benefit_type === 'szep_recreation' && i.sub_type === 'vendeglatas')
-    .reduce((sum, i) => sum + Number(i.amount), 0), [cafeteriaItems]);
-
-  const szepLeisure = React.useMemo(() => cafeteriaItems
-    .filter(i => i.benefit_type === 'szep_recreation' && i.sub_type === 'szabadido')
-    .reduce((sum, i) => sum + Number(i.amount), 0), [cafeteriaItems]);
-
-  const szepAccom = React.useMemo(() => cafeteriaItems
-    .filter(i => i.benefit_type === 'szep_recreation' && i.sub_type === 'szallashely')
-    .reduce((sum, i) => sum + Number(i.amount), 0), [cafeteriaItems]);
-
-  const recreation = React.useMemo(() => cafeteriaItems
-    .filter(i => i.benefit_type === 'szep_active' || i.sub_type === 'recreation')
-    .reduce((sum, i) => sum + Number(i.amount), 0), [cafeteriaItems]);
-
-  const housingAllowance = React.useMemo(() => cafeteriaItems
-    .filter(i => i.benefit_type === 'housing' || i.is_housing_allowance)
-    .reduce((sum, i) => sum + Number(i.amount), 0), [cafeteriaItems]);
-
-  // Filter phone items for private use (item_type: 'phone_private')
-  const phoneItems = React.useMemo(() => items
-    .filter(i => i.item_type === 'phone_private'), [items]);
-
-  const getEmployeeNameByEmploymentId = (employmentId: string) => {
-    const emp = allEmployments.find(e => e.id === employmentId);
-    if (!emp) return 'Ismeretlen';
-    const employee = activeEmployees.find(e => e.id === emp.employee_id);
-    if (!employee) return 'Ismeretlen';
-    return `${employee.last_name} ${employee.first_name}`;
   };
 
-  const getEmployeeNameByEmployeeId = (employeeId: string) => {
-    const employee = activeEmployees.find(e => e.id === employeeId);
+  useEffect(() => {
+    if (propCafeteriaItems === undefined) {
+      fetchCafeteria();
+    }
+  }, [activeEmploymentIds.join(',')]);
+
+  // Aggregates for 2026 SZÉP Card 2-balance system
+  const szepRecreation = cafeteriaItems
+    .filter(i => i.benefit_type === 'szep_recreation' || i.benefit_type === 'szep_hospitality' || i.benefit_type === 'szep_accommodation' || i.benefit_type === 'szep_leisure')
+    .reduce((s, i) => s + Number(i.amount), 0);
+
+  const szepActive = cafeteriaItems
+    .filter(i => i.benefit_type === 'szep_active' || i.benefit_type === 'szep_sport')
+    .reduce((s, i) => s + Number(i.amount), 0);
+
+  const housingAllowance = cafeteriaItems
+    .filter(i => i.benefit_type === 'housing')
+    .reduce((s, i) => s + Number(i.amount), 0);
+
+  const phoneItems = cafeteriaItems.filter(i => i.benefit_type === 'phone' || i.benefit_type === 'company_phone');
+
+  const getEmployeeNameByEmploymentId = (employmentId: string) => {
+    const empRel = allEmployments.find(e => e.id === employmentId);
+    if (!empRel) return 'Ismeretlen';
+    const employee = activeEmployees.find(e => e.id === empRel.employee_id);
     if (!employee) return 'Ismeretlen';
     return `${employee.last_name} ${employee.first_name}`;
   };
@@ -108,7 +90,7 @@ export default function PayrollStep4({
     return (
       <div className="flex justify-center items-center h-48 text-muted-foreground">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <span className="ml-3 font-medium text-sm">Cafeteria adatok összesítése...</span>
+        <span className="ml-3 font-medium text-sm">Cafeteria adatok betöltése...</span>
       </div>
     );
   }
@@ -116,7 +98,7 @@ export default function PayrollStep4({
   return (
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground dark:text-foreground/90">
-        Magáncélú telefonhasználat, cafeteria juttatások, SZÉP kártya kezelés.
+        SZÉP kártya juttatások (2026-os kétkeretes modell), magáncélú telefonhasználat és adómentes Home Office átalány kezelése.
       </p>
 
       {/* Tax info banner */}
@@ -125,9 +107,10 @@ export default function PayrollStep4({
         <div className="text-xs text-indigo-700 dark:text-indigo-300 space-y-1">
           <p className="font-bold">2026. évi Cafeteria és Juttatási szabályok:</p>
           <ul className="list-disc pl-4 space-y-0.5">
-            <li><strong>SZÉP Kártya zsebek</strong>: Szálláshely, Vendéglátás és Szabadidő zsebenként max. 450 000 Ft/év limit. 28%-os adózás (15% SZJA + 13% SZOCHO) 1.0x-es alapon. A limit feletti rész 33.04%-os teherrel adózik.</li>
-            <li><strong>Rekreációs keret (Aktív Magyarok)</strong>: Évi max. 120 000 Ft-ig (havi 10 000 Ft) 28%-os adózás, afelett szintén egyes meghatározott juttatásként 33.04%.</li>
-            <li><strong>Lakhatási támogatás (35 év alattiaknak)</strong>: Havi max. 150 000 Ft-ig adómentes juttatás a dolgozónak, a cégnek 28% munkáltatói közteher (SZJA + SZOCHO). 35 év felett a támogatás teljes mértékben bérként adózik.</li>
+            <li><strong>SZÉP Kártya Rekreációs Keret:</strong> Évi max. <strong>450 000 Ft</strong> összevont keret (szálláshely, melegkonyhás vendéglátás és szabadidő együtt egyben). 28%-os kedvezményes adózás (15% SZJA + 13% SZOCHO). A keret feletti rész egyes meghatározott juttatásként 33.04%-kal adózik.</li>
+            <li><strong>SZÉP Kártya Aktív Magyarok Keret:</strong> Külön keretként évi max. <strong>120 000 Ft</strong> (havi 10 000 Ft) sportolási és szabadidős mozgás célokra 28%-os adózással.</li>
+            <li><strong>Magáncélú telefonhasználat (Szja tv. 69. §):</strong> Céges telefon esetén a számla bruttó díjának 20%-a tekintendő magáncélú használatnak. Ez a 20% egyes meghatározott juttatásként 1.18 × 28% = <strong>33.04% munkáltatói adóteherrel</strong> adózik.</li>
+            <li><strong>Home Office költségtérítés:</strong> Havi minimálbér 10%-áig (max. <strong>32 280 Ft/hó</strong>) igazolás nélkül adómentes.</li>
           </ul>
         </div>
       </div>
@@ -143,77 +126,87 @@ export default function PayrollStep4({
         </div>
       </div>
 
+      {/* Modern 2-Balance SZÉP Card + Benefits Widgets */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* SZÉP kártya panel */}
-        <div className="p-5 rounded-lg border border-border bg-card shadow-sm space-y-3 lg:col-span-2">
-          <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-            <Coffee className="w-4 h-4 text-amber-500" /> SZÉP kártya összesítés
-          </h4>
-          <p className="text-xs text-muted-foreground mb-2">Éves limit: 450.000 Ft / zseb</p>
+        {/* SZÉP kártya modern panel */}
+        <div className="p-5 rounded-lg border border-border bg-card shadow-sm space-y-4 lg:col-span-2">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+              <Coffee className="w-4 h-4 text-amber-500" /> SZÉP Kártya Keretek (2026)
+            </h4>
+            <span className="text-xs font-semibold px-2 py-0.5 bg-primary/10 text-primary rounded">
+              Összesített kedvezményes keret: 570 000 Ft/év
+            </span>
+          </div>
+
           <div className="space-y-4">
-            {[
-              { name: 'Szálláshely', used: szepAccom, limit: 450000, color: 'bg-blue-500' },
-              { name: 'Vendéglátás', used: szepHospitality, limit: 450000, color: 'bg-amber-500' },
-              { name: 'Szabadidő', used: szepLeisure, limit: 450000, color: 'bg-green-500' },
-            ].map((pocket) => (
-              <div key={pocket.name} className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs font-semibold">
-                  <span className="text-muted-foreground">{pocket.name}</span>
-                  <span className="font-mono text-muted-foreground">
-                    {pocket.used.toLocaleString('hu-HU')} / {pocket.limit.toLocaleString('hu-HU')} Ft
-                  </span>
-                </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className={cn('h-full rounded-full transition-all duration-500', pocket.color)}
-                    style={{ width: `${Math.min(100, (pocket.used / pocket.limit) * 100)}%` }}
-                  />
-                </div>
+            {/* 1. Rekreációs Főkeret (450 000 Ft) */}
+            <div className="p-4 rounded-lg bg-background/50 border border-border space-y-2">
+              <div className="flex items-center justify-between text-xs font-semibold">
+                <span className="text-foreground flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />
+                  Rekreációs Keret (Szállás, Vendéglátás, Szabadidő egyben)
+                </span>
+                <span className="font-mono text-muted-foreground">
+                  {szepRecreation.toLocaleString('hu-HU')} / 450 000 Ft
+                </span>
               </div>
-            ))}
+              <div className="h-2.5 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-blue-500 transition-all duration-500"
+                  style={{ width: `${Math.min(100, (szepRecreation / 450000) * 100)}%` }}
+                />
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Éves rekreációs limit: 450 000 Ft (28% közteher, a felette lévő rész 33.04%).
+              </p>
+            </div>
+
+            {/* 2. Aktív Magyarok Sportkeret (120 000 Ft) */}
+            <div className="p-4 rounded-lg bg-background/50 border border-border space-y-2">
+              <div className="flex items-center justify-between text-xs font-semibold">
+                <span className="text-foreground flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
+                  Aktív Magyarok Keret (Sport és Egészségmegőrző mozgás)
+                </span>
+                <span className="font-mono text-muted-foreground">
+                  {szepActive.toLocaleString('hu-HU')} / 120 000 Ft
+                </span>
+              </div>
+              <div className="h-2.5 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                  style={{ width: `${Math.min(100, (szepActive / 120000) * 100)}%` }}
+                />
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Külön dedikált sportkeret: évi 120 000 Ft (havi 10 000 Ft) 28%-os adózással.
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Right side widgets: Rekreáció & Lakhatási */}
+        {/* Right side widgets: Lakhatási & Home Office */}
         <div className="space-y-4 lg:col-span-1">
-          {/* Rekreáció */}
-          <div className="p-5 rounded-lg border border-border bg-card shadow-sm space-y-3">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                <Gift className="w-4 h-4 text-violet-500" /> Rekreáció
-              </h4>
-              <span className="text-xs text-muted-foreground font-mono font-bold">
-                {recreation.toLocaleString('hu-HU')} / 120.000 Ft
-              </span>
-            </div>
-            <div className="h-2 bg-muted rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-violet-500 rounded-full transition-all duration-500" 
-                style={{ width: `${Math.min(100, (recreation / 120000) * 100)}%` }} 
-              />
-            </div>
-            <p className="text-[10px] text-muted-foreground mt-1">Kedvezményes keret: évi 120.000 Ft</p>
-          </div>
-
           {/* Lakhatási támogatás */}
           <div className="p-5 rounded-lg border border-border bg-card shadow-sm space-y-3">
             <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5">
               <Home className="w-4 h-4 text-primary" /> Lakhatási támogatás
             </h4>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold font-mono text-primary dark:text-primary">
+              <span className="text-2xl font-bold font-mono text-primary">
                 {housingAllowance.toLocaleString('hu-HU')}
               </span>
               <span className="text-xs text-muted-foreground">Ft / hó</span>
             </div>
-            <p className="text-[10px] text-muted-foreground">35 év alattiaknál havi 150.000 Ft-ig adómentes.</p>
+            <p className="text-[10px] text-muted-foreground">35 év alattiaknál havi 150 000 Ft-ig adómentes a dolgozónak.</p>
           </div>
 
           {/* Home Office Költségtérítés (Adómentes átalány) */}
           <div className="p-5 rounded-lg border border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/10 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                <Home className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Home Office átalány (Adómentes)
+                <Home className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Home Office átalány
               </h4>
               <span className="px-2 py-0.5 text-[10px] font-bold bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 rounded">
                 Adómentes
@@ -229,21 +222,21 @@ export default function PayrollStep4({
               <span className="text-xs text-muted-foreground">Ft / hó</span>
             </div>
             <p className="text-[10px] text-muted-foreground">
-              SZJA tv. 3. sz. melléklet: Havi minimálbér max. 10%-áig (max. <strong>32 280 Ft/hó</strong>) igazolás nélkül adómentes otthoni munkavégzésre.
+              Max. <strong>32 280 Ft/hó</strong> igazolás nélkül adómentes.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Interactive Home Office Reimbursement Management per Employee */}
-      <div className="p-5 rounded-lg border border-emerald-500/30 bg-card shadow-sm space-y-4">
-        <div className="flex items-center justify-between">
+      {/* ── Magáncélú Mobiltelefon Használat Dolgozónként ── */}
+      <div className="p-5 rounded-lg border border-blue-500/30 bg-card shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h4 className="text-base font-bold text-foreground flex items-center gap-2">
-              <Home className="w-5 h-5 text-emerald-500" /> Home Office költségtérítés megadása dolgozónként
+              <Smartphone className="w-5 h-5 text-blue-500" /> Magáncélú Telefonhasználat Rögzítése (Szja tv. 69. §)
             </h4>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Itt adhatod meg az igazolás nélküli adómentes otthoni munkavégzési átalányt dolgozónként (max. 32 280 Ft/hó).
+              Add meg a cég által fizetett havi bruttó telefonszámlát dolgozónként. A 20%-os magáncélú átalány után a rendszer automatikusan számolja a 33.04%-os munkáltatói adóterhet.
             </p>
           </div>
         </div>
@@ -251,52 +244,191 @@ export default function PayrollStep4({
         <div className="overflow-x-auto rounded-lg border border-border">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-border bg-background/30">
-                <th className="px-4 py-2 text-left font-medium text-muted-foreground uppercase">Dolgozó neve</th>
-                <th className="px-4 py-2 text-center font-medium text-muted-foreground uppercase">Havi adómentes átalány (Ft/hó)</th>
-                <th className="px-4 py-2 text-right font-medium text-muted-foreground uppercase">Gyorsbeállítás</th>
+              <tr className="border-b border-border bg-muted/40 font-medium text-muted-foreground">
+                <th className="px-4 py-2.5 text-left uppercase">Dolgozó Neve</th>
+                <th className="px-4 py-2.5 text-center uppercase">Havi Telefonszámla (Ft)</th>
+                <th className="px-4 py-2.5 text-right uppercase">20% Magánhasználat (Ft)</th>
+                <th className="px-4 py-2.5 text-right uppercase">Munkáltatói Adóteher (33.04%)</th>
+                <th className="px-4 py-2.5 text-right uppercase w-32">Művelet</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/50">
+            <tbody className="divide-y divide-border/60">
               {activeEmployees.map((emp) => {
                 const empEmployment = allEmployments.find(e => e.employee_id === emp.id);
-                const hoItem = cafeteriaItems.find(
-                  i => i.employment_id === empEmployment?.id && (i.benefit_type === 'home_office' || i.sub_type === 'home_office')
+                const existingPhoneItem = cafeteriaItems.find(
+                  i => (i.benefit_type === 'phone' || i.benefit_type === 'company_phone') && i.employment_id === empEmployment?.id
                 );
-                const currentHoAmount = hoItem ? Number(hoItem.amount) : 0;
+
+                const currentPhoneBill = Number(existingPhoneItem?.amount || 0);
+
+                const updatePhoneAmount = async (billAmount: number) => {
+                  if (!empEmployment?.id) return;
+                  try {
+                    if (billAmount > 0) {
+                      const payload = {
+                        employment_id: empEmployment.id,
+                        benefit_type: 'company_phone',
+                        sub_type: 'telecommunication',
+                        provider: 'Mobilflotta',
+                        amount: billAmount,
+                        tax_type: 'specified_benefit', // egyes meghatározott juttatás (33.04%)
+                        period_year: new Date().getFullYear(),
+                        period_month: new Date().getMonth() + 1,
+                      };
+
+                      if (existingPhoneItem?.id) {
+                        await supabase
+                          .from('accounty_cafeteria')
+                          .update({ amount: billAmount })
+                          .eq('id', existingPhoneItem.id);
+                      } else {
+                        await supabase
+                          .from('accounty_cafeteria')
+                          .insert(payload);
+                      }
+                    } else if (existingPhoneItem?.id) {
+                      await supabase
+                        .from('accounty_cafeteria')
+                        .delete()
+                        .eq('id', existingPhoneItem.id);
+                    }
+
+                    if (propCafeteriaItems === undefined) {
+                      await fetchCafeteria();
+                    } else {
+                      queryClient.invalidateQueries({ queryKey: ['payroll'] });
+                    }
+                  } catch (err) {
+                    console.error('Error updating phone item:', err);
+                  }
+                };
+
+                const inputVal = localPhoneInputs[emp.id] !== undefined
+                  ? localPhoneInputs[emp.id]
+                  : (currentPhoneBill ? String(currentPhoneBill) : '');
+
+                const billNum = Number(inputVal) || 0;
+                const privateBase = Math.round(billNum * 0.20);
+                const employerTax = Math.round(privateBase * 1.18 * 0.28); // 1.18 * 28% = 33.04%
+
+                return (
+                  <tr key={emp.id} className="hover:bg-muted/50">
+                    <td className="px-4 py-3 font-semibold text-foreground">
+                      {emp.last_name} {emp.first_name}
+                    </td>
+                    <td className="px-4 py-2 text-center">
+                      <div className="inline-flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={0}
+                          placeholder="0"
+                          value={inputVal}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/^-+/, '');
+                            setLocalPhoneInputs(prev => ({ ...prev, [emp.id]: val }));
+                          }}
+                          onBlur={(e) => {
+                            const val = Math.max(0, parseInt(e.target.value) || 0);
+                            updatePhoneAmount(val);
+                          }}
+                          className="w-32 text-right rounded border border-border bg-card px-2.5 py-1 font-mono font-bold text-blue-600 dark:text-blue-400 focus:border-primary focus:outline-none text-xs"
+                        />
+                        <span className="text-muted-foreground font-mono">Ft</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono font-semibold text-foreground/90">
+                      {privateBase.toLocaleString('hu-HU')} Ft
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-amber-600 dark:text-amber-400">
+                      {employerTax.toLocaleString('hu-HU')} Ft
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {billNum > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLocalPhoneInputs(prev => ({ ...prev, [emp.id]: '0' }));
+                            updatePhoneAmount(0);
+                          }}
+                          className="px-2.5 py-1 text-[11px] text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded border border-transparent hover:border-red-200 transition-colors"
+                        >
+                          Törlés
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ── Home Office Költségtérítés Dolgozónként ── */}
+      <div className="p-5 rounded-lg border border-emerald-500/30 bg-card shadow-sm space-y-4">
+        <div>
+          <h4 className="text-base font-bold text-foreground flex items-center gap-2">
+            <Home className="w-5 h-5 text-emerald-500" /> Home Office Költségtérítés Megadása Dolgozónként
+          </h4>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Itt adhatod meg az igazolás nélküli adómentes otthoni munkavégzési átalányt dolgozónként (max. 32 280 Ft/hó).
+          </p>
+        </div>
+
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-border bg-muted/40 font-medium text-muted-foreground">
+                <th className="px-4 py-2.5 text-left uppercase">Dolgozó Neve</th>
+                <th className="px-4 py-2.5 text-center uppercase">Havi Adómentes Átalány (Ft/hó)</th>
+                <th className="px-4 py-2.5 text-right uppercase">Gyorsbeállítás / Művelet</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/60">
+              {activeEmployees.map((emp) => {
+                const empEmployment = allEmployments.find(e => e.employee_id === emp.id);
+                const existingHoItem = cafeteriaItems.find(
+                  i => (i.benefit_type === 'home_office' || i.sub_type === 'home_office') && i.employment_id === empEmployment?.id
+                );
+
+                const currentHoAmount = Number(existingHoItem?.amount || 0);
 
                 const updateHoAmount = async (amount: number) => {
                   if (!empEmployment?.id) return;
                   try {
                     if (amount > 0) {
-                      if (hoItem) {
-                        const { data } = await supabase
+                      const payload = {
+                        employment_id: empEmployment.id,
+                        benefit_type: 'home_office',
+                        sub_type: 'home_office',
+                        provider: 'Adómentes költségtérítés',
+                        amount,
+                        tax_type: 'tax_free',
+                        period_year: new Date().getFullYear(),
+                        period_month: new Date().getMonth() + 1,
+                      };
+
+                      if (existingHoItem?.id) {
+                        await supabase
                           .from('accounty_cafeteria')
                           .update({ amount })
-                          .eq('id', hoItem.id)
-                          .select('*')
-                          .single();
-                        if (data) {
-                          setCafeteriaItems(prev => prev.map(i => i.id === hoItem.id ? data : i));
-                        }
+                          .eq('id', existingHoItem.id);
                       } else {
-                        const { data } = await supabase
+                        await supabase
                           .from('accounty_cafeteria')
-                          .insert({
-                            employment_id: empEmployment.id,
-                            benefit_type: 'other',
-                            sub_type: 'home_office',
-                            amount: amount,
-                          })
-                          .select('*')
-                          .single();
-                        if (data) {
-                          setCafeteriaItems(prev => [...prev, data]);
-                        }
+                          .insert(payload);
                       }
-                    } else if (hoItem) {
-                      await supabase.from('accounty_cafeteria').delete().eq('id', hoItem.id);
-                      setCafeteriaItems(prev => prev.filter(i => i.id !== hoItem.id));
+                    } else if (existingHoItem?.id) {
+                      await supabase
+                        .from('accounty_cafeteria')
+                        .delete()
+                        .eq('id', existingHoItem.id);
+                    }
+
+                    if (propCafeteriaItems === undefined) {
+                      await fetchCafeteria();
+                    } else {
+                      queryClient.invalidateQueries({ queryKey: ['payroll'] });
                     }
                   } catch (err) {
                     console.error('Error updating Home Office item:', err);
@@ -309,7 +441,7 @@ export default function PayrollStep4({
 
                 return (
                   <tr key={emp.id} className="hover:bg-muted/50">
-                    <td className="px-4 py-2.5 font-semibold text-foreground">
+                    <td className="px-4 py-3 font-semibold text-foreground">
                       {emp.last_name} {emp.first_name}
                     </td>
                     <td className="px-4 py-2 text-center">
@@ -321,14 +453,14 @@ export default function PayrollStep4({
                           placeholder="0"
                           value={inputValue}
                           onChange={(e) => {
-                            const val = e.target.value;
+                            const val = e.target.value.replace(/^-+/, '');
                             setLocalHoInputs(prev => ({ ...prev, [emp.id]: val }));
                           }}
                           onBlur={(e) => {
-                            const val = parseInt(e.target.value) || 0;
+                            const val = Math.max(0, parseInt(e.target.value) || 0);
                             updateHoAmount(val);
                           }}
-                          className="w-32 text-right rounded border border-border dark:border-slate-600 bg-card px-2 py-1 font-mono font-bold text-emerald-600 dark:text-emerald-400 focus:border-primary focus:outline-none"
+                          className="w-32 text-right rounded border border-border bg-card px-2.5 py-1 font-mono font-bold text-emerald-600 dark:text-emerald-400 focus:border-primary focus:outline-none text-xs"
                         />
                         <span className="text-muted-foreground font-mono">Ft</span>
                       </div>
@@ -362,72 +494,6 @@ export default function PayrollStep4({
               })}
             </tbody>
           </table>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Phone panel */}
-        <div className="p-5 rounded-lg border border-border bg-card shadow-sm">
-          <h4 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2">
-            <Smartphone className="w-4 h-4 text-blue-500" /> Magáncélú telefon
-          </h4>
-          <p className="text-xs text-muted-foreground mb-4">A magáncélú telefonhasználat 20%-a kerül adóztatásra.</p>
-          {phoneItems.length === 0 ? (
-            <div className="text-center py-6 bg-muted/50 rounded-lg border border-dashed border-border/60">
-              <p className="text-xs text-muted-foreground">Nincs rögzített tétel</p>
-            </div>
-          ) : (
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {phoneItems.map((item) => (
-                <div key={item.id} className="flex justify-between items-center text-xs p-3 bg-muted/30 rounded-lg border border-border/40">
-                  <div>
-                    <span className="font-semibold text-foreground/90">
-                      {getEmployeeNameByEmploymentId(item.employment_id)}
-                    </span>
-                    {item.description && <span className="text-muted-foreground block text-[10px] mt-0.5">{item.description}</span>}
-                  </div>
-                  <span className="font-mono font-bold text-slate-950 dark:text-slate-50">
-                    {Number(item.amount).toLocaleString('hu-HU')} Ft
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Cafeteria Details per Employee */}
-        <div className="p-5 rounded-lg border border-border bg-card shadow-sm">
-          <h4 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2">
-            <User className="w-4 h-4 text-emerald-500" /> Cafeteria juttatások dolgozónként
-          </h4>
-          <p className="text-xs text-muted-foreground mb-4">Aktív cafeteria tételek listája a jelenlegi ciklusban.</p>
-          {cafeteriaItems.length === 0 ? (
-            <div className="text-center py-6 bg-muted/50 rounded-lg border border-dashed border-border/60">
-              <p className="text-xs text-muted-foreground">Nincs rögzített cafeteria juttatás</p>
-            </div>
-          ) : (
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {cafeteriaItems.map((item) => (
-                <div key={item.id} className="flex justify-between items-center text-xs p-3 bg-muted/30 rounded-lg border border-border/40">
-                  <div>
-                    <span className="font-semibold text-foreground/90">
-                      {getEmployeeNameByEmploymentId(item.employment_id)}
-                    </span>
-                    <span className="text-muted-foreground block text-[10px] mt-0.5 capitalize">
-                      {item.benefit_type === 'szep_recreation' ? `SZÉP Kártya (${item.sub_type})` :
-                       item.benefit_type === 'housing' ? 'Lakhatási támogatás' :
-                       item.benefit_type === 'home_office' ? 'Home Office átalány' :
-                       item.benefit_type === 'szep_active' ? 'Rekreációs keret' : item.benefit_type}
-                      {item.provider ? ` - ${item.provider}` : ''}
-                    </span>
-                  </div>
-                  <span className="font-mono font-bold text-slate-950 dark:text-slate-50">
-                    {Number(item.amount).toLocaleString('hu-HU')} Ft
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     </div>

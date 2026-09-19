@@ -36,8 +36,10 @@ export default function PayrollStep6({
       });
   }, [companyId]);
 
-  const getSzocho = (calc: any) => {
-    if (isKiva) return 0;
+  const getEmployerTax = (calc: any) => {
+    if (isKiva) {
+      return Math.round((calc.gross_salary || 0) * 0.10);
+    }
     if (calc.szocho_amount !== undefined && calc.szocho_amount !== null) {
       return calc.szocho_amount;
     }
@@ -77,10 +79,12 @@ export default function PayrollStep6({
       {companyId && <SzochoAdvisor companyId={companyId} />}
       
       {isKiva && (
-        <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-400 rounded-lg flex items-center justify-between">
+        <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 rounded-lg flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="font-bold text-sm">🟢 KIVA adózási profil aktív</span>
-            <span className="text-xs opacity-90">— A KIVA kiváltja a munkáltatói SZOCHO-t (Munkáltatói SZOCHO: 0 Ft)</span>
+            <span className="text-xs opacity-90">
+              — A munkáltatói bérteher a 10%-os Kisvállalati Adó (KIVA), amely a személyi jellegű kifizetések után fizetendő (TAO esetén 13% SZOCHO terhelné a bért).
+            </span>
           </div>
         </div>
       )}
@@ -89,7 +93,7 @@ export default function PayrollStep6({
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <p className="text-sm text-muted-foreground dark:text-foreground/90">
-            SZJA (15%), TB Járulék (18.5%), SZOCHO (13% / KIVA esetén 0 Ft) kalkuláció az adómotor segítségével.
+            SZJA (15%), TB Járulék (18.5%), Munkáltatói teher ({isKiva ? 'KIVA: 10%' : 'SZOCHO: 13%'}) kalkuláció az adómotor segítségével.
           </p>
           {lastCalcDate && (
             <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
@@ -131,8 +135,8 @@ export default function PayrollStep6({
           <p className="text-lg font-bold text-blue-700 dark:text-blue-400">18.5%</p>
         </div>
         <div className="bg-violet-50 dark:bg-violet-900/20 rounded-lg p-3 text-center border border-violet-200 dark:border-violet-800">
-          <p className="text-[10px] font-bold text-violet-600 uppercase">SZOCHO</p>
-          <p className="text-lg font-bold text-violet-700 dark:text-violet-400">{isKiva ? '0% (KIVA)' : '13%'}</p>
+          <p className="text-[10px] font-bold text-violet-600 uppercase">{isKiva ? 'KIVA (Munkáltatói)' : 'SZOCHO'}</p>
+          <p className="text-lg font-bold text-violet-700 dark:text-violet-400">{isKiva ? '10% (KIVA)' : '13%'}</p>
         </div>
       </div>
 
@@ -144,7 +148,9 @@ export default function PayrollStep6({
                 <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Név</th>
                 <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">SZJA</th>
                 <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">TB</th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">SZOCHO</th>
+                <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">
+                  {isKiva ? 'KIVA (10%)' : 'SZOCHO (13%)'}
+                </th>
                 <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">Nettó</th>
               </tr>
             </thead>
@@ -161,8 +167,8 @@ export default function PayrollStep6({
                     <td className="px-4 py-2.5 text-right text-sm font-mono text-blue-600">
                       {(calc.tb_amount || 0).toLocaleString('hu-HU')} Ft
                     </td>
-                    <td className="px-4 py-2.5 text-right text-sm font-mono text-violet-600">
-                      {getSzocho(calc).toLocaleString('hu-HU')} Ft
+                    <td className="px-4 py-2.5 text-right text-sm font-mono text-violet-600 font-semibold">
+                      {getEmployerTax(calc).toLocaleString('hu-HU')} Ft
                     </td>
                     <td className="px-4 py-2.5 text-right text-sm font-bold font-mono text-green-600">
                       {(calc.net_salary || 0).toLocaleString('hu-HU')} Ft

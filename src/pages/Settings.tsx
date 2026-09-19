@@ -851,6 +851,7 @@ export default function Settings() {
             onSave={saveCompanyData}
             companies={companies}
             setSelectedCompany={setSelectedCompany}
+            onNavigateToBankAccounts={() => setActiveSettingsTab('bank-accounts')}
           >
             {selectedCompany && selectedCompany.owner_id === user?.id && (
               <CompanyAccessCard companyId={selectedCompany.id} toast={toast} />

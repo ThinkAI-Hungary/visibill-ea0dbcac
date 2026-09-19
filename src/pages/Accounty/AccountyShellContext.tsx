@@ -153,6 +153,7 @@ const accountyPrefetchMap: Record<string, () => Promise<unknown>> = {
   "tao": () => import("@/pages/Accounty/Tao/ClientTaoMainPage"),
   "payroll": () => import("@/pages/Accounty/PayrollDashboardPage"),
   "payroll/filings": () => import("@/pages/Accounty/FilingsPage"),
+  "payroll/dividends": () => import("@/pages/Accounty/DividendPayrollPage"),
   "prompts": () => import("@/pages/Accounty/PromptsPage"),
 };
 

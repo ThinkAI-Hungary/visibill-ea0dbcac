@@ -119,4 +119,60 @@ describe('generatePayslipHtml', () => {
     expect(html).toContain('Munkába járás költségtérítés (Adómentes)');
     expect(html).toContain('12');
   });
+
+  it('should display IBAN and weekly hours when provided', () => {
+    const withIban = { ...basePayslip, iban: 'HU42117730161234567800000000', weeklyHours: 40 };
+    const html = generatePayslipHtml(withIban);
+    expect(html).toContain('HU42117730161234567800000000');
+    expect(html).toContain('40 óra');
+  });
+
+  it('should display leave balance when provided', () => {
+    const withLeave = {
+      ...basePayslip,
+      leaveBalance: { annualTotal: 25, takenCurrent: 2, takenPrevious: 5, remaining: 18 },
+      sickLeaveBalance: { annualTotal: 15, takenCurrent: 1, takenPrevious: 2, remaining: 12 },
+    };
+    const html = generatePayslipHtml(withLeave);
+    expect(html).toContain('Éves szabadságkeret');
+    expect(html).toContain('25 nap');
+    expect(html).toContain('18 nap');
+    expect(html).toContain('Betegszabadság (Mt. 15 nap)');
+    expect(html).toContain('12 nap');
+  });
+
+  it('should display KIVA calculation when taxRegime is KIVA', () => {
+    const withKiva = {
+      ...basePayslip,
+      taxRegime: 'KIVA' as const,
+      employerTaxName: 'KIVA (10%)',
+      employerTaxAmount: 50000,
+    };
+    const html = generatePayslipHtml(withKiva);
+    expect(html).toContain('KIVA kötelezettség (10%)');
+    expect(html).toContain('kisvállalati adó (KIVA) alanya');
+  });
+
+  it('should display YTD cumulative figures when provided', () => {
+    const withYtd = {
+      ...basePayslip,
+      ytd: { gross: 3000000, szja: 450000, tb: 555000, net: 1995000 },
+    };
+    const html = generatePayslipHtml(withYtd);
+    expect(html).toContain('Éves göngyölt adatok (YTD tárgyév)');
+    expect(html).toContain('YTD Bruttó bér');
+    expect(html).toContain('YTD Levont SZJA');
+  });
+
+  it('should display pension fund deduction when provided', () => {
+    const withPension = {
+      ...basePayslip,
+      pensionFund: 25000,
+      garnishmentCaseNumber: '0123.V.456/2026',
+      garnishments: 35000,
+    };
+    const html = generatePayslipHtml(withPension);
+    expect(html).toContain('Önkéntes nyugdíjpénztári tagdíj');
+    expect(html).toContain('0123.V.456/2026');
+  });
 });

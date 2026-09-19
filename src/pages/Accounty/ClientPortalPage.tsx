@@ -18,6 +18,59 @@ import { queryKeys } from '@/lib/queryKeys';
 
 const MONTHS = ['Január', 'Február', 'Március', 'Április', 'Május', 'Június', 'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'];
 
+const PAYROLL_REQUEST_CATALOG: Record<string, { title: string; desc: string; category: string }> = {
+  attendance: {
+    title: 'Jelenléti ív / Munkaidő nyilvántartás',
+    desc: 'Ledolgozott munkanapok, munkaórák és jelenlétek igazolása a tárgyhónapra',
+    category: 'Jelenlét',
+  },
+  overtime: {
+    title: 'Túlóra és műszakpótlék kimutatás',
+    desc: '50% és 100% túlórák, műszak- és éjszakai pótlékok igazolása',
+    category: 'Munkaidő',
+  },
+  bonus: {
+    title: 'Bónuszok és jutalmak listája',
+    desc: 'Tárgyhavi egyedi dolgozói prémiumok és jutalmak jóváhagyott összegei',
+    category: 'Juttatás',
+  },
+  sickLeave: {
+    title: 'Táppénzes papírok és orvosi igazolások',
+    desc: 'Keresőképtelenségi orvosi igazolások, betegszabadság dokumentumok',
+    category: 'Hiányzás',
+  },
+  newHires: {
+    title: 'Új belépő munkavállalók adatai',
+    desc: 'Munkaszerződések, személyes adatok, TAJ, adóazonosító, bankszámlaszám',
+    category: 'Törzsadat',
+  },
+  terminations: {
+    title: 'Kilépő munkavállalók dokumentumai',
+    desc: 'Munkaviszony megszűnésével kapcsolatos iratok és utolsó munkanap igazolása',
+    category: 'Kilépő',
+  },
+  cafeteria: {
+    title: 'SZÉP kártya és cafeteria nyilatkozatok',
+    desc: 'Béren kívüli juttatási keretek, alszámla felosztási nyilatkozatok',
+    category: 'Cafeteria',
+  },
+  phone: {
+    title: 'Magáncélú telefonhasználat',
+    desc: 'Céges mobilszámlák, tételes kimutatás vagy 20% átalány elszámolás',
+    category: 'Költségtérítés',
+  },
+  serviceCharge: {
+    title: 'Vendéglátóipari felszolgálási díj',
+    desc: 'Havi felszolgálási díj elszámolás és dolgozók közötti felosztási arányok',
+    category: 'Felszolgálás',
+  },
+  advances: {
+    title: 'Munkabérelőlegek és egyéb levonások',
+    desc: 'Fizetett bérelőlegek bizonylatai, egyéb dolgozói tartozások vagy tagdíjak',
+    category: 'Levonás',
+  },
+};
+
 interface PortalRequest {
   id: string;
   type: 'bejovo' | 'kimeno' | 'bank' | 'ber';
@@ -62,9 +115,28 @@ export default function ClientPortalPage() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Determine if we're in magic-link mode (/portal/:token) or admin mode (/accounty/payroll/:id/portal)
-  const isMagicLink = !!params.token;
-  const directCompanyId = params.id || '';
+  // Determine if we're in magic-link / client-facing mode or in-app accountant mode
+  const isDirectClientRoute = window.location.pathname.startsWith('/portal') || window.location.pathname.startsWith('/client-portal');
+  const searchParams = new URLSearchParams(window.location.search);
+  const queryCompanyId = searchParams.get('company') || '';
+  const periodParam = searchParams.get('period') || '';
+  const itemsParam = searchParams.get('items') || '';
+  const isPayrollMode = Boolean(periodParam || itemsParam);
+  const isMagicLink = !!params.token || (isDirectClientRoute && !params.id);
+  const directCompanyId = params.id || (params as any).companyId || queryCompanyId;
+
+  const periodFormatted = useMemo(() => {
+    if (!periodParam) return '';
+    const parts = periodParam.split('-');
+    if (parts.length === 2) {
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10);
+      if (!isNaN(y) && !isNaN(m) && m >= 1 && m <= 12) {
+        return `${y}. ${MONTHS[m - 1]}`;
+      }
+    }
+    return periodParam;
+  }, [periodParam]);
 
   // Resolve token → company_id for magic link mode
   const { data: tokenData } = useQuery({
@@ -78,17 +150,34 @@ export default function ClientPortalPage() {
       if (error) throw error;
       return data;
     },
-    enabled: isMagicLink && !!params.token,
+    enabled: !!params.token,
     staleTime: 60_000,
   });
 
-  const companyId = isMagicLink ? (tokenData?.company_id || '') : directCompanyId;
-
   const { data: clients } = useAccountyClients();
+  const companyId = params.token
+    ? (tokenData?.company_id || '')
+    : (directCompanyId || clients?.[0]?.companyId || clients?.[0]?.id || '');
   const { data: cycles = [] } = usePayrollCycles(companyId || '');
   const { data: employees = [] } = usePayrollEmployees(companyId || '');
   const { data: missingData } = useAccountyMissingItems(companyId || '');
   const missingItems = missingData?.items ?? [];
+
+  // Fetch company payroll settings when in payroll mode to fallback to company preset
+  const { data: payrollSettings } = useQuery({
+    queryKey: ['portal-payroll-settings', companyId],
+    queryFn: async () => {
+      if (!companyId) return null;
+      const { data } = await supabase
+        .from('accounty_payroll_settings')
+        .select('data_request_preset')
+        .eq('company_id', companyId)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!companyId && isPayrollMode,
+    staleTime: 60_000,
+  });
 
   // ── Fetch active portal tokens ──
   const { data: portalTokens = [] } = useQuery({
@@ -153,7 +242,20 @@ export default function ClientPortalPage() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const company = useMemo(() => clients?.find(c => c.id === companyId), [clients, companyId]);
+  const company = useMemo(() => clients?.find(c => c.id === companyId || (c as any).companyId === companyId), [clients, companyId]);
+
+  const { data: directCompany } = useQuery({
+    queryKey: ['portal-direct-company', companyId],
+    queryFn: async () => {
+      if (!companyId) return null;
+      const { data } = await supabase.from('companies').select('id, name').eq('id', companyId).maybeSingle();
+      return data;
+    },
+    enabled: !!companyId && !company,
+    staleTime: 300_000,
+  });
+
+  const effectiveCompanyName = company?.name || (company as any)?.companyName || directCompany?.name || 'Ügyfél';
   const activeEmployees = useMemo(() => employees.filter(e => e.status === 'active'), [employees]);
 
   const currentMonth = new Date().getMonth() + 1;
@@ -240,19 +342,22 @@ export default function ClientPortalPage() {
     if (!companyId || !files.length) return;
 
     const portalToken = isMagicLink ? params.token || null : null;
+    const isPayrollItem = missingItemId?.startsWith('payroll_');
 
     try {
       const uploadedPaths: string[] = [];
 
       for (const file of Array.from(files)) {
-        const filePath = `accounty-portal/${companyId}/${Date.now()}_${file.name}`;
+        const filePath = isPayrollItem
+          ? `accounty-portal/${companyId}/payroll_${periodParam || 'general'}_${Date.now()}_${file.name}`
+          : `accounty-portal/${companyId}/${Date.now()}_${file.name}`;
 
         // 1. Create audit log entry (pending)
         const { data: logEntry, error: logErr } = await supabase
           .from('accounty_uploads')
           .insert({
             company_id: companyId,
-            missing_item_id: missingItemId || null,
+            missing_item_id: isPayrollItem ? null : (missingItemId || null),
             file_name: file.name,
             file_path: filePath,
             file_type: file.type || null,
@@ -294,8 +399,16 @@ export default function ClientPortalPage() {
         }
       }
 
-      // 3. Only resolve if at least one file was actually uploaded
-      if (missingItemId && uploadedPaths.length > 0) {
+      // 3. Resolve status
+      if (isPayrollItem && uploadedPaths.length > 0) {
+        if (missingItemId) {
+          setUploadedIds(prev => new Set(prev).add(missingItemId));
+        }
+        toast({
+          title: 'Feltöltve ',
+          description: `${uploadedPaths.length} fájl sikeresen feltöltve a(z) "${requestTitle}" tételhez.`,
+        });
+      } else if (!isPayrollItem && missingItemId && uploadedPaths.length > 0) {
         const { data: existing } = await supabase
           .from('accounty_missing_items')
           .select('uploaded_files')
@@ -327,7 +440,7 @@ export default function ClientPortalPage() {
           title: 'Feltöltve ',
           description: `${uploadedPaths.length} fájl sikeresen feltöltve a(z) "${requestTitle}" tételhez.`,
         });
-      } else if (missingItemId && uploadedPaths.length === 0) {
+      } else if (uploadedPaths.length === 0) {
         toast({ variant: 'destructive', title: 'Feltöltés sikertelen', description: 'A fájl nem töltődött fel. Kérjük próbálja újra.' });
       }
     } catch (err: any) {
@@ -336,11 +449,46 @@ export default function ClientPortalPage() {
     }
   };
 
-  // Build requests from actual missing items in Supabase
-  // If magic link has specific requested_item_ids, filter to only those
+  // Build requests: if payroll mode, build from active preset/itemsParam, else from actual missing items in Supabase
   const requestedItemIds: string[] = isMagicLink && tokenData?.requested_item_ids ? tokenData.requested_item_ids : [];
 
   const requests: PortalRequest[] = useMemo(() => {
+    if (isPayrollMode) {
+      let activeKeys: string[] = [];
+      if (itemsParam) {
+        activeKeys = itemsParam
+          .split(',')
+          .map(k => k.trim())
+          .filter(k => k in PAYROLL_REQUEST_CATALOG);
+      }
+      if (activeKeys.length === 0 && payrollSettings?.data_request_preset) {
+        activeKeys = Object.entries(payrollSettings.data_request_preset)
+          .filter(([_, v]) => Boolean(v))
+          .map(([k]) => k)
+          .filter(k => k in PAYROLL_REQUEST_CATALOG);
+      }
+      if (activeKeys.length === 0) {
+        activeKeys = ['attendance', 'overtime', 'sickLeave'];
+      }
+
+      const dueDate = new Date(Date.now() + 5 * 86400000).toISOString();
+
+      return activeKeys.map(key => {
+        const itemDef = PAYROLL_REQUEST_CATALOG[key];
+        const reqId = `payroll_${periodParam || 'current'}_${key}`;
+        const isDone = uploadedIds.has(reqId);
+        return {
+          id: reqId,
+          type: 'ber' as const,
+          title: itemDef.title,
+          description: itemDef.desc,
+          category: itemDef.category,
+          status: isDone ? 'approved' : 'pending',
+          dueDate,
+        };
+      });
+    }
+
     const itemsToShow = requestedItemIds.length > 0
       ? missingItems.filter(item => requestedItemIds.includes(item.id))
       : missingItems;
@@ -359,7 +507,7 @@ export default function ClientPortalPage() {
         dueDate: item.itemDate || new Date().toISOString(),
       };
     });
-  }, [missingItems, requestedItemIds]);
+  }, [isPayrollMode, itemsParam, periodParam, payrollSettings, uploadedIds, missingItems, requestedItemIds]);
 
   const statusColors: Record<string, { bg: string; text: string; label: string }> = {
     pending: { bg: 'bg-amber-100 dark:bg-amber-900/30', text: 'text-amber-700 dark:text-amber-400', label: 'Bekérésre vár' },
@@ -429,8 +577,12 @@ export default function ClientPortalPage() {
                 <FileText className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h1 className="text-sm font-bold text-foreground">{company?.name || 'Betöltés...'}</h1>
-                <p className="text-[11px] text-muted-foreground">Dokumentum feltöltő portál</p>
+                <h1 className="text-sm font-bold text-foreground">{effectiveCompanyName}</h1>
+                <p className="text-[11px] text-muted-foreground">
+                  {isPayrollMode
+                    ? `${periodFormatted ? `${periodFormatted} havi ` : ''}bérszámfejtési adatbekérő portál`
+                    : 'Dokumentum feltöltő portál'}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
@@ -449,22 +601,32 @@ export default function ClientPortalPage() {
               Üdvözöljük! 
             </h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Könyvelője hiányzó dokumentumokat kér Öntől. Kérjük, válassza ki a megfelelő fájlokat 
-              az egyes tételeknél, majd kattintson a feltöltés gombra.
+              {isPayrollMode
+                ? `Könyvelője a(z) ${periodFormatted ? `${periodFormatted} havi ` : ''}bérszámfejtéshez szükséges dokumentumok és adatok beküldését kéri. Kérjük, válassza ki a megfelelő fájlokat az egyes tételeknél, majd kattintson a feltöltés gombra.`
+                : 'Könyvelője hiányzó dokumentumokat kér Öntől. Kérjük, válassza ki a megfelelő fájlokat az egyes tételeknél, majd kattintson a feltöltés gombra.'}
             </p>
             <div className="flex items-center gap-2 mt-4">
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-              <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">
-                {requests.length} hiányzó dokumentum
+              <span className={cn("w-2 h-2 rounded-full animate-pulse", isPayrollMode ? "bg-primary" : "bg-amber-500")} />
+              <span className={cn("text-sm font-semibold", isPayrollMode ? "text-primary" : "text-amber-600 dark:text-amber-400")}>
+                {requests.length} {isPayrollMode ? 'bekérendő bérszámfejtési tétel' : 'hiányzó dokumentum'}
+                {isPayrollMode && periodFormatted ? ` (${periodFormatted})` : ''}
               </span>
             </div>
           </div>
 
-          {/* Missing documents list */}
+          {/* Documents list */}
           <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
             <div className="px-6 py-4 border-b border-border flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-500" />
-              <h3 className="text-sm font-bold text-foreground">Hiányzó dokumentumok</h3>
+              {isPayrollMode ? (
+                <FileText className="w-4 h-4 text-primary" />
+              ) : (
+                <AlertTriangle className="w-4 h-4 text-amber-500" />
+              )}
+              <h3 className="text-sm font-bold text-foreground">
+                {isPayrollMode
+                  ? `Bekérendő adatok és dokumentumok ${periodFormatted ? `(${periodFormatted})` : ''}`
+                  : 'Hiányzó dokumentumok'}
+              </h3>
             </div>
             {requests.length === 0 ? (
               <div className="py-10 text-center">
@@ -495,6 +657,9 @@ export default function ClientPortalPage() {
                               isUploaded ? 'text-green-700 dark:text-green-400' : 'text-foreground'
                             )}>{req.title}</p>
                           </div>
+                          {req.description && (
+                            <p className="text-xs text-muted-foreground mt-0.5">{req.description}</p>
+                          )}
                           <div className="flex items-center gap-3 mt-1.5">
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-primary/10 text-primary border border-primary/20">
                               {req.category}
@@ -643,7 +808,11 @@ export default function ClientPortalPage() {
       {/* ── Data Requests (from actual missing items) ── */}
       <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
         <div className="p-5 border-b border-border flex items-center justify-between">
-          <h2 className="text-lg font-bold text-foreground">Adatbekérések — {currentYear}. {MONTHS[currentMonth - 1]}</h2>
+          <h2 className="text-lg font-bold text-foreground">
+            {isPayrollMode
+              ? `Bérszámfejtési adatbekérések — ${periodFormatted || `${currentYear}. ${MONTHS[currentMonth - 1]}`}`
+              : `Adatbekérések — ${currentYear}. ${MONTHS[currentMonth - 1]}`}
+          </h2>
           <span className="text-xs text-muted-foreground">{requests.length} dokumentum</span>
         </div>
         {requests.length === 0 ? (
@@ -674,6 +843,9 @@ export default function ClientPortalPage() {
                     <tr key={req.id} className="hover:bg-muted/50 transition-colors">
                       <td className="px-5 py-3">
                         <p className="text-sm font-semibold text-foreground">{req.title}</p>
+                        {req.description && (
+                          <p className="text-xs text-muted-foreground mt-0.5">{req.description}</p>
+                        )}
                       </td>
                       <td className="px-5 py-3">
                         <span className="px-2 py-1 rounded-md text-[10px] font-bold uppercase bg-muted text-muted-foreground">

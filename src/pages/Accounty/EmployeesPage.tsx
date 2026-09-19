@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Users, UserPlus, Search, Filter, ChevronRight, ArrowLeft,
   Download, Upload, MoreVertical, Mail, Phone, Building2, Shield,
-  ChevronLeft, Briefcase, Trash2, Loader2
+  ChevronLeft, Briefcase, Trash2, Loader2, LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -307,7 +307,25 @@ export default function EmployeesPage() {
                       </span>
                     </TableCell>
                     <TableCell className="px-5 py-3.5">
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1.5 justify-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          title="Kilépő dokumentumok"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/eaisybooks/payroll/${companyId}/employees/${emp.id}/exit-docs`);
+                          }}
+                          className={cn(
+                            "text-xs h-7 px-2 transition-all",
+                            emp.status === 'terminated'
+                              ? "text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 opacity-100 font-semibold"
+                              : "text-muted-foreground hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 opacity-0 group-hover:opacity-100"
+                          )}
+                        >
+                          <LogOut className="w-3.5 h-3.5 mr-1" />
+                          Kilépő iratok
+                        </Button>
                         <button
                           onClick={(e) => handleDelete(emp.id, `${emp.last_name} ${emp.first_name}`, e)}
                           className="p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100"

@@ -40,7 +40,13 @@
     "locations_subtitle": "A céghez tartozó telephelyek és fióktelepek kezelése",
     "new_location": "Új telephely",
     "accounting_settings_title": "Főkönyvi és Könyvelési beállítások",
-    "all_companies_title": "Összes cég áttekintése"
+    "all_companies_title": "Összes cég áttekintése",
+    "bank_accounts_overview_title": "Céges bankszámlák és IBAN azonosítók",
+    "bank_accounts_overview_desc": "A céghez tartozó belföldi GIRO és nemzetközi IBAN bankszámlák a banki utalási exportokhoz.",
+    "manage_bank_accounts": "Bankszámlák kezelése",
+    "no_bank_accounts_warning": "Még nincs céges bankszámla rögzítve",
+    "no_bank_accounts_hint": "Rögzítsd a cég GIRO vagy IBAN számlaszámát a kimenő utalási csomagok (SEPA XML, OTP, MBH, CIB) készítéséhez.",
+    "add_first_bank_account": "Számla hozzáadása"
   },
   "system": {
     "title": "Rendszer beállítások",
@@ -64,8 +70,9 @@
     "bank_name": "Bank neve",
     "select_bank": "Válassz bankot",
     "custom_bank": "Egyedi bank neve *",
-    "custom_bank_placeholder": "Pl. Gránit Bank",
-    "account_number": "Bankszámlaszám (magyar formátum) *",
+    "custom_bank_placeholder": "Pl. Gránit Bank, Revolut, Wise...",
+    "account_number": "Bankszámlaszám (magyar GIRO vagy nemzetközi IBAN) *",
+    "account_number_placeholder": "11773016-00000000-00000000 vagy HU42 1177...",
     "currency": "Pénznem",
     "save_button": "Bankszámla mentése",
     "cancel": "Mégse",
@@ -73,6 +80,11 @@
     "no_accounts": "Nincsenek még bankszámlák hozzáadva ehhez a céghez.",
     "account_suffix": "Számla",
     "account_number_label": "Számlaszám",
+    "format_giro": "Belföldi GIRO",
+    "format_iban": "Nemzetközi IBAN",
+    "detected_bank": "Felismert bank:",
+    "detected_country": "Származási ország:",
+    "invalid_account_number": "Érvénytelen számlaszám",
     "delete_confirm": "Biztosan törölni szeretnéd ezt a bankszámlát?",
     "safe_storage_title": "Biztonságos adattárolás",
     "safe_storage_desc": "A bankszámlaszámokat kizárólag a netbanki átutalási fájl generálására és a beérkező banki kivonatok automatikus párosítására használjuk. Pénzügyi tranzakciót indítani vagy a bankszámládhoz hozzáférni a Visibill nem tud."

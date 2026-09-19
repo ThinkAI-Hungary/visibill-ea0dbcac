@@ -68,6 +68,9 @@
     "sample_account_warning": "Minta bankszámlát használunk a fájl kipróbálásához. Valódi utaláshoz rögzítsd saját bankszámládat a Beállításokban!",
     "select_sender_placeholder": "Válassz indító számlát",
     "file_format": "Fájlformátum",
+    "foreign_iban_notice_title": "Nemzetközi (nem HU) IBAN számla kiválasztva",
+    "foreign_iban_sepa_only": "Külföldi számláról történő utaláshoz kizárólag a nemzetközi szabványú SEPA XML (pain.001) fájlformátum használható. A belföldi banki formátumok (OTP, MBH, CIB stb.) inaktiválva vannak.",
+    "format_unavailable": "Nem elérhető",
     "cancel": "Mégse",
     "generating": "Fájl generálása...",
     "download_save": "Fájl letöltése és mentése"

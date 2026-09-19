@@ -40,7 +40,13 @@
     "locations_subtitle": "Upravljanje poslovnicama i lokacijama tvrtke",
     "new_location": "Nova poslovnica",
     "accounting_settings_title": "Postavke glavne knjige i knjiženja",
-    "all_companies_title": "Pregled svih tvrtki"
+    "all_companies_title": "Pregled svih tvrtki",
+    "bank_accounts_overview_title": "Bankovni računi i IBAN oznake tvrtke",
+    "bank_accounts_overview_desc": "Bankovni računi i IBAN oznake tvrtke za izvoz naloga za plaćanje.",
+    "manage_bank_accounts": "Upravljanje bankovnim računima",
+    "no_bank_accounts_warning": "Još nema dodanih bankovnih računa",
+    "no_bank_accounts_hint": "Dodajte IBAN ili žiro račun tvrtke za pripremu datoteka za plaćanje (SEPA XML).",
+    "add_first_bank_account": "Dodaj račun"
   },
   "system": {
     "title": "Postavke sustava",

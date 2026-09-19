@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, ShieldAlert, Check, Calculator } from 'lucide-react';
+import { Plus, Trash2, ShieldAlert, Check, Calculator, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -13,12 +13,19 @@ interface Garnishment {
   garnishment_type: string;
   creditor_name?: string | null;
   creditor_bank_account?: string | null;
+  creditor_account?: string | null;
   case_number?: string | null;
+  decree_number?: string | null;
   total_amount?: number | null;
+  original_amount?: number | null;
   remaining_amount?: number | null;
   monthly_deduction?: number | null;
   max_deduction_pct: number;
   priority: number;
+  interest_rate_pct?: number | null;
+  interest_start_date?: string | null;
+  execution_costs?: number | null;
+  calculated_interest?: number | null;
   is_active: boolean;
 }
 
@@ -42,6 +49,9 @@ export function EmployeeGarnishmentsTab({ garnishments, empId }: EmployeeGarnish
   const [monthlyDeduction, setMonthlyDeduction] = useState('');
   const [maxPct, setMaxPct] = useState('33');
   const [priority, setPriority] = useState('1');
+  const [interestRate, setInterestRate] = useState('');
+  const [interestStartDate, setInterestStartDate] = useState('');
+  const [executionCosts, setExecutionCosts] = useState('');
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,19 +62,32 @@ export function EmployeeGarnishmentsTab({ garnishments, empId }: EmployeeGarnish
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.from('accounty_garnishments').insert({
+      const parsedTotal = totalAmount ? parseFloat(totalAmount) : null;
+      const parsedRate = interestRate ? parseFloat(interestRate) : 0;
+      const parsedCosts = executionCosts ? parseFloat(executionCosts) : 0;
+
+      // Safe payload providing both legacy and modern columns
+      const payload: Record<string, any> = {
         employee_id: empId,
         garnishment_type: type,
         creditor_name: creditorName,
+        creditor_account: creditorAccount || null,
         creditor_bank_account: creditorAccount || null,
+        decree_number: caseNumber || null,
         case_number: caseNumber || null,
-        total_amount: totalAmount ? parseFloat(totalAmount) : null,
-        remaining_amount: totalAmount ? parseFloat(totalAmount) : null,
+        original_amount: parsedTotal,
+        total_amount: parsedTotal,
+        remaining_amount: parsedTotal,
         monthly_deduction: monthlyDeduction ? parseFloat(monthlyDeduction) : null,
         max_deduction_pct: parseFloat(maxPct) / 100,
         priority: parseInt(priority) || 1,
+        interest_rate_pct: parsedRate,
+        interest_start_date: interestStartDate || null,
+        execution_costs: parsedCosts,
         is_active: true,
-      });
+      };
+
+      const { error } = await supabase.from('accounty_garnishments').insert(payload);
 
       if (error) throw error;
 
@@ -77,6 +100,9 @@ export function EmployeeGarnishmentsTab({ garnishments, empId }: EmployeeGarnish
       setCaseNumber('');
       setTotalAmount('');
       setMonthlyDeduction('');
+      setInterestRate('');
+      setInterestStartDate('');
+      setExecutionCosts('');
       setShowAddForm(false);
     } catch (err: any) {
       toast({ variant: 'destructive', title: 'Hiba', description: err.message });
@@ -105,36 +131,41 @@ export function EmployeeGarnishmentsTab({ garnishments, empId }: EmployeeGarnish
 
   return (
     <div className="p-6 space-y-6">
-      {/* Informative banner on Vht. 65.§ rules */}
-      <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800 flex items-start gap-3">
-        <ShieldAlert className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
-        <div className="text-xs text-red-700 dark:text-red-300 space-y-1">
-          <p className="font-bold">Bírósági letiltások szabályai (Vht. 65. §):</p>
-          <ul className="list-disc pl-4 space-y-0.5">
-            <li>Gyermektartásdíj és egyéb köztartozás esetén a levonás a nettó bér maximum <strong>50%-áig</strong> terjedhet.</li>
-            <li>Magánjogi tartozások (pl. hitelhátralék) esetén a levonás maximum <strong>33%</strong> lehet.</li>
-            <li>Több letiltás egyidejű érvényesítése a megadott <strong>Prioritási sorrend</strong> és a törvényi sorrend alapján történik.</li>
-          </ul>
-        </div>
-      </div>
-
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold text-foreground/90">Dolgozói Letiltások</h3>
-        <Button variant="outline" size="sm" className="flex items-center gap-1" onClick={() => setShowAddForm(!showAddForm)}>
-          <Plus className="w-3 h-3" /> {showAddForm ? 'Mégse' : 'Új letiltás'}
+        <div>
+          <h3 className="text-base font-bold text-foreground">Dolgozói Letiltások</h3>
+          <p className="text-xs text-muted-foreground">Végrehajtói határozatok, gyermektartásdíj és letiltási sorrend (Vht. 65. §)</p>
+        </div>
+        <Button
+          size="sm"
+          onClick={() => setShowAddForm(!showAddForm)}
+          className="flex items-center gap-1.5"
+          variant={showAddForm ? 'outline' : 'default'}
+        >
+          {showAddForm ? 'Mégse' : <><Plus className="w-4 h-4" /> Új letiltás</>}
         </Button>
       </div>
 
+      <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-xs space-y-1.5 text-red-700 dark:text-red-300">
+        <div className="flex items-center gap-2 font-bold text-red-800 dark:text-red-200">
+          <ShieldAlert className="w-4 h-4 text-red-500" />
+          <span>Bírósági letiltások szabályai (Vht. 65. §):</span>
+        </div>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>Gyermektartásdíj és egyéb köztartozás esetén a levonás a nettó bér maximum 50%-áig terjedhet.</li>
+          <li>Magánjogi tartozások (pl. hitelhátralék) esetén a levonás maximum 33% lehet.</li>
+          <li>Több letiltás egyidejű érvényesítése a megadott prioritási sorrend és a törvényi sorrend alapján történik.</li>
+          <li><strong>Kamatszámítás:</strong> Kamatozó követelésnél a levonás először a felmerült költségre és kamatra, majd a tőketartozásra számolódik el.</li>
+        </ul>
+      </div>
+
       {showAddForm && (
-        <form onSubmit={handleAdd} className="p-4 rounded-lg border border-border bg-muted/40/50 dark:bg-card/10 grid grid-cols-1 md:grid-cols-2 gap-4 animate-in slide-in-from-top-3 duration-200">
+        <form onSubmit={handleAdd} className="p-5 border-2 border-primary/20 bg-card rounded-lg grid grid-cols-1 md:grid-cols-2 gap-4 shadow-sm page-animate">
           <div>
             <label className="block text-xs font-semibold text-muted-foreground mb-1">Letiltás típusa</label>
             <select
               value={type}
-              onChange={(e: any) => {
-                setType(e.target.value);
-                setMaxPct(e.target.value === 'child_support' ? '50' : '33');
-              }}
+              onChange={e => setType(e.target.value as any)}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
             >
               <option value="child_support">Tartásdíj (max 50%)</option>
@@ -144,8 +175,8 @@ export function EmployeeGarnishmentsTab({ garnishments, empId }: EmployeeGarnish
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-muted-foreground mb-1">Hitelező neve *</label>
-            <Input size={30} value={creditorName} onChange={e => setCreditorName(e.target.value)} placeholder="pl. OTP Bank Nyrt." required className="bg-background" />
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Hitelező / Végrehajtó neve *</label>
+            <Input size={30} value={creditorName} onChange={e => setCreditorName(e.target.value)} placeholder="pl. OTP Faktoring Zrt. / Önálló Bírósági Végrehajtó" required className="bg-background" />
           </div>
 
           <div>
@@ -159,13 +190,28 @@ export function EmployeeGarnishmentsTab({ garnishments, empId }: EmployeeGarnish
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-muted-foreground mb-1">Teljes tartozás összege (Ft)</label>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Főtartozás / Tőke összege (Ft)</label>
             <Input type="number" value={totalAmount} onChange={e => setTotalAmount(e.target.value)} placeholder="pl. 1500000" className="bg-background" />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-muted-foreground mb-1">Havi vonandó fix összeg (Ft)</label>
-            <Input type="number" value={monthlyDeduction} onChange={e => setMonthlyDeduction(e.target.value)} placeholder="pl. 45000" className="bg-background" />
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Havi vonandó fix összeg (Ft, opcionális)</label>
+            <Input type="number" value={monthlyDeduction} onChange={e => setMonthlyDeduction(e.target.value)} placeholder="Üresen hagyva % alapú levonás" className="bg-background" />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Éves kamatláb (% / év)</label>
+            <Input type="number" step="0.1" value={interestRate} onChange={e => setInterestRate(e.target.value)} placeholder="pl. 5.5 (0 ha nem kamatozik)" className="bg-background" />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Kamat kezdő dátuma</label>
+            <Input type="date" value={interestStartDate} onChange={e => setInterestStartDate(e.target.value)} className="bg-background" />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Végrehajtási költségek (Ft)</label>
+            <Input type="number" value={executionCosts} onChange={e => setExecutionCosts(e.target.value)} placeholder="pl. 45000" className="bg-background" />
           </div>
 
           <div>
@@ -175,8 +221,8 @@ export function EmployeeGarnishmentsTab({ garnishments, empId }: EmployeeGarnish
               onChange={e => setMaxPct(e.target.value)}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
             >
-              <option value="33">33%</option>
-              <option value="50">50%</option>
+              <option value="33">33% (Magánjogi alapeset)</option>
+              <option value="50">50% (Tartásdíj vagy több letiltás)</option>
             </select>
           </div>
 
@@ -187,10 +233,10 @@ export function EmployeeGarnishmentsTab({ garnishments, empId }: EmployeeGarnish
               onChange={e => setPriority(e.target.value)}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
             >
-              <option value="1">1 (Legmagasabb)</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4 (Legalacsonyabb)</option>
+              <option value="1">1 (Legmagasabb - pl. gyermektartás)</option>
+              <option value="2">2 (Köztartozás)</option>
+              <option value="3">3 (Közüzemi követelés)</option>
+              <option value="4">4 (Magánjogi követelés)</option>
             </select>
           </div>
 
@@ -200,6 +246,21 @@ export function EmployeeGarnishmentsTab({ garnishments, empId }: EmployeeGarnish
             </Button>
           </div>
         </form>
+      )}
+
+      {garnishments.length > 1 && (
+        <div className="p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs space-y-1.5 text-amber-800 dark:text-amber-200">
+          <div className="flex items-center gap-2 font-bold">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>Több párhuzamos letiltás van érvényben ({garnishments.length} db):</span>
+          </div>
+          <p className="leading-relaxed">
+            Alkalmazandó a Vht. 165. § szerinti törvényi kielégítési sorrend (1. Gyermektartásdíj → 2. Egyéb tartásdíj → 3. Munkavállalói munkabér → 4. Köztartozás → 5. Egyéb követelés).
+          </p>
+          <div className="text-[11px] font-semibold text-amber-900 dark:text-amber-100 bg-amber-500/15 p-1.5 rounded border border-amber-500/20">
+            Törvényi korlát: Több letiltás esetén a havi levonás a nettó munkabér legfeljebb 50%-áig terjedhet (Vht. 65. §)!
+          </div>
+        </div>
       )}
 
       {garnishments.length === 0 ? (
@@ -226,14 +287,23 @@ export function EmployeeGarnishmentsTab({ garnishments, empId }: EmployeeGarnish
                     <p className="font-semibold text-foreground capitalize">
                       {g.garnishment_type === 'child_support' ? 'Gyermektartás' : g.garnishment_type === 'public_debt' ? 'Köztartozás' : 'Magánjogi letiltás'}
                     </p>
-                    <p className="text-xs text-muted-foreground font-mono mt-0.5">{g.case_number || 'Ügyszám nélkül'}</p>
+                    <p className="text-xs text-muted-foreground font-mono mt-0.5">
+                      {g.case_number || g.decree_number || 'Ügyszám nélkül'}
+                    </p>
+                    {Number(g.interest_rate_pct) > 0 && (
+                      <span className="inline-block text-[10px] bg-amber-500/10 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/20 font-medium mt-1">
+                        +{g.interest_rate_pct}% kamat/év
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <p className="font-medium text-foreground/90">{g.creditor_name}</p>
-                    {g.creditor_bank_account && <p className="text-xs text-muted-foreground font-mono mt-0.5">{g.creditor_bank_account}</p>}
+                    {(g.creditor_bank_account || g.creditor_account) && (
+                      <p className="text-xs text-muted-foreground font-mono mt-0.5">{g.creditor_bank_account || g.creditor_account}</p>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right font-mono font-semibold">
-                    {g.total_amount ? `${formatAmount(g.total_amount)}` : 'Változó'}
+                    {(g.total_amount || g.original_amount) ? `${formatAmount((g.total_amount || g.original_amount)!)}` : 'Változó'}
                   </td>
                   <td className="px-4 py-3 text-right font-mono text-red-600">
                     {g.monthly_deduction ? `${formatAmount(g.monthly_deduction)}` : '33% v. 50% alapú'}

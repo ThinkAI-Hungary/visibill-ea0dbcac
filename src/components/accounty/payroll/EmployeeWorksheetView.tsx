@@ -17,6 +17,8 @@ import {
   ListFilter,
   CheckCircle2,
   Sparkles,
+  Send,
+  ExternalLink,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -465,6 +467,21 @@ export default function EmployeeWorksheetView({
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const url = `${window.location.origin}/client-portal?company=${companyId}&period=${cycle.year}-${String(cycle.month).padStart(2, '0')}`;
+              window.open(url, '_blank');
+            }}
+            className="text-xs h-8 gap-1.5 border-teal-500/40 text-teal-600 dark:text-teal-400 hover:bg-teal-500/10 font-semibold"
+            title="Dolgozói önkiszolgáló portál megnyitása új lapon"
+          >
+            <Send className="w-3.5 h-3.5" />
+            <span>Dolgozói önkiszolgáló portál</span>
+            <ExternalLink className="w-3 h-3 opacity-70" />
+          </Button>
+
           <Button
             variant="outline"
             size="sm"

@@ -62,6 +62,7 @@ const YearEndDashboardPage = lazy(() => import("@/pages/Accounty/YearEndDashboar
 const PayrollAdvancedReportsPage = lazy(() => import("@/pages/Accounty/reports/PayrollAdvancedReportsPage"));
 const AiAnomalyReportPage = lazy(() => import("@/pages/Accounty/reports/AiAnomalyReportPage"));
 const CustomReportBuilderPage = lazy(() => import("@/pages/Accounty/reports/CustomReportBuilderPage"));
+const DividendPayrollPage = lazy(() => import("@/pages/Accounty/DividendPayrollPage"));
 
 // TAO/KIVA module
 const TaoPortfolioPage = lazy(() => import("@/pages/Accounty/Tao/TaoPortfolioPage"));
@@ -269,6 +270,7 @@ export function renderAccountyRoutes() {
           <Route path="payroll/portal" element={<Suspense fallback={<AccountyPageSkeleton />}><ClientPortalPage /></Suspense>} />
           <Route path="payroll/tax-params" element={<Suspense fallback={<AccountyPageSkeleton />}><PayrollTaxParametersPage /></Suspense>} />
           <Route path="payroll/settings" element={<Suspense fallback={<AccountyPageSkeleton />}><CompanyPayrollSettingsPage /></Suspense>} />
+          <Route path="payroll/dividends" element={<Suspense fallback={<AccountyPageSkeleton />}><DividendPayrollPage /></Suspense>} />
 
           {/* Employee extensions */}
           <Route path="payroll/employees/import" element={<Suspense fallback={<AccountyPageSkeleton />}><EmployeeImportPage /></Suspense>} />

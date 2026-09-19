@@ -6,10 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Building2, AlertCircle, Info, MapPin, Plus, X, Sparkles, BookOpen, Calendar, CalendarCheck } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Building2, AlertCircle, Info, MapPin, Plus, X, Sparkles, BookOpen, Calendar, CalendarCheck, Landmark, ExternalLink } from 'lucide-react';
 import { useCompanyLocations } from '@/hooks/useCompanyLocations';
 import { useToast } from '@/hooks/use-toast';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { formatAccountOnType, detectAccountFormat } from '@/lib/ibanUtils';
 import { cn } from '@/lib/utils';
 
 interface Company {
@@ -42,6 +46,7 @@ interface Props {
   onSave: () => void;
   companies: Company[];
   setSelectedCompany: (c: Company) => void;
+  onNavigateToBankAccounts?: () => void;
   children?: React.ReactNode; // CompanyAccessCard + CompanyMembersCard
 }
 
@@ -50,7 +55,8 @@ export function BusinessSection({
   companyTaxNumber, setCompanyTaxNumber, companyAddress, setCompanyAddress,
   companyDescription, setCompanyDescription, companyPrimaryTeaor, setCompanyPrimaryTeaor,
   isGeneratingDescription, onGenerateDescription,
-  savingCompany, onSave, companies, setSelectedCompany, children,
+  savingCompany, onSave, companies, setSelectedCompany,
+  onNavigateToBankAccounts, children,
 }: Props) {
   const { t } = useTranslation(['settings']);
   const isOwner = selectedCompany?.owner_id === userId;
@@ -58,6 +64,21 @@ export function BusinessSection({
   const { locations, isLoading: locationsLoading, addLocation, deleteLocation } = useCompanyLocations(selectedCompany?.id);
   const { effectiveSettings: compEffectiveSettings, saveMutation: compSaveMutation } = useCompanySettings();
   const [glBasis, setGlBasis] = useState<'kibocsatas' | 'teljesites'>('kibocsatas');
+
+  const { data: companyBankAccounts = [], isLoading: bankAccountsLoading } = useQuery({
+    queryKey: ['company-bank-accounts', selectedCompany?.id],
+    queryFn: async () => {
+      if (!selectedCompany?.id) return [];
+      const { data, error } = await supabase
+        .from('company_bank_accounts')
+        .select('id, bank_name, account_number, currency, created_at')
+        .eq('company_id', selectedCompany.id)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedCompany?.id,
+  });
 
   useEffect(() => {
     if (compEffectiveSettings?.gl_date_basis) {
@@ -198,6 +219,99 @@ export function BusinessSection({
           )}
         </CardContent>
       </Card>
+
+      {/* Céges bankszámlák és IBAN azonosítók áttekintése */}
+      {selectedCompany && (
+        <Card className="border-border/60 shadow-sm">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Landmark className="h-5 w-5 text-primary" />
+                  {t('business.bank_accounts_overview_title', 'Céges bankszámlák és IBAN azonosítók')}
+                </CardTitle>
+                <CardDescription>
+                  {t('business.bank_accounts_overview_desc', 'A céghez tartozó belföldi GIRO és nemzetközi IBAN bankszámlák a banki utalási exportokhoz.')}
+                </CardDescription>
+              </div>
+              {onNavigateToBankAccounts && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs"
+                  onClick={onNavigateToBankAccounts}
+                >
+                  <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                  {t('business.manage_bank_accounts', 'Bankszámlák kezelése')}
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {bankAccountsLoading ? (
+              <p className="text-sm text-muted-foreground">{t('common:loading', 'Betöltés...')}</p>
+            ) : companyBankAccounts.length === 0 ? (
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-xl border border-dashed border-amber-500/30 bg-amber-500/5 gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <AlertCircle className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      {t('business.no_bank_accounts_warning', 'Még nincs céges bankszámla rögzítve')}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {t('business.no_bank_accounts_hint', 'Rögzítsd a cég GIRO vagy IBAN számlaszámát a kimenő utalási csomagok (SEPA XML, OTP, MBH, CIB) készítéséhez.')}
+                    </p>
+                  </div>
+                </div>
+                {onNavigateToBankAccounts && (
+                  <Button size="sm" onClick={onNavigateToBankAccounts} className="shrink-0 gap-1.5">
+                    <Plus className="h-4 w-4" />
+                    {t('business.add_first_bank_account', 'Számla hozzáadása')}
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {companyBankAccounts.map((acc: any) => {
+                  const fmt = detectAccountFormat(acc.account_number);
+                  return (
+                    <div
+                      key={acc.id}
+                      className="p-3.5 rounded-xl border border-border/70 bg-card hover:bg-muted/30 transition-all flex flex-col justify-between gap-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-xs text-foreground flex items-center gap-1.5">
+                          <Landmark className="h-3.5 w-3.5 text-primary" />
+                          {acc.bank_name}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <Badge variant="secondary" className="text-[10px] font-mono px-1.5 py-0">
+                            {acc.currency}
+                          </Badge>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-[10px] font-medium px-1.5 py-0",
+                              fmt === 'iban' ? "border-sky-500/40 text-sky-600 dark:text-sky-400 bg-sky-500/5" : "border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/5"
+                            )}
+                          >
+                            {fmt === 'iban' ? 'IBAN' : 'GIRO'}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="font-mono text-xs font-semibold tracking-wider text-muted-foreground bg-muted/40 px-2.5 py-1.5 rounded-md select-all">
+                        {formatAccountOnType(acc.account_number)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Telephelyek szekció */}
       {selectedCompany && (

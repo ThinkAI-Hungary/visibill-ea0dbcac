@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,11 +6,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Landmark, Plus, Trash2, Shield, CreditCard } from 'lucide-react';
+import { Landmark, Plus, Trash2, Shield, CreditCard, Globe, CheckCircle2, Sparkles } from 'lucide-react';
 import { reportError } from '@/lib/errorReporter';
 import { useTranslation } from 'react-i18next';
 import { Aggreg8BankConnections } from '@/components/banking/Aggreg8BankConnections';
+import {
+  formatAccountOnType,
+  validateAccountNumber,
+  detectAccountFormat,
+  detectBankFromAccountNumber,
+  formatIban,
+  formatGiro,
+} from '@/lib/ibanUtils';
 
 interface BankAccount {
   id: string;
@@ -31,8 +40,30 @@ const BANK_GRADIENTS: Record<string, string> = {
   'K&H Bank': 'from-blue-600 to-sky-700 text-white',
   'Raiffeisen Bank': 'from-yellow-500 to-amber-700 text-zinc-900',
   'MBH Bank': 'from-zinc-800 to-slate-900 text-white border border-slate-700',
-  'default': 'from-indigo-600 to-violet-800 text-white'
+  'Revolut Bank': 'from-neutral-900 via-neutral-800 to-zinc-900 text-white border border-neutral-700',
+  'Wise (TransferWise)': 'from-emerald-700 to-teal-900 text-white',
+  'N26 Bank': 'from-teal-800 to-cyan-950 text-white',
+  'Gránit Bank': 'from-amber-600 to-orange-800 text-white',
+  'CIB Bank': 'from-amber-500 to-yellow-600 text-zinc-950',
+  'UniCredit Bank': 'from-red-700 to-rose-900 text-white',
+  'MagNet Bank': 'from-green-700 to-emerald-900 text-white',
+  'default': 'from-indigo-600 to-violet-800 text-white',
 };
+
+const STANDARD_BANKS = [
+  'OTP Bank',
+  'Erste Bank',
+  'K&H Bank',
+  'MBH Bank',
+  'Raiffeisen Bank',
+  'CIB Bank',
+  'UniCredit Bank',
+  'Gránit Bank',
+  'MagNet Bank',
+  'Revolut Bank',
+  'Wise (TransferWise)',
+  'N26 Bank',
+];
 
 export function BankAccountsTab({ companyId }: Props) {
   const { t } = useTranslation(['settings', 'common']);
@@ -58,33 +89,42 @@ export function BankAccountsTab({ companyId }: Props) {
     }
   });
 
-  const formatAccountNumber = (value: string) => {
-    // Keep only numbers and hyphens
-    const clean = value.replace(/[^0-9]/g, '');
-    if (clean.length <= 8) {
-      return clean;
-    } else if (clean.length <= 16) {
-      return `${clean.slice(0, 8)}-${clean.slice(8)}`;
-    } else {
-      return `${clean.slice(0, 8)}-${clean.slice(8, 16)}-${clean.slice(16, 24)}`;
-    }
-  };
+  const accountFormat = detectAccountFormat(accountNumber);
+  const detectedBankInfo = detectBankFromAccountNumber(accountNumber);
 
   const handleAccountNumChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAccountNumber(formatAccountNumber(e.target.value));
+    const formatted = formatAccountOnType(e.target.value);
+    setAccountNumber(formatted);
+
+    // Intelligens bankfelismerés gépelés közben
+    const bankInfo = detectBankFromAccountNumber(formatted);
+    if (bankInfo?.bankName) {
+      if (STANDARD_BANKS.includes(bankInfo.bankName)) {
+        setBankName(bankInfo.bankName);
+        setCustomBankName('');
+      } else {
+        setBankName('other');
+        setCustomBankName(bankInfo.bankName);
+      }
+    }
   };
 
   const handleAddAccount = async (e: React.FormEvent) => {
     e.preventDefault();
-    const finalBankName = bankName === 'other' ? customBankName.trim() : bankName;
-    if (!finalBankName) {
-      toast({ title: 'Hiba', description: 'Kérjük, add meg a bank nevét.', variant: 'destructive' });
+
+    const validation = validateAccountNumber(accountNumber);
+    if (!validation.valid) {
+      toast({
+        title: t('bank_accounts.invalid_account_number', 'Érvénytelen számlaszám'),
+        description: validation.error,
+        variant: 'destructive',
+      });
       return;
     }
 
-    const cleanNum = accountNumber.replace(/[^0-9]/g, '');
-    if (cleanNum.length !== 16 && cleanNum.length !== 24) {
-      toast({ title: 'Hiba', description: 'A magyar bankszámlaszámnak 16 vagy 24 számjegyből kell állnia.', variant: 'destructive' });
+    const finalBankName = bankName === 'other' ? customBankName.trim() : bankName;
+    if (!finalBankName) {
+      toast({ title: 'Hiba', description: 'Kérjük, add meg a bank nevét.', variant: 'destructive' });
       return;
     }
 
@@ -95,8 +135,8 @@ export function BankAccountsTab({ companyId }: Props) {
         .insert({
           company_id: companyId,
           bank_name: finalBankName,
-          account_number: accountNumber,
-          currency: currency
+          account_number: accountNumber.trim(),
+          currency: currency,
         });
 
       if (error) throw error;
@@ -145,6 +185,13 @@ export function BankAccountsTab({ companyId }: Props) {
     }
   };
 
+  const formatAccountDisplay = (accNum: string) => {
+    const fmt = detectAccountFormat(accNum);
+    if (fmt === 'iban') return formatIban(accNum);
+    if (fmt === 'giro') return formatGiro(accNum);
+    return accNum;
+  };
+
   return (
     <div className="space-y-6">
       {/* Aggreg8 Open Banking (PSD2) Integráció */}
@@ -171,8 +218,55 @@ export function BankAccountsTab({ companyId }: Props) {
         <CardContent>
           {showAddForm && (
             <form onSubmit={handleAddAccount} className="p-5 border border-primary/20 bg-primary/5 rounded-xl mb-6 space-y-4 animate-in fade-in slide-in-from-top-3 duration-200">
-              <h3 className="font-semibold text-sm flex items-center gap-2"><CreditCard className="h-4 w-4 text-primary" /> {t('bank_accounts.add_title', 'Új bankszámla hozzáadása')}</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-sm flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-primary" />
+                  {t('bank_accounts.add_title', 'Új bankszámla hozzáadása')}
+                </h3>
+                {accountFormat !== 'unknown' && (
+                  <Badge variant="outline" className="text-xs bg-background/80 flex items-center gap-1.5">
+                    {accountFormat === 'iban' ? (
+                      <>
+                        <Globe className="h-3 w-3 text-sky-500" />
+                        {t('bank_accounts.format_iban', 'Nemzetközi IBAN')}
+                      </>
+                    ) : (
+                      <>
+                        <Landmark className="h-3 w-3 text-emerald-500" />
+                        {t('bank_accounts.format_giro', 'Belföldi GIRO')}
+                      </>
+                    )}
+                  </Badge>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2 col-span-1 md:col-span-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="acc_num">
+                      {t('bank_accounts.account_number', 'Bankszámlaszám (magyar GIRO vagy nemzetközi IBAN) *')}
+                    </Label>
+                    {detectedBankInfo && (
+                      <span className="text-xs text-primary font-medium flex items-center gap-1">
+                        <Sparkles className="h-3 w-3" />
+                        {detectedBankInfo.bankName}
+                      </span>
+                    )}
+                  </div>
+                  <Input
+                    id="acc_num"
+                    value={accountNumber}
+                    onChange={handleAccountNumChange}
+                    placeholder="11773016-00000000-00000000 vagy HU42 1177 3016..."
+                    maxLength={42}
+                    required
+                    className="font-mono bg-background text-sm"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    Támogatott: 16 vagy 24 jegyű magyar GIRO számla, magyar IBAN (HU...) vagy nemzetközi IBAN (pl. Revolut, Wise, N26).
+                  </p>
+                </div>
+
                 <div className="space-y-2">
                   <Label>{t('bank_accounts.bank_name', 'Bank neve')}</Label>
                   <Select value={bankName} onValueChange={setBankName}>
@@ -180,45 +274,28 @@ export function BankAccountsTab({ companyId }: Props) {
                       <SelectValue placeholder={t('bank_accounts.select_bank', 'Válassz bankot')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="OTP Bank">OTP Bank</SelectItem>
-                      <SelectItem value="Erste Bank">Erste Bank</SelectItem>
-                      <SelectItem value="K&H Bank">K&H Bank</SelectItem>
-                      <SelectItem value="Raiffeisen Bank">Raiffeisen Bank</SelectItem>
-                      <SelectItem value="MBH Bank">MBH Bank</SelectItem>
-                      <SelectItem value="other">Egyéb bank / SEPA számla</SelectItem>
+                      {STANDARD_BANKS.map(b => (
+                        <SelectItem key={b} value={b}>{b}</SelectItem>
+                      ))}
+                      <SelectItem value="other">Egyéb bank / Egyedi név</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 {bankName === 'other' && (
-                  <div className="space-y-2">
+                  <div className="space-y-2 col-span-1 md:col-span-2">
                     <Label htmlFor="custom_bank">{t('bank_accounts.custom_bank', 'Egyedi bank neve *')}</Label>
                     <Input
                       id="custom_bank"
                       value={customBankName}
                       onChange={e => setCustomBankName(e.target.value)}
-                      placeholder={t('bank_accounts.custom_bank_placeholder', 'Pl. Gránit Bank')}
+                      placeholder={t('bank_accounts.custom_bank_placeholder', 'Pl. Gránit Bank, Revolut, Wise...')}
                       required
                       className="bg-background"
                     />
                   </div>
                 )}
 
-                <div className="space-y-2 col-span-1 md:col-span-2">
-                  <Label htmlFor="acc_num">{t('bank_accounts.account_number', 'Bankszámlaszám (magyar formátum) *')}</Label>
-                  <Input
-                    id="acc_num"
-                    value={accountNumber}
-                    onChange={handleAccountNumChange}
-                    placeholder="12345678-12345678-12345678"
-                    maxLength={26}
-                    required
-                    className="font-mono bg-background"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 max-w-sm">
                 <div className="space-y-2">
                   <Label>{t('bank_accounts.currency', 'Pénznem')}</Label>
                   <Select value={currency} onValueChange={setCurrency}>
@@ -229,6 +306,8 @@ export function BankAccountsTab({ companyId }: Props) {
                       <SelectItem value="HUF">HUF (Ft)</SelectItem>
                       <SelectItem value="EUR">EUR (€)</SelectItem>
                       <SelectItem value="USD">USD ($)</SelectItem>
+                      <SelectItem value="GBP">GBP (£)</SelectItem>
+                      <SelectItem value="CHF">CHF (Fr)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -256,6 +335,8 @@ export function BankAccountsTab({ companyId }: Props) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {accounts.map(acc => {
                 const gradient = BANK_GRADIENTS[acc.bank_name] || BANK_GRADIENTS['default'];
+                const fmt = detectAccountFormat(acc.account_number);
+
                 return (
                   <div
                     key={acc.id}
@@ -266,7 +347,12 @@ export function BankAccountsTab({ companyId }: Props) {
 
                     <div className="flex justify-between items-start z-10">
                       <div>
-                        <p className="text-xs uppercase tracking-widest opacity-80 font-medium">{acc.bank_name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs uppercase tracking-widest opacity-80 font-medium">{acc.bank_name}</p>
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-white/30 text-white/90 bg-white/10">
+                            {fmt === 'iban' ? 'IBAN' : 'GIRO'}
+                          </Badge>
+                        </div>
                         <p className="text-lg font-bold mt-1 flex items-center gap-1.5">
                           <Landmark className="h-4 w-4" />
                           {acc.currency} {t('bank_accounts.account_suffix', 'Számla')}
@@ -285,8 +371,8 @@ export function BankAccountsTab({ companyId }: Props) {
 
                     <div className="mt-4 z-10">
                       <p className="text-xs opacity-75">{t('bank_accounts.account_number_label', 'Számlaszám')}</p>
-                      <p className="font-mono text-sm tracking-wider font-semibold select-all bg-black/10 px-2 py-1 rounded mt-0.5 inline-block">
-                        {acc.account_number}
+                      <p className="font-mono text-sm tracking-wider font-semibold select-all bg-black/15 px-2 py-1 rounded mt-0.5 inline-block border border-white/10">
+                        {formatAccountDisplay(acc.account_number)}
                       </p>
                     </div>
                   </div>

@@ -29,13 +29,13 @@ export default function PayrollStep3({
         Munkaidő feldolgozás. Töltsd fel a jelenléti ívet, vagy add meg manuálisan a munkanapokat.
       </p>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <label className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 cursor-pointer transition-all">
           <Download className="w-4 h-4 text-primary rotate-180" />
-          <span className="text-sm font-semibold text-primary">CSV / Excel feltöltés</span>
+          <span className="text-sm font-semibold text-primary">Jelenléti ív feltöltése (CSV, Excel, PDF, Kép)</span>
           <input
             type="file"
-            accept=".csv,.xlsx,.xls"
+            accept=".csv,.xlsx,.xls,.pdf,.jpg,.jpeg,.png"
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0];
@@ -43,10 +43,12 @@ export default function PayrollStep3({
             }}
           />
         </label>
-        <span className="text-xs text-muted-foreground">Formátum: Név, Munkanapok, Túlóra, Táppénz, Szabadság</span>
+        <span className="text-xs text-muted-foreground">
+          Formátum: CSV, Excel, szkennelt PDF vagy kép (JPG/PNG) OCR feldolgozással
+        </span>
         {Object.keys(attendanceData).length > 0 && (
-          <span className="flex items-center gap-1 text-xs text-green-600 font-semibold">
-            <CheckCircle2 className="w-3.5 h-3.5" /> {Object.keys(attendanceData).length} betöltve
+          <span className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+            <CheckCircle2 className="w-3.5 h-3.5" /> {Object.keys(attendanceData).length} dolgozó jelenléte rögzítve
           </span>
         )}
       </div>

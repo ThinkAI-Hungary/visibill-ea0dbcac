@@ -38,6 +38,16 @@ import {
 } from 'lucide-react';
 import { calculateSkonto, formatTransferNarrative } from '@/lib/skontoUtils';
 import {
+  validateIban,
+  validateGiro,
+  validateAccountNumber,
+  giroToIban,
+  ibanToGiro,
+  detectAccountFormat,
+  normalizeAccountNumber,
+  formatAccountOnType,
+} from '@/lib/ibanUtils';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -177,46 +187,14 @@ export default function TransfersPage() {
     return `Szamlak: ${item.original_invoices.map((inv: any) => formatTransferNarrative(inv.invoice_number, isSkontoActive(inv), inv.skonto_percent)).join(', ')}`;
   };
 
-  // IBAN Validation Modulo 97 check
-  const validateIban = (iban: string): boolean => {
-    const clean = iban.replace(/[\s-]/g, '').toUpperCase();
-    if (!/^[A-Z]{2}\d{2}[A-Z0-9]{12,30}$/.test(clean)) return false;
-    const rearranged = clean.slice(4) + clean.slice(0, 4);
-    const digits = rearranged.split('').map(char => {
-      const code = char.charCodeAt(0);
-      if (code >= 65 && code <= 90) return String(code - 55);
-      return char;
-    }).join('');
-    let remainder = 0;
-    for (let i = 0; i < digits.length; i++) {
-      remainder = (remainder * 10 + parseInt(digits[i], 10)) % 97;
-    }
-    return remainder === 1;
-  };
-
-  // Hungarian CDV & Format Check
+  // Bank account validation check (GIRO CDV & International IBAN Modulo 97)
   const getAccountError = (account: string): string | null => {
-    if (!account) return t('transfers:validation.missing_account');
-    const clean = account.replace(/[\s-]/g, '').toUpperCase();
-    if (!clean) return t('transfers:validation.missing_account');
-    if (/^[A-Z]/.test(clean)) {
-      if (!validateIban(clean)) return t('transfers:validation.invalid_iban');
-      return null;
+    if (!account || !account.trim()) return t('transfers:validation.missing_account', 'Hiányzó bankszámlaszám');
+    const validation = validateAccountNumber(account);
+    if (!validation.valid) {
+      if (validation.type === 'iban') return t('transfers:validation.invalid_iban', 'Érvénytelen IBAN számlaszám');
+      return t('transfers:validation.invalid_cdv', 'Érvénytelen bankszámlaszám (hibás CDV ellenőrzőösszeg)');
     }
-    if (!/^\d+$/.test(clean)) return t('transfers:validation.digits_only');
-    if (clean.length !== 16 && clean.length !== 24) {
-      return t('transfers:validation.giro_length');
-    }
-    const digits = clean.split('').map(Number);
-    const checkBlock = (block: number[]) => {
-      const weights = [9, 7, 3, 1, 9, 7, 3, 1];
-      let sum = 0;
-      for (let i = 0; i < 8; i++) sum += block[i] * weights[i];
-      return sum % 10 === 0;
-    };
-    if (!checkBlock(digits.slice(0, 8))) return t('transfers:validation.invalid_cdv_block1');
-    if (!checkBlock(digits.slice(8, 16))) return t('transfers:validation.invalid_cdv_block2');
-    if (clean.length === 24 && !checkBlock(digits.slice(16, 24))) return t('transfers:validation.invalid_cdv_block3');
     return null;
   };
 
@@ -290,6 +268,22 @@ export default function TransfersPage() {
       currency: 'HUF'
     }];
   }, [bankAccounts]);
+
+  const selectedSenderAccount = useMemo(() => {
+    return displayBankAccounts.find(acc => acc.id === senderAccountId);
+  }, [displayBankAccounts, senderAccountId]);
+
+  const isSenderNonHuIban = useMemo(() => {
+    if (!selectedSenderAccount) return false;
+    const clean = selectedSenderAccount.account_number.replace(/[\s-]/g, '').toUpperCase();
+    return detectAccountFormat(clean) === 'iban' && !clean.startsWith('HU');
+  }, [selectedSenderAccount]);
+
+  useEffect(() => {
+    if (isSenderNonHuIban && exportFormat !== 'sepa') {
+      setExportFormat('sepa');
+    }
+  }, [isSenderNonHuIban, exportFormat]);
 
   // 2. Fetch unpaid inbound manual invoices + inbound NAV invoices
   const { data: invoices = [], isLoading, refetch: refetchInvoices } = useQuery<TransferInvoice[]>({
@@ -851,22 +845,7 @@ export default function TransfersPage() {
 
   // Handle bank account inline modification
   const handleBankChange = (id: string, value: string) => {
-    let formatted = value;
-    if (!/^[a-zA-Z]/u.test(value)) {
-      const digits = value.replace(/\D/g, '').slice(0, 24);
-      if (digits.length <= 8) {
-        formatted = digits.length === 8 && value.endsWith('-') ? `${digits}-` : digits;
-      } else if (digits.length <= 16) {
-        formatted = digits.length === 16 && value.endsWith('-') 
-          ? `${digits.slice(0, 8)}-${digits.slice(8)}-` 
-          : `${digits.slice(0, 8)}-${digits.slice(8)}`;
-      } else {
-        formatted = `${digits.slice(0, 8)}-${digits.slice(8, 16)}-${digits.slice(16)}`;
-      }
-    } else {
-      formatted = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    }
-
+    const formatted = formatAccountOnType(value);
     setEditingBankAccounts(prev => ({ ...prev, [id]: formatted }));
   };
 
@@ -874,14 +853,8 @@ export default function TransfersPage() {
     const value = editingBankAccounts[id]?.trim();
     if (value === undefined || value === invoice.partner_bank_account) return;
 
-    // Format if looks like bank account
-    const clean = value.replace(/[^0-9]/g, '');
-    let formatted = value;
-    if (clean.length === 16) {
-      formatted = `${clean.slice(0, 8)}-${clean.slice(8)}`;
-    } else if (clean.length === 24) {
-      formatted = `${clean.slice(0, 8)}-${clean.slice(8, 16)}-${clean.slice(16)}`;
-    }
+    // Intelligens formázás (IBAN blokkok vagy GIRO kötőjelezés)
+    const formatted = formatAccountOnType(value);
 
     try {
       // 1. Persist to partners table if company is selected
@@ -1278,15 +1251,19 @@ export default function TransfersPage() {
     // If the user has exactly 1 real corporate bank account, we skip the dialog!
     if (bankAccounts.length === 1) {
       const singleAcc = bankAccounts[0];
+      const cleanAcc = singleAcc.account_number.replace(/[\s-]/g, '').toUpperCase();
+      const isNonHu = detectAccountFormat(cleanAcc) === 'iban' && !cleanAcc.startsWith('HU');
+
       const bName = singleAcc.bank_name.toLowerCase();
       let format = 'otp'; // default
-      if (bName.includes('otp')) format = 'otp';
+      if (isNonHu) format = 'sepa';
+      else if (bName.includes('otp')) format = 'otp';
       else if (bName.includes('cib')) format = 'cib';
       else if (bName.includes('erste')) format = 'erste';
       else if (bName.includes('k&h') || bName.includes('kh') || bName.includes('kereskedelmi')) format = 'kh';
       else if (bName.includes('raiffeisen')) format = 'raiffeisen';
       else if (bName.includes('mbh')) format = 'mbh';
-      else if (bName.includes('sepa')) format = 'sepa';
+      else if (bName.includes('sepa') || bName.includes('revolut') || bName.includes('wise') || bName.includes('n26') || bName.includes('bunq') || bName.includes('paysera')) format = 'sepa';
       
       // Directly generate without opening dialog
       handleGenerateFile(singleAcc.id, format);
@@ -1298,12 +1275,18 @@ export default function TransfersPage() {
 
   const handleGenerateFile = async (overrideSenderId?: string, overrideFormat?: string) => {
     const activeSenderId = overrideSenderId || senderAccountId;
-    const activeFormat = overrideFormat || exportFormat;
+    let activeFormat = overrideFormat || exportFormat;
 
     const sender = displayBankAccounts.find(acc => acc.id === activeSenderId);
     if (!sender) {
       toast({ title: t('common:error', 'Hiba'), description: t('transfers:toasts.select_sender_account'), variant: 'destructive' });
       return;
+    }
+
+    // Safety guard: if sender account is a non-HU IBAN, enforce SEPA XML format
+    const cleanSenderNum = sender.account_number.replace(/[\s-]/g, '').toUpperCase();
+    if (detectAccountFormat(cleanSenderNum) === 'iban' && !cleanSenderNum.startsWith('HU')) {
+      activeFormat = 'sepa';
     }
 
     setExporting(true);
@@ -1332,7 +1315,9 @@ export default function TransfersPage() {
 
         let trfInfos = '';
         selectedItems.forEach((item, idx) => {
-          const cleanIban = item.partner_bank_account.replace(/[^A-Z0-9]/ig, '');
+          const partnerIban = detectAccountFormat(item.partner_bank_account) === 'iban'
+            ? normalizeAccountNumber(item.partner_bank_account)
+            : (giroToIban(item.partner_bank_account) || normalizeAccountNumber(item.partner_bank_account));
           const narrative = getItemNarrative(item);
           trfInfos += `
       <CdtTrfTxInf>
@@ -1348,7 +1333,7 @@ export default function TransfersPage() {
         <CdtrAcct>
           <Id>
             <Othr>
-              <Id>${cleanIban}</Id>
+              <Id>${partnerIban}</Id>
             </Othr>
           </Id>
         </CdtrAcct>
@@ -1358,7 +1343,9 @@ export default function TransfersPage() {
       </CdtTrfTxInf>`;
         });
 
-        const senderIban = sender.account_number.replace(/[^A-Z0-9]/ig, '');
+        const senderIban = detectAccountFormat(sender.account_number) === 'iban'
+          ? normalizeAccountNumber(sender.account_number)
+          : (giroToIban(sender.account_number) || normalizeAccountNumber(sender.account_number));
 
         fileContent = `<?xml version="1.0" encoding="UTF-8"?>
 <Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.001.001.03">
@@ -1406,8 +1393,10 @@ export default function TransfersPage() {
         // CIB Business Online CSV Format (19 columns, semicolon separated, no header)
         fileContent = '';
         selectedItems.forEach(item => {
-          const cleanSender = sender.account_number.replace(/[^0-9]/g, '');
-          const cleanPartner = item.partner_bank_account.replace(/[^0-9]/g, '');
+          const domesticSender = ibanToGiro(sender.account_number) || sender.account_number;
+          const cleanSender = domesticSender.replace(/[^0-9]/g, '');
+          const domesticPartner = ibanToGiro(item.partner_bank_account) || item.partner_bank_account;
+          const cleanPartner = domesticPartner.replace(/[^0-9]/g, '');
           const narrative = getItemNarrative(item).slice(0, 140);
           
           // Columns: 1.Terhelendo szamla, 2.Kedvezmenyezett nev, 3.Kedvezmenyezett szamla, 4.Osszeg (egeszresz), 5.Kozlemeny, 6-19.Ures
@@ -1420,7 +1409,8 @@ export default function TransfersPage() {
         const rows = [header];
 
         selectedItems.forEach(item => {
-          const cleanPartner = item.partner_bank_account.replace(/[^0-9]/g, '');
+          const domesticPartner = ibanToGiro(item.partner_bank_account) || item.partner_bank_account;
+          const cleanPartner = domesticPartner.replace(/[^0-9]/g, '');
           const narrative = getItemNarrative(item).slice(0, 140);
           const name = `Utalas - ${item.partner_name.slice(0, 20)}`;
           const comment = 'Visibill atutalas';
@@ -1436,8 +1426,10 @@ export default function TransfersPage() {
         // MBH Fixed-Width TXT Format (293 bytes per row)
         fileContent = '';
         selectedItems.forEach((item, idx) => {
-          const cleanSender = sender.account_number.replace(/[^0-9]/g, '');
-          const cleanPartner = item.partner_bank_account.replace(/[^0-9]/g, '');
+          const domesticSender = ibanToGiro(sender.account_number) || sender.account_number;
+          const cleanSender = domesticSender.replace(/[^0-9]/g, '');
+          const domesticPartner = ibanToGiro(item.partner_bank_account) || item.partner_bank_account;
+          const cleanPartner = domesticPartner.replace(/[^0-9]/g, '');
           const formattedDate = todayStr.replace(/-/g, ''); // YYYYMMDD
           const narrative = getItemNarrative(item);
 
@@ -1469,8 +1461,10 @@ export default function TransfersPage() {
         // Generate Semicolon separated CSV (Domestic GIRO CSV) for OTP and K&H
         fileContent = '';
         selectedItems.forEach(item => {
-          const cleanSender = sender.account_number.replace(/[^0-9]/g, '');
-          const cleanPartner = item.partner_bank_account.replace(/[^0-9]/g, '');
+          const domesticSender = ibanToGiro(sender.account_number) || sender.account_number;
+          const cleanSender = domesticSender.replace(/[^0-9]/g, '');
+          const domesticPartner = ibanToGiro(item.partner_bank_account) || item.partner_bank_account;
+          const cleanPartner = domesticPartner.replace(/[^0-9]/g, '');
           const formattedDate = todayStr.replace(/-/g, ''); // YYYYMMDD format
           const narrative = getItemNarrative(item).slice(0, 140);
           fileContent += `${cleanSender};${cleanPartner};${item.partner_name};${item.amount.toFixed(0)};${item.currency};${formattedDate};${narrative}\r\n`;
@@ -2432,30 +2426,70 @@ export default function TransfersPage() {
 
             {/* Format Selection Card Grid */}
             <div className="space-y-2">
-              <Label className="text-sm font-semibold">{t('transfers:dialog.file_format', 'Fájlformátum')}</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold">{t('transfers:dialog.file_format', 'Fájlformátum')}</Label>
+                {isSenderNonHuIban && (
+                  <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    Kizárólag SEPA XML érhető el
+                  </span>
+                )}
+              </div>
+
+              {isSenderNonHuIban && (
+                <div className="p-3 bg-amber-500/10 border border-amber-500/25 rounded-xl text-xs flex items-start gap-2.5 text-foreground leading-relaxed">
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-amber-800 dark:text-amber-300">
+                      {t('transfers:dialog.foreign_iban_notice_title', 'Nemzetközi (nem HU) IBAN számla kiválasztva')}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      {t('transfers:dialog.foreign_iban_sepa_only', 'Külföldi számláról történő utaláshoz kizárólag a nemzetközi szabványú SEPA XML (pain.001) fájlformátum használható. A belföldi banki formátumok (OTP, MBH, CIB stb.) inaktiválva vannak.')}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { id: 'otp', name: 'OTP Bank', desc: 'Giro CSV' },
-                  { id: 'cib', name: 'CIB Bank', desc: 'Pozíciós CSV' },
-                  { id: 'erste', name: 'Erste Bank', desc: 'Electra CSV' },
-                  { id: 'kh', name: 'K&H Bank', desc: 'Giro CSV' },
-                  { id: 'raiffeisen', name: 'Raiffeisen', desc: 'Electra CSV' },
-                  { id: 'mbh', name: 'MBH Bank', desc: 'Pozíciós TXT' },
-                  { id: 'sepa', name: 'SEPA XML', desc: 'pain.001 standard' },
-                ].map(fmt => (
-                  <div
-                    key={fmt.id}
-                    onClick={() => setExportFormat(fmt.id)}
-                    className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
-                      exportFormat === fmt.id
-                        ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                        : 'border-border hover:bg-muted/40'
-                    }`}
-                  >
-                    <p className="font-semibold text-xs text-foreground">{fmt.name}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">{fmt.desc}</p>
-                  </div>
-                ))}
+                  { id: 'otp', name: 'OTP Bank', desc: 'Giro CSV', domestic: true },
+                  { id: 'cib', name: 'CIB Bank', desc: 'Pozíciós CSV', domestic: true },
+                  { id: 'erste', name: 'Erste Bank', desc: 'Electra CSV', domestic: true },
+                  { id: 'kh', name: 'K&H Bank', desc: 'Giro CSV', domestic: true },
+                  { id: 'raiffeisen', name: 'Raiffeisen', desc: 'Electra CSV', domestic: true },
+                  { id: 'mbh', name: 'MBH Bank', desc: 'Pozíciós TXT', domestic: true },
+                  { id: 'sepa', name: 'SEPA XML', desc: 'pain.001 standard', domestic: false },
+                ].map(fmt => {
+                  const isBlocked = isSenderNonHuIban && fmt.domestic;
+                  return (
+                    <div
+                      key={fmt.id}
+                      onClick={() => {
+                        if (isBlocked) return;
+                        setExportFormat(fmt.id);
+                      }}
+                      className={cn(
+                        "p-3 rounded-xl border text-left transition-all",
+                        isBlocked
+                          ? "opacity-35 cursor-not-allowed bg-muted/20 border-border/40 select-none"
+                          : exportFormat === fmt.id
+                            ? "border-primary bg-primary/5 ring-1 ring-primary cursor-pointer"
+                            : "border-border hover:bg-muted/40 cursor-pointer"
+                      )}
+                      title={isBlocked ? t('transfers:dialog.foreign_iban_sepa_only') : undefined}
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="font-semibold text-xs text-foreground">{fmt.name}</p>
+                        {isBlocked && (
+                          <span className="text-[9px] text-destructive font-bold uppercase tracking-wider">
+                            {t('transfers:dialog.format_unavailable', 'Nem elérhető')}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{fmt.desc}</p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

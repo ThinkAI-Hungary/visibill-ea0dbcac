@@ -5,7 +5,7 @@ import {
   Users, Calculator, FileText, Calendar, Clock, TrendingUp,
   Plus, Search, ArrowUpRight, Banknote, UserPlus, ChevronRight,
   AlertTriangle, CheckCircle2, Loader2, Building2, Settings, ChevronLeft,
-  Upload, Sparkles
+  Upload, Sparkles, Coins, LogOut, FolderOpen
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,7 @@ import { Breadcrumb } from '@/components/accounty/SharedComponents';
 import { useAccountyClients } from '@/hooks/accounty';
 import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 import { PayrollReconstructionDialog } from '@/components/accounty/payroll/PayrollReconstructionDialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 // ── Animated number component ──
 function AnimatedNumber({ value, duration = 1200 }: { value: number; duration?: number }) {
@@ -119,6 +120,8 @@ export default function PayrollDashboardPage() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [reconstructionOpen, setReconstructionOpen] = useState(false);
+  const [exitModalOpen, setExitModalOpen] = useState(false);
+  const [exitSearchQuery, setExitSearchQuery] = useState('');
 
   const { data: employees = [], isLoading: empLoading, isError: empError } = usePayrollEmployees(companyId || '');
   const { data: cycles = [], isLoading: cyclesLoading, isError: cyclesError } = usePayrollCycles(companyId || '');
@@ -159,6 +162,37 @@ export default function PayrollDashboardPage() {
     ).slice(0, 10);
   }, [employees, searchQuery]);
 
+  // ── Exit document candidate employees ──
+  const exitCandidateEmployees = useMemo(() => {
+    let list = [...employees];
+    if (exitSearchQuery.trim()) {
+      const q = exitSearchQuery.toLowerCase();
+      list = list.filter(e =>
+        `${e.last_name} ${e.first_name}`.toLowerCase().includes(q) ||
+        (e.taj_number && e.taj_number.includes(q)) ||
+        (e.tax_id && e.tax_id.includes(q))
+      );
+    }
+    return list.sort((a, b) => {
+      if (a.status === 'terminated' && b.status !== 'terminated') return -1;
+      if (b.status === 'terminated' && a.status !== 'terminated') return 1;
+      return `${a.last_name} ${a.first_name}`.localeCompare(`${b.last_name} ${b.first_name}`, 'hu');
+    });
+  }, [employees, exitSearchQuery]);
+
+  const handleOpenExitDocs = () => {
+    if (employees.length === 0) {
+      navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees`);
+      return;
+    }
+    if (employees.length === 1) {
+      navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/${employees[0].id}/exit-docs`);
+      return;
+    }
+    setExitSearchQuery('');
+    setExitModalOpen(true);
+  };
+
   if (isError) {
     return <AccountyErrorState message="Nem sikerült betölteni a bérszámfejtési adatokat." onRetry={() => window.location.reload()} />;
   }
@@ -182,7 +216,7 @@ export default function PayrollDashboardPage() {
   }
 
   return (
-    <div className="w-full space-y-8 page-animate">
+    <div className="w-full space-y-8 pb-32 page-animate">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
@@ -229,12 +263,28 @@ export default function PayrollDashboardPage() {
             Importálás
           </Button>
           <Button
+            onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/dividends`)}
+            variant="outline"
+            className="flex items-center gap-2 border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+          >
+            <Coins className="w-4 h-4 text-emerald-600" />
+            Osztalék
+          </Button>
+          <Button
             onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/settings`)}
             variant="outline"
             className="flex items-center gap-2"
           >
             <Settings className="w-4 h-4" />
             Beállítások
+          </Button>
+          <Button
+            onClick={handleOpenExitDocs}
+            variant="outline"
+            className="flex items-center gap-2 border-rose-200 dark:border-rose-800/60 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30 shadow-xs"
+          >
+            <LogOut className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+            Kilépő dokumentumok
           </Button>
           <Button
             onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/new`)}
@@ -373,15 +423,34 @@ export default function PayrollDashboardPage() {
                       {emp.taj_number || 'TAJ: –'}
                     </p>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    title="Kilépő dokumentumok megtekintése"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/${emp.id}/exit-docs`);
+                    }}
+                    className={cn(
+                      "text-xs h-7 px-2.5 transition-all shrink-0",
+                      emp.status === 'terminated'
+                        ? "text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 opacity-100 font-semibold"
+                        : "text-muted-foreground hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 opacity-0 group-hover:opacity-100"
+                    )}
+                  >
+                    <LogOut className="w-3 h-3 mr-1" />
+                    Kilépő iratok
+                  </Button>
                   <span className={cn(
-                    'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase',
+                    'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase shrink-0',
                     emp.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' :
                     emp.status === 'pending' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' :
+                    emp.status === 'terminated' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300' :
                     'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground'
                   )}>
                     {emp.status === 'active' ? 'Aktív' : emp.status === 'pending' ? 'Függő' : emp.status === 'terminated' ? 'Kilépett' : emp.status}
                   </span>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-primary transition-colors" />
+                  <ChevronRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-primary transition-colors shrink-0" />
                 </div>
               ))
             )}
@@ -541,12 +610,13 @@ export default function PayrollDashboardPage() {
       )}
 
       {/* Quick Action Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
         {[
           { path: 'filings', icon: FileText, title: 'NAV Bevallások', desc: '08-as, M30 generálás', color: 'blue', action: 'Megnyitás' },
           { path: 'reports', icon: TrendingUp, title: 'Riportok', desc: 'Bérelőzmény, trendek', color: 'violet', action: 'Megtekintés' },
           { path: 'declarations', icon: FileText, title: 'Nyilatkozatok', desc: 'SZJA kedvezmények', color: 'teal', action: 'Megnyitás' },
           { path: 'documents', icon: FileText, title: 'Dokumentumok', desc: 'Bérjegyzék, utalás', color: 'blue', action: 'Megnyitás' },
+          { path: 'exit-docs', icon: LogOut, title: 'Kilépő csomag', desc: 'Munkaviszony-megszűnés, Mt. 80. §', color: 'rose', action: 'Megnyitás', isExitDocs: true },
           { path: 'year-end', icon: Calendar, title: 'Év végi feladatok', desc: 'M30, SZJA, szabadság', color: 'amber', action: 'Megnyitás' },
           { path: 'advanced-reports', icon: TrendingUp, title: 'Haladó riportok', desc: 'Anomália, egyéni riport', color: 'violet', action: 'Megnyitás' },
           { path: 'portal', icon: Building2, title: 'Ügyfélportál', desc: 'Adatbekérés, chat', color: 'amber', action: 'Megnyitás' },
@@ -559,15 +629,27 @@ export default function PayrollDashboardPage() {
             violet: 'bg-violet-100 dark:bg-violet-900/30',
             amber: 'bg-amber-100 dark:bg-amber-900/30',
             teal: 'bg-teal-100 dark:bg-teal-900/30',
+            rose: 'bg-rose-100 dark:bg-rose-900/30',
             slate: 'bg-muted/50',
           };
           const iconColorMap: Record<string, string> = {
-            blue: 'text-blue-600', violet: 'text-violet-600', amber: 'text-amber-600', teal: 'text-teal-600', slate: 'text-muted-foreground',
+            blue: 'text-blue-600',
+            violet: 'text-violet-600',
+            amber: 'text-amber-600',
+            teal: 'text-teal-600',
+            rose: 'text-rose-600',
+            slate: 'text-muted-foreground',
           };
           return (
             <div
               key={card.path}
-              onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/${card.path}`)}
+              onClick={() => {
+                if ('isExitDocs' in card && card.isExitDocs) {
+                  handleOpenExitDocs();
+                } else {
+                  navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/${card.path}`);
+                }
+              }}
               className="bg-card rounded-lg border border-border shadow-soft p-5 hover:border-primary/30 cursor-pointer transition-all group"
             >
               <div className="flex items-center gap-3 mb-2">
@@ -594,6 +676,87 @@ export default function PayrollDashboardPage() {
         open={reconstructionOpen}
         onOpenChange={setReconstructionOpen}
       />
+
+      {/* Kilépő dokumentumok munkavállaló-választó modál */}
+      <Dialog open={exitModalOpen} onOpenChange={setExitModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <div className="p-2 rounded-lg bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400">
+                <LogOut className="w-5 h-5" />
+              </div>
+              Kilépő dokumentumok
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Válaszd ki a munkavállalót, akinek a kilépő csomagját (Mt. 80. § igazolás, TB kiskönyv/igazolás, M30 jövedelemigazolás, szabadság-elszámolás, záró bérlap) meg szeretnéd tekinteni vagy ki szeretnéd nyomtatni.
+            </DialogDescription>
+          </DialogHeader>
+
+          {employees.length > 5 && (
+            <div className="relative mt-2">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Keresés név, adóazonosító, TAJ..."
+                value={exitSearchQuery}
+                onChange={(e) => setExitSearchQuery(e.target.value)}
+                className="pl-9 h-9 text-sm"
+              />
+            </div>
+          )}
+
+          <div className="max-h-72 overflow-y-auto divide-y divide-border/50 -mx-6 px-6 mt-2">
+            {exitCandidateEmployees.length === 0 ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">
+                <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                Nincs megjeleníthető munkavállaló
+              </div>
+            ) : (
+              exitCandidateEmployees.map((emp) => (
+                <div
+                  key={emp.id}
+                  onClick={() => {
+                    setExitModalOpen(false);
+                    navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/${emp.id}/exit-docs`);
+                  }}
+                  className="py-3 px-3 rounded-lg flex items-center justify-between hover:bg-muted/60 cursor-pointer transition-colors group"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={cn(
+                      "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
+                      emp.status === 'terminated'
+                        ? "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300"
+                        : "bg-primary/10 text-primary"
+                    )}>
+                      {emp.last_name[0]}{emp.first_name[0]}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+                        {emp.last_name} {emp.first_name}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {emp.job_title || 'Munkakör nincs megadva'} • TAJ: {emp.taj_number || '–'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0 ml-3">
+                    <span className={cn(
+                      'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase',
+                      emp.status === 'terminated'
+                        ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
+                        : emp.status === 'active'
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                          : 'bg-muted text-muted-foreground'
+                    )}>
+                      {emp.status === 'terminated' ? 'Kilépett' : emp.status === 'active' ? 'Aktív' : emp.status}
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

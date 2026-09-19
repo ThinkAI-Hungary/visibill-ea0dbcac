@@ -624,42 +624,88 @@ export function calculatePayroll(input: PayrollCalculationInput): PayrollCalcula
 
 export interface Garnishment {
   type: 'child_support' | 'public_debt' | 'private_debt';
-  monthlyDeduction: number;
+  monthlyDeduction?: number;
   maxDeductionPct: number;   // 0.33 vagy 0.50
   priority: number;
+  totalAmount?: number;
+  remainingAmount?: number;
+  interestRatePct?: number;  // Éves kamatláb %
+  interestStartDate?: string;
+  executionCosts?: number;   // Végrehajtási költség
+}
+
+export interface GarnishmentResultItem extends Garnishment {
+  appliedAmount: number;
+  appliedCosts: number;
+  appliedInterest: number;
+  appliedPrincipal: number;
+  monthlyInterest: number;
+  newRemainingAmount: number;
 }
 
 /**
- * Letiltás-levonás kalkuláció a Vht. 65.§ szerint.
+ * Letiltás-levonás kalkuláció a Vht. 65.§ szerint kamatszámítással.
  *
  * Szabályok:
  * - Tartásdíj: max 50% a nettóból
  * - Egyéb letiltás: max 33% a nettóból
  * - Több letiltás: sorrend a prioritás szerint
- * - Az összesített levonás nem haladhatja meg az 50%-ot
+ * - Az összesített levonás nem haladhatja meg a nettó bér 50%-át
+ * - Törvényi kielégítési sorrend: először költség, majd kamat, végül tőke.
  */
 export function calculateGarnishments(
   netSalary: number,
   garnishments: Garnishment[]
-): { total: number; details: Array<Garnishment & { appliedAmount: number }> } {
+): { total: number; details: GarnishmentResultItem[] } {
   // Prioritás szerinti sorrend (tartásdíj > közjogi > magánjogi)
   const sorted = [...garnishments].sort((a, b) => a.priority - b.priority);
 
   let totalDeducted = 0;
-  const maxTotal = netSalary * 0.50; // abszolút maximum 50%
-  const details: Array<Garnishment & { appliedAmount: number }> = [];
+  const maxTotal = Math.floor(netSalary * 0.50); // abszolút maximum 50%
+  const details: GarnishmentResultItem[] = [];
 
   for (const g of sorted) {
-    const maxForType = netSalary * g.maxDeductionPct;
-    const available = Math.min(maxForType, maxTotal - totalDeducted);
-    const applied = Math.min(g.monthlyDeduction, available);
+    const maxForType = Math.floor(netSalary * g.maxDeductionPct);
+    const available = Math.max(0, Math.min(maxForType, maxTotal - totalDeducted));
 
-    if (applied > 0) {
-      details.push({ ...g, appliedAmount: applied });
-      totalDeducted += applied;
-    } else {
-      details.push({ ...g, appliedAmount: 0 });
-    }
+    const remainingPrincipal = g.remainingAmount ?? g.totalAmount ?? 0;
+    const rate = g.interestRatePct || 0;
+    // Havi kamat számítása az aktuális tőketartozás után
+    const monthlyInterest = rate > 0 && remainingPrincipal > 0
+      ? Math.round((remainingPrincipal * (rate / 100)) / 12)
+      : 0;
+    const costs = g.executionCosts || 0;
+
+    const totalDue = remainingPrincipal + monthlyInterest + costs;
+    const targetDeduction = g.monthlyDeduction && g.monthlyDeduction > 0
+      ? g.monthlyDeduction
+      : totalDue;
+
+    const applied = Math.min(targetDeduction, available);
+
+    // Törvényi sorrend: 1. költség, 2. kamat, 3. tőke
+    let remApplied = applied;
+    const appliedCosts = Math.min(remApplied, costs);
+    remApplied -= appliedCosts;
+
+    const appliedInterest = Math.min(remApplied, monthlyInterest);
+    remApplied -= appliedInterest;
+
+    const appliedPrincipal = Math.min(remApplied, remainingPrincipal);
+
+    const newRemaining = Math.max(0, remainingPrincipal - appliedPrincipal);
+
+    details.push({
+      ...g,
+      appliedAmount: applied,
+      appliedCosts,
+      appliedInterest,
+      appliedPrincipal,
+      monthlyInterest,
+      newRemainingAmount: newRemaining,
+    });
+
+    totalDeducted += applied;
   }
 
   return { total: totalDeducted, details };

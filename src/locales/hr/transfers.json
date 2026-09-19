@@ -68,6 +68,9 @@
     "sample_account_warning": "Koristi se ogledni bankovni račun za testiranje. Za stvarna plaćanja unesite svoj račun u Postavkama!",
     "select_sender_placeholder": "Odaberite račun platitelja",
     "file_format": "Format datoteke",
+    "foreign_iban_notice_title": "Odabran je međunarodni IBAN račun",
+    "foreign_iban_sepa_only": "Za plaćanja s inozemnog računa dostupan je isključivo SEPA XML (pain.001) format.",
+    "format_unavailable": "Nedostupno",
     "cancel": "Odustani",
     "generating": "Generiranje datoteke...",
     "download_save": "Preuzmi i spremi datoteku"

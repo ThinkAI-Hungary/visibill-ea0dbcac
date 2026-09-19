@@ -160,9 +160,27 @@ export function renderAuthRoutes() {
         }
       />
 
-      {/* Client Portal – standalone, no auth (magic link) */}
+      {/* Client Portal – standalone, no auth (magic link or company query) */}
       <Route
         path="/portal/:token"
+        element={
+          <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
+            <RemoveInitialLoader />
+            <ClientPortalPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/portal"
+        element={
+          <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
+            <RemoveInitialLoader />
+            <ClientPortalPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/client-portal"
         element={
           <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
             <RemoveInitialLoader />
