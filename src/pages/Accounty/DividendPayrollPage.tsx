@@ -3,17 +3,21 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   Coins, ArrowLeft, ChevronRight, Plus, Printer, CheckCircle2,
   AlertCircle, FileText, Trash2, Check, BookOpen, ShieldCheck,
-  Search, ExternalLink, Calendar, Calculator, Info
+  Search, ExternalLink, Calendar, Calculator, Info, Loader2
 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useDateRange } from '@/contexts/DateRangeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useAccountyClients } from '@/hooks/accounty';
 import { usePayrollEmployees } from '@/hooks/usePayrollData';
+import { toast } from '@/hooks/use-toast';
 import {
   useDividends, useCreateDividend, useUpdateDividend, useDeleteDividend,
   calculateDividendTaxes, SZOCHO_ANNUAL_CAP_2026, type DividendRecord
 } from '@/hooks/useDividends';
+import { postDividendToLedger } from '@/lib/payroll/dividendAutoPoster';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
 } from '@/components/ui/dialog';
@@ -32,6 +36,10 @@ export default function DividendPayrollPage() {
   const createMutation = useCreateDividend();
   const updateMutation = useUpdateDividend();
   const deleteMutation = useDeleteDividend();
+
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [postingId, setPostingId] = useState<string | null>(null);
 
   // Search & filter
   const [searchQuery, setSearchQuery] = useState('');
@@ -124,9 +132,46 @@ export default function DividendPayrollPage() {
     setNotes('');
   };
 
+  const handlePostToLedger = async (d: DividendRecord) => {
+    if (!companyId) return;
+    setPostingId(d.id);
+    try {
+      const res = await postDividendToLedger(d, companyId, user?.id);
+      if (res.success) {
+        queryClient.invalidateQueries({ queryKey: ['accounty_dividends', companyId] });
+        queryClient.invalidateQueries({ queryKey: ['acc_journal_headers', companyId] });
+        queryClient.invalidateQueries({ queryKey: ['gl_accounts'] });
+        queryClient.invalidateQueries({ queryKey: ['gl_account_card'] });
+        queryClient.invalidateQueries({ queryKey: ['gl_balances'] });
+        toast({
+          title: 'Főkönyvbe könyvelve',
+          description: res.message,
+        });
+      } else {
+        toast({
+          title: 'Hiba a könyvelésnél',
+          description: res.message,
+          variant: 'destructive',
+        });
+      }
+    } catch (err: any) {
+      toast({
+        title: 'Hiba',
+        description: err.message || 'Váratlan hiba történt a könyvelés során.',
+        variant: 'destructive',
+      });
+    } finally {
+      setPostingId(null);
+    }
+  };
+
   // Status step handler
   const handleStatusChange = async (d: DividendRecord, nextStatus: DividendRecord['status']) => {
     if (!companyId) return;
+    if (nextStatus === 'posted') {
+      await handlePostToLedger(d);
+      return;
+    }
     await updateMutation.mutateAsync({
       id: d.id,
       companyId,
@@ -268,11 +313,31 @@ export default function DividendPayrollPage() {
           <Button
             variant="outline"
             size="sm"
+            onClick={() => navigate(`/${companyId}/${effectiveDateRange}/general-ledger`)}
+            className="flex items-center gap-1.5 text-xs shadow-xs"
+          >
+            <ExternalLink className="w-3.5 h-3.5 text-emerald-600" />
+            Főkönyv
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(`/${companyId}/${effectiveDateRange}/journals`)}
+            className="flex items-center gap-1.5 text-xs shadow-xs"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-purple-600" />
+            Vegyes napló
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setIsLedgerGuideOpen(true)}
             className="flex items-center gap-1.5 text-xs shadow-xs"
           >
-            <BookOpen className="w-3.5 h-3.5 text-blue-600" />
-            Főkönyvi Kontírozás
+            <Info className="w-3.5 h-3.5 text-blue-600" />
+            Kontírozási útmutató
           </Button>
 
           <Button
@@ -443,18 +508,26 @@ export default function DividendPayrollPage() {
                       {d.net_amount.toLocaleString('hu-HU')} Ft
                     </td>
                     <td className="py-3.5 px-4 text-center">
-                      <span className={cn(
-                        'px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider',
-                        d.status === 'paid' && 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
-                        d.status === 'approved' && 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-                        d.status === 'posted' && 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
-                        d.status === 'draft' && 'bg-muted text-muted-foreground'
-                      )}>
-                        {d.status === 'approved' && 'Jóváhagyva'}
-                        {d.status === 'paid' && 'Kifizetve'}
-                        {d.status === 'posted' && 'Könyvelve'}
-                        {d.status === 'draft' && 'Tervezet'}
-                      </span>
+                      <div className="flex flex-col items-center gap-1">
+                        <span className={cn(
+                          'px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1',
+                          d.status === 'paid' && 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+                          d.status === 'approved' && 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+                          d.status === 'posted' && 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
+                          d.status === 'draft' && 'bg-muted text-muted-foreground'
+                        )}>
+                          {d.status === 'posted' && <CheckCircle2 className="w-3 h-3 text-purple-600" />}
+                          {d.status === 'approved' && 'Jóváhagyva'}
+                          {d.status === 'paid' && 'Kifizetve'}
+                          {d.status === 'posted' && 'Könyvelve'}
+                          {d.status === 'draft' && 'Tervezet'}
+                        </span>
+                        {d.status === 'posted' && (
+                          <span className="text-[10px] font-mono text-muted-foreground">
+                            Vegyes napló
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3.5 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
@@ -483,10 +556,51 @@ export default function DividendPayrollPage() {
                           <Button
                             variant="outline"
                             size="sm"
+                            disabled={postingId === d.id}
                             onClick={() => handleStatusChange(d, 'posted')}
                             className="h-7 px-2 text-[11px] border-purple-300 text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-950/30"
                           >
-                            Könyvelés
+                            {postingId === d.id ? (
+                              <span className="flex items-center gap-1">
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                                Könyvelés...
+                              </span>
+                            ) : (
+                              'Könyvelés'
+                            )}
+                          </Button>
+                        )}
+
+                        {d.status === 'posted' && d.journal_entry_id && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate(`/${companyId}/${effectiveDateRange}/journals`)}
+                            className="h-7 px-2 text-[11px] text-purple-700 hover:bg-purple-50 dark:text-purple-300 dark:hover:bg-purple-950/30 flex items-center gap-1 font-medium"
+                            title="Megtekintés a Vegyes naplóban"
+                          >
+                            <BookOpen className="w-3.5 h-3.5" />
+                            Naplóban
+                          </Button>
+                        )}
+
+                        {d.status === 'posted' && !d.journal_entry_id && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={postingId === d.id}
+                            onClick={() => handlePostToLedger(d)}
+                            className="h-7 px-2 text-[11px] border-amber-300 text-amber-700 hover:bg-amber-50"
+                            title="Még nincs bizonylat létrehozva a főkönyvben"
+                          >
+                            {postingId === d.id ? (
+                              <span className="flex items-center gap-1">
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                                Feladás...
+                              </span>
+                            ) : (
+                              'Főkönyvbe feladás'
+                            )}
                           </Button>
                         )}
 
@@ -710,44 +824,93 @@ export default function DividendPayrollPage() {
 
       {/* Ledger Guidance Dialog */}
       <Dialog open={isLedgerGuideOpen} onOpenChange={setIsLedgerGuideOpen}>
-        <DialogContent className="sm:max-w-[580px]">
+        <DialogContent className="sm:max-w-[620px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base font-bold">
               <BookOpen className="w-5 h-5 text-blue-600" />
-              Osztalék Főkönyvi Kontírozási Tájékoztató
+              Osztalék Főkönyvi Kontírozás és Megjelenés
             </DialogTitle>
             <DialogDescription className="text-xs">
-              A Számviteli törvény szerinti kettős könyvvitel hivatalos számlatükör kontírozási tételei.
+              A Számviteli törvény szerinti kettős könyvvitel szabályai és a rendszerbeli tételek helye.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2 text-xs">
             <div className="bg-muted/40 p-3 rounded-lg border border-border space-y-2">
-              <div className="font-bold text-foreground">1. Osztalék jóváhagyásakor (Taggyűlési határozat napján):</div>
+              <div className="font-bold text-foreground flex items-center justify-between">
+                <span>1. Osztalék jóváhagyásakor (Taggyűlési határozat napján):</span>
+                <span className="text-[10px] text-muted-foreground uppercase font-semibold">Vegyes napló (VE)</span>
+              </div>
               <div className="font-mono bg-background p-2.5 rounded border border-border text-[11px] leading-relaxed">
-                <div><strong>T 493</strong> (vagy T 413 Eredménytartalék) – <strong>K 4791</strong> (Kötelezettségek a tagokkal szemben)</div>
+                <div><strong>T 413</strong> Eredménytartalék – <strong>K 4792</strong> Alapítókkal szembeni rövid lej. kötelezettségek</div>
                 <div className="text-muted-foreground text-[10px] mt-0.5">Összeg: Bruttó jóváhagyott osztalék</div>
               </div>
             </div>
 
             <div className="bg-muted/40 p-3 rounded-lg border border-border space-y-2">
-              <div className="font-bold text-foreground">2. Adólevonások és kifizetés elszámolásakor:</div>
-              <div className="font-mono bg-background p-2.5 rounded border border-border text-[11px] leading-relaxed space-y-1">
-                <div><strong>T 4791</strong> – <strong>K 462</strong> (Levont SZJA elszámolása: 15%)</div>
-                <div><strong>T 4791</strong> – <strong>K 463</strong> (Levont SZOCHO elszámolása: 13%)</div>
-                <div><strong>T 4791</strong> – <strong>K 384</strong> (Banki átutalás nettó osztalék)</div>
+              <div className="font-bold text-foreground flex items-center justify-between">
+                <span>2. Levont adók elszámolásakor:</span>
+                <span className="text-[10px] text-muted-foreground uppercase font-semibold">Vegyes napló (VE)</span>
               </div>
+              <div className="font-mono bg-background p-2.5 rounded border border-border text-[11px] leading-relaxed space-y-1">
+                <div><strong>T 4792</strong> – <strong>K 4622</strong> (Levont 15% SZJA)</div>
+                <div><strong>T 4792</strong> – <strong>K 463 / 46311</strong> (Levont 13% SZOCHO, ha a plafon nem ért el)</div>
+              </div>
+            </div>
+
+            <div className="bg-muted/40 p-3 rounded-lg border border-border space-y-2">
+              <div className="font-bold text-foreground flex items-center justify-between">
+                <span>3. Kifizetéskor (Bankkivonat könyvelése):</span>
+                <span className="text-[10px] text-muted-foreground uppercase font-semibold">Banki napló (B)</span>
+              </div>
+              <div className="font-mono bg-background p-2.5 rounded border border-border text-[11px] leading-relaxed">
+                <div><strong>T 4792</strong> – <strong>K 384</strong> (Elszámolási betétszámla)</div>
+                <div className="text-muted-foreground text-[10px] mt-0.5">Összeg: Nettó kifizetés (a 4792 egyenlege ezzel nullázódik)</div>
+              </div>
+            </div>
+
+            <div className="bg-emerald-50/70 dark:bg-emerald-950/30 p-3.5 rounded-lg border border-emerald-200 dark:border-emerald-800/40 text-xs">
+              <div className="font-semibold text-emerald-900 dark:text-emerald-200 mb-1 flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                Hol ellenőrizhető a könyvelés?
+              </div>
+              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                <li><strong className="text-foreground">Főkönyvi karton:</strong> A <em>Főkönyv → Kartonok</em> nézetben a <strong>413</strong>, <strong>4792</strong>, <strong>4622</strong> és <strong>46311</strong> számlák kiválasztásával.</li>
+                <li><strong className="text-foreground">Naplók:</strong> A <em>Naplók</em> nézetben a <strong>Vegyes napló (VE)</strong> fül alatt <span className="font-mono font-semibold">OSZT-...</span> bizonylatszámmal.</li>
+              </ul>
             </div>
 
             <div className="bg-blue-50/70 dark:bg-blue-950/30 p-3 rounded-lg border border-blue-200 dark:border-blue-800/40 text-[11px] text-muted-foreground">
               <strong className="text-foreground">Bevallási határidő: </strong>
-              Az osztalék kifizetését követő hónap 12. napjáig esedékes a NAV 08-as havi adó- és járulékbevallás benyújtása és az adók befizetése.
+              Az osztalék kifizetését követő hónap 12. napjáig esedékes a NAV '08-as havi adó- és járulékbevallás benyújtása és az adók befizetése.
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setIsLedgerGuideOpen(false);
+                navigate(`/${companyId}/${effectiveDateRange}/general-ledger`);
+              }}
+              className="flex items-center gap-1.5"
+            >
+              <ExternalLink className="w-3.5 h-3.5" /> Főkönyv megnyitása
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setIsLedgerGuideOpen(false);
+                navigate(`/${companyId}/${effectiveDateRange}/journals`);
+              }}
+              className="flex items-center gap-1.5"
+            >
+              <BookOpen className="w-3.5 h-3.5" /> Vegyes napló
+            </Button>
             <Button size="sm" onClick={() => setIsLedgerGuideOpen(false)}>
-              Rendben
+              Bezárás
             </Button>
           </DialogFooter>
         </DialogContent>

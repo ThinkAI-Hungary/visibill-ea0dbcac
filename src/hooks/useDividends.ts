@@ -177,19 +177,73 @@ export function useDeleteDividend() {
 
   return useMutation({
     mutationFn: async ({ id, companyId }: { id: string; companyId: string }) => {
+      // 1. Fetch the dividend first to check if there is a linked journal entry
+      const { data: dividend } = await supabase
+        .from('accounty_dividends')
+        .select('id, journal_entry_id, status, member_name')
+        .eq('id', id)
+        .maybeSingle();
+
+      let wasStornoed = false;
+
+      // 2. If a journal entry is linked, handle its storno or deletion
+      if (dividend?.journal_entry_id) {
+        const { data: header } = await supabase
+          .from('acc_journal_headers')
+          .select('id, status, journal_number')
+          .eq('id', dividend.journal_entry_id)
+          .maybeSingle();
+
+        if (header) {
+          if (header.status === 'KONYVELT') {
+            // Per Sztv., posted entries cannot be deleted directly; they must be stornoed with inverted lines
+            const { data: { user } } = await supabase.auth.getUser();
+            const { error: stornoErr } = await supabase.rpc('acc_storno_journal_entry', {
+              p_header_id: header.id,
+              p_user_id: user?.id || null,
+              p_reason: `Osztalék tétel törölve a bérszámfejtésből (${dividend.member_name || ''})`,
+              p_create_correction: false,
+            });
+            if (stornoErr) {
+              console.error('Failed to storno dividend journal entry:', stornoErr);
+            } else {
+              wasStornoed = true;
+            }
+          } else {
+            // Unposted draft: safe to delete lines and header
+            await supabase.from('acc_journal_lines').delete().eq('header_id', header.id);
+            await supabase.from('acc_journal_headers').delete().eq('id', header.id);
+          }
+        }
+      }
+
+      // 3. Delete dividend record
       const { error } = await supabase
         .from('accounty_dividends')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
-      return { id, companyId };
+      return { id, companyId, wasStornoed };
     },
-    onSuccess: ({ companyId }) => {
+    onSuccess: ({ companyId, wasStornoed }) => {
       queryClient.invalidateQueries({ queryKey: ['accounty_dividends', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['acc_journal_headers'] });
+      queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['glBalances'] });
+      queryClient.invalidateQueries({ queryKey: ['glItems'] });
+      queryClient.invalidateQueries({ queryKey: ['glJournalItems'] });
+      queryClient.invalidateQueries({ queryKey: ['gl_accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['gl_account_card'] });
+      queryClient.invalidateQueries({ queryKey: ['gl_balances'] });
+      queryClient.invalidateQueries({ queryKey: ['subledger-reconciliation'] });
+      queryClient.invalidateQueries({ queryKey: ['glBalancesCurr'] });
+      queryClient.invalidateQueries({ queryKey: ['glBalancesPrev'] });
       toast({
         title: 'Osztalék törölve',
-        description: 'A tétel sikeresen eltávolítva.',
+        description: wasStornoed
+          ? 'Az osztalék törölve, és a kapcsolódó főkönyvi naplóbejegyzés automatikusan sztornózva lett.'
+          : 'A tétel sikeresen eltávolítva.',
       });
     },
     onError: (err: any) => {

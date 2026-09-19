@@ -279,14 +279,6 @@ export default function PayrollDashboardPage() {
             Beállítások
           </Button>
           <Button
-            onClick={handleOpenExitDocs}
-            variant="outline"
-            className="flex items-center gap-2 border-rose-200 dark:border-rose-800/60 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30 shadow-xs"
-          >
-            <LogOut className="w-4 h-4 text-rose-600 dark:text-rose-400" />
-            Kilépő dokumentumok
-          </Button>
-          <Button
             onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/new`)}
             variant="outline"
             className="flex items-center gap-2"
