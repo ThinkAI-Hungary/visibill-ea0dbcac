@@ -64,6 +64,7 @@ lehetővé téve linkek megosztását azonos nézettel:
 | `/hr/auth/callback` | OAuth callback (Horvát) |
 | `/reset-password` | Jelszó visszaállítás |
 | `/register/:token` | Employee regisztráció (token alapú) |
+| `/api-docs` | Hivatalos Ügyfél REST API v1 Fejlesztői Portál (önálló, keretmentes) |
 
 **Többnyelvű útvonalak (`/hr/*`):**
 A horvát demonstrációs környezet tiszta route-vezérelt működést kapott:
@@ -85,7 +86,8 @@ Visibill
 │   ├── /hr/auth                   Bejelentkezés / Regisztráció (HR demó)
 │   ├── /hr/auth/callback          OAuth callback (HR)
 │   ├── /reset-password            Jelszó visszaállítás
-│   └── /register/:token           Employee regisztráció
+│   ├── /register/:token           Employee regisztráció
+│   └── /api-docs                  Hivatalos Ügyfél REST API Fejlesztői Portál
 │
 ├── Védett (/:companyId/:dateRange/ és /hr/:companyId/:dateRange/)
 │   ├── /                          Irányítópult (Dashboard)

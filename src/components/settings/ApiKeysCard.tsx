@@ -59,13 +59,8 @@ import {
   AlertTriangle,
   Clock,
   Terminal,
-  FileCode2,
-  BookOpen,
-  Play,
-  Sparkles,
   ExternalLink,
 } from 'lucide-react';
-import { ApiDocsExplorer, ApiDocsView } from './ApiDocsExplorer';
 
 interface ApiKeyItem {
   id: string;
@@ -93,8 +88,10 @@ export function ApiKeysCard() {
   const [copiedKey, setCopiedKey] = useState(false);
 
   const [revokeTarget, setRevokeTarget] = useState<ApiKeyItem | null>(null);
-  const [showCurlExample, setShowCurlExample] = useState(false);
-  const [showDocsExplorer, setShowDocsExplorer] = useState(false);
+
+  const handleOpenApiDocs = () => {
+    window.open('/api-docs', '_blank', 'noopener,noreferrer');
+  };
 
   // Fetch API keys
   const { data: apiKeys = [], isLoading, isError, refetch } = useQuery<ApiKeyItem[]>({
@@ -224,22 +221,15 @@ export function ApiKeysCard() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Button
-            variant="secondary"
+            variant="outline"
             size="sm"
-            onClick={() => setShowDocsExplorer(true)}
-            className="text-xs gap-1.5 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20"
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            Élő Végpont Tesztelő
-          </Button>
-          <Button
-            variant={showCurlExample ? 'secondary' : 'outline'}
-            size="sm"
-            onClick={() => setShowCurlExample(!showCurlExample)}
+            onClick={handleOpenApiDocs}
             className="text-xs gap-1.5"
+            title="Megnyitás külön lapon"
           >
             <Terminal className="h-3.5 w-3.5" />
-            {showCurlExample ? 'Dokumentáció elrejtése' : 'API Dokumentáció'}
+            API Dokumentáció
+            <ExternalLink className="h-3 w-3 text-muted-foreground ml-0.5" />
           </Button>
           <Button onClick={handleOpenCreate} size="sm" className="gap-1.5 text-xs">
             <Plus className="h-4 w-4" />
@@ -249,16 +239,6 @@ export function ApiKeysCard() {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Full API Documentation & Explorer (Inline) */}
-        {showCurlExample && (
-          <div className="rounded-lg border border-primary/20 bg-card p-4 space-y-3 text-xs shadow-sm">
-            <ApiDocsView
-              defaultApiKey={generatedKey || (apiKeys.length > 0 ? 'vb_...' : '')}
-              isInline={true}
-              onMaximize={() => setShowDocsExplorer(true)}
-            />
-          </div>
-        )}
 
         {/* Loading State */}
         {isLoading && (
@@ -520,12 +500,6 @@ export function ApiKeysCard() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* ── Modal: Comprehensive API Documentation & Interactive Live Tester ── */}
-      <ApiDocsExplorer
-        open={showDocsExplorer}
-        onOpenChange={setShowDocsExplorer}
-        defaultApiKey={generatedKey || ''}
-      />
     </Card>
   );
 }

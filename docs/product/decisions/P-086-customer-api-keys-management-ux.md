@@ -40,10 +40,14 @@ A `Beállítások` (`/settings`) felület `Biztonság` szekciójában elhelyezt�
   - Monospace kijelző azonnali egykattintásos vágólapra másolás gombbal (`Copy` / `Check` vizuális visszajelzéssel).
   - A modál bezárásakor a nyers kulcs véglegesen eltűnik a kliens memóriájából.
 
-### 3. Interaktív cURL API Dokumentáció
-- A kártya fejlécében elhelyezett `API Dokumentáció` / `Dokumentáció elrejtése` gomb egy kattintással lenyit egy kódblokkot.
-- Pontos végpont URL: `https://<project-ref>.supabase.co/functions/v1/customer-api`
-- Példa cURL parancsok cégek lekérdezésére és adatmódosításra (név, cím, leírás, TEÁOR, adószám).
+### 3. Hivatalos REST API v1 Fejlesztői Portál (Önálló Oldal és Új Lap)
+- A kártya fejlécében az `Új API kulcs` gomb mellett kizárólag az `API Dokumentáció` gomb (`Terminal` ikon) található.
+- A gombra kattintva a felület új böngészőlapon (`window.open('/api-docs', '_blank', 'noopener,noreferrer')`) nyitja meg a **Hivatalos Ügyfél REST API v1 — Fejlesztői Portál** felületét ([ApiDocsPage.tsx](../../../src/pages/ApiDocsPage.tsx)).
+- **Letisztult, keretmentes kialakítás:** Az `/api-docs` oldalon nem jelenik meg az alkalmazás oldalsávja (AppSidebar) vagy felső navigációs sávja; a felület teljes képernyős, zavartalan fejlesztői élményt és tiszta vertikális görgethetőséget biztosít.
+- **Funkciók:**
+  - Végpontok részletes specifikációja (számlák, hiánylista `has_image=false`, partnerek, tranzakciók, főkönyv, riportok, cégek).
+  - Böngészőből közvetlenül futtatható Élő API Végpont Tesztelő (bejelentkezett felhasználó esetén az aktív kulcs automatikus előtöltésével).
+  - Gyors útmutató cURL, JavaScript és Python integrációs kódmintákkal.
 
 ### 4. Megerősített Kulcsvisszavonás (`AlertDialog`)
 - Aktív kulcsok mellett `Visszavonás` gomb (`Trash2` ikon).

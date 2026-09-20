@@ -15,6 +15,7 @@ const EmployeeRegister = lazy(() => import("@/pages/EmployeeRegister"));
 const ClientPortalPage = lazy(() => import("@/pages/Accounty/ClientPortalPage"));
 const ManagementDashboard = lazy(() => import("@/pages/ManagementDashboard"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
+const ApiDocsPage = lazy(() => import("@/pages/ApiDocsPage"));
 
 /**
  * ManagementRoute — Strict role-based guard for the /management path.
@@ -185,6 +186,16 @@ export function renderAuthRoutes() {
           <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
             <RemoveInitialLoader />
             <ClientPortalPage />
+          </Suspense>
+        }
+      />
+      {/* Standalone Developer API Documentation – purely documentation without navbar or sidebar */}
+      <Route
+        path="/api-docs"
+        element={
+          <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
+            <RemoveInitialLoader />
+            <ApiDocsPage />
           </Suspense>
         }
       />

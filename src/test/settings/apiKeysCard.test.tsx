@@ -46,7 +46,7 @@ describe('ApiKeysCard Component Tests', () => {
     );
   };
 
-  it('renders card title, description and API docs toggle button', async () => {
+  it('renders card title, description and exact header buttons (no separate live tester)', async () => {
     const selectMock = vi.fn().mockReturnValue({
       order: vi.fn().mockResolvedValue({ data: [], error: null }),
     });
@@ -57,9 +57,11 @@ describe('ApiKeysCard Component Tests', () => {
     expect(screen.getByText('Programozói Hozzáférés & API Kulcsok')).toBeInTheDocument();
     expect(screen.getByText('API Dokumentáció')).toBeInTheDocument();
     expect(screen.getByText('Új API kulcs')).toBeInTheDocument();
+    expect(screen.queryByText('Élő Végpont Tesztelő')).not.toBeInTheDocument();
   });
 
-  it('toggles cURL API documentation when clicking the docs button', async () => {
+  it('opens API documentation on a separate tab (/api-docs, _blank) when clicking the API Dokumentáció button', async () => {
+    const windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
     const selectMock = vi.fn().mockReturnValue({
       order: vi.fn().mockResolvedValue({ data: [], error: null }),
     });
@@ -70,8 +72,8 @@ describe('ApiKeysCard Component Tests', () => {
     const docBtn = screen.getByText('API Dokumentáció');
     fireEvent.click(docBtn);
 
-    expect(screen.getByText(/customer-api\?action=companies/)).toBeInTheDocument();
-    expect(screen.getByText('Dokumentáció elrejtése')).toBeInTheDocument();
+    expect(windowOpenSpy).toHaveBeenCalledWith('/api-docs', '_blank', 'noopener,noreferrer');
+    windowOpenSpy.mockRestore();
   });
 
   it('renders list of existing API keys with prefix, scope and status badges', async () => {

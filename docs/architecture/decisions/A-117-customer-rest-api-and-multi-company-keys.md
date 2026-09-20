@@ -56,6 +56,7 @@ A `Beállítások` (`Settings.tsx`) felületen, a `Biztonság` szekcióban elhel
 - Új kulcs generálása Dialógus (kulcsnév, scope, cég hatáskör).
 - Kriptográfiai biztonság: a generált nyers kulcs kizárólag a modálban jelenik meg egyetlen alkalommal, másolás gombbal és biztonsági figyelmeztetéssel.
 - Visszavonási megerősítő modál (`AlertDialog`).
+- **Önálló Fejlesztői Portál (`/api-docs`):** A fejlécben elhelyezett „API Dokumentáció” gomb új böngészőlapon nyitja meg a dedikált, keret- és oldalsávmentes fejlesztői portál felületet ([ApiDocsPage.tsx](../../../src/pages/ApiDocsPage.tsx)), amely tartalmazza mind a 17 végpont specifikációját, a cURL/JS/Python kódmintákat és az Élő Végpont Tesztelőt.
 
 ---
 
