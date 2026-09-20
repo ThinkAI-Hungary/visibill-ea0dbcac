@@ -1478,15 +1478,15 @@
         "next_gl": "Tovább a Főkönyvhöz"
       },
       "step2": {
-        "csv_import": "CSV / JSON Import",
+        "csv_import": "Importálás (.xlsx, .csv)",
         "add_row": "Sor hozzáadása",
         "total_debit": "Össz T:",
         "total_credit": "Össz K:",
         "imbalance_label": "491 Nyitómérleg Eltérés:",
         "table_headers": {
-          "gl_account": "Főkönyvi Számla (1–4)",
+          "gl_account": "Főkönyvi Számla (0–4, 9)",
           "sign": "Jel",
-          "amount": "Nyitó Összeg (Ft)",
+          "amount": "Nyitó Összeg",
           "comment": "Megjegyzés"
         },
         "choose_account": "Válassz mérlegszámlát...",
@@ -1512,7 +1512,7 @@
       },
       "step4": {
         "success_title": "A Nyitó bizonylat sikeresen lekönyvelve!",
-        "success_desc": "Az 1–4. számlaosztályok megnyitásra kerültek a 491-es technikai számlával szemben.",
+        "success_desc": "A mérlegszámlák megnyitásra kerültek a 491-es technikai számlával szemben.",
         "reconciliations_title": "Nyitás utáni rendező tételek indítása (Sztv.)",
         "reconciliations_item1": "419 Adózott eredmény átvezetése a 413. Eredménytartalék számlára",
         "reconciliations_item2": "ÁFA számlák összevezetése (466 Előzetes és 467 Fizetendő kivezetése a 468-ra)",
@@ -1533,17 +1533,17 @@
       }
     },
     "opening_csv_import": {
-      "title": "Nyitó adatok tömeges importálása (CSV / JSON)",
-      "description": "Tölts fel CSV vagy JSON fájlt a nyitó egyenlegek és analitikák gyors felviteléhez.",
+      "title": "Nyitó adatok importálása (.xlsx, .xls, .csv, .json)",
+      "description": "Tölts fel Excel (.xlsx, .xls), CSV vagy JSON fájlt a nyitó egyenlegek gyors felviteléhez.",
       "tabs": {
         "gl": "Főkönyvi Nyitó egyenlegek",
         "invoices": "Nyitó Számlák (Hamarosan)"
       },
-      "expected_columns": "Elvárt oszlopok:",
-      "expected_cols_list": "szamlaszam, irany (T/K), osszeg, megnevezes",
-      "sample_file": "Mintafájl",
-      "upload_drop_title": "Kattints ide a CSV vagy JSON fájl kiválasztásához",
-      "upload_drop_subtitle": "Formátum: UTF-8 kódolású CSV vagy JSON",
+      "expected_columns": "Támogatott formátumok:",
+      "expected_cols_list": ".xlsx, .xls, .csv, .json",
+      "sample_file": "CSV Minta",
+      "upload_drop_title": "Húzd ide vagy kattints a fájl kiválasztásához",
+      "upload_drop_subtitle": "Támogatott kiterjesztések: .xlsx, .xls, .csv, .json",
       "items_read": "{{count}} beolvasott tétel",
       "apply_import": "Importálás alkalmazása ({{count}})",
       "cancel": "Mégse",

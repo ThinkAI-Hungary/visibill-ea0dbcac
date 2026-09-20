@@ -480,6 +480,10 @@ export default function OpeningJournalWizardModal({
       setAccountingYear(metadata.suggestedYear);
       setDocumentId(`NYITO-${metadata.suggestedYear}`);
     }
+
+    if (newLines.length > 0) {
+      setStep(2);
+    }
   };
 
   return (
@@ -595,6 +599,35 @@ export default function OpeningJournalWizardModal({
                   </div>
                 )}
 
+                {/* Quick File Import Banner */}
+                <div className="p-4 rounded-xl border border-primary/25 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2.5 rounded-xl bg-primary/15 text-primary shrink-0">
+                      <UploadCloud className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-foreground flex items-center gap-2">
+                        {t('dialogs.opening_wizard.step1.quick_import_title', { defaultValue: 'Gyors nyitás fájlból (.xlsx, .xls, .csv, .json)' })}
+                        <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/30 py-0 px-1.5 font-normal">
+                          .xlsx, .xls, .csv
+                        </Badge>
+                      </h4>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                        {t('dialogs.opening_wizard.step1.quick_import_desc', { defaultValue: 'Tölts fel exportált főkönyvi nyitóállományt, és a rendszer automatikusan betölti a számlákat és egyenlegeket!' })}
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    type="button"
+                    size="sm" 
+                    onClick={() => setCsvImportOpen(true)}
+                    className="gap-1.5 h-8 text-xs shrink-0 font-medium shadow-xs"
+                  >
+                    <UploadCloud className="w-4 h-4" />
+                    {t('dialogs.opening_wizard.step1.upload_btn', { defaultValue: 'Fájl feltöltése (.xlsx, .csv)' })}
+                  </Button>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold">{t('dialogs.opening_wizard.step1.tax_year', { defaultValue: 'Könyvelési Adóév' })}</Label>
@@ -678,7 +711,7 @@ export default function OpeningJournalWizardModal({
                 <div className="flex items-center justify-between bg-muted/40 p-3 rounded-xl border">
                   <div className="flex items-center gap-2">
                     <Button size="sm" variant="outline" onClick={() => setCsvImportOpen(true)} className="gap-1.5 h-8 text-xs">
-                      <UploadCloud className="w-4 h-4" /> {t('dialogs.opening_wizard.step2.csv_import', { defaultValue: 'CSV / JSON Import' })}
+                      <UploadCloud className="w-4 h-4" /> {t('dialogs.opening_wizard.step2.csv_import', { defaultValue: 'Importálás (.xlsx, .csv)' })}
                     </Button>
                     <Button size="sm" variant="outline" onClick={handleAddLine} className="gap-1.5 h-8 text-xs">
                       <Plus className="w-4 h-4" /> {t('dialogs.opening_wizard.step2.add_row', { defaultValue: 'Sor hozzáadása' })}

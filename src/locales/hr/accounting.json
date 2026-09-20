@@ -1478,13 +1478,13 @@
         "next_gl": "Nastavi na Glavnu knjigu"
       },
       "step2": {
-        "csv_import": "CSV / JSON Uvoz",
+        "csv_import": "Uvoz (.xlsx, .csv)",
         "add_row": "Dodaj redak",
         "total_debit": "Ukupno D:",
         "total_credit": "Ukupno P:",
         "imbalance_label": "Razlika konta 491 Početna bilanca:",
         "table_headers": {
-          "gl_account": "Konto glavne knjige (1–4)",
+          "gl_account": "Konto glavne knjige (0–4, 9)",
           "sign": "Oznaka",
           "amount": "Početni iznos",
           "comment": "Napomena"
@@ -1512,7 +1512,7 @@
       },
       "step4": {
         "success_title": "Početna temeljnica je uspješno proknjižena!",
-        "success_desc": "Razredi konta 1–4 uspješno su otvoreni nasuprot tehničkog konta 491.",
+        "success_desc": "Razredi bilance uspješno su otvoreni nasuprot tehničkog konta 491.",
         "reconciliations_title": "Pokretanje usklađenja nakon otvaranja",
         "reconciliations_item1": "Prijenos 419 Neto dobiti na konto 413. Zadržana dobit",
         "reconciliations_item2": "Prijeboj PDV konta (zatvaranje pretporeza i obveze za PDV)",
@@ -1533,17 +1533,17 @@
       }
     },
     "opening_csv_import": {
-      "title": "Skupni uvoz početnih podataka (CSV / JSON)",
-      "description": "Učitajte CSV ili JSON datoteku za brzi unos početnih stanja i analitike.",
+      "title": "Uvoz početnih podataka (.xlsx, .xls, .csv, .json)",
+      "description": "Učitajte Excel (.xlsx, .xls), CSV ili JSON datoteku za brzi unos početnih stanja.",
       "tabs": {
         "gl": "Početna stanja glavne knjige",
         "invoices": "Početni računi (Uskoro)"
       },
-      "expected_columns": "Očekivani stupci:",
-      "expected_cols_list": "szamlaszam, irany (T/K), osszeg, megnevezes",
+      "expected_columns": "Podržani formati:",
+      "expected_cols_list": ".xlsx, .xls, .csv, .json",
       "sample_file": "Primjer datoteke",
-      "upload_drop_title": "Kliknite ovdje za odabir CSV ili JSON datoteke",
-      "upload_drop_subtitle": "Format: UTF-8 kodiran CSV ili JSON",
+      "upload_drop_title": "Dovucite ili kliknite za odabir datoteke",
+      "upload_drop_subtitle": "Podržana proširenja: .xlsx, .xls, .csv, .json",
       "items_read": "{{count}} učitanih stavki",
       "apply_import": "Primijeni uvoz ({{count}})",
       "cancel": "Odustani",

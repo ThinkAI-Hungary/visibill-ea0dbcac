@@ -116,7 +116,7 @@ describe('OpeningJournalWizardModal Component', () => {
     fireEvent.click(nextButton);
 
     await waitFor(() => {
-      expect(screen.getByText('CSV / JSON Import')).toBeInTheDocument();
+      expect(screen.getByText(/Import/i)).toBeInTheDocument();
       expect(screen.getByText('Sor hozzáadása')).toBeInTheDocument();
       expect(screen.getByText(/491 Nyitómérleg Eltérés/i)).toBeInTheDocument();
     });
@@ -163,7 +163,7 @@ describe('OpeningJournalWizardModal Component', () => {
     fireEvent.click(screen.getByText(/Tovább a Főkönyvhöz/i));
 
     await waitFor(() => {
-      expect(screen.getByText('CSV / JSON Import')).toBeInTheDocument();
+      expect(screen.getByText(/Import/i)).toBeInTheDocument();
     });
 
     // Step 1 button in stepper is now passed, so it should be clickable
@@ -198,7 +198,7 @@ describe('OpeningJournalWizardModal Component', () => {
     // Step 1 -> Step 2
     fireEvent.click(screen.getByText(/Tovább a Főkönyvhöz/i));
     await waitFor(() => {
-      expect(screen.getByText('CSV / JSON Import')).toBeInTheDocument();
+      expect(screen.getByText(/Import/i)).toBeInTheDocument();
     });
 
     // Close modal (open=false)

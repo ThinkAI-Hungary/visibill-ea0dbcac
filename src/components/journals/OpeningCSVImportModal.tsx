@@ -44,10 +44,9 @@ export default function OpeningCSVImportModal({
   const [report, setReport] = useState<OpeningImportReport | null>(null);
   const [importMode, setImportMode] = useState<'aggregated' | 'detailed'>('aggregated');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files?.[0];
-    if (!selected) return;
+  const processFile = async (selected: File) => {
     setFile(selected);
     setErrorMsg(null);
     setLoading(true);
@@ -66,6 +65,33 @@ export default function OpeningCSVImportModal({
       setReport(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    if (selected) processFile(selected);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const droppedFile = e.dataTransfer?.files?.[0];
+    if (droppedFile) {
+      processFile(droppedFile);
     }
   };
 
@@ -125,10 +151,10 @@ export default function OpeningCSVImportModal({
         <DialogHeader className="px-6 pt-5 pb-4 border-b border-border/40 bg-muted/20 shrink-0">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <UploadCloud className="w-5 h-5 text-primary" />
-            {t('dialogs.opening_csv_import.title', { defaultValue: 'Nyitó adatok tömeges importálása (Excel / CSV / JSON)' })}
+            {t('dialogs.opening_csv_import.title', { defaultValue: 'Nyitó adatok importálása (.xlsx, .xls, .csv, .json)' })}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-            {t('dialogs.opening_csv_import.description', { defaultValue: 'Tölts fel Excel (.xlsx, .xls), CSV vagy JSON fájlt (pl. Minimax export) a nyitó egyenlegek és mérlegsorok gyors felviteléhez.' })}
+            {t('dialogs.opening_csv_import.description', { defaultValue: 'Tölts fel Excel (.xlsx, .xls), CSV vagy JSON formátumú nyitóállományt a nyitó egyenlegek gyors felviteléhez.' })}
           </DialogDescription>
         </DialogHeader>
 
@@ -149,14 +175,25 @@ export default function OpeningCSVImportModal({
               <div className="flex items-center justify-between p-3 bg-muted/40 rounded-xl border text-xs">
                 <div>
                   <span className="font-semibold block text-foreground">{t('dialogs.opening_csv_import.expected_columns', { defaultValue: 'Támogatott formátumok:' })}</span>
-                  <span className="text-muted-foreground">{t('dialogs.opening_csv_import.expected_cols_list', { defaultValue: 'Excel (.xlsx/.xls, pl. Minimax naplókivonat), CSV vagy JSON' })}</span>
+                  <span className="text-muted-foreground">{t('dialogs.opening_csv_import.expected_cols_list', { defaultValue: '.xlsx, .xls, .csv, .json' })}</span>
                 </div>
                 <Button size="sm" variant="outline" onClick={handleDownloadSampleGl} className="gap-1.5 h-8 text-xs shrink-0">
                   <Download className="w-3.5 h-3.5" /> {t('dialogs.opening_csv_import.sample_file', { defaultValue: 'CSV Minta' })}
                 </Button>
               </div>
 
-              <div className="border-2 border-dashed rounded-xl p-6 text-center hover:bg-muted/30 transition-colors">
+              <div 
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => !loading && document.getElementById('opening-csv-input')?.click()}
+                className={cn(
+                  "border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer select-none",
+                  isDragging 
+                    ? "border-primary bg-primary/10 scale-[1.01]" 
+                    : "border-border/80 hover:border-primary/60 hover:bg-muted/30"
+                )}
+              >
                 <input
                   type="file"
                   accept=".xlsx, .xls, .csv, .json, .txt"
@@ -165,21 +202,23 @@ export default function OpeningCSVImportModal({
                   id="opening-csv-input"
                   disabled={loading}
                 />
-                <label htmlFor="opening-csv-input" className="cursor-pointer flex flex-col items-center gap-2">
+                <div className="flex flex-col items-center gap-2 pointer-events-none">
                   {loading ? (
-                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                    <Loader2 className="w-9 h-9 text-primary animate-spin" />
                   ) : (
-                    <UploadCloud className="w-8 h-8 text-primary opacity-80" />
+                    <div className="p-3 rounded-2xl bg-primary/10 text-primary">
+                      <UploadCloud className="w-8 h-8" />
+                    </div>
                   )}
-                  <span className="text-sm font-semibold">
+                  <span className="text-sm font-semibold text-foreground">
                     {loading
                       ? 'Fájl feldolgozása...'
-                      : t('dialogs.opening_csv_import.upload_drop_title', { defaultValue: 'Kattints ide az Excel vagy CSV fájl kiválasztásához' })}
+                      : t('dialogs.opening_csv_import.upload_drop_title', { defaultValue: 'Húzd ide vagy kattints a fájl kiválasztásához' })}
                   </span>
-                  <span className="text-xs text-muted-foreground">
-                    {t('dialogs.opening_csv_import.upload_drop_subtitle', { defaultValue: 'Támogatott: .xlsx, .xls, .csv, .json (pl. Minimax PS naplóexport)' })}
+                  <span className="text-xs text-muted-foreground max-w-md">
+                    {t('dialogs.opening_csv_import.upload_drop_subtitle', { defaultValue: 'Támogatott kiterjesztések: .xlsx, .xls, .csv, .json' })}
                   </span>
-                </label>
+                </div>
               </div>
 
               {file && report && (
