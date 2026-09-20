@@ -7691,6 +7691,7 @@ export type Database = {
           invoice_direction: string | null
           invoice_type: string
           invoice_uploads_id: string | null
+          is_accountant_reviewed: boolean | null
           is_cross_year: boolean
           is_manual_payment: boolean | null
           kibocsatas_datuma: string
@@ -7767,6 +7768,7 @@ export type Database = {
           invoice_direction?: string | null
           invoice_type?: string
           invoice_uploads_id?: string | null
+          is_accountant_reviewed?: boolean | null
           is_cross_year?: boolean
           is_manual_payment?: boolean | null
           kibocsatas_datuma: string
@@ -7843,6 +7845,7 @@ export type Database = {
           invoice_direction?: string | null
           invoice_type?: string
           invoice_uploads_id?: string | null
+          is_accountant_reviewed?: boolean | null
           is_cross_year?: boolean
           is_manual_payment?: boolean | null
           kibocsatas_datuma?: string
@@ -8394,6 +8397,7 @@ export type Database = {
           invoice_number: string
           invoice_operation: string | null
           invoice_vat_amount: number | null
+          is_accountant_reviewed: boolean | null
           is_cash_accounting: boolean | null
           is_continuous: boolean | null
           is_cross_year: boolean
@@ -8456,6 +8460,7 @@ export type Database = {
           invoice_number: string
           invoice_operation?: string | null
           invoice_vat_amount?: number | null
+          is_accountant_reviewed?: boolean | null
           is_cash_accounting?: boolean | null
           is_continuous?: boolean | null
           is_cross_year?: boolean
@@ -8518,6 +8523,7 @@ export type Database = {
           invoice_number?: string
           invoice_operation?: string | null
           invoice_vat_amount?: number | null
+          is_accountant_reviewed?: boolean | null
           is_cash_accounting?: boolean | null
           is_continuous?: boolean | null
           is_cross_year?: boolean
@@ -12269,6 +12275,7 @@ export type Database = {
           invoice_number: string
           invoice_operation: string
           invoice_vat_amount: number
+          is_accountant_reviewed: boolean | null
           is_continuous: boolean
           is_manual_payment: boolean
           manual_payment_type: string
@@ -12328,6 +12335,7 @@ export type Database = {
           id: string
           image_url: string
           invoice_direction: string
+          is_accountant_reviewed: boolean | null
           kibocsatas_datuma: string
           match_status: string
           melleklet_url: string

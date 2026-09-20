@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -134,6 +134,20 @@ function NavInvoiceRowComponent({
   const isNettingCandidate = nettingInvoiceIds.has(invoice.id);
   const isExpanded = expandedRowIds.has(invoice.id);
   const isSelected = selectedInvoiceIds.has(invoice.id);
+
+  const [isOptimisticReviewed, setIsOptimisticReviewed] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    setIsOptimisticReviewed(null);
+  }, [invoice.id, invoice.is_accountant_reviewed]);
+
+  const isReviewed = isOptimisticReviewed !== null
+    ? isOptimisticReviewed
+    : (
+        invoice.is_accountant_reviewed === true ||
+        invoice.submitted === true ||
+        (navToSubmittedMap.get(navKey)?.length ?? 0) > 0
+      );
 
   const getNavInvoiceMatches = (navInvoice: NavInvoice) => {
     const matchedSubmitted = navInvoice.invoice_number
@@ -435,25 +449,24 @@ function NavInvoiceRowComponent({
               <TooltipTrigger asChild>
                 <div onClick={(e) => e.stopPropagation()} className="inline-flex items-center justify-center p-1">
                   <Checkbox
-                    checked={
-                      invoice.is_accountant_reviewed === true ||
-                      invoice.submitted === true ||
-                      (navToSubmittedMap.get(normalizeInvoiceNumber(invoice.invoice_number))?.length ?? 0) > 0
-                    }
+                    checked={isReviewed}
                     onCheckedChange={async (checked) => {
                       const nextVal = !!checked;
+                      setIsOptimisticReviewed(nextVal);
                       try {
                         const { error } = await supabase
                           .from('nav_invoices')
-                          .update({ is_accountant_reviewed: nextVal } as any)
+                          .update({ is_accountant_reviewed: nextVal })
                           .eq('id', invoice.id);
                         if (error) {
                           console.error('Failed to update nav invoice accountant reviewed status:', error);
+                          setIsOptimisticReviewed(null);
                           return;
                         }
                         invalidateInvoiceData?.();
                       } catch (err) {
                         console.error('Error updating nav invoice accountant reviewed status:', err);
+                        setIsOptimisticReviewed(null);
                       }
                     }}
                     className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 cursor-pointer"

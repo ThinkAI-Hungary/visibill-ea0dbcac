@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -60,6 +60,16 @@ export function SubmittedInvoiceRow({
 
   const isExpanded = expandedRowIds.has(invoice.id);
   const isSelected = selectedSubmittedIds.has(invoice.id);
+
+  const [isOptimisticReviewed, setIsOptimisticReviewed] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    setIsOptimisticReviewed(null);
+  }, [invoice.id, invoice.is_accountant_reviewed]);
+
+  const isReviewed = isOptimisticReviewed !== null
+    ? isOptimisticReviewed
+    : invoice.is_accountant_reviewed === true;
   const matchStatus = (invoice as any).match_status || 'unmatched';
   const isMatched = matchStatus === 'matched';
   const isPartiallyPaid = matchStatus === 'partially_paid';
@@ -290,21 +300,24 @@ export function SubmittedInvoiceRow({
               <TooltipTrigger asChild>
                 <div onClick={(e) => e.stopPropagation()} className="inline-flex items-center justify-center p-1">
                   <Checkbox
-                    checked={invoice.is_accountant_reviewed === true}
+                    checked={isReviewed}
                     onCheckedChange={async (checked) => {
                       const nextVal = !!checked;
+                      setIsOptimisticReviewed(nextVal);
                       try {
                         const { error } = await supabase
                           .from('invoices')
-                          .update({ is_accountant_reviewed: nextVal } as any)
+                          .update({ is_accountant_reviewed: nextVal })
                           .eq('id', invoice.id);
                         if (error) {
                           console.error('Failed to update invoice accountant reviewed status:', error);
+                          setIsOptimisticReviewed(null);
                           return;
                         }
                         invalidateInvoiceData?.();
                       } catch (err) {
                         console.error('Error updating invoice accountant reviewed status:', err);
+                        setIsOptimisticReviewed(null);
                       }
                     }}
                     className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 cursor-pointer"
