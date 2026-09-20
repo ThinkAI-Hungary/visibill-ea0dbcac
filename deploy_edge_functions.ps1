@@ -41,6 +41,7 @@ $functionConfigs = @{
     "send-monthly-summary" = $false
     "verify-email" = $false
     "management-stats" = $false
+    "auto-categorize-invoices" = $true
 }
 
 $successCount = 0

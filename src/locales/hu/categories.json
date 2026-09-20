@@ -49,6 +49,7 @@
   "toast_deleted": "Kategória törölve",
   "toast_delete_failed": "Törlés sikertelen",
   "toast_create_failed": "Létrehozás sikertelen",
+  "duplicate_error": "Már létezik ilyen nevű kategória ennél a cégnél.",
   "toast_invoice_removed": "Számla eltávolítva a kategóriából",
   "toast_invoices_assigned": "{{count}} számla hozzárendelve a kategóriához",
   "modal": {
@@ -76,5 +77,16 @@
     "results_count": "{{count}} találat",
     "selected_count": "{{count}} db kijelölve",
     "assign_button": "Hozzárendelés ({{count}} db)"
-  }
+  },
+  "auto_categorize": "Automatikus kategorizálás",
+  "auto_categorize_in_progress": "Kategorizálás folyamatban...",
+  "auto_categorize_gathering": "Számlák összegyűjtése...",
+  "auto_categorize_progress": "{{processed}} / {{total}} számla kategorizálása...",
+  "auto_categorize_success": "{{count}} számla sikeresen besorolva.",
+  "auto_categorize_partial_title": "{{categorized}} / {{total}} számla sikeresen besorolva.",
+  "auto_categorize_partial_desc": "A fennmaradó {{uncategorized}} számlához nem volt biztos egyezés az elérhető kategóriák között.",
+  "auto_categorize_none": "Minden bejövő számla már rendelkezik kategóriával, vagy nincs egyértelmű egyezés.",
+  "auto_categorize_error": "Hiba történt az automatikus kategorizálás során."
 }
+
+

@@ -1,7 +1,7 @@
 # Visibill — Business Requirement Decisions
 
-> **Utoljára frissítve:** 2026-09-17  
-> **Összesen:** 58 döntés | ✅ Decided: 44 | 🟡 Partially Decided: 8 | ⛔ Superseded: 1 | 🔴 Open: 5
+> **Utoljára frissítve:** 2026-09-20  
+> **Összesen:** 59 döntés | ✅ Decided: 45 | 🟡 Partially Decided: 8 | ⛔ Superseded: 1 | 🔴 Open: 5
 
 ---
 
@@ -143,3 +143,4 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 | 056 | Csoportos ÁFA-alanyok és NAV Szinkronizáció Üzleti Szabályzata | ✅ Decided | [056-group-vat-entity-sync-policy.md](./056-group-vat-entity-sync-policy.md) |
 | 057 | Évek Közötti Áthúzódó Teljesítésű Számlák Számviteli és ÁFA Üzleti Szabályzata | ✅ Decided | [057-cross-year-delivery-accounting-rules.md](./057-cross-year-delivery-accounting-rules.md) |
 | 058 | Idegen Vevőre Szóló Számlák Jóváhagyási és Könyvelési Védelmi Szabályzata | ✅ Decided | [058-buyer-tax-mismatch-accounting-guard.md](./058-buyer-tax-mismatch-accounting-guard.md) |
+| 059 | Partner-történeti Többségi Számlakategorizálási Szabályzat | ✅ Decided | [059-partner-history-majority-categorization.md](./059-partner-history-majority-categorization.md) |

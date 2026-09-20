@@ -1,7 +1,7 @@
 # Supabase Edge Functions Katalógus
 
-> **Utoljára frissítve:** 2026-09-17  
-> **Összesen:** 62 Deno Edge Function + `_shared/` közös modulok | **Runtime:** Deno (TypeScript) | **Platform:** Supabase Cloud
+> **Utoljára frissítve:** 2026-09-20  
+> **Összesen:** 63 Deno Edge Function + `_shared/` közös modulok | **Runtime:** Deno (TypeScript) | **Platform:** Supabase Cloud
 
 Ez a dokumentáció az eaisybill-prod rendszer összes Supabase Edge Function-jének hivatalos, autoritatív katalógusa. Részletezi az egyes funkciók célját, jogosultsági modelljét (`verify_jwt`), meghívási kontextusát (Frontend, pg_cron, Webhook, Postgres Trigger) és környezeti változóit.
 A funkciók forráskódja a [`supabase/functions/`](../../supabase/functions/) könyvtárban található. A technikai architektúra döntést az [A-005: Edge Functions a Serverless Logikához](./decisions/A-005-edge-functions.md), az adatbázis sémát a [database-schema.md](./database-schema.md), az eljárásokat pedig az [rpc-catalog.md](./rpc-catalog.md) írja le.
@@ -29,7 +29,7 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 6. [🔑 NAV Hitelesítő Adatok (2 db)](#6-nav-hitelesítő-adatok)
 7. [📱 eaisyBooks / Accounty Modul (15 db)](#7-eaisybooks--accounty-modul)
 8. [🔗 Nylas Email Integráció (2 db)](#8-nylas-email-integráció)
-9. [🛠️ Management, Üzemeltetés & AI Segédek (8 db)](#9-management,-üzemeltetés--ai-segédek)
+9. [🛠️ Management, Üzemeltetés & AI Segédek (9 db)](#9-management,-üzemeltetés--ai-segédek)
 10. [🔌 Külső Integrációk & API (1 db)](#10-külső-integrációk--api)
 11. [🗓️ MNB & Jogi Frissítések (2 db)](#11-mnb--jogi-frissítések)
 12. [🚚 Szállítmányozás / HRTSPED (1 db)](#12-szállítmányozás--hrtsped)
@@ -44,7 +44,7 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 | Edge Function | JWT Auth | Meghívó Réteg | Szükséges Környezeti Változók | Leírás és Üzleti Szerepkör |
 |---|:---:|---|---|---|
 | [`nav`](../../supabase/functions/nav/index.ts) | ❌ Nyilvános / Belső | Belső / PostgREST proxy | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Általános NAV API proxy és lekérdező végpont. |
-| [`nav-auto-sync`](../../supabase/functions/nav-auto-sync/index.ts) | ❌ Nyilvános / Belső | pg_cron (időzített feladat) / Webhook | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Automatikus NAV számlaletöltés és státuszszinkron az összes aktív cégre a `NavIngestionService` segítségével. |
+| [`nav-auto-sync`](../../supabase/functions/nav-auto-sync/index.ts) | ❌ Nyilvános / Belső | pg_cron (01:00-04:00 UTC) / Webhook | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Automatikus NAV számlaletöltés és státuszszinkron 4 hajnali idősávban (slot 0..3) load staggering-gel az aktív cégekre a `NavIngestionService` segítségével (A-130). |
 | [`nav-sync`](../../supabase/functions/nav-sync/index.ts) | ✅ Kötelező | Frontend (NavInvoicesTable / InvoicesHeader) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Manuálisan indított NAV számla szinkronizáció megadott cégre és időszakra. |
 | [`nav-token`](../../supabase/functions/nav-token/index.ts) | ✅ Kötelező | Frontend (NavSettings.tsx) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | NAV technikai felhasználó és aláírókulcsok (SHA-512, SHA3-512) validációja és token-csere. |
 | [`nav-query-outbound-invoices`](../../supabase/functions/nav-query-outbound-invoices/index.ts) | ✅ Kötelező | Frontend (InvoicesPage) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Kimenő számlák lekérdezése a NAV-ból és mentése a `nav_invoices` táblába `direction='outbound'` jelölővel. |
@@ -156,13 +156,14 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 
 ---
 
-## 9. 🛠️ Management, Üzemeltetés & AI Segédek (8 db)
+## 9. 🛠️ Management, Üzemeltetés & AI Segédek (9 db)
 
-> Rendszerüzemeltetés, support admin megszemélyesítés, GDPR export, takarítás és céges AI leírásgenerálás.
+> Rendszerüzemeltetés, support admin megszemélyesítés, GDPR export, takarítás, számlakategorizáció és céges AI leírásgenerálás.
 
 | Edge Function | JWT Auth | Meghívó Réteg | Szükséges Környezeti Változók | Leírás és Üzleti Szerepkör |
 |---|:---:|---|---|---|
 | [`management-stats`](../../supabase/functions/management-stats/index.ts) | ❌ Nyilvános / Belső | Frontend (Management Dashboard) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Központi adminisztrációs API — 14 moduláris action (cégek, userek, jogosultságok, hibák, worker állapot, PGMQ retry, A-077). |
+| [`auto-categorize-invoices`](../../supabase/functions/auto-categorize-invoices/index.ts) | ✅ Kötelező | Frontend (InvoiceActions / useAutoCategorizeInvoices) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, OPENAI_API_KEY` | Kétfázisú aszinkron számlakategorizáció: Phase 1 partner-történeti többségi előszűrés (0 token), Phase 2 AI kötegelt feldolgozás job követéssel és konkurenciavédelemmel (A-129, P-096). |
 | [`impersonate-company`](../../supabase/functions/impersonate-company/index.ts) | ✅ Kötelező | Frontend (Management / Support Admin) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Ideiglenes support admin megszemélyesítés indítása és leállítása auditált időkorláttal (A-026). |
 | [`export-user-data`](../../supabase/functions/export-user-data/index.ts) | ✅ Kötelező | Frontend (Settings / Privacy) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | GDPR adathordozhatósági export generálása a felhasználó összes számlájával, tranzakciójával és naplóbejegyzésével ZIP formátumban. |
 | [`get-invoice-image-url`](../../supabase/functions/get-invoice-image-url/index.ts) | ❌ Nyilvános / Belső | Frontend (InvoiceImageViewer) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Időkorlátos, biztonságos Signed URL generálása a védett Supabase Storage számlaképekhez. |

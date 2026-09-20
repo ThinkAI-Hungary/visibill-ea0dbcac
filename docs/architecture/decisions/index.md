@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-09-18  
-> **Összesen:** 139 döntés | ✅ Decided: 137 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-09-20  
+> **Összesen:** 141 döntés | ✅ Decided: 139 | ⛔ Superseded: 2
 
 ---
 
@@ -84,6 +84,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-041 | Mailgun Webhook Concurrent Dedup — Háromrétegű Idempotency | ✅ Decided | [A-041](./A-041-mailgun-concurrent-dedup.md) |
 | A-052 | Multi-Profile IMAP/SMTP Levelező Fiókok és Vault Integráció | ✅ Decided | [A-052](./A-052-multi-profile-email-accounts-vault-integration.md) |
 | A-113 | NAV Számlatételek ÁFA és Bruttó Összeg Automatikus Kalkulációja (Közműszámlák) | ✅ Decided | [A-113](./A-113-nav-invoice-items-vat-gross-auto-calculation.md) |
+| A-130 | NAV Automatikus Szinkronizáció Hajnali Idő-ablakos Terheléselosztása (Load Staggering) | ✅ Decided | [A-130](./A-130-nav-auto-sync-dawn-load-staggering.md) |
 
 ## 🗄️ Adatbázis & Pénzügy
 
@@ -118,6 +119,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-111 | Közvetlen Bizonylat-visszanyitás (Unpost), Főkönyvi Sztornó Kioltás és Sorszámfolytonossági Védelem | ✅ Decided | [A-111](./A-111-accounting-journal-unpost-gl-storno-and-numbering-integrity.md) |
 | A-118 | Atomi Partner Skontó Újraszámolás és Kliensoldali Ciklusok Felszámolása | ✅ Decided | [A-118](./A-118-atomic-partner-skonto-recalculation.md) |
 | A-119 | Aggreg8 PSD2 Open Banking AISP Integráció, Hosted SyncUI és Valós Idejű Tranzakció Szinkronizáció | ✅ Decided | [A-119](./A-119-aggreg8-psd2-open-banking-integration.md) |
+| A-129 | Partner-történeti Többségi Szabályú Számlakategorizálás & DB Triggerek | ✅ Decided | [A-129](./A-129-partner-history-majority-categorization.md) |
 
 ## 🖥️ Frontend
 

@@ -49,6 +49,7 @@
   "toast_deleted": "Kategorija obrisana",
   "toast_delete_failed": "Brisanje nije uspjelo",
   "toast_create_failed": "Stvaranje nije uspjelo",
+  "duplicate_error": "Kategorija s ovim nazivom već postoji za ovu tvrtku.",
   "toast_invoice_removed": "Račun uklonjen iz kategorije",
   "toast_invoices_assigned": "{{count}} računa dodijeljeno kategoriji",
   "modal": {
@@ -76,5 +77,16 @@
     "results_count": "{{count}} rezultata",
     "selected_count": "{{count}} označeno",
     "assign_button": "Dodijeli ({{count}})"
-  }
+  },
+  "auto_categorize": "Automatsko kategoriziranje",
+  "auto_categorize_in_progress": "Kategoriziranje u tijeku...",
+  "auto_categorize_gathering": "Prikupljanje računa...",
+  "auto_categorize_progress": "Kategorizacija {{processed}} / {{total}} računa...",
+  "auto_categorize_success": "{{count}} računa uspješno kategorizirano.",
+  "auto_categorize_partial_title": "Kategorizirano {{categorized}} / {{total}} računa.",
+  "auto_categorize_partial_desc": "Za preostalih {{uncategorized}} računa nije pronađeno jasno podudaranje među dostupnim kategorijama.",
+  "auto_categorize_none": "Svi ulazni računi već imaju kategoriju ili nema jasnog podudaranja.",
+  "auto_categorize_error": "Došlo je do pogreške tijekom automatskog kategoriziranja."
 }
+
+

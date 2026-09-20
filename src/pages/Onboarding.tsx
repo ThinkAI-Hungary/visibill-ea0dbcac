@@ -12,7 +12,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/components/ui/use-toast';
-import { Plus, X, Search, ChevronLeft, ChevronRight, CheckCircle2, Circle, Download, FileText, FileSpreadsheet, File, ChevronDown, Eye, List } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { useAutoCategorizeJob } from '@/hooks/useAutoCategorizeJob';
+import { Plus, X, Search, ChevronLeft, ChevronRight, CheckCircle2, Circle, Download, FileText, FileSpreadsheet, File, ChevronDown, Eye, List, Sparkles, Loader2 } from 'lucide-react';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { UnsavedChangesDialog } from '@/components/UnsavedChangesDialog';
 import { reportError } from '@/lib/errorReporter';
@@ -83,7 +85,10 @@ const CategoryPageSkeleton = () => {
           <div className="h-8 w-36 bg-muted rounded animate-pulse" />
           <div className="h-4 w-96 bg-muted rounded animate-pulse mt-2" />
         </div>
-        <div className="h-9 w-32 bg-muted rounded animate-pulse" />
+        <div className="flex items-center gap-2">
+          <div className="h-9 w-44 bg-muted rounded animate-pulse" />
+          <div className="h-9 w-32 bg-muted rounded animate-pulse" />
+        </div>
       </div>
 
       {/* Donut chart summary skeleton */}
@@ -269,21 +274,46 @@ const Onboarding = () => {
         else navByCat.set(inv.category_id, [item]);
       }
 
-      const loadedCategories: Category[] = (categoryData || []).map((c: any) => ({
-        id: c.id,
-        name: c.name,
-        description: c.description || '',
-        icon: c.icon || null,
-        color: c.color || null,
-        gl_accounts: c.gl_accounts || [],
-      }));
+      const seenNames = new Set<string>();
+      const loadedCategories: Category[] = [];
+      for (const c of (categoryData || [])) {
+        const norm = (c.name || '').trim().toLowerCase();
+        if (norm && seenNames.has(norm)) continue;
+        if (norm) seenNames.add(norm);
+        loadedCategories.push({
+          id: c.id,
+          name: c.name,
+          description: c.description || '',
+          icon: c.icon || null,
+          color: c.color || null,
+          gl_accounts: c.gl_accounts || [],
+        });
+      }
 
       const stats: Record<string, CategoryStats> = {};
       for (const cat of loadedCategories) {
         if (!cat.id) continue;
         const fromUploaded = uploadedByCat.get(cat.id) || [];
         const fromNav = navByCat.get(cat.id) || [];
-        const invList = [...fromUploaded, ...fromNav];
+
+        // Deduplicate invoices across tables by invoice_number, preferring uploaded invoices with attachments/images
+        const seenNumbers = new Set<string>();
+        const invList: CategoryInvoice[] = [];
+
+        for (const inv of fromUploaded) {
+          const key = (inv.invoice_number || '').trim().toLowerCase();
+          if (key) seenNumbers.add(key);
+          invList.push(inv);
+        }
+
+        for (const inv of fromNav) {
+          const key = (inv.invoice_number || '').trim().toLowerCase();
+          if (key && seenNumbers.has(key)) {
+            continue; // Skip duplicate invoice already present from uploaded table
+          }
+          if (key) seenNumbers.add(key);
+          invList.push(inv);
+        }
 
         const currencyTotals: Record<string, number> = {};
         for (const inv of invList) {
@@ -360,6 +390,21 @@ const Onboarding = () => {
   const [itemsInvoice, setItemsInvoice] = useState<CategoryInvoice | null>(null);
   const [itemsOpen, setItemsOpen] = useState(false);
 
+  // Auto categorize background job & live progress hook
+  const {
+    activeJob: autoCategorizeJob,
+    isRunning: isAutoCategorizing,
+    isGathering: isAutoCategorizeGathering,
+    processedCount: autoCategorizeProcessed,
+    totalCount: autoCategorizeTotal,
+    progressPercent: autoCategorizePercent,
+    startAutoCategorize,
+  } = useAutoCategorizeJob({
+    companyId: selectedCompany?.id,
+    writable,
+    categoriesCount: categories.length,
+  });
+
   
   const hasUnsavedChanges = useMemo(() => {
     if (!initialCategories || initialLoading) return false;
@@ -423,7 +468,11 @@ const Onboarding = () => {
         queryClient.invalidateQueries({ queryKey: queryKeys.categoriesPageData(selectedCompany.id) });
         toast({ title: t('categories:toast_saved', 'Kategória mentve!') });
       } catch (error: any) {
-        toast({ variant: 'destructive', title: t('categories:toast_save_failed', 'Mentés sikertelen'), description: error.message });
+        if (error?.code === '23505' || error?.message?.includes('idx_categories') || error?.message?.includes('duplicate key')) {
+          toast({ variant: 'destructive', title: t('categories:duplicate_error', 'Már létezik ilyen nevű kategória ennél a cégnél.') });
+        } else {
+          toast({ variant: 'destructive', title: t('categories:toast_save_failed', 'Mentés sikertelen'), description: error.message });
+        }
         return;
       }
     }
@@ -798,7 +847,11 @@ const Onboarding = () => {
         queryClient.invalidateQueries({ queryKey: queryKeys.categoriesPageData(selectedCompany.id) });
       }
     } catch (error: any) {
-      toast({ variant: 'destructive', title: t('categories:toast_create_failed', 'Létrehozás sikertelen'), description: error.message });
+      if (error?.code === '23505' || error?.message?.includes('idx_categories') || error?.message?.includes('duplicate key')) {
+        toast({ variant: 'destructive', title: t('categories:duplicate_error', 'Már létezik ilyen nevű kategória ennél a cégnél.') });
+      } else {
+        toast({ variant: 'destructive', title: t('categories:toast_create_failed', 'Létrehozás sikertelen'), description: error.message });
+      }
     }
   };
 
@@ -913,10 +966,46 @@ const Onboarding = () => {
             {t('categories:subtitle', 'Csoportosítsd számláidat egyéni kategóriákba (pl. Marketing, IT, Rezsi) a kiadásaid átlátható követéséhez és elemzéséhez.')}
           </p>
         </div>
-        <Button onClick={() => setShowNewDialog(true)} className="gap-2" disabled={!writable} title={!writable ? t('common:no_permission', 'Nincs írási jogosultságod') : undefined}>
-          <Plus className="h-4 w-4" />
-          {t('categories:new_category', 'Új kategória')}
-        </Button>
+        <div className="flex items-center gap-2">
+          {isAutoCategorizing ? (
+            isAutoCategorizeGathering || !autoCategorizeJob || autoCategorizeJob.status === 'pending' || autoCategorizeTotal === 0 ? (
+              <div className="flex items-center gap-2 px-3.5 py-1.5 h-10 rounded-md border border-border/80 bg-card shadow-xs text-xs whitespace-nowrap">
+                <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
+                <span className="font-medium text-muted-foreground whitespace-nowrap">
+                  {t('categories:auto_categorize_gathering', 'Számlák összegyűjtése...')}
+                </span>
+              </div>
+            ) : (
+              <div className="flex flex-col justify-center gap-1.5 min-w-[340px] px-3.5 py-1.5 h-10 rounded-md border border-border/80 bg-card shadow-xs">
+                <div className="flex items-center justify-between gap-4 text-xs">
+                  <span className="flex items-center gap-1.5 font-medium text-foreground whitespace-nowrap">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-primary shrink-0" />
+                    {t('categories:auto_categorize_in_progress', 'Kategorizálás folyamatban...')}
+                  </span>
+                  <span className="font-mono text-muted-foreground text-xs font-medium whitespace-nowrap">
+                    {autoCategorizeProcessed} / {autoCategorizeTotal} ({autoCategorizePercent}%)
+                  </span>
+                </div>
+                <Progress value={autoCategorizePercent} className="h-1.5 w-full bg-secondary" />
+              </div>
+            )
+          ) : (
+            <Button
+              variant="outline"
+              onClick={startAutoCategorize}
+              disabled={!writable}
+              className="gap-2 transition-colors duration-150"
+              title={!writable ? t('common:no_permission', 'Nincs írási jogosultságod') : undefined}
+            >
+              <Sparkles className="h-4 w-4 text-primary" />
+              {t('categories:auto_categorize', 'Automatikus kategorizálás')}
+            </Button>
+          )}
+          <Button onClick={() => setShowNewDialog(true)} className="gap-2" disabled={!writable} title={!writable ? t('common:no_permission', 'Nincs írási jogosultságod') : undefined}>
+            <Plus className="h-4 w-4" />
+            {t('categories:new_category', 'Új kategória')}
+          </Button>
+        </div>
       </div>
 
       {/* Donut chart summary */}

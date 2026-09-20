@@ -13,7 +13,7 @@ CREATE EXTENSION IF NOT EXISTS pg_net;
 
 SELECT cron.schedule(
   'nav-daily-sync',
-  '0 2 * * *',  -- 2:00 AM UTC daily
+  '0 1,2,3,4 * * *',  -- 01:00, 02:00, 03:00, 04:00 UTC daily (Load Staggering across 4 dawn windows)
   $$
   SELECT net.http_post(
     url := 'https://vxxgvdlqvvchtlmqnrqf.supabase.co/functions/v1/nav-auto-sync',

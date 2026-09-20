@@ -5,8 +5,8 @@
     "semantic_hash": "237367fea9ecc053a2edc802502d67ae"
   },
   "deploy_edge_functions.ps1": {
-    "mtime": 1787931793.4439647,
-    "ast_hash": "abcc76ea78936ffb75d1f9eb34f48ac0",
+    "mtime": 1789888302.1277368,
+    "ast_hash": "3c788980a7eeea46c59ae11bd90264a9",
     "semantic_hash": ""
   },
   "eslint.config.js": {
@@ -1520,8 +1520,8 @@
     "semantic_hash": ""
   },
   "src/pages/Onboarding.tsx": {
-    "mtime": 1789348468.2204938,
-    "ast_hash": "a46bf90357efb2fb73f6358314961003",
+    "mtime": 1789890779.7388642,
+    "ast_hash": "61a9428d44f648d3cd47683e312a7f88",
     "semantic_hash": ""
   },
   "src/pages/PartnersPage.tsx": {
@@ -1705,8 +1705,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/nav-auto-sync/index.ts": {
-    "mtime": 1789881969.3953369,
-    "ast_hash": "bef8545982e04888c83fb2114a58d09a",
+    "mtime": 1789892597.2767675,
+    "ast_hash": "7ba676de993a88871a574ff20400e316",
     "semantic_hash": ""
   },
   "supabase/functions/nav-query-outbound-invoices/index.ts": {
@@ -2640,8 +2640,8 @@
     "semantic_hash": "336da7845689d89e268cae17e13a6e5c"
   },
   "supabase/setup-nav-cron.sql": {
-    "mtime": 1782325973.1715412,
-    "ast_hash": "0bcf03547c643c3639d410a161e683f0",
+    "mtime": 1789892666.0133395,
+    "ast_hash": "737a787bfb00c62a0bbe8c4bdb84a974",
     "semantic_hash": ""
   },
   "tailwind.config.ts": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1789881969.359316,
-    "ast_hash": "a2ae1982b34ed59f08c262b53af40fe4",
+    "mtime": 1789893455.430705,
+    "ast_hash": "824666f4f102e6db9fcdd3a001fc4ef5",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3205,8 +3205,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/016-nav-sync-strategy.md": {
-    "mtime": 1780305936.24339,
-    "ast_hash": "5de150abe59e0bda1b560f06f2f7b121",
+    "mtime": 1789893401.8879507,
+    "ast_hash": "1122a9a21ab2911ba9cf35a8e3eebeee",
     "semantic_hash": ""
   },
   "docs/business/decisions/017-transaction-matching.md": {
@@ -3325,8 +3325,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/index.md": {
-    "mtime": 1789676945.9662445,
-    "ast_hash": "59eaa502adeb468d96b6d1c4236c4ec3",
+    "mtime": 1789893489.4835784,
+    "ast_hash": "137808d3bddeaf1479c125ece567501e",
     "semantic_hash": ""
   },
   "docs/business/overview.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1789696039.2871583,
-    "ast_hash": "8485f9d69e1ed7711bf6e10b5981c640",
+    "mtime": 1789893478.2175233,
+    "ast_hash": "abbf5ad53ff459d9766e2a39a91e00aa",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -9315,8 +9315,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/edge-functions.md": {
-    "mtime": 1789608997.4180343,
-    "ast_hash": "b39cced24c5b1a27f59b29b3af038069",
+    "mtime": 1789893428.746533,
+    "ast_hash": "ea2777bd92a19bd7cb5cba2f3c06f43b",
     "semantic_hash": ""
   },
   "docs/architecture/rpc-catalog.md": {
@@ -10225,8 +10225,8 @@
     "semantic_hash": ""
   },
   "src/locales/hr/categories.json": {
-    "mtime": 1789159283.0066316,
-    "ast_hash": "0d7d25f1124106118feebe165e21762c",
+    "mtime": 1789890880.617818,
+    "ast_hash": "076f23299a3592174261999ba325ac45",
     "semantic_hash": ""
   },
   "src/locales/hr/hr.json": {
@@ -10265,8 +10265,8 @@
     "semantic_hash": ""
   },
   "src/locales/hu/categories.json": {
-    "mtime": 1789159283.0126512,
-    "ast_hash": "23bcd6ab046786f3b63ac9aeb41b6f81",
+    "mtime": 1789890874.5395508,
+    "ast_hash": "c80b46ba7719d2b2cf0260ad41c093d2",
     "semantic_hash": ""
   },
   "src/locales/hu/hr.json": {
@@ -11312,6 +11312,91 @@
   "src/pages/ApiDocsPage.tsx": {
     "mtime": 1789882999.7095964,
     "ast_hash": "c4ece5da53d3599cfc9b0bc333818206",
+    "semantic_hash": ""
+  },
+  "src/test/accounty/categoriesDeduplication.test.ts": {
+    "mtime": 1789889785.693894,
+    "ast_hash": "8094f6e3a669e099f763317419674ebb",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260920100000_fix_categories_deduplication_and_constraint.sql": {
+    "mtime": 1789884112.94313,
+    "ast_hash": "590b6e57662b1853533dcbdfd1e2263d",
+    "semantic_hash": ""
+  },
+  "src/test/accounty/autoCategorizeInvoices.test.ts": {
+    "mtime": 1789888501.9196377,
+    "ast_hash": "493d976dd153b3877584b230295a8df0",
+    "semantic_hash": ""
+  },
+  "supabase/functions/auto-categorize-invoices/index.ts": {
+    "mtime": 1789894222.669705,
+    "ast_hash": "2e4785a2731fd216bf7428eb67c4ba3d",
+    "semantic_hash": ""
+  },
+  "src/hooks/useAutoCategorizeJob.ts": {
+    "mtime": 1789894111.4985244,
+    "ast_hash": "6737cde824c592b51a46807aad77f58a",
+    "semantic_hash": ""
+  },
+  "src/test/accounty/autoCategorizeJob.test.ts": {
+    "mtime": 1789894257.193673,
+    "ast_hash": "676dc131a49131a4180bb8bebd4cb892",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260920120000_create_auto_categorize_jobs.sql": {
+    "mtime": 1789892085.3876064,
+    "ast_hash": "44d473797929fd3ae153dd4f79202a89",
+    "semantic_hash": ""
+  },
+  "src/test/accounty/partnerMajorityCategorization.test.ts": {
+    "mtime": 1789894247.8220675,
+    "ast_hash": "3f46455620ae8479bc27a617a2ac3822",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260920130000_partner_history_auto_categorization.sql": {
+    "mtime": 1789891505.8676336,
+    "ast_hash": "ea1c4395d58edc1afdb12412a88ec659",
+    "semantic_hash": ""
+  },
+  "src/lib/nav/__tests__/syncStaggering.test.ts": {
+    "mtime": 1789892552.019304,
+    "ast_hash": "09dbe66cff72bdbaab2fb392774592a6",
+    "semantic_hash": ""
+  },
+  "src/lib/nav/syncStaggering.ts": {
+    "mtime": 1789892544.9607184,
+    "ast_hash": "211d1bfaad2c393325c2acc400b6ba3b",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260920140000_nav_auto_sync_staggered_cron.sql": {
+    "mtime": 1789892640.130657,
+    "ast_hash": "bb308622903c06b36839c55db5fb530b",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-129-partner-history-majority-categorization.md": {
+    "mtime": 1789894281.8879364,
+    "ast_hash": "7b89b965d7ec04991cb7402bfff001d1",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-130-nav-auto-sync-dawn-load-staggering.md": {
+    "mtime": 1789893361.643334,
+    "ast_hash": "9d41062248483a6e9808fa2ab7a70618",
+    "semantic_hash": ""
+  },
+  "docs/business/decisions/059-partner-history-majority-categorization.md": {
+    "mtime": 1789893395.2620013,
+    "ast_hash": "bc8516c406272b78f07425a5fa1c9341",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-096-auto-categorize-invoices-batch-progress-and-toast-ux.md": {
+    "mtime": 1789893378.0037622,
+    "ast_hash": "b5ba7c5079354fd0132c714c6fa82fc8",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260920150000_partner_history_tax_core_and_job_concurrency.sql": {
+    "mtime": 1789894163.0490751,
+    "ast_hash": "760ec78e5dba6d28de86eb7893561fab",
     "semantic_hash": ""
   }
 }

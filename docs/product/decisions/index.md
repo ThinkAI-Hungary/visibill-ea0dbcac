@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-09-18  
-> **Összesen:** 90 döntés | ✅ Decided: 86 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Utoljára frissítve:** 2026-09-20  
+> **Összesen:** 91 döntés | ✅ Decided: 87 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -41,6 +41,7 @@
 | P-064 | Részben Fizetett Számlák Státusz, Badge & Szűrés UX | ✅ Decided | [P-064](./P-064-partially-paid-invoice-status-ux.md) |
 | P-092 | Házipénztár Bizonylat Validáció, 0-Kassza Védelem és Számlakiegyenlítés UX | ✅ Decided | [P-092](./P-092-petty-cash-manual-entry-validation-and-settlement-ux.md) |
 | P-095 | NAV OSA Tabok Elnevezése, Gyorsítótárazott Tab-Váltás és Azonnali Sorlenyitási Animáció UX | ✅ Decided | [P-095](./P-095-nav-osa-tabs-performance-and-immediate-row-expansion-ux.md) |
+| P-096 | Számlák Kötegelt Automatikus Kategorizálása, Valós Idejű Progress és Toast UX | ✅ Decided | [P-096](./P-096-auto-categorize-invoices-batch-progress-and-toast-ux.md) |
 
 ## 🔄 Tranzakció & Párosítás
 
