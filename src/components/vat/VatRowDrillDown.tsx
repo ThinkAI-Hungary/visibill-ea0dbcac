@@ -43,7 +43,7 @@ export function InvoiceItemsDrillDown({ invoiceNumber, companyId }: { invoiceNum
       if ((inv as any)?.id) {
         const { data: navItems } = await supabase
           .from('nav_invoice_items')
-          .select('line_number, line_description, quantity, unit_price, net_amount, vat_amount, vat_rate, deductible_percentage')
+          .select('line_number, line_description, quantity, unit_price, net_amount, vat_amount, vat_rate, deductible_percentage, product_code, net_weight_kg')
           .eq('nav_invoice_id', (inv as any).id)
           .order('line_number');
         if (navItems && navItems.length > 0) return navItems as any[];
@@ -60,7 +60,7 @@ export function InvoiceItemsDrillDown({ invoiceNumber, companyId }: { invoiceNum
       if ((appInv as any)?.id) {
         const { data: appItems } = await supabase
           .from('invoice_items')
-          .select('line_number, line_description, quantity, unit_price, net_amount, vat_amount, vat_rate, deductible_percentage')
+          .select('line_number, line_description, quantity, unit_price, net_amount, vat_amount, vat_rate, deductible_percentage, product_code, net_weight_kg')
           .eq('invoice_id', (appInv as any).id)
           .order('line_number');
         if (appItems && appItems.length > 0) return appItems as any[];
@@ -101,6 +101,16 @@ export function InvoiceItemsDrillDown({ invoiceNumber, companyId }: { invoiceNum
           <div key={j} className="grid grid-cols-12 gap-2 px-3 py-1 text-[11px] text-muted-foreground hover:bg-muted/20 transition-colors items-center">
             <div className="col-span-4 flex items-center gap-1.5 truncate" title={item.line_description}>
               <span className="truncate">{item.line_description || '—'}</span>
+              {item.product_code && (
+                <span className="shrink-0 text-[10px] font-mono px-1 py-0.2 rounded bg-muted text-muted-foreground border border-border/40">
+                  {item.product_code}
+                </span>
+              )}
+              {item.net_weight_kg != null && (
+                <span className="shrink-0 text-[10px] font-mono px-1 py-0.2 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+                  {item.net_weight_kg} kg
+                </span>
+              )}
               {isPartial && (
                 <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
                   {deductible}% lev.
@@ -200,11 +210,16 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
 
       // 1. Direct resolution by standard NAV 65 rowNumber
       if (rowNumber === '01') { directions = ['OUTBOUND']; vatPercents = [0]; }
-      else if (rowNumber === '03') { directions = ['OUTBOUND']; vatPercents = [5]; }
-      else if (rowNumber === '05') { directions = ['OUTBOUND']; vatPercents = [18]; }
+      else if (rowNumber === '02') { directions = ['OUTBOUND']; vatPercents = [0]; }
+      else if (rowNumber === '04') { directions = ['OUTBOUND']; vatPercents = [0]; }
+      else if (rowNumber === '05') { directions = ['OUTBOUND']; vatPercents = [5]; }
+      else if (rowNumber === '06') { directions = ['OUTBOUND']; vatPercents = [18]; }
       else if (rowNumber === '07') { directions = ['OUTBOUND']; vatPercents = [27]; }
+      else if (rowNumber === '08') { directions = ['OUTBOUND']; vatPercents = [0]; }
+      else if (rowNumber === '29') { directions = ['INBOUND']; vatPercents = [27]; }
       else if (rowNumber === '45') { directions = ['OUTBOUND']; vatPercents = [27, 18, 5]; }
       else if (rowNumber === '18' || rowNumber === '27') { directions = ['INBOUND']; vatPercents = [27]; }
+      else if (rowNumber === '63') { directions = ['INBOUND']; vatPercents = [0]; }
       else if (rowNumber === '64') { directions = ['INBOUND']; vatPercents = [5]; }
       else if (rowNumber === '65') { directions = ['INBOUND']; vatPercents = [18]; }
       else if (rowNumber === '66') { directions = ['INBOUND']; vatPercents = [27]; }

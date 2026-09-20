@@ -67,7 +67,7 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 | `book_accrual_entry(p_accrual_id uuid)` | `DEFINER` | `json` | AccrualsTab.tsx | Időszaki elhatárolás automatikus lekönyvelése a vegyes naplóba. |
 | `calculate_hourly_cost(p_base_salary numeric, p_monthly_hours numeric)` | `INVOKER` | `numeric` | Salary / CostCalc | Óradíj és bérköltség számítás alapbér és havi óraszám alapján. |
 | `calculate_invoice_ti(p_invoice_id uuid)` | `DEFINER` | `json` | InvoiceDetail / TaxDate | Számla teljesítési időpont (TI) automatikus kalkulációja a számla dátumai és folyamatos teljesítés szabályai alapján. |
-| `calculate_vat_return(p_company_id uuid, p_year integer, p_month integer, p_frequency text)` | `DEFINER` | `uuid` | VatReturnDetail.tsx | ÁFA bevallás automatikus legenerálása és sorainak kalkulációja adott évre, hónapra/negyedévre. |
+| `calculate_vat_return(p_company_id uuid, p_year integer, p_month integer, p_frequency text)` | `DEFINER` | `jsonb` | VatReturnViewTab.tsx | ÁFA bevallás automatikus legenerálása és sorainak kalkulációja a NAV 2665 struktúra szerint (lásd A-131). |
 | `check_chart_of_accounts_preset_usage(p_preset_id uuid)` | `DEFINER` | `jsonb` | ChartOfAccountsSettings | Ellenőrzi, hogy egy számlatükör sablon használatban van-e cégek vagy tételek által. |
 | `delete_audit_import(p_import_id uuid)` | `DEFINER` | `void` | GlAuditImportsTab | Korábbi XML főkönyvi import és a kapcsolódó naplótételek visszavonása/törlése. |
 | `delete_chart_of_accounts_preset(p_preset_id uuid, p_target_preset_id uuid)` | `DEFINER` | `jsonb` | ChartOfAccountsSettings | Biztonságos számlatükör sablon törlés, a meglévő tételek cél-sablonra való átmozgatásával. |

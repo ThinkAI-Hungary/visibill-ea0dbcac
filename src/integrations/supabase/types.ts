@@ -7514,6 +7514,7 @@ export type Database = {
           line_description: string | null
           line_number: number
           net_amount: number | null
+          net_weight_kg: number | null
           notes: string | null
           product_code: string | null
           project_id: string | null
@@ -7534,6 +7535,7 @@ export type Database = {
           line_description?: string | null
           line_number: number
           net_amount?: number | null
+          net_weight_kg?: number | null
           notes?: string | null
           product_code?: string | null
           project_id?: string | null
@@ -7554,6 +7556,7 @@ export type Database = {
           line_description?: string | null
           line_number?: number
           net_amount?: number | null
+          net_weight_kg?: number | null
           notes?: string | null
           product_code?: string | null
           project_id?: string | null
@@ -8289,6 +8292,7 @@ export type Database = {
           line_number: number
           nav_invoice_id: string
           net_amount: number | null
+          net_weight_kg: number | null
           notes: string | null
           product_code: string | null
           project_id: string | null
@@ -8312,6 +8316,7 @@ export type Database = {
           line_number: number
           nav_invoice_id: string
           net_amount?: number | null
+          net_weight_kg?: number | null
           notes?: string | null
           product_code?: string | null
           project_id?: string | null
@@ -8335,6 +8340,7 @@ export type Database = {
           line_number?: number
           nav_invoice_id?: string
           net_amount?: number | null
+          net_weight_kg?: number | null
           notes?: string | null
           product_code?: string | null
           project_id?: string | null

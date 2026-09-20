@@ -14,6 +14,7 @@ import type {
   TaxValidationResult,
   XmlValidationCheck,
 } from '../types';
+import { useDateRange } from '@/contexts/DateRangeContext';
 import {
   validateHungarianTaxNumber,
   runXmlValidation,
@@ -27,13 +28,41 @@ export function useVatReturnData() {
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const { data: exchangeRates } = useExchangeRates();
+  const dateRange = useDateRange();
   const qc = useQueryClient();
 
   const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth() || 12);
+  const initialYear = dateRange?.dateFrom ? dateRange.dateFrom.getFullYear() : now.getFullYear();
+  const initialMonth = dateRange?.dateFrom ? (dateRange.dateFrom.getMonth() + 1) : (now.getMonth() || 12);
+  const [year, setYearState] = useState(initialYear);
+  const [month, setMonthState] = useState(initialMonth);
   const [frequency, setFrequency] = useState<VatFrequency>('H');
-  const [viewMode, setViewMode] = useState<'calculator' | 'nav65'>('calculator');
+  const [viewMode, setViewMode] = useState<'calculator' | 'nav65' | 'steel'>('calculator');
+
+  const setYear = useCallback((newYear: number) => {
+    setYearState(newYear);
+    if (dateRange?.setDateFrom && dateRange?.setDateTo) {
+      dateRange.setDateFrom(new Date(newYear, month - 1, 1));
+      dateRange.setDateTo(new Date(newYear, month, 0));
+    }
+  }, [dateRange, month]);
+
+  const setMonth = useCallback((newMonth: number) => {
+    setMonthState(newMonth);
+    if (dateRange?.setDateFrom && dateRange?.setDateTo) {
+      dateRange.setDateFrom(new Date(year, newMonth - 1, 1));
+      dateRange.setDateTo(new Date(year, newMonth, 0));
+    }
+  }, [dateRange, year]);
+
+  useEffect(() => {
+    if (dateRange?.dateFrom) {
+      const dy = dateRange.dateFrom.getFullYear();
+      const dm = dateRange.dateFrom.getMonth() + 1;
+      if (dy !== year) setYearState(dy);
+      if (dm !== month) setMonthState(dm);
+    }
+  }, [dateRange?.dateFrom]);
 
   const [expandedPartners, setExpandedPartners] = useState<Set<string>>(new Set());
   const [expandedInvoice, setExpandedInvoice] = useState<string | null>(null);

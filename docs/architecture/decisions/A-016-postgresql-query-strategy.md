@@ -70,7 +70,7 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 | `get_filtered_submitted_invoices(p_company_id, p_date_from, p_date_to, p_direction, ..., p_kpi_filter?)` | DEFINER | useInvoiceFilters.ts | Feltöltött számlák szűrt/lapozott lekérdezés + KPI szűrés + match_status |
 | `get_linked_invoices(p_company_id, p_seed_bizonylat[], p_seed_reference[], p_exclude_ids[])` | DEFINER | useInvoiceData.ts | Összekapcsolt számlák (végszámla ↔ díjbekérő) |
 | `get_transaction_filter_options(p_company_id)` | DEFINER | useTransactionData.ts | Tranzakció szűrő dropdown értékek |
-| `calculate_vat_return(p_company_id, p_year, p_month, p_frequency?)` | DEFINER | VatReturnPage.tsx | ÁFA bevallás kalkuláció |
+| `calculate_vat_return(p_company_id, p_year, p_month, p_frequency?)` | DEFINER | VatReturnViewTab.tsx | ÁFA bevallás automatikus kalkuláció NAV 2665 struktúra szerint (A-131) |
 | `freeze_annual_data(p_report_id, p_company_id, p_preset_id, p_fiscal_year, p_exchange_rates?)` | DEFINER | AnnualReportPage.tsx | Éves beszámoló zárolás |
 | `validate_annual_report(p_report_id)` | DEFINER | AnnualReportPage.tsx | Éves beszámoló validáció |
 | `rematch_courier_report(p_report_id)` | DEFINER | useCourierReportData.ts | Futárjelentés újrapárosítás |

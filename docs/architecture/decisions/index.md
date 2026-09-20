@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-20  
-> **Összesen:** 143 döntés | ✅ Decided: 141 | ⛔ Superseded: 2
+> **Összesen:** 144 döntés | ✅ Decided: 142 | ⛔ Superseded: 2
 
 ---
 
@@ -176,6 +176,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-124 | Többoldalas Számlák Folytatás-Felismerése és Téves Multi-Invoice Split Megelőzés | ✅ Decided | [A-124](./A-124-multi-page-invoice-continuation-guard-and-split-suppression.md) |
 | A-125 | Atomi Házipénztári Számlakiegyenlítés, Számlaszinkron Trigger Védelem és Auth Életciklus Védelmek | ✅ Decided | [A-125](./A-125-atomic-petty-cash-invoice-settlement-and-auth-resilience.md) |
 | A-127 | Számlatáblázat Tab-Váltási Render-Skálázás (Lazy Combobox / DOM Pruning) és CSS Grid Accordion Re-Render Retesz | ✅ Decided | [A-127](./A-127-invoice-table-tab-switch-scaling-and-accordion-re-render-latch.md) |
+| A-131 | NAV 2665 ÁFA Bevallás Sormegfeleltetés, Gyűjtőkódok Tisztítása, 6/B Acélipari Nyilatkozat és Egész Kilogrammos Kerekítés | ✅ Decided | [A-131](./A-131-nav-2665-vat-return-restructuring-and-steel-reporting.md) |
 
 ## 💳 Fizetés
 

@@ -12,16 +12,36 @@ import { formatCurrency, cn } from '@/lib/utils';
 import { exportVatCollectorAnalyticsExcel, VatCollectorGroup } from '@/lib/glExport';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
+import { useDateRange } from '@/contexts/DateRangeContext';
+import { formatVatRate } from '@/lib/utils';
 
 interface VatCollectorAnalyticsViewProps {
   year?: number;
   periodMonth?: number;
 }
 
-export function VatCollectorAnalyticsView({ year = new Date().getFullYear(), periodMonth }: VatCollectorAnalyticsViewProps) {
+export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAnalyticsViewProps) {
   const { t } = useTranslation(['accounting', 'common']);
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
+  const { dateFromFormatted, dateToFormatted } = useDateRange();
+
+  // Compute effective date interval from props or DateRangeContext
+  const effectiveDateFrom = useMemo(() => {
+    if (year && periodMonth) {
+      return `${year}-${String(periodMonth).padStart(2, '0')}-01`;
+    }
+    return dateFromFormatted;
+  }, [year, periodMonth, dateFromFormatted]);
+
+  const effectiveDateTo = useMemo(() => {
+    if (year && periodMonth) {
+      const lastDay = new Date(year, periodMonth, 0).getDate();
+      return `${year}-${String(periodMonth).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+    }
+    return dateToFormatted;
+  }, [year, periodMonth, dateToFormatted]);
+
   const [expandedCodes, setExpandedCodes] = useState<Set<string>>(new Set(['25', '05', 'FAD']));
   const [isExporting, setIsExporting] = useState(false);
 
@@ -29,9 +49,9 @@ export function VatCollectorAnalyticsView({ year = new Date().getFullYear(), per
   const [pageSize, setPageSize] = useState<number>(20);
   const [groupPages, setGroupPages] = useState<Record<string, number>>({});
 
-  // Query invoice items with VAT codes
+  // Query invoice items with VAT codes filtered by interval
   const { data: rawItems = [], isLoading } = useQuery({
-    queryKey: ['vatCollectorItems', selectedCompany?.id, year, periodMonth],
+    queryKey: ['vatCollectorItems', selectedCompany?.id, effectiveDateFrom, effectiveDateTo],
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
 
@@ -39,11 +59,15 @@ export function VatCollectorAnalyticsView({ year = new Date().getFullYear(), per
         supabase
           .from('nav_invoices')
           .select('id, invoice_number, supplier_name, customer_name, invoice_delivery_date, invoice_issue_date, invoice_net_amount, invoice_vat_amount')
-          .eq('company_id', selectedCompany.id),
+          .eq('company_id', selectedCompany.id)
+          .or(`invoice_delivery_date.gte.${effectiveDateFrom},and(invoice_delivery_date.is.null,invoice_issue_date.gte.${effectiveDateFrom})`)
+          .or(`invoice_delivery_date.lte.${effectiveDateTo},and(invoice_delivery_date.is.null,invoice_issue_date.lte.${effectiveDateTo})`),
         supabase
           .from('invoices')
           .select('id, bizonylatsorszam, elado_nev, vevo_nev, teljesites_datuma, kibocsatas_datuma, netto_ar, afa_ertek')
-          .eq('company_id', selectedCompany.id),
+          .eq('company_id', selectedCompany.id)
+          .or(`teljesites_datuma.gte.${effectiveDateFrom},and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${effectiveDateFrom})`)
+          .or(`teljesites_datuma.lte.${effectiveDateTo},and(teljesites_datuma.is.null,kibocsatas_datuma.lte.${effectiveDateTo})`),
       ]);
 
       const navInvs = navInvsRes.data || [];
@@ -75,12 +99,14 @@ export function VatCollectorAnalyticsView({ year = new Date().getFullYear(), per
       const getCode = (rate: string | null) => {
         if (!rate) return '25';
         const u = rate.toUpperCase();
-        if (u.includes('FAD')) return 'FAD';
+        if (u.includes('FAD') || u.includes('FORD')) return 'FAD';
         if (rate === '0.27' || rate === '27' || rate === '27.0' || rate === '27.00' || rate === '27%') return '25';
         if (rate === '0.05' || rate === '5' || rate === '5.0' || rate === '5.00' || rate === '5%') return '05';
         if (rate === '0.18' || rate === '18' || rate === '18.0' || rate === '18.00' || rate === '18%') return '18';
         if (u.includes('AAM')) return 'AAM';
         if (u.includes('TAM')) return 'TAM';
+        if (u.includes('EXP')) return 'EXP';
+        if (u === '0' || u === '0%' || u === '0.00' || u === 'MENTES') return 'TAM';
         return '25';
       };
 
@@ -108,7 +134,7 @@ export function VatCollectorAnalyticsView({ year = new Date().getFullYear(), per
           const vat = Number(inv.invoice_vat_amount || 0);
           if (net !== 0 || vat !== 0) {
             const rate = net > 0 ? vat / net : 0;
-            const code = Math.round(rate * 100) === 27 ? '25' : Math.round(rate * 100) === 18 ? '18' : Math.round(rate * 100) === 5 ? '05' : vat === 0 ? 'AAM' : '25';
+            const code = Math.round(rate * 100) === 27 ? '25' : Math.round(rate * 100) === 18 ? '18' : Math.round(rate * 100) === 5 ? '05' : vat === 0 ? 'TAM' : '25';
             const dateStr = inv.invoice_delivery_date || inv.invoice_issue_date || '';
             items.push({
               id: `nav_inv_${inv.id}`,
@@ -148,7 +174,7 @@ export function VatCollectorAnalyticsView({ year = new Date().getFullYear(), per
           const vat = Number(inv.afa_ertek || 0);
           if (net !== 0 || vat !== 0) {
             const rate = net > 0 ? vat / net : 0;
-            const code = Math.round(rate * 100) === 27 ? '25' : Math.round(rate * 100) === 18 ? '18' : Math.round(rate * 100) === 5 ? '05' : vat === 0 ? 'AAM' : '25';
+            const code = Math.round(rate * 100) === 27 ? '25' : Math.round(rate * 100) === 18 ? '18' : Math.round(rate * 100) === 5 ? '05' : vat === 0 ? 'TAM' : '25';
             const dateStr = inv.teljesites_datuma || inv.kibocsatas_datuma || '';
             items.push({
               id: `sub_inv_${inv.id}`,
@@ -174,13 +200,14 @@ export function VatCollectorAnalyticsView({ year = new Date().getFullYear(), per
 
     const getLabel = (c: string) => {
       switch (c) {
-        case '25': return t('accounting:vat_return.analytics_view.codes.25', 'Normál belföldi 27% (Alapértelmezett NAV Gyűjtőkód 25)');
-        case '05': return t('accounting:vat_return.analytics_view.codes.05', 'Kedvezményes belföldi 5%');
-        case '18': return t('accounting:vat_return.analytics_view.codes.18', 'Kedvezményes belföldi 18%');
-        case 'FAD': return t('accounting:vat_return.analytics_view.codes.FAD', 'Fordított adózás (FAD vas/acél, építőipar, mezőgazdaság)');
-        case 'AAM': return t('accounting:vat_return.analytics_view.codes.AAM', 'Alanyi adómentes (AAM)');
-        case 'TAM': return t('accounting:vat_return.analytics_view.codes.TAM', 'Tárgyi adómentes (TAM)');
-        default: return t('accounting:vat_return.analytics_view.codes.custom', { code: c, defaultValue: `Különleges gyűjtőkód (${c})` });
+        case '25': return t('accounting:vat_return.analytics_view.codes.25', 'Normál belföldi 27% (NAV Gyűjtőkód 25)');
+        case '05': return t('accounting:vat_return.analytics_view.codes.05', 'Kedvezményes belföldi 5% (NAV Gyűjtőkód 05)');
+        case '18': return t('accounting:vat_return.analytics_view.codes.18', 'Kedvezményes belföldi 18% (NAV Gyűjtőkód 18)');
+        case 'FAD': return t('accounting:vat_return.analytics_view.codes.FAD', 'Fordított adózás (FAD, mentes)');
+        case 'AAM': return t('accounting:vat_return.analytics_view.codes.AAM', 'Alanyi adómentes (AAM, mentes)');
+        case 'TAM': return t('accounting:vat_return.analytics_view.codes.TAM', 'Közérdekű vagy speciális adómentes (TAM, mentes)');
+        case 'EXP': return t('accounting:vat_return.analytics_view.codes.EXP', 'Termékexport 3. országba (mentes)');
+        default: return t('accounting:vat_return.analytics_view.codes.custom', { code: c, defaultValue: `Különleges gyűjtőkód (${c}, mentes)` });
       }
     };
 
@@ -250,6 +277,11 @@ export function VatCollectorAnalyticsView({ year = new Date().getFullYear(), per
           <CardDescription>
             {t('accounting:vat_return.analytics_view.card_description', 'NAV adóhatósági ellenőrzéseknek megfelelő bizonylat-analitika ÁFA gyűjtőkódonként csoportosítva (Fakov Kft. elvárás).')}
           </CardDescription>
+          <div className="flex items-center gap-2 mt-2">
+            <Badge variant="secondary" className="font-mono text-xs bg-muted/60 text-foreground border border-border">
+              {t('accounting:vat_return.analytics_view.active_period', 'Szűrt időszak:')} {effectiveDateFrom} – {effectiveDateTo}
+            </Badge>
+          </div>
         </div>
 
         <div className="flex items-center gap-3 self-end sm:self-auto">

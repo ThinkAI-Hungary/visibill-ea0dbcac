@@ -154,3 +154,19 @@ export interface VatProRataPeriod {
   updated_at?: string;
 }
 
+export { formatVatRate } from '@/lib/utils';
+
+export interface VatSteelItemSummary {
+  id: string;
+  invoice_id: string;
+  invoice_number: string;
+  partner_name: string;
+  partner_tax_number: string;
+  delivery_date: string;
+  product_code: string; // VTSZ (vámtarifaszám)
+  line_description: string;
+  net_amount: number;
+  net_weight_kg: number;
+}
+
+

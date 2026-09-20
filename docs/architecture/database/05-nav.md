@@ -96,6 +96,7 @@
 | gl_classifications | jsonb | ✓ | `'{}'::jsonb` |
 | exclude_from_accounting | boolean | — | `false` |
 | deductible_percentage | numeric(5,2) | — | `100.00` |
+| net_weight_kg | numeric | ✓ | NULL | Nettó tömeg kilogrammban (6/B melléklet szerinti acélipari nyilatkozathoz, lásd [A-131](../decisions/A-131-nav-2665-vat-return-restructuring-and-steel-reporting.md)) |
 
 **FK:** `company_id` → `companies.id`, `nav_invoice_id` → `nav_invoices.id`, `project_id` → `projects.id`
 

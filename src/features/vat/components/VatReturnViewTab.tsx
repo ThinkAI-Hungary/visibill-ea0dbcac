@@ -9,6 +9,7 @@ import {
   Clock,
   ShieldCheck,
   AlertTriangle,
+  Scale,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,11 +29,23 @@ import { cn } from '@/lib/utils';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { generateVatReturnPdf } from '@/lib/vatReturnPdf';
 import { generateVatReturnXml } from '@/lib/vatReturnXml';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { MONTHS } from '../types';
 import { useVatReturnData } from '../hooks/useVatReturnData';
+import { useSteelProductsData } from '../hooks/useSteelProductsData';
 import { useToast } from '@/hooks/use-toast';
 import { VatCalculatorView } from './VatCalculatorView';
 import { VatNav65Replica } from './VatNav65Replica';
+import { VatSteelProductsSection } from './VatSteelProductsSection';
 
 export function VatReturnViewTab() {
   const { t, i18n } = useTranslation(['accounting', 'common']);
@@ -58,6 +71,54 @@ export function VatReturnViewTab() {
     calculate,
     getVal,
   } = vatData;
+
+  const [showSteelWarningModal, setShowSteelWarningModal] = React.useState(false);
+  const { incompleteSteelItems, hasIncompleteSteelItems } = useSteelProductsData(
+    selectedCompany,
+    year,
+    month,
+    frequency
+  );
+
+  const executeXmlDownload = () => {
+    if (!vatReturn || !selectedCompany) return;
+    const taxNum = (selectedCompany as any).tax_number || '';
+    if (!taxNum) {
+      toast({
+        title: t('accounting:vat_return.toasts.missing_tax_num_title', 'Hiányzó adószám'),
+        description: t('accounting:vat_return.toasts.missing_tax_num_desc', 'A cég adószáma hiányzik a beállításokból, kérlek ellenőrizd!'),
+        variant: 'destructive',
+      });
+    }
+    generateVatReturnXml({
+      companyName: selectedCompany.name || '',
+      companyTaxNumber: taxNum,
+      companyAddress: (selectedCompany as any).address || '',
+      periodYear: year,
+      periodMonth: month,
+      frequency,
+      representativeName: (selectedCompany as any).representative_name || (selectedCompany as any).contact_name || undefined,
+      phone: (selectedCompany as any).phone || undefined,
+      lines: lines as any[],
+      mLines: mLines as any[],
+    });
+    toast({
+      title: t('accounting:vat_return.toasts.xml_downloaded_title', 'ÁNYK XML letöltve'),
+      description: t('accounting:vat_return.toasts.xml_downloaded_desc', {
+        formCode: `${year % 100}65`,
+        defaultValue: `A ${year % 100}65 ÁNYK-kompatibilis XML fájl elkészült és letöltésre került.`,
+      }),
+    });
+  };
+
+  const handleXmlDownloadClick = () => {
+    if (!vatReturn || !selectedCompany) return;
+    if (hasIncompleteSteelItems) {
+      setShowSteelWarningModal(true);
+      return;
+    }
+    executeXmlDownload();
+  };
 
   useKeyboardShortcuts([
     { combo: { key: 'p', ctrl: true }, handler: () => window.print(), description: 'Nyomtatás' },
@@ -221,38 +282,7 @@ export function VatReturnViewTab() {
                 >
                   <FileSpreadsheet className="w-4 h-4 mr-2" /> {t('accounting:vat_return.period.pdf_print', 'PDF nyomtatás')}
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    if (!vatReturn || !selectedCompany) return;
-                    const taxNum = (selectedCompany as any).tax_number || '';
-                    if (!taxNum) {
-                      toast({
-                        title: t('accounting:vat_return.toasts.missing_tax_num_title', 'Hiányzó adószám'),
-                        description: t('accounting:vat_return.toasts.missing_tax_num_desc', 'A cég adószáma hiányzik a beállításokból, kérlek ellenőrizd!'),
-                        variant: 'destructive',
-                      });
-                    }
-                    generateVatReturnXml({
-                      companyName: selectedCompany.name || '',
-                      companyTaxNumber: taxNum,
-                      companyAddress: (selectedCompany as any).address || '',
-                      periodYear: year,
-                      periodMonth: month,
-                      frequency,
-                      representativeName: (selectedCompany as any).representative_name || (selectedCompany as any).contact_name || undefined,
-                      phone: (selectedCompany as any).phone || undefined,
-                      lines: lines as any[],
-                      mLines: mLines as any[],
-                    });
-                    toast({
-                      title: t('accounting:vat_return.toasts.xml_downloaded_title', 'ÁNYK XML letöltve'),
-                      description: t('accounting:vat_return.toasts.xml_downloaded_desc', {
-                        formCode: `${year % 100}65`,
-                        defaultValue: `A ${year % 100}65 ÁNYK-kompatibilis XML fájl elkészült és letöltésre került.`,
-                      }),
-                    });
-                  }}
-                >
+                <DropdownMenuItem onClick={handleXmlDownloadClick}>
                   <Download className="w-4 h-4 mr-2" /> {t('accounting:vat_return.period.xml_download', 'ÁNYK XML letöltés')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -434,6 +464,19 @@ export function VatReturnViewTab() {
             <FileSpreadsheet className="w-3.5 h-3.5" />
             {t('accounting:vat_return.subtabs.replica', 'NAV 65 Nyomtatvány replika')}
           </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('steel')}
+            className={cn(
+              'px-4 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5',
+              viewMode === 'steel'
+                ? 'bg-background shadow-sm text-foreground font-bold'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <Scale className="w-3.5 h-3.5" />
+            6/B Acélipari kimutatás
+          </button>
         </div>
       )}
 
@@ -445,9 +488,85 @@ export function VatReturnViewTab() {
           frequency={frequency}
           getVal={getVal}
         />
+      ) : viewMode === 'steel' ? (
+        <VatSteelProductsSection
+          selectedCompany={selectedCompany}
+          year={year}
+          month={month}
+          frequency={frequency}
+        />
       ) : (
         <VatCalculatorView vatData={vatData} />
       )}
+
+      {/* Pre-export steel items completeness warning dialog (Blind Spot 1 Guard) */}
+      <AlertDialog open={showSteelWarningModal} onOpenChange={setShowSteelWarningModal}>
+        <AlertDialogContent className="max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+              <AlertTriangle className="h-5 w-5 shrink-0" />
+              {t('accounting:vat_return.steel_warning.title', 'Hiányos 6/B Acélipari adatok!')}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 pt-2 text-sm text-muted-foreground">
+                <p>
+                  Az adott bevallási időszakban{' '}
+                  <strong className="text-foreground">{incompleteSteelItems.length} db</strong>{' '}
+                  olyan fordított adózású vas- és acélipari tétel található, amelynél hiányzik a{' '}
+                  <strong className="text-foreground">VTSZ szám</strong> vagy a{' '}
+                  <strong className="text-foreground">nettó tömeg (kg)</strong>.
+                </p>
+                <p className="text-xs">
+                  A NAV 2665-07 (értékesítő) és 2665-08 (beszerző) nyilatkozati lapok a 6/B. melléklet szerinti
+                  termékeknél kötelezően megkövetelik a pontos VTSZ/KN kódot és az egész kg-ban kifejezett nettó tömeget.
+                </p>
+                <div className="bg-muted/50 rounded-lg p-2.5 border border-border text-xs space-y-1.5 max-h-36 overflow-y-auto">
+                  <span className="font-semibold text-foreground block">Érintett bizonylatok (első tételek):</span>
+                  {incompleteSteelItems.slice(0, 5).map((it) => (
+                    <div key={it.id} className="flex items-center justify-between text-muted-foreground font-mono">
+                      <span className="truncate max-w-[200px]" title={it.partnerName}>
+                        {it.partnerName} ({it.invoiceNumber})
+                      </span>
+                      <span className="text-amber-600 dark:text-amber-400 font-sans text-[11px] font-medium shrink-0 ml-2">
+                        {!it.productCode ? 'Hiányzó VTSZ' : 'Hiányzó tömeg'}
+                      </span>
+                    </div>
+                  ))}
+                  {incompleteSteelItems.length > 5 && (
+                    <div className="text-[11px] text-muted-foreground italic text-center pt-1">
+                      ...és további {incompleteSteelItems.length - 5} tétel
+                    </div>
+                  )}
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2 mt-4">
+            <AlertDialogCancel onClick={() => setShowSteelWarningModal(false)}>
+              Mégse
+            </AlertDialogCancel>
+            <Button
+              variant="outline"
+              className="text-xs text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                setShowSteelWarningModal(false);
+                executeXmlDownload();
+              }}
+            >
+              Letöltés hiányosan is
+            </Button>
+            <AlertDialogAction
+              className="bg-primary text-primary-foreground text-xs font-semibold"
+              onClick={() => {
+                setShowSteelWarningModal(false);
+                setViewMode('steel');
+              }}
+            >
+              Tételek kiegészítése (6/B lap)
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

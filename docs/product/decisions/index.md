@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-20  
-> **Összesen:** 91 döntés | ✅ Decided: 87 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 92 döntés | ✅ Decided: 88 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -111,6 +111,7 @@
 | P-082 | Bérszámfejtési Főkönyvi Feladás Kontírozás (Step 8), Kereshető Választó és Magyarázó Szövegezés UX | ✅ Decided | [P-082](./P-082-payroll-gl-mapping-combobox-and-step8-ux.md) |
 | P-084 | Hierarchikus Útvonalkövető (Breadcrumbs) Rendszer és Automatikus Route Resolver UX | ✅ Decided | [P-084](./P-084-hierarchical-breadcrumbs-navigation-ux.md) |
 | P-085 | eaisyBooks Portfólió Oldalsáv 4-Kategóriás Munkafolyamat-Alapú Csoportosítása UX | ✅ Decided | [P-085](./P-085-eaisybooks-portfolio-navigation-grouping-ux.md) |
+| P-097 | NAV 2665 Nyomtatvány Replika, 6/B Acélipari Analitika és ÁNYK Validáció UX | ✅ Decided | [P-097](./P-097-nav-2665-replica-steel-analytics-and-anyk-validation-ux.md) |
 
 ## 🔍 Keresés
 

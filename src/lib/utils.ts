@@ -198,3 +198,39 @@ export function getTicketSummary(message: string | null | undefined): { title: s
 
   return { title, preview };
 }
+
+/**
+ * Formats a VAT rate for UI display. If the rate represents 0% / exempt / domestic reverse charge,
+ * it returns 'mentes' instead of '0%'.
+ */
+export function formatVatRate(rate: string | number | null | undefined): string {
+  if (rate == null || rate === '') return 'mentes';
+  if (typeof rate === 'number') {
+    if (rate === 0) return 'mentes';
+    if (rate > 0 && rate <= 1) {
+      const pct = Math.round(rate * 100);
+      return pct === 0 ? 'mentes' : `${pct}%`;
+    }
+    return `${rate}%`;
+  }
+  const s = String(rate).trim();
+  const u = s.toUpperCase();
+  if (['0', '0%', '0.00', '0.0', '0.000', '0,00', '0,0', 'AAM', 'TAM', 'MENTES', 'EXP', 'EXPORT', 'FAD', 'FORD', 'FORDITOTT', 'DOMESTIC_REVERSE_CHARGE'].includes(u)) {
+    return 'mentes';
+  }
+  if (s.endsWith('%')) {
+    if (s.startsWith('0') && !s.startsWith('0.') && !s.startsWith('0,')) return 'mentes';
+    return s;
+  }
+  const num = Number(s.replace(',', '.'));
+  if (!isNaN(num)) {
+    if (num === 0) return 'mentes';
+    if (num > 0 && num <= 1) {
+      const pct = Math.round(num * 100);
+      return pct === 0 ? 'mentes' : `${pct}%`;
+    }
+    return `${num}%`;
+  }
+  return s;
+}
+

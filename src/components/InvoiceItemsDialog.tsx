@@ -23,7 +23,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { formatCurrency, cn } from '@/lib/utils';
+import { formatCurrency, cn, formatVatRate } from '@/lib/utils';
 import { Package, Package2, CheckCircle2, Info, Loader2, Check, Pencil, FileSpreadsheet, X, ArrowUpDown, ChevronUp, ChevronDown, MessageSquare, Sparkles, Wallet, Lock } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -59,6 +59,7 @@ interface InvoiceLineItem {
   project_id?: string | null;
   notes?: string | null;
   deductible_percentage?: number | null;
+  net_weight_kg?: number | null;
 }
 
 interface InvoiceItemsDialogProps {
@@ -275,7 +276,7 @@ export function InvoiceItemsDialog({
   const { data: items = [], isLoading: loading } = useQuery({
     queryKey: ['invoiceItems', source, invoiceId],
     queryFn: async () => {
-      const baseCols = 'id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications, project_id, notes, deductible_percentage';
+      const baseCols = 'id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications, project_id, notes, deductible_percentage, net_weight_kg';
       const fullCols = baseCols + ', exclude_from_accounting';
       const fkCol = source === 'submitted' ? 'invoice_id' : 'nav_invoice_id';
       const fromTable = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
@@ -497,6 +498,57 @@ export function InvoiceItemsDialog({
       setUpdatingDeductibleId(null);
     }
   }, [source, invoiceId, queryClient, toast, findTwinItems, postedItemIds, t]);
+
+  // Update item VTSZ (product_code) and net weight in kg (6/B melléklet)
+  const handleUpdateItemProductCodeAndWeight = useCallback(async (
+    item: InvoiceLineItem,
+    productCode: string | null,
+    netWeightKg: number | null
+  ) => {
+    const table = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
+    try {
+      const { error } = await supabase
+        .from(table as any)
+        .update({
+          product_code: productCode || null,
+          net_weight_kg: netWeightKg != null && !isNaN(netWeightKg) ? netWeightKg : null,
+        })
+        .eq('id', item.id);
+
+      if (error) throw error;
+
+      try {
+        const twins = await findTwinItems(item);
+        for (const twin of twins) {
+          await supabase
+            .from(twin.sourceTable as any)
+            .update({
+              product_code: productCode || null,
+              net_weight_kg: netWeightKg != null && !isNaN(netWeightKg) ? netWeightKg : null,
+            })
+            .eq('id', twin.id);
+        }
+      } catch (e) {
+        console.error('Failed to update twin item weight/vtsz:', e);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
+      queryClient.invalidateQueries({ queryKey: ['vat_return'] });
+      queryClient.invalidateQueries({ queryKey: ['vat_return_lines'] });
+      queryClient.invalidateQueries({ queryKey: ['vat_steel_items'] });
+      queryClient.invalidateQueries({ queryKey: ['nav_invoice_items_drill'] });
+      toast({
+        title: 'VTSZ és súly mentve',
+        description: 'A tétel VTSZ száma és nettó tömege sikeresen mentésre került.',
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Mentési hiba',
+        description: err.message,
+        variant: 'destructive',
+      });
+    }
+  }, [source, invoiceId, findTwinItems, queryClient, toast]);
 
   // Apply 70/30 telephone rule to 27% items
   const handleApply7030TelephoneRule = useCallback(async () => {
@@ -997,18 +1049,6 @@ export function InvoiceItemsDialog({
     return unit ? `${formatted} ${unit}` : formatted;
   };
 
-  const formatVatRate = (rate: string | null) => {
-    if (!rate) return '-';
-    const num = parseFloat(rate);
-    // NAV format: 0.27 → 27%
-    if (!isNaN(num) && num > 0 && num < 1) return `${Math.round(num * 100)}%`;
-    // NAV format: 0 or 0.00 → 0%
-    if (!isNaN(num) && num === 0) return '0%';
-    // OCR format already has %: "27%", "5%" → keep as-is
-    // Special codes: "AAM", "TAM", "KBAET" → keep as-is
-    return rate;
-  };
-
   const getVatAmount = (item: InvoiceLineItem): number | null => {
     if (item.vat_amount !== null && item.vat_amount !== undefined && item.vat_amount !== 0) {
       return item.vat_amount;
@@ -1217,11 +1257,12 @@ export function InvoiceItemsDialog({
                           <div className="flex items-center gap-2">
                             <div className="flex-1">
                               <p className="font-medium">{item.line_description || '-'}</p>
-                              {item.product_code && (
-                                <p className="text-xs text-muted-foreground font-mono">
-                                  {item.product_code}
-                                </p>
-                              )}
+                              <div className="flex items-center gap-2 mt-1">
+                                <ItemVtszWeightPopover
+                                  item={item}
+                                  onSave={handleUpdateItemProductCodeAndWeight}
+                                />
+                              </div>
                             </div>
                             {alreadyActivated && (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success/10 text-success whitespace-nowrap">
@@ -1964,5 +2005,123 @@ function ItemNoteCell({ item, onSaveNotes }: ItemNoteCellProps) {
         </PopoverContent>
       </Popover>
     </TableCell>
+  );
+}
+
+// ── VTSZ & Net Weight (kg) Popover Component (6/B melléklet) ──
+interface ItemVtszWeightPopoverProps {
+  item: InvoiceLineItem;
+  onSave: (item: InvoiceLineItem, productCode: string | null, netWeightKg: number | null) => Promise<void>;
+}
+
+function ItemVtszWeightPopover({ item, onSave }: ItemVtszWeightPopoverProps) {
+  const [open, setOpen] = useState(false);
+  const [productCode, setProductCode] = useState(item.product_code || '');
+  const [netWeightKg, setNetWeightKg] = useState(item.net_weight_kg != null ? String(item.net_weight_kg) : '');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setProductCode(item.product_code || '');
+    setNetWeightKg(item.net_weight_kg != null ? String(item.net_weight_kg) : '');
+  }, [item.product_code, item.net_weight_kg]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const parsedWeight = netWeightKg.trim() !== '' ? parseFloat(netWeightKg.replace(',', '.')) : null;
+      await onSave(
+        item,
+        productCode.trim() !== '' ? productCode.trim() : null,
+        parsedWeight != null && !isNaN(parsedWeight) ? parsedWeight : null
+      );
+      setOpen(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const hasData = Boolean(item.product_code || item.net_weight_kg != null);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpen(prev => !prev);
+          }}
+          className={cn(
+            "group/vtsz inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono transition-all border cursor-pointer",
+            hasData
+              ? "bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/20"
+              : "bg-muted/40 text-muted-foreground/60 border-border/40 hover:bg-muted hover:text-foreground opacity-70 hover:opacity-100"
+          )}
+        >
+          <span>{item.product_code ? `VTSZ: ${item.product_code}` : '+ VTSZ / Súly'}</span>
+          {item.net_weight_kg != null && (
+            <span className="font-semibold text-amber-600 dark:text-amber-400">({item.net_weight_kg} kg)</span>
+          )}
+          <Pencil className="h-2.5 w-2.5 opacity-50 group-hover/vtsz:opacity-100" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-72 p-3.5 z-[110] shadow-xl border-border bg-popover space-y-3"
+        align="start"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b pb-2">
+          <h4 className="font-semibold text-xs text-foreground">VTSZ & Nettó tömeg (kg)</h4>
+          <span className="text-[10px] text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded">6/B melléklet</span>
+        </div>
+        <div className="space-y-2 text-xs">
+          <div className="space-y-1">
+            <Label className="text-[11px] font-medium text-muted-foreground">VTSZ / KN kód</Label>
+            <input
+              className="w-full px-2.5 py-1.5 text-xs bg-background border border-border/80 rounded focus:outline-none focus:ring-1 focus:ring-primary font-mono text-foreground"
+              placeholder="pl. 7214 20 00"
+              value={productCode}
+              onChange={(e) => setProductCode(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[11px] font-medium text-muted-foreground">Nettó tömeg (kg)</Label>
+            <input
+              type="number"
+              step="any"
+              className="w-full px-2.5 py-1.5 text-xs bg-background border border-border/80 rounded focus:outline-none focus:ring-1 focus:ring-primary font-mono text-foreground"
+              placeholder="pl. 1250"
+              value={netWeightKg}
+              onChange={(e) => setNetWeightKg(e.target.value)}
+            />
+            <p className="text-[10px] text-muted-foreground">
+              A NAV 2665-07/08 nyilatkozat egész kg-ban kéri az adatot (a rendszer exportkor kerekíti).
+            </p>
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 pt-1 border-t">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs px-2.5"
+            onClick={() => setOpen(false)}
+            disabled={saving}
+          >
+            Mégse
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            className="h-7 text-xs px-2.5 gap-1"
+            onClick={handleSave}
+            disabled={saving}
+          >
+            {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+            Mentés
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

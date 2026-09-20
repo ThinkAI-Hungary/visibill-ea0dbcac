@@ -27,6 +27,48 @@ export function VatNav65Replica({
 
   const fields = [
     {
+      num: '01',
+      type: 'Fizetendő',
+      label: 'Közösség területén kívülre történő termékértékesítés (export, mentes)',
+      val: getVal('01', 'base'),
+      isBase: true,
+    },
+    {
+      num: '04',
+      type: 'Fizetendő',
+      label: 'Belföldi fordított adózású értékesítés (mentes)',
+      val: getVal('04', 'base'),
+      isBase: true,
+    },
+    {
+      num: '05',
+      type: 'Fizetendő',
+      label: '5%-os kulcsú belföldi értékesítés adóalapja',
+      val: getVal('05', 'base'),
+      isBase: true,
+    },
+    {
+      num: '05',
+      type: 'Fizetendő',
+      label: '5%-os kulcsú belföldi értékesítés fizetendő ÁFA',
+      val: getVal('05', 'tax'),
+      isBase: false,
+    },
+    {
+      num: '06',
+      type: 'Fizetendő',
+      label: '18%-os kulcsú belföldi értékesítés adóalapja',
+      val: getVal('06', 'base'),
+      isBase: true,
+    },
+    {
+      num: '06',
+      type: 'Fizetendő',
+      label: '18%-os kulcsú belföldi értékesítés fizetendő ÁFA',
+      val: getVal('06', 'tax'),
+      isBase: false,
+    },
+    {
       num: '07',
       type: 'Fizetendő',
       label: '27%-os kulcsú belföldi értékesítés adóalapja',
@@ -41,17 +83,17 @@ export function VatNav65Replica({
       isBase: false,
     },
     {
-      num: '05',
+      num: '08',
       type: 'Fizetendő',
-      label: '18%-os kulcsú belföldi értékesítés fizetendő ÁFA',
-      val: getVal('05', 'tax'),
-      isBase: false,
+      label: 'Közérdekű vagy speciális adómentes értékesítés (TAM, mentes)',
+      val: getVal('08', 'base'),
+      isBase: true,
     },
     {
-      num: '03',
+      num: '29',
       type: 'Fizetendő',
-      label: '5%-os kulcsú belföldi értékesítés fizetendő ÁFA',
-      val: getVal('03', 'tax'),
+      label: 'Fordított adózás alapján fizetendő adó (29. sor)',
+      val: getVal('29', 'tax'),
       isBase: false,
     },
     {
@@ -70,6 +112,20 @@ export function VatNav65Replica({
       isSummary: true,
     },
     {
+      num: '64',
+      type: 'Levonható',
+      label: '5%-os belföldi beszerzés levonható ÁFA',
+      val: getVal('64', 'tax'),
+      isBase: false,
+    },
+    {
+      num: '65',
+      type: 'Levonható',
+      label: '18%-os belföldi beszerzés levonható ÁFA',
+      val: getVal('65', 'tax'),
+      isBase: false,
+    },
+    {
       num: '66',
       type: 'Levonható',
       label: '27%-os belföldi beszerzés adóalapja',
@@ -79,7 +135,7 @@ export function VatNav65Replica({
     {
       num: '66',
       type: 'Levonható',
-      label: '27%-os belföldi beszerzés levonható ÁFA',
+      label: '27%-os belföldi és fordított beszerzés levonható ÁFA',
       val: getVal('66', 'tax'),
       isBase: false,
     },
