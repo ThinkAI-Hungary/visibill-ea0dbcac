@@ -27,7 +27,8 @@ Egy intelligens, **kétfázisú és trigger-vezérelt partner-történeti többs
   * Egyesíti az adott cég korábbi `invoices` és `nav_invoices` bejövő (`INBOUND`) számláit.
   * **1. Prioritás (Partner Név):** A partner nevét `lower(trim(name))` formában normalizálja és többségi szavazást futtat (`top_cnt > second_cnt`).
   * **2. Prioritás (Adószám Törzsszám Fallback):** Ha a név alapján nincs egyértelmű többség vagy a partner neve kis mértékben eltér (pl. „Telekom Magyarország Zrt.” vs „Magyar Telekom Nyrt.”), de a partner 8 számjegyű adószáma ismert (`p_tax_number` / `elado_vat_id` / `supplier_tax_number`), a rendszer a magyar törzsszám (első 8 számjegy) alapján futtatja le a többségi szavazást.
-  * **Döntetlen / Új partner védelem:** Ha holtverseny van (pl. 2 db IT vs 2 db Iroda), vagy a partner teljesen új (0 korábbi számla), a függvény `NULL`-t ad vissza, így nem találgat, hanem átengedi a döntést az AI-nak.
+* **Függvény-túlterhelési védelem (PostgreSQL 42725 Ambiguity Fix):**
+  * A 3 paraméteres eljárás bevezetésekor a korábbi 2 argumentumos szignatúra (`uuid, text`) explicit eldobásra került (`DROP FUNCTION IF EXISTS public.get_partner_majority_category(uuid, text);`). Mivel a 3. paraméter alapértelmezése `DEFAULT NULL`, az egyetlen függvény transzparensen és ütközésmentesen szolgálja ki mind a 2, mind a 3 argumentumos hívásokat.
 * **Valós idejű `BEFORE INSERT` triggerek:**
   * `trg_auto_categorize_invoices_on_insert` az `invoices` táblán (`NEW.elado_nev`, `NEW.elado_vat_id`).
   * `trg_auto_categorize_nav_invoices_on_insert` a `nav_invoices` táblán (`NEW.supplier_name`, `NEW.supplier_tax_number`).

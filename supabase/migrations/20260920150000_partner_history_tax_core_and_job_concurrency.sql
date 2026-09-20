@@ -5,6 +5,9 @@
 -- 3. Update trg_fn_auto_categorize_invoices_on_insert and trg_fn_auto_categorize_nav_invoices_on_insert to pass tax numbers
 
 -- 1. Function: get_partner_majority_category with tax core fallback
+-- Drop obsolete 2-argument overload to avoid function ambiguity (ERROR 42725)
+DROP FUNCTION IF EXISTS public.get_partner_majority_category(uuid, text);
+
 CREATE OR REPLACE FUNCTION public.get_partner_majority_category(
   p_company_id uuid,
   p_supplier_name text,

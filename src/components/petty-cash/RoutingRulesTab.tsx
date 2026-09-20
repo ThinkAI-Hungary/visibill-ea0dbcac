@@ -58,13 +58,25 @@ export default function RoutingRulesTab() {
 
   const saveRule = useMutation({
     mutationFn: async (rule: Partial<RoutingRule>) => {
+      if (!rule.target_register_id || !rule.target_register_id.trim()) {
+        throw new Error('A cél pénztár kiválasztása kötelező.');
+      }
       if (rule.id) {
         const { error } = await supabase.from('petty_cash_routing_rules')
           .update(rule as any).eq('id', rule.id);
         if (error) throw error;
       } else {
         const { error } = await supabase.from('petty_cash_routing_rules')
-          .insert({ ...rule, company_id: companyId });
+          .insert({
+            company_id: companyId,
+            target_register_id: rule.target_register_id,
+            priority: rule.priority ?? 10,
+            match_currency: rule.match_currency ?? null,
+            match_source_type: rule.match_source_type ?? null,
+            match_description_pattern: rule.match_description_pattern ?? null,
+            match_partner_pattern: rule.match_partner_pattern ?? null,
+            is_active: rule.is_active ?? true,
+          });
         if (error) throw error;
       }
     },
@@ -199,8 +211,9 @@ function RoutingRuleDialog({ open, onOpenChange, rule, registers, onSave, saving
   saving: boolean;
 }) {
   const nonDefault = registers.filter(r => !r.is_default);
+  const defaultTargetId = nonDefault[0]?.id || registers[0]?.id || '';
   const [form, setForm] = useState({
-    target_register_id: nonDefault[0]?.id || '',
+    target_register_id: defaultTargetId,
     priority: 10,
     match_currency: '',
     match_source_type: '',
@@ -222,7 +235,7 @@ function RoutingRuleDialog({ open, onOpenChange, rule, registers, onSave, saving
       });
     } else {
       setForm({
-        target_register_id: nonDefault[0]?.id || '',
+        target_register_id: defaultTargetId,
         priority: 10,
         match_currency: '',
         match_source_type: '',
@@ -231,7 +244,7 @@ function RoutingRuleDialog({ open, onOpenChange, rule, registers, onSave, saving
         is_active: true,
       });
     }
-  }, [rule, open]);
+  }, [rule, open, defaultTargetId]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

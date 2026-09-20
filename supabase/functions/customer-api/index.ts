@@ -15,8 +15,13 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-const errorResponse = (code: string, message: string, status = 400, details?: unknown) =>
-  json({ success: false, error: { code, message, details } }, status);
+const errorResponse = (code: string, message: string, status = 400, details?: unknown) => {
+  const res = json({ success: false, error: { code, message, details } }, status);
+  (res as any)._errorMessage = details
+    ? `${code}: ${message} (${typeof details === "object" ? JSON.stringify(details) : details})`
+    : `${code}: ${message}`;
+  return res;
+};
 
 // ─── Rate Limiter (in-memory per key hash, 60s sliding window) ──
 const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
@@ -380,7 +385,7 @@ serve(async (req) => {
 
   try {
     // Normalize aliases: e.g. /v1/invoices vs ?action=invoices
-    if (resource === "invoices" || resource === "invoice") {
+    if (resource === "invoices" || resource === "invoice" || resource === "link_invoice" || resource === "upload_invoice") {
       // ──────────────────────────────────────────────────
       // DOMAIN: INVOICES
       // ──────────────────────────────────────────────────
@@ -1431,7 +1436,7 @@ serve(async (req) => {
     userAgent,
     requestParams: Object.fromEntries(url.searchParams.entries()),
     requestBody: req.method === "GET" ? null : requestBody,
-    errorMessage: response.status >= 400 ? `Status ${response.status}` : null,
+    errorMessage: (response as any)?._errorMessage || (response.status >= 400 ? `Status ${response.status}` : null),
     durationMs,
   });
 

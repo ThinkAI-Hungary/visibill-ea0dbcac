@@ -92,6 +92,10 @@ export default function TransferDialog({
 
   const transferMutation = useMutation({
     mutationFn: async () => {
+      if (!fromRegisterId || !toRegisterId || fromRegisterId === toRegisterId) {
+        throw new Error('A forrás és a cél házipénztár megadása kötelező és el kell térniük.');
+      }
+
       const roundedAmount = roundHuf(parsedAmount, currency);
       const customDesc = description.trim() ? description.trim() : null;
 
@@ -337,7 +341,7 @@ export default function TransferDialog({
             size="sm"
             className="bg-sky-600 hover:bg-sky-500 text-white gap-1.5"
             onClick={() => transferMutation.mutate()}
-            disabled={!isAmountValid || fromRegisterId === toRegisterId || transferMutation.isPending}
+            disabled={!isAmountValid || !fromRegisterId || !toRegisterId || fromRegisterId === toRegisterId || transferMutation.isPending}
           >
             {transferMutation.isPending ? (
               <>

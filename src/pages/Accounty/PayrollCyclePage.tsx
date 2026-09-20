@@ -511,13 +511,28 @@ export default function PayrollCyclePage() {
     const advanceAmount = decs.advances || 0;
     const otherDeductionsAmount = decs.other || 0;
     
-    // Extract tax credits
-    const credits = (calc.tax_credits || []) as any[];
-    const familyCredit = credits.filter(c => c.type === 'family' || c.type === 'family_tb').reduce((sum, c) => sum + (c.taxSaving || 0) + (c.tbSaving || 0), 0);
-    const under25Credit = credits.find(c => c.type === 'young_25')?.taxSaving || 0;
-    const newMotherCredit = credits.find(c => c.type === 'young_mother_30')?.taxSaving || 0;
-    const firstMarriageCredit = credits.find(c => c.type === 'first_marriage')?.taxSaving || 0;
-    const personalDisabilityCredit = credits.find(c => c.type === 'personal')?.taxSaving || 0;
+    // Extract tax credits safely (handle both array and object formats)
+    let familyCredit = 0;
+    let under25Credit = 0;
+    let newMotherCredit = 0;
+    let firstMarriageCredit = 0;
+    let personalDisabilityCredit = 0;
+
+    if (Array.isArray(calc.tax_credits)) {
+      const credits = calc.tax_credits as any[];
+      familyCredit = credits.filter(c => c.type === 'family' || c.type === 'family_tb').reduce((sum, c) => sum + (c.taxSaving || 0) + (c.tbSaving || 0), 0);
+      under25Credit = credits.find(c => c.type === 'young_25')?.taxSaving || 0;
+      newMotherCredit = credits.find(c => c.type === 'young_mother_30')?.taxSaving || 0;
+      firstMarriageCredit = credits.find(c => c.type === 'first_marriage')?.taxSaving || 0;
+      personalDisabilityCredit = credits.find(c => c.type === 'personal')?.taxSaving || 0;
+    } else if (calc.tax_credits && typeof calc.tax_credits === 'object') {
+      const tc = calc.tax_credits as Record<string, any>;
+      familyCredit = Number(tc.family_credit ?? tc.family ?? tc.familyCredit ?? 0);
+      under25Credit = Number(tc.under25_credit ?? tc.young_25 ?? tc.under25Credit ?? 0);
+      newMotherCredit = Number(tc.new_mother_credit ?? tc.young_mother_30 ?? tc.newMotherCredit ?? 0);
+      firstMarriageCredit = Number(tc.first_marriage_credit ?? tc.first_marriage ?? tc.firstMarriageCredit ?? 0);
+      personalDisabilityCredit = Number(tc.personal_credit ?? tc.personal ?? tc.personalDisabilityCredit ?? 0);
+    }
 
     // Calculate supplement amounts
     const weeklyHours = employment?.weekly_hours || 40;

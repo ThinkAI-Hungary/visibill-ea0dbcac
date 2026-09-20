@@ -29,6 +29,7 @@ import {
   Shield,
   Link2,
   ChevronRight,
+  Sparkles,
 } from 'lucide-react';
 
 /* ─── Step Indicator ─── */

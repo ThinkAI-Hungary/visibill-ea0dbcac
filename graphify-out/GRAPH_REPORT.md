@@ -1,7 +1,7 @@
 # Graph Report - eaisybill-prod  (2026-09-20)
 
 ## Corpus Check
-- 2117 files · ~2,792,907 words
+- 2117 files · ~2,793,279 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `4b0722ba`
+- Built from commit: `305642ef`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -1247,7 +1247,6 @@
 - [[_COMMUNITY_Community 1263|Community 1263]]
 - [[_COMMUNITY_Community 1264|Community 1264]]
 - [[_COMMUNITY_Community 1265|Community 1265]]
-- [[_COMMUNITY_Community 1266|Community 1266]]
 - [[_COMMUNITY_Community 1267|Community 1267]]
 - [[_COMMUNITY_Community 1268|Community 1268]]
 - [[_COMMUNITY_Community 1269|Community 1269]]
@@ -1273,6 +1272,7 @@
 - [[_COMMUNITY_Community 1291|Community 1291]]
 - [[_COMMUNITY_Community 1292|Community 1292]]
 - [[_COMMUNITY_Community 1293|Community 1293]]
+- [[_COMMUNITY_Community 1294|Community 1294]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `cn()` - 580 edges
@@ -1392,8 +1392,8 @@ Cohesion: 0.07
 Nodes (29): @vitejs/plugin-react, devDependencies, autoprefixer, eslint, @eslint/js, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals (+21 more)
 
 ### Community 21 - "Accounty Generaterequestemail Saveapprovalqueue"
-Cohesion: 0.03
-Nodes (93): AccountyShellContextType, ACTION_META, ClientDetailsPage(), DEFAULT_META, ClientMissingInvoicesPage(), ClientMissingInvoicesReportPage(), COLORS, defaultBarData (+85 more)
+Cohesion: 0.04
+Nodes (49): AccountyShellContextType, AssignmentRow, CompanyInvoice, CompanyRow, DeadlineRow, InvoiceStatus, kanbanStatusMap, kanbanStatusReverse (+41 more)
 
 ### Community 22 - "Accounty Generaterequestemail Updatemessagebody"
 Cohesion: 0.13
@@ -1661,7 +1661,7 @@ Nodes (28): 1. Menü és routing, 2.1 ShipmentMatchingDashboard.tsx, 2.2 UploadH
 
 ### Community 88 - "Hooks Useaccountydata Usecompletedeadline"
 Cohesion: 0.18
-Nodes (10): Bejelentkezés, Bevezetés, Elfelejtett jelszó, Kapcsolat, Kinek készült?, Mi a VisiBill?, Regisztráció és bejelentkezés, Tartalomjegyzék (+2 more)
+Nodes (10): Bankkivonatok és Tranzakciók, Bevezetés, Jegyzetek oldal integrációja, Kapcsolat, Kinek készült?, Mi a VisiBill?, Tartalomjegyzék, Tranzakciós feljegyzések (Jegyzetek) készítése (+2 more)
 
 ### Community 89 - "Hooks Useaccountydata Usegenerateportaltoken"
 Cohesion: 0.43
@@ -1905,7 +1905,7 @@ Nodes (24): 1. réteg: Autentikáció (Supabase Auth), 2. réteg: Autorizáció 
 
 ### Community 181 - "Community 181"
 Cohesion: 0.12
-Nodes (25): fetchManagementData(), postManagementData(), RETRYABLE_SOURCES, useWorkerTelemetry(), WORKER_PERIOD_LABELS, formatDuration(), formatUptime(), LLMCostPanel() (+17 more)
+Nodes (26): fetchManagementData(), postManagementData(), Skeleton(), RETRYABLE_SOURCES, useWorkerTelemetry(), WORKER_PERIOD_LABELS, formatDuration(), formatUptime() (+18 more)
 
 ### Community 182 - "Community 182"
 Cohesion: 0.04
@@ -2065,7 +2065,7 @@ Nodes (25): 1. Portfólió Mód (`/eaisybooks/*`, PRD P-085), 1. URL Struktúra,
 
 ### Community 222 - "Community 222"
 Cohesion: 0.15
-Nodes (12): 14. Jövőbeli Döntések, 15. Követelmények Mátrix, 1. Összefoglaló, 8. HR & Munkaidő (eaisyBill), 9. Előfizetés & Árazás, eaisyBill követelmények, eaisyBooks követelmények, REQ-8.1: Munkaidő nyilvántartás (+4 more)
+Nodes (12): 14. Jövőbeli Döntések, 15. Követelmények Mátrix, 1. Összefoglaló, 6. NAV Integráció, 8. HR & Munkaidő (eaisyBill), eaisyBill követelmények, eaisyBooks követelmények, REQ-6.1: NAV Online Számla API v3 (+4 more)
 
 ### Community 223 - "Community 223"
 Cohesion: 0.29
@@ -3877,7 +3877,7 @@ Nodes (9): assign_modal, assign_selected, badge_in, badge_out, desc, no_unassign
 
 ### Community 794 - "Community 794"
 Cohesion: 0.11
-Nodes (22): CompanyDetail, FilesData, OverviewData, UserDetail, Skeleton(), SkeletonList(), StatCard(), RoleBadge() (+14 more)
+Nodes (21): CompanyDetail, FilesData, OverviewData, UserDetail, SkeletonList(), StatCard(), RoleBadge(), CompanyDetailView() (+13 more)
 
 ### Community 795 - "Community 795"
 Cohesion: 0.24
@@ -4296,8 +4296,8 @@ Cohesion: 0.06
 Nodes (33): col_cost, col_employee, col_rate, col_status, copy_link_tooltip, delete_confirm, delete_tooltip, detail_email (+25 more)
 
 ### Community 902 - "Community 902"
-Cohesion: 0.17
-Nodes (14): CegkapuSettingsPage(), useCegkapuSettings(), useUpsertCegkapuSettings(), useUpsertTaxProfile(), CEGKAPU_DEFAULTS, CegkapuFormData, ClientSettingsTab(), ClientSettingsTabProps (+6 more)
+Cohesion: 0.04
+Nodes (58): CegkapuSettingsPage(), ACTION_META, ClientDetailsPage(), DEFAULT_META, ClientMissingInvoicesPage(), ClientMissingInvoicesReportPage(), COLORS, defaultBarData (+50 more)
 
 ### Community 903 - "Community 903"
 Cohesion: 0.06
@@ -4444,8 +4444,8 @@ Cohesion: 0.08
 Nodes (26): auto_verify_desc, auto_verify_title, cancel_btn, dir_all, dir_inflow, dir_outflow, field_direction, field_max_amount (+18 more)
 
 ### Community 940 - "Community 940"
-Cohesion: 0.15
-Nodes (13): dialogs, edit_desc, image, buyer, electronic_voucher, fulfillment_issue, invoice_number, loading (+5 more)
+Cohesion: 0.18
+Nodes (11): image, buyer, electronic_voucher, fulfillment_issue, invoice_number, loading, nav_source_desc, net_total (+3 more)
 
 ### Community 941 - "Community 941"
 Cohesion: 0.23
@@ -4748,8 +4748,8 @@ Cohesion: 0.25
 Nodes (8): print_preview_modal, analytical, close, layout, print, subtitle, synthetic, title
 
 ### Community 1017 - "Community 1017"
-Cohesion: 0.18
-Nodes (11): cannot_undo, deleting, description_prefix, description_suffix, option_row_and_file_desc, option_row_and_file_title, option_row_only_desc, option_row_only_title (+3 more)
+Cohesion: 0.15
+Nodes (13): cannot_undo, deleting, description_prefix, description_suffix, option_row_and_file_desc, option_row_and_file_title, option_row_only_desc, option_row_only_title (+5 more)
 
 ### Community 1018 - "Community 1018"
 Cohesion: 0.18
@@ -5441,7 +5441,7 @@ Nodes (12): columns, category, currency, due_date, fulfillment_date, gross_amoun
 
 ### Community 1195 - "Community 1195"
 Cohesion: 0.50
-Nodes (4): Bankkivonatok és Tranzakciók, Jegyzetek oldal integrációja, Tranzakciós feljegyzések (Jegyzetek) készítése, Tranzakciós fájlok feltöltése és törlése
+Nodes (4): Bejelentkezés, Elfelejtett jelszó, Regisztráció és bejelentkezés, Új fiók létrehozása
 
 ### Community 1196 - "Community 1196"
 Cohesion: 0.57
@@ -5687,10 +5687,6 @@ Nodes (3): admin, env, envContent
 Cohesion: 0.40
 Nodes (3): env, envContent, supabase
 
-### Community 1266 - "Community 1266"
-Cohesion: 0.67
-Nodes (3): 6. NAV Integráció, REQ-6.1: NAV Online Számla API v3, REQ-6.2: Szinkronizáció stratégia
-
 ### Community 1267 - "Community 1267"
 Cohesion: 0.50
 Nodes (4): reports, action_button, card_description, card_title
@@ -5758,6 +5754,10 @@ Nodes (3): TicketsPageProps, mockUsers, ManagementUserOption
 ### Community 1291 - "Community 1291"
 Cohesion: 0.50
 Nodes (4): status, final, temp_badge, temporary
+
+### Community 1294 - "Community 1294"
+Cohesion: 0.67
+Nodes (3): 9. Előfizetés & Árazás, REQ-9.1: Subscription tierek, REQ-9.2: Előfizetés scope
 
 ## Knowledge Gaps
 - **12936 isolated node(s):** `skill_name`, `evals`, `__filename`, `__dirname`, `rootDir` (+12931 more)

@@ -190,6 +190,13 @@ export function renderAccountyRoutes() {
         element={<Navigate to={window.location.pathname.replace(/^\/accounty/, '/eaisybooks') + window.location.search} replace />}
       />
 
+      {/* Croatian prefix redirects: /hr/eaisybooks to /eaisybooks */}
+      <Route path="/hr/eaisybooks" element={<Navigate to="/eaisybooks" replace />} />
+      <Route
+        path="/hr/eaisybooks/*"
+        element={<Navigate to={window.location.pathname.replace(/^\/hr\/eaisybooks/, '/eaisybooks') + window.location.search} replace />}
+      />
+
       {/* Accounty New Client Wizard (No Layout) */}
       <Route
         path="/eaisybooks/new-client"

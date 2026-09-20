@@ -980,8 +980,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useInvoiceFilters.ts": {
-    "mtime": 1789693770.4399433,
-    "ast_hash": "84ec8b5751702b2886ea76124053b824",
+    "mtime": 1789895978.7335427,
+    "ast_hash": "7690ac633fda0fe7de2d170a7cb9fb02",
     "semantic_hash": ""
   },
   "src/hooks/useInvoiceMutations.ts": {
@@ -1390,8 +1390,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/PayrollCyclePage.tsx": {
-    "mtime": 1789881969.3866591,
-    "ast_hash": "2dfeed70ab986e54e18cb25f0512986c",
+    "mtime": 1789895961.4644558,
+    "ast_hash": "aa2a95ac55b88a3a21dda65fdfcabba5",
     "semantic_hash": ""
   },
   "src/pages/Accounty/PayrollDashboardPage.tsx": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1789893455.430705,
-    "ast_hash": "824666f4f102e6db9fcdd3a001fc4ef5",
+    "mtime": 1789896814.3605163,
+    "ast_hash": "43f457a17bbd39f1f66e3759eb5bced9",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3575,8 +3575,8 @@
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
-    "mtime": 1789883239.3400207,
-    "ast_hash": "4fc8e8a11fa66865e238b09735c666a5",
+    "mtime": 1789896841.7239947,
+    "ast_hash": "14d434cba377230eb9c72414348b643e",
     "semantic_hash": ""
   },
   "docs/product/prd.md": {
@@ -3670,8 +3670,8 @@
     "semantic_hash": ""
   },
   "src/components/AppModeSwitcher.tsx": {
-    "mtime": 1789516741.3070607,
-    "ast_hash": "63eb90a1d92ced02854d709e4ccc5c8c",
+    "mtime": 1789896058.8077164,
+    "ast_hash": "41e4656ebfd2829def6d4c78459c216b",
     "semantic_hash": ""
   },
   "src/components/CMREscalationDialog.tsx": {
@@ -3710,8 +3710,8 @@
     "semantic_hash": ""
   },
   "src/components/accounty/AccountyWelcomeWizard.tsx": {
-    "mtime": 1789341293.5667021,
-    "ast_hash": "4f685ebfee4d9f59ffbfcaca632e4fa9",
+    "mtime": 1789895946.5036314,
+    "ast_hash": "075c7509c21d4be4e76481634bce5055",
     "semantic_hash": ""
   },
   "src/components/accounty/CompanySwitcher.tsx": {
@@ -3775,8 +3775,8 @@
     "semantic_hash": ""
   },
   "src/components/petty-cash/RoutingRulesTab.tsx": {
-    "mtime": 1782621606.777684,
-    "ast_hash": "55f01e25ec61e939c8bfdbf7e5153348",
+    "mtime": 1789896180.2414339,
+    "ast_hash": "088e240de304c3fdd010f3936505ba3b",
     "semantic_hash": ""
   },
   "src/components/petty-cash/types.ts": {
@@ -7575,8 +7575,8 @@
     "semantic_hash": ""
   },
   "src/routes/accountyRoutes.tsx": {
-    "mtime": 1789881969.392659,
-    "ast_hash": "b4adfa82e5cb3002b9c381c8474e843a",
+    "mtime": 1789896065.9522855,
+    "ast_hash": "212cec5c88d06193c55618ebb6ff4f9e",
     "semantic_hash": ""
   },
   "src/routes/authRoutes.tsx": {
@@ -10590,8 +10590,8 @@
     "semantic_hash": ""
   },
   "src/components/petty-cash/TransferDialog.tsx": {
-    "mtime": 1789261207.955891,
-    "ast_hash": "5e9b56b68f0960fa687e52fa18d2d4a4",
+    "mtime": 1789896011.9057367,
+    "ast_hash": "1664321a46a76f03c2c619136bb2412b",
     "semantic_hash": ""
   },
   "src/pages/Accounty/AccountyShellContext.tsx": {
@@ -10880,8 +10880,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/customer-api/index.ts": {
-    "mtime": 1789881969.3943298,
-    "ast_hash": "ad5c258bc2ae1924715925dd1c65f240",
+    "mtime": 1789896198.7518234,
+    "ast_hash": "d77f043f93ce776b8368d2e2a63d8ec5",
     "semantic_hash": ""
   },
   "supabase/migrations/20260916140000_customer_api_and_keys.sql": {
@@ -10890,8 +10890,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-117-customer-rest-api-and-multi-company-keys.md": {
-    "mtime": 1789883247.4809039,
-    "ast_hash": "337917b60ef21dd08aa8a16d91da8d6b",
+    "mtime": 1789896853.0015357,
+    "ast_hash": "4d912c33eab0728c8425f409c2ad2ae6",
     "semantic_hash": ""
   },
   "src/test/settings/apiKeysCard.test.tsx": {
@@ -11330,8 +11330,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/auto-categorize-invoices/index.ts": {
-    "mtime": 1789894222.669705,
-    "ast_hash": "2e4785a2731fd216bf7428eb67c4ba3d",
+    "mtime": 1789895014.6042857,
+    "ast_hash": "0e89fa94b808c82735b3bc3593cb6610",
     "semantic_hash": ""
   },
   "src/hooks/useAutoCategorizeJob.ts": {
@@ -11375,8 +11375,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-129-partner-history-majority-categorization.md": {
-    "mtime": 1789894281.8879364,
-    "ast_hash": "7b89b965d7ec04991cb7402bfff001d1",
+    "mtime": 1789896827.245017,
+    "ast_hash": "5a96152eb688fb1d2f1ab438ea643ba9",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-130-nav-auto-sync-dawn-load-staggering.md": {
@@ -11395,8 +11395,8 @@
     "semantic_hash": ""
   },
   "supabase/migrations/20260920150000_partner_history_tax_core_and_job_concurrency.sql": {
-    "mtime": 1789894163.0490751,
-    "ast_hash": "760ec78e5dba6d28de86eb7893561fab",
+    "mtime": 1789896439.0765874,
+    "ast_hash": "3d8d657b9b42f68aab48278637e6052e",
     "semantic_hash": ""
   }
 }

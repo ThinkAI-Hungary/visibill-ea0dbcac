@@ -612,10 +612,11 @@ export function useInvoiceFilters(
         queryClient.prefetchQuery({
           queryKey: [
             'filteredSubmittedInvoices', companyId, dateFromFormatted, dateToFormatted,
-            submittedDirection, deferredSearch, filters.currency, filters.project,
-            filters.category, filters.paymentMethod, filters.amountMin, filters.amountMax,
+            submittedDirection, deferredSearch, filters.currency,
+            filters.category, filters.project, filters.paymentMethod,
+            filters.amountMin, filters.amountMax, filters.navStatus,
             sortField, sortDirection, nextPage, submittedPageSize,
-            issueDateFrom, issueDateTo, activePresetId, filters.navStatus, kpiFilter
+            issueDateFrom, issueDateTo, kpiFilter
           ],
           queryFn: async () => {
             const { data, error } = await supabase.rpc('get_filtered_submitted_invoices', {
@@ -625,8 +626,8 @@ export function useInvoiceFilters(
               p_direction: submittedDirection,
               p_search: deferredSearch || undefined,
               p_currency: filters.currency === 'all' ? undefined : filters.currency,
-              p_project_id: filters.project === 'all' ? undefined : filters.project,
               p_category_id: filters.category === 'all' ? undefined : filters.category,
+              p_project_id: filters.project === 'all' ? undefined : filters.project,
               p_payment_method: filters.paymentMethod === 'all' ? undefined : filters.paymentMethod,
               p_amount_min: filters.amountMin ? parseFloat(filters.amountMin) : undefined,
               p_amount_max: filters.amountMax ? parseFloat(filters.amountMax) : undefined,
@@ -636,9 +637,8 @@ export function useInvoiceFilters(
               p_page_size: submittedPageSize,
               p_issue_date_from: issueDateFrom || undefined,
               p_issue_date_to: issueDateTo || undefined,
-              p_preset_id: activePresetId || undefined,
-              p_nav_status: filters.navStatus === 'all' ? undefined : filters.navStatus,
               p_kpi_filter: kpiFilter,
+              p_nav_status: filters.navStatus === 'all' ? undefined : filters.navStatus,
             });
             if (error) throw error;
             return (data || []) as (SubmittedInvoice & { match_status: string; total_count: number })[];
@@ -652,10 +652,11 @@ export function useInvoiceFilters(
         queryClient.prefetchQuery({
           queryKey: [
             'filteredSubmittedInvoices', companyId, dateFromFormatted, dateToFormatted,
-            submittedDirection, deferredSearch, filters.currency, filters.project,
-            filters.category, filters.paymentMethod, filters.amountMin, filters.amountMax,
+            submittedDirection, deferredSearch, filters.currency,
+            filters.category, filters.project, filters.paymentMethod,
+            filters.amountMin, filters.amountMax, filters.navStatus,
             sortField, sortDirection, prevPage, submittedPageSize,
-            issueDateFrom, issueDateTo, activePresetId, filters.navStatus, kpiFilter
+            issueDateFrom, issueDateTo, kpiFilter
           ],
           queryFn: async () => {
             const { data, error } = await supabase.rpc('get_filtered_submitted_invoices', {
@@ -665,8 +666,8 @@ export function useInvoiceFilters(
               p_direction: submittedDirection,
               p_search: deferredSearch || undefined,
               p_currency: filters.currency === 'all' ? undefined : filters.currency,
-              p_project_id: filters.project === 'all' ? undefined : filters.project,
               p_category_id: filters.category === 'all' ? undefined : filters.category,
+              p_project_id: filters.project === 'all' ? undefined : filters.project,
               p_payment_method: filters.paymentMethod === 'all' ? undefined : filters.paymentMethod,
               p_amount_min: filters.amountMin ? parseFloat(filters.amountMin) : undefined,
               p_amount_max: filters.amountMax ? parseFloat(filters.amountMax) : undefined,
@@ -676,9 +677,8 @@ export function useInvoiceFilters(
               p_page_size: submittedPageSize,
               p_issue_date_from: issueDateFrom || undefined,
               p_issue_date_to: issueDateTo || undefined,
-              p_preset_id: activePresetId || undefined,
-              p_nav_status: filters.navStatus === 'all' ? undefined : filters.navStatus,
               p_kpi_filter: kpiFilter,
+              p_nav_status: filters.navStatus === 'all' ? undefined : filters.navStatus,
             });
             if (error) throw error;
             return (data || []) as (SubmittedInvoice & { match_status: string; total_count: number })[];
