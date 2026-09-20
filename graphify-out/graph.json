@@ -5757,7 +5757,7 @@
       "label": "StepIndicator()",
       "file_type": "code",
       "source_file": "src/components/accounty/AccountyWelcomeWizard.tsx",
-      "source_location": "L35",
+      "source_location": "L36",
       "_origin": "ast",
       "id": "accounty_accountywelcomewizard_stepindicator",
       "community": 23,
@@ -5767,7 +5767,7 @@
       "label": "FeatureCard()",
       "file_type": "code",
       "source_file": "src/components/accounty/AccountyWelcomeWizard.tsx",
-      "source_location": "L89",
+      "source_location": "L90",
       "_origin": "ast",
       "id": "accounty_accountywelcomewizard_featurecard",
       "community": 599,
@@ -5777,7 +5777,7 @@
       "label": "ConfettiBurst()",
       "file_type": "code",
       "source_file": "src/components/accounty/AccountyWelcomeWizard.tsx",
-      "source_location": "L141",
+      "source_location": "L142",
       "_origin": "ast",
       "id": "accounty_accountywelcomewizard_confettiburst",
       "community": 23,
@@ -5787,7 +5787,7 @@
       "label": "AccountyWelcomeWizardProps",
       "file_type": "code",
       "source_file": "src/components/accounty/AccountyWelcomeWizard.tsx",
-      "source_location": "L192",
+      "source_location": "L193",
       "_origin": "ast",
       "id": "accounty_accountywelcomewizard_accountywelcomewizardprops",
       "community": 23,
@@ -5797,7 +5797,7 @@
       "label": "AccountyWelcomeWizard()",
       "file_type": "code",
       "source_file": "src/components/accounty/AccountyWelcomeWizard.tsx",
-      "source_location": "L196",
+      "source_location": "L197",
       "_origin": "ast",
       "id": "accounty_accountywelcomewizard_accountywelcomewizard",
       "community": 1288,
@@ -6090,7 +6090,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "client_details_clientpayrolltab",
-      "community": 21,
+      "community": 902,
       "norm_label": "clientpayrolltab.tsx"
     },
     {
@@ -6100,7 +6100,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "client_details_clientpayrolltab_clientpayrolltabprops",
-      "community": 21,
+      "community": 902,
       "norm_label": "clientpayrolltabprops"
     },
     {
@@ -6110,7 +6110,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "client_details_clientpayrolltab_clientpayrolltab",
-      "community": 21,
+      "community": 902,
       "norm_label": "clientpayrolltab()"
     },
     {
@@ -6120,7 +6120,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "client_details_clientprofiletab",
-      "community": 21,
+      "community": 902,
       "norm_label": "clientprofiletab.tsx"
     },
     {
@@ -6130,7 +6130,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "client_details_clientprofiletab_clientprofiletabprops",
-      "community": 21,
+      "community": 902,
       "norm_label": "clientprofiletabprops"
     },
     {
@@ -6140,7 +6140,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "client_details_clientprofiletab_clientprofiletab",
-      "community": 21,
+      "community": 902,
       "norm_label": "clientprofiletab()"
     },
     {
@@ -6280,7 +6280,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "dashboard_clientgridview",
-      "community": 21,
+      "community": 902,
       "norm_label": "clientgridview.tsx"
     },
     {
@@ -6290,7 +6290,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "dashboard_clientgridview_clientgridviewprops",
-      "community": 21,
+      "community": 902,
       "norm_label": "clientgridviewprops"
     },
     {
@@ -6300,7 +6300,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "dashboard_clientgridview_clientgridview",
-      "community": 21,
+      "community": 902,
       "norm_label": "clientgridview()"
     },
     {
@@ -6310,7 +6310,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "dashboard_clientkanbanview",
-      "community": 21,
+      "community": 902,
       "norm_label": "clientkanbanview.tsx"
     },
     {
@@ -6320,7 +6320,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "dashboard_clientkanbanview_clientkanbanviewprops",
-      "community": 21,
+      "community": 902,
       "norm_label": "clientkanbanviewprops"
     },
     {
@@ -6330,7 +6330,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "dashboard_clientkanbanview_clientkanbanview",
-      "community": 21,
+      "community": 902,
       "norm_label": "clientkanbanview()"
     },
     {
@@ -6350,7 +6350,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "dashboard_clientlistview_clientlistviewprops",
-      "community": 21,
+      "community": 902,
       "norm_label": "clientlistviewprops"
     },
     {
@@ -6380,7 +6380,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "dashboard_dashboardkpiview_dashboardkpiviewprops",
-      "community": 21,
+      "community": 902,
       "norm_label": "dashboardkpiviewprops"
     },
     {
@@ -6470,7 +6470,7 @@
       "source_location": "L241",
       "_origin": "ast",
       "id": "dashboard_dashboardshared_clientcard",
-      "community": 21,
+      "community": 902,
       "norm_label": "clientcard()"
     },
     {
@@ -11887,7 +11887,7 @@
       "label": "RoutingRuleDialog()",
       "file_type": "code",
       "source_file": "src/components/petty-cash/RoutingRulesTab.tsx",
-      "source_location": "L193",
+      "source_location": "L205",
       "_origin": "ast",
       "id": "petty_cash_routingrulestab_routingruledialog",
       "community": 23,
@@ -20940,7 +20940,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "common_managementskeleton_skeleton",
-      "community": 794,
+      "community": 181,
       "norm_label": "skeleton()"
     },
     {
@@ -23760,7 +23760,7 @@
       "source_location": "L243",
       "_origin": "ast",
       "id": "accounty_useaccountyclients_useaccountytaxprofile",
-      "community": 21,
+      "community": 902,
       "norm_label": "useaccountytaxprofile()"
     },
     {
@@ -23790,7 +23790,7 @@
       "source_location": "L333",
       "_origin": "ast",
       "id": "accounty_useaccountyclients_usegenerateportaltoken",
-      "community": 21,
+      "community": 902,
       "norm_label": "usegenerateportaltoken()"
     },
     {
@@ -23800,7 +23800,7 @@
       "source_location": "L372",
       "_origin": "ast",
       "id": "accounty_useaccountyclients_useaccountycommunicationprefs",
-      "community": 21,
+      "community": 902,
       "norm_label": "useaccountycommunicationprefs()"
     },
     {
@@ -23810,7 +23810,7 @@
       "source_location": "L408",
       "_origin": "ast",
       "id": "accounty_useaccountyclients_useupsertcommunicationprefs",
-      "community": 21,
+      "community": 902,
       "norm_label": "useupsertcommunicationprefs()"
     },
     {
@@ -23910,7 +23910,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_useaccountydeadlines",
-      "community": 21,
+      "community": 902,
       "norm_label": "useaccountydeadlines.ts"
     },
     {
@@ -23920,7 +23920,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "accounty_useaccountydeadlines_useaccountydeadlines",
-      "community": 21,
+      "community": 902,
       "norm_label": "useaccountydeadlines()"
     },
     {
@@ -23930,7 +23930,7 @@
       "source_location": "L75",
       "_origin": "ast",
       "id": "accounty_useaccountydeadlines_usecompletedeadline",
-      "community": 21,
+      "community": 902,
       "norm_label": "usecompletedeadline()"
     },
     {
@@ -24100,7 +24100,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_useaccountymissing",
-      "community": 21,
+      "community": 902,
       "norm_label": "useaccountymissing.ts"
     },
     {
@@ -24110,7 +24110,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "accounty_useaccountymissing_useaccountymissingitems",
-      "community": 21,
+      "community": 902,
       "norm_label": "useaccountymissingitems()"
     },
     {
@@ -24120,7 +24120,7 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "accounty_useaccountymissing_useaccountymissingcounts",
-      "community": 21,
+      "community": 902,
       "norm_label": "useaccountymissingcounts()"
     },
     {
@@ -24150,7 +24150,7 @@
       "source_location": "L290",
       "_origin": "ast",
       "id": "accounty_useaccountymissing_useignoremissingitem",
-      "community": 21,
+      "community": 902,
       "norm_label": "useignoremissingitem()"
     },
     {
@@ -24160,7 +24160,7 @@
       "source_location": "L319",
       "_origin": "ast",
       "id": "accounty_useaccountymissing_useresolvemissingitem",
-      "community": 21,
+      "community": 902,
       "norm_label": "useresolvemissingitem()"
     },
     {
@@ -24170,7 +24170,7 @@
       "source_location": "L347",
       "_origin": "ast",
       "id": "accounty_useaccountymissing_useaddmissingitem",
-      "community": 21,
+      "community": 902,
       "norm_label": "useaddmissingitem()"
     },
     {
@@ -25020,7 +25020,7 @@
       "source_location": "L381",
       "_origin": "ast",
       "id": "hooks_useadmindata_usetaoyearly",
-      "community": 21,
+      "community": 902,
       "norm_label": "usetaoyearly()"
     },
     {
@@ -33500,7 +33500,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_naverrorutils_test",
-      "community": 21,
+      "community": 902,
       "norm_label": "naverrorutils.test.ts"
     },
     {
@@ -33690,7 +33690,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "nav_naverrorutils",
-      "community": 21,
+      "community": 902,
       "norm_label": "naverrorutils.ts"
     },
     {
@@ -33700,7 +33700,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "nav_naverrorutils_extractnavsyncerror",
-      "community": 21,
+      "community": 902,
       "norm_label": "extractnavsyncerror()"
     },
     {
@@ -33710,7 +33710,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "nav_naverrorutils_formatnaverrormessage",
-      "community": 21,
+      "community": 902,
       "norm_label": "formatnaverrormessage()"
     },
     {
@@ -33720,7 +33720,7 @@
       "source_location": "L91",
       "_origin": "ast",
       "id": "nav_naverrorutils_isnavtransienterror",
-      "community": 21,
+      "community": 902,
       "norm_label": "isnavtransienterror()"
     },
     {
@@ -93740,7 +93740,7 @@
       "source_location": "L112",
       "_origin": "ast",
       "id": "hu_invoices_dialogs",
-      "community": 940,
+      "community": 1017,
       "norm_label": "dialogs"
     },
     {
@@ -93750,7 +93750,7 @@
       "source_location": "L113",
       "_origin": "ast",
       "id": "hu_invoices_dialogs_edit_desc",
-      "community": 940,
+      "community": 1017,
       "norm_label": "edit_desc"
     },
     {
@@ -118420,7 +118420,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_clientdetailspage",
-      "community": 21,
+      "community": 902,
       "norm_label": "clientdetailspage.tsx"
     },
     {
@@ -118430,7 +118430,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "accounty_clientdetailspage_clientdetailspage",
-      "community": 21,
+      "community": 902,
       "norm_label": "clientdetailspage()"
     },
     {
@@ -118440,7 +118440,7 @@
       "source_location": "L1104",
       "_origin": "ast",
       "id": "accounty_clientdetailspage_action_meta",
-      "community": 21,
+      "community": 902,
       "norm_label": "action_meta"
     },
     {
@@ -118450,7 +118450,7 @@
       "source_location": "L1120",
       "_origin": "ast",
       "id": "accounty_clientdetailspage_default_meta",
-      "community": 21,
+      "community": 902,
       "norm_label": "default_meta"
     },
     {
@@ -118510,7 +118510,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "accounty_clientmissinginvoicespage_clientmissinginvoicespage",
-      "community": 21,
+      "community": 902,
       "norm_label": "clientmissinginvoicespage()"
     },
     {
@@ -118520,7 +118520,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_clientmissinginvoicesreportpage",
-      "community": 21,
+      "community": 902,
       "norm_label": "clientmissinginvoicesreportpage.tsx"
     },
     {
@@ -118530,7 +118530,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "accounty_clientmissinginvoicesreportpage_defaultbardata",
-      "community": 21,
+      "community": 902,
       "norm_label": "defaultbardata"
     },
     {
@@ -118540,7 +118540,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "accounty_clientmissinginvoicesreportpage_defaultpiedata",
-      "community": 21,
+      "community": 902,
       "norm_label": "defaultpiedata"
     },
     {
@@ -118550,7 +118550,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "accounty_clientmissinginvoicesreportpage_colors",
-      "community": 21,
+      "community": 902,
       "norm_label": "colors"
     },
     {
@@ -118560,7 +118560,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "accounty_clientmissinginvoicesreportpage_clientmissinginvoicesreportpage",
-      "community": 21,
+      "community": 902,
       "norm_label": "clientmissinginvoicesreportpage()"
     },
     {
@@ -122490,7 +122490,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tao_clienttaomainpage",
-      "community": 21,
+      "community": 902,
       "norm_label": "clienttaomainpage.tsx"
     },
     {
@@ -122500,7 +122500,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "tao_clienttaomainpage_wizard_steps",
-      "community": 21,
+      "community": 902,
       "norm_label": "wizard_steps"
     },
     {
@@ -122510,7 +122510,7 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "tao_clienttaomainpage_taotab",
-      "community": 21,
+      "community": 902,
       "norm_label": "taotab"
     },
     {
@@ -122520,7 +122520,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "tao_clienttaomainpage_clienttaomainpage",
-      "community": 21,
+      "community": 902,
       "norm_label": "clienttaomainpage()"
     },
     {
@@ -123350,7 +123350,7 @@
       "source_location": "L82",
       "_origin": "ast",
       "id": "accounty_taxcalendarpage_taxcalendarpage",
-      "community": 21,
+      "community": 902,
       "norm_label": "taxcalendarpage()"
     },
     {
@@ -124470,7 +124470,7 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "accounty_generaterequestemail_missingitemforemail",
-      "community": 21,
+      "community": 902,
       "norm_label": "missingitemforemail"
     },
     {
@@ -125170,7 +125170,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_mockdata",
-      "community": 21,
+      "community": 902,
       "norm_label": "mockdata.ts"
     },
     {
@@ -125180,7 +125180,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_mockdata_clientdata",
-      "community": 21,
+      "community": 902,
       "norm_label": "clientdata"
     },
     {
@@ -125190,7 +125190,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "accounty_mockdata_blockingcategory",
-      "community": 21,
+      "community": 902,
       "norm_label": "blockingcategory"
     },
     {
@@ -125200,7 +125200,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "accounty_mockdata_blockingitem",
-      "community": 21,
+      "community": 902,
       "norm_label": "blockingitem"
     },
     {
@@ -125210,7 +125210,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "accounty_mockdata_blockingcategorymeta",
-      "community": 21,
+      "community": 902,
       "norm_label": "blockingcategorymeta"
     },
     {
@@ -125860,7 +125860,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_types",
-      "community": 21,
+      "community": 902,
       "norm_label": "types.ts"
     },
     {
@@ -125870,7 +125870,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "accounty_types_clientdata",
-      "community": 21,
+      "community": 902,
       "norm_label": "clientdata"
     },
     {
@@ -125880,7 +125880,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "accounty_types_blockingcategory",
-      "community": 21,
+      "community": 902,
       "norm_label": "blockingcategory"
     },
     {
@@ -125890,7 +125890,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "accounty_types_blockingitem",
-      "community": 21,
+      "community": 902,
       "norm_label": "blockingitem"
     },
     {
@@ -125900,7 +125900,7 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "accounty_types_blockingcategorymeta",
-      "community": 21,
+      "community": 902,
       "norm_label": "blockingcategorymeta"
     },
     {
@@ -130750,7 +130750,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "accounty_types_test",
-      "community": 21,
+      "community": 902,
       "norm_label": "types.test.ts"
     },
     {
@@ -133657,7 +133657,7 @@
       "label": "rateLimitMap",
       "file_type": "code",
       "source_file": "supabase/functions/customer-api/index.ts",
-      "source_location": "L22",
+      "source_location": "L27",
       "_origin": "ast",
       "id": "customer_api_index_ratelimitmap",
       "community": 924,
@@ -133667,7 +133667,7 @@
       "label": "checkRateLimit()",
       "file_type": "code",
       "source_file": "supabase/functions/customer-api/index.ts",
-      "source_location": "L24",
+      "source_location": "L29",
       "_origin": "ast",
       "id": "customer_api_index_checkratelimit",
       "community": 924,
@@ -133677,7 +133677,7 @@
       "label": "sha256()",
       "file_type": "code",
       "source_file": "supabase/functions/customer-api/index.ts",
-      "source_location": "L43",
+      "source_location": "L48",
       "_origin": "ast",
       "id": "customer_api_index_sha256",
       "community": 924,
@@ -133687,7 +133687,7 @@
       "label": "AuthResult",
       "file_type": "code",
       "source_file": "supabase/functions/customer-api/index.ts",
-      "source_location": "L52",
+      "source_location": "L57",
       "_origin": "ast",
       "id": "customer_api_index_authresult",
       "community": 924,
@@ -133697,7 +133697,7 @@
       "label": "validateTaxNumber()",
       "file_type": "code",
       "source_file": "supabase/functions/customer-api/index.ts",
-      "source_location": "L65",
+      "source_location": "L70",
       "_origin": "ast",
       "id": "customer_api_index_validatetaxnumber",
       "community": 924,
@@ -133707,7 +133707,7 @@
       "label": "validateTime()",
       "file_type": "code",
       "source_file": "supabase/functions/customer-api/index.ts",
-      "source_location": "L70",
+      "source_location": "L75",
       "_origin": "ast",
       "id": "customer_api_index_validatetime",
       "community": 924,
@@ -133717,7 +133717,7 @@
       "label": "logApiRequest()",
       "file_type": "code",
       "source_file": "supabase/functions/customer-api/index.ts",
-      "source_location": "L76",
+      "source_location": "L81",
       "_origin": "ast",
       "id": "customer_api_index_logapirequest",
       "community": 924,
@@ -133727,7 +133727,7 @@
       "label": "getApiDocumentation()",
       "file_type": "code",
       "source_file": "supabase/functions/customer-api/index.ts",
-      "source_location": "L116",
+      "source_location": "L121",
       "_origin": "ast",
       "id": "customer_api_index_getapidocumentation",
       "community": 924,
@@ -143260,7 +143260,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_regisztr\u00e1ci\u00f3_\u00e9s_bejelentkez\u00e9s",
-      "community": 88,
+      "community": 1195,
       "norm_label": "regisztracio es bejelentkezes"
     },
     {
@@ -143270,7 +143270,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_\u00faj_fi\u00f3k_l\u00e9trehoz\u00e1sa",
-      "community": 88,
+      "community": 1195,
       "norm_label": "uj fiok letrehozasa"
     },
     {
@@ -143280,7 +143280,7 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_bejelentkez\u00e9s",
-      "community": 88,
+      "community": 1195,
       "norm_label": "bejelentkezes"
     },
     {
@@ -143290,7 +143290,7 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_elfelejtett_jelsz\u00f3",
-      "community": 88,
+      "community": 1195,
       "norm_label": "elfelejtett jelszo"
     },
     {
@@ -143660,7 +143660,7 @@
       "source_location": "L433",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_bankkivonatok_\u00e9s_tranzakci\u00f3k",
-      "community": 1195,
+      "community": 88,
       "norm_label": "bankkivonatok es tranzakciok"
     },
     {
@@ -143670,7 +143670,7 @@
       "source_location": "L444",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_tranzakci\u00f3s_f\u00e1jlok_felt\u00f6lt\u00e9se_\u00e9s_t\u00f6rl\u00e9se",
-      "community": 1195,
+      "community": 88,
       "norm_label": "tranzakcios fajlok feltoltese es torlese"
     },
     {
@@ -143680,7 +143680,7 @@
       "source_location": "L452",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_tranzakci\u00f3s_feljegyz\u00e9sek_jegyzetek_k\u00e9sz\u00edt\u00e9se",
-      "community": 1195,
+      "community": 88,
       "norm_label": "tranzakcios feljegyzesek (jegyzetek) keszitese"
     },
     {
@@ -143690,7 +143690,7 @@
       "source_location": "L461",
       "_origin": "ast",
       "id": "felhasznaloi_utmutato_jegyzetek_oldal_integr\u00e1ci\u00f3ja",
-      "community": 1195,
+      "community": 88,
       "norm_label": "jegyzetek oldal integracioja"
     },
     {
@@ -159027,7 +159027,7 @@
       "label": "5. Webes Kulcskezel\u0151 Fel\u00fclet (`ApiKeysCard.tsx`)",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-117-customer-rest-api-and-multi-company-keys.md",
-      "source_location": "L53",
+      "source_location": "L54",
       "_origin": "ast",
       "id": "decisions_a_117_customer_rest_api_and_multi_company_keys_5_webes_kulcskezel\u0151_fel\u00fclet_apikeyscard_tsx",
       "community": 944,
@@ -159037,7 +159037,7 @@
       "label": "Addendum (2026-09-18) \u2014 Customer REST API v2 B\u0151v\u00edt\u00e9s (P\u00e9nz\u00fcgyi Domainek & Path-Based Routing)",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-117-customer-rest-api-and-multi-company-keys.md",
-      "source_location": "L63",
+      "source_location": "L64",
       "_origin": "ast",
       "id": "decisions_a_117_customer_rest_api_and_multi_company_keys_addendum_2026_09_18_customer_rest_api_v2_b\u0151v\u00edt\u00e9s_p\u00e9nz\u00fcgyi_domainek_path_based_routing",
       "community": 944,
@@ -159047,7 +159047,7 @@
       "label": "Consequences",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-117-customer-rest-api-and-multi-company-keys.md",
-      "source_location": "L77",
+      "source_location": "L78",
       "_origin": "ast",
       "id": "decisions_a_117_customer_rest_api_and_multi_company_keys_consequences",
       "community": 944,
@@ -159057,7 +159057,7 @@
       "label": "Kapcsol\u00f3d\u00f3",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-117-customer-rest-api-and-multi-company-keys.md",
-      "source_location": "L89",
+      "source_location": "L90",
       "_origin": "ast",
       "id": "decisions_a_117_customer_rest_api_and_multi_company_keys_kapcsol\u00f3d\u00f3",
       "community": 944,
@@ -160267,7 +160267,7 @@
       "label": "2. K\u00e9tf\u00e1zis\u00fa Edge Function (`auto-categorize-invoices`)",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-129-partner-history-majority-categorization.md",
-      "source_location": "L36",
+      "source_location": "L37",
       "_origin": "ast",
       "id": "decisions_a_129_partner_history_majority_categorization_2_k\u00e9tf\u00e1zis\u00fa_edge_function_auto_categorize_invoices",
       "community": 845,
@@ -160277,7 +160277,7 @@
       "label": "3. Worker Integr\u00e1ci\u00f3 (`category_classifier.py`)",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-129-partner-history-majority-categorization.md",
-      "source_location": "L48",
+      "source_location": "L49",
       "_origin": "ast",
       "id": "decisions_a_129_partner_history_majority_categorization_3_worker_integr\u00e1ci\u00f3_category_classifier_py",
       "community": 845,
@@ -160287,7 +160287,7 @@
       "label": "Consequences (K\u00f6vetkezm\u00e9nyek)",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-129-partner-history-majority-categorization.md",
-      "source_location": "L56",
+      "source_location": "L57",
       "_origin": "ast",
       "id": "decisions_a_129_partner_history_majority_categorization_consequences_k\u00f6vetkezm\u00e9nyek",
       "community": 845,
@@ -160297,7 +160297,7 @@
       "label": "Pozit\u00edv",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-129-partner-history-majority-categorization.md",
-      "source_location": "L58",
+      "source_location": "L59",
       "_origin": "ast",
       "id": "decisions_a_129_partner_history_majority_categorization_pozit\u00edv",
       "community": 845,
@@ -160307,7 +160307,7 @@
       "label": "Kock\u00e1zatok \u00e9s Kezel\u00e9s\u00fck",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-129-partner-history-majority-categorization.md",
-      "source_location": "L63",
+      "source_location": "L64",
       "_origin": "ast",
       "id": "decisions_a_129_partner_history_majority_categorization_kock\u00e1zatok_\u00e9s_kezel\u00e9s\u00fck",
       "community": 845,
@@ -160317,7 +160317,7 @@
       "label": "Implementation Details (Implement\u00e1ci\u00f3s r\u00e9szletek)",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/A-129-partner-history-majority-categorization.md",
-      "source_location": "L69",
+      "source_location": "L70",
       "_origin": "ast",
       "id": "decisions_a_129_partner_history_majority_categorization_implementation_details_implement\u00e1ci\u00f3s_r\u00e9szletek",
       "community": 845,
@@ -160487,7 +160487,7 @@
       "label": "\ud83e\udd16 AI & Feldolgoz\u00e1s",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/index.md",
-      "source_location": "L37",
+      "source_location": "L38",
       "_origin": "ast",
       "id": "decisions_index_ai_feldolgoz\u00e1s",
       "community": 211,
@@ -160497,7 +160497,7 @@
       "label": "\ud83d\udd12 Biztons\u00e1g & Auth",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/index.md",
-      "source_location": "L58",
+      "source_location": "L60",
       "_origin": "ast",
       "id": "decisions_index_biztons\u00e1g_auth",
       "community": 211,
@@ -160507,7 +160507,7 @@
       "label": "\ud83d\udce7 Email & Integr\u00e1ci\u00f3",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/index.md",
-      "source_location": "L73",
+      "source_location": "L75",
       "_origin": "ast",
       "id": "decisions_index_email_integr\u00e1ci\u00f3",
       "community": 211,
@@ -160517,7 +160517,7 @@
       "label": "\ud83d\uddc4\ufe0f Adatb\u00e1zis & P\u00e9nz\u00fcgy",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/index.md",
-      "source_location": "L89",
+      "source_location": "L91",
       "_origin": "ast",
       "id": "decisions_index_adatb\u00e1zis_p\u00e9nz\u00fcgy",
       "community": 211,
@@ -160527,7 +160527,7 @@
       "label": "\ud83d\udda5\ufe0f Frontend",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/index.md",
-      "source_location": "L124",
+      "source_location": "L126",
       "_origin": "ast",
       "id": "decisions_index_frontend",
       "community": 211,
@@ -160537,7 +160537,7 @@
       "label": "\ud83d\udcb3 Fizet\u00e9s",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/index.md",
-      "source_location": "L178",
+      "source_location": "L180",
       "_origin": "ast",
       "id": "decisions_index_fizet\u00e9s",
       "community": 211,
@@ -160547,7 +160547,7 @@
       "label": "\ud83c\udf9f\ufe0f \u00dcgyf\u00e9lszolg\u00e1lat",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/index.md",
-      "source_location": "L184",
+      "source_location": "L186",
       "_origin": "ast",
       "id": "decisions_index_\u00fcgyf\u00e9lszolg\u00e1lat",
       "community": 211,
@@ -160557,7 +160557,7 @@
       "label": "\ud83d\udee0\ufe0f Platform \u00dczemeltet\u00e9s",
       "file_type": "document",
       "source_file": "docs/architecture/decisions/index.md",
-      "source_location": "L191",
+      "source_location": "L193",
       "_origin": "ast",
       "id": "docs_architecture_decisions_index_md_decisions_index_platform_\u00fczemeltet\u00e9s",
       "community": 211,
@@ -162910,7 +162910,7 @@
       "source_location": "L147",
       "_origin": "ast",
       "id": "business_brd_6_nav_integr\u00e1ci\u00f3",
-      "community": 1266,
+      "community": 222,
       "norm_label": "6. nav integracio"
     },
     {
@@ -162920,7 +162920,7 @@
       "source_location": "L149",
       "_origin": "ast",
       "id": "business_brd_req_6_1_nav_online_sz\u00e1mla_api_v3",
-      "community": 1266,
+      "community": 222,
       "norm_label": "req-6.1: nav online szamla api v3"
     },
     {
@@ -162930,7 +162930,7 @@
       "source_location": "L154",
       "_origin": "ast",
       "id": "business_brd_req_6_2_szinkroniz\u00e1ci\u00f3_strat\u00e9gia",
-      "community": 1266,
+      "community": 222,
       "norm_label": "req-6.2: szinkronizacio strategia"
     },
     {
@@ -163270,7 +163270,7 @@
       "source_location": "L339",
       "_origin": "ast",
       "id": "business_brd_9_el\u0151fizet\u00e9s_\u00e1raz\u00e1s",
-      "community": 222,
+      "community": 1294,
       "norm_label": "9. elofizetes & arazas"
     },
     {
@@ -163280,7 +163280,7 @@
       "source_location": "L341",
       "_origin": "ast",
       "id": "business_brd_req_9_1_subscription_tierek",
-      "community": 222,
+      "community": 1294,
       "norm_label": "req-9.1: subscription tierek"
     },
     {
@@ -163290,7 +163290,7 @@
       "source_location": "L346",
       "_origin": "ast",
       "id": "business_brd_req_9_2_el\u0151fizet\u00e9s_scope",
-      "community": 222,
+      "community": 1294,
       "norm_label": "req-9.2: elofizetes scope"
     },
     {
@@ -187997,7 +187997,7 @@
       "label": "2. Oldal T\u00e9rk\u00e9p (Sitemap)",
       "file_type": "document",
       "source_file": "docs/product/information-architecture.md",
-      "source_location": "L79",
+      "source_location": "L80",
       "_origin": "ast",
       "id": "product_information_architecture_2_oldal_t\u00e9rk\u00e9p_sitemap",
       "community": 221,
@@ -188007,7 +188007,7 @@
       "label": "3. Sidebar Navig\u00e1ci\u00f3 (6 Csoport)",
       "file_type": "document",
       "source_file": "docs/product/information-architecture.md",
-      "source_location": "L183",
+      "source_location": "L184",
       "_origin": "ast",
       "id": "product_information_architecture_3_sidebar_navig\u00e1ci\u00f3_6_csoport",
       "community": 221,
@@ -188017,7 +188017,7 @@
       "label": "1. \ud83d\udcca \u00c1ttekint\u00e9s (`overview`)",
       "file_type": "document",
       "source_file": "docs/product/information-architecture.md",
-      "source_location": "L187",
+      "source_location": "L188",
       "_origin": "ast",
       "id": "product_information_architecture_1_\u00e1ttekint\u00e9s_overview",
       "community": 221,
@@ -188027,7 +188027,7 @@
       "label": "2. \ud83c\udfe6 P\u00e9nz\u00fcgyek (`finance`)",
       "file_type": "document",
       "source_file": "docs/product/information-architecture.md",
-      "source_location": "L193",
+      "source_location": "L194",
       "_origin": "ast",
       "id": "product_information_architecture_2_p\u00e9nz\u00fcgyek_finance",
       "community": 221,
@@ -188037,7 +188037,7 @@
       "label": "3. \ud83d\udcd6 K\u00f6nyvel\u00e9s (`accounting`)",
       "file_type": "document",
       "source_file": "docs/product/information-architecture.md",
-      "source_location": "L200",
+      "source_location": "L201",
       "_origin": "ast",
       "id": "product_information_architecture_3_k\u00f6nyvel\u00e9s_accounting",
       "community": 221,
@@ -188047,7 +188047,7 @@
       "label": "4. \ud83d\udc65 HR & Eszk\u00f6z\u00f6k (`hr`)",
       "file_type": "document",
       "source_file": "docs/product/information-architecture.md",
-      "source_location": "L208",
+      "source_location": "L209",
       "_origin": "ast",
       "id": "product_information_architecture_4_hr_eszk\u00f6z\u00f6k_hr",
       "community": 221,
@@ -188057,7 +188057,7 @@
       "label": "5. \ud83d\ude9a Sz\u00e1ll\u00edtm\u00e1nyoz\u00e1s (`shipment`)",
       "file_type": "document",
       "source_file": "docs/product/information-architecture.md",
-      "source_location": "L213",
+      "source_location": "L214",
       "_origin": "ast",
       "id": "product_information_architecture_5_sz\u00e1ll\u00edtm\u00e1nyoz\u00e1s_shipment",
       "community": 221,
@@ -188067,7 +188067,7 @@
       "label": "6. \u2699\ufe0f Rendszer (`system`)",
       "file_type": "document",
       "source_file": "docs/product/information-architecture.md",
-      "source_location": "L218",
+      "source_location": "L219",
       "_origin": "ast",
       "id": "product_information_architecture_6_rendszer_system",
       "community": 221,
@@ -188077,7 +188077,7 @@
       "label": "5. Layout Strukt\u00fara",
       "file_type": "document",
       "source_file": "docs/product/information-architecture.md",
-      "source_location": "L232",
+      "source_location": "L233",
       "_origin": "ast",
       "id": "product_information_architecture_5_layout_strukt\u00fara",
       "community": 221,
@@ -188087,7 +188087,7 @@
       "label": "6. Navig\u00e1ci\u00f3 Viselked\u00e9s",
       "file_type": "document",
       "source_file": "docs/product/information-architecture.md",
-      "source_location": "L275",
+      "source_location": "L276",
       "_origin": "ast",
       "id": "product_information_architecture_6_navig\u00e1ci\u00f3_viselked\u00e9s",
       "community": 221,
@@ -188097,7 +188097,7 @@
       "label": "7. Role-alap\u00fa Navig\u00e1ci\u00f3",
       "file_type": "document",
       "source_file": "docs/product/information-architecture.md",
-      "source_location": "L289",
+      "source_location": "L290",
       "_origin": "ast",
       "id": "product_information_architecture_7_role_alap\u00fa_navig\u00e1ci\u00f3",
       "community": 221,
@@ -188107,7 +188107,7 @@
       "label": "8. [eaisyBooks] Layout & Navig\u00e1ci\u00f3s Architekt\u00fara (k\u00f3dban: AccountyLayout)",
       "file_type": "document",
       "source_file": "docs/product/information-architecture.md",
-      "source_location": "L300",
+      "source_location": "L301",
       "_origin": "ast",
       "id": "product_information_architecture_8_eaisybooks_layout_navig\u00e1ci\u00f3s_architekt\u00fara_k\u00f3dban_accountylayout",
       "community": 221,
@@ -188117,7 +188117,7 @@
       "label": "Komponens & Provider Hierarchia:",
       "file_type": "document",
       "source_file": "docs/product/information-architecture.md",
-      "source_location": "L342",
+      "source_location": "L343",
       "_origin": "ast",
       "id": "product_information_architecture_komponens_provider_hierarchia",
       "community": 221,
@@ -188127,7 +188127,7 @@
       "label": "K\u00e9t\u00e1llapot\u00fa Sidebar M\u0171k\u00f6d\u00e9s (`AccountySidebar.tsx`)",
       "file_type": "document",
       "source_file": "docs/product/information-architecture.md",
-      "source_location": "L362",
+      "source_location": "L363",
       "_origin": "ast",
       "id": "product_information_architecture_k\u00e9t\u00e1llapot\u00fa_sidebar_m\u0171k\u00f6d\u00e9s_accountysidebar_tsx",
       "community": 221,
@@ -188137,7 +188137,7 @@
       "label": "1. Portf\u00f3li\u00f3 M\u00f3d (`/eaisybooks/*`, PRD P-085)",
       "file_type": "document",
       "source_file": "docs/product/information-architecture.md",
-      "source_location": "L366",
+      "source_location": "L367",
       "_origin": "ast",
       "id": "product_information_architecture_1_portf\u00f3li\u00f3_m\u00f3d_eaisybooks_prd_p_085",
       "community": 221,
@@ -188147,7 +188147,7 @@
       "label": "Hierarchikus \u00datvonalk\u00f6vet\u0151 (Breadcrumbs, PRD P-084)",
       "file_type": "document",
       "source_file": "docs/product/information-architecture.md",
-      "source_location": "L386",
+      "source_location": "L387",
       "_origin": "ast",
       "id": "product_information_architecture_hierarchikus_\u00fatvonalk\u00f6vet\u0151_breadcrumbs_prd_p_084",
       "community": 221,
@@ -188157,7 +188157,7 @@
       "label": "2. \u00dcgyf\u00e9l Kontextus M\u00f3d (`/eaisybooks/:companyId/:dateRange/*`)",
       "file_type": "document",
       "source_file": "docs/product/information-architecture.md",
-      "source_location": "L391",
+      "source_location": "L392",
       "_origin": "ast",
       "id": "product_information_architecture_2_\u00fcgyf\u00e9l_kontextus_m\u00f3d_eaisybooks_companyid_daterange",
       "community": 221,
@@ -188167,7 +188167,7 @@
       "label": "Szerepk\u00f6r-alap\u00fa Jogosults\u00e1gi Rendszer (eaisyBooks RBAC)",
       "file_type": "document",
       "source_file": "docs/product/information-architecture.md",
-      "source_location": "L413",
+      "source_location": "L414",
       "_origin": "ast",
       "id": "product_information_architecture_szerepk\u00f6r_alap\u00fa_jogosults\u00e1gi_rendszer_eaisybooks_rbac",
       "community": 221,
@@ -188177,7 +188177,7 @@
       "label": "9. Oldal-szint\u0171 Funkci\u00f3k (2026-06-26)",
       "file_type": "document",
       "source_file": "docs/product/information-architecture.md",
-      "source_location": "L429",
+      "source_location": "L430",
       "_origin": "ast",
       "id": "product_information_architecture_9_oldal_szint\u0171_funkci\u00f3k_2026_06_26",
       "community": 221,
@@ -188187,7 +188187,7 @@
       "label": "Partnert\u00f6rzs (`/partners`)",
       "file_type": "document",
       "source_file": "docs/product/information-architecture.md",
-      "source_location": "L431",
+      "source_location": "L432",
       "_origin": "ast",
       "id": "product_information_architecture_partnert\u00f6rzs_partners",
       "community": 221,
@@ -188197,7 +188197,7 @@
       "label": "Kateg\u00f3ri\u00e1k (`/categories`)",
       "file_type": "document",
       "source_file": "docs/product/information-architecture.md",
-      "source_location": "L457",
+      "source_location": "L458",
       "_origin": "ast",
       "id": "product_information_architecture_kateg\u00f3ri\u00e1k_categories",
       "community": 221,
@@ -188207,7 +188207,7 @@
       "label": "Sz\u00e1mla T\u00e9telek (`InvoiceItemsDialog`)",
       "file_type": "document",
       "source_file": "docs/product/information-architecture.md",
-      "source_location": "L472",
+      "source_location": "L473",
       "_origin": "ast",
       "id": "product_information_architecture_sz\u00e1mla_t\u00e9telek_invoiceitemsdialog",
       "community": 221,
@@ -188217,7 +188217,7 @@
       "label": "7. Rendszer Tud\u00e1sb\u00e1zis \u00e9s Funkci\u00f3kalauz (Knowledge Base)",
       "file_type": "document",
       "source_file": "docs/product/information-architecture.md",
-      "source_location": "L496",
+      "source_location": "L497",
       "_origin": "ast",
       "id": "product_information_architecture_7_rendszer_tud\u00e1sb\u00e1zis_\u00e9s_funkci\u00f3kalauz_knowledge_base",
       "community": 221,
@@ -341705,9 +341705,9 @@
       "source_file": "src/hooks/useAutoCategorizeJob.ts",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "hooks_useautocategorizejob",
-      "target": "cache_invalidations_invalidateinvoicequeries",
-      "confidence_score": 1.0
+      "target": "cache_invalidations_invalidateinvoicequeries"
     },
     {
       "relation": "contains",
@@ -481748,9 +481748,9 @@
       "source_file": "src/test/accounty/partnerMajorityCategorization.test.ts",
       "source_location": "L127",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "accounty_partnermajoritycategorization_test",
-      "target": "accounty_partnermajoritycategorization_test_historicaltaxinvoice",
-      "confidence_score": 1.0
+      "target": "accounty_partnermajoritycategorization_test_historicaltaxinvoice"
     },
     {
       "relation": "contains",
@@ -538969,5 +538969,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "4b0722baa837daa356507830deda7009b7c3cf48"
+  "built_at_commit": "305642ef02d0673c5bb51e2749ba8c5fc81f6d74"
 }

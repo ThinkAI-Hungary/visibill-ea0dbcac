@@ -48,7 +48,8 @@ Az API kizárólag ellenőrzött, whitelistelt mezőket enged módosítani:
 ### 4. Átfogó API Audit Napló (`api_request_logs`)
 Létrehoztunk egy dedikált `public.api_request_logs` táblát indexekkel és RLS védelemmel:
 - Minden beérkező API hívást naplóz: `api_key_id`, `user_id`, `company_id`, `endpoint`, `method`, `status_code`, `ip_address`, `user_agent`, `duration_ms`, `error_message`.
-- Hibák (401, 403, 400, 429) és sikeres hívások (200) egyaránt ellenőrizhetők és visszakövethetők.
+- **Részletes belső hibainfó (`_errorMessage`):** Az `error_message` mezőbe nem a generikus `Status 500` szöveg kerül, hanem a válaszhoz csatolt konkrét hibakód és hibaüzenet (`code: message (details)`), így a hívási naplókból közvetlenül és azonnal kiderül a hiba valódi gyökéroka.
+- Hibák (401, 403, 400, 429, 500) és sikeres hívások (200) egyaránt ellenőrizhetők és visszakövethetők.
 
 ### 5. Webes Kulcskezelő Felület (`ApiKeysCard.tsx`)
 A `Beállítások` (`Settings.tsx`) felületen, a `Biztonság` szekcióban elhelyezésre került a modern API kulcs kezelő kártya:

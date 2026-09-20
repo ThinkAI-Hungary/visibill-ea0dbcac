@@ -25,6 +25,7 @@ Az alkalmazás scoped URL pattern-t használ:
 Az `AppModeSwitcher` közvetlen célzott útvonalakat képez az aktív cég megőrzésével:
 - **eaisyBill-ből eaisyBooks-ba:** `/eaisybooks/:companyId/:dateRange/overview` (ha a cég jogosult az eaisyBooks modulra) vagy `/eaisybooks` (ha portfólió szinten lép be).
 - **eaisyBooks-ból eaisyBill-be:** `/:companyId/:dateRange/` (a könyvelő felületen aktív céget kiemelve).
+- **eaisyBooks Nyelvi Függetlensége & Útvonalvédelem:** Az eaisyBooks modul kizárólag a prefix nélküli `/eaisybooks/*` gyökérútvonal alatt érhető el. Horvát (`/hr/...`) felületről történő váltáskor az `AppModeSwitcher` közvetlenül prefixmentes `/eaisybooks/...` célútvonalat képez. Az `accountyRoutes.tsx` pedig automatikus fallback átirányítással (`<Route path="/hr/eaisybooks/*" element={<Navigate to="/eaisybooks" replace />} />`) védi a könyvjelzőzött vagy kézzel beírt URL-eket a 404-es hibáktól.
 - A navigációt memória-alapú életciklus kapuk vezérlik: hidegindításkor (F5) `LoadingSpinner` védi a felületet, meleg váltáskor 0ms-os azonnali SPA átmenet történik (ADR A-115, PRD P-083).
 
 **Query paraméterek (Számlák oldal):**

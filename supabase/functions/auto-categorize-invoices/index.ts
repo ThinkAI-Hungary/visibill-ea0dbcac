@@ -594,7 +594,6 @@ VÁLASZ FORMÁTUM:
               },
               body: JSON.stringify({
                 model: apiModel,
-                temperature: 0.1,
                 messages: [
                   { role: "system", content: systemPrompt },
                   {

@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-20  
-> **Összesen:** 141 döntés | ✅ Decided: 139 | ⛔ Superseded: 2
+> **Összesen:** 143 döntés | ✅ Decided: 141 | ⛔ Superseded: 2
 
 ---
 
@@ -33,6 +33,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-005 | Edge Functions (Deno) — 60 function teljes katalógus | ✅ Decided | [A-005](./A-005-edge-functions.md) |
 | A-023 | Upload Dedup Védelem (DB Trigger + Frontend Mutex) | ✅ Decided | [A-023](./A-023-upload-dedup-protection.md) |
 | A-074 | PDF Export Edge Function Invocation Resilience | ✅ Decided | [A-074](./A-074-pdf-export-edge-function-invocation-resilience.md) |
+| A-130 | NAV Auto-Sync Hajnali Időablakos Terheléselosztás (Dawn Load Staggering) | ✅ Decided | [A-130](./A-130-nav-auto-sync-dawn-load-staggering.md) |
 
 ## 🤖 AI & Feldolgozás
 
@@ -54,6 +55,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-119 | Aggreg8 PSD2 Open Banking AISP Integráció, Hosted SyncUI és Valós Idejű Tranzakció Szinkronizáció | ✅ Decided | [A-119](./A-119-aggreg8-psd2-open-banking-integration.md) |
 | A-120 | Csoportos ÁFA-alanyok Észlelése, Technikai Felhasználó Útmutatás és Szinkronizációs Védőháló | ✅ Decided | [A-120](./A-120-group-vat-entity-detection-and-technical-user-guidance.md) |
 | A-128 | Szigorított Számlaszám Határ-illesztés (Boundary Matching), Részhalmaz Kiszűrés (Subsumption Filter) és Többszörös Párosítási Jóváhagyási Kapu | ✅ Decided | [A-128](./A-128-strict-invoice-number-boundary-matching-and-subsumption-guard.md) |
+| A-129 | Partner-történeti Többségi Szabályú Számlakategorizálás & DB Triggerek | ✅ Decided | [A-129](./A-129-partner-history-majority-categorization.md) |
 
 ## 🔒 Biztonság & Auth
 
