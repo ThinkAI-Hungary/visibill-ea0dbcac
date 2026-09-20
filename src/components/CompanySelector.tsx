@@ -1,9 +1,10 @@
 import { useCompany, Company, VatRegime } from '@/contexts/CompanyContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building2, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Building2, Plus, Pencil, Trash2, Loader2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useMemo } from 'react';
+import { queryTaxpayerFromNav } from '@/lib/nav/navTaxpayerService';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { invalidateAccountyCache } from '@/hooks/accounty/useAccountyHelpers';
@@ -20,7 +21,7 @@ import { reportError } from '@/lib/errorReporter';
 import { useTranslation } from 'react-i18next';
 
 const CompanySelector = () => {
-  const { t } = useTranslation('common');
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { companies, selectedCompany, setSelectedCompany, refreshCompanies, loading } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
@@ -56,6 +57,61 @@ const CompanySelector = () => {
   const [newCompanyAddress, setNewCompanyAddress] = useState('');
   const [newCompanyVatRegime, setNewCompanyVatRegime] = useState<VatRegime>('normal');
   const [isCreating, setIsCreating] = useState(false);
+  const [isNavLoading, setIsNavLoading] = useState(false);
+
+  const handleNavLookup = async () => {
+    const cleanCore = newCompanyTaxNumber.replace(/[^0-9]/g, '').slice(0, 8);
+    if (!cleanCore || cleanCore.length !== 8) {
+      toast({
+        title: 'Érvénytelen adószám',
+        description: 'Kérjük, adj meg legalább 8 számjegyet az adószámból a lekérdezéshez!',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsNavLoading(true);
+    try {
+      const res = await queryTaxpayerFromNav(newCompanyTaxNumber, selectedCompany?.id);
+      if (!res.success || !res.taxpayer) {
+        toast({
+          title: 'Nem sikerült lekérdezni a cégadatokat',
+          description: res.error || 'A NAV nem adott vissza adatot a megadott adószámra.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const tp = res.taxpayer;
+      if (tp.taxpayerName) {
+        setNewCompanyName(tp.taxpayerName);
+      }
+      if (tp.address?.formattedAddress) {
+        setNewCompanyAddress(tp.address.formattedAddress);
+      }
+      if (tp.vatCode === '1') {
+        setNewCompanyVatRegime('alanyi_mentes');
+      } else if (tp.vatCode === '2') {
+        setNewCompanyVatRegime('normal');
+      }
+      if (tp.vatCode && tp.countyCode && !newCompanyTaxNumber.includes('-')) {
+        setNewCompanyTaxNumber(`${tp.taxpayerId}-${tp.vatCode}-${tp.countyCode}`);
+      }
+
+      toast({
+        title: 'Cégadatok sikeresen betöltve a NAV-ból!',
+        description: `${tp.taxpayerName || ''} (${tp.taxNumber})`,
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Hiba a NAV lekérdezés során',
+        description: err?.message || 'Ismeretlen hiba történt.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsNavLoading(false);
+    }
+  };
 
   // Join state
   const [joinCode, setJoinCode] = useState('');
@@ -298,7 +354,7 @@ const CompanySelector = () => {
     return (
       <div className="flex items-center gap-2 px-3 py-2">
         <Building2 className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">{t('company_selector.loading')}</span>
+        <span className="text-sm text-muted-foreground">{t('common:company_selector.loading')}</span>
       </div>
     );
   }
@@ -310,7 +366,7 @@ const CompanySelector = () => {
       <Building2 className="h-4 w-4 text-muted-foreground" />
       {hasNoCompanies ? (
         <div className="flex-1 px-3 py-2 text-sm text-muted-foreground bg-muted/30 rounded-md border border-dashed">
-          {t('company_selector.no_company')}
+          {t('common:company_selector.no_company')}
         </div>
       ) : (
         <Select
@@ -318,7 +374,7 @@ const CompanySelector = () => {
           onValueChange={handleCompanyChange}
         >
           <SelectTrigger className="min-w-[140px] max-w-[220px] h-9 [&>span]:text-left [&>span]:flex-1">
-            <SelectValue placeholder={t('company_selector.choose_company')}>
+            <SelectValue placeholder={t('common:company_selector.choose_company')}>
               {effectiveCompany?.name}
             </SelectValue>
           </SelectTrigger>
@@ -333,13 +389,13 @@ const CompanySelector = () => {
       )}
 
       {effectiveCompany && (
-        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => openEditDialog(effectiveCompany)} title={t('company_selector.edit_company')}>
+        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => openEditDialog(effectiveCompany)} title={t('common:company_selector.edit_company')}>
           <Pencil className="h-4 w-4" />
         </Button>
       )}
 
       {effectiveCompany && effectiveCompany.owner_id === user?.id && (
-        <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive hover:text-destructive" onClick={() => openDeleteDialog(effectiveCompany)} title={t('company_selector.delete_company')}>
+        <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive hover:text-destructive" onClick={() => openDeleteDialog(effectiveCompany)} title={t('common:company_selector.delete_company')}>
           <Trash2 className="h-4 w-4" />
         </Button>
       )}
@@ -347,60 +403,86 @@ const CompanySelector = () => {
       {/* Create / Join dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-9 w-9" title={t('company_selector.add_company')}>
+          <Button variant="ghost" size="icon" className="h-9 w-9" title={t('common:company_selector.add_company')}>
             <Plus className="h-4 w-4" />
           </Button>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('company_selector.dialog_title')}</DialogTitle>
-            <DialogDescription>{t('company_selector.dialog_desc')}</DialogDescription>
+            <DialogTitle>{t('common:company_selector.dialog_title')}</DialogTitle>
+            <DialogDescription>{t('common:company_selector.dialog_desc')}</DialogDescription>
           </DialogHeader>
           <Tabs defaultValue="create" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="create">{t('company_selector.tab_create')}</TabsTrigger>
-              <TabsTrigger value="join">{t('company_selector.tab_join')}</TabsTrigger>
+              <TabsTrigger value="create">{t('common:company_selector.tab_create')}</TabsTrigger>
+              <TabsTrigger value="join">{t('common:company_selector.tab_join')}</TabsTrigger>
             </TabsList>
             <TabsContent value="create" className="space-y-4 pt-4">
               <div className="space-y-2">
-                <Label htmlFor="newCompanyName">{t('company_selector.name_label')}</Label>
+                <Label htmlFor="newTaxNumber">{t('common:company_selector.tax_label')}</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    id="newTaxNumber" 
+                    value={newCompanyTaxNumber} 
+                    onChange={(e) => setNewCompanyTaxNumber(e.target.value)} 
+                    placeholder="Pl. 12345678-2-42 vagy 12345678" 
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleNavLookup}
+                    disabled={isNavLoading || !newCompanyTaxNumber.trim()}
+                    className="shrink-0 gap-1.5"
+                    title="Cégadatok automatikus kitöltése a NAV-ból"
+                  >
+                    {isNavLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    ) : (
+                      <Search className="h-4 w-4 text-primary" />
+                    )}
+                    <span>NAV lekérdezés</span>
+                  </Button>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Írd be az adószámot és kattints a lekérdezésre az adatok automatikus betöltéséhez!
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="newCompanyName">{t('common:company_selector.name_label')}</Label>
                 <Input id="newCompanyName" value={newCompanyName} onChange={(e) => setNewCompanyName(e.target.value)} placeholder="Pl. Példa Kft." />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="newTaxNumber">{t('company_selector.tax_label')}</Label>
-                <Input id="newTaxNumber" value={newCompanyTaxNumber} onChange={(e) => setNewCompanyTaxNumber(e.target.value)} placeholder="Pl. 12345678-2-42" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="newAddress">{t('company_selector.address_label')}</Label>
+                <Label htmlFor="newAddress">{t('common:company_selector.address_label')}</Label>
                 <Input id="newAddress" value={newCompanyAddress} onChange={(e) => setNewCompanyAddress(e.target.value)} placeholder="Pl. 1234 Budapest, Példa utca 1." />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="newVatRegime">{t('company_selector.vat_regime_label')}</Label>
+                <Label htmlFor="newVatRegime">{t('common:company_selector.vat_regime_label')}</Label>
                 <Select value={newCompanyVatRegime} onValueChange={(v) => setNewCompanyVatRegime(v as VatRegime)}>
                   <SelectTrigger id="newVatRegime">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="normal">{t('company_selector.vat_regime_normal')}</SelectItem>
-                    <SelectItem value="penzforgalmi">{t('company_selector.vat_regime_cash')}</SelectItem>
-                    <SelectItem value="alanyi_mentes">{t('company_selector.vat_regime_exempt')}</SelectItem>
-                    <SelectItem value="targyi_mentes">{t('company_selector.vat_regime_targyi')}</SelectItem>
+                    <SelectItem value="normal">{t('common:company_selector.vat_regime_normal')}</SelectItem>
+                    <SelectItem value="penzforgalmi">{t('common:company_selector.vat_regime_cash')}</SelectItem>
+                    <SelectItem value="alanyi_mentes">{t('common:company_selector.vat_regime_exempt')}</SelectItem>
+                    <SelectItem value="targyi_mentes">{t('common:company_selector.vat_regime_targyi')}</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">{t('company_selector.vat_regime_hint')}</p>
+                <p className="text-xs text-muted-foreground">{t('common:company_selector.vat_regime_hint')}</p>
               </div>
               <Button onClick={handleCreateCompany} disabled={!newCompanyName.trim() || !newCompanyTaxNumber.trim() || isCreating} className="w-full">
-                {isCreating ? t('company_selector.creating') : t('company_selector.create_button')}
+                {isCreating ? t('common:company_selector.creating') : t('common:company_selector.create_button')}
               </Button>
             </TabsContent>
             <TabsContent value="join" className="space-y-4 pt-4">
               <div className="space-y-2">
-                <Label htmlFor="joinCode">{t('company_selector.join_code_label')}</Label>
+                <Label htmlFor="joinCode">{t('common:company_selector.join_code_label')}</Label>
                 <Input id="joinCode" value={joinCode} onChange={(e) => setJoinCode(e.target.value.toUpperCase())} placeholder="Pl. ABC123" maxLength={6} className="text-center text-lg tracking-widest font-mono" />
-                <p className="text-sm text-muted-foreground">{t('company_selector.join_code_hint')}</p>
+                <p className="text-sm text-muted-foreground">{t('common:company_selector.join_code_hint')}</p>
               </div>
               <Button onClick={handleJoinCompany} disabled={!joinCode.trim() || isJoining} className="w-full">
-                {isJoining ? t('company_selector.joining') : t('company_selector.join_button')}
+                {isJoining ? t('common:company_selector.joining') : t('common:company_selector.join_button')}
               </Button>
             </TabsContent>
           </Tabs>
@@ -411,24 +493,24 @@ const CompanySelector = () => {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('company_selector.edit_company')}</DialogTitle>
-            <DialogDescription>{t('company_selector.edit_desc')}</DialogDescription>
+            <DialogTitle>{t('common:company_selector.edit_company')}</DialogTitle>
+            <DialogDescription>{t('common:company_selector.edit_desc')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="editName">{t('company_selector.name_label')}</Label>
+              <Label htmlFor="editName">{t('common:company_selector.name_label')}</Label>
               <Input id="editName" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Pl. Példa Kft." />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="editTaxNumber">{t('company_selector.tax_label')}</Label>
+              <Label htmlFor="editTaxNumber">{t('common:company_selector.tax_label')}</Label>
               <Input id="editTaxNumber" value={editTaxNumber} onChange={(e) => setEditTaxNumber(e.target.value)} placeholder="Pl. 12345678-2-42" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="editAddress">{t('company_selector.address_label')}</Label>
+              <Label htmlFor="editAddress">{t('common:company_selector.address_label')}</Label>
               <Input id="editAddress" value={editAddress} onChange={(e) => setEditAddress(e.target.value)} placeholder="Pl. 1234 Budapest, Példa utca 1." />
             </div>
             <Button onClick={handleUpdateCompany} disabled={!editName.trim() || !editTaxNumber.trim() || isUpdating} className="w-full">
-              {isUpdating ? t('company_selector.creating') : t('company_selector.save_changes')}
+              {isUpdating ? t('common:company_selector.creating') : t('common:company_selector.save_changes')}
             </Button>
           </div>
         </DialogContent>
@@ -438,15 +520,15 @@ const CompanySelector = () => {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('company_selector.delete_company')}</AlertDialogTitle>
+            <AlertDialogTitle>{t('common:company_selector.delete_company')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('company_selector.delete_confirm', { name: deletingCompany?.name })}
+              {t('common:company_selector.delete_confirm', 'Biztosan törölni szeretnéd a(z) {{name}} céget? Ez a művelet nem visszavonható, és a céghez kapcsolódó összes adat is törlődik.', { name: deletingCompany?.name || '' })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>{t('actions.cancel')}</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{t('common:actions.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteCompany} disabled={isDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              {isDeleting ? t('company_selector.creating') : t('actions.delete')}
+              {isDeleting ? t('common:company_selector.creating') : t('common:actions.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

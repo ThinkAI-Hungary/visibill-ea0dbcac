@@ -299,7 +299,7 @@ export class NavIngestionService {
         const { data: dbInvoice } = await query.maybeSingle();
 
         if (dbInvoice?.id) {
-          const hasContent = (details.lineItems && details.lineItems.length > 0) || details.supplierAddress || details.customerAddress;
+          const hasContent = (details.lineItems && details.lineItems.length > 0) || details.supplierAddress || details.customerAddress || !!details.vatSummary;
           if (!hasContent) {
             console.warn(`[NavIngestionService] No details returned by NAV for ${inv.invoice_number}, skipping details_fetched mark.`);
             continue;
@@ -311,6 +311,13 @@ export class NavIngestionService {
           if (details.customerAddress) invoiceUpdates.customer_address = details.customerAddress;
           if (details.isCashAccounting !== undefined) invoiceUpdates.is_cash_accounting = details.isCashAccounting;
           if (details.originalInvoiceNumber) invoiceUpdates.original_invoice_number = details.originalInvoiceNumber;
+          if (details.vatSummary) {
+            invoiceUpdates.vat_summary = details.vatSummary;
+            if (details.vatSummary.hasReverseCharge) {
+              invoiceUpdates.is_reverse_charge = true;
+              invoiceUpdates.reverse_charge_category = 'DOMESTIC_142';
+            }
+          }
 
           await this.supabase
             .from('nav_invoices')

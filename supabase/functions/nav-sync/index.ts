@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
     }
 
     const syncParams = await req.json();
-    const { direction, dateFrom, dateTo, page, companyId } = syncParams;
+    const { direction, dateFrom, dateTo, page, companyId, fetchDetailedItems } = syncParams;
 
     if (!direction || !['INBOUND', 'OUTBOUND'].includes(direction)) {
       throw new Error('direction is required (INBOUND or OUTBOUND)');
@@ -47,6 +47,7 @@ Deno.serve(async (req) => {
       dateFrom,
       dateTo,
       page,
+      fetchDetailedItems: fetchDetailedItems ?? true,
       syncType: 'manual'
     });
 

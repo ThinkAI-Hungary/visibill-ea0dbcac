@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link2, Plus, CreditCard, RotateCcw, XCircle, AlertTriangle, CheckCircle2, ShieldCheck, Tag } from 'lucide-react';
+import { Link2, Plus, CreditCard, RotateCcw, XCircle, AlertTriangle, CheckCircle2, ShieldCheck, Tag, Sparkles } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { toast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import { useTransactionMatcher } from '@/hooks/useTransactionMatcher';
 import { unmatchTransaction } from '@/lib/matching/matchingService';
 import { invalidateMatchingQueries } from '@/lib/matching/matchingKeys';
@@ -18,6 +18,7 @@ import { StornoSettleDialog } from '@/components/invoices/StornoSettleDialog';
 // Subcomponents
 import { GeneralLedgerBadgeSection } from './GeneralLedgerBadgeSection';
 import { InvoiceVatCodeSelector } from '@/components/vat/InvoiceVatCodeSelector';
+import { NavInvoiceVatSummaryCard } from '@/components/nav/NavInvoiceVatSummaryCard';
 import { NettingCardSection } from './NettingCardSection';
 import { ContinuousServiceCardSection } from './ContinuousServiceCardSection';
 import { LinkedInvoicesSection } from './LinkedInvoicesSection';
@@ -74,9 +75,88 @@ export function ExpandedInvoiceRow({
   vatCodeId,
   vatRowOverride,
   invoiceType,
+  vatSummary: propVatSummary,
+  isReverseCharge: propIsReverseCharge,
+  nonDeductibleInfo: propNonDeductibleInfo,
 }: ExpandedInvoiceRowProps) {
   const { t } = useTranslation(['invoices', 'common']);
   const queryClient = useQueryClient();
+
+  // Fetch official NAV VAT summary if not provided and source is NAV
+  const { data: navVatData } = useQuery({
+    queryKey: ['nav-invoice-vat-summary', invoiceId],
+    queryFn: async () => {
+      if (!invoiceId || invoiceSource !== 'nav') return null;
+      const { data, error } = await supabase
+        .from('nav_invoices')
+        .select('vat_summary, is_reverse_charge, currency')
+        .eq('id', invoiceId)
+        .single();
+      if (error || !data) return null;
+      return data;
+    },
+    enabled: !propVatSummary && !!invoiceId && invoiceSource === 'nav',
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const effectiveVatSummary = propVatSummary || navVatData?.vat_summary;
+  const effectiveIsReverseCharge = propIsReverseCharge ?? navVatData?.is_reverse_charge;
+
+  // Deductibility query if not provided via props and invoice is INBOUND
+  const isInbound = (invoiceType?.toUpperCase() || 'INBOUND') === 'INBOUND';
+  const { data: fetchedDeductibility } = useQuery({
+    queryKey: ['expanded-row-deductibility', invoiceSource, invoiceId],
+    queryFn: async () => {
+      if (!invoiceId || !isInbound) return null;
+      const table = invoiceSource === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
+      const foreignKey = invoiceSource === 'submitted' ? 'invoice_id' : 'nav_invoice_id';
+      const { data, error } = await supabase
+        .from(table as any)
+        .select('vat_amount, net_amount, vat_rate, deductible_percentage')
+        .eq(foreignKey, invoiceId)
+        .lt('deductible_percentage', 100);
+
+      if (error || !data || data.length === 0) return null;
+
+      let totalVat = 0;
+      let deductibleVat = 0;
+      let nonDeductibleVat = 0;
+      let minPercentage = 100;
+
+      for (const item of data as any[]) {
+        let vat = item.vat_amount;
+        if ((vat === null || vat === 0 || vat === undefined) && item.net_amount && item.vat_rate) {
+          const num = parseFloat(item.vat_rate);
+          if (!isNaN(num) && num > 0) {
+            const rate = num >= 1 ? num / 100 : num;
+            vat = Math.round(item.net_amount * rate);
+          }
+        }
+        const itemVat = vat || 0;
+        const pct = item.deductible_percentage != null ? Number(item.deductible_percentage) : 100;
+        const ded = Math.round(itemVat * (pct / 100));
+        const nonDed = itemVat - ded;
+
+        totalVat += itemVat;
+        deductibleVat += ded;
+        nonDeductibleVat += nonDed;
+        minPercentage = Math.min(minPercentage, pct);
+      }
+
+      if (nonDeductibleVat <= 0) return null;
+
+      return {
+        deductibleVat,
+        nonDeductibleVat,
+        minPercentage,
+      };
+    },
+    enabled: propNonDeductibleInfo === undefined && !!invoiceId && isInbound,
+    staleTime: 60_000,
+  });
+
+  const effectiveDeductibility = propNonDeductibleInfo !== undefined ? propNonDeductibleInfo : fetchedDeductibility;
+
   const [showManualPayment, setShowManualPayment] = useState(false);
   const [showStornoSettle, setShowStornoSettle] = useState(false);
   const [unmatching, setUnmatching] = useState(false);
@@ -320,6 +400,41 @@ export function ExpandedInvoiceRow({
                       />
                     </div>
                   </div>
+
+                  {/* Non-deductible VAT card (Option 3) */}
+                  {effectiveDeductibility && effectiveDeductibility.nonDeductibleVat > 0 && (
+                    <div className="mb-4 expand-animate bg-card border border-amber-500/40 bg-amber-500/5 p-3 rounded-lg flex flex-col gap-2 min-w-[260px] shadow-sm">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+                          <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                          <span>ÁFA levonhatóság</span>
+                        </div>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                          {effectiveDeductibility.minPercentage === 0 ? '0% levonható' : `${effectiveDeductibility.minPercentage}% hányad`}
+                        </span>
+                      </div>
+                      <div className="space-y-1 text-xs">
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                            Levonható ÁFA:
+                          </span>
+                          <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                            {formatCurrency(effectiveDeductibility.deductibleVat, invoiceCurrency || 'HUF')}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                            Nem levonható ÁFA:
+                          </span>
+                          <span className="font-mono font-semibold text-amber-600 dark:text-amber-400">
+                            {formatCurrency(effectiveDeductibility.nonDeductibleVat, invoiceCurrency || 'HUF')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Netting (kompenzálás) card */}
@@ -375,6 +490,19 @@ export function ExpandedInvoiceRow({
                       )}
                     </div>
                   )
+                )}
+
+                {/* Official NAV VAT Summary Block */}
+                {effectiveVatSummary && (
+                  <div className="pt-2">
+                    <NavInvoiceVatSummaryCard
+                      vatSummary={effectiveVatSummary}
+                      currency={invoiceCurrency || navVatData?.currency || 'HUF'}
+                      isReverseCharge={effectiveIsReverseCharge}
+                      defaultExpanded={false}
+                      className="mb-2"
+                    />
+                  </div>
                 )}
 
                 <div className="space-y-6 pt-2">

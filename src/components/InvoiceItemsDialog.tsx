@@ -23,7 +23,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { formatCurrency, cn, formatVatRate } from '@/lib/utils';
+import { formatCurrency, cn, formatVatRate, is27PercentVatRate, normalizeVatRatePercent } from '@/lib/utils';
 import { Package, Package2, CheckCircle2, Info, Loader2, Check, Pencil, FileSpreadsheet, X, ArrowUpDown, ChevronUp, ChevronDown, MessageSquare, Sparkles, Wallet, Lock } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -41,6 +41,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useProjectList } from '@/hooks/useProjectList';
 import { Label } from '@/components/ui/label';
+import { NavInvoiceVatSummaryCard } from '@/components/nav/NavInvoiceVatSummaryCard';
 
 interface InvoiceLineItem {
   id: string;
@@ -130,8 +131,8 @@ export function InvoiceItemsDialog({
     queryFn: async () => {
       const table = source === 'submitted' ? 'invoices' : 'nav_invoices';
       const selectFields = source === 'submitted'
-        ? 'project_id, invoice_direction, kibocsatas_datuma, penznem'
-        : 'project_id, invoice_direction, invoice_issue_date, currency';
+        ? 'project_id, invoice_direction, kibocsatas_datuma, penznem, bizonylatsorszam'
+        : 'project_id, invoice_direction, invoice_issue_date, currency, vat_summary, is_reverse_charge';
 
       const { data, error } = await supabase
         .from(table as any)
@@ -139,13 +140,37 @@ export function InvoiceItemsDialog({
         .eq('id', invoiceId)
         .single();
       if (error) throw error;
-      return data as {
+
+      let vatSummary = (data as any)?.vat_summary || null;
+      let isRc = (data as any)?.is_reverse_charge || false;
+
+      if (source === 'submitted' && (data as any)?.bizonylatsorszam) {
+        const num = ((data as any).bizonylatsorszam as string).replace(/\s+/g, '');
+        const { data: twinNav } = await (supabase
+          .from('nav_invoices') as any)
+          .select('vat_summary, is_reverse_charge')
+          .ilike('invoice_number', `%${num}%`)
+          .limit(1)
+          .maybeSingle();
+        if (twinNav) {
+          vatSummary = (twinNav as any).vat_summary;
+          isRc = (twinNav as any).is_reverse_charge;
+        }
+      }
+
+      return {
+        ...(data as any),
+        vat_summary: vatSummary,
+        is_reverse_charge: isRc,
+      } as {
         project_id?: string | null;
         invoice_direction?: string;
         kibocsatas_datuma?: string;
         invoice_issue_date?: string;
         currency?: string;
         penznem?: string;
+        vat_summary?: any;
+        is_reverse_charge?: boolean;
       } | null;
     },
     enabled: open && !!invoiceId,
@@ -481,6 +506,8 @@ export function InvoiceItemsDialog({
       queryClient.invalidateQueries({ queryKey: ['glItems'] });
       queryClient.invalidateQueries({ queryKey: ['glJournalEntries'] });
       queryClient.invalidateQueries({ queryKey: ['subledger-reconciliation'] });
+      queryClient.invalidateQueries({ queryKey: ['page-invoice-deductibility-map'] });
+      queryClient.invalidateQueries({ queryKey: ['expanded-row-deductibility'] });
 
       const isPosted = postedItemIds.has(item.id);
       if (isPosted) {
@@ -553,7 +580,7 @@ export function InvoiceItemsDialog({
   // Apply 70/30 telephone rule to 27% items
   const handleApply7030TelephoneRule = useCallback(async () => {
     const table = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
-    const targetItems = items.filter(it => it.vat_rate === '0.27' || it.vat_rate === '27' || it.vat_rate === '27.0' || it.vat_rate === '27.00');
+    const targetItems = items.filter(it => is27PercentVatRate(it.vat_rate));
     if (targetItems.length === 0) {
       toast({
         title: t('invoices:dialogs.items.toast_7030_no_items'),
@@ -579,6 +606,21 @@ export function InvoiceItemsDialog({
         return;
       }
 
+      // Sync twin items if any
+      try {
+        for (const it of targetItems) {
+          const twins = await findTwinItems(it);
+          for (const twin of twins) {
+            await supabase
+              .from(twin.sourceTable as any)
+              .update({ deductible_percentage: 70.00 })
+              .eq('id', twin.id);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to update twin items 70/30 deductible:', e);
+      }
+
       queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
       queryClient.invalidateQueries({ queryKey: ['vat_return'] });
       queryClient.invalidateQueries({ queryKey: ['vat_return_lines'] });
@@ -588,6 +630,8 @@ export function InvoiceItemsDialog({
       queryClient.invalidateQueries({ queryKey: ['glItems'] });
       queryClient.invalidateQueries({ queryKey: ['glJournalEntries'] });
       queryClient.invalidateQueries({ queryKey: ['subledger-reconciliation'] });
+      queryClient.invalidateQueries({ queryKey: ['page-invoice-deductibility-map'] });
+      queryClient.invalidateQueries({ queryKey: ['expanded-row-deductibility'] });
 
       const hasPosted = targetItems.some(it => postedItemIds.has(it.id));
       if (hasPosted) {
@@ -604,7 +648,7 @@ export function InvoiceItemsDialog({
     } finally {
       setIsApplying7030(false);
     }
-  }, [items, source, invoiceId, queryClient, toast, postedItemIds, t]);
+  }, [items, source, invoiceId, queryClient, toast, postedItemIds, t, findTwinItems]);
 
   // Bulk update deductible percentage
   const handleBulkUpdateDeductible = useCallback(async (percentage: number) => {
@@ -635,6 +679,8 @@ export function InvoiceItemsDialog({
     queryClient.invalidateQueries({ queryKey: ['glItems'] });
     queryClient.invalidateQueries({ queryKey: ['glJournalEntries'] });
     queryClient.invalidateQueries({ queryKey: ['subledger-reconciliation'] });
+    queryClient.invalidateQueries({ queryKey: ['page-invoice-deductibility-map'] });
+    queryClient.invalidateQueries({ queryKey: ['expanded-row-deductibility'] });
 
     const hasPosted = ids.some(id => postedItemIds.has(id));
     if (hasPosted) {
@@ -1081,11 +1127,40 @@ export function InvoiceItemsDialog({
     return null;
   };
 
-  const totals = useMemo(() => ({
-    net: items.reduce((sum, item) => sum + (item.net_amount || 0), 0),
-    vat: items.reduce((sum, item) => sum + (getVatAmount(item) || 0), 0),
-    gross: items.reduce((sum, item) => sum + (getGrossAmount(item) || 0), 0),
-  }), [items]);
+  const totals = useMemo(() => {
+    let net = 0;
+    let vat = 0;
+    let gross = 0;
+    let deductibleVat = 0;
+    let nonDeductibleVat = 0;
+    let hasNonDeductible = false;
+
+    for (const item of items) {
+      const itemNet = item.net_amount || 0;
+      const itemVat = getVatAmount(item) || 0;
+      const itemGross = getGrossAmount(item) || 0;
+      net += itemNet;
+      vat += itemVat;
+      gross += itemGross;
+
+      const pct = item.deductible_percentage != null ? Number(item.deductible_percentage) : 100;
+      if (pct < 100) {
+        hasNonDeductible = true;
+      }
+      const itemDeductible = Math.round(itemVat * (pct / 100));
+      deductibleVat += itemDeductible;
+      nonDeductibleVat += (itemVat - itemDeductible);
+    }
+
+    return {
+      net,
+      vat,
+      gross,
+      deductibleVat,
+      nonDeductibleVat,
+      hasNonDeductible: hasNonDeductible && nonDeductibleVat > 0,
+    };
+  }, [items]);
 
   // Selection helpers — only count selectable (non-activated) items
   const allSelected = selectableItems.length > 0 && selectableItems.every(i => selectedIds.has(i.id));
@@ -1286,12 +1361,14 @@ export function InvoiceItemsDialog({
                             const getVatCollectorCode = (rate: string | null): string => {
                               if (!rate) return '25';
                               const upper = rate.toUpperCase();
-                              if (upper.includes('FAD')) return 'FAD';
-                              if (rate === '0.27' || rate === '27' || rate === '27.0' || rate === '27.00') return '25';
-                              if (rate === '0.05' || rate === '5' || rate === '5.0' || rate === '5.00') return '05';
-                              if (rate === '0.18' || rate === '18' || rate === '18.0' || rate === '18.00') return '18';
+                              if (upper.includes('FAD') || upper.includes('FORD') || upper.includes('REVERSE_CHARGE')) return 'FAD';
                               if (upper.includes('AAM')) return 'AAM';
                               if (upper.includes('TAM')) return 'TAM';
+                              const pct = normalizeVatRatePercent(rate);
+                              if (pct === 27) return '25';
+                              if (pct === 5) return '05';
+                              if (pct === 18) return '18';
+                              if (pct === 0) return '00';
                               return '25';
                             };
                             const code = getVatCollectorCode(item.vat_rate);
@@ -1490,6 +1567,19 @@ export function InvoiceItemsDialog({
                 </Table>
               </div>
             )}
+
+            {/* Official NAV VAT Summary at bottom of items table, collapsed by default */}
+            {parentInvoice?.vat_summary && (
+              <div className="mt-4">
+                <NavInvoiceVatSummaryCard
+                  vatSummary={parentInvoice.vat_summary}
+                  currency={currency || parentInvoice.currency || parentInvoice.penznem || 'HUF'}
+                  isReverseCharge={parentInvoice.is_reverse_charge}
+                  defaultExpanded={false}
+                  className="mb-0"
+                />
+              </div>
+            )}
           </div>
 
           {items.length > 0 && (
@@ -1575,6 +1665,35 @@ export function InvoiceItemsDialog({
                       <span className="text-muted-foreground">{t('invoices:dialogs.items.totals_vat')}</span>
                       <span className="font-mono font-medium">{formatAmount(totals.vat)}</span>
                     </div>
+                    {totals.hasNonDeductible && !isOutbound && (
+                      <div className="pl-3 py-1.5 my-1.5 border-l-2 border-amber-500/60 bg-amber-500/5 rounded-r space-y-1">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                            Levonható ÁFA:
+                          </span>
+                          <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                            {formatAmount(totals.deductibleVat)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1.5 cursor-help">
+                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                                Nem levonható ÁFA:
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="left" className="text-xs max-w-xs">
+                              Áfa tv. szerinti levonási tiltás / hányad (pl. 70/30 telefon, szgk., reprezentáció)
+                            </TooltipContent>
+                          </Tooltip>
+                          <span className="font-mono font-semibold text-amber-600 dark:text-amber-400">
+                            {formatAmount(totals.nonDeductibleVat)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                     <div className="h-px bg-border/50 my-3" />
                     <div className="flex justify-between items-center">
                       <span className="text-foreground font-medium">{t('invoices:dialogs.items.totals_gross')}</span>

@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-20  
-> **Összesen:** 92 döntés | ✅ Decided: 88 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 94 döntés | ✅ Decided: 90 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -165,6 +165,7 @@
 | P-053 | Szigorított Számlakép Előnézet és Párosítás UX (Strict Invoice Attachment Pairing) | ✅ Decided | [P-053](./P-053-strict-invoice-attachment-pairing-ux.md) |
 | P-089 | Számla Könyvelési Kizárás ("Nem könyvelt") Optimista Kapcsoló és Zökkenőmentes UX | ✅ Decided | [P-089](./P-089-invoice-exclude-from-accounting-optimistic-toggle-ux.md) |
 | P-091 | Téves Vevőre Szóló Számlák Figyelmeztető Jelzése és Jóváhagyási Dialógus UX | ✅ Decided | [P-091](./P-091-buyer-tax-mismatch-warning-ux.md) |
+| P-100 | Nem Levonható ÁFA Megjelenítése és Felületi Átláthatósága (1. + 2. + 3. Opció) UX | ✅ Decided | [P-100](./P-100-non-deductible-vat-indicators-ux.md) |
 
 ## 🔗 NAV Integráció
 
@@ -172,6 +173,8 @@
 |---|--------|---------|------|
 | P-049 | NAV Szinkronizálás Dátumtartomány Választó Modal UX (preset gombok, progress bar) | ✅ Decided | [P-049](./P-049-nav-sync-dialog-ux.md) |
 | P-088 | Csoportos ÁFA-tagok NAV Online Számla Beállítási Figyelmeztetése és Varázsló UX | ✅ Decided | [P-088](./P-088-group-vat-nav-credentials-detection-and-sync-ux.md) |
+| P-098 | NAV Adózói Adatlekérdezés és Automatikus Cégkitöltés UX | ✅ Decided | [P-098](./P-098-company-taxpayer-lookup-ux.md) |
+| P-099 | Hivatalos NAV ÁFA Összesítő és Adókulcs-Megbontás Felületi Élmény (UX) | ✅ Decided | [P-099](./P-099-official-vat-summary-ui.md) |
 
 ## 💼 Projektek & Tárgyi Eszközök
 

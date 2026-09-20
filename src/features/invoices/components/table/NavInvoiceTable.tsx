@@ -15,11 +15,13 @@ import { NavInvoiceRow } from './NavInvoiceRow';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 import type { SubmittedInvoice, TransactionRecord } from '../../types';
 import type { SuggestedSubmittedInvoiceWithScore } from '../../utils/invoiceRelations';
+import type { InvoiceDeductibilitySummary } from '../../hooks/usePageDeductibilityMap';
 
 interface NavInvoiceTableProps {
   navToSubmittedMap: Map<string, SubmittedInvoice[]>;
   navToSuggestedSubmittedMap?: Map<string, SuggestedSubmittedInvoiceWithScore[]>;
   pageInvoiceIdToTransactionsMap: Map<string, TransactionRecord[]>;
+  pageDeductibilityMap?: Map<string, InvoiceDeductibilitySummary>;
   onRowClick: (invoiceId: string, e: React.MouseEvent) => void;
   onToggleExclude: (invoiceId: string, currentValue: boolean) => Promise<void>;
 }
@@ -28,6 +30,7 @@ export function NavInvoiceTable({
   navToSubmittedMap,
   navToSuggestedSubmittedMap,
   pageInvoiceIdToTransactionsMap,
+  pageDeductibilityMap,
   onRowClick,
   onToggleExclude,
 }: NavInvoiceTableProps) {
@@ -263,6 +266,7 @@ export function NavInvoiceTable({
                       navToSubmittedMap={navToSubmittedMap}
                       navToSuggestedSubmittedMap={navToSuggestedSubmittedMap}
                       pageInvoiceIdToTransactionsMap={pageInvoiceIdToTransactionsMap}
+                      nonDeductibleInfo={pageDeductibilityMap?.get(invoice.id)}
                       onRowClick={onRowClick}
                       onToggleExclude={onToggleExclude}
                     />

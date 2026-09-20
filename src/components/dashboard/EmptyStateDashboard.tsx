@@ -1,8 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Euro, TrendingUp, PieChart, Building2, ArrowRight, ArrowLeft, Check, Plus, X, FolderOpen, Tags, Shield, RefreshCw, CheckCircle, Users, LogOut, Sparkles, AlertTriangle } from 'lucide-react';
+import { FileText, Euro, TrendingUp, PieChart, Building2, ArrowRight, ArrowLeft, Check, Plus, X, FolderOpen, Tags, Shield, RefreshCw, CheckCircle, Users, LogOut, Sparkles, AlertTriangle, Loader2, Search } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { useState, useMemo } from 'react';
+import { queryTaxpayerFromNav } from '@/lib/nav/navTaxpayerService';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
@@ -104,6 +105,56 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
   const [step1Tab, setStep1Tab] = useState('create');
   const [joinCode, setJoinCode] = useState('');
   const [isJoining, setIsJoining] = useState(false);
+  const [isNavLoading, setIsNavLoading] = useState(false);
+
+  const handleNavLookup = async () => {
+    const cleanCore = companyTaxNumber.replace(/[^0-9]/g, '').slice(0, 8);
+    if (!cleanCore || cleanCore.length !== 8) {
+      toast({
+        title: 'Érvénytelen adószám',
+        description: 'Kérjük, adj meg legalább 8 számjegyet az adószámból a lekérdezéshez!',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsNavLoading(true);
+    try {
+      const res = await queryTaxpayerFromNav(companyTaxNumber);
+      if (!res.success || !res.taxpayer) {
+        toast({
+          title: 'Nem sikerült lekérdezni a cégadatokat',
+          description: res.error || 'A NAV nem adott vissza adatot a megadott adószámra.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const tp = res.taxpayer;
+      if (tp.taxpayerName) {
+        setCompanyName(tp.taxpayerName);
+      }
+      if (tp.address?.formattedAddress) {
+        setCompanyAddress(tp.address.formattedAddress);
+      }
+      if (tp.vatCode && tp.countyCode && !companyTaxNumber.includes('-')) {
+        setCompanyTaxNumber(`${tp.taxpayerId}-${tp.vatCode}-${tp.countyCode}`);
+      }
+
+      toast({
+        title: 'Cégadatok sikeresen betöltve a NAV-ból!',
+        description: `${tp.taxpayerName || ''} (${tp.taxNumber})`,
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Hiba a NAV lekérdezés során',
+        description: err?.message || 'Ismeretlen hiba történt.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsNavLoading(false);
+    }
+  };
 
   // Step 2: Projects data
   const [projects, setProjects] = useState<OnboardingProject[]>([]);
@@ -557,22 +608,43 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
         </TabsList>
         <TabsContent value="create" className="space-y-4 pt-4">
           <div className="space-y-2">
+            <Label htmlFor="tax-number">Adószám *</Label>
+            <div className="flex gap-2">
+              <Input
+                id="tax-number"
+                value={companyTaxNumber}
+                onChange={(e) => setCompanyTaxNumber(e.target.value)}
+                placeholder="Pl. 12345678-2-42 vagy 12345678"
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleNavLookup}
+                disabled={isNavLoading || !companyTaxNumber.trim()}
+                className="shrink-0 gap-1.5"
+                title="Cégadatok automatikus kitöltése a NAV-ból"
+              >
+                {isNavLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                ) : (
+                  <Search className="h-4 w-4 text-primary" />
+                )}
+                <span>NAV lekérdezés</span>
+              </Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Írd be az adószámot és kattints a lekérdezésre a név és székhely automatikus betöltéséhez!
+            </p>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="company-name">Cég neve *</Label>
             <Input
               id="company-name"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
               placeholder="Pl. Példa Kft."
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="tax-number">Adószám *</Label>
-            <Input
-              id="tax-number"
-              value={companyTaxNumber}
-              onChange={(e) => setCompanyTaxNumber(e.target.value)}
-              placeholder="Pl. 12345678-2-42"
             />
           </div>
 

@@ -44,7 +44,7 @@ import hrAuth from '@/locales/hr/auth.json';
 import hrNotes from '@/locales/hr/notes.json';
 import hrExchangeRates from '@/locales/hr/exchangeRates.json';
 
-export const defaultNS = 'common';
+export const defaultNS = 'common' as const;
 
 export const resources = {
   hu: {

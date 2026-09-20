@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-20  
-> **Összesen:** 144 döntés | ✅ Decided: 142 | ⛔ Superseded: 2
+> **Összesen:** 147 döntés | ✅ Decided: 145 | ⛔ Superseded: 2
 
 ---
 
@@ -30,10 +30,12 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | A-004 | PGMQ mint aszinkron queue | ✅ Decided | [A-004](./A-004-pgmq-queue.md) |
-| A-005 | Edge Functions (Deno) — 60 function teljes katalógus | ✅ Decided | [A-005](./A-005-edge-functions.md) |
+| A-005 | Edge Functions (Deno) — 64 function teljes katalógus | ✅ Decided | [A-005](./A-005-edge-functions.md) |
 | A-023 | Upload Dedup Védelem (DB Trigger + Frontend Mutex) | ✅ Decided | [A-023](./A-023-upload-dedup-protection.md) |
 | A-074 | PDF Export Edge Function Invocation Resilience | ✅ Decided | [A-074](./A-074-pdf-export-edge-function-invocation-resilience.md) |
 | A-130 | NAV Auto-Sync Hajnali Időablakos Terheléselosztás (Dawn Load Staggering) | ✅ Decided | [A-130](./A-130-nav-auto-sync-dawn-load-staggering.md) |
+| A-132 | NAV Online Számla v3.0 queryTaxpayer Integráció és Think AI Kft. Kulcs Fallback | ✅ Decided | [A-132](./A-132-nav-query-taxpayer-auto-fill.md) |
+| A-133 | NAV Online Számla v3.0 Hivatalos ÁFA Összesítő (<invoiceSummary>) és Áfakulcs-Megbontás Integráció | ✅ Decided | [A-133](./A-133-nav-official-invoice-summary-vat-breakdown.md) |
 
 ## 🤖 AI & Feldolgozás
 
@@ -177,6 +179,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-125 | Atomi Házipénztári Számlakiegyenlítés, Számlaszinkron Trigger Védelem és Auth Életciklus Védelmek | ✅ Decided | [A-125](./A-125-atomic-petty-cash-invoice-settlement-and-auth-resilience.md) |
 | A-127 | Számlatáblázat Tab-Váltási Render-Skálázás (Lazy Combobox / DOM Pruning) és CSS Grid Accordion Re-Render Retesz | ✅ Decided | [A-127](./A-127-invoice-table-tab-switch-scaling-and-accordion-re-render-latch.md) |
 | A-131 | NAV 2665 ÁFA Bevallás Sormegfeleltetés, Gyűjtőkódok Tisztítása, 6/B Acélipari Nyilatkozat és Egész Kilogrammos Kerekítés | ✅ Decided | [A-131](./A-131-nav-2665-vat-return-restructuring-and-steel-reporting.md) |
+| A-134 | Nem Levonható ÁFA Életciklus, Reaktív ÁFA-Bontás (1. + 2. + 3. Opció) és Parciális B-Tree Indexek | ✅ Decided | [A-134](./A-134-non-deductible-vat-lifecycle-and-partial-indexes.md) |
 
 ## 💳 Fizetés
 

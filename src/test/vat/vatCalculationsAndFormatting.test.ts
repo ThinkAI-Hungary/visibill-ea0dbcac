@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatVatRate } from '@/lib/utils';
+import { formatVatRate, normalizeVatRatePercent, is27PercentVatRate } from '@/lib/utils';
 import { formatThousands, fmtEft } from '@/features/vat/types';
 import {
   isSteelCandidate,
@@ -48,6 +48,37 @@ describe('VAT Rate and Tax Formatting (NAV 2665 Rules)', () => {
     expect(formatVatRate('0.27')).toBe('27%');
     expect(formatVatRate('0.18')).toBe('18%');
     expect(formatVatRate('0.05')).toBe('5%');
+  });
+
+  it('correctly normalizes VAT rates into integer percentage and detects 27% items', () => {
+    // 27% variations
+    expect(normalizeVatRatePercent('27%')).toBe(27);
+    expect(normalizeVatRatePercent('0.27')).toBe(27);
+    expect(normalizeVatRatePercent(0.27)).toBe(27);
+    expect(normalizeVatRatePercent('27')).toBe(27);
+    expect(normalizeVatRatePercent('27.0')).toBe(27);
+    expect(normalizeVatRatePercent('27.00')).toBe(27);
+    expect(is27PercentVatRate('27%')).toBe(true);
+    expect(is27PercentVatRate('0.27')).toBe(true);
+    expect(is27PercentVatRate(0.27)).toBe(true);
+    expect(is27PercentVatRate('27')).toBe(true);
+
+    // 5% and 18%
+    expect(normalizeVatRatePercent('5%')).toBe(5);
+    expect(normalizeVatRatePercent('0.05')).toBe(5);
+    expect(normalizeVatRatePercent(0.05)).toBe(5);
+    expect(normalizeVatRatePercent('18%')).toBe(18);
+    expect(normalizeVatRatePercent('0.18')).toBe(18);
+    expect(is27PercentVatRate('5%')).toBe(false);
+    expect(is27PercentVatRate('0.05')).toBe(false);
+
+    // Exempt and null
+    expect(normalizeVatRatePercent('AAM')).toBe(null);
+    expect(normalizeVatRatePercent('TAM')).toBe(null);
+    expect(normalizeVatRatePercent('FAD')).toBe(null);
+    expect(normalizeVatRatePercent(null)).toBe(null);
+    expect(is27PercentVatRate('AAM')).toBe(false);
+    expect(is27PercentVatRate(null)).toBe(false);
   });
 
   it('formats currency numbers and eFt correctly for NAV forms', () => {

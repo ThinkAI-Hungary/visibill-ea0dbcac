@@ -26,6 +26,11 @@ interface NavInvoiceRowProps {
   navToSubmittedMap: Map<string, SubmittedInvoice[]>;
   navToSuggestedSubmittedMap?: Map<string, SuggestedSubmittedInvoiceWithScore[]>;
   pageInvoiceIdToTransactionsMap: Map<string, TransactionRecord[]>;
+  nonDeductibleInfo?: {
+    deductibleVat: number;
+    nonDeductibleVat: number;
+    minPercentage: number;
+  } | null;
   onRowClick: (invoiceId: string, e: React.MouseEvent) => void;
   onToggleExclude: (invoiceId: string, currentValue: boolean) => Promise<void>;
 }
@@ -90,6 +95,7 @@ function NavInvoiceRowComponent({
   navToSubmittedMap,
   navToSuggestedSubmittedMap,
   pageInvoiceIdToTransactionsMap,
+  nonDeductibleInfo,
   onRowClick,
   onToggleExclude,
 }: NavInvoiceRowProps) {
@@ -275,6 +281,40 @@ function NavInvoiceRowComponent({
         <TableCell className="text-right font-mono tabular-nums text-muted-foreground whitespace-nowrap">
           <div className="flex flex-col items-end gap-1">
             <span>{formatCurrency(invoice.invoice_vat_amount || 0, invoice.currency || 'HUF')}</span>
+            {nonDeductibleInfo && nonDeductibleInfo.nonDeductibleVat > 0 && activeTab !== 'OUTBOUND' && (
+              <div onClick={(e) => e.stopPropagation()}>
+                <TooltipProvider delayDuration={150}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-400/40 cursor-help transition-colors hover:bg-amber-500/25">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                        {nonDeductibleInfo.minPercentage === 0 ? '0% lev.' : `${nonDeductibleInfo.minPercentage}/${100 - nonDeductibleInfo.minPercentage}`}
+                        <span className="text-muted-foreground/80 font-normal">(-{formatCurrency(nonDeductibleInfo.nonDeductibleVat, invoice.currency || 'HUF')})</span>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" className="text-xs space-y-1.5 max-w-[240px] text-left">
+                      <p className="font-semibold text-amber-500 flex items-center gap-1">
+                        <Sparkles className="h-3 w-3" />
+                        ÁFA Levonási Korlátozás
+                      </p>
+                      <div className="space-y-0.5 font-sans">
+                        <div className="flex justify-between gap-3 text-emerald-600 dark:text-emerald-400">
+                          <span>Levonható:</span>
+                          <span className="font-mono font-medium">{formatCurrency((invoice.invoice_vat_amount || 0) - nonDeductibleInfo.nonDeductibleVat, invoice.currency || 'HUF')}</span>
+                        </div>
+                        <div className="flex justify-between gap-3 text-amber-600 dark:text-amber-400">
+                          <span>Nem levonható:</span>
+                          <span className="font-mono font-medium">{formatCurrency(nonDeductibleInfo.nonDeductibleVat, invoice.currency || 'HUF')}</span>
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground pt-1 border-t border-border/30">
+                        Áfa tv. szerinti levonási hányad (pl. telefon 70/30, szgk.)
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            )}
             <div onClick={(e) => e.stopPropagation()}>
               <InvoiceVatCodeSelector
                 navInvoiceId={invoice.id}
@@ -282,7 +322,7 @@ function NavInvoiceRowComponent({
                 companyId={companyId}
                 currentVatCodeId={invoice.vat_code_id}
                 currentVatRowOverride={invoice.vat_row_override}
-                direction={activeTab === 'OUTBOUND' ? 'OUTBOUND' : 'INBOUND'}
+                direction={(invoice.invoice_direction?.toUpperCase() as 'INBOUND' | 'OUTBOUND') || (activeTab === 'OUTBOUND' ? 'OUTBOUND' : 'INBOUND')}
                 onUpdated={invalidateInvoiceData}
               />
             </div>
@@ -646,7 +686,9 @@ function NavInvoiceRowComponent({
           invoiceNumber={invoice.invoice_number}
           vatCodeId={invoice.vat_code_id}
           vatRowOverride={invoice.vat_row_override}
-          invoiceType={activeTab === 'OUTBOUND' ? 'outbound' : 'inbound'}
+          invoiceType={(invoice.invoice_direction?.toLowerCase() as 'inbound' | 'outbound') || (activeTab === 'OUTBOUND' ? 'outbound' : 'inbound')}
+          vatSummary={(invoice as any).vat_summary}
+          nonDeductibleInfo={nonDeductibleInfo}
         />
       )}
     </React.Fragment>

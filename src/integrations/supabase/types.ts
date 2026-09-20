@@ -8437,6 +8437,7 @@ export type Database = {
           ti_override: string | null
           transaction_id: string | null
           user_id: string | null
+          vat_summary: Json | null
         }
         Insert: {
           ai_categorization_reason?: string | null
@@ -8500,6 +8501,7 @@ export type Database = {
           ti_override?: string | null
           transaction_id?: string | null
           user_id?: string | null
+          vat_summary?: Json | null
         }
         Update: {
           ai_categorization_reason?: string | null
@@ -8563,6 +8565,7 @@ export type Database = {
           ti_override?: string | null
           transaction_id?: string | null
           user_id?: string | null
+          vat_summary?: Json | null
         }
         Relationships: [
           {

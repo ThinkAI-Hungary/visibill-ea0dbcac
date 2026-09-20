@@ -8,7 +8,7 @@ import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/h
 import { CopyableCell } from '@/components/ui/copyable-cell';
 import { InvoiceImagePreview } from '@/components/InvoiceImagePreview';
 import ExpandedInvoiceRow from '@/components/ExpandedInvoiceRow';
-import { ChevronDown, FileText, Package, Pencil, AlertTriangle, AlertOctagon, Check } from 'lucide-react';
+import { ChevronDown, FileText, Package, Pencil, AlertTriangle, AlertOctagon, Check, Sparkles } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 import { getInitials, getAvatarColor } from '@/lib/helpers';
 import { normalizeInvoiceNumber, checkBuyerTaxMismatch } from '@/lib/invoiceMatchingUtils';
@@ -23,6 +23,11 @@ interface SubmittedInvoiceRowProps {
   invoice: SubmittedInvoice;
   submittedToNavMap: Map<string, NavInvoice[]>;
   pageInvoiceIdToTransactionsMap: Map<string, TransactionRecord[]>;
+  nonDeductibleInfo?: {
+    deductibleVat: number;
+    nonDeductibleVat: number;
+    minPercentage: number;
+  } | null;
   onRowClick: (invoiceId: string, e: React.MouseEvent) => void;
   onToggleExclude: (invoiceId: string, currentValue: boolean) => Promise<void>;
 }
@@ -31,6 +36,7 @@ export function SubmittedInvoiceRow({
   invoice,
   submittedToNavMap,
   pageInvoiceIdToTransactionsMap,
+  nonDeductibleInfo,
   onRowClick,
   onToggleExclude,
 }: SubmittedInvoiceRowProps) {
@@ -280,6 +286,40 @@ export function SubmittedInvoiceRow({
         <TableCell className="text-right font-mono tabular-nums text-muted-foreground whitespace-nowrap">
           <div className="flex flex-col items-end gap-1">
             <span>{formatCurrency(invoice.afa_osszeg_osszesen || 0, invoice.penznem || 'HUF')}</span>
+            {nonDeductibleInfo && nonDeductibleInfo.nonDeductibleVat > 0 && activeTab !== 'SUBMITTED_OUTBOUND' && (
+              <div onClick={(e) => e.stopPropagation()}>
+                <TooltipProvider delayDuration={150}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-400/40 cursor-help transition-colors hover:bg-amber-500/25">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                        {nonDeductibleInfo.minPercentage === 0 ? '0% lev.' : `${nonDeductibleInfo.minPercentage}/${100 - nonDeductibleInfo.minPercentage}`}
+                        <span className="text-muted-foreground/80 font-normal">(-{formatCurrency(nonDeductibleInfo.nonDeductibleVat, invoice.penznem || 'HUF')})</span>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" className="text-xs space-y-1.5 max-w-[240px] text-left">
+                      <p className="font-semibold text-amber-500 flex items-center gap-1">
+                        <Sparkles className="h-3 w-3" />
+                        ÁFA Levonási Korlátozás
+                      </p>
+                      <div className="space-y-0.5 font-sans">
+                        <div className="flex justify-between gap-3 text-emerald-600 dark:text-emerald-400">
+                          <span>Levonható:</span>
+                          <span className="font-mono font-medium">{formatCurrency((invoice.afa_osszeg_osszesen || 0) - nonDeductibleInfo.nonDeductibleVat, invoice.penznem || 'HUF')}</span>
+                        </div>
+                        <div className="flex justify-between gap-3 text-amber-600 dark:text-amber-400">
+                          <span>Nem levonható:</span>
+                          <span className="font-mono font-medium">{formatCurrency(nonDeductibleInfo.nonDeductibleVat, invoice.penznem || 'HUF')}</span>
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground pt-1 border-t border-border/30">
+                        Áfa tv. szerinti levonási hányad (pl. telefon 70/30, szgk.)
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            )}
             <div onClick={(e) => e.stopPropagation()}>
               <InvoiceVatCodeSelector
                 invoiceId={invoice.id}
@@ -485,6 +525,7 @@ export function SubmittedInvoiceRow({
           vatCodeId={invoice.vat_code_id}
           vatRowOverride={invoice.vat_row_override}
           invoiceType={activeTab === 'SUBMITTED_OUTBOUND' ? 'outbound' : 'inbound'}
+          nonDeductibleInfo={nonDeductibleInfo}
         />
       )}
     </React.Fragment>

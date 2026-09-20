@@ -1,7 +1,7 @@
 # Supabase Edge Functions Katalógus
 
 > **Utoljára frissítve:** 2026-09-20  
-> **Összesen:** 63 Deno Edge Function + `_shared/` közös modulok | **Runtime:** Deno (TypeScript) | **Platform:** Supabase Cloud
+> **Összesen:** 64 Deno Edge Function + `_shared/` közös modulok | **Runtime:** Deno (TypeScript) | **Platform:** Supabase Cloud
 
 Ez a dokumentáció az eaisybill-prod rendszer összes Supabase Edge Function-jének hivatalos, autoritatív katalógusa. Részletezi az egyes funkciók célját, jogosultsági modelljét (`verify_jwt`), meghívási kontextusát (Frontend, pg_cron, Webhook, Postgres Trigger) és környezeti változóit.
 A funkciók forráskódja a [`supabase/functions/`](../../supabase/functions/) könyvtárban található. A technikai architektúra döntést az [A-005: Edge Functions a Serverless Logikához](./decisions/A-005-edge-functions.md), az adatbázis sémát a [database-schema.md](./database-schema.md), az eljárásokat pedig az [rpc-catalog.md](./rpc-catalog.md) írja le.
@@ -21,7 +21,7 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 
 ## Tartalomjegyzék
 
-1. [🏛️ NAV Integráció (7 db)](#1-nav-integráció)
+1. [🏛️ NAV Integráció (8 db)](#1-nav-integráció)
 2. [📧 Email Küldés & Riportok (10 db)](#2-email-küldés--riportok)
 3. [📥 Email Fogadás & Saját Levelező (5 db)](#3-email-fogadás--saját-levelező)
 4. [⚡ Queue & Export Generálás (2 db)](#4-queue--export-generálás)
@@ -37,7 +37,7 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 
 ---
 
-## 1. 🏛️ NAV Integráció (7 db)
+## 1. 🏛️ NAV Integráció (8 db)
 
 > NAV Online Számla v3 protokoll motor, hitelesítés, számla és adószám szinkronizáció.
 
@@ -47,6 +47,7 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 | [`nav-auto-sync`](../../supabase/functions/nav-auto-sync/index.ts) | ❌ Nyilvános / Belső | pg_cron (01:00-04:00 UTC) / Webhook | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Automatikus NAV számlaletöltés és státuszszinkron 4 hajnali idősávban (slot 0..3) load staggering-gel az aktív cégekre a `NavIngestionService` segítségével (A-130). |
 | [`nav-sync`](../../supabase/functions/nav-sync/index.ts) | ✅ Kötelező | Frontend (NavInvoicesTable / InvoicesHeader) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Manuálisan indított NAV számla szinkronizáció megadott cégre és időszakra. |
 | [`nav-token`](../../supabase/functions/nav-token/index.ts) | ✅ Kötelező | Frontend (NavSettings.tsx) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | NAV technikai felhasználó és aláírókulcsok (SHA-512, SHA3-512) validációja és token-csere. |
+| [`nav-query-taxpayer`](../../supabase/functions/nav-query-taxpayer/index.ts) | ✅ Kötelező | Frontend (CompanySelector, EmptyStateDashboard, ClientDetailsStep) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | NAV v3.0 /queryTaxpayer végpont hívása 8-jegyű adószám alapján adózói név, székhelycím és ÁFA-kód kinyerésére. Be nem állított vagy új cégnél fallbackként a Think AI Kft. Vault kulcsaival írja alá a kérést (A-132, P-098). |
 | [`nav-query-outbound-invoices`](../../supabase/functions/nav-query-outbound-invoices/index.ts) | ✅ Kötelező | Frontend (InvoicesPage) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Kimenő számlák lekérdezése a NAV-ból és mentése a `nav_invoices` táblába `direction='outbound'` jelölővel. |
 | [`query-nav-invoices`](../../supabase/functions/query-nav-invoices/index.ts) | ✅ Kötelező | Frontend (NavSearchModal) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Egyedi számlakeresés és részletek lekérdezése NAV bizonylatszám vagy tranzakcióazonosító alapján. |
 | [`nav-tax-profile-sync`](../../supabase/functions/nav-tax-profile-sync/index.ts) | ❌ Nyilvános / Belső | pg_cron / Company onboarding | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Cég adózási státuszának, ÁFA csoportazonosítójának és telephelyeinek frissítése a NAV nyilvántartásból. |

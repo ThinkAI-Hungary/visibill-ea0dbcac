@@ -234,3 +234,34 @@ export function formatVatRate(rate: string | number | null | undefined): string 
   return s;
 }
 
+/**
+ * Normalizes any VAT rate representation ('0.27', '27', '27%', '0.05', '5%', 0.27, etc.)
+ * into an integer percentage (e.g. 27, 5, 18, 0), or null if non-numeric/exempt/reverse charge.
+ */
+export function normalizeVatRatePercent(rate: string | number | null | undefined): number | null {
+  if (rate == null || rate === '') return null;
+  if (typeof rate === 'number') {
+    if (rate > 0 && rate <= 1) return Math.round(rate * 100);
+    return Math.round(rate);
+  }
+  const s = String(rate).trim();
+  const u = s.toUpperCase();
+  if (['AAM', 'TAM', 'MENTES', 'EXP', 'EXPORT', 'FAD', 'FORD', 'FORDITOTT', 'DOMESTIC_REVERSE_CHARGE', 'KBAET', 'ATHK', 'EUK', 'AHK'].some(ex => u.includes(ex))) {
+    return null;
+  }
+  const clean = s.replace(',', '.').replace('%', '').trim();
+  const num = parseFloat(clean);
+  if (!isNaN(num)) {
+    if (num > 0 && num <= 1) return Math.round(num * 100);
+    return Math.round(num);
+  }
+  return null;
+}
+
+/**
+ * Checks if a VAT rate represents 27% regardless of format ('0.27', '27', '27%', 0.27, etc.).
+ */
+export function is27PercentVatRate(rate: string | number | null | undefined): boolean {
+  return normalizeVatRatePercent(rate) === 27;
+}
+

@@ -13,10 +13,12 @@ import { cn } from '@/lib/utils';
 import { SubmittedInvoiceRow } from './SubmittedInvoiceRow';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 import type { NavInvoice, TransactionRecord } from '../../types';
+import type { InvoiceDeductibilitySummary } from '../../hooks/usePageDeductibilityMap';
 
 interface SubmittedInvoiceTableProps {
   submittedToNavMap: Map<string, NavInvoice[]>;
   pageInvoiceIdToTransactionsMap: Map<string, TransactionRecord[]>;
+  pageDeductibilityMap?: Map<string, InvoiceDeductibilitySummary>;
   onRowClick: (invoiceId: string, e: React.MouseEvent) => void;
   onToggleExclude: (invoiceId: string, currentValue: boolean) => Promise<void>;
 }
@@ -24,6 +26,7 @@ interface SubmittedInvoiceTableProps {
 export function SubmittedInvoiceTable({
   submittedToNavMap,
   pageInvoiceIdToTransactionsMap,
+  pageDeductibilityMap,
   onRowClick,
   onToggleExclude,
 }: SubmittedInvoiceTableProps) {
@@ -225,6 +228,7 @@ export function SubmittedInvoiceTable({
                       invoice={invoice}
                       submittedToNavMap={submittedToNavMap}
                       pageInvoiceIdToTransactionsMap={pageInvoiceIdToTransactionsMap}
+                      nonDeductibleInfo={pageDeductibilityMap?.get(invoice.id)}
                       onRowClick={onRowClick}
                       onToggleExclude={onToggleExclude}
                     />

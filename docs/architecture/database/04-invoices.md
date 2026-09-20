@@ -117,7 +117,7 @@
 
 **FK:** `invoice_id` → `invoices.id`, `project_id` → `projects.id`
 
-**Indexek:** `idx_invoice_items_invoice_id`
+**Indexek:** `idx_invoice_items_invoice_id`, `idx_invoice_items_partial_deductible` (`invoice_id` WHERE `deductible_percentage < 100`) — O(1) részleges index nem levonható ÁFA-tételekhez (lásd [A-134](../decisions/A-134-non-deductible-vat-lifecycle-and-partial-indexes.md))
 
 ---
 

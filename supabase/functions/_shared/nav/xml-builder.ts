@@ -141,3 +141,24 @@ ${buildCommonBlocks(creds, requestId, timestamp, passwordHash, requestSignature)
   </invoiceNumberQuery>
 </QueryInvoiceDataRequest>`;
 }
+
+/**
+ * QueryTaxpayerRequest XML generálása adóalanyi törzsadat lekéréséhez.
+ * A NAV 3.0 specifikáció szerint a taxNumber 8-jegyű törzsszám (TaxpayerIdType).
+ */
+export function buildQueryTaxpayerXml(
+  creds: NavCredentials,
+  taxNumber: string,
+  requestId: string,
+  timestamp: string,
+  passwordHash: string,
+  requestSignature: string
+): string {
+  const cleanTaxNumber = taxNumber.replace(/[^0-9]/g, '').slice(0, 8);
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<QueryTaxpayerRequest xmlns="http://schemas.nav.gov.hu/OSA/3.0/api" 
+                      xmlns:common="http://schemas.nav.gov.hu/NTCA/1.0/common">
+${buildCommonBlocks(creds, requestId, timestamp, passwordHash, requestSignature)}
+  <taxNumber>${cleanTaxNumber}</taxNumber>
+</QueryTaxpayerRequest>`;
+}

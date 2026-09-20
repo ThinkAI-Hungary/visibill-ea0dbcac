@@ -1,10 +1,10 @@
 // =============================================================================
 // NAV Online Számla v3 – Protokoll Kliens (NavClient)
 // =============================================================================
-import { NavCredentials, NavSyncOptions, NavInvoiceDigest, InvoiceDetails, NavValidationResult } from './types.ts';
+import { NavCredentials, NavSyncOptions, NavInvoiceDigest, InvoiceDetails, NavValidationResult, TaxpayerDetails } from './types.ts';
 import { generateRequestId, hashPassword, createSignature, maskSensitiveXml } from './crypto.ts';
-import { buildTokenExchangeXml, buildQueryDigestXml, buildQueryInvoiceDataXml } from './xml-builder.ts';
-import { parseTokenResponse, parseInvoiceDigestXml, parseInvoiceDataXml, parseNavError } from './xml-parser.ts';
+import { buildTokenExchangeXml, buildQueryDigestXml, buildQueryInvoiceDataXml, buildQueryTaxpayerXml } from './xml-builder.ts';
+import { parseTokenResponse, parseInvoiceDigestXml, parseInvoiceDataXml, parseNavError, parseTaxpayerXml } from './xml-parser.ts';
 
 export class NavClient {
   private baseUrl: string;
@@ -233,6 +233,38 @@ export class NavClient {
     }
 
     return allInvoices;
+  }
+
+  /**
+   * Adóalany törzs- és székhelyadatainak lekérdezése 8-jegyű adószám alapján.
+   */
+  async queryTaxpayer(taxNumber: string): Promise<TaxpayerDetails> {
+    const requestId = generateRequestId();
+    const timestamp = new Date().toISOString();
+    const passwordHash = await hashPassword(this.creds.nav_password);
+    const requestSignature = createSignature(this.creds, requestId, timestamp);
+
+    const xmlRequest = buildQueryTaxpayerXml(
+      this.creds,
+      taxNumber,
+      requestId,
+      timestamp,
+      passwordHash,
+      requestSignature
+    );
+
+    const response = await this.transport(`${this.baseUrl}/queryTaxpayer`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/xml; charset=UTF-8',
+        'Accept': 'application/xml'
+      },
+      body: xmlRequest
+    });
+
+    const xmlResponse = await response.text();
+    console.log('[NAV-QUERY-TAXPAYER-RAW-XML]:', xmlResponse);
+    return parseTaxpayerXml(xmlResponse);
   }
 }
 

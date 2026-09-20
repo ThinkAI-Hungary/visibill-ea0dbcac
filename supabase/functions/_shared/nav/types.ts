@@ -62,6 +62,44 @@ export interface InvoiceLineItem {
   lineDeliveryPeriodTo?: string;
 }
 
+export type VatRateCategory = 
+  | 'percentage' 
+  | 'exemption' 
+  | 'out_of_scope' 
+  | 'reverse_charge' 
+  | 'margin_scheme' 
+  | 'content';
+
+export interface InvoiceVatSummaryItem {
+  category: VatRateCategory;
+  vatRateLiteral: string;
+  vatPercentage?: number;
+  vatContent?: number;
+  exemptionCase?: string;
+  exemptionReason?: string;
+  outOfScopeCase?: string;
+  outOfScopeReason?: string;
+  isReverseCharge?: boolean;
+  marginSchemeIndicator?: string;
+  netAmount: number;
+  netAmountHUF?: number;
+  vatAmount: number;
+  vatAmountHUF?: number;
+  grossAmount?: number;
+  grossAmountHUF?: number;
+}
+
+export interface InvoiceSummaryDetails {
+  vatSummaries: InvoiceVatSummaryItem[];
+  invoiceNetAmount?: number;
+  invoiceNetAmountHUF?: number;
+  invoiceVatAmount?: number;
+  invoiceVatAmountHUF?: number;
+  invoiceGrossAmount?: number;
+  invoiceGrossAmountHUF?: number;
+  hasReverseCharge?: boolean;
+}
+
 export interface InvoiceDetails {
   supplierName?: string;
   supplierAddress?: string;
@@ -72,6 +110,7 @@ export interface InvoiceDetails {
   lineItems?: InvoiceLineItem[];
   isCashAccounting?: boolean;
   originalInvoiceNumber?: string;
+  vatSummary?: InvoiceSummaryDetails;
 }
 
 export interface NavValidationResult {
@@ -93,4 +132,34 @@ export interface NavSyncResult {
   invoices: NavInvoiceDigest[];
   errors?: string[];
   page?: number;
+}
+
+export interface TaxpayerAddress {
+  postalCode?: string;
+  city?: string;
+  streetName?: string;
+  publicPlaceCategory?: string;
+  number?: string;
+  building?: string;
+  staircase?: string;
+  floor?: string;
+  door?: string;
+  countryCode?: string;
+  formattedAddress: string;
+}
+
+export interface TaxpayerDetails {
+  taxpayerValidity: boolean;
+  taxNumber: string;
+  taxpayerId: string;
+  vatCode?: string;
+  countyCode?: string;
+  taxpayerName?: string;
+  taxpayerShortName?: string;
+  incorporation?: 'ORGANIZATION' | 'SELF_EMPLOYED' | 'TAXABLE_PERSON';
+  address?: TaxpayerAddress;
+  vatGroupMembership?: {
+    groupTaxNumber: string;
+    groupMemberTaxNumber?: string;
+  };
 }

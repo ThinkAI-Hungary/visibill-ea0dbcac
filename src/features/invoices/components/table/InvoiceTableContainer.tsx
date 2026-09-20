@@ -9,6 +9,7 @@ import { SubmittedInvoiceTable } from './SubmittedInvoiceTable';
 import { InvoiceFilterBar } from '../filters/InvoiceFilterBar';
 import { buildNavToSubmittedMap, buildSubmittedToNavMap, buildNavToSuggestedSubmittedMap } from '../../utils/invoiceRelations';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
+import { usePageDeductibilityMap, type InvoiceDeductibilitySummary } from '../../hooks/usePageDeductibilityMap';
 import { toast } from '@/hooks/use-toast';
 import type { TransactionRecord } from '../../types';
 
@@ -197,6 +198,21 @@ export function InvoiceTableContainer() {
     return map;
   }, [pageTransactions]);
 
+  // 3.3 Batch fetch deductibility for current page invoices
+  const pageNavIds = useMemo(() => {
+    return isSubmittedTab ? [] : paginatedNavInvoices.map(n => n.id).filter(Boolean);
+  }, [isSubmittedTab, paginatedNavInvoices]);
+
+  const pageSubIds = useMemo(() => {
+    return isSubmittedTab ? paginatedSubmittedInvoices.map(s => s.id).filter(Boolean) : [];
+  }, [isSubmittedTab, paginatedSubmittedInvoices]);
+
+  const { data: pageDeductibilityMap = new Map<string, InvoiceDeductibilitySummary>() } = usePageDeductibilityMap({
+    navInvoiceIds: pageNavIds,
+    submittedInvoiceIds: pageSubIds,
+    enabled: !!companyId,
+  });
+
   // 4. Handle row click (expansion + URL param sync)
   const handleRowClick = useCallback(
     (invoiceId: string, e: React.MouseEvent) => {
@@ -323,6 +339,7 @@ export function InvoiceTableContainer() {
         <SubmittedInvoiceTable
           submittedToNavMap={submittedToNavMap}
           pageInvoiceIdToTransactionsMap={pageInvoiceIdToTransactionsMap}
+          pageDeductibilityMap={pageDeductibilityMap}
           onRowClick={handleRowClick}
           onToggleExclude={handleToggleExclude}
         />
@@ -331,6 +348,7 @@ export function InvoiceTableContainer() {
           navToSubmittedMap={navToSubmittedMap}
           navToSuggestedSubmittedMap={navToSuggestedSubmittedMap}
           pageInvoiceIdToTransactionsMap={pageInvoiceIdToTransactionsMap}
+          pageDeductibilityMap={pageDeductibilityMap}
           onRowClick={handleRowClick}
           onToggleExclude={handleToggleExclude}
         />

@@ -140,4 +140,14 @@ export interface ExpandedInvoiceRowProps {
   vatCodeId?: string | null;
   vatRowOverride?: string | null;
   invoiceType?: 'inbound' | 'outbound' | 'INBOUND' | 'OUTBOUND';
+  // ── NAV Online Számla official VAT summary ──
+  vatSummary?: any;
+  isReverseCharge?: boolean;
+  // ── Deductibility & non-deductible VAT ──
+  nonDeductibleInfo?: {
+    deductibleVat: number;
+    nonDeductibleVat: number;
+    minPercentage: number;
+  } | null;
 }
+

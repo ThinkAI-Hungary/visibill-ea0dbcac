@@ -1,10 +1,12 @@
-import React from 'react';
-import { Check, Building2, Mail, FileText, Smartphone, Send, Loader2, CheckCircle, AlertCircle, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import { Check, Building2, Mail, FileText, Smartphone, Send, Loader2, CheckCircle, AlertCircle, Sparkles, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
+import { queryTaxpayerFromNav } from '@/lib/nav/navTaxpayerService';
 
 interface ClientDetailsStepProps {
   useVisibillAccount: boolean;
@@ -71,6 +73,65 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
     companyDescription, setCompanyDescription,
     isGeneratingDescription, handleGenerateDescription,
   } = props;
+
+  const [isNavLoading, setIsNavLoading] = useState(false);
+
+  const handleNavLookup = async () => {
+    const cleanCore = taxNumber.replace(/[^0-9]/g, '').slice(0, 8);
+    if (!cleanCore || cleanCore.length !== 8) {
+      toast({
+        title: 'Érvénytelen adószám',
+        description: 'Kérjük, adj meg legalább 8 számjegyet az adószámból a lekérdezéshez!',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsNavLoading(true);
+    try {
+      const res = await queryTaxpayerFromNav(taxNumber);
+      if (!res.success || !res.taxpayer) {
+        toast({
+          title: 'Nem sikerült lekérdezni az ügyfél adatait',
+          description: res.error || 'A NAV nem adott vissza adatot a megadott adószámra.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const tp = res.taxpayer;
+      if (tp.taxpayerName) {
+        setClientName(tp.taxpayerName);
+        setValidationErrors(prev => {
+          const n = { ...prev };
+          delete n.clientName;
+          return n;
+        });
+      }
+      if (tp.vatCode && tp.countyCode) {
+        const fullTax = `${tp.taxpayerId}-${tp.vatCode}-${tp.countyCode}`;
+        setTaxNumber(fullTax);
+        setValidationErrors(prev => {
+          const n = { ...prev };
+          delete n.taxNumber;
+          return n;
+        });
+      }
+
+      toast({
+        title: 'Ügyfél adatai sikeresen betöltve a NAV-ból!',
+        description: `${tp.taxpayerName || ''} (${tp.taxNumber})`,
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Hiba a NAV lekérdezés során',
+        description: err?.message || 'Ismeretlen hiba történt.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsNavLoading(false);
+    }
+  };
 
   return (
     <div className="page-animate">
@@ -184,28 +245,42 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
           
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-xs text-foreground/90">Cégnév <span className="text-red-500">*</span></Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs text-foreground/90">Adószám <span className="text-red-500">*</span></Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-xs text-primary hover:text-primary/80 gap-1 px-1.5"
+                  onClick={handleNavLookup}
+                  disabled={isNavLoading || !taxNumber.trim()}
+                  title="Cégadatok automatikus kitöltése a NAV-ból"
+                >
+                  {isNavLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
+                  <span>NAV lekérdezés</span>
+                </Button>
+              </div>
               <Input 
-                placeholder="" 
+                value={taxNumber}
+                onChange={(e) => { setTaxNumber(e.target.value); setValidationErrors(prev => { const n = {...prev}; delete n.taxNumber; return n; }); }}
+                required 
+                placeholder="12345678-1-23 vagy 12345678"
+                className={cn("bg-card border-border", validationErrors.taxNumber && "border-red-400 focus-visible:ring-red-500")} 
+              />
+              {validationErrors.taxNumber && <p className="text-xs text-red-500 mt-1">{validationErrors.taxNumber}</p>}
+            </div>
+            <div className="space-y-2">
+              <div className="h-6 flex items-center">
+                <Label className="text-xs text-foreground/90">Cégnév <span className="text-red-500">*</span></Label>
+              </div>
+              <Input 
+                placeholder="Pl. Példa Kft." 
                 required 
                 className={cn("bg-card border-border", validationErrors.clientName && "border-red-400 focus-visible:ring-red-500")} 
                 value={clientName}
                 onChange={(e) => { setClientName(e.target.value); setValidationErrors(prev => { const n = {...prev}; delete n.clientName; return n; }); }}
               />
               {validationErrors.clientName && <p className="text-xs text-red-500 mt-1">{validationErrors.clientName}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs text-foreground/90">Adószám <span className="text-red-500">*</span></Label>
-              <Input 
-                value={taxNumber}
-                onChange={(e) => { setTaxNumber(e.target.value); setValidationErrors(prev => { const n = {...prev}; delete n.taxNumber; return n; }); }}
-                required 
-                pattern="^[0-9]{8}-[0-9]-[0-9]{2}$"
-                title="Kérjük, érvényes magyar adószámot adjon meg, a következő formátumban: 12345678-1-23"
-                placeholder="12345678-1-23"
-                className={cn("bg-card border-border", validationErrors.taxNumber && "border-red-400 focus-visible:ring-red-500")} 
-              />
-              {validationErrors.taxNumber && <p className="text-xs text-red-500 mt-1">{validationErrors.taxNumber}</p>}
             </div>
             <div className="space-y-2 col-span-2">
               <Label className="text-xs text-foreground/90">Kapcsolattartó neve <span className="text-red-500">*</span></Label>

@@ -60,10 +60,11 @@
 | manual_payment_type | text | ✓ |  | ← `'storno_settled'` (sztornó lezárás) vagy `'compensation'` (futár kompenzáció) |
 | manual_payment_note | text | ✓ |  |
 | original_invoice_number | text | ✓ |  | ← NAV XML `<originalInvoiceNumber>` — STORNO számlák esetén |
+| vat_summary | jsonb | ✓ | NULL | NAV Online Számla v3.0 hivatalos számlaösszesítő (`<invoiceSummary>`) blokk (lásd [A-133](../decisions/A-133-nav-official-invoice-summary-vat-breakdown.md)) |
 
 **FK:** `category_id` → `categories.id`, `company_id` → `companies.id`, `gl_account_id` → `gl_accounts.id`, `project_id` → `projects.id`, `supplier_partner_id` → `partners.id`, `transaction_id` → `transactions.id`, `user_id` → `auth.users.id`
 
-**Indexek:** `idx_nav_invoices_cash_payment`, `idx_nav_invoices_category_id`, `idx_nav_invoices_company_date`, `idx_nav_invoices_company_direction_date`, `idx_nav_invoices_company_dir_date_desc`, `idx_nav_invoices_company_payment`, `idx_nav_invoices_exclude`, `idx_nav_invoices_gl_account_id`, `idx_nav_invoices_outbound_unpaid`, `idx_nav_invoices_project_id`, `idx_nav_invoices_reverse_charge`, `idx_nav_invoices_search_trgm` (GIN trigram), `idx_nav_invoices_supplier_partner`, `idx_nav_invoices_transaction_id`, `idx_nav_invoices_user_id`, `nav_invoices_company_id_invoice_number_key`
+**Indexek:** `idx_nav_invoices_cash_payment`, `idx_nav_invoices_category_id`, `idx_nav_invoices_company_date`, `idx_nav_invoices_company_direction_date`, `idx_nav_invoices_company_dir_date_desc`, `idx_nav_invoices_company_payment`, `idx_nav_invoices_exclude`, `idx_nav_invoices_gl_account_id`, `idx_nav_invoices_outbound_unpaid`, `idx_nav_invoices_project_id`, `idx_nav_invoices_reverse_charge`, `idx_nav_invoices_search_trgm` (GIN trigram), `idx_nav_invoices_supplier_partner`, `idx_nav_invoices_transaction_id`, `idx_nav_invoices_user_id`, `idx_nav_invoices_vat_summary` (GIN), `nav_invoices_company_id_invoice_number_key`
 
 **Kézi fizetés logika (`is_manual_payment`):**  
 - Ha `manual_payment_type = 'storno_settled'` → a sztornó láncolatot a user manuálisan zárta le (`mark_storno_group_settled` RPC). A sor zöldre vált a frontenden, visszavonható (`unmark_storno_group_settled`). Lásd: [A-042: Sztornó Settle Architektúra](../decisions/A-042-storno-settle-architecture.md)
@@ -105,6 +106,7 @@
 - `idx_nav_invoice_items_company_unclassified` (`company_id, id` WHERE `(gl_classifications = '{}'::jsonb OR gl_classifications IS NULL) AND exclude_from_accounting = false`)
 - `idx_nav_invoice_items_nav_invoice_id` (`nav_invoice_id`)
 - `idx_nav_invoice_items_project_id` (`project_id`)
+- `idx_nav_invoice_items_partial_deductible` (`nav_invoice_id` WHERE `deductible_percentage < 100`) — O(1) részleges index a nem levonható ÁFA-tételekhez (lásd [A-134](../decisions/A-134-non-deductible-vat-lifecycle-and-partial-indexes.md))
 
 **Triggerek:**
 - `trg_set_nav_invoice_items_company_id` (`BEFORE INSERT OR UPDATE ON nav_invoice_items`): Ha az új tételen hiányzik a `company_id`, a szülő `nav_invoices` alapján automatikusan feltölti.
