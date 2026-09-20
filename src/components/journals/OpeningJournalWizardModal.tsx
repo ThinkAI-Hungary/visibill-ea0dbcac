@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2, Loader2, AlertCircle, CheckCircle2, BookOpen, ShieldCheck, ArrowRight, ArrowLeft, UploadCloud, RefreshCw, Sparkles, Scale, Check, AlertTriangle } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
+import { formatCurrencyLocale } from '@/lib/locale/formatters';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { CustomTooltip } from '@/components/ui/custom-tooltip';
@@ -65,6 +66,7 @@ export default function OpeningJournalWizardModal({
   const [documentId, setDocumentId] = useState<string>('NYITO-' + currentYear);
   const [justification, setJustification] = useState<string>(t('dialogs.opening_wizard.step1.default_justification', { defaultValue: 'Előző évi záró mérleg és nyitó főkönyvi kivonat alapján' }));
   const [transitionType, setTransitionType] = useState<'EVFORDULOS' | 'EVKOZBENI'>('EVFORDULOS');
+  const [currency, setCurrency] = useState<string>('HUF');
   
   const [lines, setLines] = useState<OpeningLineInput[]>([
     { gl_account_id: '', dc_type: 'T', amount: 0, description: 'Eszköz nyitó tétel' },
@@ -84,6 +86,7 @@ export default function OpeningJournalWizardModal({
     setDocumentId(`NYITO-${currentYear}`);
     setJustification(t('dialogs.opening_wizard.step1.default_justification', { defaultValue: 'Előző évi záró mérleg és nyitó főkönyvi kivonat alapján' }));
     setTransitionType('EVFORDULOS');
+    setCurrency('HUF');
     setLines([
       { gl_account_id: '', dc_type: 'T', amount: 0, description: 'Eszköz nyitó tétel' },
       { gl_account_id: '', dc_type: 'K', amount: 0, description: 'Forrás nyitó tétel' },
@@ -142,14 +145,14 @@ export default function OpeningJournalWizardModal({
     enabled: !!selectedCompany?.id && open,
   });
 
-  // Fetch NY Journal ID
+  // Fetch NY Journal ID & currency
   const { data: nyJournal } = useQuery({
     queryKey: ['acc-ny-journal', selectedCompany?.id],
     queryFn: async () => {
       if (!selectedCompany?.id) return null;
       const { data, error } = await supabase
         .from('acc_journals')
-        .select('id, code, name')
+        .select('id, code, name, currency')
         .eq('company_id', selectedCompany.id)
         .eq('code', 'NY')
         .maybeSingle();
@@ -159,17 +162,23 @@ export default function OpeningJournalWizardModal({
     enabled: !!selectedCompany?.id,
   });
 
-  // Fetch GL Accounts (Filtered to 1-4 Balance sheet accounts for Opening, paginated)
+  useEffect(() => {
+    if (nyJournal?.currency) {
+      setCurrency(nyJournal.currency);
+    }
+  }, [nyJournal?.currency]);
+
+  // Fetch GL Accounts (Filtered to 0, 1-4, 9 Balance sheet accounts for Opening, paginated)
   const { data: glAccounts = [] } = useQuery({
     queryKey: ['gl-accounts-balance-sheet', activePresetId],
     queryFn: async () => {
       if (!activePresetId) return [];
       const data = await fetchAllGlAccountsByPreset(activePresetId);
       
-      // Filter to Balance sheet accounts (1-4)
+      // Filter to Balance sheet accounts (0, 1-4, 9) to support Hungarian (1-4) and Croatian/international charts (0, 1-4, 9)
       return (data || []).filter(g => {
         const firstDigit = g.gl_number.replace(/\./g, '').substring(0, 1);
-        return ['1', '2', '3', '4'].includes(firstDigit);
+        return ['0', '1', '2', '3', '4', '9'].includes(firstDigit);
       });
     },
     enabled: !!activePresetId,
@@ -196,7 +205,7 @@ export default function OpeningJournalWizardModal({
       const g = glAccounts.find(acc => acc.id === l.gl_account_id);
       if (!g) return l.dc_type === 'T';
       const firstDigit = g.gl_number.replace(/\./g, '').substring(0, 1);
-      return ['1', '2', '3'].includes(firstDigit) && l.dc_type === 'T';
+      return ['0', '1', '2', '3'].includes(firstDigit) && l.dc_type === 'T';
     })
     .reduce((sum, l) => sum + (l.amount || 0), 0);
 
@@ -205,22 +214,22 @@ export default function OpeningJournalWizardModal({
       const g = glAccounts.find(acc => acc.id === l.gl_account_id);
       if (!g) return l.dc_type === 'K';
       const firstDigit = g.gl_number.replace(/\./g, '').substring(0, 1);
-      return firstDigit === '4' && l.dc_type === 'K';
+      return ['2', '4', '9'].includes(firstDigit) && l.dc_type === 'K';
     })
     .reduce((sum, l) => sum + (l.amount || 0), 0);
 
   const totalDebit = lines.filter(l => l.dc_type === 'T').reduce((sum, l) => sum + (l.amount || 0), 0);
   const totalCredit = lines.filter(l => l.dc_type === 'K').reduce((sum, l) => sum + (l.amount || 0), 0);
   
-  // Imbalance of double-entry
-  const totalImbalance = totalDebit - totalCredit;
+  // Imbalance of double-entry (rounded to 2 decimals)
+  const totalImbalance = Math.round((totalDebit - totalCredit) * 100) / 100;
 
   const hasValidLines = lines.some(l => Boolean(l.gl_account_id) && Number(l.amount) > 0);
 
   // 491 Account balance calculation:
   // Eszköz nyitás: T Eszköz - K 491 (adds Credit to 491)
   // Forrás nyitás: T 491 - K Forrás (adds Debit to 491)
-  const is491Balanced = hasValidLines && totalImbalance === 0;
+  const is491Balanced = hasValidLines && Math.abs(totalImbalance) < 0.01;
 
   // Save / Post Opening Mutation
   const saveAndPostMutation = useMutation({
@@ -252,7 +261,7 @@ export default function OpeningJournalWizardModal({
           document_id: documentId,
           description: `Nyitó tételek (${accountingYear})`,
           justification: justification,
-          currency: 'HUF',
+          currency: currency || nyJournal?.currency || 'HUF',
           created_by: user.id
         })
         .select('id')
@@ -412,11 +421,16 @@ export default function OpeningJournalWizardModal({
     });
   };
 
-  const handleImportGlBalances = (imported: Array<{ gl_number: string; dc_type: 'T' | 'K'; amount: number; description?: string }>) => {
+  const handleImportGlBalances = (
+    imported: Array<{ gl_number: string; dc_type: 'T' | 'K'; amount: number; description?: string }>,
+    metadata?: { currency?: string; suggestedDate?: string; suggestedYear?: number }
+  ) => {
     const newLines: OpeningLineInput[] = [];
+    let unmatchedCount = 0;
 
     for (const item of imported) {
-      const matched = glAccounts.find(g => g.gl_number.replace(/\./g, '') === item.gl_number.replace(/\./g, ''));
+      const cleanItemKonto = item.gl_number.replace(/\./g, '').trim();
+      const matched = glAccounts.find(g => g.gl_number.replace(/\./g, '').trim() === cleanItemKonto);
       if (matched) {
         newLines.push({
           gl_account_id: matched.id,
@@ -426,11 +440,45 @@ export default function OpeningJournalWizardModal({
           amount: item.amount,
           description: item.description || 'Importált nyitó egyenleg'
         });
+      } else {
+        unmatchedCount++;
       }
     }
 
     if (newLines.length > 0) {
       setLines(newLines);
+      if (unmatchedCount > 0) {
+        toast({
+          title: t('dialogs.opening_wizard.toasts.import_partial_title', { defaultValue: 'Részleges import' }),
+          description: t('dialogs.opening_wizard.toasts.import_partial_desc', { 
+            defaultValue: `${newLines.length} számla sikeresen betöltve. ${unmatchedCount} számla nem található a számlatükörben.`
+          }),
+        });
+      } else {
+        toast({
+          title: t('dialogs.opening_wizard.toasts.import_success_title', { defaultValue: 'Sikeres import' }),
+          description: t('dialogs.opening_wizard.toasts.import_success_desc', { 
+            defaultValue: `${newLines.length} nyitó tétel sikeresen betöltve.`
+          })
+        });
+      }
+    } else {
+      toast({
+        title: t('dialogs.opening_wizard.toasts.import_empty_title', { defaultValue: 'Sikertelen betöltés' }),
+        description: t('dialogs.opening_wizard.toasts.import_empty_desc', { defaultValue: 'Nem sikerült számlákat párosítani az aktív számlatükörrel.' }),
+        variant: 'destructive'
+      });
+    }
+
+    if (metadata?.currency) {
+      setCurrency(metadata.currency);
+    }
+    if (metadata?.suggestedDate) {
+      setPostingDate(metadata.suggestedDate);
+    }
+    if (metadata?.suggestedYear) {
+      setAccountingYear(metadata.suggestedYear);
+      setDocumentId(`NYITO-${metadata.suggestedYear}`);
     }
   };
 
@@ -574,7 +622,7 @@ export default function OpeningJournalWizardModal({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold">{t('dialogs.opening_wizard.step1.document_number', { defaultValue: 'Bizonylatszám' })}</Label>
                     <Input
@@ -582,6 +630,20 @@ export default function OpeningJournalWizardModal({
                       onChange={e => setDocumentId(e.target.value)}
                       className="h-9 font-mono text-xs focus:border-primary focus-visible:border-primary"
                     />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">{t('dialogs.opening_wizard.step1.currency', { defaultValue: 'Pénznem' })}</Label>
+                    <Select value={currency} onValueChange={(v) => setCurrency(v)}>
+                      <SelectTrigger className="h-9 focus:border-primary focus-visible:border-primary">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="EUR">EUR (€)</SelectItem>
+                        <SelectItem value="HUF">HUF (Ft)</SelectItem>
+                        <SelectItem value="USD">USD ($)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-1.5">
@@ -625,8 +687,8 @@ export default function OpeningJournalWizardModal({
 
                   {/* Live 491 KPI indicator */}
                   <div className="flex items-center gap-4 text-xs font-medium">
-                    <div>{t('dialogs.opening_wizard.step2.total_debit', { defaultValue: 'Össz T:' })} <span className="font-bold tabular-nums text-blue-600">{formatCurrency(totalDebit)}</span></div>
-                    <div>{t('dialogs.opening_wizard.step2.total_credit', { defaultValue: 'Össz K:' })} <span className="font-bold tabular-nums text-emerald-600">{formatCurrency(totalCredit)}</span></div>
+                    <div>{t('dialogs.opening_wizard.step2.total_debit', { defaultValue: 'Össz T:' })} <span className="font-bold tabular-nums text-blue-600">{formatCurrencyLocale(totalDebit, currency)}</span></div>
+                    <div>{t('dialogs.opening_wizard.step2.total_credit', { defaultValue: 'Össz K:' })} <span className="font-bold tabular-nums text-emerald-600">{formatCurrencyLocale(totalCredit, currency)}</span></div>
                     <div className={cn(
                       "px-3 py-1 rounded-full font-bold border flex items-center gap-1.5 tabular-nums transition-colors",
                       !hasValidLines
@@ -637,7 +699,7 @@ export default function OpeningJournalWizardModal({
                     )}>
                       {!hasValidLines ? <AlertTriangle className="w-3.5 h-3.5" /> : is491Balanced ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
                       <span>
-                        {t('dialogs.opening_wizard.step2.imbalance_label', { defaultValue: '491 Nyitómérleg Eltérés:' })} {formatCurrency(totalImbalance)}
+                        {t('dialogs.opening_wizard.step2.imbalance_label', { defaultValue: '491 Nyitómérleg Eltérés:' })} {formatCurrencyLocale(totalImbalance, currency)}
                         {!hasValidLines && ` (${t('dialogs.opening_wizard.step2.no_lines_warning', { defaultValue: 'Nincsenek nyitó összegek' })})`}
                       </span>
                     </div>
@@ -651,9 +713,9 @@ export default function OpeningJournalWizardModal({
                       <thead className="sticky top-0 bg-muted/95 backdrop-blur-xs z-10 shadow-xs border-b border-border/60">
                         <tr className="text-muted-foreground font-semibold uppercase text-[10px] tracking-wider">
                           <th className="py-2.5 px-3 text-left w-10">#</th>
-                          <th className="py-2.5 px-3 text-left w-[320px]">{t('dialogs.opening_wizard.step2.table_headers.gl_account', { defaultValue: 'Főkönyvi Számla (1–4)' })}</th>
+                          <th className="py-2.5 px-3 text-left w-[320px]">{t('dialogs.opening_wizard.step2.table_headers.gl_account', { defaultValue: 'Főkönyvi Számla (0–4, 9)' })}</th>
                           <th className="py-2.5 px-3 text-center w-24">{t('dialogs.opening_wizard.step2.table_headers.sign', { defaultValue: 'Jel' })}</th>
-                          <th className="py-2.5 px-3 text-right w-40">{t('dialogs.opening_wizard.step2.table_headers.amount', { defaultValue: 'Nyitó Összeg (Ft)' })}</th>
+                          <th className="py-2.5 px-3 text-right w-40">{t('dialogs.opening_wizard.step2.table_headers.amount', { defaultValue: `Nyitó Összeg (${currency === 'EUR' ? '€' : currency})` })}</th>
                           <th className="py-2.5 px-3 text-left">{t('dialogs.opening_wizard.step2.table_headers.comment', { defaultValue: 'Megjegyzés' })}</th>
                           <th className="py-2.5 px-3 text-center w-12"></th>
                         </tr>
@@ -836,21 +898,21 @@ export default function OpeningJournalWizardModal({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="p-4 border rounded-xl bg-card space-y-2">
                       <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('dialogs.opening_wizard.step3.customer_subledger', { defaultValue: 'Vevő (311) Folyószámla' })}</div>
-                      <div className="flex justify-between text-xs"><span>{t('dialogs.opening_wizard.step3.itemized_opening', { defaultValue: 'Tételes Nyitó Számlák:' })}</span> <span className="font-bold">{formatCurrency(subledgerData.open_ar_subledger)}</span></div>
-                      <div className="flex justify-between text-xs"><span>{t('dialogs.opening_wizard.step3.gl_opening_311', { defaultValue: 'Főkönyvi 311 Nyitó:' })}</span> <span className="font-bold">{formatCurrency(subledgerData.gl_311_opening)}</span></div>
+                      <div className="flex justify-between text-xs"><span>{t('dialogs.opening_wizard.step3.itemized_opening', { defaultValue: 'Tételes Nyitó Számlák:' })}</span> <span className="font-bold">{formatCurrencyLocale(subledgerData.open_ar_subledger, currency)}</span></div>
+                      <div className="flex justify-between text-xs"><span>{t('dialogs.opening_wizard.step3.gl_opening_311', { defaultValue: 'Főkönyvi 311 Nyitó:' })}</span> <span className="font-bold">{formatCurrencyLocale(subledgerData.gl_311_opening, currency)}</span></div>
                       <div className={cn("text-xs font-bold pt-2 border-t flex items-center justify-between", subledgerData.ar_diff === 0 ? "text-emerald-600" : "text-rose-500")}>
                         <span>{t('dialogs.opening_wizard.step3.difference', { defaultValue: 'Eltérés:' })}</span>
-                        <span>{formatCurrency(subledgerData.ar_diff)}</span>
+                        <span>{formatCurrencyLocale(subledgerData.ar_diff, currency)}</span>
                       </div>
                     </div>
 
                     <div className="p-4 border rounded-xl bg-card space-y-2">
                       <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('dialogs.opening_wizard.step3.supplier_subledger', { defaultValue: 'Szállító (454) Folyószámla' })}</div>
-                      <div className="flex justify-between text-xs"><span>{t('dialogs.opening_wizard.step3.itemized_opening', { defaultValue: 'Tételes Nyitó Számlák:' })}</span> <span className="font-bold">{formatCurrency(subledgerData.open_ap_subledger)}</span></div>
-                      <div className="flex justify-between text-xs"><span>{t('dialogs.opening_wizard.step3.gl_opening_454', { defaultValue: 'Főkönyvi 454 Nyitó:' })}</span> <span className="font-bold">{formatCurrency(subledgerData.gl_454_opening)}</span></div>
+                      <div className="flex justify-between text-xs"><span>{t('dialogs.opening_wizard.step3.itemized_opening', { defaultValue: 'Tételes Nyitó Számlák:' })}</span> <span className="font-bold">{formatCurrencyLocale(subledgerData.open_ap_subledger, currency)}</span></div>
+                      <div className="flex justify-between text-xs"><span>{t('dialogs.opening_wizard.step3.gl_opening_454', { defaultValue: 'Főkönyvi 454 Nyitó:' })}</span> <span className="font-bold">{formatCurrencyLocale(subledgerData.gl_454_opening, currency)}</span></div>
                       <div className={cn("text-xs font-bold pt-2 border-t flex items-center justify-between", subledgerData.ap_diff === 0 ? "text-emerald-600" : "text-rose-500")}>
                         <span>{t('dialogs.opening_wizard.step3.difference', { defaultValue: 'Eltérés:' })}</span>
-                        <span>{formatCurrency(subledgerData.ap_diff)}</span>
+                        <span>{formatCurrencyLocale(subledgerData.ap_diff, currency)}</span>
                       </div>
                     </div>
                   </div>
