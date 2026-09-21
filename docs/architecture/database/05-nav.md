@@ -98,14 +98,18 @@
 | exclude_from_accounting | boolean | — | `false` |
 | deductible_percentage | numeric(5,2) | — | `100.00` |
 | net_weight_kg | numeric | ✓ | NULL | Nettó tömeg kilogrammban (6/B melléklet szerinti acélipari nyilatkozathoz, lásd [A-131](../decisions/A-131-nav-2665-vat-return-restructuring-and-steel-reporting.md)) |
+| vat_code | text | ✓ | NULL | Kézzel felülbírált vagy gépi tanulás által felismert ÁFA kód szöveges azonosítója (pl. 27, 05, FAD, TAM), lásd [A-135](../decisions/A-135-dual-vat-code-system-and-reverse-charge-recognition.md) |
+| vat_code_id | uuid | ✓ | NULL | Hivatkozás a konkrét ÁFA kód törzsrekordra (`public.vat_codes`), lásd [A-136](../decisions/A-136-invoice-vat-code-overrides-and-machine-learning.md) |
+| is_vat_code_manual | boolean | — | `false` | Jelzi, ha az ÁFA kód manuálisan lett felülbírálva a felhasználó által |
 
-**FK:** `company_id` → `companies.id`, `nav_invoice_id` → `nav_invoices.id`, `project_id` → `projects.id`
+**FK:** `company_id` → `companies.id`, `nav_invoice_id` → `nav_invoices.id`, `project_id` → `projects.id`, `vat_code_id` → `vat_codes.id`
 
 **Indexek:**
 - `idx_nav_invoice_items_company_id` (`company_id`)
 - `idx_nav_invoice_items_company_unclassified` (`company_id, id` WHERE `(gl_classifications = '{}'::jsonb OR gl_classifications IS NULL) AND exclude_from_accounting = false`)
 - `idx_nav_invoice_items_nav_invoice_id` (`nav_invoice_id`)
 - `idx_nav_invoice_items_project_id` (`project_id`)
+- `idx_nav_invoice_items_vat_code_id` (`vat_code_id`)
 - `idx_nav_invoice_items_partial_deductible` (`nav_invoice_id` WHERE `deductible_percentage < 100`) — O(1) részleges index a nem levonható ÁFA-tételekhez (lásd [A-134](../decisions/A-134-non-deductible-vat-lifecycle-and-partial-indexes.md))
 
 **Triggerek:**

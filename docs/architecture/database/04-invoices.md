@@ -2,7 +2,7 @@
 
 > Számlafeldolgozás, feltöltések, tételmutató, backup táblák.
 
-**Táblák ebben a csoportban:** 9
+**Táblák ebben a csoportban:** 10
 
 ---
 
@@ -114,10 +114,13 @@
 | exclude_from_accounting | boolean | — | `false` |
 | deductible_percentage | numeric(5,2) | — | `100.00` |
 | net_weight_kg | numeric | ✓ | NULL | Nettó tömeg kilogrammban (6/B melléklet szerinti acélipari nyilatkozathoz, lásd [A-131](../decisions/A-131-nav-2665-vat-return-restructuring-and-steel-reporting.md)) |
+| vat_code | text | ✓ | NULL | Kézzel felülbírált vagy gépi tanulás által felismert ÁFA kód szöveges azonosítója (pl. 27, 05, FAD, TAM), lásd [A-135](../decisions/A-135-dual-vat-code-system-and-reverse-charge-recognition.md) |
+| vat_code_id | uuid | ✓ | NULL | Hivatkozás a konkrét ÁFA kód törzsrekordra (`public.vat_codes`), lásd [A-136](../decisions/A-136-invoice-vat-code-overrides-and-machine-learning.md) |
+| is_vat_code_manual | boolean | — | `false` | Jelzi, ha az ÁFA kód manuálisan lett felülbírálva a felhasználó által |
 
-**FK:** `invoice_id` → `invoices.id`, `project_id` → `projects.id`
+**FK:** `invoice_id` → `invoices.id`, `project_id` → `projects.id`, `vat_code_id` → `vat_codes.id`
 
-**Indexek:** `idx_invoice_items_invoice_id`, `idx_invoice_items_partial_deductible` (`invoice_id` WHERE `deductible_percentage < 100`) — O(1) részleges index nem levonható ÁFA-tételekhez (lásd [A-134](../decisions/A-134-non-deductible-vat-lifecycle-and-partial-indexes.md))
+**Indexek:** `idx_invoice_items_invoice_id`, `idx_invoice_items_vat_code_id`, `idx_invoice_items_partial_deductible` (`invoice_id` WHERE `deductible_percentage < 100`) — O(1) részleges index nem levonható ÁFA-tételekhez (lásd [A-134](../decisions/A-134-non-deductible-vat-lifecycle-and-partial-indexes.md))
 
 ---
 
@@ -296,4 +299,35 @@
 - UPDATE: `user_id = auth.uid()` — user csak saját jobját módosíthatja
 
 **Indexek:** `idx_pdf_export_jobs_company_created`
+
+---
+
+### `vat_code_overrides_log`
+
+**RLS:** ✅ | **Sorok:** 0
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| id | uuid | — | `gen_random_uuid()` |
+| company_id | uuid | — | |
+| partner_tax_number | text | ✓ | |
+| partner_name | text | ✓ | |
+| item_description | text | ✓ | |
+| original_vat_rate | text | ✓ | |
+| original_vat_code | text | ✓ | |
+| new_vat_code_id | uuid | — | |
+| new_vat_code | text | — | |
+| direction | text | ✓ | NULL (CHECK in `'inbound'`, `'outbound'`) |
+| user_id | uuid | ✓ | NULL |
+| created_at | timestamp with time zone | ✓ | `now()` |
+
+**FK:** `company_id` → `companies.id`, `new_vat_code_id` → `vat_codes.id`, `user_id` → `auth.users.id`
+
+**Indexek:** `idx_vat_code_overrides_company_partner` (`company_id, partner_tax_number, item_description`)
+
+**RLS policies:**
+- SELECT: Cégtagok számára (`company_id IN (SELECT company_id FROM company_members WHERE user_id = auth.uid())`)
+- INSERT: Cégtagok számára (`company_id IN (SELECT company_id FROM company_members WHERE user_id = auth.uid())`)
+
+> **Architektúra Döntés (2026-09-21):** Számlatételes ÁFA kód felülbírálások audit naplója és gépi tanulási bázisa — lásd [A-136](../decisions/A-136-invoice-vat-code-overrides-and-machine-learning.md).
 

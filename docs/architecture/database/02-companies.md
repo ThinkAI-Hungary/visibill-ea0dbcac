@@ -59,6 +59,7 @@
 | admin_deadline | time without time zone | — | `'20:00:00'::time without time zone` |
 | monthly_working_hours | numeric | — | `168` |
 | gl_date_basis | text | — | `'kibocsatas'` (CHECK in `'kibocsatas'`, `'teljesites'`) |
+| vat_code_display_mode | text | — | `'legacy'` (CHECK in `'legacy'`, `'nav'`) |
 | created_at | timestamp with time zone | — | `now()` |
 | updated_at | timestamp with time zone | — | `now()` |
 

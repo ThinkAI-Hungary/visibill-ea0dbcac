@@ -1,7 +1,7 @@
 # Visibill — Business Requirement Decisions
 
-> **Utoljára frissítve:** 2026-09-20  
-> **Összesen:** 60 döntés | ✅ Decided: 46 | 🟡 Partially Decided: 8 | ⛔ Superseded: 1 | 🔴 Open: 5
+> **Utoljára frissítve:** 2026-09-21  
+> **Összesen:** 61 döntés | ✅ Decided: 47 | 🟡 Partially Decided: 8 | ⛔ Superseded: 1 | 🔴 Open: 5
 
 ---
 
@@ -145,3 +145,4 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 | 058 | Idegen Vevőre Szóló Számlák Jóváhagyási és Könyvelési Védelmi Szabályzata | ✅ Decided | [058-buyer-tax-mismatch-accounting-guard.md](./058-buyer-tax-mismatch-accounting-guard.md) |
 | 059 | Partner-történeti Többségi Számlakategorizálási Szabályzat | ✅ Decided | [059-partner-history-majority-categorization.md](./059-partner-history-majority-categorization.md) |
 | 060 | NAV 2665 ÁFA Bevallási Szabályok, Gyűjtőkódok és 6/B Acélipari Kötelezettség | ✅ Decided | [060-nav-2665-vat-rules-and-steel-reporting.md](./060-nav-2665-vat-rules-and-steel-reporting.md) |
+| 061 | Számlatétel Áfakód Felülbírálat és Gépi Tanulási (ML) Szabályrendszer | ✅ Decided | [061-invoice-vat-code-overrides-and-machine-learning.md](./061-invoice-vat-code-overrides-and-machine-learning.md) |

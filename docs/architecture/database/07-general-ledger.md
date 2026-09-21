@@ -218,6 +218,7 @@
 | created_at | timestamp with time zone | — | `now()` |
 | updated_at | timestamp with time zone | — | `now()` |
 | fad_category | text | ✓ |  |
+| legacy_code | text | ✓ | NULL | Alternatív / korábbi szoftverekből örökölt ÁFA kód (pl. 27, FAD, 05, TAM), lásd [A-135](../decisions/A-135-dual-vat-code-system-and-reverse-charge-recognition.md) |
 
 **FK:** `company_id` → `companies.id`
 

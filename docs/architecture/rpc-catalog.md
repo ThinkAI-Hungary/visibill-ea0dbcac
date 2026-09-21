@@ -1,7 +1,7 @@
 # PostgreSQL RPC és Függvény Katalógus
 
-> **Utoljára frissítve:** 2026-09-18  
-> **Összesen:** 133 hívható RPC függvény | 74 PostgreSQL trigger függvény | `public` séma | **Supabase PostgreSQL**
+> **Utoljára frissítve:** 2026-09-21  
+> **Összesen:** 134 hívható RPC függvény | 74 PostgreSQL trigger függvény | `public` séma | **Supabase PostgreSQL**
 
 Ez a dokumentáció az eaisybill-prod és eaisyBooks rendszerekben használt összes PostgreSQL tárolt eljárást és RPC (Remote Procedure Call) függvényt tartalmazza. Részletezi a függvény szignatúráját, biztonsági környezetét (`SECURITY DEFINER` vs `INVOKER`), hívó komponensét és funkcionális szerepét.
 A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-schema.md), a szervermentes funkciókat az [Edge Functions Katalógus](./edge-functions.md), a lekérdezési stratégiát pedig az [A-016: PostgreSQL Query Stratégia](./decisions/A-016-postgresql-query-strategy.md) mutatja be.
@@ -11,7 +11,7 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 ## Tartalomjegyzék
 
 1. [📊 Frontend Lekérdező és Aggregációs RPC-k (29 db)](#1--frontend-lekérdező-és-aggregációs-rpc-k)
-2. [✏️ Frontend Állapotmódosító és Üzleti RPC-k (31 db)](#2-️-frontend-állapotmódosító-és-üzleti-rpc-k)
+2. [✏️ Frontend Állapotmódosító és Üzleti RPC-k (32 db)](#2-️-frontend-állapotmódosító-és-üzleti-rpc-k)
 3. [📄 Kettős Könyvviteli Naplók (acc_*) RPC-k (8 db)](#3--kettős-könyvviteli-naplók-acc_-rpc-k)
 4. [📘 eaisyBooks és EV Modul RPC-k (8 db)](#4--eaisybooks-és-ev-modul-rpc-k)
 5. [🔐 Jogosultságkezelés és RLS Segédfüggvények (15 db)](#5--jogosultságkezelés-és-rls-segédfüggvények)
@@ -79,6 +79,7 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 | `normalize_partner_name_for_match(p_name text)` | `INVOKER` | `text` | Matcher Engine | Partnernév normalizálása (jogformák, írásjelek, kis-/nagybetűk tisztítása) párosításhoz. |
 | `override_gl_classification(p_item_id uuid, p_source_table text, p_new_gl_account_id uuid, p_original_gl_account_id uuid, p_company_id uuid, p_user_id uuid, p_preset_id uuid, p_new_gl_number text)` | `DEFINER` | `boolean` | GlClassificationSelect | Egyedi főkönyvi szám felülbírálása és audit naplózása. |
 | `override_gl_classifications_batch(p_items jsonb, p_new_gl_account_id uuid, p_company_id uuid, p_user_id uuid, p_preset_id uuid, p_new_gl_number text)` | `DEFINER` | `boolean` | GlBatchOverrideModal | Tömeges főkönyvi szám módosítás kijelölt tételekre. |
+| `override_vat_code_batch(p_items jsonb, p_new_vat_code_id uuid, p_company_id uuid, p_user_id uuid)` | `DEFINER` | `boolean` | InvoiceItemsDialog.tsx / VatCollectorAnalyticsView | Számlatételek ÁFA kódjának tömeges vagy egyedi felülbírálása, audit naplózás a `vat_code_overrides_log` táblába, és gépi tanulási visszacsatolás (partner+leírás szabályképzés). |
 | `recalculate_partner_skonto(p_company_id uuid, p_partner_name text, p_partner_tax text, p_has_skonto boolean, p_skonto_days integer, p_skonto_percent numeric, p_excludes_shipping boolean)` | `DEFINER` | `jsonb` | PartnersPage.tsx | Partnerhez tartozó nyitott, kifizetetlen számlák (`invoices` és `nav_invoices`) skontó kedvezményének atomi újraszámolása és frissítése, tételszintű szállítási díj kiszűréssel, illetve kikapcsoláskor a skontó mezők automatikus törlésével. |
 | `record_manual_invoice_payment(p_invoice_id uuid, p_payment_date date, p_payment_type text, p_note text)` | `DEFINER` | `void` | ManualPaymentModal.tsx | Számla kézi kiegyenlítésének rögzítése (készpénz, kompenzáció, egyéb) megjegyzéssel. |
 | `rematch_courier_report(p_report_id uuid)` | `DEFINER` | `jsonb` | CourierReportsTab.tsx | Futárjelentés sorainak újrafuttatása a párosító motorral. |

@@ -1,7 +1,7 @@
 # eaisybill-prod — Adatbázis Séma Áttekintés
 
-> **Utoljára frissítve:** 2026-09-17  
-> **Összesen:** 183 aktív alkalmazás-tábla (184 sémában) | **RLS:** mind engedélyezve (100% InitPlan & Single-Permissive optimalizált) | **FK Indexek:** 100% lefedettség | **Supabase PostgreSQL**
+> **Utoljára frissítve:** 2026-09-21  
+> **Összesen:** 184 aktív alkalmazás-tábla (185 sémában) | **RLS:** mind engedélyezve (100% InitPlan & Single-Permissive optimalizált) | **FK Indexek:** 100% lefedettség | **Supabase PostgreSQL**
 
 Ez a dokumentáció az eaisybill-prod Supabase projekt teljes adatbázis sémáját tartalmazza. Célja, hogy bármely fejlesztő és AI agent azonnal megértse a táblastruktúrát, kapcsolatokat és felhasználási kontextust.
 A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [PostgreSQL RPC Katalógus](./rpc-catalog.md), a serverless függvényeket az [Edge Functions Katalógus](./edge-functions.md), a biztonsági és indexelési irányelveket pedig az [A-092: Teljes Adatbázis Biztonsági és Teljesítménybeli Audit & Optimalizáció](./decisions/A-092-database-security-and-performance-optimization.md) dokumentálja.
@@ -13,7 +13,7 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 - [🔐 Auth & Felhasználók](./database/01-auth-users.md) — 6 tábla, ~73 sor
 - [🏢 Cégek & Tagság](./database/02-companies.md) — 8 tábla, ~122 sor
 - [🔑 Jogosultságok & Hozzáférés](./database/03-permissions.md) — 3 tábla, ~189 sor
-- [📄 Számlák & Bizonylatok](./database/04-invoices.md) — 8 tábla, ~30556 sor
+- [📄 Számlák & Bizonylatok](./database/04-invoices.md) — 10 tábla, ~30556 sor
 - [🏛️ NAV Integráció](./database/05-nav.md) — 3 tábla, ~164208 sor
 - [💳 Tranzakciók & Bank](./database/06-transactions-bank.md) — 13 tábla, ~7945 sor
 - [📊 Főkönyv (General Ledger)](./database/07-general-ledger.md) — 9 tábla, ~30771 sor
@@ -34,7 +34,7 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 - [📄 Könyvelési Naplók](./database/22-accounting-journals.md) — 6 tábla, ~58702 sor
 
 **Kiegészítő katalógusok:**
-- [⚡ PostgreSQL RPC Katalógus (133 RPC + 74 Trigger)](./rpc-catalog.md) — Teljes tárolt eljárás és aggregációs motor katalógus
+- [⚡ PostgreSQL RPC Katalógus (134 RPC + 74 Trigger)](./rpc-catalog.md) — Teljes tárolt eljárás és aggregációs motor katalógus
 - [🌐 Supabase Edge Functions Katalógus (62 Deno EF)](./edge-functions.md) — NAV szinkron, email, AI, Open Banking és webhook szervermentes funkciók
 
 ---
@@ -223,6 +223,7 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 | `user_nav_credentials` | 🔐 Auth & Felhasználók | 47 | Titkosított NAV API belépési adatok. |
 | `user_subscriptions` | 🔐 Auth & Felhasználók | 7 | Felhasználói hozzáférési állapotok. |
 | `vat_codes` | 📊 Főkönyv | 1311 | ÁFA kulcsok és számlatükör kódok. |
+| `vat_code_overrides_log` | 📄 Számlák & Bizonylatok | 0 | Számlatételes ÁFA kód felülbírálások audit naplója és gépi tanulási bázisa. |
 | `vat_form_rows` | 📋 Éves Beszámoló & ÁFA | 0 | ÁFA bevallás hivatalos nyomtatvány sorai. |
 | `vat_return_lines` | 📋 Éves Beszámoló & ÁFA | 661 | Számított ÁFA bevallás sorai. |
 | `vat_return_m_lines` | 📋 Éves Beszámoló & ÁFA | 242 | ÁFA M-lapos partnerenkénti összesítők. |

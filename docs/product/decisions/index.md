@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-09-20  
-> **Összesen:** 94 döntés | ✅ Decided: 90 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Utoljára frissítve:** 2026-09-21  
+> **Összesen:** 96 döntés | ✅ Decided: 92 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -166,6 +166,7 @@
 | P-089 | Számla Könyvelési Kizárás ("Nem könyvelt") Optimista Kapcsoló és Zökkenőmentes UX | ✅ Decided | [P-089](./P-089-invoice-exclude-from-accounting-optimistic-toggle-ux.md) |
 | P-091 | Téves Vevőre Szóló Számlák Figyelmeztető Jelzése és Jóváhagyási Dialógus UX | ✅ Decided | [P-091](./P-091-buyer-tax-mismatch-warning-ux.md) |
 | P-100 | Nem Levonható ÁFA Megjelenítése és Felületi Átláthatósága (1. + 2. + 3. Opció) UX | ✅ Decided | [P-100](./P-100-non-deductible-vat-indicators-ux.md) |
+| P-101 | Számlatételek Áfakód Szerkesztése, Kettős Áfakód Megjelenítés és Tömeges Módosítás UX | ✅ Decided | [P-101](./P-101-invoice-vat-code-overrides-and-dual-display-ux.md) |
 
 ## 🔗 NAV Integráció
 
@@ -194,3 +195,4 @@
 | P-067 | Főkönyvi Könyvelési Státusz Szűrés, Naplózási Kormányzás és ÁFA Audit Jelző UX | ✅ Decided | [P-067](./P-067-gl-posting-status-filter-and-journal-governance-ux.md) |
 | P-068 | Főkönyvi Gyorskeresés, Összehasonlító Táblázat Pagináció és Felületi Ergonómia UX | ✅ Decided | [P-068](./P-068-gl-search-and-comparison-pagination-ux.md) |
 | P-071 | Biztonságos Számlatükör Törlés és Tételek Átkötése (Safe CoA Preset Remapping) UX | ✅ Decided | [P-071](./P-071-safe-chart-of-accounts-preset-deletion-and-remapping-ux.md) |
+| P-102 | Főkönyvi Kivonatok és Nyitó Egyenlegek Rugalmas Fájlimportja (Microfox & XML SpreadsheetML) UX | ✅ Decided | [P-102](./P-102-general-ledger-and-opening-balance-import-ux.md) |
