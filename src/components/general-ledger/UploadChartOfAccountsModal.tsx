@@ -237,8 +237,11 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
             return key ? row[key] : null;
           };
 
-          const glNumber = findKey(['fokszam', 'főkszám', 'fők.szám', 'főkönyvi', 'account', 'számlaszám', 'gl_number']) 
+          const rawGlNumber = findKey(['fokszam', 'főkszám', 'fők.szám', 'főkönyvi szám', 'főkönyvi', 'fksz', 'account', 'számlaszám', 'gl_number']) 
             || rowValues[0] || '';
+            
+          // Clean gl number (e.g. remove trailing dashes and format spaces like '113  -' or '413 - 17')
+          const glNumber = String(rawGlNumber).trim().replace(/\s*-\s*$/, '').replace(/\s*-\s*/g, '-');
             
           const shortName = findKey(['foknev', 'megnevezés', 'megnev', 'név', 'name', 'számlanév', 'short_name']) 
             || rowValues[1] || '';
@@ -248,7 +251,7 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
 
            return {
               preset_id: presetId,
-              gl_number: String(glNumber).trim(),
+              gl_number: glNumber,
               short_name: String(shortName).trim(),
               description: description ? String(description).trim() : null
            };
@@ -396,7 +399,7 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
               type="file" 
               ref={fileInputRef} 
               className="hidden" 
-              accept=".csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/pdf,text/plain"
+              accept=".csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/pdf,text/plain,.xml,text/xml,application/xml"
               onChange={handleFileSelect} 
             />
           </div>

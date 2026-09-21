@@ -28,7 +28,15 @@ import { Package, Package2, CheckCircle2, Info, Loader2, Check, Pencil, FileSpre
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActivePreset } from '@/hooks/useActivePreset';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useToast } from '@/hooks/use-toast';
+import {
+  matchItemToVatCode,
+  resolveVatCodeWithLearning,
+  getVatCodeBadgeData,
+  type VatCodeItem,
+  type VatCodeOverrideLogEntry,
+} from '@/utils/vatCodeMatching';
 import { AssetActivationDialog } from '@/components/AssetActivationDialog';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import {
@@ -61,6 +69,9 @@ interface InvoiceLineItem {
   notes?: string | null;
   deductible_percentage?: number | null;
   net_weight_kg?: number | null;
+  vat_code_id?: string | null;
+  vat_code?: string | null;
+  is_vat_code_manual?: boolean | null;
 }
 
 interface InvoiceItemsDialogProps {
@@ -99,10 +110,52 @@ export function InvoiceItemsDialog({
   const { activePresetId } = useActivePreset(selectedCompany?.id);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { effectiveSettings } = useCompanySettings();
+
+  // Fetch company configured VAT codes for dual tracking & accurate badge/tooltip resolution
+  const { data: vatCodes = [] } = useQuery({
+    queryKey: ['vat_codes', selectedCompany?.id],
+    queryFn: async () => {
+      if (!selectedCompany?.id) return [];
+      const { data, error } = await supabase
+        .from('vat_codes')
+        .select('*')
+        .eq('company_id', selectedCompany.id)
+        .order('sort_order');
+      if (error) throw error;
+      return (data || []) as unknown as VatCodeItem[];
+    },
+    enabled: open && !!selectedCompany?.id,
+  });
+
+  // Fetch learned VAT code rules for this company (few-shot ML learning)
+  const { data: learnedVatRules = [] } = useQuery({
+    queryKey: ['vat_code_overrides_log', selectedCompany?.id],
+    queryFn: async () => {
+      if (!selectedCompany?.id) return [];
+      const { data, error } = await supabase
+        .from('vat_code_overrides_log')
+        .select('*')
+        .eq('company_id', selectedCompany.id)
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.warn('Failed to load learned vat code overrides:', error);
+        return [];
+      }
+      return (data || []) as unknown as VatCodeOverrideLogEntry[];
+    },
+    enabled: open && !!selectedCompany?.id,
+  });
 
   // Selection state for activation
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [activationDialogOpen, setActivationDialogOpen] = useState(false);
+
+  // VAT code editing state
+  const [updatingVatCodeItemId, setUpdatingVatCodeItemId] = useState<string | null>(null);
+  const [bulkVatDialogOpen, setBulkVatDialogOpen] = useState(false);
+  const [bulkVatCodeId, setBulkVatCodeId] = useState<string>('');
+  const [isSubmittingVatCode, setIsSubmittingVatCode] = useState(false);
 
   // GL editing state
   const [glEditItem, setGlEditItem] = useState<InvoiceLineItem | null>(null);
@@ -125,14 +178,14 @@ export function InvoiceItemsDialog({
   // Fetch projects list
   const { projects: projectList } = useProjectList();
 
-  // Fetch parent invoice project_id and other details for petty cash
+  // Fetch parent invoice project_id and other details for petty cash & learning context
   const { data: parentInvoice } = useQuery({
     queryKey: ['parentInvoice', source, invoiceId],
     queryFn: async () => {
       const table = source === 'submitted' ? 'invoices' : 'nav_invoices';
       const selectFields = source === 'submitted'
-        ? 'project_id, invoice_direction, kibocsatas_datuma, penznem, bizonylatsorszam'
-        : 'project_id, invoice_direction, invoice_issue_date, currency, vat_summary, is_reverse_charge';
+        ? 'project_id, invoice_direction, kibocsatas_datuma, penznem, bizonylatsorszam, partner_adoszam, partner_nev'
+        : 'project_id, invoice_direction, invoice_issue_date, currency, vat_summary, is_reverse_charge, supplier_tax_number, supplier_name, customer_tax_number, customer_name';
 
       const { data, error } = await supabase
         .from(table as any)
@@ -301,7 +354,7 @@ export function InvoiceItemsDialog({
   const { data: items = [], isLoading: loading } = useQuery({
     queryKey: ['invoiceItems', source, invoiceId],
     queryFn: async () => {
-      const baseCols = 'id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications, project_id, notes, deductible_percentage, net_weight_kg';
+      const baseCols = 'id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications, project_id, notes, deductible_percentage, net_weight_kg, vat_code_id, vat_code, is_vat_code_manual';
       const fullCols = baseCols + ', exclude_from_accounting';
       const fkCol = source === 'submitted' ? 'invoice_id' : 'nav_invoice_id';
       const fromTable = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
@@ -822,6 +875,88 @@ export function InvoiceItemsDialog({
       queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices'] });
     }
   }, [glEditItem, isBulkGlEdit, selectedIds, items, selectedNewGL, selectedCompany?.id, session?.user.id, activePresetId, source, glAccounts, queryClient, toast, findTwinItems]);
+
+  // Single or Bulk VAT Code Override Handler with Few-Shot ML Learning
+  const handleSaveVatCodeOverride = useCallback(async (targetItems: InvoiceLineItem[], newVatCodeId: string | null) => {
+    if (!selectedCompany?.id || !session?.user.id) return;
+    if (targetItems.length === 0 || isSubmittingVatCode) return;
+
+    setIsSubmittingVatCode(true);
+
+    const sourceTable = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
+    const direction = isOutbound ? 'OUTBOUND' : 'INBOUND';
+    const partnerTax = isOutbound
+      ? (parentInvoice?.customer_tax_number || (parentInvoice as any)?.partner_adoszam || '')
+      : (parentInvoice?.supplier_tax_number || (parentInvoice as any)?.partner_adoszam || '');
+    const partnerName = isOutbound
+      ? (parentInvoice?.customer_name || (parentInvoice as any)?.partner_nev || supplierName || '')
+      : (parentInvoice?.supplier_name || (parentInvoice as any)?.partner_nev || supplierName || '');
+
+    const payloadItems: any[] = [];
+
+    for (const item of targetItems) {
+      payloadItems.push({
+        item_id: item.id,
+        source_table: sourceTable,
+        partner_tax_number: partnerTax,
+        partner_name: partnerName,
+        item_description: item.line_description || '',
+        original_vat_rate: item.vat_rate || '',
+        original_vat_code: item.vat_code || '',
+        direction,
+      });
+
+      // Synchronize twin items in the other table
+      const twins = await findTwinItems(item);
+      for (const twin of twins) {
+        payloadItems.push({
+          item_id: twin.id,
+          source_table: twin.sourceTable,
+          partner_tax_number: partnerTax,
+          partner_name: partnerName,
+          item_description: item.line_description || '',
+          original_vat_rate: item.vat_rate || '',
+          original_vat_code: item.vat_code || '',
+          direction,
+        });
+      }
+    }
+
+    const { error } = await supabase.rpc('override_vat_code_batch', {
+      p_items: payloadItems,
+      p_new_vat_code_id: newVatCodeId,
+      p_company_id: selectedCompany.id,
+      p_user_id: session.user.id,
+    });
+
+    setIsSubmittingVatCode(false);
+    setUpdatingVatCodeItemId(null);
+    setBulkVatDialogOpen(false);
+
+    if (error) {
+      toast({
+        title: 'Áfakód módosítási hiba',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      const selectedCodeObj = vatCodes.find(c => c.id === newVatCodeId);
+      const codeName = selectedCodeObj?.legacy_code || selectedCodeObj?.code || 'alapértelmezett';
+      toast({
+        title: 'Áfakód sikeresen elmentve',
+        description: targetItems.length > 1
+          ? `${targetItems.length} tétel áfakódja frissítve (${codeName}). A rendszer megjegyezte a szabályt a jövőbeli tételekhez.`
+          : `Tétel áfakódja frissítve (${codeName}). A rendszer megtanulta a hozzárendelést.`,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['invoiceItems'] });
+      queryClient.invalidateQueries({ queryKey: ['vat_code_overrides_log'] });
+      queryClient.invalidateQueries({ queryKey: ['vat_codes'] });
+      queryClient.invalidateQueries({ queryKey: ['vatCollectorItems'] });
+      queryClient.invalidateQueries({ queryKey: ['filteredNavInvoices'] });
+      queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices'] });
+    }
+  }, [selectedCompany?.id, session?.user.id, isSubmittingVatCode, source, isOutbound, parentInvoice, supplierName, vatCodes, findTwinItems, queryClient, toast]);
 
   // Sort items client-side if a sort field is active
   const sortedItems = useMemo(() => {
@@ -1358,32 +1493,116 @@ export function InvoiceItemsDialog({
                         </TableCell>
                         <TableCell className="text-center">
                           {(() => {
-                            const getVatCollectorCode = (rate: string | null): string => {
-                              if (!rate) return '25';
-                              const upper = rate.toUpperCase();
-                              if (upper.includes('FAD') || upper.includes('FORD') || upper.includes('REVERSE_CHARGE')) return 'FAD';
-                              if (upper.includes('AAM')) return 'AAM';
-                              if (upper.includes('TAM')) return 'TAM';
-                              const pct = normalizeVatRatePercent(rate);
-                              if (pct === 27) return '25';
-                              if (pct === 5) return '05';
-                              if (pct === 18) return '18';
-                              if (pct === 0) return '00';
-                              return '25';
-                            };
-                            const code = getVatCollectorCode(item.vat_rate);
+                            const direction = isOutbound ? 'OUTBOUND' : 'INBOUND';
+                            const isReverseCharge = parentInvoice?.is_reverse_charge ?? false;
+                            const partnerTax = isOutbound
+                              ? (parentInvoice?.customer_tax_number || (parentInvoice as any)?.partner_adoszam || '')
+                              : (parentInvoice?.supplier_tax_number || (parentInvoice as any)?.partner_adoszam || '');
+                            const partnerName = isOutbound
+                              ? (parentInvoice?.customer_name || (parentInvoice as any)?.partner_nev || supplierName || '')
+                              : (parentInvoice?.supplier_name || (parentInvoice as any)?.partner_nev || supplierName || '');
+
+                            const resolved = resolveVatCodeWithLearning({
+                              itemVatCodeId: item.vat_code_id,
+                              itemVatCode: item.vat_code,
+                              isItemManual: item.is_vat_code_manual,
+                              vatRate: item.vat_rate,
+                              direction,
+                              lineDescription: item.line_description,
+                              partnerTaxNumber: partnerTax,
+                              partnerName,
+                              vatCodes,
+                              learnedRules: learnedVatRules as any,
+                              isReverseCharge,
+                            });
+
+                            const displayMode = effectiveSettings?.vat_code_display_mode || 'legacy';
+                            const badgeData = getVatCodeBadgeData(
+                              resolved.matchedCode,
+                              displayMode,
+                              item.vat_rate,
+                              resolved.source,
+                              resolved.ruleExplanation
+                            );
+
+                            const relevantVatCodes = vatCodes.filter(c => c.direction === direction);
+
                             return (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20 cursor-help">
-                                    <span className="font-mono font-bold">{code}</span>
-                                    <span className="text-[11px] opacity-80">({formatVatRate(item.vat_rate)})</span>
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="text-xs z-[120]">
-                                  {t('invoices:dialogs.items.vat_collector_tooltip', { code })}
-                                </TooltipContent>
-                              </Tooltip>
+                              <DropdownMenu>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <DropdownMenuTrigger asChild>
+                                      <button
+                                        type="button"
+                                        disabled={updatingVatCodeItemId === item.id}
+                                        className={cn(
+                                          "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border shadow-xs transition-all cursor-pointer group",
+                                          badgeData.isManual
+                                            ? "bg-primary/15 text-primary border-primary/30 hover:bg-primary/25"
+                                            : badgeData.isLearned
+                                            ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/25"
+                                            : "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+                                        )}
+                                      >
+                                        {updatingVatCodeItemId === item.id ? (
+                                          <Loader2 className="w-3 h-3 animate-spin" />
+                                        ) : badgeData.isLearned ? (
+                                          <Sparkles className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
+                                        ) : badgeData.isManual ? (
+                                          <Pencil className="w-2.5 h-2.5 text-primary shrink-0 opacity-70 group-hover:opacity-100" />
+                                        ) : null}
+                                        <span className="font-mono font-bold">{badgeData.displayCode}</span>
+                                        <span className="text-[11px] opacity-80">({badgeData.rateLabel})</span>
+                                      </button>
+                                    </DropdownMenuTrigger>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="text-xs z-[120] max-w-xs text-center whitespace-pre-line">
+                                    {badgeData.tooltipText}
+                                  </TooltipContent>
+                                </Tooltip>
+
+                                <DropdownMenuContent align="center" className="w-72 max-h-72 overflow-y-auto z-[120]">
+                                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-b mb-1">
+                                    Áfakód választás ({direction === 'OUTBOUND' ? 'Kimenő' : 'Bejövő'})
+                                  </div>
+                                  {relevantVatCodes.map(vc => {
+                                    const isSelected = item.vat_code_id === vc.id || (!item.vat_code_id && resolved.matchedCode.code === vc.code);
+                                    return (
+                                      <DropdownMenuItem
+                                        key={vc.id || vc.code}
+                                        onClick={() => {
+                                          setUpdatingVatCodeItemId(item.id);
+                                          handleSaveVatCodeOverride([item], vc.id || null);
+                                        }}
+                                        className={cn(
+                                          "flex items-center justify-between text-xs cursor-pointer py-1.5",
+                                          isSelected && "bg-primary/10 font-medium"
+                                        )}
+                                      >
+                                        <div className="flex flex-col truncate pr-2">
+                                          <div className="flex items-center gap-1.5 font-mono">
+                                            <span className="font-bold">{displayMode === 'nav' ? vc.code : (vc.legacy_code || vc.code)}</span>
+                                            <span className="text-[11px] text-muted-foreground">({vc.vat_percent}%)</span>
+                                          </div>
+                                          <span className="text-[11px] text-muted-foreground truncate">{vc.label}</span>
+                                        </div>
+                                        {isSelected && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+                                      </DropdownMenuItem>
+                                    );
+                                  })}
+                                  {item.vat_code_id && (
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setUpdatingVatCodeItemId(item.id);
+                                        handleSaveVatCodeOverride([item], null);
+                                      }}
+                                      className="text-xs text-destructive focus:text-destructive border-t mt-1 cursor-pointer"
+                                    >
+                                      Visszaállítás törvényi alapértelmezettre
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             );
                           })()}
                         </TableCell>
@@ -1601,6 +1820,17 @@ export function InvoiceItemsDialog({
                   >
                     <Pencil className="h-4 w-4 text-primary" />
                     {t('invoices:dialogs.items.action_change_gl', { count: selectedIds.size || 0 })}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className={cn("gap-2", !someSelected && "invisible pointer-events-none")}
+                    onClick={() => {
+                      setBulkVatCodeId('');
+                      setBulkVatDialogOpen(true);
+                    }}
+                  >
+                    <Sparkles className="h-4 w-4 text-amber-500" />
+                    Áfakód módosítása ({selectedIds.size || 0})
                   </Button>
                   {!isOutbound && (
                     <div className={cn(!someSelected && "invisible pointer-events-none")}>
@@ -1889,6 +2119,55 @@ export function InvoiceItemsDialog({
               disabled={!selectedRegisterId}
             >
               {t('invoices:dialogs.items.petty_cash_btn_yes')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk VAT Code Assignment Dialog */}
+      <Dialog open={bulkVatDialogOpen} onOpenChange={setBulkVatDialogOpen}>
+        <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md p-6">
+          <DialogHeader>
+            <DialogTitle>Tömeges Áfakód Módosítás</DialogTitle>
+            <DialogDescription>
+              Válassz új áfakódot a kijelölt {selectedIds.size} tételhez. A rendszer automatikusan megjegyzi a választást a gépi tanulási szabályok közé.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Áfakód</Label>
+              <Select value={bulkVatCodeId} onValueChange={setBulkVatCodeId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Válassz áfakódot..." />
+                </SelectTrigger>
+                <SelectContent className="max-h-60 z-[130]">
+                  {vatCodes
+                    .filter(c => c.direction === (isOutbound ? 'OUTBOUND' : 'INBOUND'))
+                    .map(vc => (
+                      <SelectItem key={vc.id || vc.code} value={vc.id || ''}>
+                        <div className="flex items-center gap-2 font-mono">
+                          <span className="font-bold">{vc.legacy_code || vc.code}</span>
+                          <span className="text-xs text-muted-foreground">({vc.code} - {vc.vat_percent}%)</span>
+                          <span className="text-xs text-muted-foreground truncate max-w-[180px]">{vc.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkVatDialogOpen(false)}>Mégse</Button>
+            <Button
+              disabled={!bulkVatCodeId || isSubmittingVatCode}
+              onClick={() => {
+                const selectedLineItems = items.filter(i => selectedIds.has(i.id));
+                handleSaveVatCodeOverride(selectedLineItems, bulkVatCodeId);
+                setSelectedIds(new Set());
+              }}
+            >
+              {isSubmittingVatCode ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2 text-amber-400" />}
+              Alkalmazás ({selectedIds.size} tétel)
             </Button>
           </DialogFooter>
         </DialogContent>

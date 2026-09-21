@@ -215,7 +215,8 @@ export function formatVatRate(rate: string | number | null | undefined): string 
   }
   const s = String(rate).trim();
   const u = s.toUpperCase();
-  if (['0', '0%', '0.00', '0.0', '0.000', '0,00', '0,0', 'AAM', 'TAM', 'MENTES', 'EXP', 'EXPORT', 'FAD', 'FORD', 'FORDITOTT', 'DOMESTIC_REVERSE_CHARGE'].includes(u)) {
+  if (['0', '0%', '0.00', '0.0', '0.000', '0,00', '0,0', 'AAM', 'TAM', 'MENTES', 'EXP', 'EXPORT', 'FAD', 'FORD', 'FORDITOTT', 'DOMESTIC_REVERSE_CHARGE', 'F.AFA', 'F_AFA', 'F-AFA', 'FAFA', 'F. ÁFA', 'F_ÁFA'].includes(u) ||
+      u.includes('F.AFA') || u.includes('F_AFA') || u.includes('F-AFA') || u.includes('DOMESTIC_REVERSE_CHARGE')) {
     return 'mentes';
   }
   if (s.endsWith('%')) {
@@ -246,7 +247,7 @@ export function normalizeVatRatePercent(rate: string | number | null | undefined
   }
   const s = String(rate).trim();
   const u = s.toUpperCase();
-  if (['AAM', 'TAM', 'MENTES', 'EXP', 'EXPORT', 'FAD', 'FORD', 'FORDITOTT', 'DOMESTIC_REVERSE_CHARGE', 'KBAET', 'ATHK', 'EUK', 'AHK'].some(ex => u.includes(ex))) {
+  if (['AAM', 'TAM', 'MENTES', 'EXP', 'EXPORT', 'FAD', 'FORD', 'FORDITOTT', 'DOMESTIC_REVERSE_CHARGE', 'F.AFA', 'F_AFA', 'F-AFA', 'FAFA', 'F. ÁFA', 'F_ÁFA', 'KBAET', 'ATHK', 'EUK', 'AHK'].some(ex => u.includes(ex))) {
     return null;
   }
   const clean = s.replace(',', '.').replace('%', '').trim();
@@ -256,6 +257,23 @@ export function normalizeVatRatePercent(rate: string | number | null | undefined
     return Math.round(num);
   }
   return null;
+}
+
+/**
+ * Checks if a VAT rate represents domestic reverse charge (FAD, FORD, F.AFA, DOMESTIC_REVERSE_CHARGE).
+ */
+export function isReverseChargeVatRate(rate: string | number | null | undefined): boolean {
+  if (!rate) return false;
+  const u = String(rate).trim().toUpperCase();
+  return u.includes('FAD') ||
+    u.includes('FORD') ||
+    u.includes('REVERSE_CHARGE') ||
+    u.includes('F.AFA') ||
+    u.includes('F_AFA') ||
+    u.includes('F-AFA') ||
+    u.includes('FAFA') ||
+    u.includes('F. ÁFA') ||
+    u.includes('F_ÁFA');
 }
 
 /**

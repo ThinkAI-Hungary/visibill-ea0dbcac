@@ -175,7 +175,7 @@ export default function OpeningCSVImportModal({
               <div className="flex items-center justify-between p-3 bg-muted/40 rounded-xl border text-xs">
                 <div>
                   <span className="font-semibold block text-foreground">{t('dialogs.opening_csv_import.expected_columns', { defaultValue: 'Támogatott formátumok:' })}</span>
-                  <span className="text-muted-foreground">{t('dialogs.opening_csv_import.expected_cols_list', { defaultValue: '.xlsx, .xls, .csv, .json' })}</span>
+                  <span className="text-muted-foreground">{t('dialogs.opening_csv_import.expected_cols_list', { defaultValue: '.xlsx, .xls, .xml, .csv, .json' })}</span>
                 </div>
                 <Button size="sm" variant="outline" onClick={handleDownloadSampleGl} className="gap-1.5 h-8 text-xs shrink-0">
                   <Download className="w-3.5 h-3.5" /> {t('dialogs.opening_csv_import.sample_file', { defaultValue: 'CSV Minta' })}
@@ -196,7 +196,7 @@ export default function OpeningCSVImportModal({
               >
                 <input
                   type="file"
-                  accept=".xlsx, .xls, .csv, .json, .txt"
+                  accept=".xlsx, .xls, .xml, .csv, .json, .txt"
                   onChange={handleFileChange}
                   className="hidden"
                   id="opening-csv-input"
@@ -216,7 +216,7 @@ export default function OpeningCSVImportModal({
                       : t('dialogs.opening_csv_import.upload_drop_title', { defaultValue: 'Húzd ide vagy kattints a fájl kiválasztásához' })}
                   </span>
                   <span className="text-xs text-muted-foreground max-w-md">
-                    {t('dialogs.opening_csv_import.upload_drop_subtitle', { defaultValue: 'Támogatott kiterjesztések: .xlsx, .xls, .csv, .json' })}
+                    {t('dialogs.opening_csv_import.upload_drop_subtitle', { defaultValue: 'Támogatott kiterjesztések: .xlsx, .xls, .xml, .csv, .json' })}
                   </span>
                 </div>
               </div>

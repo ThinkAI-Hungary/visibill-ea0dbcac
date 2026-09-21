@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { is27PercentVatRate, normalizeVatRatePercent } from '@/lib/utils';
+import { is27PercentVatRate, normalizeVatRatePercent, isReverseChargeVatRate } from '@/lib/utils';
 
 describe('Telecom 70/30 Rule & VAT Collector Code Accuracy', () => {
   it('correctly targets all 27% line items regardless of string representation (including "27%" and "0.27")', () => {
@@ -23,6 +23,7 @@ describe('Telecom 70/30 Rule & VAT Collector Code Accuracy', () => {
   it('correctly returns proper NAV gyűjtőkód for 27%, 5%, 18% and special rates', () => {
     const getVatCollectorCode = (rate: string | null): string => {
       if (!rate) return '25';
+      if (isReverseChargeVatRate(rate)) return 'FAD';
       const upper = rate.toUpperCase();
       if (upper.includes('FAD') || upper.includes('FORD') || upper.includes('REVERSE_CHARGE')) return 'FAD';
       if (upper.includes('AAM')) return 'AAM';
@@ -53,5 +54,9 @@ describe('Telecom 70/30 Rule & VAT Collector Code Accuracy', () => {
     expect(getVatCollectorCode('TAM')).toBe('TAM');
     expect(getVatCollectorCode('FAD')).toBe('FAD');
     expect(getVatCollectorCode('DOMESTIC_REVERSE_CHARGE')).toBe('FAD');
+    expect(getVatCollectorCode('F.AFA')).toBe('FAD');
+    expect(getVatCollectorCode('F_AFA')).toBe('FAD');
+    expect(getVatCollectorCode('FAFA')).toBe('FAD');
+    expect(getVatCollectorCode('F. ÁFA')).toBe('FAD');
   });
 });

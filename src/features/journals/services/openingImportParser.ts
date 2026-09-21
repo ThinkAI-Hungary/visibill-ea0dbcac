@@ -263,22 +263,30 @@ function parseGenericRows(rows: any[], format: 'generic_csv' | 'generic_excel'):
     if (keys.length === 0) continue;
 
     // Account detection
-    const glKey = keys.find(k => /szamla|fokonyv|gl|account|konto/i.test(k));
-    const gl_number = glKey ? String(row[glKey]).trim() : String(row[keys[0]]).trim();
+    const glKey = keys.find(k => /szamla|fokonyv|fksz|gl|account|konto/i.test(k));
+    let gl_number = glKey ? String(row[glKey]).trim() : String(row[keys[0]]).trim();
+    gl_number = gl_number.replace(/\s*-\s*$/, '').replace(/\s*-\s*/g, '-');
 
     // DC detection
     const dcKey = keys.find(k => /irany|jel|dc|t_k|tartozik_kovetel|side/i.test(k));
     const dcRaw = dcKey ? String(row[dcKey]).toUpperCase().trim() : '';
 
     // Amount detection
+    const egyenlegKey = keys.find(k => /^egyenleg$/i.test(k) || /net_balance|closing_balance|zaro_egyenleg/i.test(k));
     const amtKey = keys.find(k => /osszeg|amount|egyenleg|balance/i.test(k));
-    const debitKey = keys.find(k => /tartozik|debit|duguje/i.test(k));
-    const creditKey = keys.find(k => /kovetel|credit|potrazuje/i.test(k));
+    const debitKey = keys.find(k => /tartozik|debit|duguje|^zt$/i.test(k));
+    const creditKey = keys.find(k => /kovetel|credit|potrazuje|^zk$/i.test(k));
 
     let dc_type: 'T' | 'K' = 'T';
     let amount = 0;
 
-    if (debitKey && creditKey) {
+    if (egyenlegKey && row[egyenlegKey] !== undefined && row[egyenlegKey] !== null && String(row[egyenlegKey]).trim() !== '') {
+      const bal = parseAmount(row[egyenlegKey]);
+      if (Math.abs(bal) > 0.001) {
+        dc_type = bal >= 0 ? 'T' : 'K';
+        amount = Math.abs(bal);
+      }
+    } else if (debitKey && creditKey) {
       const d = parseAmount(row[debitKey]);
       const c = parseAmount(row[creditKey]);
       if (d > 0) {
@@ -349,8 +357,8 @@ export async function parseOpeningFile(file: File): Promise<OpeningImportReport>
     return parseGenericRows(json, 'generic_csv');
   }
 
-  // 2. Excel (.xlsx, .xls)
-  if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+  // 2. Excel (.xlsx, .xls, .xml)
+  if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls') || fileName.endsWith('.xml')) {
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer, { type: 'array' });
     

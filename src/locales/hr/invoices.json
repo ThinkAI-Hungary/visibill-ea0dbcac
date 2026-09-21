@@ -201,7 +201,7 @@
       "telecom_banner_title": "Uočena telekomunikacijska faktura:",
       "telecom_banner_desc": "Sukladno propisima, 27% telefonske stavke odbitne su 70%, dok su 5% internetske stavke odbitne 100%.",
       "apply_70_30_btn": "Primjena pravila 70/30 (na 27% stavke)",
-      "vat_collector_tooltip": "Kôd PDV skupine: {{code}} (Zadani kôd za stavke 27%: 25)",
+      "vat_collector_tooltip": "{{label}} ({{code}})",
       "change_deductible_tooltip": "Promjena stope odbitka PDV-a",
       "deductible_100": "100% — Puni odbitak",
       "deductible_70": "70% — Telefon (70/30)",

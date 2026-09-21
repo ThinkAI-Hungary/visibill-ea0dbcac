@@ -180,6 +180,8 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-127 | Számlatáblázat Tab-Váltási Render-Skálázás (Lazy Combobox / DOM Pruning) és CSS Grid Accordion Re-Render Retesz | ✅ Decided | [A-127](./A-127-invoice-table-tab-switch-scaling-and-accordion-re-render-latch.md) |
 | A-131 | NAV 2665 ÁFA Bevallás Sormegfeleltetés, Gyűjtőkódok Tisztítása, 6/B Acélipari Nyilatkozat és Egész Kilogrammos Kerekítés | ✅ Decided | [A-131](./A-131-nav-2665-vat-return-restructuring-and-steel-reporting.md) |
 | A-134 | Nem Levonható ÁFA Életciklus, Reaktív ÁFA-Bontás (1. + 2. + 3. Opció) és Parciális B-Tree Indexek | ✅ Decided | [A-134](./A-134-non-deductible-vat-lifecycle-and-partial-indexes.md) |
+| A-135 | Kettős Áfa Kódrendszer (NAV 2665 vs Konvencionális Könyvelői Kódok) és F.AFA Fordított Adózási Felismerés | ✅ Decided | [A-135](./A-135-dual-vat-code-system-and-reverse-charge-recognition.md) |
+| A-136 | Számlatételek Áfakód Szerkeszthetősége és Gépi Tanulási (Machine Learning) Memória | ✅ Decided | [A-136](./A-136-invoice-vat-code-overrides-and-machine-learning.md) |
 
 ## 💳 Fizetés
 

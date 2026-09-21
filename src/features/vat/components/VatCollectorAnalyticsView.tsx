@@ -83,23 +83,38 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
         navIds.length > 0
           ? supabase
               .from('nav_invoice_items')
-              .select('id, nav_invoice_id, net_amount, vat_amount, vat_rate')
+              .select('id, nav_invoice_id, net_amount, vat_amount, vat_rate, vat_code')
               .in('nav_invoice_id', navIds)
           : Promise.resolve({ data: [] }),
         subIds.length > 0
           ? supabase
               .from('invoice_items')
-              .select('id, invoice_id, net_amount, vat_amount, vat_rate')
+              .select('id, invoice_id, net_amount, vat_amount, vat_rate, vat_code')
               .in('invoice_id', subIds)
           : Promise.resolve({ data: [] }),
       ]);
 
       const items: any[] = [];
 
-      const getCode = (rate: string | null) => {
+      const getCode = (rate: string | null, overrideCode?: string | null) => {
+        if (overrideCode && overrideCode.trim()) {
+          const oc = overrideCode.trim().toUpperCase();
+          if (['25', '05', '18', 'FAD', 'TAM', 'AAM', 'EXP'].includes(oc)) {
+            return oc;
+          }
+          if (oc.includes('FORD') || oc.includes('FAD')) return 'FAD';
+          if (oc.includes('27')) return '25';
+          if (oc.includes('05') || oc.includes('_5_') || oc.endsWith('_5')) return '05';
+          if (oc.includes('18')) return '18';
+          if (oc.includes('TAM') || oc.includes('0_LEV') || oc.includes('MENTES')) return 'TAM';
+          if (oc.includes('AAM')) return 'AAM';
+          if (oc.includes('EXP') || oc.includes('EXPORT')) return 'EXP';
+          return overrideCode.trim();
+        }
+
         if (!rate) return '25';
         const u = rate.toUpperCase();
-        if (u.includes('FAD') || u.includes('FORD')) return 'FAD';
+        if (u.includes('FAD') || u.includes('FORD') || u.includes('F.AFA') || u.includes('F_AFA') || u.includes('FAFA') || u.includes('REVERSE_CHARGE')) return 'FAD';
         if (rate === '0.27' || rate === '27' || rate === '27.0' || rate === '27.00' || rate === '27%') return '25';
         if (rate === '0.05' || rate === '5' || rate === '5.0' || rate === '5.00' || rate === '5%') return '05';
         if (rate === '0.18' || rate === '18' || rate === '18.0' || rate === '18.00' || rate === '18%') return '18';
@@ -117,7 +132,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
         const dateStr = inv?.invoice_delivery_date || inv?.invoice_issue_date || '';
         items.push({
           id: `nav_${i.id}`,
-          code: getCode(i.vat_rate),
+          code: getCode(i.vat_rate, i.vat_code),
           invoice_number: inv?.invoice_number || 'Névtelen',
           partner_name: inv?.supplier_name || inv?.customer_name || 'Ismeretlen partner',
           fulfillment_date: dateStr,
@@ -157,7 +172,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
         const dateStr = inv?.teljesites_datuma || inv?.kibocsatas_datuma || '';
         items.push({
           id: `sub_${i.id}`,
-          code: getCode(i.vat_rate),
+          code: getCode(i.vat_rate, i.vat_code),
           invoice_number: inv?.bizonylatsorszam || 'Névtelen',
           partner_name: inv?.elado_nev || inv?.vevo_nev || 'Ismeretlen partner',
           fulfillment_date: dateStr,

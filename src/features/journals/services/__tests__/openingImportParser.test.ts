@@ -92,4 +92,88 @@ describe('openingImportParser', () => {
     expect(report.totalCredit).toBe(150000);
     expect(report.aggregatedItems.length).toBe(2);
   });
+
+  it('correctly parses real Microfox Hungarian general ledger extract with FKSZ and EGYENLEG', async () => {
+    const filePath = path.resolve(
+      process.cwd(),
+      'tests/docs/eb0148/7602d66c-3907-4ba3-aba7-120d581b058d.xls'
+    );
+
+    expect(fs.existsSync(filePath)).toBe(true);
+    const buffer = fs.readFileSync(filePath);
+
+    const file = new File([buffer], '7602d66c-3907-4ba3-aba7-120d581b058d.xls', {
+      type: 'application/vnd.ms-excel',
+    });
+
+    const report = await parseOpeningFile(file);
+
+    expect(report.format).toBe('generic_excel');
+    expect(report.rawRowCount).toBe(156);
+    expect(report.isBalanced).toBe(true);
+    expect(report.imbalance).toBeLessThan(0.01);
+    expect(report.totalDebit).toBe(98897496.04);
+    expect(report.totalCredit).toBe(98897496.04);
+
+    // Verify sanitized gl numbers
+    const item113 = report.aggregatedItems.find(i => i.gl_number === '113');
+    expect(item113).toBeDefined();
+    expect(item113?.dc_type).toBe('T');
+    expect(item113?.amount).toBe(598010);
+
+    const item411 = report.aggregatedItems.find(i => i.gl_number === '411');
+    expect(item411).toBeDefined();
+    expect(item411?.dc_type).toBe('K');
+    expect(item411?.amount).toBe(3000000);
+  });
+
+  it('correctly parses Excel 2003 XML (SpreadsheetML) format files with .xml extension', async () => {
+    const xmlContent = `<?xml version="1.0" encoding="ISO-8859-1" ?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+  <Worksheet ss:Name="Munka1">
+    <Table ss:ExpandedColumnCount="4" ss:ExpandedRowCount="3">
+      <Row>
+        <Cell><Data ss:Type="String">FKSZ</Data></Cell>
+        <Cell><Data ss:Type="String">MEGNEV</Data></Cell>
+        <Cell><Data ss:Type="String">ZT</Data></Cell>
+        <Cell><Data ss:Type="String">ZK</Data></Cell>
+      </Row>
+      <Row>
+        <Cell><Data ss:Type="String">311 - </Data></Cell>
+        <Cell><Data ss:Type="String">Vevők</Data></Cell>
+        <Cell><Data ss:Type="Number">150000</Data></Cell>
+        <Cell><Data ss:Type="Number">0</Data></Cell>
+      </Row>
+      <Row>
+        <Cell><Data ss:Type="String">454</Data></Cell>
+        <Cell><Data ss:Type="String">Szállítók</Data></Cell>
+        <Cell><Data ss:Type="Number">0</Data></Cell>
+        <Cell><Data ss:Type="Number">150000</Data></Cell>
+      </Row>
+    </Table>
+  </Worksheet>
+</Workbook>`;
+
+    const file = new File([Buffer.from(xmlContent, 'utf-8')], 'fokonyv.xml', {
+      type: 'text/xml',
+    });
+
+    const report = await parseOpeningFile(file);
+    expect(report.format).toBe('generic_excel');
+    expect(report.rawRowCount).toBe(2);
+    expect(report.isBalanced).toBe(true);
+    expect(report.totalDebit).toBe(150000);
+    expect(report.totalCredit).toBe(150000);
+
+    const item311 = report.aggregatedItems.find(i => i.gl_number === '311');
+    expect(item311).toBeDefined();
+    expect(item311?.dc_type).toBe('T');
+    expect(item311?.amount).toBe(150000);
+
+    const item454 = report.aggregatedItems.find(i => i.gl_number === '454');
+    expect(item454).toBeDefined();
+    expect(item454?.dc_type).toBe('K');
+    expect(item454?.amount).toBe(150000);
+  });
 });
+

@@ -16,6 +16,7 @@ const DEFAULT_SETTINGS: Omit<CompanyWorkSettings, 'id' | 'company_id' | 'created
   admin_deadline: '20:00',
   monthly_working_hours: 168,
   gl_date_basis: 'kibocsatas',
+  vat_code_display_mode: 'legacy',
 };
 
 export function useCompanySettings() {
@@ -51,6 +52,7 @@ export function useCompanySettings() {
       admin_deadline?: string;
       monthly_working_hours?: number;
       gl_date_basis?: 'kibocsatas' | 'teljesites';
+      vat_code_display_mode?: 'legacy' | 'nav';
     }) => {
       if (!user || !selectedCompany) throw new Error('No user/company');
 
@@ -64,6 +66,7 @@ export function useCompanySettings() {
       if (form.admin_deadline !== undefined) payload.admin_deadline = form.admin_deadline;
       if (form.monthly_working_hours !== undefined) payload.monthly_working_hours = form.monthly_working_hours;
       if (form.gl_date_basis !== undefined) payload.gl_date_basis = form.gl_date_basis;
+      if (form.vat_code_display_mode !== undefined) (payload as any).vat_code_display_mode = form.vat_code_display_mode;
 
       const { error } = await supabase
         .from('company_settings')
@@ -91,6 +94,7 @@ export function useCompanySettings() {
     admin_deadline: settings?.admin_deadline ?? DEFAULT_SETTINGS.admin_deadline,
     monthly_working_hours: settings?.monthly_working_hours ?? DEFAULT_SETTINGS.monthly_working_hours,
     gl_date_basis: (settings?.gl_date_basis as 'kibocsatas' | 'teljesites') ?? DEFAULT_SETTINGS.gl_date_basis,
+    vat_code_display_mode: (settings?.vat_code_display_mode as 'legacy' | 'nav') ?? DEFAULT_SETTINGS.vat_code_display_mode,
   }), [settings]);
 
   return {
