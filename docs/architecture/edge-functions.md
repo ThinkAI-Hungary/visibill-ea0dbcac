@@ -93,7 +93,7 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 
 | Edge Function | JWT Auth | Meghívó Réteg | Szükséges Környezeti Változók | Leírás és Üzleti Szerepkör |
 |---|:---:|---|---|---|
-| [`trigger-nav-categorization`](../../supabase/functions/trigger-nav-categorization/index.ts) | ✅ Kötelező | Frontend (InvoicesPage) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | NAV számlák automatikus AI főkönyvi számlaszám hozzárendelésének kezdeményezése PGMQ enqueue segítségével. |
+| [`trigger-nav-categorization`](../../supabase/functions/trigger-nav-categorization/index.ts) | ✅ Kötelező | Frontend (InvoicesPage / ClientInvoicesPage / NavCredentialsForm) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | NAV szinkronizáció utáni vagy felületi manuális kötegelt számlakategorizálás kezdeményezése: aszinkron háttérindítással (EdgeRuntime.waitUntil) továbbítja a feladatot az `auto-categorize-invoices` felé (A-101, A-129). |
 | [`generate-pdf-export`](../../supabase/functions/generate-pdf-export/index.ts) | ✅ Kötelező | Frontend (PdfExportDialog) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Több száz/ezer számlát tartalmazó PDF csomag és kontírozó lap generálási feladat inicializálása a `pdf_export_jobs` táblában és worker értesítés (A-028, A-047). |
 
 ---
@@ -164,7 +164,7 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 | Edge Function | JWT Auth | Meghívó Réteg | Szükséges Környezeti Változók | Leírás és Üzleti Szerepkör |
 |---|:---:|---|---|---|
 | [`management-stats`](../../supabase/functions/management-stats/index.ts) | ❌ Nyilvános / Belső | Frontend (Management Dashboard) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Központi adminisztrációs API — 14 moduláris action (cégek, userek, jogosultságok, hibák, worker állapot, PGMQ retry, A-077). |
-| [`auto-categorize-invoices`](../../supabase/functions/auto-categorize-invoices/index.ts) | ✅ Kötelező | Frontend (InvoiceActions / useAutoCategorizeInvoices) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, OPENAI_API_KEY` | Kétfázisú aszinkron számlakategorizáció: Phase 1 partner-történeti többségi előszűrés (0 token), Phase 2 AI kötegelt feldolgozás job követéssel és konkurenciavédelemmel (A-129, P-096). |
+| [`auto-categorize-invoices`](../../supabase/functions/auto-categorize-invoices/index.ts) | ✅ Kötelező | Frontend (InvoiceActions / useAutoCategorizeInvoices / trigger-nav-categorization) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, OPENAI_API_KEY` | Kétfázisú aszinkron számlakategorizáció: Phase 1 partner-történeti többségi előszűrés (0 token), Phase 2 AI kötegelt feldolgozás job követéssel, konkurenciavédelemmel és kijelölt számlák (forceInvoiceIds) felülbírálásával (A-129, P-096). |
 | [`impersonate-company`](../../supabase/functions/impersonate-company/index.ts) | ✅ Kötelező | Frontend (Management / Support Admin) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Ideiglenes support admin megszemélyesítés indítása és leállítása auditált időkorláttal (A-026). |
 | [`export-user-data`](../../supabase/functions/export-user-data/index.ts) | ✅ Kötelező | Frontend (Settings / Privacy) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | GDPR adathordozhatósági export generálása a felhasználó összes számlájával, tranzakciójával és naplóbejegyzésével ZIP formátumban. |
 | [`get-invoice-image-url`](../../supabase/functions/get-invoice-image-url/index.ts) | ❌ Nyilvános / Belső | Frontend (InvoiceImageViewer) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Időkorlátos, biztonságos Signed URL generálása a védett Supabase Storage számlaképekhez. |

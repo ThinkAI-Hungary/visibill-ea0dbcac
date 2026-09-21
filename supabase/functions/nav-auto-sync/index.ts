@@ -348,24 +348,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Optional webhook trigger for invoice categorization
-    const webhookUrl = Deno.env.get('NAV_INVOICES_KATEGORIZALAS_WEBHOOK_URL');
-    if (webhookUrl && results.successful > 0 && !detailsOnly) {
-      try {
-        await fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            event: 'nav_auto_sync_completed',
-            timestamp: new Date().toISOString(),
-            companies_synced: results.successful
-          })
-        });
-      } catch (hookErr) {
-        console.warn('[NAV-AUTO-SYNC] Categorization webhook warning:', hookErr);
-      }
-    }
-
     return new Response(
       JSON.stringify({
         success: true,

@@ -144,4 +144,45 @@ describe('Auto Categorize Invoices - Phase 2', () => {
       expect(validAssignments.every(v => v.category_id === 'cat-kozugy')).toBe(true);
     });
   });
+
+  describe('Forced Recategorization (forceInvoiceIds / forceRecategorizeIds)', () => {
+    it('includes already categorized invoices when their ID is in forcedIds and allows overwriting', () => {
+      const mockInvoices = [
+        { id: 'inv-already-cat', bizonylatsorszam: 'FORCE-001', invoice_direction: 'INBOUND', category_id: 'cat-old' },
+        { id: 'inv-regular-uncat', bizonylatsorszam: 'REG-001', invoice_direction: 'INBOUND', category_id: null },
+        { id: 'inv-protected-cat', bizonylatsorszam: 'KEEP-001', invoice_direction: 'INBOUND', category_id: 'cat-keep' },
+      ];
+
+      const forcedIds = ['inv-already-cat'];
+      const forcedIdSet = new Set(forcedIds);
+
+      // Filtering logic: uncat OR explicitly forced
+      const candidates = mockInvoices.filter(inv => {
+        if (forcedIdSet.has(inv.id)) return true;
+        return inv.category_id === null;
+      });
+
+      expect(candidates).toHaveLength(2);
+      expect(candidates.map(c => c.id)).toContain('inv-already-cat');
+      expect(candidates.map(c => c.id)).toContain('inv-regular-uncat');
+      expect(candidates.map(c => c.id)).not.toContain('inv-protected-cat');
+
+      // Persistence logic: forced items omit .is('category_id', null) guard
+      const updates = [
+        { id: 'inv-already-cat', category_id: 'cat-new' },
+        { id: 'inv-regular-uncat', category_id: 'cat-assigned' },
+      ];
+
+      const updateGuards = updates.map(u => ({
+        id: u.id,
+        protectNull: !forcedIdSet.has(u.id),
+      }));
+
+      const forcedUpdate = updateGuards.find(u => u.id === 'inv-already-cat');
+      const regularUpdate = updateGuards.find(u => u.id === 'inv-regular-uncat');
+
+      expect(forcedUpdate?.protectNull).toBe(false); // Can overwrite
+      expect(regularUpdate?.protectNull).toBe(true);  // Protected by is('category_id', null)
+    });
+  });
 });

@@ -134,12 +134,27 @@ Deno.serve(async (req: Request) => {
     const isServiceRole = token === supabaseServiceKey;
 
     const body = await req.json().catch(() => ({}));
-    const { companyId, limit = 100, jobId, userId } = body as {
+    const {
+      companyId,
+      limit = 100,
+      jobId,
+      userId,
+      forceInvoiceIds,
+      forceRecategorizeIds,
+    } = body as {
       companyId?: string;
       limit?: number;
       jobId?: string;
       userId?: string;
+      forceInvoiceIds?: string[];
+      forceRecategorizeIds?: string[];
     };
+
+    const rawForced = forceInvoiceIds || forceRecategorizeIds || [];
+    const forcedIds: string[] = Array.isArray(rawForced)
+      ? rawForced.filter((id) => typeof id === "string" && id.trim().length > 0)
+      : [];
+    const forcedIdSet = new Set(forcedIds);
 
     let effectiveUserId: string | null = null;
 
@@ -257,10 +272,10 @@ Deno.serve(async (req: Request) => {
 
     const validCategoryIds = new Set(categories.map((c) => c.id));
 
-    // 2. Fetch uncategorized INBOUND invoices from both tables
+    // 2. Fetch uncategorized INBOUND invoices from both tables (plus any explicitly forced invoices)
     const maxItems = Math.min(Math.max(1, limit), 200);
 
-    const [uploadedRes, navRes] = await Promise.all([
+    const [uploadedRes, navRes, forcedUploadedRes, forcedNavRes] = await Promise.all([
       serviceClient
         .from("invoices")
         .select(`
@@ -299,6 +314,45 @@ Deno.serve(async (req: Request) => {
         .eq("invoice_direction", "INBOUND")
         .is("category_id", null)
         .limit(maxItems),
+
+      forcedIds.length > 0
+        ? serviceClient
+            .from("invoices")
+            .select(`
+              id,
+              bizonylatsorszam,
+              elado_nev,
+              elado_vat_id,
+              brutto_vegosszeg,
+              penznem,
+              invoice_items (
+                line_description,
+                net_amount
+              )
+            `)
+            .eq("company_id", companyId)
+            .in("id", forcedIds)
+        : Promise.resolve({ data: [] as any[], error: null }),
+
+      forcedIds.length > 0
+        ? serviceClient
+            .from("nav_invoices")
+            .select(`
+              id,
+              invoice_number,
+              supplier_name,
+              supplier_tax_number,
+              invoice_gross_amount,
+              currency,
+              nav_invoice_items (
+                line_description,
+                product_code,
+                net_amount
+              )
+            `)
+            .eq("company_id", companyId)
+            .in("id", forcedIds)
+        : Promise.resolve({ data: [] as any[], error: null }),
     ]);
 
     if (uploadedRes.error) {
@@ -307,12 +361,31 @@ Deno.serve(async (req: Request) => {
     if (navRes.error) {
       console.error("[AUTO-CATEGORIZE] Failed to fetch NAV invoices:", navRes.error);
     }
+    if (forcedUploadedRes.error) {
+      console.error("[AUTO-CATEGORIZE] Failed to fetch forced uploaded invoices:", forcedUploadedRes.error);
+    }
+    if (forcedNavRes.error) {
+      console.error("[AUTO-CATEGORIZE] Failed to fetch forced NAV invoices:", forcedNavRes.error);
+    }
+
+    // Merge uncategorized and explicitly forced invoices
+    const uploadedInvoicesMap = new Map<string, any>();
+    for (const inv of [...(uploadedRes.data || []), ...(forcedUploadedRes.data || [])]) {
+      if (inv?.id) uploadedInvoicesMap.set(inv.id, inv);
+    }
+    const allUploadedInvoices = Array.from(uploadedInvoicesMap.values());
+
+    const navInvoicesMap = new Map<string, any>();
+    for (const nav of [...(navRes.data || []), ...(forcedNavRes.data || [])]) {
+      if (nav?.id) navInvoicesMap.set(nav.id, nav);
+    }
+    const allNavInvoices = Array.from(navInvoicesMap.values());
 
     // 3. Merge & Deduplicate candidates by invoice number / id
     const candidateMap = new Map<string, InvoiceItemCandidate>();
 
     // Add uploaded invoices
-    for (const inv of uploadedRes.data || []) {
+    for (const inv of allUploadedInvoices) {
       const invNum = (inv.bizonylatsorszam || "").trim();
       const key = invNum.toLowerCase() || `up_${inv.id}`;
       const lineItems = (inv.invoice_items || [])
@@ -336,7 +409,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Add / merge NAV invoices
-    for (const nav of navRes.data || []) {
+    for (const nav of allNavInvoices) {
       const invNum = (nav.invoice_number || "").trim();
       const key = invNum.toLowerCase() || `nav_${nav.id}`;
       const navItems = (nav.nav_invoice_items || [])
@@ -715,26 +788,32 @@ VÁLASZ FORMÁTUM:
 
     // Explicit ID updates for uploaded invoices
     for (const u of updatesInvoices) {
-      updatePromises.push(
-        serviceClient
-          .from("invoices")
-          .update({ category_id: u.category_id })
-          .eq("id", u.id)
-          .eq("company_id", companyId)
-          .is("category_id", null)
-      );
+      let q = serviceClient
+        .from("invoices")
+        .update({ category_id: u.category_id })
+        .eq("id", u.id)
+        .eq("company_id", companyId);
+
+      // Protect existing category unless explicitly forced
+      if (!forcedIdSet.has(u.id)) {
+        q = q.is("category_id", null);
+      }
+      updatePromises.push(q);
     }
 
     // Explicit ID updates for NAV invoices
     for (const u of updatesNavInvoices) {
-      updatePromises.push(
-        serviceClient
-          .from("nav_invoices")
-          .update({ category_id: u.category_id })
-          .eq("id", u.id)
-          .eq("company_id", companyId)
-          .is("category_id", null)
-      );
+      let q = serviceClient
+        .from("nav_invoices")
+        .update({ category_id: u.category_id })
+        .eq("id", u.id)
+        .eq("company_id", companyId);
+
+      // Protect existing category unless explicitly forced
+      if (!forcedIdSet.has(u.id)) {
+        q = q.is("category_id", null);
+      }
+      updatePromises.push(q);
     }
 
     // Cross-table synchronization by invoice number

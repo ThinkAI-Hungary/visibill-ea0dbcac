@@ -1705,8 +1705,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/nav-auto-sync/index.ts": {
-    "mtime": 1789892597.2767675,
-    "ast_hash": "7ba676de993a88871a574ff20400e316",
+    "mtime": 1789980177.4567149,
+    "ast_hash": "83cb26aa80ddc169672c5739ec2fd00e",
     "semantic_hash": ""
   },
   "supabase/functions/nav-query-outbound-invoices/index.ts": {
@@ -1815,8 +1815,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/trigger-nav-categorization/index.ts": {
-    "mtime": 1789881969.3953369,
-    "ast_hash": "117986c67d59f0f4c4b57b3cca67abe5",
+    "mtime": 1789981021.9083514,
+    "ast_hash": "89b614d62bea5b9b11373659e3577624",
     "semantic_hash": ""
   },
   "supabase/functions/validate-employee-token/index.ts": {
@@ -11325,13 +11325,13 @@
     "semantic_hash": ""
   },
   "src/test/accounty/autoCategorizeInvoices.test.ts": {
-    "mtime": 1789888501.9196377,
-    "ast_hash": "493d976dd153b3877584b230295a8df0",
+    "mtime": 1789981031.0973644,
+    "ast_hash": "301d76f08b2a247e7b7c7a282b2d0de0",
     "semantic_hash": ""
   },
   "supabase/functions/auto-categorize-invoices/index.ts": {
-    "mtime": 1789911528.309239,
-    "ast_hash": "a58c7c75f3e2abda6538a3a50e7db6f5",
+    "mtime": 1789981008.5086403,
+    "ast_hash": "7e0ed99248bb880a852bead359d6f304",
     "semantic_hash": ""
   },
   "src/hooks/useAutoCategorizeJob.ts": {
