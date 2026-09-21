@@ -2,6 +2,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { computeTicketSla, type TicketSlaInfo } from "@/utils/ticketSlaUtils";
+
+export type { TicketSlaInfo };
 
 // ── Types ──────────────────────────────────────────────────────
 export type TicketStatus = "created" | "assigned" | "in_progress" | "resolved";
@@ -53,6 +56,9 @@ export interface Ticket {
   resolution_requested_at?: string | null;
   resolution_requested_by?: string | null;
   resolution_confirmed_at?: string | null;
+  needs_staff_response?: boolean;
+  last_customer_message_at?: string | null;
+  sla?: TicketSlaInfo;
 }
 
 export interface TicketComment {
@@ -142,11 +148,19 @@ export function useTickets(statusFilter?: TicketStatus | "all") {
 
       const ticketIds = tickets.map((t) => t.id);
 
-      // 2. Fetch comment counts + latest OTHER-party comment time
+      // 2. Fetch comment counts + latest OTHER-party comment time + full comment list for SLA
       const { data: comments } = await supabase
         .from("ticket_comments")
-        .select("feedback_id, created_at, user_id")
+        .select("feedback_id, created_at, user_id, is_admin, is_internal")
         .in("feedback_id", ticketIds);
+
+      // Comments grouped by feedback_id for SLA computation
+      const ticketCommentsListMap = new Map<string, Array<{ created_at?: string | null; is_admin?: boolean | null; is_internal?: boolean | null }>>();
+      (comments || []).forEach((c) => {
+        const list = ticketCommentsListMap.get(c.feedback_id) || [];
+        list.push(c);
+        ticketCommentsListMap.set(c.feedback_id, list);
+      });
 
       // For unread detection: only comments from OTHER users
       const otherComments = (comments || []).filter((c) => c.user_id !== user.id);
@@ -210,6 +224,19 @@ export function useTickets(statusFilter?: TicketStatus | "all") {
           hasUnread = true;
         }
 
+        const commentsForTicket = ticketCommentsListMap.get(t.id) || [];
+        const sla = computeTicketSla(
+          {
+            created_at: t.created_at,
+            status: t.status,
+            waiting_for_user_confirmation: (t as any).waiting_for_user_confirmation,
+            created_by_is_staff: isCreatedByStaff,
+            assigned_to: t.assigned_to,
+            needs_staff_response: (t as any).needs_staff_response,
+          },
+          commentsForTicket
+        );
+
         return {
           id: t.id,
           ticket_number: t.ticket_number,
@@ -239,6 +266,9 @@ export function useTickets(statusFilter?: TicketStatus | "all") {
           resolution_requested_at: (t as any).resolution_requested_at || null,
           resolution_requested_by: (t as any).resolution_requested_by || null,
           resolution_confirmed_at: (t as any).resolution_confirmed_at || null,
+          needs_staff_response: (t as any).needs_staff_response !== false,
+          last_customer_message_at: (t as any).last_customer_message_at || null,
+          sla,
         };
       }).sort((a, b) => {
         // 1. Olvasatlan jegyek mindig legfelül
@@ -395,6 +425,18 @@ export function useTicketDetail(feedbackId: string | null) {
         ['thinkai', 'management'].includes(createdByProfile?.role)
       );
 
+      const sla = computeTicketSla(
+        {
+          created_at: ticket.created_at,
+          status: ticket.status,
+          waiting_for_user_confirmation: Boolean((ticket as any).waiting_for_user_confirmation),
+          created_by_is_staff: isCreatedByStaff,
+          assigned_to: ticket.assigned_to,
+          needs_staff_response: (ticket as any).needs_staff_response,
+        },
+        (comments || []) as TicketComment[]
+      );
+
       return {
         ticket: {
           ...ticket,
@@ -406,6 +448,9 @@ export function useTicketDetail(feedbackId: string | null) {
           resolution_requested_at: (ticket as any).resolution_requested_at || null,
           resolution_requested_by: (ticket as any).resolution_requested_by || null,
           resolution_confirmed_at: (ticket as any).resolution_confirmed_at || null,
+          needs_staff_response: (ticket as any).needs_staff_response !== false,
+          last_customer_message_at: (ticket as any).last_customer_message_at || null,
+          sla,
         },
         comments: (comments || []) as TicketComment[],
       };
@@ -515,6 +560,57 @@ export function useUpdateTicketPriority() {
         .eq("id", feedbackId);
 
       if (error) throw error;
+    },
+    onSuccess: (_, { feedbackId }) => {
+      queryClient.invalidateQueries({ queryKey: ["ticket_detail", feedbackId] });
+      queryClient.invalidateQueries({ queryKey: ["ticket_events", feedbackId] });
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+    },
+  });
+}
+
+// ── Mutation: Update ticket staff response need ─────────────────
+export function useUpdateTicketStaffResponse() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      feedbackId,
+      needsStaffResponse,
+    }: {
+      feedbackId: string;
+      needsStaffResponse: boolean;
+    }) => {
+      const { error } = await supabase
+        .from("feedback")
+        .update({
+          needs_staff_response: needsStaffResponse,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", feedbackId);
+
+      if (error) throw error;
+
+      // Record event in ticket_events
+      if (user?.id) {
+        try {
+          await supabase.from("ticket_events").insert({
+            feedback_id: feedbackId,
+            actor_id: user.id,
+            event_type: needsStaffResponse ? "staff_response_required" : "staff_response_cleared",
+            old_value: (!needsStaffResponse).toString(),
+            new_value: needsStaffResponse.toString(),
+            metadata: {
+              reason: needsStaffResponse
+                ? "Újra válaszra váróként jelölve"
+                : "Megjelölve: nem igényel további választ",
+            },
+          });
+        } catch (eventErr) {
+          console.warn("[useUpdateTicketStaffResponse] Failed to record ticket event:", eventErr);
+        }
+      }
     },
     onSuccess: (_, { feedbackId }) => {
       queryClient.invalidateQueries({ queryKey: ["ticket_detail", feedbackId] });

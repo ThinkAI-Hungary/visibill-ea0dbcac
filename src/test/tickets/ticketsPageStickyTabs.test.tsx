@@ -12,6 +12,7 @@ vi.mock('@/hooks/useTickets', () => ({
   useSupportAgents: vi.fn(),
   useUpdateTicketAssignee: vi.fn(() => ({ mutateAsync: vi.fn() })),
   useUpdateTicketStatus: vi.fn(() => ({ mutateAsync: vi.fn() })),
+  useUpdateTicketStaffResponse: vi.fn(() => ({ mutateAsync: vi.fn() })),
   resolveEffectiveTicketStatus: (status: string) => status,
 }));
 

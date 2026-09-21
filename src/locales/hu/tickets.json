@@ -19,7 +19,18 @@
     "assigned": "Hozzárendelt",
     "in_progress": "Folyamatban",
     "resolved": "Megoldva",
-    "critical_sla": "Kritikus SLA"
+    "critical_sla": "Kritikus SLA",
+    "overdue_48h": "48h+ válaszra vár"
+  },
+  "active_filter_overdue_notice": "Szűrés aktív: Csak a 48 órája megválaszolatlan, teendőt igénylő hibajegyek jelennek meg",
+  "clear_filter": "Szűrő törlése",
+  "batch_no_response": "Nem igényel választ",
+  "mark_no_response_quick": "Megjelölés: nem igényel választ",
+  "toasts": {
+    "batch_response_cleared_title": "Sikeres tömeges frissítés",
+    "batch_response_cleared_desc": "{{count}} hibajegy megjelölve, nem igényel választ.",
+    "response_cleared_title": "Nem igényel választ",
+    "response_cleared_desc": "A hibajegy megjelölve, nem igényel további választ."
   },
   "status_filter": {
     "active_count": "Aktív jegyek ({{count}})",
@@ -149,6 +160,10 @@
     "waiting_for_confirmation": "Visszaigazolásra vár",
     "cancel_resolution_request": "Kérés visszavonása",
     "request_resolution_btn": "Megoldás visszaigazolás kérése",
+    "no_response_needed": "Nem igényel választ",
+    "mark_no_response_needed": "Nem igényel választ",
+    "undo": "Visszavonás",
+    "undo_no_response": "Visszavonás (újra válaszra vár)",
     "copy_link_toast_title": "Link másolva!",
     "copy_link_toast_desc": "A hibajegy közvetlen linkje a vágólapra került.",
     "copy_link_tooltip": "Kattints a link másolásához",
@@ -157,6 +172,11 @@
     "prop_assignee": "Felelős",
     "prop_unassigned": "Nincs hozzárendelve",
     "toasts": {
+      "response_needed_title": "Válaszra váróként jelölve",
+      "response_needed_desc": "A hibajegy újra válaszra vár a csapattól.",
+      "response_cleared_title": "Nem igényel választ",
+      "response_cleared_desc": "A hibajegy sikeresen megjelölve, nem igényel további választ.",
+      "error_update": "Hiba történt a frissítéskor",
       "res_req_sent_title": "Megerősítés-kérés elküldve",
       "res_req_sent_desc": "A hibajegy állapota visszaigazolásra váróra váltott.",
       "reply_and_res_req_title": "Válasz és megerősítés-kérés elküldve",

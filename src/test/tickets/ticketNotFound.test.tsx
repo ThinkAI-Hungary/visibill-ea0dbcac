@@ -33,6 +33,7 @@ vi.mock('@/hooks/useTickets', () => ({
   useIsManagementRole: vi.fn(() => ({ data: false })),
   useDeleteTicket: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
   useTickets: vi.fn(() => ({ data: [], isLoading: false, refetch: vi.fn() })),
+  useUpdateTicketStaffResponse: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
   resolveEffectiveTicketStatus: (status: string) => status,
 }));
 

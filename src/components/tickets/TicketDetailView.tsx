@@ -47,6 +47,7 @@ import {
   CircleDot,
   UserCheck,
   CheckCircle2,
+  Check,
   Sparkles,
 } from "lucide-react";
 import { uploadTicketImage, isAllowedTicketFile } from "@/lib/upload-ticket-image";
@@ -54,6 +55,8 @@ import { TicketStatusBadge } from "./TicketStatusBadge";
 import { TicketPriorityBadge } from "./TicketPriorityBadge";
 import { ThinkAiBadge, ThinkAiIcon } from "./ThinkAiBadge";
 import { TicketResolutionBanner } from "./TicketResolutionBanner";
+import { TicketSlaBadge } from "./TicketSlaBadge";
+import { TicketSlaWarningBanner } from "./TicketSlaWarningBanner";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { RichTextContent } from "@/components/ui/rich-text-content";
 import {
@@ -72,6 +75,7 @@ import {
   useDeleteTicket,
   useUpdateTicketAttachments,
   useRequestTicketResolution,
+  useUpdateTicketStaffResponse,
 } from "@/hooks/useTickets";
 import {
   AlertDialog,
@@ -129,6 +133,29 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
   const [editorKey, setEditorKey] = useState(0);
   const { data: isManagement } = useIsManagementRole();
   const { mutateAsync: deleteTicket, isPending: isDeleting } = useDeleteTicket();
+  const { mutateAsync: updateStaffResponse, isPending: isUpdatingStaffResponse } = useUpdateTicketStaffResponse();
+
+  const handleToggleStaffResponse = async (needed: boolean) => {
+    if (!feedbackId) return;
+    try {
+      await updateStaffResponse({
+        feedbackId,
+        needsStaffResponse: needed,
+      });
+      toast({
+        title: needed ? t('detail.toasts.response_needed_title', 'Válaszra váróként jelölve') : t('detail.toasts.response_cleared_title', 'Nem igényel választ'),
+        description: needed
+          ? t('detail.toasts.response_needed_desc', 'A hibajegy újra válaszra vár a csapattól.')
+          : t('detail.toasts.response_cleared_desc', 'A hibajegy sikeresen megjelölve, nem igényel további választ.'),
+      });
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: t('detail.toasts.error_update', 'Hiba történt a frissítéskor'),
+        description: err?.message || "Nem sikerült módosítani a beállítást.",
+      });
+    }
+  };
 
   const isImageUrl = (url: string) => {
     if (!url) return false;
@@ -607,20 +634,58 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
             <h1 className="text-xl font-bold tracking-tight">{ticket.ticket_number || "—"}</h1>
             <TicketPriorityBadge priority={ticket.priority} />
             <TicketStatusBadge status={ticket.status} waitingForConfirmation={ticket.waiting_for_user_confirmation} />
+            <TicketSlaBadge sla={ticket.sla} />
+            {ticket.needs_staff_response === false && ticket.status !== "resolved" && (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shrink-0">
+                <Check className="h-3 w-3" />
+                <span>{t('detail.no_response_needed', 'Nem igényel választ')}</span>
+                {isAdmin && (
+                  <button
+                    onClick={() => handleToggleStaffResponse(true)}
+                    disabled={isUpdatingStaffResponse}
+                    className="ml-1 text-[10px] text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors cursor-pointer"
+                    title={t('detail.undo_no_response', 'Visszavonás (újra válaszra vár)')}
+                  >
+                    {t('detail.undo', 'Visszavonás')}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
-          {/* Delete button — management only */}
-          {isAdmin && isManagement && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="ml-auto shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30"
-              onClick={() => setShowDeleteConfirm(true)}
-              disabled={isDeleting}
-            >
-              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Trash2 className="h-4 w-4 mr-1.5" />}
-              {t('detail.delete_button')}
-            </Button>
-          )}
+          {/* Header Action Buttons */}
+          <div className="ml-auto flex items-center gap-2 shrink-0">
+            {isAdmin && ticket.status !== "resolved" && ticket.needs_staff_response !== false && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="shrink-0 text-muted-foreground hover:text-foreground border-border/80 text-xs h-8 gap-1.5"
+                onClick={() => handleToggleStaffResponse(false)}
+                disabled={isUpdatingStaffResponse}
+                title="Kattints, ha az ügyfél üzenete nem igényel választ (pl. köszönet, megerősítés)"
+              >
+                {isUpdatingStaffResponse ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                )}
+                <span className="hidden sm:inline">{t('detail.mark_no_response_needed', 'Nem igényel választ')}</span>
+              </Button>
+            )}
+
+            {/* Delete button — management only */}
+            {isAdmin && isManagement && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30"
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={isDeleting}
+              >
+                {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Trash2 className="h-4 w-4 mr-1.5" />}
+                {t('detail.delete_button')}
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Delete confirmation dialog */}
@@ -670,6 +735,14 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Fő tartalom (üzenet + csatolmányok + hozzászólások + válaszíró) */}
           <div className="lg:col-span-7 xl:col-span-8 2xl:col-span-8 space-y-4 min-w-0">
+            {/* SLA Overdue Warning Banner */}
+            <TicketSlaWarningBanner
+              sla={ticket.sla}
+              onFocusReply={() => bottomRef.current?.scrollIntoView({ behavior: "smooth" })}
+              onMarkNoResponseNeeded={() => handleToggleStaffResponse(false)}
+              isMarking={isUpdatingStaffResponse}
+            />
+
             {/* Original message */}
             <Card className={`rounded-none shadow-none ${isStaffInitiated ? "border-primary/20 bg-primary/[0.02]" : ""}`}>
               <CardContent className="pt-6">
@@ -1385,6 +1458,43 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                           <Sparkles className="h-3.5 w-3.5 text-emerald-500" />
                         )}
                         {t('detail.request_resolution_btn')}
+                      </Button>
+                    )}
+                  </div>
+                )}
+
+                {/* Admin quick response status control in sidebar */}
+                {isAdmin && ticket.status !== "resolved" && (
+                  <div className="pt-0.5">
+                    {ticket.needs_staff_response === false ? (
+                      <div className="flex items-center justify-between p-2 rounded-md bg-emerald-500/10 border border-emerald-500/25 text-xs text-emerald-700 dark:text-emerald-300">
+                        <span className="flex items-center gap-1.5 font-medium">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                          <span>{t('detail.no_response_needed', 'Nem igényel választ')}</span>
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-[11px] text-muted-foreground hover:text-foreground px-1.5"
+                          disabled={isUpdatingStaffResponse}
+                          onClick={() => handleToggleStaffResponse(true)}
+                        >
+                          {t('detail.undo', 'Visszavonás')}
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-center h-8 text-xs font-normal border-dashed text-muted-foreground hover:text-foreground"
+                        disabled={isUpdatingStaffResponse}
+                        onClick={() => handleToggleStaffResponse(false)}
+                        title="Kattints ide, ha az ügyfél üzenete nem igényel választ a supporttól"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5 mr-1.5 text-emerald-500" />
+                        <span>{t('detail.mark_no_response_needed', 'Nem igényel választ')}</span>
                       </Button>
                     )}
                   </div>

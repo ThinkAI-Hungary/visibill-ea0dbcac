@@ -8,7 +8,7 @@ import { buildUserPermissions, updatePermissions, deleteUser } from "./handlers/
 import { buildSuperadminData } from "./handlers/superadminHandler.ts";
 import { buildFiles, updateFileStatus, deleteFiles } from "./handlers/filesHandler.ts";
 import { buildWorkerStatus } from "./handlers/workerHandler.ts";
-import { createTicketOnBehalf } from "./handlers/ticketsHandler.ts";
+import { createTicketOnBehalf, sendOverdueTicketReminders } from "./handlers/ticketsHandler.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -124,6 +124,12 @@ serve(async (req) => {
       if (req.method !== "POST") return json({ error: "POST required" }, 405);
       const body = await req.json().catch(() => ({}));
       const res = await createTicketOnBehalf(admin, body, authContext.userId);
+      return json(res, res.error ? 400 : 200);
+    }
+
+    if (action === "send-ticket-reminders") {
+      if (req.method !== "POST") return json({ error: "POST required" }, 405);
+      const res = await sendOverdueTicketReminders(admin);
       return json(res, res.error ? 400 : 200);
     }
 

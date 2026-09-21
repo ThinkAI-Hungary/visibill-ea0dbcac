@@ -19,7 +19,18 @@
     "assigned": "Dodijeljeno",
     "in_progress": "U tijeku",
     "resolved": "Riješeno",
-    "critical_sla": "Kritični SLA"
+    "critical_sla": "Kritični SLA",
+    "overdue_48h": "48h+ čeka odgovor"
+  },
+  "active_filter_overdue_notice": "Filter aktivan: Prikazuju se samo tiketi bez odgovora više od 48 sati",
+  "clear_filter": "Očisti filter",
+  "batch_no_response": "Ne zahtijeva odgovor",
+  "mark_no_response_quick": "Označi: ne zahtijeva odgovor",
+  "toasts": {
+    "batch_response_cleared_title": "Uspješno skupno ažuriranje",
+    "batch_response_cleared_desc": "Označeno {{count}} zahtjeva, ne zahtijevaju odgovor.",
+    "response_cleared_title": "Ne zahtijeva odgovor",
+    "response_cleared_desc": "Zahtjev je označen, ne zahtijeva daljnji odgovor."
   },
   "status_filter": {
     "active_count": "Aktivni zahtjevi ({{count}})",
@@ -149,6 +160,10 @@
     "waiting_for_confirmation": "Čeka potvrdu",
     "cancel_resolution_request": "Poništi zahtjev",
     "request_resolution_btn": "Zatraži potvrdu rješenja",
+    "no_response_needed": "Ne zahtijeva odgovor",
+    "mark_no_response_needed": "Ne zahtijeva odgovor",
+    "undo": "Poništi",
+    "undo_no_response": "Poništi (ponovno čeka odgovor)",
     "copy_link_toast_title": "Poveznica kopirana!",
     "copy_link_toast_desc": "Izravna poveznica na zahtjev kopirana je u međuspremnik.",
     "copy_link_tooltip": "Kliknite za kopiranje poveznice",
@@ -157,6 +172,11 @@
     "prop_assignee": "Referent",
     "prop_unassigned": "Nije dodijeljeno",
     "toasts": {
+      "response_needed_title": "Označeno kao čeka odgovor",
+      "response_needed_desc": "Zahtjev ponovno čeka odgovor tima.",
+      "response_cleared_title": "Ne zahtijeva odgovor",
+      "response_cleared_desc": "Zahtjev uspješno označen, ne zahtijeva daljnji odgovor.",
+      "error_update": "Greška pri ažuriranju",
       "res_req_sent_title": "Zahtjev za potvrdu poslan",
       "res_req_sent_desc": "Status zahtjeva promijenjen je u 'Čeka potvrdu'.",
       "reply_and_res_req_title": "Odgovor i zahtjev za potvrdu poslani",

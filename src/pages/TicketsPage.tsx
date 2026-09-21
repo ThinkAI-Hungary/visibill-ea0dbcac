@@ -23,6 +23,12 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   TicketCheck,
   Bug,
   Lightbulb,
@@ -44,17 +50,18 @@ import {
   CircleDot,
   Layers,
   ChevronLeft,
-  ChevronRight,
   HelpCircle,
   TicketPlus,
   X,
+  AlertCircle,
 } from "lucide-react";
+import { TicketSlaBadge } from "@/components/tickets/TicketSlaBadge";
 import {
   ManagementCreateTicketDialog,
   type ManagementUserOption,
 } from "@/features/management/components/tickets/ManagementCreateTicketDialog";
 import { useQuery } from "@tanstack/react-query";
-import { fetchManagementData } from "@/features/management/api/managementApi";
+import { fetchManagementData, postManagementData } from "@/features/management/api/managementApi";
 import type { OverviewData } from "@/features/management/api/types";
 import { UnifiedPagination } from "@/components/ui/unified-pagination";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
@@ -68,6 +75,7 @@ import {
   useSupportAgents,
   useUpdateTicketAssignee,
   useUpdateTicketStatus,
+  useUpdateTicketStaffResponse,
   type TicketStatus,
   type TicketPriority,
   type Ticket,
@@ -149,6 +157,7 @@ export default function TicketsPage({
     : 'list';
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isSendingReminders, setIsSendingReminders] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -162,6 +171,7 @@ export default function TicketsPage({
   const [selectedStatuses, setSelectedStatuses] = useState<TicketStatus[]>(ACTIVE_TICKET_STATUSES);
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [serviceFilter, setServiceFilter] = useState<string>("all");
+  const [slaFilter, setSlaFilter] = useState<'all' | 'overdue_48h'>('all');
   const [search, setSearch] = useState("");
 
   const { user } = useAuth();
@@ -171,6 +181,56 @@ export default function TicketsPage({
   const { data: supportAgents = [] } = useSupportAgents();
   const { mutateAsync: updateAssignee } = useUpdateTicketAssignee();
   const { mutateAsync: updateStatus } = useUpdateTicketStatus();
+  const { mutateAsync: updateStaffResponse } = useUpdateTicketStaffResponse();
+
+  const handleQuickMarkNoResponse = async (feedbackId: string) => {
+    try {
+      await updateStaffResponse({
+        feedbackId,
+        needsStaffResponse: false,
+      });
+      toast({
+        title: t('tickets:toasts.response_cleared_title', 'Nem igényel választ'),
+        description: t('tickets:toasts.response_cleared_desc', 'A hibajegy megjelölve, nem igényel további választ.'),
+      });
+      refetch();
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Hiba",
+        description: err?.message || "Nem sikerült frissíteni a jegyet.",
+      });
+    }
+  };
+
+  const handleBatchClearResponseNeeded = async () => {
+    if (selectedTicketIds.size === 0) return;
+    setBatchUpdating(true);
+    try {
+      const promises: Promise<any>[] = [];
+      selectedTicketIds.forEach(id => {
+        promises.push(updateStaffResponse({
+          feedbackId: id,
+          needsStaffResponse: false,
+        }));
+      });
+      await Promise.all(promises);
+      toast({
+        title: t('tickets:toasts.batch_response_cleared_title', 'Sikeres tömeges frissítés'),
+        description: t('tickets:toasts.batch_response_cleared_desc', '{{count}} hibajegy megjelölve, nem igényel választ.', { count: selectedTicketIds.size }),
+      });
+      setSelectedTicketIds(new Set());
+      refetch();
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Hiba",
+        description: err?.message || "Nem sikerült a tömeges frissítés.",
+      });
+    } finally {
+      setBatchUpdating(false);
+    }
+  };
 
   // Query management overview for user list if not passed via props
   const { data: overviewData } = useQuery<OverviewData>({
@@ -215,6 +275,7 @@ export default function TicketsPage({
 
       const matchesPriority = priorityFilter === "all" || t.priority === priorityFilter;
       const matchesService = serviceFilter === "all" || t.service === serviceFilter;
+      const matchesSla = slaFilter === "all" || Boolean(t.sla?.isOverdue48h);
       
       // Unread tickets or explicit text searches should never be hidden by the active status filter
       const matchesStatus = 
@@ -232,11 +293,11 @@ export default function TicketsPage({
       const matchesOwner = !isAdmin || showAllTickets || !user ||
         t.assigned_to === user.id || t.assigned_to === null || isNyitott;
 
-      return matchesSearch && matchesPriority && matchesService && matchesStatus && matchesOwner;
+      return matchesSearch && matchesPriority && matchesService && matchesSla && matchesStatus && matchesOwner;
     });
 
     return sortTicketsByUnreadAndDate(filtered);
-  }, [tickets, search, priorityFilter, serviceFilter, selectedStatuses, isAdmin, showAllTickets, user]);
+  }, [tickets, search, priorityFilter, serviceFilter, slaFilter, selectedStatuses, isAdmin, showAllTickets, user]);
 
   // Tickets for Console View (Unresolved tickets filtered by search and owner, sorted with unread first)
   const consoleTickets = useMemo(() => {
@@ -259,7 +320,7 @@ export default function TicketsPage({
 
   React.useEffect(() => {
     setPage(1);
-  }, [search, selectedStatuses, priorityFilter, serviceFilter, showAllTickets]);
+  }, [search, selectedStatuses, priorityFilter, serviceFilter, slaFilter, showAllTickets]);
 
   const totalPages = Math.ceil(filteredTickets.length / pageSize);
   const paginatedTickets = useMemo(() => {
@@ -289,8 +350,9 @@ export default function TicketsPage({
     const inProgress = tickets.filter(t => t.status === "in_progress").length;
     const closed = tickets.filter(t => t.status === "resolved").length;
     const critical = tickets.filter(t => t.priority === "critical" && t.status !== "resolved").length;
+    const overdue48h = tickets.filter(t => t.sla?.isOverdue48h && t.status !== "resolved").length;
 
-    return { active, created, assigned, inProgress, closed, critical };
+    return { active, created, assigned, inProgress, closed, critical, overdue48h };
   }, [tickets]);
 
   // Support Agent Load metrics
@@ -429,6 +491,26 @@ export default function TicketsPage({
     }
   };
 
+  const handleSendReminders = async () => {
+    setIsSendingReminders(true);
+    try {
+      const res = await postManagementData('send-ticket-reminders', {});
+      toast({
+        title: "Emlékeztetők kiküldve",
+        description: `${res.remindersSent || 0} megválaszolatlan hibajegyhez rögzítettünk emlékeztetőt.`,
+      });
+      refetch();
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Hiba az emlékeztetők küldésekor",
+        description: err?.message || "Nem sikerült elküldeni az emlékeztetőket.",
+      });
+    } finally {
+      setIsSendingReminders(false);
+    }
+  };
+
   // ────────────────────────────────────────────────────────
   // RENDER: Sub-Tabs Header (Admins only)
   // ────────────────────────────────────────────────────────
@@ -475,13 +557,33 @@ export default function TicketsPage({
           </button>
         </div>
 
-        <Button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="gap-2 h-9 text-xs font-semibold shadow-sm shrink-0"
-        >
-          <TicketPlus className="h-4 w-4" />
-          <span>{t('tickets:new_ticket', 'Új hibajegy nyitása')}</span>
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          {kpis.overdue48h > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSendReminders}
+              disabled={isSendingReminders}
+              className="gap-1.5 h-9 text-xs font-semibold text-destructive border-destructive/30 hover:bg-destructive/10 shrink-0"
+              title="Automatikus emlékeztető küldése a 48 órája megválaszolatlan jegyek felelőseinek"
+            >
+              {isSendingReminders ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <AlertCircle className="h-3.5 w-3.5" />
+              )}
+              <span>Emlékeztetők küldése ({kpis.overdue48h})</span>
+            </Button>
+          )}
+
+          <Button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="gap-2 h-9 text-xs font-semibold shadow-sm shrink-0"
+          >
+            <TicketPlus className="h-4 w-4" />
+            <span>{t('tickets:new_ticket', 'Új hibajegy nyitása')}</span>
+          </Button>
+        </div>
       </div>
     );
   };
@@ -494,7 +596,7 @@ export default function TicketsPage({
       <div className="space-y-6 content-animate">
         {/* KPI stat matrix */}
         {embeddedInManagement && isAdmin && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
             {/* Nyitott */}
             <Card
               className={`border border-border/80 bg-card/50 backdrop-blur-md cursor-pointer transition-all hover:bg-card/80 ${
@@ -600,6 +702,57 @@ export default function TicketsPage({
                 </div>
               </CardContent>
             </Card>
+
+            {/* 48h+ válaszra vár */}
+            <Card
+              className={`border border-border/80 bg-card/50 backdrop-blur-md cursor-pointer transition-all hover:bg-card/80 ${
+                slaFilter === 'overdue_48h' ? 'ring-2 ring-destructive bg-destructive/10' : ''
+              }`}
+              onClick={() => {
+                setSlaFilter(prev => prev === 'overdue_48h' ? 'all' : 'overdue_48h');
+                if (slaFilter !== 'overdue_48h') {
+                  setSelectedStatuses(ACTIVE_TICKET_STATUSES);
+                  setPriorityFilter('all');
+                }
+              }}
+            >
+              <CardContent className="p-4 flex items-start gap-3.5">
+                <div className={`h-10 w-10 rounded-lg flex items-center justify-center border ${
+                  kpis.overdue48h > 0
+                    ? 'bg-destructive/15 border-destructive/30 text-destructive animate-pulse'
+                    : 'bg-muted/40 border-border text-muted-foreground'
+                }`}>
+                  <AlertCircle className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className={`text-2xl font-bold leading-none tabular-nums ${kpis.overdue48h > 0 ? 'text-destructive' : 'text-foreground'}`}>
+                    {kpis.overdue48h}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wider">
+                    {t('tickets:kpi.overdue_48h', '48h+ válaszra vár')}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Overdue filter active alert banner */}
+        {slaFilter === 'overdue_48h' && (
+          <div className="flex items-center justify-between p-3 bg-destructive/10 border border-destructive/25 rounded-lg text-xs">
+            <div className="flex items-center gap-2 text-destructive font-semibold">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{t('tickets:active_filter_overdue_notice', 'Szűrés aktív: Csak a 48 órája megválaszolatlan, teendőt igénylő hibajegyek jelennek meg')}</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSlaFilter('all')}
+              className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-3.5 w-3.5 mr-1" />
+              {t('tickets:clear_filter', 'Szűrő törlése')}
+            </Button>
           </div>
         )}
 
@@ -772,7 +925,7 @@ export default function TicketsPage({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[120px]">{t('tickets:table.col_ticket_number', 'Jegyszám')}</TableHead>
+                  <TableHead className="w-[165px] min-w-[160px]">{t('tickets:table.col_ticket_number', 'Jegyszám')}</TableHead>
                   <TableHead className="w-[60px]">{t('tickets:table.col_type', 'Típus')}</TableHead>
                   <TableHead className="w-[110px]">{t('tickets:table.col_system', 'Rendszer')}</TableHead>
                   <TableHead>{t('tickets:table.col_subject', 'Tárgy')}</TableHead>
@@ -806,17 +959,40 @@ export default function TicketsPage({
                       }`}
                       onClick={() => openTicket(ticket.id)}
                     >
-                      <TableCell>
-                        <div className="flex items-center gap-2">
+                      <TableCell className="whitespace-nowrap">
+                        <div className="flex items-center gap-2 whitespace-nowrap">
                           {ticket.has_unread && (
                             <span className="relative flex h-2 w-2 shrink-0">
                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/85 opacity-75" />
                               <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
                             </span>
                           )}
-                          <span className="font-mono text-xs font-semibold text-primary">
+                          <span className="font-mono text-xs font-semibold text-primary whitespace-nowrap shrink-0">
                             #{ticket.ticket_number || ticket.id.slice(0, 8)}
                           </span>
+                          <TicketSlaBadge sla={ticket.sla} compact={true} />
+                          {isAdmin && ticket.sla?.isOverdue48h && (
+                            <TooltipProvider delayDuration={150}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleQuickMarkNoResponse(ticket.id);
+                                    }}
+                                    className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground/60 hover:text-emerald-500 hover:bg-emerald-500/10 transition-colors shrink-0 cursor-pointer"
+                                    aria-label="Nem igényel választ"
+                                  >
+                                    <CheckCircle2 className="h-3.5 w-3.5" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="right" className="text-xs">
+                                  {t('tickets:mark_no_response_quick', 'Megjelölés: nem igényel választ')}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -977,6 +1153,7 @@ export default function TicketsPage({
                       <span className="font-mono text-[10px] font-bold text-primary">
                         #{t_item.ticket_number || t_item.id.slice(0, 8)}
                       </span>
+                      <TicketSlaBadge sla={t_item.sla} compact={true} />
                       {t_item.waiting_for_user_confirmation ? (
                         <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/25">
                           {t('tickets:status.waiting_for_confirmation', 'Visszaigazolásra vár')}
@@ -1167,6 +1344,18 @@ export default function TicketsPage({
               )}
               {t('tickets:assignment.apply_button', 'Alkalmaz')}
             </Button>
+
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={selectedTicketIds.size === 0 || batchUpdating}
+              onClick={handleBatchClearResponseNeeded}
+              className="h-8 text-xs font-medium gap-1.5 border-dashed text-muted-foreground hover:text-foreground"
+              title="A kijelölt jegyek megjelölése úgy, hogy nem igényelnek további választ a csapattól"
+            >
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+              <span>{t('tickets:batch_no_response', 'Nem igényel választ')}</span>
+            </Button>
           </div>
 
           <Card className="border border-border/80 bg-card/50 backdrop-blur-md overflow-hidden">
@@ -1203,8 +1392,11 @@ export default function TicketsPage({
                           onCheckedChange={() => toggleSelectTicket(t_item.id)}
                         />
                       </TableCell>
-                      <TableCell className="font-mono text-xs font-semibold text-primary">
-                        #{t_item.ticket_number || t_item.id.slice(0, 8)}
+                      <TableCell className="font-mono text-xs font-semibold text-primary whitespace-nowrap">
+                        <div className="flex items-center gap-2 whitespace-nowrap">
+                          <span className="whitespace-nowrap shrink-0">#{t_item.ticket_number || t_item.id.slice(0, 8)}</span>
+                          <TicketSlaBadge sla={t_item.sla} compact={true} />
+                        </div>
                       </TableCell>
                       <TableCell className="text-xs font-medium">{t_item.company_name}</TableCell>
                       <TableCell className="text-xs text-foreground/80">{truncate(stripHtml(t_item.message), 60)}</TableCell>

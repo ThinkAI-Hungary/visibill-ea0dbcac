@@ -137,3 +137,92 @@ export async function createTicketOnBehalf(
     ticket,
   };
 }
+
+export async function sendOverdueTicketReminders(admin: SupabaseClient) {
+  const cutoff48h = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+  const cutoff24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+  // Find tickets where status != 'resolved', waiting_for_user_confirmation != true, assigned_to is not null
+  // and needs_staff_response is true, and last_customer_message_at <= cutoff48h
+  const { data: overdueTickets, error } = await admin
+    .from("feedback")
+    .select("id, ticket_number, company_name, message, assigned_to, last_customer_message_at, last_reminder_sent_at")
+    .not("status", "eq", "resolved")
+    .neq("waiting_for_user_confirmation", true)
+    .not("assigned_to", "is", null)
+    .eq("needs_staff_response", true)
+    .lte("last_customer_message_at", cutoff48h);
+
+  if (error) {
+    console.error("[MANAGEMENT-STATS send-ticket-reminders] Query error:", error);
+    return { error: `Hiba a jegyek lekérdezésekor: ${error.message}` };
+  }
+
+  const eligibleTickets = (overdueTickets || []).filter(t => 
+    !t.last_reminder_sent_at || t.last_reminder_sent_at <= cutoff24h
+  );
+
+  const results: Array<{ ticketId: string; ticketNumber: string | null; assigneeId: string; success: boolean }> = [];
+
+  for (const t of eligibleTickets) {
+    try {
+      // 1. Fetch assignee profile & email
+      const { data: assigneeProfile } = await admin
+        .from("profiles")
+        .select("name, user_id")
+        .eq("user_id", t.assigned_to)
+        .maybeSingle();
+
+      let assigneeEmail: string | null = null;
+      try {
+        const { data: authUser } = await admin.auth.admin.getUserById(t.assigned_to);
+        assigneeEmail = authUser?.user?.email || null;
+      } catch (err) {
+        console.warn("[reminders] Failed to get user email:", err);
+      }
+
+      // 2. Record reminder event in ticket_events
+      await admin.from("ticket_events").insert({
+        feedback_id: t.id,
+        event_type: "reminder_sent",
+        actor_id: t.assigned_to,
+        actor_name: assigneeProfile?.name || "Rendszer",
+        actor_email: assigneeEmail,
+        metadata: {
+          automated: true,
+          overdue_hours: Math.floor((Date.now() - new Date(t.last_customer_message_at).getTime()) / (1000 * 60 * 60)),
+          recipient_email: assigneeEmail,
+        },
+      });
+
+      // 3. Update last_reminder_sent_at
+      await admin
+        .from("feedback")
+        .update({ last_reminder_sent_at: new Date().toISOString() })
+        .eq("id", t.id);
+
+      results.push({
+        ticketId: t.id,
+        ticketNumber: t.ticket_number,
+        assigneeId: t.assigned_to,
+        success: true,
+      });
+    } catch (err: any) {
+      console.error(`[reminders] Error processing ticket ${t.id}:`, err);
+      results.push({
+        ticketId: t.id,
+        ticketNumber: t.ticket_number,
+        assigneeId: t.assigned_to,
+        success: false,
+      });
+    }
+  }
+
+  return {
+    success: true,
+    totalOverdue: overdueTickets?.length || 0,
+    remindersSent: results.length,
+    details: results,
+  };
+}
+
