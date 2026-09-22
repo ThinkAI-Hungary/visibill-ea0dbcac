@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useInvoiceData } from '@/hooks/useInvoiceData';
 import { useInvoiceFilters, FILTER_URL_KEYS, defaultFilters } from '@/hooks/useInvoiceFilters';
 import { useInvoiceMutations } from '@/hooks/useInvoiceMutations';
@@ -239,6 +240,9 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
     invalidateInvoiceData,
   } = useInvoiceData(companyId, enabled, dateFromFormatted, dateToFormatted, selectedCompany?.id);
 
+  const { effectiveSettings } = useCompanySettings();
+  const defaultDateBasis = (effectiveSettings?.gl_date_basis as string) || 'kibocsatas';
+
   // ── Filters hook ──
   const {
     filters,
@@ -277,7 +281,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
     getCategoryName,
     getProjectName,
     getPaymentMethodLabel,
-  } = useInvoiceFilters(companyId, enabled, dateFromFormatted, dateToFormatted, partners, categories, projects, activeTab);
+  } = useInvoiceFilters(companyId, enabled, dateFromFormatted, dateToFormatted, partners, categories, projects, activeTab, defaultDateBasis);
 
   // ── Netting detection ──
   const { nettingInvoiceIds, getNettingGroup } = useNettingDetection(paginatedNavInvoices);
@@ -290,6 +294,8 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       filters.search !== '' ||
       filters.issueDateFrom !== '' ||
       filters.issueDateTo !== '' ||
+      filters.deliveryDateFrom !== '' ||
+      filters.deliveryDateTo !== '' ||
       filters.amountMin !== '' ||
       filters.amountMax !== '' ||
       filters.currency !== 'all' ||
@@ -298,9 +304,10 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       filters.project !== 'all' ||
       filters.category !== 'all' ||
       filters.paymentMethod !== 'all' ||
-      filters.continuous !== 'all'
+      filters.continuous !== 'all' ||
+      (filters.dateBasis && filters.dateBasis !== defaultDateBasis)
     );
-  }, [filters]);
+  }, [filters, defaultDateBasis]);
   const hasAnyActiveFilter = hasStandardFilters || kpiFilter !== 'all';
 
   const clearAllFilters = useCallback(() => {
@@ -317,6 +324,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
         for (const urlKey of Object.values(FILTER_URL_KEYS)) {
           next.delete(urlKey);
         }
+        next.delete('date_basis');
         next.delete('kpi');
         next.delete('sf');
         next.delete('sd');
@@ -324,11 +332,17 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
         next.delete('ps');
 
         for (const [key, urlKey] of Object.entries(FILTER_URL_KEYS)) {
+          if (key === 'dateBasis') continue;
           const value = filters[key as keyof typeof filters];
           const defValue = defaultFilters[key as keyof typeof defaultFilters];
           if (value !== defValue) {
             next.set(urlKey, value);
           }
+        }
+
+        // Only persist db if it differs from the company default setting
+        if (filters.dateBasis && filters.dateBasis !== defaultDateBasis) {
+          next.set('db', filters.dateBasis);
         }
 
         if (kpiFilter !== 'all') next.set('kpi', kpiFilter);
@@ -359,6 +373,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
     navPageSize,
     submittedPageSize,
     isSubmittedTab,
+    defaultDateBasis,
     setSearchParams,
   ]);
 

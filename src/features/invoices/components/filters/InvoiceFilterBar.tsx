@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Search, CalendarIcon, X } from 'lucide-react';
+import { Search, CalendarIcon, CalendarCheck, Calendar as CalendarGlyph, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
@@ -29,8 +29,18 @@ export function InvoiceFilterBar() {
     clearAllFilters,
   } = useInvoiceContext();
 
-  const [issueDateFromOpen, setIssueDateFromOpen] = useState(false);
-  const [issueDateToOpen, setIssueDateToOpen] = useState(false);
+  const [dateFromOpen, setDateFromOpen] = useState(false);
+  const [dateToOpen, setDateToOpen] = useState(false);
+
+  const isDeliveryBasis = filters.dateBasis === 'teljesites';
+  const activeDateFrom = isDeliveryBasis ? filters.deliveryDateFrom : filters.issueDateFrom;
+  const activeDateTo = isDeliveryBasis ? filters.deliveryDateTo : filters.issueDateTo;
+
+  // Inactive date filter values (for indicator badge if both are filtered)
+  const inactiveIsDelivery = !isDeliveryBasis;
+  const inactiveFrom = inactiveIsDelivery ? filters.deliveryDateFrom : filters.issueDateFrom;
+  const inactiveTo = inactiveIsDelivery ? filters.deliveryDateTo : filters.issueDateTo;
+  const hasInactiveDateFilter = Boolean(inactiveFrom || inactiveTo);
 
   return (
     <div className="flex flex-wrap items-center gap-3 min-h-[88px]">
@@ -45,40 +55,86 @@ export function InvoiceFilterBar() {
         />
       </div>
 
+      {/* Date Basis Segmented Control (Kibocsátás vs Teljesítés) */}
+      <div className="inline-flex h-9 items-center rounded-lg border border-border/80 bg-muted/40 p-1 shadow-2xs text-xs select-none">
+        <button
+          type="button"
+          onClick={() => setFilters(prev => ({ ...prev, dateBasis: 'kibocsatas' }))}
+          className={cn(
+            "inline-flex px-2.5 h-7 items-center justify-center gap-1.5 rounded-md text-xs transition-all cursor-pointer border",
+            !isDeliveryBasis
+              ? "bg-background text-foreground shadow-xs border-border/60 font-semibold"
+              : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
+          )}
+          title={t('invoices:filters.date_basis_issue_tooltip', { defaultValue: 'Kibocsátás kelte: számlák hivatalos kiállítási dátuma alapján gyűjti és szűri az adatokat' })}
+        >
+          <CalendarGlyph className="w-3.5 h-3.5 shrink-0" />
+          <span>{t('invoices:filters.date_basis_issue', { defaultValue: 'Kibocsátás' })}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setFilters(prev => ({ ...prev, dateBasis: 'teljesites' }))}
+          className={cn(
+            "inline-flex px-2.5 h-7 items-center justify-center gap-1.5 rounded-md text-xs transition-all cursor-pointer border",
+            isDeliveryBasis
+              ? "bg-background text-foreground shadow-xs border-border/60 font-semibold text-primary"
+              : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
+          )}
+          title={t('invoices:filters.date_basis_delivery_tooltip', { defaultValue: 'Teljesítés dátuma: a gazdasági teljesítés napja alapján gyűjti és szűri az adatokat (áfa és főkönyv összhang)' })}
+        >
+          <CalendarCheck className="w-3.5 h-3.5 shrink-0 text-primary" />
+          <span>{t('invoices:filters.date_basis_delivery', { defaultValue: 'Teljesítés' })}</span>
+        </button>
+      </div>
+
       {/* Date Range Popovers */}
       <div className="flex items-center gap-1.5">
-        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">{t('invoices:filters.issue_date', { defaultValue: 'Kibocsátás:' })}</span>
-        <Popover open={issueDateFromOpen} onOpenChange={setIssueDateFromOpen}>
+        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+          {isDeliveryBasis
+            ? t('invoices:filters.delivery_date_label', { defaultValue: 'Teljesítés:' })
+            : t('invoices:filters.issue_date', { defaultValue: 'Kibocsátás:' })}
+        </span>
+        <Popover open={dateFromOpen} onOpenChange={setDateFromOpen}>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
               size="sm"
               className={cn(
                 'h-9 text-xs px-2.5 justify-start font-normal min-w-[130px]',
-                filters.issueDateFrom &&
+                activeDateFrom &&
                   'bg-primary/10 border-primary/50 text-primary dark:bg-primary/10 dark:border-primary dark:text-primary'
               )}
             >
               <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
-              {filters.issueDateFrom
-                ? format(new Date(filters.issueDateFrom), dateFormat, { locale: getDateFnsLocale() })
+              {activeDateFrom
+                ? format(new Date(activeDateFrom), dateFormat, { locale: getDateFnsLocale() })
                 : t('invoices:filters.date_from', { defaultValue: 'Dátum -tól' })}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
             <Calendar
               mode="single"
-              selected={filters.issueDateFrom ? new Date(filters.issueDateFrom) : undefined}
+              selected={activeDateFrom ? new Date(activeDateFrom) : undefined}
               onSelect={(date) => {
                 const dateStr = date ? format(date, 'yyyy-MM-dd') : '';
-                setFilters(prev => ({
-                  ...prev,
-                  issueDateFrom: dateStr,
-                  issueDateTo: dateStr && !prev.issueDateTo ? format(new Date(), 'yyyy-MM-dd') : prev.issueDateTo,
-                }));
-                setIssueDateFromOpen(false);
+                setFilters(prev => {
+                  if (isDeliveryBasis) {
+                    return {
+                      ...prev,
+                      deliveryDateFrom: dateStr,
+                      deliveryDateTo: dateStr && !prev.deliveryDateTo ? format(new Date(), 'yyyy-MM-dd') : prev.deliveryDateTo,
+                    };
+                  } else {
+                    return {
+                      ...prev,
+                      issueDateFrom: dateStr,
+                      issueDateTo: dateStr && !prev.issueDateTo ? format(new Date(), 'yyyy-MM-dd') : prev.issueDateTo,
+                    };
+                  }
+                });
+                setDateFromOpen(false);
               }}
-              disabled={filters.issueDateTo ? { after: new Date(filters.issueDateTo) } : undefined}
+              disabled={activeDateTo ? { after: new Date(activeDateTo) } : undefined}
               initialFocus
               className="p-3 pointer-events-auto"
             />
@@ -87,49 +143,85 @@ export function InvoiceFilterBar() {
 
         <span className="text-xs text-muted-foreground">–</span>
 
-        <Popover open={issueDateToOpen} onOpenChange={setIssueDateToOpen}>
+        <Popover open={dateToOpen} onOpenChange={setDateToOpen}>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
               size="sm"
               className={cn(
                 'h-9 text-xs px-2.5 justify-start font-normal min-w-[130px]',
-                filters.issueDateTo &&
+                activeDateTo &&
                   'bg-primary/10 border-primary/50 text-primary dark:bg-primary/10 dark:border-primary dark:text-primary'
               )}
             >
               <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
-              {filters.issueDateTo
-                ? format(new Date(filters.issueDateTo), dateFormat, { locale: getDateFnsLocale() })
+              {activeDateTo
+                ? format(new Date(activeDateTo), dateFormat, { locale: getDateFnsLocale() })
                 : t('invoices:filters.date_to', { defaultValue: 'Dátum -ig' })}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
             <Calendar
               mode="single"
-              selected={filters.issueDateTo ? new Date(filters.issueDateTo) : undefined}
+              selected={activeDateTo ? new Date(activeDateTo) : undefined}
               onSelect={(date) => {
-                setFilters(prev => ({ ...prev, issueDateTo: date ? format(date, 'yyyy-MM-dd') : '' }));
-                setIssueDateToOpen(false);
+                const dateStr = date ? format(date, 'yyyy-MM-dd') : '';
+                setFilters(prev => ({
+                  ...prev,
+                  [isDeliveryBasis ? 'deliveryDateTo' : 'issueDateTo']: dateStr,
+                }));
+                setDateToOpen(false);
               }}
-              disabled={filters.issueDateFrom ? { before: new Date(filters.issueDateFrom) } : undefined}
+              disabled={activeDateFrom ? { before: new Date(activeDateFrom) } : undefined}
               initialFocus
               className="p-3 pointer-events-auto"
             />
           </PopoverContent>
         </Popover>
 
-        {(filters.issueDateFrom || filters.issueDateTo) && (
+        {(activeDateFrom || activeDateTo) && (
           <Button
             variant="ghost"
             size="icon"
             className="h-7 w-7"
-            onClick={() => setFilters(prev => ({ ...prev, issueDateFrom: '', issueDateTo: '' }))}
+            onClick={() => setFilters(prev => ({
+              ...prev,
+              [isDeliveryBasis ? 'deliveryDateFrom' : 'issueDateFrom']: '',
+              [isDeliveryBasis ? 'deliveryDateTo' : 'issueDateTo']: '',
+            }))}
           >
             <X className="h-3.5 w-3.5" />
           </Button>
         )}
       </div>
+
+      {/* Secondary / Inactive Date Chip Indicator */}
+      {hasInactiveDateFilter && (
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-muted/60 text-xs text-muted-foreground border border-border/60">
+          <span className="text-[11px] font-medium">
+            {isDeliveryBasis
+              ? t('invoices:filters.issue_date_chip', { defaultValue: 'Kibocsátás:' })
+              : t('invoices:filters.delivery_date_chip', { defaultValue: 'Teljesítés:' })}
+          </span>
+          <span className="font-semibold text-foreground text-[11px]">
+            {inactiveFrom ? format(new Date(inactiveFrom), dateFormat, { locale: getDateFnsLocale() }) : '...'}
+            {' – '}
+            {inactiveTo ? format(new Date(inactiveTo), dateFormat, { locale: getDateFnsLocale() }) : '...'}
+          </span>
+          <button
+            type="button"
+            onClick={() => setFilters(prev => ({
+              ...prev,
+              [inactiveIsDelivery ? 'deliveryDateFrom' : 'issueDateFrom']: '',
+              [inactiveIsDelivery ? 'deliveryDateTo' : 'issueDateTo']: '',
+            }))}
+            className="p-0.5 hover:text-foreground text-muted-foreground ml-0.5 rounded-full hover:bg-muted"
+            title={t('invoices:filters.clear_secondary_date', { defaultValue: 'Dátumszűrő törlése' })}
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      )}
 
       {/* Currency Select */}
       <Select value={filters.currency} onValueChange={(value) => setFilters(prev => ({ ...prev, currency: value }))}>

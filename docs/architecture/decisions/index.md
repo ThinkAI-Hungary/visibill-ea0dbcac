@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-22  
-> **Összesen:** 150 döntés | ✅ Decided: 148 | ⛔ Superseded: 2
+> **Összesen:** 151 döntés | ✅ Decided: 149 | ⛔ Superseded: 2
 
 ---
 
@@ -124,6 +124,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-118 | Atomi Partner Skontó Újraszámolás és Kliensoldali Ciklusok Felszámolása | ✅ Decided | [A-118](./A-118-atomic-partner-skonto-recalculation.md) |
 | A-119 | Aggreg8 PSD2 Open Banking AISP Integráció, Hosted SyncUI és Valós Idejű Tranzakció Szinkronizáció | ✅ Decided | [A-119](./A-119-aggreg8-psd2-open-banking-integration.md) |
 | A-129 | Partner-történeti Többségi Szabályú Számlakategorizálás & DB Triggerek | ✅ Decided | [A-129](./A-129-partner-history-majority-categorization.md) |
+| A-138 | Számlák Teljesítés Dátuma és Dátum Alap RPC Szűrés | ✅ Decided | [A-138](./A-138-invoices-delivery-date-and-date-basis-rpc-filters.md) |
 
 ## 🖥️ Frontend
 

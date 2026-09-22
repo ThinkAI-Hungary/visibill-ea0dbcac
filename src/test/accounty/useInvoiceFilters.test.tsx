@@ -19,8 +19,8 @@ const queryClient = new QueryClient({
   },
 });
 
-function TestComponent() {
-  const { filters } = useInvoiceFilters(
+function TestComponent({ defaultDateBasis }: { defaultDateBasis?: string }) {
+  const { filters, setFilters } = useInvoiceFilters(
     'test-company',
     false, // disabled to prevent actual API calls
     '2026-01-01',
@@ -28,12 +28,28 @@ function TestComponent() {
     [],
     [],
     [],
-    'OUTBOUND'
+    'OUTBOUND',
+    defaultDateBasis
   );
 
   return (
     <div>
       <span data-testid="search-value">{filters.search}</span>
+      <span data-testid="date-basis">{filters.dateBasis}</span>
+      <span data-testid="ddf-value">{filters.deliveryDateFrom}</span>
+      <span data-testid="ddt-value">{filters.deliveryDateTo}</span>
+      <button
+        data-testid="toggle-kibocsatas"
+        onClick={() => setFilters(prev => ({ ...prev, dateBasis: 'kibocsatas' }))}
+      >
+        Kibocsátás
+      </button>
+      <button
+        data-testid="toggle-teljesites"
+        onClick={() => setFilters(prev => ({ ...prev, dateBasis: 'teljesites' }))}
+      >
+        Teljesítés
+      </button>
     </div>
   );
 }
@@ -62,4 +78,43 @@ describe('useInvoiceFilters URL parameters integration', () => {
 
     expect(screen.getByTestId('search-value').textContent).toBe('ArtHold Kft');
   });
+
+  it('correctly initializes delivery date and date basis parameters from URL', () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/invoices?db=teljesites&ddf=2026-08-01&ddt=2026-08-31']}>
+          <TestComponent />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    expect(screen.getByTestId('date-basis').textContent).toBe('teljesites');
+    expect(screen.getByTestId('ddf-value').textContent).toBe('2026-08-01');
+    expect(screen.getByTestId('ddt-value').textContent).toBe('2026-08-31');
+  });
+
+  it('honors defaultDateBasis when no URL param is present', () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/invoices']}>
+          <TestComponent defaultDateBasis="teljesites" />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    expect(screen.getByTestId('date-basis').textContent).toBe('teljesites');
+  });
+
+  it('allows overriding defaultDateBasis with explicit db=kibocsatas in URL', () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/invoices?db=kibocsatas']}>
+          <TestComponent defaultDateBasis="teljesites" />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    expect(screen.getByTestId('date-basis').textContent).toBe('kibocsatas');
+  });
 });
+

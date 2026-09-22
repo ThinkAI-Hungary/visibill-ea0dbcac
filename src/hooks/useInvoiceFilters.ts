@@ -21,6 +21,9 @@ export interface InvoiceFilters {
   search: string;
   issueDateFrom: string;
   issueDateTo: string;
+  deliveryDateFrom: string;
+  deliveryDateTo: string;
+  dateBasis: 'kibocsatas' | 'teljesites' | string;
   amountMin: string;
   amountMax: string;
   currency: string;
@@ -37,6 +40,9 @@ export const defaultFilters: InvoiceFilters = {
   search: '',
   issueDateFrom: '',
   issueDateTo: '',
+  deliveryDateFrom: '',
+  deliveryDateTo: '',
+  dateBasis: 'kibocsatas',
   amountMin: '',
   amountMax: '',
   currency: 'all',
@@ -54,6 +60,9 @@ export const FILTER_URL_KEYS: Record<keyof InvoiceFilters, string> = {
   search: 'q',
   issueDateFrom: 'idf',
   issueDateTo: 'idt',
+  deliveryDateFrom: 'ddf',
+  deliveryDateTo: 'ddt',
+  dateBasis: 'db',
   amountMin: 'amin',
   amountMax: 'amax',
   currency: 'cur',
@@ -74,7 +83,8 @@ export function useInvoiceFilters(
   partners: Partner[],
   categories: Category[],
   projects: Project[],
-  activeTab: InvoiceTab
+  activeTab: InvoiceTab,
+  defaultDateBasis: string = 'kibocsatas'
 ) {
   const [searchParams, setSearchParams] = useSearchParams();
   const { activePresetId } = useActivePreset(companyId);
@@ -82,8 +92,14 @@ export function useInvoiceFilters(
 
   // Initialize all state from URL searchParams (enables link sharing)
   const [filters, setFilters] = useState<InvoiceFilters>(() => {
-    const initial = { ...defaultFilters };
+    const urlDateBasis = searchParams.get('db') || searchParams.get('date_basis');
+    const effectiveBasis = (urlDateBasis === 'kibocsatas' || urlDateBasis === 'teljesites')
+      ? urlDateBasis
+      : (defaultDateBasis || 'kibocsatas');
+
+    const initial = { ...defaultFilters, dateBasis: effectiveBasis };
     for (const [key, urlKey] of Object.entries(FILTER_URL_KEYS)) {
+      if (key === 'dateBasis') continue;
       const value = searchParams.get(urlKey);
       if (value !== null) {
         initial[key as keyof InvoiceFilters] = value;
@@ -143,10 +159,24 @@ export function useInvoiceFilters(
       }
       
       for (const [key, urlKey] of Object.entries(FILTER_URL_KEYS)) {
-        if (key === 'search') continue;
+        if (key === 'search' || key === 'dateBasis') continue;
         const val = searchParams.get(urlKey) || defaultFilters[key as keyof InvoiceFilters];
         if (next[key as keyof InvoiceFilters] !== val) {
           next[key as keyof InvoiceFilters] = val;
+          updated = true;
+        }
+      }
+
+      // Explicit dateBasis sync if URL param exists, or fallback to company default
+      const urlBasis = searchParams.get('db') || searchParams.get('date_basis');
+      if (urlBasis && (urlBasis === 'kibocsatas' || urlBasis === 'teljesites')) {
+        if (next.dateBasis !== urlBasis) {
+          next.dateBasis = urlBasis;
+          updated = true;
+        }
+      } else if (!urlBasis && defaultDateBasis) {
+        if (next.dateBasis !== defaultDateBasis) {
+          next.dateBasis = defaultDateBasis;
           updated = true;
         }
       }
@@ -173,7 +203,7 @@ export function useInvoiceFilters(
     const pageNum = p ? (parseInt(p, 10) || 1) : 1;
     setNavCurrentPage(prev => prev !== pageNum ? pageNum : prev);
     setSubmittedCurrentPage(prev => prev !== pageNum ? pageNum : prev);
-  }, [searchParams]);
+  }, [searchParams, defaultDateBasis]);
 
   // Debounce search with useDeferredValue
   const deferredSearch = useDeferredValue(filters.search);
@@ -196,6 +226,9 @@ export function useInvoiceFilters(
 
   const issueDateFrom = filters.issueDateFrom || null;
   const issueDateTo = filters.issueDateTo || null;
+  const deliveryDateFrom = filters.deliveryDateFrom || null;
+  const deliveryDateTo = filters.deliveryDateTo || null;
+  const dateBasis = filters.dateBasis || defaultDateBasis || 'kibocsatas';
 
   // ── Server-side KPI Summary RPC query (ultra-fast aggregation) ──
   const { data: invoiceKpis = { total: 0, matched: 0, suggested: 0, unmatched: 0 }, isLoading: isKpisLoading } = useQuery({
@@ -205,7 +238,8 @@ export function useInvoiceFilters(
       isNavTab ? 'nav' : 'submitted',
       deferredSearch, filters.currency, filters.project, filters.category,
       filters.paymentMethod, filters.amountMin, filters.amountMax,
-      issueDateFrom, issueDateTo, filters.continuous, filters.submitted
+      issueDateFrom, issueDateTo, deliveryDateFrom, deliveryDateTo, dateBasis,
+      filters.continuous, filters.submitted
     ],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_invoice_kpis', {
@@ -223,6 +257,9 @@ export function useInvoiceFilters(
         p_amount_max: filters.amountMax ? parseFloat(filters.amountMax) : undefined,
         p_issue_date_from: issueDateFrom || undefined,
         p_issue_date_to: issueDateTo || undefined,
+        p_delivery_date_from: deliveryDateFrom || undefined,
+        p_delivery_date_to: deliveryDateTo || undefined,
+        p_date_basis: dateBasis,
         p_continuous: filters.continuous === 'all' ? undefined : filters.continuous,
         p_submitted: filters.submitted === 'all' ? undefined : filters.submitted,
       });
@@ -261,7 +298,8 @@ export function useInvoiceFilters(
         oppositeDirection, 'nav',
         deferredSearch, filters.currency, filters.project, filters.category,
         filters.paymentMethod, filters.amountMin, filters.amountMax,
-        issueDateFrom, issueDateTo, filters.continuous, filters.submitted
+        issueDateFrom, issueDateTo, deliveryDateFrom, deliveryDateTo, dateBasis,
+        filters.continuous, filters.submitted
       ],
       queryFn: async () => {
         const { data, error } = await supabase.rpc('get_invoice_kpis', {
@@ -279,6 +317,9 @@ export function useInvoiceFilters(
           p_amount_max: filters.amountMax ? parseFloat(filters.amountMax) : undefined,
           p_issue_date_from: issueDateFrom || undefined,
           p_issue_date_to: issueDateTo || undefined,
+          p_delivery_date_from: deliveryDateFrom || undefined,
+          p_delivery_date_to: deliveryDateTo || undefined,
+          p_date_basis: dateBasis,
           p_continuous: filters.continuous === 'all' ? undefined : filters.continuous,
           p_submitted: filters.submitted === 'all' ? undefined : filters.submitted,
         });
@@ -302,7 +343,8 @@ export function useInvoiceFilters(
         filters.submitted, filters.project, filters.category,
         filters.paymentMethod, filters.amountMin, filters.amountMax,
         sortField, sortDirection, 1, navPageSize,
-        issueDateFrom, issueDateTo, activePresetId, filters.continuous, kpiFilter
+        issueDateFrom, issueDateTo, deliveryDateFrom, deliveryDateTo, dateBasis,
+        activePresetId, filters.continuous, kpiFilter
       ],
       queryFn: async () => {
         const { data, error } = await supabase.rpc('get_filtered_nav_invoices', {
@@ -325,6 +367,9 @@ export function useInvoiceFilters(
           p_page_size: navPageSize,
           p_issue_date_from: issueDateFrom || undefined,
           p_issue_date_to: issueDateTo || undefined,
+          p_delivery_date_from: deliveryDateFrom || undefined,
+          p_delivery_date_to: deliveryDateTo || undefined,
+          p_date_basis: dateBasis,
           p_preset_id: activePresetId || undefined,
           p_continuous: filters.continuous === 'all' ? undefined : filters.continuous,
           p_kpi_filter: kpiFilter,
@@ -369,7 +414,8 @@ export function useInvoiceFilters(
       filters.submitted, filters.project, filters.category,
       filters.paymentMethod, filters.amountMin, filters.amountMax,
       sortField, sortDirection, navCurrentPage, navPageSize,
-      issueDateFrom, issueDateTo, activePresetId, filters.continuous, kpiFilter
+      issueDateFrom, issueDateTo, deliveryDateFrom, deliveryDateTo, dateBasis,
+      activePresetId, filters.continuous, kpiFilter
     ],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_filtered_nav_invoices', {
@@ -392,6 +438,9 @@ export function useInvoiceFilters(
         p_page_size: navPageSize,
         p_issue_date_from: issueDateFrom || undefined,
         p_issue_date_to: issueDateTo || undefined,
+        p_delivery_date_from: deliveryDateFrom || undefined,
+        p_delivery_date_to: deliveryDateTo || undefined,
+        p_date_basis: dateBasis,
         p_preset_id: activePresetId || undefined,
         p_continuous: filters.continuous === 'all' ? undefined : filters.continuous,
         p_kpi_filter: kpiFilter,
@@ -418,7 +467,8 @@ export function useInvoiceFilters(
       filters.category, filters.project, filters.paymentMethod,
       filters.amountMin, filters.amountMax, filters.navStatus,
       sortField, sortDirection, submittedCurrentPage, submittedPageSize,
-      issueDateFrom, issueDateTo, kpiFilter
+      issueDateFrom, issueDateTo, deliveryDateFrom, deliveryDateTo, dateBasis,
+      kpiFilter
     ],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_filtered_submitted_invoices', {
@@ -439,6 +489,9 @@ export function useInvoiceFilters(
         p_page_size: submittedPageSize,
         p_issue_date_from: issueDateFrom || undefined,
         p_issue_date_to: issueDateTo || undefined,
+        p_delivery_date_from: deliveryDateFrom || undefined,
+        p_delivery_date_to: deliveryDateTo || undefined,
+        p_date_basis: dateBasis,
         p_kpi_filter: kpiFilter,
         p_nav_status: filters.navStatus === 'all' ? undefined : filters.navStatus,
       });
@@ -784,7 +837,10 @@ export function useInvoiceFilters(
   // ── Clear filters ──
 
   const clearFilters = () => {
-    setFilters(defaultFilters);
+    setFilters({
+      ...defaultFilters,
+      dateBasis: defaultDateBasis || 'kibocsatas',
+    });
     setKpiFilter('all');
   };
 

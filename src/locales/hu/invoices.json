@@ -55,7 +55,13 @@
   },
   "filters": {
     "search_placeholder": "Keresés (partner, bizonylat, összeg...)",
+    "date_basis_issue": "Kibocsátás",
+    "date_basis_delivery": "Teljesítés",
     "issue_date": "Kibocsátás:",
+    "delivery_date_label": "Teljesítés:",
+    "issue_date_chip": "Kibocsátás:",
+    "delivery_date_chip": "Teljesítés:",
+    "clear_secondary_date": "Dátumszűrő törlése",
     "date_from": "Dátum -tól",
     "date_to": "Dátum -ig",
     "currency": "Pénznem",

@@ -55,7 +55,13 @@
   },
   "filters": {
     "search_placeholder": "Traži (partner, račun, iznos...)",
+    "date_basis_issue": "Izdavanje",
+    "date_basis_delivery": "Isporuka",
     "issue_date": "Izdavanje:",
+    "delivery_date_label": "Isporuka:",
+    "issue_date_chip": "Izdavanje:",
+    "delivery_date_chip": "Isporuka:",
+    "clear_secondary_date": "Ukloni filtar datuma",
     "date_from": "Datum od",
     "date_to": "Datum do",
     "currency": "Valuta",
