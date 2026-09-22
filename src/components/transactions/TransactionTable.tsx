@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { TableBody, TableRow, TableCell, TableHead, TableHeader } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { FloatingBulkBar } from '@/components/ui/floating-bulk-bar';
@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn, formatCurrency, fixCharacterEncoding } from '@/lib/utils';
-import { CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown, Eye, Settings, Ban, UploadCloud, ChevronDown, Link2, Link2Off, Copy, Download, FileText, X, Trash2, Lock, Users, Loader2, Plus, ClipboardCheck, Pencil, Check, Undo2 } from 'lucide-react';
+import { CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown, Eye, Settings, Ban, UploadCloud, ChevronDown, Link2, Link2Off, Copy, Download, FileText, X, Trash2, Lock, Users, Loader2, Plus, ClipboardCheck, Pencil, Check, Undo2, FileDown, FileSpreadsheet } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -1132,7 +1132,7 @@ interface TransactionTableProps {
   bankConfig?: Record<string, { label: string; fullName?: string; bgClass: string }>;
   duplicateTxIds?: Set<string>;
   onBulkStatusChange?: (ids: string[], matchType: string) => void;
-  onBulkExport?: (ids: string[], format: 'csv' | 'xlsx') => void;
+  onBulkExport?: (ids: string[], format: 'csv' | 'xlsx' | 'pdf') => void;
   onBulkDelete?: (ids: string[]) => void;
 }
 
@@ -1276,12 +1276,16 @@ const TransactionTable = React.memo(function TransactionTable({
                 <Download className="w-3.5 h-3.5" /> {t('transactions:bulk.export', 'Exportálás')} <ChevronDown className="w-3 h-3 text-muted-foreground" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onBulkExport(Array.from(selectedIds), 'csv')} className="cursor-pointer gap-2">
-                <FileText className="w-4 h-4 text-muted-foreground" /> CSV (.csv)
-              </DropdownMenuItem>
+            <DropdownMenuContent align="end" className="w-44">
               <DropdownMenuItem onClick={() => onBulkExport(Array.from(selectedIds), 'xlsx')} className="cursor-pointer gap-2">
-                <FileText className="w-4 h-4 text-muted-foreground" /> Excel (.xlsx)
+                <FileSpreadsheet className="w-4 h-4 text-emerald-500" /> Excel (.xlsx)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onBulkExport(Array.from(selectedIds), 'csv')} className="cursor-pointer gap-2">
+                <FileText className="w-4 h-4 text-blue-500" /> CSV (.csv)
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onBulkExport(Array.from(selectedIds), 'pdf')} className="cursor-pointer gap-2">
+                <FileDown className="w-4 h-4 text-rose-500" /> PDF (.pdf)
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

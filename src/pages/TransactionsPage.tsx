@@ -4,17 +4,18 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn, formatCurrency } from '@/lib/utils';
-import { RefreshCw, Download, ChevronDown, FileText, Package, Truck, Mail, ArrowDownRight, ArrowUpRight, Link2, Link2Off, Loader2, Settings, CreditCard, AlertTriangle, Upload, TrendingUp, TrendingDown, Wallet, Copy, X } from 'lucide-react';
+import { RefreshCw, Download, ChevronDown, FileText, Package, Truck, Mail, ArrowDownRight, ArrowUpRight, Link2, Link2Off, Loader2, Settings, CreditCard, AlertTriangle, Upload, TrendingUp, TrendingDown, Wallet, Copy, X, FileSpreadsheet, FileDown } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip as ChartTooltip, CartesianGrid, ReferenceArea } from 'recharts';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { TransactionDetailsDialog } from '@/components/TransactionDetailsDialog';
+import { TransactionDataExportDialog, type ExportableTransaction } from '@/components/transactions/TransactionDataExportDialog';
 import TransactionFilters from '@/components/transactions/TransactionFilters';
 import TransactionTable from '@/components/transactions/TransactionTable';
-import { useTransactionData, type Transaction } from '@/hooks/useTransactionData';
+import { useTransactionData, fetchMatchedInvoiceNumbers, type Transaction } from '@/hooks/useTransactionData';
 import SzepCardTab from '@/components/SzepCardTab';
 import { supabase } from '@/integrations/supabase/client';
 import { TransactionFilesDialog } from '@/components/transactions/TransactionFilesDialog';
@@ -102,6 +103,8 @@ const TransactionsPage = () => {
     rematching,
     handleRematch,
     handleExport,
+    handleCustomExport,
+    fetchAllFilteredTransactions,
     handleBulkStatusChange,
     handleBulkExport,
     handleBulkDelete,
@@ -111,15 +114,55 @@ const TransactionsPage = () => {
   const { canWrite: canWriteModule } = useEaisybillPermissions();
   const writable = canWriteModule('transactions');
 
-  const [exporting, setExporting] = useState(false);
-  const runExport = async (format: 'csv' | 'xlsx') => {
-    setExporting(true);
-    try {
-      await handleExport(format);
-    } finally {
-      setExporting(false);
+  // Interactive Data Export Dialog state (mirrors InvoicesPage)
+  const [dataExportDialogOpen, setDataExportDialogOpen] = useState(false);
+  const [dataExportFormat, setDataExportFormat] = useState<'csv' | 'xlsx' | 'pdf'>('xlsx');
+  const [dataExportSelectedIds, setDataExportSelectedIds] = useState<Set<string>>(new Set());
+  const [exportableTransactions, setExportableTransactions] = useState<ExportableTransaction[]>([]);
+  const [isPreparingExport, setIsPreparingExport] = useState(false);
+
+  const openDataExportDialog = useCallback(async (
+    format: 'csv' | 'xlsx' | 'pdf' = 'xlsx',
+    preSelectedIds?: string[]
+  ) => {
+    setDataExportFormat(format);
+    if (preSelectedIds && preSelectedIds.length > 0) {
+      setDataExportSelectedIds(new Set(preSelectedIds));
+    } else {
+      setDataExportSelectedIds(new Set());
     }
-  };
+
+    setIsPreparingExport(true);
+    setDataExportDialogOpen(true);
+    try {
+      let txList = filteredTransactions;
+      if (totalCount > filteredTransactions.length) {
+        txList = await fetchAllFilteredTransactions();
+      }
+
+      const invoiceIds = txList.map(t => t.matched_invoice_id);
+      const invoiceMap = await fetchMatchedInvoiceNumbers(invoiceIds);
+
+      const enriched: ExportableTransaction[] = txList.map(tx => ({
+        ...tx,
+        matched_invoice_number: tx.matched_invoice_id ? invoiceMap.get(tx.matched_invoice_id) : undefined,
+      }));
+
+      setExportableTransactions(enriched);
+    } catch (err) {
+      console.error('Failed to prepare transactions for export:', err);
+      setExportableTransactions(filteredTransactions.map(tx => ({ ...tx })));
+    } finally {
+      setIsPreparingExport(false);
+    }
+  }, [filteredTransactions, totalCount, fetchAllFilteredTransactions]);
+
+  const handleDataExportConfirm = useCallback(async (
+    selectedTxs: ExportableTransaction[],
+    format: 'csv' | 'xlsx' | 'pdf'
+  ) => {
+    await handleCustomExport(selectedTxs, format);
+  }, [handleCustomExport]);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const dateFromStr = dateFrom ? format(dateFrom, 'yyyy-MM-dd') : '';
@@ -809,8 +852,8 @@ const TransactionsPage = () => {
                     <TransactionRulesDialog open={rulesDialogOpen} onOpenChange={setRulesDialogOpen} />
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" disabled={exporting}>
-                          {exporting ? (
+                        <Button variant="outline" size="sm" disabled={isPreparingExport}>
+                          {isPreparingExport ? (
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                           ) : (
                             <Download className="h-4 w-4 mr-2" />
@@ -819,14 +862,19 @@ const TransactionsPage = () => {
                           <ChevronDown className="h-4 w-4 ml-2" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => runExport('csv')}>
-                          <FileText className="h-4 w-4 mr-2" />
-                          Export CSV
+                      <DropdownMenuContent className="w-48">
+                        <DropdownMenuItem onClick={() => openDataExportDialog('xlsx')} className="gap-2 cursor-pointer">
+                          <FileSpreadsheet className="h-4 w-4 text-emerald-500" />
+                          <span>Export Excel (.xlsx)</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => runExport('xlsx')}>
-                          <FileText className="h-4 w-4 mr-2" />
-                          Export XLSX
+                        <DropdownMenuItem onClick={() => openDataExportDialog('csv')} className="gap-2 cursor-pointer">
+                          <FileText className="h-4 w-4 text-blue-500" />
+                          <span>Export CSV (.csv)</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => openDataExportDialog('pdf')} className="gap-2 cursor-pointer">
+                          <FileDown className="h-4 w-4 text-rose-500" />
+                          <span>Export PDF (.pdf)</span>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -955,7 +1003,7 @@ const TransactionsPage = () => {
                   bankConfig={BANK_CONFIG}
                   duplicateTxIds={duplicateTxIds}
                   onBulkStatusChange={writable ? handleBulkStatusChange : undefined}
-                  onBulkExport={handleBulkExport}
+                  onBulkExport={(ids, format) => openDataExportDialog(format, ids)}
                   onBulkDelete={writable ? handleBulkDelete : undefined}
                 />
 
@@ -1020,6 +1068,17 @@ const TransactionsPage = () => {
         onUpdate={() => {
           queryClient.invalidateQueries({ queryKey: ['transactions', selectedCompany?.id || ''] });
         }}
+      />
+
+      {/* Interactive Data Export Dialog (CSV / XLSX / PDF) */}
+      <TransactionDataExportDialog
+        open={dataExportDialogOpen}
+        onClose={() => setDataExportDialogOpen(false)}
+        transactions={exportableTransactions}
+        initialSelectedIds={dataExportSelectedIds}
+        initialFormat={dataExportFormat}
+        companyName={selectedCompany?.name}
+        onExport={handleDataExportConfirm}
       />
     </div>
   );

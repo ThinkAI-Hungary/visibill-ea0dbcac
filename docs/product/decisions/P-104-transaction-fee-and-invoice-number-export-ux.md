@@ -24,3 +24,10 @@ Korábban az exportban (`.csv` és `.xlsx`) csak az alapadatok (dátum, leírás
 2. **UI Megjelenítés a Tranzakciók Táblázatában:**
    - A tranzakciók listájában az összeg alatt finom, másodlagos tipográfiával megjelenik a jutalék mértéke: `díj: -X Ft`.
    - Ez biztosítja, hogy a felhasználó és a könyvelő azonnal lássa a tranzakció nettó elszámolását külön exportálás nélkül is.
+3. **Interaktív Export Modál Paritás a Számlák Oldallal (`TransactionDataExportDialog`):**
+   - Az export gombra (illetve a tömeges műveleti lebegő sáv export gombjára) kattintva mostantól a Számlák oldaléval megegyező (`InvoiceDataExportDialog`) formátumú, prémium modális ablak jelenik meg.
+   - **Formátum választó:** Excel (.xlsx), CSV (.csv), PDF (.pdf) közvetlen kiválasztási lehetőséggel.
+   - **Időszak szűrő presetek:** Összes szűrt tétel, Aktuális hónap, Előző hónap, Aktuális negyedév, Előző negyedév, illetve Egyéni dátumtartomány (tól-ig naptárral).
+   - **Kereső és kijelölő funkciók:** Teljes szöveges keresés a leírásban, összegben vagy feloldott számlaszámban; "Mindet kijelöl" és "Kijelölés törlése" gyorsgombokkal.
+   - **Lapozható táblázat előnézet:** Checkboxokkal soronként ellenőrizhető a kiválasztott tételek köre, a feloldott számlaszámok és jutalékok.
+   - **Lábléc összegzés:** Kijelölt darabszám, bruttó összérték és levont díjak dinamikus összesítése.

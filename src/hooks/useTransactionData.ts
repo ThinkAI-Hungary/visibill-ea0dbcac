@@ -54,6 +54,38 @@ const DEFAULT_FILTERS: TransactionFilters = {
   matchStatus: 'all',
 };
 
+export async function fetchMatchedInvoiceNumbers(invoiceIds: (string | null | undefined)[]): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  const validIds = Array.from(new Set(invoiceIds.filter((id): id is string => Boolean(id))));
+  if (validIds.length === 0) return map;
+
+  const CHUNK_SIZE = 500;
+  for (let i = 0; i < validIds.length; i += CHUNK_SIZE) {
+    const chunk = validIds.slice(i, i + CHUNK_SIZE);
+    const [subRes, navRes] = await Promise.all([
+      supabase.from('invoices').select('id, bizonylatsorszam').in('id', chunk),
+      supabase.from('nav_invoices').select('id, invoice_number').in('id', chunk),
+    ]);
+
+    if (subRes.data) {
+      for (const row of subRes.data) {
+        if (row.bizonylatsorszam) {
+          map.set(row.id, row.bizonylatsorszam);
+        }
+      }
+    }
+    if (navRes.data) {
+      for (const row of navRes.data) {
+        if (row.invoice_number && !map.has(row.id)) {
+          map.set(row.id, row.invoice_number);
+        }
+      }
+    }
+  }
+
+  return map;
+}
+
 export function useTransactionData(overrideDateFrom?: Date, overrideDateTo?: Date) {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
@@ -301,46 +333,17 @@ export function useTransactionData(overrideDateFrom?: Date, overrideDateTo?: Dat
     }
   }, [queryClient, selectedCompany?.id]);
 
-async function fetchMatchedInvoiceNumbers(invoiceIds: (string | null | undefined)[]): Promise<Map<string, string>> {
-  const map = new Map<string, string>();
-  const validIds = Array.from(new Set(invoiceIds.filter((id): id is string => Boolean(id))));
-  if (validIds.length === 0) return map;
-
-  const CHUNK_SIZE = 500;
-  for (let i = 0; i < validIds.length; i += CHUNK_SIZE) {
-    const chunk = validIds.slice(i, i + CHUNK_SIZE);
-    const [subRes, navRes] = await Promise.all([
-      supabase.from('invoices').select('id, bizonylatsorszam').in('id', chunk),
-      supabase.from('nav_invoices').select('id, invoice_number').in('id', chunk),
-    ]);
-
-    if (subRes.data) {
-      for (const row of subRes.data) {
-        if (row.bizonylatsorszam) {
-          map.set(row.id, row.bizonylatsorszam);
-        }
-      }
-    }
-    if (navRes.data) {
-      for (const row of navRes.data) {
-        if (row.invoice_number && !map.has(row.id)) {
-          map.set(row.id, row.invoice_number);
-        }
-      }
-    }
-  }
-
-  return map;
-}
-
-  // Export
-  const handleExport = useCallback(async (exportFormat: 'csv' | 'xlsx') => {
+  // Export with arbitrary transaction list (used by TransactionDataExportDialog)
+  const handleCustomExport = useCallback(async (
+    transactionsToExport: Transaction[],
+    exportFormat: 'csv' | 'xlsx' | 'pdf' = 'xlsx'
+  ) => {
     try {
-      const invoiceIds = filteredTransactions.map(t => t.matched_invoice_id);
+      const invoiceIds = transactionsToExport.map(t => t.matched_invoice_id);
       const invoiceMap = await fetchMatchedInvoiceNumbers(invoiceIds);
 
       const headers = ['Dátum', 'Leírás', 'Összeg', 'Pénznem', 'Díj / Jutalék', 'Kapcsolódó számla', 'Típus', 'Státusz', 'Pontszám', 'Indoklás'];
-      const exportData = filteredTransactions.map(transaction => {
+      const exportData = transactionsToExport.map(transaction => {
         const matchStatus = computeMatchStatus(transaction);
         const statusText = matchStatus === 'matched' ? 'Párosított'
           : matchStatus === 'suggested' ? 'Javasolt'
@@ -354,19 +357,86 @@ async function fetchMatchedInvoiceNumbers(invoiceIds: (string | null | undefined
           transaction.amount?.toString() || '0',
           transaction.currency || 'HUF',
           transaction.fee_amount != null ? transaction.fee_amount.toString() : '',
-          (transaction.matched_invoice_id ? invoiceMap.get(transaction.matched_invoice_id) : '') || '',
+          (transaction as any).matched_invoice_number || (transaction.matched_invoice_id ? invoiceMap.get(transaction.matched_invoice_id) : '') || '',
           transaction.type || '',
           statusText,
           transaction.confidence_score ? Math.round(transaction.confidence_score * 100).toString() + '%' : '',
           transaction.reason || ''
         ];
       });
-      await exportToFile(headers, exportData, exportFormat, 'tranzakciok');
+      await exportToFile(headers, exportData, exportFormat, transactionsToExport.length === filteredTransactions.length ? 'tranzakciok' : `tranzakciok_${transactionsToExport.length}db`);
     } catch (error: any) {
       reportError({ type: 'db_query', component: 'useTransactionData', action: 'export_error', message: 'Export error:', error });
       toast({ title: 'Hiba', description: error.message || 'Export sikertelen', variant: 'destructive' });
     }
-  }, [filteredTransactions]);
+  }, [filteredTransactions.length]);
+
+  // Export current filtered transactions
+  const handleExport = useCallback(async (exportFormat: 'csv' | 'xlsx' | 'pdf' = 'xlsx') => {
+    await handleCustomExport(filteredTransactions, exportFormat);
+  }, [handleCustomExport, filteredTransactions]);
+
+  // Fetch all filtered transactions without page limit (for export modal)
+  const fetchAllFilteredTransactions = useCallback(async (): Promise<Transaction[]> => {
+    if (!selectedCompany?.id) return [];
+    let query = supabase
+      .from('transactions')
+      .select('*, gl_accounts(id, gl_number, short_name)')
+      .eq('company_id', selectedCompany.id)
+      .order(sortField, { ascending: sortDirection === 'asc' });
+
+    if (dateFromStr) query = query.gte('transaction_date', dateFromStr);
+    if (dateToStr) query = query.lte('transaction_date', dateToStr);
+    if (filters.currency !== 'all') query = query.eq('currency', filters.currency);
+    if (filters.type !== 'all') query = query.eq('type', filters.type);
+    if (filters.search) {
+      query = query.or(`description.ilike.%${filters.search}%,type.ilike.%${filters.search}%`);
+    }
+
+    if (filters.matchStatus !== 'all') {
+      if (filters.matchStatus === 'matched') {
+        query = query
+          .eq('is_verified', true)
+          .not('matched_invoice_id', 'is', null);
+      } else if (filters.matchStatus === 'auto_settled') {
+        query = query.or(
+          'match_type.eq.no_match_category,' +
+          'type.in.("atm készpénzfelvét","pénztári kp felvét","pénztári kp befizetés","kp befizetés atm-en keresztül","bankköltség","járulékok/adók")'
+        );
+      } else if (filters.matchStatus === 'suggested') {
+        query = query
+          .not('matched_invoice_id', 'is', null)
+          .or('is_verified.is.null,is_verified.eq.false')
+          .not('match_type', 'eq', 'no_match_category')
+          .not('match_type', 'eq', 'no_invoice')
+          .not('match_type', 'eq', 'invoice_missing');
+      } else if (filters.matchStatus === 'unmatched') {
+        query = query
+          .is('matched_invoice_id', null)
+          .not('match_type', 'eq', 'no_match_category')
+          .not('match_type', 'eq', 'no_invoice')
+          .not('match_type', 'eq', 'invoice_missing')
+          .not('type', 'in', '("atm készpénzfelvét","pénztári kp felvét","pénztári kp befizetés","kp befizetés atm-en keresztül","bankköltség","járulékok/adók")');
+      } else if (filters.matchStatus === 'no_invoice') {
+        query = query.eq('match_type', 'no_invoice');
+      } else if (filters.matchStatus === 'invoice_missing') {
+        query = query.eq('match_type', 'invoice_missing');
+      }
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    let result = (data || []) as Transaction[];
+    if (filters.amountMin) {
+      const min = parseFloat(filters.amountMin);
+      if (!isNaN(min)) result = result.filter(t => Math.abs(t.amount) >= min);
+    }
+    if (filters.amountMax) {
+      const max = parseFloat(filters.amountMax);
+      if (!isNaN(max)) result = result.filter(t => Math.abs(t.amount) <= max);
+    }
+    return result;
+  }, [selectedCompany?.id, sortField, sortDirection, dateFromStr, dateToStr, filters]);
 
   const handlePageSizeChange = useCallback((size: number) => {
     setPageSize(size);
@@ -499,6 +569,8 @@ async function fetchMatchedInvoiceNumbers(invoiceIds: (string | null | undefined
     rematching,
     handleRematch,
     handleExport,
+    handleCustomExport,
+    fetchAllFilteredTransactions,
     // F1: Bulk actions
     handleBulkStatusChange,
     handleBulkExport,
