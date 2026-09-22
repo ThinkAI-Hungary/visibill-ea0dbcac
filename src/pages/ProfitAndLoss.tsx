@@ -197,10 +197,12 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
     mutationFn: async () => {
       if (!selectedCompany?.id || !presetId) throw new Error("Missing company or preset");
       
-      const payload = Object.entries(mappings).map(([gl_account_id, pnl_structure_id]) => ({
-        gl_account_id,
-        pnl_structure_id
-      }));
+      const payload = Object.entries(mappings)
+        .filter(([gl_account_id, pnl_structure_id]) => Boolean(gl_account_id && pnl_structure_id && pnl_structure_id.trim() !== ''))
+        .map(([gl_account_id, pnl_structure_id]) => ({
+          gl_account_id,
+          pnl_structure_id: pnl_structure_id.trim()
+        }));
 
       const { error } = await supabase.rpc('save_pnl_mappings', {
         p_company_id: selectedCompany.id,
@@ -240,10 +242,12 @@ function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccou
         updatedMappings[s.gl_account_id] = s.pnl_structure_id;
       });
 
-      const payload = Object.entries(updatedMappings).map(([gl_account_id, pnl_structure_id]) => ({
-        gl_account_id,
-        pnl_structure_id
-      }));
+      const payload = Object.entries(updatedMappings)
+        .filter(([gl_account_id, pnl_structure_id]) => Boolean(gl_account_id && pnl_structure_id && pnl_structure_id.trim() !== ''))
+        .map(([gl_account_id, pnl_structure_id]) => ({
+          gl_account_id,
+          pnl_structure_id: pnl_structure_id.trim()
+        }));
 
       const { error } = await supabase.rpc('save_pnl_mappings', {
         p_company_id: selectedCompany.id,

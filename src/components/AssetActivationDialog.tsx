@@ -49,7 +49,7 @@ export function AssetActivationDialog({
   invoiceInfo,
   onSuccess,
 }: AssetActivationDialogProps) {
-  const { t } = useTranslation('hr');
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { selectedCompany } = useCompany();
   const { user } = useAuth();
@@ -131,7 +131,10 @@ export function AssetActivationDialog({
         if (!form.name.trim() || usefulMonths <= 0) {
           toast({
             title: t('common:status.error'),
-            description: t('fixed_assets.activation_dialog.validation_error', { index: i + 1 }),
+            description: t('hr:fixed_assets.activation_dialog.validation_error', {
+              index: i + 1,
+              defaultValue: `Az ${i + 1}. tétel neve és hasznos élettartama kötelező.`,
+            }),
             variant: 'destructive',
           });
           setSubmitting(false);
@@ -179,7 +182,10 @@ export function AssetActivationDialog({
 
       toast({
         title: t('common:status.success'),
-        description: t('fixed_assets.activation_dialog.success_toast', { count: forms.length }),
+        description: t('hr:fixed_assets.activation_dialog.success_toast', {
+          count: forms.length,
+          defaultValue: `${forms.length} eszköz sikeresen aktiválva.`,
+        }),
       });
 
       onOpenChange(false);
@@ -188,7 +194,7 @@ export function AssetActivationDialog({
       reportError({ type: 'db_query', component: 'AssetActivationDialog', action: 'activateAsset', message: error?.message || 'Asset activation failed', error });
       toast({
         title: t('common:status.error'),
-        description: error?.message || t('fixed_assets.activation_dialog.error_toast'),
+        description: error?.message || t('hr:fixed_assets.activation_dialog.error_toast'),
         variant: 'destructive',
       });
     } finally {
@@ -206,12 +212,15 @@ export function AssetActivationDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package2 className="h-5 w-5 text-primary" />
-            {t('fixed_assets.activation_dialog.title')}
+            {t('hr:fixed_assets.activation_dialog.title')}
           </DialogTitle>
           <DialogDescription>
             {selectedItems.length === 1
-              ? t('fixed_assets.activation_dialog.description_single')
-              : t('fixed_assets.activation_dialog.description_multiple', { count: selectedItems.length })
+              ? t('hr:fixed_assets.activation_dialog.description_single')
+              : t('hr:fixed_assets.activation_dialog.description_multiple', {
+                  count: selectedItems.length,
+                  defaultValue: `${selectedItems.length} tétel aktiválása eszközként.`,
+                })
             }
           </DialogDescription>
         </DialogHeader>
@@ -221,20 +230,20 @@ export function AssetActivationDialog({
           <div className="rounded-lg border border-border/50 p-3 bg-muted/20">
             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
               <div>
-                <span className="text-muted-foreground">{t('fixed_assets.activation_dialog.invoice_number')}</span>
+                <span className="text-muted-foreground">{t('hr:fixed_assets.activation_dialog.invoice_number')}</span>
                 <span className="ml-2 font-mono font-semibold">{invoiceInfo.invoiceNumber}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">{t('fixed_assets.activation_dialog.supplier')}</span>
+                <span className="text-muted-foreground">{t('hr:fixed_assets.activation_dialog.supplier')}</span>
                 <span className="ml-2 font-semibold">{invoiceInfo.supplierName}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">{t('fixed_assets.activation_dialog.purchase_date')}</span>
+                <span className="text-muted-foreground">{t('hr:fixed_assets.activation_dialog.purchase_date')}</span>
                 <span className="ml-2 font-semibold">{invoiceInfo.invoiceDate}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">{t('fixed_assets.activation_dialog.activated_by')}</span>
-                <span className="ml-2 font-semibold">{userName || t('fixed_assets.activation_dialog.unknown_user')}</span>
+                <span className="text-muted-foreground">{t('hr:fixed_assets.activation_dialog.activated_by')}</span>
+                <span className="ml-2 font-semibold">{userName || t('hr:fixed_assets.activation_dialog.unknown_user')}</span>
               </div>
             </div>
           </div>
@@ -274,38 +283,38 @@ export function AssetActivationDialog({
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor={`name-${index}`}>{t('fixed_assets.activation_dialog.name_label')}</Label>
+                    <Label htmlFor={`name-${index}`}>{t('hr:fixed_assets.activation_dialog.name_label')}</Label>
                     <Input
                       id={`name-${index}`}
                       value={form.name}
                       onChange={e => updateForm(index, 'name', e.target.value)}
-                      placeholder={t('fixed_assets.activation_dialog.name_placeholder')}
+                      placeholder={t('hr:fixed_assets.activation_dialog.name_placeholder')}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor={`vtsz-${index}`}>{t('fixed_assets.activation_dialog.vtsz_label')}</Label>
+                    <Label htmlFor={`vtsz-${index}`}>{t('hr:fixed_assets.activation_dialog.vtsz_label')}</Label>
                     <Input
                       id={`vtsz-${index}`}
                       value={form.vtszTeszor}
                       onChange={e => updateForm(index, 'vtszTeszor', e.target.value)}
-                      placeholder={t('fixed_assets.activation_dialog.vtsz_placeholder')}
+                      placeholder={t('hr:fixed_assets.activation_dialog.vtsz_placeholder')}
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor={`desc-${index}`}>{t('fixed_assets.activation_dialog.description_label')}</Label>
+                  <Label htmlFor={`desc-${index}`}>{t('hr:fixed_assets.activation_dialog.description_label')}</Label>
                   <Input
                     id={`desc-${index}`}
                     value={form.description}
                     onChange={e => updateForm(index, 'description', e.target.value)}
-                    placeholder={t('fixed_assets.activation_dialog.description_placeholder')}
+                    placeholder={t('hr:fixed_assets.activation_dialog.description_placeholder')}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor={`value-${index}`}>{t('fixed_assets.activation_dialog.acquisition_value_label')}</Label>
+                    <Label htmlFor={`value-${index}`}>{t('hr:fixed_assets.activation_dialog.acquisition_value_label')}</Label>
                     <Input
                       id={`value-${index}`}
                       type="number"
@@ -314,7 +323,7 @@ export function AssetActivationDialog({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor={`activation-date-${index}`}>{t('fixed_assets.activation_dialog.activation_date_label')}</Label>
+                    <Label htmlFor={`activation-date-${index}`}>{t('hr:fixed_assets.activation_dialog.activation_date_label')}</Label>
                     <Input
                       id={`activation-date-${index}`}
                       type="date"
@@ -326,7 +335,7 @@ export function AssetActivationDialog({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>{t('fixed_assets.activation_dialog.useful_life_label')}</Label>
+                    <Label>{t('hr:fixed_assets.activation_dialog.useful_life_label')}</Label>
                     <div className="flex gap-2">
                       <div className="flex items-center gap-1.5 flex-1">
                         <Input
@@ -336,7 +345,7 @@ export function AssetActivationDialog({
                           onChange={e => updateForm(index, 'usefulLifeYears', e.target.value)}
                           className="w-full"
                         />
-                        <span className="text-sm text-muted-foreground whitespace-nowrap">{t('fixed_assets.activation_dialog.years_unit')}</span>
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">{t('hr:fixed_assets.activation_dialog.years_unit')}</span>
                       </div>
                       <div className="flex items-center gap-1.5 flex-1">
                         <Input
@@ -347,12 +356,12 @@ export function AssetActivationDialog({
                           onChange={e => updateForm(index, 'usefulLifeMonths', e.target.value)}
                           className="w-full"
                         />
-                        <span className="text-sm text-muted-foreground whitespace-nowrap">{t('fixed_assets.activation_dialog.months_unit')}</span>
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">{t('hr:fixed_assets.activation_dialog.months_unit')}</span>
                       </div>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor={`residual-${index}`}>{t('fixed_assets.activation_dialog.residual_value_label')}</Label>
+                    <Label htmlFor={`residual-${index}`}>{t('hr:fixed_assets.activation_dialog.residual_value_label')}</Label>
                     <Input
                       id={`residual-${index}`}
                       type="number"
@@ -364,23 +373,23 @@ export function AssetActivationDialog({
                 </div>
 
                 <div className="space-y-2 border-t pt-4">
-                  <Label>{t('fixed_assets.activation_dialog.depreciation_method_label')}</Label>
+                  <Label>{t('hr:fixed_assets.activation_dialog.depreciation_method_label')}</Label>
                   <Select
                     value={form.depreciationMethod}
                     onValueChange={v => updateForm(index, 'depreciationMethod', v)}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={t('fixed_assets.activation_dialog.depreciation_methods.linear')} />
+                      <SelectValue placeholder={t('hr:fixed_assets.activation_dialog.depreciation_methods.linear')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="linear">{t('fixed_assets.activation_dialog.depreciation_methods.linear')}</SelectItem>
-                      <SelectItem value="degressive_syd">{t('fixed_assets.activation_dialog.depreciation_methods.degressive_syd')}</SelectItem>
-                      <SelectItem value="degressive_declining">{t('fixed_assets.activation_dialog.depreciation_methods.degressive_declining')}</SelectItem>
-                      <SelectItem value="progressive">{t('fixed_assets.activation_dialog.depreciation_methods.progressive')}</SelectItem>
-                      <SelectItem value="performance">{t('fixed_assets.activation_dialog.depreciation_methods.performance')}</SelectItem>
-                      <SelectItem value="absolute">{t('fixed_assets.activation_dialog.depreciation_methods.absolute')}</SelectItem>
-                      <SelectItem value="multiplier">{t('fixed_assets.activation_dialog.depreciation_methods.multiplier')}</SelectItem>
-                      <SelectItem value="immediate">{t('fixed_assets.activation_dialog.depreciation_methods.immediate')}</SelectItem>
+                      <SelectItem value="linear">{t('hr:fixed_assets.activation_dialog.depreciation_methods.linear')}</SelectItem>
+                      <SelectItem value="degressive_syd">{t('hr:fixed_assets.activation_dialog.depreciation_methods.degressive_syd')}</SelectItem>
+                      <SelectItem value="degressive_declining">{t('hr:fixed_assets.activation_dialog.depreciation_methods.degressive_declining')}</SelectItem>
+                      <SelectItem value="progressive">{t('hr:fixed_assets.activation_dialog.depreciation_methods.progressive')}</SelectItem>
+                      <SelectItem value="performance">{t('hr:fixed_assets.activation_dialog.depreciation_methods.performance')}</SelectItem>
+                      <SelectItem value="absolute">{t('hr:fixed_assets.activation_dialog.depreciation_methods.absolute')}</SelectItem>
+                      <SelectItem value="multiplier">{t('hr:fixed_assets.activation_dialog.depreciation_methods.multiplier')}</SelectItem>
+                      <SelectItem value="immediate">{t('hr:fixed_assets.activation_dialog.depreciation_methods.immediate')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -388,22 +397,22 @@ export function AssetActivationDialog({
                 {form.depreciationMethod === 'performance' && (
                   <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top-1 duration-200">
                     <div className="space-y-2">
-                      <Label htmlFor={`perf-unit-${index}`}>{t('fixed_assets.activation_dialog.perf_unit_label')}</Label>
+                      <Label htmlFor={`perf-unit-${index}`}>{t('hr:fixed_assets.activation_dialog.perf_unit_label')}</Label>
                       <Input
                         id={`perf-unit-${index}`}
                         value={form.performanceUnit}
                         onChange={e => updateForm(index, 'performanceUnit', e.target.value)}
-                        placeholder={t('fixed_assets.activation_dialog.perf_unit_placeholder')}
+                        placeholder={t('hr:fixed_assets.activation_dialog.perf_unit_placeholder')}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor={`perf-total-${index}`}>{t('fixed_assets.activation_dialog.perf_total_label')}</Label>
+                      <Label htmlFor={`perf-total-${index}`}>{t('hr:fixed_assets.activation_dialog.perf_total_label')}</Label>
                       <Input
                         id={`perf-total-${index}`}
                         type="number"
                         value={form.totalPlannedPerformance}
                         onChange={e => updateForm(index, 'totalPlannedPerformance', e.target.value)}
-                        placeholder={t('fixed_assets.activation_dialog.perf_total_placeholder')}
+                        placeholder={t('hr:fixed_assets.activation_dialog.perf_total_placeholder')}
                       />
                     </div>
                   </div>
@@ -413,8 +422,8 @@ export function AssetActivationDialog({
                   <div className="space-y-2 animate-in slide-in-from-top-1 duration-200">
                     <Label htmlFor={`schedule-${index}`}>
                       {form.depreciationMethod === 'absolute'
-                        ? t('fixed_assets.activation_dialog.schedule_label_absolute')
-                        : t('fixed_assets.activation_dialog.schedule_label_multiplier')
+                        ? t('hr:fixed_assets.activation_dialog.schedule_label_absolute')
+                        : t('hr:fixed_assets.activation_dialog.schedule_label_multiplier')
                       }
                     </Label>
                     <Input
@@ -422,8 +431,8 @@ export function AssetActivationDialog({
                       value={form.depreciationScheduleString}
                       onChange={e => updateForm(index, 'depreciationScheduleString', e.target.value)}
                       placeholder={form.depreciationMethod === 'absolute'
-                        ? t('fixed_assets.activation_dialog.schedule_placeholder_absolute')
-                        : t('fixed_assets.activation_dialog.schedule_placeholder_multiplier')
+                        ? t('hr:fixed_assets.activation_dialog.schedule_placeholder_absolute')
+                        : t('hr:fixed_assets.activation_dialog.schedule_placeholder_multiplier')
                       }
                     />
                   </div>
@@ -431,13 +440,13 @@ export function AssetActivationDialog({
 
                 <div className="grid grid-cols-2 gap-4 border-t pt-4">
                   <div className="space-y-2">
-                    <Label>{t('fixed_assets.activation_dialog.tao_template_label')}</Label>
+                    <Label>{t('hr:fixed_assets.activation_dialog.tao_template_label')}</Label>
                     <Select
                       value={form.taoTemplateId}
                       onValueChange={v => updateForm(index, 'taoTemplateId', v)}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder={t('fixed_assets.activation_dialog.tao_template_placeholder')} />
+                        <SelectValue placeholder={t('hr:fixed_assets.activation_dialog.tao_template_placeholder')} />
                       </SelectTrigger>
                       <SelectContent>
                         {taoTemplates.map(t => (
@@ -449,19 +458,19 @@ export function AssetActivationDialog({
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>{t('fixed_assets.activation_dialog.location_label')}</Label>
+                    <Label>{t('hr:fixed_assets.activation_dialog.location_label')}</Label>
                     <Select
                       value={form.locationId}
                       onValueChange={v => updateForm(index, 'locationId', v)}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder={t('fixed_assets.activation_dialog.location_placeholder')} />
+                        <SelectValue placeholder={t('hr:fixed_assets.activation_dialog.location_placeholder')} />
                       </SelectTrigger>
                       <SelectContent>
                         {locations.map(l => (
                           <SelectItem key={l.id} value={l.id}>
                             {l.location_type === 'headquarters'
-                              ? `${l.address} ${t('fixed_assets.activation_dialog.headquarters_suffix')}`
+                              ? `${l.address} ${t('hr:fixed_assets.activation_dialog.headquarters_suffix')}`
                               : l.address}
                           </SelectItem>
                         ))}
@@ -472,16 +481,16 @@ export function AssetActivationDialog({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>{t('fixed_assets.activation_dialog.project_label')}</Label>
+                    <Label>{t('hr:fixed_assets.activation_dialog.project_label')}</Label>
                     <Select
                       value={form.projectId || '_none'}
                       onValueChange={v => updateForm(index, 'projectId', v === '_none' ? '' : v)}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder={t('fixed_assets.activation_dialog.project_placeholder')} />
+                        <SelectValue placeholder={t('hr:fixed_assets.activation_dialog.project_placeholder')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="_none">{t('fixed_assets.activation_dialog.no_project')}</SelectItem>
+                        <SelectItem value="_none">{t('hr:fixed_assets.activation_dialog.no_project')}</SelectItem>
                         {projects.map(p => (
                           <SelectItem key={p.id} value={p.id}>
                             {p.name}
@@ -492,13 +501,13 @@ export function AssetActivationDialog({
                   </div>
                   {glAccounts.length > 0 && (
                     <div className="space-y-2">
-                      <Label>{t('fixed_assets.activation_dialog.gl_account_label')}</Label>
+                      <Label>{t('hr:fixed_assets.activation_dialog.gl_account_label')}</Label>
                       <Select
                         value={form.glAccountId}
                         onValueChange={v => updateForm(index, 'glAccountId', v)}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder={t('fixed_assets.activation_dialog.gl_account_placeholder')} />
+                          <SelectValue placeholder={t('hr:fixed_assets.activation_dialog.gl_account_placeholder')} />
                         </SelectTrigger>
                         <SelectContent>
                           {glAccounts.map((a: any) => (
@@ -518,7 +527,7 @@ export function AssetActivationDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
-            {t('fixed_assets.activation_dialog.cancel')}
+            {t('hr:fixed_assets.activation_dialog.cancel')}
           </Button>
           <Button
             onClick={handleSubmit}
@@ -527,8 +536,11 @@ export function AssetActivationDialog({
           >
             <Package2 className="h-4 w-4" />
             {submitting
-              ? t('fixed_assets.activation_dialog.activating')
-              : t('fixed_assets.activation_dialog.activate_button', { count: forms.length })
+              ? t('hr:fixed_assets.activation_dialog.activating')
+              : t('hr:fixed_assets.activation_dialog.activate_button', {
+                  count: forms.length,
+                  defaultValue: `Aktiválás (${forms.length} tétel)`,
+                })
             }
           </Button>
         </DialogFooter>

@@ -237,7 +237,9 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!selectedCompany?.id || !presetId) throw new Error("Missing company or preset");
-      const payload = Object.entries(mappings).map(([gl_account_id, bs_structure_id]) => ({ gl_account_id, bs_structure_id }));
+      const payload = Object.entries(mappings)
+        .filter(([gl_account_id, bs_structure_id]) => Boolean(gl_account_id && bs_structure_id && bs_structure_id.trim() !== ''))
+        .map(([gl_account_id, bs_structure_id]) => ({ gl_account_id, bs_structure_id: bs_structure_id.trim() }));
       const { error } = await supabase.rpc('save_bs_mappings', { p_company_id: selectedCompany.id, p_preset_id: presetId, p_mappings: payload });
       if (error) throw error;
     },
@@ -272,10 +274,12 @@ function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGene
         updatedMappings[s.gl_account_id] = s.bs_structure_id;
       });
 
-      const payload = acceptedList.map(s => ({
-        gl_account_id: s.gl_account_id,
-        bs_structure_id: s.bs_structure_id
-      }));
+      const payload = Object.entries(updatedMappings)
+        .filter(([gl_account_id, bs_structure_id]) => Boolean(gl_account_id && bs_structure_id && bs_structure_id.trim() !== ''))
+        .map(([gl_account_id, bs_structure_id]) => ({
+          gl_account_id,
+          bs_structure_id: bs_structure_id.trim()
+        }));
 
       const { error } = await supabase.rpc('save_bs_mappings', {
         p_company_id: selectedCompany.id,

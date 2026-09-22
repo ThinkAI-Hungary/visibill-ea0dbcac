@@ -1,4 +1,4 @@
-# A-117: Hivatalos Ügyfél REST API (Customer API), Többcéges API Kulcs Kezelés és Auditált M2M Átjáró
+# A-117: Hivatalos Ügyfél REST API v2.2.2 (Customer API), Többcéges API Kulcs Kezelés és Auditált M2M Átjáró
 
 **Status:** Decided  
 **Date:** 2026-09-16  
@@ -129,6 +129,33 @@ Az ügyfélszolgálati folyamatok automatizálása és a platformon belüli inte
    - A `POST /v1/nav/sync` végponton a `nav_sync_logs` tábla alapján vizsgáljuk az utolsó szinkron kezdetét. Ha 60 másodpercen belül indult már szinkron a cégre, az API azonnali `429 Too Many Requests` választ ad `NAV_SYNC_COOLDOWN` hibakóddal és `retry_after_seconds` mezővel.
 3. **Lezárt Hibajegyek Kommentelési Védelme (Opció B):**
    - Lezárt hibajegyhez (`resolved` vagy `closed` státusz) a `POST /v1/tickets/:id/comments` végponton keresztül nem küldhető további hozzászólás. A rendszer szigorú `400 Bad Request` választ ad `TICKET_CLOSED` hibakóddal, előírva, hogy az ügyfél új jegyet nyisson a korábbi jegyszámra hivatkozva.
+
+---
+
+## Addendum (2026-09-22) — Customer REST API v2.2.2 (M2M Felhasználói Attribúció Hierarchia & Kulcstulajdonos Feloldás)
+
+A valós üzemeltetési hibák elemzése során feltártuk, hogy külső integrációkon (pl. Make, n8n, egyedi ERP rendszerek) keresztül beküldött hibajegyek és visszajelzések esetén a `feedback` tábla `user_id` és `created_by` mezőinek `NOT NULL` korlátja adatbázishibát (`23502 null value in column "user_id" of relation "feedback" violates not-null constraint`) eredményezett, ha az API kérés nem tartalmazott explicit felhasználói azonosítót.
+
+A probléma végleges elhárítására és a felhasználói felelősség nyomonkövethetőségére a következő architektúrális megoldás került bevezetésre:
+
+1. **`authenticate_customer_api_key` RPC Kulcstulajdonos Feloldás:**
+   - A PostgreSQL hitelesítő függvény frissítésre került: `COALESCE(k.user_id, k.created_by) AS user_id`.
+   - Amennyiben a kulcs rekordjában a specifikus `user_id` nincs közvetlenül kitöltve, a függvény automatikusan a kulcsot létrehozó adminisztrátor / felhasználó (`created_by`) azonosítóját tekinti elsődleges kulcstulajdonosnak.
+
+2. **5-Szintű `resolveEffectiveUserId` Feloldási Lánc (`customer-api/index.ts`):**
+   A rendszer szigorúan meghatározott prioritás szerint határozza meg a bejegyzést létrehozó felhasználót:
+   1. **API Kulcs Tulajdonosa:** Ha a hitelesített API kulcshoz tartozik érvényes `user_id` (`apiKeyData.user_id`), közvetlenül ezt a felhasználót rendeli a művelethez.
+   2. **Explicit Kérés Törzs `user_id`:** Ha a hívó kliens explicit UUID-t küld a kérés törzsében, a rendszer ellenőrzi a cégtagságot a `company_members` táblában. Ha a megadott felhasználó tagja az adott cégnek, az ő nevében jön létre a bejegyzés.
+   3. **Explicit Kérés Törzs `email`:** Ha a kliens email címet ad meg, a rendszer feloldja a fiókot az `auth.users` / `profiles` táblákból, majd ellenőrzi a cégtagságot.
+   4. **Cégtulajdonos / Admin Fallback:** Ha a fenti azonosítók egyike sem elérhető, a cég hivatalos tulajdonosát (`company_members WHERE role = 'owner' LIMIT 1`), ennek hiányában első adminisztrátorát (`role = 'admin'`) jelöli ki felelősnek.
+   5. **Rendszerszintű Fallback:** Vészhelyzeti fallbackként a legelső aktív adminisztrátort / profil azonosítót használja.
+
+3. **Konzisztens Entitás Attribúció:**
+   A feloldott felhasználói azonosító szinkronban kerül rögzítésre valamennyi kapcsolódó auditált táblában:
+   - `feedback.user_id` és `feedback.created_by`
+   - `ticket_comments.user_id`
+   - `ticket_events.actor_id`
+   - `api_request_logs.user_id` (így a REST audit naplóban is pontosan látható, hogy mely fiókhoz kapcsolódott a kérés).
 
 ---
 

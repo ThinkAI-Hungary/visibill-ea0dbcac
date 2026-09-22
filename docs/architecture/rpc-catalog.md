@@ -84,10 +84,10 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 | `record_manual_invoice_payment(p_invoice_id uuid, p_payment_date date, p_payment_type text, p_note text)` | `DEFINER` | `void` | ManualPaymentModal.tsx | Számla kézi kiegyenlítésének rögzítése (készpénz, kompenzáció, egyéb) megjegyzéssel. |
 | `rematch_courier_report(p_report_id uuid)` | `DEFINER` | `jsonb` | CourierReportsTab.tsx | Futárjelentés sorainak újrafuttatása a párosító motorral. |
 | `reverse_accrual_entry(p_accrual_id uuid)` | `DEFINER` | `json` | AccrualsTab.tsx | Időszaki elhatárolás feloldása (stornózása) a következő időszakban. |
-| `save_bs_mappings(p_company_id uuid, p_preset_id uuid, p_mappings jsonb)` | `DEFINER` | `void` | BalanceSheetMapping.tsx | Mérleg sorok és főkönyvi számok összerendelésének mentése. |
+| `save_bs_mappings(p_company_id uuid, p_preset_id uuid, p_mappings jsonb)` | `DEFINER` | `void` | BalanceSheetMapping.tsx | Mérleg sorok és főkönyvi számok összerendelésének mentése (biztonságos UUID regex validációval, üres string szűréssel, company_members bérlői jogosultság-ellenőrzéssel és ON CONFLICT DO UPDATE idempotens beszúrással). |
 | `save_bs_prior_year(p_company_id uuid, p_fiscal_year integer, p_data jsonb)` | `DEFINER` | `void` | BalanceSheetPriorYear.tsx | Mérleg előző évi adatainak manuális felülírása és mentése. |
 | `save_item_project_rule_and_retroactive(p_company_id uuid, p_line_description text, p_gl_number text, p_project_id uuid, p_user_id uuid)` | `DEFINER` | `boolean` | ItemProjectRuleDialog | Tételszintű automatikus projektszabály mentése és retroaktív érvényesítése a meglévő számlákra. |
-| `save_pnl_mappings(p_company_id uuid, p_preset_id uuid, p_mappings jsonb)` | `DEFINER` | `void` | ProfitAndLossMapping.tsx | Eredménykimutatás sorok és főkönyvi számok összerendelésének mentése. |
+| `save_pnl_mappings(p_company_id uuid, p_preset_id uuid, p_mappings jsonb)` | `DEFINER` | `void` | ProfitAndLossMapping.tsx | Eredménykimutatás sorok és főkönyvi számok összerendelésének mentése (biztonságos UUID regex validációval, üres string szűréssel, company_members bérlői jogosultság-ellenőrzéssel és ON CONFLICT DO UPDATE idempotens beszúrással). |
 | `seed_default_vat_codes(p_company_id uuid)` | `INVOKER` | `void` | Settings / MasterData | Alapértelmezett NAV ÁFA kódok feltöltése egy céghez. |
 | `seed_fad_vat_codes(p_company_id uuid)` | `INVOKER` | `void` | Settings / MasterData | Fordított adózású (FAD) ÁFA kódok inicializálása. |
 | `sync_petty_cash_entries(p_company_id uuid)` | `DEFINER` | `TABLE(inserted_count integer, skipped_count integer)` | PettyCashTab.tsx | Készpénzes számlák automatikus szinkronizálása a házipénztár naplóba. |
@@ -174,6 +174,7 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 
 | RPC Függvény és Paraméterek | Biztonság | Visszatérési érték | Hívó | Cél és Működés |
 |---|:---:|---|---|---|
+| `authenticate_customer_api_key(p_key_hash text)` | `DEFINER` | `TABLE(api_key_id uuid, user_id uuid, company_id uuid, permissions text[], accessible_company_ids uuid[], is_active boolean)` | customer-api EF | Külső Customer REST API kulcs hash-alapú hitelesítése, cég-hozzáférések feloldása és kulcstulajdonos feloldása (`COALESCE(user_id, created_by)`). |
 | `check_request(—)` | `DEFINER` | `void` | Belső / PostgREST | Adatbázis eljárás. |
 | `cleanup_pdf_exports(—)` | `DEFINER` | `void` | pg_cron / Cleanup | 24 óránál régebbi, lejárt PDF export jobok és ideiglenes fájlok törlése. |
 | `cleanup_stale_impersonations(—)` | `DEFINER` | `void` | pg_cron / Security | Lejárt vagy beragadt support admin megszemélyesítések érvénytelenítése. |

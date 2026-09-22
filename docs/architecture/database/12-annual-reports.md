@@ -101,6 +101,8 @@
 
 **Indexek:** `bs_mapping_company_id_preset_id_gl_account_id_key`, `idx_bs_mapping_bs_structure_id`, `idx_bs_mapping_gl_account_id`, `idx_bs_mapping_preset_id`, `idx_bs_mapping_user_id`
 
+**Mentési RPC:** `save_bs_mappings` (biztonságos UUID regex validációval, üres string szűréssel, `company_members` bérlői jogosultság-ellenőrzéssel és `ON CONFLICT DO UPDATE` védelemmel).
+
 ---
 
 ### `bs_prior_year`
@@ -163,6 +165,8 @@
 **FK:** `company_id` → `companies.id`, `gl_account_id` → `gl_accounts.id`, `pnl_structure_id` → `pnl_structure.id`, `preset_id` → `chart_of_accounts_presets.id`, `user_id` → `auth.users.id`
 
 **Indexek:** `idx_pnl_mapping_gl_account_id`, `idx_pnl_mapping_pnl_structure_id`, `idx_pnl_mapping_preset_id`, `idx_pnl_mapping_user_id`, `pnl_mapping_company_id_preset_id_gl_account_id_key`
+
+**Mentési RPC:** `save_pnl_mappings` (biztonságos UUID regex validációval, üres string szűréssel, `company_members` bérlői jogosultság-ellenőrzéssel és `ON CONFLICT DO UPDATE` védelemmel).
 
 ---
 

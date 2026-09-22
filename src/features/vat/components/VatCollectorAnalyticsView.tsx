@@ -64,7 +64,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
           .or(`invoice_delivery_date.lte.${effectiveDateTo},and(invoice_delivery_date.is.null,invoice_issue_date.lte.${effectiveDateTo})`),
         supabase
           .from('invoices')
-          .select('id, bizonylatsorszam, elado_nev, vevo_nev, teljesites_datuma, kibocsatas_datuma, netto_ar, afa_ertek')
+          .select('id, bizonylatsorszam, elado_nev, vevo_nev, teljesites_datuma, kibocsatas_datuma, adoalap_osszesen, afa_osszeg_osszesen')
           .eq('company_id', selectedCompany.id)
           .or(`teljesites_datuma.gte.${effectiveDateFrom},and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${effectiveDateFrom})`)
           .or(`teljesites_datuma.lte.${effectiveDateTo},and(teljesites_datuma.is.null,kibocsatas_datuma.lte.${effectiveDateTo})`),
@@ -185,8 +185,8 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
       // Fallback for manual invoices without item records yet
       subInvs.forEach((inv: any) => {
         if (!processedSubIds.has(inv.id)) {
-          const net = Number(inv.netto_ar || 0);
-          const vat = Number(inv.afa_ertek || 0);
+          const net = Number(inv.adoalap_osszesen || 0);
+          const vat = Number(inv.afa_osszeg_osszesen || 0);
           if (net !== 0 || vat !== 0) {
             const rate = net > 0 ? vat / net : 0;
             const code = Math.round(rate * 100) === 27 ? '25' : Math.round(rate * 100) === 18 ? '18' : Math.round(rate * 100) === 5 ? '05' : vat === 0 ? 'TAM' : '25';

@@ -111,41 +111,79 @@ function validateTime(timeStr: string): boolean {
 async function resolveEffectiveUserId(
   admin: ReturnType<typeof createClient>,
   authUserId: string | null | undefined,
-  companyId: string,
-  apiKeyId?: string | null
+  companyId?: string | null,
+  apiKeyId?: string | null,
+  bodyUserId?: string | null,
+  bodyUserEmail?: string | null
 ): Promise<string | null> {
+  // 1. Az API kulcshoz közvetlenül tartozó felhasználói fiók (akinek az accountjából küldik a kérést)
   if (authUserId) return authUserId;
 
-  // 1. Megpróbáljuk a cég tulajdonosát (owner)
-  const { data: ownerMember } = await admin
-    .from("company_members")
-    .select("user_id")
-    .eq("company_id", companyId)
-    .eq("role", "owner")
-    .limit(1)
-    .maybeSingle();
-
-  if (ownerMember?.user_id) return ownerMember.user_id;
-
-  // 2. Megpróbáljuk a cég bármely adminisztrátorát vagy tagját
-  const { data: anyMember } = await admin
-    .from("company_members")
-    .select("user_id")
-    .eq("company_id", companyId)
-    .limit(1)
-    .maybeSingle();
-
-  if (anyMember?.user_id) return anyMember.user_id;
-
-  // 3. Megpróbáljuk az API kulcs létrehozóját
+  // 2. Ha az API kulcs alapján határozzuk meg a fiókot (user_id vagy created_by)
   if (apiKeyId) {
     const { data: keyRec } = await admin
       .from("api_keys")
-      .select("created_by")
+      .select("user_id, created_by")
       .eq("id", apiKeyId)
       .maybeSingle();
+    if (keyRec?.user_id) return keyRec.user_id;
     if (keyRec?.created_by) return keyRec.created_by;
   }
+
+  // 3. Ha a külső kérés törzsében expliciten megadtak létező felhasználói azonosítót
+  if (bodyUserId) {
+    const { data: userProfile } = await admin
+      .from("profiles")
+      .select("user_id")
+      .eq("user_id", bodyUserId)
+      .maybeSingle();
+    if (userProfile?.user_id) return userProfile.user_id;
+  }
+
+  // 4. Ha a külső kérés törzsében expliciten megadtak létező email címet
+  if (bodyUserEmail) {
+    try {
+      const { data: authUsers } = await admin.rpc("get_auth_emails");
+      const matched = authUsers?.find((u: { id: string; email: string }) => u.email?.toLowerCase() === bodyUserEmail.trim().toLowerCase());
+      if (matched?.id) return matched.id;
+    } catch (_) {
+      // Ha az RPC nem elérhető, fallback a céges tagokhoz
+    }
+  }
+
+  // 5. Cégtulajdonos (owner) vagy cégtag
+  if (companyId) {
+    const { data: ownerMember } = await admin
+      .from("company_members")
+      .select("user_id")
+      .eq("company_id", companyId)
+      .eq("role", "owner")
+      .limit(1)
+      .maybeSingle();
+
+    if (ownerMember?.user_id) return ownerMember.user_id;
+
+    // 6. Cég bármely adminisztrátora vagy tagja
+    const { data: anyMember } = await admin
+      .from("company_members")
+      .select("user_id")
+      .eq("company_id", companyId)
+      .limit(1)
+      .maybeSingle();
+
+    if (anyMember?.user_id) return anyMember.user_id;
+  }
+
+  // 7. Végső védelmi háló: első aktív management / thinkai admin profil (feedback NOT NULL védelem)
+  const { data: fallbackAdmin } = await admin
+    .from("profiles")
+    .select("user_id")
+    .in("role", ["thinkai", "management"])
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (fallbackAdmin?.user_id) return fallbackAdmin.user_id;
 
   return null;
 }
@@ -1335,7 +1373,7 @@ serve(async (req) => {
     // DOMAIN: TRANSACTIONS
     // ──────────────────────────────────────────────────
     else if (resource === "transactions" || resource === "transaction") {
-      const isBulkDelete = subResource === "bulk-delete" || resource === "bulk_delete_transactions";
+      const isBulkDelete = subResource === "bulk-delete";
       const transactionId = isBulkDelete ? null : (subResource || url.searchParams.get("transaction_id"));
 
       // Bulk delete transactions (POST /v1/transactions/bulk-delete)
@@ -2037,8 +2075,8 @@ serve(async (req) => {
                       const ingestionService = new NavIngestionService(admin);
 
                     try {
-                      const credentials = await ingestionService.getCredentials(auth.user_id, targetCompanyId);
-                      const effectiveUserId = auth.user_id || credentials.user_id;
+                      const effectiveUserId = auth.user_id || (targetCompanyId ? await resolveEffectiveUserId(admin, auth.user_id, targetCompanyId, auth.key_id) : null) || "system";
+                      const credentials = await ingestionService.getCredentials(effectiveUserId, targetCompanyId || null);
 
                       let inboundResult: any = null;
                       let outboundResult: any = null;
@@ -2328,18 +2366,38 @@ serve(async (req) => {
                 if (!allowedPriorities.includes(ticketPriority)) {
                   response = errorResponse("VALIDATION_ERROR", `Érvénytelen 'priority' mező: ${ticketPriority}. Megengedett értékek: ${allowedPriorities.join(", ")}`, 400);
                 } else {
-                  const effectiveUserId = await resolveEffectiveUserId(admin, auth.user_id, targetCompanyId, auth.key_id);
+                  const effectiveUserId = await resolveEffectiveUserId(
+                    admin,
+                    auth.user_id,
+                    targetCompanyId,
+                    auth.key_id,
+                    requestBody.user_id ? String(requestBody.user_id).trim() : null,
+                    requestBody.user_email ? String(requestBody.user_email).trim() : null
+                  );
+                  if (!auth.user_id && effectiveUserId) {
+                    auth.user_id = effectiveUserId;
+                  }
                   if (!effectiveUserId) {
                     response = errorResponse("USER_CONTEXT_REQUIRED", "Nem található érvényes felhasználó vagy cégtulajdonos a hibajegy rögzítéséhez.", 400);
                   } else {
                     const [userRes, compRes] = await Promise.all([
-                      admin.from("profiles").select("name, email").eq("user_id", effectiveUserId).maybeSingle(),
+                      admin.from("profiles").select("name").eq("user_id", effectiveUserId).maybeSingle(),
                       admin.from("companies").select("name").eq("id", targetCompanyId).maybeSingle(),
                     ]);
 
+                    let resolvedUserEmail = requestBody.user_email ? String(requestBody.user_email).trim() : null;
+                    if (!resolvedUserEmail) {
+                      try {
+                        const { data: authUser } = await admin.auth.admin.getUserById(effectiveUserId);
+                        resolvedUserEmail = authUser?.user?.email || null;
+                      } catch (_) {
+                        // ignore
+                      }
+                    }
+
                     const ticketId = crypto.randomUUID();
-                    const userName = userRes.data?.name || auth.name || "API Felhasználó";
-                    const userEmail = userRes.data?.email || null;
+                    const userName = requestBody.user_name || userRes.data?.name || auth.name || "API Felhasználó";
+                    const userEmail = resolvedUserEmail;
                     const companyName = compRes.data?.name || null;
 
                     const { data: newTicket, error: insertErr } = await admin
@@ -2347,6 +2405,7 @@ serve(async (req) => {
                       .insert({
                         id: ticketId,
                         user_id: effectiveUserId,
+                        created_by: effectiveUserId,
                         company_id: targetCompanyId,
                         company_name: companyName,
                         type: ticketType,
@@ -2418,15 +2477,35 @@ serve(async (req) => {
                     { ticket_id: ticketRecord.id, ticket_number: ticketRecord.ticket_number, status: ticketRecord.status }
                   );
                 } else {
-                  const effectiveUserId = await resolveEffectiveUserId(admin, auth.user_id, targetCompanyId, auth.key_id);
+                  const effectiveUserId = await resolveEffectiveUserId(
+                    admin,
+                    auth.user_id,
+                    targetCompanyId,
+                    auth.key_id,
+                    requestBody.user_id ? String(requestBody.user_id).trim() : null,
+                    requestBody.user_email ? String(requestBody.user_email).trim() : null
+                  );
+                  if (!auth.user_id && effectiveUserId) {
+                    auth.user_id = effectiveUserId;
+                  }
                   if (!effectiveUserId) {
                     response = errorResponse("USER_CONTEXT_REQUIRED", "Nem található érvényes felhasználó vagy cégtulajdonos a hozzászólás rögzítéséhez.", 400);
                   } else {
                     const { data: userProfile } = await admin
                       .from("profiles")
-                      .select("name, email")
+                      .select("name")
                       .eq("user_id", effectiveUserId)
                       .maybeSingle();
+
+                    let resolvedCommentEmail = requestBody.user_email ? String(requestBody.user_email).trim() : null;
+                    if (!resolvedCommentEmail) {
+                      try {
+                        const { data: authUser } = await admin.auth.admin.getUserById(effectiveUserId);
+                        resolvedCommentEmail = authUser?.user?.email || null;
+                      } catch (_) {
+                        // ignore
+                      }
+                    }
 
                     const commentId = crypto.randomUUID();
                     const { data: newComment, error: commentErr } = await admin
@@ -2435,8 +2514,8 @@ serve(async (req) => {
                         id: commentId,
                         feedback_id: ticketRecord.id,
                         user_id: effectiveUserId,
-                        user_name: userProfile?.name || auth.name || "API Felhasználó",
-                        user_email: userProfile?.email || null,
+                        user_name: requestBody.user_name || userProfile?.name || auth.name || "API Felhasználó",
+                        user_email: resolvedCommentEmail,
                         is_admin: false,
                         is_internal: false,
                         message: String(requestBody.message).trim(),
@@ -2484,14 +2563,27 @@ serve(async (req) => {
                 if (findErr || !ticketRecord) {
                   response = errorResponse("TICKET_NOT_FOUND", "A hibajegy nem található a megadott cégnél.", 404);
                 } else {
+                  const effectiveUserId = await resolveEffectiveUserId(admin, auth.user_id, targetCompanyId, auth.key_id);
+                  if (!auth.user_id && effectiveUserId) {
+                    auth.user_id = effectiveUserId;
+                  }
+                  const activeUserId = effectiveUserId || auth.user_id;
+
                   const { data: userProfile } = await admin
                     .from("profiles")
-                    .select("name, email")
-                    .eq("user_id", auth.user_id)
+                    .select("name")
+                    .eq("user_id", activeUserId)
                     .maybeSingle();
 
+                  let userEmail: string | null = null;
+                  try {
+                    const { data: authUser } = await admin.auth.admin.getUserById(activeUserId);
+                    userEmail = authUser?.user?.email || null;
+                  } catch (_) {
+                    // ignore
+                  }
+
                   const userName = userProfile?.name || auth.name || "Ügyfél";
-                  const userEmail = userProfile?.email || null;
 
                   await Promise.all([
                     admin
@@ -2507,7 +2599,7 @@ serve(async (req) => {
                       .from("ticket_comments")
                       .insert({
                         feedback_id: ticketRecord.id,
-                        user_id: auth.user_id,
+                        user_id: activeUserId,
                         user_name: userName,
                         user_email: userEmail,
                         is_admin: false,
@@ -2518,7 +2610,7 @@ serve(async (req) => {
                       .from("ticket_events")
                       .insert({
                         feedback_id: ticketRecord.id,
-                        actor_id: auth.user_id,
+                        actor_id: activeUserId,
                         actor_email: userEmail,
                         actor_name: userName,
                         event_type: "resolution_confirmed",
