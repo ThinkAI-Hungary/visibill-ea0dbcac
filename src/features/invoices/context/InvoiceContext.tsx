@@ -12,7 +12,7 @@ import { useUrlTab } from '@/lib/navigation';
 import { useNettingDetection } from '@/hooks/useNettingDetection';
 import { usePdfExport } from '@/hooks/usePdfExport';
 import { isNavAndSubmittedInvoiceMatch } from '@/lib/invoiceMatchingUtils';
-import { exportToFile } from '@/lib/exportUtils';
+import { exportToFile, exportMultiTableDocument } from '@/lib/exportUtils';
 import { supabase } from '@/integrations/supabase/client';
 import type {
   NavInvoice,
@@ -26,6 +26,7 @@ import type {
   KpiFilterType,
   ExportableInvoice,
   ExportLevel,
+  ExportSheetLayout,
   TabSlug,
   InvoiceAction,
 } from '../types';
@@ -139,7 +140,8 @@ export interface InvoiceContextValue
   handleDataExportConfirm: (
     selectedInvoices: ExportableInvoice[],
     format: 'csv' | 'xlsx' | 'pdf',
-    exportLevel?: ExportLevel
+    exportLevel?: ExportLevel,
+    sheetLayout?: ExportSheetLayout
   ) => Promise<void>;
   exportableInvoices: ExportableInvoice[];
 
@@ -305,6 +307,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       filters.category !== 'all' ||
       filters.paymentMethod !== 'all' ||
       filters.continuous !== 'all' ||
+      (filters.vatRate && filters.vatRate !== 'all') ||
       (filters.dateBasis && filters.dateBasis !== defaultDateBasis)
     );
   }, [filters, defaultDateBasis]);
@@ -507,6 +510,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
         partner_name: inv.invoice_direction === 'OUTBOUND' ? inv.vevo_nev || '–' : inv.elado_nev || '–',
         issue_date: inv.kibocsatas_datuma || '',
         delivery_date: inv.teljesites_datuma || '',
+        payment_method: inv.fizetesi_mod || '',
         net_amount: inv.adoalap_osszesen || 0,
         gross_amount: inv.brutto_vegosszeg || 0,
         vat_amount: inv.afa_osszeg_osszesen || 0,
@@ -533,6 +537,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
         partner_tax_number: getPartnerTaxNumber(inv),
         issue_date: inv.invoice_issue_date || '',
         delivery_date: inv.invoice_delivery_date || '',
+        payment_method: inv.payment_method || '',
         net_amount: inv.invoice_net_amount || 0,
         gross_amount: inv.invoice_gross_amount || 0,
         vat_amount: inv.invoice_vat_amount || 0,
@@ -562,8 +567,19 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
     async (
       selectedInvoices: ExportableInvoice[],
       format: 'csv' | 'xlsx' | 'pdf',
-      exportLevel: ExportLevel = 'summary'
+      exportLevel: ExportLevel = 'summary',
+      sheetLayout: ExportSheetLayout = 'single'
     ) => {
+      const isBankOrCard = (pm: string) => {
+        const p = (pm || '').toLowerCase();
+        return p.includes('átutalás') || p.includes('transfer') || p.includes('bankkártya') || p.includes('card') || p.includes('kártya') || p.includes('utalás');
+      };
+
+      const isCashOrPetty = (pm: string) => {
+        const p = (pm || '').toLowerCase();
+        return p.includes('készpénz') || p.includes('cash') || p.includes('kp') || p.includes('házipénztár') || p.includes('penztar');
+      };
+
       if (format === 'pdf' && exportLevel === 'itemized_posting') {
         if (!selectedCompany?.id) return;
         const dates = selectedInvoices.map(i => i.issue_date).filter(Boolean).sort();
@@ -655,75 +671,118 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
           'Beküldve',
         ];
 
-        const rows: (string | number | boolean | null | undefined)[][] = [];
+        const buildItemizedRows = (invoices: ExportableInvoice[]) => {
+          const r: (string | number | boolean | null | undefined)[][] = [];
+          invoices.forEach(inv => {
+            const items = inv.source === 'nav' ? navItemsMap.get(inv.id) || [] : subItemsMap.get(inv.id) || [];
 
-        selectedInvoices.forEach(inv => {
-          const items = inv.source === 'nav' ? navItemsMap.get(inv.id) || [] : subItemsMap.get(inv.id) || [];
-
-          if (items.length === 0) {
-            rows.push([
-              inv.invoice_number,
-              inv.direction === 'OUTBOUND' ? 'Kimenő' : 'Bejövő',
-              inv.partner_name,
-              inv.partner_tax_number || '',
-              inv.issue_date,
-              inv.delivery_date,
-              1,
-              'Főszámla összesítő (nincs tételes adat)',
-              1,
-              'db',
-              inv.currency,
-              inv.net_amount,
-              inv.net_amount,
-              '-',
-              inv.vat_amount,
-              inv.gross_amount,
-              inv.category_name || '',
-              inv.project_name || '',
-              inv.match_status === 'partially_paid' ? 'Részben fizetve' : (inv.paid ? 'Igen' : 'Nem'),
-              inv.submitted ? 'Igen' : 'Nem',
-            ]);
-          } else {
-            items.forEach((item, idx) => {
-              const itemName = item.line_description || item.megnevezes || item.product_name || `Tétel #${idx + 1}`;
-              const qty = item.quantity || item.mennyiseg || 1;
-              const unit = item.unit_of_measure || item.mennyisegi_egyseg || 'db';
-              const netUnit = item.unit_price || item.netto_egysegar || (qty > 0 ? (item.net_amount || item.netto_ar || 0) / qty : 0);
-              const netTotal = item.net_amount || item.netto_ar || 0;
-              const vatRate = item.vat_percentage != null ? `${item.vat_percentage}%` : (item.afa_kulcs != null ? `${item.afa_kulcs}%` : '-');
-              const vatAmount = item.vat_amount || item.afa_ertek || 0;
-              const grossTotal = item.gross_amount || item.brutto_ar || (netTotal + vatAmount);
-
-              rows.push([
+            if (items.length === 0) {
+              r.push([
                 inv.invoice_number,
                 inv.direction === 'OUTBOUND' ? 'Kimenő' : 'Bejövő',
                 inv.partner_name,
                 inv.partner_tax_number || '',
                 inv.issue_date,
                 inv.delivery_date,
-                idx + 1,
-                itemName,
-                qty,
-                unit,
+                1,
+                'Főszámla összesítő (nincs tételes adat)',
+                1,
+                'db',
                 inv.currency,
-                netUnit,
-                netTotal,
-                vatRate,
-                vatAmount,
-                grossTotal,
+                inv.net_amount,
+                inv.net_amount,
+                '-',
+                inv.vat_amount,
+                inv.gross_amount,
                 inv.category_name || '',
                 inv.project_name || '',
                 inv.match_status === 'partially_paid' ? 'Részben fizetve' : (inv.paid ? 'Igen' : 'Nem'),
                 inv.submitted ? 'Igen' : 'Nem',
               ]);
-            });
-          }
-        });
+            } else {
+              items.forEach((item, idx) => {
+                const itemName = item.line_description || item.megnevezes || item.product_name || `Tétel #${idx + 1}`;
+                const qty = item.quantity || item.mennyiseg || 1;
+                const unit = item.unit_of_measure || item.mennyisegi_egyseg || 'db';
+                const netUnit = item.unit_price || item.netto_egysegar || (qty > 0 ? (item.net_amount || item.netto_ar || 0) / qty : 0);
+                const netTotal = item.net_amount || item.netto_ar || 0;
+                const vatRate = item.vat_percentage != null ? `${item.vat_percentage}%` : (item.afa_kulcs != null ? `${item.afa_kulcs}%` : '-');
+                const vatAmount = item.vat_amount || item.afa_ertek || 0;
+                const grossTotal = item.gross_amount || item.brutto_ar || (netTotal + vatAmount);
+
+                r.push([
+                  inv.invoice_number,
+                  inv.direction === 'OUTBOUND' ? 'Kimenő' : 'Bejövő',
+                  inv.partner_name,
+                  inv.partner_tax_number || '',
+                  inv.issue_date,
+                  inv.delivery_date,
+                  idx + 1,
+                  itemName,
+                  qty,
+                  unit,
+                  inv.currency,
+                  netUnit,
+                  netTotal,
+                  vatRate,
+                  vatAmount,
+                  grossTotal,
+                  inv.category_name || '',
+                  inv.project_name || '',
+                  inv.match_status === 'partially_paid' ? 'Részben fizetve' : (inv.paid ? 'Igen' : 'Nem'),
+                  inv.submitted ? 'Igen' : 'Nem',
+                ]);
+              });
+            }
+          });
+          return r;
+        };
 
         const tabPrefix = tabFilePrefixMap[activeTab] || 'szamlak';
         const safeCompanyName = (selectedCompany?.name || 'ceg').replace(/[^a-zA-Z0-9áéíóöőúüűÁÉÍÓÖŐÚÜŰ_-]/g, '_');
         const dateStr = new Date().toISOString().split('T')[0];
         const filename = `teteles_kontirozo_${tabPrefix}_${safeCompanyName}_${dateStr}.${format}`;
+
+        if (sheetLayout === 'by_payment_method' && format === 'xlsx') {
+          const bankInvoices = selectedInvoices.filter(i => isBankOrCard(i.payment_method || ''));
+          const cashInvoices = selectedInvoices.filter(i => isCashOrPetty(i.payment_method || ''));
+          const otherInvoices = selectedInvoices.filter(i => !isBankOrCard(i.payment_method || '') && !isCashOrPetty(i.payment_method || ''));
+
+          const tables = [
+            {
+              title: 'Utalás és bankkártya',
+              headers,
+              rows: buildItemizedRows(bankInvoices),
+            },
+            {
+              title: 'Készpénz és házipénztár',
+              headers,
+              rows: buildItemizedRows(cashInvoices),
+            },
+          ];
+
+          if (otherInvoices.length > 0) {
+            tables.push({
+              title: 'Egyéb bizonylatok',
+              headers,
+              rows: buildItemizedRows(otherInvoices),
+            });
+          }
+
+          await exportMultiTableDocument(
+            {
+              title: `Tételes Kontírozó Export (${tabLabelMap[activeTab] || 'Számlák'})`,
+              companyName: selectedCompany?.name,
+              filename,
+              tables,
+            },
+            'xlsx',
+            `Tételes Kontírozó Export (${tabLabelMap[activeTab] || 'Számlák'})`
+          );
+          return;
+        }
+
+        const rows = buildItemizedRows(selectedInvoices);
         await exportToFile(headers, rows, format, filename, `Tételes Kontírozó Export (${tabLabelMap[activeTab] || 'Számlák'})`);
         return;
       }
@@ -761,28 +820,71 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
         'Forrás',
       ];
 
-      const rows = selectedInvoices.map(inv => [
-        inv.invoice_number,
-        inv.direction === 'OUTBOUND' ? 'Kimenő' : 'Bejövő',
-        inv.partner_name,
-        inv.partner_tax_number || '',
-        inv.issue_date,
-        inv.delivery_date,
-        inv.currency,
-        inv.net_amount,
-        inv.vat_amount,
-        inv.gross_amount,
-        inv.category_name || '',
-        inv.project_name || '',
-        inv.match_status === 'partially_paid' ? 'Részben fizetve' : (inv.paid ? 'Igen' : 'Nem'),
-        inv.submitted ? 'Igen' : 'Nem',
-        inv.source === 'nav' ? 'NAV Online' : 'Feltöltött bizonylat',
-      ]);
+      const buildSummaryRows = (invoices: ExportableInvoice[]) => {
+        return invoices.map(inv => [
+          inv.invoice_number,
+          inv.direction === 'OUTBOUND' ? 'Kimenő' : 'Bejövő',
+          inv.partner_name,
+          inv.partner_tax_number || '',
+          inv.issue_date,
+          inv.delivery_date,
+          inv.currency,
+          inv.net_amount,
+          inv.vat_amount,
+          inv.gross_amount,
+          inv.category_name || '',
+          inv.project_name || '',
+          inv.match_status === 'partially_paid' ? 'Részben fizetve' : (inv.paid ? 'Igen' : 'Nem'),
+          inv.submitted ? 'Igen' : 'Nem',
+          inv.source === 'nav' ? 'NAV Online' : 'Feltöltött bizonylat',
+        ]);
+      };
 
       const tabPrefix = tabFilePrefixMap[activeTab] || 'szamlak';
       const safeCompanyName = (selectedCompany?.name || 'ceg').replace(/[^a-zA-Z0-9áéíóöőúüűÁÉÍÓÖŐÚÜŰ_-]/g, '_');
       const dateStr = new Date().toISOString().split('T')[0];
       const filename = `${tabPrefix}_export_${safeCompanyName}_${dateStr}.${format}`;
+
+      if (sheetLayout === 'by_payment_method' && format === 'xlsx') {
+        const bankInvoices = selectedInvoices.filter(i => isBankOrCard(i.payment_method || ''));
+        const cashInvoices = selectedInvoices.filter(i => isCashOrPetty(i.payment_method || ''));
+        const otherInvoices = selectedInvoices.filter(i => !isBankOrCard(i.payment_method || '') && !isCashOrPetty(i.payment_method || ''));
+
+        const tables = [
+          {
+            title: 'Utalás és bankkártya',
+            headers,
+            rows: buildSummaryRows(bankInvoices),
+          },
+          {
+            title: 'Készpénz és házipénztár',
+            headers,
+            rows: buildSummaryRows(cashInvoices),
+          },
+        ];
+
+        if (otherInvoices.length > 0) {
+          tables.push({
+            title: 'Egyéb bizonylatok',
+            headers,
+            rows: buildSummaryRows(otherInvoices),
+          });
+        }
+
+        await exportMultiTableDocument(
+          {
+            title: `${tabLabelMap[activeTab] || 'Számlák'} Exportálása`,
+            companyName: selectedCompany?.name,
+            filename,
+            tables,
+          },
+          'xlsx',
+          `${tabLabelMap[activeTab] || 'Számlák'} Exportálása`
+        );
+        return;
+      }
+
+      const rows = buildSummaryRows(selectedInvoices);
       await exportToFile(headers, rows, format, filename, `${tabLabelMap[activeTab] || 'Számlák'} Exportálása`);
     },
     [selectedCompany, pdfExport, activeTab]

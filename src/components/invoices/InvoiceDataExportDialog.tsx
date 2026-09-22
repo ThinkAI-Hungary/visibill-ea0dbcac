@@ -17,6 +17,7 @@ export interface ExportableInvoice {
   partner_tax_number?: string;
   issue_date: string;
   delivery_date?: string;
+  payment_method?: string;
   net_amount: number;
   gross_amount: number;
   vat_amount: number;
@@ -34,6 +35,7 @@ export interface ExportableInvoice {
 }
 
 export type ExportLevel = 'summary' | 'itemized_posting';
+export type ExportSheetLayout = 'single' | 'by_payment_method';
 
 interface InvoiceDataExportDialogProps {
   open: boolean;
@@ -42,8 +44,14 @@ interface InvoiceDataExportDialogProps {
   initialSelectedIds: Set<string>;
   initialFormat?: 'csv' | 'xlsx' | 'pdf';
   initialLevel?: ExportLevel;
+  initialSheetLayout?: ExportSheetLayout;
   companyName?: string;
-  onExport: (selectedInvoices: ExportableInvoice[], format: 'csv' | 'xlsx' | 'pdf', exportLevel: ExportLevel) => Promise<void>;
+  onExport: (
+    selectedInvoices: ExportableInvoice[],
+    format: 'csv' | 'xlsx' | 'pdf',
+    exportLevel: ExportLevel,
+    sheetLayout?: ExportSheetLayout
+  ) => Promise<void>;
 }
 
 type PeriodPreset = 'all_filtered' | 'current_month' | 'previous_month' | 'current_quarter' | 'previous_quarter' | 'custom';
@@ -124,11 +132,13 @@ export function InvoiceDataExportDialog({
   initialSelectedIds,
   initialFormat = 'xlsx',
   initialLevel = 'summary',
+  initialSheetLayout = 'single',
   companyName,
   onExport,
 }: InvoiceDataExportDialogProps) {
   const [format, setFormat] = useState<'csv' | 'xlsx' | 'pdf'>(initialFormat);
   const [exportLevel, setExportLevel] = useState<ExportLevel>(initialLevel);
+  const [sheetLayout, setSheetLayout] = useState<ExportSheetLayout>(initialSheetLayout || 'single');
   const [selectedPreset, setSelectedPreset] = useState<PeriodPreset>('all_filtered');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
@@ -144,6 +154,7 @@ export function InvoiceDataExportDialog({
     if (open && !prevOpenRef.current) {
       setFormat(initialFormat || 'xlsx');
       setExportLevel(initialLevel || 'summary');
+      setSheetLayout(initialSheetLayout || 'single');
       setSearchQuery('');
       setCurrentPage(1);
 
@@ -155,7 +166,7 @@ export function InvoiceDataExportDialog({
       setSelectedPreset('all_filtered');
     }
     prevOpenRef.current = open;
-  }, [open, initialSelectedIds, initialFormat, initialLevel]);
+  }, [open, initialSelectedIds, initialFormat, initialLevel, initialSheetLayout]);
 
   const presetDates = useMemo(() => getPresetDates(selectedPreset), [selectedPreset]);
 
@@ -227,7 +238,7 @@ export function InvoiceDataExportDialog({
     if (invoicesToExport.length === 0) return;
     setIsExporting(true);
     try {
-      await onExport(invoicesToExport, format, exportLevel);
+      await onExport(invoicesToExport, format, exportLevel, sheetLayout);
       onClose();
     } finally {
       setIsExporting(false);
@@ -398,6 +409,50 @@ export function InvoiceDataExportDialog({
                   onChange={(e) => setCustomTo(e.target.value)}
                   className="mt-1 h-8 text-xs"
                 />
+              </div>
+            </div>
+          )}
+
+          {/* Excel Sheet Layout selector (Single sheet vs By payment method) */}
+          {format === 'xlsx' && (
+            <div>
+              <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">
+                Excel Munkalapok Elrendezése
+              </Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => setSheetLayout('single')}
+                  className={`flex items-start gap-2.5 p-3 rounded-lg border text-left transition-all focus:outline-none ${
+                    sheetLayout === 'single'
+                      ? 'border-emerald-500 bg-emerald-500/10 text-foreground font-semibold'
+                      : 'border-border hover:border-emerald-500/40 hover:bg-muted/30 text-muted-foreground'
+                  }`}
+                >
+                  <FileSpreadsheet className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <div>
+                    <div className="font-semibold text-xs">Egyetlen munkalap</div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">Minden számla egyetlen közös táblázatban</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => setSheetLayout('by_payment_method')}
+                  className={`flex items-start gap-2.5 p-3 rounded-lg border text-left transition-all focus:outline-none ${
+                    sheetLayout === 'by_payment_method'
+                      ? 'border-emerald-500 bg-emerald-500/10 text-foreground font-semibold'
+                      : 'border-border hover:border-emerald-500/40 hover:bg-muted/30 text-muted-foreground'
+                  }`}
+                >
+                  <FileSpreadsheet className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <div>
+                    <div className="font-semibold text-xs text-emerald-600 dark:text-emerald-400">Fizetési mód szerint bontva (3 fül)</div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">Utalás és kártya, Készpénz és házipénztár, Egyéb</div>
+                  </div>
+                </button>
               </div>
             </div>
           )}

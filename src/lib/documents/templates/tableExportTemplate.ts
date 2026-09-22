@@ -60,3 +60,53 @@ export async function exportTableDocument(
     toast({ title: `${label} sikeresen exportálva (${format.toUpperCase()})` });
   }
 }
+
+export interface MultiTableExportOptions {
+  title: string;
+  subtitle?: string;
+  companyName?: string;
+  period?: string;
+  filename?: string;
+  tables: {
+    title: string;
+    headers: string[];
+    rows: (string | number | boolean | null | undefined)[][];
+    footers?: { label: string; value: string | number }[];
+  }[];
+}
+
+/**
+ * Exports multiple table datasets (e.g. multi-sheet Excel workbook) and triggers download.
+ */
+export async function exportMultiTableDocument(
+  options: MultiTableExportOptions,
+  format: 'pdf' | 'csv' | 'xlsx',
+  toastLabel?: string
+): Promise<void> {
+  const descriptor: DocumentDescriptor = {
+    type: 'table_export',
+    metadata: {
+      title: options.title,
+      subtitle: options.subtitle,
+      companyName: options.companyName,
+      period: options.period,
+      filename: options.filename || options.title.toLowerCase().replace(/[^a-z0-9_-]/gi, '_'),
+      orientation: 'landscape',
+      themeColor: [15, 116, 103],
+    },
+    sections: options.tables.map(t => ({
+      type: 'table',
+      title: t.title,
+      headers: t.headers,
+      rows: t.rows,
+      footers: t.footers,
+    })),
+  };
+
+  const result = await DocumentEngine.export(descriptor, format);
+
+  if (result.success) {
+    const label = toastLabel || options.title;
+    toast({ title: `${label} sikeresen exportálva (${format.toUpperCase()})` });
+  }
+}

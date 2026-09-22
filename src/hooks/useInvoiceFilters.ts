@@ -34,6 +34,7 @@ export interface InvoiceFilters {
   paymentMethod: string;
   continuous: string; // 'all' | 'yes' | 'no'
   navStatus: string;  // 'all' | 'verified' | 'missing_nav' | 'not_applicable'
+  vatRate: string;    // 'all' | '27%' | '18%' | '5%' | '0%' | 'AAM' | 'TAM' | 'FAD'
 }
 
 export const defaultFilters: InvoiceFilters = {
@@ -53,6 +54,7 @@ export const defaultFilters: InvoiceFilters = {
   paymentMethod: 'all',
   continuous: 'all',
   navStatus: 'all',
+  vatRate: 'all',
 };
 
 // URL query param keys for each filter (short keys for clean URLs)
@@ -73,6 +75,7 @@ export const FILTER_URL_KEYS: Record<keyof InvoiceFilters, string> = {
   paymentMethod: 'pm',
   continuous: 'cont',
   navStatus: 'navs',
+  vatRate: 'vr',
 };
 
 export function useInvoiceFilters(
@@ -239,7 +242,7 @@ export function useInvoiceFilters(
       deferredSearch, filters.currency, filters.project, filters.category,
       filters.paymentMethod, filters.amountMin, filters.amountMax,
       issueDateFrom, issueDateTo, deliveryDateFrom, deliveryDateTo, dateBasis,
-      filters.continuous, filters.submitted
+      filters.continuous, filters.submitted, filters.vatRate
     ],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_invoice_kpis', {
@@ -262,9 +265,11 @@ export function useInvoiceFilters(
         p_date_basis: dateBasis,
         p_continuous: filters.continuous === 'all' ? undefined : filters.continuous,
         p_submitted: filters.submitted === 'all' ? undefined : filters.submitted,
+        p_vat_rate: filters.vatRate === 'all' ? undefined : filters.vatRate,
       });
       if (error) throw error;
-      const res = data?.[0] || { total: 0, matched: 0, suggested: 0, unmatched: 0 };
+      const raw = Array.isArray(data) ? data[0] : data;
+      const res = (raw && typeof raw === 'object') ? raw : { total: 0, matched: 0, suggested: 0, unmatched: 0 };
       return {
         total: Number(res.total || 0),
         matched: Number(res.matched || 0),
@@ -299,7 +304,7 @@ export function useInvoiceFilters(
         deferredSearch, filters.currency, filters.project, filters.category,
         filters.paymentMethod, filters.amountMin, filters.amountMax,
         issueDateFrom, issueDateTo, deliveryDateFrom, deliveryDateTo, dateBasis,
-        filters.continuous, filters.submitted
+        filters.continuous, filters.submitted, filters.vatRate
       ],
       queryFn: async () => {
         const { data, error } = await supabase.rpc('get_invoice_kpis', {
@@ -322,9 +327,11 @@ export function useInvoiceFilters(
           p_date_basis: dateBasis,
           p_continuous: filters.continuous === 'all' ? undefined : filters.continuous,
           p_submitted: filters.submitted === 'all' ? undefined : filters.submitted,
+          p_vat_rate: filters.vatRate === 'all' ? undefined : filters.vatRate,
         });
         if (error) throw error;
-        const res = data?.[0] || { total: 0, matched: 0, suggested: 0, unmatched: 0 };
+        const raw = Array.isArray(data) ? data[0] : data;
+        const res = (raw && typeof raw === 'object') ? raw : { total: 0, matched: 0, suggested: 0, unmatched: 0 };
         return {
           total: Number(res.total || 0),
           matched: Number(res.matched || 0),
@@ -344,7 +351,7 @@ export function useInvoiceFilters(
         filters.paymentMethod, filters.amountMin, filters.amountMax,
         sortField, sortDirection, 1, navPageSize,
         issueDateFrom, issueDateTo, deliveryDateFrom, deliveryDateTo, dateBasis,
-        activePresetId, filters.continuous, kpiFilter
+        activePresetId, filters.continuous, kpiFilter, filters.vatRate
       ],
       queryFn: async () => {
         const { data, error } = await supabase.rpc('get_filtered_nav_invoices', {
@@ -373,6 +380,7 @@ export function useInvoiceFilters(
           p_preset_id: activePresetId || undefined,
           p_continuous: filters.continuous === 'all' ? undefined : filters.continuous,
           p_kpi_filter: kpiFilter,
+          p_vat_rate: filters.vatRate === 'all' ? undefined : filters.vatRate,
         });
         if (error) throw error;
         return (data || []) as (NavInvoice & { match_status: string; total_count: number })[];
@@ -415,7 +423,7 @@ export function useInvoiceFilters(
       filters.paymentMethod, filters.amountMin, filters.amountMax,
       sortField, sortDirection, navCurrentPage, navPageSize,
       issueDateFrom, issueDateTo, deliveryDateFrom, deliveryDateTo, dateBasis,
-      activePresetId, filters.continuous, kpiFilter
+      activePresetId, filters.continuous, kpiFilter, filters.vatRate
     ],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_filtered_nav_invoices', {
@@ -444,6 +452,7 @@ export function useInvoiceFilters(
         p_preset_id: activePresetId || undefined,
         p_continuous: filters.continuous === 'all' ? undefined : filters.continuous,
         p_kpi_filter: kpiFilter,
+        p_vat_rate: filters.vatRate === 'all' ? undefined : filters.vatRate,
       });
       if (error) throw error;
       return (data || []) as (NavInvoice & { match_status: string; total_count: number })[];
@@ -468,7 +477,7 @@ export function useInvoiceFilters(
       filters.amountMin, filters.amountMax, filters.navStatus,
       sortField, sortDirection, submittedCurrentPage, submittedPageSize,
       issueDateFrom, issueDateTo, deliveryDateFrom, deliveryDateTo, dateBasis,
-      kpiFilter
+      kpiFilter, filters.vatRate
     ],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_filtered_submitted_invoices', {
@@ -494,6 +503,7 @@ export function useInvoiceFilters(
         p_date_basis: dateBasis,
         p_kpi_filter: kpiFilter,
         p_nav_status: filters.navStatus === 'all' ? undefined : filters.navStatus,
+        p_vat_rate: filters.vatRate === 'all' ? undefined : filters.vatRate,
       });
       if (error) throw error;
       return (data || []) as (SubmittedInvoice & { match_status: string; total_count: number })[];
@@ -581,7 +591,8 @@ export function useInvoiceFilters(
             filters.submitted, filters.project, filters.category,
             filters.paymentMethod, filters.amountMin, filters.amountMax,
             sortField, sortDirection, nextPage, navPageSize,
-            issueDateFrom, issueDateTo, activePresetId, filters.continuous, kpiFilter
+            issueDateFrom, issueDateTo, deliveryDateFrom, deliveryDateTo, dateBasis,
+            activePresetId, filters.continuous, kpiFilter, filters.vatRate
           ],
           queryFn: async () => {
             const { data, error } = await supabase.rpc('get_filtered_nav_invoices', {
@@ -604,9 +615,13 @@ export function useInvoiceFilters(
               p_page_size: navPageSize,
               p_issue_date_from: issueDateFrom || undefined,
               p_issue_date_to: issueDateTo || undefined,
+              p_delivery_date_from: deliveryDateFrom || undefined,
+              p_delivery_date_to: deliveryDateTo || undefined,
+              p_date_basis: dateBasis,
               p_preset_id: activePresetId || undefined,
               p_continuous: filters.continuous === 'all' ? undefined : filters.continuous,
               p_kpi_filter: kpiFilter,
+              p_vat_rate: filters.vatRate === 'all' ? undefined : filters.vatRate,
             });
             if (error) throw error;
             return (data || []) as (NavInvoice & { match_status: string; total_count: number })[];
@@ -624,7 +639,8 @@ export function useInvoiceFilters(
             filters.submitted, filters.project, filters.category,
             filters.paymentMethod, filters.amountMin, filters.amountMax,
             sortField, sortDirection, prevPage, navPageSize,
-            issueDateFrom, issueDateTo, activePresetId, filters.continuous, kpiFilter
+            issueDateFrom, issueDateTo, deliveryDateFrom, deliveryDateTo, dateBasis,
+            activePresetId, filters.continuous, kpiFilter, filters.vatRate
           ],
           queryFn: async () => {
             const { data, error } = await supabase.rpc('get_filtered_nav_invoices', {
@@ -647,9 +663,13 @@ export function useInvoiceFilters(
               p_page_size: navPageSize,
               p_issue_date_from: issueDateFrom || undefined,
               p_issue_date_to: issueDateTo || undefined,
+              p_delivery_date_from: deliveryDateFrom || undefined,
+              p_delivery_date_to: deliveryDateTo || undefined,
+              p_date_basis: dateBasis,
               p_preset_id: activePresetId || undefined,
               p_continuous: filters.continuous === 'all' ? undefined : filters.continuous,
               p_kpi_filter: kpiFilter,
+              p_vat_rate: filters.vatRate === 'all' ? undefined : filters.vatRate,
             });
             if (error) throw error;
             return (data || []) as (NavInvoice & { match_status: string; total_count: number })[];
@@ -669,7 +689,8 @@ export function useInvoiceFilters(
             filters.category, filters.project, filters.paymentMethod,
             filters.amountMin, filters.amountMax, filters.navStatus,
             sortField, sortDirection, nextPage, submittedPageSize,
-            issueDateFrom, issueDateTo, kpiFilter
+            issueDateFrom, issueDateTo, deliveryDateFrom, deliveryDateTo, dateBasis,
+            kpiFilter, filters.vatRate
           ],
           queryFn: async () => {
             const { data, error } = await supabase.rpc('get_filtered_submitted_invoices', {
@@ -690,8 +711,12 @@ export function useInvoiceFilters(
               p_page_size: submittedPageSize,
               p_issue_date_from: issueDateFrom || undefined,
               p_issue_date_to: issueDateTo || undefined,
+              p_delivery_date_from: deliveryDateFrom || undefined,
+              p_delivery_date_to: deliveryDateTo || undefined,
+              p_date_basis: dateBasis,
               p_kpi_filter: kpiFilter,
               p_nav_status: filters.navStatus === 'all' ? undefined : filters.navStatus,
+              p_vat_rate: filters.vatRate === 'all' ? undefined : filters.vatRate,
             });
             if (error) throw error;
             return (data || []) as (SubmittedInvoice & { match_status: string; total_count: number })[];
@@ -709,7 +734,8 @@ export function useInvoiceFilters(
             filters.category, filters.project, filters.paymentMethod,
             filters.amountMin, filters.amountMax, filters.navStatus,
             sortField, sortDirection, prevPage, submittedPageSize,
-            issueDateFrom, issueDateTo, kpiFilter
+            issueDateFrom, issueDateTo, deliveryDateFrom, deliveryDateTo, dateBasis,
+            kpiFilter, filters.vatRate
           ],
           queryFn: async () => {
             const { data, error } = await supabase.rpc('get_filtered_submitted_invoices', {
@@ -730,8 +756,12 @@ export function useInvoiceFilters(
               p_page_size: submittedPageSize,
               p_issue_date_from: issueDateFrom || undefined,
               p_issue_date_to: issueDateTo || undefined,
+              p_delivery_date_from: deliveryDateFrom || undefined,
+              p_delivery_date_to: deliveryDateTo || undefined,
+              p_date_basis: dateBasis,
               p_kpi_filter: kpiFilter,
               p_nav_status: filters.navStatus === 'all' ? undefined : filters.navStatus,
+              p_vat_rate: filters.vatRate === 'all' ? undefined : filters.vatRate,
             });
             if (error) throw error;
             return (data || []) as (SubmittedInvoice & { match_status: string; total_count: number })[];
@@ -764,12 +794,16 @@ export function useInvoiceFilters(
     filters.amountMax,
     filters.continuous,
     filters.navStatus,
+    filters.vatRate,
     sortField,
     sortDirection,
     navPageSize,
     submittedPageSize,
     issueDateFrom,
     issueDateTo,
+    deliveryDateFrom,
+    deliveryDateTo,
+    dateBasis,
     activePresetId,
     kpiFilter,
     queryClient,

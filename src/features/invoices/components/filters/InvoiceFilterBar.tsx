@@ -433,6 +433,36 @@ export function InvoiceFilterBar() {
         </Select>
       )}
 
+      {/* VAT Rate Select */}
+      <Select
+        value={filters.vatRate || 'all'}
+        onValueChange={(value) => setFilters(prev => ({ ...prev, vatRate: value }))}
+      >
+        <SelectTrigger
+          className={cn(
+            'h-9 w-[150px]',
+            filters.vatRate && filters.vatRate !== 'all' &&
+              'bg-primary/10 border-primary/50 text-primary dark:bg-primary/10 dark:border-primary dark:text-primary'
+          )}
+        >
+          <span className="truncate">
+            {filters.vatRate === 'all' || !filters.vatRate
+              ? t('invoices:filters.vat_rate', { defaultValue: 'ÁFA-kulcs' })
+              : `ÁFA: ${filters.vatRate}`}
+          </span>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">{t('invoices:filters.vat_rate_all', { defaultValue: 'Minden ÁFA-kulcs' })}</SelectItem>
+          <SelectItem value="27%">27%</SelectItem>
+          <SelectItem value="18%">18%</SelectItem>
+          <SelectItem value="5%">5%</SelectItem>
+          <SelectItem value="0%">0%</SelectItem>
+          <SelectItem value="AAM">AAM (alanyi mentes)</SelectItem>
+          <SelectItem value="TAM">TAM (tárgyi mentes)</SelectItem>
+          <SelectItem value="FAD">FAD (fordított adózás)</SelectItem>
+        </SelectContent>
+      </Select>
+
       {/* Clear Filters Button */}
       {hasAnyActiveFilter && (
         <Button variant="ghost" size="sm" onClick={clearAllFilters}>

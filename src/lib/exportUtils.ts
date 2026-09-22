@@ -2,7 +2,10 @@
  * Shared file export utilities (Facade).
  * Re-exports and delegates to the unified DocumentEngine under src/lib/documents/.
  */
-import { exportTableDocument } from './documents/templates/tableExportTemplate';
+import { exportTableDocument, exportMultiTableDocument, type MultiTableExportOptions } from './documents/templates/tableExportTemplate';
+
+export { exportMultiTableDocument };
+export type { MultiTableExportOptions };
 
 export async function exportToFile(
   headers: string[],

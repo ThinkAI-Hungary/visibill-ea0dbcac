@@ -1,6 +1,6 @@
 import type { NavInvoice, SubmittedInvoice, TransactionRecord, Partner, Category, Project } from '@/hooks/useInvoiceData';
 import type { InvoiceTab, InvoiceFilters, InvoiceKpiSummary, KpiFilterType } from '@/hooks/useInvoiceFilters';
-import type { ExportableInvoice, ExportLevel } from '@/components/invoices/InvoiceDataExportDialog';
+import type { ExportableInvoice, ExportLevel, ExportSheetLayout } from '@/components/invoices/InvoiceDataExportDialog';
 import type { NettingGroup } from '@/hooks/useNettingDetection';
 
 export type {
@@ -16,6 +16,7 @@ export type {
   KpiFilterType,
   ExportableInvoice,
   ExportLevel,
+  ExportSheetLayout,
   NettingGroup,
 };
 
