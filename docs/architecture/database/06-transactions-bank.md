@@ -33,6 +33,7 @@
 | gl_classifications | jsonb | ✓ | `'{}'::jsonb` |
 | terheles_datuma | date | ✓ |  |
 | a8_transaction_id | text | ✓ | NULL (A-119: Aggreg8 PSD2 API egyedi azonosító) |
+| fee_amount | numeric | ✓ | NULL (A-139: Kártyás elszámolási jutalék / díj, pl. SimplePay) |
 
 **FK:** `company_id` → `companies.id`, `gl_account_id` → `gl_accounts.id`, `upload_id` → `transaction_uploads.id`
 

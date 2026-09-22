@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-22  
-> **Összesen:** 97 döntés | ✅ Decided: 93 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 99 döntés | ✅ Decided: 95 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -52,6 +52,7 @@
 | P-017 | AI párosítás megjelenítés (confidence + reason) | ✅ Decided | [P-017](./P-017-matching-display.md) |
 | P-018 | Manuális párosítás felülírás + ML tanulás + deviza-tudatos | ✅ Decided | [P-018](./P-018-manual-matching.md) |
 | P-090 | Banki Tranzakciós Fájlok és Kivonatok Kezelő Dialógus (TransactionFilesDialog) UX | ✅ Decided | [P-090](./P-090-transaction-uploaded-files-management-dialog-ux.md) |
+| P-104 | Tranzakció jutalék és számlaszám exportálása | ✅ Decided | [P-104](./P-104-transaction-fee-and-invoice-number-export-ux.md) |
 
 ## 📒 Főkönyv & Riportok
 
@@ -61,6 +62,7 @@
 | P-020 | Beszámoló workflow (3 oldal, lineáris) | ✅ Decided | [P-020](./P-020-report-workflow.md) |
 | P-021 | Export formátumok (CSV + PDF) | ✅ Decided | [P-021](./P-021-export-formats.md) |
 | P-043 | GL besorolás NAV ↔ Beküldött dual-table szinkronizáció (twin sync) | ✅ Decided | [P-043](./P-043-gl-twin-sync.md) |
+| P-105 | Főkönyvi Kivonat 2-Tier Eszköztár és Hierarchikus Számlafa Kibontás/Összecsukás UX | ✅ Decided | [P-105](./P-105-general-ledger-toolbar-and-expand-collapse-ux.md) |
 
 ## 🔔 Értesítések & Kommunikáció
 
