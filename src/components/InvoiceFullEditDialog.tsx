@@ -579,7 +579,7 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className={cn(
         "max-h-[85vh] overflow-hidden flex flex-col transition-all duration-200",
-        activeTab === 'items' ? 'sm:max-w-5xl' : 'sm:max-w-[600px]'
+        activeTab === 'items' ? 'sm:max-w-5xl' : 'sm:max-w-[720px]'
       )}>
         <DialogHeader>
           <DialogTitle>{t('invoices:dialogs.full_edit.title', 'Számla szerkesztése')}</DialogTitle>
@@ -606,10 +606,10 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
           </TabsList>
 
           {/* ── Tab 1: Invoice Details ── */}
-          <TabsContent value="details" className="flex-1 overflow-auto mt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-2">
+          <TabsContent value="details" className="flex-1 overflow-y-auto overflow-x-hidden mt-4 pr-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-2 min-w-0">
               {/* Left column */}
-              <div className="space-y-4">
+              <div className="space-y-4 min-w-0">
                 <div className="space-y-1.5">
                   <Label htmlFor="edit-bizonylatsorszam" className="text-foreground font-medium">
                     {t('invoices:dialogs.full_edit.invoice_number', 'Bizonylatsorszám')}
@@ -672,9 +672,9 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
               </div>
 
               {/* Right column */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between pb-1">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              <div className="space-y-4 min-w-0">
+                <div className="flex items-center justify-between pb-1 min-w-0 gap-2">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider shrink-0">
                     {t('invoices:dialogs.full_edit.amounts_section', 'Összegek')}
                   </span>
                   {visibleItems.length > 0 && (
