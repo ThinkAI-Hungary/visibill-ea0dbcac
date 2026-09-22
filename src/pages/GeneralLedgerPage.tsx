@@ -287,6 +287,52 @@ export default function GeneralLedgerPage() {
     </div>
   );
 
+  const [isAllExpanded, setIsAllExpanded] = useState(false);
+
+  const handleToggleExpandAll = useCallback((expand: boolean) => {
+    setIsAllExpanded(expand);
+    if (expand) {
+      tableRef.current?.expandAll();
+    } else {
+      tableRef.current?.collapseAll();
+    }
+  }, []);
+
+  const renderExpandCollapseToggle = () => (
+    <div className="inline-flex h-9 items-center rounded-lg border border-border/80 bg-muted/40 p-1 shadow-2xs text-xs select-none">
+      <CustomTooltip content={t('accounting:general_ledger.expand_all_tooltip', 'Összes főkönyvi szám és alábontás lenyitása')} side="bottom">
+        <button
+          type="button"
+          onClick={() => handleToggleExpandAll(true)}
+          className={cn(
+            "inline-flex h-7 items-center justify-center gap-1.5 px-2.5 rounded-md text-xs transition-all cursor-pointer border",
+            isAllExpanded
+              ? "bg-background text-foreground shadow-xs border-border/60 font-semibold text-primary"
+              : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
+          )}
+        >
+          <Maximize2 className="w-3.5 h-3.5 shrink-0" />
+          <span>{t('accounting:general_ledger.context_menu.expand_all', 'Mind kinyitása')}</span>
+        </button>
+      </CustomTooltip>
+      <CustomTooltip content={t('accounting:general_ledger.collapse_all_tooltip', 'Összes alszámla becsukása a főkategóriák szintjére')} side="bottom">
+        <button
+          type="button"
+          onClick={() => handleToggleExpandAll(false)}
+          className={cn(
+            "inline-flex h-7 items-center justify-center gap-1.5 px-2.5 rounded-md text-xs transition-all cursor-pointer border",
+            !isAllExpanded
+              ? "bg-background text-foreground shadow-xs border-border/60 font-semibold"
+              : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
+          )}
+        >
+          <Minimize2 className="w-3.5 h-3.5 shrink-0" />
+          <span>{t('accounting:general_ledger.context_menu.collapse_all', 'Mind becsukása')}</span>
+        </button>
+      </CustomTooltip>
+    </div>
+  );
+
   const handleHideZeroChange = useCallback((hide: boolean) => {
     setHideZeroBalances(hide);
     if (selectedCompany?.id) {
@@ -814,6 +860,8 @@ export default function GeneralLedgerPage() {
                 {renderHideZeroToggle()}
                 {/* Nézet elrendezés kapcsoló (Összesítő vs Klasszikus) */}
                 {renderViewLayoutToggle()}
+                {/* Mind kinyitása / Mind becsukása kapcsoló */}
+                {renderExpandCollapseToggle()}
                 <span className="text-xs font-semibold text-muted-foreground bg-background px-3 py-1.5 rounded-full border border-border flex items-center gap-2 shadow-sm">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
                   {dateFrom.replace(/-/g, '.')} - {dateTo.replace(/-/g, '.')}
