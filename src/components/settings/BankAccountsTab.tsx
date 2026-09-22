@@ -7,11 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { Landmark, Plus, Trash2, Shield, CreditCard, Globe, CheckCircle2, Sparkles } from 'lucide-react';
+import { Landmark, Plus, Trash2, Shield, CreditCard, Globe, CheckCircle2, Sparkles, ArrowRight } from 'lucide-react';
 import { reportError } from '@/lib/errorReporter';
 import { useTranslation } from 'react-i18next';
-import { Aggreg8BankConnections } from '@/components/banking/Aggreg8BankConnections';
+import { useAggreg8 } from '@/hooks/useAggreg8';
 import {
   formatAccountOnType,
   validateAccountNumber,
@@ -67,8 +68,10 @@ const STANDARD_BANKS = [
 
 export function BankAccountsTab({ companyId }: Props) {
   const { t } = useTranslation(['settings', 'common']);
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { consents = [] } = useAggreg8(companyId);
   const [showAddForm, setShowAddForm] = useState(false);
   const [bankName, setBankName] = useState('OTP Bank');
   const [customBankName, setCustomBankName] = useState('');
@@ -194,8 +197,48 @@ export function BankAccountsTab({ companyId }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Aggreg8 Open Banking (PSD2) Integráció */}
-      <Aggreg8BankConnections companyId={companyId} />
+      {/* Élő Banki Kapcsolatok (PSD2 Open Banking) Állapotjelző & Integrációk Átirányító Kártya */}
+      <Card className="border border-border/80 bg-gradient-to-r from-card via-card to-primary/5 shadow-sm">
+        <CardContent className="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-start gap-3.5">
+            <div className="p-2.5 rounded-xl bg-primary/10 text-primary shrink-0 mt-0.5">
+              <Landmark className="h-5 w-5" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-semibold text-base">Élő Banki Kapcsolatok (PSD2 Open Banking)</h3>
+                <Badge variant="outline" className="text-xs bg-primary/5 text-primary border-primary/20">
+                  Aggreg8
+                </Badge>
+                {consents.length > 0 ? (
+                  <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 text-xs flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3" />
+                    {consents.length} csatlakoztatott bank
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="text-xs text-muted-foreground">
+                    Nincs aktív kapcsolat
+                  </Badge>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground max-w-xl">
+                {consents.length > 0
+                  ? `A rendszer automatikusan szinkronizálja az élő banki tranzakciókat (${consents.map(c => c.bank_name || 'Bank').join(', ')}). A banki kapcsolatokat és PSD2 hozzájárulásokat az Integrációk menüpontban kezelheted.`
+                  : 'Kapcsold össze vállalkozásod bankszámláit a bankoddal az automatikus, valós idejű tranzakció-szinkronizációhoz és számlapárosításhoz az Integrációk menüpontban.'}
+              </p>
+            </div>
+          </div>
+
+          <Button
+            onClick={() => navigate('/integrations?tab=banking')}
+            className="shrink-0 gap-2 font-medium"
+            variant={consents.length > 0 ? 'outline' : 'default'}
+          >
+            {consents.length > 0 ? 'Bankkapcsolatok kezelése' : 'Bankcsatlakozás beállítása'}
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card className="border-border/60 shadow-lg">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">

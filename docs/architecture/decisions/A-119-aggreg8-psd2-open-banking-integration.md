@@ -35,11 +35,14 @@ Az **Aggreg8 (AISP API v5.3.1)** felhőalapú banki aggregátorát integráltuk 
     - Partner token lekérése és gyorsítótárazása (`aggreg8_settings` táblában 175 percre).
     - Aggreg8 felhasználó azonosító feloldása / regisztrációja (`ensureAggreg8User`).
     - SyncUI session indítása (`user-flow/init`): `ADD_BANK`, `ON_DEMAND`, `EXTEND_CONSENT`, `DELETE_INFO_SHARING_CONSENT`.
+    - **Munkamenet-követés (Multi-Company Isolation):** Az indításkor kapott `userFlowId`-t azonnal naplózza az `aggreg8_webhook_logs` táblába `FLOW_INITIATED` típusú bejegyzésként a pontos `company_id` és `user_id` metaadatokkal.
     - Támogatott bankok listázása (`GET /banks`).
   - Hiba esetén nem generikus 500-at dob, hanem strukturált HTTP 503 / 400 választ ad `A8_API_KEY_MISSING` vagy `OPERATION_FAILED` hibakóddal.
 - **`aggreg8-callback` (`verify_jwt: false`):**
   - Nyilvános webhook végpont az Aggreg8 szerverek felé (`/functions/v1/aggreg8-callback`).
   - Események: `INFO_SHARING_CONSENT_CREATED`, `INFO_SHARING_CONSENT_EXTENDED`, `INFO_SHARING_CONSENT_DELETED`, `ACCOUNT_SYNCED`, `DATA_TRANSFER_SCHEDULED`, `TRANSACTIONS_CREATED`, `TRANSACTIONS_UPDATED`.
+  - **Determinisztikus Cégfeloldás (Session Mapping):** `INFO_SHARING_CONSENT_CREATED` eseménynél a `payload.userFlowInfo.userFlowId` kulcs alapján pontosan visszakeresi a cég- és felhasználó-azonosítót a `FLOW_INITIATED` naplóból (megszüntetve az első consent és többcéges téves hozzárendelés kockázatát).
+  - **Számlaszűrés (`consentedAccounts`):** Csak az adott folyamatban kifejezetten engedélyezett számlákat köti a céghez, megakadályozva a többcég-ugyanaz-a-tulajdonos számlakeveredést.
   - Hozzájárulások perzisztálása az `aggreg8_consents` és `aggreg8_accounts` táblákba.
   - Automatikus tranzakcióletöltés: lapozás kezelése `while (page < totalPages && page < 50)` ciklussal kezdeti szinkronizációkor (>200 tétel esetén).
   - Upsert a `bank_transactions` és `transactions` táblákba külső duplikáció elleni védelemmel (`external_id` és `unique_transaction_entry`).
@@ -68,6 +71,14 @@ Az **Aggreg8 (AISP API v5.3.1)** felhőalapú banki aggregátorát integráltuk 
   - **Supabase Realtime feliratkozás** az `aggreg8_consents` és `aggreg8_accounts` táblákra (azonnali UI frissülés amint a webhook beír).
   - Lépcsőzetes késleltetett lekérdezés: popup zárásakor azonnali refetch, majd +2.5 mp és +6.0 mp múlva megerősítő invalidáció.
   - Frontend animált „Szinkronizálás folyamatban...” visszajelzés a felhasználónak.
+
+### 6. Felületi Elhelyezés és Kétirányú Navigáció (UI/UX Architecture)
+- **Master-Detail Split View az Integrációk (`/integrations`) menüpontban:** A korábbi egymásra halmozott, függőlegesen nyúló űrlapok helyett egy professzionális, kétoszlopos Master-Detail architektúrát vezettünk be:
+  - **Bal oldalsáv (Master):** 3 logikai csoportba sorolva (Pénzintézet & Hatóság, Számlázás & Dokumentum, Fejlesztők & Rendszer) listázza a modulokat élő állapotjelzőkkel (`2 bank`, `Aktív`, `Agent API`, `Alias aktív`, `Archívum`, `API hozzáférés`).
+  - **Jobb munkaterület (Detail Canvas):** Egyszerre kizárólag a kiválasztott integráció teljes, kényelmes felülete látható (zéró túlcsordulás és görgetési káosz).
+  - **URL Query Deep-linking (`?tab=banking`):** A kiválasztott tabot a böngésző URL állapota vezérli, így a `Beállítások -> Bankszámlák` felületről átkattintva közvetlenül a banki kapcsolatok nyílnak meg.
+  - **Mobil reszponzivitás:** Kis képernyőn elegáns, vízszintesen görgethető gombfolyammá alakul át a bal oldalsáv.
+- **Állapotjelző & Átirányító Kártya a Beállítások $\rightarrow$ Bankszámlák lapon:** A `BankAccountsTab` megtartja a cég manuális kimenő bankszámláinak nyilvántartását, tetején egy státuszkártyával, amely mutatja az aktív banki kapcsolatok számát, és a `navigate('/integrations?tab=banking')` hívással közvetlenül a megfelelő nézetbe vezeti a felhasználót.
 
 ## Consequences
 

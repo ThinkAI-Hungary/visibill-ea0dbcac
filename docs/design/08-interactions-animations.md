@@ -677,3 +677,60 @@ return (
 );
 ```
 
+---
+
+## 🗂️ Master-Detail & Tab Váltási Irányelvek (Zero-Jitter & ClearType Védelem) (2026-09-22)
+
+A fülek közötti navigáció és a Master-Detail osztott nézetek (pl. `/integrations`, `/settings`) rendkívül érzékenyek a vizuális stabilitásra (Cumulative Layout Shift - CLS) és a betűrenderelés konzisztenciájára.
+
+### 1. A Probléma Anatómiája
+Gyakori UX hiba, hogy fülváltáskor a tartalom látszólag "homályosodik, majd kiélesedik", miközben a teljes kontent 0.5–1 pixelt ugrásszerűen eltolódik. Ennek két független kiváltó oka van:
+1. **GPU Réteg Transzformáció:** Ha a fülváltás konténerén CSS transzformáció vagy `animate-in` fut, a Chromium motor a DirectWrite LCD Subpixel ClearType élsimítást Grayscale élsimításra cseréli. Amikor az animáció lejár, a böngésző megszünteti a GPU réteget és visszakapcsolja a ClearType-ot. Ez a hirtelen váltás pont úgy néz ki az emberi szemnek, mintha a kép fókuszba ugrana és elmozdulna 1 pixelt.
+2. **Unmount / Remount Skeleton Villódzás:** Ha a fülek feltételes rendereléssel futnak (`{activeTab === 'x' && <Component />}`), minden kattintáskor újra mountolódik a komponens, `loading: true` állapotba kerül, és 50–100 ms-ig egy Skeleton helyőrzőt jelenít meg. Amikor a valós tartalom megérkezik, a fizikai dobozméret ugrása azonnali layout shiftet okoz.
+
+### 2. A Három Alapszabály Master-Detail és Tab Felületeken
+
+#### A. Perzisztens DOM Renderelés (`block` / `hidden`)
+A fülek tartalmát tilos feltételesen lecsatolni (unmountolni) a DOM-ról, hacsak nincs rendkívüli memóriakorlát. A tabok maradjanak a fában, csupán a láthatóságuk váltson:
+```tsx
+// ✅ HELYES — Perzisztens DOM: 0ms váltás, nincs Skeleton villanás, űrlap-állapot megmarad
+<div className={activeTab === 'banking' ? 'block' : 'hidden'}>
+  <BankingIntegration />
+</div>
+<div className={activeTab === 'szamlazz' ? 'block' : 'hidden'}>
+  <SzamlazzAgentForm />
+</div>
+<div className={activeTab === 'email' ? 'block' : 'hidden'}>
+  <EmailAliasManager />
+</div>
+
+// ❌ TILOS — Feltételes unmount: minden kattintáskor újramountol, Skeleton villan, inputok elvesznek
+{activeTab === 'banking' && <BankingIntegration />}
+{activeTab === 'szamlazz' && <SzamlazzAgentForm />}
+```
+
+**Miért kötelező a perzisztens DOM?**
+- **0 ms késleltetés:** A váltás azonnali, nem kell várni újra-renderelésre.
+- **Zéró Skeleton Villódzás:** A komponens egyszer, oldalbetöltéskor tölti be az adatait; fülváltáskor nem ugrik be a Skeleton.
+- **Piszkozat- és Űrlap-állapot Védelem:** Ha a felhasználó egy fájlt választott ki (pl. Relax XML) vagy elkezdett gépelni egy API kulcsot, a fül elhagyása és visszatérése NEM törli a beírt adatokat.
+- **Felesleges DB lekérdezések eliminálása:** Nincs redundáns Supabase/RPC fetch minden egyes tabkattintásra.
+
+#### B. GPU Transzformáció Zéró Tolerancia a Részletező Konténereken
+A fülváltó konténerre **szigorúan tilos** `animate-in`, `slide-in`, `zoom-in` vagy bármilyen `translate3d`-t generáló Tailwind animációs osztályt tenni.
+```tsx
+// ✅ HELYES — Tiszta, transzformáció-mentes konténer (ClearType élsimítás 100%-ban stabil marad)
+<div className="flex-1 min-w-0">
+  {/* panelek */}
+</div>
+
+// ❌ TILOS — Transzformációt triggerel, ami kikapcsolja a ClearType-ot és 1px ugrást okoz
+<div className="flex-1 min-w-0 animate-in fade-in-50 duration-200">
+  {/* panelek */}
+</div>
+```
+
+#### C. Stabil Görgetősáv (Scrollbar Gutter)
+Olyan tabok esetén, amelyek tartalmi magassága eltérő (az egyik fül görgethető, a másik belefér a képernyőbe), a böngésző natív vertikális görgetősávjának megjelenése/eltűnése 15 pixellel vízszintesen eltolhatja a teljes oldalt.
+* Minden gyökér shell konténeren kötelező a `scrollbarGutter: 'stable'` beállítás (ld. [AppLayout.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/components/AppLayout.tsx#L42)), így a scrollbar helye mindig fenntartott, megakadályozva a horizontális ugrást.
+
+

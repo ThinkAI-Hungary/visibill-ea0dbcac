@@ -54,3 +54,16 @@ Minden adatra támaszkodó nézetben (táblázat, kártya, lista, dashboard) kö
   * Keresőmezőkön és combobox triggereken külső lebegő ring helyett a komponens saját szegélye (`border-primary/80`) és háttere jelzi az aktív fókuszt.
 * **Zárt Viewport Élmény:**
   * A fő layoutban a fejléc és a navigáció maradjon fix; a görgetés mindig a belső tartalmi panelen történjen (`overflow-y-auto`).
+
+---
+
+## 🖥️ 6. Tabok, Master-Detail és Kijelzők Stabilitása (Zero-Jitter & ClearType Védelem)
+* **GPU Transzformáció Zéró Tolerancia Tab Konténereken ([08-interactions-animations.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/08-interactions-animations.md)):**
+  * Részletező vásznon és tab konténereken **szigorúan tilos az `animate-in`**, `slide-in`, `zoom-in` vagy bármilyen CSS 3D transzformáció!
+  * Windows alatt a Chromium a GPU layeren kikapcsolja a DirectWrite LCD Subpixel ClearType élsimítást, ami homályosodást és az animáció végén 0.5–1 pixeles ugrásszerű "kiélesedést" okoz.
+* **Perzisztens DOM Renderelés (`block` / `hidden`):**
+  * Tabok és Master-Detail panelek váltásakor tilos a feltételes unmountolás (`{activeTab === 'x' && <Component />}`).
+  * Használj perzisztens DOM megjelenítést (`className={activeTab === id ? 'block' : 'hidden'}`). Ezzel elérhető a 0ms-os azonnali váltás, zéró Skeleton villódzás és a piszkozat-adatok (pl. űrlapok, fájlválasztások) megőrzése.
+* **Skeleton kizárólag ELSŐ betöltésre ([07-loading-patterns.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/07-loading-patterns.md)):**
+  * Tilos fülváltáskor Skeletonra visszaváltani! Háttérfrissítésnél a meglévő tartalom látható marad, és diszkrét spinner jelzi a lekérdezést.
+

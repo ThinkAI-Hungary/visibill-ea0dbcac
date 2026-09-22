@@ -19,17 +19,20 @@ import {
   Plus,
   RefreshCw,
   ShieldCheck,
+  Shield,
   Calendar,
   AlertTriangle,
   Trash2,
   CheckCircle2,
 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Props {
   companyId: string;
+  isOwner?: boolean;
 }
 
-export function Aggreg8BankConnections({ companyId }: Props) {
+export function Aggreg8BankConnections({ companyId, isOwner = true }: Props) {
   const {
     consents,
     isLoading,
@@ -127,7 +130,8 @@ export function Aggreg8BankConnections({ companyId }: Props) {
   }
 
   return (
-    <Card className="border border-border shadow-sm">
+    <div className="space-y-4">
+      <Card className="border border-border shadow-sm">
       <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4">
         <div>
           <div className="flex items-center gap-2">
@@ -150,23 +154,25 @@ export function Aggreg8BankConnections({ companyId }: Props) {
           </CardDescription>
         </div>
 
-        <Button
-          onClick={startAddBankFlow}
-          disabled={isFlowLoading}
-          className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-colors duration-150 shrink-0"
-        >
-          {isFlowLoading ? (
-            <>
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              Csatlakozás...
-            </>
-          ) : (
-            <>
-              <Plus className="h-4 w-4 mr-2" />
-              Új bank csatlakoztatása
-            </>
-          )}
-        </Button>
+        {isOwner && (
+          <Button
+            onClick={startAddBankFlow}
+            disabled={isFlowLoading}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-colors duration-150 shrink-0"
+          >
+            {isFlowLoading ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Csatlakozás...
+              </>
+            ) : (
+              <>
+                <Plus className="h-4 w-4 mr-2" />
+                Új bank csatlakoztatása
+              </>
+            )}
+          </Button>
+        )}
       </CardHeader>
 
       <CardContent className="space-y-4">
@@ -182,15 +188,17 @@ export function Aggreg8BankConnections({ companyId }: Props) {
                 Kattints az új bank hozzáadására, válaszd ki a bankodat (OTP, Erste, K&H, Raiffeisen, MBH stb.), és lépj be a netbankoddal. A tranzakciók automatikusan bekerülnek a könyvelésbe.
               </p>
             </div>
-            <Button
-              onClick={startAddBankFlow}
-              disabled={isFlowLoading}
-              variant="outline"
-              className="border-primary/40 hover:bg-primary/5 text-primary font-medium transition-colors duration-150"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Bank csatlakoztatása most
-            </Button>
+            {isOwner && (
+              <Button
+                onClick={startAddBankFlow}
+                disabled={isFlowLoading}
+                variant="outline"
+                className="border-primary/40 hover:bg-primary/5 text-primary font-medium transition-colors duration-150"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Bank csatlakoztatása most
+              </Button>
+            )}
           </div>
         ) : (
           /* 4. Data State: List of connected banks */
@@ -282,59 +290,73 @@ export function Aggreg8BankConnections({ companyId }: Props) {
                       Frissítés most
                     </Button>
 
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => startExtendConsent(consent.info_sharing_consent_id)}
-                      disabled={isFlowLoading}
-                      className="text-xs h-8 transition-colors duration-150"
-                    >
-                      <Calendar className="h-3.5 w-3.5 mr-1.5" />
-                      180 napos megújítás
-                    </Button>
+                    {isOwner && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => startExtendConsent(consent.info_sharing_consent_id)}
+                        disabled={isFlowLoading}
+                        className="text-xs h-8 transition-colors duration-150"
+                      >
+                        <Calendar className="h-3.5 w-3.5 mr-1.5" />
+                        180 napos megújítás
+                      </Button>
+                    )}
                   </div>
 
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setDeletingConsent(consent)}
-                    className="text-xs h-8 text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
-                  >
-                    <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                    Kapcsolat bontása
-                  </Button>
+                  {isOwner && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setDeletingConsent(consent)}
+                      className="text-xs h-8 text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                      Kapcsolat bontása
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         )}
       </CardContent>
-
-      {/* Confirmation Dialog for Revoking Bank Consent */}
-      <AlertDialog open={!!deletingConsent} onOpenChange={(open) => !open && setDeletingConsent(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Biztosan bontani szeretnéd ezt a bankkapcsolatot?</AlertDialogTitle>
-            <AlertDialogDescription>
-              A(z) <span className="font-semibold text-foreground">{deletingConsent?.bank_name}</span> banki hozzáférési jogosultság visszavonásra kerül. Az automatikus háttérszinkronizáció leáll, a korábban már leszinkronizált tranzakciók viszont megmaradnak a rendszerben.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="transition-colors duration-150">Mégsem</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (deletingConsent) {
-                  revokeConsent(deletingConsent.id, deletingConsent.info_sharing_consent_id);
-                  setDeletingConsent(null);
-                }
-              }}
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground transition-colors duration-150"
-            >
-              Kapcsolat bontása
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </Card>
+
+    {!isOwner && (
+      <Alert>
+        <Shield className="h-4 w-4" />
+        <AlertDescription>
+          Csak a cég tulajdonosa kezelheti a banki integrációt.
+        </AlertDescription>
+      </Alert>
+    )}
+
+    {/* Confirmation Dialog for Revoking Bank Consent */}
+    <AlertDialog open={!!deletingConsent} onOpenChange={(open) => !open && setDeletingConsent(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Biztosan bontani szeretnéd ezt a bankkapcsolatot?</AlertDialogTitle>
+          <AlertDialogDescription>
+            A(z) <span className="font-semibold text-foreground">{deletingConsent?.bank_name}</span> banki hozzáférési jogosultság visszavonásra kerül. Az automatikus háttérszinkronizáció leáll, a korábban már leszinkronizált tranzakciók viszont megmaradnak a rendszerben.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="transition-colors duration-150">Mégsem</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              if (deletingConsent) {
+                revokeConsent(deletingConsent.id, deletingConsent.info_sharing_consent_id);
+                setDeletingConsent(null);
+              }
+            }}
+            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground transition-colors duration-150"
+          >
+            Kapcsolat bontása
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  </div>
   );
 }
