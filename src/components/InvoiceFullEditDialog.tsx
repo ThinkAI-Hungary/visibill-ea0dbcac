@@ -297,7 +297,11 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
 
       if (invoiceError) {
         if (invoiceError.code === '23505') {
-          throw new Error(t('invoices:dialogs.full_edit.toast_duplicate_number', 'Ezzel a bizonylatsorszámmal már létezik számla ennél a cégnél.'));
+          toast({
+            title: t('invoices:dialogs.full_edit.toast_duplicate_number', 'Ezzel a bizonylatsorszámmal már létezik számla ennél a cégnél.'),
+            variant: 'destructive',
+          });
+          return;
         }
         throw invoiceError;
       }
@@ -368,7 +372,14 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
       toast({ title: t('invoices:dialogs.full_edit.toast_success', 'Számla sikeresen frissítve') });
       onSave();
       onClose();
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.code === '23505' || error?.message?.includes('bizonylatsorszámmal már létezik')) {
+        toast({
+          title: t('invoices:dialogs.full_edit.toast_duplicate_number', 'Ezzel a bizonylatsorszámmal már létezik számla ennél a cégnél.'),
+          variant: 'destructive',
+        });
+        return;
+      }
       reportError({ type: 'db_query', component: 'InvoiceFullEditDialog', action: 'error', message: 'Error updating invoice:', error: error });
       toast({ title: t('invoices:dialogs.full_edit.toast_error', 'Nem sikerült menteni a változtatásokat'), variant: 'destructive' });
     } finally {
