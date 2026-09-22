@@ -980,8 +980,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useInvoiceFilters.ts": {
-    "mtime": 1789895978.7335427,
-    "ast_hash": "7690ac633fda0fe7de2d170a7cb9fb02",
+    "mtime": 1790091679.2861078,
+    "ast_hash": "dc91ce9be0269341de9e84eef9a9cb61",
     "semantic_hash": ""
   },
   "src/hooks/useInvoiceMutations.ts": {
@@ -1090,8 +1090,8 @@
     "semantic_hash": "ff6f4be2b05ce5953ce44d546c419181"
   },
   "src/lib/exportUtils.ts": {
-    "mtime": 1788139419.0102866,
-    "ast_hash": "1c34529f7efb20bae1f6c736dfedddfc",
+    "mtime": 1790091679.287108,
+    "ast_hash": "76eb92a5b98ddc838927288f31343154",
     "semantic_hash": ""
   },
   "src/lib/financeUtils.test.ts": {
@@ -1490,8 +1490,8 @@
     "semantic_hash": ""
   },
   "src/pages/Integrations.tsx": {
-    "mtime": 1789881969.389657,
-    "ast_hash": "78f8f7b6df02c41c5279392b83537d75",
+    "mtime": 1790093965.2430837,
+    "ast_hash": "a1c3acb7d484aa174cf8d5f5aa448b02",
     "semantic_hash": ""
   },
   "src/pages/InvoicesPage.tsx": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790091471.0764146,
-    "ast_hash": "cff691771f777b87b4548fdbf819c250",
+    "mtime": 1790091709.9725113,
+    "ast_hash": "9a0d7ab3a2836842b902d7c2f2902bd6",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3360,18 +3360,18 @@
     "semantic_hash": ""
   },
   "docs/design/05-layout-navigation.md": {
-    "mtime": 1789420136.8417716,
-    "ast_hash": "b89a104216d660cb7a6a45d924685d83",
+    "mtime": 1790093659.649997,
+    "ast_hash": "f5f6a77f1ccb1a63cd3476e3a7db24c2",
     "semantic_hash": ""
   },
   "docs/design/07-loading-patterns.md": {
-    "mtime": 1788969456.570755,
-    "ast_hash": "083ecc48780fa5cdfa3d3b5df47e1753",
+    "mtime": 1790093619.9423,
+    "ast_hash": "57e75ecd6efc588a15b015148ee13589",
     "semantic_hash": ""
   },
   "docs/design/08-interactions-animations.md": {
-    "mtime": 1789082246.845927,
-    "ast_hash": "beffcabe0be969af598ed6812ac1cb96",
+    "mtime": 1790093609.920952,
+    "ast_hash": "02f15e159361dedafe18aeec4b565a72",
     "semantic_hash": ""
   },
   "docs/design/09-error-handling-feedback.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1790031217.1046627,
-    "ast_hash": "c0203bcb1255c5e428343d39b485a969",
+    "mtime": 1790091679.2222798,
+    "ast_hash": "b7ffcf6398a8c32b7f89b6613c4c300e",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -6050,8 +6050,8 @@
     "semantic_hash": ""
   },
   "src/components/invoices/InvoiceDataExportDialog.tsx": {
-    "mtime": 1788308421.9900727,
-    "ast_hash": "4845fa3fb87f1722cf55e680526fc88d",
+    "mtime": 1790091679.2818775,
+    "ast_hash": "3f7e3dbbedf9dff3713b4a86d6e7b23d",
     "semantic_hash": ""
   },
   "src/components/nav/EvAlertsCenter.tsx": {
@@ -6065,8 +6065,8 @@
     "semantic_hash": ""
   },
   "src/components/settings/BankAccountsTab.tsx": {
-    "mtime": 1789881969.3689446,
-    "ast_hash": "3cf7fa75ecc16b65bfd6ac679e216dd0",
+    "mtime": 1790093156.758589,
+    "ast_hash": "9646945697da3c63a787b35b2df76386",
     "semantic_hash": ""
   },
   "src/components/ui/FilePreviewModal.tsx": {
@@ -6945,8 +6945,8 @@
     "semantic_hash": ""
   },
   "src/test/accounty/useInvoiceFilters.test.tsx": {
-    "mtime": 1787568622.9108496,
-    "ast_hash": "9d3362d520baafe92d7f34dcec413c53",
+    "mtime": 1790091679.2891085,
+    "ast_hash": "ea923749bf1f07d82c523a45f068a18a",
     "semantic_hash": ""
   },
   "supabase/migrations/20260818190000_add_vamhatarozat_type.sql": {
@@ -7635,8 +7635,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/components/filters/InvoiceFilterBar.tsx": {
-    "mtime": 1789166617.7862408,
-    "ast_hash": "158a5258af2301437846f1a1b01caf81",
+    "mtime": 1790091679.2838771,
+    "ast_hash": "012c54b174ddbf8ec2e1bf5d1a17e8eb",
     "semantic_hash": ""
   },
   "src/features/invoices/components/filters/InvoiceTabSelector.tsx": {
@@ -7685,8 +7685,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/context/InvoiceContext.tsx": {
-    "mtime": 1789691545.1189628,
-    "ast_hash": "b26eab6ebf07daefd4dce02bebaf0d36",
+    "mtime": 1790091679.2838771,
+    "ast_hash": "23212f996986d08b303ed91330fb2916",
     "semantic_hash": ""
   },
   "src/features/invoices/context/useInvoiceContext.ts": {
@@ -7700,8 +7700,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/types/index.ts": {
-    "mtime": 1788136825.6015732,
-    "ast_hash": "cb8f826e991c58ab6105ed7aa2a27960",
+    "mtime": 1790091679.285104,
+    "ast_hash": "73933f436f16fe8b8d1ed74c049f8310",
     "semantic_hash": ""
   },
   "src/features/invoices/utils/invoiceRelations.ts": {
@@ -7800,8 +7800,8 @@
     "semantic_hash": ""
   },
   "src/lib/documents/templates/tableExportTemplate.ts": {
-    "mtime": 1788138304.1304383,
-    "ast_hash": "fee11e8c1e99e6f5a24821cb1bdd2034",
+    "mtime": 1790091679.2861078,
+    "ast_hash": "eacd4e2d42011357cfd4984ba670e1bf",
     "semantic_hash": ""
   },
   "src/lib/documents/templates/vatReturnTemplate.ts": {
@@ -7945,8 +7945,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/__tests__/invoiceContexts.test.tsx": {
-    "mtime": 1788703612.15056,
-    "ast_hash": "eb38dcb354e4284c051b5f2a11092265",
+    "mtime": 1790091679.2828782,
+    "ast_hash": "6e0d1c853b0d9c5f62371ab1c79df035",
     "semantic_hash": ""
   },
   "src/features/invoices/components/expanded-row/ContinuousServiceCardSection.tsx": {
@@ -8015,8 +8015,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/context/InvoiceFilterContext.tsx": {
-    "mtime": 1788142353.2151785,
-    "ast_hash": "4a57c8c9a0f0ad274ee8e33c8c855d09",
+    "mtime": 1790091679.285104,
+    "ast_hash": "6f3898366a77ae061e53fca9a9449e62",
     "semantic_hash": ""
   },
   "src/features/invoices/context/InvoicePaginationContext.tsx": {
@@ -9315,7 +9315,7 @@
     "semantic_hash": ""
   },
   "docs/architecture/edge-functions.md": {
-    "mtime": 1790091442.28089,
+    "mtime": 1790091679.4495277,
     "ast_hash": "435ac58210e8c178a16add4acbea6591",
     "semantic_hash": ""
   },
@@ -10135,8 +10135,8 @@
     "semantic_hash": ""
   },
   "src/locales/hr/invoices.json": {
-    "mtime": 1790031217.1101806,
-    "ast_hash": "735f6ac1dd592ca267de9cb87ebdbfbf",
+    "mtime": 1790091679.2881088,
+    "ast_hash": "da6de15e950bf6fb06fe88120f859275",
     "semantic_hash": ""
   },
   "src/locales/hr/navigation.json": {
@@ -10175,8 +10175,8 @@
     "semantic_hash": ""
   },
   "src/locales/hu/invoices.json": {
-    "mtime": 1790031217.1111803,
-    "ast_hash": "aa799be510bbed06d4612c804a215bad",
+    "mtime": 1790091679.2891085,
+    "ast_hash": "b5d0b96855d9e19138903168252bbeb8",
     "semantic_hash": ""
   },
   "src/locales/hu/navigation.json": {
@@ -10750,8 +10750,8 @@
     "semantic_hash": ""
   },
   ".agents/rules/ui-ux.md": {
-    "mtime": 1789355819.1221976,
-    "ast_hash": "a53a359e0bca620ca862850f7246350f",
+    "mtime": 1790093672.892807,
+    "ast_hash": "51865997c3e42b7668f354212359fea6",
     "semantic_hash": ""
   },
   ".agents/rules/verification.md": {
@@ -10980,8 +10980,8 @@
     "semantic_hash": ""
   },
   "src/components/banking/Aggreg8BankConnections.tsx": {
-    "mtime": 1789607816.5656111,
-    "ast_hash": "cbe521677838735a18d5a44c3c1722e7",
+    "mtime": 1790094938.9048135,
+    "ast_hash": "a003f3343276d89a2df1bddd42679db0",
     "semantic_hash": ""
   },
   "src/hooks/useAggreg8.ts": {
@@ -10990,18 +10990,18 @@
     "semantic_hash": ""
   },
   "supabase/functions/aggreg8-api/index.ts": {
-    "mtime": 1790090193.5266573,
-    "ast_hash": "d1d3c6c014592acd644b593be73ec96f",
+    "mtime": 1790093979.111804,
+    "ast_hash": "1597d465ee22b5eb64dc60c2b493dcb4",
     "semantic_hash": ""
   },
   "supabase/functions/aggreg8-callback/index.ts": {
-    "mtime": 1790090231.7074995,
-    "ast_hash": "f5dce17db5b0de4eefc11d9941eced07",
+    "mtime": 1790092358.6829638,
+    "ast_hash": "56a34251ab64622f7a2cfa056585f792",
     "semantic_hash": ""
   },
   "supabase/migrations/20260917030000_aggreg8_integration.sql": {
-    "mtime": 1789881969.3973382,
-    "ast_hash": "40d1d3df78276ebf097e7306cd4bba31",
+    "mtime": 1790092372.6813025,
+    "ast_hash": "2b797df183dbcd62df94a5045526cb15",
     "semantic_hash": ""
   },
   "supabase/migrations/20260917031000_bank_statement_id_nullable.sql": {
@@ -11010,8 +11010,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-119-aggreg8-psd2-open-banking-integration.md": {
-    "mtime": 1790091423.1426525,
-    "ast_hash": "89e9ec5a95fd7eee514fb08ebcff8fa9",
+    "mtime": 1790093211.0700736,
+    "ast_hash": "82335fbeff3f3e23e37716e6828bfcb6",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-087-aggreg8-bank-connections-and-sync-ui-ux.md": {
@@ -11695,13 +11695,53 @@
     "semantic_hash": ""
   },
   "docs/nav_api_jogosultsag_riport.html": {
-    "mtime": 1790075823.82013,
-    "ast_hash": "106106c9547509347e7ed163bc54bfdd",
+    "mtime": 1790091679.450046,
+    "ast_hash": "95b01f6f3dc50fafd61a3711bb25e9f4",
     "semantic_hash": ""
   },
   "docs/nav_api_jogosultsag_riport.pdf": {
-    "mtime": 1790075834.4529178,
+    "mtime": 1790091679.4521122,
     "ast_hash": "805afb41ba83bb1bddd60bbd06ad1098",
+    "semantic_hash": ""
+  },
+  "src/features/invoices/__tests__/InvoiceFilterBarDateBasis.test.tsx": {
+    "mtime": 1790091679.2828782,
+    "ast_hash": "ef8495a32c8c0534ae3aa0e8677cc1d1",
+    "semantic_hash": ""
+  },
+  "src/features/invoices/__tests__/vatRateAndExportLayout.test.tsx": {
+    "mtime": 1790091679.2828782,
+    "ast_hash": "acdf6dd696a3ac3dce15503eda671a4a",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260922154500_add_delivery_date_and_date_basis_to_invoice_filters.sql": {
+    "mtime": 1790091679.2921083,
+    "ast_hash": "d7d20240119967611c4533531ce0db92",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260922170000_vat_filter_and_item_vat_fix.sql": {
+    "mtime": 1790091679.2921083,
+    "ast_hash": "a91c61edf421c9c005731f0ddd50dce9",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260922171500_fix_submitted_invoices_vat_items_column.sql": {
+    "mtime": 1790091679.2936149,
+    "ast_hash": "c382b2790e1f374cd0a7e6071d92674e",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-138-invoices-delivery-date-and-date-basis-rpc-filters.md": {
+    "mtime": 1790091679.221273,
+    "ast_hash": "c87cb902767cd3b7ca6317f979c00ae6",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-103-invoices-delivery-date-and-date-basis-filtering-ux.md": {
+    "mtime": 1790091679.2222798,
+    "ast_hash": "45482198dccc16d668ce90627b7e460c",
+    "semantic_hash": ""
+  },
+  "docs/integrations_layout_mockup.html": {
+    "mtime": 1790093080.6424851,
+    "ast_hash": "5e6365a751584cf6312d5103fbaab317",
     "semantic_hash": ""
   }
 }

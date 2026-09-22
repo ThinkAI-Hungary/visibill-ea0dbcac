@@ -579,3 +579,43 @@ A Management Dashboard és Hibajegy kezelőkonzol felületén (`TicketsPage.tsx`
    - **Hiba:** `h-[calc(100vh-200px)] min-h-[550px]` fix magasság beállítása egy flex/grid szülőre tabok alatt. Zoom-out (pl. 75%, 50%) esetén vagy rövidebb tartalomnál a szülő magassága mesterségesen nagyobb lesz mint a tényleges tartalom, és az oldal üres fekete térbe enged lefelé görgetni.
    - **Szabály:** Soha ne használj mesterséges fix `h-[calc(100vh-...)]` magasságot beágyazott tartalomra. Ehelyett az elrendezés `items-start` igazítású legyen, a bal oldali queue kapjon `max-h-[calc(100vh-...)]` korlátot `min-h-0`-val, a jobb oldali tartalom pedig természetesen skálázódjon. Az oldal csak és kizárólag akkor görgethető, ha a tartalom ténylegesen túlnő a viewport magasságán.
 
+---
+
+## 🧩 Integrációk & Beállítások Master-Detail Split View Minta (ADR A-119)
+
+Az integrációk és konfigurációs felületek skálázódásakor (pl. `/integrations`) a vertikálisan egymás alá halmozott kártyák helyett a Master-Detail Split View elrendezést alkalmazzuk:
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│ PageHeader (Cím, Leírás, Vissza navigáció, Aktív cég infó)            │
+├──────────────────────────────────┬─────────────────────────────────────┤
+│ Navigációs Hasáb (300px desktop) │ Részletező Vászon (1fr, flex-1)     │
+│ ┌──────────────────────────────┐ │ ┌─────────────────────────────────┐ │
+│ │ PÉNZINTÉZET & HATÓSÁG        │ │ │ Kiválasztott integráció kártya  │ │
+│ │ • Banki kapcsolatok (PSD2)   │ │ │ (Űrlapok, API kulcsok, logok,  │ │
+│ │ • NAV Számla szinkron        │ │ │  fájlfeltöltés, lecsatolás)     │ │
+│ │                              │ │ │                                 │ │
+│ │ SZÁMLÁZÁS & DOKUMENTUM       │ │ │ (Perzisztens DOM, azonnali 0ms  │ │
+│ │ • Számlázz.hu Agent          │ │ │  váltás, zéró layout-shift)     │ │
+│ │ • E-mail számlafogadás       │ │ │                                 │ │
+│ │ • Relax könyvelési import    │ │ └─────────────────────────────────┘ │
+│ │                              │                                       │
+│ │ FEJLESZTŐK & RENDSZER        │                                       │
+│ │ • REST API hozzáférés        │                                       │
+│ └──────────────────────────────┘                                       │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+### Specifikációs Követelmények:
+1. **Hasábok Aránya:**
+   - Desktop (`lg:` és felette): Bal navigációs hasáb `w-full lg:w-[300px] shrink-0`, jobb részletező vászon `flex-1 min-w-0`.
+   - Mobil / Tablet (`< lg`): A bal oldali lista automatikusan átvált egy vízszintesen görgethető kártyás sávra (`flex gap-2 overflow-x-auto pb-2 scrollbar-none`), így mobilon sem foglal felesleges függőleges teret.
+2. **Kategória-csoportosítás:**
+   - A navigációs elemek logikai szekciókba rendeződnek (pl. *Pénzintézet & Hatóság*, *Számlázás & Dokumentum*, *Fejlesztők & Rendszer*), felső indexű kicsi felirattal (`text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70`).
+3. **Élő Állapotjelző Badge-ek:**
+   - Minden tétel mellett diszkrét státuszjelvény található (pl. zöld pipa *Aktív*, kék számláló *1 bank*, vagy szürke *Nincs*), ami azonnali áttekintést nyújt anélkül, hogy a fülre kellene kattintani.
+4. **Kétirányú URL Szinkronizáció:**
+   - A fülváltás szinkronizálva van az URL keresési paraméterével (`?tab=banking|nav|szamlazz|email|relax|api`).
+   - Ez lehetővé teszi a közvetlen mélylinkelést más oldalakról (pl. a Beállítások bankszámla füléről: `/integrations?tab=banking`), és támogatja a böngésző Előre/Vissza gombját.
+5. **Perzisztens DOM és Zéró GPU Transzformáció:**
+   - A jobb oldali részletező panelek párhuzamosan a DOM-ban maradnak (`className={activeTab === id ? 'block' : 'hidden'}`). Tilos `animate-in` vagy GPU transzformációs osztályok használata a szövegélesség (ClearType) és a piszkozat-adatok védelmében.

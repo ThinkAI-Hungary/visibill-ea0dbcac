@@ -156,6 +156,7 @@ CREATE TABLE IF NOT EXISTS public.aggreg8_webhook_logs (
 CREATE INDEX IF NOT EXISTS idx_aggreg8_webhook_logs_type ON public.aggreg8_webhook_logs(notification_type);
 CREATE INDEX IF NOT EXISTS idx_aggreg8_webhook_logs_created_at ON public.aggreg8_webhook_logs(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_aggreg8_webhook_logs_isc_id ON public.aggreg8_webhook_logs(info_sharing_consent_id);
+CREATE INDEX IF NOT EXISTS idx_aggreg8_webhook_logs_user_flow_id ON public.aggreg8_webhook_logs(user_flow_id);
 
 ALTER TABLE public.aggreg8_webhook_logs ENABLE ROW LEVEL SECURITY;
 

@@ -232,9 +232,32 @@ serve(async (req) => {
       });
     }
 
+    // Verify company ownership for sensitive bank operations
+    const { data: comp } = await adminClient
+      .from("companies")
+      .select("owner_id")
+      .eq("id", companyId)
+      .maybeSingle();
+
+    const isCompanyOwner = comp?.owner_id === user.id || membership.role === "owner";
+
     // ── Action: INIT FLOW (ADD_BANK, ON_DEMAND, EXTEND_CONSENT, DELETE_INFO_SHARING_CONSENT) ──
     if (action === "init-flow") {
       const type = flowType || "ADD_BANK";
+
+      // Security Guard: Only CEO/Owner can add a bank, extend consent, or delete consent
+      if ((type === "ADD_BANK" || type === "EXTEND_CONSENT" || type === "DELETE_INFO_SHARING_CONSENT") && !isCompanyOwner) {
+        return new Response(
+          JSON.stringify({ 
+            error: "Kizárólag a cég tulajdonosa (CEO/Owner) jogosult új banki kapcsolatot létesíteni vagy módosítani." 
+          }),
+          {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
       const customerToken = await getCustomerToken(adminClient);
       const a8UserId = await ensureAggreg8User(customerToken, user.email!);
 
@@ -273,6 +296,26 @@ serve(async (req) => {
       const flowRes = await res.json();
       const { userFlowId, token: userFlowToken } = flowRes;
       const syncUiUrl = `${config.syncUiUrl}?token=${userFlowToken}&lang=HU`;
+
+      // ── Munkamenet-követés: kapcsoljuk össze a userFlowId-t a cég és felhasználó azonosítóval ──
+      if (userFlowId) {
+        try {
+          await adminClient.from("aggreg8_webhook_logs").insert({
+            notification_type: "FLOW_INITIATED",
+            user_flow_id: userFlowId,
+            a8_user_id: a8UserId,
+            payload: {
+              company_id: companyId,
+              user_id: user.id,
+              flow_type: type,
+              initiated_at: new Date().toISOString(),
+            },
+            processed: true,
+          });
+        } catch (logErr) {
+          console.warn("[aggreg8-api] Could not log FLOW_INITIATED session map:", logErr);
+        }
+      }
 
       return new Response(
         JSON.stringify({

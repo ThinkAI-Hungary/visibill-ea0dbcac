@@ -355,5 +355,18 @@ const { data, isLoading, isFetching } = useQuery<FilesData>({
 ❌ Skeleton a filter toolbaron isFetching-re — input focus elvész
 ❌ 100-200ms debounce — túl rövid, nem fogja meg a normál gépelést
 ❌ keepPreviousData nélkül — adat eltűnik minden fetch-nél
+❌ Tab fülváltáskor Skeleton villanás — perzisztens DOM helyett unmount/remount
 ```
+
+---
+
+## 🗂️ Tab & Master-Detail Betöltési Fegyelem (Zero Skeleton Flash)
+
+A fülek közötti navigáció és Master-Detail nézetek (pl. `/integrations`, `/settings`) esetén a felhasználó azonnali (0ms) visszajelzést és vizuális stabilitást vár el.
+
+### 1. Fülváltási Szabály: A Skeleton kizárólag ELSŐ betöltésre való
+* **Tilos a Skeleton villantás minden tabkattintáskor:** Ha a komponens minden rákattintáskor feltételesen mountolódik újra (`{activeTab === 'x' && <Component />}`), az 50–100ms-ig tartó Skeleton állapot vibrálást és layout shiftet okoz.
+* **Perzisztens DOM elvárás:** A tabokat a háttérben a DOM-ban kell hagyni (`className={activeTab === 'x' ? 'block' : 'hidden'}`).
+* **Háttérfrissítés kezelése:** Ha egy fül adatait a háttérben újra kell érvényesíteni (revalidation), **TILOS a teljes űrlapot vagy táblázatot eltüntetni és Skeletonra cserélni**. A meglévő adat látható maradjon, és egy diszkrét állapotjelző (pl. kis spinner a gombban vagy enyhe halványulás) jelezze a szinkronizációt.
+
 

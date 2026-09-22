@@ -306,21 +306,55 @@ serve(async (req) => {
           .maybeSingle();
 
         if (!existingConsent) {
-          // Ha még nincs rögzítve, keressünk az a8_user_id alapján vagy hozzunk létre consent rekordot
-          const { data: latestConsent } = await supabaseAdmin
-            .from("aggreg8_consents")
-            .select("company_id, user_id")
-            .eq("a8_user_id", a8UserId)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
+          let resolvedCompanyId: string | null = null;
+          let resolvedUserId: string | null = null;
 
-          if (latestConsent) {
-            const { data: newConsent } = await supabaseAdmin
+          // 1. Elsődleges feloldás: keresés userFlowId alapján a FLOW_INITIATED munkamenet-naplóból
+          const userFlowId = userFlowInfo?.userFlowId;
+          if (userFlowId) {
+            const { data: flowInitLog } = await supabaseAdmin
+              .from("aggreg8_webhook_logs")
+              .select("payload")
+              .eq("notification_type", "FLOW_INITIATED")
+              .eq("user_flow_id", userFlowId)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (flowInitLog?.payload?.company_id && flowInitLog?.payload?.user_id) {
+              resolvedCompanyId = flowInitLog.payload.company_id;
+              resolvedUserId = flowInitLog.payload.user_id;
+              console.log(
+                `[aggreg8-callback] Resolved company ${resolvedCompanyId} and user ${resolvedUserId} via userFlowId: ${userFlowId}`
+              );
+            }
+          }
+
+          // 2. Másodlagos feloldás (fallback): meglévő consent keresése az a8_user_id alapján
+          if (!resolvedCompanyId && a8UserId) {
+            const { data: latestConsent } = await supabaseAdmin
+              .from("aggreg8_consents")
+              .select("company_id, user_id")
+              .eq("a8_user_id", a8UserId)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (latestConsent) {
+              resolvedCompanyId = latestConsent.company_id;
+              resolvedUserId = latestConsent.user_id;
+              console.log(
+                `[aggreg8-callback] Fallback resolved company ${resolvedCompanyId} from latest consent for a8UserId ${a8UserId}`
+              );
+            }
+          }
+
+          if (resolvedCompanyId && resolvedUserId) {
+            const { data: newConsent, error: insErr } = await supabaseAdmin
               .from("aggreg8_consents")
               .insert({
-                company_id: latestConsent.company_id,
-                user_id: latestConsent.user_id,
+                company_id: resolvedCompanyId,
+                user_id: resolvedUserId,
                 info_sharing_consent_id: infoSharingConsentId,
                 a8_user_id: a8UserId,
                 bank_id: "PENDING_SYNC",
@@ -333,7 +367,16 @@ serve(async (req) => {
               })
               .select()
               .single();
-            existingConsent = newConsent;
+
+            if (insErr) {
+              console.error("[aggreg8-callback] Failed to insert new consent:", insErr);
+            } else {
+              existingConsent = newConsent;
+            }
+          } else {
+            console.error(
+              `[aggreg8-callback] Could not resolve company_id for infoSharingConsentId: ${infoSharingConsentId}, userFlowId: ${userFlowId}, a8UserId: ${a8UserId}`
+            );
           }
         }
 
@@ -348,8 +391,41 @@ serve(async (req) => {
 
           if (accRes.ok) {
             const accList = await accRes.json();
-            for (const acc of accList) {
-              const { data: savedAcc } = await supabaseAdmin
+            const rawAccounts = Array.isArray(accList) ? accList : (accList.accounts || []);
+
+            // Ha az Aggreg8 megküldte a specifikus engedélyezett számlákat (consentedAccounts), szűrjünk azokra
+            const consentedAccountIds: string[] | null =
+              Array.isArray(consentedAccounts) && consentedAccounts.length > 0
+                ? consentedAccounts.map((a: any) =>
+                    typeof a === "string" ? a : (a.id || a._id || a.accountId)
+                  )
+                : null;
+
+            const targetAccounts = consentedAccountIds
+              ? rawAccounts.filter((acc: any) =>
+                  consentedAccountIds.includes(acc.id || acc._id)
+                )
+              : rawAccounts;
+
+            // Bank név és azonosító frissítése a hozzájáruláson ha elérhető
+            if (targetAccounts.length > 0 && existingConsent.bank_id === "PENDING_SYNC") {
+              const firstAcc = targetAccounts[0];
+              const detectedBankId = firstAcc.bankId || firstAcc.bank?.id;
+              const detectedBankName = firstAcc.bankName || firstAcc.bank?.name;
+              if (detectedBankId || detectedBankName) {
+                await supabaseAdmin
+                  .from("aggreg8_consents")
+                  .update({
+                    bank_id: detectedBankId || existingConsent.bank_id,
+                    bank_name: detectedBankName || existingConsent.bank_name,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq("id", existingConsent.id);
+              }
+            }
+
+            for (const acc of targetAccounts) {
+              const { data: savedAcc, error: accErr } = await supabaseAdmin
                 .from("aggreg8_accounts")
                 .upsert(
                   {
@@ -367,7 +443,9 @@ serve(async (req) => {
                 .select()
                 .single();
 
-              if (savedAcc) {
+              if (accErr) {
+                console.error("[aggreg8-callback] Error saving aggreg8_account:", accErr);
+              } else if (savedAcc) {
                 await syncAccountTransactions(supabaseAdmin, customerToken, savedAcc, a8UserId);
               }
             }
