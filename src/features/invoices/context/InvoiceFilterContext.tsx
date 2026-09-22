@@ -4,6 +4,7 @@ import type { InvoiceFilters, InvoiceKpiSummary, KpiFilterType } from '../types'
 export interface InvoiceFilterContextValue {
   filters: InvoiceFilters;
   setFilters: React.Dispatch<React.SetStateAction<InvoiceFilters>>;
+  setDateBasis: (basis: 'kibocsatas' | 'teljesites') => void;
   clearFilters: () => void;
   hasStandardFilters: boolean;
   hasAnyActiveFilter: boolean;

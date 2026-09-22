@@ -116,5 +116,31 @@ describe('useInvoiceFilters URL parameters integration', () => {
 
     expect(screen.getByTestId('date-basis').textContent).toBe('kibocsatas');
   });
+
+  it('updates dateBasis when toggled via user click', async () => {
+    const { act } = await import('@testing-library/react');
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/invoices']}>
+          <TestComponent defaultDateBasis="teljesites" />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    expect(screen.getByTestId('date-basis').textContent).toBe('teljesites');
+    
+    // Click Kibocsátás inside act
+    await act(async () => {
+      screen.getByTestId('toggle-kibocsatas').click();
+    });
+    expect(screen.getByTestId('date-basis').textContent).toBe('kibocsatas');
+
+    // Click Teljesítés inside act
+    await act(async () => {
+      screen.getByTestId('toggle-teljesites').click();
+    });
+    expect(screen.getByTestId('date-basis').textContent).toBe('teljesites');
+  });
 });
+
 

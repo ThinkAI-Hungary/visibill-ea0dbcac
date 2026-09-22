@@ -19,6 +19,7 @@ export function InvoiceFilterBar() {
   const {
     filters,
     setFilters,
+    setDateBasis,
     activeTab,
     isSubmittedTab,
     categories,
@@ -59,7 +60,7 @@ export function InvoiceFilterBar() {
       <div className="inline-flex h-9 items-center rounded-lg border border-border/80 bg-muted/40 p-1 shadow-2xs text-xs select-none">
         <button
           type="button"
-          onClick={() => setFilters(prev => ({ ...prev, dateBasis: 'kibocsatas' }))}
+          onClick={() => (setDateBasis ? setDateBasis('kibocsatas') : setFilters(prev => ({ ...prev, dateBasis: 'kibocsatas' })))}
           className={cn(
             "inline-flex px-2.5 h-7 items-center justify-center gap-1.5 rounded-md text-xs transition-all cursor-pointer border",
             !isDeliveryBasis
@@ -73,7 +74,7 @@ export function InvoiceFilterBar() {
         </button>
         <button
           type="button"
-          onClick={() => setFilters(prev => ({ ...prev, dateBasis: 'teljesites' }))}
+          onClick={() => (setDateBasis ? setDateBasis('teljesites') : setFilters(prev => ({ ...prev, dateBasis: 'teljesites' })))}
           className={cn(
             "inline-flex px-2.5 h-7 items-center justify-center gap-1.5 rounded-md text-xs transition-all cursor-pointer border",
             isDeliveryBasis

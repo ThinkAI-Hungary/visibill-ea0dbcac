@@ -46,6 +46,7 @@ describe('Invoice Sub-Contexts', () => {
         continuous: 'all',
       },
       setFilters: () => {},
+      setDateBasis: () => {},
       clearFilters: () => {},
       hasStandardFilters: true,
       hasAnyActiveFilter: true,

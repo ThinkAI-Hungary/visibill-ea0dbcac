@@ -310,10 +310,27 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
   }, [filters, defaultDateBasis]);
   const hasAnyActiveFilter = hasStandardFilters || kpiFilter !== 'all';
 
+  const handleDateBasisChange = useCallback((newBasis: 'kibocsatas' | 'teljesites') => {
+    if (newBasis === filters.dateBasis) return;
+    setFilters(prev => ({ ...prev, dateBasis: newBasis }));
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('db', newBasis);
+      next.delete('date_basis');
+      return next.toString() === prev.toString() ? prev : next;
+    }, { replace: true });
+  }, [filters.dateBasis, setFilters, setSearchParams]);
+
   const clearAllFilters = useCallback(() => {
     clearFilters();
     setKpiFilter('all');
-  }, [clearFilters, setKpiFilter]);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.delete('db');
+      next.delete('date_basis');
+      return next.toString() === prev.toString() ? prev : next;
+    }, { replace: true });
+  }, [clearFilters, setKpiFilter, setSearchParams]);
 
   // ── Sync ALL view state → URL query params ──
   useEffect(() => {
@@ -321,10 +338,10 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       prev => {
         const next = new URLSearchParams(prev);
 
-        for (const urlKey of Object.values(FILTER_URL_KEYS)) {
+        for (const [key, urlKey] of Object.entries(FILTER_URL_KEYS)) {
+          if (key === 'dateBasis') continue;
           next.delete(urlKey);
         }
-        next.delete('date_basis');
         next.delete('kpi');
         next.delete('sf');
         next.delete('sd');
@@ -338,11 +355,6 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
           if (value !== defValue) {
             next.set(urlKey, value);
           }
-        }
-
-        // Only persist db if it differs from the company default setting
-        if (filters.dateBasis && filters.dateBasis !== defaultDateBasis) {
-          next.set('db', filters.dateBasis);
         }
 
         if (kpiFilter !== 'all') next.set('kpi', kpiFilter);
@@ -373,7 +385,6 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
     navPageSize,
     submittedPageSize,
     isSubmittedTab,
-    defaultDateBasis,
     setSearchParams,
   ]);
 
@@ -782,6 +793,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
     () => ({
       filters,
       setFilters,
+      setDateBasis: handleDateBasisChange,
       clearFilters,
       hasStandardFilters,
       hasAnyActiveFilter,
@@ -798,6 +810,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
     [
       filters,
       setFilters,
+      handleDateBasisChange,
       clearFilters,
       hasStandardFilters,
       hasAnyActiveFilter,
