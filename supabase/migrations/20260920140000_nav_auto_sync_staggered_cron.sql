@@ -21,7 +21,10 @@ BEGIN
     $cmd$
     SELECT net.http_post(
       url := 'https://vxxgvdlqvvchtlmqnrqf.supabase.co/functions/v1/nav-auto-sync',
-      headers := '{"Content-Type": "application/json", "x-cron-secret": "JGqfiN0Y6gFWHRPnsekm5BLElXrQdaVw2DpzCOxU4738M1ATutovZcKhSby9jI"}'::jsonb,
+      headers := jsonb_build_object(
+        'Content-Type', 'application/json',
+        'x-cron-secret', (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'cron_secret' LIMIT 1)
+      ),
       body := '{}'::jsonb
     ) as request_id;
     $cmd$
