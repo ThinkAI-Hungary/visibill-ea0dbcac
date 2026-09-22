@@ -18,6 +18,7 @@ export interface Transaction {
   description: string | null;
   amount: number;
   currency: string | null;
+  fee_amount?: number | null;
   type: string | null;
   matched_invoice_id: string | null;
   confidence_score: number | null;
@@ -300,29 +301,71 @@ export function useTransactionData(overrideDateFrom?: Date, overrideDateTo?: Dat
     }
   }, [queryClient, selectedCompany?.id]);
 
+async function fetchMatchedInvoiceNumbers(invoiceIds: (string | null | undefined)[]): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  const validIds = Array.from(new Set(invoiceIds.filter((id): id is string => Boolean(id))));
+  if (validIds.length === 0) return map;
+
+  const CHUNK_SIZE = 500;
+  for (let i = 0; i < validIds.length; i += CHUNK_SIZE) {
+    const chunk = validIds.slice(i, i + CHUNK_SIZE);
+    const [subRes, navRes] = await Promise.all([
+      supabase.from('invoices').select('id, bizonylatsorszam').in('id', chunk),
+      supabase.from('nav_invoices').select('id, invoice_number').in('id', chunk),
+    ]);
+
+    if (subRes.data) {
+      for (const row of subRes.data) {
+        if (row.bizonylatsorszam) {
+          map.set(row.id, row.bizonylatsorszam);
+        }
+      }
+    }
+    if (navRes.data) {
+      for (const row of navRes.data) {
+        if (row.invoice_number && !map.has(row.id)) {
+          map.set(row.id, row.invoice_number);
+        }
+      }
+    }
+  }
+
+  return map;
+}
+
   // Export
   const handleExport = useCallback(async (exportFormat: 'csv' | 'xlsx') => {
-    const headers = ['Dátum', 'Leírás', 'Összeg', 'Pénznem', 'Típus', 'Státusz', 'Pontszám', 'Indoklás'];
-    const exportData = filteredTransactions.map(transaction => {
-      const matchStatus = computeMatchStatus(transaction);
-      const statusText = matchStatus === 'matched' ? 'Párosított'
-        : matchStatus === 'suggested' ? 'Javasolt'
-          : matchStatus === 'auto_settled' ? 'Rendezett'
-            : matchStatus === 'no_invoice' ? 'Nincs hozzá számla'
-              : matchStatus === 'invoice_missing' ? 'Számla nincs feltöltve'
-                : 'Párosítatlan';
-      return [
-        transaction.transaction_date || '',
-        transaction.description || '',
-        transaction.amount?.toString() || '0',
-        transaction.currency || 'HUF',
-        transaction.type || '',
-        statusText,
-        transaction.confidence_score ? Math.round(transaction.confidence_score * 100).toString() + '%' : '',
-        transaction.reason || ''
-      ];
-    });
-    await exportToFile(headers, exportData, exportFormat, 'tranzakciok');
+    try {
+      const invoiceIds = filteredTransactions.map(t => t.matched_invoice_id);
+      const invoiceMap = await fetchMatchedInvoiceNumbers(invoiceIds);
+
+      const headers = ['Dátum', 'Leírás', 'Összeg', 'Pénznem', 'Díj / Jutalék', 'Kapcsolódó számla', 'Típus', 'Státusz', 'Pontszám', 'Indoklás'];
+      const exportData = filteredTransactions.map(transaction => {
+        const matchStatus = computeMatchStatus(transaction);
+        const statusText = matchStatus === 'matched' ? 'Párosított'
+          : matchStatus === 'suggested' ? 'Javasolt'
+            : matchStatus === 'auto_settled' ? 'Rendezett'
+              : matchStatus === 'no_invoice' ? 'Nincs hozzá számla'
+                : matchStatus === 'invoice_missing' ? 'Számla nincs feltöltve'
+                  : 'Párosítatlan';
+        return [
+          transaction.transaction_date || '',
+          transaction.description || '',
+          transaction.amount?.toString() || '0',
+          transaction.currency || 'HUF',
+          transaction.fee_amount != null ? transaction.fee_amount.toString() : '',
+          (transaction.matched_invoice_id ? invoiceMap.get(transaction.matched_invoice_id) : '') || '',
+          transaction.type || '',
+          statusText,
+          transaction.confidence_score ? Math.round(transaction.confidence_score * 100).toString() + '%' : '',
+          transaction.reason || ''
+        ];
+      });
+      await exportToFile(headers, exportData, exportFormat, 'tranzakciok');
+    } catch (error: any) {
+      reportError({ type: 'db_query', component: 'useTransactionData', action: 'export_error', message: 'Export error:', error });
+      toast({ title: 'Hiba', description: error.message || 'Export sikertelen', variant: 'destructive' });
+    }
   }, [filteredTransactions]);
 
   const handlePageSizeChange = useCallback((size: number) => {
@@ -360,7 +403,10 @@ export function useTransactionData(overrideDateFrom?: Date, overrideDateTo?: Dat
         .in('id', ids);
       if (error) throw error;
       const txList = (data || []) as Transaction[];
-      const headers = ['Dátum', 'Leírás', 'Összeg', 'Pénznem', 'Típus', 'Státusz', 'Pontszám', 'Indoklás'];
+      const invoiceIds = txList.map(t => t.matched_invoice_id);
+      const invoiceMap = await fetchMatchedInvoiceNumbers(invoiceIds);
+
+      const headers = ['Dátum', 'Leírás', 'Összeg', 'Pénznem', 'Díj / Jutalék', 'Kapcsolódó számla', 'Típus', 'Státusz', 'Pontszám', 'Indoklás'];
       const exportData = txList.map(transaction => {
         const matchStatus = computeMatchStatus(transaction);
         const statusText = matchStatus === 'matched' ? 'Párosított'
@@ -374,6 +420,8 @@ export function useTransactionData(overrideDateFrom?: Date, overrideDateTo?: Dat
           transaction.description || '',
           transaction.amount?.toString() || '0',
           transaction.currency || 'HUF',
+          transaction.fee_amount != null ? transaction.fee_amount.toString() : '',
+          (transaction.matched_invoice_id ? invoiceMap.get(transaction.matched_invoice_id) : '') || '',
           transaction.type || '',
           statusText,
           transaction.confidence_score ? Math.round(transaction.confidence_score * 100).toString() + '%' : '',

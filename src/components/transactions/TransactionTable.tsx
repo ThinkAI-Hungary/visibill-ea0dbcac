@@ -961,6 +961,11 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
       )}>
         <div className="flex flex-col items-end">
           <span className="font-medium">{formatCurrency(transaction.amount, transaction.currency || undefined)}</span>
+          {transaction.fee_amount != null && (
+            <span className="text-[10px] text-muted-foreground font-normal leading-tight" title="Jutalék / tranzakciós díj">
+              díj: -{formatCurrency(transaction.fee_amount, transaction.currency || undefined)}
+            </span>
+          )}
           {transaction.currency && transaction.currency !== 'HUF' && exchangeRates && (
             <span className="text-[10px] text-muted-foreground font-normal leading-tight">
               ({formatCurrency(transaction.amount * (exchangeRates[transaction.currency] || 1))})

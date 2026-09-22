@@ -184,6 +184,8 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-135 | Kettős Áfa Kódrendszer (NAV 2665 vs Konvencionális Könyvelői Kódok) és F.AFA Fordított Adózási Felismerés | ✅ Decided | [A-135](./A-135-dual-vat-code-system-and-reverse-charge-recognition.md) |
 | A-136 | Számlatételek Áfakód Szerkeszthetősége és Gépi Tanulási (Machine Learning) Memória | ✅ Decided | [A-136](./A-136-invoice-vat-code-overrides-and-machine-learning.md) |
 | A-137 | Rugalmas Főkönyvi Kivonat és Nyitó Import Normalizáció (Microfox Fejlécek és XML SpreadsheetML) | ✅ Decided | [A-137](./A-137-general-ledger-and-opening-import-normalization.md) |
+| A-138 | Számlák Teljesítési Dátum és Dátum Alapú Szerveroldali RPC Szűrése | ✅ Decided | [A-138](./A-138-invoices-delivery-date-and-date-basis-rpc-filters.md) |
+| A-139 | Tranzakciós jutalék (fee_amount) és kötegelt számlaszám-feloldás | ✅ Decided | [A-139](./A-139-transaction-fee-amount-and-batch-invoice-resolution.md) |
 
 ## 💳 Fizetés
 
