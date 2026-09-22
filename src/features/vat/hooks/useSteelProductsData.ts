@@ -103,7 +103,7 @@ export function useSteelProductsData(
 
       const { data: subInvs } = await supabase
         .from('invoices')
-        .select('id, bizonylatsorszam, partner_nev, partner_adoszam, teljesites_datuma, kibocsatas_datuma, invoice_direction')
+        .select('id, bizonylatsorszam, elado_nev, elado_vat_id, vevo_nev, vevo_vat_id, teljesites_datuma, kibocsatas_datuma, invoice_direction')
         .eq('company_id', selectedCompany.id)
         .gte('teljesites_datuma', dateFrom)
         .lte('teljesites_datuma', dateTo);
@@ -171,8 +171,8 @@ export function useSteelProductsData(
               invoiceId: it.invoice_id,
               direction: isOut ? 'OUTBOUND' : 'INBOUND',
               invoiceNumber: inv?.bizonylatsorszam || '—',
-              partnerName: inv?.partner_nev || 'Ismeretlen partner',
-              partnerTaxNumber: inv?.partner_adoszam || '',
+              partnerName: (isOut ? inv?.vevo_nev : inv?.elado_nev) || 'Ismeretlen partner',
+              partnerTaxNumber: (isOut ? inv?.vevo_vat_id : inv?.elado_vat_id) || '',
               deliveryDate: inv?.teljesites_datuma || inv?.kibocsatas_datuma || '',
               lineNumber: it.line_number || 1,
               lineDescription: it.line_description || '—',

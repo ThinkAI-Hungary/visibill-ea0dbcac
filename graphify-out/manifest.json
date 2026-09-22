@@ -170,8 +170,8 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceItemsDialog.tsx": {
-    "mtime": 1790031217.1061716,
-    "ast_hash": "8a782585c28bbfd14a4280a78a30c584",
+    "mtime": 1790075056.635495,
+    "ast_hash": "16493bf0a72ecf192d255de2ff0cd4cf",
     "semantic_hash": ""
   },
   "src/components/LiveNotificationProvider.tsx": {
@@ -11420,8 +11420,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/hooks/useSteelProductsData.ts": {
-    "mtime": 1789910901.8862684,
-    "ast_hash": "4f0f3c8e9dadd792d4e20af766d9ee4c",
+    "mtime": 1790075076.1671813,
+    "ast_hash": "464936b295b01ab138012bfe871ffc34",
     "semantic_hash": ""
   },
   "src/lib/nav/__tests__/navTaxpayer.test.ts": {

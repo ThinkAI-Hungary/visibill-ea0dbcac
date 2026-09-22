@@ -184,7 +184,7 @@ export function InvoiceItemsDialog({
     queryFn: async () => {
       const table = source === 'submitted' ? 'invoices' : 'nav_invoices';
       const selectFields = source === 'submitted'
-        ? 'project_id, invoice_direction, kibocsatas_datuma, penznem, bizonylatsorszam, partner_adoszam, partner_nev'
+        ? 'project_id, invoice_direction, kibocsatas_datuma, penznem, bizonylatsorszam, elado_vat_id, elado_nev, vevo_vat_id, vevo_nev, forditott_adozas'
         : 'project_id, invoice_direction, invoice_issue_date, currency, vat_summary, is_reverse_charge, supplier_tax_number, supplier_name, customer_tax_number, customer_name';
 
       const { data, error } = await supabase
@@ -197,22 +197,43 @@ export function InvoiceItemsDialog({
       let vatSummary = (data as any)?.vat_summary || null;
       let isRc = (data as any)?.is_reverse_charge || false;
 
-      if (source === 'submitted' && (data as any)?.bizonylatsorszam) {
-        const num = ((data as any).bizonylatsorszam as string).replace(/\s+/g, '');
-        const { data: twinNav } = await (supabase
-          .from('nav_invoices') as any)
-          .select('vat_summary, is_reverse_charge')
-          .ilike('invoice_number', `%${num}%`)
-          .limit(1)
-          .maybeSingle();
-        if (twinNav) {
-          vatSummary = (twinNav as any).vat_summary;
-          isRc = (twinNav as any).is_reverse_charge;
+      if (source === 'submitted') {
+        if ((data as any)?.forditott_adozas != null) {
+          isRc = Boolean((data as any).forditott_adozas);
+        }
+        if ((data as any)?.bizonylatsorszam) {
+          const num = ((data as any).bizonylatsorszam as string).replace(/\s+/g, '');
+          const { data: twinNav } = await (supabase
+            .from('nav_invoices') as any)
+            .select('vat_summary, is_reverse_charge')
+            .ilike('invoice_number', `%${num}%`)
+            .limit(1)
+            .maybeSingle();
+          if (twinNav) {
+            vatSummary = (twinNav as any).vat_summary;
+            if ((twinNav as any).is_reverse_charge != null) {
+              isRc = (twinNav as any).is_reverse_charge;
+            }
+          }
         }
       }
 
+      const isOutbound = ((data as any)?.invoice_direction || '').toUpperCase() === 'OUTBOUND';
+      const partnerAdoszam = source === 'submitted'
+        ? (isOutbound ? (data as any)?.vevo_vat_id : (data as any)?.elado_vat_id)
+        : (isOutbound ? (data as any)?.customer_tax_number : (data as any)?.supplier_tax_number);
+      const partnerNev = source === 'submitted'
+        ? (isOutbound ? (data as any)?.vevo_nev : (data as any)?.elado_nev)
+        : (isOutbound ? (data as any)?.customer_name : (data as any)?.supplier_name);
+
       return {
         ...(data as any),
+        partner_adoszam: partnerAdoszam || null,
+        partner_nev: partnerNev || null,
+        supplier_tax_number: (data as any)?.supplier_tax_number || (data as any)?.elado_vat_id || null,
+        supplier_name: (data as any)?.supplier_name || (data as any)?.elado_nev || null,
+        customer_tax_number: (data as any)?.customer_tax_number || (data as any)?.vevo_vat_id || null,
+        customer_name: (data as any)?.customer_name || (data as any)?.vevo_nev || null,
         vat_summary: vatSummary,
         is_reverse_charge: isRc,
       } as {
@@ -224,6 +245,12 @@ export function InvoiceItemsDialog({
         penznem?: string;
         vat_summary?: any;
         is_reverse_charge?: boolean;
+        partner_adoszam?: string | null;
+        partner_nev?: string | null;
+        supplier_tax_number?: string | null;
+        supplier_name?: string | null;
+        customer_tax_number?: string | null;
+        customer_name?: string | null;
       } | null;
     },
     enabled: open && !!invoiceId,
