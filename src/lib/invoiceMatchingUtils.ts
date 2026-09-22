@@ -96,6 +96,9 @@ const GENERIC_WORDS = new Set([
   'invest', 'solutions', 'kreativ', 'studio', 'partner', 'partners',
   'depo', 'team', 'express', 'logistik', 'logisztika', 'trans', 'spedition',
   'iroda', 'ugyved', 'dr', 'doktor',
+  // Számviteli, könyvelési és szakmai generikus megnevezések:
+  'konyvvizsgalo', 'konyvvizsgalat', 'konyvelo', 'konyveles', 'audit',
+  'tanacsado', 'tanacsadas', 'penzugyi', 'szakerto', 'szakertoi',
 ]);
 
 /**
@@ -473,6 +476,7 @@ export function checkBuyerTaxMismatch(
     invoice_direction?: string | null;
     vevo_vat_id?: string | null;
     vevo_nev?: string | null;
+    nav_status?: string | null;
   } | null | undefined,
   company: {
     tax_number?: string | null;
@@ -489,12 +493,32 @@ export function checkBuyerTaxMismatch(
     return { isMismatch: false };
   }
 
+  // Ha a számla NAV által igazolt / összekapcsolt, a NAV jogosultság garantálja a céghez tartozást
+  if (invoice.nav_status === 'verified') {
+    return { isMismatch: false };
+  }
+
   const invoiceBuyerTax = extractBaseTax(invoice.vevo_vat_id);
   const companyBaseTax = extractBaseTax(company.tax_number);
 
   // 1. Elsődleges vizsgálat: 8 jegyű törzsszámok összehasonlítása
   if (invoiceBuyerTax && companyBaseTax && invoiceBuyerTax.length >= 7 && companyBaseTax.length >= 7) {
     if (invoiceBuyerTax !== companyBaseTax) {
+      // Ha a cégnév egyértelműen egyezik (pl. B-Audit Kft. vs B-Audit Könyvvizsgáló Kft.)
+      // ÉS az adószám eltérése csupán egy kisebb OCR számcsere/elütés (pl. transzpozíció vagy 1-2 számjegy eltérés)
+      const nameMatches = Boolean(invoice.vevo_nev && company.name && isPartnerNameMatch(invoice.vevo_nev, company.name));
+      if (nameMatches) {
+        let diffCount = 0;
+        const maxLen = Math.max(invoiceBuyerTax.length, companyBaseTax.length);
+        for (let i = 0; i < maxLen; i++) {
+          if (invoiceBuyerTax[i] !== companyBaseTax[i]) diffCount++;
+        }
+        const isAnagramOfDigits = invoiceBuyerTax.split('').sort().join('') === companyBaseTax.split('').sort().join('');
+        if (isAnagramOfDigits || diffCount <= 2) {
+          return { isMismatch: false };
+        }
+      }
+
       return {
         isMismatch: true,
         buyerName: invoice.vevo_nev?.trim() || undefined,

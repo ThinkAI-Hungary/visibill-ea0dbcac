@@ -112,6 +112,48 @@ describe('Buyer Tax Mismatch Detection (checkBuyerTaxMismatch)', () => {
     const result = checkBuyerTaxMismatch(invoice, company);
     expect(result.isMismatch).toBe(false);
   });
+
+  it('does NOT detect mismatch when buyer name has professional generic terms (e.g. B-Audit Kft vs B-Audit Könyvvizsgáló Kft.)', () => {
+    const bAuditCompany = {
+      name: 'B-Audit Könyvvizsgáló Kft.',
+      tax_number: '11797427-2-08',
+    };
+    const invoice = {
+      invoice_direction: 'INBOUND',
+      vevo_vat_id: null,
+      vevo_nev: 'B-Audit Kft.',
+    };
+
+    const result = checkBuyerTaxMismatch(invoice, bAuditCompany);
+    expect(result.isMismatch).toBe(false);
+  });
+
+  it('does NOT detect mismatch when buyer has OCR transposition typo in tax number but name matches', () => {
+    const bAuditCompany = {
+      name: 'B-Audit Könyvvizsgáló Kft.',
+      tax_number: '11797427-2-08',
+    };
+    const invoice = {
+      invoice_direction: 'INBOUND',
+      vevo_vat_id: 'HU11794727', // OCR typo: 47 instead of 74
+      vevo_nev: 'B-Audit Kft.',
+    };
+
+    const result = checkBuyerTaxMismatch(invoice, bAuditCompany);
+    expect(result.isMismatch).toBe(false);
+  });
+
+  it('does NOT detect mismatch when invoice is already verified by NAV', () => {
+    const invoice = {
+      invoice_direction: 'INBOUND',
+      vevo_vat_id: 'HU99999999',
+      vevo_nev: 'Custom Partner',
+      nav_status: 'verified',
+    };
+
+    const result = checkBuyerTaxMismatch(invoice, company);
+    expect(result.isMismatch).toBe(false);
+  });
 });
 
 describe('InvoiceApprovalDialog Safety Guard on Buyer Mismatch', () => {
