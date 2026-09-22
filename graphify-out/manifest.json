@@ -155,8 +155,8 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceFullEditDialog.tsx": {
-    "mtime": 1789881969.3639393,
-    "ast_hash": "175c072c5ed96b03b6ba617f0cba41c8",
+    "mtime": 1790083841.3932304,
+    "ast_hash": "70ad97e7c22cd3741ae5c4ab3ae5eefa",
     "semantic_hash": ""
   },
   "src/components/InvoiceImageDialog.tsx": {
@@ -1525,8 +1525,8 @@
     "semantic_hash": ""
   },
   "src/pages/PartnersPage.tsx": {
-    "mtime": 1789602390.3133936,
-    "ast_hash": "1dce2556150371e9706560f934608614",
+    "mtime": 1790083841.3947966,
+    "ast_hash": "a5bd8993c57922e7d68fc2c9bfeb6771",
     "semantic_hash": ""
   },
   "src/pages/PettyCashPage.tsx": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790037214.1353104,
-    "ast_hash": "e8b6ff13f31a33684a043487a9eb133e",
+    "mtime": 1790091471.0764146,
+    "ast_hash": "cff691771f777b87b4548fdbf819c250",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -6105,8 +6105,8 @@
     "semantic_hash": ""
   },
   "src/pages/TransfersPage.tsx": {
-    "mtime": 1789881969.3916588,
-    "ast_hash": "29173c46b3b3529408c0bb5b8d2fa570",
+    "mtime": 1790083841.3953168,
+    "ast_hash": "f1d8a4694e58d863ae782baa86f6f19c",
     "semantic_hash": ""
   },
   "supabase/functions/accounty-ai-categorize/index.ts": {
@@ -9235,8 +9235,8 @@
     "semantic_hash": ""
   },
   "src/components/__tests__/InvoiceFullEditDialog.test.tsx": {
-    "mtime": 1788702948.7001352,
-    "ast_hash": "0ee2ee3ca6e325906aeeddb7c3699f31",
+    "mtime": 1790083841.393751,
+    "ast_hash": "da9058f84ebb24df702a5fc434b4ec9a",
     "semantic_hash": ""
   },
   "src/features/invoices/__tests__/BulkDeleteDialog.test.tsx": {
@@ -9315,8 +9315,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/edge-functions.md": {
-    "mtime": 1790037163.7741003,
-    "ast_hash": "8df0f8e8e398740fe5ea2d58e74fb517",
+    "mtime": 1790091442.28089,
+    "ast_hash": "435ac58210e8c178a16add4acbea6591",
     "semantic_hash": ""
   },
   "docs/architecture/rpc-catalog.md": {
@@ -10990,13 +10990,13 @@
     "semantic_hash": ""
   },
   "supabase/functions/aggreg8-api/index.ts": {
-    "mtime": 1789608595.3092687,
-    "ast_hash": "005787fcbef1c74d3ba4458249b01880",
+    "mtime": 1790090193.5266573,
+    "ast_hash": "d1d3c6c014592acd644b593be73ec96f",
     "semantic_hash": ""
   },
   "supabase/functions/aggreg8-callback/index.ts": {
-    "mtime": 1789611460.2702155,
-    "ast_hash": "5bb8c0bb0ca45c6bd364679202c39f18",
+    "mtime": 1790090231.7074995,
+    "ast_hash": "f5dce17db5b0de4eefc11d9941eced07",
     "semantic_hash": ""
   },
   "supabase/migrations/20260917030000_aggreg8_integration.sql": {
@@ -11010,8 +11010,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-119-aggreg8-psd2-open-banking-integration.md": {
-    "mtime": 1789611081.7391572,
-    "ast_hash": "1fc3fb9773bb4d0489f6c4370582ecd7",
+    "mtime": 1790091423.1426525,
+    "ast_hash": "89e9ec5a95fd7eee514fb08ebcff8fa9",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-087-aggreg8-bank-connections-and-sync-ui-ux.md": {
@@ -11370,8 +11370,8 @@
     "semantic_hash": ""
   },
   "supabase/migrations/20260920140000_nav_auto_sync_staggered_cron.sql": {
-    "mtime": 1789892640.130657,
-    "ast_hash": "bb308622903c06b36839c55db5fb530b",
+    "mtime": 1790083841.4536934,
+    "ast_hash": "41d3ea89683c4d43539b07d0d05dc7e3",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-129-partner-history-majority-categorization.md": {
@@ -11682,6 +11682,26 @@
   "supabase/migrations/20260922120000_api_idempotency_and_enhancements.sql": {
     "mtime": 1790033109.0680373,
     "ast_hash": "5e97b631279d61c4cc8d8e1fdd111a79",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260922142000_fix_recalculate_partner_skonto_invoices_column.sql": {
+    "mtime": 1790083841.395837,
+    "ast_hash": "cdabf5787029fd048f4a726635f8a0fc",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260922150000_fix_petty_cash_dedup_and_routing.sql": {
+    "mtime": 1790083841.3963568,
+    "ast_hash": "eef9b0f5380351ec334faad44e919f05",
+    "semantic_hash": ""
+  },
+  "docs/nav_api_jogosultsag_riport.html": {
+    "mtime": 1790075823.82013,
+    "ast_hash": "106106c9547509347e7ed163bc54bfdd",
+    "semantic_hash": ""
+  },
+  "docs/nav_api_jogosultsag_riport.pdf": {
+    "mtime": 1790075834.4529178,
+    "ast_hash": "805afb41ba83bb1bddd60bbd06ad1098",
     "semantic_hash": ""
   }
 }

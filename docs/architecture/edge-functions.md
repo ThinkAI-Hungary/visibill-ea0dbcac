@@ -213,8 +213,8 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 
 | Edge Function | JWT Auth | Meghívó Réteg | Szükséges Környezeti Változók | Leírás és Üzleti Szerepkör |
 |---|:---:|---|---|---|
-| [`aggreg8-api`](../../supabase/functions/aggreg8-api/index.ts) | ✅ Kötelező | Frontend (`useAggreg8.ts`, BankAccountsTab) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, A8_AIS_API_KEY, A8_ENVIRONMENT` | Aggreg8 PSD2 AISP API átjáró — Token cache (`aggreg8_settings`), felhasználó regisztráció, SyncUI user-flow indítás (`ADD_BANK`, `ON_DEMAND`, `EXTEND_CONSENT`, `DELETE_INFO_SHARING_CONSENT`), banklista lekérdezés (`GET /banks`). |
-| [`aggreg8-callback`](../../supabase/functions/aggreg8-callback/index.ts) | ❌ Nyilvános / Webhook | Aggreg8 Webhook szerverek | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, A8_AIS_API_KEY, A8_ENVIRONMENT` | Nyilvános webhook végpont az Aggreg8 felé — Hozzájárulások perzisztálása (`aggreg8_consents`, `aggreg8_accounts`), többoldalas tranzakció-letöltés (`syncAccountTransactions`), upsert a `bank_transactions` és `transactions` táblákba. |
+| [`aggreg8-api`](../../supabase/functions/aggreg8-api/index.ts) | ✅ Kötelező | Frontend (`useAggreg8.ts`, BankAccountsTab) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, A8_AIS_API_KEY, A8_ENVIRONMENT` | Aggreg8 PSD2 AISP API átjáró — Token cache (`aggreg8_settings` 175p lejárattal), Bearer sanitization duplikációvédelemmel, felhasználó regisztráció, SyncUI user-flow indítás (`ADD_BANK`, `ON_DEMAND`, `EXTEND_CONSENT`, `DELETE_INFO_SHARING_CONSENT`), banklista lekérdezés (`GET /banks`). |
+| [`aggreg8-callback`](../../supabase/functions/aggreg8-callback/index.ts) | ❌ Nyilvános / Webhook | Aggreg8 Webhook szerverek | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, A8_AIS_API_KEY, A8_ENVIRONMENT` | Nyilvános webhook végpont az Aggreg8 felé — Hozzájárulások perzisztálása (`aggreg8_consents`, `aggreg8_accounts`), Bearer sanitization, többoldalas tranzakció-letöltés (`syncAccountTransactions`), upsert a `bank_transactions` és `transactions` táblákba. |
 
 ---
 

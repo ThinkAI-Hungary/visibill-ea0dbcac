@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NAV Online Számla – API Jogosultsági Riport | eaisybill</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand-dark: #0d1117;
+      --brand-deep: #161b22;
+      --brand-teal: #0f3d3e;
+      --brand-accent: #2dd4bf;
+      --brand-accent-dark: #14b8a6;
+      --text-primary: #1a1a2e;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --bg-subtle: #f8fafc;
+      --bg-teal-subtle: #f0fdfa;
+      --border-color: #e2e8f0;
+      --danger-red: #ef4444;
+      --danger-bg: #fef2f2;
+      --warning-amber: #f59e0b;
+      --warning-bg: #fffbeb;
+      --success-green: #10b981;
+      --success-bg: #ecfdf5;
+      --info-blue: #3b82f6;
+      --info-bg: #eff6ff;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      background: #f1f5f9;
+      font-size: 14px;
+    }
+
+    body {
+      max-width: 1200px;
+      width: 90%;
+      min-width: 320px;
+      margin: 24px auto;
+      background: #ffffff;
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    /* Logo */
+    .logo-container {
+      display: inline-flex;
+      align-items: center;
+      font-size: 1.8rem;
+      letter-spacing: -0.03em;
+      font-weight: 700;
+      user-select: none;
+    }
+    .logo-container .e { color: #ffffff; font-weight: 500; }
+    .logo-container .ai { color: var(--brand-accent); font-weight: 800; }
+    .logo-container .sy { color: #ffffff; font-weight: 500; }
+    .logo-container .bill { color: var(--brand-accent); font-weight: 800; }
+
+    /* Cover Page */
+    .cover-page {
+      background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand-deep) 60%, #062b2c 100%);
+      color: #ffffff;
+      padding: 80px 60px 60px;
+      position: relative;
+      overflow: hidden;
+      min-height: 520px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .cover-page::after {
+      content: '';
+      position: absolute;
+      top: -120px;
+      right: -120px;
+      width: 450px;
+      height: 450px;
+      background: radial-gradient(circle, rgba(45, 212, 191, 0.15) 0%, rgba(15, 61, 62, 0) 70%);
+      pointer-events: none;
+    }
+
+    .cover-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+
+    .pill-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: rgba(45, 212, 191, 0.12);
+      border: 1px solid rgba(45, 212, 191, 0.35);
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--brand-accent);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .cover-title-block {
+      margin-top: 20px;
+    }
+
+    .cover-divider {
+      width: 70px;
+      height: 4px;
+      background: linear-gradient(90deg, var(--brand-accent), var(--brand-accent-dark));
+      border-radius: 2px;
+      margin-bottom: 24px;
+    }
+
+    .cover-title {
+      font-size: 2.6rem;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+      color: #ffffff;
+    }
+
+    .cover-subtitle {
+      font-size: 1.15rem;
+      font-weight: 300;
+      color: #94a3b8;
+      max-width: 780px;
+      line-height: 1.5;
+    }
+
+    .cover-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      padding-top: 24px;
+      margin-top: 40px;
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+
+    .cover-footer-right {
+      text-align: right;
+      color: #cbd5e1;
+      font-weight: 500;
+    }
+
+    /* Content Layout */
+    .content {
+      padding: 40px 50px;
+    }
+
+    h2 {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.45rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--brand-teal);
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    h2 .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: var(--brand-teal);
+      color: var(--brand-accent);
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 800;
+    }
+
+    /* Metric cards */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .metric-card {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 18px 20px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+    }
+
+    .metric-card.teal::before { background: var(--brand-accent); }
+    .metric-card.red::before { background: var(--danger-red); }
+    .metric-card.amber::before { background: var(--warning-amber); }
+    .metric-card.green::before { background: var(--success-green); }
+
+    .metric-value {
+      font-size: 2.1rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1.1;
+      margin-bottom: 6px;
+      letter-spacing: -0.03em;
+    }
+
+    .metric-card.red .metric-value { color: #b91c1c; }
+    .metric-card.green .metric-value { color: #047857; }
+    .metric-card.teal .metric-value { color: var(--brand-teal); }
+
+    .metric-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin-bottom: 32px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th {
+      background: var(--brand-teal);
+      color: #ffffff;
+      text-align: left;
+      padding: 12px 14px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    td {
+      padding: 12px 14px;
+      border-top: 1px solid var(--border-color);
+      font-size: 0.88rem;
+      vertical-align: middle;
+    }
+
+    tr:nth-child(even) td {
+      background: var(--bg-subtle);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 0.74rem;
+      font-weight: 700;
+    }
+
+    .status-badge.danger {
+      background: var(--danger-bg);
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+
+    .status-badge.success {
+      background: var(--success-bg);
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+
+    .status-badge.warning {
+      background: var(--warning-bg);
+      color: #92400e;
+      border: 1px solid #fde68a;
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', Consolas, monospace;
+      font-size: 0.82rem;
+      color: #334155;
+    }
+
+    .uuid-box {
+      font-family: 'JetBrains Mono', Consolas, monospace;
+      font-size: 0.76rem;
+      color: #64748b;
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid #e2e8f0;
+      display: inline-block;
+    }
+
+    /* Detailed Company Cards */
+    .company-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .company-card {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-top: 4px solid var(--danger-red);
+      border-radius: 8px;
+      padding: 22px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    }
+
+    .company-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .company-card-title {
+      font-size: 1.18rem;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+
+    .company-card-tax {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--brand-teal);
+      margin-top: 2px;
+    }
+
+    .card-row {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 12px;
+    }
+
+    .card-row-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-secondary);
+      margin-bottom: 3px;
+    }
+
+    .card-row-value {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .card-row-value a {
+      color: #0284c7;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    /* Info boxes */
+    .info-box {
+      border-radius: 6px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      border-left: 4px solid;
+    }
+
+    .info-box.red {
+      background: var(--danger-bg);
+      border-color: var(--danger-red);
+      color: #991b1b;
+    }
+
+    .info-box.amber {
+      background: var(--warning-bg);
+      border-color: var(--warning-amber);
+      color: #92400e;
+    }
+
+    .info-box.teal {
+      background: var(--bg-teal-subtle);
+      border-color: var(--brand-accent);
+      color: #134e4a;
+    }
+
+    .info-box.blue {
+      background: var(--info-bg);
+      border-color: var(--info-blue);
+      color: #1e40af;
+    }
+
+    .info-box-title {
+      font-weight: 800;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Step guide */
+    .steps-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 14px 18px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+    }
+
+    .step-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--brand-teal);
+      color: var(--brand-accent);
+      font-size: 0.85rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .step-text h4 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+
+    .step-text p {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    /* Email template box */
+    .email-template-box {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 20px;
+      margin-top: 14px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    }
+
+    .email-header-row {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .email-header-row span {
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .email-body {
+      font-size: 0.88rem;
+      color: var(--text-primary);
+      line-height: 1.6;
+      white-space: pre-line;
+      background: #f8fafc;
+      padding: 16px;
+      border-radius: 6px;
+      border: 1px dashed #cbd5e1;
+      font-family: inherit;
+    }
+
+    /* Footer */
+    .doc-footer {
+      background: var(--bg-subtle);
+      border-top: 1px solid var(--border-color);
+      padding: 20px 50px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* Page Break */
+    .page-break {
+      page-break-after: always;
+      break-after: page;
+      height: 0;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Print Optimization */
+    @page {
+      size: A4;
+      margin: 14mm 14mm;
+    }
+
+    @media print {
+      html { background: #ffffff; font-size: 11px; }
+      body {
+        max-width: none;
+        width: 100%;
+        margin: 0;
+        box-shadow: none;
+        border-radius: 0;
+        font-size: 9pt;
+        line-height: 1.45;
+      }
+      .cover-page {
+        min-height: 100vh;
+        padding: 50px 30px 30px;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .content {
+        padding: 16px 14px;
+      }
+      .company-card, .metric-card, .info-box, .step-item, table, .email-template-box {
+        page-break-inside: avoid;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .steps-container {
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      .step-item {
+        padding: 8px 12px;
+      }
+      .email-template-box {
+        padding: 14px;
+        margin-top: 10px;
+      }
+      .email-body {
+        padding: 12px;
+        font-size: 8pt;
+        line-height: 1.4;
+      }
+      h2 {
+        page-break-after: avoid;
+        margin-bottom: 14px;
+      }
+      .doc-footer {
+        padding: 12px 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. COVER PAGE -->
+  <div class="cover-page">
+    <div class="cover-header">
+      <div class="logo-container">
+        <span class="e">e</span><span class="ai">ai</span><span class="sy">sy</span><span class="bill">bill</span>
+      </div>
+      <div class="pill-badge">Rendszerüzemeltetés • Bizalmas</div>
+    </div>
+
+    <div class="cover-title-block">
+      <div class="cover-divider"></div>
+      <h1 class="cover-title">NAV Online Számla<br>API Jogosultsági Riport</h1>
+      <p class="cover-subtitle">
+        Azonosított technikai felhasználói jogosultsági korlátozások, érintett cégek és felhasználók listája, valamint közvetlen elhárítási akcióterv.
+      </p>
+    </div>
+
+    <div class="cover-footer">
+      <div>
+        <strong>ThinkAI Hungary Kft.</strong> • eaisybill Platform Rendszerfelügyelet
+      </div>
+      <div class="cover-footer-right">
+        Dátum: 2026. szeptember 22.<br>
+        Státusz: 🔴 2 aktív hiba azonosítva
+      </div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- 2. EXECUTIVE SUMMARY & METRICS -->
+  <div class="content">
+    <h2><span class="num">1</span> Vezetői Összefoglaló & Érintett Cégek Mátrixa</h2>
+
+    <div class="metrics">
+      <div class="metric-card red">
+        <div class="metric-value">2</div>
+        <div class="metric-label">Érintett Aktív Cég</div>
+      </div>
+      <div class="metric-card amber">
+        <div class="metric-value">169x</div>
+        <div class="metric-label">Blokkolt Lekérdezés</div>
+      </div>
+      <div class="metric-card green">
+        <div class="metric-value">100%</div>
+        <div class="metric-label">Kimenő Számla OK</div>
+      </div>
+      <div class="metric-card teal">
+        <div class="metric-value">1 perc</div>
+        <div class="metric-label">Elhárítási Idő / Cég</div>
+      </div>
+    </div>
+
+    <div class="info-box red">
+      <div class="info-box-title">⚠️ Kritikus Üzemeltetési Figyelmeztetés</div>
+      Az alábbi két cégnél a NAV Online Számla éjszakai és manuális szinkronizációja során a **bejövő (szállítói) számlák letöltése elakad**. A NAV API a kérést <span class="mono">FORBIDDEN: Jogosultság szükséges!</span> hibaüzenettel elutasítja. A kimenő (vevői) számlák szinkronizációja mindkét cégnél hibátlanul működik.
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Cégnév</th>
+          <th>Adószám</th>
+          <th>Felhasználó Neve</th>
+          <th>E-mail Cím</th>
+          <th>Hiba Jellege</th>
+          <th>Gyakoriság</th>
+          <th>Utolsó Esemény</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>DR. BELINSZKAJA GALINA</strong></td>
+          <td class="mono">76783401-1-42</td>
+          <td>Csejtei Gergő</td>
+          <td><a href="mailto:gcsejtei@sanctuskft.hu" style="color:#0284c7; font-weight:600; text-decoration:none;">gcsejtei@sanctuskft.hu</a></td>
+          <td><span class="status-badge danger">INBOUND tiltva</span></td>
+          <td><strong>34x</strong></td>
+          <td class="mono">2026-09-22 02:00:52</td>
+        </tr>
+        <tr>
+          <td><strong>PADI Kft.</strong></td>
+          <td class="mono">14097324-2-03</td>
+          <td>Kovács Péter</td>
+          <td><a href="mailto:kovacs.peter@testkft.hu" style="color:#0284c7; font-weight:600; text-decoration:none;">kovacs.peter@testkft.hu</a></td>
+          <td><span class="status-badge danger">INBOUND tiltva</span></td>
+          <td><strong>135x</strong></td>
+          <td class="mono">2026-09-22 01:00:21</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="info-box teal">
+      <div class="info-box-title">ℹ️ Történeti audit állapot</div>
+      A naplók alapján korábban a <strong>Mauroni Events KFT.</strong> cégnél is fennállt ugyanez a jogosultsági hiba, azonban ott a felhasználó (Mauroni Marco) sikeresen javította a technikai felhasználó beállítását, így a 2026. szeptember 22-i éjszakai szinkron már hiba nélkül (<span class="status-badge success">COMPLETED</span>) lefutott.
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- 3. DETAILED PROFILES -->
+  <div class="content">
+    <h2><span class="num">2</span> Részletes Cég- és Felhasználói Adatlapok</h2>
+
+    <div class="company-grid">
+      <!-- Card 1 -->
+      <div class="company-card">
+        <div class="company-card-header">
+          <div>
+            <div class="company-card-title">DR. BELINSZKAJA GALINA</div>
+            <div class="company-card-tax">Adószám: 76783401-1-42</div>
+          </div>
+          <span class="status-badge danger">Azonnali teendő</span>
+        </div>
+
+        <div class="card-row">
+          <div class="card-row-label">Cég Belső Azonosító (Company UUID)</div>
+          <div class="card-row-value"><span class="uuid-box">0f25214d-f802-4ce7-9bb1-8238ea574e05</span></div>
+        </div>
+
+        <div class="card-row">
+          <div class="card-row-label">Kapcsolattartó Felhasználó</div>
+          <div class="card-row-value"><strong>Csejtei Gergő</strong></div>
+        </div>
+
+        <div class="card-row">
+          <div class="card-row-label">Felhasználó E-mail Címe</div>
+          <div class="card-row-value"><a href="mailto:gcsejtei@sanctuskft.hu">gcsejtei@sanctuskft.hu</a></div>
+        </div>
+
+        <div class="card-row">
+          <div class="card-row-label">Felhasználó UUID</div>
+          <div class="card-row-value"><span class="uuid-box">8fd12bbc-11a2-4899-a86a-43edb784ffef</span></div>
+        </div>
+
+        <div class="card-row">
+          <div class="card-row-label">Hibaüzenet (NAV API válasz)</div>
+          <div class="card-row-value" style="color: #b91c1c; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;">
+            NAV Query hiba: FORBIDDEN: Jogosultság szükséges!
+          </div>
+        </div>
+
+        <div class="card-row">
+          <div class="card-row-label">Szinkronizációs Előzmények</div>
+          <div class="card-row-value" style="font-size: 0.84rem;">
+            • Kimenő számlák: <span style="color:#059669; font-weight:700;">OK (34 sikeres futás)</span><br>
+            • Bejövő számlák: <span style="color:#dc2626; font-weight:700;">Hiba (34 sikertelen futás)</span><br>
+            • Tegnap 33 manuális szinkronizálási kísérlet a felületről
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="company-card">
+        <div class="company-card-header">
+          <div>
+            <div class="company-card-title">PADI Kft.</div>
+            <div class="company-card-tax">Adószám: 14097324-2-03</div>
+          </div>
+          <span class="status-badge danger">Azonnali teendő</span>
+        </div>
+
+        <div class="card-row">
+          <div class="card-row-label">Cég Belső Azonosító (Company UUID)</div>
+          <div class="card-row-value"><span class="uuid-box">af09f0f8-20fb-41dd-8165-2f47d97eda1c</span></div>
+        </div>
+
+        <div class="card-row">
+          <div class="card-row-label">Kapcsolattartó Felhasználó</div>
+          <div class="card-row-value"><strong>Kovács Péter</strong></div>
+        </div>
+
+        <div class="card-row">
+          <div class="card-row-label">Felhasználó E-mail Címe</div>
+          <div class="card-row-value"><a href="mailto:kovacs.peter@testkft.hu">kovacs.peter@testkft.hu</a></div>
+        </div>
+
+        <div class="card-row">
+          <div class="card-row-label">Felhasználó UUID</div>
+          <div class="card-row-value"><span class="uuid-box">5abff3e7-0b0e-47eb-9198-4db551668caf</span></div>
+        </div>
+
+        <div class="card-row">
+          <div class="card-row-label">Hibaüzenet (NAV API válasz)</div>
+          <div class="card-row-value" style="color: #b91c1c; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;">
+            NAV Query hiba: FORBIDDEN: Jogosultság szükséges!
+          </div>
+        </div>
+
+        <div class="card-row">
+          <div class="card-row-label">Szinkronizációs Előzmények</div>
+          <div class="card-row-value" style="font-size: 0.84rem;">
+            • Kimenő számlák: <span style="color:#059669; font-weight:700;">OK (135 sikeres futás)</span><br>
+            • Bejövő számlák: <span style="color:#dc2626; font-weight:700;">Hiba (135 sikertelen futás)</span><br>
+            • Folyamatosan fennálló probléma a technikai regisztráció óta
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2><span class="num">3</span> Technikai Háttér & Gyökérok-elemzés</h2>
+
+    <div class="info-box amber">
+      <div class="info-box-title">🔍 Miért működik a kimenő és miért bukik el a bejövő ág?</div>
+      A NAV Online Számla 3.0 API specifikációja szerint a technikai felhasználóhoz két önálló jogosultsági csoport tartozik:
+      <br><br>
+      1. <strong>Számlák kezelése (Manage Invoices):</strong> Lehetővé teszi a cég által kibocsátott saját számlák beküldését és lekérdezését (kimenő irány). Ez mindkét cégnél be van jelölve.<br>
+      2. <strong>Számlák lekérdezése (Query Invoices):</strong> Kizárólag ez teszi lehetővé a partnerek által a cég adószámára kiállított szállítói számlák adatainak letöltését (bejövő irány). <strong>Ez a jogosultság jelenleg hiányzik mindkét technikai felhasználónál.</strong>
+    </div>
+  </div>
+
+  <!-- 3. FOOTER -->
+  <div class="doc-footer">
+    <div>eaisybill Platform Management • ThinkAI Hungary Kft.</div>
+    <div>Dokumentum generálva: 2026.09.22. • Konfidenciális audit riport</div>
+  </div>
+
+</body>
+</html>

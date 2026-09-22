@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-09-17  
-**Utoljára frissítve:** 2026-09-17  
+**Utoljára frissítve:** 2026-09-22  
 
 ## Context
 
@@ -19,7 +19,16 @@ Az **Aggreg8 (AISP API v5.3.1)** felhőalapú banki aggregátorát integráltuk 
 - A Visibill **soha nem látja és nem tárolja a felhasználó netbankos belépési adatait vagy jelszavait**.
 - A felugró ablakban egyedi partner-branding jelenik meg a Visibill / Eaisybill logóval (185x55 px).
 
-### 2. Kettős Edge Function Architektúra
+### 2. Kettős Edge Function Architektúra és Token Sanitization
+- **Környezetkezelés (Sandbox vs Prod):**
+  - Vezérlés Supabase Secrets környezeti változókkal: `A8_ENVIRONMENT` (`sandbox` vagy `prod`), valamint `A8_AIS_API_KEY`.
+  - Sandbox: `https://a8-ais-api.sandbox.aggreg8test.hu` és `https://a8-sync-ui.sandbox.aggreg8test.hu`.
+  - Prod: `https://ais-api.aggreg8.hu` és `https://sync-ui.aggreg8.hu`.
+  - A rendszer dinamikusan vált a két környezet között a secrets átírásakor újrakódolás nélkül.
+- **Bearer Token Sanitization Védvonal:**
+  - Az Aggreg8 `GET /token` végpontja a tokent már eleve `Bearer ` előtaggal adja vissza (`{"token": "Bearer eyJ..."}`).
+  - Ha a kimenő kérés fejléce `Authorization: Bearer ${customerToken}` lenne sanitization nélkül, az Aggreg8 szerverei duplikált `Bearer Bearer ...` miatt **HTTP 401 Unauthorized** hibával elutasítanák a hívásokat.
+  - Ezért mind az `aggreg8-api`, mind az `aggreg8-callback` függvényekben a `getCustomerToken` szigorúan levágja az esetleges `Bearer ` prefixet mind a perzisztáláskor (`aggreg8_settings`), mind a kiolvasáskor, garantálva az idempotens és tiszta hitelesítést.
 - **`aggreg8-api` (`verify_jwt: true`):**
   - Védve van a Visibill kettős védelmi reteszével (`checkAutomationShield` és Supabase JWT autentikáció).
   - Szerepkörei:
@@ -29,8 +38,8 @@ Az **Aggreg8 (AISP API v5.3.1)** felhőalapú banki aggregátorát integráltuk 
     - Támogatott bankok listázása (`GET /banks`).
   - Hiba esetén nem generikus 500-at dob, hanem strukturált HTTP 503 / 400 választ ad `A8_API_KEY_MISSING` vagy `OPERATION_FAILED` hibakóddal.
 - **`aggreg8-callback` (`verify_jwt: false`):**
-  - Nyilvános webhook végpont az Aggreg8 szerverek felé.
-  - Események: `INFO_SHARING_CONSENT_CREATED`, `INFO_SHARING_CONSENT_EXTENDED`, `INFO_SHARING_CONSENT_DELETED`, `ACCOUNT_SYNCED`, `DATA_TRANSFER_SCHEDULED`.
+  - Nyilvános webhook végpont az Aggreg8 szerverek felé (`/functions/v1/aggreg8-callback`).
+  - Események: `INFO_SHARING_CONSENT_CREATED`, `INFO_SHARING_CONSENT_EXTENDED`, `INFO_SHARING_CONSENT_DELETED`, `ACCOUNT_SYNCED`, `DATA_TRANSFER_SCHEDULED`, `TRANSACTIONS_CREATED`, `TRANSACTIONS_UPDATED`.
   - Hozzájárulások perzisztálása az `aggreg8_consents` és `aggreg8_accounts` táblákba.
   - Automatikus tranzakcióletöltés: lapozás kezelése `while (page < totalPages && page < 50)` ciklussal kezdeti szinkronizációkor (>200 tétel esetén).
   - Upsert a `bank_transactions` és `transactions` táblákba külső duplikáció elleni védelemmel (`external_id` és `unique_transaction_entry`).
