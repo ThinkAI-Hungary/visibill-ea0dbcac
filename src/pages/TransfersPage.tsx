@@ -600,9 +600,9 @@ export default function TransfersPage() {
 
         const pRule = (inv.elado_vat_id ? partnerSkontoMap[inv.elado_vat_id] : null) ||
           (inv.elado_nev ? partnerSkontoMap[inv.elado_nev.toLowerCase().trim()] : null);
-        const hasSkonto = inv.has_skonto ?? pRule?.has_skonto ?? false;
-        const skontoDays = inv.skonto_days ?? pRule?.skonto_days ?? 8;
-        const skontoPercent = inv.skonto_percent ?? pRule?.skonto_percent ?? 2;
+        const hasSkonto = Boolean(inv.has_skonto || pRule?.has_skonto);
+        const skontoDays = (inv.has_skonto && inv.skonto_days) ? inv.skonto_days : (pRule?.skonto_days ?? 8);
+        const skontoPercent = (inv.has_skonto && inv.skonto_percent != null) ? inv.skonto_percent : (pRule?.skonto_percent ?? 2);
         const skontoShipping = inv.skonto_shipping_amount ?? 0;
         const issueDate = inv.kibocsatas_datuma || inv.teljesites_datuma || inv.fizetesi_hatarido || today;
 
@@ -653,9 +653,9 @@ export default function TransfersPage() {
 
         const pRule = (taxNumber ? partnerSkontoMap[taxNumber] : null) ||
           (inv.supplier_name ? partnerSkontoMap[inv.supplier_name.toLowerCase().trim()] : null);
-        const hasSkonto = inv.has_skonto ?? pRule?.has_skonto ?? false;
-        const skontoDays = inv.skonto_days ?? pRule?.skonto_days ?? 8;
-        const skontoPercent = inv.skonto_percent ?? pRule?.skonto_percent ?? 2;
+        const hasSkonto = Boolean(inv.has_skonto || pRule?.has_skonto);
+        const skontoDays = (inv.has_skonto && inv.skonto_days) ? inv.skonto_days : (pRule?.skonto_days ?? 8);
+        const skontoPercent = (inv.has_skonto && inv.skonto_percent != null) ? inv.skonto_percent : (pRule?.skonto_percent ?? 2);
         const skontoShipping = inv.skonto_shipping_amount ?? 0;
         const issueDate = inv.invoice_issue_date || inv.invoice_delivery_date || inv.payment_date || today;
 

@@ -270,9 +270,11 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
         finalGross = Math.round(itemTotals.gross * 100) / 100;
       }
 
-      // 1. Save invoice metadata + amounts (bizonylatsorszam + category + project + header totals)
+      // 1. Save invoice metadata + amounts (bizonylatsorszam + elado_nev + vevo_nev + category + project + header totals)
       const invoiceUpdatePayload: Record<string, any> = {
         bizonylatsorszam: formData.bizonylatsorszam.trim() || null,
+        elado_nev: formData.elado_nev.trim() || null,
+        vevo_nev: formData.vevo_nev.trim() || null,
         category_id: formData.category_id === 'none' ? null : formData.category_id,
         project_id: formData.project_id === 'none' ? null : formData.project_id,
         frissitve: new Date().toISOString(),
@@ -639,18 +641,30 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-muted-foreground">{t('invoices:dialogs.full_edit.seller_name', 'Eladó neve')}</Label>
-                  <div className="text-sm py-2 px-3 rounded-md bg-muted/30 border border-border/30 truncate">
-                    {formData.elado_nev || '-'}
-                  </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-elado-nev" className="text-foreground font-medium">
+                    {t('invoices:dialogs.full_edit.seller_name', 'Eladó neve')}
+                  </Label>
+                  <Input
+                    id="edit-elado-nev"
+                    value={formData.elado_nev}
+                    onChange={(e) => setFormData(prev => ({ ...prev, elado_nev: e.target.value }))}
+                    placeholder={t('invoices:dialogs.full_edit.seller_name', 'Eladó neve')}
+                    className="text-sm"
+                  />
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-muted-foreground">{t('invoices:dialogs.full_edit.buyer_name', 'Vevő neve')}</Label>
-                  <div className="text-sm py-2 px-3 rounded-md bg-muted/30 border border-border/30 truncate">
-                    {formData.vevo_nev || '-'}
-                  </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-vevo-nev" className="text-foreground font-medium">
+                    {t('invoices:dialogs.full_edit.buyer_name', 'Vevő neve')}
+                  </Label>
+                  <Input
+                    id="edit-vevo-nev"
+                    value={formData.vevo_nev}
+                    onChange={(e) => setFormData(prev => ({ ...prev, vevo_nev: e.target.value }))}
+                    placeholder={t('invoices:dialogs.full_edit.buyer_name', 'Vevő neve')}
+                    className="text-sm"
+                  />
                 </div>
               </div>
 

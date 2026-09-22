@@ -1408,7 +1408,7 @@ export default function PartnersPage() {
 
       {/* Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
               {editingPartner ? t('partners:actions.edit_partner', 'Partner szerkesztése') : t('partners:actions.new_partner', 'Új partner hozzáadása')}

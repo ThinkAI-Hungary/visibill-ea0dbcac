@@ -178,4 +178,47 @@ describe('InvoiceFullEditDialog — Számlakép törlése flow', () => {
     });
     expect(mockEq).toHaveBeenCalledWith('id', 'inv-test-456');
   });
+
+  describe('seller and buyer name editing', () => {
+    it('allows editing seller name and buyer name and saves them', async () => {
+      const mockOnSave = vi.fn();
+      const mockOnClose = vi.fn();
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <InvoiceFullEditDialog
+            invoice={mockInvoice}
+            categories={[]}
+            projects={[]}
+            open={true}
+            onClose={mockOnClose}
+            onSave={mockOnSave}
+          />
+        </QueryClientProvider>
+      );
+
+      const sellerInput = screen.getByLabelText(/Eladó neve/i) as HTMLInputElement;
+      const buyerInput = screen.getByLabelText(/Vevő neve/i) as HTMLInputElement;
+
+      expect(sellerInput.value).toBe('ShopExpert Hungary Kft.');
+      expect(buyerInput.value).toBe('FAKOV Kft');
+
+      fireEvent.change(sellerInput, { target: { value: 'Új Eladó Kft.' } });
+      fireEvent.change(buyerInput, { target: { value: 'Új Vevő Zrt.' } });
+
+      const saveBtn = screen.getByRole('button', { name: /^Mentés$/i });
+      fireEvent.click(saveBtn);
+
+      await waitFor(() => {
+        expect(mockUpdate).toHaveBeenCalledWith(
+          expect.objectContaining({
+            elado_nev: 'Új Eladó Kft.',
+            vevo_nev: 'Új Vevő Zrt.',
+          })
+        );
+      });
+      expect(mockEq).toHaveBeenCalledWith('id', 'inv-test-456');
+    });
+  });
 });
+
