@@ -88,6 +88,11 @@ const URLS = {
 const config = A8_ENV === "prod" ? URLS.prod : URLS.sandbox;
 
 async function getCustomerToken(supabaseAdmin: any): Promise<string> {
+  const sanitize = (t: string | null | undefined): string => {
+    if (!t) return "";
+    return t.startsWith("Bearer ") ? t.slice(7).trim() : t.trim();
+  };
+
   // 1. Check cached token in aggreg8_settings
   const { data: settings } = await supabaseAdmin
     .from("aggreg8_settings")
@@ -103,7 +108,7 @@ async function getCustomerToken(supabaseAdmin: any): Promise<string> {
     settings.token_expires_at &&
     new Date(settings.token_expires_at).getTime() > now.getTime() + 5 * 60 * 1000
   ) {
-    return settings.customer_token;
+    return sanitize(settings.customer_token);
   }
 
   if (!A8_AIS_API_KEY) {
@@ -125,7 +130,8 @@ async function getCustomerToken(supabaseAdmin: any): Promise<string> {
   }
 
   const tokenData = await res.json();
-  const token = tokenData.token || tokenData;
+  const rawToken = tokenData.token || tokenData;
+  const token = sanitize(String(rawToken || ""));
   const expiresAt = new Date(now.getTime() + 175 * 60 * 1000).toISOString(); // ~2h 55m
 
   // 3. Cache token
