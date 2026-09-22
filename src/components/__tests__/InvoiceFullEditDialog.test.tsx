@@ -219,6 +219,41 @@ describe('InvoiceFullEditDialog — Számlakép törlése flow', () => {
       });
       expect(mockEq).toHaveBeenCalledWith('id', 'inv-test-456');
     });
+
+    it('saves fizetesi_mod on invoice update', async () => {
+      const mockOnSave = vi.fn();
+      const mockOnClose = vi.fn();
+
+      const invoiceWithCash = {
+        ...mockInvoice,
+        fizetesi_mod: 'készpénz',
+      };
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <InvoiceFullEditDialog
+            invoice={invoiceWithCash as any}
+            categories={[]}
+            projects={[]}
+            open={true}
+            onClose={mockOnClose}
+            onSave={mockOnSave}
+          />
+        </QueryClientProvider>
+      );
+
+      const saveBtn = screen.getByRole('button', { name: /^Mentés$/i });
+      fireEvent.click(saveBtn);
+
+      await waitFor(() => {
+        expect(mockUpdate).toHaveBeenCalledWith(
+          expect.objectContaining({
+            fizetesi_mod: 'készpénz',
+          })
+        );
+      });
+      expect(mockEq).toHaveBeenCalledWith('id', 'inv-test-456');
+    });
   });
 });
 

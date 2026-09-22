@@ -558,6 +558,7 @@
     "cash": "Gotovina",
     "card": "Kartica",
     "voucher": "Vaučer",
+    "cod": "Pouzeće",
     "other": "Ostalo",
     "not_specified": "Nije navedeno"
   },

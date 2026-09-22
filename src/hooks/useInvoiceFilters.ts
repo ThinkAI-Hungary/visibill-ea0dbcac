@@ -853,6 +853,7 @@ export function useInvoiceFilters(
     if (m === 'CASH' || m === 'KÉSZPÉNZ') return t('invoices:payment_methods.cash', 'Készpénz');
     if (m === 'CARD' || m === 'BANKKÁRTYA') return t('invoices:payment_methods.card', 'Bankkártya');
     if (m === 'VOUCHER' || m === 'UTALVÁNY') return t('invoices:payment_methods.voucher', 'Utalvány');
+    if (m === 'COD' || m === 'UTÁNVÉT' || m === 'UTÁNVÉTEL') return t('invoices:payment_methods.cod', 'Utánvét');
     if (m === 'OTHER' || m === 'EGYÉB') return t('invoices:payment_methods.other', 'Egyéb');
     return method;
   }, [t]);

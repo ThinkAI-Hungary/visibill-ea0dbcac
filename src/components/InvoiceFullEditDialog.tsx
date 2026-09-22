@@ -104,6 +104,7 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
     penznem: 'HUF',
     category_id: 'none',
     project_id: 'none',
+    fizetesi_mod: 'átutalás',
   });
   const [isHeaderAmountsDirty, setIsHeaderAmountsDirty] = useState(false);
 
@@ -148,6 +149,7 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
         penznem: invoice.penznem || 'HUF',
         category_id: invoice.category_id || 'none',
         project_id: invoice.project_id || 'none',
+        fizetesi_mod: invoice.fizetesi_mod ? invoice.fizetesi_mod.toLowerCase().trim() : 'átutalás',
       });
       setIsHeaderAmountsDirty(false);
       setCurrentImageUrl(invoice.image_url ?? null);
@@ -277,6 +279,7 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
         vevo_nev: formData.vevo_nev.trim() || null,
         category_id: formData.category_id === 'none' ? null : formData.category_id,
         project_id: formData.project_id === 'none' ? null : formData.project_id,
+        fizetesi_mod: formData.fizetesi_mod || null,
         frissitve: new Date().toISOString(),
       };
 
@@ -751,6 +754,26 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
                   <div className="text-sm py-2 px-3 rounded-md bg-muted/30 border border-border/30">
                     {formData.penznem}
                   </div>
+                </div>
+
+                {/* Editable: Fizetési mód */}
+                <div className="space-y-2">
+                  <Label htmlFor="edit-fizetesi-mod">{t('invoices:columns.payment_method', 'Fizetés módja')}</Label>
+                  <Select
+                    value={formData.fizetesi_mod}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, fizetesi_mod: value }))}
+                  >
+                    <SelectTrigger id="edit-fizetesi-mod">
+                      <SelectValue placeholder={t('invoices:columns.payment_method', 'Fizetés módja')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="átutalás">{t('invoices:payment_methods.transfer', 'Átutalás')}</SelectItem>
+                      <SelectItem value="bankkártya">{t('invoices:payment_methods.card', 'Bankkártya')}</SelectItem>
+                      <SelectItem value="készpénz">{t('invoices:payment_methods.cash', 'Készpénz')}</SelectItem>
+                      <SelectItem value="utánvét">{t('invoices:payment_methods.cod', 'Utánvét')}</SelectItem>
+                      <SelectItem value="egyéb">{t('invoices:payment_methods.other', 'Egyéb')}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Editable: Kategória */}

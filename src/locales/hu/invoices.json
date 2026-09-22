@@ -558,6 +558,7 @@
     "cash": "Készpénz",
     "card": "Bankkártya",
     "voucher": "Utalvány",
+    "cod": "Utánvét",
     "other": "Egyéb",
     "not_specified": "Nem megadott"
   },
