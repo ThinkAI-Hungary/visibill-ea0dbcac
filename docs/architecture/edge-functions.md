@@ -1,6 +1,6 @@
 # Supabase Edge Functions Katalógus
 
-> **Utoljára frissítve:** 2026-09-20  
+> **Utoljára frissítve:** 2026-09-22  
 > **Összesen:** 64 Deno Edge Function + `_shared/` közös modulok | **Runtime:** Deno (TypeScript) | **Platform:** Supabase Cloud
 
 Ez a dokumentáció az eaisybill-prod rendszer összes Supabase Edge Function-jének hivatalos, autoritatív katalógusa. Részletezi az egyes funkciók célját, jogosultsági modelljét (`verify_jwt`), meghívási kontextusát (Frontend, pg_cron, Webhook, Postgres Trigger) és környezeti változóit.
@@ -182,7 +182,7 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 | Edge Function | JWT Auth | Meghívó Réteg | Szükséges Környezeti Változók | Leírás és Üzleti Szerepkör |
 |---|:---:|---|---|---|
 | [`openclaw-api`](../../supabase/functions/openclaw-api/index.ts) | ❌ Nyilvános / Belső | Külső integrációs kliensek (OpenClaw) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Szigorúan korlátozott, olvasási jogú REST API végpont SHA-256 hash-elt API kulcs hitelesítéssel (`api_keys` tábla). |
-| [`customer-api`](../../supabase/functions/customer-api/index.ts) | ❌ Nyilvános / API Key | Külső ügyfél integrációk (M2M, curl, Python, ERP) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Hivatalos ügyfél REST API cégadatok és konfigurációs beállítások lekérdezéséhez és módosításához (`api_keys` SHA-256 hash hitelesítés, többcéges hatáskör feloldás, sliding window rate limiting, `api_request_logs` teljes audit naplózás). |
+| [`customer-api`](../../supabase/functions/customer-api/index.ts) | ❌ Nyilvános / API Key | Külső ügyfél integrációk (M2M, curl, Python, ERP) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Hivatalos ügyfél REST API v2.2 (33 végpont) OpenAPI 3.0.3 gépi specifikációval (`/v1/openapi.json`). Lefedi a cégeket, beállításokat, számlákat (normalizált bejövő/kimenő, signed image letöltés, védett törlés), partnereket, tranzakciókat (párosítás, unmatch, bulk-delete), hibajegyeket és kommenteket (`/v1/tickets`), kategóriákat, főkönyvet (`/v1/ledger`), ÁFA/eredmény kimutatásokat, NAV státuszt és manuális szinkron indítást 60s cooldownnal, valamint 24 órás `Idempotency-Key` védelmet (`api_idempotency_keys`). |
 
 ---
 

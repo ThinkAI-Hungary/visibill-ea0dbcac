@@ -2,7 +2,7 @@
 
 > Hibalogok, audit trail, LLM költségek, API kulcsok, email aliasok, devizaárfolyamok, visszajelzések.
 
-**Táblák ebben a csoportban:** 12
+**Táblák ebben a csoportban:** 13
 
 ---
 
@@ -173,6 +173,32 @@
 **FK:** `company_id` → `companies.id (ON DELETE CASCADE)`, `user_id` → `auth.users.id (ON DELETE CASCADE)`
 
 **Indexek:** `idx_api_keys_company_id`, `idx_api_keys_key_hash`, `idx_api_keys_user_id`, `idx_api_keys_active_lookup`
+
+---
+
+### `api_idempotency_keys`
+
+> Idempotencia-kulcsok és gyorsítótárazott válaszok a külső Customer REST API hívások atomi védelméhez és újrajátszásához. 24 órás lejárati idővel (TTL), automatikus `pg_cron` karbantartással és az API kulcs visszavonásakor kaszkádolt törléssel rendelkezik.
+
+**RLS:** ✅ | **Sorok:** Dinamikus (~0-100)
+
+| Oszlop | Típus | Null | Default | Leírás |
+|--------|-------|------|---------|--------|
+| `id` | uuid | — | `gen_random_uuid()` | Elsődleges kulcs |
+| `api_key_id` | uuid | ✓ | — | FK → `public.api_keys(id)` (ON DELETE CASCADE) |
+| `idempotency_key` | text | — | — | Kliens által küldött egyedi `Idempotency-Key` fejléc érték |
+| `endpoint` | text | — | — | Hívott REST API végpont (pl. `/v1/transactions/:id/match`) |
+| `request_hash` | text | — | — | Kéréstörzs és paraméterek SHA-256 lenyomata |
+| `status_code` | integer | — | — | Visszaadott HTTP státuszkód (pl. 200, 201) |
+| `response_body` | jsonb | — | — | Eredeti JSON válaszstruktúra újrajátszáshoz |
+| `created_at` | timestamptz | — | `now()` | Rögzítés időpontja |
+| `expires_at` | timestamptz | — | `now() + 24 hours` | Lejárat időpontja (24 órás ablak) |
+
+**FK:** `api_key_id` → `public.api_keys(id) ON DELETE CASCADE`
+
+**Indexek:**
+- `idx_api_idempotency_key_lookup` UNIQUE on `(api_key_id, idempotency_key)`
+- `idx_api_idempotency_expiry` on `(expires_at)`
 
 ---
 

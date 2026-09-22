@@ -1,7 +1,7 @@
 # eaisybill-prod — Adatbázis Séma Áttekintés
 
-> **Utoljára frissítve:** 2026-09-21  
-> **Összesen:** 184 aktív alkalmazás-tábla (185 sémában) | **RLS:** mind engedélyezve (100% InitPlan & Single-Permissive optimalizált) | **FK Indexek:** 100% lefedettség | **Supabase PostgreSQL**
+> **Utoljára frissítve:** 2026-09-22  
+> **Összesen:** 185 aktív alkalmazás-tábla (186 sémában) | **RLS:** mind engedélyezve (100% InitPlan & Single-Permissive optimalizált) | **FK Indexek:** 100% lefedettség | **Supabase PostgreSQL**
 
 Ez a dokumentáció az eaisybill-prod Supabase projekt teljes adatbázis sémáját tartalmazza. Célja, hogy bármely fejlesztő és AI agent azonnal megértse a táblastruktúrát, kapcsolatokat és felhasználási kontextust.
 A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [PostgreSQL RPC Katalógus](./rpc-catalog.md), a serverless függvényeket az [Edge Functions Katalógus](./edge-functions.md), a biztonsági és indexelési irányelveket pedig az [A-092: Teljes Adatbázis Biztonsági és Teljesítménybeli Audit & Optimalizáció](./decisions/A-092-database-security-and-performance-optimization.md) dokumentálja.
@@ -28,14 +28,14 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 - [📘 eaisyBooks — Szervezet](./database/16-eaisybooks-org.md) — 10 tábla, ~21 sor
 - [📘 eaisyBooks — EV (Egyéni Vállalkozó)](./database/17-eaisybooks-ev.md) — 23 tábla, ~2 sor
 - [📘 eaisyBooks — AI Chat](./database/18-eaisybooks-ai.md) — 2 tábla, ~124 sor
-- [🛠️ Platform & Üzemeltetés](./database/19-platform-ops.md) — 12 tábla, ~36622 sor
+- [🛠️ Platform & Üzemeltetés](./database/19-platform-ops.md) — 13 tábla, ~36622 sor
 - [🎫 Hibajegy Rendszer](./database/20-tickets.md) — 3 tábla, ~633 sor
 - [🏷️ Törzsadatok](./database/21-master-data.md) — 8 tábla, ~5483 sor
 - [📄 Könyvelési Naplók](./database/22-accounting-journals.md) — 6 tábla, ~58702 sor
 
 **Kiegészítő katalógusok:**
 - [⚡ PostgreSQL RPC Katalógus (134 RPC + 74 Trigger)](./rpc-catalog.md) — Teljes tárolt eljárás és aggregációs motor katalógus
-- [🌐 Supabase Edge Functions Katalógus (62 Deno EF)](./edge-functions.md) — NAV szinkron, email, AI, Open Banking és webhook szervermentes funkciók
+- [🌐 Supabase Edge Functions Katalógus (64 Deno EF)](./edge-functions.md) — NAV szinkron, email, AI, Open Banking és webhook szervermentes funkciók
 
 ---
 
@@ -63,6 +63,7 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 | `accounty_data_contracts` | 📘 eaisyBooks — Adó & Jogi | 0 | Adatfeldolgozási és könyvelési szerződések. |
 | `accounty_deadlines` | 📘 eaisyBooks — Alap | 3728 | Könyvelési és adóügyi határidők cégenként. |
 | `accounty_declarations` | 📘 eaisyBooks — Bérszámfejtés | 0 | Adóelőleg-nyilatkozatok kedvezmény-típusonként. |
+| `api_idempotency_keys` | 🛠️ Platform & Üzemeltetés | 0 | 24 órás M2M Customer API kérés-idempotencia tároló gyorsított válaszadással |
 | `api_keys` | 🛠️ Platform & Üzemeltetés | 2 | API kulcsok külső integrációkhoz (OpenClaw és ügyfél Customer REST API) SHA-256 hash hitelesítéssel |
 | `api_request_logs` | 🏢 Cégek & Tagság | 5 | Külső gép-gép (M2M) Customer REST API kérések és cégadat-módosítások strukturált audit naplója |
 | `accounty_departments` | 📘 eaisyBooks — Szervezet | 5 | Szervezeti egységek. |

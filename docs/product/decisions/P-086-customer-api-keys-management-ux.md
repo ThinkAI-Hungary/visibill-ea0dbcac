@@ -60,3 +60,26 @@ A `Beállítások` (`/settings`) felület `Biztonság` szekciójában elhelyezt�
 - **Zéró szivárgás:** A nyers kulcsot soha nem tároljuk és a felhasználó később sem kérheti le újra, minimalizálva a böngészős adathalászat és session-lopás kockázatát.
 - **Többcéges ergonómia:** Mauroni Marco és a hasonló cégcsoport-tulajdonosok egyetlen kulccsal tudják automatizálni az összes cégüket, anélkül, hogy 7 külön kulcsot kellene fejben tartaniuk és konfigurálniuk.
 - **Önkiszolgáló API onboarding:** A beépített cURL példák és a `?action=help` végpont révén a külső fejlesztők rendszergazdai segítség nélkül képesek bekötni az integrációt.
+
+---
+
+## Addendum (2026-09-22) — Fejlesztői Portál v2.1 & OpenAPI 3 Export
+
+A 2.1-es verzióval a Fejlesztői Portál és az API Explorer az alábbi képességekkel gazdagodott:
+- **OpenAPI 3.0.3 JSON Letöltés:** A fejlécben elhelyezett közvetlen gomb (`FileJson` ikon) segítségével a fejlesztők egy kattintással letölthetik a gépileg validált OpenAPI specifikációt Swagger, Postman vagy SDK kódgenerálás céljából.
+- **Kibővített Végpont Katalógus:** 27 végpont részletes interaktív leírása, beleértve az új `DELETE` metódusokat, a tranzakció párosítás felbontását (`unmatch`), számlakép lekérést, kategóriák főkönyvi számláit, NAV szinkronizáció státuszt és a kulcs introspekciót (`/v1/auth/me`).
+- **Élő Tesztelő Támogatás:** A beépített tesztelő konzol támogatja a `DELETE` és `PATCH` metódusokat opcionális JSON kéréstörzzsel és dinamikus válaszidő méréssel.
+
+---
+
+## Addendum (2026-09-22) — Fejlesztői Portál v2.2 (Support Tickets Modul & 33 Végpont)
+
+A 2.2-es verzióval a Fejlesztői Portál és az [ApiDocsExplorer.tsx](../../../src/components/settings/ApiDocsExplorer.tsx) teljes körűen integrálta az ügyfélszolgálati hibajegykezelést és a NAV manuális szinkronizációt:
+- **Support Tickets Fül (`Hibajegyek (5)`):** Külön dedikált kategóriaszűrő gomb és 5 új interaktív kártya:
+  1. `GET /v1/tickets`: Lapozott jegylista státusz, típus és prioritás szűréssel, csatolt publikus hozzászólás-számlálóval.
+  2. `POST /v1/tickets`: Új hibajegy beküldése típus, prioritás és leírás megadásával.
+  3. `GET /v1/tickets/:id`: Részletes jegyadatok duális UUID vagy emberi azonosítóval (pl. `EB-0157`), idővonal és nyilvános kommentek.
+  4. `POST /v1/tickets/:id/comments`: Ügyfél válasz beküldése (belső staff kommentek rejtve, lezárt jegy esetén szigorú `400 TICKET_CLOSED` hiba).
+  5. `POST /v1/tickets/:id/confirm-resolution`: Megoldás végleges megerősítése az ügyfél által.
+- **NAV Kézi Szinkronizáció Végpont:** `POST /v1/nav/sync` tesztelése és indítása tetszőleges dátumtartománnyal, automatikus tranzakció-újrapárosítással és 60 másodperces perzisztens debounce védelemmel (`429 NAV_SYNC_COOLDOWN`).
+- **33 Aktív Végpont:** A portál fejlécében és a kategóriaszűrőkben a számlálók dinamikusan igazodnak a 33 aktív REST végponthoz.

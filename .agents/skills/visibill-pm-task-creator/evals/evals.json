@@ -1,0 +1,23 @@
+{
+  "skill_name": "visibill-pm-task-creator",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "lehessen legfelül váltani, hogy keltezésre vagy telejesítésre szűrjek Időszaknál",
+      "expected_output": "Egy teljes körű fejlesztői task brief, amely beazonosítja a Headerben lévő dátumszűrőt, hivatkozik a P-066 és 049-gl-date-basis specifikációkra, definiálja az issue_date és fulfillment_date szűrést, az URL szinkronizációt (?date_basis=...) és az elfogadási kritériumokat.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "kellene a számlák táblázatba egy olyan funkció, hogy több számlát kijelölve egyszerre lehessen kizárni a könyvelésből vagy visszakapcsolni, mert most egyesével kell kattintgatni",
+      "expected_output": "Egy fejlesztői task brief a Számlák oldal tömeges műveleteihez (BulkActionsBar), amely hivatkozik a P-015 (bulk actions) és P-089 (exclude from accounting toggle) döntésekre, megadja az érintett is_excluded_from_accounting mezőt, az optimista UI frissítést és a visszaigazoló toast értesítést.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "az eaisybooksban a cégváltóban vagy a fejlécben látsszon azonnal, ha a kiválasztott cég egyéni vállalkozó, és egy kattintással át lehessen ugrani az EV pénztárkönyvre",
+      "expected_output": "Egy task brief az eaisyBooks navigációhoz, amely hivatkozik a P-073 (EV könyvelés és pénztárkönyv), P-076 (dual mode company switcher) és P-083 (app mode switcher) dokumentációkra, és meghatározza az EV badge-et valamint az /accounty/ev/cashbook gyorslinket.",
+      "files": []
+    }
+  ]
+}

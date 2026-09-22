@@ -127,9 +127,11 @@ export function renderEaisybillLegacyAndFallbackRoutes() {
       <Route path="/tickets" element={<LegacyRedirect page="tickets" />} />
       <Route path="/onboarding" element={<LegacyRedirect page="categories" />} />
 
-      {/* Root → scoped dashboard */}
+      {/* Root & Dashboard → scoped dashboard */}
       <Route path="/" element={<RootRedirect />} />
+      <Route path="/dashboard" element={<RootRedirect />} />
       <Route path="/hr" element={<RootRedirect />} />
+      <Route path="/hr/dashboard" element={<RootRedirect />} />
     </>
   );
 }

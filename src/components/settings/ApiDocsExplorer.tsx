@@ -33,9 +33,9 @@ import { useToast } from '@/hooks/use-toast';
 
 export interface EndpointDef {
   id: string;
-  method: 'GET' | 'POST' | 'PATCH';
+  method: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   path: string;
-  category: 'invoices' | 'partners' | 'transactions' | 'ledger' | 'reports' | 'companies';
+  category: 'invoices' | 'partners' | 'transactions' | 'ledger' | 'reports' | 'companies' | 'categories' | 'nav' | 'auth' | 'tickets';
   categoryTitle: string;
   title: string;
   description: string;
@@ -213,6 +213,52 @@ export const ENDPOINTS: EndpointDef[] = [
       success: true,
       message: "Számla adatai / bizonylatszáma / számlaképe sikeresen frissítve.",
       data: { invoice: { id: "e5654ff2-...", invoice_number: "INV-2026-001", has_image: true } }
+    }, null, 2)
+  },
+  {
+    id: 'get-invoice-image',
+    method: 'GET',
+    path: '/v1/invoices/:id/image',
+    category: 'invoices',
+    categoryTitle: 'Számlák (Invoices)',
+    title: 'Számlakép letöltése / Signed URL',
+    description: '1 óráig érvényes, közvetlen pre-signed URL generálása a csatolt bizonylathoz/számlaképhez. ?redirect=true paraméterrel azonnali 302 átirányítást hajt végre.',
+    scope: 'read',
+    queryParams: [
+      { name: 'redirect', type: 'boolean', required: false, description: 'true esetén 302 HTTP átirányít a képre' },
+      { name: 'company_id', type: 'uuid', required: false, description: 'Cég azonosító' },
+    ],
+    curlExample: `curl -H "Authorization: Bearer <API_KEY>" \\
+     "${BASE_URL}/v1/invoices/<INVOICE_ID>/image"`,
+    sampleResponse: JSON.stringify({
+      success: true,
+      data: {
+        invoice_id: "a79a5eb7-e683-4c8c-be76-b9afef3f50e1",
+        invoice_number: "FBADS-070-105702620",
+        image_url: "https://vxxgvdlqvvchtlmqnrqf.supabase.co/storage/v1/object/sign/invoice-uploads/sample.pdf?token=...",
+        expires_in_seconds: 3600
+      }
+    }, null, 2)
+  },
+  {
+    id: 'delete-invoice',
+    method: 'DELETE',
+    path: '/v1/invoices/:id',
+    category: 'invoices',
+    categoryTitle: 'Számlák (Invoices)',
+    title: 'Számla törlése',
+    description: 'Feltöltött számla törlése tételsorokkal együtt. A NAV-szinkronizált számlákat védi az API (409 Conflict), kivéve ?force=true megadása esetén.',
+    scope: 'read_write',
+    queryParams: [
+      { name: 'force', type: 'boolean', required: false, description: 'true esetén felülbírálja a NAV integritásvédelmi zárat' },
+      { name: 'company_id', type: 'uuid', required: false, description: 'Cég azonosító' },
+    ],
+    curlExample: `curl -X DELETE -H "Authorization: Bearer <API_KEY>" \\
+     "${BASE_URL}/v1/invoices/<INVOICE_ID>"`,
+    sampleResponse: JSON.stringify({
+      success: true,
+      message: "Számla sikeresen törölve.",
+      data: { id: "a79a5eb7-e683-4c8c-be76-b9afef3f50e1", invoice_number: "UPLOAD-123456" }
     }, null, 2)
   },
   {
@@ -424,6 +470,184 @@ export const ENDPOINTS: EndpointDef[] = [
       data: { matched: true, transaction_id: "57262174-...", invoice_id: "e5654ff2-..." }
     }, null, 2)
   },
+  {
+    id: 'post-transaction-unmatch',
+    method: 'POST',
+    path: '/v1/transactions/:id/unmatch',
+    category: 'transactions',
+    categoryTitle: 'Bank & Párosítás (Transactions)',
+    title: 'Számlapárosítás visszavonása (Unmatch)',
+    description: 'Banki tranzakció és számla összerendelésének feloldása. A korábban párosított számla fizetettségét automatikusan visszaállítja kifizetetlenre (DELETE /v1/transactions/:id/match szintén használható).',
+    scope: 'read_write',
+    curlExample: `curl -X POST -H "Authorization: Bearer <API_KEY>" \\
+     "${BASE_URL}/v1/transactions/<TRANSACTION_ID>/unmatch"`,
+    sampleResponse: JSON.stringify({
+      success: true,
+      message: "Párosítás sikeresen visszavonva.",
+      data: { transaction_id: "57262174-...", unmatched_invoice_id: "e5654ff2-..." }
+    }, null, 2)
+  },
+  {
+    id: 'delete-transaction',
+    method: 'DELETE',
+    path: '/v1/transactions/:id',
+    category: 'transactions',
+    categoryTitle: 'Bank & Párosítás (Transactions)',
+    title: 'Tranzakció törlése',
+    description: 'Egyedi banki tranzakció törlése. Ha párosítva volt számlához, a párosítást előtte tisztán feloldja.',
+    scope: 'read_write',
+    curlExample: `curl -X DELETE -H "Authorization: Bearer <API_KEY>" \\
+     "${BASE_URL}/v1/transactions/<TRANSACTION_ID>"`,
+    sampleResponse: JSON.stringify({
+      success: true,
+      message: "Tranzakció sikeresen törölve.",
+      data: { id: "57262174-a698-4c75-ae90-7b561c28f110" }
+    }, null, 2)
+  },
+  {
+    id: 'post-transactions-bulk-delete',
+    method: 'POST',
+    path: '/v1/transactions/bulk-delete',
+    category: 'transactions',
+    categoryTitle: 'Bank & Párosítás (Transactions)',
+    title: 'Tömeges tranzakció törlés (Bulk Delete)',
+    description: 'Akár 500 tranzakció egyidejű kötegelt törlése azonosító lista alapján. Duplikációk és hibás importok gyors tisztítására.',
+    scope: 'read_write',
+    bodyParams: [
+      { name: 'ids', type: 'string[]', required: true, description: 'Törlendő tranzakció UUID azonosítók listája (max 500)' },
+      { name: 'company_id', type: 'uuid', required: false, description: 'Cég azonosító' },
+    ],
+    curlExample: `curl -X POST -H "Authorization: Bearer <API_KEY>" -H "Content-Type: application/json" \\
+     -d '{"ids": ["57262174-...", "a1b2c3d4-..."]}' \\
+     "${BASE_URL}/v1/transactions/bulk-delete"`,
+    sampleBody: JSON.stringify({ ids: ["57262174-a698-4c75-ae90-7b561c28f110"] }, null, 2),
+    sampleResponse: JSON.stringify({
+      success: true,
+      message: "1 tranzakció sikeresen törölve.",
+      data: { requested_count: 1, deleted_count: 1, deleted_ids: ["57262174-a698-4c75-ae90-7b561c28f110"] }
+    }, null, 2)
+  },
+
+  // ── CATEGORIES ──
+  {
+    id: 'get-categories',
+    method: 'GET',
+    path: '/v1/categories',
+    category: 'categories',
+    categoryTitle: 'Kategóriák (Categories)',
+    title: 'Kategóriatörzs lekérdezése',
+    description: 'A céghez tartozó bevételi és költségkategóriák listája (ikon, szín, kapcsolódó főkönyvi számlák).',
+    scope: 'read',
+    queryParams: [
+      { name: 'company_id', type: 'uuid', required: false, description: 'Cég azonosító' },
+    ],
+    curlExample: `curl -H "Authorization: Bearer <API_KEY>" \\
+     "${BASE_URL}/v1/categories"`,
+    sampleResponse: JSON.stringify({
+      success: true,
+      data: {
+        categories: [
+          { id: "cat-1", name: "Irodaszer & Eszközök", icon: "folder", color: "#3b82f6", gl_accounts: ["511", "512"] },
+          { id: "cat-2", name: "Szoftver előfizetések", icon: "cloud", color: "#10b981", gl_accounts: ["521"] }
+        ],
+        count: 2
+      }
+    }, null, 2)
+  },
+
+  // ── NAV INTEGRATION ──
+  {
+    id: 'get-nav-status',
+    method: 'GET',
+    path: '/v1/nav/status',
+    category: 'nav',
+    categoryTitle: 'NAV Szinkron (NAV Status)',
+    title: 'NAV technikai felhasználó és szinkron státusz',
+    description: 'A cég NAV Online Számla kapcsolatának állapota, utolsó sikeres szinkronizáció időpontja és a legfrissebb szinkron naplóbejegyzések.',
+    scope: 'read',
+    queryParams: [
+      { name: 'company_id', type: 'uuid', required: false, description: 'Cég azonosító' },
+    ],
+    curlExample: `curl -H "Authorization: Bearer <API_KEY>" \\
+     "${BASE_URL}/v1/nav/status"`,
+    sampleResponse: JSON.stringify({
+      success: true,
+      data: {
+        company_id: "c132676d-85c5-4e2a-bde1-d966766bb94f",
+        nav_configured: true,
+        technical_user: "TEC***",
+        environment: "production",
+        last_sync: { timestamp: "2026-09-22T00:00:00Z", status: "success", invoices_fetched: 14 },
+        recent_logs: []
+      }
+    }, null, 2)
+  },
+  {
+    id: 'post-nav-sync',
+    method: 'POST',
+    path: '/v1/nav/sync',
+    category: 'nav',
+    categoryTitle: 'NAV Szinkron (NAV Sync)',
+    title: 'Manuális NAV számla szinkronizáció indítása dátumtartománnyal',
+    description: 'Lekéri a NAV Online Számla rendszeréből a számlákat a megadott dátumtartományra és irányra, elmenti őket, és automatikus tranzakció-újrapárosítási feladatot indít.',
+    scope: 'read_write',
+    bodyParams: [
+      { name: 'date_from', type: 'string (YYYY-MM-DD)', required: true, description: 'Kezdő dátum (pl. 2026-04-01)' },
+      { name: 'date_to', type: 'string (YYYY-MM-DD)', required: false, description: 'Záró dátum (alapértelmezetten a mai nap)' },
+      { name: 'direction', type: 'string', required: false, description: "'inbound' (bejövő), 'outbound' (kimenő) vagy 'both' (mindkettő, alapértelmezett)" },
+      { name: 'fetch_details', type: 'boolean', required: false, description: 'Tételszintű sorok letöltése (alapértelmezett: true)' },
+      { name: 'company_id', type: 'uuid', required: false, description: 'Cél cég azonosító (többcéges kulcs esetén kötelező)' },
+    ],
+    curlExample: `curl -X POST -H "Authorization: Bearer <API_KEY>" -H "Content-Type: application/json" \\
+     -d '{"date_from": "2026-04-01", "date_to": "2026-04-30", "direction": "inbound"}' \\
+     "${BASE_URL}/v1/nav/sync"`,
+    sampleBody: JSON.stringify({
+      date_from: "2026-04-01",
+      date_to: "2026-04-30",
+      direction: "both",
+      fetch_details: true
+    }, null, 2),
+    sampleResponse: JSON.stringify({
+      success: true,
+      message: "A manuális NAV szinkronizáció sikeresen lefutott.",
+      data: {
+        company_id: "c132676d-85c5-4e2a-bde1-d966766bb94f",
+        date_from: "2026-04-01",
+        date_to: "2026-04-30",
+        direction: "both",
+        inbound: { status: "completed", total_fetched: 14, total_inserted: 2, sync_log_id: "log-1" },
+        outbound: { status: "completed", total_fetched: 8, total_inserted: 0, sync_log_id: "log-2" },
+        total_invoices_fetched: 22,
+        total_invoices_inserted: 2
+      }
+    }, null, 2)
+  },
+
+  // ── AUTH / ME ──
+  {
+    id: 'get-auth-me',
+    method: 'GET',
+    path: '/v1/auth/me',
+    category: 'auth',
+    categoryTitle: 'Azonosítás (Auth / Me)',
+    title: 'API kulcs introspekció & Cég jogosultságok',
+    description: 'A megadott Bearer tokenhez tartozó metaadatok: kulcs neve, jogosultsági kör (scope), rate limit és az elérhető cégek listája.',
+    scope: 'read',
+    curlExample: `curl -H "Authorization: Bearer <API_KEY>" \\
+     "${BASE_URL}/v1/auth/me"`,
+    sampleResponse: JSON.stringify({
+      success: true,
+      data: {
+        key_id: "key-1234",
+        name: "ERP M2M Integráció",
+        scope: "read_write",
+        rate_limit_per_minute: 120,
+        accessible_companies: [
+          { id: "c132676d-85c5-4e2a-bde1-d966766bb94f", name: "Mauroni Events Kft.", tax_number: "12345678-2-41" }
+        ]
+      }
+    }, null, 2)
+  },
 
   // ── LEDGER ──
   {
@@ -629,6 +853,191 @@ export const ENDPOINTS: EndpointDef[] = [
       message: "Cégbeállítások sikeresen mentve (atomi upsert).",
       data: { settings: { work_start_time: "08:30", work_end_time: "17:00", monthly_working_hours: 168 } }
     }, null, 2)
+  },
+  // ── TICKETS (Hibajegyek & Ügyfélszolgálat) ──
+  {
+    id: 'get-tickets',
+    method: 'GET',
+    path: '/v1/tickets',
+    category: 'tickets',
+    categoryTitle: 'Hibajegyek (Tickets)',
+    title: 'Hibajegyek listázása, szűrése & lapozása',
+    description: 'A céghez tartozó hibajegyek lekérdezése lapozással, státusz (created, assigned, in_progress, waiting_confirmation, resolved), prioritás és típus szerint.',
+    scope: 'read',
+    queryParams: [
+      { name: 'status', type: 'string', required: false, description: 'created | assigned | in_progress | waiting_confirmation | resolved | all' },
+      { name: 'priority', type: 'string', required: false, description: 'low | medium | high | critical' },
+      { name: 'type', type: 'string', required: false, description: 'bug | feedback | question' },
+      { name: 'page', type: 'number', required: false, description: 'Oldalszám (alapértelmezett: 1)' },
+      { name: 'page_size', type: 'number', required: false, description: 'Oldalméret (max: 100, alapértelmezett: 20)' },
+      { name: 'company_id', type: 'uuid', required: false, description: 'Cég azonosító (többcéges kulcsnál)' },
+    ],
+    curlExample: `curl -H "Authorization: Bearer <API_KEY>" \\
+     "${BASE_URL}/v1/tickets?status=in_progress&page=1"`,
+    sampleResponse: JSON.stringify({
+      success: true,
+      data: {
+        tickets: [
+          {
+            id: "47fdfaeb-9bc7-40bd-b65f-df6dba97490c",
+            ticket_number: "EB-0130",
+            type: "bug",
+            service: "eaisybill",
+            priority: "high",
+            status: "in_progress",
+            message: "A cég csoportos ÁFA-tag...",
+            comment_count: 3,
+            waiting_for_user_confirmation: false,
+            needs_staff_response: false,
+            created_at: "2026-09-16T12:38:48Z",
+            updated_at: "2026-09-22T01:00:00Z"
+          }
+        ],
+        pagination: { page: 1, page_size: 20, total_items: 1, total_pages: 1 }
+      }
+    }, null, 2)
+  },
+  {
+    id: 'create-ticket',
+    method: 'POST',
+    path: '/v1/tickets',
+    category: 'tickets',
+    categoryTitle: 'Hibajegyek (Tickets)',
+    title: 'Új hibajegy nyitása',
+    description: 'Új hibajelentés, visszajelzés vagy kérdés feladása. A jegyszámot (EB-xxxx) és a létrehozási audit eseményt a szerver automatikusan generálja.',
+    scope: 'read_write',
+    bodyParams: [
+      { name: 'type', type: 'string', required: true, description: 'bug | feedback | question' },
+      { name: 'message', type: 'string', required: true, description: 'A probléma vagy észrevétel részletes leírása' },
+      { name: 'priority', type: 'string', required: false, description: 'low | medium | high | critical (alapértelmezett: medium)' },
+      { name: 'service', type: 'string', required: false, description: 'eaisybill | accounty (alapértelmezett: eaisybill)' },
+      { name: 'page_url', type: 'string', required: false, description: 'Érintett oldal vagy külső URL' },
+      { name: 'attachments', type: 'string[]', required: false, description: 'Csatolt fájlok / képek nyilvános URL-jei' },
+      { name: 'company_id', type: 'uuid', required: false, description: 'Cég azonosító (többcéges kulcsnál)' },
+    ],
+    curlExample: `curl -X POST -H "Authorization: Bearer <API_KEY>" -H "Content-Type: application/json" \\
+     -d '{"type": "bug", "priority": "high", "message": "Számla szinkronizáció timeout hiba.", "service": "eaisybill"}' \\
+     "${BASE_URL}/v1/tickets"`,
+    sampleBody: JSON.stringify({
+      type: "bug",
+      priority: "high",
+      message: "Számla szinkronizáció timeout hiba a 2026-09-es időszakban.",
+      service: "eaisybill"
+    }, null, 2),
+    sampleResponse: JSON.stringify({
+      success: true,
+      message: "Hibajegy sikeresen létrehozva.",
+      data: {
+        ticket: {
+          id: "3e5a7b8c-1234-5678-9abc-def012345678",
+          ticket_number: "EB-0131",
+          type: "bug",
+          service: "eaisybill",
+          priority: "high",
+          status: "created",
+          message: "Számla szinkronizáció timeout hiba...",
+          created_at: "2026-09-22T02:00:00Z"
+        }
+      }
+    }, null, 2)
+  },
+  {
+    id: 'get-ticket-detail',
+    method: 'GET',
+    path: '/v1/tickets/:id',
+    category: 'tickets',
+    categoryTitle: 'Hibajegyek (Tickets)',
+    title: 'Egyedi hibajegy részletei & Publikus hozzászólások',
+    description: 'Hibajegy adatlapjának lekérése UUID vagy EB-xxxx jegyszám alapján. A válasz tartalmazza a support és az ügyfél publikus párbeszédét (a belső support jegyzetek automatikusan szűrve vannak).',
+    scope: 'read',
+    queryParams: [
+      { name: 'company_id', type: 'uuid', required: false, description: 'Cég azonosító (többcéges kulcsnál)' },
+    ],
+    curlExample: `curl -H "Authorization: Bearer <API_KEY>" \\
+     "${BASE_URL}/v1/tickets/EB-0130"`,
+    sampleResponse: JSON.stringify({
+      success: true,
+      data: {
+        ticket: {
+          id: "47fdfaeb-9bc7-40bd-b65f-df6dba97490c",
+          ticket_number: "EB-0130",
+          type: "bug",
+          service: "eaisybill",
+          priority: "high",
+          status: "in_progress",
+          message: "A cég csoportos ÁFA-tag...",
+          waiting_for_user_confirmation: false,
+          created_at: "2026-09-16T12:38:48Z"
+        },
+        comments: [
+          {
+            id: "b74569fd-9646-49dc-b10e-e02499aeca6f",
+            user_name: "Support Admin",
+            is_admin: true,
+            message: "Vizsgáljuk a csoportos ÁFA szinkronizációs logokat.",
+            created_at: "2026-09-16T13:00:00Z"
+          }
+        ]
+      }
+    }, null, 2)
+  },
+  {
+    id: 'add-ticket-comment',
+    method: 'POST',
+    path: '/v1/tickets/:id/comments',
+    category: 'tickets',
+    categoryTitle: 'Hibajegyek (Tickets)',
+    title: 'Hozzászólás küldése hibajegyhez',
+    description: 'Új válasz vagy kiegészítő információ beküldése a hibajegyhez. Automatikusan értesíti a support csapatot és frissíti az utolsó ügyfél aktivitás dátumát.',
+    scope: 'read_write',
+    bodyParams: [
+      { name: 'message', type: 'string', required: true, description: 'Hozzászólás szövege' },
+      { name: 'attachments', type: 'string[]', required: false, description: 'Opcionális csatolmány URL-ek' },
+      { name: 'company_id', type: 'uuid', required: false, description: 'Cég azonosító (többcéges kulcsnál)' },
+    ],
+    curlExample: `curl -X POST -H "Authorization: Bearer <API_KEY>" -H "Content-Type: application/json" \\
+     -d '{"message": "Csatoltam a kért hibanaplót a megfigyelésekkel."}' \\
+     "${BASE_URL}/v1/tickets/EB-0130/comments"`,
+    sampleBody: JSON.stringify({
+      message: "Csatoltam a kért hibanaplót a megfigyelésekkel."
+    }, null, 2),
+    sampleResponse: JSON.stringify({
+      success: true,
+      message: "Hozzászólás sikeresen elküldve.",
+      data: {
+        comment: {
+          id: "c1234567-89ab-cdef-0123-456789abcdef",
+          user_name: "API Felhasználó",
+          is_admin: false,
+          message: "Csatoltam a kért hibanaplót...",
+          created_at: "2026-09-22T02:10:00Z"
+        }
+      }
+    }, null, 2)
+  },
+  {
+    id: 'confirm-ticket-resolution',
+    method: 'POST',
+    path: '/v1/tickets/:id/confirm-resolution',
+    category: 'tickets',
+    categoryTitle: 'Hibajegyek (Tickets)',
+    title: 'Megoldás megerősítése & Jegy lezárása',
+    description: 'Az ügyfél hivatalos megerősítése, hogy a felmerült probléma megoldódott. A hibajegy resolved státuszba kerül és audit záróesemény rögzül.',
+    scope: 'read_write',
+    bodyParams: [
+      { name: 'company_id', type: 'uuid', required: false, description: 'Cég azonosító (többcéges kulcsnál)' },
+    ],
+    curlExample: `curl -X POST -H "Authorization: Bearer <API_KEY>" \\
+     "${BASE_URL}/v1/tickets/EB-0130/confirm-resolution"`,
+    sampleResponse: JSON.stringify({
+      success: true,
+      message: "Megoldás megerősítve, a hibajegy lezárásra került.",
+      data: {
+        id: "47fdfaeb-9bc7-40bd-b65f-df6dba97490c",
+        ticket_number: "EB-0130",
+        status: "resolved"
+      }
+    }, null, 2)
   }
 ];
 
@@ -699,7 +1108,7 @@ export function ApiDocsView({
         },
       };
 
-      if ((selectedDef.method === 'POST' || selectedDef.method === 'PATCH') && testRequestBody.trim()) {
+      if ((selectedDef.method === 'POST' || selectedDef.method === 'PATCH' || selectedDef.method === 'DELETE') && testRequestBody.trim()) {
         opts.body = testRequestBody.trim();
       }
 
@@ -781,6 +1190,17 @@ export function ApiDocsView({
             </Button>
           </div>
 
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs gap-1.5 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
+            onClick={() => window.open(`${BASE_URL}/v1/openapi.json`, '_blank')}
+            title="OpenAPI 3.0.3 hivatalos specifikáció megnyitása / letöltése JSON formátumban"
+          >
+            <FileCode2 className="h-3.5 w-3.5" />
+            OpenAPI 3 JSON
+          </Button>
+
           {isInline && onMaximize && (
             <Button
               variant="outline"
@@ -830,7 +1250,7 @@ export function ApiDocsView({
               onClick={() => setSelectedCategory('invoices')}
               className="h-7 text-xs rounded-full"
             >
-              Számlák (4)
+              Számlák ({ENDPOINTS.filter((e) => e.category === 'invoices').length})
             </Button>
             <Button
               size="sm"
@@ -838,7 +1258,7 @@ export function ApiDocsView({
               onClick={() => setSelectedCategory('partners')}
               className="h-7 text-xs rounded-full"
             >
-              Partnerek (2)
+              Partnerek ({ENDPOINTS.filter((e) => e.category === 'partners').length})
             </Button>
             <Button
               size="sm"
@@ -846,7 +1266,23 @@ export function ApiDocsView({
               onClick={() => setSelectedCategory('transactions')}
               className="h-7 text-xs rounded-full"
             >
-              Bank & Párosítás (2)
+              Bank & Párosítás ({ENDPOINTS.filter((e) => e.category === 'transactions').length})
+            </Button>
+            <Button
+              size="sm"
+              variant={selectedCategory === 'categories' ? 'default' : 'outline'}
+              onClick={() => setSelectedCategory('categories')}
+              className="h-7 text-xs rounded-full"
+            >
+              Kategóriák ({ENDPOINTS.filter((e) => e.category === 'categories').length})
+            </Button>
+            <Button
+              size="sm"
+              variant={selectedCategory === 'nav' ? 'default' : 'outline'}
+              onClick={() => setSelectedCategory('nav')}
+              className="h-7 text-xs rounded-full"
+            >
+              NAV ({ENDPOINTS.filter((e) => e.category === 'nav').length})
             </Button>
             <Button
               size="sm"
@@ -854,7 +1290,7 @@ export function ApiDocsView({
               onClick={() => setSelectedCategory('ledger')}
               className="h-7 text-xs rounded-full"
             >
-              Főkönyvi Napló (1)
+              Főkönyv ({ENDPOINTS.filter((e) => e.category === 'ledger').length})
             </Button>
             <Button
               size="sm"
@@ -862,7 +1298,7 @@ export function ApiDocsView({
               onClick={() => setSelectedCategory('reports')}
               className="h-7 text-xs rounded-full"
             >
-              Kimutatások (2)
+              Kimutatások ({ENDPOINTS.filter((e) => e.category === 'reports').length})
             </Button>
             <Button
               size="sm"
@@ -870,7 +1306,23 @@ export function ApiDocsView({
               onClick={() => setSelectedCategory('companies')}
               className="h-7 text-xs rounded-full"
             >
-              Cégek & Projektek (4)
+              Cégek & Projektek ({ENDPOINTS.filter((e) => e.category === 'companies').length})
+            </Button>
+            <Button
+              size="sm"
+              variant={selectedCategory === 'tickets' ? 'default' : 'outline'}
+              onClick={() => setSelectedCategory('tickets')}
+              className="h-7 text-xs rounded-full"
+            >
+              Hibajegyek ({ENDPOINTS.filter((e) => e.category === 'tickets').length})
+            </Button>
+            <Button
+              size="sm"
+              variant={selectedCategory === 'auth' ? 'default' : 'outline'}
+              onClick={() => setSelectedCategory('auth')}
+              className="h-7 text-xs rounded-full"
+            >
+              Auth ({ENDPOINTS.filter((e) => e.category === 'auth').length})
             </Button>
           </div>
 
@@ -890,6 +1342,8 @@ export function ApiDocsView({
                               ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30'
                               : ep.method === 'POST'
                               ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                              : ep.method === 'DELETE'
+                              ? 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30'
                               : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
                           }`}
                           variant="outline"

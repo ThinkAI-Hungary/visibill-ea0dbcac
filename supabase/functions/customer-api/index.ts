@@ -1,27 +1,58 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { OPENAPI_SPEC } from "./openapi-spec.ts";
+import { NavIngestionService } from "../_shared/nav/index.ts";
 
 // ─── CORS ────────────────────────────────────────────
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, idempotency-key",
+  "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
 };
 
 // ─── Helpers ─────────────────────────────────────────
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), {
+let lastResponsePayload: unknown = null;
+
+const json = (body: unknown, status = 200) => {
+  lastResponsePayload = body;
+  return new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+};
 
 const errorResponse = (code: string, message: string, status = 400, details?: unknown) => {
-  const res = json({ success: false, error: { code, message, details } }, status);
+  const body = { success: false, error: { code, message, details } };
+  lastResponsePayload = body;
+  const res = new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
   (res as any)._errorMessage = details
     ? `${code}: ${message} (${typeof details === "object" ? JSON.stringify(details) : details})`
     : `${code}: ${message}`;
   return res;
 };
+
+// ─── Query Param Validator ────────────────────────────
+function validateQueryParams(url: URL, allowedParams: string[]): Response | null {
+  const allowed = new Set(["action", "company_id", ...allowedParams]);
+  const unknown: string[] = [];
+  for (const key of url.searchParams.keys()) {
+    if (!allowed.has(key)) {
+      unknown.push(key);
+    }
+  }
+  if (unknown.length > 0) {
+    return errorResponse(
+      "INVALID_QUERY_PARAMETER",
+      `Ismeretlen vagy nem támogatott lekérdezési paraméter(ek): ${unknown.join(", ")}. Megengedett paraméterek: ${allowedParams.join(", ") || "nincsenek"}.`,
+      400,
+      { unknown_parameters: unknown, allowed_parameters: allowedParams }
+    );
+  }
+  return null;
+}
 
 // ─── Rate Limiter (in-memory per key hash, 60s sliding window) ──
 const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
@@ -66,7 +97,7 @@ interface AuthResult {
   accessible_company_ids?: string[];
 }
 
-// ─── Input Validators ────────────────────────────────
+// ─── Input Validators & Resolvers ────────────────────
 function validateTaxNumber(taxNumber: string): boolean {
   const regex = /^(HU)?\d{8}-?[1-5]-?\d{2}$/i;
   return regex.test(taxNumber.trim());
@@ -75,6 +106,48 @@ function validateTaxNumber(taxNumber: string): boolean {
 function validateTime(timeStr: string): boolean {
   const regex = /^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/;
   return regex.test(timeStr.trim());
+}
+
+async function resolveEffectiveUserId(
+  admin: ReturnType<typeof createClient>,
+  authUserId: string | null | undefined,
+  companyId: string,
+  apiKeyId?: string | null
+): Promise<string | null> {
+  if (authUserId) return authUserId;
+
+  // 1. Megpróbáljuk a cég tulajdonosát (owner)
+  const { data: ownerMember } = await admin
+    .from("company_members")
+    .select("user_id")
+    .eq("company_id", companyId)
+    .eq("role", "owner")
+    .limit(1)
+    .maybeSingle();
+
+  if (ownerMember?.user_id) return ownerMember.user_id;
+
+  // 2. Megpróbáljuk a cég bármely adminisztrátorát vagy tagját
+  const { data: anyMember } = await admin
+    .from("company_members")
+    .select("user_id")
+    .eq("company_id", companyId)
+    .limit(1)
+    .maybeSingle();
+
+  if (anyMember?.user_id) return anyMember.user_id;
+
+  // 3. Megpróbáljuk az API kulcs létrehozóját
+  if (apiKeyId) {
+    const { data: keyRec } = await admin
+      .from("api_keys")
+      .select("created_by")
+      .eq("id", apiKeyId)
+      .maybeSingle();
+    if (keyRec?.created_by) return keyRec.created_by;
+  }
+
+  return null;
 }
 
 // ─── Request Logger ──────────────────────────────────
@@ -123,21 +196,38 @@ function getApiDocumentation() {
     api_name: "Visibill / eaisybill Customer REST API",
     version: "v2",
     base_url: "https://vxxgvdlqvvchtlmqnrqf.supabase.co/functions/v1/customer-api",
-    description: "Hivatalos programozási felület (M2M) cégadatok, számlák, partnerek, banki tranzakciók, főkönyvi adatok és kimutatások eléréséhez és kezeléséhez.",
+    openapi_url: "https://vxxgvdlqvvchtlmqnrqf.supabase.co/functions/v1/customer-api/v1/openapi.json",
+    description: "Hivatalos programozási felület (M2M) cégadatok, számlák, partnerek, banki tranzakciók, kategóriák, NAV szinkron és kimutatások eléréséhez és kezeléséhez.",
     auth_header: "Authorization: Bearer vb_<40-hex-characters>",
+    idempotency_header: "Idempotency-Key: <egyedi-uuid-vagy-kulcs> (opcionális POST/PATCH/DELETE hívásoknál az ismételt végrehajtás elkerülésére)",
     rate_limit: "Alapértelmezett 120 kérés/perc csúszóablakos korlát.",
     endpoints: {
+      "GET /v1/openapi.json": {
+        description: "Hivatalos, interaktív OpenAPI 3.0.3 specifikáció JSON formátumban (nincs szükség auth fejléc-re).",
+      },
+      "GET /v1/auth/me": {
+        description: "Az aktív API kulcs introspekciója (jogosultságok, cég-hozzáférések, rate limit).",
+      },
       "GET /v1/invoices": {
         description: "Számlák listázása szűréssel és lapozással (kimenő és bejövő/NAV számlák normalizált sémában). Támogatja a hiánylista lekérdezést has_image=false szűrővel.",
-        query_params: ["company_id (kötelező)", "direction (all|inbound|outbound)", "date_from (YYYY-MM-DD)", "date_to (YYYY-MM-DD)", "has_image (true|false - false esetén HIÁNYLISTA)", "status (paid|unpaid|all)", "nav_status", "partner_tax_number", "page (default: 1)", "page_size (default: 50, max: 100)"],
+        query_params: ["company_id (kötelező, kivéve ha a kulcs egyetlen céghez van kötve)", "direction (all|inbound|outbound)", "date_from (YYYY-MM-DD)", "date_to (YYYY-MM-DD)", "has_image (true|false - false esetén HIÁNYLISTA)", "status (paid|unpaid|all)", "nav_status", "partner_tax_number", "page (default: 1)", "page_size (default: 50, max: 100)"],
       },
       "GET /v1/invoices/:id": {
         description: "Egy konkrét számla összes adata és számlaképe tételsorokkal (items) együtt.",
-        query_params: ["company_id (kötelező)"],
+        query_params: ["company_id"],
+      },
+      "GET /v1/invoices/:id/image": {
+        description: "Számlakép letöltési linkje (1 órás pre-signed URL) vagy közvetlen 302 átirányítás (?redirect=true).",
+        query_params: ["company_id", "redirect (true|false)"],
       },
       "PATCH /v1/invoices/:id": {
         description: "Számla adatainak módosítása (bizonylatszám OCR-hiba javítása, számlakép és NAV tétel összekötése, fizetettség, kategória, projekt).",
         body_params: ["company_id", "invoice_number (bizonylatszám javítása)", "attachment_url (számlakép csatolása)", "file_base64 (közvetlen PDF feltöltés)", "is_paid (boolean)", "payment_date (YYYY-MM-DD)", "category_id (uuid)", "project_id (uuid)"],
+        required_scope: "read_write",
+      },
+      "DELETE /v1/invoices/:id": {
+        description: "Feltöltött számla törlése. NAV-szinkronizált számla esetén 409 Conflict hibát ad, kivéve ?force=true paraméterrel.",
+        query_params: ["company_id", "force (true|false)"],
         required_scope: "read_write",
       },
       "POST /v1/invoices/upload": {
@@ -152,7 +242,7 @@ function getApiDocumentation() {
       },
       "GET /v1/partners": {
         description: "Partnertörzs (vevők/szállítók) listázása és keresése.",
-        query_params: ["company_id (kötelező)", "search", "page", "page_size"],
+        query_params: ["company_id", "search", "page", "page_size"],
       },
       "POST /v1/partners": {
         description: "Új partner rögzítése.",
@@ -165,17 +255,47 @@ function getApiDocumentation() {
         required_scope: "read_write",
       },
       "GET /v1/transactions": {
-        description: "Banki tranzakciók lekérdezése számlapárosítási információkkal.",
-        query_params: ["company_id (kötelező)", "date_from", "date_to", "is_matched (true|false)", "currency", "page", "page_size"],
+        description: "Banki tranzakciók lekérdezése számlapárosítási információkkal. Támogatja az is_matched=false és az unmatched_only=true szűrést.",
+        query_params: ["company_id", "date_from", "date_to", "is_matched (true|false)", "unmatched_only (true|false)", "currency", "page", "page_size"],
       },
       "POST /v1/transactions/:id/match": {
-        description: "Banki tranzakció kézi összerendelése számlával.",
-        body_params: ["company_id", "invoice_id"],
+        description: "Banki tranzakció kézi összerendelése számlával (szigorú létezés-ellenőrzéssel mindkét oldalon, hiány esetén 404).",
+        body_params: ["company_id", "invoice_id (kötelező)"],
+        required_scope: "read_write",
+      },
+      "POST /v1/transactions/:id/unmatch": {
+        description: "Banki tranzakció számlapárosításának feloldása és fizetettség visszavonása.",
+        required_scope: "read_write",
+      },
+      "DELETE /v1/transactions/:id/match": {
+        description: "A POST /v1/transactions/:id/unmatch REST-megfelelője: párosítás törlése.",
+        required_scope: "read_write",
+      },
+      "DELETE /v1/transactions/:id": {
+        description: "Egyedi tranzakció törlése és kapcsolódó kötések feloldása.",
+        required_scope: "read_write",
+      },
+      "POST /v1/transactions/bulk-delete": {
+        description: "Tömeges tranzakció törlés (max. 500 ID).",
+        body_params: ["company_id", "ids (string[])"],
+        required_scope: "read_write",
+      },
+      "GET /v1/categories": {
+        description: "Céghez tartozó kategóriák listája főkönyvi adatokkal.",
+        query_params: ["company_id"],
+      },
+      "GET /v1/nav/status": {
+        description: "NAV technikai felhasználó beállítások és legutóbbi szinkron naplók státusza.",
+        query_params: ["company_id"],
+      },
+      "POST /v1/nav/sync": {
+        description: "Manuális NAV számla szinkronizáció indítása megadott dátumtartományra és irányra.",
+        body_params: ["company_id", "date_from (kötelező, YYYY-MM-DD)", "date_to (YYYY-MM-DD)", "direction ('inbound' | 'outbound' | 'both')", "fetch_details (boolean)"],
         required_scope: "read_write",
       },
       "GET /v1/projects": {
         description: "Aktív projektek és költségvetési keretek listája.",
-        query_params: ["company_id (kötelező)"],
+        query_params: ["company_id"],
       },
       "POST /v1/projects": {
         description: "Új projekt rögzítése.",
@@ -184,22 +304,44 @@ function getApiDocumentation() {
       },
       "GET /v1/ledger": {
         description: "Sorszintű, kontírozott főkönyvi napló lekérdezése ERP feladáshoz.",
-        query_params: ["company_id (kötelező)", "date_from", "date_to", "page", "page_size"],
+        query_params: ["company_id", "date_from", "date_to", "page", "page_size"],
       },
       "GET /v1/reports/vat": {
         description: "Időszaki ÁFA bevallási pozíció és számítási összefoglaló.",
-        query_params: ["company_id (kötelező)", "period (YYYY-MM)"],
+        query_params: ["company_id", "period (YYYY-MM) vagy year (YYYY)"],
       },
       "GET /v1/reports/pnl": {
         description: "Éves eredménykimutatás (bevétel, költség, adózás előtti eredmény).",
-        query_params: ["company_id (kötelező)", "year (YYYY)"],
+        query_params: ["company_id", "year (YYYY)"],
       },
       "GET /v1/companies": {
         description: "Az API kulccsal elérhető összes cég listája.",
       },
       "GET /v1/company": {
         description: "Egy konkrét cég törzsadatai, beállításai, telephelyei és bankszámlái.",
-        query_params: ["company_id (kötelező)"],
+        query_params: ["company_id"],
+      },
+      "GET /v1/tickets": {
+        description: "A céghez tartozó hibajegyek listája státusz és prioritás szűréssel, lapozással.",
+        query_params: ["company_id", "status", "priority", "type", "page", "page_size"],
+      },
+      "POST /v1/tickets": {
+        description: "Új hibajegy nyitása a céghez.",
+        body_params: ["company_id", "type (bug|feedback|question)", "message (kötelező)", "priority", "service", "page_url", "attachments"],
+        required_scope: "read_write",
+      },
+      "GET /v1/tickets/:id": {
+        description: "Egyedi hibajegy részletes adatlapja publikus hozzászólásokkal (UUID vagy EB-xxxx jegyszám alapján).",
+        query_params: ["company_id"],
+      },
+      "POST /v1/tickets/:id/comments": {
+        description: "Új hozzászólás / válasz beküldése meglévő hibajegyhez.",
+        body_params: ["company_id", "message (kötelező)", "attachments"],
+        required_scope: "read_write",
+      },
+      "POST /v1/tickets/:id/confirm-resolution": {
+        description: "A support által kínált megoldás elfogadása és a hibajegy lezárása.",
+        required_scope: "read_write",
       },
     },
   };
@@ -222,6 +364,22 @@ serve(async (req) => {
   const normalizedPath = url.pathname.replace(/^\/customer-api/, "").replace(/\/+$/, "");
   const pathSegments = normalizedPath.split("/").filter(Boolean);
   const isV1Path = pathSegments.length > 0 && pathSegments[0] === "v1";
+
+  // Check OpenAPI JSON endpoint (no auth required)
+  if (
+    normalizedPath === "/openapi.json" ||
+    normalizedPath === "/v1/openapi.json" ||
+    url.searchParams.get("action") === "openapi" ||
+    url.searchParams.get("action") === "openapi.json"
+  ) {
+    return new Response(JSON.stringify(OPENAPI_SPEC, null, 2), {
+      status: 200,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+      },
+    });
+  }
 
   // Action resolution: path-based first, query parameter second
   let resource = isV1Path ? pathSegments[1] : (url.searchParams.get("action") || "help");
@@ -335,7 +493,12 @@ serve(async (req) => {
     try {
       const contentType = req.headers.get("content-type") || "";
       if (contentType.includes("application/json")) {
-        requestBody = await req.json();
+        const text = await req.text();
+        if (text && text.trim().length > 0) {
+          requestBody = JSON.parse(text);
+        } else {
+          requestBody = {};
+        }
       }
     } catch {
       const res = errorResponse("INVALID_JSON", "Érvénytelen JSON kéréstörzs.", 400);
@@ -351,6 +514,29 @@ serve(async (req) => {
         durationMs: Date.now() - startTime,
       });
       return res;
+    }
+  }
+
+  // 6. Check Idempotency-Key for mutating requests (POST, PATCH, DELETE)
+  const idempotencyKey = req.headers.get("idempotency-key")?.trim();
+  if (idempotencyKey && (req.method === "POST" || req.method === "PATCH" || req.method === "DELETE")) {
+    const { data: cached } = await admin
+      .from("api_idempotency_keys")
+      .select("status_code, response_body")
+      .eq("api_key_id", auth.key_id)
+      .eq("idempotency_key", idempotencyKey)
+      .gt("expires_at", new Date().toISOString())
+      .maybeSingle();
+
+    if (cached) {
+      return new Response(JSON.stringify(cached.response_body), {
+        status: cached.status_code,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+          "Idempotency-Replayed": "true",
+        },
+      });
     }
   }
 
@@ -638,12 +824,74 @@ serve(async (req) => {
           }
         }
       }
+      // CASE: Invoice image signed URL (GET /v1/invoices/:id/image or /v1/invoices/:id/download)
+      else if (req.method === "GET" && invoiceId && (subAction === "image" || subAction === "download")) {
+        const queryErr = validateQueryParams(url, ["invoice_id", "redirect"]);
+        if (queryErr) { response = queryErr; }
+        else {
+          const accessErr = verifyCompanyAccess(targetCompanyId);
+          if (accessErr) { response = accessErr; }
+          else {
+            const { data: inv, error: invErr } = await admin
+              .from("invoices")
+              .select("id, bizonylatsorszam, melleklet_url, image_url")
+              .eq("id", invoiceId)
+              .eq("company_id", targetCompanyId)
+              .maybeSingle();
+
+            if (invErr || !inv) {
+              response = errorResponse("INVOICE_NOT_FOUND", "A számla nem található a megadott cégnél.", 404);
+            } else {
+              const rawUrl = inv.melleklet_url || inv.image_url;
+              if (!rawUrl) {
+                response = errorResponse("IMAGE_NOT_FOUND", "A számlához nem tartozik csatolt számlakép vagy bizonylat.", 404);
+              } else {
+                let finalUrl = rawUrl;
+                let expiresIn = 3600;
+
+                const storageMatch = rawUrl.match(/\/storage\/v1\/object\/(?:public|sign)\/([^/]+)\/(.+)$/);
+                if (storageMatch) {
+                  const bucket = storageMatch[1];
+                  const objectPath = decodeURIComponent(storageMatch[2].split("?")[0]);
+                  const { data: signedData } = await admin.storage.from(bucket).createSignedUrl(objectPath, expiresIn);
+                  if (signedData?.signedUrl) {
+                    finalUrl = signedData.signedUrl;
+                  }
+                }
+
+                if (url.searchParams.get("redirect") === "true") {
+                  response = new Response(null, {
+                    status: 302,
+                    headers: {
+                      ...corsHeaders,
+                      "Location": finalUrl,
+                    },
+                  });
+                } else {
+                  response = json({
+                    success: true,
+                    data: {
+                      invoice_id: inv.id,
+                      invoice_number: inv.bizonylatsorszam,
+                      image_url: finalUrl,
+                      expires_in_seconds: expiresIn,
+                    }
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
       // CASE: Single invoice details with items (GET /v1/invoices/:id)
       else if (req.method === "GET" && invoiceId) {
-        const accessErr = verifyCompanyAccess(targetCompanyId);
-        if (accessErr) { response = accessErr; }
+        const queryErr = validateQueryParams(url, ["invoice_id"]);
+        if (queryErr) { response = queryErr; }
         else {
-          const [invRes, itemsRes] = await Promise.all([
+          const accessErr = verifyCompanyAccess(targetCompanyId);
+          if (accessErr) { response = accessErr; }
+          else {
+            const [invRes, itemsRes] = await Promise.all([
             admin
               .from("invoices")
               .select("*")
@@ -730,6 +978,7 @@ serve(async (req) => {
           }
         }
       }
+    }
       // CASE: Update invoice details / fix OCR errors / pair image (PATCH /v1/invoices/:id)
       else if (req.method === "PATCH" && invoiceId) {
         const scopeErr = requireWriteScope();
@@ -821,11 +1070,71 @@ serve(async (req) => {
           }
         }
       }
+      // CASE: Delete invoice (DELETE /v1/invoices/:id)
+      else if (req.method === "DELETE" && invoiceId) {
+        const queryErr = validateQueryParams(url, ["invoice_id", "force"]);
+        if (queryErr) { response = queryErr; }
+        else {
+          const scopeErr = requireWriteScope();
+          if (scopeErr) { response = scopeErr; }
+          else {
+            const accessErr = verifyCompanyAccess(targetCompanyId);
+            if (accessErr) { response = accessErr; }
+            else {
+              const { data: invRecord, error: findInvErr } = await admin
+                .from("invoices")
+                .select("id, bizonylatsorszam, nav_status, transaction_id")
+                .eq("id", invoiceId)
+                .eq("company_id", targetCompanyId)
+                .maybeSingle();
+
+              if (findInvErr || !invRecord) {
+                response = errorResponse("INVOICE_NOT_FOUND", "A számla nem található a megadott cégnél.", 404);
+              } else {
+                const isNavSynced = Boolean(invRecord.nav_status && invRecord.nav_status !== "missing_nav");
+                const force = url.searchParams.get("force") === "true";
+
+                if (isNavSynced && !force) {
+                  response = errorResponse(
+                    "NAV_INVOICE_CANNOT_BE_DELETED",
+                    "A NAV által szinkronizált számla integritási okokból nem törölhető az adatbázisból. Csak manuálisan rögzített számlák törölhetők, vagy ?force=true paraméter szükséges.",
+                    409,
+                    { invoice_number: invRecord.bizonylatsorszam, nav_status: invRecord.nav_status }
+                  );
+                } else {
+                  if (invRecord.transaction_id) {
+                    await Promise.all([
+                      admin.from("transactions").update({ matched_invoice_id: null, match_type: null, is_verified: false }).eq("id", invRecord.transaction_id),
+                      admin.from("transaction_invoice_matches").delete().eq("invoice_id", invoiceId),
+                    ]);
+                  }
+
+                  await admin.from("invoice_items").delete().eq("invoice_id", invoiceId);
+                  const { error: delErr } = await admin.from("invoices").delete().eq("id", invoiceId).eq("company_id", targetCompanyId);
+
+                  if (delErr) {
+                    response = errorResponse("DELETE_FAILED", delErr.message, 500);
+                  } else {
+                    response = json({
+                      success: true,
+                      message: "Számla sikeresen törölve.",
+                      data: { id: invoiceId, invoice_number: invRecord.bizonylatsorszam }
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
       // CASE: List invoices (GET /v1/invoices) with Missing-Image (Hiánylista) support
       else if (req.method === "GET") {
-        const accessErr = verifyCompanyAccess(targetCompanyId);
-        if (accessErr) { response = accessErr; }
+        const queryErr = validateQueryParams(url, ["direction", "date_from", "date_to", "status", "partner_tax_number", "has_image", "missing_image", "nav_status", "page", "page_size"]);
+        if (queryErr) { response = queryErr; }
         else {
+          const accessErr = verifyCompanyAccess(targetCompanyId);
+          if (accessErr) { response = accessErr; }
+          else {
           const direction = url.searchParams.get("direction")?.toLowerCase() || "all";
           const dateFrom = url.searchParams.get("date_from");
           const dateTo = url.searchParams.get("date_to");
@@ -933,9 +1242,10 @@ serve(async (req) => {
             });
           }
         }
-      } else {
-        response = errorResponse("METHOD_NOT_ALLOWED", "Nem támogatott HTTP metódus számlákhoz.", 405);
       }
+    } else {
+      response = errorResponse("METHOD_NOT_ALLOWED", "Nem támogatott HTTP metódus számlákhoz.", 405);
+    }
     }
     // ──────────────────────────────────────────────────
     // DOMAIN: PARTNERS
@@ -1025,92 +1335,385 @@ serve(async (req) => {
     // DOMAIN: TRANSACTIONS
     // ──────────────────────────────────────────────────
     else if (resource === "transactions" || resource === "transaction") {
-      const transactionId = subResource || url.searchParams.get("transaction_id");
+      const isBulkDelete = subResource === "bulk-delete" || resource === "bulk_delete_transactions";
+      const transactionId = isBulkDelete ? null : (subResource || url.searchParams.get("transaction_id"));
 
-      // Match transaction to invoice (POST /v1/transactions/:id/match)
-      if (req.method === "POST" && subAction === "match" && transactionId) {
-        const scopeErr = requireWriteScope();
-        if (scopeErr) { response = scopeErr; }
+      // Bulk delete transactions (POST /v1/transactions/bulk-delete)
+      if (req.method === "POST" && isBulkDelete) {
+        const queryErr = validateQueryParams(url, []);
+        if (queryErr) { response = queryErr; }
         else {
-          const accessErr = verifyCompanyAccess(targetCompanyId);
-          if (accessErr) { response = accessErr; }
-          else if (!requestBody.invoice_id) {
-            response = errorResponse("MISSING_INVOICE_ID", "Az 'invoice_id' megadása kötelező.", 400);
-          } else {
-            // Update transaction and invoice link
-            const [txRes, invRes] = await Promise.all([
-              admin
-                .from("transactions")
-                .update({ matched_invoice_id: requestBody.invoice_id, match_type: "manual", is_verified: true })
-                .eq("id", transactionId)
-                .eq("company_id", targetCompanyId),
-              admin
-                .from("invoices")
-                .update({ transaction_id: transactionId, fizetve: true })
-                .eq("id", requestBody.invoice_id)
-                .eq("company_id", targetCompanyId)
-            ]);
+          const scopeErr = requireWriteScope();
+          if (scopeErr) { response = scopeErr; }
+          else {
+            const accessErr = verifyCompanyAccess(targetCompanyId);
+            if (accessErr) { response = accessErr; }
+            else {
+              const ids: string[] = Array.isArray(requestBody.ids) ? requestBody.ids : [];
+              if (ids.length === 0) {
+                response = errorResponse("INVALID_PAYLOAD", "Az 'ids' tömb megadása kötelező és legalább 1 azonosítót kell tartalmaznia.", 400);
+              } else if (ids.length > 500) {
+                response = errorResponse("PAYLOAD_TOO_LARGE", "Egyszerre legfeljebb 500 tranzakció törölhető egyetlen kéréssel.", 400);
+              } else {
+                const { data: foundTxs, error: findErr } = await admin
+                  .from("transactions")
+                  .select("id, matched_invoice_id")
+                  .eq("company_id", targetCompanyId)
+                  .in("id", ids);
 
-            if (txRes.error || invRes.error) {
-              response = errorResponse("MATCH_FAILED", txRes.error?.message || invRes.error?.message || "Párosítás sikertelen.", 500);
-            } else {
-              response = json({ success: true, message: "Tranzakció és számla sikeresen összerendelve." });
+                if (findErr) {
+                  response = errorResponse("QUERY_FAILED", findErr.message, 500);
+                } else {
+                  const foundIds = (foundTxs || []).map((t: any) => t.id);
+                  const matchedInvoiceIds = (foundTxs || []).map((t: any) => t.matched_invoice_id).filter(Boolean);
+
+                  if (foundIds.length > 0) {
+                    if (matchedInvoiceIds.length > 0) {
+                      await Promise.all([
+                        admin.from("invoices").update({ transaction_id: null, fizetve: false }).in("id", matchedInvoiceIds).in("transaction_id", foundIds),
+                        admin.from("nav_invoices").update({ transaction_id: null, paid: false }).in("id", matchedInvoiceIds).in("transaction_id", foundIds),
+                        admin.from("salary").update({ transaction_id: null }).in("transaction_id", foundIds),
+                        admin.from("transaction_invoice_matches").delete().in("transaction_id", foundIds),
+                      ]);
+                    }
+
+                    const { error: delErr } = await admin
+                      .from("transactions")
+                      .delete()
+                      .eq("company_id", targetCompanyId)
+                      .in("id", foundIds);
+
+                    if (delErr) {
+                      response = errorResponse("DELETE_FAILED", delErr.message, 500);
+                    } else {
+                      response = json({
+                        success: true,
+                        message: `${foundIds.length} tranzakció sikeresen törölve.`,
+                        data: {
+                          requested_count: ids.length,
+                          deleted_count: foundIds.length,
+                          deleted_ids: foundIds,
+                        }
+                      });
+                    }
+                  } else {
+                    response = json({
+                      success: true,
+                      message: "Nem található törölhető tranzakció a megadott azonosítókkal ennél a cégnél.",
+                      data: {
+                        requested_count: ids.length,
+                        deleted_count: 0,
+                        deleted_ids: [],
+                      }
+                    });
+                  }
+                }
+              }
             }
           }
         }
       }
-      // List transactions (GET /v1/transactions)
-      else if (req.method === "GET") {
-        const accessErr = verifyCompanyAccess(targetCompanyId);
-        if (accessErr) { response = accessErr; }
+      // Unmatch transaction (POST /v1/transactions/:id/unmatch OR DELETE /v1/transactions/:id/match)
+      else if (
+        transactionId &&
+        ((req.method === "POST" && subAction === "unmatch") || (req.method === "DELETE" && subAction === "match"))
+      ) {
+        const queryErr = validateQueryParams(url, ["transaction_id"]);
+        if (queryErr) { response = queryErr; }
         else {
-          const dateFrom = url.searchParams.get("date_from");
-          const dateTo = url.searchParams.get("date_to");
-          const isMatched = url.searchParams.get("is_matched");
-          const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
-          const pageSize = Math.min(100, Math.max(1, parseInt(url.searchParams.get("page_size") || "50", 10)));
-          const offset = (page - 1) * pageSize;
-
-          let query = admin
-            .from("transactions")
-            .select("id, transaction_date, description, amount, currency, type, matched_invoice_id, match_type, is_verified, created_at", { count: "exact" })
-            .eq("company_id", targetCompanyId);
-
-          if (dateFrom) query = query.gte("transaction_date", dateFrom);
-          if (dateTo) query = query.lte("transaction_date", dateTo);
-          if (isMatched === "true") query = query.not("matched_invoice_id", "is", null);
-          if (isMatched === "false") query = query.is("matched_invoice_id", null);
-
-          const { data: txs, count, error: txErr } = await query
-            .order("transaction_date", { ascending: false })
-            .range(offset, offset + pageSize - 1);
-
-          if (txErr) { response = errorResponse("QUERY_FAILED", txErr.message, 500); }
+          const scopeErr = requireWriteScope();
+          if (scopeErr) { response = scopeErr; }
           else {
-            const normalizedTxs = (txs || []).map((tx: any) => ({
-              id: tx.id,
-              transaction_date: tx.transaction_date,
-              booking_date: tx.transaction_date,
-              date: tx.transaction_date,
-              description: tx.description,
-              comment: tx.description,
-              amount: tx.amount,
-              currency: tx.currency,
-              type: tx.type,
-              matched_invoice_id: tx.matched_invoice_id,
-              is_matched: Boolean(tx.matched_invoice_id),
-              match_type: tx.match_type,
-              is_verified: tx.is_verified,
-              created_at: tx.created_at,
-            }));
+            const accessErr = verifyCompanyAccess(targetCompanyId);
+            if (accessErr) { response = accessErr; }
+            else {
+              const { data: txRecord, error: txErr } = await admin
+                .from("transactions")
+                .select("id, company_id, matched_invoice_id")
+                .eq("id", transactionId)
+                .eq("company_id", targetCompanyId)
+                .maybeSingle();
 
-            response = json({
-              success: true,
-              data: {
-                transactions: normalizedTxs,
-                pagination: { page, page_size: pageSize, total_items: count || 0, total_pages: Math.ceil((count || 0) / pageSize) },
-              },
-            });
+              if (txErr || !txRecord) {
+                response = errorResponse("TRANSACTION_NOT_FOUND", "A megadott tranzakció nem található a megadott cégnél.", 404, { transaction_id: transactionId });
+              } else if (!txRecord.matched_invoice_id) {
+                response = errorResponse("NOT_MATCHED", "A megadott tranzakció jelenleg nincs számlához párosítva.", 400, { transaction_id: transactionId });
+              } else {
+                const previousInvoiceId = txRecord.matched_invoice_id;
+                await Promise.all([
+                  admin
+                    .from("transactions")
+                    .update({ matched_invoice_id: null, match_type: null, is_verified: false })
+                    .eq("id", transactionId)
+                    .eq("company_id", targetCompanyId),
+                  admin
+                    .from("invoices")
+                    .update({ transaction_id: null, fizetve: false })
+                    .eq("id", previousInvoiceId)
+                    .eq("transaction_id", transactionId),
+                  admin
+                    .from("nav_invoices")
+                    .update({ transaction_id: null, paid: false })
+                    .eq("id", previousInvoiceId)
+                    .eq("transaction_id", transactionId),
+                  admin
+                    .from("salary")
+                    .update({ transaction_id: null })
+                    .eq("transaction_id", transactionId),
+                  admin
+                    .from("transaction_invoice_matches")
+                    .delete()
+                    .eq("transaction_id", transactionId),
+                ]);
+
+                response = json({
+                  success: true,
+                  message: "Párosítás sikeresen visszavonva.",
+                  data: {
+                    transaction_id: transactionId,
+                    unmatched_invoice_id: previousInvoiceId,
+                  }
+                });
+              }
+            }
+          }
+        }
+      }
+      // Match transaction to invoice (POST /v1/transactions/:id/match) - Strict validation
+      else if (req.method === "POST" && subAction === "match" && transactionId) {
+        const queryErr = validateQueryParams(url, ["transaction_id"]);
+        if (queryErr) { response = queryErr; }
+        else {
+          const scopeErr = requireWriteScope();
+          if (scopeErr) { response = scopeErr; }
+          else {
+            const accessErr = verifyCompanyAccess(targetCompanyId);
+            if (accessErr) { response = accessErr; }
+            else if (!requestBody.invoice_id) {
+              response = errorResponse("MISSING_INVOICE_ID", "Az 'invoice_id' megadása kötelező a párosításhoz.", 400);
+            } else {
+              const targetInvoiceId = String(requestBody.invoice_id).trim();
+
+              // 1. Verify transaction exists and belongs to company
+              const { data: txRecord, error: txErr } = await admin
+                .from("transactions")
+                .select("id, company_id, matched_invoice_id")
+                .eq("id", transactionId)
+                .eq("company_id", targetCompanyId)
+                .maybeSingle();
+
+              if (txErr || !txRecord) {
+                response = errorResponse("TRANSACTION_NOT_FOUND", "A megadott tranzakció nem található a megadott cégnél.", 404, { transaction_id: transactionId });
+              } else {
+                // 2. Verify target invoice exists and belongs to company (check invoices, then nav_invoices)
+                const { data: invRecord, error: invErr } = await admin
+                  .from("invoices")
+                  .select("id, company_id, bizonylatsorszam, brutto_vegosszeg, fizetve")
+                  .eq("id", targetInvoiceId)
+                  .eq("company_id", targetCompanyId)
+                  .maybeSingle();
+
+                let isNavTable = false;
+                if (!invRecord) {
+                  const { data: navInvRecord } = await admin
+                    .from("nav_invoices")
+                    .select("id, company_id, invoice_number, invoice_gross_amount, paid")
+                    .eq("id", targetInvoiceId)
+                    .eq("company_id", targetCompanyId)
+                    .maybeSingle();
+
+                  if (!navInvRecord) {
+                    response = errorResponse("INVOICE_NOT_FOUND", "A megadott számla nem található a megadott cégnél.", 404, { invoice_id: targetInvoiceId });
+                  } else {
+                    isNavTable = true;
+                  }
+                }
+
+                if (!response!) {
+                  // Perform atomic link updates
+                  const updatePromises: Promise<any>[] = [
+                    admin
+                      .from("transactions")
+                      .update({ matched_invoice_id: targetInvoiceId, match_type: "manual", is_verified: true })
+                      .eq("id", transactionId)
+                      .eq("company_id", targetCompanyId),
+                  ];
+
+                  if (isNavTable) {
+                    updatePromises.push(
+                      admin
+                        .from("nav_invoices")
+                        .update({ transaction_id: transactionId, paid: true })
+                        .eq("id", targetInvoiceId)
+                        .eq("company_id", targetCompanyId)
+                    );
+                  } else {
+                    updatePromises.push(
+                      admin
+                        .from("invoices")
+                        .update({ transaction_id: transactionId, fizetve: true })
+                        .eq("id", targetInvoiceId)
+                        .eq("company_id", targetCompanyId)
+                    );
+                  }
+
+                  updatePromises.push(
+                    admin
+                      .from("transaction_invoice_matches")
+                      .upsert({
+                        transaction_id: transactionId,
+                        invoice_id: targetInvoiceId,
+                        confidence_score: 1.0,
+                        match_type: "manual",
+                        status: "confirmed",
+                        updated_at: new Date().toISOString(),
+                      }, { onConflict: "transaction_id" })
+                  );
+
+                  await Promise.all(updatePromises);
+
+                  response = json({
+                    success: true,
+                    message: "Tranzakció és számla sikeresen összerendelve.",
+                    data: {
+                      transaction_id: transactionId,
+                      invoice_id: targetInvoiceId,
+                      match_type: "manual",
+                      is_verified: true,
+                    }
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+      // Delete single transaction (DELETE /v1/transactions/:id)
+      else if (req.method === "DELETE" && transactionId && !subAction) {
+        const queryErr = validateQueryParams(url, ["transaction_id"]);
+        if (queryErr) { response = queryErr; }
+        else {
+          const scopeErr = requireWriteScope();
+          if (scopeErr) { response = scopeErr; }
+          else {
+            const accessErr = verifyCompanyAccess(targetCompanyId);
+            if (accessErr) { response = accessErr; }
+            else {
+              const { data: txRecord, error: findErr } = await admin
+                .from("transactions")
+                .select("id, matched_invoice_id")
+                .eq("id", transactionId)
+                .eq("company_id", targetCompanyId)
+                .maybeSingle();
+
+              if (findErr || !txRecord) {
+                response = errorResponse("TRANSACTION_NOT_FOUND", "A megadott tranzakció nem található a megadott cégnél.", 404, { transaction_id: transactionId });
+              } else {
+                if (txRecord.matched_invoice_id) {
+                  await Promise.all([
+                    admin.from("invoices").update({ transaction_id: null, fizetve: false }).eq("id", txRecord.matched_invoice_id).eq("transaction_id", transactionId),
+                    admin.from("nav_invoices").update({ transaction_id: null, paid: false }).eq("id", txRecord.matched_invoice_id).eq("transaction_id", transactionId),
+                    admin.from("salary").update({ transaction_id: null }).eq("transaction_id", transactionId),
+                    admin.from("transaction_invoice_matches").delete().eq("transaction_id", transactionId),
+                  ]);
+                }
+
+                const { error: delErr } = await admin
+                  .from("transactions")
+                  .delete()
+                  .eq("id", transactionId)
+                  .eq("company_id", targetCompanyId);
+
+                if (delErr) {
+                  response = errorResponse("DELETE_FAILED", delErr.message, 500);
+                } else {
+                  response = json({
+                    success: true,
+                    message: "Tranzakció sikeresen törölve.",
+                    data: { id: transactionId }
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+      // List transactions (GET /v1/transactions) with unmatched_only alias and param validation
+      else if (req.method === "GET") {
+        const queryErr = validateQueryParams(url, ["date_from", "date_to", "is_matched", "unmatched_only", "currency", "page", "page_size"]);
+        if (queryErr) { response = queryErr; }
+        else {
+          const accessErr = verifyCompanyAccess(targetCompanyId);
+          if (accessErr) { response = accessErr; }
+          else {
+            const dateFrom = url.searchParams.get("date_from");
+            const dateTo = url.searchParams.get("date_to");
+            const isMatchedParam = url.searchParams.get("is_matched");
+            const unmatchedOnlyParam = url.searchParams.get("unmatched_only");
+            const currencyParam = url.searchParams.get("currency");
+            const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
+            const pageSize = Math.min(100, Math.max(1, parseInt(url.searchParams.get("page_size") || "50", 10)));
+            const offset = (page - 1) * pageSize;
+
+            // Handle unmatched_only alias and conflict check
+            let effectiveIsMatched = isMatchedParam;
+            if (unmatchedOnlyParam !== null) {
+              const uBool = unmatchedOnlyParam.toLowerCase() === "true";
+              if (isMatchedParam !== null) {
+                const mBool = isMatchedParam.toLowerCase() === "true";
+                if (uBool === mBool) {
+                  response = errorResponse("CONFLICTING_PARAMETERS", "Az 'unmatched_only' és az 'is_matched' paraméterek ellentmondanak egymásnak.", 400);
+                }
+              }
+              if (!response!) {
+                effectiveIsMatched = uBool ? "false" : "true";
+              }
+            }
+
+            if (!response!) {
+              let query = admin
+                .from("transactions")
+                .select("id, transaction_date, description, amount, currency, type, matched_invoice_id, match_type, is_verified, created_at", { count: "exact" })
+                .eq("company_id", targetCompanyId);
+
+              if (dateFrom) query = query.gte("transaction_date", dateFrom);
+              if (dateTo) query = query.lte("transaction_date", dateTo);
+              if (effectiveIsMatched === "true") query = query.not("matched_invoice_id", "is", null);
+              if (effectiveIsMatched === "false") query = query.is("matched_invoice_id", null);
+              if (currencyParam) query = query.eq("currency", currencyParam.toUpperCase());
+
+              const { data: txs, count, error: txErr } = await query
+                .order("transaction_date", { ascending: false })
+                .range(offset, offset + pageSize - 1);
+
+              if (txErr) { response = errorResponse("QUERY_FAILED", txErr.message, 500); }
+              else {
+                const normalizedTxs = (txs || []).map((tx: any) => ({
+                  id: tx.id,
+                  transaction_date: tx.transaction_date,
+                  booking_date: tx.transaction_date,
+                  date: tx.transaction_date,
+                  description: tx.description,
+                  comment: tx.description,
+                  amount: tx.amount,
+                  currency: tx.currency,
+                  type: tx.type,
+                  matched_invoice_id: tx.matched_invoice_id,
+                  is_matched: Boolean(tx.matched_invoice_id),
+                  match_type: tx.match_type,
+                  is_verified: tx.is_verified,
+                  created_at: tx.created_at,
+                }));
+
+                response = json({
+                  success: true,
+                  data: {
+                    transactions: normalizedTxs,
+                    pagination: { page, page_size: pageSize, total_items: count || 0, total_pages: Math.ceil((count || 0) / pageSize) },
+                  },
+                });
+              }
+            }
           }
         }
       } else {
@@ -1195,69 +1798,89 @@ serve(async (req) => {
       const reportType = subResource || url.searchParams.get("report_type");
 
       if (reportType === "vat") {
-        const accessErr = verifyCompanyAccess(targetCompanyId);
-        if (accessErr) { response = accessErr; }
+        const queryErr = validateQueryParams(url, ["report_type", "period", "year", "month", "quarter"]);
+        if (queryErr) { response = queryErr; }
         else {
-          const period = url.searchParams.get("period"); // YYYY-MM
-          let query = admin
-            .from("vat_returns")
-            .select("period_year, period_month, period_quarter, frequency, status, total_payable_tax, total_deductible_tax, net_result, amount_to_pay, amount_reclaimable, finalized_at")
-            .eq("company_id", targetCompanyId);
+          const accessErr = verifyCompanyAccess(targetCompanyId);
+          if (accessErr) { response = accessErr; }
+          else {
+            const period = url.searchParams.get("period"); // YYYY-MM
+            const yearParam = url.searchParams.get("year");
+            const monthParam = url.searchParams.get("month");
+            const quarterParam = url.searchParams.get("quarter");
 
-          if (period && period.includes("-")) {
-            const [y, m] = period.split("-");
-            query = query.eq("period_year", parseInt(y, 10)).eq("period_month", parseInt(m, 10));
+            let query = admin
+              .from("vat_returns")
+              .select("period_year, period_month, period_quarter, frequency, status, total_payable_tax, total_deductible_tax, net_result, amount_to_pay, amount_reclaimable, finalized_at")
+              .eq("company_id", targetCompanyId);
+
+            if (period && period.includes("-")) {
+              const [y, m] = period.split("-");
+              query = query.eq("period_year", parseInt(y, 10)).eq("period_month", parseInt(m, 10));
+            } else if (yearParam) {
+              query = query.eq("period_year", parseInt(yearParam, 10));
+              if (monthParam) query = query.eq("period_month", parseInt(monthParam, 10));
+              if (quarterParam) query = query.eq("period_quarter", parseInt(quarterParam, 10));
+            }
+
+            const { data: vatData, error: vatErr } = await query
+              .order("period_year", { ascending: false })
+              .order("period_month", { ascending: false })
+              .limit(12);
+
+            if (vatErr) { response = errorResponse("QUERY_FAILED", vatErr.message, 500); }
+            else { response = json({ success: true, data: { vat_reports: vatData || [] } }); }
           }
-
-          const { data: vatData, error: vatErr } = await query.order("period_year", { ascending: false }).order("period_month", { ascending: false }).limit(12);
-          if (vatErr) { response = errorResponse("QUERY_FAILED", vatErr.message, 500); }
-          else { response = json({ success: true, data: { vat_reports: vatData || [] } }); }
         }
       } else if (reportType === "pnl") {
-        const accessErr = verifyCompanyAccess(targetCompanyId);
-        if (accessErr) { response = accessErr; }
+        const queryErr = validateQueryParams(url, ["report_type", "year"]);
+        if (queryErr) { response = queryErr; }
         else {
-          const year = url.searchParams.get("year") || String(new Date().getFullYear());
-          const startDate = `${year}-01-01`;
-          const endDate = `${year}-12-31`;
-
-          const { data: invs, error: pnlErr } = await admin
-            .from("invoices")
-            .select("invoice_direction, adoalap_osszesen, penznem")
-            .eq("company_id", targetCompanyId)
-            .gte("kibocsatas_datuma", startDate)
-            .lte("kibocsatas_datuma", endDate);
-
-          if (pnlErr) { response = errorResponse("QUERY_FAILED", pnlErr.message, 500); }
+          const accessErr = verifyCompanyAccess(targetCompanyId);
+          if (accessErr) { response = accessErr; }
           else {
-            let totalRevenueHuf = 0;
-            let totalExpenseHuf = 0;
+            const year = url.searchParams.get("year") || String(new Date().getFullYear());
+            const startDate = `${year}-01-01`;
+            const endDate = `${year}-12-31`;
 
-            (invs || []).forEach((inv: any) => {
-              const amount = Number(inv.adoalap_osszesen) || 0;
-              if (inv.invoice_direction?.toUpperCase() === "OUTBOUND") {
-                totalRevenueHuf += amount;
-              } else {
-                totalExpenseHuf += amount;
-              }
-            });
+            const { data: invs, error: pnlErr } = await admin
+              .from("invoices")
+              .select("invoice_direction, adoalap_osszesen, penznem")
+              .eq("company_id", targetCompanyId)
+              .gte("kibocsatas_datuma", startDate)
+              .lte("kibocsatas_datuma", endDate);
 
-            const pnlData = {
-              year: parseInt(year, 10),
-              revenue_net: Math.round(totalRevenueHuf),
-              expense_net: Math.round(totalExpenseHuf),
-              operating_result_net: Math.round(totalRevenueHuf - totalExpenseHuf),
-              currency: "HUF",
-              invoice_count: invs?.length || 0,
-            };
+            if (pnlErr) { response = errorResponse("QUERY_FAILED", pnlErr.message, 500); }
+            else {
+              let totalRevenueHuf = 0;
+              let totalExpenseHuf = 0;
 
-            response = json({
-              success: true,
-              data: {
-                ...pnlData,
-                pnl: pnlData,
-              },
-            });
+              (invs || []).forEach((inv: any) => {
+                const amount = Number(inv.adoalap_osszesen) || 0;
+                if (inv.invoice_direction?.toUpperCase() === "OUTBOUND") {
+                  totalRevenueHuf += amount;
+                } else {
+                  totalExpenseHuf += amount;
+                }
+              });
+
+              const pnlData = {
+                year: parseInt(year, 10),
+                revenue_net: Math.round(totalRevenueHuf),
+                expense_net: Math.round(totalExpenseHuf),
+                operating_result_net: Math.round(totalRevenueHuf - totalExpenseHuf),
+                currency: "HUF",
+                invoice_count: invs?.length || 0,
+              };
+
+              response = json({
+                success: true,
+                data: {
+                  ...pnlData,
+                  pnl: pnlData,
+                },
+              });
+            }
           }
         }
       } else {
@@ -1265,47 +1888,323 @@ serve(async (req) => {
       }
     }
     // ──────────────────────────────────────────────────
+    // DOMAIN: CATEGORIES (Kategóriák)
+    // ──────────────────────────────────────────────────
+    else if (resource === "categories" || resource === "category") {
+      if (req.method === "GET") {
+        const queryErr = validateQueryParams(url, []);
+        if (queryErr) { response = queryErr; }
+        else {
+          const accessErr = verifyCompanyAccess(targetCompanyId);
+          if (accessErr) { response = accessErr; }
+          else {
+            const { data: cats, error: catErr } = await admin
+              .from("categories")
+              .select("id, name, description, icon, color, gl_accounts, created_at, updated_at")
+              .or(`company_id.eq.${targetCompanyId},company_id.is.null`)
+              .order("name", { ascending: true });
+
+            if (catErr) {
+              response = errorResponse("QUERY_FAILED", catErr.message, 500);
+            } else {
+              response = json({
+                success: true,
+                data: {
+                  categories: cats || [],
+                  count: cats?.length || 0,
+                },
+              });
+            }
+          }
+        }
+      } else {
+        response = errorResponse("METHOD_NOT_ALLOWED", "A kategóriák végpont csak GET metódust támogat.", 405);
+      }
+    }
+    // ──────────────────────────────────────────────────
+    // DOMAIN: NAV INTEGRATION STATUS
+    // ──────────────────────────────────────────────────
+    else if (resource === "nav") {
+      if (req.method === "GET") {
+        const queryErr = validateQueryParams(url, []);
+        if (queryErr) { response = queryErr; }
+        else {
+          const accessErr = verifyCompanyAccess(targetCompanyId);
+          if (accessErr) { response = accessErr; }
+          else {
+            const [credRes, logsRes] = await Promise.all([
+              admin
+                .from("user_nav_credentials")
+                .select("nav_username, nav_tax_number, is_test_environment, last_validated_at, validation_status, validation_error, auto_sync_enabled, sync_frequency")
+                .eq("company_id", targetCompanyId)
+                .maybeSingle(),
+              admin
+                .from("nav_sync_logs")
+                .select("id, sync_type, invoice_direction, date_from, date_to, invoices_fetched, status, error_message, duration_ms, started_at, completed_at, created_at")
+                .eq("company_id", targetCompanyId)
+                .order("created_at", { ascending: false })
+                .limit(5),
+            ]);
+
+            const cred = credRes.data;
+            const logs = logsRes.data || [];
+            const lastSync = logs.length > 0 ? logs[0] : null;
+
+            let maskedUser = null;
+            if (cred?.nav_username) {
+              const u = cred.nav_username;
+              maskedUser = u.length > 3 ? `${u.slice(0, 3)}***` : `${u}***`;
+            }
+
+            response = json({
+              success: true,
+              data: {
+                company_id: targetCompanyId,
+                nav_configured: Boolean(cred),
+                is_configured: Boolean(cred),
+                technical_user: maskedUser,
+                nav_tax_number: cred?.nav_tax_number || null,
+                environment: cred?.is_test_environment ? "test" : "production",
+                auto_sync_enabled: cred?.auto_sync_enabled ?? false,
+                sync_frequency: cred?.sync_frequency || null,
+                last_validated_at: cred?.last_validated_at || null,
+                validation_status: cred?.validation_status || "unknown",
+                validation_error: cred?.validation_error || null,
+                last_sync: lastSync ? {
+                  timestamp: lastSync.created_at || lastSync.completed_at,
+                  status: lastSync.status,
+                  invoices_fetched: lastSync.invoices_fetched,
+                  sync_type: lastSync.sync_type,
+                  error: lastSync.error_message,
+                } : null,
+                recent_logs: logs,
+                recent_syncs: logs,
+              },
+            });
+          }
+        }
+      } else if (req.method === "POST" && (subResource === "sync" || !subResource)) {
+        const queryErr = validateQueryParams(url, []);
+        if (queryErr) { response = queryErr; }
+        else {
+          const scopeErr = requireWriteScope();
+          if (scopeErr) { response = scopeErr; }
+          else {
+            const accessErr = verifyCompanyAccess(targetCompanyId);
+            if (accessErr) { response = accessErr; }
+            else {
+              // 1. Validate date_from
+              const dateFrom = String(requestBody.date_from || "").trim();
+              if (!dateFrom) {
+                response = errorResponse("MISSING_FIELD", "A 'date_from' (kezdő dátum: YYYY-MM-DD) mező megadása kötelező.", 400);
+              } else if (!/^\d{4}-\d{2}-\d{2}$/.test(dateFrom) || isNaN(Date.parse(dateFrom))) {
+                response = errorResponse("VALIDATION_ERROR", "A 'date_from' formátuma érvénytelen. Elvárt formátum: YYYY-MM-DD (pl. 2026-04-01).", 400);
+              } else {
+                // 2. Validate date_to (defaults to today)
+                const todayStr = new Date().toISOString().split("T")[0];
+                const dateTo = requestBody.date_to ? String(requestBody.date_to).trim() : todayStr;
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(dateTo) || isNaN(Date.parse(dateTo))) {
+                  response = errorResponse("VALIDATION_ERROR", "A 'date_to' formátuma érvénytelen. Elvárt formátum: YYYY-MM-DD (pl. 2026-04-30).", 400);
+                } else if (dateTo < dateFrom) {
+                  response = errorResponse("VALIDATION_ERROR", "A 'date_to' nem lehet korábbi dátum, mint a 'date_from'.", 400);
+                } else {
+                  // 3. Validate direction
+                  const rawDir = String(requestBody.direction || "both").toLowerCase();
+                  if (!["inbound", "outbound", "both"].includes(rawDir)) {
+                    response = errorResponse("VALIDATION_ERROR", "A 'direction' mező értéke kizárólag 'inbound', 'outbound' vagy 'both' lehet.", 400);
+                  } else {
+                    const fetchDetails = requestBody.fetch_details !== false;
+                    const sixtySecondsAgo = new Date(Date.now() - 60_000).toISOString();
+                    const { data: recentSync } = await admin
+                      .from("nav_sync_logs")
+                      .select("id, started_at")
+                      .eq("company_id", targetCompanyId)
+                      .gte("started_at", sixtySecondsAgo)
+                      .order("started_at", { ascending: false })
+                      .limit(1)
+                      .maybeSingle();
+
+                    if (recentSync && recentSync.started_at) {
+                      const startedAtMs = new Date(recentSync.started_at).getTime();
+                      const waitSec = Math.max(1, Math.ceil((60_000 - (Date.now() - startedAtMs)) / 1000));
+                      response = errorResponse(
+                        "NAV_SYNC_COOLDOWN",
+                        `A cégnél már folyamatban van egy NAV szinkronizáció, vagy nemrég fejeződött be. Kérjük, várj még ${waitSec} másodpercet az újabb lekérés előtt.`,
+                        429,
+                        { retry_after_seconds: waitSec }
+                      );
+                    } else {
+                      const ingestionService = new NavIngestionService(admin);
+
+                    try {
+                      const credentials = await ingestionService.getCredentials(auth.user_id, targetCompanyId);
+                      const effectiveUserId = auth.user_id || credentials.user_id;
+
+                      let inboundResult: any = null;
+                      let outboundResult: any = null;
+
+                      if (rawDir === "inbound" || rawDir === "both") {
+                        inboundResult = await ingestionService.executeSync({
+                          userId: effectiveUserId,
+                          companyId: targetCompanyId!,
+                          direction: "INBOUND",
+                          dateFrom,
+                          dateTo,
+                          fetchDetailedItems: fetchDetails,
+                          syncType: "manual",
+                        });
+                      }
+
+                      if (rawDir === "outbound" || rawDir === "both") {
+                        outboundResult = await ingestionService.executeSync({
+                          userId: effectiveUserId,
+                          companyId: targetCompanyId!,
+                          direction: "OUTBOUND",
+                          dateFrom,
+                          dateTo,
+                          fetchDetailedItems: fetchDetails,
+                          syncType: "manual",
+                        });
+                      }
+
+                      const totalFetched = (inboundResult?.totalFetched || 0) + (outboundResult?.totalFetched || 0);
+                      const totalInserted = (inboundResult?.totalInserted || 0) + (outboundResult?.totalInserted || 0);
+
+                      response = json({
+                        success: true,
+                        message: "A manuális NAV szinkronizáció sikeresen lefutott.",
+                        data: {
+                          company_id: targetCompanyId,
+                          date_from: dateFrom,
+                          date_to: dateTo,
+                          direction: rawDir,
+                          inbound: inboundResult ? {
+                            status: "completed",
+                            total_fetched: inboundResult.totalFetched,
+                            total_inserted: inboundResult.totalInserted,
+                            sync_log_id: inboundResult.syncLogId || null,
+                          } : null,
+                          outbound: outboundResult ? {
+                            status: "completed",
+                            total_fetched: outboundResult.totalFetched,
+                            total_inserted: outboundResult.totalInserted,
+                            sync_log_id: outboundResult.syncLogId || null,
+                          } : null,
+                          total_invoices_fetched: totalFetched,
+                          total_invoices_inserted: totalInserted,
+                        },
+                      });
+                    } catch (navErr: any) {
+                      const msg = navErr?.message || String(navErr);
+                      if (msg.includes("Credentials not found") || msg.includes("nem találhatók")) {
+                        response = errorResponse("NAV_NOT_CONFIGURED", "A megadott céghez nincsenek érvényes NAV technikai felhasználói adatok beállítva.", 422);
+                      } else {
+                        response = errorResponse("NAV_SYNC_FAILED", `NAV szinkronizációs hiba: ${msg}`, 502);
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          }
+        }
+      } else {
+        response = errorResponse("METHOD_NOT_ALLOWED", "A NAV végpont csak GET (/status) és POST (/sync) metódust támogat.", 405);
+      }
+    }
+    // ──────────────────────────────────────────────────
+    // DOMAIN: AUTH / ME (Kulcs Introspekció)
+    // ──────────────────────────────────────────────────
+    else if (resource === "auth" && (subResource === "me" || url.searchParams.get("action") === "auth_me")) {
+      if (req.method === "GET") {
+        const queryErr = validateQueryParams(url, []);
+        if (queryErr) { response = queryErr; }
+        else {
+          const { data: compList } = await admin
+            .from("companies")
+            .select("id, name, tax_number")
+            .in("id", Array.from(accessibleCompanyIds));
+
+          const boundCompany = auth.company_id
+            ? (compList || []).find((c: any) => c.id === auth.company_id) || { id: auth.company_id }
+            : null;
+
+          response = json({
+            success: true,
+            data: {
+              key_id: auth.key_id,
+              name: auth.name,
+              scope: auth.scope,
+              user_id: auth.user_id,
+              bound_company_id: auth.company_id || null,
+              company_id: auth.company_id || null,
+              rate_limit_per_minute: auth.rate_limit_per_minute || 120,
+              key: {
+                id: auth.key_id,
+                name: auth.name,
+                scope: auth.scope,
+                rate_limit_per_minute: auth.rate_limit_per_minute || 120,
+              },
+              company: boundCompany,
+              accessible_companies: compList || [],
+            },
+          });
+        }
+      } else {
+        response = errorResponse("METHOD_NOT_ALLOWED", "Csak GET metódus támogatott az auth introspekcióhoz.", 405);
+      }
+    }
+    // ──────────────────────────────────────────────────
     // DOMAIN: PROJECTS
     // ──────────────────────────────────────────────────
     else if (resource === "projects" || resource === "project") {
       if (req.method === "GET") {
-        const accessErr = verifyCompanyAccess(targetCompanyId);
-        if (accessErr) { response = accessErr; }
-        else {
-          const { data: projs, error: projErr } = await admin
-            .from("projects")
-            .select("id, name, project_code, description, status, budget, created_at")
-            .eq("company_id", targetCompanyId)
-            .order("name", { ascending: true });
-
-          if (projErr) { response = errorResponse("QUERY_FAILED", projErr.message, 500); }
-          else { response = json({ success: true, data: { projects: projs || [] } }); }
-        }
-      } else if (req.method === "POST") {
-        const scopeErr = requireWriteScope();
-        if (scopeErr) { response = scopeErr; }
+        const queryErr = validateQueryParams(url, []);
+        if (queryErr) { response = queryErr; }
         else {
           const accessErr = verifyCompanyAccess(targetCompanyId);
           if (accessErr) { response = accessErr; }
-          else if (!requestBody.name) {
-            response = errorResponse("MISSING_NAME", "A projekt neve kötelező.", 400);
-          } else {
-            const { data: newProj, error: createProjErr } = await admin
+          else {
+            const { data: projs, error: projErr } = await admin
               .from("projects")
-              .insert({
-                company_id: targetCompanyId,
-                user_id: auth.user_id,
-                name: String(requestBody.name).trim(),
-                project_code: requestBody.project_code || null,
-                budget: requestBody.budget ? Number(requestBody.budget) : null,
-                description: requestBody.description || null,
-                status: requestBody.status || "active",
-              })
-              .select("*")
-              .single();
+              .select("id, name, project_code, description, status, budget, created_at")
+              .eq("company_id", targetCompanyId)
+              .order("name", { ascending: true });
 
-            if (createProjErr) { response = errorResponse("CREATE_FAILED", createProjErr.message, 500); }
-            else { response = json({ success: true, message: "Projekt sikeresen létrehozva.", data: { project: newProj } }, 201); }
+            if (projErr) { response = errorResponse("QUERY_FAILED", projErr.message, 500); }
+            else { response = json({ success: true, data: { projects: projs || [] } }); }
+          }
+        }
+      } else if (req.method === "POST") {
+        const queryErr = validateQueryParams(url, []);
+        if (queryErr) { response = queryErr; }
+        else {
+          const scopeErr = requireWriteScope();
+          if (scopeErr) { response = scopeErr; }
+          else {
+            const accessErr = verifyCompanyAccess(targetCompanyId);
+            if (accessErr) { response = accessErr; }
+            else if (!requestBody.name) {
+              response = errorResponse("MISSING_NAME", "A projekt neve kötelező.", 400);
+            } else {
+              const { data: newProj, error: createProjErr } = await admin
+                .from("projects")
+                .insert({
+                  company_id: targetCompanyId,
+                  user_id: auth.user_id,
+                  name: String(requestBody.name).trim(),
+                  project_code: requestBody.project_code || null,
+                  budget: requestBody.budget ? Number(requestBody.budget) : null,
+                  description: requestBody.description || null,
+                  status: requestBody.status || "active",
+                })
+                .select("*")
+                .single();
+
+              if (createProjErr) { response = errorResponse("CREATE_FAILED", createProjErr.message, 500); }
+              else { response = json({ success: true, message: "Projekt sikeresen létrehozva.", data: { project: newProj } }, 201); }
+            }
           }
         }
       } else {
@@ -1313,10 +2212,398 @@ serve(async (req) => {
       }
     }
     // ──────────────────────────────────────────────────
+    // DOMAIN: TICKETS (Support & Feedback)
+    // ──────────────────────────────────────────────────
+    else if (resource === "tickets" || resource === "ticket") {
+      const ticketIdentifier = subResource || url.searchParams.get("ticket_id");
+
+      // CASE: List tickets (GET /v1/tickets)
+      if (req.method === "GET" && !ticketIdentifier) {
+        const queryErr = validateQueryParams(url, ["status", "priority", "type", "page", "page_size"]);
+        if (queryErr) { response = queryErr; }
+        else {
+          const accessErr = verifyCompanyAccess(targetCompanyId);
+          if (accessErr) { response = accessErr; }
+          else {
+            const statusParam = url.searchParams.get("status")?.toLowerCase();
+            const priorityParam = url.searchParams.get("priority")?.toLowerCase();
+            const typeParam = url.searchParams.get("type")?.toLowerCase();
+            const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
+            const pageSize = Math.min(100, Math.max(1, parseInt(url.searchParams.get("page_size") || "20", 10)));
+            const offset = (page - 1) * pageSize;
+
+            let query = admin
+              .from("feedback")
+              .select("id, ticket_number, type, service, priority, status, message, company_id, company_name, user_email, user_name, page_url, attachments, waiting_for_user_confirmation, needs_staff_response, created_at, updated_at", { count: "exact" })
+              .eq("company_id", targetCompanyId);
+
+            if (statusParam && statusParam !== "all") {
+              if (statusParam === "created" || statusParam === "open" || statusParam === "new") {
+                query = query.in("status", ["created", "open", "new"]);
+              } else {
+                query = query.eq("status", statusParam);
+              }
+            }
+            if (priorityParam) {
+              query = query.eq("priority", priorityParam);
+            }
+            if (typeParam) {
+              query = query.eq("type", typeParam);
+            }
+
+            const { data: tickets, count, error: listErr } = await query
+              .order("created_at", { ascending: false })
+              .range(offset, offset + pageSize - 1);
+
+            if (listErr) {
+              response = errorResponse("QUERY_FAILED", listErr.message, 500);
+            } else {
+              // Fetch comment counts for these tickets
+              const ticketIds = (tickets || []).map((t: any) => t.id);
+              let commentCounts: Record<string, number> = {};
+              if (ticketIds.length > 0) {
+                const { data: comments } = await admin
+                  .from("ticket_comments")
+                  .select("feedback_id")
+                  .in("feedback_id", ticketIds)
+                  .or("is_internal.is.null,is_internal.eq.false");
+                (comments || []).forEach((c: any) => {
+                  commentCounts[c.feedback_id] = (commentCounts[c.feedback_id] || 0) + 1;
+                });
+              }
+
+              const normalizedTickets = (tickets || []).map((t: any) => ({
+                id: t.id,
+                ticket_number: t.ticket_number,
+                type: t.type,
+                service: t.service,
+                priority: t.priority,
+                status: t.status,
+                message: t.message,
+                page_url: t.page_url,
+                attachments: t.attachments || [],
+                comment_count: commentCounts[t.id] || 0,
+                waiting_for_user_confirmation: Boolean(t.waiting_for_user_confirmation),
+                needs_staff_response: Boolean(t.needs_staff_response),
+                created_at: t.created_at,
+                updated_at: t.updated_at,
+              }));
+
+              response = json({
+                success: true,
+                data: {
+                  tickets: normalizedTickets,
+                  pagination: {
+                    page,
+                    page_size: pageSize,
+                    total_items: count || 0,
+                    total_pages: Math.ceil((count || 0) / pageSize),
+                  },
+                },
+              });
+            }
+          }
+        }
+      }
+      // CASE: Create ticket (POST /v1/tickets)
+      else if (req.method === "POST" && !ticketIdentifier) {
+        const queryErr = validateQueryParams(url, []);
+        if (queryErr) { response = queryErr; }
+        else {
+          const scopeErr = requireWriteScope();
+          if (scopeErr) { response = scopeErr; }
+          else {
+            const accessErr = verifyCompanyAccess(targetCompanyId);
+            if (accessErr) { response = accessErr; }
+            else if (!requestBody.message || String(requestBody.message).trim().length === 0) {
+              response = errorResponse("VALIDATION_ERROR", "A 'message' (leírás) mező megadása kötelező.", 400);
+            } else {
+              const allowedTypes = ["bug", "feedback", "question"];
+              const ticketType = requestBody.type ? String(requestBody.type).toLowerCase() : "bug";
+              if (!allowedTypes.includes(ticketType)) {
+                response = errorResponse("VALIDATION_ERROR", `Érvénytelen 'type' mező: ${ticketType}. Megengedett értékek: ${allowedTypes.join(", ")}`, 400);
+              } else {
+                const allowedPriorities = ["low", "medium", "high", "critical"];
+                const ticketPriority = requestBody.priority ? String(requestBody.priority).toLowerCase() : "medium";
+                if (!allowedPriorities.includes(ticketPriority)) {
+                  response = errorResponse("VALIDATION_ERROR", `Érvénytelen 'priority' mező: ${ticketPriority}. Megengedett értékek: ${allowedPriorities.join(", ")}`, 400);
+                } else {
+                  const effectiveUserId = await resolveEffectiveUserId(admin, auth.user_id, targetCompanyId, auth.key_id);
+                  if (!effectiveUserId) {
+                    response = errorResponse("USER_CONTEXT_REQUIRED", "Nem található érvényes felhasználó vagy cégtulajdonos a hibajegy rögzítéséhez.", 400);
+                  } else {
+                    const [userRes, compRes] = await Promise.all([
+                      admin.from("profiles").select("name, email").eq("user_id", effectiveUserId).maybeSingle(),
+                      admin.from("companies").select("name").eq("id", targetCompanyId).maybeSingle(),
+                    ]);
+
+                    const ticketId = crypto.randomUUID();
+                    const userName = userRes.data?.name || auth.name || "API Felhasználó";
+                    const userEmail = userRes.data?.email || null;
+                    const companyName = compRes.data?.name || null;
+
+                    const { data: newTicket, error: insertErr } = await admin
+                      .from("feedback")
+                      .insert({
+                        id: ticketId,
+                        user_id: effectiveUserId,
+                        company_id: targetCompanyId,
+                        company_name: companyName,
+                        type: ticketType,
+                        service: requestBody.service ? String(requestBody.service).toLowerCase() : "eaisybill",
+                        priority: ticketPriority,
+                        message: String(requestBody.message).trim(),
+                        user_email: userEmail,
+                        user_name: userName,
+                        page_url: requestBody.page_url || null,
+                        status: "created",
+                        attachments: Array.isArray(requestBody.attachments) ? requestBody.attachments : [],
+                      })
+                      .select("id, ticket_number, type, service, priority, status, message, company_id, company_name, user_email, user_name, page_url, attachments, created_at, updated_at")
+                      .single();
+
+                    if (insertErr) {
+                      response = errorResponse("CREATE_FAILED", insertErr.message, 500);
+                    } else {
+                      response = json({
+                        success: true,
+                        message: "Hibajegy sikeresen létrehozva.",
+                        data: {
+                          ticket: newTicket,
+                        },
+                      }, 201);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      // Helper for finding a ticket by UUID or ticket_number
+      else if (ticketIdentifier) {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ticketIdentifier);
+        let findQuery = admin
+          .from("feedback")
+          .select("id, ticket_number, type, service, priority, status, message, company_id, company_name, user_email, user_name, page_url, attachments, waiting_for_user_confirmation, needs_staff_response, created_at, updated_at")
+          .eq("company_id", targetCompanyId);
+
+        if (isUuid) {
+          findQuery = findQuery.eq("id", ticketIdentifier);
+        } else {
+          findQuery = findQuery.ilike("ticket_number", ticketIdentifier.replace(/^#/, "").trim());
+        }
+
+        // CASE: Add comment (POST /v1/tickets/:id/comments)
+        if (req.method === "POST" && subAction === "comments") {
+          const queryErr = validateQueryParams(url, ["ticket_id"]);
+          if (queryErr) { response = queryErr; }
+          else {
+            const scopeErr = requireWriteScope();
+            if (scopeErr) { response = scopeErr; }
+            else {
+              const accessErr = verifyCompanyAccess(targetCompanyId);
+              if (accessErr) { response = accessErr; }
+              else if (!requestBody.message || String(requestBody.message).trim().length === 0) {
+                response = errorResponse("VALIDATION_ERROR", "A 'message' (hozzászólás) mező megadása kötelező.", 400);
+              } else {
+                const { data: ticketRecord, error: findErr } = await findQuery.maybeSingle();
+                if (findErr || !ticketRecord) {
+                  response = errorResponse("TICKET_NOT_FOUND", "A hibajegy nem található a megadott cégnél.", 404);
+                } else if (ticketRecord.status === "resolved" || ticketRecord.status === "closed") {
+                  response = errorResponse(
+                    "TICKET_CLOSED",
+                    "A hibajegy már lezárásra került, ezért további hozzászólás nem küldhető hozzá. Kérjük, nyisson új hibajegyet a korábbi jegyszámra hivatkozva.",
+                    400,
+                    { ticket_id: ticketRecord.id, ticket_number: ticketRecord.ticket_number, status: ticketRecord.status }
+                  );
+                } else {
+                  const effectiveUserId = await resolveEffectiveUserId(admin, auth.user_id, targetCompanyId, auth.key_id);
+                  if (!effectiveUserId) {
+                    response = errorResponse("USER_CONTEXT_REQUIRED", "Nem található érvényes felhasználó vagy cégtulajdonos a hozzászólás rögzítéséhez.", 400);
+                  } else {
+                    const { data: userProfile } = await admin
+                      .from("profiles")
+                      .select("name, email")
+                      .eq("user_id", effectiveUserId)
+                      .maybeSingle();
+
+                    const commentId = crypto.randomUUID();
+                    const { data: newComment, error: commentErr } = await admin
+                      .from("ticket_comments")
+                      .insert({
+                        id: commentId,
+                        feedback_id: ticketRecord.id,
+                        user_id: effectiveUserId,
+                        user_name: userProfile?.name || auth.name || "API Felhasználó",
+                        user_email: userProfile?.email || null,
+                        is_admin: false,
+                        is_internal: false,
+                        message: String(requestBody.message).trim(),
+                        attachments: Array.isArray(requestBody.attachments) ? requestBody.attachments : [],
+                      })
+                      .select("id, feedback_id, user_id, user_name, user_email, is_admin, message, attachments, created_at")
+                      .single();
+
+                    if (commentErr) {
+                      response = errorResponse("CREATE_FAILED", commentErr.message, 500);
+                    } else {
+                      await admin
+                        .from("feedback")
+                        .update({
+                          needs_staff_response: true,
+                          last_customer_message_at: new Date().toISOString(),
+                          updated_at: new Date().toISOString(),
+                        })
+                        .eq("id", ticketRecord.id);
+
+                      response = json({
+                        success: true,
+                        message: "Hozzászólás sikeresen elküldve.",
+                        data: { comment: newComment },
+                      }, 201);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        // CASE: Confirm resolution (POST /v1/tickets/:id/confirm-resolution OR resolve)
+        else if (req.method === "POST" && (subAction === "confirm-resolution" || subAction === "resolve")) {
+          const queryErr = validateQueryParams(url, ["ticket_id"]);
+          if (queryErr) { response = queryErr; }
+          else {
+            const scopeErr = requireWriteScope();
+            if (scopeErr) { response = scopeErr; }
+            else {
+              const accessErr = verifyCompanyAccess(targetCompanyId);
+              if (accessErr) { response = accessErr; }
+              else {
+                const { data: ticketRecord, error: findErr } = await findQuery.maybeSingle();
+                if (findErr || !ticketRecord) {
+                  response = errorResponse("TICKET_NOT_FOUND", "A hibajegy nem található a megadott cégnél.", 404);
+                } else {
+                  const { data: userProfile } = await admin
+                    .from("profiles")
+                    .select("name, email")
+                    .eq("user_id", auth.user_id)
+                    .maybeSingle();
+
+                  const userName = userProfile?.name || auth.name || "Ügyfél";
+                  const userEmail = userProfile?.email || null;
+
+                  await Promise.all([
+                    admin
+                      .from("feedback")
+                      .update({
+                        status: "resolved",
+                        waiting_for_user_confirmation: false,
+                        resolution_confirmed_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                      })
+                      .eq("id", ticketRecord.id),
+                    admin
+                      .from("ticket_comments")
+                      .insert({
+                        feedback_id: ticketRecord.id,
+                        user_id: auth.user_id,
+                        user_name: userName,
+                        user_email: userEmail,
+                        is_admin: false,
+                        is_internal: false,
+                        message: "Az ügyfél API-n keresztül megerősítette: a probléma megoldódott. A hibajegy sikeresen lezárásra került.",
+                      }),
+                    admin
+                      .from("ticket_events")
+                      .insert({
+                        feedback_id: ticketRecord.id,
+                        actor_id: auth.user_id,
+                        actor_email: userEmail,
+                        actor_name: userName,
+                        event_type: "resolution_confirmed",
+                        old_value: ticketRecord.status,
+                        new_value: "resolved",
+                        metadata: { source: "customer_api" },
+                      }),
+                  ]);
+
+                  response = json({
+                    success: true,
+                    message: "Megoldás megerősítve, a hibajegy lezárásra került.",
+                    data: {
+                      id: ticketRecord.id,
+                      ticket_number: ticketRecord.ticket_number,
+                      status: "resolved",
+                    },
+                  });
+                }
+              }
+            }
+          }
+        }
+        // CASE: Single ticket details (GET /v1/tickets/:id)
+        else if (req.method === "GET" && !subAction) {
+          const queryErr = validateQueryParams(url, ["ticket_id"]);
+          if (queryErr) { response = queryErr; }
+          else {
+            const accessErr = verifyCompanyAccess(targetCompanyId);
+            if (accessErr) { response = accessErr; }
+            else {
+              const { data: ticketRecord, error: findErr } = await findQuery.maybeSingle();
+              if (findErr || !ticketRecord) {
+                response = errorResponse("TICKET_NOT_FOUND", "A hibajegy nem található a megadott cégnél.", 404);
+              } else {
+                // Comments: strictly public only
+                const { data: comments, error: commErr } = await admin
+                  .from("ticket_comments")
+                  .select("id, feedback_id, user_id, user_name, user_email, is_admin, message, attachments, created_at")
+                  .eq("feedback_id", ticketRecord.id)
+                  .or("is_internal.is.null,is_internal.eq.false")
+                  .order("created_at", { ascending: true });
+
+                if (commErr) {
+                  response = errorResponse("QUERY_FAILED", commErr.message, 500);
+                } else {
+                  response = json({
+                    success: true,
+                    data: {
+                      ticket: {
+                        id: ticketRecord.id,
+                        ticket_number: ticketRecord.ticket_number,
+                        type: ticketRecord.type,
+                        service: ticketRecord.service,
+                        priority: ticketRecord.priority,
+                        status: ticketRecord.status,
+                        message: ticketRecord.message,
+                        page_url: ticketRecord.page_url,
+                        attachments: ticketRecord.attachments || [],
+                        waiting_for_user_confirmation: Boolean(ticketRecord.waiting_for_user_confirmation),
+                        needs_staff_response: Boolean(ticketRecord.needs_staff_response),
+                        created_at: ticketRecord.created_at,
+                        updated_at: ticketRecord.updated_at,
+                      },
+                      comments: comments || [],
+                    },
+                  });
+                }
+              }
+            }
+          }
+        } else {
+          response = errorResponse("METHOD_NOT_ALLOWED", "Nem támogatott metódus vagy alútvonal hibajegyekhez.", 405);
+        }
+      } else {
+        response = errorResponse("METHOD_NOT_ALLOWED", "Nem támogatott metódus hibajegyekhez.", 405);
+      }
+    }
+    // ──────────────────────────────────────────────────
     // DOMAIN: COMPANIES & COMPANY MASTER DATA (Legacy / Base)
     // ──────────────────────────────────────────────────
     else if (resource === "companies") {
-      if (accessibleCompanyIds.size === 0) {
+      const queryErr = validateQueryParams(url, []);
+      if (queryErr) { response = queryErr; }
+      else if (accessibleCompanyIds.size === 0) {
         response = json({ success: true, data: { companies: [], count: 0 } });
       } else {
         const { data: companies, error: compErr } = await admin
@@ -1329,28 +2616,32 @@ serve(async (req) => {
         else { response = json({ success: true, data: { companies: companies || [], count: companies?.length || 0, key_scope: auth.scope } }); }
       }
     } else if (resource === "company") {
-      const accessErr = verifyCompanyAccess(targetCompanyId);
-      if (accessErr) { response = accessErr; }
+      const queryErr = validateQueryParams(url, []);
+      if (queryErr) { response = queryErr; }
       else {
-        const [companyRes, settingsRes, locationsRes, bankAccountsRes] = await Promise.all([
-          admin.from("companies").select("*").eq("id", targetCompanyId).maybeSingle(),
-          admin.from("company_settings").select("*").eq("company_id", targetCompanyId).maybeSingle(),
-          admin.from("company_locations").select("*").eq("company_id", targetCompanyId).order("is_default", { ascending: false }),
-          admin.from("company_bank_accounts").select("*").eq("company_id", targetCompanyId),
-        ]);
+        const accessErr = verifyCompanyAccess(targetCompanyId);
+        if (accessErr) { response = accessErr; }
+        else {
+          const [companyRes, settingsRes, locationsRes, bankAccountsRes] = await Promise.all([
+            admin.from("companies").select("*").eq("id", targetCompanyId).maybeSingle(),
+            admin.from("company_settings").select("*").eq("company_id", targetCompanyId).maybeSingle(),
+            admin.from("company_locations").select("*").eq("company_id", targetCompanyId).order("is_default", { ascending: false }),
+            admin.from("company_bank_accounts").select("*").eq("company_id", targetCompanyId),
+          ]);
 
-        if (companyRes.error || !companyRes.data) {
-          response = errorResponse("COMPANY_NOT_FOUND", "A megadott cég nem található.", 404);
-        } else {
-          response = json({
-            success: true,
-            data: {
-              company: companyRes.data,
-              settings: settingsRes.data || {},
-              locations: locationsRes.data || [],
-              bank_accounts: bankAccountsRes.data || [],
-            },
-          });
+          if (companyRes.error || !companyRes.data) {
+            response = errorResponse("COMPANY_NOT_FOUND", "A megadott cég nem található.", 404);
+          } else {
+            response = json({
+              success: true,
+              data: {
+                company: companyRes.data,
+                settings: settingsRes.data || {},
+                locations: locationsRes.data || [],
+                bank_accounts: bankAccountsRes.data || [],
+              },
+            });
+          }
         }
       }
     } else if (resource === "update_company") {
@@ -1416,7 +2707,7 @@ serve(async (req) => {
         }
       }
     } else {
-      response = errorResponse("UNKNOWN_RESOURCE", `Ismeretlen végpont: '${resource}'. Használd a ?action=help végpontot a leíráshoz.`, 404);
+      response = errorResponse("UNKNOWN_RESOURCE", `Ismeretlen végpont: '${resource}'. Használd a ?action=help végpontot a leíráshoz vagy tekintsd meg az /v1/openapi.json specifikációt.`, 404);
     }
   } catch (err: any) {
     console.error("[CUSTOMER-API] Execution error:", err);
@@ -1439,6 +2730,28 @@ serve(async (req) => {
     errorMessage: (response as any)?._errorMessage || (response.status >= 400 ? `Status ${response.status}` : null),
     durationMs,
   });
+
+  // 7. Save Idempotency response if key was provided and operation succeeded (200..499)
+  if (
+    idempotencyKey &&
+    lastResponsePayload &&
+    (req.method === "POST" || req.method === "PATCH" || req.method === "DELETE") &&
+    response.status >= 200 && response.status < 500
+  ) {
+    try {
+      await admin.from("api_idempotency_keys").upsert({
+        api_key_id: auth.key_id,
+        idempotency_key: idempotencyKey,
+        endpoint: url.pathname,
+        request_hash: await sha256(JSON.stringify(requestBody || {})),
+        status_code: response.status,
+        response_body: lastResponsePayload,
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      }, { onConflict: "api_key_id,idempotency_key" });
+    } catch (idempErr) {
+      console.error("[CUSTOMER-API] Failed to store idempotency key:", idempErr);
+    }
+  }
 
   return response;
 });

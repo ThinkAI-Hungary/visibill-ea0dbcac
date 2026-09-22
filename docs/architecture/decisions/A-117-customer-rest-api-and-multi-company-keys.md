@@ -75,6 +75,63 @@ A Mauroni Group (7 entitás) és külső ERP integrációk igényei alapján az 
 
 ---
 
+## Addendum (2026-09-22) — Customer REST API v2.1 (OpenAPI 3.0.3, Idempotencia, P0 Adatintegritás és Teljes Életciklus)
+
+A Mauroni Marco által végzett éles integrációs audit és visszajelzések alapján a Customer REST API 2.1-es alverzióra bővült:
+
+1. **Hivatalos OpenAPI 3.0.3 Szabvány:**
+   - Publikus, hitelesítés nélkül elérhető gépi specifikáció a `GET /v1/openapi.json` és `GET /openapi.json` útvonalakon, valamint a statikus [docs/api/openapi.json](../../api/openapi.json) fájlban.
+   - Swagger UI, Postman, Insomnia és kódgenerátorok (OpenAPI Generator, Orval, kiota) által azonnal importálható formátumban.
+2. **P0 Adatintegritási Javítások:**
+   - **Szigorú Párosítási Validáció:** A `POST /v1/transactions/:id/match` megszüntette a hamis 200 sikerjelentést: nem létező vagy idegen céghez tartozó tranzakció vagy számla esetén szigorú `404 Not Found` választ ad (`TRANSACTION_NOT_FOUND`, `INVOICE_NOT_FOUND`).
+   - **Szigorú URL Paraméter Validáció:** Bármely ismeretlen vagy elgépelt query paraméter azonnali `400 Bad Request` (`INVALID_QUERY_PARAMETER`) hibát eredményez az összes végponton, kizárva a csendes szűrési félreértéseket.
+   - **`unmatched_only` és `is_matched=false` Ekvivalencia:** A lekérdezések támogatják az `unmatched_only=true` aliast, a paraméter-ütközések (`unmatched_only=true&is_matched=true`) pedig 400 hibával elutasításra kerülnek.
+3. **P1 Életciklus és Hiányzó Képességek:**
+   - **Tranzakció Párosítás Visszavonása (Unmatch):** `POST /v1/transactions/:id/unmatch` és `DELETE /v1/transactions/:id/match` atomian bontja a kapcsolatot, visszaállítja a számla kifizetetlen státuszát és törli a `transaction_invoice_matches` rekordot.
+   - **Tranzakció Törlés:** Egyedi `DELETE /v1/transactions/:id` és kötegelt `POST /v1/transactions/bulk-delete` (max. 500 ID/kérés) automatikus kapcsolat-bontással.
+   - **Számla Törlésvédelmi Integritás:** `DELETE /v1/invoices/:id` NAV által szinkronizált számlák esetén szigorú `409 Conflict` (`NAV_INVOICE_CANNOT_BE_DELETED`) védelmet alkalmaz; csak manuális számlák törölhetők azonnal, vagy explicit `force=true` paraméter szükséges.
+   - **Csatolt Számlakép Letöltés:** `GET /v1/invoices/:id/image` (és `/download`) 1 órás időkorlátos, előre aláírt Supabase Storage URL-t ad vissza, illetve opcionális `redirect=true` esetén közvetlen 302 átirányítást biztosít.
+   - **Kategóriák és Főkönyv Lekérdezés:** `GET /v1/categories` biztosítja a cég- és rendszerszintű kategóriák, ikonok, színek és hozzájuk tartozó `gl_accounts` főkönyvi számok gépi felolvasását.
+   - **NAV Kapcsolat és Szinkronizáció Státusz:** `GET /v1/nav/status` maszkolt technikai felhasználóval, automatikus szinkronizáció beállításokkal és az utolsó 5 szinkronizációs napló tétellel (`nav_sync_logs`).
+   - **Manuális NAV Szinkronizáció Indítása:** `POST /v1/nav/sync` lehetővé teszi tetszőleges dátumtartomány (`date_from`, `date_to`) és irány (`inbound`, `outbound`, `both`) szerinti azonnali számlaletöltést a `NavIngestionService` motoron keresztül, tételszintű sorok mentésével és automatikus tranzakció-újrapárosítási feladat (`rematch`) triggerelésével.
+   - **Idempotencia Védelem (`Idempotency-Key`):** A POST/PATCH/DELETE hívások fejléce támogatja az `Idempotency-Key` értéket. Az atomi `api_idempotency_keys` tábla 24 órán át garantálja az azonos kérés újrafuttatás nélküli azonnali visszaadását `Idempotency-Replayed: true` HTTP fejléccel.
+4. **P2 Kulcs Introspekció és Dokumentáció:**
+   - `GET /v1/auth/me` visszaadja a használt API kulcs metaadatait, jogosultsági körét és az összes elérhető cég listáját.
+   - `GET /v1/reports/vat` az éves szűrés mellett támogatja az explicit havi időszakot (`period=YYYY-MM`).
+   - Az interaktív [ApiDocsExplorer.tsx](../../../src/components/settings/ApiDocsExplorer.tsx) kibővült az összes új végponttal, a DELETE metódussal, dinamikus számlálókkal és a közvetlen OpenAPI 3 JSON letöltési hivatkozással.
+
+---
+
+## Addendum (2026-09-22) — Customer REST API v2.2 (Hibajegyek / Support Tickets Modul Integráció)
+
+Az ügyfélszolgálati folyamatok automatizálása és a platformon belüli integrált ticket-kezelés érdekében az API a 2.2-es verzióra bővült a `feedback`, `ticket_comments` és `ticket_events` táblák teljes körű kiszolgálásával:
+
+1. **Dedikált Hibajegy Útvonalak (`/v1/tickets`):**
+   - `GET /v1/tickets`: Lapozott jegylista státusz (`new`, `open`, `in_progress`, `resolved`), prioritás (`low`, `medium`, `high`, `urgent`) és típus (`bug`, `feedback`, `question`) szerinti szűréssel, valamint hozzákapcsolt nyilvános hozzászólás-számlálóval.
+   - `POST /v1/tickets`: Új hibajegy feladása kötelező mezővalidációval (`message`, `type`, `priority`). Létrehozáskor a meglévő PostgreSQL triggerek (`trg_generate_ticket_number`, `trg_ticket_created_event`) automatikusan generálják az emberileg olvasható jegyszámot (pl. `EB-0157`) és a kezdeti naplóeseményt.
+   - `GET /v1/tickets/:id`: Részletes jegyadatok lekérése **duális azonosítással** (UUID és `EB-xxxx` formátumú jegyszám alapján egyaránt működik).
+   - `POST /v1/tickets/:id/comments`: Ügyfél válasz vagy újabb észrevétel beküldése, amely atomian beállítja a `needs_staff_response = true` flaget és frissíti az `updated_at` időbélyeget.
+   - `POST /v1/tickets/:id/confirm-resolution`: Megoldás megerősítése az ügyfél részéről; a jegyet `resolved` státuszba állítja, törli a `waiting_for_user_confirmation` jelzőt, és `resolution_confirmed` típusú audit eseményt rögzít a `ticket_events` táblában.
+   - **Újranyitás Tiltása (Reopen Restriction):** Ügyfélszolgálati folyamatbiztonsági döntés alapján a lezárt hibajegyek gépi újranyitása (`reopen`) az ügyfél REST API-n keresztül nem engedélyezett, megakadályozva az automatizált végtelen ciklusokat és a koordinálatlan újraaktiválásokat.
+
+2. **Szigorú Belső Adatszivárgás-védelem (Internal Comment Isolation):**
+   - Az ügyfélszolgálati munkatársak által rögzített belső megjegyzések (`is_internal = true`) lekérdezéskor szigorúan kiszűrésre kerülnek (`or("is_internal.is.null,is_internal.eq.false")`).
+   - A Customer REST API kliens semmilyen körülmények között nem láthatja vagy módosíthatja a belső feljegyzéseket.
+
+3. **OpenAPI 3.0.3 v2.2.0 és Fejlesztői Portál Frissítés:**
+   - A gépi OpenAPI specifikáció ([openapi-spec.ts](../../../supabase/functions/customer-api/openapi-spec.ts) és [openapi.json](../../api/openapi.json)) frissítésre került v2.2.0-ra, tartalmazva a teljes hibajegy sémát és az engedélyezett 5 végpontot.
+   - Az interaktív fejlesztői felületen ([ApiDocsExplorer.tsx](../../../src/components/settings/ApiDocsExplorer.tsx)) megjelent a „Hibajegyek (5)” kategória szűrő gomb és a cURL/JSON tesztelő kártyák.
+
+### v2.2.1 Kiegészítés (Morfi Review Döntések nyomán — 2026-09-22)
+1. **M2M API Kulcsok Felhasználói Kontextusa (Opció A):**
+   - Ha egy gépi API kulcs tisztán céges hatókörű (`api_keys.user_id IS NULL`), a hibajegy és hozzászólás létrehozásakor a rendszer automatikusan feloldja a cég tulajdonosának (`company_members WHERE role = 'owner'`) vagy adminisztrátorának azonosítóját (`resolveEffectiveUserId`), megelőzve az adatbázis `NOT NULL` kényszerhibáját.
+2. **NAV Manuális Szinkron 60s Perzisztens Cooldown (Opció A):**
+   - A `POST /v1/nav/sync` végponton a `nav_sync_logs` tábla alapján vizsgáljuk az utolsó szinkron kezdetét. Ha 60 másodpercen belül indult már szinkron a cégre, az API azonnali `429 Too Many Requests` választ ad `NAV_SYNC_COOLDOWN` hibakóddal és `retry_after_seconds` mezővel.
+3. **Lezárt Hibajegyek Kommentelési Védelme (Opció B):**
+   - Lezárt hibajegyhez (`resolved` vagy `closed` státusz) a `POST /v1/tickets/:id/comments` végponton keresztül nem küldhető további hozzászólás. A rendszer szigorú `400 Bad Request` választ ad `TICKET_CLOSED` hibakóddal, előírva, hogy az ügyfél új jegyet nyisson a korábbi jegyszámra hivatkozva.
+
+---
+
 ## Consequences
 
 - **Pozitív:**

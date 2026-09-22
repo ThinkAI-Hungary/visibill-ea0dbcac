@@ -1,6 +1,6 @@
 # Visibill — Information Architecture & Navigation
 
-> **Verzió:** 1.6 | **Dátum:** 2026-09-13  
+> **Verzió:** 1.7 | **Dátum:** 2026-09-22  
 > **Forrás:** [AppSidebar.tsx](../../src/components/AppSidebar.tsx) · [App.tsx](../../src/App.tsx) · [AppModeSwitcher.tsx](../../src/components/AppModeSwitcher.tsx)  
 > **Kapcsolódó döntés:** [P-006 Sidebar Structure](./decisions/P-006-sidebar-structure.md) · [A-109 Horvát Lokalizáció & Route Architektúra](../architecture/decisions/A-109-eaisybill-i18n-croatia-localization-and-route-architecture.md) · [P-081 Horvát Demó UX](./decisions/P-081-eaisybill-croatia-localization-and-demo-ux.md) · [A-114 eaisyBooks Shell Collapse](../architecture/decisions/A-114-collapse-dual-mode-navigation-shell.md) · [A-115 Cold/Warm Hibrid Navigáció](../architecture/decisions/A-115-eaisybooks-eaisybill-cold-warm-hybrid-transition-and-route-resolution.md) · [P-083 AppModeSwitcher UX](./decisions/P-083-eaisybooks-eaisybill-app-mode-switcher-and-cold-warm-transition-ux.md) · [P-095 NAV OSA Tabok & Render UX](./decisions/P-095-nav-osa-tabs-performance-and-immediate-row-expansion-ux.md)
 
@@ -65,7 +65,7 @@ lehetővé téve linkek megosztását azonos nézettel:
 | `/hr/auth/callback` | OAuth callback (Horvát) |
 | `/reset-password` | Jelszó visszaállítás |
 | `/register/:token` | Employee regisztráció (token alapú) |
-| `/api-docs` | Hivatalos Ügyfél REST API v1 Fejlesztői Portál (önálló, keretmentes) |
+| `/api-docs`, `/docs/api` | Hivatalos Ügyfél REST API v2.2 Fejlesztői Portál (önálló, keretmentes, interaktív tesztelővel) |
 
 **Többnyelvű útvonalak (`/hr/*`):**
 A horvát demonstrációs környezet tiszta route-vezérelt működést kapott:
@@ -88,7 +88,7 @@ Visibill
 │   ├── /hr/auth/callback          OAuth callback (HR)
 │   ├── /reset-password            Jelszó visszaállítás
 │   ├── /register/:token           Employee regisztráció
-│   └── /api-docs                  Hivatalos Ügyfél REST API Fejlesztői Portál
+│   └── /api-docs, /docs/api       Hivatalos Ügyfél REST API v2.2 Fejlesztői Portál
 │
 ├── Védett (/:companyId/:dateRange/ és /hr/:companyId/:dateRange/)
 │   ├── /                          Irányítópult (Dashboard)
