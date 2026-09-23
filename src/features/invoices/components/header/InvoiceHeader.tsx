@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -9,16 +9,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Info, FileText, Download, ChevronDown, FileSpreadsheet, FileDown } from 'lucide-react';
+import { Info, FileText, Download, ChevronDown, FileSpreadsheet, FileDown, Sliders } from 'lucide-react';
 import { NavSyncButton } from './NavSyncButton';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 import { useTranslation } from 'react-i18next';
 import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
+import { InvoiceRulesDialog } from '@/components/invoices/InvoiceRulesDialog';
 
 export function InvoiceHeader() {
   const { setFilesDialogOpen, setInvoiceParam, openDataExportDialog } = useInvoiceContext();
   const { t } = useTranslation(['invoices', 'common']);
   const { hasNavIntegration } = useCompanyJurisdiction();
+  const [rulesDialogOpen, setRulesDialogOpen] = useState(false);
 
   const handleOpenFiles = () => {
     setFilesDialogOpen(true);
@@ -49,6 +51,12 @@ export function InvoiceHeader() {
         <div className="relative">
           <div className="flex gap-2 justify-end">
             {hasNavIntegration && <NavSyncButton />}
+
+            <Button variant="outline" size="sm" onClick={() => setRulesDialogOpen(true)}>
+              <Sliders className="h-4 w-4 mr-2" />
+              {t('invoices:actions.accounting_rules', { defaultValue: 'Könyvelési szabályok' })}
+            </Button>
+            <InvoiceRulesDialog open={rulesDialogOpen} onOpenChange={setRulesDialogOpen} />
 
             <Button variant="outline" size="sm" onClick={handleOpenFiles}>
               <FileText className="h-4 w-4 mr-2" />

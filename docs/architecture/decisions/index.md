@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-24  
-> **Összesen:** 156 döntés | ✅ Decided: 154 | ⛔ Superseded: 2
+> **Összesen:** 157 döntés | ✅ Decided: 155 | ⛔ Superseded: 2
 
 ---
 
@@ -190,6 +190,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-141 | Globális Fejléc Dátumválasztó Mellé Helyezett Nyelvválasztó (Inline DatePicker Companion Pattern) és Oldalsáv Tehermentesítés | ✅ Decided | [A-141](./A-141-global-header-inline-datepicker-language-switcher.md) |
 | A-142 | Kettős Könyvvitel Szerinti Kötelező Kontírszám Szabályok és Vevői Kontírválasztó (311–317 + ÁFA 467/466) | ✅ Decided | [A-142](./A-142-customer-and-vat-gl-rules-enforcement.md) |
 | A-143 | Devizás Főkönyvi Számlakezelés (gl_accounts), Bankszámla Deviza Védelem, Devizás Számlakarton és Többdevizás Partner Analitika | ✅ Decided | [A-143](./A-143-multicurrency-chart-of-accounts-and-general-ledger.md) |
+| A-144 | Determinisztikus Számlatétel Szabály Motor (invoice_item_rules) és 1-Kattintásos Mentés Dialógus | ✅ Decided | [A-144](./A-144-deterministic-invoice-item-rules-engine.md) |
 
 ## 💳 Fizetés
 

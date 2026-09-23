@@ -50,6 +50,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useProjectList } from '@/hooks/useProjectList';
 import { Label } from '@/components/ui/label';
 import { NavInvoiceVatSummaryCard } from '@/components/nav/NavInvoiceVatSummaryCard';
+import { InvoiceRuleQuickSaveDialog, type InvoiceRuleQuickSaveItem } from '@/components/invoices/InvoiceRuleQuickSaveDialog';
 
 interface InvoiceLineItem {
   id: string;
@@ -133,9 +134,9 @@ export function InvoiceItemsDialog({
     queryKey: ['vat_code_overrides_log', selectedCompany?.id],
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
-      const { data, error } = await supabase
-        .from('vat_code_overrides_log')
-        .select('*')
+      const { data, error } = await (supabase
+        .from('vat_code_overrides_log' as any)
+        .select('*') as any)
         .eq('company_id', selectedCompany.id)
         .order('created_at', { ascending: false });
       if (error) {
@@ -164,6 +165,12 @@ export function InvoiceItemsDialog({
   const [glSearchQuery, setGlSearchQuery] = useState('');
   const [selectedNewGL, setSelectedNewGL] = useState<string>('');
   const [isGlSubmitting, setIsGlSubmitting] = useState(false);
+
+  // Quick Rule prompt state
+  const [quickRuleOpen, setQuickRuleOpen] = useState(false);
+  const [bookedRuleItem, setBookedRuleItem] = useState<InvoiceRuleQuickSaveItem | null>(null);
+  const [bookedGlForRule, setBookedGlForRule] = useState<{ id?: string | null; gl_number: string; short_name?: string } | null>(null);
+  const [bookedVatForRule, setBookedVatForRule] = useState<{ id?: string | null; code: string } | null>(null);
 
   // Petty cash write-off dialog state
   const [pettyCashWriteOffOpen, setPettyCashWriteOffOpen] = useState(false);
@@ -886,9 +893,47 @@ export function InvoiceItemsDialog({
     if (error || data === false) {
       toast({ title: t('invoices:dialogs.items.toast_gl_error'), description: error?.message || '', variant: 'destructive' });
     } else {
-      const count = isBulkGlEdit ? selectedIds.size : 1;
-      toast({ title: t('invoices:dialogs.items.toast_bulk_gl_success'), description: t('invoices:dialogs.items.toast_bulk_gl_success_desc', { count }) });
       setGlEditOpen(false);
+
+      const isSuppressed = typeof window !== 'undefined' && sessionStorage.getItem('suppress_invoice_rule_prompt') === 'true';
+      const targetItem = glEditItem || (isBulkGlEdit && items.length > 0 ? items.find(i => selectedIds.has(i.id)) : null);
+      const willOpenRulePrompt = !isSuppressed && selectedNewGL !== 'UNCLASSIFIED' && Boolean(newGlItem) && Boolean(targetItem);
+
+      // Only show immediate toast if rule dialog will NOT open
+      if (!willOpenRulePrompt) {
+        const count = isBulkGlEdit ? selectedIds.size : 1;
+        toast({ title: t('invoices:dialogs.items.toast_bulk_gl_success'), description: t('invoices:dialogs.items.toast_bulk_gl_success_desc', { count }) });
+      }
+
+      // Open quick rule prompt if a real GL number was selected and not suppressed
+      if (willOpenRulePrompt && targetItem && newGlItem) {
+        const isOutboundInvoice = invoiceDirection === 'OUTBOUND' || (parentInvoice as any)?.invoice_direction === 'OUTBOUND' || (parentInvoice as any)?.type === 'OUTBOUND';
+        const partnerTax = isOutboundInvoice
+          ? (parentInvoice?.customer_tax_number || (parentInvoice as any)?.partner_adoszam || '')
+          : (parentInvoice?.supplier_tax_number || (parentInvoice as any)?.partner_adoszam || '');
+        const partnerName = isOutboundInvoice
+          ? (parentInvoice?.customer_name || (parentInvoice as any)?.partner_nev || supplierName || '')
+          : (parentInvoice?.supplier_name || (parentInvoice as any)?.partner_nev || supplierName || '');
+
+        const assignedVatCodeObj = vatCodes.find(v => v.id === targetItem.vat_code_id);
+
+        setBookedRuleItem({
+          id: targetItem.id,
+          line_description: targetItem.line_description,
+          direction: isOutboundInvoice ? 'OUTBOUND' : 'INBOUND',
+          partner_tax_number: partnerTax,
+          partner_name: partnerName,
+          company_id: selectedCompany.id,
+        });
+        setBookedGlForRule({
+          id: newGlItem.id,
+          gl_number: newGlItem.gl_number,
+          short_name: newGlItem.short_name,
+        });
+        setBookedVatForRule(assignedVatCodeObj ? { id: assignedVatCodeObj.id, code: assignedVatCodeObj.code } : null);
+        setQuickRuleOpen(true);
+      }
+
       setGlEditItem(null);
       setIsBulkGlEdit(false);
       if (isBulkGlEdit) {
@@ -901,7 +946,7 @@ export function InvoiceItemsDialog({
       queryClient.invalidateQueries({ queryKey: ['filteredNavInvoices'] });
       queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices'] });
     }
-  }, [glEditItem, isBulkGlEdit, selectedIds, items, selectedNewGL, selectedCompany?.id, session?.user.id, activePresetId, source, glAccounts, queryClient, toast, findTwinItems]);
+  }, [glEditItem, isBulkGlEdit, selectedIds, items, selectedNewGL, selectedCompany?.id, session?.user.id, activePresetId, source, glAccounts, vatCodes, invoiceDirection, parentInvoice, supplierName, queryClient, toast, findTwinItems]);
 
   // Single or Bulk VAT Code Override Handler with Few-Shot ML Learning
   const handleSaveVatCodeOverride = useCallback(async (targetItems: InvoiceLineItem[], newVatCodeId: string | null) => {
@@ -949,7 +994,7 @@ export function InvoiceItemsDialog({
       }
     }
 
-    const { error } = await supabase.rpc('override_vat_code_batch', {
+    const { error } = await (supabase.rpc as any)('override_vat_code_batch', {
       p_items: payloadItems,
       p_new_vat_code_id: newVatCodeId,
       p_company_id: selectedCompany.id,
@@ -969,12 +1014,42 @@ export function InvoiceItemsDialog({
     } else {
       const selectedCodeObj = vatCodes.find(c => c.id === newVatCodeId);
       const codeName = selectedCodeObj?.legacy_code || selectedCodeObj?.code || 'alapértelmezett';
-      toast({
-        title: 'Áfakód sikeresen elmentve',
-        description: targetItems.length > 1
-          ? `${targetItems.length} tétel áfakódja frissítve (${codeName}). A rendszer megjegyezte a szabályt a jövőbeli tételekhez.`
-          : `Tétel áfakódja frissítve (${codeName}). A rendszer megtanulta a hozzárendelést.`,
-      });
+
+      const isSuppressed = typeof window !== 'undefined' && sessionStorage.getItem('suppress_invoice_rule_prompt') === 'true';
+      const firstItem = targetItems.length > 0 ? targetItems[0] : null;
+      const classification = activePresetId && firstItem ? firstItem.gl_classifications?.[activePresetId] : null;
+      const willOpenRulePrompt = !isSuppressed && Boolean(firstItem && selectedCodeObj && classification?.gl_number);
+
+      if (!willOpenRulePrompt) {
+        toast({
+          title: 'Áfakód sikeresen elmentve',
+          description: targetItems.length > 1
+            ? `${targetItems.length} tétel áfakódja frissítve (${codeName}). A rendszer megjegyezte a szabályt a jövőbeli tételekhez.`
+            : `Tétel áfakódja frissítve (${codeName}). A rendszer megtanulta a hozzárendelést.`,
+        });
+      }
+
+      // If the target item already has a GL classification, also offer quick rule prompt (if not suppressed)
+      if (willOpenRulePrompt && firstItem && selectedCodeObj && classification?.gl_number) {
+        setBookedRuleItem({
+          id: firstItem.id,
+          line_description: firstItem.line_description,
+          direction,
+          partner_tax_number: partnerTax,
+          partner_name: partnerName,
+          company_id: selectedCompany.id,
+        });
+        setBookedGlForRule({
+          id: classification.gl_account_id,
+          gl_number: classification.gl_number,
+          short_name: classification.reasoning || '',
+        });
+        setBookedVatForRule({
+          id: selectedCodeObj.id,
+          code: selectedCodeObj.code,
+        });
+        setQuickRuleOpen(true);
+      }
 
       queryClient.invalidateQueries({ queryKey: ['invoiceItems'] });
       queryClient.invalidateQueries({ queryKey: ['vat_code_overrides_log'] });
@@ -983,7 +1058,7 @@ export function InvoiceItemsDialog({
       queryClient.invalidateQueries({ queryKey: ['filteredNavInvoices'] });
       queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices'] });
     }
-  }, [selectedCompany?.id, session?.user.id, isSubmittingVatCode, source, isOutbound, parentInvoice, supplierName, vatCodes, findTwinItems, queryClient, toast]);
+  }, [selectedCompany?.id, session?.user.id, isSubmittingVatCode, source, isOutbound, parentInvoice, supplierName, vatCodes, activePresetId, findTwinItems, queryClient, toast]);
 
   // Sort items client-side if a sort field is active
   const sortedItems = useMemo(() => {
@@ -2199,6 +2274,15 @@ export function InvoiceItemsDialog({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Invoice Rule Quick Save Dialog */}
+      <InvoiceRuleQuickSaveDialog
+        open={quickRuleOpen}
+        onOpenChange={setQuickRuleOpen}
+        item={bookedRuleItem}
+        glAccount={bookedGlForRule}
+        vatCode={bookedVatForRule}
+      />
     </>
   );
 }

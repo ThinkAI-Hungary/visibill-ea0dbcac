@@ -170,8 +170,8 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceItemsDialog.tsx": {
-    "mtime": 1790075056.635495,
-    "ast_hash": "16493bf0a72ecf192d255de2ff0cd4cf",
+    "mtime": 1790206132.380269,
+    "ast_hash": "4c15c228769ce4746161d75ae452104d",
     "semantic_hash": ""
   },
   "src/components/LiveNotificationProvider.tsx": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790201530.0961528,
-    "ast_hash": "17855780342fa44fc4b27408c13d710b",
+    "mtime": 1790204671.4544177,
+    "ast_hash": "9e6954302624716092b85b0634c7a0ef",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1790202593.7677255,
-    "ast_hash": "9e4cb32363868296ba8abb602b3bc73a",
+    "mtime": 1790204660.6065078,
+    "ast_hash": "779b403bc6e5646c7731678e0f4c613d",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -7645,8 +7645,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/components/header/InvoiceHeader.tsx": {
-    "mtime": 1790156034.228721,
-    "ast_hash": "7afab81a22c95f102160f2c8400cf08a",
+    "mtime": 1790204482.0983994,
+    "ast_hash": "72f80edc636f632f991746f5bf05321c",
     "semantic_hash": ""
   },
   "src/features/invoices/components/header/InvoiceKpiCards.tsx": {
@@ -11927,6 +11927,46 @@
   "docs/product/decisions/P-108-multicurrency-chart-of-accounts-and-gl-card-ux.md": {
     "mtime": 1790202581.3487659,
     "ast_hash": "27d1a9f93dcda14eabd962dd9890c04a",
+    "semantic_hash": ""
+  },
+  "src/components/invoices/InvoiceRuleQuickSaveDialog.tsx": {
+    "mtime": 1790206058.9222524,
+    "ast_hash": "84e332a8b4d846a19de948cb07e46243",
+    "semantic_hash": ""
+  },
+  "src/components/invoices/InvoiceRulesDialog.tsx": {
+    "mtime": 1790204819.0026162,
+    "ast_hash": "b860022780792147fbe6af783845f356",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260924120000_create_invoice_item_rules.sql": {
+    "mtime": 1790204256.4994638,
+    "ast_hash": "019c7583cbb73067803df7b0ea60f385",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-144-deterministic-invoice-item-rules-engine.md": {
+    "mtime": 1790205463.8639288,
+    "ast_hash": "8c2d411851e76ce82af9ae3c88a45919",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-109-invoice-item-rules-and-quick-save-ux.md": {
+    "mtime": 1790204612.1418126,
+    "ast_hash": "e2e8d1d646e27795dc6a9af800f02d2d",
+    "semantic_hash": ""
+  },
+  "src/components/invoices/__tests__/InvoiceRuleQuickSaveDialog.test.tsx": {
+    "mtime": 1790206098.6862974,
+    "ast_hash": "48633b659464a045f58cd6c98a837dc8",
+    "semantic_hash": ""
+  },
+  "src/components/invoices/__tests__/InvoiceRulesDialog.test.tsx": {
+    "mtime": 1790205152.5635924,
+    "ast_hash": "c1851fda2ec3d5f208186eea3c452828",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260924130000_update_invoice_item_rules_rpc_tax_and_escape.sql": {
+    "mtime": 1790205397.5138047,
+    "ast_hash": "f68fec69947a71e58bbae290e856b243",
     "semantic_hash": ""
   }
 }
