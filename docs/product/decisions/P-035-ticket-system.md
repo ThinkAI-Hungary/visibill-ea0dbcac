@@ -57,7 +57,7 @@
   - Clipboard paste: Ctrl+V a hozzászólás mezőben képet csatol vágólapról
   - Fullscreen galéria: Portal-alapú overlay (z-index: 9999), teljes képernyős képnézegető billentyűzet-navigációval (Escape, Nyilak) és letöltési funkcióval
 - Unread badge & Realtime: `useUnreadTicketCount` hook — nemcsak az új kommentekre, hanem a megoldás-visszaigazolás kérésére és állapotváltozásaira is azonnal jelez a felhasználónak (+1 a sidebar-ban, kiemelés a listában)
-- Felelős kijelölés: support admin hozzárendelhet support agentet, változás logolódik a timeline-ban
+- Felelős kijelölés és átruházás (Reassignment): Support admin vagy Management szerepkörű felhasználó bármikor szabadon kijelölhet, átruházhat egy hibajegyet egy másik support munkatársra (`force: true`), vagy visszavonhatja a hozzárendelést (`unassigned`). Az átrendelés nem dob `ALREADY_ASSIGNED` blokkolást adminisztrátori művelet esetén, és a változás automatikusan auditálódik a timeline-ban (`assignee_changed` esemény régi és új felelős nevével).
 - Jegy történet (Timeline):
   - Folyamatos, elemenkénti összekötő vonal struktúra, amely dinamikus tartalom és görgetés esetén is stabilan összeköti az eseményeket
   - Eseménytípusok: státusz változás, felelős változás, kommentek, megoldás kérése (`resolution_requested`), megerősítése (`resolution_confirmed`) és elutasítása (`resolution_rejected`)
@@ -70,5 +70,10 @@
   - A jegy megnyitásakor az olvasottnak jelölés (`markRead`) szigorúan a sikeres jegybetöltéshez van kötve (`ticket?.id`), így betöltési fázisban vagy törölt / nem létező jegynél (404) a rendszer nem kísérel meg rekordot rögzíteni a `ticket_reads` táblába.
   - A háttérbeli mutáció csendben elnyeli a PostgreSQL `23503` (Foreign Key violation) hibakódot, garantálva, hogy versenyhelyzetből fakadó törlés esetén se keletkezzen alkalmazáshiba vagy felesleges naplóbejegyzés az `app_error_logs`-ban.
 - ThinkAI márka jelvény (`ThinkAiBadge`): A kezdeményező ThinkAI support operátorok neve mellett diszkrét, modern SVG monogram (`T`) jelenik meg `iconOnly` módban, jelezve a hivatalos support minőséget felesleges szöveges ismétlés nélkül.
+- **SLA & 48 órás válaszfigyelés (Kizárólag Belső / Management nézet):**
+  - **Szerepkör-védelem:** Az SLA túllépési figyelmeztető banner (`TicketSlaWarningBanner`), a várakozási idő jelvények (`TicketSlaBadge`), a „Nem igényel választ” kapcsolók és státuszjelölések **kizárólag belső support admin és management felhasználók (`is_support_admin = true` vagy `role IN ('management', 'thinkai')`) számára láthatók**. Normál ügyfél / kliens felhasználó számára ezek a figyelmeztetések szigorúan rejtve maradnak.
+  - **SLA Figyelmeztető Banner (`TicketSlaWarningBanner`):** Ha egy aktív hibajegy utolsó nem belső üzenete az ügyféltől érkezett és több mint 48 órája nem kapott hivatalos választ, a jegy tetején kiemelt piros figyelmeztetés jelenik meg a munkatársnak a várakozási idővel, valamint közvetlen „Nem igényel választ” és „Válasz írása” akciógombokkal.
+  - **SLA Várakozási Badge (`TicketSlaBadge`):** 24 óra után borostyán, 48 óra után vörös kapszula badge mutatja a várakozási időt a listában és a fejlécben.
+  - **Nem igényel választ (`needs_staff_response = false`):** Lehetővé teszi a support munkatársnak a figyelmeztetés elnémítását, ha az ügyfél üzenete nem igényel érdemi választ (pl. egyszerű köszönetnyilvánítás).
 
 **Rationale:** Egy beépített ticket rendszer gyorsabb visszajelzési ciklust biztosít mint az email, és kontextust ad a fejlesztőknek (melyik oldalon, melyik cég kontextusban keletkezett a hiba). Az ügyfél általi megerősítő folyamat garantálja, hogy egyetlen hibajegy se záródjon le a felhasználó valós jóváhagyása nélkül.

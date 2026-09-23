@@ -8,6 +8,7 @@ import { useAccountyKpis, useAccountyClients, type AccountyClient } from '@/hook
 import { useAccountyPermissions, PATH_TO_MODULE } from '@/hooks/useAccountyPermissions';
 import { useHasEaisybillAccess } from '@/hooks/useHasEaisybillAccess';
 import { useUnreadTicketCount } from '@/hooks/useTickets';
+import { useTranslation } from 'react-i18next';
 
 function useSafeCompany() {
   try {
@@ -122,7 +123,7 @@ export const AccountyShellContext: React.Context<AccountyShellContextType | unde
   ((globalThis as any)[SHELL_CONTEXT_KEY] = createContext<AccountyShellContextType | undefined>(undefined));
 
 export function extractCompanyIdFromPath(pathname: string): string | null {
-  const match = pathname.match(/\/eaisybooks\/(?:(?:client|payroll|missing-invoices)\/)?([a-f0-9-]{36})/i);
+  const match = pathname.match(/(?:\/hr)?\/eaisybooks\/(?:(?:client|payroll|missing-invoices)\/)?([a-f0-9-]{36})/i);
   return match ? match[1] : null;
 }
 
@@ -190,7 +191,7 @@ export function AccountyShellProvider({ children }: { children: React.ReactNode 
   });
 
   const derivedClientId = useMemo(() => {
-    const match = pathname.match(/\/eaisybooks\/(?:(?:client|payroll|missing-invoices)\/)?([a-f0-9-]{36})/i);
+    const match = pathname.match(/(?:\/hr)?\/eaisybooks\/(?:(?:client|payroll|missing-invoices)\/)?([a-f0-9-]{36})/i);
     return match ? match[1] : null;
   }, [pathname]);
 
@@ -332,78 +333,89 @@ export function AccountyShellProvider({ children }: { children: React.ReactNode 
   const [payrollSearch, setPayrollSearch] = useState('');
   const [showAllPayroll, setShowAllPayroll] = useState(false);
 
+  const { t } = useTranslation('accounty');
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
+
   // Sub-groups configuration for admin & portfolio
   const subGroups = useMemo<SubGroup[]>(() => [
     {
       id: 'office',
-      label: 'Iroda & Beállítások',
+      label: t('nav.groups.office', 'Iroda & Beállítások'),
       icon: Settings,
       items: [
-        { to: '/eaisybooks/settings', icon: Settings, label: 'Beállítások', id: 'settings' },
-        { to: '/eaisybooks/profile/settings', icon: User, label: 'Profilbeállítások' },
-        { to: '/eaisybooks/admin/permissions', icon: Shield, label: 'Jogosultságkezelő' },
-        { to: '/eaisybooks/admin/accountants', icon: Users, label: 'Könyvelők kezelése' },
+        { to: `${prefix}/eaisybooks/settings`, icon: Settings, label: t('nav.items.settings', 'Beállítások'), id: 'settings' },
+        { to: `${prefix}/eaisybooks/profile/settings`, icon: User, label: t('nav.items.profile_settings', 'Profilbeállítások') },
+        { to: `${prefix}/eaisybooks/admin/permissions`, icon: Shield, label: t('nav.items.permissions', 'Jogosultságkezelő') },
+        { to: `${prefix}/eaisybooks/admin/accountants`, icon: Users, label: t('nav.items.accountants', 'Könyvelők kezelése') },
       ].filter(item => {
-        const module = PATH_TO_MODULE[item.to];
+        const rawPath = item.to.replace(/^\/hr/, '');
+        const module = PATH_TO_MODULE[rawPath] || PATH_TO_MODULE[item.to];
         return !module || canAccess(module);
       })
     },
     {
       id: 'professional',
-      label: 'Szakmai Törzsadatok',
+      label: t('nav.groups.professional', 'Szakmai Törzsadatok'),
       icon: BookOpen,
       items: [
-        { to: '/eaisybooks/admin/templates', icon: FileText, label: 'Sablonok' },
-        { to: '/eaisybooks/admin/job-codes', icon: BookOpen, label: 'Jogviszonykódok' },
-        { to: '/eaisybooks/admin/tax-parameters', icon: Calculator, label: 'Adómértékek' },
-        { to: '/eaisybooks/admin/legal-updates', icon: Scale, label: 'Jogszabály-frissítések' },
+        { to: `${prefix}/eaisybooks/admin/templates`, icon: FileText, label: t('nav.items.templates', 'Sablonok') },
+        { to: `${prefix}/eaisybooks/admin/job-codes`, icon: BookOpen, label: t('nav.items.job_codes', 'Jogviszonykódok') },
+        { to: `${prefix}/eaisybooks/admin/tax-parameters`, icon: Calculator, label: t('nav.items.tax_parameters', 'Adómértékek') },
+        { to: `${prefix}/eaisybooks/admin/legal-updates`, icon: Scale, label: t('nav.items.legal_updates', 'Jogszabály-frissítések') },
       ].filter(item => {
-        const module = PATH_TO_MODULE[item.to];
+        const rawPath = item.to.replace(/^\/hr/, '');
+        const module = PATH_TO_MODULE[rawPath] || PATH_TO_MODULE[item.to];
         return !module || canAccess(module);
       })
     },
     {
       id: 'security',
-      label: 'Biztonság & GDPR',
+      label: t('nav.groups.security', 'Biztonság & GDPR'),
       icon: ShieldCheck,
       items: [
-        { to: '/eaisybooks/admin/audit', icon: ShieldCheck, label: 'Audit napló' },
-        { to: '/eaisybooks/admin/gdpr', icon: ShieldCheck, label: 'GDPR' },
+        { to: `${prefix}/eaisybooks/admin/audit`, icon: ShieldCheck, label: t('nav.items.audit', 'Audit napló') },
+        { to: `${prefix}/eaisybooks/admin/gdpr`, icon: ShieldCheck, label: t('nav.items.gdpr', 'GDPR') },
       ].filter(item => {
-        const module = PATH_TO_MODULE[item.to];
+        const rawPath = item.to.replace(/^\/hr/, '');
+        const module = PATH_TO_MODULE[rawPath] || PATH_TO_MODULE[item.to];
         return !module || canAccess(module);
       })
     }
-  ], [canAccess]);
+  ], [canAccess, prefix, t]);
 
   const isActive = useCallback((path: string) => {
-    if (path === '/eaisybooks') {
-      return pathname === '/eaisybooks' || pathname.startsWith('/eaisybooks/client');
+    const rawPath = path.replace(/^\/hr/, '');
+    const rawCurrentPath = pathname.replace(/^\/hr/, '');
+    if (rawPath === '/eaisybooks') {
+      return rawCurrentPath === '/eaisybooks' || rawCurrentPath.startsWith('/eaisybooks/client');
     }
-    if (path === '/eaisybooks/tao') {
-      return pathname === '/eaisybooks/tao';
+    if (rawPath === '/eaisybooks/tao') {
+      return rawCurrentPath === '/eaisybooks/tao';
     }
-    if (path === '/eaisybooks/ev') {
-      return pathname === '/eaisybooks/ev';
+    if (rawPath === '/eaisybooks/ev') {
+      return rawCurrentPath === '/eaisybooks/ev';
     }
-    return pathname.startsWith(path);
+    return rawCurrentPath.startsWith(rawPath);
   }, [pathname]);
 
   const isPathActive = useCallback((to: string, exact?: boolean) => {
-    const cleanTo = to.split('?')[0];
+    const rawTo = to.replace(/^\/hr/, '');
+    const cleanTo = rawTo.split('?')[0];
     const itemParams = new URLSearchParams(to.split('?')[1] || '');
     const itemTab = itemParams.get('tab');
     
     const queryParams = new URLSearchParams(location.search);
     const currentTab = queryParams.get('tab');
     
+    const rawCurrentPath = pathname.replace(/^\/hr/, '');
+    
     if (itemTab) {
-      return pathname.startsWith(cleanTo) && currentTab === itemTab;
+      return rawCurrentPath.startsWith(cleanTo) && currentTab === itemTab;
     }
-    if (to === '/eaisybooks') {
-      return pathname === '/eaisybooks' && !currentTab;
+    if (rawTo === '/eaisybooks') {
+      return rawCurrentPath === '/eaisybooks' && !currentTab;
     }
-    return exact ? pathname === cleanTo : isActive(cleanTo);
+    return exact ? rawCurrentPath === cleanTo : isActive(cleanTo);
   }, [pathname, location.search, isActive]);
 
   const handlePrefetch = useCallback((to: string) => {

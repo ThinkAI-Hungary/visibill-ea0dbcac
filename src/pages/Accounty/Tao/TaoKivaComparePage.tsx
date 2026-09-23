@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams , useLocation } from 'react-router-dom';
 import { ArrowLeft, BarChart2, Calculator, CheckCircle, Info, Landmark, Scale, TrendingDown, TrendingUp, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,8 @@ function NumberInput({ value, onChange, label }: {
 }
 
 export default function TaoKivaComparePage() {
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const id = companyId;
   const { data: clients = [] } = useAccountyClients();
@@ -87,7 +89,7 @@ export default function TaoKivaComparePage() {
     <div className="w-full space-y-6 page-animate max-w-5xl">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link to={`/eaisybooks/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-muted transition-colors">
+        <Link to={`${prefix}/eaisybooks/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-muted transition-colors">
           <ArrowLeft className="w-4 h-4 text-muted-foreground" />
         </Link>
         <div className="p-2.5 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg shadow-lg shadow-violet-500/25">

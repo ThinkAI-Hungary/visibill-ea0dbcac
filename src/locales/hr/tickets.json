@@ -189,7 +189,10 @@
       "ticket_deleted_title": "Zahtjev obrisan",
       "ticket_deleted_desc": "{{number}} uspješno obrisan.",
       "ticket_already_assigned_title": "Zahtjev je već dodijeljen",
-      "ticket_already_assigned_desc": "Ovaj zahtjev je već preuzeo drugi referent podrške."
+      "ticket_already_assigned_desc": "Ovaj zahtjev je već preuzeo drugi referent podrške.",
+      "ticket_reassigned_title": "Referent ažuriran",
+      "ticket_reassigned_desc": "Referent dodijeljen zahtjevu je uspješno promijenjen.",
+      "ticket_unassigned_desc": "Referent dodijeljen zahtjevu je uspješno uklonjen."
     },
     "resolution_banner": {
       "ticket_closed_title": "Zahtjev zatvoren",

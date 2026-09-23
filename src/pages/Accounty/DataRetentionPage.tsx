@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   ArrowLeft, Shield, FileText, Clock, AlertTriangle, CheckCircle,
   Upload, Trash2, Eye, Download, Database, Plus, Save, Loader2, Pencil, X, ChevronLeft
@@ -28,6 +28,8 @@ const REQUEST_TYPE_LABELS: Record<string, { label: string; color: string }> = {
 export default function DataRetentionPage() {
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const id = companyId;
   const { toast } = useToast();
   const { data: client, isLoading: clientLoading } = useAccountyClient(id || '');
@@ -546,14 +548,14 @@ export default function DataRetentionPage() {
           <div className="px-5 py-3 border-b border-border dark:bg-card/30 flex items-center justify-between">
             <h2 className="text-sm font-bold text-foreground/90">Érintetti kérelmek</h2>
             <Button variant="outline" size="sm" className="text-xs" asChild>
-              <Link to="/eaisybooks/admin/gdpr">Rendszerszintű GDPR modul →</Link>
+              <Link to={`${prefix}/eaisybooks/admin/gdpr`}>Rendszerszintű GDPR modul →</Link>
             </Button>
           </div>
           <div className="py-12 text-center text-sm text-muted-foreground space-y-2">
             <Database className="w-8 h-8 mx-auto text-muted-foreground" />
             <p>Az érintetti kérelmek kezelése a rendszerszintű GDPR modulból érhető el.</p>
             <Button variant="outline" size="sm" asChild>
-              <Link to="/eaisybooks/admin/gdpr">Megnyitás →</Link>
+              <Link to={`${prefix}/eaisybooks/admin/gdpr`}>Megnyitás →</Link>
             </Button>
           </div>
         </div>

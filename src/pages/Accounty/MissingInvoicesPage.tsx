@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, Clock, MoreVertical, FileText, Settings, Search, ChevronRight, Mail, Phone, CheckCircle2, X, CheckCircle, Loader2, TrendingUp, TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,7 +25,7 @@ import { TableEmptyState } from '@/components/ui/table-empty-state';
 import { FloatingBulkBar } from '@/components/ui/floating-bulk-bar';
 import { useToast } from '@/hooks/use-toast';
 
-function AnimatedNumber({ value, duration = 1200 }: { value: number; duration?: number }) {
+function AnimatedNumber({ value, duration = 1200, locale = 'hu-HU' }: { value: number; duration?: number; locale?: string }) {
   const [display, setDisplay] = useState(0);
   useEffect(() => {
     if (value === 0) { setDisplay(0); return; }
@@ -37,13 +38,18 @@ function AnimatedNumber({ value, duration = 1200 }: { value: number; duration?: 
     }, 16);
     return () => clearInterval(timer);
   }, [value, duration]);
-  return <>{display.toLocaleString('hu-HU')}</>;
+  return <>{display.toLocaleString(locale)}</>;
 }
 
 type KpiModalType = 'all' | 'critical' | 'sent' | 'response' | null;
 
 export default function MissingInvoicesPage() {
+  const { t, i18n } = useTranslation('accounty');
   const navigate = useNavigate();
+  const location = useLocation();
+  const prefix = location.pathname.startsWith('/hr') ? '/hr' : '';
+  const currentLocale = i18n.language === 'hr' ? 'hr-HR' : 'hu-HU';
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [kpiModal, setKpiModal] = useState<KpiModalType>(null);
@@ -61,15 +67,17 @@ export default function MissingInvoicesPage() {
   const data = useMemo(() => {
     if (!companySummary || companySummary.length === 0) return [];
     return companySummary.map(cs => {
-      let status = 'Nincs felszólítva';
+      let status = t('missing_invoices.status_not_notified', 'Nincs felszólítva');
       let statusType = 'neutral';
       let lastNotice = '-';
 
       if (cs.totalNotified > 0) {
-        status = cs.maxNotificationCount >= 3 ? 'Kritikus' : 'Felszólítva';
+        status = cs.maxNotificationCount >= 3 
+          ? t('missing_invoices.status_critical', 'Kritikus') 
+          : t('missing_invoices.status_notified', 'Felszólítva');
         statusType = cs.maxNotificationCount >= 3 ? 'danger' : 'warning';
         if (cs.lastNotifiedAt) {
-          lastNotice = new Date(cs.lastNotifiedAt).toLocaleDateString('hu-HU');
+          lastNotice = new Date(cs.lastNotifiedAt).toLocaleDateString(currentLocale);
         }
       }
 
@@ -83,7 +91,7 @@ export default function MissingInvoicesPage() {
         statusType,
       };
     });
-  }, [companySummary]);
+  }, [companySummary, t, currentLocale]);
 
   const [selectedInvoiceForDetails, setSelectedInvoiceForDetails] = useState<any>(null);
   const { toast } = useToast();
@@ -139,22 +147,22 @@ export default function MissingInvoicesPage() {
     if (!kpiModal) return { title: '', items: [] as typeof data };
     switch (kpiModal) {
       case 'all':
-        return { title: `Összes hiányzó számla (${totalMissing})`, items: data.filter(r => r.missing > 0) };
+        return { title: t('missing_invoices.modal_all_title', 'Összes hiányzó számla ({{count}})', { count: totalMissing }), items: data.filter(r => r.missing > 0) };
       case 'critical':
-        return { title: `Kritikus számlák (${totalCritical})`, items: data.filter(r => r.critical > 0) };
+        return { title: t('missing_invoices.modal_critical_title', 'Kritikus számlák ({{count}})', { count: totalCritical }), items: data.filter(r => r.critical > 0) };
       case 'sent':
-        return { title: `Felszólított ügyfelek (${totalNotified})`, items: data.filter(r => r.status === 'Felszólítva' || r.status === 'Kritikus') };
+        return { title: t('missing_invoices.modal_sent_title', 'Felszólított ügyfelek ({{count}})', { count: totalNotified }), items: data.filter(r => r.status === 'Felszólítva' || r.status === 'Kritikus') };
       case 'response':
-        return { title: `Válaszra váró ügyfelek`, items: data.filter(r => r.status === 'Nincs felszólítva' && r.missing > 0) };
+        return { title: t('missing_invoices.modal_response_title', 'Válaszra váró ügyfelek'), items: data.filter(r => r.status === 'Nincs felszólítva' && r.missing > 0) };
     }
-  }, [kpiModal, totalMissing, totalCritical, totalNotified, data]);
+  }, [kpiModal, totalMissing, totalCritical, totalNotified, data, t]);
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
-      case 'S\u00FCrg\u0151s':
-        return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-red-50 dark:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-800">S&#252;rg&#337;s</span>;
-      case 'K\u00F6zepes':
-        return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-800">K&#246;zepes</span>;
+      case 'Sürgős':
+        return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-red-50 dark:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-800">{t('missing_invoices.status_critical', 'Sürgős')}</span>;
+      case 'Közepes':
+        return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-800">Közepes</span>;
       case 'Alacsony':
         return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground border border-border">Alacsony</span>;
       default:
@@ -195,20 +203,20 @@ export default function MissingInvoicesPage() {
   return (
     <div className="w-full space-y-6 page-animate">
       <PageHeader 
-        title="Hiányzó számlák"
-        description="Hiányzó bizonylatok bekérése és partneri felszólítások kezelése"
+        title={t('missing_invoices.title', 'Hiányzó számlák')}
+        description={t('missing_invoices.description', 'Hiányzó bizonylatok bekérése és partneri felszólítások kezelése')}
         actions={
           <>
             <Button 
               variant="outline" 
               size="sm" 
               className="gap-2 bg-card border-border text-foreground hover:bg-muted/50 h-9 px-4"
-              onClick={() => navigate('/eaisybooks/reports/missing-invoices')}
+              onClick={() => navigate(`${prefix}/eaisybooks/reports/missing-invoices`)}
             >
-              <FileText className="w-4 h-4"/> Riportok
+              <FileText className="w-4 h-4"/> {t('missing_invoices.reports', 'Riportok')}
             </Button>
             <Button variant="outline" size="sm" className="gap-2 bg-card border-border text-foreground hover:bg-muted/50 h-9 px-4">
-              <Settings className="w-4 h-4"/> Beállítások
+              <Settings className="w-4 h-4"/> {t('missing_invoices.settings', 'Beállítások')}
             </Button>
           </>
         }
@@ -218,8 +226,8 @@ export default function MissingInvoicesPage() {
        <div className="border border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-900/20 rounded-lg p-4 flex gap-3 text-red-600 dark:text-red-400 shadow-soft">
          <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5 text-red-500" />
          <div>
-           <h3 className="font-semibold text-sm">Kritikus hiányok!</h3>
-           <p className="text-sm text-red-600/80 dark:text-red-400/70 mt-0.5">{totalCritical} sürgős számla vár bekérésre {data.length} ügyféltől.</p>
+           <h3 className="font-semibold text-sm">{t('missing_invoices.critical_banner_title', 'Kritikus hiányok!')}</h3>
+           <p className="text-sm text-red-600/80 dark:text-red-400/70 mt-0.5">{t('missing_invoices.critical_banner_desc', '{{count}} sürgős számla vár bekérésre {{clients}} ügyféltől.', { count: totalCritical, clients: data.length })}</p>
          </div>
        </div>
        )}
@@ -232,12 +240,12 @@ export default function MissingInvoicesPage() {
             className="w-full bg-card rounded-lg border border-border p-5 shadow-soft flex flex-col justify-between text-left hover:border-muted-foreground/40 dark:hover:border-slate-600 hover:bg-muted/50 transition-all cursor-pointer card-ripple"
             onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`); e.currentTarget.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`); }}
           >
-            <h3 className="text-sm font-medium text-muted-foreground">Összes hiányzó</h3>
+            <h3 className="text-sm font-medium text-muted-foreground">{t('missing_invoices.kpi_all', 'Összes hiányzó')}</h3>
             <div className="mt-4">
-              <div className="text-2xl font-bold text-foreground"><AnimatedNumber value={totalMissing} /></div>
+              <div className="text-2xl font-bold text-foreground"><AnimatedNumber value={totalMissing} locale={currentLocale} /></div>
               <div className="flex items-center gap-1 mt-1">
                 <TrendingDown className="w-3 h-3 text-red-500" />
-                <p className="text-xs text-red-500">{data.length} ügyféltől</p>
+                <p className="text-xs text-red-500">{t('missing_invoices.kpi_clients_count', '{{count}} ügyféltől', { count: data.length })}</p>
               </div>
             </div>
           </button>
@@ -248,10 +256,10 @@ export default function MissingInvoicesPage() {
             className="w-full bg-card rounded-lg border border-red-200 dark:border-red-900/50 p-5 shadow-soft flex flex-col justify-between text-left hover:border-red-400 dark:hover:border-red-700 hover:bg-red-50/50 dark:hover:bg-red-900/20 transition-all cursor-pointer card-ripple"
             onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`); e.currentTarget.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`); }}
           >
-            <h3 className="text-sm font-medium text-red-500">Kritikus</h3>
+            <h3 className="text-sm font-medium text-red-500">{t('missing_invoices.kpi_critical', 'Kritikus')}</h3>
             <div className="mt-4">
-              <div className="text-2xl font-bold text-red-600"><AnimatedNumber value={totalCritical} /></div>
-              <p className="text-xs text-red-500 mt-1">Sürgős bekérés</p>
+              <div className="text-2xl font-bold text-red-600"><AnimatedNumber value={totalCritical} locale={currentLocale} /></div>
+              <p className="text-xs text-red-500 mt-1">{t('missing_invoices.kpi_urgent_request', 'Sürgős bekérés')}</p>
             </div>
           </button>
          </div>
@@ -261,10 +269,10 @@ export default function MissingInvoicesPage() {
             className="w-full bg-card rounded-lg border border-border p-5 shadow-soft flex flex-col justify-between text-left hover:border-muted-foreground/40 dark:hover:border-slate-600 hover:bg-muted/50 transition-all cursor-pointer card-ripple"
             onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`); e.currentTarget.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`); }}
           >
-            <h3 className="text-sm font-medium text-muted-foreground">Küldött felszólítások</h3>
+            <h3 className="text-sm font-medium text-muted-foreground">{t('missing_invoices.kpi_sent_notices', 'Küldött felszólítások')}</h3>
             <div className="mt-4">
-             <div className="text-2xl font-bold text-foreground"><AnimatedNumber value={totalNotified} /></div>
-               <p className="text-xs text-muted-foreground mt-1">ez a hónap</p>
+             <div className="text-2xl font-bold text-foreground"><AnimatedNumber value={totalNotified} locale={currentLocale} /></div>
+               <p className="text-xs text-muted-foreground mt-1">{t('missing_invoices.kpi_this_month', 'ez a hónap')}</p>
             </div>
           </button>
          </div>
@@ -274,9 +282,9 @@ export default function MissingInvoicesPage() {
             className="w-full bg-card rounded-lg border border-border p-5 shadow-soft flex flex-col justify-between text-left hover:border-muted-foreground/40 dark:hover:border-slate-600 hover:bg-muted/50 transition-all cursor-pointer card-ripple"
             onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`); e.currentTarget.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`); }}
           >
-            <h3 className="text-sm font-medium text-muted-foreground mb-4">Válaszadási arány</h3>
+            <h3 className="text-sm font-medium text-muted-foreground mb-4">{t('missing_invoices.kpi_response_rate', 'Válaszadási arány')}</h3>
             <div>
-               <div className="text-2xl font-bold text-foreground mb-2"><AnimatedNumber value={responseRate} />%</div>
+               <div className="text-2xl font-bold text-foreground mb-2"><AnimatedNumber value={responseRate} locale={currentLocale} />%</div>
                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                  <div className="h-full bg-primary rounded-full transition-all duration-1000" style={{ width: `${responseRate}%` }}></div>
               </div>
@@ -309,7 +317,7 @@ export default function MissingInvoicesPage() {
                {modalData.items.length > 0 ? modalData.items.map((row: any) => (
                    <button
                      key={row.id}
-                     onClick={() => { setKpiModal(null); navigate(`/eaisybooks/missing-invoices/${row.id}`); }}
+                     onClick={() => { setKpiModal(null); navigate(`${prefix}/eaisybooks/missing-invoices/${row.id}`); }}
                      className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group text-left"
                    >
                      <div className="flex items-center gap-3 min-w-0">
@@ -322,11 +330,11 @@ export default function MissingInvoicesPage() {
                        <div className="min-w-0">
                          <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary dark:group-hover:text-primary transition-colors">{row.name}</p>
                          <div className="flex items-center gap-2 mt-0.5">
-                           <span className="text-[10px] text-muted-foreground">{row.missing} hiányzó</span>
+                           <span className="text-[10px] text-muted-foreground">{t('missing_invoices.items_missing', '{{count}} hiányzó', { count: row.missing })}</span>
                            {row.critical > 0 && (
                              <>
                                <span className="text-[10px] text-muted-foreground">•</span>
-                               <span className="text-[10px] text-red-500 font-semibold">{row.critical} kritikus</span>
+                               <span className="text-[10px] text-red-500 font-semibold">{t('missing_invoices.items_critical', '{{count}} kritikus', { count: row.critical })}</span>
                              </>
                            )}
                          </div>
@@ -345,7 +353,7 @@ export default function MissingInvoicesPage() {
                      </div>
                    </button>
                )) : (
-                 <div className="text-center py-12 text-muted-foreground">Nincs adat</div>
+                 <div className="text-center py-12 text-muted-foreground">{t('missing_invoices.no_data', 'Nincs adat')}</div>
                )}
              </div>
              
@@ -355,7 +363,7 @@ export default function MissingInvoicesPage() {
                  onClick={() => setKpiModal(null)}
                  className="px-4 py-2 rounded-lg bg-slate-900 dark:bg-muted text-white dark:text-foreground text-sm font-semibold hover:bg-slate-800 dark:hover:bg-muted transition-colors"
                >
-                 Bez&#225;r&#225;s
+                 {t('missing_invoices.close', 'Bezárás')}
                </button>
              </div>
            </div>
@@ -485,7 +493,7 @@ export default function MissingInvoicesPage() {
          <div className="w-72 relative">
            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
            <Input 
-             placeholder={"Keres\u00E9s \u00FCgyf\u00E9l..."} 
+             placeholder={t('missing_invoices.search_placeholder', 'Keresés ügyfél...')} 
              className="pl-9 bg-card border-border" 
              value={searchQuery}
              onChange={(e) => setSearchQuery(e.target.value)}
@@ -494,13 +502,13 @@ export default function MissingInvoicesPage() {
          <div className="w-48">
            <Select value={statusFilter} onValueChange={setStatusFilter}>
              <SelectTrigger className="bg-card border-border">
-               <SelectValue placeholder={"Minden st\u00E1tusz"} />
+               <SelectValue placeholder={t('missing_invoices.filter_all', 'Minden státusz')} />
              </SelectTrigger>
              <SelectContent>
-               <SelectItem value="all">Minden st&#225;tusz</SelectItem>
-               <SelectItem value="critical">Kritikus</SelectItem>
-               <SelectItem value="warning">Felsz&#243;l&#237;tva</SelectItem>
-               <SelectItem value="neutral">Nincs felsz&#243;l&#237;tva</SelectItem>
+               <SelectItem value="all">{t('missing_invoices.filter_all', 'Minden státusz')}</SelectItem>
+               <SelectItem value="critical">{t('missing_invoices.status_critical', 'Kritikus')}</SelectItem>
+               <SelectItem value="warning">{t('missing_invoices.status_notified', 'Felszólítva')}</SelectItem>
+               <SelectItem value="neutral">{t('missing_invoices.status_not_notified', 'Nincs felszólítva')}</SelectItem>
              </SelectContent>
            </Select>
          </div>
@@ -517,11 +525,11 @@ export default function MissingInvoicesPage() {
                    onCheckedChange={toggleSelectAllClients}
                  />
                </TableHead>
-               <TableHead className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ügyfél</TableHead>
-               <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Hiányzó</TableHead>
-               <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Kritikus</TableHead>
-               <TableHead className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Utolsó felszólítás</TableHead>
-               <TableHead className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Státusz</TableHead>
+               <TableHead className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('missing_invoices.th_client', 'Ügyfél')}</TableHead>
+               <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('missing_invoices.th_missing', 'Hiányzó')}</TableHead>
+               <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('missing_invoices.th_critical', 'Kritikus')}</TableHead>
+               <TableHead className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('missing_invoices.th_last_notice', 'Utolsó felszólítás')}</TableHead>
+               <TableHead className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('missing_invoices.th_status', 'Státusz')}</TableHead>
                <TableHead className="px-6 py-4 w-12 text-center"></TableHead>
              </TableRow>
            </TableHeader>
@@ -530,7 +538,7 @@ export default function MissingInvoicesPage() {
                paginatedData.map((row) => (
                <TableRow 
                  key={row.id} 
-                 onClick={() => navigate(`/eaisybooks/missing-invoices/${row.id}`)}
+                 onClick={() => navigate(`${prefix}/eaisybooks/missing-invoices/${row.id}`)}
                  className={cn(
                    "hover:bg-muted/40 transition-colors group cursor-pointer border-l-2 border-l-transparent hover:border-l-primary",
                    selectedClientIds.has(row.id) && "bg-primary/5 border-l-primary"
@@ -596,7 +604,7 @@ export default function MissingInvoicesPage() {
                </TableRow>
              ))
            ) : (
-             <TableEmptyState colSpan={7} title="Nincs találat" description="A megadott szűrők alapján nincs megjeleníthető ügyfél." />
+             <TableEmptyState colSpan={7} title={t('empty.title', 'Nincs találat')} description={t('empty.no_match', 'A megadott szűrők alapján nincs megjeleníthető ügyfél.')} />
            )}
            </TableBody>
          </Table>
@@ -618,10 +626,10 @@ export default function MissingInvoicesPage() {
       {/* Centralized Floating Bulk Action Bar */}
       <FloatingBulkBar
         count={selectedClientIds.size}
-        label="Kijelölt ügyfelek:"
-        itemUnit="db"
+        label={t('missing_invoices.bulk_selected', 'Kijelölt ügyfelek:')}
+        itemUnit={t('missing_invoices.bulk_unit', 'db')}
         onCancel={() => setSelectedClientIds(new Set())}
-        cancelLabel="Mégse"
+        cancelLabel={t('bulk.cancel', 'Mégse')}
         hideSaveButton={true}
       >
         <Button
@@ -629,15 +637,15 @@ export default function MissingInvoicesPage() {
           size="sm"
           onClick={() => {
             toast({
-              title: 'Felszólítások elküldve',
-              description: `${selectedClientIds.size} ügyfélnek elküldve a hiánypótlási felszólítás.`
+              title: t('missing_invoices.toast_sent_title', 'Felszólítások elküldve'),
+              description: t('missing_invoices.toast_sent_desc', '{{count}} ügyfélnek elküldve a hiánypótlási felszólítás.', { count: selectedClientIds.size })
             });
             setSelectedClientIds(new Set());
           }}
           className="h-9 text-xs gap-1.5 rounded-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm shrink-0"
         >
           <Mail className="w-3.5 h-3.5" />
-          Felszólítás küldése ({selectedClientIds.size} db)
+          {t('missing_invoices.send_notice_btn', 'Felszólítás küldése ({{count}} db)', { count: selectedClientIds.size })}
         </Button>
       </FloatingBulkBar>
     </div>

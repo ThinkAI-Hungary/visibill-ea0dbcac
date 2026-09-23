@@ -73,6 +73,7 @@ export interface AccountyClient {
   accountantRole: 'senior' | 'junior';
   ownerId?: string;
   isMainAccountant?: boolean;
+  countryCode?: string;
 }
 
 export interface AccountyMissingItem {

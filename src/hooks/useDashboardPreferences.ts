@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { STORAGE_KEYS } from '@/lib/constants';
 
 export interface ChartLineFlags {
@@ -19,7 +19,7 @@ const CHART_LINE_DEFAULTS: ChartLineFlags = {
   cashFlow: true,
 };
 
-export function useDashboardPreferences() {
+export function useDashboardPreferences(defaultCurrency: string = 'HUF') {
   const [showBrutto, setShowBruttoRaw] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.DASHBOARD_SHOW_BRUTTO);
     return saved !== null ? saved === 'true' : false;
@@ -33,7 +33,12 @@ export function useDashboardPreferences() {
     return CHART_LINE_DEFAULTS;
   });
 
-  const [selectedCurrency, setSelectedCurrency] = useState<string>('HUF');
+  const [selectedCurrency, setSelectedCurrency] = useState<string>(defaultCurrency);
+
+  // Automatically update selectedCurrency if defaultCurrency changes (e.g. company switch)
+  useEffect(() => {
+    setSelectedCurrency(defaultCurrency);
+  }, [defaultCurrency]);
   const [vatSectionOpen, setVatSectionOpen] = useState(true);
   const [revenueSectionOpen, setRevenueSectionOpen] = useState(true);
   const [fxSectionOpen, setFxSectionOpen] = useState(true);

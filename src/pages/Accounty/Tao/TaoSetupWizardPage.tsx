@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate , useLocation } from 'react-router-dom';
 import { ArrowLeft, Shield, ChevronRight, Check, HelpCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,8 @@ const QUESTIONS = [
 ];
 
 export default function TaoSetupWizardPage() {
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const id = companyId;
   const navigate = useNavigate();
@@ -48,7 +50,7 @@ export default function TaoSetupWizardPage() {
         description: `Új besorolás: ${result.type} (${result.regime})`
       });
       
-      navigate(`/eaisybooks/${id}/${dateRange}/tao`);
+      navigate(`${prefix}/eaisybooks/${id}/${dateRange}/tao`);
     } catch (err: any) {
       toast({
         variant: 'destructive',
@@ -81,7 +83,7 @@ export default function TaoSetupWizardPage() {
   return (
     <div className="w-full space-y-6 page-animate max-w-3xl">
       <div className="flex items-center gap-3">
-        <Link to={`/eaisybooks/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-muted transition-colors">
+        <Link to={`${prefix}/eaisybooks/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-muted transition-colors">
           <ArrowLeft className="w-4 h-4 text-muted-foreground" />
         </Link>
         <div className="p-2.5 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg shadow-lg shadow-amber-500/25">

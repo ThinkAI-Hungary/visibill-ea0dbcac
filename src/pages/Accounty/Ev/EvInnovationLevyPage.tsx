@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams , useLocation } from 'react-router-dom';
 import {
   Beaker, ArrowLeft, ChevronRight, Info, Calculator
 } from 'lucide-react';
@@ -10,6 +10,8 @@ import { formatHuf } from '@/lib/evCalculations';
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function EvInnovationLevyPage() {
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const id = companyId;
   const { data: client } = useAccountyClient(id);
@@ -25,11 +27,11 @@ export default function EvInnovationLevyPage() {
     <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link to="/eaisybooks?tab=ev" className="hover:text-primary transition-colors flex items-center gap-1">
+        <Link to={`${prefix}/eaisybooks?tab=ev`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/eaisybooks/${id}/${dateRange}/ev`} className="hover:text-primary transition-colors">
+        <Link to={`${prefix}/eaisybooks/${id}/${dateRange}/ev`} className="hover:text-primary transition-colors">
           {client?.name || 'Ügyfél'}
         </Link>
         <ChevronRight className="w-3 h-3" />

@@ -8,10 +8,15 @@ import { useDateRange } from '@/contexts/DateRangeContext';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getDateFnsLocale, getActiveLocale } from '@/lib/locale/formatters';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 const MAX_RANGE_DAYS = 365;
 
-export function GlobalDatePicker() {
+export interface GlobalDatePickerProps {
+  showLanguageSwitcher?: boolean;
+}
+
+export function GlobalDatePicker({ showLanguageSwitcher = true }: GlobalDatePickerProps = {}) {
   const { t } = useTranslation('common');
   const { dateFrom, dateTo, setDateFrom, setDateTo, setThisMonth, setPreviousMonth, setThisYear } = useDateRange();
   const [dateFromOpen, setDateFromOpen] = useState(false);
@@ -128,6 +133,13 @@ export function GlobalDatePicker() {
           </PopoverContent>
         </Popover>
       </div>
+
+      {showLanguageSwitcher && (
+        <>
+          <span className="text-muted-foreground mx-1 text-xs">|</span>
+          <LanguageSwitcher buttonVariant="outline" />
+        </>
+      )}
     </div>
   );
 }

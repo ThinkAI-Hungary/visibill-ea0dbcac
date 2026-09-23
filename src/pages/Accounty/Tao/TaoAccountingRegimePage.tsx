@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams , useLocation } from 'react-router-dom';
 import { ArrowLeft, BookOpen, Info, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 
 export default function TaoAccountingRegimePage() {
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const id = companyId;
   const [regime, setRegime] = useState<'szt' | 'ifrs'>('szt');
@@ -13,7 +15,7 @@ export default function TaoAccountingRegimePage() {
   return (
     <div className="w-full space-y-6 page-animate max-w-3xl">
       <div className="flex items-center gap-3">
-        <Link to={`/eaisybooks/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-muted transition-colors">
+        <Link to={`${prefix}/eaisybooks/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-muted transition-colors">
           <ArrowLeft className="w-4 h-4 text-muted-foreground" />
         </Link>
         <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg shadow-lg shadow-primary/20">

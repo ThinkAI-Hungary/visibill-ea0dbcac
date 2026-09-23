@@ -343,18 +343,25 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
       if (prevStatus && activeStatuses.has(prevStatus) && doneStatuses.has(curStatus)) {
         if (!isUploadNotified(rec.id)) {
           // Tab-aware toast title
-          const toastTitle = activeTab === 'invoices' ? 'Számlák feldolgozva!'
-            : activeTab === 'vouchers' ? 'Pénztárbizonylatok feldolgozva!'
-            : activeTab === 'salaries' ? 'Bér/járulékok feldolgozva!'
-            : (activeTab === 'bank' || activeTab === 'bank-statements') ? 'Bankkivonat feldolgozva!'
-            : activeTab === 'reports' ? 'Riport feldolgozva!'
-            : 'Tranzakciók feldolgozva!';
+          const toastTitle = activeTab === 'invoices' ? t('common:notifications.invoices_processed_title', 'Számlák feldolgozva!')
+            : activeTab === 'vouchers' ? t('common:notifications.vouchers_processed_title', 'Pénztárbizonylatok feldolgozva!')
+            : activeTab === 'salaries' ? t('common:notifications.salaries_processed_title', 'Bér/járulékok feldolgozva!')
+            : (activeTab === 'bank' || activeTab === 'bank-statements') ? t('common:notifications.bank_statement_processed_title', 'Bankkivonat feldolgozva!')
+            : activeTab === 'reports' ? t('common:notifications.report_processed_title', 'Riport feldolgozva!')
+            : t('common:notifications.transactions_processed_title', 'Tranzakciók feldolgozva!');
 
           toast({
             title: toastTitle,
             description: rec.metadata?.multi_invoice
-              ? `${rec.file_name} — ${rec.metadata.invoice_count_processed || 0} számla sikeresen feldolgozva.`
-              : `${rec.file_name} sikeresen fel lett dolgozva.`,
+              ? t('common:notifications.multi_invoice_processed_desc', {
+                  fileName: rec.file_name,
+                  count: rec.metadata.invoice_count_processed || 0,
+                  defaultValue: `${rec.file_name} — ${rec.metadata.invoice_count_processed || 0} számla sikeresen feldolgozva.`,
+                })
+              : t('common:notifications.single_file_processed_desc', {
+                  fileName: rec.file_name,
+                  defaultValue: `${rec.file_name} sikeresen fel lett dolgozva.`,
+                }),
             variant: 'default',
             duration: 5000,
           });

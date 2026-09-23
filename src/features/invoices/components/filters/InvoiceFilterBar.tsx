@@ -8,8 +8,9 @@ import { Search, CalendarIcon, CalendarCheck, Calendar as CalendarGlyph, X } fro
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
-import { getDateFnsLocale, getActiveLocale } from '@/lib/locale/formatters';
+import { getActiveLocale } from '@/lib/locale/formatters';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
+import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
 
 export function InvoiceFilterBar() {
   const { t } = useTranslation(['invoices', 'common']);
@@ -29,6 +30,7 @@ export function InvoiceFilterBar() {
     hasAnyActiveFilter,
     clearAllFilters,
   } = useInvoiceContext();
+  const { hasNavIntegration } = useCompanyJurisdiction();
 
   const [dateFromOpen, setDateFromOpen] = useState(false);
   const [dateToOpen, setDateToOpen] = useState(false);
@@ -300,7 +302,7 @@ export function InvoiceFilterBar() {
       )}
 
       {/* NAV Online Számla Status Select (Submitted Invoices only) */}
-      {isSubmittedTab && (
+      {isSubmittedTab && hasNavIntegration && (
         <Select
           value={filters.navStatus || 'all'}
           onValueChange={(value) => setFilters(prev => ({ ...prev, navStatus: value }))}

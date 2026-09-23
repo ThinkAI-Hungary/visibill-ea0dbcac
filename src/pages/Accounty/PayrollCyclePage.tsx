@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   ArrowLeft, Check, ChevronRight, ChevronLeft,
   Mail, ClipboardList, Clock, Coffee, Calculator,
@@ -91,6 +91,8 @@ const EMPLOYMENT_TYPE_LABELS: Record<string, string> = {
 export default function PayrollCyclePage() {
   const { companyId, cycleId, dateRange } = useParams<{ companyId: string; cycleId: string; dateRange?: string }>();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const { dateFromFormatted, dateToFormatted } = useDateRange();
   const effectiveDateRange = dateRange || `${dateFromFormatted}_${dateToFormatted}`;
 
@@ -708,7 +710,7 @@ export default function PayrollCyclePage() {
     if (!companyId) return;
     try {
       const result = await createCycle.mutateAsync({ company_id: companyId, year: newYear, month: newMonth });
-      navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/cycle/${result.id}`, { replace: true });
+      navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/cycle/${result.id}`, { replace: true });
     } catch {
       // Error handled by mutation
     }
@@ -769,7 +771,7 @@ export default function PayrollCyclePage() {
           variant: 'destructive',
         });
       }
-      navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll`);
+      navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll`);
     } catch (err: any) {
       toast({
         title: 'Hiba a lezárás során',
@@ -788,9 +790,9 @@ export default function PayrollCyclePage() {
           title="Új havi ciklus"
           description="Bérszámfejtési időszak indítása"
           breadcrumbs={[
-            { label: 'eaisyBooks', href: '/eaisybooks' },
-            { label: clientName, href: `/eaisybooks/${companyId}/${effectiveDateRange}/overview` },
-            { label: 'Bérszámfejtés', href: `/eaisybooks/${companyId}/${effectiveDateRange}/payroll` },
+            { label: 'eaisyBooks', href: `${prefix}/eaisybooks` },
+            { label: clientName, href: `${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/overview` },
+            { label: 'Bérszámfejtés', href: `${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll` },
             { label: 'Új havi ciklus' },
           ]}
         />
@@ -871,9 +873,9 @@ export default function PayrollCyclePage() {
         title={`${cycle.year}. ${MONTHS[cycle.month - 1]}`}
         description={`${activeEmployees.length} foglalkoztatott · ${viewMode === 'stepper' ? `Lépés ${currentStep}/8` : 'Dolgozói munkalap nézet'}`}
         breadcrumbs={[
-          { label: 'eaisyBooks', href: '/eaisybooks' },
-          { label: clientName, href: `/eaisybooks/${companyId}/${effectiveDateRange}/overview` },
-          { label: 'Bérszámfejtés', href: `/eaisybooks/${companyId}/${effectiveDateRange}/payroll` },
+          { label: 'eaisyBooks', href: `${prefix}/eaisybooks` },
+          { label: clientName, href: `${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/overview` },
+          { label: 'Bérszámfejtés', href: `${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll` },
           { label: `${cycle.year}. ${MONTHS[cycle.month - 1]}` },
         ]}
         actions={

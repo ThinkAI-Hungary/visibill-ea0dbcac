@@ -1,6 +1,6 @@
 import { useDateRange } from '@/contexts/DateRangeContext';
 import React, { useState, useMemo } from 'react';
-import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useNavigate, useSearchParams , useLocation } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, Lock, CheckCircle2, AlertTriangle,
   FileText, Calendar, ArrowRight, Shield, Loader2
@@ -84,6 +84,8 @@ function runCloseChecks(period: PeriodSummary, allPeriods: PeriodSummary[]): Clo
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function CashbookCloseWizard() {
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const id = companyId;
   const { data: client } = useAccountyClient(id);
@@ -193,7 +195,7 @@ export default function CashbookCloseWizard() {
     <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link to={`/eaisybooks/${id}/${dateRange}/ev/cashbook?year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
+        <Link to={`${prefix}/eaisybooks/${id}/${dateRange}/ev/cashbook?year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> Pénztárkönyv
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -461,7 +463,7 @@ export default function CashbookCloseWizard() {
               <Calendar className="w-3.5 h-3.5" /> Következő hónap
             </button>
             <Link
-              to={`/eaisybooks/${id}/${dateRange}/ev/cashbook?year=${taxYear}`}
+              to={`${prefix}/eaisybooks/${id}/${dateRange}/ev/cashbook?year=${taxYear}`}
               className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary/90"
             >
               <FileText className="w-3.5 h-3.5" /> Vissza a pénztárkönyvhöz

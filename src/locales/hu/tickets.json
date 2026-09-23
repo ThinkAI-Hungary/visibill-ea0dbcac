@@ -189,7 +189,10 @@
       "ticket_deleted_title": "Hibajegy törölve",
       "ticket_deleted_desc": "{{number}} sikeresen törölve.",
       "ticket_already_assigned_title": "Jegy már kiosztva",
-      "ticket_already_assigned_desc": "Ezt a hibajegyet egy másik support munkatárs már magához rendelte."
+      "ticket_already_assigned_desc": "Ezt a hibajegyet egy másik support munkatárs már magához rendelte.",
+      "ticket_reassigned_title": "Felelős frissítve",
+      "ticket_reassigned_desc": "A hibajegy felelőse sikeresen módosítva lett.",
+      "ticket_unassigned_desc": "A hibajegy felelőse sikeresen törölve lett."
     },
     "resolution_banner": {
       "ticket_closed_title": "Hibajegy lezárva",

@@ -1,6 +1,6 @@
 import { useDateRange } from '@/contexts/DateRangeContext';
 import React, { useState, useMemo, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   Landmark, Search, ChevronRight, CheckCircle, AlertTriangle, Clock,
   FileText, TrendingUp, Building2, Globe, Calendar, BarChart2, Users
@@ -71,6 +71,8 @@ function enrichWithTaoData(client: AccountyClient, idx: number): EnrichedTaoClie
 type FilterMode = 'all' | 'not_started' | 'pillar2' | 'kiva';
 
 export default function TaoPortfolioPage() {
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const { data: clients = [] } = useAccountyClients();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
@@ -135,13 +137,13 @@ export default function TaoPortfolioPage() {
           </div>
         </div>
         <div className="flex items-center gap-2.5">
-          <Link to="/eaisybooks/tao/calendar">
+          <Link to={`${prefix}/eaisybooks/tao/calendar`}>
             <Button variant="outline" size="sm" className="gap-2 h-9 text-xs border-border font-semibold bg-card hover:bg-muted/30">
               <Calendar className="w-3.5 h-3.5 text-primary" />
               TAO Naptár
             </Button>
           </Link>
-          <Link to="/eaisybooks/tao/taxpayer-types">
+          <Link to={`${prefix}/eaisybooks/tao/taxpayer-types`}>
             <Button variant="outline" size="sm" className="gap-2 h-9 text-xs border-border font-semibold bg-card hover:bg-muted/30">
               <Users className="w-3.5 h-3.5 text-primary" />
               TAO Adózói Körök

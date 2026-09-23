@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Mail,
   Clock,
@@ -45,47 +46,53 @@ import {
 type TabType = 'pending' | 'history';
 type ViewMode = 'grid' | 'list';
 
-const categoryConfig: Record<MessageCategory, { label: string; color: string }> = {
-  urgent: {
-    label: 'SÜRGŐS',
-    color: 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800',
-  },
-  callback: {
-    label: 'CALLBACK',
-    color: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800',
-  },
-  normal: {
-    label: 'EGYÉB',
-    color: 'bg-muted text-muted-foreground border-border',
-  },
-};
-
-const statusConfig: Record<MessageStatus, { label: string; color: string; icon: typeof CheckCircle2 }> = {
-  pending: {
-    label: 'Várakozó',
-    color: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400',
-    icon: Clock,
-  },
-  approved: {
-    label: 'Jóváhagyva',
-    color: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400',
-    icon: CheckCircle2,
-  },
-  rejected: {
-    label: 'Elutasítva',
-    color: 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400',
-    icon: XCircle,
-  },
-  sent: {
-    label: 'Elküldve',
-    color: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400',
-    icon: Send,
-  },
-};
+// Config types moved inside component for i18n support
 
 export default function ApprovalQueuePage() {
+  const { t, i18n } = useTranslation('accounty');
   const navigate = useNavigate();
+  const location = useLocation();
+  const prefix = location.pathname.startsWith('/hr') ? '/hr' : '';
+  const currentLocale = i18n.language === 'hr' ? 'hr-HR' : 'hu-HU';
   const { toast } = useToast();
+
+  const categoryConfig: Record<MessageCategory, { label: string; color: string }> = {
+    urgent: {
+      label: t('approval_queue.category_urgent', 'SÜRGŐS'),
+      color: 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800',
+    },
+    callback: {
+      label: t('approval_queue.category_callback', 'CALLBACK'),
+      color: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800',
+    },
+    normal: {
+      label: t('approval_queue.category_normal', 'EGYÉB'),
+      color: 'bg-muted text-muted-foreground border-border',
+    },
+  };
+
+  const statusConfig: Record<MessageStatus, { label: string; color: string; icon: typeof CheckCircle2 }> = {
+    pending: {
+      label: t('approval_queue.status_pending', 'Várakozó'),
+      color: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400',
+      icon: Clock,
+    },
+    approved: {
+      label: t('approval_queue.status_approved', 'Jóváhagyva'),
+      color: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400',
+      icon: CheckCircle2,
+    },
+    rejected: {
+      label: t('approval_queue.status_rejected', 'Elutasítva'),
+      color: 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400',
+      icon: XCircle,
+    },
+    sent: {
+      label: t('approval_queue.status_sent', 'Elküldve'),
+      color: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400',
+      icon: Send,
+    },
+  };
   const [activeTab, setActiveTab] = useState<TabType>('pending');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [searchTerm, setSearchTerm] = useState('');
@@ -192,14 +199,14 @@ export default function ApprovalQueuePage() {
       if (success) {
         updateMessageStatus(selectedMessage.id, 'sent');
         toast({
-          title: ' Üzenet elküldve',
-          description: `${selectedMessage.companyName} – Az email sikeresen elküldve a(z) ${recipientEmail} címre.`,
+          title: t('approval_queue.toast_sent_title', 'Üzenet elküldve'),
+          description: t('approval_queue.toast_sent_desc', '{{company}} – Az email sikeresen elküldve a(z) {{email}} címre.', { company: selectedMessage.companyName, email: recipientEmail }),
         });
       } else {
         updateMessageStatus(selectedMessage.id, 'approved');
         toast({
-          title: ' Jóváhagyva, de küldési hiba',
-          description: `${selectedMessage.companyName} – Az email jóváhagyásra került, de a küldés sikertelen volt. Később újrapróbálható.`,
+          title: t('approval_queue.toast_approved_error_title', 'Jóváhagyva, de küldési hiba'),
+          description: t('approval_queue.toast_approved_error_desc', '{{company}} – Az email jóváhagyásra került, de a küldés sikertelen volt. Később újrapróbálható.', { company: selectedMessage.companyName }),
           variant: 'destructive',
         });
       }
@@ -218,8 +225,8 @@ export default function ApprovalQueuePage() {
     setSelectedMessage(null);
     refresh();
     toast({
-      title: ' Üzenet elutasítva',
-      description: `${selectedMessage.companyName} – Az üzenet elutasításra került.`,
+      title: t('approval_queue.toast_rejected_title', 'Üzenet elutasítva'),
+      description: t('approval_queue.toast_rejected_desc', '{{company}} – Az üzenet elutasításra került.', { company: selectedMessage.companyName }),
     });
   };
 
@@ -245,13 +252,13 @@ export default function ApprovalQueuePage() {
       refresh();
       if (successCount > 0) {
         toast({
-          title: ` ${successCount} üzenet sikeresen elküldve`,
-          description: errorCount > 0 ? `${errorCount} küldés sikertelen.` : undefined,
+          title: t('approval_queue.toast_bulk_sent_title', '{{count}} üzenet sikeresen elküldve', { count: successCount }),
+          description: errorCount > 0 ? t('approval_queue.toast_bulk_error_desc', '{{count}} küldés sikertelen.', { count: errorCount }) : undefined,
         });
       }
       if (errorCount > 0 && successCount === 0) {
         toast({
-          title: ` ${errorCount} küldés sikertelen`,
+          title: t('approval_queue.toast_bulk_failed_title', '{{count}} küldés sikertelen', { count: errorCount }),
           variant: 'destructive',
         });
       }
@@ -271,8 +278,8 @@ export default function ApprovalQueuePage() {
     setSelectedIds(new Set());
     refresh();
     toast({
-      title: ' Tömeges elutasítás',
-      description: `${selectedIds.size} üzenet elutasítva.`,
+      title: t('approval_queue.toast_bulk_reject_title', 'Tömeges elutasítás'),
+      description: t('approval_queue.toast_bulk_reject_desc', '{{count}} üzenet elutasítva.', { count: selectedIds.size }),
     });
   };
 
@@ -294,7 +301,7 @@ export default function ApprovalQueuePage() {
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleString('hu-HU', {
+    return new Date(dateStr).toLocaleString(currentLocale, {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -309,10 +316,10 @@ export default function ApprovalQueuePage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
-             Jóváhagyó rendszer
+            {t('approval_queue.title', 'Jóváhagyó rendszer')}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Kimenő kommunikáció áttekintése és jóváhagyása
+            {t('approval_queue.description', 'Kimenő kommunikáció áttekintése és jóváhagyása')}
           </p>
         </div>
       </div>
@@ -332,7 +339,7 @@ export default function ApprovalQueuePage() {
               )}
             >
               <Clock className="w-4 h-4" />
-              Várakozó
+              {t('approval_queue.tab_pending', 'Várakozó')}
               {pendingMessages.length > 0 && (
                 <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md min-w-5 text-center">
                   {pendingMessages.length}
@@ -349,7 +356,7 @@ export default function ApprovalQueuePage() {
               )}
             >
               <RotateCcw className="w-4 h-4" />
-              Előzmények
+              {t('approval_queue.tab_history', 'Előzmények')}
             </button>
           </div>
 
@@ -389,7 +396,7 @@ export default function ApprovalQueuePage() {
                 onCheckedChange={handleSelectAll}
                 className="cursor-pointer"
               />
-              Mind
+              {t('approval_queue.all_checkbox', 'Mind')}
             </label>
           )}
           <select
@@ -397,16 +404,16 @@ export default function ApprovalQueuePage() {
             onChange={(e) => setCategoryFilter(e.target.value as typeof categoryFilter)}
             className="px-3 py-2 bg-card border border-border rounded-lg text-sm text-foreground/90 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-soft cursor-pointer"
           >
-            <option value="all">Összes kategória</option>
-            <option value="urgent">Sürgős</option>
-            <option value="callback">Callback</option>
-            <option value="normal">Egyéb</option>
+            <option value="all">{t('approval_queue.filter_all_categories', 'Összes kategória')}</option>
+            <option value="urgent">{t('approval_queue.category_urgent', 'Sürgős')}</option>
+            <option value="callback">{t('approval_queue.category_callback', 'Callback')}</option>
+            <option value="normal">{t('approval_queue.category_normal', 'Egyéb')}</option>
           </select>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Keresés..."
+              placeholder={t('approval_queue.search_placeholder', 'Keresés...')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-soft w-48"
@@ -417,7 +424,7 @@ export default function ApprovalQueuePage() {
 
       {/* Counter */}
       <div className="text-xs text-muted-foreground">
-        {filteredMessages.length} megjelenítve
+        {t('approval_queue.displayed_count', '{{count}} megjelenítve', { count: filteredMessages.length })}
       </div>
 
       {/* Empty State */}
@@ -427,12 +434,12 @@ export default function ApprovalQueuePage() {
             <Mail className="w-8 h-8 text-muted-foreground/60" />
           </div>
           <h3 className="text-lg font-semibold text-foreground mb-2">
-            {activeTab === 'pending' ? 'Nincs várakozó üzenet' : 'Nincsenek előzmények'}
+            {activeTab === 'pending' ? t('approval_queue.empty_pending_title', 'Nincs várakozó üzenet') : t('approval_queue.empty_history_title', 'Nincsenek előzmények')}
           </h3>
           <p className="text-sm text-muted-foreground max-w-sm mx-auto">
             {activeTab === 'pending'
-              ? 'Amikor „Bekérés küldése" gombra kattintasz egy hiányzó számlánál, az üzenet ide kerül jóváhagyásra.'
-              : 'A jóváhagyott és elutasított üzenetek itt jelennek majd meg.'}
+              ? t('approval_queue.empty_pending_desc', 'Amikor „Bekérés küldése" gombra kattintasz egy hiányzó számlánál, az üzenet ide kerül jóváhagyásra.')
+              : t('approval_queue.empty_history_desc', 'A jóváhagyott és elutasított üzenetek itt jelennek majd meg.')}
           </p>
         </div>
       )}
@@ -540,12 +547,12 @@ export default function ApprovalQueuePage() {
                       />
                     </th>
                   )}
-                  <th className="py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Csatorna</th>
-                  <th className="py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ügyfél</th>
-                  <th className="py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tárgy</th>
-                  <th className="py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Kategória</th>
+                  <th className="py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('approval_queue.th_channel', 'Csatorna')}</th>
+                  <th className="py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('approval_queue.th_client', 'Ügyfél')}</th>
+                  <th className="py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('approval_queue.th_subject', 'Tárgy')}</th>
+                  <th className="py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('approval_queue.th_category', 'Kategória')}</th>
                   <th className="py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    {activeTab === 'pending' ? 'Létrehozva' : 'Státusz'}
+                    {activeTab === 'pending' ? t('approval_queue.th_created', 'Létrehozva') : t('approval_queue.th_status', 'Státusz')}
                   </th>
                   <th className="py-4 px-4 w-12"></th>
                 </tr>
@@ -640,10 +647,10 @@ export default function ApprovalQueuePage() {
       <FloatingBulkBar
         open={selectedIds.size > 0 && activeTab === 'pending'}
         count={selectedIds.size}
-        label="Kijelölt üzenetek:"
-        itemUnit="db"
+        label={t('approval_queue.bulk_label', 'Kijelölt üzenetek:')}
+        itemUnit={t('approval_queue.bulk_unit', 'db')}
         onCancel={() => setSelectedIds(new Set())}
-        cancelLabel="Mégse"
+        cancelLabel={t('bulk.cancel', 'Mégse')}
         hideSaveButton={true}
       >
         <Button
@@ -656,12 +663,12 @@ export default function ApprovalQueuePage() {
           {isSending ? (
             <>
               <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Küldés...
+              {t('approval_queue.sending', 'Küldés...')}
             </>
           ) : (
             <>
               <CheckCircle2 className="w-3.5 h-3.5" />
-              Jóváhagyás és Küldés
+              {t('approval_queue.bulk_approve', 'Jóváhagyás és Küldés')}
             </>
           )}
         </Button>
@@ -674,7 +681,7 @@ export default function ApprovalQueuePage() {
           className="h-9 text-xs gap-1.5 rounded-lg font-semibold shadow-sm shrink-0"
         >
           <XCircle className="w-3.5 h-3.5" />
-          Elutasítás
+          {t('approval_queue.bulk_reject', 'Elutasítás')}
         </Button>
       </FloatingBulkBar>
 
@@ -685,7 +692,7 @@ export default function ApprovalQueuePage() {
             <>
               <DialogHeader className="px-6 py-4 border-b border-border">
                 <DialogTitle className="text-lg font-bold text-foreground">
-                  Üzenet jóváhagyása
+                  {t('approval_queue.modal_title', 'Üzenet jóváhagyása')}
                 </DialogTitle>
               </DialogHeader>
 
@@ -693,7 +700,7 @@ export default function ApprovalQueuePage() {
                 {/* Original Context */}
                 <div className="bg-amber-50/80 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-lg p-4">
                   <p className="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-2">
-                    Eredeti üzenet / Kontextus:
+                    {t('approval_queue.modal_orig_context', 'Eredeti üzenet / Kontextus:')}
                   </p>
                   <p className="text-sm font-medium text-foreground">
                     {selectedMessage.originalContext}
@@ -707,7 +714,7 @@ export default function ApprovalQueuePage() {
                 {selectedMessage.status === 'pending' && (
                   <div>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                      Címzett email:
+                      {t('approval_queue.modal_recipient', 'Címzett email:')}
                     </p>
                     <input
                       type="email"
@@ -718,7 +725,7 @@ export default function ApprovalQueuePage() {
                     />
                     {editedRecipient !== selectedMessage.contactEmail && (
                       <p className="text-[11px] text-amber-500 mt-1.5 flex items-center gap-1">
-                         Módosított címzett (eredeti: {selectedMessage.contactEmail})
+                        {t('approval_queue.modal_modified_recipient', 'Módosított címzett (eredeti: {{email}})', { email: selectedMessage.contactEmail })}
                       </p>
                     )}
                   </div>
@@ -727,12 +734,12 @@ export default function ApprovalQueuePage() {
                 {/* AI Generated Body */}
                 <div>
                   <p className="text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wider mb-2">
-                    AI által generált válasz piszkozata:
+                    {t('approval_queue.modal_ai_draft', 'AI által generált válasz piszkozata:')}
                   </p>
                   <div className="border border-border rounded-lg overflow-hidden">
                     <div className="bg-background/50 px-4 py-2 border-b border-border">
                       <p className="text-xs text-muted-foreground">
-                        <span className="font-medium">Tárgy:</span> {selectedMessage.subject}
+                        <span className="font-medium">{t('approval_queue.modal_subject', 'Tárgy:')}</span> {selectedMessage.subject}
                       </p>
                     </div>
                     {selectedMessage.status === 'pending' ? (
@@ -767,7 +774,7 @@ export default function ApprovalQueuePage() {
                     onClick={handleReject}
                     className="px-4 py-2.5 bg-card border border-border text-foreground/90 rounded-lg text-sm font-medium hover:bg-muted/50 transition-colors shadow-soft"
                   >
-                    Elutasítás
+                    {t('approval_queue.modal_reject', 'Elutasítás')}
                   </button>
                   <button
                     onClick={handleApprove}
@@ -775,9 +782,9 @@ export default function ApprovalQueuePage() {
                     className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-semibold transition-colors shadow-soft"
                   >
                     {isSending ? (
-                      <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Küldés...</>
+                      <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> {t('approval_queue.sending', 'Küldés...')}</>
                     ) : (
-                      <><Send className="w-4 h-4" /> Jóváhagyás és Küldés</>
+                      <><Send className="w-4 h-4" /> {t('approval_queue.modal_approve_send', 'Jóváhagyás és Küldés')}</>
                     )}
                   </button>
                 </div>
@@ -787,7 +794,7 @@ export default function ApprovalQueuePage() {
                     onClick={() => setIsApprovalModalOpen(false)}
                     className="px-4 py-2.5 bg-card border border-border text-foreground/90 rounded-lg text-sm font-medium hover:bg-muted/50 transition-colors shadow-soft"
                   >
-                    Bezárás
+                    {t('approval_queue.modal_close', 'Bezárás')}
                   </button>
                 </div>
               )}

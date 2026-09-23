@@ -307,22 +307,24 @@ const [tab, setTab] = useUrlTab('invoices', 'outbound_nav', VALID_TABS);
 
 ---
 
-## Global Date Picker (TopBar)
+## Global Date Picker & Inline Nyelvválasztó (TopBar & Header)
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│ Időszak: [Ez a hónap] [Előző hónap] [Ez az év] | 📅 2026. jan. 01. – 📅 2026. dec. 31. │
-└─────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────────────┐
+│ Időszak: [Ez a hónap] [Előző hónap] [Ez az év] | 📅 2026. jan. 01. – 📅 2026. dec. 31. | 🌐 HU │
+└───────────────────────────────────────────────────────────────────────────────┘
 ```
 
 | Tulajdonság | Érték |
 |-------------|-------|
-| **Pozíció** | Fejléc alatti sáv, `border-b` |
+| **Pozíció** | Fejléc sáv, `border-b` (mind az eaisyBill TopBar, mind az eaisyBooks Header tartalmazza) |
 | **Háttér** | `bg-background/95 backdrop-blur` |
-| **Preset gombok** | „Ez a hónap", „Előző hónap", „Ez az év" |
-| **Custom dátum** | Két `Calendar` popover (from/to) |
+| **Preset gombok** | „Ez a hónap", „Előző hónap", „Ez az év" (`h-7 text-xs px-3`) |
+| **Custom dátum** | Két `Calendar` popover (from/to) (`h-7 text-xs px-2.5`) |
 | **Max tartomány** | 365 nap |
-| **Locale** | `hu` — magyar dátumformátum: `2026. jan. 01.` |
+| **Locale** | `hu` / `hr` dinamikus dátumformátum (`2026. jan. 01.` vagy `01.01.2026.`) |
+| **Nyelvválasztó** | Inline társ-elem: `<LanguageSwitcher buttonVariant="outline" />` (`h-7 text-xs px-2.5`, Lucide `Globe` ikon) |
+| **Sidebar lábléc** | Tehermentesítve: csak avatar + név + e-mail + téma-kapcsoló (nincs zsúfolt, csonkoló badge) |
 
 ---
 

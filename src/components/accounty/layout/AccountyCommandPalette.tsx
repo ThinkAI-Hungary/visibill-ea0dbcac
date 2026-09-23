@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   Search, 
   X, 
@@ -37,33 +39,10 @@ export interface AccountyCommandPaletteProps {
   navigate?: (path: string) => void;
 }
 
-const DEFAULT_CMD_PAGES = [
-  { name: 'Portfólió', path: '/eaisybooks', icon: Briefcase },
-  { name: 'Hiányzó számlák', path: '/eaisybooks/missing-invoices', icon: FileWarning },
-  { name: 'Adó naptár', path: '/eaisybooks/tax-calendar', icon: Calendar },
-  { name: 'Riportok', path: '/eaisybooks/reports', icon: BarChart2 },
-  { name: 'Jóváhagyó rendszer', path: '/eaisybooks/approval-queue', icon: MailCheck },
-  { name: 'Riasztások', path: '/eaisybooks/alerts', icon: AlertTriangle },
-  { name: 'NAV határidők', path: '/eaisybooks/nav-deadlines', icon: Clock },
-  { name: 'Bérszámfejtés portfólió', path: '/eaisybooks?tab=payroll', icon: Calculator },
-  { name: 'Onboarding', path: '/eaisybooks/onboarding', icon: Rocket },
-  { name: 'Beállítások', path: '/eaisybooks/settings', icon: Settings },
-  { name: 'Felhasználói beállítások', path: '/eaisybooks/profile/settings', icon: User },
-  { name: 'Segítség', path: '/eaisybooks/help', icon: HelpCircle },
-  { name: 'AI Asszisztens', path: '/eaisybooks/ai-assistant', icon: Bot },
-  { name: 'Audit napló', path: '/eaisybooks/admin/audit', icon: ShieldCheck },
-  { name: 'GDPR', path: '/eaisybooks/admin/gdpr', icon: ShieldCheck },
-  { name: 'Sablonok', path: '/eaisybooks/admin/templates', icon: FileText },
-  { name: 'Jogviszonykódok', path: '/eaisybooks/admin/job-codes', icon: BookOpen },
-  { name: 'Adómértékek', path: '/eaisybooks/admin/tax-parameters', icon: Calculator },
-  { name: 'Jogszabály-frissítések', path: '/eaisybooks/admin/legal-updates', icon: Scale },
-  { name: 'TAO Portfólió', path: '/eaisybooks?tab=tao', icon: Landmark },
-  { name: 'TAO Naptár', path: '/eaisybooks/tao/calendar', icon: Calendar },
-  { name: 'TAO Adózói Körök', path: '/eaisybooks/tao/taxpayer-types', icon: Users },
-  { name: 'EV Portfólió', path: '/eaisybooks?tab=ev', icon: PiggyBank },
-];
-
 export default function AccountyCommandPalette(props: AccountyCommandPaletteProps) {
+  const { t } = useTranslation('accounty');
+  const location = useLocation();
+  const prefix = location.pathname.startsWith('/hr') ? '/hr' : '';
   const shell = useAccountyShellOptional();
 
   const cmdOpen = props.cmdOpen ?? shell?.cmdOpen ?? false;
@@ -72,11 +51,37 @@ export default function AccountyCommandPalette(props: AccountyCommandPaletteProp
   const setCmdQuery = props.setCmdQuery ?? shell?.setCmdQuery ?? (() => {});
   const navigate = props.navigate ?? shell?.navigate ?? (() => {});
 
+  const defaultCmdPages = useMemo(() => [
+    { name: t('nav.items.portfolio', 'Portfólió'), path: `${prefix}/eaisybooks`, icon: Briefcase },
+    { name: t('nav.items.missing_invoices', 'Hiányzó számlák'), path: `${prefix}/eaisybooks/missing-invoices`, icon: FileWarning },
+    { name: t('nav.items.tax_calendar', 'Adó naptár'), path: `${prefix}/eaisybooks/tax-calendar`, icon: Calendar },
+    { name: t('nav.items.reports', 'Riportok'), path: `${prefix}/eaisybooks/reports`, icon: BarChart2 },
+    { name: t('nav.items.approval_queue', 'Jóváhagyó rendszer'), path: `${prefix}/eaisybooks/approval-queue`, icon: MailCheck },
+    { name: t('nav.items.alerts', 'Riasztások'), path: `${prefix}/eaisybooks/alerts`, icon: AlertTriangle },
+    { name: t('nav.items.nav_filings', 'NAV határidők'), path: `${prefix}/eaisybooks/nav-deadlines`, icon: Clock },
+    { name: t('nav.items.payroll_cycles', 'Bérszámfejtés portfólió'), path: `${prefix}/eaisybooks?tab=payroll`, icon: Calculator },
+    { name: t('nav.items.onboarding', 'Onboarding'), path: `${prefix}/eaisybooks/onboarding`, icon: Rocket },
+    { name: t('nav.items.settings', 'Beállítások'), path: `${prefix}/eaisybooks/settings`, icon: Settings },
+    { name: t('nav.items.profile_settings', 'Felhasználói beállítások'), path: `${prefix}/eaisybooks/profile/settings`, icon: User },
+    { name: t('nav.items.help', 'Segítség'), path: `${prefix}/eaisybooks/help`, icon: HelpCircle },
+    { name: t('nav.items.ai_assistant', 'AI Asszisztens'), path: `${prefix}/eaisybooks/ai-assistant`, icon: Bot },
+    { name: t('nav.items.audit', 'Audit napló'), path: `${prefix}/eaisybooks/admin/audit`, icon: ShieldCheck },
+    { name: t('nav.items.gdpr', 'GDPR'), path: `${prefix}/eaisybooks/admin/gdpr`, icon: ShieldCheck },
+    { name: t('nav.items.templates', 'Sablonok'), path: `${prefix}/eaisybooks/admin/templates`, icon: FileText },
+    { name: t('nav.items.job_codes', 'Jogviszonykódok'), path: `${prefix}/eaisybooks/admin/job-codes`, icon: BookOpen },
+    { name: t('nav.items.tax_parameters', 'Adómértékek'), path: `${prefix}/eaisybooks/admin/tax-parameters`, icon: Calculator },
+    { name: t('nav.items.legal_updates', 'Jogszabály-frissítések'), path: `${prefix}/eaisybooks/admin/legal-updates`, icon: Scale },
+    { name: 'TAO ' + t('nav.items.portfolio', 'Portfólió'), path: `${prefix}/eaisybooks?tab=tao`, icon: Landmark },
+    { name: 'TAO ' + t('tax_calendar.title', 'Naptár'), path: `${prefix}/eaisybooks/tao/calendar`, icon: Calendar },
+    { name: 'TAO ' + t('nav.items.accountants', 'Adózói Körök'), path: `${prefix}/eaisybooks/tao/taxpayer-types`, icon: Users },
+    { name: 'EV ' + t('nav.items.portfolio', 'Portfólió'), path: `${prefix}/eaisybooks?tab=ev`, icon: PiggyBank },
+  ], [t, prefix]);
+
   const defaultFilteredPages = useMemo(() => {
     return cmdQuery 
-      ? DEFAULT_CMD_PAGES.filter(p => p.name.toLowerCase().includes(cmdQuery.toLowerCase())) 
-      : DEFAULT_CMD_PAGES;
-  }, [cmdQuery]);
+      ? defaultCmdPages.filter(p => p.name.toLowerCase().includes(cmdQuery.toLowerCase())) 
+      : defaultCmdPages;
+  }, [cmdQuery, defaultCmdPages]);
 
   const defaultFilteredClients = useMemo(() => {
     return cmdQuery && shell?.allClients 
@@ -125,7 +130,7 @@ export default function AccountyCommandPalette(props: AccountyCommandPaletteProp
           const clientId = selected.companyId || selected.id;
           if (clientId) {
             const dateRange = shell?.currentDateRange || '2026-01-01_2026-12-31';
-            navigate(`/eaisybooks/${clientId}/${dateRange}/overview`);
+            navigate(`${prefix}/eaisybooks/${clientId}/${dateRange}/overview`);
           }
         }
         setCmdOpen(false);
@@ -141,7 +146,7 @@ export default function AccountyCommandPalette(props: AccountyCommandPaletteProp
           <Search className="w-4 h-4 text-muted-foreground shrink-0" />
           <input
             autoFocus
-            placeholder="Keresés oldal vagy ügyfél..."
+            placeholder={t('command_palette.placeholder', 'Keresés oldal vagy ügyfél...')}
             value={cmdQuery}
             onChange={(e) => setCmdQuery(e.target.value)}
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground text-foreground"
@@ -157,7 +162,7 @@ export default function AccountyCommandPalette(props: AccountyCommandPaletteProp
         <div className="max-h-[320px] overflow-y-auto p-2">
           {filteredPages.length > 0 && (
             <div className="mb-2">
-              <p className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Oldalak</p>
+              <p className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t('command_palette.groups.navigation', 'Oldalak')}</p>
               {filteredPages.map((p, idx) => {
                 const isSelected = idx === selectedIndex;
                 return (
@@ -183,7 +188,7 @@ export default function AccountyCommandPalette(props: AccountyCommandPaletteProp
           )}
           {filteredClients.length > 0 && (
             <div>
-              <p className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Ügyfelek</p>
+              <p className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t('command_palette.groups.clients', 'Ügyfelek')}</p>
               {filteredClients.map((c, idx) => {
                 const globalIdx = filteredPages.length + idx;
                 const isSelected = globalIdx === selectedIndex;
@@ -192,7 +197,7 @@ export default function AccountyCommandPalette(props: AccountyCommandPaletteProp
                   <button
                     key={clientId}
                     onClick={() => { 
-                      navigate(`/eaisybooks/${clientId}/${shell.currentDateRange}/overview`); 
+                      navigate(`${prefix}/eaisybooks/${clientId}/${shell?.currentDateRange || '2026-01-01_2026-12-31'}/overview`); 
                       setCmdOpen(false); 
                       setCmdQuery(''); 
                     }}
@@ -218,20 +223,20 @@ export default function AccountyCommandPalette(props: AccountyCommandPaletteProp
           )}
           {filteredPages.length === 0 && filteredClients.length === 0 && cmdQuery && (
             <div className="py-8 text-center text-muted-foreground text-sm">
-              Nincs találat: "{cmdQuery}"
+              {t('command_palette.no_results', 'Nincs találat.')}
             </div>
           )}
         </div>
         {combinedItems.length > 0 && (
           <div className="border-t border-border px-4 py-2 bg-muted/40 dark:bg-muted/10 flex items-center justify-between text-[10px] text-muted-foreground">
             <span className="flex items-center gap-1">
-              <span className="px-1.5 py-0.5 bg-card border border-border rounded font-mono shadow-sm">↑↓</span> navigálás
+              <span className="px-1.5 py-0.5 bg-card border border-border rounded font-mono shadow-sm">↑↓</span> {t('command_palette.hints.navigate', 'navigálás')}
             </span>
             <span className="flex items-center gap-1">
-              <span className="px-1.5 py-0.5 bg-card border border-border rounded font-mono shadow-sm">Enter</span> kiválasztás
+              <span className="px-1.5 py-0.5 bg-card border border-border rounded font-mono shadow-sm">Enter</span> {t('command_palette.hints.select', 'kiválasztás')}
             </span>
             <span className="flex items-center gap-1">
-              <span className="px-1.5 py-0.5 bg-card border border-border rounded font-mono shadow-sm">Esc</span> bezárás
+              <span className="px-1.5 py-0.5 bg-card border border-border rounded font-mono shadow-sm">Esc</span> {t('command_palette.hints.close', 'bezárás')}
             </span>
           </div>
         )}

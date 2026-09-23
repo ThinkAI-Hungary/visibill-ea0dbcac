@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -34,7 +35,10 @@ export default function ClientDetailsPage() {
   const navigate = useNavigate();
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const id = companyId;
+  const { t, i18n } = useTranslation('accounty');
   const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
+  const isHr = prefix === '/hr' || i18n.language === 'hr';
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isSyncing, setIsSyncing] = useState(false);
@@ -215,24 +219,60 @@ export default function ClientDetailsPage() {
     if (!supabaseMissing) return [];
     return supabaseMissing
       .filter(mi => mi.status === 'open' || mi.status === 'notified')
-      .map(mi => ({
-        id: mi.id,
-        clientId: mi.companyId,
-        category: mi.category,
-        title: mi.title,
-        subtitle: mi.subtitle || '',
-        source: mi.source === 'nav_detektor' ? 'NAV Online Számla'
-          : mi.source === 'bank_detektor' ? 'Bankkivonat-figyelő'
-          : mi.source === 'ber_cron' ? 'Havi kötelező nyilatkozat'
-          : 'Kézi rögzítés',
-        amount: mi.amount ? `${mi.amount.toLocaleString('hu-HU')} Ft` : undefined,
-        date: mi.itemDate || undefined,
-        priority: mi.priority,
-        details: mi.details || '',
-        invoiceNumber: mi.invoiceNumber || undefined,
-        resolveRoute: mi.resolveRoute || undefined,
-      }));
-  }, [supabaseMissing]);
+      .map(mi => {
+        let title = mi.title;
+        let subtitle = mi.subtitle || '';
+        let details = mi.details || '';
+        if (isHr) {
+          if (title.includes('Bérszámfejtési adatok')) {
+            title = title
+              .replace('Bérszámfejtési adatok', 'Podaci za obračun plaća')
+              .replace('január', 'siječanj').replace('február', 'veljača').replace('március', 'ožujak')
+              .replace('április', 'travanj').replace('május', 'svibanj').replace('június', 'lipanj')
+              .replace('július', 'srpanj').replace('augusztus', 'kolovoz').replace('szeptember', 'rujan')
+              .replace('október', 'listopad').replace('november', 'studeni').replace('december', 'prosinac');
+          }
+          if (subtitle === 'Havi kötelező nyilatkozat és jelenléti ív') {
+            subtitle = 'Mjesečna obvezna izjava i evidencija radnog vremena';
+          } else if (subtitle === 'Manuálisan felvett') {
+            subtitle = 'Ručni unos';
+          }
+          if (details.includes('bérszámfejtéshez szükséges adatok')) {
+            details = 'Prikupljanje podataka potrebnih za obračun plaća (evidencija radnog vremena, godišnji odmori, prekovremeni rad, ostale promjene).';
+          }
+        }
+        const sourceLabel = isHr
+          ? (mi.source === 'nav_detektor' ? 'Porezna uprava (E-račun)'
+             : mi.source === 'bank_detektor' ? 'Nadzor bankovnih izvadaka'
+             : mi.source === 'ber_cron' ? 'Mjesečna obvezna izjava'
+             : 'Ručni unos')
+          : (mi.source === 'nav_detektor' ? 'NAV Online Számla'
+             : mi.source === 'bank_detektor' ? 'Bankkivonat-figyelő'
+             : mi.source === 'ber_cron' ? 'Havi kötelező nyilatkozat'
+             : 'Kézi rögzítés');
+
+        const amountStr = mi.amount 
+          ? (isHr 
+              ? `${mi.amount.toLocaleString('hr-HR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` 
+              : `${mi.amount.toLocaleString('hu-HU')} Ft`) 
+          : undefined;
+
+        return {
+          id: mi.id,
+          clientId: mi.companyId,
+          category: mi.category,
+          title,
+          subtitle,
+          source: sourceLabel,
+          amount: amountStr,
+          date: mi.itemDate || undefined,
+          priority: mi.priority,
+          details,
+          invoiceNumber: mi.invoiceNumber || undefined,
+          resolveRoute: mi.resolveRoute || undefined,
+        };
+      });
+  }, [supabaseMissing, isHr]);
 
   // Dynamic KPI values
   const missingCount = useMemo(() => {
@@ -277,14 +317,18 @@ export default function ClientDetailsPage() {
         : inv.status === 'Problémás' ? 'bg-red-100 text-red-700'
         : inv.status === 'Új' ? 'bg-amber-100 text-amber-700'
         : 'bg-muted text-muted-foreground';
-      const statusLabel = inv.status === 'Új' ? 'Feldolgozás alatt'
-        : inv.status === 'Kontírozott' ? 'Könyvelve'
-        : inv.status === 'Exportálva' ? 'Exportálva' : inv.status;
+      const statusLabel = inv.status === 'Új' ? (isHr ? 'U obradi' : 'Feldolgozás alatt')
+        : inv.status === 'Kontírozott' ? (isHr ? 'Proknjiženo' : 'Könyvelve')
+        : inv.status === 'Exportálva' ? (isHr ? 'Izvezeno' : 'Exportálva')
+        : inv.status === 'Kontírozásra vár' ? (isHr ? 'Čeka knjiženje' : 'Kontírozásra vár')
+        : inv.status;
       return {
         id: inv.id,
         number: inv.invoiceNumber,
         company: inv.partnerName,
-        amount: new Intl.NumberFormat('hu-HU').format(inv.grossAmount) + ' Ft',
+        amount: isHr
+          ? new Intl.NumberFormat('hr-HR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(inv.grossAmount) + ' €'
+          : new Intl.NumberFormat('hu-HU').format(inv.grossAmount) + ' Ft',
         date: inv.date,
         status: statusLabel,
         dotColor,
@@ -299,11 +343,11 @@ export default function ClientDetailsPage() {
       {/* Header */}
       <PageHeader
         title={clientLoading ? 'Betöltés...' : client.name}
-        description={clientLoading ? undefined : (client.taxNumber ? `Adószám: ${client.taxNumber}` : undefined)}
+        description={clientLoading ? undefined : (client.taxNumber ? (isHr ? `OIB: ${client.taxNumber}` : `Adószám: ${client.taxNumber}`) : undefined)}
         breadcrumbs={[
-          { label: 'eaisyBooks', href: '/eaisybooks' },
-          { label: client.name || 'Ügyfél', href: `/eaisybooks/${id}/${dateRange}/overview` },
-          { label: pathname.endsWith('/settings') ? 'Beállítások' : 'Áttekintés' },
+          { label: 'eaisyBooks', href: `${prefix}/eaisybooks` },
+          { label: client.name || (isHr ? t('client_details.client') : 'Ügyfél'), href: `${prefix}/eaisybooks/${id}/${dateRange}/overview` },
+          { label: pathname.endsWith('/settings') ? t('client_details.settings') : t('client_details.overview') },
         ]}
         actions={
           <div className="flex items-center gap-2 flex-wrap">
@@ -318,7 +362,7 @@ export default function ClientDetailsPage() {
             )}
           >
             {isSyncing ? <Loader2 className="w-4 h-4 animate-spin shrink-0" /> : <RefreshCcw className="w-4 h-4 shrink-0" />}
-            {isSyncing ? 'NAV szinkron...' : 'NAV szinkron'}
+            {isSyncing ? t('client_details.nav_syncing') : t('client_details.nav_sync')}
           </button>
           <button
             onClick={startCall}
@@ -331,7 +375,7 @@ export default function ClientDetailsPage() {
             )}
           >
             <Phone className="w-4 h-4" />
-            AI Hívás
+            {t('client_details.ai_call')}
           </button>
           <button
             onClick={async () => {
@@ -354,7 +398,7 @@ export default function ClientDetailsPage() {
             )}
           >
             {generateToken.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : linkCopied ? <Check className="w-4 h-4" /> : <Link2 className="w-4 h-4" />}
-            {generateToken.isPending ? 'Generálás...' : linkCopied ? 'Másolt!' : 'Magic Link'}
+            {generateToken.isPending ? t('client_details.magic_link_generating') : linkCopied ? t('client_details.magic_link_copied') : t('client_details.magic_link')}
           </button>
           <button 
             onClick={() => {
@@ -370,7 +414,7 @@ export default function ClientDetailsPage() {
                 ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
                 : "bg-card border-border text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground/60 hover:bg-muted dark:hover:bg-muted"
             )}
-            title={pathname.endsWith('/settings') ? "Vissza az áttekintéshez" : "Beállítások"}
+            title={pathname.endsWith('/settings') ? t('client_details.back_to_overview') : t('client_details.settings')}
           >
             <Settings className="w-5 h-5" />
           </button>
@@ -418,7 +462,7 @@ export default function ClientDetailsPage() {
               onClick={() => navigate(pathname.replace(/(?:overview|settings|profile)$/, 'invoices'))}
             >
               <div className="flex justify-between items-start mb-4">
-                <h3 className="text-sm font-medium text-muted-foreground">Feldolgozatlan számlák</h3>
+                <h3 className="text-sm font-medium text-muted-foreground">{t('client_overview.kpi_unprocessed')}</h3>
                 <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center">
                   <FileText className="w-4 h-4 text-amber-500" />
                 </div>
@@ -431,7 +475,7 @@ export default function ClientDetailsPage() {
               onClick={() => navigate(pathname.replace(/(?:overview|settings|profile)$/, 'invoices'))}
             >
               <div className="flex justify-between items-start mb-4">
-                <h3 className="text-sm font-medium text-muted-foreground">Kontírozásra vár</h3>
+                <h3 className="text-sm font-medium text-muted-foreground">{t('client_overview.kpi_awaiting_coding')}</h3>
                 <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center">
                   <FileCheck className="w-4 h-4 text-blue-500" />
                 </div>
@@ -444,7 +488,7 @@ export default function ClientDetailsPage() {
               onClick={() => navigate(pathname.replace(/(?:overview|settings|profile)$/, 'missing-invoices'))}
             >
               <div className="flex justify-between items-start mb-4">
-                <h3 className="text-sm font-medium text-muted-foreground">Hiányzó számlák</h3>
+                <h3 className="text-sm font-medium text-muted-foreground">{t('client_overview.kpi_missing')}</h3>
                 <div className="w-8 h-8 rounded-full bg-red-50 dark:bg-red-950/40 flex items-center justify-center">
                   <FileWarning className="w-4 h-4 text-red-500" />
                 </div>
@@ -454,13 +498,15 @@ export default function ClientDetailsPage() {
 
             <div className="bg-card rounded-lg border border-border p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/30 hover:-translate-y-1">
               <div className="flex justify-between items-start mb-4">
-                <h3 className="text-sm font-medium text-muted-foreground">ÁFA egyenleg (becsült)</h3>
+                <h3 className="text-sm font-medium text-muted-foreground">{t('client_overview.kpi_vat_balance')}</h3>
                 <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center">
                   <TrendingUp className="w-4 h-4 text-emerald-500" />
                 </div>
               </div>
               <div className="text-3xl font-bold text-foreground">
-                {new Intl.NumberFormat('hu-HU').format(estimatedVatBalance)} Ft
+                {isHr
+                  ? new Intl.NumberFormat('hr-HR', { minimumFractionDigits: 1, maximumFractionDigits: 2 }).format(estimatedVatBalance) + ' €'
+                  : new Intl.NumberFormat('hu-HU').format(estimatedVatBalance) + ' Ft'}
               </div>
             </div>
           </div>
@@ -472,7 +518,7 @@ export default function ClientDetailsPage() {
               className="h-14 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-base font-semibold flex items-center justify-center gap-2"
             >
               <FileCheck className="w-5 h-5" />
-              Számlák feldolgozása
+              {t('client_overview.btn_process_invoices')}
             </Button>
             <Button 
               variant="outline" 
@@ -480,7 +526,7 @@ export default function ClientDetailsPage() {
               onClick={() => navigate(pathname.replace(/(?:overview|settings|profile)$/, 'missing-invoices'))}
             >
               <AlertTriangle className="w-5 h-5 text-muted-foreground" />
-              Hiányzók bekérése
+              {t('client_overview.btn_request_missing')}
             </Button>
             <Button 
               variant="outline" 
@@ -488,22 +534,22 @@ export default function ClientDetailsPage() {
               onClick={() => navigate(pathname.replace(/(?:overview|settings|profile)$/, 'reports'))}
             >
               <UploadCloud className="w-5 h-5 text-muted-foreground" />
-              Riport generálása
+              {t('client_overview.btn_generate_report')}
             </Button>
           </div>
 
           {/* Gyors elérés — korábban csak a Bérszámfejtés fülről volt elérhető */}
           <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
             {[
-              { label: 'Cégkapu / KÜNY', path: pathname.replace(/(?:overview|settings|profile)$/, 'cegkapu') },
-              { label: 'NAV meghatalmazás', path: pathname.replace(/(?:overview|settings|profile)$/, 'representation') },
-              { label: 'Iratkezelés & GDPR', path: pathname.replace(/(?:overview|settings|profile)$/, 'data-retention') },
-              { label: 'NAV bevallások', path: pathname.replace(/(?:overview|settings|profile)$/, 'payroll/filings') },
-              { label: 'Bérezési struktúra', path: pathname.replace(/(?:overview|settings|profile)$/, 'structure') },
-              { label: 'Paramétertábla', path: pathname.replace(/(?:overview|settings|profile)$/, 'payroll/tax-params') },
-            ].map((link) => (
+              { label: t('client_overview.quick_cegkapu'), path: pathname.replace(/(?:overview|settings|profile)$/, 'cegkapu') },
+              { label: t('client_overview.quick_representation'), path: pathname.replace(/(?:overview|settings|profile)$/, 'representation') },
+              { label: t('client_overview.quick_data_retention'), path: pathname.replace(/(?:overview|settings|profile)$/, 'data-retention') },
+              { label: t('client_overview.quick_filings'), path: pathname.replace(/(?:overview|settings|profile)$/, 'payroll/filings') },
+              { label: t('client_overview.quick_structure'), path: pathname.replace(/(?:overview|settings|profile)$/, 'structure') },
+              { label: t('client_overview.quick_params'), path: pathname.replace(/(?:overview|settings|profile)$/, 'payroll/tax-params') },
+            ].map((link, idx) => (
               <button
-                key={link.label}
+                key={link.path + idx}
                 onClick={() => navigate(link.path)}
                 className="flex items-center justify-center p-3 h-14 rounded-lg bg-card border border-border shadow-sm hover:shadow-md hover:border-primary/30 hover:-translate-y-0.5 transition-all duration-200 group text-center"
               >
@@ -521,9 +567,18 @@ export default function ClientDetailsPage() {
               ...manualItems.filter((item) => item.clientId === client.id),
             ].filter((item) => !ignoredIds.has(item.id));
             const categories: BlockingCategory[] = ['bejovo', 'kimeno', 'bank', 'ber'];
+            const getCatLabel = (cat: BlockingCategory) => {
+              switch (cat) {
+                case 'bejovo': return t('client_overview.cat_inbound');
+                case 'kimeno': return t('client_overview.cat_outbound');
+                case 'bank': return t('client_overview.cat_bank');
+                case 'ber': return t('client_overview.cat_payroll');
+                default: return blockingCategoryMeta[cat]?.label;
+              }
+            };
             const grouped = categories.map((cat) => ({
               category: cat,
-              meta: blockingCategoryMeta[cat],
+              meta: { ...blockingCategoryMeta[cat], label: getCatLabel(cat) },
               items: allItems.filter((item) => item.category === cat),
             }));
             const totalCount = allItems.length;
@@ -534,7 +589,11 @@ export default function ClientDetailsPage() {
                 medium: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400',
                 low: 'bg-muted text-muted-foreground',
               };
-              const labels = { urgent: 'Sürgős', medium: 'Közepes', low: 'Alacsony' };
+              const labels = {
+                urgent: t('client_overview.priority_urgent'),
+                medium: t('client_overview.priority_medium'),
+                low: t('client_overview.priority_low'),
+              };
               return (
                 <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider', styles[p])}>
                   {labels[p]}
@@ -548,11 +607,11 @@ export default function ClientDetailsPage() {
                 <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-3">
                     <h2 className="text-lg font-semibold text-foreground">
-                       Zárást blokkoló hiányosságok
+                      {t('client_overview.blocking_title')}
                     </h2>
                     {totalCount > 0 && (
                       <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400">
-                        {totalCount} tétel
+                        {t('client_overview.blocking_count_suffix', { count: totalCount })}
                       </span>
                     )}
                   </div>
@@ -560,7 +619,7 @@ export default function ClientDetailsPage() {
                     {totalCount === 0 && (
                       <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm font-medium">
                         <CheckCircle2 className="w-4 h-4" />
-                        Nincs blokkoló hiányosság
+                        {t('client_overview.blocking_no_items')}
                       </div>
                     )}
                     <button
@@ -573,7 +632,7 @@ export default function ClientDetailsPage() {
                       )}
                     >
                       {showAddForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-                      {showAddForm ? 'Mégse' : 'Hozzáadás'}
+                      {showAddForm ? t('client_overview.btn_cancel') : t('client_overview.btn_add')}
                     </button>
                   </div>
                 </div>
@@ -586,28 +645,28 @@ export default function ClientDetailsPage() {
                   )}
                 >
                   <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
-                    <h4 className="text-sm font-semibold text-foreground mb-3">Hiányosság manuális felvétele</h4>
+                    <h4 className="text-sm font-semibold text-foreground mb-3">{t('client_overview.add_title')}</h4>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {/* Kategória */}
                       <div>
-                        <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Kategória</label>
+                        <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">{t('client_overview.field_category')}</label>
                         <select
                           value={newItem.category}
                           onChange={(e) => setNewItem({ ...newItem, category: e.target.value as BlockingCategory })}
                           className="w-full h-9 px-2.5 rounded-lg border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-slate-400"
                         >
-                          <option value="bejovo"> Bejövő</option>
-                          <option value="kimeno"> Kimenő</option>
-                          <option value="bank"> Bank</option>
-                          <option value="ber"> Bér</option>
+                          <option value="bejovo">{t('client_overview.cat_inbound')}</option>
+                          <option value="kimeno">{t('client_overview.cat_outbound')}</option>
+                          <option value="bank">{t('client_overview.cat_bank')}</option>
+                          <option value="ber">{t('client_overview.cat_payroll')}</option>
                         </select>
                       </div>
                       {/* Megnevezés */}
                       <div>
-                        <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Megnevezés</label>
+                        <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">{t('client_overview.field_title')}</label>
                         <input
                           type="text"
-                          placeholder="pl. MOL Nyrt."
+                          placeholder={t('client_overview.placeholder_title')}
                           value={newItem.title}
                           onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
                           className="w-full h-9 px-2.5 rounded-lg border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-slate-400"
@@ -615,10 +674,10 @@ export default function ClientDetailsPage() {
                       </div>
                       {/* Részlet */}
                       <div>
-                        <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Rövid leírás</label>
+                        <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">{t('client_overview.field_subtitle')}</label>
                         <input
                           type="text"
-                          placeholder="pl. PDF hiányzik"
+                          placeholder={t('client_overview.placeholder_subtitle')}
                           value={newItem.subtitle}
                           onChange={(e) => setNewItem({ ...newItem, subtitle: e.target.value })}
                           className="w-full h-9 px-2.5 rounded-lg border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-slate-400"
@@ -627,15 +686,15 @@ export default function ClientDetailsPage() {
                       {/* Prioritás + Gomb */}
                       <div className="flex gap-2">
                         <div className="flex-1">
-                          <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Prioritás</label>
+                          <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">{t('client_overview.field_priority')}</label>
                           <select
                             value={newItem.priority}
                             onChange={(e) => setNewItem({ ...newItem, priority: e.target.value as BlockingItem['priority'] })}
                             className="w-full h-9 px-2.5 rounded-lg border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-slate-400"
                           >
-                            <option value="urgent"> Sürgős</option>
-                            <option value="medium"> Közepes</option>
-                            <option value="low"> Alacsony</option>
+                            <option value="urgent">{t('client_overview.priority_urgent')}</option>
+                            <option value="medium">{t('client_overview.priority_medium')}</option>
+                            <option value="low">{t('client_overview.priority_low')}</option>
                           </select>
                         </div>
                         <div className="flex items-end">
@@ -660,7 +719,7 @@ export default function ClientDetailsPage() {
                             disabled={!newItem.title.trim()}
                             className="h-9 px-4 rounded-lg bg-slate-900 dark:bg-muted text-white dark:text-foreground text-xs font-semibold hover:bg-slate-800 dark:hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                           >
-                            Felvesz
+                            {t('client_overview.btn_submit_add')}
                           </button>
                         </div>
                       </div>
@@ -693,7 +752,7 @@ export default function ClientDetailsPage() {
                       {/* Items */}
                       {items.length === 0 ? (
                         <div className="flex-1 flex items-center justify-center">
-                          <p className="text-xs text-muted-foreground italic">Nincs hiányosság</p>
+                          <p className="text-xs text-muted-foreground italic">{t('client_overview.empty_category')}</p>
                         </div>
                       ) : (
                         <div className="flex flex-col gap-2">
@@ -745,27 +804,27 @@ export default function ClientDetailsPage() {
                                     <div className="mt-3 space-y-2">
                                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                         <Info className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                                        <span className="font-medium">Forrás:</span>
+                                        <span className="font-medium">{t('client_overview.label_source')}</span>
                                         <span>{item.source}</span>
                                       </div>
                                       {item.date && (
                                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                           <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                                          <span className="font-medium">Dátum:</span>
+                                          <span className="font-medium">{t('client_overview.label_date')}</span>
                                           <span>{item.date}</span>
                                         </div>
                                       )}
                                       {item.amount && (
                                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                           <FileText className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                                          <span className="font-medium">Összeg:</span>
+                                          <span className="font-medium">{t('client_overview.label_amount')}</span>
                                           <span className="font-semibold text-foreground">{item.amount}</span>
                                         </div>
                                       )}
                                       {item.invoiceNumber && (
                                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                           <Hash className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                                          <span className="font-medium">Szla#:</span>
+                                          <span className="font-medium">{t('client_overview.label_invoice_num')}</span>
                                           <span className="font-mono text-[11px]">{item.invoiceNumber}</span>
                                         </div>
                                       )}
@@ -791,7 +850,7 @@ export default function ClientDetailsPage() {
                                         className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
                                       >
                                         <EyeOff className="w-3.5 h-3.5" />
-                                        Ignorálom (fals pozitív)
+                                        {t('client_overview.btn_ignore')}
                                       </button>
                                       {item.resolveRoute && (
                                         <button
@@ -802,7 +861,7 @@ export default function ClientDetailsPage() {
                                           className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
                                         >
                                           <Wrench className="w-3.5 h-3.5" />
-                                          Megoldom
+                                          {t('client_overview.btn_resolve')}
                                         </button>
                                       )}
                                       <button
@@ -849,12 +908,12 @@ export default function ClientDetailsPage() {
                                             missingItemIds: [item.id],
                                           };
                                           addToApprovalQueue(msg);
-                                          navigate('/eaisybooks/approval-queue');
+                                          navigate(`${prefix}/eaisybooks/approval-queue`);
                                         }}
                                         className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-medium text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
                                       >
                                         <Bell className="w-3.5 h-3.5" />
-                                        Bekérés küldése
+                                        {t('client_overview.btn_send_request')}
                                       </button>
                                     </div>
                                   </div>
@@ -880,12 +939,12 @@ export default function ClientDetailsPage() {
             {/* Upcoming Deadlines */}
             <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden flex flex-col">
               <div className="p-5 border-b border-border">
-                <h3 className="font-semibold text-foreground">Következő határidők</h3>
+                <h3 className="font-semibold text-foreground">{t('client_overview.deadlines_title')}</h3>
               </div>
               <div className="p-4 space-y-3 flex-1">
                 {companyDeadlines.length === 0 ? (
                   <div className="flex items-center justify-center h-32 text-sm text-muted-foreground">
-                    Nincs közelgő határidő
+                    {t('client_overview.deadlines_empty')}
                   </div>
                 ) : (
                   companyDeadlines.slice(0, 4).map((dl) => {
@@ -894,7 +953,23 @@ export default function ClientDetailsPage() {
                     const diffDays = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
                     const isOverdue = diffDays < 0;
                     const typeLabels: Record<string, string> = { afa: 'ÁFA', jarulek: 'Járulék', kata: 'Kata', ber: 'Bér', tao: 'TAO', ipa: 'IPA', egyeb: 'Egyéb' };
-                    const label = dl.title || typeLabels[dl.deadlineType] || dl.deadlineType;
+                    const rawTitle = dl.title || '';
+                    let label = isHr
+                      ? (DEADLINE_TITLES_HR[rawTitle] || DEADLINE_TYPES_HR[dl.deadlineType] || rawTitle || dl.deadlineType)
+                      : (rawTitle || typeLabels[dl.deadlineType] || dl.deadlineType);
+                    if (isHr && !DEADLINE_TITLES_HR[rawTitle]) {
+                      label = label
+                        .replace('Bér járulékok befizetése', 'Uplata doprinosa na plaće')
+                        .replace('Bér járulékok', 'Doprinosi na plaće')
+                        .replace('Bérszámfejtés leadás', 'Predaja obračuna plaća')
+                        .replace('Járulékbevallás + befizetés', 'Prijava i uplata doprinosa')
+                        .replace('ÁFA bevallás (negyedéves)', 'Prijava PDV-a (tromjesečna)')
+                        .replace('ÁFA bevallás (éves)', 'Prijava PDV-a (godišnja)')
+                        .replace('ÁFA bevallás', 'Prijava PDV-a')
+                        .replace('KATA adó befizetés', 'Uplata paušalnog poreza')
+                        .replace('TAO bevallás', 'Prijava poreza na dobit')
+                        .replace('IPA bevallás', 'Prijava lokalnog poreza');
+                    }
 
                     return (
                       <div
@@ -916,7 +991,7 @@ export default function ClientDetailsPage() {
                           <div>
                             <p className={cn("text-sm font-semibold", isOverdue ? "text-red-600 dark:text-red-400" : "text-foreground")}>{label}</p>
                             <p className={cn("text-xs", isOverdue ? "text-red-500/80 dark:text-red-400/60" : "text-muted-foreground")}>
-                              {dueDate.toLocaleDateString('hu-HU')}
+                              {dueDate.toLocaleDateString(isHr ? 'hr-HR' : 'hu-HU')}
                             </p>
                           </div>
                         </div>
@@ -929,12 +1004,12 @@ export default function ClientDetailsPage() {
                                 ? "bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400"
                                 : "bg-muted text-muted-foreground"
                           )}>
-                            {isOverdue ? `${Math.abs(diffDays)} napja lejárt` : `${diffDays} nap`}
+                            {isOverdue ? t('client_overview.deadline_overdue', { days: Math.abs(diffDays) }) : t('client_overview.deadline_days_left', { days: diffDays })}
                           </div>
                           <button
                             onClick={() => completeDeadlineMutation.mutate(dl.id)}
                             className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors"
-                            title="Megjelölés késznek"
+                            title={t('client_overview.btn_mark_complete')}
                           >
                             <Check className="w-4 h-4" />
                           </button>
@@ -1099,6 +1174,30 @@ export default function ClientDetailsPage() {
   );
 }
 
+
+const DEADLINE_TITLES_HR: Record<string, string> = {
+  'Járulékbevallás + befizetés': 'Prijava i uplata doprinosa',
+  'Bérszámfejtés leadás': 'Predaja obračuna plaća',
+  'Bér járulékok befizetése': 'Uplata doprinosa na plaće',
+  'Bér járulékok': 'Doprinosi na plaće',
+  'ÁFA bevallás': 'Prijava PDV-a',
+  'ÁFA bevallás (negyedéves)': 'Prijava PDV-a (tromjesečna)',
+  'ÁFA bevallás (éves)': 'Prijava PDV-a (godišnja)',
+  'KATA adó befizetés': 'Uplata paušalnog poreza',
+  'TAO bevallás': 'Prijava poreza na dobit',
+  'IPA bevallás': 'Prijava lokalnog poreza',
+};
+
+const DEADLINE_TYPES_HR: Record<string, string> = {
+  afa: 'PDV',
+  jarulek: 'Doprinosi',
+  kata: 'Paušalni porez',
+  ber: 'Plaće',
+  tao: 'Porez na dobit',
+  ipa: 'Lokalni porez',
+  egyeb: 'Ostalo',
+};
+
 // ── RecentActivities: real data from accounty_audit_log ──
 
 const ACTION_META: Record<string, { label: string; icon: React.ElementType; bg: string; iconColor: string }> = {
@@ -1119,7 +1218,26 @@ const ACTION_META: Record<string, { label: string; icon: React.ElementType; bg: 
 
 const DEFAULT_META = { label: 'Tevékenység', icon: Clock, bg: 'bg-muted', iconColor: 'text-muted-foreground' };
 
+const ACTION_KEY_MAP: Record<string, string> = {
+  create_client:     'client_overview.act_create_client',
+  resolve_missing:   'client_overview.act_resolve_missing',
+  complete_deadline: 'client_overview.act_complete_deadline',
+  generate_report:   'client_overview.act_generate_report',
+  upload_invoice:    'client_overview.act_upload_invoice',
+  nav_sync:          'client_overview.act_nav_sync',
+  contiroz:          'client_overview.act_contiroz',
+  send_notification: 'client_overview.act_send_notification',
+  add_missing:       'client_overview.act_add_missing',
+  ignore_missing:    'client_overview.act_ignore_missing',
+  generate_portal:   'client_overview.act_generate_portal',
+  update_prefs:      'client_overview.act_update_prefs',
+  update_tax:        'client_overview.act_update_tax',
+};
+
 function RecentActivities({ companyId }: { companyId?: string }) {
+  const { t } = useTranslation('accounty');
+  const { pathname } = useLocation();
+  const isHr = pathname.startsWith('/hr');
   const { data: allLogs, isLoading } = useAccountyAuditLog(50);
 
   const logs = useMemo(() => {
@@ -1132,16 +1250,18 @@ function RecentActivities({ companyId }: { companyId?: string }) {
 
   const formatDate = (iso: string) => {
     try {
-      return new Date(iso).toLocaleDateString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+      return new Date(iso).toLocaleDateString(isHr ? 'hr-HR' : 'hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
     } catch { return iso; }
   };
 
   return (
     <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden flex flex-col">
       <div className="p-5 border-b border-border flex justify-between items-center">
-        <h3 className="font-semibold text-foreground">Legutóbbi tevékenységek</h3>
+        <h3 className="font-semibold text-foreground">{t('client_overview.recent_activities_title')}</h3>
         {logs.length > 0 && (
-          <span className="text-[10px] font-bold text-muted-foreground uppercase">{logs.length} bejegyzés</span>
+          <span className="text-[10px] font-bold text-muted-foreground uppercase">
+            {t('client_overview.recent_activities_count', { count: logs.length })}
+          </span>
         )}
       </div>
       <div className="p-2 flex-1">
@@ -1153,11 +1273,12 @@ function RecentActivities({ companyId }: { companyId?: string }) {
         {!isLoading && logs.length === 0 && (
           <div className="text-center py-6">
             <Clock className="w-6 h-6 mx-auto mb-2 text-muted-foreground/60" />
-            <p className="text-sm text-muted-foreground">Még nincs tevékenység</p>
+            <p className="text-sm text-muted-foreground">{t('client_overview.recent_activities_empty')}</p>
           </div>
         )}
         {logs.map(log => {
           const meta = ACTION_META[log.action] || DEFAULT_META;
+          const actionLabel = ACTION_KEY_MAP[log.action] ? t(ACTION_KEY_MAP[log.action]) : meta.label;
           const Icon = meta.icon;
           const details = log.details as any;
           const detailText = (details?.description || details?.item_title || details?.deadline_title || '') as string;
@@ -1168,7 +1289,7 @@ function RecentActivities({ companyId }: { companyId?: string }) {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-foreground truncate">
-                  {meta.label}
+                  {actionLabel}
                   {detailText && <span className="font-normal text-muted-foreground"> — {detailText}</span>}
                 </p>
                 <p className="text-xs text-muted-foreground">

@@ -15,6 +15,7 @@ import { toast } from '@/hooks/use-toast';
 import { fetchAllGlBalances, GlDateBasis, GlPostingStatus } from '@/lib/glData';
 import { useTranslation } from 'react-i18next';
 import { getLocalizedGlAccountName } from '@/lib/glUtils';
+import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
 
 interface GeneralLedgerComparisonTableProps {
   presetId?: string;
@@ -33,7 +34,9 @@ export function GeneralLedgerComparisonTable({
   dateBasis = 'kibocsatas',
   postingStatus = 'all',
 }: GeneralLedgerComparisonTableProps) {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['accounting', 'common']);
+  const { isCroatia, defaultCurrency } = useCompanyJurisdiction();
+  const currencyLabel = defaultCurrency === 'HUF' ? 'Ft' : defaultCurrency;
   const { data: exchangeRates } = useExchangeRates();
   const [search, setSearch] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'changed' | 'increased' | 'decreased'>('all');
@@ -119,10 +122,11 @@ export function GeneralLedgerComparisonTable({
     return allKeys.map(key => {
       const c = currMap.get(key);
       const p = prevMap.get(key);
-      const displayGlNumber = key === 'UNCLASSIFIED' ? 'Besorolatlan' : key;
+      const isUnclassified = key === 'UNCLASSIFIED';
+      const displayGlNumber = isUnclassified ? t('accounting:general_ledger.unclassified', 'Besorolatlan') : key;
       const rawName = c?.short_name || p?.short_name || 'Besorolatlan';
-      const name = displayGlNumber === 'Besorolatlan'
-        ? t('accounting:general_ledger.unclassified_item', 'Besorolatlan')
+      const name = isUnclassified
+        ? t('accounting:general_ledger.unclassified', 'Besorolatlan')
         : getLocalizedGlAccountName(displayGlNumber, rawName, t);
       const valCurr = c?.total_balance ?? 0;
       const valPrev = p?.total_balance ?? 0;
@@ -145,8 +149,8 @@ export function GeneralLedgerComparisonTable({
         pct,
       };
     }).sort((a, b) => {
-      if (a.glNumber === 'Besorolatlan') return 1;
-      if (b.glNumber === 'Besorolatlan') return -1;
+      if (a.originalKey === 'UNCLASSIFIED') return 1;
+      if (b.originalKey === 'UNCLASSIFIED') return -1;
       return a.glNumber.localeCompare(b.glNumber);
     });
   }, [currData, prevData, isLoading]);
@@ -165,8 +169,7 @@ export function GeneralLedgerComparisonTable({
       const q = search.toLowerCase();
       result = result.filter(d =>
         d.glNumber.toLowerCase().includes(q) ||
-        d.name.toLowerCase().includes(q) ||
-        (d.originalKey === 'UNCLASSIFIED' && 'besorolatlan'.includes(q))
+        d.name.toLowerCase().includes(q)
       );
     }
     return result;
@@ -187,8 +190,8 @@ export function GeneralLedgerComparisonTable({
     return { prev, curr, diff: curr - prev };
   }, [filteredData]);
 
-  const formatHuf = (v: number) => {
-    return new Intl.NumberFormat('hu-HU', {
+  const formatAmount = (v: number) => {
+    return new Intl.NumberFormat(isCroatia ? 'hr-HR' : 'hu-HU', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(Math.round(v));
@@ -200,12 +203,12 @@ export function GeneralLedgerComparisonTable({
   const handleExport = async () => {
     const basisLabel = dateBasis === 'teljesites' ? 'Teljesítés' : 'Kibocsátás';
     const headers = [
-      'Főkönyvi szám',
-      'Megnevezés',
-      `${prevYearLabel} Egyenleg (Ft)`,
-      `${currYearLabel} Egyenleg (Ft)`,
-      'Eltérés (Ft)',
-      'Változás %',
+      t('accounting:general_ledger.table.gl_account', 'Főkönyvi szám'),
+      t('accounting:general_ledger.table.name', 'Megnevezés'),
+      `${prevYearLabel} ${t('accounting:general_ledger.comparison_view.col_balance', 'Egyenleg')} (${currencyLabel})`,
+      `${currYearLabel} ${t('accounting:general_ledger.comparison_view.col_balance', 'Egyenleg')} (${currencyLabel})`,
+      t('accounting:general_ledger.comparison_view.col_diff', { currency: currencyLabel, defaultValue: `Eltérés (${currencyLabel})` }),
+      t('accounting:general_ledger.comparison_view.col_change_pct', 'Változás %'),
     ];
     const rows = filteredData.map(row => [
       row.glNumber,
@@ -217,7 +220,7 @@ export function GeneralLedgerComparisonTable({
     ]);
     const fileSuffix = `fokonyv_osszehasonlitas_${prevYearLabel}_vs_${currYearLabel}_${basisLabel.toLowerCase()}_alapjan`;
     await exportToFile(headers, rows, 'xlsx', fileSuffix);
-    toast({ title: 'Összehasonlítás exportálva' });
+    toast({ title: t('accounting:general_ledger.comparison_view.export_toast', 'Összehasonlítás exportálva') });
   };
 
   return (
@@ -227,7 +230,7 @@ export function GeneralLedgerComparisonTable({
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Keresés (főkönyvi szám, megnevezés...)"
+            placeholder={t('accounting:general_ledger.comparison_view.search_placeholder', 'Keresés (főkönyvi szám, megnevezés...)')}
             value={search}
             onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
             className="pl-9 h-9"
@@ -235,13 +238,13 @@ export function GeneralLedgerComparisonTable({
         </div>
         <Select value={filterMode} onValueChange={(v: any) => { setFilterMode(v); setCurrentPage(1); }}>
           <SelectTrigger className="w-44 h-9 text-sm">
-            <SelectValue placeholder="Szűrés" />
+            <SelectValue placeholder={t('accounting:general_ledger.comparison_view.filter_placeholder', 'Szűrés')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Összes számla</SelectItem>
-            <SelectItem value="changed">Csak eltérések</SelectItem>
-            <SelectItem value="increased">Csak növekedés</SelectItem>
-            <SelectItem value="decreased">Csak csökkenés</SelectItem>
+            <SelectItem value="all">{t('accounting:general_ledger.comparison_view.filter_all', 'Összes számla')}</SelectItem>
+            <SelectItem value="changed">{t('accounting:general_ledger.comparison_view.filter_changed', 'Csak eltérések')}</SelectItem>
+            <SelectItem value="increased">{t('accounting:general_ledger.comparison_view.filter_increased', 'Csak növekedés')}</SelectItem>
+            <SelectItem value="decreased">{t('accounting:general_ledger.comparison_view.filter_decreased', 'Csak csökkenés')}</SelectItem>
           </SelectContent>
         </Select>
         <Button
@@ -251,7 +254,7 @@ export function GeneralLedgerComparisonTable({
           onClick={handleExport}
           disabled={isLoading || filteredData.length === 0}
         >
-          <Download className="w-4 h-4" /> Export
+          <Download className="w-4 h-4" /> {t('accounting:general_ledger.toolbar.export', 'Export')}
         </Button>
       </div>
 
@@ -261,14 +264,14 @@ export function GeneralLedgerComparisonTable({
           <Skeleton className="h-4 w-64 bg-muted/50 rounded" />
         ) : (
           <>
-            <span>{filteredData.length} számla</span>
+            <span>{filteredData.length} {t('accounting:general_ledger.comparison_view.accounts_count', 'számla')}</span>
             <span>|</span>
-            <span>{prevYearLabel}: <strong className="text-foreground">{formatHuf(totals.prev)} Ft</strong></span>
-            <span>{currYearLabel}: <strong className="text-foreground">{formatHuf(totals.curr)} Ft</strong></span>
+            <span>{prevYearLabel}: <strong className="text-foreground">{formatAmount(totals.prev)} {currencyLabel}</strong></span>
+            <span>{currYearLabel}: <strong className="text-foreground">{formatAmount(totals.curr)} {currencyLabel}</strong></span>
             <span>
-              Nettó eltérés:{' '}
+              {t('accounting:general_ledger.comparison_view.net_diff', 'Nettó eltérés:')}{' '}
               <strong className={totals.diff > 0 ? 'text-emerald-600 dark:text-emerald-400' : totals.diff < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-foreground'}>
-                {totals.diff > 0 ? '+' : ''}{formatHuf(totals.diff)} Ft
+                {totals.diff > 0 ? '+' : ''}{formatAmount(totals.diff)} {currencyLabel}
               </strong>
             </span>
           </>
@@ -281,12 +284,12 @@ export function GeneralLedgerComparisonTable({
           <table className="w-full text-sm text-left border-collapse">
             <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur border-b text-xs font-semibold text-muted-foreground uppercase tracking-wider select-none">
               <tr>
-                <th className="p-3 text-center w-[12%]">Fők. szám</th>
-                <th className="p-3 w-[36%]">Megnevezés</th>
-                <th className="p-3 text-right w-[15%]">{prevYearLabel} Egyenleg</th>
-                <th className="p-3 text-right w-[15%]">{currYearLabel} Egyenleg</th>
-                <th className="p-3 text-right w-[12%]">Eltérés (Ft)</th>
-                <th className="p-3 text-center w-[10%]">Változás %</th>
+                <th className="p-3 text-center w-[12%]">{t('accounting:general_ledger.table.gl_account', 'Fők. szám')}</th>
+                <th className="p-3 w-[36%]">{t('accounting:general_ledger.table.name', 'Megnevezés')}</th>
+                <th className="p-3 text-right w-[15%]">{prevYearLabel} {t('accounting:general_ledger.comparison_view.col_balance', 'Egyenleg')}</th>
+                <th className="p-3 text-right w-[15%]">{currYearLabel} {t('accounting:general_ledger.comparison_view.col_balance', 'Egyenleg')}</th>
+                <th className="p-3 text-right w-[12%]">{t('accounting:general_ledger.comparison_view.col_diff', { currency: currencyLabel, defaultValue: `Eltérés (${currencyLabel})` })}</th>
+                <th className="p-3 text-center w-[10%]">{t('accounting:general_ledger.comparison_view.col_change_pct', 'Változás %')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">
@@ -306,7 +309,7 @@ export function GeneralLedgerComparisonTable({
                   <td colSpan={6} className="py-12 text-center text-muted-foreground">
                     <div className="flex flex-col items-center gap-2">
                       <BookOpen className="w-8 h-8 text-muted-foreground/40" />
-                      <p className="text-sm">Nincsenek összehasonlító adatok a kiválasztott feltételekkel.</p>
+                      <p className="text-sm">{t('accounting:general_ledger.comparison_view.no_data', 'Nincsenek összehasonlító adatok a kiválasztott feltételekkel.')}</p>
                     </div>
                   </td>
                 </tr>
@@ -320,7 +323,7 @@ export function GeneralLedgerComparisonTable({
                     : classChar === '9' ? 'border-l-4 border-l-emerald-500/70'
                     : '';
 
-                  const isHeading = row.glNumber.length <= 2 && row.glNumber !== 'Besorolatlan';
+                  const isHeading = row.originalKey !== 'UNCLASSIFIED' && row.glNumber.length <= 2;
 
                   return (
                     <tr
@@ -341,16 +344,16 @@ export function GeneralLedgerComparisonTable({
                         </CustomTooltip>
                       </td>
                       <td className="p-2.5 font-mono text-xs text-right tabular-nums">
-                        {formatHuf(row.valPrev)} Ft
+                        {formatAmount(row.valPrev)} {currencyLabel}
                       </td>
                       <td className="p-2.5 font-mono text-xs text-right tabular-nums">
-                        {formatHuf(row.valCurr)} Ft
+                        {formatAmount(row.valCurr)} {currencyLabel}
                       </td>
                       <td className={cn(
                         "p-2.5 font-mono text-xs text-right tabular-nums font-semibold",
                         row.diff > 0 ? "text-emerald-600 dark:text-emerald-400" : row.diff < 0 ? "text-rose-600 dark:text-rose-400" : ""
                       )}>
-                        {row.diff > 0 ? '+' : ''}{formatHuf(row.diff)} Ft
+                        {row.diff > 0 ? '+' : ''}{formatAmount(row.diff)} {currencyLabel}
                       </td>
                       <td className="p-2.5 text-center shrink-0">
                         {row.diff === 0 ? (

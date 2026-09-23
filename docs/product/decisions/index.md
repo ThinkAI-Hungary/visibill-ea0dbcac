@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-09-22  
-> **Összesen:** 99 döntés | ✅ Decided: 95 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Utoljára frissítve:** 2026-09-23  
+> **Összesen:** 102 döntés | ✅ Decided: 98 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -24,6 +24,7 @@
 | P-081 | Eaisybill Horvát Lokalizáció, /hr/ Route Prefix és Demó Navigáció UX | ✅ Decided | [P-081](./P-081-eaisybill-croatia-localization-and-demo-ux.md) |
 | P-083 | eaisyBooks ↔ eaisyBill Alkalmazásváltó (AppModeSwitcher) és Hideg/Meleg (Cold/Warm) Átmenet UX | ✅ Decided | [P-083](./P-083-eaisybooks-eaisybill-app-mode-switcher-and-cold-warm-transition-ux.md) |
 | P-093 | ÁFA Analitika Oszlopelrendezés és Valós Nettó Megjelenítés UX | ✅ Decided | [P-093](./P-093-vat-analytics-net-revenue-and-column-layout-ux.md) |
+| P-107 | Globális Nyelvválasztó Elhelyezés és Lucide Globe Ikon Felületi Élmény (Books és Bill nézet) | ✅ Decided | [P-107](./P-107-global-header-inline-language-switcher-ux.md) |
 
 ## 📄 Számla Kezelés
 
@@ -63,6 +64,7 @@
 | P-021 | Export formátumok (CSV + PDF) | ✅ Decided | [P-021](./P-021-export-formats.md) |
 | P-043 | GL besorolás NAV ↔ Beküldött dual-table szinkronizáció (twin sync) | ✅ Decided | [P-043](./P-043-gl-twin-sync.md) |
 | P-105 | Főkönyvi Kivonat 2-Tier Eszköztár és Hierarchikus Számlafa Kibontás/Összecsukás UX | ✅ Decided | [P-105](./P-105-general-ledger-toolbar-and-expand-collapse-ux.md) |
+| P-106 | Horvát Főkönyvi Kivonat és Nézetek Teljes Lokalizációja, Dinamikus Pénznem és Novo Konto UX | ✅ Decided | [P-106](./P-106-croatian-general-ledger-and-multicurrency-views.md) |
 
 ## 🔔 Értesítések & Kommunikáció
 
@@ -199,3 +201,4 @@
 | P-068 | Főkönyvi Gyorskeresés, Összehasonlító Táblázat Pagináció és Felületi Ergonómia UX | ✅ Decided | [P-068](./P-068-gl-search-and-comparison-pagination-ux.md) |
 | P-071 | Biztonságos Számlatükör Törlés és Tételek Átkötése (Safe CoA Preset Remapping) UX | ✅ Decided | [P-071](./P-071-safe-chart-of-accounts-preset-deletion-and-remapping-ux.md) |
 | P-102 | Főkönyvi Kivonatok és Nyitó Egyenlegek Rugalmas Fájlimportja (Microfox & XML SpreadsheetML) UX | ✅ Decided | [P-102](./P-102-general-ledger-and-opening-balance-import-ux.md) |
+| P-106 | Horvát Főkönyvi Kivonat és Nézetek Teljes Lokalizációja, Dinamikus Pénznem és Novo Konto UX | ✅ Decided | [P-106](./P-106-croatian-general-ledger-and-multicurrency-views.md) |

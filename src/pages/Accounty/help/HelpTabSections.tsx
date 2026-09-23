@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   Zap, BookOpen, Lightbulb, Keyboard, MessageCircle,
   ChevronDown, Shield, ExternalLink, ArrowRight, Construction,
@@ -22,6 +22,8 @@ interface OverviewProps {
 }
 
 export function HelpOverviewSection({ filteredFaqs, searchActive }: OverviewProps) {
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   return (
@@ -170,7 +172,7 @@ export function HelpOverviewSection({ filteredFaqs, searchActive }: OverviewProp
               <span className="text-muted-foreground">Utolsó frissítés</span>
               <span className="font-semibold text-foreground">{new Date().toLocaleDateString('hu-HU')}</span>
             </div>
-            <Link to="/eaisybooks/privacy-policy" className="flex items-center gap-2 p-3 rounded-lg hover:bg-accent/50 transition-colors text-muted-foreground hover:text-primary">
+            <Link to={`${prefix}/eaisybooks/privacy-policy`} className="flex items-center gap-2 p-3 rounded-lg hover:bg-accent/50 transition-colors text-muted-foreground hover:text-primary">
               <ExternalLink className="w-3.5 h-3.5" />
               <span>Adatvédelmi tájékoztató</span>
             </Link>

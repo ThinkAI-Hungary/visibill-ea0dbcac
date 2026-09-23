@@ -1,6 +1,6 @@
 import { useDateRange } from '@/contexts/DateRangeContext';
 import React, { useState, useMemo } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams , useLocation } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, Scale, TrendingUp, PiggyBank,
   Shield, Calculator, Check, Crown, Info
@@ -28,6 +28,8 @@ const FORM_COLORS: Record<string, { gradient: string; text: string; bg: string }
 };
 
 export default function EvComparePage() {
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const id = companyId;
   const { data: client } = useAccountyClient(id);
@@ -57,7 +59,7 @@ export default function EvComparePage() {
     <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
+        <Link to={`${prefix}/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Főoldal
         </Link>
         <ChevronRight className="w-3 h-3" />

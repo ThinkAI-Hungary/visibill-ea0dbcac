@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   Search, 
   Sun, 
@@ -173,6 +174,9 @@ function AccountySidebarStandalone(props: AccountySidebarProps) {
 }
 
 function AccountySidebarInner({ shell, props }: { shell: AccountyShellContextType; props: AccountySidebarProps }) {
+  const { t } = useTranslation('accounty');
+  const pathname = shell.pathname || '';
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
 
   // Prefer context values with optional prop fallbacks for backwards compatibility
   const isCollapsed = props.isCollapsed ?? shell.isCollapsed;
@@ -258,7 +262,7 @@ function AccountySidebarInner({ shell, props }: { shell: AccountyShellContextTyp
             className="flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8 hover:bg-primary/10 text-sidebar-foreground/60 mb-1"
           >
             <Search className="h-4 w-4 shrink-0" />
-            <span className="truncate flex-1">Keresés...</span>
+            <span className="truncate flex-1">{t('sidebar.search_placeholder', 'Keresés...')}</span>
             <kbd className="px-1.5 py-0.5 text-[9px] font-mono bg-sidebar-foreground/10 text-sidebar-foreground/50 rounded">Ctrl K</kbd>
           </button>
         )}
@@ -295,18 +299,18 @@ function AccountySidebarInner({ shell, props }: { shell: AccountyShellContextTyp
                   </div>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="right">{isDark ? 'Világos mód' : 'Sötét mód'}</TooltipContent>
+              <TooltipContent side="right">{isDark ? t('sidebar.light_mode', 'Világos mód') : t('sidebar.dark_mode', 'Sötét mód')}</TooltipContent>
             </Tooltip>
 
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button data-tour="settings" variant="outline" asChild className="w-8 h-8 p-0 hover:bg-primary/10 hover:text-primary hover:border-primary/30">
-                  <Link to="/eaisybooks/profile/settings">
+                  <Link to={`${prefix}/eaisybooks/profile/settings`}>
                     <Settings className="h-4 w-4" />
                   </Link>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="right">Beállítások</TooltipContent>
+              <TooltipContent side="right">{t('sidebar.settings', 'Beállítások')}</TooltipContent>
             </Tooltip>
 
             <Tooltip>
@@ -320,7 +324,7 @@ function AccountySidebarInner({ shell, props }: { shell: AccountyShellContextTyp
                   <LogOut className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="right">Kijelentkezés</TooltipContent>
+              <TooltipContent side="right">{t('sidebar.sign_out', 'Kijelentkezés')}</TooltipContent>
             </Tooltip>
           </div>
         ) : (
@@ -332,7 +336,7 @@ function AccountySidebarInner({ shell, props }: { shell: AccountyShellContextTyp
               </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">
-                  {user?.user_metadata?.name || user?.email?.split('@')[0] || 'Felhasználó'}
+                  {user?.user_metadata?.name || user?.email?.split('@')[0] || t('sidebar.user', 'Felhasználó')}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
               </div>
@@ -342,7 +346,7 @@ function AccountySidebarInner({ shell, props }: { shell: AccountyShellContextTyp
                   size="icon" 
                   onClick={toggleTheme} 
                   className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
-                  title={isDark ? 'Világos mód' : 'Sötét mód'}
+                  title={isDark ? t('sidebar.light_mode', 'Világos mód') : t('sidebar.dark_mode', 'Sötét mód')}
                 >
                   <div className="relative h-4 w-4">
                     <Sun className={`h-4 w-4 absolute transition-all ${isDark ? 'animate-rotate-out' : 'animate-rotate-in'}`} />
@@ -356,12 +360,12 @@ function AccountySidebarInner({ shell, props }: { shell: AccountyShellContextTyp
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button data-tour="settings" variant="outline" asChild className="w-full aspect-square justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/30">
-                    <Link to="/eaisybooks/profile/settings">
+                    <Link to={`${prefix}/eaisybooks/profile/settings`}>
                       <Settings className="h-5 w-5" />
                     </Link>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="top">Beállítások</TooltipContent>
+                <TooltipContent side="top">{t('sidebar.settings', 'Beállítások')}</TooltipContent>
               </Tooltip>
 
               <Tooltip>
@@ -374,7 +378,7 @@ function AccountySidebarInner({ shell, props }: { shell: AccountyShellContextTyp
                     <LogOut className="h-5 w-5" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="top">Kijelentkezés</TooltipContent>
+                <TooltipContent side="top">{t('sidebar.sign_out', 'Kijelentkezés')}</TooltipContent>
               </Tooltip>
             </div>
           </div>
@@ -388,7 +392,7 @@ function AccountySidebarInner({ shell, props }: { shell: AccountyShellContextTyp
             size="icon"
             onClick={toggleSidebarCollapse}
             className={cn("hover:bg-primary/10 hover:text-primary h-7", isCollapsed ? "w-7" : "w-full")}
-            title={isCollapsed ? "Oldalsáv kinyitása" : "Oldalsáv összecsukása"}
+            title={isCollapsed ? t('sidebar.open_sidebar', 'Oldalsáv kinyitása') : t('sidebar.collapse_sidebar', 'Oldalsáv összecsukása')}
           >
             <PanelLeft className="h-4 w-4" />
             <span className="sr-only">Toggle Sidebar</span>

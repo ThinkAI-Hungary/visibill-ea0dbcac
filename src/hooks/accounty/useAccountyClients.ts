@@ -13,7 +13,7 @@ import { reportError } from '@/lib/errorReporter';
 type AssignmentRow = Tables<'accounty_assignments'>;
 type MissingItemRow = Pick<Tables<'accounty_missing_items'>, 'company_id'>;
 type DeadlineRow = Pick<Tables<'accounty_deadlines'>, 'company_id' | 'due_date'>;
-type CompanyRow = Pick<Tables<'companies'>, 'id' | 'name' | 'tax_number'>;
+type CompanyRow = Pick<Tables<'companies'>, 'id' | 'name' | 'tax_number' | 'country_code'>;
 import {
   AccountyClient,
   AccountyKpis,
@@ -73,7 +73,7 @@ export function useAccountyClients(dateFrom?: string, dateTo?: string) {
       // Get company details
       const { data: companies, error: compErr } = await supabase
         .from('companies')
-        .select('id, name, tax_number')
+        .select('id, name, tax_number, country_code')
         .in('id', uniqueCompanyIds);
 
       if (compErr) throw compErr;
@@ -140,6 +140,7 @@ export function useAccountyClients(dateFrom?: string, dateTo?: string) {
           companyId: company.id,
           name: company.name,
           taxNumber: company.tax_number,
+          countryCode: (company as any).country_code || 'HU',
           status: computeStatus(missingCount, unprocessedCount),
           unprocessedCount,
           missingCount,

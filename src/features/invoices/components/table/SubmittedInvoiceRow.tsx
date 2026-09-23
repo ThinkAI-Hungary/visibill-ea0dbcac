@@ -18,6 +18,7 @@ import { hu } from 'date-fns/locale';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 import type { SubmittedInvoice, NavInvoice, TransactionRecord } from '../../types';
 import { supabase } from '@/integrations/supabase/client';
+import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
 
 interface SubmittedInvoiceRowProps {
   invoice: SubmittedInvoice;
@@ -63,6 +64,7 @@ export function SubmittedInvoiceRow({
     getPaymentMethodLabel,
   } = useInvoiceContext();
   const { t } = useTranslation(['invoices', 'common']);
+  const { hasNavIntegration, defaultCurrency } = useCompanyJurisdiction(selectedCompany);
 
   const isExpanded = expandedRowIds.has(invoice.id);
   const isSelected = selectedSubmittedIds.has(invoice.id);
@@ -186,19 +188,19 @@ export function SubmittedInvoiceRow({
                   <TooltipTrigger asChild>
                     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-sans font-semibold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-300/60 dark:border-rose-700/60 shrink-0 cursor-help">
                       <AlertOctagon className="h-3 w-3" />
-                      Eltérő vevő
+                      {t('invoices:warnings.buyer_mismatch_badge', 'Eltérő vevő')}
                     </span>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-xs text-xs font-sans">
                     <p className="font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1">
-                      <AlertOctagon className="h-3.5 w-3.5" /> A számla vevője eltér az aktív cégtől!
+                      <AlertOctagon className="h-3.5 w-3.5" /> {t('invoices:warnings.buyer_mismatch_title', 'A számla vevője eltér az aktív cégtől!')}
                     </p>
                     <p className="mt-1 text-foreground">
-                      Számlán szereplő vevő: <strong>{buyerMismatch.buyerName || 'Ismeretlen vevő'}</strong>
+                      {t('invoices:warnings.buyer_on_invoice', 'Számlán szereplő vevő:')} <strong>{buyerMismatch.buyerName || t('invoices:warnings.unknown_buyer', 'Ismeretlen vevő')}</strong>
                       {buyerMismatch.buyerTax ? ` (${buyerMismatch.buyerTax})` : ''}
                     </p>
                     <p className="text-muted-foreground mt-0.5">
-                      Aktív cég: {buyerMismatch.companyName || '-'} ({buyerMismatch.companyTax || '-'})
+                      {t('invoices:warnings.active_company', 'Aktív cég:')} {buyerMismatch.companyName || '-'} ({buyerMismatch.companyTax || '-'})
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -206,18 +208,18 @@ export function SubmittedInvoiceRow({
             )}
 
             {/* NAV missing warning icon right after bizonylatsorszám */}
-            {(invoice.nav_status === 'missing_nav' || invoice.statusz === 'jovahagyasra_var') && (
+            {hasNavIntegration && (invoice.nav_status === 'missing_nav' || invoice.statusz === 'jovahagyasra_var') && (
               invoice.approved_at ? (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <span className="inline-flex items-center justify-center p-0.5 text-blue-600 dark:text-blue-400 shrink-0 cursor-help" aria-label="Könyvelő által jóváhagyva">
+                      <span className="inline-flex items-center justify-center p-0.5 text-blue-600 dark:text-blue-400 shrink-0 cursor-help" aria-label={t('invoices:warnings.accountant_approved_title', 'Könyvelő által jóváhagyva')}>
                         <Check className="h-3.5 w-3.5" />
                       </span>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="max-w-xs text-xs font-sans">
-                      <p className="font-semibold text-blue-600 dark:text-blue-400">Könyvelő által jóváhagyva</p>
-                      <p className="text-muted-foreground mt-0.5">{invoice.approval_note || 'NAV adatszolgáltatás nélkül engedélyezve'}</p>
+                      <p className="font-semibold text-blue-600 dark:text-blue-400">{t('invoices:warnings.accountant_approved_title', 'Könyvelő által jóváhagyva')}</p>
+                      <p className="text-muted-foreground mt-0.5">{invoice.approval_note || t('invoices:warnings.accountant_approved_default_note', 'NAV adatszolgáltatás nélkül engedélyezve')}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -233,17 +235,17 @@ export function SubmittedInvoiceRow({
                           setSelectedInvoiceForApproval(invoice);
                           setApprovalDialogOpen(true);
                         }}
-                        aria-label="Nincs NAV online számla adatszolgáltatás! Kattintson a könyvelői jóváhagyáshoz."
+                        aria-label={t('invoices:warnings.missing_nav_aria', 'Nincs NAV online számla adatszolgáltatás! Kattintson a könyvelői jóváhagyáshoz.')}
                       >
                         <AlertTriangle className="h-3 w-3" />
                       </button>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="max-w-xs text-xs font-sans">
                       <p className="font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                        <AlertTriangle className="h-3.5 w-3.5" /> NAV adatszolgáltatás hiányzik!
+                        <AlertTriangle className="h-3.5 w-3.5" /> {t('invoices:warnings.missing_nav_title', 'NAV adatszolgáltatás hiányzik!')}
                       </p>
                       <p className="text-muted-foreground mt-0.5">
-                        A számlához nem tartozik online számla adatszolgáltatás. Kattintson ide a könyvelői jóváhagyáshoz!
+                        {t('invoices:warnings.missing_nav_desc', 'A számlához nem tartozik online számla adatszolgáltatás. Kattintson ide a könyvelői jóváhagyáshoz!')}
                       </p>
                     </TooltipContent>
                   </Tooltip>
@@ -265,7 +267,7 @@ export function SubmittedInvoiceRow({
                   : 'text-success'
           )}
         >
-          {formatCurrency(invoice.adoalap_osszesen || 0, invoice.penznem || 'HUF')}
+          {formatCurrency(invoice.adoalap_osszesen || 0, invoice.penznem || defaultCurrency)}
         </TableCell>
 
         <TableCell
@@ -280,12 +282,12 @@ export function SubmittedInvoiceRow({
                   : 'text-success'
           )}
         >
-          {formatCurrency(invoice.brutto_vegosszeg || 0, invoice.penznem || 'HUF')}
+          {formatCurrency(invoice.brutto_vegosszeg || 0, invoice.penznem || defaultCurrency)}
         </TableCell>
 
         <TableCell className="text-right font-mono tabular-nums text-muted-foreground whitespace-nowrap">
           <div className="flex flex-col items-end gap-1">
-            <span>{formatCurrency(invoice.afa_osszeg_osszesen || 0, invoice.penznem || 'HUF')}</span>
+            <span>{formatCurrency(invoice.afa_osszeg_osszesen || 0, invoice.penznem || defaultCurrency)}</span>
             {nonDeductibleInfo && nonDeductibleInfo.nonDeductibleVat > 0 && activeTab !== 'SUBMITTED_OUTBOUND' && (
               <div onClick={(e) => e.stopPropagation()}>
                 <TooltipProvider delayDuration={150}>
@@ -294,7 +296,7 @@ export function SubmittedInvoiceRow({
                       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-400/40 cursor-help transition-colors hover:bg-amber-500/25">
                         <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
                         {nonDeductibleInfo.minPercentage === 0 ? '0% lev.' : `${nonDeductibleInfo.minPercentage}/${100 - nonDeductibleInfo.minPercentage}`}
-                        <span className="text-muted-foreground/80 font-normal">(-{formatCurrency(nonDeductibleInfo.nonDeductibleVat, invoice.penznem || 'HUF')})</span>
+                        <span className="text-muted-foreground/80 font-normal">(-{formatCurrency(nonDeductibleInfo.nonDeductibleVat, invoice.penznem || defaultCurrency)})</span>
                       </span>
                     </TooltipTrigger>
                     <TooltipContent side="left" className="text-xs space-y-1.5 max-w-[240px] text-left">
@@ -305,11 +307,11 @@ export function SubmittedInvoiceRow({
                       <div className="space-y-0.5 font-sans">
                         <div className="flex justify-between gap-3 text-emerald-600 dark:text-emerald-400">
                           <span>Levonható:</span>
-                          <span className="font-mono font-medium">{formatCurrency((invoice.afa_osszeg_osszesen || 0) - nonDeductibleInfo.nonDeductibleVat, invoice.penznem || 'HUF')}</span>
+                          <span className="font-mono font-medium">{formatCurrency((invoice.afa_osszeg_osszesen || 0) - nonDeductibleInfo.nonDeductibleVat, invoice.penznem || defaultCurrency)}</span>
                         </div>
                         <div className="flex justify-between gap-3 text-amber-600 dark:text-amber-400">
                           <span>Nem levonható:</span>
-                          <span className="font-mono font-medium">{formatCurrency(nonDeductibleInfo.nonDeductibleVat, invoice.penznem || 'HUF')}</span>
+                          <span className="font-mono font-medium">{formatCurrency(nonDeductibleInfo.nonDeductibleVat, invoice.penznem || defaultCurrency)}</span>
                         </div>
                       </div>
                       <p className="text-[10px] text-muted-foreground pt-1 border-t border-border/30">
@@ -390,7 +392,7 @@ export function SubmittedInvoiceRow({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-300/40 whitespace-nowrap cursor-help">
-                      ⏳ Áthúzódó
+                      {t('invoices:expanded.cross_year_badge', '⏳ Áthúzódó')}
                     </span>
                   </TooltipTrigger>
                   <TooltipContent side="left" className="max-w-[280px]">

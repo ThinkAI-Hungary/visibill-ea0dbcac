@@ -132,6 +132,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
   const [isUploadingTicketAttachment, setIsUploadingTicketAttachment] = useState(false);
   const [editorKey, setEditorKey] = useState(0);
   const { data: isManagement } = useIsManagementRole();
+  const canManage = Boolean(isAdmin || isManagement);
   const { mutateAsync: deleteTicket, isPending: isDeleting } = useDeleteTicket();
   const { mutateAsync: updateStaffResponse, isPending: isUpdatingStaffResponse } = useUpdateTicketStaffResponse();
 
@@ -634,27 +635,25 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
             <h1 className="text-xl font-bold tracking-tight">{ticket.ticket_number || "—"}</h1>
             <TicketPriorityBadge priority={ticket.priority} />
             <TicketStatusBadge status={ticket.status} waitingForConfirmation={ticket.waiting_for_user_confirmation} />
-            <TicketSlaBadge sla={ticket.sla} />
-            {ticket.needs_staff_response === false && ticket.status !== "resolved" && (
+            {canManage && <TicketSlaBadge sla={ticket.sla} canManage={canManage} />}
+            {canManage && ticket.needs_staff_response === false && ticket.status !== "resolved" && (
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shrink-0">
                 <Check className="h-3 w-3" />
                 <span>{t('detail.no_response_needed', 'Nem igényel választ')}</span>
-                {isAdmin && (
-                  <button
-                    onClick={() => handleToggleStaffResponse(true)}
-                    disabled={isUpdatingStaffResponse}
-                    className="ml-1 text-[10px] text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors cursor-pointer"
-                    title={t('detail.undo_no_response', 'Visszavonás (újra válaszra vár)')}
-                  >
-                    {t('detail.undo', 'Visszavonás')}
-                  </button>
-                )}
+                <button
+                  onClick={() => handleToggleStaffResponse(true)}
+                  disabled={isUpdatingStaffResponse}
+                  className="ml-1 text-[10px] text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors cursor-pointer"
+                  title={t('detail.undo_no_response', 'Visszavonás (újra válaszra vár)')}
+                >
+                  {t('detail.undo', 'Visszavonás')}
+                </button>
               </div>
             )}
           </div>
           {/* Header Action Buttons */}
           <div className="ml-auto flex items-center gap-2 shrink-0">
-            {isAdmin && ticket.status !== "resolved" && ticket.needs_staff_response !== false && (
+            {canManage && ticket.status !== "resolved" && ticket.needs_staff_response !== false && (
               <Button
                 variant="outline"
                 size="sm"
@@ -735,13 +734,16 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Fő tartalom (üzenet + csatolmányok + hozzászólások + válaszíró) */}
           <div className="lg:col-span-7 xl:col-span-8 2xl:col-span-8 space-y-4 min-w-0">
-            {/* SLA Overdue Warning Banner */}
-            <TicketSlaWarningBanner
-              sla={ticket.sla}
-              onFocusReply={() => bottomRef.current?.scrollIntoView({ behavior: "smooth" })}
-              onMarkNoResponseNeeded={() => handleToggleStaffResponse(false)}
-              isMarking={isUpdatingStaffResponse}
-            />
+            {/* SLA Overdue Warning Banner — management / support only */}
+            {canManage && (
+              <TicketSlaWarningBanner
+                sla={ticket.sla}
+                canManage={canManage}
+                onFocusReply={() => bottomRef.current?.scrollIntoView({ behavior: "smooth" })}
+                onMarkNoResponseNeeded={() => handleToggleStaffResponse(false)}
+                isMarking={isUpdatingStaffResponse}
+              />
+            )}
 
             {/* Original message */}
             <Card className={`rounded-none shadow-none ${isStaffInitiated ? "border-primary/20 bg-primary/[0.02]" : ""}`}>
@@ -1464,7 +1466,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                 )}
 
                 {/* Admin quick response status control in sidebar */}
-                {isAdmin && ticket.status !== "resolved" && (
+                {canManage && ticket.status !== "resolved" && (
                   <div className="pt-0.5">
                     {ticket.needs_staff_response === false ? (
                       <div className="flex items-center justify-between p-2 rounded-md bg-emerald-500/10 border border-emerald-500/25 text-xs text-emerald-700 dark:text-emerald-300">
@@ -1609,7 +1611,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                       {t('detail.prop_priority')}
                     </span>
                     <div>
-                      {isAdmin ? (
+                      {canManage ? (
                         <Select
                           value={ticket.priority || "medium"}
                           onValueChange={(val) =>
@@ -1642,7 +1644,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                       {t('detail.prop_assignee')}
                     </span>
                     <div className="max-w-[65%]">
-                      {isAdmin ? (
+                      {canManage ? (
                         <Select
                           value={(ticket as any).assigned_to || "unassigned"}
                           onValueChange={(val) => {
@@ -1651,14 +1653,28 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                               {
                                 feedbackId: ticket.id,
                                 assignedTo: newAssignee,
-                                force: !newAssignee,
+                                force: true,
                               },
                               {
+                                onSuccess: () => {
+                                  toast({
+                                    title: t('detail.toasts.ticket_reassigned_title', 'Felelős frissítve'),
+                                    description: newAssignee
+                                      ? t('detail.toasts.ticket_reassigned_desc', 'A hibajegy felelőse sikeresen módosítva lett.')
+                                      : t('detail.toasts.ticket_unassigned_desc', 'A hibajegy felelőse sikeresen törölve lett.'),
+                                  });
+                                },
                                 onError: (err: any) => {
                                   if (err?.message === "ALREADY_ASSIGNED") {
                                     toast({
                                       title: t('detail.toasts.ticket_already_assigned_title'),
                                       description: t('detail.toasts.ticket_already_assigned_desc'),
+                                      variant: "destructive",
+                                    });
+                                  } else {
+                                    toast({
+                                      title: t('detail.resolution_banner.error_title', 'Hiba történt'),
+                                      description: err?.message || t('detail.toasts.error_send', 'Hiba történt a művelet során'),
                                       variant: "destructive",
                                     });
                                   }

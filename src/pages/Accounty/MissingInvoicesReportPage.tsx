@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Download, TrendingUp, CheckCircle2, Clock, Zap, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -13,6 +14,9 @@ const MONTH_NAMES_HU = ['Jan', 'Feb', 'Már', 'Ápr', 'Máj', 'Jún', 'Júl', 'A
 
 export default function MissingInvoicesReportPage() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
+  const { t } = useTranslation('accounty');
   const [selectedClient, setSelectedClient] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
@@ -159,9 +163,9 @@ export default function MissingInvoicesReportPage() {
     <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-sm text-muted-foreground stagger-1">
-        <button onClick={() => navigate('/eaisybooks/missing-invoices')} className="hover:text-primary transition-colors">Hiányzó számlák</button>
+        <button onClick={() => navigate(`${prefix}/eaisybooks/missing-invoices`)} className="hover:text-primary transition-colors">{t('missing_invoices.title', 'Hiányzó számlák')}</button>
         <ChevronRight className="w-3.5 h-3.5" />
-        <span className="text-foreground font-medium">Riport</span>
+        <span className="text-foreground font-medium">{t('missing_invoices.reports', 'Riport')}</span>
       </nav>
 
       {/* Header */}
@@ -174,18 +178,18 @@ export default function MissingInvoicesReportPage() {
             <ArrowLeft className="w-5 h-5 text-muted-foreground" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Hiányzó számlák riport</h1>
-            <p className="text-sm text-muted-foreground mt-1">Bekérési statisztikák valós adatokból</p>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">{t('reports.missing_invoices_report', 'Hiányzó számlák riport')}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{t('reports.stats_from_real_data', 'Bekérési statisztikák valós adatokból')}</p>
           </div>
         </div>
         
         <div className="flex gap-3">
           <Select value={selectedClient} onValueChange={setSelectedClient}>
             <SelectTrigger className="w-[180px] bg-card border-border">
-              <SelectValue placeholder="Összes ügyfél" />
+              <SelectValue placeholder={t('reports.all_clients', 'Összes ügyfél')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Összes ügyfél</SelectItem>
+              <SelectItem value="all">{t('reports.all_clients', 'Összes ügyfél')}</SelectItem>
               {tableData.map(client => (
                 <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
               ))}
@@ -194,7 +198,7 @@ export default function MissingInvoicesReportPage() {
 
           <Button variant="outline" className="gap-2" onClick={exportToCSV}>
               <Download className="w-4 h-4" />
-              Riport Exportálása
+              {t('reports.export_report', 'Riport Exportálása')}
             </Button>
         </div>
       </div>

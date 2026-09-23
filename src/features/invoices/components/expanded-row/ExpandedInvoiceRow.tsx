@@ -31,6 +31,7 @@ import type {
   ExpandedInvoiceRowProps,
   MatchedTransaction,
 } from './types';
+import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
 
 export function ExpandedInvoiceRow({
   colSpan,
@@ -81,6 +82,7 @@ export function ExpandedInvoiceRow({
 }: ExpandedInvoiceRowProps) {
   const { t } = useTranslation(['invoices', 'common']);
   const queryClient = useQueryClient();
+  const { hasNavIntegration, defaultCurrency } = useCompanyJurisdiction();
 
   // Fetch official NAV VAT summary if not provided and source is NAV
   const { data: navVatData } = useQuery({
@@ -311,7 +313,7 @@ export function ExpandedInvoiceRow({
   const matcher = useTransactionMatcher({
     invoiceId: invoiceId || '',
     invoiceAmount: invoiceAmount || 0,
-    invoiceCurrency: invoiceCurrency || 'HUF',
+    invoiceCurrency: invoiceCurrency || defaultCurrency,
     invoiceDate: invoiceDate || '',
     companyId: companyId || '',
     onUpdate: onMatchUpdate,
@@ -420,7 +422,7 @@ export function ExpandedInvoiceRow({
                             Levonható ÁFA:
                           </span>
                           <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">
-                            {formatCurrency(effectiveDeductibility.deductibleVat, invoiceCurrency || 'HUF')}
+                            {formatCurrency(effectiveDeductibility.deductibleVat, invoiceCurrency || defaultCurrency)}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
@@ -429,7 +431,7 @@ export function ExpandedInvoiceRow({
                             Nem levonható ÁFA:
                           </span>
                           <span className="font-mono font-semibold text-amber-600 dark:text-amber-400">
-                            {formatCurrency(effectiveDeductibility.nonDeductibleVat, invoiceCurrency || 'HUF')}
+                            {formatCurrency(effectiveDeductibility.nonDeductibleVat, invoiceCurrency || defaultCurrency)}
                           </span>
                         </div>
                       </div>
@@ -451,7 +453,7 @@ export function ExpandedInvoiceRow({
                 />
 
                 {/* NAV Online Számla Cross-Check Banner */}
-                {(navStatus === 'missing_nav' || statusz === 'jovahagyasra_var') && (
+                {hasNavIntegration && (navStatus === 'missing_nav' || statusz === 'jovahagyasra_var') && (
                   approvedAt ? (
                     <div className="flex items-center justify-between p-3 rounded-lg border border-blue-200/70 bg-blue-50/50 dark:bg-blue-950/20 text-xs text-blue-800 dark:text-blue-300">
                       <div className="flex items-center gap-2">
@@ -497,7 +499,7 @@ export function ExpandedInvoiceRow({
                   <div className="pt-2">
                     <NavInvoiceVatSummaryCard
                       vatSummary={effectiveVatSummary}
-                      currency={invoiceCurrency || navVatData?.currency || 'HUF'}
+                      currency={invoiceCurrency || navVatData?.currency || defaultCurrency}
                       isReverseCharge={effectiveIsReverseCharge}
                       defaultExpanded={false}
                       className="mb-2"
@@ -758,7 +760,7 @@ export function ExpandedInvoiceRow({
                     onOpenChange={setShowManualPayment}
                     invoiceId={invoiceId || ''}
                     invoiceAmount={invoiceAmount || 0}
-                    invoiceCurrency={invoiceCurrency || 'HUF'}
+                    invoiceCurrency={invoiceCurrency || defaultCurrency}
                     onSuccess={onMatchUpdate}
                   />
                 )}

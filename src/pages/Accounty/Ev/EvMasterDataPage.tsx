@@ -1,6 +1,6 @@
 import { useDateRange } from '@/contexts/DateRangeContext';
 import React, { useState, useMemo, useCallback } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams , useLocation } from 'react-router-dom';
 import {
   Database, ArrowLeft, ChevronRight, Save, Edit3, X,
   Building2, User, MapPin, Phone, Mail, Globe,
@@ -50,6 +50,8 @@ function DataField({ label, value, icon: Icon, mono, isEditing, onChange }: {
 // ─── Main component ─────────────────────────────────────────────────────────
 
 export default function EvMasterDataPage() {
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const id = companyId;
   const [searchParams] = useSearchParams();
@@ -204,11 +206,11 @@ export default function EvMasterDataPage() {
     <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link to="/eaisybooks?tab=ev" className="hover:text-primary transition-colors flex items-center gap-1">
+        <Link to={`${prefix}/eaisybooks?tab=ev`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Portfólió
         </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-primary transition-colors">
+        <Link to={`${prefix}/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-primary transition-colors">
           {client?.name || 'Ügyfél'}
         </Link>
         <ChevronRight className="w-3 h-3" />

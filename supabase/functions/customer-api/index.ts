@@ -386,7 +386,7 @@ function getApiDocumentation() {
 }
 
 // ─── Main Handler ────────────────────────────────────
-serve(async (req) => {
+serve(async (req: Request) => {
   const startTime = Date.now();
 
   // 1. CORS preflight

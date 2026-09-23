@@ -1,6 +1,6 @@
 import { useDateRange } from '@/contexts/DateRangeContext';
 import React, { useState, useMemo } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams , useLocation } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, Landmark, Calculator, Info, MapPin, Send
 } from 'lucide-react';
@@ -14,6 +14,8 @@ import { useUpdateEvTaxReturn } from '@/hooks/useEvData';
 import { toast } from '@/hooks/use-toast';
 
 export default function EvHipaPage() {
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const id = companyId;
   const { data: client } = useAccountyClient(id);
@@ -110,7 +112,7 @@ export default function EvHipaPage() {
     <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link to={`/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
+        <Link to={`${prefix}/eaisybooks/${id}/${dateRange}/ev?year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> EV Főoldal
         </Link>
         <ChevronRight className="w-3 h-3" />

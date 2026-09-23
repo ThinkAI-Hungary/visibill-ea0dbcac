@@ -9,13 +9,22 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Globe, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface LanguageSwitcherProps {
-  variant?: 'compact' | 'full';
+  variant?: 'compact' | 'full' | 'header';
+  buttonVariant?: 'outline' | 'ghost' | 'default';
   className?: string;
+  showText?: boolean;
 }
 
-export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ variant = 'compact', className = '' }) => {
+export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ 
+  variant = 'header',
+  buttonVariant = 'outline',
+  className = '',
+  showText = true,
+}) => {
   const { i18n, t } = useTranslation('common');
   const navigate = useNavigate();
   const location = useLocation();
@@ -29,17 +38,17 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ variant = 'c
 
     // Synchronize URL if route routing is used
     const currentPath = location.pathname;
+    let nextPath = currentPath;
     if (targetLang === 'hr') {
       if (!currentPath.startsWith('/hr')) {
-        const nextPath = currentPath === '/' ? '/hr' : `/hr${currentPath}`;
-        navigate(nextPath, { replace: true });
+        nextPath = currentPath === '/' ? '/hr' : `/hr${currentPath}`;
       }
     } else {
       if (currentPath.startsWith('/hr')) {
-        const nextPath = currentPath.replace(/^\/hr(\/|$)/, '$1') || '/';
-        navigate(nextPath, { replace: true });
+        nextPath = currentPath.replace(/^\/hr(\/|$)/, '$1') || '/';
       }
     }
+    navigate(nextPath + location.search, { replace: true });
   };
 
   if (variant === 'full') {
@@ -71,31 +80,47 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ variant = 'c
         <TooltipTrigger asChild>
           <DropdownMenuTrigger asChild>
             <Button
-              variant="outline"
-              size="icon"
-              className={`h-8 w-8 hover:bg-primary/10 hover:text-primary hover:border-primary/30 text-xs font-semibold ${className}`}
-              aria-label={t('user.language')}
+              variant={buttonVariant}
+              size="sm"
+              className={cn(
+                "h-7 text-xs px-2.5 flex items-center gap-1.5 font-normal text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors",
+                className
+              )}
+              aria-label={t('user.language', { defaultValue: 'Nyelvválasztó' })}
             >
-              {currentLang === 'hr' ? '🇭🇷' : '🇭🇺'}
+              <Globe className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground" />
+              {showText && (
+                <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                  {currentLang.toUpperCase()}
+                </span>
+              )}
             </Button>
           </DropdownMenuTrigger>
         </TooltipTrigger>
-        <TooltipContent side="top">{t('user.language')}</TooltipContent>
+        <TooltipContent side="bottom">
+          {t('user.language', { defaultValue: 'Nyelv / Jezik' })}
+        </TooltipContent>
       </Tooltip>
-      <DropdownMenuContent align="end" className="w-36">
+      <DropdownMenuContent align="start" className="w-40 bg-card border-border shadow-md">
         <DropdownMenuItem
           onClick={() => switchLanguage('hu')}
-          className={`gap-2 cursor-pointer ${currentLang === 'hu' ? 'font-bold bg-accent' : ''}`}
+          className={`flex items-center justify-between gap-2 cursor-pointer ${currentLang === 'hu' ? 'font-bold bg-accent' : ''}`}
         >
-          <span className="text-base">🇭🇺</span>
-          <span>Magyar</span>
+          <div className="flex items-center gap-2">
+            <span className="text-base">🇭🇺</span>
+            <span>Magyar</span>
+          </div>
+          {currentLang === 'hu' && <Check className="w-4 h-4 text-primary" />}
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => switchLanguage('hr')}
-          className={`gap-2 cursor-pointer ${currentLang === 'hr' ? 'font-bold bg-accent' : ''}`}
+          className={`flex items-center justify-between gap-2 cursor-pointer ${currentLang === 'hr' ? 'font-bold bg-accent' : ''}`}
         >
-          <span className="text-base">🇭🇷</span>
-          <span>Hrvatski</span>
+          <div className="flex items-center gap-2">
+            <span className="text-base">🇭🇷</span>
+            <span>Hrvatski</span>
+          </div>
+          {currentLang === 'hr' && <Check className="w-4 h-4 text-primary" />}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

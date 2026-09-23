@@ -554,7 +554,7 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
                       {buyerMismatch.isMismatch && (
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-sans font-semibold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-300/60 dark:border-rose-700/60">
                           <AlertOctagon className="h-3 w-3" />
-                          Eltérő vevő
+                          {t('invoices:warnings.buyer_mismatch_badge', 'Eltérő vevő')}
                         </span>
                       )}
                     </div>
@@ -562,7 +562,12 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
                       <div className="p-2 rounded bg-rose-100/70 dark:bg-rose-900/30 text-[11px] text-rose-800 dark:text-rose-200 border border-rose-200 dark:border-rose-800/50 flex items-start gap-1.5">
                         <AlertOctagon className="h-3.5 w-3.5 shrink-0 text-rose-600 mt-0.5" />
                         <div>
-                          <strong>Figyelem:</strong> A vevő nem egyezik az aktív céggel ({selectedCompany?.name || '-'}, {selectedCompany?.tax_number || '-'})!
+                          <strong>{t('invoices:fad_panel.status_warning', 'Figyelem')}:</strong>{' '}
+                          {t('invoices:warnings.buyer_mismatch_notice', {
+                            company: selectedCompany?.name || '-',
+                            taxNumber: selectedCompany?.tax_number || '-',
+                            defaultValue: `A vevő nem egyezik az aktív céggel (${selectedCompany?.name || '-'}, ${selectedCompany?.tax_number || '-'})!`,
+                          })}
                         </div>
                       </div>
                     )}

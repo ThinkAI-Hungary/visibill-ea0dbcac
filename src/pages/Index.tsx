@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useDashboardPreferences } from '@/hooks/useDashboardPreferences';
+import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -80,7 +81,8 @@ const Index = () => {
     buildMonthlyData,
   } = useDashboardData();
 
-  const prefs = useDashboardPreferences();
+  const { defaultCurrency } = useCompanyJurisdiction(selectedCompany);
+  const prefs = useDashboardPreferences(defaultCurrency);
   const queryClient = useQueryClient();
 
   // GL accounts for FX mapping

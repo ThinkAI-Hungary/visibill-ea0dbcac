@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,6 +42,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { ContentSkeleton } from '@/components/ui/content-skeleton';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
+import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
 
 interface SyncLog {
   id: string;
@@ -64,12 +65,19 @@ const Integrations = () => {
   const { selectedCompany, loading: companyLoading } = useCompany();
   const { role } = useUserRole();
   const isOwner = selectedCompany?.owner_id === user?.id || role === 'owner';
+  const { hasNavIntegration } = useCompanyJurisdiction();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'banking';
   const setActiveTab = (tabId: string) => {
     setSearchParams({ tab: tabId }, { replace: true });
   };
+
+  useEffect(() => {
+    if (!hasNavIntegration && activeTab === 'nav') {
+      setActiveTab('banking');
+    }
+  }, [hasNavIntegration, activeTab]);
 
   const { consents = [] } = useAggreg8(selectedCompany?.id || '');
 
@@ -263,7 +271,7 @@ const Integrations = () => {
       if (error) throw error;
       return (data || []) as SyncLog[];
     },
-    enabled: !!selectedCompany?.id,
+    enabled: !!selectedCompany?.id && hasNavIntegration,
     staleTime: 2 * 60 * 1000,
   });
 
@@ -308,82 +316,89 @@ const Integrations = () => {
     </div>
   );
 
-  // Master-Detail Navigációs csoportok és elemek
-  const INTEGRATION_NAV = [
-    {
-      group: 'Pénzintézet & Hatóság',
-      items: [
-        {
-          id: 'banking',
-          title: 'Banki Kapcsolatok',
-          subtitle: 'PSD2 Open Banking (Aggreg8)',
-          icon: Landmark,
-          color: 'text-sky-600 bg-sky-50 dark:bg-sky-950/40 border-sky-200 dark:border-sky-800',
-          badgeText: consents.length > 0 ? `${consents.length} bank` : 'Nincs kapcsolat',
-          badgeClass: consents.length > 0
-            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
-            : 'bg-muted text-muted-foreground',
-        },
-        {
-          id: 'nav',
-          title: 'NAV Online Számla',
-          subtitle: '3.0 Rendszerkapcsolat & Szinkron',
-          icon: Shield,
-          color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800',
-          badgeText: syncLogs.length > 0 ? 'Aktív' : 'Beállítás',
-          badgeClass: syncLogs.length > 0
-            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
-            : 'bg-muted text-muted-foreground',
-        },
-      ],
-    },
-    {
-      group: 'Számlázás & Dokumentum',
-      items: [
-        {
-          id: 'szamlazz',
-          title: 'Számlázz.hu Agent',
-          subtitle: 'Közvetlen számlaátvétel',
-          icon: Receipt,
-          color: 'text-amber-600 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800',
-          badgeText: 'Agent API',
-          badgeClass: 'bg-muted text-muted-foreground',
-        },
-        {
-          id: 'email',
-          title: 'E-mail Számlafogadás',
-          subtitle: 'Alias & Saját IMAP/SMTP',
-          icon: Mail,
-          color: 'text-purple-600 bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800',
-          badgeText: 'Alias aktív',
-          badgeClass: 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400 border-purple-200 dark:border-purple-800',
-        },
-        {
-          id: 'relax',
-          title: 'Relax Adatimport',
-          subtitle: 'XML és DMP könyvelési import',
-          icon: Database,
-          color: 'text-teal-600 bg-teal-50 dark:bg-teal-950/40 border-teal-200 dark:border-teal-800',
-          badgeText: 'Archívum',
-          badgeClass: 'bg-muted text-muted-foreground',
-        },
-      ],
-    },
-    {
-      group: 'Fejlesztők & Rendszer',
-      items: [
-        {
-          id: 'api',
-          title: 'REST API & Kulcsok',
-          subtitle: 'M2M kapcsolatok & Webhookok',
-          icon: Zap,
-          color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800',
-          badgeText: 'API hozzáférés',
-          badgeClass: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800',
-        },
-      ],
-    },
-  ];
+  // Master-Detail Navigációs csoportok és elemek (jurisdiction-tudatos)
+  const INTEGRATION_NAV = useMemo(() => {
+    const rawNav = [
+      {
+        group: 'Pénzintézet & Hatóság',
+        items: [
+          {
+            id: 'banking',
+            title: 'Banki Kapcsolatok',
+            subtitle: 'PSD2 Open Banking (Aggreg8)',
+            icon: Landmark,
+            color: 'text-sky-600 bg-sky-50 dark:bg-sky-950/40 border-sky-200 dark:border-sky-800',
+            badgeText: consents.length > 0 ? `${consents.length} bank` : 'Nincs kapcsolat',
+            badgeClass: consents.length > 0
+              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+              : 'bg-muted text-muted-foreground',
+          },
+          ...(hasNavIntegration
+            ? [
+                {
+                  id: 'nav',
+                  title: 'NAV Online Számla',
+                  subtitle: '3.0 Rendszerkapcsolat & Szinkron',
+                  icon: Shield,
+                  color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800',
+                  badgeText: syncLogs.length > 0 ? 'Aktív' : 'Beállítás',
+                  badgeClass: syncLogs.length > 0
+                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+                    : 'bg-muted text-muted-foreground',
+                },
+              ]
+            : []),
+        ],
+      },
+      {
+        group: 'Számlázás & Dokumentum',
+        items: [
+          {
+            id: 'szamlazz',
+            title: 'Számlázz.hu Agent',
+            subtitle: 'Közvetlen számlaátvétel',
+            icon: Receipt,
+            color: 'text-amber-600 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800',
+            badgeText: 'Agent API',
+            badgeClass: 'bg-muted text-muted-foreground',
+          },
+          {
+            id: 'email',
+            title: 'E-mail Számlafogadás',
+            subtitle: 'Alias & Saját IMAP/SMTP',
+            icon: Mail,
+            color: 'text-purple-600 bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800',
+            badgeText: 'Alias aktív',
+            badgeClass: 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400 border-purple-200 dark:border-purple-800',
+          },
+          {
+            id: 'relax',
+            title: 'Relax Adatimport',
+            subtitle: 'XML és DMP könyvelési import',
+            icon: Database,
+            color: 'text-teal-600 bg-teal-50 dark:bg-teal-950/40 border-teal-200 dark:border-teal-800',
+            badgeText: 'Archívum',
+            badgeClass: 'bg-muted text-muted-foreground',
+          },
+        ],
+      },
+      {
+        group: 'Fejlesztők & Rendszer',
+        items: [
+          {
+            id: 'api',
+            title: 'REST API & Kulcsok',
+            subtitle: 'M2M kapcsolatok & Webhookok',
+            icon: Zap,
+            color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800',
+            badgeText: 'API hozzáférés',
+            badgeClass: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800',
+          },
+        ],
+      },
+    ];
+    return rawNav.filter(group => group.items.length > 0);
+  }, [hasNavIntegration, consents.length, syncLogs.length]);
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -502,7 +517,8 @@ const Integrations = () => {
             </div>
 
             {/* ── PANEL 2: NAV Online Számla ── */}
-            <div className={activeTab === 'nav' ? 'block' : 'hidden'}>
+            {hasNavIntegration && (
+              <div className={activeTab === 'nav' ? 'block' : 'hidden'}>
               <Card className="border-primary/10 hover:border-primary/20 transition-colors shadow-xs">
                 <CardHeader>
                   <div className="flex items-center gap-4">
@@ -612,7 +628,8 @@ const Integrations = () => {
                   </Tabs>
                 </CardContent>
               </Card>
-            </div>
+              </div>
+            )}
 
             {/* ── PANEL 3: Számlázz.hu Agent ── */}
             <div className={activeTab === 'szamlazz' ? 'block' : 'hidden'}>

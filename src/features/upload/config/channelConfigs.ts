@@ -1,5 +1,6 @@
 import { FileText, Coins, Landmark, Wallet, CreditCard, Package } from 'lucide-react';
 import type { UploadChannelId, ChannelConfig } from '../types';
+import i18n from '@/lib/i18n';
 
 export const CHANNEL_CONFIGS: Record<UploadChannelId, ChannelConfig> = {
   invoices: {
@@ -22,7 +23,11 @@ export const CHANNEL_CONFIGS: Record<UploadChannelId, ChannelConfig> = {
     ],
     fileTypeDescription: 'PDF vagy kép fájlokat (JPG, PNG, WebP)',
     dragPrompt: 'Húzd ide a számlafájlokat, vagy kattints a tallózáshoz',
-    actionButtonLabel: (count: number) => `${count} számlafájl feltöltése`,
+    actionButtonLabel: (count: number) =>
+      i18n.t('upload:channels_config.invoices.action_button', {
+        count,
+        defaultValue: `${count} számlafájl feltöltése`,
+      }),
     documentCategory: 'invoice',
   },
   vouchers: {
@@ -45,7 +50,11 @@ export const CHANNEL_CONFIGS: Record<UploadChannelId, ChannelConfig> = {
     ],
     fileTypeDescription: 'PDF vagy kép fájlokat (JPG, PNG, WebP)',
     dragPrompt: 'Húzd ide a pénztárbizonylat fájlokat, vagy kattints a tallózáshoz',
-    actionButtonLabel: (count: number) => `${count} pénztárbizonylat feltöltése`,
+    actionButtonLabel: (count: number) =>
+      i18n.t('upload:channels_config.vouchers.action_button', {
+        count,
+        defaultValue: `${count} pénztárbizonylat feltöltése`,
+      }),
     documentCategory: 'penztarbizonylat',
     defaultMetadata: {
       source: 'manual_voucher_upload',
@@ -71,7 +80,11 @@ export const CHANNEL_CONFIGS: Record<UploadChannelId, ChannelConfig> = {
     ],
     fileTypeDescription: 'PDF, CSV vagy Excel (XLS, XLSX) fájlokat',
     dragPrompt: 'Húzd ide a tranzakciós fájlokat, vagy kattints a tallózáshoz',
-    actionButtonLabel: (count: number) => `${count} tranzakciós fájl feltöltése`,
+    actionButtonLabel: (count: number) =>
+      i18n.t('upload:channels_config.transactions.action_button', {
+        count,
+        defaultValue: `${count} tranzakciós fájl feltöltése`,
+      }),
     hasBankHintSelector: true,
   },
   salaries: {
@@ -93,7 +106,11 @@ export const CHANNEL_CONFIGS: Record<UploadChannelId, ChannelConfig> = {
     ],
     fileTypeDescription: 'PDF, CSV vagy Excel fájlokat',
     dragPrompt: 'Húzd ide a bér- vagy járulékfájlokat, vagy kattints a tallózáshoz',
-    actionButtonLabel: (count: number) => `${count} bérfájl feltöltése`,
+    actionButtonLabel: (count: number) =>
+      i18n.t('upload:channels_config.salaries.action_button', {
+        count,
+        defaultValue: `${count} bérfájl feltöltése`,
+      }),
     documentCategory: 'payroll',
     defaultMetadata: {
       source: 'manual_salary_upload',
@@ -121,7 +138,11 @@ export const CHANNEL_CONFIGS: Record<UploadChannelId, ChannelConfig> = {
     ],
     fileTypeDescription: 'XLS, XLSX, CSV, PDF vagy DOCX fájlokat',
     dragPrompt: 'Húzd ide a futár riportokat, vagy kattints a tallózáshoz',
-    actionButtonLabel: (count: number) => `${count} riportfájl feltöltése`,
+    actionButtonLabel: (count: number) =>
+      i18n.t('upload:channels_config.reports.action_button', {
+        count,
+        defaultValue: `${count} riportfájl feltöltése`,
+      }),
     hasCourierSelector: true,
   },
 };

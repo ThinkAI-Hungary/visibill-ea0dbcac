@@ -115,4 +115,42 @@ describe('VatSection column layout & net revenue/costs display', () => {
     expect(totalRowCells[1].textContent).not.toContain('71');
     expect(totalRowCells[2].textContent).toContain('11');
   });
+
+  it('renders EUR values properly when baseCurrency is EUR without HUF hardcoding', () => {
+    const mockEurBreakdown = {
+      outboundVatCategories: [
+        { rate: '25%', netAmount: 126032.16, vatAmount: 31508.40 },
+        { rate: 'Oslobođeno PDV-a', netAmount: 19457.62, vatAmount: 0 },
+      ],
+      inboundVatCategories: [
+        { rate: '25%', netAmount: 48118.25, vatAmount: 12028.69 },
+      ],
+      totalOutboundVat: 31508.40,
+      totalInboundVat: 12028.69,
+      baseCurrency: 'EUR',
+    };
+
+    render(
+      <VatSection
+        navVatData={undefined}
+        vatBreakdown={mockEurBreakdown}
+        selectedCurrency="EUR"
+        displayedPeriod="01.01.2026. - 31.12.2026."
+        convertToSelectedCurrency={(amt, from, to) => from === to ? amt : amt}
+        vatSectionOpen={true}
+        onVatSectionOpenChange={vi.fn()}
+      />
+    );
+
+    const tables = screen.getAllByRole('table');
+    expect(tables.length).toBe(2);
+
+    // Outbound table has 25% and Oslobođeno PDV-a
+    const rows = tables[0].querySelectorAll('tbody tr');
+    expect(rows[0].textContent).toContain('25%');
+    expect(rows[0].textContent).toMatch(/€|EUR/);
+    expect(rows[1].textContent).toContain('Oslobođeno PDV-a');
+    expect(rows[1].textContent).toMatch(/€|EUR/);
+  });
 });
+

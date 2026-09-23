@@ -24,7 +24,7 @@ export function getDateFnsLocale() {
  */
 export function formatCurrencyLocale(
   amount: number,
-  currency?: string,
+  currency?: string | null,
   compactOrOptions?: boolean | Intl.NumberFormatOptions
 ): string {
   const currentLang = getActiveLocale();
