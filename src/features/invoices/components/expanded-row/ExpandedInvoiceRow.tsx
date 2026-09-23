@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link2, Plus, CreditCard, RotateCcw, XCircle, AlertTriangle, CheckCircle2, ShieldCheck, Tag, Sparkles } from 'lucide-react';
+import { Link2, Plus, CreditCard, RotateCcw, XCircle, AlertTriangle, CheckCircle2, ShieldCheck, Tag, Sparkles, Landmark } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ import { StornoSettleDialog } from '@/components/invoices/StornoSettleDialog';
 // Subcomponents
 import { GeneralLedgerBadgeSection } from './GeneralLedgerBadgeSection';
 import { InvoiceVatCodeSelector } from '@/components/vat/InvoiceVatCodeSelector';
+import { InvoiceGlAccountSelector } from '@/components/invoices/InvoiceGlAccountSelector';
 import { NavInvoiceVatSummaryCard } from '@/components/nav/NavInvoiceVatSummaryCard';
 import { NettingCardSection } from './NettingCardSection';
 import { ContinuousServiceCardSection } from './ContinuousServiceCardSection';
@@ -398,6 +399,25 @@ export function ExpandedInvoiceRow({
                         currentVatCodeId={vatCodeId}
                         currentVatRowOverride={vatRowOverride}
                         direction={invoiceType ? (invoiceType.toUpperCase() as 'INBOUND' | 'OUTBOUND') : 'INBOUND'}
+                        onUpdated={onMatchUpdate}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Kettős könyvviteli kontírozás: Vevő (311-317) / Szállító (454) + ÁFA (467/466) */}
+                  <div className="mb-4 expand-animate bg-card border border-border/40 p-3 rounded-lg flex flex-col gap-2 min-w-[260px]">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      <Landmark className="h-3.5 w-3.5 text-primary" />
+                      <span>{invoiceType?.toUpperCase() === 'OUTBOUND' ? 'Vevői & ÁFA kontír' : 'Szállítói & ÁFA kontír'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <InvoiceGlAccountSelector
+                        invoiceId={invoiceSource === 'submitted' ? invoiceId : undefined}
+                        navInvoiceId={invoiceSource === 'nav' ? invoiceId : undefined}
+                        invoiceNumber={invoiceNumber}
+                        companyId={companyId}
+                        direction={invoiceType ? (invoiceType.toUpperCase() as 'INBOUND' | 'OUTBOUND') : 'INBOUND'}
+                        currency={invoiceCurrency}
                         onUpdated={onMatchUpdate}
                       />
                     </div>
