@@ -276,7 +276,51 @@ Deno.serve(async (req: Request) => {
               firmName = (firm as any)?.name
             }
 
+            // Generate or fetch magic link portal token for client contact
+            let clientPortalUrl = ''
+            try {
+              const minExp = new Date(Date.now() + 7 * 86400000).toISOString()
+              const { data: cTokens } = await supabase
+                .from('accounty_portal_tokens')
+                .select('token')
+                .eq('company_id', companyId)
+                .eq('is_active', true)
+                .gt('expires_at', minExp)
+                .order('created_at', { ascending: false })
+                .limit(1)
+
+              let cToken = cTokens?.[0]?.token
+              if (!cToken && assignedUsers?.length > 0) {
+                const creator = assignedUsers[0].accountant_user_id
+                const newToken = crypto.randomUUID()
+                const expiresAt = new Date(Date.now() + 30 * 86400000).toISOString()
+                const { data: created } = await supabase
+                  .from('accounty_portal_tokens')
+                  .insert({
+                    company_id: companyId,
+                    token: newToken,
+                    created_by: creator,
+                    expires_at: expiresAt,
+                    is_active: true,
+                  })
+                  .select('token')
+                  .single()
+                if (created) cToken = created.token
+              }
+
+              if (cToken) {
+                const appUrl = Deno.env.get('APP_URL') || 'https://app.visibill.hu'
+                clientPortalUrl = `${appUrl}/portal/${cToken}?company_name=${encodeURIComponent(companyName)}`
+              }
+            } catch (tokErr) {
+              console.error(`[accounty-detect-missing] Portal token error for ${companyId}:`, tokErr)
+            }
+
             const greeting = commPrefs.contact_name ? `Kedves ${commPrefs.contact_name}!` : 'Tisztelt Ügyfelünk!'
+            const portalButtonHtml = clientPortalUrl
+              ? `<p style="margin:20px 0;text-align:center"><a href="${clientPortalUrl}" style="display:inline-block;padding:12px 28px;background:#0070f3;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;font-size:14px">Számlák feltöltése</a></p>`
+              : ''
+
             const clientBodyHtml = `
               <p>${greeting}</p>
               <p>A <strong>${companyName}</strong> könyvelésével kapcsolatban az alábbi dokumentumok hiányoznak a rendszerünkből:</p>
@@ -288,6 +332,7 @@ Deno.serve(async (req: Request) => {
                 <tbody>${clientItemsSummary}</tbody>
               </table>
               ${clientMoreText}
+              ${portalButtonHtml}
               <p style="margin-top:16px">Kérjük, juttassa el a hiányzó dokumentumokat könyvelőjéhez mielőbb.</p>
               <p style="color:#6b7280;font-size:13px;margin-top:20px">Üdvözlettel,<br/>${firmName || 'Könyvelőirodája'}</p>
             `

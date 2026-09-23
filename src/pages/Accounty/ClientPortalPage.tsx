@@ -119,6 +119,7 @@ export default function ClientPortalPage() {
   const isDirectClientRoute = window.location.pathname.startsWith('/portal') || window.location.pathname.startsWith('/client-portal');
   const searchParams = new URLSearchParams(window.location.search);
   const queryCompanyId = searchParams.get('company') || '';
+  const queryCompanyName = searchParams.get('company_name') || searchParams.get('name') || '';
   const periodParam = searchParams.get('period') || '';
   const itemsParam = searchParams.get('items') || '';
   const isPayrollMode = Boolean(periodParam || itemsParam);
@@ -255,7 +256,7 @@ export default function ClientPortalPage() {
     staleTime: 300_000,
   });
 
-  const effectiveCompanyName = company?.name || (company as any)?.companyName || directCompany?.name || 'Ügyfél';
+  const effectiveCompanyName = company?.name || (company as any)?.companyName || directCompany?.name || queryCompanyName || 'Ügyfél';
   const activeEmployees = useMemo(() => employees.filter(e => e.status === 'active'), [employees]);
 
   const currentMonth = new Date().getMonth() + 1;
@@ -497,13 +498,23 @@ export default function ClientPortalPage() {
       const categoryLabels: Record<string, string> = {
         bejovo: 'Bejövő számla', kimeno: 'Kimenő számla', bank: 'Banki tétel', ber: 'Bér dokumentum',
       };
+
+      let displayTitle = item.title;
+      let displaySubtitle = item.subtitle || '';
+      if (item.invoiceNumber && !displaySubtitle.includes(item.invoiceNumber) && !displayTitle.includes(item.invoiceNumber)) {
+        displaySubtitle = displaySubtitle ? `${displaySubtitle} (${item.invoiceNumber})` : `Számlaszám: ${item.invoiceNumber}`;
+      }
+      const fullTitle = displaySubtitle ? `${displayTitle} – ${displaySubtitle}` : displayTitle;
+      const amtStr = item.amount ? ` · ${new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 0 }).format(Math.abs(item.amount))} Ft` : '';
+      const desc = `${categoryLabels[item.category] || item.category}${amtStr}`;
+
       return {
         id: item.id,
         type: (item.category || 'bejovo') as PortalRequest['type'],
-        title: `${item.title}${item.subtitle ? ` – ${item.subtitle}` : ''}${item.invoiceNumber ? ` (${item.invoiceNumber})` : ''}`,
-        description: categoryLabels[item.category] || item.category,
+        title: fullTitle,
+        description: desc,
         category: categoryLabels[item.category] || item.category,
-        status: item.notificationCount > 0 ? 'submitted' : 'pending',
+        status: item.status === 'resolved' ? 'approved' : item.notificationCount > 0 ? 'submitted' : 'pending',
         dueDate: item.itemDate || new Date().toISOString(),
       };
     });
@@ -606,10 +617,11 @@ export default function ClientPortalPage() {
                 : 'Könyvelője hiányzó dokumentumokat kér Öntől. Kérjük, válassza ki a megfelelő fájlokat az egyes tételeknél, majd kattintson a feltöltés gombra.'}
             </p>
             <div className="flex items-center gap-2 mt-4">
-              <span className={cn("w-2 h-2 rounded-full animate-pulse", isPayrollMode ? "bg-primary" : "bg-amber-500")} />
-              <span className={cn("text-sm font-semibold", isPayrollMode ? "text-primary" : "text-amber-600 dark:text-amber-400")}>
-                {requests.length} {isPayrollMode ? 'bekérendő bérszámfejtési tétel' : 'hiányzó dokumentum'}
-                {isPayrollMode && periodFormatted ? ` (${periodFormatted})` : ''}
+              <span className={cn("w-2 h-2 rounded-full", requests.filter(r => r.status !== 'approved' && !uploadedIds.has(r.id)).length > 0 ? (isPayrollMode ? "bg-primary animate-pulse" : "bg-amber-500 animate-pulse") : "bg-green-500")} />
+              <span className={cn("text-sm font-semibold", requests.filter(r => r.status !== 'approved' && !uploadedIds.has(r.id)).length > 0 ? (isPayrollMode ? "text-primary" : "text-amber-600 dark:text-amber-400") : "text-green-600 dark:text-green-400")}>
+                {requests.filter(r => r.status !== 'approved' && !uploadedIds.has(r.id)).length > 0
+                  ? `${requests.filter(r => r.status !== 'approved' && !uploadedIds.has(r.id)).length} ${isPayrollMode ? 'bekérendő bérszámfejtési tétel' : 'hiányzó dokumentum'}${isPayrollMode && periodFormatted ? ` (${periodFormatted})` : ''}`
+                  : 'Minden dokumentum sikeresen feltöltve!'}
               </span>
             </div>
           </div>
@@ -640,7 +652,7 @@ export default function ClientPortalPage() {
                   const isOverdue = new Date(req.dueDate) < new Date() && req.status === 'pending';
                   const staged = stagedFiles[req.id] || [];
                   const isUploading = uploadingIds.has(req.id);
-                  const isUploaded = uploadedIds.has(req.id);
+                  const isUploaded = uploadedIds.has(req.id) || req.status === 'approved';
 
                   return (
                     <div key={req.id} className={cn(
