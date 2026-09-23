@@ -475,8 +475,8 @@
     "semantic_hash": ""
   },
   "src/components/tickets/TicketDetailView.tsx": {
-    "mtime": 1790031217.1071775,
-    "ast_hash": "b77687edce2c363f73f2e1e09e163f52",
+    "mtime": 1790178812.2317274,
+    "ast_hash": "acf1b9348685a6cb60f3157ac33e5d53",
     "semantic_hash": ""
   },
   "src/components/tickets/TicketPriorityBadge.tsx": {
@@ -1560,8 +1560,8 @@
     "semantic_hash": ""
   },
   "src/pages/TicketsPage.tsx": {
-    "mtime": 1790031217.1121814,
-    "ast_hash": "6c963946cc7bd0e5bfe03302ac381a42",
+    "mtime": 1790177823.8650396,
+    "ast_hash": "0ad576e37d44cfba0e369f0b7a908cd1",
     "semantic_hash": ""
   },
   "src/pages/TransactionsPage.tsx": {
@@ -3555,8 +3555,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-035-ticket-system.md": {
-    "mtime": 1789110090.3319328,
-    "ast_hash": "cdf393c44fe85ff0e10a50947f467163",
+    "mtime": 1790178831.1109207,
+    "ast_hash": "4b17cfda331287fc7d89583b363007c3",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-036-management-dashboard.md": {
@@ -10250,8 +10250,8 @@
     "semantic_hash": ""
   },
   "src/locales/hr/tickets.json": {
-    "mtime": 1790031217.1111803,
-    "ast_hash": "7fdb25744d72b4bddc3bbbe647962914",
+    "mtime": 1790178784.2589717,
+    "ast_hash": "973fcc71c69d03bb5671f133e9b777f6",
     "semantic_hash": ""
   },
   "src/locales/hr/transfers.json": {
@@ -10290,8 +10290,8 @@
     "semantic_hash": ""
   },
   "src/locales/hu/tickets.json": {
-    "mtime": 1790031217.1121814,
-    "ast_hash": "bd2755d948311852cf613fd76c637371",
+    "mtime": 1790178779.085266,
+    "ast_hash": "5e5588f34dfcd77b654d1617674e2b8b",
     "semantic_hash": ""
   },
   "src/locales/hu/transfers.json": {
@@ -10370,8 +10370,8 @@
     "semantic_hash": ""
   },
   "src/test/tickets/ticketsPageActiveFilter.test.tsx": {
-    "mtime": 1790031217.1146853,
-    "ast_hash": "f8f6c09aa7b2ff1cfbabb23284c0cd99",
+    "mtime": 1790177893.0075736,
+    "ast_hash": "8dcbba3a3179b5cf403906592d1a9b89",
     "semantic_hash": ""
   },
   "src/features/management/__tests__/controlCenterStickyTabs.test.tsx": {
@@ -10380,8 +10380,8 @@
     "semantic_hash": ""
   },
   "src/test/tickets/ticketsPageStickyTabs.test.tsx": {
-    "mtime": 1790031217.1146853,
-    "ast_hash": "7a2b3bcc4393b24337d44cd2dd202d3b",
+    "mtime": 1790177887.321866,
+    "ast_hash": "9774c774a2dc0e9ec1d7b547a5df2d28",
     "semantic_hash": ""
   },
   "src/components/tickets/TicketResolutionBanner.tsx": {
@@ -10405,8 +10405,8 @@
     "semantic_hash": ""
   },
   "src/test/tickets/ticketsConsoleSearch.test.tsx": {
-    "mtime": 1790031217.1146853,
-    "ast_hash": "13d8c61ddb41f6144e60597261c6fce5",
+    "mtime": 1790177899.0034213,
+    "ast_hash": "950cd5e970159b8f098e8a49f9a17eff",
     "semantic_hash": ""
   },
   "src/test/tickets/ticketResolutionUnread.test.tsx": {
@@ -10455,8 +10455,8 @@
     "semantic_hash": ""
   },
   "src/test/tickets/ticketsUnreadSort.test.tsx": {
-    "mtime": 1790031217.115688,
-    "ast_hash": "c0c8ef6ae4dcf157258c761c8c086e6a",
+    "mtime": 1790177880.1341581,
+    "ast_hash": "569ff226bd18867b540cf3cb29e4ba06",
     "semantic_hash": ""
   },
   "src/locales/hr/exchangeRates.json": {
@@ -11555,13 +11555,13 @@
     "semantic_hash": ""
   },
   "src/components/tickets/TicketSlaBadge.tsx": {
-    "mtime": 1790031217.1071775,
-    "ast_hash": "a44974370b32cb13846ef479d119eb2d",
+    "mtime": 1790177731.8826628,
+    "ast_hash": "8dcdb5b4192b0c6f4f62f5117a9b3732",
     "semantic_hash": ""
   },
   "src/components/tickets/TicketSlaWarningBanner.tsx": {
-    "mtime": 1790031217.1071775,
-    "ast_hash": "21480d5729ef9ab9e98c159e7099adbd",
+    "mtime": 1790177739.4946146,
+    "ast_hash": "a7e7259e5f487e1490d2c28fbcbd870f",
     "semantic_hash": ""
   },
   "src/test/navigation/dashboardLegacyRedirect.test.tsx": {
@@ -11570,8 +11570,8 @@
     "semantic_hash": ""
   },
   "src/test/tickets/ticketSlaIntegration.test.tsx": {
-    "mtime": 1790031217.113181,
-    "ast_hash": "5b4873dce22e2ac1cfb3e6f3312d08fb",
+    "mtime": 1790177935.5687685,
+    "ast_hash": "8af95d0623ae74404f6b3017c3c8ebd8",
     "semantic_hash": ""
   },
   "src/test/tickets/ticketSlaUtils.test.ts": {
@@ -11857,6 +11857,21 @@
   "docs/product/decisions/P-107-global-header-inline-language-switcher-ux.md": {
     "mtime": 1790175028.295437,
     "ast_hash": "1b28c1dd4011ce4582f5d21970ccb0f8",
+    "semantic_hash": ""
+  },
+  "src/test/tickets/ticketSlaVisibility.test.tsx": {
+    "mtime": 1790177945.5285943,
+    "ast_hash": "18d51d13c3b50a5302c9cc1b9742596b",
+    "semantic_hash": ""
+  },
+  "src/test/tickets/ticketAssigneeReassignment.test.tsx": {
+    "mtime": 1790180051.115387,
+    "ast_hash": "659bdb56bfc3810572433708e59460cf",
+    "semantic_hash": ""
+  },
+  "src/test/tickets/useUpdateTicketAssignee.test.tsx": {
+    "mtime": 1790178869.7608376,
+    "ast_hash": "d31851a4eb739fa08b83c7c7970c04cf",
     "semantic_hash": ""
   }
 }

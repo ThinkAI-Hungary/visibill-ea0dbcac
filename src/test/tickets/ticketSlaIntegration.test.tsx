@@ -23,6 +23,7 @@ vi.mock('@/hooks/useTickets', () => ({
   useRequestTicketResolution: vi.fn(() => ({ mutate: vi.fn() })),
   useRespondTicketResolution: vi.fn(() => ({ mutate: vi.fn() })),
   useIsSupportAdmin: vi.fn(),
+  useIsManagementRole: vi.fn(() => ({ data: false, isLoading: false })),
   useSupportAgents: vi.fn(),
   useUpdateTicketAssignee: vi.fn(() => ({ mutateAsync: vi.fn() })),
   useUpdateTicketStatus: vi.fn(() => ({ mutateAsync: vi.fn() })),
@@ -221,5 +222,24 @@ describe('Ticket 48h SLA Reminder Integration in TicketsPage', () => {
         needsStaffResponse: false,
       });
     });
+  });
+
+  it('hides SLA badge and quick mark button in the table for regular users', () => {
+    vi.mocked(useIsSupportAdmin).mockReturnValue({ data: false } as any);
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <TicketsPage embeddedInManagement={false} />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    // Tickets are visible
+    expect(screen.getByText('#EB-0100')).toBeInTheDocument();
+    expect(screen.getByText('#EB-0101')).toBeInTheDocument();
+
+    // SLA badge and quick mark button are NOT visible for regular users
+    expect(screen.queryByText(/48h\+ \(3 nap\)/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Nem igényel választ/i })).not.toBeInTheDocument();
   });
 });

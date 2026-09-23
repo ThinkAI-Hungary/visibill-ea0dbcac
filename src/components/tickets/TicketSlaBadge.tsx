@@ -12,14 +12,16 @@ interface TicketSlaBadgeProps {
   sla?: TicketSlaInfo | null;
   className?: string;
   compact?: boolean;
+  canManage?: boolean;
 }
 
 export const TicketSlaBadge: React.FC<TicketSlaBadgeProps> = ({
   sla,
   className = '',
   compact = false,
+  canManage = true,
 }) => {
-  if (!sla || sla.severity === 'normal') {
+  if (canManage === false || !sla || sla.severity === 'normal') {
     return null;
   }
 

@@ -9,6 +9,7 @@ import { useTickets, useIsSupportAdmin, useSupportAgents } from '@/hooks/useTick
 vi.mock('@/hooks/useTickets', () => ({
   useTickets: vi.fn(),
   useIsSupportAdmin: vi.fn(),
+  useIsManagementRole: vi.fn(() => ({ data: false, isLoading: false })),
   useSupportAgents: vi.fn(),
   useUpdateTicketAssignee: vi.fn(() => ({ mutateAsync: vi.fn() })),
   useUpdateTicketStatus: vi.fn(() => ({ mutateAsync: vi.fn() })),

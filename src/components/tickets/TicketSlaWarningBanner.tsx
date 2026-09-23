@@ -5,6 +5,7 @@ import type { TicketSlaInfo } from '@/utils/ticketSlaUtils';
 
 interface TicketSlaWarningBannerProps {
   sla?: TicketSlaInfo | null;
+  canManage?: boolean;
   onFocusReply?: () => void;
   onMarkNoResponseNeeded?: () => void;
   isMarking?: boolean;
@@ -13,12 +14,13 @@ interface TicketSlaWarningBannerProps {
 
 export const TicketSlaWarningBanner: React.FC<TicketSlaWarningBannerProps> = ({
   sla,
+  canManage = true,
   onFocusReply,
   onMarkNoResponseNeeded,
   isMarking = false,
   className = '',
 }) => {
-  if (!sla || !sla.isOverdue48h) {
+  if (canManage === false || !sla || !sla.isOverdue48h) {
     return null;
   }
 

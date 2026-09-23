@@ -72,6 +72,7 @@ import { TicketDetailView } from "@/components/tickets/TicketDetailView";
 import {
   useTickets,
   useIsSupportAdmin,
+  useIsManagementRole,
   useSupportAgents,
   useUpdateTicketAssignee,
   useUpdateTicketStatus,
@@ -177,7 +178,9 @@ export default function TicketsPage({
   const { user } = useAuth();
   const [showAllTickets, setShowAllTickets] = useState(false);
   const { data: tickets = [], isLoading, refetch } = useTickets();
-  const { data: isAdmin } = useIsSupportAdmin();
+  const { data: isSupportAdmin } = useIsSupportAdmin();
+  const { data: isManagement } = useIsManagementRole();
+  const isAdmin = Boolean(isSupportAdmin || isManagement);
   const { data: supportAgents = [] } = useSupportAgents();
   const { mutateAsync: updateAssignee } = useUpdateTicketAssignee();
   const { mutateAsync: updateStatus } = useUpdateTicketStatus();
@@ -970,7 +973,7 @@ export default function TicketsPage({
                           <span className="font-mono text-xs font-semibold text-primary whitespace-nowrap shrink-0">
                             #{ticket.ticket_number || ticket.id.slice(0, 8)}
                           </span>
-                          <TicketSlaBadge sla={ticket.sla} compact={true} />
+                          {isAdmin && <TicketSlaBadge sla={ticket.sla} compact={true} canManage={isAdmin} />}
                           {isAdmin && ticket.sla?.isOverdue48h && (
                             <TooltipProvider delayDuration={150}>
                               <Tooltip>
