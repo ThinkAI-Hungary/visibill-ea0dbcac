@@ -1,10 +1,10 @@
 import { type CompanyInvoice } from '@/hooks/accounty/useAccountyClients';
 
 /**
- * Exports the selected invoices in RLB60 CSV text import format.
+ * Generates the RLB60 CSV text format string for the given invoices.
  * Semicolon-delimited, UTF-8 BOM, standard Hungarian Chart of Accounts defaults.
  */
-export function exportToRLB60(invoices: CompanyInvoice[]) {
+export function generateRLB60Content(invoices: CompanyInvoice[]): string {
   const bom = '\uFEFF';
   const headers = [
     'Bizonylatszám',
@@ -30,8 +30,9 @@ export function exportToRLB60(invoices: CompanyInvoice[]) {
 
     // Use dynamic glNumber from eaisybill template mapping if available
     const isExpense = inv.type === 'bejovo';
-    const debitAccount = isExpense ? (inv.glNumber || '511') : '311'; // custom expense code vs domestic debtors
-    const creditAccount = isExpense ? '454' : (inv.glNumber || '911'); // domestic suppliers vs custom revenue code
+    const partnerGl = inv.partnerGlNumber || (isExpense ? '4541' : '311');
+    const debitAccount = isExpense ? (inv.glNumber || '511') : partnerGl; // custom expense code vs customer account
+    const creditAccount = isExpense ? partnerGl : (inv.glNumber || '911'); // supplier account vs custom revenue code
 
     const dateStr = inv.rawDate ? inv.rawDate.slice(0, 10) : '';
 
@@ -52,7 +53,14 @@ export function exportToRLB60(invoices: CompanyInvoice[]) {
     ].join(';');
   });
 
-  const content = bom + [headers, ...rows].join('\r\n');
+  return bom + [headers, ...rows].join('\r\n');
+}
+
+/**
+ * Exports the selected invoices in RLB60 CSV text import format.
+ */
+export function exportToRLB60(invoices: CompanyInvoice[]) {
+  const content = generateRLB60Content(invoices);
   const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -63,9 +71,9 @@ export function exportToRLB60(invoices: CompanyInvoice[]) {
 }
 
 /**
- * Exports the selected invoices in Kulcs-Soft structured XML format.
+ * Generates Kulcs-Soft structured XML format string.
  */
-export function exportToKulcsSoft(invoices: CompanyInvoice[]) {
+export function generateKulcsSoftXml(invoices: CompanyInvoice[]): string {
   const xmlLines: string[] = [];
   xmlLines.push('<?xml version="1.0" encoding="utf-8"?>');
   xmlLines.push('<Szamlak>');
@@ -77,9 +85,10 @@ export function exportToKulcsSoft(invoices: CompanyInvoice[]) {
       : 0;
 
     const isExpense = inv.type === 'bejovo';
-    const debitAccount = isExpense ? (inv.glNumber || '511') : '311';
-    const creditAccount = isExpense ? '454' : (inv.glNumber || '911');
-    const vatAccount = isExpense ? '466' : '467'; // Deductible vs Payable VAT
+    const partnerGl = inv.partnerGlNumber || (isExpense ? '4541' : '311');
+    const debitAccount = isExpense ? (inv.glNumber || '511') : partnerGl;
+    const creditAccount = isExpense ? partnerGl : (inv.glNumber || '911');
+    const vatAccount = inv.vatGlNumber || (isExpense ? '466' : '467'); // Deductible vs Payable VAT
     const dateStr = inv.rawDate ? inv.rawDate.slice(0, 10) : '';
 
     xmlLines.push('  <Szamla>');
@@ -97,13 +106,12 @@ export function exportToKulcsSoft(invoices: CompanyInvoice[]) {
     xmlLines.push('    </Fejlec>');
     xmlLines.push('    <Tetelek>');
     xmlLines.push('      <Tetel>');
-    xmlLines.push(`        <Megnevezes>${isExpense ? 'Vásárolt anyag/szolgáltatás' : 'Termékértékesítés/Szolgáltatás'}</Megnevezes>`);
+    xmlLines.push(`        <Megnevezes>${isExpense ? 'Költség ráfordítás' : 'Értékesítés nettó árbevétele'}</Megnevezes>`);
     xmlLines.push(`        <Netto>${net.toFixed(2)}</Netto>`);
-    xmlLines.push(`        <AfaKulcs>${vatPercent}</AfaKulcs>`);
     xmlLines.push(`        <Afa>${inv.vatAmount.toFixed(2)}</Afa>`);
-    xmlLines.push(`        <Brutto>${inv.grossAmount.toFixed(2)}</Brutto>`);
-    xmlLines.push(`        <FokonyvT>${debitAccount}</FokonyvT>`);
-    xmlLines.push(`        <FokonyvK>${creditAccount}</FokonyvK>`);
+    xmlLines.push(`        <AfaKulcs>${vatPercent}</AfaKulcs>`);
+    xmlLines.push(`        <TartozikFokonyv>${debitAccount}</TartozikFokonyv>`);
+    xmlLines.push(`        <KovetelFokonyv>${creditAccount}</KovetelFokonyv>`);
     if (inv.vatAmount > 0) {
       xmlLines.push(`        <AfaFokonyv>${vatAccount}</AfaFokonyv>`);
     }
@@ -113,8 +121,14 @@ export function exportToKulcsSoft(invoices: CompanyInvoice[]) {
   });
 
   xmlLines.push('</Szamlak>');
+  return xmlLines.join('\r\n');
+}
 
-  const content = xmlLines.join('\r\n');
+/**
+ * Exports the selected invoices in Kulcs-Soft structured XML format.
+ */
+export function exportToKulcsSoft(invoices: CompanyInvoice[]) {
+  const content = generateKulcsSoftXml(invoices);
   const blob = new Blob([content], { type: 'application/xml;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -125,10 +139,9 @@ export function exportToKulcsSoft(invoices: CompanyInvoice[]) {
 }
 
 /**
- * Exports the selected invoices in Novitax semicolon-separated CSV format.
- * Includes partner tax numbers, dates, vat rates, accounts, and amounts.
+ * Generates Novitax semicolon-separated CSV format string.
  */
-export function exportToNovitax(invoices: CompanyInvoice[]) {
+export function generateNovitaxCsv(invoices: CompanyInvoice[]): string {
   const bom = '\uFEFF';
   const headers = [
     'Bizonylatszám',
@@ -139,25 +152,21 @@ export function exportToNovitax(invoices: CompanyInvoice[]) {
     'Esedékesség',
     'Irány',
     'Nettó érték',
-    'ÁFA kulcs',
     'ÁFA érték',
     'Bruttó érték',
     'Pénznem',
-    'Tartozik főkönyv (T)',
-    'Követel főkönyv (K)',
-    'ÁFA főkönyv'
+    'Tartozik számla',
+    'Követel számla',
+    'ÁFA számla'
   ].join(';');
 
   const rows = invoices.map(inv => {
     const net = inv.grossAmount - inv.vatAmount;
-    const vatPercent = inv.grossAmount > 0 && inv.vatAmount > 0 
-      ? Math.round((inv.vatAmount / net) * 100) 
-      : 0;
-
     const isExpense = inv.type === 'bejovo';
-    const debitAccount = isExpense ? (inv.glNumber || '511') : '311';
-    const creditAccount = isExpense ? '454' : (inv.glNumber || '911');
-    const vatAccount = inv.vatAmount > 0 ? (isExpense ? '466' : '467') : '';
+    const partnerGl = inv.partnerGlNumber || (isExpense ? '4541' : '311');
+    const debitAccount = isExpense ? (inv.glNumber || '511') : partnerGl;
+    const creditAccount = isExpense ? partnerGl : (inv.glNumber || '911');
+    const vatAccount = inv.vatAmount > 0 ? (inv.vatGlNumber || (isExpense ? '466' : '467')) : '';
 
     const dateStr = inv.rawDate ? inv.rawDate.slice(0, 10) : '';
 
@@ -170,7 +179,6 @@ export function exportToNovitax(invoices: CompanyInvoice[]) {
       dateStr,
       inv.type === 'bejovo' ? 'BEJÖVŐ' : 'KIMENŐ',
       net.toFixed(2),
-      `${vatPercent}%`,
       inv.vatAmount.toFixed(2),
       inv.grossAmount.toFixed(2),
       inv.currency,
@@ -180,7 +188,15 @@ export function exportToNovitax(invoices: CompanyInvoice[]) {
     ].join(';');
   });
 
-  const content = bom + [headers, ...rows].join('\r\n');
+  return bom + [headers, ...rows].join('\r\n');
+}
+
+/**
+ * Exports the selected invoices in Novitax semicolon-separated CSV format.
+ * Includes partner tax numbers, dates, vat rates, accounts, and amounts.
+ */
+export function exportToNovitax(invoices: CompanyInvoice[]) {
+  const content = generateNovitaxCsv(invoices);
   const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -202,4 +218,3 @@ function escapeXml(unsafe: string): string {
     }
   });
 }
-

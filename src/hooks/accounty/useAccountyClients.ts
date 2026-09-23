@@ -631,6 +631,8 @@ export interface CompanyInvoice {
   statusz?: string;
   approvedAt?: string | null;
   approvalNote?: string | null;
+  partnerGlNumber?: string | null;
+  vatGlNumber?: string | null;
 }
 
 const mapDbStatus = (s: string | null): InvoiceStatus => {
@@ -674,6 +676,8 @@ export function useCompanyInvoices(companyId: string) {
           nav_status,
           approved_at,
           approval_note,
+          partner_gl_number,
+          vat_gl_number,
           gl_account:gl_accounts(id, gl_number, short_name)
         `)
         .eq('company_id', companyId)
@@ -700,6 +704,8 @@ export function useCompanyInvoices(companyId: string) {
           currency,
           submitted,
           gl_account_id,
+          partner_gl_number,
+          vat_gl_number,
           gl_account:gl_accounts(id, gl_number, short_name)
         `)
         .eq('company_id', companyId)
@@ -744,6 +750,8 @@ export function useCompanyInvoices(companyId: string) {
           statusz: inv.statusz || undefined,
           approvedAt: (inv as any).approved_at || null,
           approvalNote: (inv as any).approval_note || null,
+          partnerGlNumber: (inv as any).partner_gl_number || null,
+          vatGlNumber: (inv as any).vat_gl_number || null,
         });
       }
 
@@ -775,6 +783,8 @@ export function useCompanyInvoices(companyId: string) {
           glName: glAcc?.short_name || null,
           submitted: nav.submitted === true,
           isNav: true,
+          partnerGlNumber: (nav as any).partner_gl_number || null,
+          vatGlNumber: (nav as any).vat_gl_number || null,
         });
       }
 

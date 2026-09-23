@@ -20,6 +20,32 @@ export function TAccountLedger({ invoice }: TAccountLedgerProps) {
     }).format(val);
   };
 
+  // Customer labels lookup helper
+  const getCustomerAccount = (code?: string | null) => {
+    switch (code) {
+      case '312': return { code: '312', name: 'Külföldi vevők (Export)' };
+      case '315': return { code: '315', name: 'Vevők (Kapcsolt vállalkozás)' };
+      case '316': return { code: '316', name: 'Vevők (Jelentős részesedés)' };
+      case '317': return { code: '317', name: 'Vevők (Egyéb részesedés)' };
+      case '311':
+      default: return { code: code || '311', name: 'Vevők (Belföldi)' };
+    }
+  };
+
+  const getSupplierAccount = (code?: string | null) => {
+    switch (code) {
+      case '4542': return { code: '4542', name: 'Szállítók (Külföldi)' };
+      case '4541':
+      case '454':
+      default: return { code: code || '454', name: 'Szállítók (Belföldi)' };
+    }
+  };
+
+  const custAcc = getCustomerAccount(invoice.partnerGlNumber);
+  const suppAcc = getSupplierAccount(invoice.partnerGlNumber);
+  const vatDedCode = invoice.vatGlNumber || '466';
+  const vatPayCode = invoice.vatGlNumber || '467';
+
   // Define Hungarian accounts based on direction
   const debitAccounts = isExpense
     ? [
@@ -29,16 +55,16 @@ export function TAccountLedger({ invoice }: TAccountLedgerProps) {
           amount: net 
         },
         ...(invoice.vatAmount > 0
-          ? [{ code: '466', name: 'Előzetesen felszámított ÁFA', amount: invoice.vatAmount }]
+          ? [{ code: vatDedCode, name: vatDedCode === '466' ? 'Előzetesen felszámított ÁFA' : 'Levonható ÁFA', amount: invoice.vatAmount }]
           : []),
       ]
     : [
-        { code: '311', name: 'Vevők (Belföldi)', amount: invoice.grossAmount },
+        { code: custAcc.code, name: custAcc.name, amount: invoice.grossAmount },
       ];
 
   const creditAccounts = isExpense
     ? [
-        { code: '454', name: 'Szállítók (Belföldi)', amount: invoice.grossAmount },
+        { code: suppAcc.code, name: suppAcc.name, amount: invoice.grossAmount },
       ]
     : [
         { 
@@ -47,7 +73,7 @@ export function TAccountLedger({ invoice }: TAccountLedgerProps) {
           amount: net 
         },
         ...(invoice.vatAmount > 0
-          ? [{ code: '467', name: 'Fizetendő ÁFA', amount: invoice.vatAmount }]
+          ? [{ code: vatPayCode, name: vatPayCode === '467' ? 'Fizetendő ÁFA' : 'ÁFA számla', amount: invoice.vatAmount }]
           : []),
       ];
 
