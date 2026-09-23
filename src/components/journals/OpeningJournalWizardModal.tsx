@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2, Loader2, AlertCircle, CheckCircle2, BookOpen, ShieldCheck, ArrowRight, ArrowLeft, UploadCloud, RefreshCw, Sparkles, Scale, Check, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Loader2, AlertCircle, CheckCircle2, BookOpen, ShieldCheck, ArrowRight, ArrowLeft, UploadCloud, RefreshCw, Sparkles, Scale, Check, AlertTriangle, Coins, ChevronsUpDown } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 import { formatCurrencyLocale } from '@/lib/locale/formatters';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -28,15 +28,71 @@ interface OpeningJournalWizardModalProps {
   headerId?: string | null;
 }
 
-interface OpeningLineInput {
+export interface OpeningLineInput {
   id?: string;
   gl_account_id: string;
   gl_number?: string;
   gl_name?: string;
   dc_type: 'T' | 'K';
   amount: number;
+  is_foreign?: boolean;
+  currency?: string;
+  foreign_amount?: number | null;
+  exchange_rate?: number | null;
   description: string;
 }
+
+export const isForeignCurrencyAccount = (glNumber: string = '', shortName: string = ''): boolean => {
+  const clean = glNumber.replace(/\./g, '').trim();
+  return (
+    clean.startsWith('386') || // Devizabetétszámla
+    clean.startsWith('382') || // Valutapénztár
+    clean.startsWith('316') || // Külföldi vevők
+    clean.startsWith('317') || // Egyéb devizás követelések
+    clean.startsWith('4542') || // Külföldi szállítók
+    clean.startsWith('455') || // Egyéb devizás kötelezettségek
+    /deviza|valuta|eur|usd|külföldi/i.test(shortName)
+  );
+};
+
+export interface MnbRateResult {
+  rate: number;
+  date: string;
+  isExact: boolean;
+}
+
+export const findMnbRateForDate = (
+  rates: Array<{ currency: string; rate_date: string; rate: number | string }>,
+  currency: string,
+  targetDate: string
+): MnbRateResult | null => {
+  if (!currency || currency === 'HUF') {
+    return { rate: 1, date: targetDate, isExact: true };
+  }
+  const upperCurr = currency.toUpperCase().trim();
+
+  // Rates are sorted desc by rate_date (most recent first)
+  const match = rates.find(r => r.currency === upperCurr && r.rate_date <= targetDate);
+  if (match?.rate) {
+    return {
+      rate: Number(match.rate),
+      date: match.rate_date,
+      isExact: match.rate_date === targetDate,
+    };
+  }
+
+  // Fallback to latest available rate for this currency if target date has no prior rates in table
+  const fallback = rates.find(r => r.currency === upperCurr);
+  if (fallback?.rate) {
+    return {
+      rate: Number(fallback.rate),
+      date: fallback.rate_date,
+      isExact: false,
+    };
+  }
+
+  return null;
+};
 
 export default function OpeningJournalWizardModal({
   open,
@@ -184,6 +240,22 @@ export default function OpeningJournalWizardModal({
     enabled: !!activePresetId,
   });
 
+  // Fetch MNB daily exchange rates for one-click FX lookup
+  const { data: mnbExchangeRates = [] } = useQuery({
+    queryKey: ['daily-exchange-rates-opening'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('daily_exchange_rates')
+        .select('currency, rate_date, rate')
+        .eq('source', 'MNB')
+        .order('rate_date', { ascending: false });
+      if (error) return [];
+      return data || [];
+    },
+    staleTime: 1000 * 60 * 30, // 30 minutes cache
+    enabled: open,
+  });
+
   // Fetch Subledger reconciliation status
   const { data: subledgerData, refetch: refetchSubledger } = useQuery({
     queryKey: ['subledger-reconciliation', selectedCompany?.id, accountingYear],
@@ -280,6 +352,14 @@ export default function OpeningJournalWizardModal({
       for (const line of lines) {
         if (!line.gl_account_id || !line.amount) continue;
 
+        const hasForeign = Boolean(line.is_foreign && line.foreign_amount != null && Number(line.foreign_amount) > 0);
+        const foreignAmount = hasForeign ? Number(line.foreign_amount) : null;
+        let lineDesc = line.description || 'Nyitó tétel';
+        if (hasForeign && line.currency) {
+          const rateInfo = line.exchange_rate ? ` @ ${line.exchange_rate} HUF` : '';
+          lineDesc = `${lineDesc} (${foreignAmount} ${line.currency}${rateInfo})`;
+        }
+
         // Original line
         insertLines.push({
           header_id: header.id,
@@ -287,7 +367,8 @@ export default function OpeningJournalWizardModal({
           gl_account_id: line.gl_account_id,
           dc_type: line.dc_type,
           amount: line.amount,
-          description: line.description || 'Nyitó tétel'
+          foreign_amount: foreignAmount,
+          description: lineDesc
         });
 
         // Technical 491 counter line
@@ -298,6 +379,7 @@ export default function OpeningJournalWizardModal({
             gl_account_id: technicalAccount491.id,
             dc_type: line.dc_type === 'T' ? 'K' : 'T',
             amount: line.amount,
+            foreign_amount: null,
             description: `491 Technikai ellenszámla (${line.gl_number || ''})`
           });
         }
@@ -379,8 +461,6 @@ export default function OpeningJournalWizardModal({
     }
   });
 
-  const justClosedRef = useRef(false);
-
   // Line Handlers
   const handleAddLine = () => {
     setLines(prev => {
@@ -389,8 +469,6 @@ export default function OpeningJournalWizardModal({
         { gl_account_id: '', dc_type: 'T' as const, amount: 0, description: 'Nyitó tétel' }
       ];
       const nextIdx = next.length - 1;
-      setOpenDropdownIndex(nextIdx);
-      setSearchQuery('');
       setTimeout(() => {
         const el = document.getElementById(`gl-account-trigger-${nextIdx}`);
         if (el) {
@@ -406,19 +484,127 @@ export default function OpeningJournalWizardModal({
     setLines(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handleToggleForeign = (index: number) => {
+    setLines(prev => {
+      const next = [...prev];
+      const cur = next[index];
+      const willBeForeign = !cur.is_foreign;
+      const targetCurr = cur.currency || 'EUR';
+      let autoRate = cur.exchange_rate;
+      if (willBeForeign && (autoRate == null || autoRate === 0)) {
+        const found = findMnbRateForDate(mnbExchangeRates, targetCurr, postingDate);
+        if (found) autoRate = found.rate;
+      }
+      const calculatedAmount = (willBeForeign && cur.foreign_amount != null && autoRate != null && Number(cur.foreign_amount) > 0 && Number(autoRate) > 0)
+        ? Math.round(Number(cur.foreign_amount) * Number(autoRate))
+        : cur.amount;
+
+      next[index] = {
+        ...cur,
+        is_foreign: willBeForeign,
+        currency: willBeForeign ? targetCurr : undefined,
+        exchange_rate: willBeForeign ? autoRate : undefined,
+        amount: calculatedAmount,
+      };
+      return next;
+    });
+  };
+
   const handleUpdateLine = (index: number, field: keyof OpeningLineInput, value: any) => {
     setLines(prev => {
       const next = [...prev];
-      next[index] = { ...next[index], [field]: value };
+      const current = { ...next[index], [field]: value };
+
       if (field === 'gl_account_id') {
         const selected = glAccounts.find(g => g.id === value);
         if (selected) {
-          next[index].gl_number = selected.gl_number;
-          next[index].gl_name = selected.short_name;
+          current.gl_number = selected.gl_number;
+          current.gl_name = selected.short_name;
+          if (isForeignCurrencyAccount(selected.gl_number, selected.short_name) && !current.is_foreign) {
+            current.is_foreign = true;
+            if (!current.currency) current.currency = 'EUR';
+            if (current.exchange_rate == null || current.exchange_rate === 0) {
+              const found = findMnbRateForDate(mnbExchangeRates, current.currency, postingDate);
+              if (found) current.exchange_rate = found.rate;
+            }
+          }
         }
       }
+
+      if (field === 'currency') {
+        const newCurr = value || 'EUR';
+        const found = findMnbRateForDate(mnbExchangeRates, newCurr, postingDate);
+        if (found) {
+          current.exchange_rate = found.rate;
+          if (current.foreign_amount != null && Number(current.foreign_amount) > 0) {
+            current.amount = Math.round(Number(current.foreign_amount) * found.rate);
+          }
+        }
+      }
+
+      if (field === 'foreign_amount' || field === 'exchange_rate') {
+        const fAmt = field === 'foreign_amount' ? value : current.foreign_amount;
+        const rate = field === 'exchange_rate' ? value : current.exchange_rate;
+        if (fAmt != null && rate != null && Number(fAmt) > 0 && Number(rate) > 0) {
+          current.amount = Math.round(Number(fAmt) * Number(rate));
+        }
+      }
+
+      next[index] = current;
       return next;
     });
+  };
+
+  const handleFetchMnbRate = (index: number) => {
+    const line = lines[index];
+    const curr = line.currency || 'EUR';
+    const result = findMnbRateForDate(mnbExchangeRates, curr, postingDate);
+
+    if (result) {
+      handleUpdateLine(index, 'exchange_rate', result.rate);
+      toast({
+        title: 'MNB árfolyam betöltve',
+        description: `${curr}: ${result.rate} Ft (${result.date}${result.isExact ? '' : ' - legközelebbi korábbi MNB nap'})`,
+      });
+    } else {
+      toast({
+        title: 'Árfolyam nem található',
+        description: `Nincs elérhető MNB árfolyam a(z) ${curr} devizához a megadott időszakra (${postingDate}).`,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleFetchAllMnbRates = () => {
+    let updatedCount = 0;
+    setLines(prev =>
+      prev.map(line => {
+        if (!line.is_foreign) return line;
+        const curr = line.currency || 'EUR';
+        const result = findMnbRateForDate(mnbExchangeRates, curr, postingDate);
+        if (result) {
+          updatedCount++;
+          const rate = result.rate;
+          const amount = line.foreign_amount && Number(line.foreign_amount) > 0 
+            ? Math.round(Number(line.foreign_amount) * rate) 
+            : line.amount;
+          return { ...line, exchange_rate: rate, amount };
+        }
+        return line;
+      })
+    );
+    if (updatedCount > 0) {
+      toast({
+        title: 'MNB árfolyamok frissítve',
+        description: `${updatedCount} devizás tételhez betöltöttük a hivatalos MNB árfolyamot.`,
+      });
+    } else {
+      toast({
+        title: 'Nem található devizás tétel vagy árfolyam',
+        description: 'Nincs elérhető árfolyam az aktuális devizanemekhez.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleImportGlBalances = (
@@ -432,12 +618,15 @@ export default function OpeningJournalWizardModal({
       const cleanItemKonto = item.gl_number.replace(/\./g, '').trim();
       const matched = glAccounts.find(g => g.gl_number.replace(/\./g, '').trim() === cleanItemKonto);
       if (matched) {
+        const isFx = isForeignCurrencyAccount(matched.gl_number, matched.short_name);
         newLines.push({
           gl_account_id: matched.id,
           gl_number: matched.gl_number,
           gl_name: matched.short_name,
           dc_type: item.dc_type,
           amount: item.amount,
+          is_foreign: isFx,
+          currency: isFx ? 'EUR' : undefined,
           description: item.description || 'Importált nyitó egyenleg'
         });
       } else {
@@ -489,7 +678,7 @@ export default function OpeningJournalWizardModal({
   return (
     <>
       <Dialog open={open} onOpenChange={(val) => { if (!val) handleClose(); else onOpenChange(val); }}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+        <DialogContent className="w-[96vw] max-w-5xl lg:max-w-6xl xl:max-w-7xl max-h-[92vh] flex flex-col p-0 overflow-hidden">
           {/* Header */}
           <DialogHeader className="px-6 pt-5 pb-4 border-b border-border/40 bg-muted/20 shrink-0 space-y-4">
             {/* Top row: Icon + Title + Badge + Subtitle */}
@@ -526,7 +715,7 @@ export default function OpeningJournalWizardModal({
                     disabled={!isPassed}
                     onClick={() => isPassed && setStep(s.id)}
                     className={cn(
-                      "relative flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs transition-all duration-200 select-none text-left border",
+                      "relative flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs transition-colors duration-150 select-none text-left border",
                       isCurrent && "bg-primary text-primary-foreground border-primary shadow-sm ring-1 ring-primary/20 font-semibold",
                       isPassed && "bg-card hover:bg-muted/80 text-foreground border-emerald-500/30 dark:border-emerald-500/20 hover:border-emerald-500/50 cursor-pointer shadow-2xs",
                       !isCurrent && !isPassed && "bg-muted/40 border-border/40 text-muted-foreground opacity-60 cursor-not-allowed"
@@ -534,7 +723,7 @@ export default function OpeningJournalWizardModal({
                   >
                     {/* Step indicator circle */}
                     <span className={cn(
-                      "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-all",
+                      "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors duration-150",
                       isCurrent && "bg-primary-foreground text-primary shadow-2xs",
                       isPassed && "bg-emerald-500 text-white shadow-2xs",
                       !isCurrent && !isPassed && "bg-muted-foreground/15 text-muted-foreground"
@@ -707,31 +896,56 @@ export default function OpeningJournalWizardModal({
             {/* STEP 2: GL Opening lines & Live 491 check */}
             {step === 2 && (
               <div className="space-y-4">
-                {/* Top Action Bar */}
-                <div className="flex items-center justify-between bg-muted/40 p-3 rounded-xl border">
-                  <div className="flex items-center gap-2">
-                    <Button size="sm" variant="outline" onClick={() => setCsvImportOpen(true)} className="gap-1.5 h-8 text-xs">
-                      <UploadCloud className="w-4 h-4" /> {t('dialogs.opening_wizard.step2.csv_import', { defaultValue: 'Importálás (.xlsx, .csv)' })}
+                {/* Top Action Bar & Live 491 Balance Bar */}
+                <div className="flex flex-wrap items-center justify-between gap-3 bg-muted/40 p-3 rounded-xl border border-border/60">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button size="sm" variant="outline" onClick={() => setCsvImportOpen(true)} className="gap-1.5 h-8 text-xs font-medium">
+                      <UploadCloud className="w-3.5 h-3.5 text-muted-foreground" /> {t('dialogs.opening_wizard.step2.csv_import', { defaultValue: 'Importálás (.xlsx, .csv)' })}
                     </Button>
-                    <Button size="sm" variant="outline" onClick={handleAddLine} className="gap-1.5 h-8 text-xs">
-                      <Plus className="w-4 h-4" /> {t('dialogs.opening_wizard.step2.add_row', { defaultValue: 'Sor hozzáadása' })}
+                    <Button size="sm" variant="outline" onClick={handleAddLine} className="gap-1.5 h-8 text-xs font-medium">
+                      <Plus className="w-3.5 h-3.5 text-muted-foreground" /> {t('dialogs.opening_wizard.step2.add_row', { defaultValue: 'Sor hozzáadása' })}
                     </Button>
+                    {lines.some(l => l.is_foreign) && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        id="fetch-all-mnb-rates-btn"
+                        onClick={handleFetchAllMnbRates}
+                        className="gap-1.5 h-8 text-xs border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-500/5 hover:bg-amber-500/15"
+                        title={`Minden devizás tételhez lekéri a hivatalos MNB záróárfolyamot a nyitás dátumára (${postingDate})`}
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                        MNB árfolyamok kitöltése
+                      </Button>
+                    )}
+                    {lines.some(l => l.is_foreign && l.gl_account_id) && (
+                      <Badge variant="outline" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 gap-1 text-[11px] font-semibold py-1">
+                        <Coins className="w-3 h-3" />
+                        {lines.filter(l => l.is_foreign && l.gl_account_id).length} devizás tétel
+                      </Badge>
+                    )}
                   </div>
 
                   {/* Live 491 KPI indicator */}
-                  <div className="flex items-center gap-4 text-xs font-medium">
-                    <div>{t('dialogs.opening_wizard.step2.total_debit', { defaultValue: 'Össz T:' })} <span className="font-bold tabular-nums text-blue-600">{formatCurrencyLocale(totalDebit, currency)}</span></div>
-                    <div>{t('dialogs.opening_wizard.step2.total_credit', { defaultValue: 'Össz K:' })} <span className="font-bold tabular-nums text-emerald-600">{formatCurrencyLocale(totalCredit, currency)}</span></div>
+                  <div className="flex flex-wrap items-center gap-2.5 text-xs font-medium shrink-0 ml-auto">
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-background/80 border border-border/50 shadow-2xs">
+                      <span className="text-muted-foreground">{t('dialogs.opening_wizard.step2.total_debit', { defaultValue: 'Össz T:' })}</span>
+                      <span className="font-bold tabular-nums font-mono text-blue-600 dark:text-blue-400">{formatCurrencyLocale(totalDebit, currency)}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-background/80 border border-border/50 shadow-2xs">
+                      <span className="text-muted-foreground">{t('dialogs.opening_wizard.step2.total_credit', { defaultValue: 'Össz K:' })}</span>
+                      <span className="font-bold tabular-nums font-mono text-emerald-600 dark:text-emerald-400">{formatCurrencyLocale(totalCredit, currency)}</span>
+                    </div>
                     <div className={cn(
-                      "px-3 py-1 rounded-full font-bold border flex items-center gap-1.5 tabular-nums transition-colors",
+                      "px-3 py-1 rounded-lg font-bold border flex items-center gap-1.5 tabular-nums transition-colors duration-150 shadow-2xs",
                       !hasValidLines
-                        ? "bg-amber-500/10 text-amber-600 border-amber-500/30"
+                        ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30"
                         : is491Balanced 
-                          ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
-                          : "bg-rose-500/10 text-rose-600 border-rose-500/30"
+                          ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
+                          : "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30"
                     )}>
-                      {!hasValidLines ? <AlertTriangle className="w-3.5 h-3.5" /> : is491Balanced ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
-                      <span>
+                      {!hasValidLines ? <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> : is491Balanced ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <AlertCircle className="w-3.5 h-3.5 shrink-0" />}
+                      <span className="whitespace-nowrap">
                         {t('dialogs.opening_wizard.step2.imbalance_label', { defaultValue: '491 Nyitómérleg Eltérés:' })} {formatCurrencyLocale(totalImbalance, currency)}
                         {!hasValidLines && ` (${t('dialogs.opening_wizard.step2.no_lines_warning', { defaultValue: 'Nincsenek nyitó összegek' })})`}
                       </span>
@@ -741,47 +955,38 @@ export default function OpeningJournalWizardModal({
 
                 {/* Lines Table Container with internal scroll & sticky header */}
                 <div className="border border-border/60 rounded-xl overflow-hidden bg-card shadow-2xs">
-                  <div className="max-h-[clamp(200px,calc(85vh-420px),420px)] overflow-y-auto">
+                  <div className="max-h-[clamp(240px,calc(88vh-360px),560px)] overflow-y-auto">
                     <table className="w-full text-xs border-collapse">
                       <thead className="sticky top-0 bg-muted/95 backdrop-blur-xs z-10 shadow-xs border-b border-border/60">
                         <tr className="text-muted-foreground font-semibold uppercase text-[10px] tracking-wider">
-                          <th className="py-2.5 px-3 text-left w-10">#</th>
-                          <th className="py-2.5 px-3 text-left w-[320px]">{t('dialogs.opening_wizard.step2.table_headers.gl_account', { defaultValue: 'Főkönyvi Számla (0–4, 9)' })}</th>
-                          <th className="py-2.5 px-3 text-center w-24">{t('dialogs.opening_wizard.step2.table_headers.sign', { defaultValue: 'Jel' })}</th>
-                          <th className="py-2.5 px-3 text-right w-40">{t('dialogs.opening_wizard.step2.table_headers.amount', { defaultValue: `Nyitó Összeg (${currency === 'EUR' ? '€' : currency})` })}</th>
-                          <th className="py-2.5 px-3 text-left">{t('dialogs.opening_wizard.step2.table_headers.comment', { defaultValue: 'Megjegyzés' })}</th>
+                          <th className="py-2.5 px-3 text-center w-10">#</th>
+                          <th className="py-2.5 px-3 text-left w-[260px] lg:w-[320px]">{t('dialogs.opening_wizard.step2.table_headers.gl_account', { defaultValue: 'Főkönyvi Számla (0–4, 9)' })}</th>
+                          <th className="py-2.5 px-3 text-center w-32">{t('dialogs.opening_wizard.step2.table_headers.sign', { defaultValue: 'Jel' })}</th>
+                          <th className="py-2.5 px-3 text-right w-[280px] lg:w-[340px]">{t('dialogs.opening_wizard.step2.table_headers.amount', { defaultValue: `Nyitó Összeg (${currency === 'EUR' ? '€' : currency})` })}</th>
+                          <th className="py-2.5 px-3 text-left min-w-[180px]">{t('dialogs.opening_wizard.step2.table_headers.comment', { defaultValue: 'Megjegyzés' })}</th>
                           <th className="py-2.5 px-3 text-center w-12"></th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border/40">
                         {lines.map((line, idx) => (
                           <tr key={idx} className="hover:bg-muted/20 transition-colors">
-                            <td className="py-2 px-3 text-muted-foreground font-mono">{idx + 1}</td>
-                            <td className="py-2 px-3">
+                            <td className="py-2.5 px-3 text-center text-muted-foreground font-mono">{idx + 1}</td>
+                            <td className="py-2.5 px-3 align-top">
                               <Popover 
                                 open={openDropdownIndex === idx} 
                                 onOpenChange={(open) => {
+                                  setOpenDropdownIndex(open ? idx : null);
                                   if (open) {
-                                    setOpenDropdownIndex(idx);
                                     setSearchQuery('');
-                                  } else {
-                                    justClosedRef.current = true;
-                                    setOpenDropdownIndex(null);
-                                    setTimeout(() => { justClosedRef.current = false; }, 200);
                                   }
                                 }}
                               >
                                 <PopoverTrigger asChild>
                                   <Button
+                                    type="button"
                                     variant="outline"
                                     size="sm"
                                     id={`gl-account-trigger-${idx}`}
-                                    onFocus={() => {
-                                      if (!justClosedRef.current && openDropdownIndex !== idx) {
-                                        setOpenDropdownIndex(idx);
-                                        setSearchQuery('');
-                                      }
-                                    }}
                                     className="w-full justify-between h-8 text-xs font-mono focus:border-primary focus-visible:border-primary"
                                   >
                                     {line.gl_account_id ? (
@@ -791,15 +996,15 @@ export default function OpeningJournalWizardModal({
                                     ) : (
                                       <span className="text-muted-foreground">{t('dialogs.opening_wizard.step2.choose_account', { defaultValue: 'Válassz mérlegszámlát...' })}</span>
                                     )}
+                                    <ChevronsUpDown className="w-3.5 h-3.5 opacity-50 shrink-0 ml-1" />
                                   </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-[360px] p-0" align="start">
+                                <PopoverContent className="w-[380px] p-0 z-50" align="start">
                                   <Command shouldFilter={false}>
                                     <CommandInput
                                       placeholder={t('dialogs.opening_wizard.step2.search_account_placeholder', { defaultValue: 'Számlaszám v. név keresése...' })}
                                       value={searchQuery}
                                       onValueChange={setSearchQuery}
-                                      autoFocus
                                     />
                                     <CommandList className="max-h-60 overflow-y-auto">
                                       <CommandEmpty>{t('dialogs.opening_wizard.step2.no_account_found', { defaultValue: 'Nincs találat.' })}</CommandEmpty>
@@ -829,35 +1034,158 @@ export default function OpeningJournalWizardModal({
                                   </Command>
                                 </PopoverContent>
                               </Popover>
+
+                              {/* Deviza kapcsoló gomb */}
+                              <div className="flex items-center gap-1.5 mt-1.5">
+                                <button
+                                  type="button"
+                                  id={`foreign-toggle-${idx}`}
+                                  onClick={() => handleToggleForeign(idx)}
+                                  className={cn(
+                                    "inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold border transition-colors duration-150 cursor-pointer shadow-2xs",
+                                    line.is_foreign 
+                                      ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/40 hover:bg-amber-500/25" 
+                                      : "text-muted-foreground/80 hover:text-foreground border-dashed border-border/80 hover:border-foreground/30 hover:bg-muted/40"
+                                  )}
+                                  title={line.is_foreign ? "Devizás tétel bekapcsolva (kattints a kikapcsoláshoz)" : "Devizás tétel bekapcsolása ezen a számlán"}
+                                >
+                                  <Coins className="w-3 h-3 text-amber-500" />
+                                  <span>{line.is_foreign ? `Deviza: ${line.currency || 'EUR'}` : '+ Deviza'}</span>
+                                </button>
+                              </div>
                             </td>
-                            <td className="py-2 px-3 text-center">
+                            <td className="py-2.5 px-3 text-center align-top">
                               <Select value={line.dc_type} onValueChange={(v: any) => handleUpdateLine(idx, 'dc_type', v)}>
-                                <SelectTrigger id={`dc-type-trigger-${idx}`} className="h-8 text-xs font-bold text-center focus:border-primary focus-visible:border-primary">
-                                  <SelectValue />
+                                <SelectTrigger id={`dc-type-trigger-${idx}`} className="h-8 text-xs font-bold justify-between px-2.5 focus:border-primary focus-visible:border-primary">
+                                  <span className={line.dc_type === 'T' ? "text-blue-600 dark:text-blue-400 font-bold" : "text-emerald-600 dark:text-emerald-400 font-bold"}>
+                                    {line.dc_type === 'T' 
+                                      ? t('dialogs.opening_wizard.step2.debit_label', { defaultValue: 'T (Eszköz)' }) 
+                                      : t('dialogs.opening_wizard.step2.credit_label', { defaultValue: 'K (Forrás)' })}
+                                  </span>
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="T" className="text-blue-600 font-bold">{t('dialogs.opening_wizard.step2.debit_label', { defaultValue: 'T (Eszköz)' })}</SelectItem>
-                                  <SelectItem value="K" className="text-emerald-600 font-bold">{t('dialogs.opening_wizard.step2.credit_label', { defaultValue: 'K (Forrás)' })}</SelectItem>
+                                  <SelectItem value="T" className="text-blue-600 dark:text-blue-400 font-bold">{t('dialogs.opening_wizard.step2.debit_label', { defaultValue: 'T (Eszköz)' })}</SelectItem>
+                                  <SelectItem value="K" className="text-emerald-600 dark:text-emerald-400 font-bold">{t('dialogs.opening_wizard.step2.credit_label', { defaultValue: 'K (Forrás)' })}</SelectItem>
                                 </SelectContent>
                               </Select>
                             </td>
-                            <td className="py-2 px-3">
-                              <NumberInput
-                                id={`amount-input-${idx}`}
-                                value={line.amount || ''}
-                                onChange={e => handleUpdateLine(idx, 'amount', Math.abs(parseFloat(e.target.value) || 0))}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    document.getElementById(`desc-input-${idx}`)?.focus();
-                                  }
-                                }}
-                                className="h-8 text-right font-semibold text-xs min-w-[120px] w-full focus:border-primary focus-visible:border-primary"
-                                min="0"
-                                step="any"
-                              />
+                            <td className="py-2.5 px-3 align-top">
+                              {line.is_foreign ? (
+                                <div className="p-2 rounded-lg bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/25 space-y-1.5 shadow-2xs">
+                                  {/* Deviza összeg és Devizanem választó */}
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[10px] text-muted-foreground font-medium w-14 shrink-0">Deviza:</span>
+                                    <div className="relative flex-1">
+                                      <NumberInput
+                                        id={`foreign-amount-input-${idx}`}
+                                        showStepper={false}
+                                        value={line.foreign_amount ?? ''}
+                                        placeholder="0.00"
+                                        onChange={e => handleUpdateLine(idx, 'foreign_amount', e.target.value === '' ? null : Math.abs(parseFloat(e.target.value) || 0))}
+                                        className="h-7 text-right font-mono text-xs pr-2 bg-background focus:border-primary"
+                                        min="0"
+                                        step="any"
+                                      />
+                                    </div>
+                                    <Select 
+                                      value={line.currency || 'EUR'} 
+                                      onValueChange={(curr) => handleUpdateLine(idx, 'currency', curr)}
+                                    >
+                                      <SelectTrigger className="h-7 w-[72px] text-xs px-2 font-bold bg-background shrink-0">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="EUR">EUR</SelectItem>
+                                        <SelectItem value="USD">USD</SelectItem>
+                                        <SelectItem value="GBP">GBP</SelectItem>
+                                        <SelectItem value="CHF">CHF</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  {/* Árfolyam és MNB lekérő gomb */}
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[10px] text-muted-foreground font-medium w-14 shrink-0">Árfolyam:</span>
+                                    <div className="relative flex-1">
+                                      <NumberInput
+                                        id={`exchange-rate-input-${idx}`}
+                                        showStepper={false}
+                                        value={line.exchange_rate ?? ''}
+                                        placeholder="0.00"
+                                        onChange={e => handleUpdateLine(idx, 'exchange_rate', e.target.value === '' ? null : Math.abs(parseFloat(e.target.value) || 0))}
+                                        className="h-7 text-right font-mono text-xs pr-14 bg-background focus:border-primary"
+                                        min="0"
+                                        step="any"
+                                      />
+                                      <span className="absolute right-1.5 top-1.5 text-[9px] text-muted-foreground/80 font-mono font-medium pointer-events-none">
+                                        Ft/{line.currency || 'EUR'}
+                                      </span>
+                                    </div>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      id={`fetch-mnb-btn-${idx}`}
+                                      onClick={() => handleFetchMnbRate(idx)}
+                                      className="h-7 px-2 text-[10px] font-semibold gap-1 shrink-0 bg-background text-amber-700 dark:text-amber-400 border-amber-500/40 hover:bg-amber-500/10"
+                                      title={`Hivatalos MNB záróárfolyam betöltése (${postingDate})`}
+                                    >
+                                      <Sparkles className="w-3 h-3 text-amber-500" />
+                                      MNB
+                                    </Button>
+                                  </div>
+
+                                  {/* Könyvelt HUF érték (automatikus átszámítás) */}
+                                  <div className="flex items-center gap-1.5 pt-1 border-t border-amber-500/20">
+                                    <span className="text-[10px] font-semibold text-primary w-14 shrink-0">HUF:</span>
+                                    <div className="relative flex-1">
+                                      <NumberInput
+                                        id={`amount-input-${idx}`}
+                                        showStepper={false}
+                                        value={line.amount || ''}
+                                        placeholder="0"
+                                        onChange={e => handleUpdateLine(idx, 'amount', Math.abs(parseFloat(e.target.value) || 0))}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            document.getElementById(`desc-input-${idx}`)?.focus();
+                                          }
+                                        }}
+                                        className="h-7 text-right font-bold font-mono text-xs pr-7 bg-primary/10 border-primary/40 focus:border-primary text-foreground"
+                                        min="0"
+                                        step="any"
+                                      />
+                                      <span className="absolute right-2 top-1.5 text-[10px] font-bold text-primary pointer-events-none">
+                                        Ft
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="relative">
+                                  <NumberInput
+                                    id={`amount-input-${idx}`}
+                                    showStepper={false}
+                                    value={line.amount || ''}
+                                    placeholder="0"
+                                    onChange={e => handleUpdateLine(idx, 'amount', Math.abs(parseFloat(e.target.value) || 0))}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        document.getElementById(`desc-input-${idx}`)?.focus();
+                                      }
+                                    }}
+                                    className="h-8 text-right font-bold font-mono text-xs pr-7 w-full bg-background focus:border-primary focus-visible:border-primary"
+                                    min="0"
+                                    step="any"
+                                  />
+                                  <span className="absolute right-2 top-2 text-[10px] font-bold text-muted-foreground pointer-events-none">
+                                    Ft
+                                  </span>
+                                </div>
+                              )}
                             </td>
-                            <td className="py-2 px-3">
+                            <td className="py-2.5 px-3 align-top">
                               <Input
                                 id={`desc-input-${idx}`}
                                 value={line.description}
@@ -870,30 +1198,28 @@ export default function OpeningJournalWizardModal({
                                     } else if (e.key === 'Enter') {
                                       e.preventDefault();
                                       const nextIdx = idx + 1;
-                                      setOpenDropdownIndex(nextIdx);
-                                      setSearchQuery('');
                                       setTimeout(() => {
                                         document.getElementById(`gl-account-trigger-${nextIdx}`)?.focus();
                                       }, 50);
                                     }
                                   }
                                 }}
-                                className="h-8 text-xs focus:border-primary focus-visible:border-primary"
+                                className="h-8 text-xs w-full focus:border-primary focus-visible:border-primary"
                                 placeholder={t('dialogs.opening_wizard.step2.comment_placeholder', { defaultValue: 'Megjegyzés...' })}
                               />
                             </td>
-                            <td className="py-2 px-3 text-center">
+                            <td className="py-2.5 px-3 text-center align-top">
                               <CustomTooltip content={t('dialogs.opening_wizard.step2.delete_row_tooltip', { defaultValue: 'Sor törlése' })}>
                                 <Button
                                   type="button"
                                   size="icon"
                                   variant="ghost"
                                   tabIndex={-1}
-                                  className="h-7 w-7 text-muted-foreground hover:text-rose-500"
+                                  className="h-8 w-8 text-muted-foreground/60 hover:text-rose-500 hover:bg-rose-500/10 transition-colors duration-150"
                                   onClick={() => handleRemoveLine(idx)}
                                   aria-label={t('dialogs.opening_wizard.step2.delete_row_tooltip', { defaultValue: 'Sor törlése' })}
                                 >
-                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <Trash2 className="w-4 h-4" />
                                 </Button>
                               </CustomTooltip>
                             </td>
@@ -917,7 +1243,7 @@ export default function OpeningJournalWizardModal({
 
             {/* STEP 3: Subledger Reconciliation Control */}
             {step === 3 && (
-              <div className="space-y-4 max-w-xl mx-auto py-2">
+              <div className="space-y-4 max-w-2xl mx-auto py-2">
                 <div className="bg-muted/40 p-4 rounded-xl border space-y-3">
                   <h3 className="font-semibold text-sm flex items-center gap-2">
                     <Scale className="w-4 h-4 text-primary" /> {t('dialogs.opening_wizard.step3.reconciliation_title', { defaultValue: 'Analitika vs. Főkönyv egyeztetési kontroll' })}

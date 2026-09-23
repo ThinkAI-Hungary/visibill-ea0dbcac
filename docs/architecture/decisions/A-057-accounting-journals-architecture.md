@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-08-27  
-**Utoljára frissítve:** 2026-09-05  
+**Utoljára frissítve:** 2026-09-23
 
 ---
 
@@ -84,6 +84,14 @@ A Postgres szintű adatintegritásra épülő, trigger- és RPC-vezérelt modul�
   - A kettős könyvviteli elvek szerint a lekönyvelt (`KONYVELT`) és sztornózott (`SZTORNOZOTT`) tételek nem jelölhetők ki tömeges piszkozat-műveletekre (könyvelés, törlés, jóváhagyásra küldés).
   - A korábbi megtévesztő üres cella helyett a felület egy lakat ikont (`<Lock />`) és magyarázó tooltipet jelenít meg, egyértelműsítve, hogy a zárt tétel közvetlenül nem jelölhető ki, módosítása kizárólag a sorvégi sztornó/helyesbítés művelettel lehetséges.
   - A táblázatfejléc jelölőnégyzete felkészítve a háromállapotú kijelölésre (teljes, `indeterminate`, inaktív ha nincs kijelölhető piszkozat az oldalon).
+
+### 10. Többdevizás Nyitó Sorok Perzisztenciája és Fallback Generátor Típusbiztonság (2026-09-23)
+- **Többdevizás Nyitó Adatmodell Kapcsolat (`OpeningJournalWizardModal.tsx`):**
+  - Az `acc_journal_lines` tábla devizaoszlopai (`foreign_amount`, `currency`, `exchange_rate`) közvetlenül integrálva lettek a Nyitó Varázsló felületébe.
+  - Pénzügyi könyvelési kerekítési szabályok érvényesítése a könyvelt forintértéknél (`Math.round(foreign_amount * exchange_rate)`), megelőzve az egyensúlyi kerekítési hibákat.
+- **Szerviz Dekompozíció és Típusvédelem (`draftFallbackGenerator.ts`):**
+  - A fallback naplójavaslat-generáló szerviz interfészei és adattípusai szinkronizálva lettek a legfrissebb Supabase típusokkal (`Database['public']['Tables']['acc_journal_headers']['Row']` és `Insert`).
+  - Izolált unit tesztek garantálják a bizonylatgenerálási tartalékágak megbízhatóságát hálózati kiesés vagy RPC hiba esetén.
 
 ## Consequences
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,10 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { Landmark, Plus, Trash2, Shield, CreditCard, Globe, CheckCircle2, Sparkles, ArrowRight } from 'lucide-react';
+import { Landmark, Plus, Trash2, Shield, CreditCard, Globe, CheckCircle2, Sparkles, ArrowRight, BookOpen, Settings2, AlertTriangle } from 'lucide-react';
 import { reportError } from '@/lib/errorReporter';
 import { useTranslation } from 'react-i18next';
 import { useAggreg8 } from '@/hooks/useAggreg8';
+import { useActivePreset } from '@/hooks/useActivePreset';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import {
   formatAccountOnType,
   validateAccountNumber,
@@ -28,11 +30,63 @@ interface BankAccount {
   bank_name: string;
   account_number: string;
   currency: string;
+  journal_id?: string | null;
+  gl_account_id?: string | null;
   created_at: string;
 }
 
 interface Props {
   companyId: string;
+}
+
+export interface CurrencyMatchResult {
+  isMatch: boolean;
+  warning?: string;
+}
+
+export function checkGlAccountCurrencyMatch(
+  glNumber: string | undefined | null,
+  currency: string | undefined | null
+): CurrencyMatchResult {
+  if (!glNumber) return { isMatch: true };
+  const clean = glNumber.replace(/\./g, '').trim();
+  const isHuf = !currency || currency.toUpperCase() === 'HUF';
+
+  if (isHuf) {
+    if (clean.startsWith('386') || clean.startsWith('382')) {
+      return {
+        isMatch: false,
+        warning: `A bankszámla HUF devizanemű, de a kiválasztott főkönyvi szám (${glNumber}) devizaszámla / valuta számla. HUF bankszámlához a 384-es elszámolási számla ajánlott.`,
+      };
+    }
+    return { isMatch: true };
+  } else {
+    const curr = currency.toUpperCase();
+    if (clean.startsWith('384') || clean.startsWith('381')) {
+      return {
+        isMatch: false,
+        warning: `A bankszámla ${curr} devizanemű, de a kiválasztott főkönyvi szám (${glNumber}) forintos elszámolási számla. ${curr} bankszámlához a 386-os devizaszámla ajánlott.`,
+      };
+    }
+    return { isMatch: true };
+  }
+}
+
+export function checkJournalCurrencyMatch(
+  journalCurrency: string | undefined | null,
+  bankCurrency: string | undefined | null
+): CurrencyMatchResult {
+  if (!journalCurrency) return { isMatch: true };
+  const jCurr = journalCurrency.toUpperCase().trim();
+  const bCurr = (bankCurrency || 'HUF').toUpperCase().trim();
+
+  if (jCurr !== bCurr) {
+    return {
+      isMatch: false,
+      warning: `A kiválasztott napló devizaneme (${jCurr}) eltér a bankszámla devizanemétől (${bCurr}).`,
+    };
+  }
+  return { isMatch: true };
 }
 
 const BANK_GRADIENTS: Record<string, string> = {
@@ -72,12 +126,22 @@ export function BankAccountsTab({ companyId }: Props) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { consents = [] } = useAggreg8(companyId);
+  const { activePresetId } = useActivePreset(companyId);
+
   const [showAddForm, setShowAddForm] = useState(false);
   const [bankName, setBankName] = useState('OTP Bank');
   const [customBankName, setCustomBankName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [currency, setCurrency] = useState('HUF');
+  const [selectedJournalId, setSelectedJournalId] = useState<string>('none');
+  const [selectedGlAccountId, setSelectedGlAccountId] = useState<string>('none');
   const [saving, setSaving] = useState(false);
+
+  // Edit modal states
+  const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null);
+  const [editJournalId, setEditJournalId] = useState<string>('none');
+  const [editGlAccountId, setEditGlAccountId] = useState<string>('none');
+  const [editSaving, setEditSaving] = useState(false);
 
   const { data: accounts = [], isLoading } = useQuery<BankAccount[]>({
     queryKey: ['company-bank-accounts', companyId],
@@ -88,9 +152,100 @@ export function BankAccountsTab({ companyId }: Props) {
         .eq('company_id', companyId)
         .order('created_at', { ascending: true });
       if (error) throw error;
-      return data as BankAccount[];
+      return (data || []) as BankAccount[];
     }
   });
+
+  // Fetch active BANK journals for this company
+  const { data: bankJournals = [] } = useQuery({
+    queryKey: ['acc-bank-journals', companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('acc_journals')
+        .select('id, code, name, currency, connected_gl_account')
+        .eq('company_id', companyId)
+        .eq('type', 'BANK')
+        .eq('is_active', true)
+        .order('code');
+      if (error) return [];
+      return data || [];
+    }
+  });
+
+  // Fetch bank GL accounts (38% Class 3 Financial Assets)
+  const { data: bankGlAccounts = [] } = useQuery({
+    queryKey: ['bank-gl-accounts', activePresetId, companyId],
+    queryFn: async () => {
+      let query = supabase
+        .from('gl_accounts')
+        .select('id, gl_number, short_name');
+      if (activePresetId) {
+        query = query.or(`preset_id.eq.${activePresetId},company_id.eq.${companyId}`);
+      } else {
+        query = query.eq('company_id', companyId);
+      }
+      const { data, error } = await query
+        .like('gl_number', '38%')
+        .order('gl_number');
+      if (error) return [];
+      return data || [];
+    }
+  });
+
+  // Sorted bank GL accounts for Add form (prioritizing currency matches)
+  const sortedBankGlAccounts = useMemo(() => {
+    return [...bankGlAccounts].sort((a, b) => {
+      const aMatch = checkGlAccountCurrencyMatch(a.gl_number, currency).isMatch;
+      const bMatch = checkGlAccountCurrencyMatch(b.gl_number, currency).isMatch;
+      if (aMatch && !bMatch) return -1;
+      if (!aMatch && bMatch) return 1;
+      return a.gl_number.localeCompare(b.gl_number);
+    });
+  }, [bankGlAccounts, currency]);
+
+  // Sorted bank journals for Add form (prioritizing currency matches)
+  const sortedBankJournals = useMemo(() => {
+    return [...bankJournals].sort((a, b) => {
+      const aMatch = checkJournalCurrencyMatch(a.currency, currency).isMatch;
+      const bMatch = checkJournalCurrencyMatch(b.currency, currency).isMatch;
+      if (aMatch && !bMatch) return -1;
+      if (!aMatch && bMatch) return 1;
+      return a.code.localeCompare(b.code);
+    });
+  }, [bankJournals, currency]);
+
+  // Active mismatch warnings for Add form
+  const selectedAddGl = bankGlAccounts.find(g => g.id === selectedGlAccountId);
+  const selectedAddJournal = bankJournals.find(j => j.id === selectedJournalId);
+  const addGlMatch = checkGlAccountCurrencyMatch(selectedAddGl?.gl_number, currency);
+  const addJournalMatch = checkJournalCurrencyMatch(selectedAddJournal?.currency, currency);
+
+  // Sorted lists and mismatch warnings for Edit dialog
+  const editAccCurrency = editingAccount?.currency || 'HUF';
+  const sortedEditBankGlAccounts = useMemo(() => {
+    return [...bankGlAccounts].sort((a, b) => {
+      const aMatch = checkGlAccountCurrencyMatch(a.gl_number, editAccCurrency).isMatch;
+      const bMatch = checkGlAccountCurrencyMatch(b.gl_number, editAccCurrency).isMatch;
+      if (aMatch && !bMatch) return -1;
+      if (!aMatch && bMatch) return 1;
+      return a.gl_number.localeCompare(b.gl_number);
+    });
+  }, [bankGlAccounts, editAccCurrency]);
+
+  const sortedEditBankJournals = useMemo(() => {
+    return [...bankJournals].sort((a, b) => {
+      const aMatch = checkJournalCurrencyMatch(a.currency, editAccCurrency).isMatch;
+      const bMatch = checkJournalCurrencyMatch(b.currency, editAccCurrency).isMatch;
+      if (aMatch && !bMatch) return -1;
+      if (!aMatch && bMatch) return 1;
+      return a.code.localeCompare(b.code);
+    });
+  }, [bankJournals, editAccCurrency]);
+
+  const selectedEditGl = bankGlAccounts.find(g => g.id === editGlAccountId);
+  const selectedEditJournal = bankJournals.find(j => j.id === editJournalId);
+  const editGlMatch = checkGlAccountCurrencyMatch(selectedEditGl?.gl_number, editAccCurrency);
+  const editJournalMatch = checkJournalCurrencyMatch(selectedEditJournal?.currency, editAccCurrency);
 
   const accountFormat = detectAccountFormat(accountNumber);
   const detectedBankInfo = detectBankFromAccountNumber(accountNumber);
@@ -109,6 +264,72 @@ export function BankAccountsTab({ companyId }: Props) {
         setBankName('other');
         setCustomBankName(bankInfo.bankName);
       }
+    }
+  };
+
+  const handleJournalChange = (jId: string) => {
+    setSelectedJournalId(jId);
+    if (jId && jId !== 'none') {
+      const j = bankJournals.find((bj: any) => bj.id === jId);
+      if (j?.connected_gl_account) {
+        const matchingGl = bankGlAccounts.find((ga: any) => ga.gl_number === j.connected_gl_account);
+        if (matchingGl) {
+          setSelectedGlAccountId(matchingGl.id);
+        }
+      }
+      if (j?.currency && j.currency.trim()) {
+        setCurrency(j.currency.trim());
+      }
+    }
+  };
+
+  const startEditAccount = (acc: BankAccount) => {
+    setEditingAccount(acc);
+    setEditJournalId(acc.journal_id || 'none');
+    setEditGlAccountId(acc.gl_account_id || 'none');
+  };
+
+  const handleEditJournalChange = (jId: string) => {
+    setEditJournalId(jId);
+    if (jId && jId !== 'none') {
+      const j = bankJournals.find((bj: any) => bj.id === jId);
+      if (j?.connected_gl_account) {
+        const matchingGl = bankGlAccounts.find((ga: any) => ga.gl_number === j.connected_gl_account);
+        if (matchingGl) {
+          setEditGlAccountId(matchingGl.id);
+        }
+      }
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingAccount) return;
+    setEditSaving(true);
+    try {
+      const { error } = await supabase
+        .from('company_bank_accounts')
+        .update({
+          journal_id: editJournalId && editJournalId !== 'none' ? editJournalId : null,
+          gl_account_id: editGlAccountId && editGlAccountId !== 'none' ? editGlAccountId : null,
+        })
+        .eq('id', editingAccount.id);
+
+      if (error) throw error;
+
+      toast({ title: 'Siker', description: 'Bankszámla könyvelési beállításai frissítve.' });
+      setEditingAccount(null);
+      queryClient.invalidateQueries({ queryKey: ['company-bank-accounts', companyId] });
+    } catch (err: any) {
+      reportError({
+        type: 'db_query',
+        component: 'BankAccountsTab',
+        action: 'handleSaveEdit',
+        message: err?.message || 'Nem sikerült frissíteni a bankszámlát.',
+        error: err,
+      });
+      toast({ title: 'Hiba', description: 'Nem sikerült frissíteni a beállításokat.', variant: 'destructive' });
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -140,6 +361,8 @@ export function BankAccountsTab({ companyId }: Props) {
           bank_name: finalBankName,
           account_number: accountNumber.trim(),
           currency: currency,
+          journal_id: selectedJournalId && selectedJournalId !== 'none' ? selectedJournalId : null,
+          gl_account_id: selectedGlAccountId && selectedGlAccountId !== 'none' ? selectedGlAccountId : null,
         });
 
       if (error) throw error;
@@ -147,6 +370,8 @@ export function BankAccountsTab({ companyId }: Props) {
       toast({ title: 'Siker', description: 'Bankszámla sikeresen hozzáadva.' });
       setAccountNumber('');
       setCustomBankName('');
+      setSelectedJournalId('none');
+      setSelectedGlAccountId('none');
       setShowAddForm(false);
       queryClient.invalidateQueries({ queryKey: ['company-bank-accounts', companyId] });
     } catch (err: any) {
@@ -248,7 +473,7 @@ export function BankAccountsTab({ companyId }: Props) {
               {t('bank_accounts.title', 'Céges bankszámlák')}
             </CardTitle>
             <CardDescription>
-              {t('bank_accounts.subtitle', 'Regisztráld a cég saját bankszámláit a kimenő utalási listák generálásához.')}
+              {t('bank_accounts.subtitle', 'Regisztráld a cég saját bankszámláit a kimenő utalási listák generálásához és a könyvelési összerendeléshez.')}
             </CardDescription>
           </div>
           {!showAddForm && (
@@ -354,6 +579,72 @@ export function BankAccountsTab({ companyId }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Könyvelési összerendelés szekció */}
+                <div className="col-span-1 md:col-span-3 pt-3 border-t border-border/40 space-y-3">
+                  <div className="flex items-center gap-1.5">
+                    <BookOpen className="h-4 w-4 text-primary" />
+                    <span className="text-xs font-semibold text-foreground">Könyvelési összerendelés (eaisyBooks)</span>
+                    <Badge variant="outline" className="text-[10px] font-normal text-muted-foreground ml-1">Opcionális</Badge>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="acc_journal" className="text-xs">Kapcsolódó Bank Napló</Label>
+                      <Select value={selectedJournalId} onValueChange={handleJournalChange}>
+                        <SelectTrigger id="acc_journal" className="bg-background text-xs">
+                          <SelectValue placeholder="— Nincs hozzárendelve —" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">— Nincs hozzárendelve —</SelectItem>
+                          {sortedBankJournals.map(j => {
+                            const jMatch = checkJournalCurrencyMatch(j.currency, currency);
+                            return (
+                              <SelectItem key={j.id} value={j.id}>
+                                [{j.code}] {j.name} ({j.currency || 'HUF'}) {!jMatch.isMatch ? '⚠️ (Eltérő deviza)' : ''}
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[11px] text-muted-foreground">
+                        Ebbe a naplóba generálódnak automatikusan a banki tételek.
+                      </p>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="acc_gl" className="text-xs">Kapcsolódó Főkönyvi Számla</Label>
+                      <Select value={selectedGlAccountId} onValueChange={setSelectedGlAccountId}>
+                        <SelectTrigger id="acc_gl" className="bg-background text-xs">
+                          <SelectValue placeholder="— Nincs hozzárendelve —" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">— Nincs hozzárendelve —</SelectItem>
+                          {sortedBankGlAccounts.map(g => {
+                            const gMatch = checkGlAccountCurrencyMatch(g.gl_number, currency);
+                            return (
+                              <SelectItem key={g.id} value={g.id}>
+                                {g.gl_number} - {g.short_name} {!gMatch.isMatch ? '⚠️ (Eltérő deviza)' : ''}
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[11px] text-muted-foreground">
+                        Erre az analitikus számlára (pl. 3841, 3842, 3861) könyvelődik az egyenleg.
+                      </p>
+                    </div>
+                  </div>
+
+                  {((selectedGlAccountId !== 'none' && !addGlMatch.isMatch) || (selectedJournalId !== 'none' && !addJournalMatch.isMatch)) && (
+                    <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2">
+                      <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                      <div className="space-y-1">
+                        {selectedJournalId !== 'none' && !addJournalMatch.isMatch && <p>{addJournalMatch.warning}</p>}
+                        {selectedGlAccountId !== 'none' && !addGlMatch.isMatch && <p>{addGlMatch.warning}</p>}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex gap-2 pt-2">
@@ -383,7 +674,7 @@ export function BankAccountsTab({ companyId }: Props) {
                 return (
                   <div
                     key={acc.id}
-                    className={`relative p-5 rounded-2xl bg-gradient-to-br ${gradient} shadow-md overflow-hidden min-h-[140px] flex flex-col justify-between group transition-all duration-300 hover:scale-[1.02] hover:shadow-lg`}
+                    className={`relative p-5 rounded-2xl bg-gradient-to-br ${gradient} shadow-md overflow-hidden min-h-[160px] flex flex-col justify-between group transition-all duration-300 hover:scale-[1.02] hover:shadow-lg`}
                   >
                     {/* Background glassmorphic circle */}
                     <div className="absolute right-[-20px] top-[-20px] w-32 h-32 bg-white/10 rounded-full blur-xl pointer-events-none" />
@@ -401,22 +692,75 @@ export function BankAccountsTab({ companyId }: Props) {
                           {acc.currency} {t('bank_accounts.account_suffix', 'Számla')}
                         </p>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-white/80 hover:text-red-400 hover:bg-white/10 rounded-full shrink-0 z-20"
-                        onClick={() => handleDeleteAccount(acc.id)}
-                        title="Törlés"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/15 rounded-full shrink-0 z-20"
+                          onClick={() => startEditAccount(acc)}
+                          title="Könyvelési beállítások"
+                        >
+                          <Settings2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-white/80 hover:text-red-400 hover:bg-white/15 rounded-full shrink-0 z-20"
+                          onClick={() => handleDeleteAccount(acc.id)}
+                          title="Törlés"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
 
-                    <div className="mt-4 z-10">
+                    <div className="mt-2 z-10">
                       <p className="text-xs opacity-75">{t('bank_accounts.account_number_label', 'Számlaszám')}</p>
                       <p className="font-mono text-sm tracking-wider font-semibold select-all bg-black/15 px-2 py-1 rounded mt-0.5 inline-block border border-white/10">
                         {formatAccountDisplay(acc.account_number)}
                       </p>
+                    </div>
+
+                    {/* Könyvelési hozzárendelés címke és gyorsgomb */}
+                    <div className="mt-3 pt-2.5 border-t border-white/15 flex items-center justify-between gap-2 z-10">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <BookOpen className="h-3.5 w-3.5 opacity-80 shrink-0" />
+                        {(() => {
+                          const j = bankJournals.find(bj => bj.id === acc.journal_id);
+                          const g = bankGlAccounts.find(ga => ga.id === acc.gl_account_id);
+                          const gMatch = g ? checkGlAccountCurrencyMatch(g.gl_number, acc.currency) : { isMatch: true };
+                          const jMatch = j ? checkJournalCurrencyMatch(j.currency, acc.currency) : { isMatch: true };
+                          const hasMismatch = !gMatch.isMatch || !jMatch.isMatch;
+
+                          let text = 'Nincs főkönyvhöz rendelve';
+                          if (j && g) text = `[${j.code}] ${j.name} • ${g.gl_number}`;
+                          else if (j) text = `[${j.code}] ${j.name}`;
+                          else if (g) text = `${g.gl_number} - ${g.short_name}`;
+
+                          return (
+                            <span className="text-xs font-medium opacity-90 truncate max-w-[220px] flex items-center gap-1">
+                              {text}
+                              {hasMismatch && (
+                                <span
+                                  title={gMatch.warning || jMatch.warning}
+                                  className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[10px] font-bold bg-amber-500/30 text-amber-200 border border-amber-400/40 shrink-0 ml-1"
+                                >
+                                  ⚠️ Eltérő deviza
+                                </span>
+                              )}
+                            </span>
+                          );
+                        })()}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-[11px] text-white/90 hover:text-white hover:bg-white/15 rounded-md shrink-0"
+                        onClick={() => startEditAccount(acc)}
+                      >
+                        Beállítás
+                      </Button>
                     </div>
                   </div>
                 );
@@ -425,6 +769,95 @@ export function BankAccountsTab({ companyId }: Props) {
           )}
         </CardContent>
       </Card>
+
+      {/* Könyvelési beállítások szerkesztő modál */}
+      <Dialog open={!!editingAccount} onOpenChange={open => !open && setEditingAccount(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <Landmark className="h-5 w-5 text-primary" />
+              Könyvelési beállítások
+            </DialogTitle>
+            <DialogDescription>
+              Rendeld hozzá a(z) <span className="font-semibold text-foreground">{editingAccount?.bank_name}</span> ({editingAccount?.currency}) számlát a megfelelő könyvelési naplóhoz és főkönyvi számhoz.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-3">
+            <div className="p-3 bg-muted/40 rounded-xl space-y-1 text-xs">
+              <div className="text-muted-foreground">Számlaszám:</div>
+              <div className="font-mono font-semibold text-sm select-all">
+                {editingAccount && formatAccountDisplay(editingAccount.account_number)}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit_journal" className="text-xs">Kapcsolódó Bank Napló</Label>
+              <Select value={editJournalId} onValueChange={handleEditJournalChange}>
+                <SelectTrigger id="edit_journal">
+                  <SelectValue placeholder="— Nincs hozzárendelve —" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— Nincs hozzárendelve —</SelectItem>
+                  {sortedEditBankJournals.map(j => {
+                    const jMatch = checkJournalCurrencyMatch(j.currency, editAccCurrency);
+                    return (
+                      <SelectItem key={j.id} value={j.id}>
+                        [{j.code}] {j.name} ({j.currency || 'HUF'}) {!jMatch.isMatch ? '⚠️ (Eltérő deviza)' : ''}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-muted-foreground">
+                A banki tranzakciókból ide készülnek majd az automatikus könyvelési tervezetek.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit_gl" className="text-xs">Kapcsolódó Főkönyvi Számla</Label>
+              <Select value={editGlAccountId} onValueChange={setEditGlAccountId}>
+                <SelectTrigger id="edit_gl">
+                  <SelectValue placeholder="— Nincs hozzárendelve —" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— Nincs hozzárendelve —</SelectItem>
+                  {sortedEditBankGlAccounts.map(g => {
+                    const gMatch = checkGlAccountCurrencyMatch(g.gl_number, editAccCurrency);
+                    return (
+                      <SelectItem key={g.id} value={g.id}>
+                        {g.gl_number} - {g.short_name} {!gMatch.isMatch ? '⚠️ (Eltérő deviza)' : ''}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-muted-foreground">
+                Az analitikus számla, amelyre a bank mozgásai könyvelődnek (pl. 3841, 3842, 3861).
+              </p>
+            </div>
+
+            {((editGlAccountId !== 'none' && !editGlMatch.isMatch) || (editJournalId !== 'none' && !editJournalMatch.isMatch)) && (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                <div className="space-y-1">
+                  {editJournalId !== 'none' && !editJournalMatch.isMatch && <p>{editJournalMatch.warning}</p>}
+                  {editGlAccountId !== 'none' && !editGlMatch.isMatch && <p>{editGlMatch.warning}</p>}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setEditingAccount(null)}>
+              Mégse
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={editSaving}>
+              {editSaving ? 'Mentés...' : 'Beállítások mentése'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Card className="border-border/60 bg-muted/30 shadow-none">
         <CardContent className="pt-4 flex gap-3 items-start text-xs text-muted-foreground">
@@ -440,3 +873,4 @@ export function BankAccountsTab({ companyId }: Props) {
     </div>
   );
 }
+

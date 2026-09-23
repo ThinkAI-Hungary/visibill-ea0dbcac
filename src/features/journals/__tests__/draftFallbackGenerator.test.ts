@@ -677,4 +677,133 @@ describe('draftFallbackGenerator', () => {
     // Crucial assertion: Must resolve to 3842 (OTP analytical), not 3841 (K&H)!
     expect(bankLine.gl_account_id).toBe('gl-3842-otp');
   });
+
+  it('should directly route transactions to configured journal_id and gl_account_id from company_bank_accounts', async () => {
+    const mockItems = [
+      {
+        item_id: 'tr-cba-mapped',
+        gl_account_id: 'gl-cust-311',
+        source_table: 'transactions',
+        item_type: 'Banki tranzakció',
+        description: 'Átutalás jóváírás számlára: 10402568-50526884-55571005',
+        amount: 50000,
+        original_amount: 50000,
+        original_currency: 'HUF',
+        item_date: '2026-08-25'
+      }
+    ];
+
+    const insertedHeaders: any[] = [];
+    const insertedLines: any[] = [];
+
+    vi.mocked(supabase.rpc).mockImplementation(async (rpcName: string) => {
+      if (rpcName === 'get_gl_categorized_items') {
+        return { data: mockItems, error: null } as any;
+      }
+      return { data: null, error: null } as any;
+    });
+
+    vi.mocked(supabase.from).mockImplementation((table: string): any => {
+      if (table === 'company_bank_accounts') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({
+              data: [
+                {
+                  id: 'cba-kh',
+                  bank_name: 'K&H Bank',
+                  account_number: '10402568-50526884-55571005',
+                  currency: 'HUF',
+                  journal_id: 'j-b1-kh-custom',
+                  gl_account_id: 'gl-3841-kh-custom'
+                }
+              ],
+              error: null
+            })
+          })
+        };
+      }
+      if (table === 'acc_journals') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({
+              data: [
+                { id: 'j-b1-kh-custom', code: 'B1', name: 'K&H bank HUF', type: 'BANK', connected_gl_account: '3841', currency: 'HUF' },
+                { id: 'j-b3-otp', code: 'B3', name: 'OTP Bank HUF', type: 'BANK', connected_gl_account: '3842', currency: 'HUF' }
+              ],
+              error: null
+            })
+          })
+        };
+      }
+      if (table === 'gl_accounts') {
+        return {
+          select: vi.fn().mockReturnValue({
+            or: vi.fn().mockResolvedValue({
+              data: [
+                { id: 'gl-3841-kh-custom', gl_number: '3841', short_name: 'K&H Bank HUF Speciális' },
+                { id: 'gl-3842-otp', gl_number: '3842', short_name: 'OTP Bank HUF' },
+                { id: 'gl-cust-311', gl_number: '3110', short_name: 'Vevők' },
+                { id: 'gl-supp-4541', gl_number: '4541', short_name: 'Szállítók' }
+              ],
+              error: null
+            })
+          })
+        };
+      }
+      if (table === 'acc_journal_headers') {
+        return {
+          delete: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockResolvedValue({ data: null, error: null })
+            })
+          }),
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ data: [], error: null })
+          }),
+          insert: vi.fn().mockImplementation((payload) => {
+            insertedHeaders.push(payload);
+            return {
+              select: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({ data: { id: 'hdr-cba' }, error: null })
+              })
+            };
+          })
+        };
+      }
+      if (table === 'acc_journal_lines') {
+        return {
+          insert: vi.fn().mockImplementation((payload) => {
+            if (Array.isArray(payload)) {
+              insertedLines.push(...payload);
+            } else {
+              insertedLines.push(payload);
+            }
+            return {
+              select: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({ data: { id: 'line-cba' }, error: null })
+              })
+            };
+          })
+        };
+      }
+      return {
+        select: vi.fn().mockReturnValue({
+          in: vi.fn().mockResolvedValue({ data: [], error: null }),
+          eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+          order: vi.fn().mockResolvedValue({ data: [], error: null })
+        })
+      };
+    });
+
+    const count = await generateDraftsFallback(mockCompanyId, mockPresetId);
+    expect(count).toBe(1);
+    expect(insertedHeaders.length).toBe(1);
+    expect(insertedHeaders[0].journal_id).toBe('j-b1-kh-custom');
+
+    const bankLine = insertedLines.find(l => l.dc_type === 'T');
+    expect(bankLine).toBeDefined();
+    expect(bankLine.gl_account_id).toBe('gl-3841-kh-custom');
+  });
 });
+

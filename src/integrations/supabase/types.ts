@@ -6017,7 +6017,9 @@ export type Database = {
           company_id: string
           created_at: string
           currency: string
+          gl_account_id: string | null
           id: string
+          journal_id: string | null
           updated_at: string
         }
         Insert: {
@@ -6026,7 +6028,9 @@ export type Database = {
           company_id: string
           created_at?: string
           currency?: string
+          gl_account_id?: string | null
           id?: string
+          journal_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -6035,7 +6039,9 @@ export type Database = {
           company_id?: string
           created_at?: string
           currency?: string
+          gl_account_id?: string | null
           id?: string
+          journal_id?: string | null
           updated_at?: string
         }
         Relationships: [

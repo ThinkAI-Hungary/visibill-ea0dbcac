@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import OpeningJournalWizardModal from '../OpeningJournalWizardModal';
+import OpeningJournalWizardModal, { isForeignCurrencyAccount, findMnbRateForDate } from '../OpeningJournalWizardModal';
 
 beforeAll(() => {
   global.ResizeObserver = class {
@@ -42,6 +42,7 @@ vi.mock('@/lib/glData', () => ({
     { id: 'gl-2', gl_number: '311', short_name: 'Vevők' },
     { id: 'gl-3', gl_number: '454', short_name: 'Szállítók' },
     { id: 'gl-4', gl_number: '491', short_name: 'Nyitómérleg technikai számla' },
+    { id: 'gl-5', gl_number: '3861', short_name: 'EUR Devizabetétszámla' },
   ]),
 }));
 
@@ -227,4 +228,141 @@ describe('OpeningJournalWizardModal Component', () => {
       expect(screen.getByText(/Tovább a Főkönyvhöz/i)).toBeInTheDocument();
     });
   });
+
+  describe('Foreign Currency Opening Support (Devizás Nyitó)', () => {
+    it('correctly identifies foreign currency accounts via isForeignCurrencyAccount', () => {
+      // 386* Devizabetét
+      expect(isForeignCurrencyAccount('3861', 'EUR Bankszámla')).toBe(true);
+      expect(isForeignCurrencyAccount('386.10', 'Devizabetét')).toBe(true);
+
+      // 382* Valutapénztár
+      expect(isForeignCurrencyAccount('3821', 'EUR Valutapénztár')).toBe(true);
+
+      // 316* Külföldi vevők / 317*
+      expect(isForeignCurrencyAccount('316', 'Külföldi vevők')).toBe(true);
+      expect(isForeignCurrencyAccount('3171', 'Devizás követelések')).toBe(true);
+
+      // 4542* Külföldi szállítók / 455*
+      expect(isForeignCurrencyAccount('4542', 'Külföldi szállítók')).toBe(true);
+      expect(isForeignCurrencyAccount('4551', 'Devizás kötelezettségek')).toBe(true);
+
+      // Name based detection
+      expect(isForeignCurrencyAccount('3849', 'Egyedi deviza számla')).toBe(true);
+
+      // Standard HUF accounts
+      expect(isForeignCurrencyAccount('111', 'Ingatlanok')).toBe(false);
+      expect(isForeignCurrencyAccount('311', 'Belföldi vevők')).toBe(false);
+      expect(isForeignCurrencyAccount('454', 'Belföldi szállítók')).toBe(false);
+      expect(isForeignCurrencyAccount('491', 'Nyitómérleg technikai')).toBe(false);
+    });
+
+    it('toggles foreign currency mode on a row and auto-calculates HUF amount from foreign_amount and exchange_rate', async () => {
+      renderModal();
+
+      // Navigate to Step 2
+      fireEvent.click(screen.getByText(/Tovább a Főkönyvhöz/i));
+
+      await waitFor(() => {
+        expect(screen.getByText(/Sor hozzáadása/i)).toBeInTheDocument();
+      });
+
+      // Toggle foreign mode on row 0
+      const foreignToggle0 = document.getElementById('foreign-toggle-0');
+      expect(foreignToggle0).toBeInTheDocument();
+      fireEvent.click(foreignToggle0!);
+
+      // foreign amount and rate inputs should now appear
+      await waitFor(() => {
+        expect(document.getElementById('foreign-amount-input-0')).toBeInTheDocument();
+        expect(document.getElementById('exchange-rate-input-0')).toBeInTheDocument();
+      });
+
+      const fAmountInput = document.getElementById('foreign-amount-input-0') as HTMLInputElement;
+      const rateInput = document.getElementById('exchange-rate-input-0') as HTMLInputElement;
+      const amountInput = document.getElementById('amount-input-0') as HTMLInputElement;
+
+      // Enter foreign amount 1000 EUR
+      fireEvent.change(fAmountInput, { target: { value: '1000' } });
+
+      // Enter exchange rate 405.5
+      fireEvent.change(rateInput, { target: { value: '405.5' } });
+
+      // Amount should auto-calculate: 1000 * 405.5 = 405500
+      await waitFor(() => {
+        expect(amountInput.value).toBe('405500');
+      });
+    });
+
+    describe('One-Click MNB Closing Rate Fetch (Blind Spot 2)', () => {
+      const mockRates = [
+        { currency: 'EUR', rate_date: '2026-01-02', rate: 410.2 },
+        { currency: 'EUR', rate_date: '2025-12-31', rate: 408.5 },
+        { currency: 'USD', rate_date: '2025-12-31', rate: 380.0 },
+        { currency: 'CHF', rate_date: '2025-12-15', rate: 430.0 },
+      ];
+
+      it('finds exact matching MNB rate for target date', () => {
+        const res = findMnbRateForDate(mockRates, 'EUR', '2025-12-31');
+        expect(res).not.toBeNull();
+        expect(res?.rate).toBe(408.5);
+        expect(res?.date).toBe('2025-12-31');
+        expect(res?.isExact).toBe(true);
+      });
+
+      it('finds last available business day rate when opening date is a holiday (e.g. Jan 1)', () => {
+        const res = findMnbRateForDate(mockRates, 'EUR', '2026-01-01');
+        expect(res).not.toBeNull();
+        expect(res?.rate).toBe(408.5);
+        expect(res?.date).toBe('2025-12-31');
+        expect(res?.isExact).toBe(false);
+      });
+
+      it('returns rate 1 for HUF currency', () => {
+        const res = findMnbRateForDate(mockRates, 'HUF', '2026-01-01');
+        expect(res).toEqual({ rate: 1, date: '2026-01-01', isExact: true });
+      });
+
+      it('returns fallback rate when target date precedes all table records', () => {
+        const res = findMnbRateForDate(mockRates, 'CHF', '2025-01-01');
+        expect(res).not.toBeNull();
+        expect(res?.rate).toBe(430.0);
+        expect(res?.isExact).toBe(false);
+      });
+
+      it('returns null when currency has no rates in table', () => {
+        const res = findMnbRateForDate(mockRates, 'GBP', '2026-01-01');
+        expect(res).toBeNull();
+      });
+
+      it('renders row-level and bulk MNB fetch buttons when foreign currency mode is active', async () => {
+        renderModal();
+
+        // Navigate to Step 2
+        fireEvent.click(screen.getByText(/Tovább a Főkönyvhöz/i));
+
+        await waitFor(() => {
+          expect(screen.getByText(/Sor hozzáadása/i)).toBeInTheDocument();
+        });
+
+        // Toggle foreign mode on row 0
+        const foreignToggle0 = document.getElementById('foreign-toggle-0');
+        fireEvent.click(foreignToggle0!);
+
+        // Row MNB button and bulk button should now be rendered
+        await waitFor(() => {
+          expect(document.getElementById('fetch-mnb-btn-0')).toBeInTheDocument();
+          expect(document.getElementById('fetch-all-mnb-rates-btn')).toBeInTheDocument();
+        });
+
+        // Clicking row MNB button works without error
+        const fetchMnbBtn = document.getElementById('fetch-mnb-btn-0')!;
+        fireEvent.click(fetchMnbBtn);
+
+        // Clicking bulk MNB button works without error
+        const fetchAllMnbBtn = document.getElementById('fetch-all-mnb-rates-btn')!;
+        fireEvent.click(fetchAllMnbBtn);
+      });
+    });
+  });
 });
+

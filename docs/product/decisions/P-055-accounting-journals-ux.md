@@ -73,6 +73,17 @@ Hogyan jelenjen meg a Könyvelési Napló (Accounting Journals) felülete az eai
      - Amennyiben egy visszanyitott piszkozat rendelkezik már korábban kiosztott `journal_number`-rel, a sorvégi piros törlés gomb helyett egy inaktív, védett állapotot jelző ikon jelenik meg: *"A tétel hivatalos bizonylatszámmal rendelkezik (V/9), a bizonylati fegyelem és sorszámfolytonosság védelme miatt nem törölhető. Kérjük könyvelje le vagy sztornózza!"*
      - A tömeges törlési művelet (`bulkDeleteMutation`) automatikusan megvédi a számozott tételeket a törléstől, és tájékoztató toast üzenetet jelenít meg.
 
+8. **Többdevizás Nyitó Tételek & Nyitó Varázsló Ergonómiai Finomhangolások (2026-09-23):**
+   - **Többdevizás Nyitó Tétel Kezelés (`OpeningJournalWizardModal.tsx`):**
+     - A 2. lépésben minden nyitó tételsorhoz opcionális devizás kapcsoló (`+ Deviza` gomb) tartozik, amellyel aktiválható a devizás beviteli panel: deviza összeg (`foreign_amount`), devizanem választó (`currency`: EUR, USD, GBP, CHF) és árfolyam mező (`exchange_rate`).
+     - **Automatikus devizás számlafelismerés:** Ha a felhasználó devizás jellegű mérlegszámlát választ ki (pl. 386 Devizabetét, 382 Valutapénztár, 316 Külföldi vevők, 4542 Külföldi szállítók vagy nevükben valutát/devizát tartalmazó számlák), a rendszer automatikusan bekapcsolja a devizás panelt.
+     - **Hivatalos MNB Árfolyam Integráció:** A soronkénti egyedi `MNB` gomb és a fejlécben elhelyezett tömeges *"MNB árfolyamok kitöltése"* funkció a fordulónapra (vagy a legközelebbi megelőző banki munkanapra) érvényes hivatalos MNB devizaárfolyamot tölti be, és valós időben forintosítja a könyvelt értéket (`amount = Math.round(foreign_amount * exchange_rate)`).
+     - Az `acc_journal_lines` táblában mindkét érték (a devizaösszeg/árfolyam és a forintosított könyvelt összeg) rögzítésre kerül.
+   - **Felületi Ergonómia és Versenyhelyzet-mentesítés:**
+     - **Popover Dropdown stabilitás:** A számlaválasztó gomb `onFocus` eseménykezelőjének eltávolításával megszűnt a Radix PopoverTrigger egérkattintási versenyhelyzete; a dropdown normál kattintásra azonnal megnyílik és stabilan nyitva marad a keresés és kiválasztás során.
+     - **Intelligens Sorhozzáadás:** Új sor beszúrásakor vagy lefelé lépéskor a fókusz a számlaválasztó gombra kerül, de a keresőablak nem ugrik fel tolakodóan a képernyőre, kizárólag szándékos felhasználói interakcióra nyílik meg.
+     - **Zavartalan Számbevitel (`showStepper={false}`):** A pénzügyi és árfolyam `NumberInput` mezőkről eltávolításra kerültek a redundáns léptetőnyilak (`ChevronUp`/`ChevronDown`), megszüntetve a vizuális fedést és összecsúszást a beágyazott `Ft` és `Ft/EUR` devizajelzésekkel.
+
 ## Current Implementation
 
 - Oldal: `src/pages/JournalsPage.tsx`

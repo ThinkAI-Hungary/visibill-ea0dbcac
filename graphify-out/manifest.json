@@ -1060,8 +1060,8 @@
     "semantic_hash": ""
   },
   "src/integrations/supabase/types.ts": {
-    "mtime": 1789917780.596865,
-    "ast_hash": "f5e21c19041fa828a1c2f6ec47009167",
+    "mtime": 1790193375.3519785,
+    "ast_hash": "52b3c193453af7e3b47f2587f05ade90",
     "semantic_hash": ""
   },
   "src/lib/annualReportPdf.ts": {
@@ -1330,8 +1330,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/ClientMissingInvoicesPage.tsx": {
-    "mtime": 1790169404.8001971,
-    "ast_hash": "189f81711178d6cddb2c2e31d99938aa",
+    "mtime": 1790195770.4242709,
+    "ast_hash": "356fc6f6f1281aad03728fb6d7bc9a76",
     "semantic_hash": ""
   },
   "src/pages/Accounty/ClientMissingInvoicesReportPage.tsx": {
@@ -1340,8 +1340,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/ClientPortalPage.tsx": {
-    "mtime": 1790168409.1853757,
-    "ast_hash": "74ac50bd72367d7810df7641dcbfbaea",
+    "mtime": 1790195770.4253128,
+    "ast_hash": "85ca43e87d98853e4d0801ba6e976f74",
     "semantic_hash": ""
   },
   "src/pages/Accounty/ClientReportsPage.tsx": {
@@ -1640,8 +1640,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/accounty-detect-missing/index.ts": {
-    "mtime": 1783704240.8533287,
-    "ast_hash": "c0c4f411c6c2dc308af16fd29301d1d3",
+    "mtime": 1790195770.4258795,
+    "ast_hash": "86a200d168ae1833ebb4d40d5135126f",
     "semantic_hash": ""
   },
   "supabase/functions/accounty-generate-deadlines/index.ts": {
@@ -1655,9 +1655,9 @@
     "semantic_hash": ""
   },
   "supabase/functions/check-missing-invoices/index.ts": {
-    "mtime": 1780695606.4195788,
-    "ast_hash": "9d6ecac96af73f0f8fdf17a42a7948e5",
-    "semantic_hash": "9d6ecac96af73f0f8fdf17a42a7948e5"
+    "mtime": 1790195770.4263952,
+    "ast_hash": "d05726f31b2dab803114ebc9a05f20ea",
+    "semantic_hash": ""
   },
   "supabase/functions/check-payment-deadlines/index.ts": {
     "mtime": 1788010724.3349092,
@@ -6065,8 +6065,8 @@
     "semantic_hash": ""
   },
   "src/components/settings/BankAccountsTab.tsx": {
-    "mtime": 1790095135.5974846,
-    "ast_hash": "9646945697da3c63a787b35b2df76386",
+    "mtime": 1790195850.3353646,
+    "ast_hash": "2c369573b6a68253ada3b0ace4cd7342",
     "semantic_hash": ""
   },
   "src/components/ui/FilePreviewModal.tsx": {
@@ -7270,8 +7270,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-057-accounting-journals-architecture.md": {
-    "mtime": 1788586819.852818,
-    "ast_hash": "3b71cfcb328c8704d655df98f4f2a41d",
+    "mtime": 1790199074.4060605,
+    "ast_hash": "27727755d57e1fec8d225c484a33a830",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-058-bank-transfers-architecture.md": {
@@ -7290,8 +7290,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-055-accounting-journals-ux.md": {
-    "mtime": 1789108999.1275542,
-    "ast_hash": "de3e80ca596accbc78e0a7757ccde745",
+    "mtime": 1790199074.4029262,
+    "ast_hash": "62cc79d40540283fd1cf032d7aabd6e2",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-056-bank-transfers-export-ux.md": {
@@ -8155,8 +8155,8 @@
     "semantic_hash": ""
   },
   "src/components/journals/OpeningJournalWizardModal.tsx": {
-    "mtime": 1789910901.8788397,
-    "ast_hash": "a4f759fe564d6e857648c666c3f3c16b",
+    "mtime": 1790198359.6370375,
+    "ast_hash": "88a7951d22a35af1b4b777e974531ca3",
     "semantic_hash": ""
   },
   "src/lib/nav/__tests__/navProtocol.test.ts": {
@@ -8800,13 +8800,13 @@
     "semantic_hash": ""
   },
   "src/features/journals/services/draftFallbackGenerator.ts": {
-    "mtime": 1789676945.9712448,
-    "ast_hash": "cb76a0d6b661198d38a555fdd7f89d70",
+    "mtime": 1790193788.2689931,
+    "ast_hash": "bd6b9f3f53973626e10cfd5feb9936a5",
     "semantic_hash": ""
   },
   "src/features/journals/__tests__/draftFallbackGenerator.test.ts": {
-    "mtime": 1789163591.555661,
-    "ast_hash": "be537e67aab6df7b97fbaad89a238e3a",
+    "mtime": 1790193538.0161524,
+    "ast_hash": "5f3fa701a13eb322cb20060fcb732c12",
     "semantic_hash": ""
   },
   "supabase/migrations/20260903110000_accounting_journals_daily_exchange_rates.sql": {
@@ -9015,8 +9015,8 @@
     "semantic_hash": ""
   },
   "src/components/journals/__tests__/OpeningJournalWizardModal.test.tsx": {
-    "mtime": 1789910901.8793507,
-    "ast_hash": "f124127f2b6aca3dfb9efb8f1f6697a0",
+    "mtime": 1790196096.8560991,
+    "ast_hash": "6619a2825ce30e38985590746ba335d7",
     "semantic_hash": ""
   },
   "src/features/management/__tests__/workerTelemetryActiveProcessing.test.tsx": {
@@ -11872,6 +11872,11 @@
   "src/test/tickets/useUpdateTicketAssignee.test.tsx": {
     "mtime": 1790178869.7608376,
     "ast_hash": "d31851a4eb739fa08b83c7c7970c04cf",
+    "semantic_hash": ""
+  },
+  "src/components/settings/__tests__/BankAccountsTab.test.tsx": {
+    "mtime": 1790195862.5973985,
+    "ast_hash": "1e6a4cc51cf05a358d3d6a84421cf044",
     "semantic_hash": ""
   }
 }

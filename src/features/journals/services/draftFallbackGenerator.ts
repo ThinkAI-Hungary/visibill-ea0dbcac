@@ -39,6 +39,11 @@ export async function generateDraftsFallback(
     .select('id, code, name, type, connected_gl_account, currency')
     .eq('company_id', companyId);
 
+  const { data: companyBankAccounts } = await supabase
+    .from('company_bank_accounts')
+    .select('id, bank_name, account_number, currency, journal_id, gl_account_id')
+    .eq('company_id', companyId);
+
   // Fakov GL Account Resolution:
   // Suppliers: 4541 (Belföldi), 4542 (Külföldi), 4543 (Fordított ÁFA / FAD)
   // Customers: 3111 (Belföldi), 3112 (Külföldi), 3113 (Fordított ÁFA / FAD)
@@ -175,28 +180,56 @@ export async function generateDraftsFallback(
     let source = 'AUTO_RENDSZER';
     let docId = `MISC-${item.item_id.substring(0, 8).toUpperCase()}`;
 
+    let matchedBankAccount: any = null;
+
     if (item.source_table === 'transactions') {
       source = 'AUTO_BANK';
       docId = `TR-${item.item_id.substring(0, 8).toUpperCase()}`;
 
-      // Match specific BANK journal by keyword if multiple bank journals exist for this currency
       const descLower = (item.description || '').toLowerCase();
-      const bankKeywords = ['otp', 'kh', 'k&h', 'erste', 'revolut', 'cib', 'raiffeisen', 'mbh', 'unicredit', 'binx', 'wise', 'oberbank', 'paypal'];
-      const specificJournal = journals?.find(j => {
-        if (j.type !== 'BANK' || j.currency !== currency) return false;
-        const nameLower = (j.name || '').toLowerCase();
-        const codeLower = (j.code || '').toLowerCase();
-        return bankKeywords.some(kw => 
-          (descLower.includes(kw) || (kw === 'kh' && descLower.includes('k&h'))) && 
-          (nameLower.includes(kw) || codeLower.includes(kw) || (kw === 'kh' && nameLower.includes('k&h')))
-        );
-      });
+      const cleanDesc = descLower.replace(/[-\s]/g, '');
 
-      journalId = specificJournal?.id
-               || journals?.find(j => j.type === 'BANK' && j.currency === currency && (currency === 'HUF' ? j.code === 'B1' : (currency === 'EUR' ? j.code === 'B2' : true)))?.id
-               || journals?.find(j => j.type === 'BANK' && j.currency === currency)?.id
-               || journals?.find(j => j.code === 'B1')?.id
-               || journalId;
+      // 1. Try matching with configured company_bank_accounts first
+      matchedBankAccount = companyBankAccounts?.find((cba: any) => {
+        if (!cba.journal_id && !cba.gl_account_id) return false;
+
+        // Exact or partial account number match in description
+        if (cba.account_number) {
+          const cleanCbaNum = cba.account_number.replace(/[-\s]/g, '').toLowerCase();
+          if (cleanCbaNum && cleanDesc.includes(cleanCbaNum)) return true;
+        }
+
+        // Bank name + currency match
+        if (cba.currency === currency && cba.bank_name) {
+          const bName = cba.bank_name.toLowerCase();
+          if (descLower.includes(bName) || (bName.includes('k&h') && (descLower.includes('kh') || descLower.includes('k&h')))) {
+            return true;
+          }
+        }
+        return false;
+      }) || (currency ? companyBankAccounts?.find((cba: any) => cba.currency === currency && (cba.journal_id || cba.gl_account_id)) : null);
+
+      if (matchedBankAccount?.journal_id) {
+        journalId = matchedBankAccount.journal_id;
+      } else {
+        // Match specific BANK journal by keyword if multiple bank journals exist for this currency
+        const bankKeywords = ['otp', 'kh', 'k&h', 'erste', 'revolut', 'cib', 'raiffeisen', 'mbh', 'unicredit', 'binx', 'wise', 'oberbank', 'paypal'];
+        const specificJournal = journals?.find(j => {
+          if (j.type !== 'BANK' || j.currency !== currency) return false;
+          const nameLower = (j.name || '').toLowerCase();
+          const codeLower = (j.code || '').toLowerCase();
+          return bankKeywords.some(kw => 
+            (descLower.includes(kw) || (kw === 'kh' && descLower.includes('k&h'))) && 
+            (nameLower.includes(kw) || codeLower.includes(kw) || (kw === 'kh' && nameLower.includes('k&h')))
+          );
+        });
+
+        journalId = specificJournal?.id
+                 || journals?.find(j => j.type === 'BANK' && j.currency === currency && (currency === 'HUF' ? j.code === 'B1' : (currency === 'EUR' ? j.code === 'B2' : true)))?.id
+                 || journals?.find(j => j.type === 'BANK' && j.currency === currency)?.id
+                 || journals?.find(j => j.code === 'B1')?.id
+                 || journalId;
+      }
     } else if (['invoice_items', 'nav_invoice_items'].includes(item.source_table)) {
       source = 'AUTO_SZAMLA';
       docId = `INV-${item.item_id.substring(0, 8).toUpperCase()}`;
@@ -210,9 +243,18 @@ export async function generateDraftsFallback(
     if (item.source_table === 'transactions') {
       const selectedJournal = journals?.find(j => j.id === journalId);
       let glBankId: string | undefined;
-      if (selectedJournal?.connected_gl_account) {
+
+      // 1. Direct configured gl_account_id from matched company_bank_accounts
+      if (matchedBankAccount?.gl_account_id && validGlIds.has(matchedBankAccount.gl_account_id)) {
+        glBankId = matchedBankAccount.gl_account_id;
+      }
+
+      // 2. From selected journal's connected_gl_account
+      if (!glBankId && selectedJournal?.connected_gl_account) {
         glBankId = glAccounts?.find(g => g.gl_number === selectedJournal.connected_gl_account)?.id;
       }
+
+      // 3. Fallback to analytical 384... or 386...
       if (!glBankId) {
         if (currency === 'HUF') {
           glBankId = glAccounts?.find(g => g.gl_number.startsWith('384') && g.gl_number !== '384')?.id
@@ -545,7 +587,7 @@ export async function generatePettyCashDrafts(
 
   const { data: rawPce } = await supabase
     .from('petty_cash_entries')
-    .select('id, entry_date, description, amount, currency, source_type, source_table, source_id, partner_id, is_opening')
+    .select('id, entry_date, description, amount, currency, source_type, source_table, source_id, partner_id')
     .eq('company_id', companyId);
 
   const { data: existingPostings } = await supabase
@@ -563,7 +605,7 @@ export async function generatePettyCashDrafts(
   if (invoiceSourceIds.length > 0) {
     const { data: invList } = await supabase
       .from('invoices')
-      .select('id, invoice_direction, bizonylatsorszam, partner_id')
+      .select('id, invoice_direction, bizonylatsorszam')
       .in('id', invoiceSourceIds);
     for (const inv of (invList || [])) {
       invoiceMap[inv.id] = inv;
@@ -572,7 +614,7 @@ export async function generatePettyCashDrafts(
 
   let createdCount = 0;
   for (const pce of (rawPce || [])) {
-    if (pce.is_opening || pce.source_type === 'opening_balance') continue;
+    if (pce.source_type === 'opening_balance') continue;
     if (postedKeys.has(`PCE-${pce.id}`) || postedKeys.has(pce.id)) continue;
     if (!pce.amount || Math.abs(Number(pce.amount)) === 0) continue;
 
@@ -583,7 +625,7 @@ export async function generatePettyCashDrafts(
     const docId = `KP-${pce.id.substring(0, 8).toUpperCase()}`;
 
     const linkedInv = pce.source_id ? invoiceMap[pce.source_id] : null;
-    const partnerId = pce.partner_id || linkedInv?.partner_id || null;
+    const partnerId = pce.partner_id || null;
     const isExpense = Number(pce.amount) < 0;
 
     let line1: any;
