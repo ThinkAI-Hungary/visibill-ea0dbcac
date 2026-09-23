@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, History, Plus, MailCheck, ChevronLeft } from 'lucide-react';
-import { useAccountyMissingItems, useAccountyMissingCounts, useAddMissingItem, useIgnoreMissingItem, useResolveMissingItem, useAccountyCommunicationPrefs, useGeneratePortalToken } from '@/hooks/accounty';
+import { ArrowLeft, History, Plus, MailCheck, ChevronLeft, Mail } from 'lucide-react';
+import { useAccountyMissingItems, useAccountyMissingCounts, useAddMissingItem, useIgnoreMissingItem, useResolveMissingItem, useAccountyCommunicationPrefs, useUpsertCommunicationPrefs, useGeneratePortalToken } from '@/hooks/accounty';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -79,16 +80,25 @@ export default function ClientMissingInvoicesPage() {
 
   // Communication preferences for contact email
   const { data: commPrefs } = useAccountyCommunicationPrefs(companyId || '');
+  const upsertCommPrefs = useUpsertCommunicationPrefs();
   const generateTokenMutation = useGeneratePortalToken();
 
-
   const [previewMessage, setPreviewMessage] = useState<OutgoingMessage | null>(null);
+  const [targetEmail, setTargetEmail] = useState<string>('');
+  const [saveAsDefaultEmail, setSaveAsDefaultEmail] = useState<boolean>(true);
+  const [emailError, setEmailError] = useState<string>('');
 
   // ── Handler: prepare request message for preview ──
   const handleSendToApprovalQueue = async (items: InvoiceItem[]) => {
     if (!companyId || items.length === 0) return;
 
-    const contactEmail = commPrefs?.contactEmail || 'nincs-megadva@example.com';
+    const initialEmail = (commPrefs?.contactEmail && commPrefs.contactEmail !== 'nincs-megadva@example.com')
+      ? commPrefs.contactEmail
+      : '';
+    setTargetEmail(initialEmail);
+    setEmailError('');
+    setSaveAsDefaultEmail(true);
+
     const missingItemsForEmail: MissingItemForEmail[] = items.map(item => ({
       title: item.vendor + (item.subtext ? ` – ${item.subtext}` : ''),
       category: item.category,
@@ -99,7 +109,7 @@ export default function ClientMissingInvoicesPage() {
     let portalLink = `${window.location.origin}/portal/demo-fallback`;
     try {
       const result = await generateTokenMutation.mutateAsync({ companyId, requestedItemIds: items.map(i => i.id) });
-      portalLink = `${window.location.origin}/portal/${result.token}`;
+      portalLink = `${window.location.origin}/portal/${result.token}?company_name=${encodeURIComponent(clientName)}`;
     } catch (err) {
       reportError({ type: 'db_query', component: 'ClientMissingInvoicesPage', action: 'error', message: 'Portal token creation failed:', error: err });
     }
@@ -115,7 +125,7 @@ export default function ClientMissingInvoicesPage() {
       id: `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       companyId,
       companyName: clientName,
-      contactEmail,
+      contactEmail: initialEmail,
       channel: 'email',
       category: items.some(i => i.priority === 'Sürgős') ? 'urgent' : 'normal',
       subject: generated.subject,
@@ -131,12 +141,38 @@ export default function ClientMissingInvoicesPage() {
     setPreviewMessage(message);
   };
 
-  const handleConfirmSend = () => {
+  const handleConfirmSend = async () => {
     if (!previewMessage) return;
-    addToApprovalQueue(previewMessage);
+    const cleanEmail = targetEmail.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!cleanEmail || !emailRegex.test(cleanEmail)) {
+      setEmailError('Kérjük, adjon meg egy érvényes email címet a küldéshez!');
+      return;
+    }
+
+    // Save as default if requested
+    if (saveAsDefaultEmail && companyId) {
+      try {
+        await upsertCommPrefs.mutateAsync({
+          companyId,
+          contactEmail: cleanEmail,
+          contactName: commPrefs?.contactName || clientName,
+          channelEmail: true,
+        });
+      } catch (err) {
+        console.error('Failed to save communication preferences:', err);
+      }
+    }
+
+    const finalMessage: OutgoingMessage = {
+      ...previewMessage,
+      contactEmail: cleanEmail,
+    };
+
+    addToApprovalQueue(finalMessage);
     toast({
       title: 'Bekérés a jóváhagyó sorba került',
-      description: `${previewMessage.missingItemIds.length} dokumentum – ${clientName}`,
+      description: `${finalMessage.missingItemIds.length} dokumentum – Címzett: ${cleanEmail}`,
     });
     setPreviewMessage(null);
     setSelectedIds([]);
@@ -466,14 +502,57 @@ export default function ClientMissingInvoicesPage() {
           <DialogContent className="sm:max-w-[640px] p-6 max-h-[85vh] flex flex-col gap-4 overflow-hidden dark:bg-card border-border">
             <div>
               <h3 className="text-lg font-bold text-foreground">Bekérő levél előnézete</h3>
-              <p className="text-xs text-muted-foreground mt-1">Az alábbi levelet fogjuk küldeni a(z) <span className="font-semibold">{previewMessage.contactEmail}</span> címre jóváhagyás után.</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Az alábbi levelet fogjuk küldeni a(z) <span className="font-semibold text-foreground">{targetEmail ? targetEmail : 'megadott'}</span> címre jóváhagyás után.
+              </p>
             </div>
             
             <div className="border border-border rounded-lg overflow-hidden flex flex-col flex-1 min-h-[300px] bg-background/50">
-              <div className="px-4 py-3 border-b border-border bg-card flex flex-col gap-1.5 text-xs text-muted-foreground">
-                <p><span className="font-semibold text-foreground dark:text-foreground">Címzett:</span> {previewMessage.contactEmail}</p>
-                <p><span className="font-semibold text-foreground dark:text-foreground">Tárgy:</span> {previewMessage.subject}</p>
+              <div className="px-4 py-3 border-b border-border bg-card flex flex-col gap-2.5 text-xs text-muted-foreground">
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="preview-target-email" className="font-semibold text-foreground flex items-center gap-1.5">
+                      <Mail className="w-3.5 h-3.5 text-primary" />
+                      Címzett email címe:
+                    </label>
+                    {(!commPrefs?.contactEmail || commPrefs.contactEmail === 'nincs-megadva@example.com') && (
+                      <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                        Nincs még mentett email cím
+                      </span>
+                    )}
+                  </div>
+                  <Input
+                    id="preview-target-email"
+                    type="email"
+                    value={targetEmail}
+                    onChange={(e) => {
+                      setTargetEmail(e.target.value);
+                      if (emailError) setEmailError('');
+                    }}
+                    placeholder="pl. ugyfel@cegnev.hu vagy penzugy@example.com"
+                    className="h-8 text-xs bg-background border-border"
+                  />
+                  {emailError && (
+                    <p className="text-[11px] text-destructive font-medium">{emailError}</p>
+                  )}
+                  <label className="flex items-center gap-2 cursor-pointer mt-0.5 select-none">
+                    <input
+                      type="checkbox"
+                      checked={saveAsDefaultEmail}
+                      onChange={(e) => setSaveAsDefaultEmail(e.target.checked)}
+                      className="rounded border-border text-primary focus:ring-0 w-3.5 h-3.5 cursor-pointer"
+                    />
+                    <span className="text-[11px] text-muted-foreground">
+                      Mentés a(z) {clientName} alapértelmezett kapcsolattartói emailjeként
+                    </span>
+                  </label>
+                </div>
+
+                <div className="pt-2 border-t border-border/50">
+                  <p><span className="font-semibold text-foreground dark:text-foreground">Tárgy:</span> {previewMessage.subject}</p>
+                </div>
               </div>
+
               <div 
                 className="p-6 overflow-y-auto flex-1 bg-card/40 text-sm text-foreground dark:text-foreground/90 font-sans"
                 dangerouslySetInnerHTML={{ __html: previewMessage.htmlPreview || `<pre class="font-mono whitespace-pre-wrap">${previewMessage.aiGeneratedBody}</pre>` }}
@@ -484,7 +563,11 @@ export default function ClientMissingInvoicesPage() {
               <Button variant="outline" onClick={() => setPreviewMessage(null)} className="bg-card border-border text-foreground/90">
                 Mégse
               </Button>
-              <Button onClick={handleConfirmSend} className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold gap-1.5">
+              <Button 
+                onClick={handleConfirmSend} 
+                disabled={!targetEmail.trim()}
+                className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold gap-1.5"
+              >
                 <MailCheck className="w-4 h-4" /> Bekérés küldése
               </Button>
             </div>
