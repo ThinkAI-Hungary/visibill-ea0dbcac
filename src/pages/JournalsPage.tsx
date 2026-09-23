@@ -46,10 +46,9 @@ import { InvoiceDetailPopup } from '@/components/InvoiceDetailPopup';
 import AddManualJournalEntryModal from '@/components/journals/AddManualJournalEntryModal';
 import OpeningJournalWizardModal from '@/components/journals/OpeningJournalWizardModal';
 import PeriodClosingSettings from '@/components/journals/PeriodClosingSettings';
-import AuditTrailDialog from '@/components/journals/AuditTrailDialog';
 import { getLocalizedJournalName, getNextDocumentId } from '@/lib/journalUtils';
 import { useActivePreset } from '@/hooks/useActivePreset';
-import { generatePettyCashDrafts } from '@/features/journals/services/draftFallbackGenerator';
+import { generatePettyCashDrafts, generateDraftsFallback } from '@/features/journals/services/draftFallbackGenerator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
@@ -174,7 +173,13 @@ export default function JournalsPage() {
         if (error) throw error;
         count = Number(data) || 0;
       } catch (rpcErr) {
-        console.warn('acc_generate_drafts_from_ledger warning:', rpcErr);
+        console.warn('acc_generate_drafts_from_ledger warning, attempting client-side fallback:', rpcErr);
+        try {
+          count = await generateDraftsFallback(selectedCompany.id, activePresetId);
+        } catch (fbErr) {
+          console.error('generateDraftsFallback failed as well:', fbErr);
+          throw rpcErr;
+        }
       }
       try {
         const p1Count = await generatePettyCashDrafts(selectedCompany.id, activePresetId);

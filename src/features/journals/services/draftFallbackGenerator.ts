@@ -42,20 +42,21 @@ export async function generateDraftsFallback(
   // Fakov GL Account Resolution:
   // Suppliers: 4541 (Belföldi), 4542 (Külföldi), 4543 (Fordított ÁFA / FAD)
   // Customers: 3111 (Belföldi), 3112 (Külföldi), 3113 (Fordított ÁFA / FAD)
-  // VAT: 466 (Levonható), 4668 (Arányosítandó / nem levonható), 467 (Fizetendő)
-  const glSupp1Id = glAccounts?.find(g => g.gl_number === '4541')?.id || glAccounts?.find(g => g.gl_number.startsWith('454'))?.id;
-  const glSupp2Id = glAccounts?.find(g => g.gl_number === '4542')?.id || glSupp1Id;
-  const glSupp3Id = glAccounts?.find(g => g.gl_number === '4543')?.id || glSupp1Id;
+  const glClean = (g: any) => (g.gl_number || '').replace(/\./g, '');
+
+  const glSupp1Id = glAccounts?.find(g => glClean(g) === '4541')?.id || glAccounts?.find(g => glClean(g).startsWith('454'))?.id;
+  const glSupp2Id = glAccounts?.find(g => glClean(g) === '4542')?.id || glSupp1Id;
+  const glSupp3Id = glAccounts?.find(g => glClean(g) === '4543')?.id || glSupp1Id;
   const glSuppId = glSupp1Id || glAccounts?.[0]?.id;
 
-  const glCust1Id = glAccounts?.find(g => g.gl_number === '3111')?.id || glAccounts?.find(g => g.gl_number.startsWith('311'))?.id;
-  const glCust2Id = glAccounts?.find(g => g.gl_number === '3112')?.id || glCust1Id;
-  const glCust3Id = glAccounts?.find(g => g.gl_number === '3113')?.id || glCust1Id;
+  const glCust1Id = glAccounts?.find(g => glClean(g) === '3111')?.id || glAccounts?.find(g => glClean(g).startsWith('311'))?.id;
+  const glCust2Id = glAccounts?.find(g => glClean(g) === '3112')?.id || glCust1Id;
+  const glCust3Id = glAccounts?.find(g => glClean(g) === '3113')?.id || glCust1Id;
   const glCustId = glCust1Id || glAccounts?.[0]?.id;
 
-  const glVatDedId = glAccounts?.find(g => g.gl_number === '4661')?.id || glAccounts?.find(g => g.gl_number === '466')?.id;
-  const glVatProRataId = glAccounts?.find(g => g.gl_number === '4668')?.id;
-  const glVatPayId = glAccounts?.find(g => g.gl_number === '4671')?.id || glAccounts?.find(g => g.gl_number === '467')?.id;
+  const glVatDedId = glAccounts?.find(g => glClean(g) === '4661')?.id || glAccounts?.find(g => glClean(g) === '466')?.id || glAccounts?.find(g => glClean(g).startsWith('466'))?.id;
+  const glVatProRataId = glAccounts?.find(g => glClean(g) === '4668')?.id;
+  const glVatPayId = glAccounts?.find(g => glClean(g) === '4671')?.id || glAccounts?.find(g => glClean(g) === '467')?.id || glAccounts?.find(g => glClean(g).startsWith('467'))?.id;
 
   if (!glCustId || !glSuppId) return 0;
 
