@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { Outlet } from "react-router-dom";
 import { Suspense, memo, useEffect, useState } from "react";
 import { GlobalDatePicker } from "@/components/GlobalDatePicker";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePdfExportNotifications } from "@/hooks/usePdfExportNotifications";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -17,10 +18,15 @@ interface AppLayoutProps {
  */
 const TopBar = memo(function TopBar() {
   const { isEmployee } = useUserRole();
-  if (isEmployee) return null;
   return (
-    <div className="print:hidden border-b border-border">
-      <GlobalDatePicker />
+    <div className="print:hidden border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0">
+      {!isEmployee ? (
+        <GlobalDatePicker />
+      ) : (
+        <div className="flex items-center px-6 py-2">
+          <LanguageSwitcher />
+        </div>
+      )}
     </div>
   );
 });

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAccountyClient } from '@/hooks/accounty';
@@ -26,7 +27,7 @@ interface PromptRule {
   updated_at: string;
 }
 
-const RULE_TEMPLATES = [
+const RULE_TEMPLATES_HU = [
   {
     name: 'Szoftver licenc előfizetések',
     prompt: "Minden 'szoftver', 'licenc' vagy 'előfizetés' nevű bejövő (INBOUND) tételt (pl. Cashbook, Adobe, Slack, Zoom) könyvelj a 529-es Egyéb igénybevett szolgáltatások közé.",
@@ -53,7 +54,40 @@ const RULE_TEMPLATES = [
   }
 ];
 
+const RULE_TEMPLATES_HR = [
+  {
+    name: 'Pretplate na softverske licence',
+    prompt: "Sve ulazne (INBOUND) stavke s nazivom 'softver', 'licenca' ili 'pretplata' (npr. Adobe, Slack, Zoom, Google) knjižite na konto 412 - Troškovi softvera i intelektualnih usluga.",
+    icon: Brain,
+    badge: 'Trošak'
+  },
+  {
+    name: 'Sitni inventar i oprema manje vrijednosti',
+    prompt: "Ako je stavka informatička oprema (npr. tipkovnica, miš, kabel, adapter, monitor) i iznos je manji od 465 EUR, proknjižite na konto 400 - Utrošeni materijal i sitni inventar umjesto dugotrajne imovine.",
+    icon: Lightbulb,
+    badge: 'Imovina'
+  },
+  {
+    name: 'Nabava INA goriva',
+    prompt: "Sve nabave goriva (npr. INA, Petrol, Lukoil, Crodux) knjižite na konto 400 - Troškovi goriva i energije.",
+    icon: Sparkles,
+    badge: 'Trošak'
+  },
+  {
+    name: 'Knjigovodstvene i odvjetničke naknade',
+    prompt: "Knjigovodstvene naknade, odvjetničke troškove i porezno savjetovanje uvijek rasporedite na konto 412 - Intelektualne i odvjetničke usluge.",
+    icon: Brain,
+    badge: 'Usluga'
+  }
+];
+
 export default function PromptsPage() {
+  const { t, i18n } = useTranslation('accounty');
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
+  const isHr = prefix === '/hr' || i18n.language === 'hr';
+  const RULE_TEMPLATES = isHr ? RULE_TEMPLATES_HR : RULE_TEMPLATES_HU;
+
   const { companyId } = useParams<{ companyId: string }>();
   const { selectedCompany } = useCompany();
   const { data: client } = useAccountyClient(companyId);
@@ -62,7 +96,7 @@ export default function PromptsPage() {
   const queryClient = useQueryClient();
 
   const effectiveCompanyId = companyId || selectedCompany?.id;
-  const effectiveCompanyName = client?.name || selectedCompany?.name || 'Kiválasztott cég';
+  const effectiveCompanyName = client?.name || selectedCompany?.name || (isHr ? 'Odabrana tvrtka' : 'Kiválasztott cég');
 
   const [isOpen, setIsOpen] = useState(false);
   const [newRuleName, setNewRuleName] = useState('');
@@ -152,7 +186,7 @@ export default function PromptsPage() {
     addRuleMutation.mutate({ name: newRuleName, prompt: newRulePrompt });
   };
 
-  const handleApplyTemplate = (template: typeof RULE_TEMPLATES[number]) => {
+  const handleApplyTemplate = (template: typeof RULE_TEMPLATES_HU[number]) => {
     setNewRuleName(template.name);
     setNewRulePrompt(template.prompt);
     setIsOpen(true);
@@ -175,10 +209,10 @@ export default function PromptsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <Brain className="h-8 w-8 text-primary" />
-            Könyvelési Szabályok (Prompt Library)
+            {t('prompts_page.title')}
           </h1>
           <p className="text-sm text-muted-foreground mt-1.5 max-w-[800px]">
-            Határozz meg egyedi AI prompt szabályokat a(z) <strong>{effectiveCompanyName}</strong> cégre szabva. Az itt bekapcsolt instrukciók a legmagasabb prioritással futnak le az AI főkönyvi osztályozásakor.
+            {t('prompts_page.subtitle')} (<strong>{effectiveCompanyName}</strong>)
           </p>
         </div>
 
@@ -186,37 +220,37 @@ export default function PromptsPage() {
           <DialogTrigger asChild>
             <Button className="gap-2 shrink-0 shadow-md">
               <Plus className="h-4 w-4" />
-              Új szabály hozzáadása
+              {t('prompts_page.btn_add_rule')}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg">
             <form onSubmit={handleSubmit}>
               <DialogHeader>
-                <DialogTitle>Egyedi könyvelési szabály felvétele</DialogTitle>
+                <DialogTitle>{t('prompts_page.dialog_title')}</DialogTitle>
                 <DialogDescription>
-                  Fogalmazd meg magyarul, hogy az AI milyen logika alapján könyveljen egyes tételeket.
+                  {t('prompts_page.dialog_desc')}
                 </DialogDescription>
               </DialogHeader>
 
               <div className="space-y-4 py-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="rule-name">Szabály neve</Label>
+                  <Label htmlFor="rule-name">{t('prompts_page.field_rule_name')}</Label>
                   <Input
                     id="rule-name"
                     value={newRuleName}
                     onChange={(e) => setNewRuleName(e.target.value)}
-                    placeholder="Pl. Telekom számlák kontírozása"
+                    placeholder={t('prompts_page.field_rule_name_placeholder')}
                     required
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="rule-prompt">AI Instrukció (Prompt)</Label>
+                  <Label htmlFor="rule-prompt">{t('prompts_page.field_rule_prompt')}</Label>
                   <Textarea
                     id="rule-prompt"
                     value={newRulePrompt}
                     onChange={(e) => setNewRulePrompt(e.target.value)}
-                    placeholder="Pl. Ha a tétel partnere a 'Telekom' és a megnevezésben szerepel a 'mobil', könyveld az 525-ös telekommunikációs költség számlára."
+                    placeholder={t('prompts_page.field_rule_prompt_placeholder')}
                     rows={4}
                     required
                   />
@@ -224,11 +258,11 @@ export default function PromptsPage() {
               </div>
 
               <DialogFooter>
-                <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Mégse</Button>
+                <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>{t('prompts_page.btn_cancel')}</Button>
                 <Button type="submit" disabled={addRuleMutation.isPending}>
                   {addRuleMutation.isPending ? (
-                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Mentés...</>
-                  ) : 'Szabály mentése'}
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {t('prompts_page.btn_saving')}</>
+                  ) : t('prompts_page.btn_save')}
                 </Button>
               </DialogFooter>
             </form>
@@ -245,12 +279,12 @@ export default function PromptsPage() {
                 <div>
                   <CardTitle className="text-lg font-bold flex items-center gap-1.5">
                     <Activity className="h-4 w-4 text-primary" />
-                    Aktív Szabályok
+                    {t('prompts_page.active_rules_title')}
                   </CardTitle>
-                  <CardDescription>A jelenlegi céghez beállított AI kontírozási instrukciók</CardDescription>
+                  <CardDescription>{t('prompts_page.active_rules_desc')}</CardDescription>
                 </div>
                 <div className="text-xs bg-muted px-2.5 py-1 rounded-full font-medium text-muted-foreground">
-                  {rules.length} szabály
+                  {t('prompts_page.rules_count', { count: rules.length })}
                 </div>
               </div>
             </CardHeader>
@@ -258,15 +292,15 @@ export default function PromptsPage() {
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center p-12 text-muted-foreground">
                   <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
-                  <p className="text-sm">Szabályok betöltése...</p>
+                  <p className="text-sm">{t('prompts_page.loading')}</p>
                 </div>
               ) : rules.length === 0 ? (
                 <div className="flex flex-col items-center justify-center text-center p-12 border-t border-border/40">
                   <div className="w-14 h-14 rounded-full bg-background border flex items-center justify-center text-muted-foreground/60 mb-4 shadow-inner">
                     <ToggleLeft className="h-6 w-6" />
                   </div>
-                  <h3 className="font-semibold text-foreground">Nincsenek egyedi szabályok</h3>
-                  <p className="text-sm text-muted-foreground mt-1 max-w-sm">Még nem adtál hozzá egyedi prompt szabályt ehhez a céghez. Használj sablont a jobb oldalon, vagy hozz létre újat!</p>
+                  <h3 className="font-semibold text-foreground">{t('prompts_page.empty_title')}</h3>
+                  <p className="text-sm text-muted-foreground mt-1 max-w-sm">{t('prompts_page.empty_desc')}</p>
                 </div>
               ) : (
                 <div className="divide-y divide-border/40 border-t border-border/40">
@@ -285,11 +319,11 @@ export default function PromptsPage() {
                           </h4>
                           {rule.is_active ? (
                             <span className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium px-2 py-0.5 rounded-full border border-emerald-500/10">
-                              Aktív
+                              {t('prompts_page.badge_active')}
                             </span>
                           ) : (
                             <span className="text-[10px] bg-muted text-muted-foreground font-medium px-2 py-0.5 rounded-full">
-                              Inaktív
+                              {t('prompts_page.badge_inactive')}
                             </span>
                           )}
                         </div>
@@ -297,8 +331,8 @@ export default function PromptsPage() {
                           {rule.rule_prompt}
                         </p>
                         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                          <span>Utoljára frissítve:</span>
-                          <span className="font-medium text-foreground/80">{new Date(rule.updated_at || rule.created_at).toLocaleString('hu-HU')}</span>
+                          <span>{t('prompts_page.last_updated')}</span>
+                          <span className="font-medium text-foreground/80">{new Date(rule.updated_at || rule.created_at).toLocaleString(isHr ? 'hr-HR' : 'hu-HU')}</span>
                         </div>
                       </div>
 
@@ -314,7 +348,7 @@ export default function PromptsPage() {
                           size="icon"
                           className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full"
                           onClick={() => {
-                            if (confirm('Biztosan törlöd ezt a könyvelési szabályt?')) {
+                            if (confirm(t('prompts_page.delete_confirm'))) {
                               deleteRuleMutation.mutate(rule.id);
                             }
                           }}
@@ -337,9 +371,9 @@ export default function PromptsPage() {
             <CardHeader className="pb-4">
               <CardTitle className="text-md font-bold flex items-center gap-1.5 text-primary">
                 <Sparkles className="h-4 w-4" />
-                Gyors Sablonok
+                {t('prompts_page.templates_title')}
               </CardTitle>
-              <CardDescription>Válassz a gyakran használt szabálysablonokból, és igazítsd a cégedre</CardDescription>
+              <CardDescription>{t('prompts_page.templates_desc')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {RULE_TEMPLATES.map((tpl, i) => {
@@ -377,18 +411,18 @@ export default function PromptsPage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-xs font-bold flex items-center gap-1 text-foreground/90">
                 <Info className="h-3.5 w-3.5" />
-                Hogyan írj hatékony könyvelési szabályokat?
+                {t('prompts_page.guidelines_title')}
               </CardTitle>
             </CardHeader>
             <CardContent className="text-xs text-muted-foreground space-y-2.5 leading-relaxed">
               <p>
-                1. <strong>Légy pontos:</strong> Ha lehetséges, említsd meg a konkrét partnert (pl. <em>„MOL”</em>, <em>„Cashbook”</em>) vagy a tétel megnevezésében előforduló kulcsszavakat.
+                1. <strong>{t('prompts_page.guidelines_step1_title')}</strong> {t('prompts_page.guidelines_step1_desc')}
               </p>
               <p>
-                2. <strong>Add meg a főkönyvi számot:</strong> Instrukciódban írd le a pontos főkönyvi számot (pl. <em>„522”</em>, <em>„511”</em>), amire könyvelni kell az adott feltétel esetén.
+                2. <strong>{t('prompts_page.guidelines_step2_title')}</strong> {t('prompts_page.guidelines_step2_desc')}
               </p>
               <p>
-                3. <strong>Csatorna/irány figyelembevétele:</strong> Szükség szerint említsd meg, hogy a szabály csak bejövő (INBOUND/költség) vagy kimenő (OUTBOUND/árbevétel) tételekre vonatkozik.
+                3. <strong>{t('prompts_page.guidelines_step3_title')}</strong> {t('prompts_page.guidelines_step3_desc')}
               </p>
             </CardContent>
           </Card>

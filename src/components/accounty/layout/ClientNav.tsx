@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   ArrowLeft, 
   Briefcase, 
@@ -21,6 +22,7 @@ import { useEvClientSettings } from '@/hooks/useEvData';
 import AccountyCompanySelector from './AccountyCompanySelector';
 
 export default function ClientNav() {
+  const { t } = useTranslation('accounty');
   const {
     isCollapsed,
     selectedClientId,
@@ -31,6 +33,7 @@ export default function ClientNav() {
     handleBackToPortfolio,
   } = useAccountyShell();
 
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const { data: evSettings } = useEvClientSettings(selectedClientId || undefined);
 
   const isEv = React.useMemo(() => {
@@ -47,54 +50,54 @@ export default function ClientNav() {
 
   const clientNavItems = [
     { 
-      path: `/eaisybooks/${selectedClientId}/${currentDateRange}/overview`, 
-      name: 'Áttekintés', 
+      path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/overview`, 
+      name: t('nav.items.overview', 'Áttekintés'), 
       icon: Briefcase, 
       exact: true 
     },
     { 
-      path: `/eaisybooks/${selectedClientId}/${currentDateRange}/profile`, 
-      name: 'Profil', 
+      path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/profile`, 
+      name: t('nav.items.profile', 'Profil'), 
       icon: User 
     },
     { 
-      path: `/eaisybooks/${selectedClientId}/${currentDateRange}/invoices`, 
-      name: 'Számlák', 
+      path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/invoices`, 
+      name: t('nav.items.invoices', 'Számlák'), 
       icon: FileText 
     },
     { 
-      path: `/eaisybooks/${selectedClientId}/${currentDateRange}/missing-invoices`, 
-      name: 'Hiányzó számlák', 
+      path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/missing-invoices`, 
+      name: t('nav.items.missing_invoices', 'Hiányzó számlák'), 
       icon: FileWarning 
     },
     { 
-      path: `/eaisybooks/${selectedClientId}/${currentDateRange}/ev`, 
-      name: 'Egyéni Vállalkozás', 
+      path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/ev`, 
+      name: t('nav.items.ev', 'Egyéni Vállalkozás'), 
       icon: Coins 
     },
     { 
-      path: `/eaisybooks/${selectedClientId}/${currentDateRange}/tao`, 
-      name: 'Társasági Adó', 
+      path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/tao`, 
+      name: t('nav.items.tao', 'Társasági Adó'), 
       icon: Landmark 
     },
     { 
-      path: `/eaisybooks/${selectedClientId}/${currentDateRange}/payroll`, 
-      name: 'Bérszámfejtés', 
+      path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/payroll`, 
+      name: t('nav.items.payroll', 'Bérszámfejtés'), 
       icon: Calculator 
     },
     { 
-      path: `/eaisybooks/${selectedClientId}/${currentDateRange}/payroll/filings`, 
-      name: 'NAV bevallások', 
+      path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/payroll/filings`, 
+      name: t('nav.items.nav_filings', 'NAV bevallások'), 
       icon: ClipboardList 
     },
     { 
-      path: `/eaisybooks/${selectedClientId}/${currentDateRange}/prompts`, 
-      name: 'Könyvelési Szabályok', 
+      path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/prompts`, 
+      name: t('nav.items.prompts', 'Könyvelési Szabályok'), 
       icon: Brain 
     },
     { 
-      path: `/eaisybooks/${selectedClientId}/${currentDateRange}/settings#notifications`, 
-      name: 'Beállítások / Cégkapu', 
+      path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/settings#notifications`, 
+      name: t('nav.items.cegkapu_settings', 'Beállítások / Cégkapu'), 
       icon: Settings 
     },
   ];
@@ -120,7 +123,7 @@ export default function ClientNav() {
                 <ArrowLeft className="h-4 w-4 shrink-0 text-primary" />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="right">Vissza a portfólióhoz</TooltipContent>
+            <TooltipContent side="right">{t('nav.tooltips.back_to_portfolio', 'Vissza a portfólióhoz')}</TooltipContent>
           </Tooltip>
         </li>
         <li className="relative flex justify-center">
@@ -172,7 +175,7 @@ export default function ClientNav() {
           )}
         >
           <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
-          <span>Vissza a portfólióhoz</span>
+          <span>{t('nav.tooltips.back_to_portfolio', 'Vissza a portfólióhoz')}</span>
         </button>
 
         <div data-tour="company-selector">

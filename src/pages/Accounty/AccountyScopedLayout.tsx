@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Outlet, useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAccountyClients } from '@/hooks/accounty';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { parseDateRange, generateAccountyScopedPath, extractAccountyPageSegment } from '@/lib/navigation';
@@ -8,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useAccountyShell } from '@/pages/Accounty/AccountyShellContext';
 
 export default function AccountyScopedLayout() {
+  const { t } = useTranslation('accounty');
   const { companyId: urlCompanyId, dateRange: urlDateRange } = useParams<{
     companyId: string;
     dateRange: string;
@@ -15,6 +17,7 @@ export default function AccountyScopedLayout() {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const prefix = location.pathname.startsWith('/hr') ? '/hr' : '';
 
   const { data: clients, isLoading: clientsLoading } = useAccountyClients();
   const { dateFromFormatted, dateToFormatted, setDateFrom, setDateTo } = useDateRange();
@@ -70,7 +73,7 @@ export default function AccountyScopedLayout() {
         }
       } else {
         // Fallback for corrupted URLs (e.g. /accounty/payroll/2026-01-01_2026-12-31/settings)
-        navigate('/eaisybooks', { replace: true });
+        navigate(`${prefix}/eaisybooks`, { replace: true });
         return;
       }
     }
@@ -146,21 +149,21 @@ export default function AccountyScopedLayout() {
           </div>
           <div className="space-y-2">
             <h1 className="text-2xl font-bold text-foreground">
-              Hozzáférés megtagadva
+              {t('access_denied.title', 'Hozzáférés megtagadva')}
             </h1>
             <p className="text-muted-foreground leading-relaxed">
-              A keresett ügyfél nem található, vagy nincs hozzáférése az adataihoz.
+              {t('access_denied.message', 'A keresett ügyfél nem található, vagy nincs hozzáférése az adataihoz.')}
             </p>
           </div>
           <Button
             variant="outline"
             onClick={() => {
               setAccessDenied(false);
-              navigate('/eaisybooks', { replace: true });
+              navigate(`${prefix}/eaisybooks`, { replace: true });
             }}
             className="px-6"
           >
-            Vissza a portfólióhoz
+            {t('access_denied.back_button', 'Vissza a portfólióhoz')}
           </Button>
         </div>
       </div>

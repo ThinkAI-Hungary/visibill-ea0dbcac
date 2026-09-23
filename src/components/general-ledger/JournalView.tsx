@@ -15,7 +15,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CustomTooltip } from '@/components/ui/custom-tooltip';
 import { fetchAllGlBalances, fetchAllGlCategorizedItems, GlDateBasis, GlPostingStatus } from '@/lib/glData';
 import { useTranslation } from 'react-i18next';
-import { getLocalizedGlAccountName } from '@/lib/glUtils';
+import { getLocalizedGlAccountName, getLocalizedGlItemType } from '@/lib/glUtils';
+import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  F7: JOURNAL VIEW (Naplófőkönyv)
@@ -45,9 +46,6 @@ interface JournalEntry {
   logical_type?: string;
 }
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
-
 export const TYPE_LABELS: Record<string, string> = {
   invoice_items: 'Számla',
   invoice: 'Számla',
@@ -65,32 +63,34 @@ export const TYPE_LABELS: Record<string, string> = {
   payroll_records: 'Bérszámfejtés',
 };
 
-export function getLogicalTypeLabel(sourceTable?: string | null, itemType?: string | null): string {
+export function getLogicalTypeLabel(sourceTable?: string | null, itemType?: string | null, t?: any): string {
+  let raw = '';
   if (sourceTable && TYPE_LABELS[sourceTable]) {
-    return TYPE_LABELS[sourceTable];
-  }
-  if (itemType && TYPE_LABELS[itemType]) {
-    return TYPE_LABELS[itemType];
-  }
-  if (itemType) {
+    raw = TYPE_LABELS[sourceTable];
+  } else if (itemType && TYPE_LABELS[itemType]) {
+    raw = TYPE_LABELS[itemType];
+  } else if (itemType) {
     const lower = itemType.toLowerCase();
-    if (lower.includes('nav')) return 'NAV Számla';
-    if (lower.includes('számla') || lower.includes('költség') || lower.includes('bevétel')) return 'Számla';
-    if (lower.includes('bank') || lower.includes('tranzakció')) return 'Banki tranzakció';
-    if (lower.includes('xml')) return 'XML Naplótétel';
-    if (lower.includes('napló') || lower.includes('nyitó') || lower.includes('záró') || lower.includes('vegyes')) return 'Naplótétel';
-    return itemType;
-  }
-  if (sourceTable) {
-    return sourceTable
+    if (lower.includes('nav')) raw = 'NAV Számla';
+    else if (lower.includes('számla') || lower.includes('költség') || lower.includes('bevétel')) raw = 'Számla';
+    else if (lower.includes('bank') || lower.includes('tranzakció')) raw = 'Banki tranzakció';
+    else if (lower.includes('xml')) raw = 'XML Naplótétel';
+    else if (lower.includes('napló') || lower.includes('nyitó') || lower.includes('záró') || lower.includes('vegyes')) raw = 'Naplótétel';
+    else raw = itemType;
+  } else if (sourceTable) {
+    raw = sourceTable
       .replace(/_/g, ' ')
       .replace(/\b\w/g, c => c.toUpperCase());
+  } else {
+    raw = 'Egyéb';
   }
-  return 'Egyéb';
+  return getLocalizedGlItemType(raw, t);
 }
 
 export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'kibocsatas', postingStatus = 'all' }: JournalViewProps) {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['accounting', 'common']);
+  const { isCroatia, defaultCurrency } = useCompanyJurisdiction();
+  const currencyLabel = defaultCurrency === 'HUF' ? 'Ft' : defaultCurrency;
   const { selectedCompany } = useCompany();
   const { data: exchangeRates } = useExchangeRates();
   const [search, setSearch] = useState('');
@@ -98,6 +98,9 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
   const [currentPage, setCurrentPage] = useState(1);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const pageSize = 50;
+
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat(isCroatia ? 'hr-HR' : 'hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
 
   const { data: rawItems = [], isLoading } = useQuery({
     queryKey: ['glJournalItems', selectedCompany?.id, presetId, dateFrom, dateTo, dateBasis, postingStatus],
@@ -167,18 +170,18 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
           gl?.gl_number === '—';
 
         const glNumber = isUnclassified
-          ? 'Besorolatlan'
-          : (gl?.gl_number || item.gl_number || 'Besorolatlan');
+          ? t('accounting:general_ledger.unclassified', 'Besorolatlan')
+          : (gl?.gl_number || item.gl_number || t('accounting:general_ledger.unclassified', 'Besorolatlan'));
 
         const rawName = isUnclassified
-          ? t('accounting:general_ledger.unclassified_item', 'Besorolatlan tétel')
-          : (gl?.short_name || item.gl_name || 'Besorolatlan tétel');
+          ? t('accounting:general_ledger.unclassified', 'Besorolatlan tétel')
+          : (gl?.short_name || item.gl_name || t('accounting:general_ledger.unclassified', 'Besorolatlan tétel'));
 
         const glName = isUnclassified
           ? rawName
           : getLocalizedGlAccountName(glNumber, rawName, t);
 
-        const logicalType = getLogicalTypeLabel(item.source_table, item.item_type);
+        const logicalType = getLogicalTypeLabel(item.source_table, item.item_type, t);
 
         return {
           ...item,
@@ -188,7 +191,7 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
           logical_type: logicalType,
         };
       });
-  }, [rawItems, glMap]);
+  }, [rawItems, glMap, t]);
 
   // Filter + search
   const filtered = useMemo(() => {
@@ -208,8 +211,7 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
         (i.gl_number && i.gl_number.toLowerCase().includes(q)) ||
         (i.gl_name && i.gl_name.toLowerCase().includes(q)) ||
         (i.logical_type && i.logical_type.toLowerCase().includes(q)) ||
-        (i.item_type && i.item_type.toLowerCase().includes(q)) ||
-        (i.is_unclassified && ('besorolatlan'.includes(q) || 'unclassified'.includes(q)))
+        (i.item_type && i.item_type.toLowerCase().includes(q))
       );
     }
     // Sort by date
@@ -233,13 +235,13 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
     enrichedItems.forEach((i: any) => {
       const key = i.source_table || i.item_type;
       if (key && !map.has(key)) {
-        map.set(key, i.logical_type || getLogicalTypeLabel(i.source_table, i.item_type));
+        map.set(key, i.logical_type || getLogicalTypeLabel(i.source_table, i.item_type, t));
       }
     });
     return Array.from(map.entries())
       .map(([value, label]) => ({ value, label }))
-      .sort((a, b) => a.label.localeCompare(b.label, 'hu'));
-  }, [enrichedItems]);
+      .sort((a, b) => a.label.localeCompare(b.label, isCroatia ? 'hr' : 'hu'));
+  }, [enrichedItems, t, isCroatia]);
 
   // Totals
   const totals = useMemo(() => {
@@ -253,21 +255,30 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
 
   const handleExport = async () => {
     const basisLabel = dateBasis === 'teljesites' ? 'Teljesítés' : 'Kibocsátás';
-    const headers = [`Dátum (${basisLabel})`, 'Partner', 'Leírás', 'Főkönyvi szám', 'Főkönyvi megnevezés', 'Típus', 'Tartozik', 'Követel'];
+    const headers = [
+      `${t('accounting:general_ledger.journal_view.col_date', 'Dátum')} (${basisLabel})`,
+      t('accounting:general_ledger.journal_view.col_partner', 'Partner'),
+      t('accounting:general_ledger.journal_view.col_description', 'Leírás'),
+      t('accounting:general_ledger.table.gl_account', 'Főkönyvi szám'),
+      t('accounting:general_ledger.table.name', 'Főkönyvi megnevezés'),
+      t('accounting:general_ledger.journal_view.col_type', 'Típus'),
+      `${t('accounting:general_ledger.journal_view.col_debit', 'Tartozik')} (${currencyLabel})`,
+      `${t('accounting:general_ledger.journal_view.col_credit', 'Követel')} (${currencyLabel})`,
+    ];
     const rows = filtered.map((item: any) => [
       item.item_date ? item.item_date.substring(0, 10) : '',
       item.partner || '',
       item.description || '',
-      item.gl_number || 'Besorolatlan',
-      item.gl_name || 'Besorolatlan tétel',
-      item.logical_type || getLogicalTypeLabel(item.source_table, item.item_type),
+      item.gl_number || t('accounting:general_ledger.unclassified', 'Besorolatlan'),
+      item.gl_name || t('accounting:general_ledger.unclassified', 'Besorolatlan tétel'),
+      item.logical_type || getLogicalTypeLabel(item.source_table, item.item_type, t),
       item.amount > 0 ? item.amount.toString() : '',
       item.amount < 0 ? Math.abs(item.amount).toString() : '',
     ]);
     const rangePart = (dateFrom && dateTo) ? `_${dateFrom}_${dateTo}` : '';
     const fileSuffix = dateBasis === 'teljesites' ? `naplofokonyv${rangePart}_teljesites_alapjan` : `naplofokonyv${rangePart}_kibocsatas_alapjan`;
     await exportToFile(headers, rows, 'xlsx', fileSuffix);
-    toast({ title: 'Naplófőkönyv exportálva' });
+    toast({ title: t('accounting:general_ledger.journal_view.export_toast', 'Naplófőkönyv exportálva') });
   };
 
   return (
@@ -277,16 +288,16 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Keresés (partner, leírás, főkönyvi szám...)"
+            placeholder={t('accounting:general_ledger.journal_view.search_placeholder', 'Keresés (partner, leírás, főkönyvi szám...)')}
             value={search}
             onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
             className="pl-9 h-9"
           />
         </div>
         <Select value={typeFilter} onValueChange={v => { setTypeFilter(v); setCurrentPage(1); }}>
-          <SelectTrigger className="w-44 h-9 text-sm"><SelectValue placeholder="Típus" /></SelectTrigger>
+          <SelectTrigger className="w-44 h-9 text-sm"><SelectValue placeholder={t('accounting:general_ledger.journal_view.type_placeholder', 'Típus')} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Összes típus</SelectItem>
+            <SelectItem value="all">{t('accounting:general_ledger.journal_view.all_types', 'Összes típus')}</SelectItem>
             {typeFilterOptions.map(opt => (
               <SelectItem key={opt.value} value={opt.value}>
                 {opt.label}
@@ -295,7 +306,7 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
           </SelectContent>
         </Select>
         <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={handleExport} disabled={isLoading || filtered.length === 0}>
-          <Download className="w-4 h-4" /> Export
+          <Download className="w-4 h-4" /> {t('accounting:general_ledger.toolbar.export', 'Export')}
         </Button>
       </div>
 
@@ -305,12 +316,12 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
           <Skeleton className="h-4 w-64 bg-muted/50 rounded" />
         ) : (
           <>
-            <span>{filtered.length} tétel</span>
+            <span>{filtered.length} {t('accounting:general_ledger.journal_view.items_count', 'tétel')}</span>
             <span>|</span>
-            <span className="text-emerald-600 font-medium">Tartozik: {formatCurrency(totals.debit)}</span>
-            <span className="text-destructive font-medium">Követel: {formatCurrency(totals.credit)}</span>
+            <span className="text-emerald-600 font-medium">{t('accounting:general_ledger.journal_view.debit', 'Tartozik:')} {formatCurrency(totals.debit)} {currencyLabel}</span>
+            <span className="text-destructive font-medium">{t('accounting:general_ledger.journal_view.credit', 'Követel:')} {formatCurrency(totals.credit)} {currencyLabel}</span>
             <span className={cn('font-bold', totals.net >= 0 ? 'text-foreground' : 'text-destructive')}>
-              Nettó: {formatCurrency(totals.net)}
+              {t('accounting:general_ledger.journal_view.net', 'Nettó:')} {formatCurrency(totals.net)} {currencyLabel}
             </span>
           </>
         )}
@@ -324,15 +335,15 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
             className="col-span-1 p-3 text-center flex items-center justify-center gap-1 hover:text-foreground transition-colors"
             onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
           >
-            Dátum <ArrowUpDown className="w-3 h-3" />
+            {t('accounting:general_ledger.journal_view.col_date', 'Dátum')} <ArrowUpDown className="w-3 h-3" />
           </button>
-          <div className="col-span-2 p-3">Partner</div>
-          <div className="col-span-3 p-3">Leírás</div>
-          <div className="col-span-2 p-3 text-center">Fők. szám</div>
-          <div className="col-span-1 p-3 text-center">Típus</div>
-          <div className="col-span-1 p-3 text-right">Tartozik</div>
-          <div className="col-span-1 p-3 text-right">Követel</div>
-          <div className="col-span-1 p-3 text-right">Egyenleg</div>
+          <div className="col-span-2 p-3">{t('accounting:general_ledger.journal_view.col_partner', 'Partner')}</div>
+          <div className="col-span-3 p-3">{t('accounting:general_ledger.journal_view.col_description', 'Leírás')}</div>
+          <div className="col-span-2 p-3 text-center">{t('accounting:general_ledger.table.gl_account', 'Fők. szám')}</div>
+          <div className="col-span-1 p-3 text-center">{t('accounting:general_ledger.journal_view.col_type', 'Típus')}</div>
+          <div className="col-span-1 p-3 text-right">{t('accounting:general_ledger.journal_view.col_debit', 'Tartozik')}</div>
+          <div className="col-span-1 p-3 text-right">{t('accounting:general_ledger.journal_view.col_credit', 'Követel')}</div>
+          <div className="col-span-1 p-3 text-right">{t('accounting:general_ledger.journal_view.col_balance', 'Egyenleg')}</div>
         </div>
 
         {/* Body */}
@@ -369,7 +380,7 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
           ) : paginated.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground flex flex-col items-center gap-2">
               <BookOpen className="w-8 h-8 text-muted-foreground/40" />
-              <p className="text-sm">Nincs naplófőkönyvi tétel a kiválasztott időszakban</p>
+              <p className="text-sm">{t('accounting:general_ledger.journal_view.no_items', 'Nincs naplófőkönyvi tétel a kiválasztott időszakban')}</p>
             </div>
           ) : (
             paginated.map((item: any) => {
@@ -405,13 +416,13 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
                     </CustomTooltip>
                   </div>
                   <div className={cn('col-span-1 p-2.5 text-right tabular-nums', debit > 0 && 'text-emerald-600 font-medium')}>
-                    {debit > 0 ? formatCurrency(debit) : ''}
+                    {debit > 0 ? `${formatCurrency(debit)} ${currencyLabel}` : ''}
                   </div>
                   <div className={cn('col-span-1 p-2.5 text-right tabular-nums', credit > 0 && 'text-destructive font-medium')}>
-                    {credit > 0 ? formatCurrency(credit) : ''}
+                    {credit > 0 ? `${formatCurrency(credit)} ${currencyLabel}` : ''}
                   </div>
                   <div className={cn('col-span-1 p-2.5 text-right tabular-nums font-medium', item.amount < 0 ? 'text-destructive' : '')}>
-                    {formatCurrency(item.amount)}
+                    {formatCurrency(item.amount)} {currencyLabel}
                   </div>
                 </div>
               );

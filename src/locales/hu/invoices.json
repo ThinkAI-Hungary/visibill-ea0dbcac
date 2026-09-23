@@ -543,7 +543,14 @@
     "continuous_service": "Folyamatos szolgáltatás",
     "service_period": "Szolg. időszak:",
     "accountant_reviewed_tooltip": "Kikontírozott / Könyvelve jelölés",
-    "select_placeholder": "Válassz..."
+    "select_placeholder": "Válassz...",
+    "cross_year_badge": "⏳ Áthúzódó",
+    "cross_year_title": "Áthúzódó gazdasági teljesítés",
+    "cross_year_desc": "A számla gazdasági teljesítése korábbi üzleti évre esik, mint a bizonylatkelt. A folyó évi eredményt és ÁFA-t közvetlenül nem terheli.",
+    "continuous_badge": "🔄 Foly.",
+    "ti_label": "TI:",
+    "ti_method_manual": "kézi",
+    "ti_method_nav": "NAV"
   },
   "nav_sync": {
     "sync": "Szinkronizálás",
@@ -557,6 +564,7 @@
     "transfer": "Átutalás",
     "cash": "Készpénz",
     "card": "Bankkártya",
+    "automatic_card": "Automatikus bankkártya",
     "voucher": "Utalvány",
     "cod": "Utánvét",
     "other": "Egyéb",
@@ -684,5 +692,29 @@
     "nem_beazonosithato": "Nem beazonosítható",
     "penztarbizonylat": "Pénztárbizonylat",
     "vamhatarozat": "Vámhatározat"
+  },
+  "warnings": {
+    "buyer_mismatch_badge": "Eltérő vevő",
+    "buyer_mismatch_title": "A számla vevője eltér az aktív cégtől!",
+    "buyer_on_invoice": "Számlán szereplő vevő:",
+    "unknown_buyer": "Ismeretlen vevő",
+    "active_company": "Aktív cég:",
+    "buyer_mismatch_notice": "A vevő nem egyezik az aktív céggel ({{company}}, {{taxNumber}})!",
+    "missing_nav_aria": "Nincs NAV online számla adatszolgáltatás! Kattintson a könyvelői jóváhagyáshoz.",
+    "missing_nav_title": "NAV adatszolgáltatás hiányzik!",
+    "missing_nav_desc": "A számlához nem tartozik online számla adatszolgáltatás. Kattintson ide a könyvelői jóváhagyáshoz!",
+    "accountant_approved_title": "Könyvelő által jóváhagyva",
+    "accountant_approved_default_note": "NAV adatszolgáltatás nélkül engedélyezve"
+  },
+  "vat_selector": {
+    "button_label": "ÁFA kód",
+    "edit_title": "ÁFA kód és bevallási sor módosítása",
+    "override_title": "ÁFA kód / 2665 bevallási sor felülbírálata",
+    "menu_title": "ÁFA kód & 2665-ös bevallási sor",
+    "row_suffix": "{{row}}. sor",
+    "default_option": "Alapértelmezett (kontírozás alapján)",
+    "group_standard": "Normál belföldi adómértékek",
+    "group_special": "Különleges & Kiemelt sorok",
+    "group_exemption": "Adómentes & Speciális"
   }
 }

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Users, ChevronRight, Landmark, PieChart, Building, ArrowLeft, ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAccountyClients } from '@/hooks/accounty';
@@ -50,6 +50,8 @@ function getCompanyGfo(companyName: string, companyId: string): string {
 
 export default function TaoTaxpayerTypesPage() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const { data: clients = [] } = useAccountyClients();
   const [selectedGfo, setSelectedGfo] = useState<typeof GFO_TYPES[number] | null>(null);
 
@@ -94,7 +96,7 @@ export default function TaoTaxpayerTypesPage() {
             if (window.history.state && window.history.state.idx > 0) {
               navigate(-1);
             } else {
-              navigate('/eaisybooks?tab=tao');
+              navigate(`${prefix}/eaisybooks?tab=tao`);
             }
           }}
           className="flex items-center justify-center w-8 h-8 mt-1 rounded-lg border border-border bg-card hover:bg-muted transition-colors shadow-sm shrink-0"
@@ -220,7 +222,7 @@ export default function TaoTaxpayerTypesPage() {
                       <h4 className="text-sm font-bold text-foreground truncate">{c.name}</h4>
                       <p className="text-[10px] font-mono text-muted-foreground mt-0.5">Adószám: {c.taxNumber || 'Nincs megadva'}</p>
                     </div>
-                    <Link to={`/eaisybooks/client/${c.companyId}/tao`} onClick={() => setSelectedGfo(null)}>
+                    <Link to={`${prefix}/eaisybooks/client/${c.companyId}/tao`} onClick={() => setSelectedGfo(null)}>
                       <Button size="sm" variant="outline" className="h-8 text-xs gap-1 border-border whitespace-nowrap bg-card">
                         Megnyitás
                         <ChevronRight className="w-3.5 h-3.5" />

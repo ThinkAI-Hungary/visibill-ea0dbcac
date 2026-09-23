@@ -24,7 +24,8 @@ import {
   Check,
   ChevronRight
 } from 'lucide-react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -68,6 +69,9 @@ export default function AccountyApp() {
   const { user } = useAuth();
   const { dateFrom, dateTo, dateFromFormatted, dateToFormatted } = useDateRange();
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const { t } = useTranslation('accounty');
+  const prefix = location.pathname.startsWith('/hr') ? '/hr' : '';
   const activeTab = searchParams.get('tab') || 'companies';
 
   useEffect(() => {
@@ -501,30 +505,30 @@ export default function AccountyApp() {
       {/* Header section with Breadcrumb */}
       <PageHeader
         breadcrumbs={[
-          { label: 'eaisyBooks', href: '/eaisybooks' },
-          { label: 'Portfólió Menedzsment' }
+          { label: 'eaisyBooks', href: `${prefix}/eaisybooks` },
+          { label: t('portfolio.title', 'Portfólió Menedzsment') }
         ]}
-        title="Ügyfélportfólió & Irodai Áttekintés"
-        description="Könyvelési ciklusok, hiányzó bizonylatok és irodai feladatok központi felügyelete"
+        title={t('portfolio.page_title', 'Ügyfélportfólió & Irodai Áttekintés')}
+        description={t('portfolio.subtitle', 'Könyvelési ciklusok, hiányzó bizonylatok és irodai feladatok központi felügyelete')}
         actions={
           <div className="flex items-center gap-3 self-start sm:self-auto">
             <div className="flex items-center bg-muted/40 px-3 py-1.5 rounded-lg border border-border/60">
               {isAdmin ? (
                 <span className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
                   <Shield className="w-3.5 h-3.5 text-primary" />
-                  Irodavezető
+                  {t('portfolio.roles.lead_accountant', 'Irodavezető')}
                 </span>
               ) : (
                 <span className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
                   <UserCheck className="w-3.5 h-3.5 text-primary" />
-                  {role === 'senior_könyvelő' ? 'Senior könyvelő' : role === 'asszisztens' ? 'Asszisztens' : 'Könyvelő'}
+                  {role === 'senior_könyvelő' ? t('portfolio.roles.senior_accountant', 'Senior könyvelő') : role === 'asszisztens' ? t('portfolio.roles.assistant', 'Asszisztens') : t('portfolio.roles.accountant', 'Könyvelő')}
                 </span>
               )}
             </div>
-            <Link to="/eaisybooks/new-client">
+            <Link to={`${prefix}/eaisybooks/new-client`}>
               <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-4 flex items-center gap-2 shadow-sm">
                 <Plus className="w-4 h-4" />
-                Új ügyfél
+                {t('portfolio.actions.new_client', 'Új ügyfél')}
               </Button>
             </Link>
           </div>
@@ -540,22 +544,22 @@ export default function AccountyApp() {
         >
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-amber-400" />
           <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            <span>Zárási státusz (2026)</span>
+            <span>{t('portfolio.kpi.closing_status', 'Zárási státusz ({{year}})', { year: new Date().getFullYear() })}</span>
             <Clock className="w-4 h-4 text-amber-500 group-hover:rotate-12 transition-transform" />
           </div>
           <div className="my-2">
             <div className="text-2xl font-bold text-foreground tracking-tight flex items-baseline gap-2">
               <span>{dynamicKpiStats.zarasiSzazalek}%</span>
               <span className="text-xs font-medium text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">
-                {dynamicKpiStats.zarasiSzazalek >= 100 ? 'Kész' : 'Folyamatban'}
+                {dynamicKpiStats.zarasiSzazalek >= 100 ? t('portfolio.kpi.completed', 'Kész') : t('portfolio.kpi.in_progress', 'Folyamatban')}
               </span>
             </div>
             <p className="text-xs text-muted-foreground">
-              {dynamicKpiStats.kiosztottLezart} ügyfél lezárva
+              {t('portfolio.kpi.clients_closed', { count: dynamicKpiStats.kiosztottLezart, defaultValue: `${dynamicKpiStats.kiosztottLezart} ügyfél lezárva` })}
             </p>
           </div>
           <div className="text-[11px] font-medium text-primary flex items-center gap-1 group-hover:underline">
-            <span>{showExecutiveAnalysis ? 'Elemzés elrejtése' : 'Vezetői elemzés megtekintése'}</span>
+            <span>{showExecutiveAnalysis ? t('portfolio.kpi.hide_analysis', 'Elemzés elrejtése') : t('portfolio.kpi.view_analysis', 'Vezetői elemzés megtekintése')}</span>
             <ChevronRight className="w-3 h-3" />
           </div>
         </div>
@@ -573,7 +577,7 @@ export default function AccountyApp() {
         >
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 to-rose-500" />
           <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            <span>Kritikus ügyfelek</span>
+            <span>{t('portfolio.kpi.critical_clients', 'Kritikus ügyfelek')}</span>
             <AlertTriangle className="w-4 h-4 text-red-500 group-hover:animate-bounce" />
           </div>
           <div className="my-2">
@@ -581,11 +585,11 @@ export default function AccountyApp() {
               <span>{dynamicKpiStats.kritikusDb} db</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Azonnali beavatkozást igénylő
+              {t('portfolio.kpi.critical_desc', 'Azonnali beavatkozást igénylő')}
             </p>
           </div>
           <div className="text-[11px] font-medium text-red-600 dark:text-red-400 flex items-center gap-1 group-hover:underline">
-            <span>Kritikus cégek szűrése</span>
+            <span>{t('portfolio.kpi.filter_critical', 'Kritikus cégek szűrése')}</span>
             <ChevronRight className="w-3 h-3" />
           </div>
         </div>
@@ -603,7 +607,7 @@ export default function AccountyApp() {
         >
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500" />
           <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            <span>Kiosztott / Rendben</span>
+            <span>{t('portfolio.kpi.assigned_ok', 'Kiosztott / Rendben')}</span>
             <CheckCircle className="w-4 h-4 text-emerald-500" />
           </div>
           <div className="my-2">
@@ -611,23 +615,23 @@ export default function AccountyApp() {
               <span>{clients.filter(c => c.status === 'Rendben').length} / {clients.length}</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Aktív könyvelés rendben
+              {t('portfolio.kpi.ok_desc', 'Aktív könyvelés rendben')}
             </p>
           </div>
           <div className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1 group-hover:underline">
-            <span>Rendben lévő cégek</span>
+            <span>{t('portfolio.kpi.filter_ok', 'Rendben lévő cégek')}</span>
             <ChevronRight className="w-3 h-3" />
           </div>
         </div>
 
         {/* Hiányzó számlák kártya */}
         <div 
-          onClick={() => navigate('/eaisybooks/missing-invoices')}
+          onClick={() => navigate(`${prefix}/eaisybooks/missing-invoices`)}
           className="group relative bg-card border border-border hover:border-primary/40 rounded-lg p-4 shadow-card hover:shadow-md transition-all cursor-pointer overflow-hidden flex flex-col justify-between"
         >
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-teal-400" />
           <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            <span>Hiányzó számlák</span>
+            <span>{t('portfolio.kpi.missing_invoices', 'Hiányzó számlák')}</span>
             <FileText className="w-4 h-4 text-primary" />
           </div>
           <div className="my-2">
@@ -635,11 +639,11 @@ export default function AccountyApp() {
               <span>{kpis.missingInvoices} db</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Bizonylatpótlási teendő
+              {t('portfolio.kpi.missing_desc', 'Bizonylatpótlási teendő')}
             </p>
           </div>
           <div className="text-[11px] font-medium text-primary flex items-center gap-1 group-hover:underline">
-            <span>Hiánypótlási lista megnyitása</span>
+            <span>{t('portfolio.kpi.open_missing', 'Hiánypótlási lista megnyitása')}</span>
             <ChevronRight className="w-3 h-3" />
           </div>
         </div>
@@ -661,7 +665,7 @@ export default function AccountyApp() {
               )}
             >
               <Building className="w-3.5 h-3.5" />
-              <span>Összes ügyfél</span>
+              <span>{t('portfolio.filters.all_clients', 'Összes ügyfél')}</span>
               <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded-full font-mono text-muted-foreground">
                 {allCount}
               </span>
@@ -676,7 +680,7 @@ export default function AccountyApp() {
               )}
             >
               <User className="w-3.5 h-3.5" />
-              <span>Saját ügyfeleim</span>
+              <span>{t('portfolio.filters.my_clients', 'Saját ügyfeleim')}</span>
               <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded-full font-mono text-muted-foreground">
                 {mineCount}
               </span>
@@ -696,7 +700,7 @@ export default function AccountyApp() {
                   : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40 border-border"
               )}
             >
-              Minden cég
+              {t('portfolio.filters.all_companies', 'Minden cég')}
             </button>
             <button
               onClick={() => setSearchParams({ tab: 'tao' })}
@@ -707,7 +711,7 @@ export default function AccountyApp() {
                   : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40 border-border"
               )}
             >
-              TAO / KIVA
+              {t('portfolio.filters.tao_kiva', 'TAO / KIVA')}
             </button>
             <button
               onClick={() => setSearchParams({ tab: 'ev' })}
@@ -718,7 +722,7 @@ export default function AccountyApp() {
                   : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40 border-border"
               )}
             >
-              EV & Egyéni
+              {t('portfolio.filters.ev_individual', 'EV & Egyéni')}
             </button>
             <button
               onClick={() => setSearchParams({ tab: 'payroll' })}
@@ -729,7 +733,7 @@ export default function AccountyApp() {
                   : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40 border-border"
               )}
             >
-              Bérszámfejtés
+              {t('portfolio.filters.payroll', 'Bérszámfejtés')}
             </button>
           </div>
         </div>
@@ -742,7 +746,7 @@ export default function AccountyApp() {
               <div className="relative w-full sm:w-56">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                 <Input 
-                  placeholder="Cégnév vagy adószám..." 
+                  placeholder={t('portfolio.search_placeholder', 'Cégnév vagy adószám...')} 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-8 pr-7 h-9 text-xs bg-background border-border focus-visible:ring-1 focus-visible:ring-primary"
@@ -761,13 +765,13 @@ export default function AccountyApp() {
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[130px] h-9 text-xs bg-background border-border gap-1 text-muted-foreground">
                   <Filter className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
-                  <SelectValue placeholder="Státusz..." />
+                  <SelectValue placeholder={t('portfolio.filters.all_statuses', 'Minden')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Minden">Minden</SelectItem>
-                  <SelectItem value="Rendben">Rendben</SelectItem>
-                  <SelectItem value="Feldolgozandó">Feldolgozandó</SelectItem>
-                  <SelectItem value="Kritikus">Kritikus</SelectItem>
+                  <SelectItem value="Minden">{t('portfolio.filters.all_statuses', 'Minden')}</SelectItem>
+                  <SelectItem value="Rendben">{t('status.ok', 'Rendben')}</SelectItem>
+                  <SelectItem value="Feldolgozandó">{t('status.to_process', 'Feldolgozandó')}</SelectItem>
+                  <SelectItem value="Kritikus">{t('status.critical', 'Kritikus')}</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -777,7 +781,7 @@ export default function AccountyApp() {
                   variant="ghost" 
                   size="icon" 
                   onClick={() => setViewMode('grid')}
-                  title="Rács nézet (1)"
+                  title={t('portfolio.views.grid', 'Rács nézet (1)')}
                   className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'grid' ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
                 >
                   <Grid className="w-3.5 h-3.5" />
@@ -786,7 +790,7 @@ export default function AccountyApp() {
                   variant="ghost" 
                   size="icon" 
                   onClick={() => setViewMode('list')}
-                  title="Lista nézet (2)"
+                  title={t('portfolio.views.list', 'Lista nézet (2)')}
                   className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'list' ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
                 >
                   <ListIcon className="w-3.5 h-3.5" />
@@ -795,7 +799,7 @@ export default function AccountyApp() {
                   variant="ghost" 
                   size="icon" 
                   onClick={() => setViewMode('kanban')}
-                  title="Kanban nézet (3)"
+                  title={t('portfolio.views.kanban', 'Kanban nézet (3)')}
                   className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'kanban' ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
                 >
                   <Kanban className="w-3.5 h-3.5" />
@@ -817,7 +821,7 @@ export default function AccountyApp() {
             )}
           >
             <BarChart2 className={cn("w-3.5 h-3.5", showExecutiveAnalysis ? "text-primary" : "text-muted-foreground")} />
-            <span>Vezetői Elemzés</span>
+            <span>{t('portfolio.executive_analysis', 'Vezetői Elemzés')}</span>
           </Button>
         </div>
       </div>
@@ -878,10 +882,10 @@ export default function AccountyApp() {
             {/* Táblázat / Munkalap Fejléc Infó */}
             <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
               <div className="flex items-center gap-2 font-medium">
-                <span>Ügyfelek Munkalapja</span>
+                <span>{t('portfolio.worksheet_title', 'Ügyfelek Munkalapja')}</span>
                 <span>·</span>
                 <span className="text-foreground font-semibold">
-                  {filteredClients.length} cég megjelenítve ({allCount > 0 ? Math.round((filteredClients.length / allCount) * 100) : 0}%)
+                  {t('portfolio.clients_displayed', { count: filteredClients.length, percent: allCount > 0 ? Math.round((filteredClients.length / allCount) * 100) : 0, defaultValue: `${filteredClients.length} cég megjelenítve` })}
                 </span>
               </div>
               {(searchQuery || statusFilter !== 'Minden' || viewScope !== 'all') && (
@@ -894,7 +898,7 @@ export default function AccountyApp() {
                   className="text-primary hover:underline flex items-center gap-1 font-medium"
                 >
                   <X className="w-3 h-3" />
-                  <span>Szűrők visszaállítása</span>
+                  <span>{t('portfolio.filters.clear_filters', 'Szűrők visszaállítása')}</span>
                 </button>
               )}
             </div>

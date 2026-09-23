@@ -1,7 +1,7 @@
 # Visibill — Business Requirement Decisions
 
-> **Utoljára frissítve:** 2026-09-21  
-> **Összesen:** 61 döntés | ✅ Decided: 47 | 🟡 Partially Decided: 8 | ⛔ Superseded: 1 | 🔴 Open: 5
+> **Utoljára frissítve:** 2026-09-23  
+> **Összesen:** 61 döntés | ✅ Decided: 48 | 🟡 Partially Decided: 7 | ⛔ Superseded: 1 | 🔴 Open: 5
 
 ---
 
@@ -22,7 +22,7 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 |---|--------|---------|------|
 | 001 | Elsődleges célcsoport | 🟡 Partially Decided | [001-primary-audience.md](./001-primary-audience.md) |
 | 002 | Támogatott vállalkozási formák | 🟡 Partially Decided | [002-supported-business-types.md](./002-supported-business-types.md) |
-| 003 | Lokalizáció & nyelv | 🟡 Partially Decided | [003-localization-strategy.md](./003-localization-strategy.md) |
+| 003 | Lokalizáció & nyelv | ✅ Decided | [003-localization-strategy.md](./003-localization-strategy.md) |
 | 004 | Árazási modell (egyszeri díj) | 🟡 Partially Decided | [004-pricing-model.md](./004-pricing-model.md) |
 | 005 | Előfizetés scope | ⛔ Superseded | [005-subscription-scope.md](./005-subscription-scope.md) |
 

@@ -15,13 +15,21 @@ interface CategoryAmountSummaryProps {
 
 export function CategoryAmountSummary({ stats }: CategoryAmountSummaryProps) {
   const { t } = useTranslation(['categories']);
-  // Find max HUF-equivalent for bar scaling
-  const maxAmount = Math.max(...stats.map(s => s.totalAmount), 1);
+
+  // Helper to get normalized amount, with fallback to summing currencyTotals if totalAmount <= 0
+  const getStatAmount = (stat: CategoryAmountStat) => {
+    if (stat.totalAmount > 0) return stat.totalAmount;
+    if (!stat.currencyTotals) return 0;
+    return Object.values(stat.currencyTotals).reduce((sum, v) => sum + (v || 0), 0);
+  };
 
   // Filter to categories that have at least one invoice
   const activeStats = stats.filter(s => s.invoiceCount > 0);
 
   if (activeStats.length === 0) return null;
+
+  // Find max base-equivalent for bar scaling
+  const maxAmount = Math.max(...activeStats.map(s => getStatAmount(s)), 1);
 
   return (
     <div className="p-5 bg-card border border-border rounded-lg">
@@ -30,11 +38,12 @@ export function CategoryAmountSummary({ stats }: CategoryAmountSummaryProps) {
       </h3>
       <div className="space-y-2.5">
         {activeStats
-          .sort((a, b) => b.totalAmount - a.totalAmount)
+          .sort((a, b) => getStatAmount(b) - getStatAmount(a))
           .map((stat, i) => {
             const ct = stat.currencyTotals || {};
             const amountLabel = formatCurrencyTotals(ct);
-            const barPct = maxAmount > 0 ? Math.max((stat.totalAmount / maxAmount) * 100, 2) : 0;
+            const amt = getStatAmount(stat);
+            const barPct = maxAmount > 0 ? Math.max((amt / maxAmount) * 100, 2) : 0;
 
             return (
               <div key={i} className="flex items-center gap-3">

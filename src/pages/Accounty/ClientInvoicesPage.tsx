@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronDown, RefreshCcw, Upload, Search, MoreVertical, Cloud, Clock, Calendar, Download, Settings, Check, ShieldAlert, Loader2, FileText, Coins, Percent, ArrowLeftRight, Trash2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,13 +40,19 @@ export default function ClientInvoicesPage() {
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const id = companyId;
   const [searchParams, setSearchParams] = useSearchParams();
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
+  const { t } = useTranslation('accounty');
   
   const { data: supabaseClients, isLoading: clientLoading } = useAccountyClients();
   const client = useMemo(() => {
     const found = supabaseClients?.find((c) => c.id === id);
-    if (found) return { id: found.id, name: found.name, taxNumber: found.taxNumber || '' };
-    return { id: id || '1', name: 'Betöltés...', taxNumber: '' };
+    if (found) return { id: found.id, name: found.name, taxNumber: found.taxNumber || '', countryCode: found.countryCode || 'HU' };
+    return { id: id || '1', name: 'Betöltés...', taxNumber: '', countryCode: 'HU' };
   }, [supabaseClients, id]);
+  
+  const hasNavIntegration = client.countryCode !== 'HR';
+  const defaultCurrency = client.countryCode === 'HR' ? 'EUR' : 'HUF';
   
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || '');
   
@@ -192,9 +199,9 @@ export default function ClientInvoicesPage() {
   const { data: invoicesData, isLoading: invoicesLoading } = useCompanyInvoices(id || '');
 
   const missingNavCount = useMemo(() => {
-    if (!invoicesData) return 0;
+    if (!invoicesData || !hasNavIntegration) return 0;
     return invoicesData.filter(inv => !inv.isNav && (inv.navStatus === 'missing_nav' || inv.statusz === 'jovahagyasra_var') && !inv.approvedAt).length;
-  }, [invoicesData]);
+  }, [invoicesData, hasNavIntegration]);
 
   const filteredInvoices = useMemo(() => {
     if (!invoicesData) return [];
@@ -205,10 +212,10 @@ export default function ClientInvoicesPage() {
       const matchType = typeFilter === 'all' || inv.type === typeFilter;
       const matchFad = !fadFilter || inv.isReverseCharge === true;
       const matchMissingImage = !missingImageFilter || (inv.isNav && inv.submitted !== true);
-      const matchMissingNav = !missingNavFilter || (!inv.isNav && (inv.navStatus === 'missing_nav' || inv.statusz === 'jovahagyasra_var') && !inv.approvedAt);
+      const matchMissingNav = !missingNavFilter || (!hasNavIntegration ? true : (!inv.isNav && (inv.navStatus === 'missing_nav' || inv.statusz === 'jovahagyasra_var') && !inv.approvedAt));
       return matchSearch && matchStatus && matchType && matchFad && matchMissingImage && matchMissingNav;
     });
-  }, [invoicesData, searchQuery, statusFilter, typeFilter, fadFilter, missingImageFilter, missingNavFilter]);
+  }, [invoicesData, searchQuery, statusFilter, typeFilter, fadFilter, missingImageFilter, missingNavFilter, hasNavIntegration]);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -351,9 +358,10 @@ export default function ClientInvoicesPage() {
     }
   };
 
-  const formatCurrency = (amount: number, currencyCode: string = 'HUF') => {
-    const curr = (currencyCode || 'HUF').toUpperCase();
-    return new Intl.NumberFormat('hu-HU', {
+  const formatCurrency = (amount: number, currencyCode?: string) => {
+    const curr = (currencyCode || defaultCurrency).toUpperCase();
+    const isHr = client.countryCode === 'HR';
+    return new Intl.NumberFormat(isHr ? 'hr-HR' : 'hu-HU', {
       style: 'currency',
       currency: curr,
       minimumFractionDigits: curr === 'HUF' ? 0 : 2,
@@ -398,18 +406,19 @@ export default function ClientInvoicesPage() {
     <div className="w-full space-y-6 page-animate pb-12">
       {/* Header */}
       <PageHeader
-        title="Számlák"
+        title={t('invoices_page.title', 'Számlák')}
         breadcrumbs={[
-          { label: 'eaisyBooks', href: '/eaisybooks' },
-          { label: client.name || 'Ügyfél', href: `/eaisybooks/${companyId}/${dateRange}/overview` },
-          { label: 'Számlák' },
+          { label: 'eaisyBooks', href: `${prefix}/eaisybooks` },
+          { label: client.name || 'Ügyfél', href: `${prefix}/eaisybooks/${companyId}/${dateRange}/overview` },
+          { label: t('invoices_page.title', 'Számlák') },
         ]}
         actions={
           <div className="flex items-center gap-3">
+          {hasNavIntegration && (
           <Dialog open={isNavSyncOpen} onOpenChange={setIsNavSyncOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2 bg-card border-border text-foreground hover:bg-accent">
-                <RefreshCcw className="w-4 h-4" /> NAV szinkron
+                <RefreshCcw className="w-4 h-4" /> {t('invoices_page.nav_sync', 'NAV szinkron')}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden bg-card">
@@ -525,11 +534,12 @@ export default function ClientInvoicesPage() {
               </div>
             </DialogContent>
           </Dialog>
+          )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="gap-2 bg-card border-border text-foreground hover:bg-accent">
-                <Download className="w-4 h-4" /> Könyvelési export <ChevronDown className="w-3.5 h-3.5" />
+                <Download className="w-4 h-4" /> {t('invoices_page.bookkeeping_export', 'Könyvelési export')} <ChevronDown className="w-3.5 h-3.5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-card border-border">
@@ -596,7 +606,7 @@ export default function ClientInvoicesPage() {
           <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
-                <Upload className="w-4 h-4" /> Számla feltöltése
+                <Upload className="w-4 h-4" /> {t('invoices_page.upload_invoice', 'Számla feltöltése')}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px] p-6">
@@ -657,7 +667,7 @@ export default function ClientInvoicesPage() {
           <div className="w-96 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input 
-              placeholder="Keresés számla szám, szállító..." 
+              placeholder={t('invoices_page.search_placeholder', 'Keresés számla szám, szállító...')} 
               className="pl-9 bg-card border-border" 
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
@@ -666,21 +676,21 @@ export default function ClientInvoicesPage() {
           <div className="flex gap-3">
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="w-48 bg-card border-border">
-                <SelectValue placeholder="Minden típus" />
+                <SelectValue placeholder={t('invoices_page.filter_all_types', 'Minden típus')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Minden típus</SelectItem>
-                <SelectItem value="bejovo">Bejövő</SelectItem>
-                <SelectItem value="kimeno">Kimenő</SelectItem>
+                <SelectItem value="all">{t('invoices_page.filter_all_types', 'Minden típus')}</SelectItem>
+                <SelectItem value="bejovo">{t('invoices_page.filter_incoming', 'Bejövő')}</SelectItem>
+                <SelectItem value="kimeno">{t('invoices_page.filter_outgoing', 'Kimenő')}</SelectItem>
               </SelectContent>
             </Select>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-48 bg-card border-border">
-                <SelectValue placeholder="Minden státusz" />
+                <SelectValue placeholder={t('invoices_page.filter_all_statuses', 'Minden státusz')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Minden státusz</SelectItem>
+                <SelectItem value="all">{t('invoices_page.filter_all_statuses', 'Minden státusz')}</SelectItem>
                 <SelectItem value="Új">Új</SelectItem>
                 <SelectItem value="Kontírozásra vár">Kontírozásra vár</SelectItem>
                 <SelectItem value="Kontírozott">Kontírozott</SelectItem>
@@ -714,7 +724,7 @@ export default function ClientInvoicesPage() {
               title="Csak a bizonylatkép nélküli NAV számlák mutatása"
             >
               <Cloud className="w-3.5 h-3.5 animate-pulse text-rose-500" />
-              Hiányzó kép
+              {t('invoices_page.filter_missing_image', 'Hiányzó kép')}
               {invoicesData?.filter(inv => inv.isNav && inv.submitted !== true).length ? (
                 <span className="ml-1 px-1.5 py-0.5 rounded-full bg-rose-500/20 text-rose-855 dark:text-rose-300 text-[10px] font-bold">
                   {invoicesData.filter(inv => inv.isNav && inv.submitted !== true).length}
@@ -722,24 +732,26 @@ export default function ClientInvoicesPage() {
               ) : null}
             </button>
 
-            <button
-              onClick={() => setMissingNavFilter(!missingNavFilter)}
-              className={cn(
-                'flex items-center gap-1.5 px-3 h-10 rounded-md border text-xs font-semibold transition-colors',
-                missingNavFilter
-                  ? 'bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-300'
-                  : 'bg-card border-border text-muted-foreground hover:bg-accent'
-              )}
-              title="Csak a NAV adatszolgáltatás nélküli (jóváhagyásra váró) belföldi számlák mutatása"
-            >
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-              NAV hiányzik
-              {missingNavCount > 0 && (
-                <span className="ml-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 text-[10px] font-bold">
-                  {missingNavCount}
-                </span>
-              )}
-            </button>
+            {hasNavIntegration && (
+              <button
+                onClick={() => setMissingNavFilter(!missingNavFilter)}
+                className={cn(
+                  'flex items-center gap-1.5 px-3 h-10 rounded-md border text-xs font-semibold transition-colors',
+                  missingNavFilter
+                    ? 'bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-300'
+                    : 'bg-card border-border text-muted-foreground hover:bg-accent'
+                )}
+                title="Csak a NAV adatszolgáltatás nélküli (jóváhagyásra váró) belföldi számlák mutatása"
+              >
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                {t('invoices_page.filter_missing_nav', 'NAV hiányzik')}
+                {missingNavCount > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 text-[10px] font-bold">
+                    {missingNavCount}
+                  </span>
+                )}
+              </button>
+            )}
           </div>
         </div>
 
@@ -751,7 +763,7 @@ export default function ClientInvoicesPage() {
               <FileText className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Számlák száma</div>
+              <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t('invoices_page.card_invoices_count', 'Számlák száma')}</div>
               <div className="text-xl font-bold tabular-nums text-foreground mt-0.5">
                 {filteredInvoices.length} <span className="text-xs font-normal text-muted-foreground">db</span>
               </div>
@@ -764,7 +776,7 @@ export default function ClientInvoicesPage() {
               <Coins className="w-5 h-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Bruttó összesen</div>
+              <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t('invoices_page.card_gross_total', 'Bruttó összesen')}</div>
               <div className="text-sm font-bold tabular-nums text-foreground mt-1 space-y-0.5">
                 {Object.entries(totalsByCurrency).map(([curr, val]) => (
                   <div key={curr} className="truncate">{formatCurrency(val.gross, curr)}</div>
@@ -779,7 +791,7 @@ export default function ClientInvoicesPage() {
               <Percent className="w-5 h-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">ÁFA összesen</div>
+              <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t('invoices_page.card_vat_total', 'ÁFA összesen')}</div>
               <div className="text-sm font-bold tabular-nums text-foreground mt-1 space-y-0.5">
                 {Object.entries(totalsByCurrency).map(([curr, val]) => (
                   <div key={curr} className="truncate">{formatCurrency(val.vat, curr)}</div>
@@ -797,7 +809,7 @@ export default function ClientInvoicesPage() {
               <ShieldAlert className="w-5 h-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Fordított adózás</div>
+              <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t('invoices_page.card_reverse_charge', 'Fordított adózás')}</div>
               <div className="mt-0.5">
                 <div className="text-sm font-bold tabular-nums text-foreground">
                   {fadCount} <span className="text-xs font-normal text-muted-foreground">db FAD számla</span>
@@ -827,12 +839,12 @@ export default function ClientInvoicesPage() {
                     onCheckedChange={(checked) => handleSelectAllPage(!!checked)}
                   />
                 </th>
-                <th className="px-6 py-4 font-semibold">Számla sorszám</th>
-                <th className="px-6 py-4 font-semibold">Szállító/Vevő</th>
-                <th className="px-6 py-4 font-semibold">Dátum</th>
-                <th className="px-6 py-4 font-semibold text-right">Bruttó</th>
-                <th className="px-6 py-4 font-semibold text-right">ÁFA</th>
-                <th className="px-6 py-4 font-semibold">Státusz</th>
+                <th className="px-6 py-4 font-semibold">{t('invoices_page.th_invoice_number', 'Számla sorszám')}</th>
+                <th className="px-6 py-4 font-semibold">{t('invoices_page.th_partner', 'Szállító/Vevő')}</th>
+                <th className="px-6 py-4 font-semibold">{t('invoices_page.th_date', 'Dátum')}</th>
+                <th className="px-6 py-4 font-semibold text-right">{t('invoices_page.th_gross', 'Bruttó')}</th>
+                <th className="px-6 py-4 font-semibold text-right">{t('invoices_page.th_vat', 'ÁFA')}</th>
+                <th className="px-6 py-4 font-semibold">{t('invoices_page.th_status', 'Státusz')}</th>
                 <th className="px-6 py-4 w-12 text-center font-semibold"></th>
               </tr>
             </thead>
@@ -842,7 +854,7 @@ export default function ClientInvoicesPage() {
                   <td colSpan={8} className="text-center py-12 text-muted-foreground">
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-4 h-4 border-2 border-border border-t-primary rounded-full animate-spin"></div>
-                      Számlák betöltése...
+                      {t('invoices_page.loading', 'Számlák betöltése...')}
                     </div>
                   </td>
                 </tr>
@@ -859,7 +871,7 @@ export default function ClientInvoicesPage() {
                     <td className="px-6 py-4 font-medium font-mono text-foreground">
                       <div className="flex items-center gap-1.5 whitespace-nowrap">
                         <span>{inv.invoiceNumber}</span>
-                        {!inv.isNav && (inv.navStatus === 'missing_nav' || inv.statusz === 'jovahagyasra_var') && (
+                        {hasNavIntegration && !inv.isNav && (inv.navStatus === 'missing_nav' || inv.statusz === 'jovahagyasra_var') && (
                           inv.approvedAt ? (
                             <TooltipProvider>
                               <Tooltip>
@@ -932,7 +944,7 @@ export default function ClientInvoicesPage() {
                             ⚠️ Hiányzó kép
                           </span>
                         )}
-                        {!inv.isNav && (inv.navStatus === 'missing_nav' || inv.statusz === 'jovahagyasra_var') && !inv.approvedAt && (
+                        {hasNavIntegration && !inv.isNav && (inv.navStatus === 'missing_nav' || inv.statusz === 'jovahagyasra_var') && !inv.approvedAt && (
                           <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 text-[10px] font-bold border border-amber-300 dark:border-amber-700 whitespace-nowrap flex items-center gap-1" title="Nincs NAV Online Számla adatszolgáltatás!">
                             <AlertTriangle className="w-2.5 h-2.5" /> NAV hiányzik
                           </span>
@@ -969,16 +981,16 @@ export default function ClientInvoicesPage() {
                               }
                             }}
                           >
-                            Megtekintés
+                            {t('invoices_page.action_view', 'Megtekintés')}
                           </DropdownMenuItem>
                           <DropdownMenuItem 
                             className="cursor-pointer gap-2"
                             onClick={() => setSelectedLedgerInvoice(inv)}
                           >
                             <ArrowLeftRight className="w-3.5 h-3.5 text-muted-foreground" />
-                            Főkönyvi napló (T-számlák)
+                            {t('invoices_page.action_ledger', 'Főkönyvi napló (T-számlák)')}
                           </DropdownMenuItem>
-                          {!inv.isNav && (inv.navStatus === 'missing_nav' || inv.statusz === 'jovahagyasra_var') && !inv.approvedAt && (
+                          {hasNavIntegration && !inv.isNav && (inv.navStatus === 'missing_nav' || inv.statusz === 'jovahagyasra_var') && !inv.approvedAt && (
                             <DropdownMenuItem 
                               className="cursor-pointer gap-2 text-amber-700 dark:text-amber-400 focus:text-amber-800"
                               onClick={() => {
@@ -1020,7 +1032,7 @@ export default function ClientInvoicesPage() {
                               }
                             }}
                           >
-                            Kontírozás
+                            {t('invoices_page.action_book', 'Kontírozás')}
                           </DropdownMenuItem>
                           <DropdownMenuItem 
                             className="cursor-pointer text-destructive focus:text-destructive"
@@ -1044,7 +1056,7 @@ export default function ClientInvoicesPage() {
                               }
                             }}
                           >
-                            Törlés
+                            {t('invoices_page.action_delete', 'Törlés')}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -1054,7 +1066,7 @@ export default function ClientInvoicesPage() {
               ) : (
                 <tr>
                   <td colSpan={8} className="text-center py-12 text-muted-foreground">
-                    Nincs találat a megadott szűrésre.
+                    {t('invoices_page.empty', 'Nincs találat a megadott szűrésre.')}
                   </td>
                 </tr>
               )}
@@ -1101,8 +1113,8 @@ export default function ClientInvoicesPage() {
       {/* F1: Centralized Floating Bulk Action Bar */}
       <FloatingBulkBar
         count={selectedInvoiceIds.size}
-        label="Kijelölt számlák:"
-        itemUnit="db"
+        label={t('invoices_page.bulk_label', 'Kijelölt számlák:')}
+        itemUnit={t('invoices_page.bulk_unit', 'db')}
         onSave={async () => {
           if (!stagedStatus || isSavingStatus) return;
           setIsSavingStatus(true);

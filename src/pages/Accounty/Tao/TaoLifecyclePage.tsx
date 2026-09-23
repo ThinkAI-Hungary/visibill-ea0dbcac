@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams , useLocation } from 'react-router-dom';
 import { ArrowLeft, Clock, Calendar, Info, Save, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,8 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { cn } from '@/lib/utils';
 
 export default function TaoLifecyclePage() {
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const id = companyId;
   const [registrationDate, setRegistrationDate] = useState('2020-03-15');
@@ -16,7 +18,7 @@ export default function TaoLifecyclePage() {
   return (
     <div className="w-full space-y-6 page-animate max-w-4xl">
       <div className="flex items-center gap-3">
-        <Link to={`/eaisybooks/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-muted transition-colors">
+        <Link to={`${prefix}/eaisybooks/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-muted transition-colors">
           <ArrowLeft className="w-4 h-4 text-muted-foreground" />
         </Link>
         <div className="p-2.5 bg-gradient-to-br from-purple-500 to-violet-600 rounded-lg shadow-lg shadow-purple-500/25">

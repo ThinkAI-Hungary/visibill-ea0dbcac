@@ -22,6 +22,7 @@ import huTickets from '@/locales/hu/tickets.json';
 import huAuth from '@/locales/hu/auth.json';
 import huNotes from '@/locales/hu/notes.json';
 import huExchangeRates from '@/locales/hu/exchangeRates.json';
+import huAccounty from '@/locales/hu/accounty.json';
 
 // Croatian resources
 import hrCommon from '@/locales/hr/common.json';
@@ -43,6 +44,7 @@ import hrTickets from '@/locales/hr/tickets.json';
 import hrAuth from '@/locales/hr/auth.json';
 import hrNotes from '@/locales/hr/notes.json';
 import hrExchangeRates from '@/locales/hr/exchangeRates.json';
+import hrAccounty from '@/locales/hr/accounty.json';
 
 export const defaultNS = 'common' as const;
 
@@ -67,6 +69,7 @@ export const resources = {
     auth: huAuth,
     notes: huNotes,
     exchangeRates: huExchangeRates,
+    accounty: huAccounty,
   },
   hr: {
     common: hrCommon,
@@ -88,6 +91,7 @@ export const resources = {
     auth: hrAuth,
     notes: hrNotes,
     exchangeRates: hrExchangeRates,
+    accounty: hrAccounty,
   },
 } as const;
 

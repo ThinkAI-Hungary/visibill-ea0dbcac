@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, History, Plus, MailCheck, ChevronLeft } from 'lucide-react';
 import { useAccountyMissingItems, useAccountyMissingCounts, useAddMissingItem, useIgnoreMissingItem, useResolveMissingItem, useAccountyCommunicationPrefs, useGeneratePortalToken } from '@/hooks/accounty';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -30,6 +31,9 @@ import { MissingInvoicesTable } from './missing-invoices/MissingInvoicesTable';
 export default function ClientMissingInvoicesPage() {
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
+  const { t } = useTranslation('accounty');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -136,7 +140,7 @@ export default function ClientMissingInvoicesPage() {
     });
     setPreviewMessage(null);
     setSelectedIds([]);
-    navigate('/eaisybooks/approval-queue');
+    navigate(`${prefix}/eaisybooks/approval-queue`);
   };
 
 
@@ -378,11 +382,11 @@ export default function ClientMissingInvoicesPage() {
               if (window.history.state && window.history.state.idx > 0) {
                 navigate(-1);
               } else {
-                navigate(`/eaisybooks/${companyId}/${dateRange}/overview`);
+                navigate(`${prefix}/eaisybooks/${companyId}/${dateRange}/overview`);
               }
             }}
             className="flex items-center justify-center w-8 h-8 mt-1 shrink-0 rounded-lg border border-border bg-card hover:bg-muted transition-colors shadow-sm"
-            title="Vissza"
+            title={t('common.back', 'Vissza')}
           >
             <ChevronLeft className="w-5 h-5 text-muted-foreground" />
           </button>
@@ -394,7 +398,7 @@ export default function ClientMissingInvoicesPage() {
                 <span className="text-xs font-semibold text-muted-foreground">{clientName}</span>
               )}
             </div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Hiányzó számlák</h1>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">{t('missing_invoices.title', 'Hiányzó számlák')}</h1>
           </div>
         </div>
         
@@ -404,7 +408,7 @@ export default function ClientMissingInvoicesPage() {
             className="flex items-center gap-2 px-4 py-2 bg-card border border-border text-foreground/90 rounded-lg hover:bg-muted/50 transition-colors text-sm font-medium shadow-soft"
           >
             <History className="w-4 h-4" />
-            Előzmények
+            {t('missing_invoices.history', 'Előzmények')}
           </button>
           
           <AddMissingInvoiceModal open={isAddModalOpen} onOpenChange={setIsAddModalOpen} form={newInvoiceForm} onFormChange={setNewInvoiceForm} onSubmit={handleAddInvoice} />

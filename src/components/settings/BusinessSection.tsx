@@ -15,6 +15,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatAccountOnType, detectAccountFormat } from '@/lib/ibanUtils';
 import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getJurisdictionRules } from '@/hooks/useCompanyJurisdiction';
 
 interface Company {
   id: string;
@@ -24,6 +26,7 @@ interface Company {
   address: string | null;
   description?: string | null;
   primary_teaor?: string | null;
+  country_code?: 'HU' | 'HR' | string | null;
   created_at: string;
 }
 
@@ -40,6 +43,8 @@ interface Props {
   setCompanyDescription: (v: string) => void;
   companyPrimaryTeaor: string;
   setCompanyPrimaryTeaor: (v: string) => void;
+  companyCountryCode?: 'HU' | 'HR';
+  setCompanyCountryCode?: (v: 'HU' | 'HR') => void;
   isGeneratingDescription: boolean;
   onGenerateDescription: () => void;
   savingCompany: boolean;
@@ -54,11 +59,14 @@ export function BusinessSection({
   selectedCompany, userId, companyName, setCompanyName,
   companyTaxNumber, setCompanyTaxNumber, companyAddress, setCompanyAddress,
   companyDescription, setCompanyDescription, companyPrimaryTeaor, setCompanyPrimaryTeaor,
+  companyCountryCode, setCompanyCountryCode,
   isGeneratingDescription, onGenerateDescription,
   savingCompany, onSave, companies, setSelectedCompany,
   onNavigateToBankAccounts, children,
 }: Props) {
   const { t } = useTranslation(['settings']);
+  const activeCountry = companyCountryCode || (selectedCompany?.country_code as 'HU' | 'HR') || 'HU';
+  const jurisdiction = getJurisdictionRules(activeCountry);
   const isOwner = selectedCompany?.owner_id === userId;
   const { toast } = useToast();
   const { locations, isLoading: locationsLoading, addLocation, deleteLocation } = useCompanyLocations(selectedCompany?.id);
@@ -166,14 +174,42 @@ export function BusinessSection({
                   <AlertDescription>{t('business.owner_only_edit', 'Csak a tulajdonos szerkesztheti a cég adatait.')}</AlertDescription>
                 </Alert>
               )}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="company_country">{t('business.country', 'Ország / Joghatóság')}</Label>
+                  {setCompanyCountryCode ? (
+                    <Select
+                      value={activeCountry}
+                      onValueChange={(val) => setCompanyCountryCode(val as 'HU' | 'HR')}
+                      disabled={!isOwner}
+                    >
+                      <SelectTrigger id="company_country" className="bg-card">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="HU">🇭🇺 Magyarország (HU)</SelectItem>
+                        <SelectItem value="HR">🇭🇷 Horvátország (HR)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="h-10 px-3 py-2 rounded-md border border-input bg-muted/50 text-sm flex items-center gap-2">
+                      <span>{activeCountry === 'HR' ? '🇭🇷 Horvátország (HR)' : '🇭🇺 Magyarország (HU)'}</span>
+                    </div>
+                  )}
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="company_name">{t('business.company_name', 'Cég neve')} *</Label>
                   <Input id="company_name" value={companyName || ''} onChange={e => setCompanyName(e.target.value)} placeholder="Pl. Példa Kft." disabled={!isOwner} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="tax_number">{t('business.tax_number', 'Adószám')}</Label>
-                  <Input id="tax_number" value={companyTaxNumber || ''} onChange={e => setCompanyTaxNumber(e.target.value)} placeholder="Pl. 12345678-2-42" disabled={!isOwner} />
+                  <Label htmlFor="tax_number">{jurisdiction.taxNumberLabel}</Label>
+                  <Input 
+                    id="tax_number" 
+                    value={companyTaxNumber || ''} 
+                    onChange={e => setCompanyTaxNumber(e.target.value)} 
+                    placeholder={jurisdiction.taxNumberPlaceholder} 
+                    disabled={!isOwner} 
+                  />
                 </div>
               </div>
               <div className="space-y-2">

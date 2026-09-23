@@ -13,10 +13,12 @@ import { Info, FileText, Download, ChevronDown, FileSpreadsheet, FileDown } from
 import { NavSyncButton } from './NavSyncButton';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 import { useTranslation } from 'react-i18next';
+import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
 
 export function InvoiceHeader() {
   const { setFilesDialogOpen, setInvoiceParam, openDataExportDialog } = useInvoiceContext();
   const { t } = useTranslation(['invoices', 'common']);
+  const { hasNavIntegration } = useCompanyJurisdiction();
 
   const handleOpenFiles = () => {
     setFilesDialogOpen(true);
@@ -46,7 +48,7 @@ export function InvoiceHeader() {
 
         <div className="relative">
           <div className="flex gap-2 justify-end">
-            <NavSyncButton />
+            {hasNavIntegration && <NavSyncButton />}
 
             <Button variant="outline" size="sm" onClick={handleOpenFiles}>
               <FileText className="h-4 w-4 mr-2" />

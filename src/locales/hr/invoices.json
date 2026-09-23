@@ -543,7 +543,14 @@
     "continuous_service": "Kontinuirana usluga",
     "service_period": "Razdoblje usluge:",
     "accountant_reviewed_tooltip": "Oznaka kontirano / proknjiženo",
-    "select_placeholder": "Odaberite..."
+    "select_placeholder": "Odaberite...",
+    "cross_year_badge": "⏳ Prijelazno",
+    "cross_year_title": "Prijelazno ekonomsko ispunjenje",
+    "cross_year_desc": "Ekonomsko ispunjenje računa pripada ranijoj poslovnoj godini od datuma izdavanja. Ne tereti izravno tekući rezultat i PDV.",
+    "continuous_badge": "🔄 Kont.",
+    "ti_label": "TI:",
+    "ti_method_manual": "ručno",
+    "ti_method_nav": "Porezna"
   },
   "nav_sync": {
     "sync": "Sinkronizacija",
@@ -557,6 +564,7 @@
     "transfer": "Virman",
     "cash": "Gotovina",
     "card": "Kartica",
+    "automatic_card": "Automatska kartica",
     "voucher": "Vaučer",
     "cod": "Pouzeće",
     "other": "Ostalo",
@@ -684,5 +692,29 @@
     "nem_beazonosithato": "Neprepoznato",
     "penztarbizonylat": "Blagajnički dokument",
     "vamhatarozat": "Carinska deklaracija"
+  },
+  "warnings": {
+    "buyer_mismatch_badge": "Različit kupac",
+    "buyer_mismatch_title": "Kupac na računu razlikuje se od aktivne tvrtke!",
+    "buyer_on_invoice": "Kupac na računu:",
+    "unknown_buyer": "Nepoznati kupac",
+    "active_company": "Aktivna tvrtka:",
+    "buyer_mismatch_notice": "Kupac se ne podudara s aktivnom tvrtkom ({{company}}, {{taxNumber}})!",
+    "missing_nav_aria": "Nema online dostave podataka poreznoj upravi! Kliknite za računovodstveno odobrenje.",
+    "missing_nav_title": "Nedostaju podaci porezne uprave (NAV)!",
+    "missing_nav_desc": "Za račun nema online dostave podataka poreznoj upravi. Kliknite ovdje za računovodstveno odobrenje!",
+    "accountant_approved_title": "Odobrio računovođa",
+    "accountant_approved_default_note": "Dozvoljeno bez dostave podataka poreznoj upravi"
+  },
+  "vat_selector": {
+    "button_label": "PDV oznaka",
+    "edit_title": "Izmjena PDV oznake i retka prijave",
+    "override_title": "Izmjena PDV oznake / retka prijave 2665",
+    "menu_title": "PDV oznaka & redak prijave 2665",
+    "row_suffix": "{{row}}. redak",
+    "default_option": "Zadano (na temelju knjiženja)",
+    "group_standard": "Standardne domaće porezne stope",
+    "group_special": "Posebni & istaknuti reci",
+    "group_exemption": "Porezno oslobođeno & posebno"
   }
 }

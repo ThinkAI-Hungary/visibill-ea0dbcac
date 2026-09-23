@@ -11,6 +11,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Printer, UserCheck, AlertTriangle, CheckCircle2, FileText, ArrowRightLeft } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { generateBalanceConfirmationPdf, BalanceConfirmationPdfData } from '@/lib/ledgerCardPdfs';
+import { useTranslation } from 'react-i18next';
+import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
 
 interface PartnerLedgerCardViewProps {
   companyId: string | undefined;
@@ -25,6 +27,9 @@ export function PartnerLedgerCardView({
   dateTo,
   companyName = 'Cég',
 }: PartnerLedgerCardViewProps) {
+  const { t } = useTranslation(['accounting', 'common']);
+  const { isCroatia, defaultCurrency } = useCompanyJurisdiction();
+  const currencyLabel = defaultCurrency === 'HUF' ? 'Ft' : defaultCurrency;
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'open_only' | 'all'>('open_only');
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -203,13 +208,13 @@ export function PartnerLedgerCardView({
         <div className="flex items-center gap-3 flex-1 min-w-[280px]">
           <UserCheck className="w-5 h-5 text-primary shrink-0" />
           <div className="space-y-1 flex-1">
-            <Label className="text-xs font-semibold">Partner kiválasztása</Label>
+            <Label className="text-xs font-semibold">{t('accounting:general_ledger.partner_ledger_card.select_partner', 'Partner kiválasztása')}</Label>
             <Select value={selectedPartnerId} onValueChange={setSelectedPartnerId}>
               <SelectTrigger className="h-9 text-xs">
-                <SelectValue placeholder="Összes partner" />
+                <SelectValue placeholder={t('accounting:general_ledger.partner_ledger_card.all_partners', 'Összes partner')} />
               </SelectTrigger>
               <SelectContent className="max-h-[300px]">
-                <SelectItem value="all">Összes partner (Összesítő nézet)</SelectItem>
+                <SelectItem value="all">{t('accounting:general_ledger.partner_ledger_card.all_partners_summary', 'Összes partner (Összesítő nézet)')}</SelectItem>
                 {partners.map(p => (
                   <SelectItem key={p.id} value={p.id} className="text-xs">
                     {p.name} {p.tax_number ? `(${p.tax_number})` : ''}
@@ -228,7 +233,7 @@ export function PartnerLedgerCardView({
             onClick={() => setViewMode('open_only')}
             className="h-8 text-xs gap-1.5"
           >
-            <AlertTriangle className="w-3.5 h-3.5" /> Csak nyitott tételek
+            <AlertTriangle className="w-3.5 h-3.5" /> {t('accounting:general_ledger.partner_ledger_card.open_only', 'Csak nyitott tételek')}
           </Button>
           <Button
             variant={viewMode === 'all' ? 'default' : 'outline'}
@@ -236,12 +241,12 @@ export function PartnerLedgerCardView({
             onClick={() => setViewMode('all')}
             className="h-8 text-xs gap-1.5"
           >
-            <FileText className="w-3.5 h-3.5" /> Teljes forgalom
+            <FileText className="w-3.5 h-3.5" /> {t('accounting:general_ledger.partner_ledger_card.all_traffic', 'Teljes forgalom')}
           </Button>
 
           {activePartner && activePartner.open_net > 0 && (
             <Button size="sm" onClick={handlePrintConfirmation} className="h-8 text-xs gap-1.5 bg-primary text-primary-foreground ml-2">
-              <Printer className="w-3.5 h-3.5" /> Egyenlegközlő Levél PDF
+              <Printer className="w-3.5 h-3.5" /> {t('accounting:general_ledger.partner_ledger_card.confirmation_letter', 'Egyenlegközlő Levél PDF')}
             </Button>
           )}
         </div>
@@ -250,27 +255,27 @@ export function PartnerLedgerCardView({
       {/* Aging Bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-card border border-emerald-500/20 bg-emerald-500/5 rounded-xl p-3">
-          <span className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold">Lejáraton belüli</span>
+          <span className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold">{t('accounting:general_ledger.partner_ledger_card.aging_current', 'Lejáraton belüli')}</span>
           <p className="text-base font-bold tabular-nums text-emerald-600 dark:text-emerald-400 mt-1">
-            {formatCurrency(partnerCardData?.aging?.c || 0)}
+            {formatCurrency(partnerCardData?.aging?.c || 0, defaultCurrency)}
           </p>
         </div>
         <div className="bg-card border border-amber-500/20 bg-amber-500/5 rounded-xl p-3">
-          <span className="text-xs text-amber-700 dark:text-amber-400 font-semibold">1 – 30 napja lejárt</span>
+          <span className="text-xs text-amber-700 dark:text-amber-400 font-semibold">{t('accounting:general_ledger.partner_ledger_card.aging_1_30', '1 – 30 napja lejárt')}</span>
           <p className="text-base font-bold tabular-nums text-amber-600 dark:text-amber-400 mt-1">
-            {formatCurrency(partnerCardData?.aging?.d30 || 0)}
+            {formatCurrency(partnerCardData?.aging?.d30 || 0, defaultCurrency)}
           </p>
         </div>
         <div className="bg-card border border-orange-500/20 bg-orange-500/5 rounded-xl p-3">
-          <span className="text-xs text-orange-700 dark:text-orange-400 font-semibold">31 – 60 napja lejárt</span>
+          <span className="text-xs text-orange-700 dark:text-orange-400 font-semibold">{t('accounting:general_ledger.partner_ledger_card.aging_31_60', '31 – 60 napja lejárt')}</span>
           <p className="text-base font-bold tabular-nums text-orange-600 dark:text-orange-400 mt-1">
-            {formatCurrency(partnerCardData?.aging?.d60 || 0)}
+            {formatCurrency(partnerCardData?.aging?.d60 || 0, defaultCurrency)}
           </p>
         </div>
         <div className="bg-card border border-destructive/20 bg-destructive/5 rounded-xl p-3">
-          <span className="text-xs text-destructive font-semibold">60+ napja lejárt</span>
+          <span className="text-xs text-destructive font-semibold">{t('accounting:general_ledger.partner_ledger_card.aging_60_plus', '60+ napja lejárt')}</span>
           <p className="text-base font-bold tabular-nums text-destructive mt-1">
-            {formatCurrency(partnerCardData?.aging?.d90 || 0)}
+            {formatCurrency(partnerCardData?.aging?.d90 || 0, defaultCurrency)}
           </p>
         </div>
       </div>
@@ -280,10 +285,12 @@ export function PartnerLedgerCardView({
         <CardHeader className="py-3 px-4 bg-muted/40 border-b flex flex-row items-center justify-between">
           <CardTitle className="text-sm font-bold flex items-center gap-2">
             <UserCheck className="w-4 h-4 text-primary" />
-            {activePartner ? `${activePartner.partner_name} Folyószámla Kartonja` : 'Partner Folyószámlák Összesítője'}
+            {activePartner 
+              ? t('accounting:general_ledger.partner_ledger_card.title_partner', { name: activePartner.partner_name, defaultValue: `${activePartner.partner_name} Folyószámla Kartonja` })
+              : t('accounting:general_ledger.partner_ledger_card.title_all', 'Partner Folyószámlák Összesítője')}
           </CardTitle>
           <span className="text-xs font-semibold text-primary">
-            Összes nyitott állomány: {formatCurrency(partnerCardData?.openTotal || 0)}
+            {t('accounting:general_ledger.partner_ledger_card.open_total', { amount: formatCurrency(partnerCardData?.openTotal || 0, defaultCurrency), defaultValue: `Összes nyitott állomány: ${formatCurrency(partnerCardData?.openTotal || 0, defaultCurrency)}` })}
           </span>
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
@@ -294,18 +301,18 @@ export function PartnerLedgerCardView({
             </div>
           ) : !partnerCardData?.partnersSummary.length ? (
             <div className="py-12 text-center text-muted-foreground text-sm italic">
-              Nincs megjeleníthető partner folyószámla adat.
+              {t('accounting:general_ledger.partner_ledger_card.no_data', 'Nincs megjeleníthető partner folyószámla adat.')}
             </div>
           ) : (
             <table className="w-full text-xs text-left">
               <thead className="bg-muted/50 border-b text-muted-foreground font-semibold">
                 <tr>
-                  <th className="py-2.5 px-3">Partner neve</th>
-                  <th className="py-2.5 px-3">Adószám</th>
-                  <th className="py-2.5 px-3 text-right">Számlázott bruttó (Ft)</th>
-                  <th className="py-2.5 px-3 text-right">Kiegyenlített (Ft)</th>
-                  <th className="py-2.5 px-3 text-right font-bold">Nyitott egyenleg (Ft)</th>
-                  <th className="py-2.5 px-3 text-center">Státusz</th>
+                  <th className="py-2.5 px-3">{t('accounting:general_ledger.partner_ledger_card.col_partner_name', 'Partner neve')}</th>
+                  <th className="py-2.5 px-3">{t('accounting:general_ledger.partner_ledger_card.col_tax_number', 'Adószám')}</th>
+                  <th className="py-2.5 px-3 text-right">{t('accounting:general_ledger.partner_ledger_card.col_invoiced', { currency: currencyLabel, defaultValue: `Számlázott bruttó (${currencyLabel})` })}</th>
+                  <th className="py-2.5 px-3 text-right">{t('accounting:general_ledger.partner_ledger_card.col_paid', { currency: currencyLabel, defaultValue: `Kiegyenlített (${currencyLabel})` })}</th>
+                  <th className="py-2.5 px-3 text-right font-bold">{t('accounting:general_ledger.partner_ledger_card.col_open_balance', { currency: currencyLabel, defaultValue: `Nyitott egyenleg (${currencyLabel})` })}</th>
+                  <th className="py-2.5 px-3 text-center">{t('accounting:general_ledger.partner_ledger_card.col_status', 'Státusz')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
@@ -322,22 +329,22 @@ export function PartnerLedgerCardView({
                       {p.partner_tax_number || '-'}
                     </td>
                     <td className="py-2.5 px-3 text-right tabular-nums">
-                      {formatCurrency(p.invoiced)}
+                      {formatCurrency(p.invoiced, defaultCurrency)}
                     </td>
                     <td className="py-2.5 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400">
-                      {formatCurrency(p.paid)}
+                      {formatCurrency(p.paid, defaultCurrency)}
                     </td>
                     <td className="py-2.5 px-3 text-right tabular-nums font-bold text-foreground">
-                      {formatCurrency(p.open_net)}
+                      {formatCurrency(p.open_net, defaultCurrency)}
                     </td>
                     <td className="py-2.5 px-3 text-center">
                       {p.open_net === 0 ? (
                         <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px]">
-                          <CheckCircle2 className="w-3 h-3 mr-1" /> Rendezve
+                          <CheckCircle2 className="w-3 h-3 mr-1" /> {t('accounting:general_ledger.partner_ledger_card.status_settled', 'Rendezve')}
                         </Badge>
                       ) : (
                         <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[10px]">
-                          <AlertTriangle className="w-3 h-3 mr-1" /> Nyitott
+                          <AlertTriangle className="w-3 h-3 mr-1" /> {t('accounting:general_ledger.partner_ledger_card.status_open', 'Nyitott')}
                         </Badge>
                       )}
                     </td>

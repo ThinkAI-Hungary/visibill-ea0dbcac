@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams , useLocation } from 'react-router-dom';
 import { ArrowLeft, Calculator, TrendingUp, Users, Landmark, Info, BarChart2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +35,8 @@ function NumberInput({ value, onChange, label, hint }: {
 }
 
 export default function KivaCalculatorPage() {
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const id = companyId;
   const { data: clients = [] } = useAccountyClients();
@@ -95,7 +97,7 @@ export default function KivaCalculatorPage() {
     <div className="w-full space-y-6 page-animate max-w-4xl">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link to={`/eaisybooks/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-muted transition-colors">
+        <Link to={`${prefix}/eaisybooks/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-muted transition-colors">
           <ArrowLeft className="w-4 h-4 text-muted-foreground" />
         </Link>
         <div className="p-2.5 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg shadow-lg shadow-orange-500/25">
@@ -105,7 +107,7 @@ export default function KivaCalculatorPage() {
           <h1 className="text-2xl font-bold text-foreground">KIVA Kalkulátor</h1>
           <p className="text-sm text-muted-foreground">{client?.name || 'Ügyfél'} — Kisvállalati adó szimuláció</p>
         </div>
-        <Link to={`/eaisybooks/${id}/${dateRange}/tao/compare`}>
+        <Link to={`${prefix}/eaisybooks/${id}/${dateRange}/tao/compare`}>
           <Button variant="outline" size="sm" className="gap-1.5">
             <BarChart2 className="w-3.5 h-3.5" /> TAO összehasonlítás
           </Button>
@@ -200,7 +202,7 @@ export default function KivaCalculatorPage() {
             </div>
 
             <div className="pt-2">
-              <Link to={`/eaisybooks/${id}/${dateRange}/tao/compare`}>
+              <Link to={`${prefix}/eaisybooks/${id}/${dateRange}/tao/compare`}>
                 <Button variant="outline" className="w-full gap-2">
                   <BarChart2 className="w-4 h-4" /> TAO vs KIVA összehasonlítás
                 </Button>

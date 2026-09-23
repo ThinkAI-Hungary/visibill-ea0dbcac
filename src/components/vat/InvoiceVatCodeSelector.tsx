@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useTranslation } from 'react-i18next';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -57,6 +58,7 @@ export function InvoiceVatCodeSelector({
   onUpdated,
 }: InvoiceVatCodeSelectorProps) {
   const { toast } = useToast();
+  const { t } = useTranslation(['invoices', 'common']);
   const qc = useQueryClient();
   const { selectedCompany } = useCompany();
   const [open, setOpen] = React.useState(false);
@@ -242,14 +244,14 @@ export function InvoiceVatCodeSelector({
                 "font-mono font-medium gap-1 cursor-pointer transition-all border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 hover:border-amber-500/60 shadow-xs",
                 size === 'sm' ? 'text-[10px] px-1.5 py-0.5 h-5' : 'text-xs px-2 py-1'
               )}
-              title="ÁFA kód és bevallási sor módosítása"
+              title={t('invoices:vat_selector.edit_title', 'ÁFA kód és bevallási sor módosítása')}
             >
               {isPending ? (
                 <Loader2 className="w-2.5 h-2.5 animate-spin" />
               ) : (
                 <Tag className="w-2.5 h-2.5 shrink-0 opacity-70" />
               )}
-              <span>{activeSelection.targetRow}. sor</span>
+              <span>{t('invoices:vat_selector.row_suffix', { row: activeSelection.targetRow, defaultValue: `${activeSelection.targetRow}. sor` })}</span>
               <span className="opacity-60 hidden sm:inline">({activeSelection.label})</span>
               <ChevronDown className="w-2.5 h-2.5 opacity-50" />
             </Badge>
@@ -261,14 +263,14 @@ export function InvoiceVatCodeSelector({
                 "h-5 text-[10px] px-1.5 text-muted-foreground/60 hover:text-foreground border border-dashed border-border/50 hover:border-primary/40 rounded gap-1",
                 size === 'sm' ? 'h-5 text-[10px] px-1.5' : 'h-7 text-xs px-2'
               )}
-              title="ÁFA kód / 2665 bevallási sor felülbírálata"
+              title={t('invoices:vat_selector.override_title', 'ÁFA kód / 2665 bevallási sor felülbírálata')}
             >
               {isPending ? (
                 <Loader2 className="w-2.5 h-2.5 animate-spin" />
               ) : (
                 <Tag className="w-2.5 h-2.5" />
               )}
-              <span>ÁFA kód</span>
+              <span>{t('invoices:vat_selector.button_label', 'ÁFA kód')}</span>
               <ChevronDown className="w-2.5 h-2.5 opacity-40" />
             </Button>
           )}
@@ -276,7 +278,7 @@ export function InvoiceVatCodeSelector({
 
         <DropdownMenuContent align="end" className="w-64 max-h-80 overflow-y-auto z-50">
           <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
-            ÁFA kód & 2665-ös bevallási sor
+            {t('invoices:vat_selector.menu_title', 'ÁFA kód & 2665-ös bevallási sor')}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
 
@@ -286,7 +288,7 @@ export function InvoiceVatCodeSelector({
             onClick={() => updateVatCodeMutation.mutate({ codeId: null, targetRow: null })}
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span>Alapértelmezett (kontírozás alapján)</span>
+            <span>{t('invoices:vat_selector.default_option', 'Alapértelmezett (kontírozás alapján)')}</span>
             {!activeSelection && <Check className="w-3.5 h-3.5 ml-auto text-primary" />}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -294,7 +296,7 @@ export function InvoiceVatCodeSelector({
           {/* Group: Standard Rates */}
           <DropdownMenuGroup>
             <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground/70 uppercase">
-              Normál belföldi adómértékek
+              {t('invoices:vat_selector.group_standard', 'Normál belföldi adómértékek')}
             </div>
             {combinedOptions.filter(o => o.group === 'standard').map((opt) => {
               const isSelected = activeSelection?.targetRow === opt.targetRow;
@@ -306,7 +308,7 @@ export function InvoiceVatCodeSelector({
                 >
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className="font-mono text-[10px] h-4 px-1">
-                      {opt.targetRow}. sor
+                      {t('invoices:vat_selector.row_suffix', { row: opt.targetRow, defaultValue: `${opt.targetRow}. sor` })}
                     </Badge>
                     <span>{opt.label}</span>
                   </div>
@@ -320,7 +322,7 @@ export function InvoiceVatCodeSelector({
           {/* Group: Special Cases */}
           <DropdownMenuGroup>
             <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground/70 uppercase">
-              Különleges & Kiemelt sorok
+              {t('invoices:vat_selector.group_special', 'Különleges & Kiemelt sorok')}
             </div>
             {combinedOptions.filter(o => o.group === 'special').map((opt) => {
               const isSelected = activeSelection?.targetRow === opt.targetRow;
@@ -332,7 +334,7 @@ export function InvoiceVatCodeSelector({
                 >
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className="font-mono text-[10px] h-4 px-1">
-                      {opt.targetRow}. sor
+                      {t('invoices:vat_selector.row_suffix', { row: opt.targetRow, defaultValue: `${opt.targetRow}. sor` })}
                     </Badge>
                     <span>{opt.label}</span>
                   </div>
@@ -346,7 +348,7 @@ export function InvoiceVatCodeSelector({
           {/* Group: Tax Exemptions */}
           <DropdownMenuGroup>
             <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground/70 uppercase">
-              Adómentes & Speciális
+              {t('invoices:vat_selector.group_exemption', 'Adómentes & Speciális')}
             </div>
             {combinedOptions.filter(o => o.group === 'exemption').map((opt) => {
               const isSelected = activeSelection?.targetRow === opt.targetRow;
@@ -358,7 +360,7 @@ export function InvoiceVatCodeSelector({
                 >
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className="font-mono text-[10px] h-4 px-1">
-                      {opt.targetRow}. sor
+                      {t('invoices:vat_selector.row_suffix', { row: opt.targetRow, defaultValue: `${opt.targetRow}. sor` })}
                     </Badge>
                     <span>{opt.label}</span>
                   </div>

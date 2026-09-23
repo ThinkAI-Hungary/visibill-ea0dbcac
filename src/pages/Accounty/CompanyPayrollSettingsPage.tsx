@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import {
   ArrowLeft, Settings, Save, Building2, Clock, Calculator, MapPin,
   Globe, AlertTriangle, Plus, Trash2, Loader2, CheckCircle, CreditCard
@@ -51,6 +51,8 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
 export default function CompanyPayrollSettingsPage() {
   const { companyId } = useParams<{ companyId: string }>();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const { toast } = useToast();
 
   const { data: allClients } = useAccountyClients();
@@ -145,15 +147,15 @@ export default function CompanyPayrollSettingsPage() {
     <div className="w-full max-w-4xl mx-auto space-y-6 page-animate">
       <Breadcrumb
         items={[
-          { label: 'Portfólió', href: '/eaisybooks' },
-          { label: companyName, href: `/eaisybooks/payroll/${companyId}` },
+          { label: 'Portfólió', href: `${prefix}/eaisybooks` },
+          { label: companyName, href: `${prefix}/eaisybooks/payroll/${companyId}` },
           { label: 'Beállítások' },
         ]}
         onNavigate={navigate}
       />
 
       <div className="flex items-center gap-3">
-        <Link to={`/eaisybooks/payroll/${companyId}`} className="p-2 rounded-lg hover:bg-muted transition-colors">
+        <Link to={`${prefix}/eaisybooks/payroll/${companyId}`} className="p-2 rounded-lg hover:bg-muted transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div className="p-2.5 bg-gradient-to-br from-muted to-card rounded-lg shadow-lg">

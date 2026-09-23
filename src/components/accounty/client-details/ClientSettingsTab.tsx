@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Bell, Mail, MessageCircle, Phone, Globe, Clock, Settings, Check, Loader2,
   Shield, Building2, Key, Monitor, TestTube, User, Save, Trash2, Plus, 
@@ -123,9 +124,11 @@ export default function ClientSettingsTab({
   commPrefsData,
   taxProfileData,
 }: ClientSettingsTabProps) {
+  const { t, i18n } = useTranslation('accounty');
   const { toast } = useToast();
-  const { hash } = useLocation();
+  const { hash, pathname } = useLocation();
   const navigate = useNavigate();
+  const isHr = pathname.startsWith('/hr') || i18n.language === 'hr';
   const upsertCommPrefs = useUpsertCommunicationPrefs();
   const upsertTaxProfile = useUpsertTaxProfile();
 
@@ -327,10 +330,10 @@ export default function ClientSettingsTab({
   const cegkapuCapacityPct = cegkapuData.capacityTotal > 0 ? Math.round((cegkapuData.capacityUsed / cegkapuData.capacityTotal) * 100) : 0;
 
   const subTabs = [
-    { id: 'notifications' as const, label: 'Kapcsolat & Értesítések', icon: Bell },
-    { id: 'tax_profile' as const, label: 'Adózási Profil', icon: Settings },
-    { id: 'cegkapu' as const, label: 'Cégkapu / KÜNY', icon: Shield },
-    { id: 'payroll' as const, label: 'Bérszámfejtés & NAV', icon: Calculator },
+    { id: 'notifications' as const, label: t('client_settings.tab_notifications'), icon: Bell },
+    { id: 'tax_profile' as const, label: t('client_settings.tab_tax_profile'), icon: Settings },
+    { id: 'cegkapu' as const, label: t('client_settings.tab_cegkapu'), icon: Shield },
+    { id: 'payroll' as const, label: t('client_settings.tab_payroll'), icon: Calculator },
   ];
 
   return (
@@ -364,17 +367,17 @@ export default function ClientSettingsTab({
         {activeSubTab === 'notifications' && (
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-bold text-foreground">Értesítési csatornák és kapcsolattartó</h3>
-              <p className="text-xs text-muted-foreground mt-1">Az ügyfél értesítési és kapcsolattartói beállításai</p>
+              <h3 className="text-lg font-bold text-foreground">{t('client_settings.section_channels_title')}</h3>
+              <p className="text-xs text-muted-foreground mt-1">{t('client_settings.section_channels_desc')}</p>
             </div>
 
             {/* Channels */}
             <div className="space-y-4">
               {[
-                { key: 'email' as const, label: 'E-mail értesítés', desc: 'Automatikus e-mail a hiányzó számlákról', icon: Mail },
-                { key: 'viber' as const, label: 'Viber / Telegram', desc: 'Üzenetek küldése Viber-en vagy Telegram-on', icon: MessageCircle },
-                { key: 'phone' as const, label: 'AI Telefonhívás', desc: 'Automatikus telefonhívás AI hanggal', icon: Phone },
-                { key: 'sms' as const, label: 'SMS értesítés', desc: 'SMS emlékeztető küldése', icon: MessageCircle },
+                { key: 'email' as const, label: t('client_settings.channel_email'), desc: t('client_settings.channel_email_desc'), icon: Mail },
+                { key: 'viber' as const, label: t('client_settings.channel_viber'), desc: t('client_settings.channel_viber_desc'), icon: MessageCircle },
+                { key: 'phone' as const, label: t('client_settings.channel_phone'), desc: t('client_settings.channel_phone_desc'), icon: Phone },
+                { key: 'sms' as const, label: t('client_settings.channel_sms'), desc: t('client_settings.channel_sms_desc'), icon: MessageCircle },
               ].map(({ key, label, desc, icon: Icon }) => (
                 <div 
                   key={key} 
@@ -412,42 +415,43 @@ export default function ClientSettingsTab({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="border border-border rounded-lg p-5 space-y-3">
                 <h4 className="font-semibold text-sm flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-muted-foreground" /> Nyelvi beállítások
+                  <Globe className="w-4 h-4 text-muted-foreground" /> {t('client_settings.language_settings_title')}
                 </h4>
                 <div>
-                  <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Értesítések nyelve</label>
+                  <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">{t('client_settings.field_notification_language')}</label>
                   <select
                     value={notifPrefs.language}
                     onChange={(e) => setNotifPrefs(prev => ({ ...prev, language: e.target.value }))}
                     className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 text-foreground"
                   >
+                    <option value="hr">Hrvatski</option>
                     <option value="hu">Magyar</option>
                     <option value="en">English</option>
                     <option value="de">Deutsch</option>
                   </select>
                 </div>
                 <div>
-                  <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Értesítés gyakorisága</label>
+                  <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">{t('client_settings.field_frequency')}</label>
                   <select
                     value={notifPrefs.frequency}
                     onChange={(e) => setNotifPrefs(prev => ({ ...prev, frequency: e.target.value }))}
                     className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 text-foreground"
                   >
-                    <option value="high">Agresszív (naponta)</option>
-                    <option value="normal">Normál (hetente 2x)</option>
-                    <option value="low">Óvatos (hetente 1x)</option>
+                    <option value="high">{t('client_settings.freq_high')}</option>
+                    <option value="normal">{t('client_settings.freq_normal')}</option>
+                    <option value="low">{t('client_settings.freq_low')}</option>
                   </select>
                 </div>
               </div>
 
               <div className="border border-border rounded-lg p-5 space-y-4">
                 <h4 className="font-semibold text-sm flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-muted-foreground" /> Automatizmus
+                  <Clock className="w-4 h-4 text-muted-foreground" /> {t('client_settings.automation_title')}
                 </h4>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-foreground">Automatikus emlékeztető</p>
-                    <p className="text-[10px] text-muted-foreground">Rendszer automatikusan küld emlékeztetőt</p>
+                    <p className="text-sm font-semibold text-foreground">{t('client_settings.auto_reminder')}</p>
+                    <p className="text-[10px] text-muted-foreground">{t('client_settings.auto_reminder_desc')}</p>
                   </div>
                   <button
                     onClick={() => setNotifPrefs(prev => ({ ...prev, autoReminder: !prev.autoReminder }))}
@@ -472,34 +476,34 @@ export default function ClientSettingsTab({
             {/* Kapcsolattartó */}
             <div className="border border-border rounded-lg p-5 space-y-4">
               <h4 className="font-semibold text-sm flex items-center gap-2">
-                <User className="w-4 h-4 text-muted-foreground" /> Ügyfél kapcsolattartó
+                <User className="w-4 h-4 text-muted-foreground" /> {t('client_settings.contact_title')}
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Kapcsolattartó neve</label>
+                  <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">{t('client_settings.field_contact_name')}</label>
                   <input
                     type="text"
-                    placeholder="pl. Kovács János"
+                    placeholder={isHr ? "npr. Ivan Horvat" : "pl. Kovács János"}
                     value={notifPrefs.contactName}
                     onChange={(e) => setNotifPrefs(prev => ({ ...prev, contactName: e.target.value }))}
                     className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 text-foreground"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">E-mail cím</label>
+                  <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">{t('client_settings.field_contact_email')}</label>
                   <input
                     type="email"
-                    placeholder="pl. kovacs@ceg.hu"
+                    placeholder={isHr ? "npr. ivan@tvrtka.hr" : "pl. kovacs@ceg.hu"}
                     value={notifPrefs.contactEmail}
                     onChange={(e) => setNotifPrefs(prev => ({ ...prev, contactEmail: e.target.value }))}
                     className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 text-foreground"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Telefonszám</label>
+                  <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">{t('client_settings.field_contact_phone')}</label>
                   <input
                     type="tel"
-                    placeholder="pl. +36 30 123 4567"
+                    placeholder={isHr ? "npr. +385 91 123 4567" : "pl. +36 30 123 4567"}
                     value={notifPrefs.contactPhone}
                     onChange={(e) => setNotifPrefs(prev => ({ ...prev, contactPhone: e.target.value }))}
                     className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 text-foreground"
@@ -558,7 +562,7 @@ export default function ClientSettingsTab({
                 className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-2"
               >
                 {savingPrefs ? <Loader2 className="w-4 h-4 animate-spin" /> : savedPrefs ? <Check className="w-4 h-4" /> : null}
-                {savingPrefs ? 'Mentés...' : savedPrefs ? 'Mentve!' : 'Mentés'}
+                {savingPrefs ? t('client_settings.btn_saving') : savedPrefs ? t('client_settings.saved') : t('client_settings.btn_save')}
               </button>
             </div>
           </div>

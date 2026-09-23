@@ -1,6 +1,6 @@
 import { useDateRange } from '@/contexts/DateRangeContext';
 import React, { useState, useMemo } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   Landmark, ArrowLeft, FileText, TrendingUp, Calculator, Shield,
   Globe, ChevronRight, BarChart2, Scale, CheckCircle, AlertTriangle,
@@ -25,6 +25,30 @@ const WIZARD_STEPS = [
   { num: 10, label: 'Fizetendő', icon: Calculator },
   { num: 11, label: 'Beküldés',  icon: CheckCircle },
 ];
+const WIZARD_STEPS_HR = [
+  { num: 1,  label: 'Izvještaj', icon: FileText },
+  { num: 2,  label: 'AEE',       icon: Calculator },
+  { num: 3,  label: 'Umanjenja', icon: TrendingUp },
+  { num: 4,  label: 'Povećanja', icon: TrendingUp },
+  { num: 5,  label: 'Kamate',    icon: Scale },
+  { num: 6,  label: 'CFC',       icon: Globe },
+  { num: 7,  label: 'Osnovica',  icon: Calculator },
+  { num: 8,  label: 'Olakšice',  icon: Shield },
+  { num: 9,  label: 'Donacije',  icon: Briefcase },
+  { num: 10, label: 'Za platiti',icon: Calculator },
+  { num: 11, label: 'Predaja',   icon: CheckCircle },
+];
+
+function formatTaoAmount(amount: number, isHr: boolean): string {
+  if (isHr) {
+    if (Math.abs(amount) >= 1_000_000) {
+      return `${(amount / 1_000_000).toFixed(2)} M €`;
+    }
+    return new Intl.NumberFormat('hr-HR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount) + ' €';
+  }
+  return `${(amount / 1_000_000).toFixed(2)} M Ft`;
+}
+
 
 interface TaoTab {
   id: string;
@@ -36,6 +60,9 @@ interface TaoTab {
 export default function ClientTaoMainPage() {
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
+  const isHr = pathname.startsWith('/hr');
   const id = companyId;
   const { data: clients = [], isLoading: clientLoading } = useAccountyClients();
   const client = clients.find((c: any) => c.companyId === id);
@@ -55,11 +82,11 @@ export default function ClientTaoMainPage() {
   const creditAmount = taoData?.tax_credits_total || 0;
 
   const tabs: TaoTab[] = [
-    { id: 'overview',  label: 'Áttekintés',     icon: Landmark,    to: `/eaisybooks/${companyId}/${dateRange}/tao` },
-    { id: 'status',    label: 'Adóalany',       icon: Shield,      to: `/eaisybooks/${companyId}/${dateRange}/tao/setup` },
-    { id: 'master',    label: 'Törzsadatok',     icon: FileText,    to: `/eaisybooks/${companyId}/${dateRange}/tao/master-data` },
-    { id: 'year-end',  label: 'Éves zárás',     icon: Calculator,  to: `/eaisybooks/${companyId}/${dateRange}/tao/year-end/${taxYear}` },
-    { id: 'lifecycle', label: 'Életciklus',      icon: Clock,       to: `/eaisybooks/${companyId}/${dateRange}/tao/lifecycle` },
+    { id: 'overview',  label: isHr ? 'Pregled' : 'Áttekintés',     icon: Landmark,    to: `${prefix}/eaisybooks/${companyId}/${dateRange}/tao` },
+    { id: 'status',    label: isHr ? 'Porezni obveznik' : 'Adóalany',       icon: Shield,      to: `${prefix}/eaisybooks/${companyId}/${dateRange}/tao/setup` },
+    { id: 'master',    label: isHr ? 'Matični podaci' : 'Törzsadatok',     icon: FileText,    to: `${prefix}/eaisybooks/${companyId}/${dateRange}/tao/master-data` },
+    { id: 'year-end',  label: isHr ? 'Godišnje zatvaranje' : 'Éves zárás',     icon: Calculator,  to: `${prefix}/eaisybooks/${companyId}/${dateRange}/tao/year-end/${taxYear}` },
+    { id: 'lifecycle', label: isHr ? 'Životni ciklus' : 'Életciklus',      icon: Clock,       to: `${prefix}/eaisybooks/${companyId}/${dateRange}/tao/lifecycle` },
   ];
 
   return (
@@ -71,11 +98,11 @@ export default function ClientTaoMainPage() {
             if (window.history.state && window.history.state.idx > 0) {
               navigate(-1);
             } else {
-              navigate('/eaisybooks?tab=tao');
+              navigate(`${prefix}/eaisybooks?tab=tao`);
             }
           }}
           className="flex items-center justify-center w-8 h-8 mt-1.5 rounded-lg border border-border bg-card hover:bg-muted transition-colors shadow-sm shrink-0"
-          title="Vissza"
+          title={isHr ? 'Natrag' : 'Vissza'}
         >
           <ChevronLeft className="w-5 h-5 text-muted-foreground" />
         </button>
@@ -84,15 +111,15 @@ export default function ClientTaoMainPage() {
             {clientLoading ? (
               <div className="h-3.5 w-32 bg-muted rounded animate-pulse" />
             ) : (
-              <span className="text-xs font-semibold text-muted-foreground">{client?.name || 'Ügyfél'}</span>
+              <span className="text-xs font-semibold text-muted-foreground">{client?.name || (isHr ? 'Klijent' : 'Ügyfél')}</span>
             )}
           </div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-foreground tracking-tight">
-              Társasági adó (TAO)
+              {isHr ? 'Porez na dobit (PD)' : 'Társasági adó (TAO)'}
             </h1>
             <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-              Belföldi Kft. (GFO 113)
+              {isHr ? 'D.O.O. (Hrvatska)' : 'Belföldi Kft. (GFO 113)'}
             </span>
             {taxProfile?.isKiva ? (
               <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
@@ -110,7 +137,7 @@ export default function ClientTaoMainPage() {
               </span>
             )}
           </div>
-          <p className="text-sm text-muted-foreground mt-1">{taxYear}. adóév</p>
+          <p className="text-sm text-muted-foreground mt-1">{isHr ? `Porezna godina ${taxYear}.` : `${taxYear}. adóév`}</p>
         </div>
       </div>
 
@@ -128,7 +155,7 @@ export default function ClientTaoMainPage() {
             </p>
             <div className="flex gap-3 mt-2">
               <Button size="sm" variant="outline" className="h-7 text-xs border-orange-300 text-orange-800 hover:bg-orange-100 dark:border-orange-800 dark:text-orange-300 dark:hover:bg-orange-950/40" asChild>
-                <Link to={`/eaisybooks/${companyId}/${dateRange}/tao/kiva`}>KIVA kalkulátor megnyitása</Link>
+                <Link to={`${prefix}/eaisybooks/${companyId}/${dateRange}/tao/kiva`}>KIVA kalkulátor megnyitása</Link>
               </Button>
             </div>
           </div>
@@ -138,33 +165,33 @@ export default function ClientTaoMainPage() {
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
-          <p className="text-xs text-muted-foreground mb-1">AEE</p>
+          <p className="text-xs text-muted-foreground mb-1">{isHr ? 'AEE' : 'AEE'}</p>
           <p className="text-xl font-bold text-foreground">
-            {(aee / 1_000_000).toFixed(1)} M Ft
+            {formatTaoAmount(aee, isHr)}
           </p>
         </div>
         <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
-          <p className="text-xs text-muted-foreground mb-1">Adóalap</p>
+          <p className="text-xs text-muted-foreground mb-1">{isHr ? 'Porezna osnovica' : 'Adóalap'}</p>
           <p className="text-xl font-bold text-emerald-600">
-            {(taxBase / 1_000_000).toFixed(1)} M Ft
+            {formatTaoAmount(taxBase, isHr)}
           </p>
         </div>
         <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
-          <p className="text-xs text-muted-foreground mb-1">Számított adó (9%)</p>
+          <p className="text-xs text-muted-foreground mb-1">{isHr ? 'Obračunati porez (10%)' : 'Számított adó (9%)'}</p>
           <p className="text-xl font-bold text-foreground/90">
-            {(calculatedTax / 1_000_000).toFixed(2)} M Ft
+            {formatTaoAmount(calculatedTax, isHr)}
           </p>
         </div>
         <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
-          <p className="text-xs text-muted-foreground mb-1">Fizetendő adó</p>
+          <p className="text-xs text-muted-foreground mb-1">{isHr ? 'Porez za platiti' : 'Fizetendő adó'}</p>
           <p className="text-xl font-bold text-emerald-600">
-            {(payableTax / 1_000_000).toFixed(2)} M Ft
+            {formatTaoAmount(payableTax, isHr)}
           </p>
         </div>
         <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
-          <p className="text-xs text-muted-foreground mb-1">Kedvezmény</p>
+          <p className="text-xs text-muted-foreground mb-1">{isHr ? 'Olakšice' : 'Kedvezmény'}</p>
           <p className="text-xl font-bold text-blue-600">
-            {(creditAmount / 1_000_000).toFixed(2)} M Ft
+            {formatTaoAmount(creditAmount, isHr)}
           </p>
         </div>
       </div>
@@ -192,18 +219,18 @@ export default function ClientTaoMainPage() {
       <div className="bg-card rounded-lg border border-border p-6 shadow-soft">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-foreground">
-            {taxYear}. adóévi TAO-zárás
+            {isHr ? `Zatvaranje poreza na dobit za ${taxYear}.` : `${taxYear}. adóévi TAO-zárás`}
           </h2>
-          <Link to={`/eaisybooks/${companyId}/${dateRange}/tao/year-end/${taxYear}?step=${currentStep}`}>
+          <Link to={`${prefix}/eaisybooks/${companyId}/${dateRange}/tao/year-end/${taxYear}?step=${currentStep}`}>
             <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
-              Folytatás — {currentStep}. lépés
+              {isHr ? `Nastavak — ${currentStep}. korak` : `Folytatás — ${currentStep}. lépés`}
             </Button>
           </Link>
         </div>
 
         {/* 11-step stepper */}
         <div className="flex items-center gap-0 overflow-x-auto pt-2 pb-2">
-          {WIZARD_STEPS.map((step, i) => {
+          {(isHr ? WIZARD_STEPS_HR : WIZARD_STEPS).map((step, i) => {
             const isDone = step.num < currentStep;
             const isCurrent = step.num === currentStep;
             return (
@@ -241,7 +268,7 @@ export default function ClientTaoMainPage() {
       {/* Quick links */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
         <Link
-          to={`/eaisybooks/${companyId}/${dateRange}/tao/master-data`}
+          to={`${prefix}/eaisybooks/${companyId}/${dateRange}/tao/master-data`}
           className="bg-card rounded-lg border border-border p-5 shadow-soft hover:shadow-md hover:border-primary/30 transition-all group"
         >
           <div className="flex items-center gap-3">
@@ -256,7 +283,7 @@ export default function ClientTaoMainPage() {
           </div>
         </Link>
         <Link
-          to={`/eaisybooks/${companyId}/${dateRange}/tao/setup`}
+          to={`${prefix}/eaisybooks/${companyId}/${dateRange}/tao/setup`}
           className="bg-card rounded-lg border border-border p-5 shadow-soft hover:shadow-md hover:border-primary/30 transition-all group"
         >
           <div className="flex items-center gap-3">
@@ -271,7 +298,7 @@ export default function ClientTaoMainPage() {
           </div>
         </Link>
         <Link
-          to={`/eaisybooks/${companyId}/${dateRange}/tao/lifecycle`}
+          to={`${prefix}/eaisybooks/${companyId}/${dateRange}/tao/lifecycle`}
           className="bg-card rounded-lg border border-border p-5 shadow-soft hover:shadow-md hover:border-primary/30 transition-all group"
         >
           <div className="flex items-center gap-3">
@@ -286,7 +313,7 @@ export default function ClientTaoMainPage() {
           </div>
         </Link>
         <Link
-          to={`/eaisybooks/${companyId}/${dateRange}/tao/kiva`}
+          to={`${prefix}/eaisybooks/${companyId}/${dateRange}/tao/kiva`}
           className="bg-card rounded-lg border border-border p-5 shadow-soft hover:shadow-md hover:border-orange-400/30 transition-all group"
         >
           <div className="flex items-center gap-3">
@@ -301,7 +328,7 @@ export default function ClientTaoMainPage() {
           </div>
         </Link>
         <Link
-          to={`/eaisybooks/${companyId}/${dateRange}/tao/compare`}
+          to={`${prefix}/eaisybooks/${companyId}/${dateRange}/tao/compare`}
           className="bg-card rounded-lg border border-border p-5 shadow-soft hover:shadow-md hover:border-violet-400/30 transition-all group"
         >
           <div className="flex items-center gap-3">

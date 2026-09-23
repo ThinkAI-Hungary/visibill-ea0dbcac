@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   Building2, 
   ChevronDown, 
@@ -24,6 +25,7 @@ export default function AccountyCompanySelector({
   isEv: propIsEv,
   className,
 }: AccountyCompanySelectorProps) {
+  const { t } = useTranslation('accounty');
   const {
     selectedClientId,
     selectedClient,
@@ -88,16 +90,16 @@ export default function AccountyCompanySelector({
   };
 
   const displayName = isClientMode
-    ? (selectedClient?.name || 'Kiválasztott cég')
-    : 'Portfólió nézet';
+    ? (selectedClient?.name || t('portfolio.selector.selected_company', 'Kiválasztott cég'))
+    : t('portfolio.selector.portfolio_view', 'Portfólió nézet');
 
   const subtitle = isClientMode
-    ? (selectedClient?.taxNumber || 'Nincs adószám')
-    : (allClients?.length ? `${allClients.length} ügyfélcég` : 'Összes ügyfél');
+    ? (selectedClient?.taxNumber || t('portfolio.selector.no_tax_number', 'Nincs adószám'))
+    : (allClients?.length ? t('portfolio.selector.client_count', { count: allClients.length, defaultValue: `${allClients.length} ügyfélcég` }) : t('portfolio.selector.all_clients', 'Összes ügyfél'));
 
   const badgeText = isClientMode
-    ? (isEv ? 'EV' : 'Társaság')
-    : 'Portfólió';
+    ? (isEv ? 'EV' : t('portfolio.selector.company_type_corp', 'Társaság'))
+    : t('nav.items.portfolio', 'Portfólió');
 
   // Collapsed Mode Trigger
   if (isCollapsed) {
@@ -213,7 +215,7 @@ export default function AccountyCompanySelector({
             <input
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Cég vagy adószám keresése..."
+              placeholder={t('portfolio.selector.search_placeholder', 'Cég vagy adószám keresése...')}
               style={{ outline: 'none' }}
               className="bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 [outline:none!important] [box-shadow:none!important] flex-1 min-w-0"
               autoFocus
@@ -249,8 +251,8 @@ export default function AccountyCompanySelector({
           >
             <Briefcase className={cn("w-4 h-4 shrink-0", !isClientMode ? "text-primary" : "text-muted-foreground")} />
             <div className="flex-1 min-w-0">
-              <div className="truncate font-semibold">Teljes Portfólió</div>
-              <div className="text-[10px] text-muted-foreground truncate">Portfólió áttekintés és teendők</div>
+              <div className="truncate font-semibold">{t('portfolio.selector.full_portfolio', 'Teljes Portfólió')}</div>
+              <div className="text-[10px] text-muted-foreground truncate">{t('portfolio.selector.portfolio_overview_desc', 'Portfólió áttekintés és teendők')}</div>
             </div>
             {!isClientMode && <Check className="w-4 h-4 shrink-0 text-primary" />}
           </button>
@@ -260,7 +262,7 @@ export default function AccountyCompanySelector({
         <div className="max-h-60 overflow-y-auto p-1 space-y-0.5" tabIndex={-1}>
           {filteredClients.length === 0 ? (
             <div className="px-3 py-6 text-center text-xs text-muted-foreground">
-              Nincs találat
+              {t('portfolio.selector.no_results', 'Nincs találat')}
             </div>
           ) : (
             filteredClients.map(client => {
@@ -291,9 +293,9 @@ export default function AccountyCompanySelector({
                   <div className="flex-1 min-w-0">
                     <div className="truncate font-medium">{client.name}</div>
                     <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
-                      <span>{client.taxNumber || 'Nincs adószám'}</span>
+                      <span>{client.taxNumber || t('portfolio.selector.no_tax_number', 'Nincs adószám')}</span>
                       <span className="text-[8px] font-mono uppercase px-1 rounded font-semibold bg-primary/10 text-primary">
-                        {clientIsEv ? 'EV' : 'Társaság'}
+                        {clientIsEv ? 'EV' : t('portfolio.selector.company_type_corp', 'Társaság')}
                       </span>
                     </div>
                   </div>

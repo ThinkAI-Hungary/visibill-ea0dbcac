@@ -1,7 +1,7 @@
 import { useDateRange } from '@/contexts/DateRangeContext';
 import React, { useState, useMemo, useEffect } from 'react';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
-import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useNavigate, useSearchParams , useLocation } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, Import, ShieldAlert, Sparkles,
   Loader2, CheckSquare, Square, Check, AlertCircle
@@ -52,6 +52,8 @@ interface GridRow {
 }
 
 export default function EvCashbookImportNavPage() {
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const id = companyId;
   const navigate = useNavigate();
@@ -336,7 +338,7 @@ export default function EvCashbookImportNavPage() {
       });
 
       // Clear the grid and navigate back to cashbook
-      navigate(`/eaisybooks/${id}/${dateRange}/ev/cashbook?year=${taxYear}`);
+      navigate(`${prefix}/eaisybooks/${id}/${dateRange}/ev/cashbook?year=${taxYear}`);
     } catch (err: any) {
       toast({
         title: 'Hiba történt',
@@ -358,7 +360,7 @@ export default function EvCashbookImportNavPage() {
     <div className="w-full space-y-6 pb-24 page-animate">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link to={`/eaisybooks/${id}/${dateRange}/ev/cashbook?year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
+        <Link to={`${prefix}/eaisybooks/${id}/${dateRange}/ev/cashbook?year=${taxYear}`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> Pénztárkönyv
         </Link>
         <ChevronRight className="w-3 h-3" />
@@ -595,7 +597,7 @@ export default function EvCashbookImportNavPage() {
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
-              onClick={() => navigate(`/eaisybooks/${id}/${dateRange}/ev/cashbook?year=${taxYear}`)}
+              onClick={() => navigate(`${prefix}/eaisybooks/${id}/${dateRange}/ev/cashbook?year=${taxYear}`)}
               className="border-border text-foreground/90 hover:bg-muted/50"
             >
               Mégse

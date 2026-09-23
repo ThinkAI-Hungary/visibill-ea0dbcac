@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { queryTaxpayerFromNav } from '@/lib/nav/navTaxpayerService';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getJurisdictionRules } from '@/hooks/useCompanyJurisdiction';
 
 interface ClientDetailsStepProps {
   useVisibillAccount: boolean;
@@ -15,6 +17,8 @@ interface ClientDetailsStepProps {
   setClientName: (v: string) => void;
   taxNumber: string;
   setTaxNumber: (v: string) => void;
+  countryCode?: 'HU' | 'HR';
+  setCountryCode?: (v: 'HU' | 'HR') => void;
   validationErrors: Record<string, string>;
   setValidationErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   contactName: string;
@@ -59,6 +63,7 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
   const {
     useVisibillAccount, setUseVisibillAccount,
     clientName, setClientName, taxNumber, setTaxNumber,
+    countryCode = 'HU', setCountryCode,
     validationErrors, setValidationErrors,
     contactName, setContactName, contactEmail, setContactEmail, contactPhone, setContactPhone,
     selectedChannels, toggleChannel, selectedDocs, toggleDoc,
@@ -74,6 +79,7 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
     isGeneratingDescription, handleGenerateDescription,
   } = props;
 
+  const jurisdiction = getJurisdictionRules(countryCode);
   const [isNavLoading, setIsNavLoading] = useState(false);
 
   const handleNavLookup = async () => {
@@ -244,27 +250,43 @@ export default function ClientDetailsStep(props: ClientDetailsStepProps) {
           <p className="text-xs text-muted-foreground mb-6">Az ügyfél nem használ Visibill-t</p>
           
           <div className="grid grid-cols-2 gap-4">
+            {setCountryCode && (
+              <div className="space-y-2 col-span-2">
+                <Label className="text-xs text-foreground/90">Ország / Joghatóság</Label>
+                <Select value={countryCode} onValueChange={(val) => setCountryCode(val as 'HU' | 'HR')}>
+                  <SelectTrigger className="bg-card border-border">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="HU">🇭🇺 Magyarország (HU)</SelectItem>
+                    <SelectItem value="HR">🇭🇷 Horvátország (HR)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label className="text-xs text-foreground/90">Adószám <span className="text-red-500">*</span></Label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 text-xs text-primary hover:text-primary/80 gap-1 px-1.5"
-                  onClick={handleNavLookup}
-                  disabled={isNavLoading || !taxNumber.trim()}
-                  title="Cégadatok automatikus kitöltése a NAV-ból"
-                >
-                  {isNavLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
-                  <span>NAV lekérdezés</span>
-                </Button>
+                <Label className="text-xs text-foreground/90">{jurisdiction.taxNumberLabel} <span className="text-red-500">*</span></Label>
+                {jurisdiction.hasNavIntegration && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-xs text-primary hover:text-primary/80 gap-1 px-1.5"
+                    onClick={handleNavLookup}
+                    disabled={isNavLoading || !taxNumber.trim()}
+                    title="Cégadatok automatikus kitöltése a NAV-ból"
+                  >
+                    {isNavLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
+                    <span>NAV lekérdezés</span>
+                  </Button>
+                )}
               </div>
               <Input 
                 value={taxNumber}
                 onChange={(e) => { setTaxNumber(e.target.value); setValidationErrors(prev => { const n = {...prev}; delete n.taxNumber; return n; }); }}
                 required 
-                placeholder="12345678-1-23 vagy 12345678"
+                placeholder={jurisdiction.taxNumberPlaceholder}
                 className={cn("bg-card border-border", validationErrors.taxNumber && "border-red-400 focus-visible:ring-red-500")} 
               />
               {validationErrors.taxNumber && <p className="text-xs text-red-500 mt-1">{validationErrors.taxNumber}</p>}

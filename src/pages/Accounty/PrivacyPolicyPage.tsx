@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, Shield, CheckCircle2, FileText, Clock, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -62,6 +62,8 @@ const sections = [
 ];
 
 export default function PrivacyPolicyPage() {
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const { user } = useAuth();
   const [accepted, setAccepted] = useState(false);
 
@@ -83,7 +85,7 @@ export default function PrivacyPolicyPage() {
     <div className="w-full max-w-3xl mx-auto space-y-6 page-animate">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link to="/eaisybooks/settings" className="p-2 rounded-lg hover:bg-muted transition-colors">
+        <Link to={`${prefix}/eaisybooks/settings`} className="p-2 rounded-lg hover:bg-muted transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div className="p-2.5 bg-gradient-to-br from-primary to-primary/70 rounded-lg shadow-lg">

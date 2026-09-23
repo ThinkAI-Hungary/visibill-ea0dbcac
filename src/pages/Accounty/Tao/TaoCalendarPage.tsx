@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Calendar, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -56,6 +56,8 @@ const Q_LABELS = ['Q1 (Jan–Már)', 'Q2 (Ápr–Jún)', 'Q3 (Júl–Szep)', 'Q4
 
 export default function TaoCalendarPage() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [year, setYear] = useState(2026);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth()); // 0-indexed
@@ -262,7 +264,7 @@ export default function TaoCalendarPage() {
               if (window.history.state && window.history.state.idx > 0) {
                 navigate(-1);
               } else {
-                navigate('/eaisybooks?tab=tao');
+                navigate(`${prefix}/eaisybooks?tab=tao`);
               }
             }}
             className="flex items-center justify-center w-8 h-8 mt-1 rounded-lg border border-border bg-card hover:bg-muted transition-colors shadow-sm shrink-0"

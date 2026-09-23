@@ -1,5 +1,6 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   BarChart2, 
   PieChart as PieChartIcon, 
@@ -79,10 +80,14 @@ export default function DashboardKpiView({
   dateTo,
 }: DashboardKpiViewProps) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { t, i18n } = useTranslation('accounty');
+  const prefix = location.pathname.startsWith('/hr') ? '/hr' : '';
+  const locale = i18n.language === 'hr' ? 'hr-HR' : 'hu-HU';
 
   const periodLabel = React.useMemo(() => {
     if (!dateFrom || !dateTo) {
-      return new Date().toLocaleDateString('hu-HU', { month: 'long' }).replace(/^./, c => c.toUpperCase());
+      return new Date().toLocaleDateString(locale, { month: 'long' }).replace(/^./, c => c.toUpperCase());
     }
     const fromYear = dateFrom.getFullYear();
     const toYear = dateTo.getFullYear();
@@ -93,17 +98,17 @@ export default function DashboardKpiView({
 
     // Single month (e.g. 2026-07-01 to 2026-07-31)
     if (fromYear === toYear && fromMonth === toMonth) {
-      return dateFrom.toLocaleDateString('hu-HU', { month: 'long' }).replace(/^./, c => c.toUpperCase());
+      return dateFrom.toLocaleDateString(locale, { month: 'long' }).replace(/^./, c => c.toUpperCase());
     }
 
     // Whole year (e.g. 2026-01-01 to 2026-12-31)
     if (fromMonth === 0 && fromDay === 1 && toMonth === 11 && toDay === 31) {
-      return `${fromYear}. év`;
+      return i18n.language === 'hr' ? `${fromYear}. godina` : `${fromYear}. év`;
     }
 
-    const formatCompact = (d: Date) => d.toLocaleDateString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    const formatCompact = (d: Date) => d.toLocaleDateString(locale, { year: 'numeric', month: '2-digit', day: '2-digit' });
     return `${formatCompact(dateFrom)} – ${formatCompact(dateTo)}`;
-  }, [dateFrom, dateTo]);
+  }, [dateFrom, dateTo, locale, i18n.language]);
 
   return (
     <div className="flex flex-col gap-6 page-animate">
@@ -120,32 +125,32 @@ export default function DashboardKpiView({
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="bg-card/50 backdrop-blur-md rounded-lg p-6 border border-border/80 shadow-soft flex flex-col justify-center">
             <h3 className="text-sm font-medium text-muted-foreground mb-2">
-              {`Zárási státusz (${periodLabel}):`}
+              {t('portfolio.kpi.closing_status_period', { period: periodLabel, defaultValue: `Zárási státusz (${periodLabel}):` })}
             </h3>
             <div className="flex items-baseline gap-4">
               <span className="text-4xl font-bold text-foreground">{dynamicKpiStats.zarasiSzazalek}%</span>
-              <span className="text-sm font-semibold text-primary">aktív</span>
+              <span className="text-sm font-semibold text-primary">{t('status.active', 'aktív')}</span>
             </div>
           </div>
           <div className="bg-card/50 backdrop-blur-md rounded-lg p-6 border border-border/80 shadow-soft flex flex-col justify-center">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Kritikus ügyfelek:</h3>
+            <h3 className="text-sm font-medium text-muted-foreground mb-2">{t('portfolio.kpi.critical_clients', 'Kritikus ügyfelek')}:</h3>
             <div className="flex items-baseline gap-4">
-              <span className="text-4xl font-bold text-foreground">{dynamicKpiStats.kritikusDb} db</span>
+              <span className="text-4xl font-bold text-foreground">{dynamicKpiStats.kritikusDb} {t('portfolio.kpi.unit_pcs', 'db')}</span>
             </div>
           </div>
           <div className="bg-card/50 backdrop-blur-md rounded-lg p-6 border border-border/80 shadow-soft flex flex-col justify-center">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Kiosztott / Rendben:</h3>
+            <h3 className="text-sm font-medium text-muted-foreground mb-2">{t('portfolio.kpi.assigned_ok', 'Kiosztott / Rendben')}:</h3>
             <div className="flex items-baseline gap-4">
               <span className="text-4xl font-bold text-foreground">{dynamicKpiStats.kiosztottLezart}</span>
             </div>
           </div>
           <div className="bg-card/50 backdrop-blur-md rounded-lg p-6 border border-border/80 shadow-soft flex flex-col justify-center">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Portál aktivitás:</h3>
+            <h3 className="text-sm font-medium text-muted-foreground mb-2">{t('portfolio.kpi.portal_activity', 'Portál aktivitás:')}</h3>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-bold text-foreground">{portalStats?.totalVisits ?? 0}</span>
-              <span className="text-sm font-semibold text-primary">látogatás</span>
+              <span className="text-sm font-semibold text-primary">{t('portfolio.kpi.visits', 'látogatás')}</span>
             </div>
-            <span className="text-xs text-muted-foreground mt-1">{portalStats?.activeLinks ?? 0} aktív link</span>
+            <span className="text-xs text-muted-foreground mt-1">{portalStats?.activeLinks ?? 0} {t('portfolio.kpi.active_links', 'aktív link')}</span>
           </div>
         </div>
       </WidgetWrapper>
@@ -162,7 +167,7 @@ export default function DashboardKpiView({
           )}
         >
           <GripVertical className="w-3.5 h-3.5" />
-          Elrendezés
+          {t('portfolio.kpi.layout', 'Elrendezés')}
         </button>
       </div>
 
@@ -180,20 +185,20 @@ export default function DashboardKpiView({
           <div className="bg-card/50 backdrop-blur-md rounded-lg p-6 border border-border/80 shadow-soft h-80 flex flex-col">
             <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
               <BarChart2 className="w-4 h-4 text-primary" />
-              Könyvelői Teljesítmény
+              {t('portfolio.kpi.accountant_performance', 'Könyvelői Teljesítmény')}
             </h3>
             <div className="flex-1 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={dynamicBarData} margin={{ top: 20, right: 10, left: 20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} className="[&>line]:stroke-border" stroke="hsl(var(--border))" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} width={75} tickFormatter={(v) => `${v} db`} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} width={75} tickFormatter={(v) => `${v} ${t('portfolio.kpi.unit_pcs', 'db')}`} />
                   <RechartsTooltip cursor={{ fill: 'var(--tooltip-cursor)' }} content={({ active, payload, label }) => {
                     if (!active || !payload?.length) return null;
                     return (
                        <div className="bg-popover rounded-lg shadow-lg border border-border px-3 py-2">
                         <p className="text-xs font-medium text-muted-foreground mb-0.5">{label}</p>
-                        <p className="text-sm font-bold text-foreground">{Number(payload[0].value).toLocaleString('hu-HU')} db</p>
+                        <p className="text-sm font-bold text-foreground">{Number(payload[0].value).toLocaleString(locale)} {t('portfolio.kpi.unit_pcs', 'db')}</p>
                       </div>
                     );
                   }} />
@@ -206,7 +211,7 @@ export default function DashboardKpiView({
           <div className="bg-card/50 backdrop-blur-md rounded-lg p-6 border border-border/80 shadow-soft h-80 flex flex-col relative">
             <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
               <PieChartIcon className="w-4 h-4 text-amber-600" />
-              {isAdmin ? 'Irodai Ügyfél Státuszok' : 'Saját Ügyfél Státuszok'}
+              {isAdmin ? t('portfolio.kpi.office_statuses', 'Irodai Ügyfél Státuszok') : t('portfolio.kpi.my_statuses', 'Saját Ügyfél Státuszok')}
             </h3>
             <div className="flex-1 w-full flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
@@ -237,7 +242,7 @@ export default function DashboardKpiView({
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-8">
-                <span className="text-sm font-semibold text-muted-foreground">Összes:</span>
+                <span className="text-sm font-semibold text-muted-foreground">{t('portfolio.kpi.total', 'Összes:')}</span>
                 <span className="text-3xl font-bold text-foreground">{clients.length}</span>
               </div>
             </div>
@@ -270,11 +275,11 @@ export default function DashboardKpiView({
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-primary" />
-              Havi Zárási Trend (utolsó 6 hónap)
+              {t('portfolio.kpi.monthly_trend', 'Havi Zárási Trend (utolsó 6 hónap)')}
             </h3>
             <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-muted/10 text-muted-foreground hover:bg-muted/20 transition-colors">
               <Download className="w-3.5 h-3.5" />
-              Export CSV
+              {t('tooltips.export', 'Export CSV')}
             </button>
           </div>
           <div className="h-64 w-full">
@@ -283,16 +288,19 @@ export default function DashboardKpiView({
                 <CartesianGrid strokeDasharray="3 3" vertical={false} className="[&>line]:stroke-border" stroke="hsl(var(--border))" />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
                 <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
-                <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} tickFormatter={(v) => `${v} db`} />
+                <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} tickFormatter={(v) => `${v} ${t('portfolio.kpi.unit_pcs', 'db')}`} />
                 <RechartsTooltip content={({ active, payload, label }) => {
                   if (!active || !payload?.length) return null;
-                  const labels: Record<string, string> = { zaras: 'Zárási %', hianyzok: 'Hiányzó számlák' };
+                  const labels: Record<string, string> = {
+                    zaras: t('portfolio.kpi.closing_pct', 'Zárási %'),
+                    hianyzok: t('portfolio.kpi.missing_invoices', 'Hiányzó számlák')
+                  };
                   return (
                     <div className="bg-popover rounded-lg shadow-lg border border-border px-3 py-2">
                       <p className="text-xs font-medium text-muted-foreground mb-1">{label}</p>
                       {payload.map((p: any, i: number) => (
                         <p key={i} className="text-sm font-bold text-foreground">
-                          {labels[p.dataKey] || p.dataKey}: {p.value}{p.dataKey === 'zaras' ? '%' : ' db'}
+                          {labels[p.dataKey] || p.dataKey}: {p.value}{p.dataKey === 'zaras' ? '%' : ` ${t('portfolio.kpi.unit_pcs', 'db')}`}
                         </p>
                       ))}
                     </div>
@@ -306,11 +314,11 @@ export default function DashboardKpiView({
           <div className="flex items-center gap-6 mt-3 justify-center">
             <div className="flex items-center gap-2">
               <div className="w-4 h-0.5 bg-primary rounded"></div>
-              <span className="text-xs text-muted-foreground">Zárási %</span>
+              <span className="text-xs text-muted-foreground">{t('portfolio.kpi.closing_pct', 'Zárási %')}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-0.5 bg-red-500 rounded border-dashed"></div>
-              <span className="text-xs text-muted-foreground">Hiányzó számlák</span>
+              <span className="text-xs text-muted-foreground">{t('portfolio.kpi.missing_invoices', 'Hiányzó számlák')}</span>
             </div>
           </div>
         </div>
@@ -331,24 +339,24 @@ export default function DashboardKpiView({
             <div className="p-4 border-b border-border dark:bg-muted/5 flex items-center justify-between">
               <h3 className="font-bold text-foreground flex items-center gap-2">
                 <User className="w-4 h-4 text-muted-foreground" />
-                Kolléga statisztikák (Havi Zárás)
+                {t('portfolio.kpi.colleague_stats', 'Kolléga statisztikák (Havi Zárás)')}
               </h3>
               <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-muted/10 text-muted-foreground hover:bg-muted/20 transition-colors">
                 <Download className="w-3.5 h-3.5" />
-                Letöltés
+                {t('tooltips.download', 'Letöltés')}
               </button>
             </div>
             <div className="overflow-x-auto">
               <Table className="compact-table min-w-[700px]">
                 <TableHeader>
                   <TableRow className="bg-muted/40 border-b border-border hover:bg-muted/40">
-                    <TableHead className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Kolléga</TableHead>
-                    <TableHead className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Kiosztott</TableHead>
-                    <TableHead className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Lezárt</TableHead>
-                    <TableHead className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Zárási %</TableHead>
-                    <TableHead className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Átl. feldolg. idő</TableHead>
-                    <TableHead className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Hiányzó</TableHead>
-                    <TableHead className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Hatékonyság</TableHead>
+                    <TableHead className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('portfolio.kpi.col_colleague', 'Kolléga')}</TableHead>
+                    <TableHead className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('portfolio.kpi.col_assigned', 'Kiosztott')}</TableHead>
+                    <TableHead className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('portfolio.kpi.col_closed', 'Lezárt')}</TableHead>
+                    <TableHead className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('portfolio.kpi.col_closing_pct', 'Zárási %')}</TableHead>
+                    <TableHead className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('portfolio.kpi.col_avg_time', 'Átl. feldolg. idő')}</TableHead>
+                    <TableHead className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('portfolio.table.col_missing', 'Hiányzó')}</TableHead>
+                    <TableHead className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('portfolio.kpi.col_efficiency', 'Hatékonyság')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-border">
@@ -372,7 +380,7 @@ export default function DashboardKpiView({
                           <span className="text-xs font-bold font-mono tabular-nums text-foreground">{colleague.closingPct}%</span>
                         </div>
                       </TableCell>
-                      <TableCell className="px-4 py-3 text-center font-medium font-mono tabular-nums text-foreground">{colleague.avgDays} nap</TableCell>
+                      <TableCell className="px-4 py-3 text-center font-medium font-mono tabular-nums text-foreground">{colleague.avgDays} {t('portfolio.kpi.unit_days', 'nap')}</TableCell>
                       <TableCell className="px-4 py-3 text-center">
                         {colleague.missing > 15 ? (
                           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-destructive/10 text-destructive font-bold font-mono tabular-nums">
@@ -390,7 +398,7 @@ export default function DashboardKpiView({
                             ? 'bg-accent text-accent-foreground'
                             : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400'
                         )}>
-                          {colleague.efficiency}
+                          {colleague.efficiency === 'Kiváló' ? t('portfolio.kpi.efficiency_excellent', 'Kiváló') : t('portfolio.kpi.efficiency_good', 'Megfelelő')}
                         </span>
                       </TableCell>
                     </TableRow>
@@ -416,11 +424,11 @@ export default function DashboardKpiView({
           <div className="bg-card/50 backdrop-blur-md rounded-lg border border-border/80 shadow-soft p-6">
             <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
               <Clock className="w-4 h-4 text-primary" />
-              Tevékenységnapló
+              {t('portfolio.kpi.activity_log', 'Tevékenységnapló')}
             </h3>
             <div className="space-y-3 max-h-72 overflow-y-auto">
               {auditLog.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-4">Még nincs bejegyzés</p>
+                <p className="text-xs text-muted-foreground text-center py-4">{t('portfolio.kpi.no_log_entries', 'Még nincs bejegyzés')}</p>
               ) : (
                 auditLog.map((entry: any, i: number) => (
                   <div key={i} className="flex items-start gap-3 text-xs">
@@ -430,7 +438,7 @@ export default function DashboardKpiView({
                       {entry.details && <span className="text-muted-foreground ml-1">— {typeof entry.details === 'string' ? entry.details : JSON.stringify(entry.details)}</span>}
                     </div>
                     <span className="text-muted-foreground shrink-0">
-                      {entry.created_at ? new Date(entry.created_at).toLocaleString('hu-HU', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                      {entry.created_at ? new Date(entry.created_at).toLocaleString(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
                     </span>
                   </div>
                 ))
@@ -453,18 +461,18 @@ export default function DashboardKpiView({
         >
           <div className="pt-8">
             <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
-              Bekérési Automatizmus & Ügyfél Kockázat
+              {t('portfolio.kpi.automation_risk', 'Bekérési Automatizmus & Ügyfél Kockázat')}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
               <div className="bg-card/50 backdrop-blur-md rounded-lg p-6 border border-border/80 shadow-soft transition-all duration-300">
-                <h3 className="font-bold text-foreground mb-6">Értesítési Csatornák (Sikeres adatbekérés %)</h3>
+                <h3 className="font-bold text-foreground mb-6">{t('portfolio.kpi.notification_channels', 'Értesítési Csatornák (Sikeres adatbekérés %)')}</h3>
                 <div className="space-y-6">
                   <div>
                     <div className="flex justify-between items-center mb-2">
                       <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                         <Phone className="w-4 h-4 text-muted-foreground" />
-                        AI Telefonhívás
+                        {t('portfolio.kpi.ai_phone_call', 'AI Telefonhívás')}
                       </div>
                       <span className="text-sm font-bold text-foreground">92%</span>
                     </div>
@@ -490,7 +498,7 @@ export default function DashboardKpiView({
                     <div className="flex justify-between items-center mb-2">
                       <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                         <Mail className="w-4 h-4 text-muted-foreground" />
-                        E-mail értesítés
+                        {t('portfolio.kpi.email_notification', 'E-mail értesítés')}
                       </div>
                       <span className="text-sm font-bold text-foreground">42%</span>
                     </div>
@@ -502,14 +510,14 @@ export default function DashboardKpiView({
               </div>
 
               <div className="bg-card/50 backdrop-blur-md rounded-lg p-6 border border-border/80 shadow-soft transition-all duration-300 flex flex-col">
-                <h3 className="font-bold text-foreground mb-6">Legtöbb hiányzó tétellel rendelkező ügyfelek</h3>
+                <h3 className="font-bold text-foreground mb-6">{t('portfolio.kpi.top_missing_clients', 'Legtöbb hiányzó tétellel rendelkező ügyfelek')}</h3>
                 <div className="overflow-x-auto pt-3 pb-1">
                   <Table className="compact-table w-full text-sm text-left">
                     <TableHeader>
                       <TableRow className="bg-transparent border-b border-border hover:bg-transparent">
-                        <TableHead className="pt-2 pb-3 pr-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ügyfél neve</TableHead>
-                        <TableHead className="pt-2 pb-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Hiányzó</TableHead>
-                        <TableHead className="pt-2 pb-3 pl-4 pr-6 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">Kockázat</TableHead>
+                        <TableHead className="pt-2 pb-3 pr-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('portfolio.table.col_client', 'Ügyfél neve')}</TableHead>
+                        <TableHead className="pt-2 pb-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('portfolio.table.col_missing', 'Hiányzó')}</TableHead>
+                        <TableHead className="pt-2 pb-3 pl-4 pr-6 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('portfolio.kpi.col_risk', 'Kockázat')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody className="divide-y divide-border">
@@ -521,7 +529,7 @@ export default function DashboardKpiView({
                           <MissingItemsTooltip key={c.id} companyId={c.id}>
                             <TableRow 
                               className="hover:bg-muted/40 transition-colors cursor-pointer group/row relative border-l-2 border-l-transparent hover:border-l-primary" 
-                              onClick={() => navigate(`/eaisybooks/missing-invoices/${c.id}`)}
+                              onClick={() => navigate(`${prefix}/eaisybooks/missing-invoices/${c.id}`)}
                             >
                               <TableCell className="py-3 pr-4 font-semibold text-foreground">{c.name}</TableCell>
                               <TableCell className="py-3 px-4 text-center font-bold font-mono tabular-nums text-foreground">{c.missingCount}</TableCell>
@@ -534,14 +542,14 @@ export default function DashboardKpiView({
                                     ? "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400"
                                     : "bg-muted/40 text-muted-foreground"
                                 )}>
-                                  {c.missingCount > 500 ? 'Kritikus' : c.missingCount > 100 ? 'Magas' : 'Közepes'}
+                                  {c.missingCount > 500 ? t('portfolio.kpi.risk_critical', 'Kritikus') : c.missingCount > 100 ? t('portfolio.kpi.risk_high', 'Magas') : t('portfolio.kpi.risk_medium', 'Közepes')}
                                 </span>
                               </TableCell>
                             </TableRow>
                           </MissingItemsTooltip>
                         ))}
                       {clients.filter(c => c.missingCount > 0).length === 0 && (
-                        <TableRow><TableCell colSpan={3} className="py-6 text-center text-muted-foreground text-sm">Nincs kritikus ügyfél</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={3} className="py-6 text-center text-muted-foreground text-sm">{t('portfolio.kpi.no_critical_clients', 'Nincs kritikus ügyfél')}</TableCell></TableRow>
                       )}
                     </TableBody>
                   </Table>

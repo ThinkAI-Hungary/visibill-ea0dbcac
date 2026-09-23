@@ -20,6 +20,7 @@ export interface Company {
   share_token?: string | null;
   vat_regime?: VatRegime;
   vat_regime_effective_from?: string | null;
+  country_code?: 'HU' | 'HR';
   created_at: string;
   updated_at: string;
 }
@@ -107,15 +108,15 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
 
       const result = await supabase
         .from('companies')
-        .select('id, name, tax_number, address, description, primary_teaor, owner_id, share_token, vat_regime, vat_regime_effective_from, created_at, updated_at')
+        .select('id, name, tax_number, address, description, primary_teaor, owner_id, share_token, vat_regime, vat_regime_effective_from, country_code, created_at, updated_at')
         .in('id', allCompanyIds)
         .order('created_at', { ascending: true });
 
       data = result.data;
       error = result.error;
 
-      // Fallback: if optional columns (vat_regime, description, primary_teaor) don't exist yet, retry without them
-      if (error && (error.message?.includes('vat_regime') || error.message?.includes('description') || error.message?.includes('primary_teaor') || error.code === '42703' || error.code === 'PGRST204')) {
+      // Fallback: if optional columns don't exist yet, retry without them
+      if (error && (error.message?.includes('vat_regime') || error.message?.includes('description') || error.message?.includes('primary_teaor') || error.message?.includes('country_code') || error.code === '42703' || error.code === 'PGRST204')) {
         const fallback = await supabase
           .from('companies')
           .select('id, name, tax_number, address, owner_id, share_token, created_at, updated_at')
@@ -126,8 +127,13 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (error) throw error;
+      const mappedCompanies = (data || []).map((c: any) => ({
+        ...c,
+        country_code: c.country_code || 'HU',
+      })) as Company[];
+
       return {
-        companies: (data || []) as Company[],
+        companies: mappedCompanies,
         eaisybillCompanyIds: memberIds,
         eaisybooksCompanyIds: assignmentIds,
       };
@@ -156,7 +162,7 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
     if (selectedCompany && companies.some(c => c.id === selectedCompany.id)) {
       // Update to the latest version of the company object (name/tax/vat_regime changes)
       const updated = companies.find(c => c.id === selectedCompany.id);
-      if (updated && (updated.name !== selectedCompany.name || updated.tax_number !== selectedCompany.tax_number || updated.vat_regime !== selectedCompany.vat_regime)) {
+      if (updated && (updated.name !== selectedCompany.name || updated.tax_number !== selectedCompany.tax_number || updated.vat_regime !== selectedCompany.vat_regime || updated.country_code !== selectedCompany.country_code)) {
         setSelectedCompanyState(updated);
       }
       return;
@@ -211,4 +217,8 @@ export const useCompany = () => {
     throw new Error('useCompany must be used within a CompanyProvider');
   }
   return context;
+};
+
+export const useOptionalCompany = () => {
+  return useContext(CompanyContext);
 };

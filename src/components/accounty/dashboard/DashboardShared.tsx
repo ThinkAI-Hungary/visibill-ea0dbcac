@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   Building2, 
   Clock, 
@@ -27,6 +28,7 @@ export const CLIENT_COLORS = [
 ];
 
 export function AnimatedNumber({ value, duration = 1200 }: { value: number; duration?: number }) {
+  const { i18n } = useTranslation('accounty');
   const [display, setDisplay] = useState(typeof value === 'number' && !isNaN(value) ? value : 0);
   useEffect(() => {
     const num = typeof value === 'number' && !isNaN(value) ? value : 0;
@@ -44,7 +46,7 @@ export function AnimatedNumber({ value, duration = 1200 }: { value: number; dura
       if (rafId) cancelAnimationFrame(rafId);
     };
   }, [value, duration]);
-  return <>{display.toLocaleString('hu-HU')}</>;
+  return <>{display.toLocaleString(i18n.language === 'hr' ? 'hr-HR' : 'hu-HU')}</>;
 }
 
 export function KpiCard({ 
@@ -106,14 +108,20 @@ export function KpiCard({
 }
 
 export function StatusBadge({ status }: { status: ClientData['status'] }) {
+  const { t } = useTranslation('accounty');
   const styles = {
     'Rendben': 'bg-accent text-accent-foreground dark:bg-accent dark:text-primary',
     'Feldolgozandó': 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
     'Kritikus': 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',
   };
+  const labelMap: Record<ClientData['status'], string> = {
+    'Rendben': t('status.ok', 'Rendben'),
+    'Feldolgozandó': t('status.to_process', 'Feldolgozandó'),
+    'Kritikus': t('status.critical', 'Kritikus'),
+  };
   return (
     <span className={cn("inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider", styles[status])}>
-      {status}
+      {labelMap[status] || status}
     </span>
   );
 }
@@ -125,10 +133,11 @@ export function OwnerDropdown({
   client: ClientData, 
   onUpdateOwner?: (clientId: string, ownerId: string) => void 
 }) {
+  const { t } = useTranslation('accounty');
   const [open, setOpen] = useState(false);
   const { data: accountants } = useAccountyAccountants();
   const { isAdmin } = useAccountyRole();
-  const safeAccountants = accountants || [{ id: '1', userId: '1', name: 'Névtelen', initial: 'N', clientCount: 0 }];
+  const safeAccountants = accountants || [{ id: '1', userId: '1', name: t('portfolio.card.unnamed', 'Névtelen'), initial: 'N', clientCount: 0 }];
   const owner = safeAccountants.find(a => a.id === client.ownerId) || safeAccountants[0];
 
   if (!owner) return null;
@@ -158,9 +167,9 @@ export function OwnerDropdown({
         </PopoverTrigger>
         <PopoverContent className="w-[200px] p-0" align="start">
           <Command>
-            <CommandInput placeholder="Keresés könyvelőre..." className="h-9 text-xs" />
+            <CommandInput placeholder={t('portfolio.card.search_accountant', 'Keresés könyvelőre...')} className="h-9 text-xs" />
             <CommandList>
-              <CommandEmpty>Nincs találat.</CommandEmpty>
+              <CommandEmpty>{t('portfolio.card.no_match', 'Nincs találat.')}</CommandEmpty>
               <CommandGroup>
                 {safeAccountants.map((acc) => (
                   <CommandItem
@@ -193,6 +202,8 @@ export function OwnerDropdown({
 }
 
 export function MissingItemsTooltip({ companyId, children }: { companyId: string; children: React.ReactNode }) {
+  const { t, i18n } = useTranslation('accounty');
+  const currencySuffix = i18n.language === 'hr' ? 'EUR' : 'Ft';
   const { data: items } = useQuery({
     queryKey: ['missing-top3', companyId],
     queryFn: async () => {
@@ -222,12 +233,16 @@ export function MissingItemsTooltip({ companyId, children }: { companyId: string
         align="center" 
         className="w-[240px] p-3 bg-popover border border-border shadow-xl rounded-lg z-[100]"
       >
-        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">Top tételek</p>
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">
+          {t('portfolio.card.top_items', 'Top tételek')}
+        </p>
         {items.map((item, i) => (
           <div key={i} className="flex items-center justify-between gap-3 py-1">
             <span className="text-xs text-foreground truncate max-w-[140px]">{item.title}</span>
             {item.amount ? (
-              <span className="text-xs font-bold text-primary whitespace-nowrap">{item.amount.toLocaleString('hu-HU')} Ft</span>
+              <span className="text-xs font-bold text-primary whitespace-nowrap">
+                {item.amount.toLocaleString(i18n.language === 'hr' ? 'hr-HR' : 'hu-HU')} {currencySuffix}
+              </span>
             ) : (
               <span className="text-xs text-muted-foreground">–</span>
             )}
@@ -254,16 +269,12 @@ export function ClientCard({
   onUpdateOwner?: (clientId: string, ownerId: string) => void 
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { t } = useTranslation('accounty');
+  const prefix = location.pathname.startsWith('/hr') ? '/hr' : '';
 
   const daysLeft = Math.ceil((new Date(client.deadlineDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   const isOverdue = daysLeft < 0;
-  const deadlineColor = isOverdue
-    ? 'bg-red-500'
-    : daysLeft <= 3
-      ? 'bg-red-500'
-      : daysLeft <= 7
-        ? 'bg-amber-500'
-        : 'bg-primary';
   const deadlineBadgeStyle = isOverdue
     ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400'
     : daysLeft <= 3
@@ -272,12 +283,12 @@ export function ClientCard({
         ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400'
         : 'bg-accent dark:bg-accent text-accent-foreground dark:text-primary';
   const deadlineText = isOverdue
-    ? `${Math.abs(daysLeft)} napja lejárt!`
+    ? t('portfolio.card.days_overdue', { count: Math.abs(daysLeft), defaultValue: `${Math.abs(daysLeft)} napja lejárt!` })
     : daysLeft === 0
-      ? 'Ma lejár!'
+      ? t('portfolio.card.due_today', 'Ma lejár!')
       : daysLeft === 1
-        ? 'Holnap lejár'
-        : `${daysLeft} nap`;
+        ? t('portfolio.card.due_tomorrow', 'Holnap lejár')
+        : t('portfolio.card.days_left', { count: daysLeft, defaultValue: `${daysLeft} nap` });
   const progressColor = client.progress >= 80
     ? 'bg-primary'
     : client.progress >= 50
@@ -289,7 +300,7 @@ export function ClientCard({
       draggable={draggable}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      onClick={() => navigate(`/eaisybooks/client/${client.id}`)}
+      onClick={() => navigate(`${prefix}/eaisybooks/client/${client.id}`)}
       className={cn(
         "bg-card/50 backdrop-blur-md rounded-lg border border-border/80 shadow-soft flex flex-col group cursor-pointer h-full overflow-hidden", 
         "hover:border-border/90 hover:-translate-y-0.5 transition-all duration-300",
@@ -318,13 +329,13 @@ export function ClientCard({
         </div>
 
         <div className="flex justify-between items-center mb-4">
-          <span className="text-xs text-muted-foreground">Státusz</span>
+          <span className="text-xs text-muted-foreground">{t('portfolio.card.status', 'Státusz')}</span>
           <StatusBadge status={client.status} />
         </div>
 
         <div className="mb-4">
           <div className="flex justify-between items-center mb-1.5">
-            <span className="text-[11px] text-muted-foreground font-medium">Havi zárás</span>
+            <span className="text-[11px] text-muted-foreground font-medium">{t('portfolio.card.monthly_closing', 'Havi zárás')}</span>
             <span className="text-[11px] font-bold text-foreground">{client.progress}%</span>
           </div>
           <div className="w-full bg-muted/20 dark:bg-muted/10 rounded-full h-1.5">
@@ -334,13 +345,13 @@ export function ClientCard({
 
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
-            <p className="text-xs text-muted-foreground mb-1">Feldolgozatlan</p>
-            <p className="font-semibold text-foreground">{client.unprocessedCount} számla</p>
+            <p className="text-xs text-muted-foreground mb-1">{t('portfolio.card.unprocessed', 'Feldolgozatlan')}</p>
+            <p className="font-semibold text-foreground">{client.unprocessedCount} {t('portfolio.card.invoices_suffix', 'számla')}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground mb-1">Hiányzó</p>
+            <p className="text-xs text-muted-foreground mb-1">{t('portfolio.card.missing', 'Hiányzó')}</p>
             <p className={`font-semibold ${client.missingCount > 0 ? 'text-red-600' : 'text-foreground'}`}>
-              {client.missingCount} számla
+              {client.missingCount} {t('portfolio.card.invoices_suffix', 'számla')}
             </p>
           </div>
         </div>

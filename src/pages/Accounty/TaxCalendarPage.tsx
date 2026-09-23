@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Users, 
   FileText, 
@@ -67,6 +67,16 @@ const deadlineTypeTitle: Record<string, string> = {
   egyeb: 'Egyéb',
 };
 
+const deadlineTypeTitleHr: Record<string, string> = {
+  afa: 'PDV',
+  jarulek: 'Doprinosi',
+  kata: 'Paušalni porez',
+  ber: 'Plaće',
+  tao: 'Porez na dobit',
+  ipa: 'Lokalni porez',
+  egyeb: 'Ostalo',
+};
+
 function KpiCard({ title, value, icon: Icon, valueClass = "text-foreground" }: { title: string, value: number, icon: React.ElementType, valueClass?: string }) {
   return (
     <div className="bg-card rounded-lg p-5 border border-border shadow-soft flex flex-col justify-between h-32 hover:shadow-md transition-shadow">
@@ -84,6 +94,8 @@ export default function TaxCalendarPage() {
   const isAuthorizedForNavDeadlines = isAdmin || isSenior;
   const [activeTab, setActiveTab] = useState<'calendar' | 'deadlines'>('calendar');
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const isHr = pathname.startsWith('/hr');
   const { toast } = useToast();
   const [viewScope, setViewScope] = useState<'mine' | 'all'>('mine');
   const [selectedDeadline, setSelectedDeadline] = useState<DeadlineGroup | null>(null);
@@ -243,9 +255,10 @@ ThinkAI`;
       if (overdueCount > 0) status = 'Piros';
       else if (pendingCount > count * 0.3) status = 'Sárga';
 
+      const groupTitle = (isHr ? deadlineTypeTitleHr[type] : deadlineTypeTitle[type]) || type;
       const group: DeadlineGroup = {
         id: key,
-        title: deadlineTypeTitle[type] || type,
+        title: groupTitle,
         date: dayOfMonth,
         countMine: count, // All are "mine" since we only fetch assigned companies
         countAll: count,

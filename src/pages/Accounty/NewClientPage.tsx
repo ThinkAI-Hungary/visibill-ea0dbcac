@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Check, User, Settings, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -14,7 +15,11 @@ import ClientDetailsStep from './new-client/ClientDetailsStep';
 import IntegrationStep from './new-client/IntegrationStep';
 
 export default function NewClientPage() {
+  const { t } = useTranslation('accounty');
   const navigate = useNavigate();
+  const location = useLocation();
+  const prefix = location.pathname.startsWith('/hr') ? '/hr' : '';
+  const isHr = location.pathname.startsWith('/hr');
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -23,6 +28,7 @@ export default function NewClientPage() {
 
   const [clientName, setClientName] = useState('');
   const [taxNumber, setTaxNumber] = useState('');
+  const [countryCode, setCountryCode] = useState<'HU' | 'HR'>(isHr ? 'HR' : 'HU');
   const [primaryTeaor, setPrimaryTeaor] = useState('');
   const [companyDescription, setCompanyDescription] = useState('');
   const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
@@ -124,7 +130,7 @@ export default function NewClientPage() {
       if (data?.error) { setCodeStatus('invalid'); return; }
       queryClient.invalidateQueries({ queryKey: ['accounty-clients'] });
       queryClient.invalidateQueries({ queryKey: ['accounty-kpis'] });
-      navigate('/eaisybooks');
+      navigate(`${prefix}/eaisybooks`);
     } catch (err) {
       reportError({ type: 'edge_function', component: 'NewClientPage', action: 'error', message: 'Failed to join as accountant:', error: err });
       setCodeStatus('invalid');
@@ -158,6 +164,7 @@ export default function NewClientPage() {
               owner_id: user.id,
               primary_teaor: primaryTeaor.trim() || null,
               description: companyDescription.trim() || null,
+              country_code: countryCode,
             } as any).select('id').single();
             if (compErr) throw compErr;
             companyId = newCompany.id;
@@ -221,7 +228,7 @@ export default function NewClientPage() {
       <header className="h-16 shrink-0 bg-card border-b border-border flex items-center justify-between px-8">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-lg leading-none">v</div>
-          <span className="text-xl font-bold text-foreground tracking-tight">Visibill for Accountants</span>
+          <span className="text-xl font-bold text-foreground tracking-tight">{t('new_client_page.app_title', 'Visibill for Accountants')}</span>
         </div>
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
@@ -243,11 +250,11 @@ export default function NewClientPage() {
               );
             })}
             <span className="text-sm font-medium text-muted-foreground ml-2">
-              {step === 1 ? "Első ügyfél" : step === 2 ? "Integráció" : "Kész"}
+              {step === 1 ? t('new_client_page.step_first_client', 'Első ügyfél') : step === 2 ? t('new_client_page.step_integration', 'Integráció') : t('new_client_page.step_done', 'Kész')}
             </span>
           </div>
-          <button onClick={() => navigate('/eaisybooks')} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            Kihagyás
+          <button onClick={() => navigate(`${prefix}/eaisybooks`)} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            {t('new_client_page.skip', 'Kihagyás')}
           </button>
         </div>
       </header>
@@ -261,6 +268,7 @@ export default function NewClientPage() {
               useVisibillAccount={useVisibillAccount} setUseVisibillAccount={setUseVisibillAccount}
               clientName={clientName} setClientName={setClientName}
               taxNumber={taxNumber} setTaxNumber={setTaxNumber}
+              countryCode={countryCode} setCountryCode={setCountryCode}
               primaryTeaor={primaryTeaor} setPrimaryTeaor={setPrimaryTeaor}
               companyDescription={companyDescription} setCompanyDescription={setCompanyDescription}
               isGeneratingDescription={isGeneratingDescription}
@@ -278,7 +286,7 @@ export default function NewClientPage() {
               handleValidateCode={handleValidateCode}
               handleJoinAsAccountant={handleJoinAsAccountant}
               handleNext={handleNext}
-              navigate={navigate}
+              navigate={(path: string) => navigate(prefix && !path.startsWith(prefix) ? `${prefix}${path.startsWith('/') ? path : `/${path}`}` : path)}
               personalData={personalData} setPersonalData={setPersonalData}
               isUploadingDocs={isUploadingDocs} docsUploaded={docsUploaded} setDocsUploaded={setDocsUploaded}
               handleUploadClick={handleUploadClick} fileInputRef={fileInputRef} handleFileChange={handleFileChange}
@@ -299,15 +307,15 @@ export default function NewClientPage() {
                 <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
                   <span className="text-3xl"></span>
                 </div>
-                <h1 className="text-2xl font-bold text-foreground">Minden készen áll!</h1>
-                <p className="text-muted-foreground mt-2">A könyvelői fiókod be van állítva. Kezdheted a munkát!</p>
+                <h1 className="text-2xl font-bold text-foreground">{t('new_client_page.done_title', 'Minden készen áll!')}</h1>
+                <p className="text-muted-foreground mt-2">{t('new_client_page.done_subtitle', 'A könyvelői fiókod be van állítva. Kezdheted a munkát!')}</p>
               </div>
 
               <div className="space-y-3 mb-6">
                 {[
-                  { label: 'Profil', desc: 'Kész', Icon: User },
-                  { label: 'Ügyfelek', desc: '1 ügyfél hozzáadva', Icon: Users },
-                  { label: 'Integráció', desc: integrationType === 'other' ? 'Manuális beállítva' : `${integrationType?.toUpperCase()} beállítva`, Icon: Settings },
+                  { label: t('new_client_page.profile', 'Profil'), desc: t('new_client_page.profile_done', 'Kész'), Icon: User },
+                  { label: t('new_client_page.clients', 'Ügyfelek'), desc: t('new_client_page.client_added', '1 ügyfél hozzáadva'), Icon: Users },
+                  { label: t('new_client_page.integration', 'Integráció'), desc: integrationType === 'other' ? t('new_client_page.manual_configured', 'Manuális beállítva') : t('new_client_page.integration_configured', '{{type}} beállítva', { type: integrationType?.toUpperCase() }), Icon: Settings },
                 ].map(item => (
                   <div key={item.label} className="bg-card rounded-lg p-4 border border-border shadow-soft flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -324,25 +332,25 @@ export default function NewClientPage() {
 
               <div className="bg-card rounded-lg p-5 border border-border shadow-soft mb-6 text-sm">
                 <p className="font-semibold text-amber-600 flex items-center gap-2 mb-2">
-                  <span className="text-base"></span> Tudtad?
+                  <span className="text-base"></span> {t('new_client_page.did_you_know', 'Tudtad?')}
                 </p>
                 <ul className="list-disc pl-5 text-muted-foreground space-y-1.5 text-xs">
-                  <li>A portfólió nézetben egy helyen látod az összes ügyfeled státuszát</li>
-                  <li>A NAV szinkronizálás automatikusan letölti a bejövő számlákat</li>
-                  <li>Az automatikus bekérő emlékezteti az ügyfeleidet a hiányzó számlákra</li>
+                  <li>{t('new_client_page.tip_portfolio', 'A portfólió nézetben egy helyen látod az összes ügyfeled státuszát')}</li>
+                  <li>{t('new_client_page.tip_nav_sync', 'A NAV szinkronizálás automatikusan letölti a bejövő számlákat')}</li>
+                  <li>{t('new_client_page.tip_reminders', 'Az automatikus bekérő emlékezteti az ügyfeleidet a hiányzó számlákra')}</li>
                 </ul>
               </div>
 
-              <Button onClick={() => navigate('/eaisybooks')} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground mb-3">
-                Irány a Dashboard &rarr;
+              <Button onClick={() => navigate(`${prefix}/eaisybooks`)} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground mb-3">
+                {t('new_client_page.go_to_dashboard', 'Irány a Dashboard →')}
               </Button>
               
               <div className="flex gap-3">
                 <Button variant="outline" onClick={() => setStep(1)} className="flex-1 text-muted-foreground">
-                  + Újabb ügyfél
+                  {t('new_client_page.add_another', '+ Újabb ügyfél')}
                 </Button>
                 <Button variant="outline" className="flex-1 text-muted-foreground">
-                  <Settings className="w-4 h-4 mr-2" /> Beállítások
+                  <Settings className="w-4 h-4 mr-2" /> {t('new_client_page.settings', 'Beállítások')}
                 </Button>
               </div>
             </div>

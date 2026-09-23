@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 import { reportError } from '@/lib/errorReporter';
 import { Truck, AlertTriangle, FileText, CheckCircle, Bell, ClipboardCheck, Banknote } from 'lucide-react';
 
@@ -46,6 +47,7 @@ export function isUploadNotified(uploadId: string): boolean {
  * and do client-side company_id matching.
  */
 export function LiveNotificationProvider() {
+  const { t } = useTranslation(['common']);
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
   const companyId = selectedCompany?.id;
@@ -88,13 +90,13 @@ export function LiveNotificationProvider() {
     }
 
     toast({
-      title: 'Gratulálunk!',
-      description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
+      title: t('common:notifications.congratulations', 'Gratulálunk!'),
+      description: t('common:notifications.file_processed_desc', { fileName, defaultValue: `A következő fájl sikeresen fel lett dolgozva: ${fileName}` }),
       variant: 'default',
       duration: 3000,
       icon: Bell,
     });
-  }, []);
+  }, [t]);
 
   // ── Upload status → toast + targeted cache invalidation helper ──
   // Used by session polling and tab-focus catch-up.
@@ -115,7 +117,13 @@ export function LiveNotificationProvider() {
     if (!cid) return;
 
     if (row.processing_status === 'processed' || row.processing_status === 'completed') {
-      toast({ title: 'Számla feldolgozva!', description: `${fileName} sikeresen feldolgozva.`, variant: 'default', duration: 5000, icon: CheckCircle });
+      toast({
+        title: t('common:notifications.invoice_processed_title', 'Számla feldolgozva!'),
+        description: t('common:notifications.invoice_processed_desc', { fileName, defaultValue: `${fileName} sikeresen feldolgozva.` }),
+        variant: 'default',
+        duration: 5000,
+        icon: CheckCircle,
+      });
       qc.invalidateQueries({ queryKey: ['submittedInvoices', cid] });
       qc.invalidateQueries({ queryKey: ['recentInvoices', cid] });
       qc.invalidateQueries({ queryKey: ['dashboardData', cid] });
@@ -123,23 +131,41 @@ export function LiveNotificationProvider() {
       qc.invalidateQueries({ queryKey: ['uploadHistory'] });
       qc.invalidateQueries({ queryKey: ['uploaded-files'] });
     } else if (row.processing_status === 'cmr_attached') {
-      toast({ title: 'Dokumentum párosítva!', description: `${fileName} sikeresen párosítva egy fuvarhoz.`, variant: 'default', duration: 5000, icon: Truck });
+      toast({
+        title: t('common:notifications.doc_matched_title', 'Dokumentum párosítva!'),
+        description: t('common:notifications.doc_matched_desc', { fileName, defaultValue: `${fileName} sikeresen párosítva egy fuvarhoz.` }),
+        variant: 'default',
+        duration: 5000,
+        icon: Truck,
+      });
       qc.invalidateQueries({ queryKey: ['shipments-matching', cid] });
       qc.invalidateQueries({ queryKey: ['uploadHistory'] });
       qc.invalidateQueries({ queryKey: ['uploaded-files'] });
     } else if (row.processing_status === 'cmr_orphaned') {
-      toast({ title: 'Dokumentum rögzítve', description: `${fileName} — vár a megfelelő számlára.`, variant: 'default', duration: 5000, icon: FileText });
+      toast({
+        title: t('common:notifications.doc_recorded_title', 'Dokumentum rögzítve'),
+        description: t('common:notifications.doc_recorded_desc', { fileName, defaultValue: `${fileName} — vár a megfelelő számlára.` }),
+        variant: 'default',
+        duration: 5000,
+        icon: FileText,
+      });
       qc.invalidateQueries({ queryKey: ['uploadHistory'] });
       qc.invalidateQueries({ queryKey: ['uploaded-files'] });
     } else if (row.processing_status === 'cmr_escalated') {
       // Manuális leválasztáskor (manual_detach: true) ne jelenjen meg az eszkaláció toast
       if ((row as any).metadata?.manual_detach) return;
-      toast({ title: 'Eszkaláció szükséges', description: `${fileName} — eltérés, kézi ellenőrzés szükséges.`, variant: 'destructive', duration: 8000, icon: AlertTriangle });
+      toast({
+        title: t('common:notifications.escalation_needed_title', 'Eszkaláció szükséges'),
+        description: t('common:notifications.escalation_needed_desc', { fileName, defaultValue: `${fileName} — eltérés, kézi ellenőrzés szükséges.` }),
+        variant: 'destructive',
+        duration: 8000,
+        icon: AlertTriangle,
+      });
       qc.invalidateQueries({ queryKey: ['shipments-matching', cid] });
       qc.invalidateQueries({ queryKey: ['uploadHistory'] });
       qc.invalidateQueries({ queryKey: ['uploaded-files'] });
     }
-  }, []);
+  }, [t]);
 
   // ── Debounced cache invalidation (500ms) with companyId scoping ──
   const debounceTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
@@ -303,8 +329,8 @@ export function LiveNotificationProvider() {
                     (supabase as any).from('invoice_uploads').select('file_name').eq('id', row.id).single().then(({ data }: { data: { file_name?: string } | null }) => {
                       const fileName = data?.file_name || 'Ismeretlen fájl';
                       toast({
-                        title: 'Dokumentum eszkalálva',
-                        description: `${fileName} nem párosítható automatikusan — kézi ellenőrzés szükséges.`,
+                        title: t('common:notifications.doc_escalated_title', 'Dokumentum eszkalálva'),
+                        description: t('common:notifications.doc_escalated_desc', { fileName, defaultValue: `${fileName} nem párosítható automatikusan — kézi ellenőrzés szükséges.` }),
                         variant: 'destructive',
                         duration: 8000,
                         icon: AlertTriangle,
@@ -530,8 +556,8 @@ export function LiveNotificationProvider() {
                   (supabase as any).from('report_uploads').select('file_name').eq('id', row.id).single().then(({ data }: { data: { file_name?: string } | null }) => {
                     const fileName = data?.file_name || 'Ismeretlen fájl';
                     toast({
-                      title: 'Riport feldolgozva!',
-                      description: `A következő riport sikeresen fel lett dolgozva: ${fileName}`,
+                      title: t('common:notifications.report_processed_title', 'Riport feldolgozva!'),
+                      description: t('common:notifications.report_processed_desc', { fileName, defaultValue: `A következő riport sikeresen fel lett dolgozva: ${fileName}` }),
                       variant: 'default',
                       duration: 5000,
                       icon: ClipboardCheck,
@@ -643,8 +669,8 @@ export function LiveNotificationProvider() {
                   };
                   const label = docTypeLabel[row.document_type] || 'Dokumentum';
                   toast({
-                    title: `${label} utólag párosítva!`,
-                    description: `${row.file_name} párosítva lett egy fuvarhoz.`,
+                    title: t('common:notifications.doc_retroactive_matched_title', { label, defaultValue: `${label} utólag párosítva!` }),
+                    description: t('common:notifications.doc_retroactive_matched_desc', { fileName: row.file_name, defaultValue: `${row.file_name} párosítva lett egy fuvarhoz.` }),
                     variant: 'default',
                     duration: 5000,
                     icon: Truck,
@@ -669,8 +695,8 @@ export function LiveNotificationProvider() {
               if (!notifiedUploads.current.has(toastKey)) {
                 notifiedUploads.current.add(toastKey);
                 toast({
-                  title: 'PDF export kész!',
-                  description: `${row.total_invoices || ''} számla exportálva. Navigálj a Számlák oldalra a letöltéshez.`,
+                  title: t('common:notifications.pdf_export_done_title', 'PDF export kész!'),
+                  description: t('common:notifications.pdf_export_done_desc', { count: row.total_invoices || '', defaultValue: `${row.total_invoices || ''} számla exportálva. Navigálj a Számlák oldalra a letöltéshez.` }),
                   variant: 'default',
                   duration: 8000,
                   icon: FileText,

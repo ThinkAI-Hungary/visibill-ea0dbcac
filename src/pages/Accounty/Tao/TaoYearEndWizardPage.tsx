@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams , useLocation } from 'react-router-dom';
 import {
   ArrowLeft, ArrowRight, Calculator, Landmark, Save, Loader2,
 } from 'lucide-react';
@@ -24,6 +24,8 @@ import { TaoWizardStepper, TaoWizardSidebar } from './TaoWizardShell';
 
 
 export default function TaoYearEndWizardPage() {
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const { companyId, year, dateRange } = useParams<{ companyId: string; year: string; dateRange: string }>();
   const id = companyId;
   const taxYear = parseInt(year || '2025', 10);
@@ -252,7 +254,7 @@ export default function TaoYearEndWizardPage() {
     <div className="w-full space-y-6 page-animate">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link to={`/eaisybooks/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-muted transition-colors">
+        <Link to={`${prefix}/eaisybooks/${id}/${dateRange}/tao`} className="p-2 rounded-lg hover:bg-muted transition-colors">
           <ArrowLeft className="w-4 h-4 text-muted-foreground" />
         </Link>
         <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg shadow-lg shadow-emerald-500/25">
@@ -264,7 +266,7 @@ export default function TaoYearEndWizardPage() {
           </h1>
           <p className="text-sm text-muted-foreground">{client?.name || 'Ügyfél'}</p>
         </div>
-        <Link to={`/eaisybooks/${id}/${dateRange}/tao/kiva`}>
+        <Link to={`${prefix}/eaisybooks/${id}/${dateRange}/tao/kiva`}>
           <Button variant="outline" size="sm" className="gap-1.5">
             <Calculator className="w-3.5 h-3.5" /> KIVA összehasonlítás
           </Button>

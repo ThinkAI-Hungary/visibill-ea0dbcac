@@ -4,7 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { cn, fixCharacterEncoding } from '@/lib/utils';
-import { getLocalizedGlAccountName } from '@/lib/glUtils';
+import { getLocalizedGlAccountName, getLocalizedGlItemType, getLocalizedGlItemDescription } from '@/lib/glUtils';
+import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
 import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw, Edit2, X, Check, ChevronsUpDown, FileText, Search, ArrowRightLeft } from 'lucide-react';
 import { exportGlExcel, exportGlAnalyticalExcel } from '@/lib/glExport';
 import { fetchAllGlBalances, fetchAllGlCategorizedItems, fetchGlItemsForAccount, GlDateBasis, GlPostingStatus, GlSearchResult } from '@/lib/glData';
@@ -82,6 +83,9 @@ interface LedgerItem {
   isLoadMoreRow?: boolean;
   targetCid?: string;
   isLoadingMore?: boolean;
+  ancestorIds?: string[];
+  depth?: number;
+  isRoot?: boolean;
 }
 
 const formatCurrency = (value: number) => {
@@ -201,6 +205,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     viewLayout = 'summary',
   } = props;
   const { selectedCompany } = useCompany();
+  const { isCroatia, defaultCurrency } = useCompanyJurisdiction();
+  const currencyLabel = defaultCurrency === 'HUF' ? 'Ft' : defaultCurrency;
   const { session } = useAuth();
   const { toast } = useToast();
 
@@ -440,69 +446,121 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     const cleanId = cleanIdVal;
     
     if (dbData && dbData.length > 0) {
-      // Step 1: Pre-calculate hasAccountChildren, hasItemChildren and clean IDs
-      const rawData = dbData.map(dbItem => {
+      // Step 1: Pre-calculate raw nodes and index in Map for O(1) prefix lookup
+      const nodeMap = new Map<string, LedgerItem>();
+      const rawData: LedgerItem[] = dbData.map(dbItem => {
         const cid = cleanId(dbItem.gl_number);
-        const hasAccountChildren = dbData.some(d => 
-          cleanId(d.gl_number).startsWith(cid) && 
-          cleanId(d.gl_number) !== cid
-        );
         const directItemCount = Number(dbItem.item_count) || 0;
         const hasItemChildren = directItemCount > 0;
         
-        return {
+        const item: LedgerItem = {
           id: String(dbItem.gl_number),
-          name: getLocalizedGlAccountName(dbItem.gl_number, fixCharacterEncoding(dbItem.short_name), t),
+          name: getLocalizedGlAccountName(dbItem.gl_number, fixCharacterEncoding(dbItem.short_name), t, isCroatia),
           glAccountId: dbItem.gl_account_id,
           balance: Number(dbItem.total_balance) || 0,
-          debitTurnover: (Number(dbItem.total_balance) || 0) > 0 ? (Number(dbItem.total_balance) || 0) : 0,
-          creditTurnover: (Number(dbItem.total_balance) || 0) < 0 ? Math.abs(Number(dbItem.total_balance) || 0) : 0,
+          debitTurnover: 0,
+          creditTurnover: 0,
           directFinalBalance: Number(dbItem.final_balance) || 0,
           directTempBalance: Number(dbItem.temp_balance) || 0,
           directItemCount,
-          hasChildren: hasAccountChildren || hasItemChildren,
-          hasAccountChildren,
+          hasChildren: false,
+          hasAccountChildren: false,
           hasItemChildren,
           cid
         };
+        nodeMap.set(cid, item);
+        return item;
       });
 
-      // Now roll up sums and split final vs temporary balances for all parent nodes
-      let rolledUpData: LedgerItem[] = rawData.map(item => {
-        if (item.hasAccountChildren) {
-          const descendants = rawData.filter(d => d.cid.startsWith(item.cid));
-          let finalBalance = 0;
-          let tempBalance = 0;
-          let debitTurnover = 0;
-          let creditTurnover = 0;
-          descendants.forEach(d => {
-            finalBalance += d.directFinalBalance;
-            tempBalance += d.directTempBalance;
-            if (!d.hasAccountChildren) {
-              if (d.balance > 0) debitTurnover += d.balance;
-              if (d.balance < 0) creditTurnover += Math.abs(d.balance);
-            }
-          });
-          const totalBalance = finalBalance + tempBalance;
+      // Step 2: Build parent-child tree hierarchy in O(N) using prefix search in nodeMap
+      const directParentMap = new Map<string, LedgerItem>();
+      const childrenMap = new Map<string, LedgerItem[]>();
+      const roots: LedgerItem[] = [];
 
-          return { 
-            ...item, 
-            balance: totalBalance,
-            debitTurnover,
-            creditTurnover,
-            finalBalance,
-            tempBalance
-          };
-        } else {
-          return {
-            ...item,
-            balance: item.balance,
-            debitTurnover: item.balance > 0 ? item.balance : 0,
-            creditTurnover: item.balance < 0 ? Math.abs(item.balance) : 0,
-            finalBalance: item.directFinalBalance,
-            tempBalance: item.directTempBalance
-          };
+      rawData.forEach(node => {
+        let directParent: LedgerItem | null = null;
+        if (node.cid !== 'UNCLASSIFIED') {
+          for (let len = node.cid.length - 1; len >= 1; len--) {
+            const prefix = node.cid.slice(0, len);
+            const candidate = nodeMap.get(prefix);
+            if (candidate) {
+              directParent = candidate;
+              break;
+            }
+          }
         }
+
+        if (!directParent) {
+          roots.push(node);
+        } else {
+          directParentMap.set(node.cid, directParent);
+          if (!childrenMap.has(directParent.cid)) {
+            childrenMap.set(directParent.cid, []);
+          }
+          childrenMap.get(directParent.cid)!.push(node);
+        }
+      });
+
+      // Step 3: Flag nodes with account children and precalculate depth / ancestor IDs
+      rawData.forEach(node => {
+        const hasAccountChildren = (childrenMap.get(node.cid)?.length ?? 0) > 0;
+        node.hasAccountChildren = hasAccountChildren;
+        node.hasChildren = hasAccountChildren || !!node.hasItemChildren;
+      });
+
+      // Step 4: Fast balance & turnover rollup in O(N) by traversing ancestors
+      rawData.forEach(node => {
+        node.finalBalance = node.directFinalBalance || 0;
+        node.tempBalance = node.directTempBalance || 0;
+        if (!node.hasAccountChildren) {
+          node.debitTurnover = node.balance > 0 ? node.balance : 0;
+          node.creditTurnover = node.balance < 0 ? Math.abs(node.balance) : 0;
+        } else {
+          node.debitTurnover = 0;
+          node.creditTurnover = 0;
+        }
+      });
+
+      rawData.forEach(d => {
+        let ancestor = directParentMap.get(d.cid);
+        while (ancestor) {
+          ancestor.finalBalance = (ancestor.finalBalance || 0) + (d.directFinalBalance || 0);
+          ancestor.tempBalance = (ancestor.tempBalance || 0) + (d.directTempBalance || 0);
+          if (!d.hasAccountChildren) {
+            if (d.balance > 0) {
+              ancestor.debitTurnover = (ancestor.debitTurnover || 0) + d.balance;
+            }
+            if (d.balance < 0) {
+              ancestor.creditTurnover = (ancestor.creditTurnover || 0) + Math.abs(d.balance);
+            }
+          }
+          ancestor = directParentMap.get(ancestor.cid);
+        }
+      });
+
+      rawData.forEach(node => {
+        node.balance = (node.finalBalance || 0) + (node.tempBalance || 0);
+      });
+
+      // Step 5: Precalculate ancestor IDs, depth, and isRoot for instant visibility checks
+      const ancestorIdsMap = new Map<string, string[]>();
+      const getAncestorIds = (cid: string): string[] => {
+        if (ancestorIdsMap.has(cid)) return ancestorIdsMap.get(cid)!;
+        const parent = directParentMap.get(cid);
+        if (!parent) {
+          ancestorIdsMap.set(cid, []);
+          return [];
+        }
+        const ancestors = [parent.id, ...getAncestorIds(parent.cid)];
+        ancestorIdsMap.set(cid, ancestors);
+        return ancestors;
+      };
+
+      rawData.forEach(node => {
+        const aIds = getAncestorIds(node.cid);
+        node.ancestorIds = aIds;
+        node.depth = aIds.length;
+        node.isRoot = aIds.length === 0;
       });
 
       // ── Hierarchical search filter computation ──
@@ -516,7 +574,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         const cleanQ = cleanId(searchQuery);
 
         // 1. Check account numbers and names
-        rolledUpData.forEach(node => {
+        rawData.forEach(node => {
           const normName = normalizeText(node.name);
           const normNum = normalizeText(node.id);
           const cid = node.cid;
@@ -567,27 +625,34 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         const allMatched = new Set<string>([...directMatchAccountCids, ...itemMatchAccountCids]);
 
         // If an account is directly matched, all of its descendant accounts are also visible
-        directMatchAccountCids.forEach(matchedCid => {
-          rolledUpData.forEach(d => {
-            if (d.cid.startsWith(matchedCid)) {
-              allMatched.add(d.cid);
+        if (directMatchAccountCids.size > 0) {
+          rawData.forEach(d => {
+            if (!allMatched.has(d.cid)) {
+              let curr = directParentMap.get(d.cid);
+              while (curr) {
+                if (directMatchAccountCids.has(curr.cid)) {
+                  allMatched.add(d.cid);
+                  break;
+                }
+                curr = directParentMap.get(curr.cid);
+              }
             }
           });
-        });
+        }
 
-        // Build visible set including all ancestor paths
+        // Build visible set including all ancestor paths in O(depth)
         visibleAccountCids = new Set<string>();
         allMatched.forEach(cid => {
           visibleAccountCids!.add(cid);
-          rolledUpData.forEach(candidate => {
-            if (candidate.cid !== cid && cid.startsWith(candidate.cid)) {
-              visibleAccountCids!.add(candidate.cid);
-            }
-          });
+          let curr = directParentMap.get(cid);
+          while (curr) {
+            visibleAccountCids!.add(curr.cid);
+            curr = directParentMap.get(curr.cid);
+          }
         });
       }
 
-      // ── Zero balances filter computation ──
+      // ── Zero balances filter computation in O(depth) ──
       let activeAccountCids: Set<string> | null = null;
       if (hideZeroBalances) {
         activeAccountCids = new Set<string>();
@@ -605,15 +670,14 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
           return hasDirectItems || hasDirectBalance || hasTurnover;
         };
 
-        rolledUpData.forEach(d => {
+        rawData.forEach(d => {
           if (isDirectlyActive(d)) {
             activeAccountCids!.add(d.cid);
-            // Include all ancestor account prefixes
-            rolledUpData.forEach(candidate => {
-              if (candidate.cid !== d.cid && d.cid.startsWith(candidate.cid)) {
-                activeAccountCids!.add(candidate.cid);
-              }
-            });
+            let curr = directParentMap.get(d.cid);
+            while (curr) {
+              activeAccountCids!.add(curr.cid);
+              curr = directParentMap.get(curr.cid);
+            }
           }
         });
 
@@ -625,18 +689,18 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
               const cid = targetGl === 'UNCLASSIFIED' ? 'UNCLASSIFIED' : cleanId(targetGl);
               if (cid) {
                 activeAccountCids!.add(cid);
-                rolledUpData.forEach(candidate => {
-                  if (candidate.cid !== cid && cid.startsWith(candidate.cid)) {
-                    activeAccountCids!.add(candidate.cid);
-                  }
-                });
+                let curr = directParentMap.get(cid);
+                while (curr) {
+                  activeAccountCids!.add(curr.cid);
+                  curr = directParentMap.get(curr.cid);
+                }
               }
             }
           });
         }
       }
 
-      // ── Build hierarchical tree and flatten in depth-first order ──
+      // ── Flatten tree in depth-first order ──
       const compareGlAccounts = (a: LedgerItem, b: LedgerItem) => {
         if (a.cid === 'UNCLASSIFIED') return 1;
         if (b.cid === 'UNCLASSIFIED') return -1;
@@ -650,29 +714,6 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
         return a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' });
       };
-
-      const childrenMap = new Map<string, LedgerItem[]>();
-      const roots: LedgerItem[] = [];
-
-      rolledUpData.forEach(node => {
-        let directParent: LedgerItem | null = null;
-        rolledUpData.forEach(candidate => {
-          if (candidate.cid !== node.cid && node.cid.startsWith(candidate.cid)) {
-            if (!directParent || candidate.cid.length > directParent.cid.length) {
-              directParent = candidate;
-            }
-          }
-        });
-
-        if (!directParent) {
-          roots.push(node);
-        } else {
-          if (!childrenMap.has(directParent.cid)) {
-            childrenMap.set(directParent.cid, []);
-          }
-          childrenMap.get(directParent.cid)!.push(node);
-        }
-      });
 
       const combinedData: LedgerItem[] = [];
 
@@ -715,15 +756,21 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
           : expandedRowIds.has(node.id);
 
         if (shouldExpandItems) {
+          const itemAncestors = [node.id, ...(node.ancestorIds || [])];
+          const itemDepth = (node.depth || 0) + 1;
+
           if (loadingAccountCids.has(node.cid)) {
             combinedData.push({
               id: `loading_${node.cid}`,
-              name: 'Tételek betöltése...',
+              name: t('accounting:general_ledger.loading_items', 'Tételek betöltése...'),
               balance: 0,
               hasChildren: false,
               cid: `${node.cid}_loading`,
               isItem: true,
-              isLoadingRow: true
+              isLoadingRow: true,
+              ancestorIds: itemAncestors,
+              depth: itemDepth,
+              isRoot: false
             });
           } else {
             let directItems = loadedAccountItems.get(node.cid) || [];
@@ -762,6 +809,9 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                       originalAmount: Number(r.amount) || 0,
                       originalCurrency: r.currency || 'HUF',
                       isTemporary: node.cid === 'UNCLASSIFIED',
+                      ancestorIds: itemAncestors,
+                      depth: itemDepth,
+                      isRoot: false
                     });
                   }
                 });
@@ -793,7 +843,14 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
             }
 
             if (displayedItems.length > 0) {
-              combinedData.push(...displayedItems);
+              displayedItems.forEach(it => {
+                combinedData.push({
+                  ...it,
+                  ancestorIds: itemAncestors,
+                  depth: itemDepth,
+                  isRoot: false
+                });
+              });
 
               // If there are more items to load for this account, emit sentinel load-more row (only when not searching)
               if (!isSearchActive && hasMoreAccountCids.has(node.cid)) {
@@ -811,7 +868,10 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                   isItem: true,
                   isLoadMoreRow: true,
                   targetCid: node.cid,
-                  isLoadingMore: loadingMoreAccountCids.has(node.cid)
+                  isLoadingMore: loadingMoreAccountCids.has(node.cid),
+                  ancestorIds: itemAncestors,
+                  depth: itemDepth,
+                  isRoot: false
                 });
               }
             }
@@ -1011,20 +1071,20 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
           });
         });
 
+        const nodeMap = new Map<string, any>();
         const rawAccounts = dbData.map(dbItem => {
           const cid = cleanId(dbItem.gl_number);
-          const hasAccountChildren = dbData.some(d =>
-            cleanId(d.gl_number).startsWith(cid) && cleanId(d.gl_number) !== cid
-          );
-          return {
+          const item = {
             id: String(dbItem.gl_number),
-            name: getLocalizedGlAccountName(dbItem.gl_number, fixCharacterEncoding(dbItem.short_name), t),
+            name: getLocalizedGlAccountName(dbItem.gl_number, fixCharacterEncoding(dbItem.short_name), t, isCroatia),
             balance: Number(dbItem.total_balance) || 0,
-            hasChildren: hasAccountChildren || itemsByGL.has(cid),
-            hasAccountChildren,
+            hasChildren: itemsByGL.has(cid),
+            hasAccountChildren: false,
             hasItemChildren: itemsByGL.has(cid),
             cid
           };
+          nodeMap.set(cid, item);
+          return item;
         });
 
         const compareGlAccounts = (a: any, b: any) => {
@@ -1036,22 +1096,33 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
           return a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' });
         };
 
+        const directParentMap = new Map<string, any>();
         const childrenMap = new Map<string, any[]>();
         const roots: any[] = [];
         rawAccounts.forEach(node => {
           let directParent: any = null;
-          rawAccounts.forEach(candidate => {
-            if (candidate.cid !== node.cid && node.cid.startsWith(candidate.cid)) {
-              if (!directParent || candidate.cid.length > directParent.cid.length) {
+          if (node.cid !== 'UNCLASSIFIED') {
+            for (let len = node.cid.length - 1; len >= 1; len--) {
+              const prefix = node.cid.slice(0, len);
+              const candidate = nodeMap.get(prefix);
+              if (candidate) {
                 directParent = candidate;
+                break;
               }
             }
-          });
+          }
           if (!directParent) roots.push(node);
           else {
+            directParentMap.set(node.cid, directParent);
             if (!childrenMap.has(directParent.cid)) childrenMap.set(directParent.cid, []);
             childrenMap.get(directParent.cid)!.push(node);
           }
+        });
+
+        rawAccounts.forEach(node => {
+          const hasAccChildren = (childrenMap.get(node.cid)?.length ?? 0) > 0;
+          node.hasAccountChildren = hasAccChildren;
+          node.hasChildren = hasAccChildren || node.hasItemChildren;
         });
 
         const fullExportRows: any[] = [];
@@ -1063,11 +1134,11 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
             const hasBalance = Math.abs(acc.balance || 0) > 0.001;
             if (hasItems || hasBalance) {
               activeExportCids!.add(acc.cid);
-              rawAccounts.forEach(cand => {
-                if (cand.cid !== acc.cid && acc.cid.startsWith(cand.cid)) {
-                  activeExportCids!.add(cand.cid);
-                }
-              });
+              let curr = directParentMap.get(acc.cid);
+              while (curr) {
+                activeExportCids!.add(curr.cid);
+                curr = directParentMap.get(curr.cid);
+              }
             }
           });
         }
@@ -1428,39 +1499,34 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
 
 
-  // Pre-calculate which categories contain items so we know what to expand during print
+  // Pre-calculate which categories contain items so we know what to expand during print in O(N)
   const categoriesWithItems = useMemo(() => {
     const result = new Set<string>();
-    const itemNodes = tableData.filter(d => d.isItem);
-    const nonItemNodes = tableData.filter(d => !d.isItem);
-    
-    itemNodes.forEach(item => {
-      nonItemNodes.forEach(node => {
-        if (item.cid.startsWith(node.cid) && item.cid !== node.cid) {
-          result.add(node.id);
-        }
-      });
+    tableData.forEach(item => {
+      if (item.isItem && item.ancestorIds) {
+        item.ancestorIds.forEach(id => result.add(id));
+      }
     });
     return result;
   }, [tableData]);
 
-  // Determine if a row should be visible based on expanded state of its ancestors
+  // Determine if a row should be visible based on expanded state of its ancestors in O(1) per row
   const processedRows = useMemo(() => {
-    const nonItemNodes = tableData.filter(d => !d.isItem);
     const isSearchActive = !!searchQuery && searchQuery.trim().length > 0;
 
     return tableData.map(item => {
-      // Find all ancestors (only searching through the ~100 category nodes, not all 10,000 items)
-      const ancestors = nonItemNodes.filter(a => item.cid.startsWith(a.cid) && a.cid !== item.cid);
+      const isRoot = !!item.isRoot;
+      const depth = item.depth || 0;
       
-      const isRoot = ancestors.length === 0 && !item.isItem;
-      const depth = ancestors.length;
-      
-      const isVisibleOnScreen = isRoot || isSearchActive || ancestors.every(a => expandedRowIds.has(a.id));
-      let isVisibleDuringPrint = isRoot || ancestors.every(a => {
-        if (printLayoutMode === 'synthetic') return true;
-        return categoriesWithItems.has(a.id);
-      });
+      const isVisibleOnScreen = isRoot || isSearchActive || (
+        item.ancestorIds ? item.ancestorIds.every(id => expandedRowIds.has(id)) : true
+      );
+      let isVisibleDuringPrint = isRoot || (
+        item.ancestorIds ? item.ancestorIds.every(id => {
+          if (printLayoutMode === 'synthetic') return true;
+          return categoriesWithItems.has(id);
+        }) : true
+      );
 
       if (printLayoutMode === 'synthetic' && item.isItem) {
         isVisibleDuringPrint = false;
@@ -1470,24 +1536,12 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     });
   }, [expandedRowIds, tableData, categoriesWithItems, printLayoutMode, searchQuery]);
 
-  // Calculate generic footer totals by summing root level items
+  // Calculate generic footer totals by summing root level items in O(N)
   const footerTotals = useMemo(() => {
     return tableData.reduce((acc, current) => {
       // Ignore leaf item rows since their balances are already natively rolled up inside their parents
-      if (current.isItem) return acc;
-
-      // Find if this item has any regular GL ancestors
-      const isRoot = !tableData.some(d => 
-        !d.isItem &&
-        current.cid.startsWith(d.cid) && 
-        d.cid !== current.cid
-      );
-      
-      // we sum only root elements because they already include all children sums
-      if (isRoot) {
-         return acc + current.balance;
-      }
-      return acc;
+      if (current.isItem || !current.isRoot) return acc;
+      return acc + current.balance;
     }, 0);
   }, [tableData]);
 
@@ -1813,14 +1867,14 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                             </div>
                           )}
                         </div>
-                        <CustomTooltip content={row.name} side="top">
+                        <CustomTooltip content={row.isItem ? getLocalizedGlItemDescription(row.name, t) : row.name} side="top">
                           <span className={cn("break-words min-w-0 font-medium leading-normal", isRoot ? "uppercase font-semibold text-foreground" : "", row.isItem ? "text-muted-foreground italic" : "")}>
-                            {row.name}
+                            {row.isItem ? getLocalizedGlItemDescription(row.name, t) : row.name}
                           </span>
                         </CustomTooltip>
                         {row.isItem && row.itemType && (
                           <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-muted whitespace-nowrap text-muted-foreground hidden lg:inline-block">
-                            {row.itemType}
+                            {getLocalizedGlItemType(row.itemType, t)}
                           </span>
                         )}
                         {row.isItem && row.isTemporary && (
@@ -2035,11 +2089,11 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                           <div className="col-span-2 font-mono tabular-nums text-center">
                             {item.date ? item.date.substring(0, 10).replace(/-/g, '.') : ''}
                           </div>
-                          <CustomTooltip content={item.name} side="top">
+                          <CustomTooltip content={getLocalizedGlItemDescription(item.name, t)} side="top">
                             <div className="col-span-7 truncate">
-                              {item.name}
+                              {getLocalizedGlItemDescription(item.name, t)}
                               {item.itemType && (
-                                <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 whitespace-nowrap">{item.itemType}</span>
+                                <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 whitespace-nowrap">{getLocalizedGlItemType(item.itemType, t)}</span>
                               )}
                             </div>
                           </CustomTooltip>
@@ -2151,7 +2205,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                   (selectedNewGL && dbData
                   ? (() => {
                       const gl = dbData.find(g => g.gl_account_id === selectedNewGL);
-                      return gl ? `${gl.gl_number} ${getLocalizedGlAccountName(gl.gl_number, gl.short_name, t)}` : t('accounting:general_ledger.edit_category_modal.choose_from_list');
+                      return gl ? `${gl.gl_number} ${getLocalizedGlAccountName(gl.gl_number, gl.short_name, t, isCroatia)}` : t('accounting:general_ledger.edit_category_modal.choose_from_list');
                     })()
                   : t('accounting:general_ledger.edit_category_modal.choose_from_list'))}
               </span>
@@ -2187,7 +2241,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                     ?.filter(gl => {
                       if (!dialogSearchQuery) return true;
                       const q = dialogSearchQuery.toLowerCase();
-                      const locName = getLocalizedGlAccountName(gl.gl_number, gl.short_name, t);
+                      const locName = getLocalizedGlAccountName(gl.gl_number, gl.short_name, t, isCroatia);
                       return `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(q) ||
                              `${gl.gl_number} ${locName}`.toLowerCase().includes(q);
                     })
@@ -2211,7 +2265,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                             )}
                           />
                           <span className={cn("truncate block w-full", selectedNewGL === gl.gl_account_id ? "font-bold text-foreground" : "")}>
-                            {gl.gl_number} {getLocalizedGlAccountName(gl.gl_number, gl.short_name, t)}
+                            {gl.gl_number} {getLocalizedGlAccountName(gl.gl_number, gl.short_name, t, isCroatia)}
                           </span>
                         </CommandItem>
                       );
@@ -2277,12 +2331,12 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                         </div>
                         <div className="text-right">
                           <p className="text-sm font-bold text-foreground tabular-nums">
-                            {formatCurrency(entry.amount)} Ft
+                            {formatCurrency(entry.amount)} {currencyLabel}
                           </p>
-                          {entry.foreign_currency && entry.foreign_currency !== 'HUF' && entry.foreign_amount && (
+                          {entry.foreign_currency && entry.foreign_currency !== defaultCurrency && entry.foreign_amount && (
                             <p className="text-[10px] font-medium text-muted-foreground tabular-nums">
                               {formatNumberLocale(Number(entry.foreign_amount), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {entry.foreign_currency}
-                              {entry.exchange_rate ? ` (@${formatNumberLocale(Number(entry.exchange_rate))} Ft)` : ''}
+                              {entry.exchange_rate ? ` (@${formatNumberLocale(Number(entry.exchange_rate))} ${currencyLabel})` : ''}
                             </p>
                           )}
                           <p className={cn(

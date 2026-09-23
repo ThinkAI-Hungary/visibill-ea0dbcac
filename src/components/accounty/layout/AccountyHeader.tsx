@@ -1,5 +1,6 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Menu, Bell, AlertTriangle, Clock, FileWarning, Calendar, HelpCircle } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { GlobalDatePicker } from '@/components/GlobalDatePicker';
@@ -14,7 +15,10 @@ export interface AccountyHeaderProps {
 }
 
 function AccountyHeaderComponent(props: AccountyHeaderProps) {
+  const { t } = useTranslation('accounty');
   const navigate = useNavigate();
+  const location = useLocation();
+  const prefix = location.pathname.startsWith('/hr') ? '/hr' : '';
   const shell = useAccountyShellOptional();
 
   const setSidebarOpen = props.setSidebarOpen ?? shell?.setSidebarOpen ?? (() => {});
@@ -34,11 +38,11 @@ function AccountyHeaderComponent(props: AccountyHeaderProps) {
       <div className="flex-1 min-w-0">
         <GlobalDatePicker />
       </div>
-      <div className="flex items-center pr-4 lg:pr-6 gap-1 shrink-0">
+      <div className="flex items-center pr-4 lg:pr-6 gap-2 shrink-0">
         <button
           onClick={onHelpClick}
           className="p-2 text-muted-foreground hover:text-foreground transition-colors focus:outline-none rounded-md"
-          title="Segítség és bemutató"
+          title={t('header.help_tooltip', 'Segítség és bemutató')}
           data-tour="help-trigger"
         >
           <HelpCircle className="w-5 h-5" />
@@ -55,66 +59,66 @@ function AccountyHeaderComponent(props: AccountyHeaderProps) {
           </PopoverTrigger>
           <PopoverContent className="w-80 p-0 mt-2 border-border shadow-md rounded-lg overflow-hidden bg-card" align="end" sideOffset={8}>
             <div className="px-4 py-3 border-b border-border bg-muted/40 flex items-center justify-between">
-              <h3 className="font-semibold text-sm text-foreground">Értesítések</h3>
+              <h3 className="font-semibold text-sm text-foreground">{t('header.notifications', 'Értesítések')}</h3>
               {((kpis?.criticalClients ?? 0) > 0 || (kpis?.missingItems ?? 0) > 0 || (kpis?.todayDeadlines ?? 0) > 0 || (kpis?.upcomingDeadlines ?? 0) > 0) && (
                 <button
                   onClick={() => setNotifDismissed(true)}
                   className="text-[10px] font-medium text-primary hover:text-primary/80 transition-colors"
                 >
-                  Mind olvasott
+                  {t('header.mark_all_read', 'Mind olvasott')}
                 </button>
               )}
             </div>
             {(kpis?.criticalClients ?? 0) > 0 || (kpis?.missingItems ?? 0) > 0 || (kpis?.todayDeadlines ?? 0) > 0 || (kpis?.upcomingDeadlines ?? 0) > 0 ? (
               <div className="divide-y divide-border max-h-64 overflow-y-auto">
                 {(kpis?.criticalClients ?? 0) > 0 && (
-                  <div className="px-4 py-3 flex items-start gap-3 hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate('/eaisybooks')}>
+                  <div className="px-4 py-3 flex items-start gap-3 hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate(`${prefix}/eaisybooks`)}>
                     <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center shrink-0 mt-0.5">
                       <AlertTriangle className="w-3.5 h-3.5 text-destructive" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-foreground">Kritikus ügyfelek</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{kpis?.criticalClients} ügyfélnél kritikus elmaradás</p>
+                      <p className="text-sm font-medium text-foreground">{t('header.critical_clients_title', 'Kritikus ügyfelek')}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{t('header.critical_clients', '{{count}} ügyfél igényel figyelmet', { count: kpis?.criticalClients })}</p>
                     </div>
                   </div>
                 )}
                 {(kpis?.todayDeadlines ?? 0) > 0 && (
-                  <div className="px-4 py-3 flex items-start gap-3 hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate('/eaisybooks/tax-calendar')}>
+                  <div className="px-4 py-3 flex items-start gap-3 hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate(`${prefix}/eaisybooks/tax-calendar`)}>
                     <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center shrink-0 mt-0.5">
                       <Clock className="w-3.5 h-3.5 text-destructive" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-foreground">Mai határidők</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{kpis?.todayDeadlines} deadline ma lejár</p>
+                      <p className="text-sm font-medium text-foreground">{t('header.today_deadlines_title', 'Mai határidők')}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{t('header.deadlines_today', '{{count}} határidő ma esedékes', { count: kpis?.todayDeadlines })}</p>
                     </div>
                   </div>
                 )}
                 {(kpis?.missingItems ?? 0) > 0 && (
-                  <div className="px-4 py-3 flex items-start gap-3 hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate('/eaisybooks/missing-invoices')}>
+                  <div className="px-4 py-3 flex items-start gap-3 hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate(`${prefix}/eaisybooks/missing-invoices`)}>
                     <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0 mt-0.5">
                       <FileWarning className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-foreground">Hiányzó dokumentumok</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{kpis?.missingItems} tétel vár bekérésre</p>
+                      <p className="text-sm font-medium text-foreground">{t('header.missing_docs_title', 'Hiányzó dokumentumok')}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{t('header.missing_invoices', '{{count}} számla pótlásra vár', { count: kpis?.missingItems })}</p>
                     </div>
                   </div>
                 )}
                 {(kpis?.upcomingDeadlines ?? 0) > 0 && (
-                  <div className="px-4 py-3 flex items-start gap-3 hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate('/eaisybooks/tax-calendar')}>
+                  <div className="px-4 py-3 flex items-start gap-3 hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate(`${prefix}/eaisybooks/tax-calendar`)}>
                     <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0 mt-0.5">
                       <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-foreground">Közelgő határidők</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{kpis?.upcomingDeadlines} deadline 7 napon belül</p>
+                      <p className="text-sm font-medium text-foreground">{t('header.upcoming_deadlines_title', 'Közelgő határidők')}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{t('header.deadlines_upcoming', '{{count}} határidő a következő 7 napban', { count: kpis?.upcomingDeadlines })}</p>
                     </div>
                   </div>
                 )}
               </div>
             ) : (
               <div className="p-8 flex items-center justify-center">
-                <span className="text-sm text-muted-foreground">Nincs új értesítés</span>
+                <span className="text-sm text-muted-foreground">{t('header.no_notifications', 'Nincs új értesítés')}</span>
               </div>
             )}
           </PopoverContent>

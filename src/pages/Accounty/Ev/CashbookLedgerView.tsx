@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams , useLocation } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, BookOpen, BarChart3, TrendingUp,
   TrendingDown, Layers, Calendar, Filter, Loader2
@@ -54,6 +54,8 @@ type ViewMode = 'monthly' | 'columns' | 'chart';
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function CashbookLedgerView() {
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const id = companyId;
   const { data: client } = useAccountyClient(id);
@@ -137,7 +139,7 @@ export default function CashbookLedgerView() {
     <div className="w-full space-y-6 page-animate">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link to={`/eaisybooks/${id}/${dateRange}/ev/cashbook`} className="hover:text-primary transition-colors flex items-center gap-1">
+        <Link to={`${prefix}/eaisybooks/${id}/${dateRange}/ev/cashbook`} className="hover:text-primary transition-colors flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> Pénztárkönyv
         </Link>
         <ChevronRight className="w-3 h-3" />

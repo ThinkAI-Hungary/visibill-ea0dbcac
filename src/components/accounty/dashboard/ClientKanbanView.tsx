@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { ClientData } from '@/pages/Accounty/types';
 import { ClientCard } from './DashboardShared';
@@ -14,6 +15,7 @@ export default function ClientKanbanView({
   handleUpdateOwner,
   onStatusChange,
 }: ClientKanbanViewProps) {
+  const { t } = useTranslation('accounty');
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<ClientData['status'] | null>(null);
 
@@ -49,21 +51,21 @@ export default function ClientKanbanView({
   const columns: { status: ClientData['status']; label: string; colorClass: string; bgOverClass: string; dotColor: string }[] = [
     { 
       status: 'Feldolgozandó', 
-      label: 'Feldolgozandó', 
+      label: t('status.to_process', 'Feldolgozandó'), 
       colorClass: 'bg-amber-50/80 border-amber-300 ring-4 ring-amber-500/10',
       bgOverClass: 'bg-amber-50/80 border-amber-300 ring-4 ring-amber-500/10',
       dotColor: 'bg-amber-500'
     },
     { 
       status: 'Rendben', 
-      label: 'Rendben', 
+      label: t('status.ok', 'Rendben'), 
       colorClass: 'bg-accent-subtle/80 border-primary/30 ring-4 ring-primary/10',
       bgOverClass: 'bg-accent-subtle/80 border-primary/30 ring-4 ring-primary/10',
       dotColor: 'bg-primary'
     },
     { 
       status: 'Kritikus', 
-      label: 'Kritikus', 
+      label: t('status.critical', 'Kritikus'), 
       colorClass: 'bg-red-50/80 border-red-300 ring-4 ring-red-500/10',
       bgOverClass: 'bg-red-50/80 border-red-300 ring-4 ring-red-500/10',
       dotColor: 'bg-red-500'
@@ -110,7 +112,7 @@ export default function ClientKanbanView({
             
             {columnClients.length === 0 && (
               <div className="text-center py-8 text-sm text-muted-foreground border-2 border-dashed border-border rounded-lg">
-                Nincs ügyfél
+                {t('portfolio.kanban.no_clients', 'Nincs ügyfél')}
               </div>
             )}
           </div>

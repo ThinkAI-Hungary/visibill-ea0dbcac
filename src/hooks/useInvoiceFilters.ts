@@ -849,12 +849,41 @@ export function useInvoiceFilters(
   const getPaymentMethodLabel = useCallback((method: string | null) => {
     if (!method) return t('invoices:payment_methods.not_specified', 'Nem megadott');
     const m = method.toUpperCase().trim();
-    if (m === 'TRANSFER' || m === 'ÁTUTALÁS') return t('invoices:payment_methods.transfer', 'Átutalás');
-    if (m === 'CASH' || m === 'KÉSZPÉNZ') return t('invoices:payment_methods.cash', 'Készpénz');
-    if (m === 'CARD' || m === 'BANKKÁRTYA') return t('invoices:payment_methods.card', 'Bankkártya');
-    if (m === 'VOUCHER' || m === 'UTALVÁNY') return t('invoices:payment_methods.voucher', 'Utalvány');
-    if (m === 'COD' || m === 'UTÁNVÉT' || m === 'UTÁNVÉTEL') return t('invoices:payment_methods.cod', 'Utánvét');
-    if (m === 'OTHER' || m === 'EGYÉB') return t('invoices:payment_methods.other', 'Egyéb');
+    // 1. Exact matches
+    if (m === 'TRANSFER' || m === 'ÁTUTALÁS' || m === 'VIRMAN') return t('invoices:payment_methods.transfer', 'Átutalás');
+    if (m === 'CASH' || m === 'KÉSZPÉNZ' || m === 'GOTOVINA') return t('invoices:payment_methods.cash', 'Készpénz');
+    if (m === 'CARD' || m === 'BANKKÁRTYA' || m === 'KARTICA') return t('invoices:payment_methods.card', 'Bankkártya');
+    if (m === 'VOUCHER' || m === 'UTALVÁNY' || m === 'VAUČER') return t('invoices:payment_methods.voucher', 'Utalvány');
+    if (m === 'COD' || m === 'UTÁNVÉT' || m === 'UTÁNVÉTEL' || m === 'POUZEĆE' || m === 'POUZECE') return t('invoices:payment_methods.cod', 'Utánvét');
+    if (m === 'OTHER' || m === 'EGYÉB' || m === 'OSTALO') return t('invoices:payment_methods.other', 'Egyéb');
+
+    // 2. Automatic card / card variations
+    const isAuto = m.includes('AUTOMATIKUS') || m.includes('AUTOMATSK') || m.includes('AUTO');
+    const isCard = m.includes('KÁRTYA') || m.includes('KARTYA') || m.includes('KÁRTYÁS') || m.includes('KARTYAS') || m.includes('CARD') || m.includes('KARTIC') || m.includes('BARION') || m.includes('SIMPLEPAY') || m.includes('STRIPE');
+    if (isAuto && isCard) {
+      return t('invoices:payment_methods.automatic_card', 'Automatikus bankkártya');
+    }
+    if (isCard) {
+      return t('invoices:payment_methods.card', 'Bankkártya');
+    }
+
+    // 3. Transfer / cash / voucher / cod pattern variations
+    if (m.includes('ÁTUTALÁS') || m.includes('ATUTALAS') || m.includes('TRANSFER') || m.includes('VIRMAN')) {
+      return t('invoices:payment_methods.transfer', 'Átutalás');
+    }
+    if (m.includes('KÉSZPÉNZ') || m.includes('KESZPENZ') || m.includes('CASH') || m.includes('GOTOVIN')) {
+      return t('invoices:payment_methods.cash', 'Készpénz');
+    }
+    if (m.includes('UTÁNVÉT') || m.includes('UTANVET') || m.includes('COD') || m.includes('POUZEĆ') || m.includes('POUZEC')) {
+      return t('invoices:payment_methods.cod', 'Utánvét');
+    }
+    if (m.includes('UTALVÁNY') || m.includes('UTALVANY') || m.includes('VOUCHER') || m.includes('VAUČER') || m.includes('SZÉP') || m.includes('SZEP')) {
+      return t('invoices:payment_methods.voucher', 'Utalvány');
+    }
+    if (m.includes('EGYÉB') || m.includes('EGYEB') || m.includes('OTHER') || m.includes('OSTAL')) {
+      return t('invoices:payment_methods.other', 'Egyéb');
+    }
+
     return method;
   }, [t]);
 

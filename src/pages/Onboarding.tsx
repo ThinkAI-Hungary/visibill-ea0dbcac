@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { useAutoCategorizeJob } from '@/hooks/useAutoCategorizeJob';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { Plus, X, Search, ChevronLeft, ChevronRight, CheckCircle2, Circle, Download, FileText, FileSpreadsheet, File, ChevronDown, Eye, List, Sparkles, Loader2 } from 'lucide-react';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { UnsavedChangesDialog } from '@/components/UnsavedChangesDialog';
@@ -67,11 +69,81 @@ export const STANDARD_GL_OPTIONS = [
   { code: '579', label: '579 - Egyéb egyéb költségek' },
 ];
 
+export const STANDARD_GL_OPTIONS_HR = [
+  { code: '4000', label: '4000 - Osnovni materijali i sirovine' },
+  { code: '4010', label: '4010 - Uredski materijal' },
+  { code: '4011', label: '4011 - Materijal i sredstva za čišćenje' },
+  { code: '4040', label: '4040 - Troškovi sitnog inventara' },
+  { code: '4050', label: '4050 - Rezervni dijelovi za popravak opreme' },
+  { code: '4070', label: '4070 - Trošak električne energije' },
+  { code: '4071', label: '4071 - Plin, toplinska energija, drva' },
+  { code: '4077', label: '4077 - Gorivo za teretna vozila i strojeve' },
+  { code: '4100', label: '4100 - Troškovi telefona, interneta' },
+  { code: '4101', label: '4101 - Poštanski troškovi' },
+  { code: '4102', label: '4102 - Prijevozne usluge u cestovnom prometu' },
+  { code: '4108', label: '4108 - Troškovi dostave' },
+  { code: '4120', label: '4120 - Usluge tekućeg održavanja' },
+  { code: '4122', label: '4122 - Usluge čišćenja' },
+  { code: '4123', label: '4123 - Održavanje softvera i web stranica' },
+  { code: '4140', label: '4140 - Zakupnine i najamnine nekretnina' },
+  { code: '4149', label: '4149 - Usluge najma informatičke opreme' },
+  { code: '4150', label: '4150 - Troškovi promidžbe (mediji)' },
+  { code: '4151', label: '4151 - Usluge promidžbenih agencija' },
+  { code: '4158', label: '4158 - Troškovi promidžbe na internetu' },
+  { code: '4164', label: '4164 - Knjigovodstvene usluge' },
+  { code: '4165', label: '4165 - Usluge poreznih savjetnika' },
+  { code: '4167', label: '4167 - Odvjetničke i pravne usluge' },
+  { code: '4170', label: '4170 - Komunalna naknada' },
+  { code: '4171', label: '4171 - Odvoz smeća i fekalija' },
+  { code: '4172', label: '4172 - Voda i odvodnja' },
+  { code: '4197', label: '4197 - Autocesta, tuneli i mostarine' },
+  { code: '4199', label: '4199 - Ostale vanjske usluge' },
+  { code: '4200', label: '4200 - Troškovi neto plaća' },
+  { code: '4240', label: '4240 - Bruto plaće' },
+  { code: '4610', label: '4610 - Troškovi prijevoza na posao' },
+  { code: '4616', label: '4616 - Prigodne nagrade zaposlenicima' },
+  { code: '4640', label: '4640 - Premije osiguranja imovine' },
+  { code: '4650', label: '4650 - Troškovi platnog prometa' },
+  { code: '4652', label: '4652 - Bankovne usluge i provizije' },
+  { code: '4658', label: '4658 - Trošak FINA-e' },
+  { code: '4660', label: '4660 - Članarine komori (HGK/HOK)' },
+  { code: '4670', label: '4670 - Porez na tvrtku' },
+  { code: '4679', label: '4679 - Ostali porezi i pristojbe' },
+  { code: '4685', label: '4685 - Troškovi licenciranih prava' },
+  { code: '4699', label: '4699 - Ostali nematerijalni troškovi' },
+  { code: '4899', label: '4899 - Ostali poslovni troškovi' },
+];
+
+export function calculateNormalizedTotal(
+  currencyTotals: Record<string, number>,
+  baseCurrency: 'HUF' | 'EUR' = 'HUF',
+  rates?: Record<string, number>
+): number {
+  const fallbackRates: Record<string, number> = {
+    HUF: 1,
+    EUR: 400,
+    USD: 370,
+    GBP: 470,
+    CHF: 415,
+  };
+  const activeRates = rates || fallbackRates;
+  const baseToHuf = activeRates[baseCurrency] || (baseCurrency === 'EUR' ? 400 : 1);
+
+  let totalInHuf = 0;
+  for (const [curr, amt] of Object.entries(currencyTotals)) {
+    if (!amt) continue;
+    const rateToHuf = activeRates[curr.toUpperCase()] || fallbackRates[curr.toUpperCase()] || 1;
+    totalInHuf += amt * rateToHuf;
+  }
+
+  return baseToHuf > 0 ? totalInHuf / baseToHuf : totalInHuf;
+}
+
 interface CategoryStats {
   invoiceCount: number;
-  /** HUF total only — used for progress bar */
+  /** Normalized base currency total (EUR for HR, HUF for HU) */
   totalAmount: number;
-  /** Per-currency totals map, e.g. { HUF: 12000, USD: 45.5 } */
+  /** Per-currency totals map, e.g. { EUR: 1200, USD: 45.5 } */
   currencyTotals: Record<string, number>;
   invoices: CategoryInvoice[];
 }
@@ -177,6 +249,10 @@ const Onboarding = () => {
   const { t } = useTranslation(['categories', 'common']);
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
+  const { isCroatia, defaultCurrency } = useCompanyJurisdiction(selectedCompany);
+  const { data: exchangeRates } = useExchangeRates();
+  const glOptions = isCroatia ? STANDARD_GL_OPTIONS_HR : STANDARD_GL_OPTIONS;
+  const defaultGlCode = isCroatia ? '4010' : '521';
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { canWrite: canWriteModule } = useEaisybillPermissions();
@@ -245,7 +321,7 @@ const Onboarding = () => {
           supplier_name: inv.elado_nev,
           invoice_issue_date: inv.kibocsatas_datuma,
           invoice_gross_amount: inv.brutto_vegosszeg,
-          penznem: inv.penznem || 'HUF',
+          penznem: inv.penznem || (selectedCompany.country_code === 'HR' ? 'EUR' : 'HUF'),
           source: 'invoices',
           image_url: inv.image_url,
           melleklet_url: inv.melleklet_url,
@@ -315,15 +391,16 @@ const Onboarding = () => {
           invList.push(inv);
         }
 
+        const defaultCurr = selectedCompany.country_code === 'HR' ? 'EUR' : 'HUF';
         const currencyTotals: Record<string, number> = {};
         for (const inv of invList) {
-          const cur = inv.penznem || 'HUF';
+          const cur = inv.penznem || defaultCurr;
           currencyTotals[cur] = (currencyTotals[cur] || 0) + (inv.invoice_gross_amount || 0);
         }
 
         stats[cat.id] = {
           invoiceCount: invList.length,
-          totalAmount: currencyTotals['HUF'] || 0,
+          totalAmount: calculateNormalizedTotal(currencyTotals, defaultCurr),
           currencyTotals,
           invoices: invList,
         };
@@ -489,21 +566,26 @@ const Onboarding = () => {
     Object.values(categoryStats).reduce((sum, s) => sum + s.invoiceCount, 0), 
     [categoryStats]
   );
-  const totalAmount = useMemo(() => 
-    Object.values(categoryStats).reduce((sum, s) => sum + s.totalAmount, 0), 
-    [categoryStats]
+
+  // Donut chart data & normalized amounts
+  const donutStats = useMemo(() => 
+    categories.map((cat) => {
+      const cTotals = cat.id ? (categoryStats[cat.id]?.currencyTotals || {}) : {};
+      const normTotal = calculateNormalizedTotal(cTotals, defaultCurrency, exchangeRates);
+      return {
+        name: cat.name || 'Névtelen',
+        invoiceCount: cat.id ? (categoryStats[cat.id]?.invoiceCount || 0) : 0,
+        totalAmount: normTotal,
+        currencyTotals: cTotals,
+        color: cat.color || DEFAULT_CATEGORY_COLOR,
+      };
+    }),
+    [categories, categoryStats, defaultCurrency, exchangeRates]
   );
 
-  // Donut chart data
-  const donutStats = useMemo(() => 
-    categories.map((cat) => ({
-      name: cat.name || 'Névtelen',
-      invoiceCount: cat.id ? (categoryStats[cat.id]?.invoiceCount || 0) : 0,
-      totalAmount: cat.id ? (categoryStats[cat.id]?.totalAmount || 0) : 0,
-      currencyTotals: cat.id ? (categoryStats[cat.id]?.currencyTotals || {}) : {},
-      color: cat.color || DEFAULT_CATEGORY_COLOR,
-    })),
-    [categories, categoryStats]
+  const totalAmount = useMemo(() => 
+    donutStats.reduce((sum, s) => sum + s.totalAmount, 0), 
+    [donutStats]
   );
 
   // Toggle category -> Open popup details modal
@@ -560,12 +642,12 @@ const Onboarding = () => {
           const newInvoices = stats[categoryId].invoices.filter(inv => inv.id !== invoiceId);
           const currencyTotals: Record<string, number> = {};
           for (const i of newInvoices) {
-            const cur = i.penznem || 'HUF';
+            const cur = i.penznem || defaultCurrency;
             currencyTotals[cur] = (currencyTotals[cur] || 0) + (i.invoice_gross_amount || 0);
           }
           stats[categoryId] = {
             invoiceCount: newInvoices.length,
-            totalAmount: currencyTotals['HUF'] || 0,
+            totalAmount: calculateNormalizedTotal(currencyTotals, defaultCurrency, exchangeRates),
             currencyTotals,
             invoices: newInvoices,
           };
@@ -668,12 +750,12 @@ const Onboarding = () => {
           const newInvoices = [...current.invoices, invoice];
           const currencyTotals: Record<string, number> = {};
           for (const i of newInvoices) {
-            const cur = i.penznem || 'HUF';
+            const cur = i.penznem || defaultCurrency;
             currencyTotals[cur] = (currencyTotals[cur] || 0) + (i.invoice_gross_amount || 0);
           }
           stats[categoryId] = {
             invoiceCount: newInvoices.length,
-            totalAmount: currencyTotals['HUF'] || 0,
+            totalAmount: calculateNormalizedTotal(currencyTotals, defaultCurrency, exchangeRates),
             currencyTotals,
             invoices: newInvoices,
           };
@@ -716,12 +798,12 @@ const Onboarding = () => {
         const newInvoices = [...current.invoices, ...toAdd];
         const currencyTotals: Record<string, number> = {};
         for (const i of newInvoices) {
-          const cur = i.penznem || 'HUF';
+          const cur = i.penznem || defaultCurrency;
           currencyTotals[cur] = (currencyTotals[cur] || 0) + (i.invoice_gross_amount || 0);
         }
         stats[categoryId] = {
           invoiceCount: newInvoices.length,
-          totalAmount: currencyTotals['HUF'] || 0,
+          totalAmount: calculateNormalizedTotal(currencyTotals, defaultCurrency, exchangeRates),
           currencyTotals,
           invoices: newInvoices,
         };
@@ -1064,7 +1146,7 @@ const Onboarding = () => {
                 color={cat.color || DEFAULT_CATEGORY_COLOR}
                 iconName={cat.icon}
                 invoiceCount={stats?.invoiceCount || 0}
-                totalAmount={stats?.totalAmount || 0}
+                totalAmount={stats ? calculateNormalizedTotal(stats.currencyTotals || {}, defaultCurrency, exchangeRates) : 0}
                 totalAllAmount={totalAmount}
                 totalInvoiceCount={totalInvoices}
                 currencyTotals={stats?.currencyTotals || {}}
@@ -1176,7 +1258,7 @@ const Onboarding = () => {
                   variant="outline"
                   size="sm"
                   className="h-7 text-xs gap-1"
-                  onClick={() => setEditGlAccounts([...editGlAccounts, '521'])}
+                  onClick={() => setEditGlAccounts([...editGlAccounts, defaultGlCode])}
                 >
                   <Plus className="h-3 w-3" /> {t('categories:new_gl_account', 'Új számlaosztály')}
                 </Button>
@@ -1188,7 +1270,7 @@ const Onboarding = () => {
                     <div key={idx} className="flex items-center gap-2 bg-muted/20 p-2 rounded-md border border-border/40">
                       <span className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400 w-6">#{idx + 1}</span>
                       <select
-                        value={STANDARD_GL_OPTIONS.some(opt => opt.code === glCode) ? glCode : 'custom'}
+                        value={glOptions.some(opt => opt.code === glCode) ? glCode : 'custom'}
                         onChange={(e) => {
                           const val = e.target.value;
                           if (val !== 'custom') {
@@ -1199,7 +1281,7 @@ const Onboarding = () => {
                         }}
                         className="flex-1 h-8 rounded-md border border-input bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                       >
-                        {STANDARD_GL_OPTIONS.map(opt => (
+                        {glOptions.map(opt => (
                           <option key={opt.code} value={opt.code}>{opt.label}</option>
                         ))}
                         <option value="custom">{t('categories:custom_gl_option', 'Egyedi számlaszám...')}</option>
@@ -1333,7 +1415,7 @@ const Onboarding = () => {
                   variant="outline"
                   size="sm"
                   className="h-7 text-xs gap-1"
-                  onClick={() => setNewGlAccounts([...newGlAccounts, '521'])}
+                  onClick={() => setNewGlAccounts([...newGlAccounts, defaultGlCode])}
                 >
                   <Plus className="h-3 w-3" /> {t('categories:new_gl_account', 'Új számlaosztály')}
                 </Button>
@@ -1345,7 +1427,7 @@ const Onboarding = () => {
                     <div key={idx} className="flex items-center gap-2 bg-muted/20 p-2 rounded-md border border-border/40">
                       <span className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400 w-6">#{idx + 1}</span>
                       <select
-                        value={STANDARD_GL_OPTIONS.some(opt => opt.code === glCode) ? glCode : 'custom'}
+                        value={glOptions.some(opt => opt.code === glCode) ? glCode : 'custom'}
                         onChange={(e) => {
                           const val = e.target.value;
                           if (val !== 'custom') {
@@ -1356,7 +1438,7 @@ const Onboarding = () => {
                         }}
                         className="flex-1 h-8 rounded-md border border-input bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                       >
-                        {STANDARD_GL_OPTIONS.map(opt => (
+                        {glOptions.map(opt => (
                           <option key={opt.code} value={opt.code}>{opt.label}</option>
                         ))}
                         <option value="custom">{t('categories:custom_gl_option', 'Egyedi számlaszám...')}</option>

@@ -4,6 +4,7 @@ import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
+import { getJurisdictionRules } from '@/hooks/useCompanyJurisdiction';
 import { supabase } from '@/integrations/supabase/client';
 import { startOfYear, endOfYear, parseISO, format } from 'date-fns';
 import { reportError } from '@/lib/errorReporter';
@@ -70,7 +71,19 @@ export interface VatBreakdownResult {
   inboundVatCategories: VatCategoryData[];
   totalOutboundVat: number;
   totalInboundVat: number;
+  baseCurrency?: string;
 }
+
+const DEFAULT_EXCHANGE_RATES: Record<string, number> = {
+  EUR: 0.00244,
+  USD: 0.00263,
+  GBP: 0.00208,
+  CHF: 0.00233,
+  PLN: 0.0105,
+  CZK: 0.0617,
+  RON: 0.0121,
+  HUF: 1.0,
+};
 
 export interface MonthlyData {
   month: string;
@@ -126,6 +139,9 @@ export function useDashboardData() {
   const { dateFrom, dateTo, dateFromFormatted, dateToFormatted } = useDateRange();
 
   const companyId = selectedCompany?.id || '';
+  const jurisdiction = useMemo(() => getJurisdictionRules(selectedCompany?.country_code), [selectedCompany?.country_code]);
+  const baseCurrency = jurisdiction.defaultCurrency;
+  const isCroatia = jurisdiction.isCroatia;
 
   // Chart always shows full current year
   const chartYearFromStr = useMemo(() => `${new Date().getFullYear()}-01-01`, []);
@@ -202,6 +218,19 @@ export function useDashboardData() {
     staleTime: 60 * 60 * 1000,
     placeholderData: keepPreviousData,
   });
+
+  // ── Currency conversion (memoized) ──
+  const convertToSelectedCurrency = useCallback((amount: number, fromCurrency: string, selectedCurrency: string): number => {
+    if (fromCurrency === selectedCurrency || !amount) return amount || 0;
+    let amountInHUF = amount;
+    if (fromCurrency !== 'HUF') {
+      const rateFromHUF = exchangeRates[fromCurrency] || DEFAULT_EXCHANGE_RATES[fromCurrency] || 1;
+      amountInHUF = amount / rateFromHUF;
+    }
+    if (selectedCurrency === 'HUF') return amountInHUF;
+    const rateToSelected = exchangeRates[selectedCurrency] || DEFAULT_EXCHANGE_RATES[selectedCurrency] || 1;
+    return amountInHUF * rateToSelected;
+  }, [exchangeRates]);
 
   // ── Profile ──
   const { data: profile } = useQuery({
@@ -518,10 +547,10 @@ export function useDashboardData() {
   });
 
   // ── VAT breakdown ──
-  const { data: vatBreakdown } = useQuery({
+  const { data: vatBreakdown } = useQuery<VatBreakdownResult>({
     queryKey: queryKeys.analyticsVat(companyId, dateFromFormatted, dateToFormatted),
     queryFn: async () => {
-      const [itemsRes, headersRes, unmatchedInvRes] = await Promise.all([
+      const [itemsRes, headersRes, allInvoicesRes] = await Promise.all([
         (supabase.rpc as any)("get_vat_breakdown", {
           p_company_id: companyId,
           p_date_from: dateFromFormatted,
@@ -533,12 +562,11 @@ export function useDashboardData() {
           .eq("company_id", companyId)
           .gte("invoice_issue_date", dateFromFormatted)
           .lte("invoice_issue_date", dateToFormatted),
-        // Also fetch submitted INBOUND invoices to find unmatched ones
+        // Fetch all invoices from invoices table (both INBOUND and OUTBOUND)
         supabase
           .from("invoices")
           .select("bizonylatsorszam, afa_osszeg_osszesen, adoalap_osszesen, invoice_direction, penznem")
           .eq("company_id", companyId)
-          .eq("invoice_direction", "INBOUND")
           .neq("invoice_type", "garanciajegy")
           .gte("kibocsatas_datuma", dateFromFormatted)
           .lte("kibocsatas_datuma", dateToFormatted),
@@ -547,195 +575,173 @@ export function useDashboardData() {
       const vatItems: any[] = itemsRes.data || [];
       const allNavInvoices = headersRes.data || [];
       const navInvoiceNumbers = new Set(
-        allNavInvoices.map(n => (n as any).invoice_number?.replace(/\s+/g, '')).filter(Boolean)
+        allNavInvoices.map((n: any) => n.invoice_number?.replace(/\s+/g, '')).filter(Boolean)
       );
-      // Find unmatched INBOUND invoices (foreign invoices not in NAV)
-      const unmatchedInvoices = (unmatchedInvRes.data || []).filter((inv: any) => {
+      // Invoices not matching any nav_invoice (for HR all invoices, for HU foreign/manual invoices)
+      const unmatchedInvoices = (allInvoicesRes.data || []).filter((inv: any) => {
         const clean = inv.bizonylatsorszam?.replace(/\s+/g, '');
-        return clean && !navInvoiceNumbers.has(clean);
+        return !clean || !navInvoiceNumbers.has(clean);
       });
 
-      // Sum unmatched invoices VAT and net for the inbound side (normalized to HUF)
-      let unmatchedInVat = 0, unmatchedInNet = 0;
-      unmatchedInvoices.forEach((inv: any) => {
-        const currency = inv.penznem || 'HUF';
-        const vatHUF = convertToSelectedCurrency(inv.afa_osszeg_osszesen || 0, currency, 'HUF');
-        const netHUF = convertToSelectedCurrency(inv.adoalap_osszesen || 0, currency, 'HUF');
-        unmatchedInVat += vatHUF;
-        unmatchedInNet += netHUF;
-      });
-
+      const outboundByRate: Record<string, { netAmount: number; vatAmount: number }> = {};
+      const inboundByRate: Record<string, { netAmount: number; vatAmount: number }> = {};
       let headerOutVat = 0, headerInVat = 0, headerOutNet = 0, headerInNet = 0;
+
+      // 1. Process nav_invoices headers
+      const headerSumByGroup: Record<string, { net: number; vat: number }> = {};
       allNavInvoices.forEach(inv => {
-        const currency = (inv as any).currency || 'HUF';
-        const vatHUF = convertToSelectedCurrency(inv.invoice_vat_amount || 0, currency, 'HUF');
-        const netHUF = convertToSelectedCurrency(inv.invoice_net_amount || 0, currency, 'HUF');
+        const currency = (inv as any).currency || baseCurrency;
+        const vatBase = convertToSelectedCurrency(inv.invoice_vat_amount || 0, currency, baseCurrency);
+        const netBase = convertToSelectedCurrency(inv.invoice_net_amount || 0, currency, baseCurrency);
 
         if (inv.invoice_direction === 'OUTBOUND') {
-          headerOutVat += vatHUF;
-          headerOutNet += netHUF;
+          headerOutVat += vatBase;
+          headerOutNet += netBase;
         } else {
-          headerInVat += vatHUF;
-          headerInNet += netHUF;
+          headerInVat += vatBase;
+          headerInNet += netBase;
+        }
+
+        const groupKey = `${inv.invoice_direction || 'INBOUND'}_${currency}`;
+        if (!headerSumByGroup[groupKey]) {
+          headerSumByGroup[groupKey] = { net: 0, vat: 0 };
+        }
+        headerSumByGroup[groupKey].net += netBase;
+        headerSumByGroup[groupKey].vat += vatBase;
+      });
+
+      // 2. Process vatItems (from nav_invoice_items)
+      const itemSumByGroup: Record<string, { net: number; vat: number }> = {};
+      vatItems.forEach(item => {
+        const direction = item.invoice_direction;
+        const currency = item.currency || baseCurrency;
+
+        const netBase = convertToSelectedCurrency(Number(item.net_sum || 0), currency, baseCurrency);
+        const vatBase = convertToSelectedCurrency(Number(item.vat_sum || 0), currency, baseCurrency);
+
+        const groupKey = `${direction}_${currency}`;
+        if (!itemSumByGroup[groupKey]) {
+          itemSumByGroup[groupKey] = { net: 0, vat: 0 };
+        }
+        itemSumByGroup[groupKey].net += netBase;
+        itemSumByGroup[groupKey].vat += vatBase;
+
+        let rateLabel: string;
+        if (item.vat_rate === null || item.vat_rate === undefined || item.vat_rate === '') {
+          rateLabel = isCroatia ? 'Oslobođeno PDV-a' : 'ÁFA mentes';
+        } else {
+          const numericVal = parseFloat(item.vat_rate);
+          if (isNaN(numericVal)) {
+            rateLabel = isCroatia ? 'Oslobođeno PDV-a' : 'ÁFA mentes';
+          } else {
+            rateLabel = `${Math.round(numericVal * 100)}%`;
+          }
+        }
+
+        const target = direction === 'OUTBOUND' ? outboundByRate : inboundByRate;
+        if (!target[rateLabel]) target[rateLabel] = { netAmount: 0, vatAmount: 0 };
+        target[rateLabel].netAmount += netBase;
+        target[rateLabel].vatAmount += vatBase;
+      });
+
+      // 3. Process unmatched invoices (all invoices for non-NAV / HR companies, foreign invoices for HU)
+      unmatchedInvoices.forEach((inv: any) => {
+        const currency = inv.penznem || baseCurrency;
+        const rawVat = Number(inv.afa_osszeg_osszesen || 0);
+        const rawNet = Number(inv.adoalap_osszesen || 0);
+        const vatBase = convertToSelectedCurrency(rawVat, currency, baseCurrency);
+        const netBase = convertToSelectedCurrency(rawNet, currency, baseCurrency);
+
+        if (inv.invoice_direction === 'OUTBOUND') {
+          headerOutVat += vatBase;
+          headerOutNet += netBase;
+        } else {
+          headerInVat += vatBase;
+          headerInNet += netBase;
+        }
+
+        let rateLabel: string;
+        if (Math.abs(rawNet) < 0.01 || Math.abs(rawVat) < 0.01) {
+          rateLabel = isCroatia ? 'Oslobođeno PDV-a' : 'ÁFA mentes';
+        } else {
+          const ratio = rawVat / rawNet;
+          if (Math.abs(ratio - 0.27) < 0.015) rateLabel = '27%';
+          else if (Math.abs(ratio - 0.25) < 0.015) rateLabel = '25%';
+          else if (Math.abs(ratio - 0.18) < 0.015) rateLabel = '18%';
+          else if (Math.abs(ratio - 0.13) < 0.015) rateLabel = '13%';
+          else if (Math.abs(ratio - 0.05) < 0.015) rateLabel = '5%';
+          else {
+            const pct = Math.round(ratio * 100);
+            rateLabel = pct > 0 && pct < 100 ? `${pct}%` : (isCroatia ? 'Neraspoređeno' : 'Nem részletezett');
+          }
+        }
+
+        const target = inv.invoice_direction === 'OUTBOUND' ? outboundByRate : inboundByRate;
+        if (!target[rateLabel]) target[rateLabel] = { netAmount: 0, vatAmount: 0 };
+        target[rateLabel].netAmount += netBase;
+        target[rateLabel].vatAmount += vatBase;
+      });
+
+      // 4. Compute gaps between nav_invoices headers and items (if any NAV items were present)
+      let gapOutVat = 0, gapOutNet = 0, gapInVat = 0, gapInNet = 0;
+      Object.keys(headerSumByGroup).forEach(groupKey => {
+        const header = headerSumByGroup[groupKey];
+        const item = itemSumByGroup[groupKey] || { net: 0, vat: 0 };
+        const vatGap = header.vat - item.vat;
+        const netGap = header.net - item.net;
+
+        if (Math.abs(vatGap) > 0.01 || Math.abs(netGap) > 0.01) {
+          if (groupKey.startsWith('OUTBOUND')) {
+            gapOutVat += vatGap;
+            gapOutNet += netGap;
+          } else {
+            gapInVat += vatGap;
+            gapInNet += netGap;
+          }
         }
       });
 
-      // Add unmatched invoices to inbound totals
-      headerInVat += unmatchedInVat;
-      headerInNet += unmatchedInNet;
-
-      if (vatItems.length > 0 || unmatchedInvoices.length > 0) {
-        const outboundByRate: Record<string, { netAmount: number; vatAmount: number }> = {};
-        const inboundByRate: Record<string, { netAmount: number; vatAmount: number }> = {};
-        
-        // Track overall item sum by currency and direction for global gap calculation
-        const itemSumByGroup: Record<string, { net: number; vat: number }> = {};
-
-        vatItems.forEach(item => {
-          const direction = item.invoice_direction;
-          const currency = item.currency || 'HUF';
-
-          const netHUF = convertToSelectedCurrency(Number(item.net_sum || 0), currency, 'HUF');
-          const vatHUF = convertToSelectedCurrency(Number(item.vat_sum || 0), currency, 'HUF');
-
-          // Accumulate global sums for gap calculation
-          const groupKey = `${direction}_${currency}`;
-          if (!itemSumByGroup[groupKey]) {
-            itemSumByGroup[groupKey] = { net: 0, vat: 0 };
-          }
-          itemSumByGroup[groupKey].net += netHUF;
-          itemSumByGroup[groupKey].vat += vatHUF;
-
-          let rateLabel: string;
-          if (item.vat_rate === null || item.vat_rate === undefined || item.vat_rate === '') {
-            rateLabel = 'ÁFA mentes';
-          } else {
-            const numericVal = parseFloat(item.vat_rate);
-            if (isNaN(numericVal)) {
-              rateLabel = 'ÁFA mentes';
-            } else {
-              const ratePercent = Math.round(numericVal * 100);
-              rateLabel = `${ratePercent}%`;
-            }
-          }
-
-          const target = direction === 'OUTBOUND' ? outboundByRate : inboundByRate;
-          if (!target[rateLabel]) target[rateLabel] = { netAmount: 0, vatAmount: 0 };
-          target[rateLabel].netAmount += netHUF;
-          target[rateLabel].vatAmount += vatHUF;
-        });
-
-        // Calculate gap globally per direction and currency
-        let gapOutVat = 0, gapOutNet = 0, gapInVat = 0, gapInNet = 0;
-
-        // Sum headers by group
-        const headerSumByGroup: Record<string, { net: number; vat: number }> = {};
-        allNavInvoices.forEach(inv => {
-          const direction = inv.invoice_direction || 'INBOUND';
-          const currency = inv.currency || 'HUF';
-          const groupKey = `${direction}_${currency}`;
-
-          const headerVatHUF = convertToSelectedCurrency(inv.invoice_vat_amount || 0, currency, 'HUF');
-          const headerNetHUF = convertToSelectedCurrency(inv.invoice_net_amount || 0, currency, 'HUF');
-
-          if (!headerSumByGroup[groupKey]) {
-            headerSumByGroup[groupKey] = { net: 0, vat: 0 };
-          }
-          headerSumByGroup[groupKey].net += headerNetHUF;
-          headerSumByGroup[groupKey].vat += headerVatHUF;
-        });
-
-        // Compute gaps comparing headers to items
-        Object.keys(headerSumByGroup).forEach(groupKey => {
-          const header = headerSumByGroup[groupKey];
-          const item = itemSumByGroup[groupKey] || { net: 0, vat: 0 };
-          
-          const vatGap = header.vat - item.vat;
-          const netGap = header.net - item.net;
-
-          if (Math.abs(vatGap) > 0.01 || Math.abs(netGap) > 0.01) {
-            if (groupKey.startsWith('OUTBOUND')) {
-              gapOutVat += vatGap;
-              gapOutNet += netGap;
-            } else {
-              gapInVat += vatGap;
-              gapInNet += netGap;
-            }
-          }
-        });
-
-        // Add unmatched invoices VAT as a gap (they have no nav_invoice_items)
-        gapInVat += unmatchedInVat;
-        gapInNet += unmatchedInNet;
-
-        if (Math.abs(gapOutVat) > 0.01 || Math.abs(gapOutNet) > 0.01) {
-          if (!outboundByRate['Nem részletezett']) outboundByRate['Nem részletezett'] = { netAmount: 0, vatAmount: 0 };
-          outboundByRate['Nem részletezett'].netAmount += gapOutNet;
-          outboundByRate['Nem részletezett'].vatAmount += gapOutVat;
-        }
-        if (Math.abs(gapInVat) > 0.01 || Math.abs(gapInNet) > 0.01) {
-          if (!inboundByRate['Nem részletezett']) inboundByRate['Nem részletezett'] = { netAmount: 0, vatAmount: 0 };
-          inboundByRate['Nem részletezett'].netAmount += gapInNet;
-          inboundByRate['Nem részletezett'].vatAmount += gapInVat;
-        }
-
-        const sortOrder = ['ÁFA mentes', '5%', '18%', '27%', 'Nem részletezett'];
-        const sortCategories = (cats: VatCategoryData[]) => cats.sort((a, b) => {
-          const iA = sortOrder.indexOf(a.rate), iB = sortOrder.indexOf(b.rate);
-          if (iA === -1 && iB === -1) return a.rate.localeCompare(b.rate);
-          if (iA === -1) return 1;
-          if (iB === -1) return -1;
-          return iA - iB;
-        });
-
-        const outCats = sortCategories(Object.entries(outboundByRate).map(([rate, d]) => ({ rate, netAmount: d.netAmount, vatAmount: d.vatAmount })));
-        const inCats = sortCategories(Object.entries(inboundByRate).map(([rate, d]) => ({ rate, netAmount: d.netAmount, vatAmount: d.vatAmount })));
-
-        return {
-          outboundVatCategories: outCats,
-          inboundVatCategories: inCats,
-          totalOutboundVat: headerOutVat,
-          totalInboundVat: headerInVat,
-        };
-      } else {
-        return {
-          outboundVatCategories: [{ rate: 'Összesített', vatAmount: headerOutVat, netAmount: headerOutNet }] as VatCategoryData[],
-          inboundVatCategories: [{ rate: 'Összesített', vatAmount: headerInVat, netAmount: headerInNet }] as VatCategoryData[],
-          totalOutboundVat: headerOutVat,
-          totalInboundVat: headerInVat,
-        };
+      const unspecLabel = isCroatia ? 'Neraspoređeno' : 'Nem részletezett';
+      if (Math.abs(gapOutVat) > 0.01 || Math.abs(gapOutNet) > 0.01) {
+        if (!outboundByRate[unspecLabel]) outboundByRate[unspecLabel] = { netAmount: 0, vatAmount: 0 };
+        outboundByRate[unspecLabel].netAmount += gapOutNet;
+        outboundByRate[unspecLabel].vatAmount += gapOutVat;
       }
+      if (Math.abs(gapInVat) > 0.01 || Math.abs(gapInNet) > 0.01) {
+        if (!inboundByRate[unspecLabel]) inboundByRate[unspecLabel] = { netAmount: 0, vatAmount: 0 };
+        inboundByRate[unspecLabel].netAmount += gapInNet;
+        inboundByRate[unspecLabel].vatAmount += gapInVat;
+      }
+
+      const sortOrder = ['ÁFA mentes', 'Oslobođeno PDV-a', '5%', '13%', '18%', '25%', '27%', 'Neraspoređeno', 'Nem részletezett'];
+      const sortCategories = (cats: VatCategoryData[]) => cats.sort((a, b) => {
+        const iA = sortOrder.indexOf(a.rate), iB = sortOrder.indexOf(b.rate);
+        if (iA === -1 && iB === -1) return a.rate.localeCompare(b.rate);
+        if (iA === -1) return 1;
+        if (iB === -1) return -1;
+        return iA - iB;
+      });
+
+      const outCats = sortCategories(Object.entries(outboundByRate).map(([rate, d]) => ({ rate, netAmount: d.netAmount, vatAmount: d.vatAmount })));
+      const inCats = sortCategories(Object.entries(inboundByRate).map(([rate, d]) => ({ rate, netAmount: d.netAmount, vatAmount: d.vatAmount })));
+
+      return {
+        outboundVatCategories: outCats,
+        inboundVatCategories: inCats,
+        totalOutboundVat: headerOutVat,
+        totalInboundVat: headerInVat,
+        baseCurrency,
+      };
     },
     enabled: !!user && !!companyId,
     staleTime: 30_000,
   });
-
-  // ── Currency conversion (memoized) ──
-  const convertToSelectedCurrency = useCallback((amount: number, fromCurrency: string, selectedCurrency: string): number => {
-    if (fromCurrency === selectedCurrency) return amount;
-    let amountInHUF = amount;
-    if (fromCurrency !== 'HUF') {
-      const rateFromHUF = exchangeRates[fromCurrency] || 1;
-      amountInHUF = amount / rateFromHUF;
-    }
-    if (selectedCurrency === 'HUF') return amountInHUF;
-    const rateToSelected = exchangeRates[selectedCurrency] || 1;
-    return amountInHUF * rateToSelected;
-  }, [exchangeRates]);
 
   // ── Monthly chart data ──
   const rawInvoices = analyticsRaw?.rawInvoices || [];
   const rawSalaries = analyticsRaw?.rawSalaries || [];
 
   const buildMonthlyData = useCallback((showBrutto: boolean): MonthlyData[] => {
-    const convertToHUF = (amount: number, fromCurrency: string | null): number => {
-      const currency = fromCurrency || 'HUF';
-      if (currency === 'HUF') return amount;
-      const rate = exchangeRates[currency];
-      if (!rate || rate === 0) return amount;
-      return amount / rate;
-    };
-
     const currentYear = new Date().getFullYear();
     const monthlyMap: { [key: string]: MonthlyData } = {};
     const monthKeys: string[] = [];
@@ -759,7 +765,7 @@ export function useDashboardData() {
         const originalAmount = showBrutto
           ? (inv.invoice_gross_amount || 0)
           : (inv.invoice_net_amount || 0);
-        const amount = convertToHUF(originalAmount, inv.currency);
+        const amount = convertToSelectedCurrency(originalAmount, inv.currency || baseCurrency, baseCurrency);
         const isPaid = !!inv.transaction_id;
         if (inv.invoice_direction === "OUTBOUND") {
           if (isPaid) monthlyMap[key].revenuePaid += amount;
@@ -788,7 +794,7 @@ export function useDashboardData() {
     });
 
     return result;
-  }, [rawInvoices, rawSalaries, exchangeRates]);
+  }, [rawInvoices, rawSalaries, baseCurrency, convertToSelectedCurrency]);
 
   // ── Project breakdown (server-side) ──
   const { data: categoryBreakdownData = [] } = useQuery({
@@ -818,12 +824,12 @@ export function useDashboardData() {
         const existing = projectMap.get(row.project_id) || { count: 0, total: 0 };
         existing.count += 1;
         
-        const amountInHUF = convertToSelectedCurrency(
+        const amountInBase = convertToSelectedCurrency(
           Number(row.invoice_gross_amount || 0),
-          row.currency || 'HUF',
-          'HUF'
+          row.currency || baseCurrency,
+          baseCurrency
         );
-        existing.total += amountInHUF;
+        existing.total += amountInBase;
         projectMap.set(row.project_id, existing);
       });
 

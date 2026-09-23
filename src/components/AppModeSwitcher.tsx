@@ -70,23 +70,23 @@ export default function AppModeSwitcher({ activeMode, isCollapsed = false, showT
   const prefix = isHr ? '/hr' : '';
 
   // Direct target for eaisyBooks: prioritize active company if enabled, then last viewed or first eligible company
-  // Note: eaisyBooks is mounted exclusively at /eaisybooks (unscoped)
+  // Note: Supports /hr prefix when active
   const booksTarget = useMemo(() => {
     if (selectedCompany && eaisybooksCompanyIds?.includes(selectedCompany.id)) {
-      return `/eaisybooks/${selectedCompany.id}/${currentDateRange}/overview`;
+      return `${prefix}/eaisybooks/${selectedCompany.id}/${currentDateRange}/overview`;
     }
     try {
       const lastBooksCompanyId = localStorage.getItem('eaisybooks_selected_company_id');
       if (lastBooksCompanyId && eaisybooksCompanyIds?.includes(lastBooksCompanyId)) {
-        return `/eaisybooks/${lastBooksCompanyId}/${currentDateRange}/overview`;
+        return `${prefix}/eaisybooks/${lastBooksCompanyId}/${currentDateRange}/overview`;
       }
       const firstEligible = companies?.find(c => eaisybooksCompanyIds?.includes(c.id));
       if (firstEligible) {
-        return `/eaisybooks/${firstEligible.id}/${currentDateRange}/overview`;
+        return `${prefix}/eaisybooks/${firstEligible.id}/${currentDateRange}/overview`;
       }
     } catch { /* ignore */ }
-    return `/eaisybooks`;
-  }, [selectedCompany, eaisybooksCompanyIds, companies, currentDateRange]);
+    return `${prefix}/eaisybooks`;
+  }, [selectedCompany, eaisybooksCompanyIds, companies, currentDateRange, prefix]);
 
   // Direct target for eaisyBill: prioritize currently viewed company in books, then active company, then last viewed eaisybill company
   const billTarget = useMemo(() => {

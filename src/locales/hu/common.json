@@ -235,6 +235,33 @@
     "copied": "Másolva",
     "failed": "Nem sikerült másolni.",
     "click_to_copy": "Kattints a másoláshoz"
+  },
+  "notifications": {
+    "congratulations": "Gratulálunk!",
+    "file_processed_desc": "A következő fájl sikeresen fel lett dolgozva: {{fileName}}",
+    "invoice_processed_title": "Számla feldolgozva!",
+    "invoices_processed_title": "Számlák feldolgozva!",
+    "vouchers_processed_title": "Pénztárbizonylatok feldolgozva!",
+    "salaries_processed_title": "Bér/járulékok feldolgozva!",
+    "bank_statement_processed_title": "Bankkivonat feldolgozva!",
+    "report_processed_title": "Riport feldolgozva!",
+    "transactions_processed_title": "Tranzakciók feldolgozva!",
+    "multi_invoice_processed_desc": "{{fileName}} — {{count}} számla sikeresen feldolgozva.",
+    "single_file_processed_desc": "{{fileName}} sikeresen fel lett dolgozva.",
+    "invoice_processed_desc": "{{fileName}} sikeresen feldolgozva.",
+    "doc_matched_title": "Dokumentum párosítva!",
+    "doc_matched_desc": "{{fileName}} sikeresen párosítva egy fuvarhoz.",
+    "doc_recorded_title": "Dokumentum rögzítve",
+    "doc_recorded_desc": "{{fileName}} — vár a megfelelő számlára.",
+    "escalation_needed_title": "Eszkaláció szükséges",
+    "escalation_needed_desc": "{{fileName}} — eltérés, kézi ellenőrzés szükséges.",
+    "doc_escalated_title": "Dokumentum eszkalálva",
+    "doc_escalated_desc": "{{fileName}} nem párosítható automatikusan — kézi ellenőrzés szükséges.",
+    "report_processed_desc": "A következő riport sikeresen fel lett dolgozva: {{fileName}}",
+    "doc_retroactive_matched_title": "{{label}} utólag párosítva!",
+    "doc_retroactive_matched_desc": "{{fileName}} párosítva lett egy fuvarhoz.",
+    "pdf_export_done_title": "PDF export kész!",
+    "pdf_export_done_desc": "{{count}} számla exportálva. Navigálj a Számlák oldalra a letöltéshez."
   }
 }
 

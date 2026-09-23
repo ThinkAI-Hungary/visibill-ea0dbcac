@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { isGroupVatMember } from '@/lib/validationUtils';
 import { reportError } from '@/lib/errorReporter';
+import { getJurisdictionRules } from '@/hooks/useCompanyJurisdiction';
 
 interface OnboardingProject {
   name: string;
@@ -40,12 +41,12 @@ interface NavCredentialsData {
   nav_exchange_key: string;
 }
 
-const StepIndicator = ({ currentStep }: { currentStep: number }) => {
+const StepIndicator = ({ currentStep, maxSteps = 4 }: { currentStep: number; maxSteps?: number }) => {
   const steps = [
     { num: 1, label: 'Cég' },
     { num: 2, label: 'Projektek' },
     { num: 3, label: 'Kategóriák' },
-    { num: 4, label: 'NAV' },
+    ...(maxSteps >= 4 ? [{ num: 4, label: 'NAV' }] : []),
   ];
 
   return (
@@ -96,6 +97,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
   const [isCreating, setIsCreating] = useState(false);
 
   // Step 1: Company data
+  const [companyCountryCode, setCompanyCountryCode] = useState<'HU' | 'HR'>('HU');
   const [companyName, setCompanyName] = useState('');
   const [companyTaxNumber, setCompanyTaxNumber] = useState('');
   const [companyAddress, setCompanyAddress] = useState('');
@@ -106,6 +108,9 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
   const [joinCode, setJoinCode] = useState('');
   const [isJoining, setIsJoining] = useState(false);
   const [isNavLoading, setIsNavLoading] = useState(false);
+
+  const jurisdiction = getJurisdictionRules(companyCountryCode);
+  const maxSteps = companyCountryCode === 'HR' ? 3 : 4;
 
   const handleNavLookup = async () => {
     const cleanCore = companyTaxNumber.replace(/[^0-9]/g, '').slice(0, 8);
@@ -344,6 +349,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
           owner_id: user.id,
           primary_teaor: primaryTeaor.trim() || null,
           description: companyDescription.trim() || null,
+          country_code: companyCountryCode,
         })
         .select()
         .single();
@@ -608,34 +614,51 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
         </TabsList>
         <TabsContent value="create" className="space-y-4 pt-4">
           <div className="space-y-2">
-            <Label htmlFor="tax-number">Adószám *</Label>
+            <Label htmlFor="company-country">Ország / Joghatóság</Label>
+            <Select value={companyCountryCode} onValueChange={(val) => setCompanyCountryCode(val as 'HU' | 'HR')}>
+              <SelectTrigger id="company-country" className="bg-card">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="HU">🇭🇺 Magyarország (HU)</SelectItem>
+                <SelectItem value="HR">🇭🇷 Horvátország (HR)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="tax-number">{jurisdiction.taxNumberLabel} *</Label>
             <div className="flex gap-2">
               <Input
                 id="tax-number"
                 value={companyTaxNumber}
                 onChange={(e) => setCompanyTaxNumber(e.target.value)}
-                placeholder="Pl. 12345678-2-42 vagy 12345678"
+                placeholder={jurisdiction.taxNumberPlaceholder}
                 className="flex-1"
               />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleNavLookup}
-                disabled={isNavLoading || !companyTaxNumber.trim()}
-                className="shrink-0 gap-1.5"
-                title="Cégadatok automatikus kitöltése a NAV-ból"
-              >
-                {isNavLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                ) : (
-                  <Search className="h-4 w-4 text-primary" />
-                )}
-                <span>NAV lekérdezés</span>
-              </Button>
+              {jurisdiction.hasNavIntegration && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleNavLookup}
+                  disabled={isNavLoading || !companyTaxNumber.trim()}
+                  className="shrink-0 gap-1.5"
+                  title="Cégadatok automatikus kitöltése a NAV-ból"
+                >
+                  {isNavLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  ) : (
+                    <Search className="h-4 w-4 text-primary" />
+                  )}
+                  <span>NAV lekérdezés</span>
+                </Button>
+              )}
             </div>
-            <p className="text-[11px] text-muted-foreground">
-              Írd be az adószámot és kattints a lekérdezésre a név és székhely automatikus betöltéséhez!
-            </p>
+            {jurisdiction.hasNavIntegration && (
+              <p className="text-[11px] text-muted-foreground">
+                Írd be az adószámot és kattints a lekérdezésre a név és székhely automatikus betöltéséhez!
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -1041,6 +1064,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
   // Get finish button text based on NAV state
   const getFinishButtonText = () => {
     if (isCreating) return 'Mentés...';
+    if (companyCountryCode === 'HR') return 'Befejezés';
     if (navValidationStatus === 'valid') return 'Befejezés';
     return 'Kihagyás / Befejezés';
   };
@@ -1215,7 +1239,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
           ) : (
             /* Onboarding stepper */
             <div className="p-6">
-              <StepIndicator currentStep={currentStep} />
+              <StepIndicator currentStep={currentStep} maxSteps={maxSteps} />
               <div className="mt-2">
                 {currentStep === 1 && renderStep1()}
                 {currentStep === 2 && renderStep2()}
@@ -1233,7 +1257,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
                   </Button>
 
 
-                  {currentStep < 4 ? (
+                  {currentStep < maxSteps ? (
                     <Button
                       onClick={() => setCurrentStep(currentStep + 1)}
                       disabled={isNextDisabled()}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { PreviewTable, exportCSV, exportPDF } from './reports/ReportHelpers';
 import { Calendar, FileText, PieChart, TrendingUp, Users, FileWarning } from 'lucide-react';
 import { PageHeader } from '@/components/ui/page-header';
@@ -37,6 +38,9 @@ const reportTypes: ReportTypeConfig[] = [
 
 export default function ReportsPage() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
+  const { t } = useTranslation('accounty');
   const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedType, setSelectedType] = useState<ReportType>('havi');
@@ -79,7 +83,7 @@ export default function ReportsPage() {
 
   const openModal = (type: ReportType) => {
     if (type === 'hianyzo') {
-      navigate('/eaisybooks/reports/missing-invoices');
+      navigate(`${prefix}/eaisybooks/reports/missing-invoices`);
       return;
     }
     setSelectedType(type);
@@ -276,8 +280,8 @@ ThinkAI`;
     <div className="w-full space-y-8 page-animate relative">
       {/* Header */}
       <PageHeader
-        title="Riportok"
-        description="Átfogó riportok és kimutatások"
+        title={t('reports.title', 'Riportok')}
+        description={t('reports.description', 'Átfogó riportok és kimutatások')}
       />
 
       {/* Report Types Grid */}

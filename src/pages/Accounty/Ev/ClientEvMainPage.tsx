@@ -1,6 +1,6 @@
 import { useDateRange } from '@/contexts/DateRangeContext';
 import React, { useState, useMemo } from 'react';
-import { Link, useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   Receipt, ArrowLeft, BookOpen, Calculator, FileText,
   TrendingUp, AlertTriangle, Calendar, Settings, ChevronRight,
@@ -42,12 +42,53 @@ const ORG_TYPE_LABELS: Record<string, string> = {
   mrp: 'MRP szervezet',
   egyeb: 'Egyéb szervezet',
 };
+const FORM_LABELS_HR: Record<string, string> = {
+  atalany: 'Paušalni porez',
+  vszja: 'Dohodak',
+  kata: 'KATA',
+};
+
+const EMPLOYMENT_LABELS_HR: Record<string, string> = {
+  foallasu: 'Puno radno vrijeme',
+  mellekallasu: 'Nepuno radno vrijeme',
+  kiegeszito: 'Dopunska djelatnost',
+};
+
+const VAT_LABELS_HR: Record<string, string> = {
+  alanyi_mentes: 'Izvan sustava PDV-a',
+  afas: 'U sustavu PDV-a',
+  penzforgalmi: 'Prema naplaćenim naknadama',
+};
+
+const ORG_TYPE_LABELS_HR: Record<string, string> = {
+  egyesulet: 'Udruga',
+  alapitvany: 'Zaklada',
+  egyhaz: 'Vjerska zajednica',
+  tarsashaz: 'Stambena zgrada',
+  lakasszov: 'Stambena zadruga',
+  mrp: 'ESOP organizacija',
+  egyeb: 'Ostale organizacije',
+};
+
+function formatEvAmount(amount: number, isHr: boolean): string {
+  if (isHr) {
+    if (Math.abs(amount) >= 1_000_000) {
+      return `${(amount / 1_000_000).toFixed(1)} M €`;
+    }
+    return new Intl.NumberFormat('hr-HR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount) + ' €';
+  }
+  return formatMillionHuf(amount);
+}
+
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function ClientEvMainPage() {
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
+  const isHr = pathname.startsWith('/hr');
   const id = companyId;
   const { data: client, isLoading: clientLoading } = useAccountyClient(id);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -77,103 +118,103 @@ export default function ClientEvMainPage() {
   // Navigation sections
   const sections = useMemo(() => [
     {
-      title: 'Törzsadatok & életciklus',
-      description: 'Alapadatok, beállítások, tevékenység-történet',
+      title: isHr ? 'Matični podaci i životni ciklus' : 'Törzsadatok & életciklus',
+      description: isHr ? 'Osnovni podaci, postavke, povijest aktivnosti' : 'Alapadatok, beállítások, tevékenység-történet',
       icon: Settings,
       color: 'indigo',
       items: [
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/master-data?year=${taxYear}`, label: 'Törzsadatok', icon: ClipboardList },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/lifecycle?year=${taxYear}`, label: 'Életciklus', icon: Calendar },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/setup?year=${taxYear}`, label: 'Beállítás varázsló', icon: Settings },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/master-data?year=${taxYear}`, label: isHr ? 'Matični podaci' : 'Törzsadatok', icon: ClipboardList },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/lifecycle?year=${taxYear}`, label: isHr ? 'Životni ciklus' : 'Életciklus', icon: Calendar },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/setup?year=${taxYear}`, label: isHr ? 'Čarobnjak za postavke' : 'Beállítás varázsló', icon: Settings },
       ],
     },
     {
-      title: 'Adózási forma & kalkulátorok',
-      description: 'Adóalap számítás, forma-választó, összehasonlítás',
+      title: isHr ? 'Porezni oblik i kalkulatori' : 'Adózási forma & kalkulátorok',
+      description: isHr ? 'Izračun porezne osnovice, odabir oblika, usporedba' : 'Adóalap számítás, forma-választó, összehasonlítás',
       icon: Calculator,
       color: 'indigo',
       items: [
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/flat-rate?year=${taxYear}`, label: 'Átalányadó kalkulátor', icon: PiggyBank },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/entrepreneurial/base?year=${taxYear}`, label: 'Vállalkozói SZJA – adóalap', icon: TrendingUp },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/entrepreneurial/dividend?year=${taxYear}`, label: 'Vállalkozói SZJA – osztalékalap', icon: Wallet },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/kata?year=${taxYear}`, label: 'KATA kisadózó', icon: Shield },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/depreciation?year=${taxYear}`, label: 'Értékcsökkenési leírás (ÉCS)', icon: BarChart3 },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/thresholds?year=${taxYear}`, label: 'Értékhatár-figyelő (Keretfigyelő)', icon: AlertTriangle },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/compare?year=${taxYear}`, label: 'Adóforma-összehasonlítás', icon: Scale },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/flat-rate?year=${taxYear}`, label: isHr ? 'Kalkulator paušalnog poreza' : 'Átalányadó kalkulátor', icon: PiggyBank },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/entrepreneurial/base?year=${taxYear}`, label: isHr ? 'Porez na dohodak – osnovica' : 'Vállalkozói SZJA – adóalap', icon: TrendingUp },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/entrepreneurial/dividend?year=${taxYear}`, label: isHr ? 'Porez na dohodak – udio u dobiti' : 'Vállalkozói SZJA – osztalékalap', icon: Wallet },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/kata?year=${taxYear}`, label: isHr ? 'KATA paušalist' : 'KATA kisadózó', icon: Shield },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/depreciation?year=${taxYear}`, label: isHr ? 'Amortizacija (DI)' : 'Értékcsökkenési leírás (ÉCS)', icon: BarChart3 },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/thresholds?year=${taxYear}`, label: isHr ? 'Praćenje pragova (Limit)' : 'Értékhatár-figyelő (Keretfigyelő)', icon: AlertTriangle },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/compare?year=${taxYear}`, label: isHr ? 'Usporedba poreznih oblika' : 'Adóforma-összehasonlítás', icon: Scale },
       ],
     },
     {
-      title: 'Pénztárkönyv',
-      description: 'Szja tv. 5. sz. melléklet szerinti könyvvezetés',
+      title: isHr ? 'Knjiga primitaka i izdataka (KPI)' : 'Pénztárkönyv',
+      description: isHr ? 'Vođenje evidencije prema propisima' : 'Szja tv. 5. sz. melléklet szerinti könyvvezetés',
       icon: BookOpen,
       color: 'violet',
       items: [
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/cashbook?year=${taxYear}`, label: 'Pénztárkönyv', icon: BookOpen },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/cashbook/ledger?year=${taxYear}`, label: 'Főkönyvi nézet', icon: BarChart3 },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/cashbook/close?year=${taxYear}`, label: 'Időszaki zárás', icon: ClipboardList },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/cashbook?year=${taxYear}`, label: isHr ? 'Knjiga primitaka i izdataka' : 'Pénztárkönyv', icon: BookOpen },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/cashbook/ledger?year=${taxYear}`, label: isHr ? 'Glavna knjiga' : 'Főkönyvi nézet', icon: BarChart3 },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/cashbook/close?year=${taxYear}`, label: isHr ? 'Periodično zatvaranje' : 'Időszaki zárás', icon: ClipboardList },
       ],
     },
     {
-      title: 'Részletező nyilvántartások',
-      description: 'Szja tv. 5. sz. melléklet II. rész',
+      title: isHr ? 'Pomoćne evidencije' : 'Részletező nyilvántartások',
+      description: isHr ? 'Evidencija tražbina i obveza' : 'Szja tv. 5. sz. melléklet II. rész',
       icon: FileText,
       color: 'teal',
       items: [
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/records?year=${taxYear}`, label: 'Nyilvántartások áttekintő', icon: FileText },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/records/receivables?year=${taxYear}`, label: 'Vevői követelések', icon: Users },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/records/payables?year=${taxYear}`, label: 'Szállítói tartozások', icon: Package },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/records/fixed-assets?year=${taxYear}`, label: 'Tárgyi eszközök', icon: Landmark },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/records/vehicle-log?year=${taxYear}`, label: 'Útnyilvántartás', icon: Car },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/records?year=${taxYear}`, label: isHr ? 'Pregled evidencija' : 'Nyilvántartások áttekintő', icon: FileText },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/records/receivables?year=${taxYear}`, label: isHr ? 'Potraživanja od kupaca' : 'Vevői követelések', icon: Users },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/records/payables?year=${taxYear}`, label: isHr ? 'Obveze prema dobavljačima' : 'Szállítói tartozások', icon: Package },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/records/fixed-assets?year=${taxYear}`, label: isHr ? 'Dugotrajna imovina' : 'Tárgyi eszközök', icon: Landmark },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/records/vehicle-log?year=${taxYear}`, label: isHr ? 'Evidencija o korištenju vozila (Loko)' : 'Útnyilvántartás', icon: Car },
       ],
     },
     {
-      title: 'Közteher-modul',
-      description: 'Járulékok, HIPA, ÁFA, kamarai hozzájárulás, cégautóadó',
+      title: isHr ? 'Javna davanja i doprinosi' : 'Közteher-modul',
+      description: isHr ? 'Doprinosi, komorski doprinos, porez na tvrtku, PDV' : 'Járulékok, HIPA, ÁFA, kamarai hozzájárulás, cégautóadó',
       icon: Landmark,
       color: 'rose',
       items: [
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/contributions?year=${taxYear}`, label: 'TB-járulék & szocho', icon: Calculator },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/hipa?year=${taxYear}`, label: 'Helyi iparűzési adó', icon: Landmark },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/vat?year=${taxYear}`, label: 'ÁFA kezelés', icon: Receipt },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/chamber?year=${taxYear}`, label: 'Kamarai hozzájárulás', icon: Shield },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/car-tax?year=${taxYear}`, label: 'Cégautóadó', icon: Car },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/innovation?year=${taxYear}`, label: 'Innovációs járulék', icon: TrendingUp },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/contributions?year=${taxYear}`, label: isHr ? 'MIO i zdravstveni doprinosi' : 'TB-járulék & szocho', icon: Calculator },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/hipa?year=${taxYear}`, label: isHr ? 'Lokalni porez na poslovanje' : 'Helyi iparűzési adó', icon: Landmark },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/vat?year=${taxYear}`, label: isHr ? 'Upravljanje PDV-om' : 'ÁFA kezelés', icon: Receipt },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/chamber?year=${taxYear}`, label: isHr ? 'Komorski doprinos' : 'Kamarai hozzájárulás', icon: Shield },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/car-tax?year=${taxYear}`, label: isHr ? 'Porez na cestovna motorna vozila' : 'Cégautóadó', icon: Car },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/innovation?year=${taxYear}`, label: isHr ? 'Naknada za općekorisne funkcije šuma' : 'Innovációs járulék', icon: TrendingUp },
       ],
     },
     {
-      title: 'Bevallások & Riportok',
-      description: 'SZJA, járulék, KATA, HIPA, ÁFA/cégautó bevallások',
+      title: isHr ? 'Prijave i izvještaji' : 'Bevallások & Riportok',
+      description: isHr ? 'Godišnja prijava, JOPPD, PDV obrasci' : 'SZJA, járulék, KATA, HIPA, ÁFA/cégautó bevallások',
       icon: ClipboardList,
       color: 'cyan',
       items: [
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/returns?year=${taxYear}`, label: 'SZJA bevallás (25SZJA)', icon: FileText },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/returns/contrib?year=${taxYear}`, label: 'Járulékbevallás (2658)', icon: Calculator },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/returns/kata?year=${taxYear}`, label: 'KATA bevallás', icon: Shield },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/returns/hipa?year=${taxYear}`, label: 'HIPA bevallás', icon: Landmark },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/returns/vat-car?year=${taxYear}`, label: 'ÁFA / cégautóadó bevallás', icon: Car },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/income-report?year=${taxYear}`, label: 'Jövedelem-kimutatás', icon: TrendingUp },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/optimization?year=${taxYear}`, label: 'Adóoptimalizálás', icon: BarChart3 },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/returns?year=${taxYear}`, label: isHr ? 'Godišnja prijava poreza (DOH)' : 'SZJA bevallás (25SZJA)', icon: FileText },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/returns/contrib?year=${taxYear}`, label: isHr ? 'Obrazac JOPPD' : 'Járulékbevallás (2658)', icon: Calculator },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/returns/kata?year=${taxYear}`, label: isHr ? 'KATA prijava' : 'KATA bevallás', icon: Shield },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/returns/hipa?year=${taxYear}`, label: isHr ? 'Prijava lokalnog poreza' : 'HIPA bevallás', icon: Landmark },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/returns/vat-car?year=${taxYear}`, label: isHr ? 'PDV / Prijava motornih vozila' : 'ÁFA / cégautóadó bevallás', icon: Car },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/income-report?year=${taxYear}`, label: isHr ? 'Izvještaj o dohotku' : 'Jövedelem-kimutatás', icon: TrendingUp },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/optimization?year=${taxYear}`, label: isHr ? 'Porezna optimizacija' : 'Adóoptimalizálás', icon: BarChart3 },
       ],
     },
     {
-      title: 'Szervezeti nyilvántartás',
-      description: 'Civil szervezet, társasház, egyszeres könyvvitel mód',
+      title: isHr ? 'Evidencija organizacija' : 'Szervezeti nyilvántartás',
+      description: isHr ? 'Udruge, stambene zgrade, jednostavno knjigovodstvo' : 'Civil szervezet, társasház, egyszeres könyvvitel mód',
       icon: Users,
       color: 'indigo',
       items: [
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/org/bookkeeping?year=${taxYear}`, label: 'Könyvvezetés mód', icon: BookOpen },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/org/civil?year=${taxYear}`, label: 'Civil szervezet', icon: Users },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/org/condominium?year=${taxYear}`, label: 'Társasház', icon: Landmark },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/org/other?year=${taxYear}`, label: 'Egyéb szervezet', icon: Package },
-        { to: `/eaisybooks/${companyId}/${dateRange}/ev/org/simplified-report?year=${taxYear}`, label: 'Egyszerűsített beszámoló', icon: FileText },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/org/bookkeeping?year=${taxYear}`, label: isHr ? 'Način vođenja knjiga' : 'Könyvvezetés mód', icon: BookOpen },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/org/civil?year=${taxYear}`, label: isHr ? 'Udruga' : 'Civil szervezet', icon: Users },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/org/condominium?year=${taxYear}`, label: isHr ? 'Stambena zgrada' : 'Társasház', icon: Landmark },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/org/other?year=${taxYear}`, label: isHr ? 'Ostale organizacije' : 'Egyéb szervezet', icon: Package },
+        { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/org/simplified-report?year=${taxYear}`, label: isHr ? 'Pojednostavljeni izvještaj' : 'Egyszerűsített beszámoló', icon: FileText },
       ],
     },
-  ], [id, taxYear]);
+  ], [id, taxYear, isHr, prefix, companyId, dateRange]);
 
   const visibleSections = useMemo(() => {
     const isOrg = !!evSettings?.org_type;
     return sections.filter(sec => {
-      if (sec.title === 'Szervezeti nyilvántartás') {
+      if (sec.title === (isHr ? 'Evidencija organizacija' : 'Szervezeti nyilvántartás')) {
         return isOrg;
       }
       return true;
@@ -205,11 +246,11 @@ export default function ClientEvMainPage() {
               if (window.history.state && window.history.state.idx > 0) {
                 navigate(-1);
               } else {
-                navigate('/eaisybooks?tab=ev');
+                navigate(`${prefix}/eaisybooks?tab=ev`);
               }
             }}
             className="flex items-center justify-center w-8 h-8 mt-1.5 rounded-lg border border-border bg-card hover:bg-muted transition-colors shadow-sm shrink-0"
-            title="Vissza"
+            title={isHr ? 'Natrag' : 'Vissza'}
           >
             <ChevronLeft className="w-5 h-5 text-muted-foreground" />
           </button>
@@ -218,29 +259,29 @@ export default function ClientEvMainPage() {
               {clientLoading ? (
                 <div className="h-3.5 w-32 bg-muted rounded animate-pulse" />
               ) : (
-                <span className="text-xs font-semibold text-muted-foreground">{client?.name || 'Ügyfél'}</span>
+                <span className="text-xs font-semibold text-muted-foreground">{client?.name || (isHr ? 'Klijent' : 'Ügyfél')}</span>
               )}
             </div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Egyéni vállalkozás (EV)</h1>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">{isHr ? 'Obrt' : 'Egyéni vállalkozás (EV)'}</h1>
             <div className="flex items-center gap-3 mt-0.5 flex-wrap">
               <span className="text-xs text-muted-foreground font-mono">{client?.taxNumber || ''}</span>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary">
-                {FORM_LABELS[taxpayerForm] || taxpayerForm}
+                {isHr ? (FORM_LABELS_HR[taxpayerForm] || taxpayerForm) : (FORM_LABELS[taxpayerForm] || taxpayerForm)}
               </span>
-              <span className="text-xs text-muted-foreground">{EMPLOYMENT_LABELS[employmentStatus] || employmentStatus}</span>
+              <span className="text-xs text-muted-foreground">{isHr ? (EMPLOYMENT_LABELS_HR[employmentStatus] || employmentStatus) : (EMPLOYMENT_LABELS[employmentStatus] || employmentStatus)}</span>
               <span className="text-xs text-muted-foreground">•</span>
-              <span className="text-xs text-muted-foreground">{VAT_LABELS[vatStatus] || vatStatus}</span>
+              <span className="text-xs text-muted-foreground">{isHr ? (VAT_LABELS_HR[vatStatus] || vatStatus) : (VAT_LABELS[vatStatus] || vatStatus)}</span>
               {evSettings?.org_type && (
                 <>
                   <span className="text-xs text-muted-foreground">•</span>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600">
-                    {ORG_TYPE_LABELS[evSettings.org_type] || evSettings.org_type}
+                    {isHr ? (ORG_TYPE_LABELS_HR[evSettings.org_type] || evSettings.org_type) : (ORG_TYPE_LABELS[evSettings.org_type] || evSettings.org_type)}
                   </span>
                 </>
               )}
               {evSettings?.bookkeeping_mode && (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 dark:bg-sky-900/30 text-sky-600">
-                  {evSettings.bookkeeping_mode === 'egyszeres' ? 'Egyszeres' : 'Kettős'}
+                  {evSettings.bookkeeping_mode === 'egyszeres' ? (isHr ? 'Jednostavno' : 'Egyszeres') : (isHr ? 'Dvojno' : 'Kettős')}
                 </span>
               )}
             </div>
@@ -252,14 +293,14 @@ export default function ClientEvMainPage() {
             onChange={(e) => ((y) => { setDateFrom(new Date(y, 0, 1)); setDateTo(new Date(y, 11, 31)); })(Number(e.target.value))}
             className="text-sm border border-border rounded-lg px-3 py-1.5 bg-card text-foreground"
           >
-            <option value={2026}>2026. adóév</option>
-            <option value={2025}>2025. adóév</option>
+            <option value={2026}>{isHr ? 'Porezna godina 2026.' : '2026. adóév'}</option>
+            <option value={2025}>{isHr ? 'Porezna godina 2025.' : '2025. adóév'}</option>
           </select>
           <Link
-            to={`/eaisybooks/${companyId}/${dateRange}/ev/setup`}
+            to={`${prefix}/eaisybooks/${companyId}/${dateRange}/ev/setup`}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
           >
-            <Settings className="w-3.5 h-3.5" /> Beállítások
+            <Settings className="w-3.5 h-3.5" /> {isHr ? 'Postavke' : 'Beállítások'}
           </Link>
         </div>
       </div>
@@ -267,25 +308,25 @@ export default function ClientEvMainPage() {
       {/* YTD Summary */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
-          <p className="text-xs text-muted-foreground mb-1">Bevétel (YTD)</p>
-          <p className="text-xl font-bold text-foreground">{totalsLoading ? '...' : formatMillionHuf(ytdRevenue)}</p>
+          <p className="text-xs text-muted-foreground mb-1">{isHr ? 'Prihod (YTD)' : 'Bevétel (YTD)'}</p>
+          <p className="text-xl font-bold text-foreground">{totalsLoading ? '...' : formatEvAmount(ytdRevenue, isHr)}</p>
         </div>
         <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
-          <p className="text-xs text-muted-foreground mb-1">Kiadások</p>
-          <p className="text-xl font-bold text-red-500">{totalsLoading ? '...' : formatMillionHuf(ytdExpenses)}</p>
+          <p className="text-xs text-muted-foreground mb-1">{isHr ? 'Rashodi' : 'Kiadások'}</p>
+          <p className="text-xl font-bold text-red-500">{totalsLoading ? '...' : formatEvAmount(ytdExpenses, isHr)}</p>
         </div>
         <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
-          <p className="text-xs text-muted-foreground mb-1">Jövedelem</p>
-          <p className="text-xl font-bold text-green-600">{totalsLoading ? '...' : formatMillionHuf(ytdIncome)}</p>
+          <p className="text-xs text-muted-foreground mb-1">{isHr ? 'Dohodak' : 'Jövedelem'}</p>
+          <p className="text-xl font-bold text-green-600">{totalsLoading ? '...' : formatEvAmount(ytdIncome, isHr)}</p>
         </div>
         <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
-          <p className="text-xs text-muted-foreground mb-1">Egyenleg</p>
+          <p className="text-xs text-muted-foreground mb-1">{isHr ? 'Saldo' : 'Egyenleg'}</p>
           <p className={cn('text-xl font-bold', (cashbookTotals?.balance || 0) >= 0 ? 'text-primary' : 'text-red-600')}>
-            {cashbookLoading ? '...' : formatMillionHuf(cashbookTotals?.balance || 0)}
+            {cashbookLoading ? '...' : formatEvAmount(cashbookTotals?.balance || 0, isHr)}
           </p>
         </div>
         <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
-          <p className="text-xs text-muted-foreground mb-1">Tételek</p>
+          <p className="text-xs text-muted-foreground mb-1">{isHr ? 'Broj stavki' : 'Tételek'}</p>
           <p className="text-xl font-bold text-violet-600">{totalsLoading ? '...' : (realTotals?.itemCount || 0)}</p>
         </div>
       </div>
@@ -295,7 +336,7 @@ export default function ClientEvMainPage() {
         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
             <AlertTriangle className="w-4 h-4 text-amber-600" />
-            <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">Értékhatár-figyelmeztetés</p>
+            <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">{isHr ? 'Upozorenje o limitu' : 'Értékhatár-figyelmeztetés'}</p>
           </div>
           <div className="space-y-2">
             {thresholds.filter(t => t.status !== 'green').map(t => (

@@ -33,6 +33,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { cn } from '@/lib/utils';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
 import { GlDateBasis, GlPostingStatus, GlSearchResult } from '@/lib/glData';
 import { useTranslation } from 'react-i18next';
 
@@ -44,6 +45,7 @@ import { CreditCard, UserCheck, ShieldAlert } from 'lucide-react';
 export default function GeneralLedgerPage() {
   const { t } = useTranslation(['accounting', 'common']);
   const { selectedCompany } = useCompany();
+  const { isCroatia, defaultCurrency } = useCompanyJurisdiction();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -254,7 +256,7 @@ export default function GeneralLedgerPage() {
 
   const renderViewLayoutToggle = () => (
     <div className="inline-flex h-8 items-center rounded-lg border border-border/80 bg-background/80 p-0.5 shadow-2xs text-xs select-none shrink-0">
-      <CustomTooltip content="Összesítő nézet (Egyenleg + Forgalom T/K)" side="bottom">
+      <CustomTooltip content={t('accounting:general_ledger.tooltips.view_summary', 'Összesítő nézet (Egyenleg + Forgalom T/K)')} side="bottom">
         <button
           type="button"
           onClick={() => setViewLayout('summary')}
@@ -266,10 +268,10 @@ export default function GeneralLedgerPage() {
           )}
         >
           <LayoutGrid className="w-3.5 h-3.5 shrink-0" />
-          <span>Összesítő</span>
+          <span>{t('accounting:general_ledger.view_summary', 'Összesítő')}</span>
         </button>
       </CustomTooltip>
-      <CustomTooltip content="Klasszikus 4 oszlopos főkönyvi kivonat (Forgalom T/K, Egyenleg T/K)" side="bottom">
+      <CustomTooltip content={t('accounting:general_ledger.tooltips.view_classic', 'Klasszikus 4 oszlopos főkönyvi kivonat (Forgalom T/K, Egyenleg T/K)')} side="bottom">
         <button
           type="button"
           onClick={() => setViewLayout('classic')}
@@ -281,7 +283,7 @@ export default function GeneralLedgerPage() {
           )}
         >
           <Columns className="w-3.5 h-3.5 shrink-0" />
-          <span>Klasszikus</span>
+          <span>{t('accounting:general_ledger.view_classic', 'Klasszikus')}</span>
         </button>
       </CustomTooltip>
     </div>
@@ -448,7 +450,7 @@ export default function GeneralLedgerPage() {
     mutationFn: async (presetId: string) => {
       if (!selectedCompany?.id) throw new Error(t('accounting:general_ledger.toasts.company_not_selected', 'Cég nincs kiválasztva.'));
       
-      const isGeneric = presets?.find(p => p.id === presetId)?.type === 'generic';
+      const isGeneric = presets?.find(p => p.id === presetId)?.type === 'generic' || presets?.find(p => p.id === presetId)?.name === 'számla_hr';
       
       // Deactivate all custom presets for this company
       await supabase
@@ -475,11 +477,16 @@ export default function GeneralLedgerPage() {
   });
 
   const getPresetDisplayName = useCallback((preset: { name: string; type?: string }) => {
+    if (preset.name === 'számla_hr') {
+      return isCroatia
+        ? t('accounting:general_ledger.toolbar.builtin_hr_preset', 'Ugrađeni sustavni predložak (számla_hr)')
+        : t('accounting:general_ledger.toolbar.builtin_hr_preset', 'Beépített Horvát Számlatükör (számla_hr)');
+    }
     if (preset.type === 'generic' || preset.name === 'Beépített Rendszerszintű Sablon' || preset.name.toLowerCase().includes('beépített')) {
       return t('accounting:general_ledger.toolbar.builtin_system_preset', 'Beépített Rendszerszintű Sablon');
     }
     return preset.name;
-  }, [t]);
+  }, [t, isCroatia]);
 
   const handleSelectPreset = (val: string) => {
     setActivePresetId(val);
@@ -616,7 +623,7 @@ export default function GeneralLedgerPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {presets?.map(preset => {
-                    const isGeneric = preset.type === 'generic';
+                    const isGeneric = preset.type === 'generic' || preset.name === 'számla_hr';
                     const displayName = getPresetDisplayName(preset);
                     return (
                       <SelectItem key={preset.id} value={preset.id}>
@@ -639,7 +646,7 @@ export default function GeneralLedgerPage() {
             <div className="border-l pl-3 border-border/60 flex items-center gap-2">
               <Button onClick={() => setAddGlAccountOpen(true)} size="sm" variant="outline" className="h-9 gap-2">
                 <Plus className="w-4 h-4" />
-                <span>Új főkönyvi szám</span>
+                <span>{t('accounting:general_ledger.toolbar.add_account', 'Új főkönyvi szám')}</span>
               </Button>
               <Button onClick={handleOpenUpload} size="sm" className="h-9 gap-2">
                 <UploadCloud className="w-4 h-4" />
@@ -707,7 +714,8 @@ export default function GeneralLedgerPage() {
 
       {/* ── KPI Summary Bar (F1) ── */}
       {!isTableLoading && glStats && glStats.accountCount > 0 ? (() => {
-        const fmtHuf = (v: number) => new Intl.NumberFormat('hu-HU').format(Math.round(v));
+        const currencyLabel = defaultCurrency === 'HUF' ? 'Ft' : defaultCurrency;
+        const fmtCurrency = (v: number) => new Intl.NumberFormat(isCroatia ? 'hr-HR' : 'hu-HU').format(Math.round(v));
         return (
           <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 print:hidden">
@@ -728,15 +736,19 @@ export default function GeneralLedgerPage() {
             <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
               <div className="bg-orange-500/10 text-orange-500 p-2 rounded-lg"><Download className="w-4 h-4 rotate-180" /></div>
               <div>
-                <div className="text-lg font-bold tabular-nums">{fmtHuf(glStats.totalDebit)}</div>
-                <div className="text-[11px] text-muted-foreground">{t('accounting:general_ledger.kpi.debit', 'Tartozik (Ft)')}</div>
+                <div className="text-lg font-bold tabular-nums">{fmtCurrency(glStats.totalDebit)}</div>
+                <div className="text-[11px] text-muted-foreground">
+                  {t('accounting:general_ledger.kpi.debit', { currency: currencyLabel, defaultValue: `Tartozik (${currencyLabel})` })}
+                </div>
               </div>
             </div>
             <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
               <div className="bg-sky-500/10 text-sky-500 p-2 rounded-lg"><Download className="w-4 h-4" /></div>
               <div>
-                <div className="text-lg font-bold tabular-nums">{fmtHuf(glStats.totalCredit)}</div>
-                <div className="text-[11px] text-muted-foreground">{t('accounting:general_ledger.kpi.credit', 'Követel (Ft)')}</div>
+                <div className="text-lg font-bold tabular-nums">{fmtCurrency(glStats.totalCredit)}</div>
+                <div className="text-[11px] text-muted-foreground">
+                  {t('accounting:general_ledger.kpi.credit', { currency: currencyLabel, defaultValue: `Követel (${currencyLabel})` })}
+                </div>
               </div>
             </div>
           </div>
@@ -868,21 +880,29 @@ export default function GeneralLedgerPage() {
               <div className="flex items-center gap-3.5 flex-wrap">
                 <div className="flex items-center gap-1.5 text-muted-foreground font-medium text-xs mr-0.5">
                   <Filter className="w-3.5 h-3.5 text-primary" />
-                  <span className="font-semibold text-foreground/85">Szűrők:</span>
+                  <span className="font-semibold text-foreground/85">
+                    {t('accounting:general_ledger.filters_label', 'Szűrők:')}
+                  </span>
                 </div>
                 {/* Dátum alap kapcsoló */}
                 <div className="flex items-center gap-1.5">
-                  <span className="text-muted-foreground/80 text-[11px] font-medium">Dátum:</span>
+                  <span className="text-muted-foreground/80 text-[11px] font-medium">
+                    {t('accounting:general_ledger.date_label', 'Dátum:')}
+                  </span>
                   {renderDateBasisToggle()}
                 </div>
                 {/* Státusz szűrő kapcsoló */}
                 <div className="flex items-center gap-1.5">
-                  <span className="text-muted-foreground/80 text-[11px] font-medium">Bizonylatok:</span>
+                  <span className="text-muted-foreground/80 text-[11px] font-medium">
+                    {t('accounting:general_ledger.documents_label', 'Bizonylatok:')}
+                  </span>
                   {renderPostingStatusToggle()}
                 </div>
                 {/* Nullás sorok kapcsoló */}
                 <div className="flex items-center gap-1.5">
-                  <span className="text-muted-foreground/80 text-[11px] font-medium">Egyenleg:</span>
+                  <span className="text-muted-foreground/80 text-[11px] font-medium">
+                    {t('accounting:general_ledger.balance_label', 'Egyenleg:')}
+                  </span>
                   {renderHideZeroToggle()}
                 </div>
               </div>

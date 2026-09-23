@@ -52,6 +52,7 @@ const CompanySelector = () => {
   
   // Create dialog state
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [newCompanyCountry, setNewCompanyCountry] = useState<'HU' | 'HR'>('HU');
   const [newCompanyName, setNewCompanyName] = useState('');
   const [newCompanyTaxNumber, setNewCompanyTaxNumber] = useState('');
   const [newCompanyAddress, setNewCompanyAddress] = useState('');
@@ -120,6 +121,7 @@ const CompanySelector = () => {
   // Edit dialog state
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+  const [editCountry, setEditCountry] = useState<'HU' | 'HR'>('HU');
   const [editName, setEditName] = useState('');
   const [editTaxNumber, setEditTaxNumber] = useState('');
   const [editAddress, setEditAddress] = useState('');
@@ -167,6 +169,7 @@ const CompanySelector = () => {
           owner_id: user.id,
           vat_regime: newCompanyVatRegime,
           vat_regime_effective_from: `${new Date().getFullYear()}-01-01`,
+          country_code: newCompanyCountry,
         });
 
       if (error) throw error;
@@ -180,6 +183,7 @@ const CompanySelector = () => {
       setNewCompanyTaxNumber('');
       setNewCompanyAddress('');
       setNewCompanyVatRegime('normal');
+      setNewCompanyCountry('HU');
       setIsCreateDialogOpen(false);
       toast({ title: 'Cég sikeresen létrehozva!' });
     } catch (error: any) {
@@ -249,6 +253,7 @@ const CompanySelector = () => {
     setEditName(company.name);
     setEditTaxNumber(company.tax_number || '');
     setEditAddress(company.address || '');
+    setEditCountry((company.country_code as 'HU' | 'HR') || 'HU');
     setIsEditDialogOpen(true);
   };
 
@@ -267,6 +272,7 @@ const CompanySelector = () => {
           name: editName.trim(),
           tax_number: editTaxNumber.trim() || null,
           address: editAddress.trim() || null,
+          country_code: editCountry,
         })
         .eq('id', editingCompany.id);
 
@@ -279,6 +285,7 @@ const CompanySelector = () => {
           name: editName.trim(),
           tax_number: editTaxNumber.trim() || null,
           address: editAddress.trim() || null,
+          country_code: editCountry,
         });
       }
       
@@ -373,15 +380,23 @@ const CompanySelector = () => {
           value={effectiveCompany?.id || ''}
           onValueChange={handleCompanyChange}
         >
-          <SelectTrigger className="min-w-[140px] max-w-[220px] h-9 [&>span]:text-left [&>span]:flex-1">
+          <SelectTrigger className="min-w-[140px] max-w-[240px] h-9 [&>span]:text-left [&>span]:flex-1">
             <SelectValue placeholder={t('common:company_selector.choose_company')}>
-              {effectiveCompany?.name}
+              {effectiveCompany && (
+                <span className="flex items-center gap-1.5 truncate">
+                  <span className="text-sm shrink-0">{effectiveCompany.country_code === 'HR' ? '🇭🇷' : '🇭🇺'}</span>
+                  <span className="truncate">{effectiveCompany.name}</span>
+                </span>
+              )}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {companies.map((company) => (
               <SelectItem key={company.id} value={company.id}>
-                {company.name}
+                <span className="flex items-center gap-1.5">
+                  <span className="text-sm shrink-0">{company.country_code === 'HR' ? '🇭🇷' : '🇭🇺'}</span>
+                  <span>{company.name}</span>
+                </span>
               </SelectItem>
             ))}
           </SelectContent>
@@ -419,33 +434,51 @@ const CompanySelector = () => {
             </TabsList>
             <TabsContent value="create" className="space-y-4 pt-4">
               <div className="space-y-2">
-                <Label htmlFor="newTaxNumber">{t('common:company_selector.tax_label')}</Label>
+                <Label htmlFor="newCompanyCountry">Ország / Joghatóság</Label>
+                <Select value={newCompanyCountry} onValueChange={(v: 'HU' | 'HR') => setNewCompanyCountry(v)}>
+                  <SelectTrigger id="newCompanyCountry">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="HU">🇭🇺 Magyarország (NAV Online Számla)</SelectItem>
+                    <SelectItem value="HR">🇭🇷 Hrvatska / Horvátország (OIB, PDV)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="newTaxNumber">
+                  {newCompanyCountry === 'HR' ? 'OIB / Horvát adószám (11 számjegy)' : t('common:company_selector.tax_label')}
+                </Label>
                 <div className="flex gap-2">
                   <Input 
                     id="newTaxNumber" 
                     value={newCompanyTaxNumber} 
                     onChange={(e) => setNewCompanyTaxNumber(e.target.value)} 
-                    placeholder="Pl. 12345678-2-42 vagy 12345678" 
+                    placeholder={newCompanyCountry === 'HR' ? 'Pl. 95114485977' : 'Pl. 12345678-2-42 vagy 12345678'} 
                     className="flex-1"
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleNavLookup}
-                    disabled={isNavLoading || !newCompanyTaxNumber.trim()}
-                    className="shrink-0 gap-1.5"
-                    title="Cégadatok automatikus kitöltése a NAV-ból"
-                  >
-                    {isNavLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                    ) : (
-                      <Search className="h-4 w-4 text-primary" />
-                    )}
-                    <span>NAV lekérdezés</span>
-                  </Button>
+                  {newCompanyCountry === 'HU' && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleNavLookup}
+                      disabled={isNavLoading || !newCompanyTaxNumber.trim()}
+                      className="shrink-0 gap-1.5"
+                      title="Cégadatok automatikus kitöltése a NAV-ból"
+                    >
+                      {isNavLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      ) : (
+                        <Search className="h-4 w-4 text-primary" />
+                      )}
+                      <span>NAV lekérdezés</span>
+                    </Button>
+                  )}
                 </div>
                 <p className="text-[11px] text-muted-foreground">
-                  Írd be az adószámot és kattints a lekérdezésre az adatok automatikus betöltéséhez!
+                  {newCompanyCountry === 'HR'
+                    ? 'Horvát cég esetén add meg a 11 számjegyű hivatalos OIB azonosítót.'
+                    : 'Írd be az adószámot és kattints a lekérdezésre az adatok automatikus betöltéséhez!'}
                 </p>
               </div>
               <div className="space-y-2">
@@ -497,6 +530,18 @@ const CompanySelector = () => {
             <DialogDescription>{t('common:company_selector.edit_desc')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="editCountry">Ország / Joghatóság</Label>
+              <Select value={editCountry} onValueChange={(v: 'HU' | 'HR') => setEditCountry(v)}>
+                <SelectTrigger id="editCountry">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="HU">🇭🇺 Magyarország (NAV Online Számla)</SelectItem>
+                  <SelectItem value="HR">🇭🇷 Hrvatska / Horvátország (OIB, PDV)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="editName">{t('common:company_selector.name_label')}</Label>
               <Input id="editName" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Pl. Példa Kft." />

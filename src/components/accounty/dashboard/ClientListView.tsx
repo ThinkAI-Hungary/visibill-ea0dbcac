@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Building2, MoreVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ClientData } from '@/pages/Accounty/types';
@@ -31,6 +32,9 @@ export default function ClientListView({
   statusFilter,
 }: ClientListViewProps) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { t } = useTranslation('accounty');
+  const prefix = location.pathname.startsWith('/hr') ? '/hr' : '';
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [focusedIndex, setFocusedIndex] = useState(-1);
 
@@ -62,7 +66,7 @@ export default function ClientListView({
           e.preventDefault();
           setFocusedIndex(prev => Math.max(prev - 1, 0));
         } else if (e.key === 'Enter' && focusedIndex >= 0 && focusedIndex < filteredClients.length) {
-          navigate(`/eaisybooks/client/${filteredClients[focusedIndex].id}`);
+          navigate(`${prefix}/eaisybooks/client/${filteredClients[focusedIndex].id}`);
         } else if (e.key === 'Escape') {
           setFocusedIndex(-1);
           clearSelection();
@@ -80,13 +84,13 @@ export default function ClientListView({
                   onCheckedChange={(checked) => checked ? selectAll(filteredClients.map(c => c.id)) : clearSelection()} 
                 />
               </TableHead>
-              <TableHead className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cégnév</TableHead>
-              <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Adószám</TableHead>
-              <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Feldolgozatlan</TableHead>
-              <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Hiányzó</TableHead>
-              <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Határidő</TableHead>
-              <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Felelős</TableHead>
-              <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Státusz</TableHead>
+              <TableHead className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('portfolio.table.col_client', 'Cégnév')}</TableHead>
+              <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('portfolio.table.col_tax_number', 'Adószám')}</TableHead>
+              <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('portfolio.table.col_unprocessed', 'Feldolgozatlan')}</TableHead>
+              <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('portfolio.table.col_missing', 'Hiányzó')}</TableHead>
+              <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('portfolio.table.col_deadline', 'Határidő')}</TableHead>
+              <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('portfolio.table.col_accountant', 'Felelős')}</TableHead>
+              <TableHead className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('portfolio.table.col_status', 'Státusz')}</TableHead>
               <TableHead className="px-6 py-4 w-12 text-center"></TableHead>
             </TableRow>
           </TableHeader>
@@ -95,7 +99,7 @@ export default function ClientListView({
               filteredClients.map((client, idx) => (
                 <TableRow 
                   key={client.id} 
-                  onClick={() => navigate(`/eaisybooks/client/${client.id}`)}
+                  onClick={() => navigate(`${prefix}/eaisybooks/client/${client.id}`)}
                   className={cn(
                     "hover:bg-muted/40 transition-colors group cursor-pointer border-l-2 border-l-transparent hover:border-l-primary",
                     selectedIds.has(client.id) && "bg-primary/5 border-l-primary",
@@ -147,8 +151,8 @@ export default function ClientListView({
             ) : (
               <TableEmptyState 
                 colSpan={9} 
-                title="Nincs találat" 
-                description={`Nincs találat a következőre: "${searchQuery}" ${statusFilter !== 'Minden' ? `és státusz: ${statusFilter}` : ''}`} 
+                title={t('portfolio.empty.no_match', 'Nincs találat')} 
+                description={t('portfolio.empty.search_result', { query: searchQuery, status: statusFilter !== 'Minden' ? t('portfolio.empty.status_suffix', { status: statusFilter }) : '', defaultValue: `Nincs találat a következőre: "${searchQuery}"` })} 
               />
             )}
           </TableBody>
@@ -158,10 +162,10 @@ export default function ClientListView({
       {/* Centralized Floating Bulk Action Bar */}
       <FloatingBulkBar
         count={selectedIds.size}
-        label="Kijelölt ügyfelek:"
-        itemUnit="db"
+        label={t('portfolio.bulk.selected_clients', 'Kijelölt ügyfelek:')}
+        itemUnit={t('portfolio.bulk.unit', 'db')}
         onCancel={clearSelection}
-        cancelLabel="Mégse"
+        cancelLabel={t('dialogs.btn_cancel', 'Mégse')}
         hideSaveButton={true}
       >
         {selectedIds.size < filteredClients.length && (
@@ -172,7 +176,7 @@ export default function ClientListView({
             onClick={() => selectAll(filteredClients.map(c => c.id))}
             className="h-9 text-xs gap-1.5 rounded-lg border-border/80 bg-background/80 hover:bg-muted font-medium shrink-0"
           >
-            Mind kijelölése
+            {t('portfolio.bulk.select_all', 'Mind kijelölése')}
           </Button>
         )}
       </FloatingBulkBar>

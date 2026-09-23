@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -85,6 +85,8 @@ function ConfettiBurst() {
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -505,7 +507,7 @@ export default function OnboardingPage() {
     setShowCelebration(true);
     setTimeout(() => {
       setShowCelebration(false);
-      navigate('/eaisybooks');
+      navigate(`${prefix}/eaisybooks`);
     }, 2000);
   };
 
@@ -815,7 +817,7 @@ export default function OnboardingPage() {
                             variant="outline"
                             className="w-full text-xs h-8"
                           >
-                            <Link to="/eaisybooks/new-client">
+                            <Link to={`${prefix}/eaisybooks/new-client`}>
                               Új ügyfél felvétele
                               <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
                             </Link>

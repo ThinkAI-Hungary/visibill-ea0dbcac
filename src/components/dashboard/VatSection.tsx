@@ -6,6 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ChevronUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils';
+import { getActiveLocale } from '@/lib/locale/formatters';
 import type { NavVatData, VatCategoryData } from '@/hooks/useDashboardData';
 import type { VatRegime } from '@/contexts/CompanyContext';
 
@@ -16,6 +17,7 @@ interface VatSectionProps {
     inboundVatCategories: VatCategoryData[];
     totalOutboundVat: number;
     totalInboundVat: number;
+    baseCurrency?: string;
   } | undefined;
   selectedCurrency: string;
   displayedPeriod: string;
@@ -36,6 +38,9 @@ const VatSection = React.memo(function VatSection({
   vatRegime,
 }: VatSectionProps) {
   const { t } = useTranslation(['dashboard', 'common']);
+  const isHr = getActiveLocale() === 'hr';
+  const baseCurrency = vatBreakdown?.baseCurrency || (isHr ? 'EUR' : 'HUF');
+
   const outboundVatCategories = vatBreakdown?.outboundVatCategories || [];
   const inboundVatCategories = vatBreakdown?.inboundVatCategories || [];
 
@@ -46,33 +51,33 @@ const VatSection = React.memo(function VatSection({
 
   const displayOutboundVat = useMemo(() => {
     if (outboundVatCategories.length > 0) {
-      return convertToSelectedCurrency(outboundTotalVat, 'HUF', selectedCurrency);
+      return convertToSelectedCurrency(outboundTotalVat, baseCurrency, selectedCurrency);
     }
     if (navVatData?.outboundVat) {
       if (typeof navVatData.outboundVat === 'number') {
-        return convertToSelectedCurrency(navVatData.outboundVat, 'HUF', selectedCurrency);
+        return convertToSelectedCurrency(navVatData.outboundVat, baseCurrency, selectedCurrency);
       }
       return Object.entries(navVatData.outboundVat).reduce((total, [currency, amount]) => {
         return total + convertToSelectedCurrency(Number(amount) || 0, currency, selectedCurrency);
       }, 0);
     }
     return 0;
-  }, [outboundVatCategories.length, outboundTotalVat, navVatData?.outboundVat, convertToSelectedCurrency, selectedCurrency]);
+  }, [outboundVatCategories.length, outboundTotalVat, navVatData?.outboundVat, convertToSelectedCurrency, baseCurrency, selectedCurrency]);
 
   const displayInboundVat = useMemo(() => {
     if (inboundVatCategories.length > 0) {
-      return convertToSelectedCurrency(inboundTotalVat, 'HUF', selectedCurrency);
+      return convertToSelectedCurrency(inboundTotalVat, baseCurrency, selectedCurrency);
     }
     if (navVatData?.inboundVat) {
       if (typeof navVatData.inboundVat === 'number') {
-        return convertToSelectedCurrency(navVatData.inboundVat, 'HUF', selectedCurrency);
+        return convertToSelectedCurrency(navVatData.inboundVat, baseCurrency, selectedCurrency);
       }
       return Object.entries(navVatData.inboundVat).reduce((total, [currency, amount]) => {
         return total + convertToSelectedCurrency(Number(amount) || 0, currency, selectedCurrency);
       }, 0);
     }
     return 0;
-  }, [inboundVatCategories.length, inboundTotalVat, navVatData?.inboundVat, convertToSelectedCurrency, selectedCurrency]);
+  }, [inboundVatCategories.length, inboundTotalVat, navVatData?.inboundVat, convertToSelectedCurrency, baseCurrency, selectedCurrency]);
 
   const displayVatPosition = useMemo(() => {
     return displayOutboundVat - displayInboundVat;
@@ -82,14 +87,22 @@ const VatSection = React.memo(function VatSection({
   const isRefundable = displayVatPosition < 0;
 
   const vatBarData = useMemo(() => [
-    { name: t('vat.total_vat', 'Összes ÁFA'), value: displayOutboundVat, color: "#F59E0B" },
-    { name: t('vat.deductible_vat', 'Levonható ÁFA'), value: displayInboundVat, color: "#8B5CF6" },
+    { name: t('vat.total_vat', isHr ? 'Ukupni PDV' : 'Összes ÁFA'), value: displayOutboundVat, color: "#F59E0B" },
+    { name: t('vat.deductible_vat', isHr ? 'Pretporez' : 'Levonható ÁFA'), value: displayInboundVat, color: "#8B5CF6" },
     {
-      name: isRefundable ? t('vat.refundable_vat', 'Visszaigényelhető ÁFA') : t('vat.payable_vat', 'Fizetendő ÁFA'),
+      name: isRefundable 
+        ? t('vat.refundable_vat', isHr ? 'Povrat PDV-a' : 'Visszaigényelhető ÁFA') 
+        : t('vat.payable_vat', isHr ? 'PDV za platiti' : 'Fizetendő ÁFA'),
       value: Math.abs(displayVatPosition),
       color: isRefundable ? "#10B981" : "#A78BFA"
     }
-  ], [displayOutboundVat, displayInboundVat, displayVatPosition, isRefundable, t]);
+  ], [displayOutboundVat, displayInboundVat, displayVatPosition, isRefundable, t, isHr]);
+
+  const formatRateLabel = (rate: string) => {
+    if (rate === 'ÁFA mentes' && isHr) return 'Oslobođeno PDV-a';
+    if (rate === 'Nem részletezett' && isHr) return 'Neraspoređeno';
+    return rate;
+  };
 
   return (
     <Collapsible open={vatSectionOpen} onOpenChange={onVatSectionOpenChange}>
@@ -177,15 +190,15 @@ const VatSection = React.memo(function VatSection({
                           <>
                             {outboundVatCategories.map(cat => (
                               <tr key={cat.rate}>
-                                <td className="py-1">{cat.rate}:</td>
-                                <td className="text-right">{formatCurrency(convertToSelectedCurrency(cat.netAmount, 'HUF', selectedCurrency), selectedCurrency)}</td>
-                                <td className="text-right">{formatCurrency(convertToSelectedCurrency(cat.vatAmount, 'HUF', selectedCurrency), selectedCurrency)}</td>
+                                <td className="py-1">{formatRateLabel(cat.rate)}:</td>
+                                <td className="text-right">{formatCurrency(convertToSelectedCurrency(cat.netAmount, baseCurrency, selectedCurrency), selectedCurrency)}</td>
+                                <td className="text-right">{formatCurrency(convertToSelectedCurrency(cat.vatAmount, baseCurrency, selectedCurrency), selectedCurrency)}</td>
                               </tr>
                             ))}
                             <tr className="font-medium border-t">
                               <td className="py-1">{t('vat.total', 'Összesen:')}</td>
-                              <td className="text-right">{formatCurrency(convertToSelectedCurrency(outboundTotalNet, 'HUF', selectedCurrency), selectedCurrency)}</td>
-                              <td className="text-right">{formatCurrency(convertToSelectedCurrency(outboundTotalVat, 'HUF', selectedCurrency), selectedCurrency)}</td>
+                              <td className="text-right">{formatCurrency(convertToSelectedCurrency(outboundTotalNet, baseCurrency, selectedCurrency), selectedCurrency)}</td>
+                              <td className="text-right">{formatCurrency(convertToSelectedCurrency(outboundTotalVat, baseCurrency, selectedCurrency), selectedCurrency)}</td>
                             </tr>
                           </>
                         ) : (
@@ -218,15 +231,15 @@ const VatSection = React.memo(function VatSection({
                           <>
                             {inboundVatCategories.map(cat => (
                               <tr key={cat.rate}>
-                                <td className="py-1">{cat.rate}:</td>
-                                <td className="text-right">{formatCurrency(convertToSelectedCurrency(cat.netAmount, 'HUF', selectedCurrency), selectedCurrency)}</td>
-                                <td className="text-right">{formatCurrency(convertToSelectedCurrency(cat.vatAmount, 'HUF', selectedCurrency), selectedCurrency)}</td>
+                                <td className="py-1">{formatRateLabel(cat.rate)}:</td>
+                                <td className="text-right">{formatCurrency(convertToSelectedCurrency(cat.netAmount, baseCurrency, selectedCurrency), selectedCurrency)}</td>
+                                <td className="text-right">{formatCurrency(convertToSelectedCurrency(cat.vatAmount, baseCurrency, selectedCurrency), selectedCurrency)}</td>
                               </tr>
                             ))}
                             <tr className="font-medium border-t">
                               <td className="py-1">{t('vat.total', 'Összesen:')}</td>
-                              <td className="text-right">{formatCurrency(convertToSelectedCurrency(inboundTotalNet, 'HUF', selectedCurrency), selectedCurrency)}</td>
-                              <td className="text-right">{formatCurrency(convertToSelectedCurrency(inboundTotalVat, 'HUF', selectedCurrency), selectedCurrency)}</td>
+                              <td className="text-right">{formatCurrency(convertToSelectedCurrency(inboundTotalNet, baseCurrency, selectedCurrency), selectedCurrency)}</td>
+                              <td className="text-right">{formatCurrency(convertToSelectedCurrency(inboundTotalVat, baseCurrency, selectedCurrency), selectedCurrency)}</td>
                             </tr>
                           </>
                         ) : (

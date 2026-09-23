@@ -1,5 +1,6 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   Briefcase, 
   FileWarning, 
@@ -28,6 +29,10 @@ import { Input } from '@/components/ui/input';
 import AccountyCompanySelector from './AccountyCompanySelector';
 
 export default function PortfolioNav() {
+  const { t } = useTranslation('accounty');
+  const location = useLocation();
+  const prefix = location.pathname.startsWith('/hr') ? '/hr' : '';
+
   const {
     isCollapsed,
     handlePrefetch,
@@ -60,29 +65,29 @@ export default function PortfolioNav() {
         <li className="my-1 mx-2 h-px bg-border/50" />
         {[
           // 1. Teendők
-          { path: '/eaisybooks/missing-invoices', name: 'Hiányzó számlák', icon: FileWarning, badge: kpis?.missingItems },
-          { path: '/eaisybooks/approval-queue', name: 'Jóváhagyási sor', icon: MailCheck },
-          { path: '/eaisybooks/alerts', name: 'Riasztások', icon: AlertTriangle },
-          { path: '/eaisybooks/tax-calendar', name: 'Adónaptár & Határidők', icon: Calendar },
+          { path: `${prefix}/eaisybooks/missing-invoices`, name: t('nav.items.missing_invoices', 'Hiányzó számlák'), icon: FileWarning, badge: kpis?.missingItems },
+          { path: `${prefix}/eaisybooks/approval-queue`, name: t('nav.items.approval_queue', 'Jóváhagyási sor'), icon: MailCheck },
+          { path: `${prefix}/eaisybooks/alerts`, name: t('nav.items.alerts', 'Riasztások'), icon: AlertTriangle },
+          { path: `${prefix}/eaisybooks/tax-calendar`, name: t('nav.items.tax_calendar', 'Adónaptár & Határidők'), icon: Calendar },
           { type: 'divider' as const },
           // 2. Portfólió & Szakmai Törzsadatok
-          { path: '/eaisybooks', name: 'Portfólió', icon: Briefcase },
-          { path: '/eaisybooks?tab=payroll', name: 'Bérszámfejtés Ciklusok', icon: Calculator },
-          { path: '/eaisybooks/reports', name: 'Riportok', icon: BarChart2 },
-          { path: '/eaisybooks/onboarding', name: 'Onboarding', icon: Rocket },
-          { path: '/eaisybooks/admin/tax-parameters', name: 'Szakmai Törzsadatok', icon: BookOpen },
+          { path: `${prefix}/eaisybooks`, name: t('nav.items.portfolio', 'Portfólió'), icon: Briefcase },
+          { path: `${prefix}/eaisybooks?tab=payroll`, name: t('nav.items.payroll_cycles', 'Bérszámfejtés Ciklusok'), icon: Calculator },
+          { path: `${prefix}/eaisybooks/reports`, name: t('nav.items.reports', 'Riportok'), icon: BarChart2 },
+          { path: `${prefix}/eaisybooks/onboarding`, name: t('nav.items.onboarding', 'Onboarding'), icon: Rocket },
+          { path: `${prefix}/eaisybooks/admin/tax-parameters`, name: t('nav.items.tax_parameters', 'Szakmai Törzsadatok'), icon: BookOpen },
           { type: 'divider' as const },
           // 3. Segítség
-          { path: '/eaisybooks/ai-assistant', name: 'AI Asszisztens', icon: Bot },
-          { path: '/eaisybooks/tickets', name: 'Hibajegyek', icon: TicketCheck, badge: unreadTicketCount },
-          { path: '/eaisybooks/help', name: 'Segítség', icon: HelpCircle },
+          { path: `${prefix}/eaisybooks/ai-assistant`, name: t('nav.items.ai_assistant', 'AI Asszisztens'), icon: Bot },
+          { path: `${prefix}/eaisybooks/tickets`, name: t('nav.items.tickets', 'Hibajegyek'), icon: TicketCheck, badge: unreadTicketCount },
+          { path: `${prefix}/eaisybooks/help`, name: t('nav.items.help', 'Segítség'), icon: HelpCircle },
           { type: 'divider' as const },
           // 4. Beállítások
-          { path: '/eaisybooks/settings', name: 'Beállítások', icon: Settings },
-          { path: '/eaisybooks/admin/audit', name: 'Audit', icon: ShieldCheck },
+          { path: `${prefix}/eaisybooks/settings`, name: t('nav.items.settings', 'Beállítások'), icon: Settings },
+          { path: `${prefix}/eaisybooks/admin/audit`, name: t('nav.items.audit', 'Audit'), icon: ShieldCheck },
         ].filter(item => {
           if ('type' in item) return true;
-          const cleanPath = (item as any).path.split('?')[0];
+          const cleanPath = (item as any).path.replace(/^\/hr/, '').split('?')[0];
           const module = PATH_TO_MODULE[cleanPath];
           return !module || canAccess(module);
         }).map((item, idx) => {
@@ -129,16 +134,16 @@ export default function PortfolioNav() {
       {/* 1. Csoport: Teendők */}
       <div>
         <div className="px-3 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70">
-          Teendők
+          {t('nav.sections.todos', 'Teendők')}
         </div>
         <ul className="flex w-full min-w-0 flex-col gap-1">
           {[
-            { to: '/eaisybooks/missing-invoices', icon: FileWarning, label: 'Hiányzó számlák', badge: kpis?.missingItems, isDangerBadge: true },
-            { to: '/eaisybooks/approval-queue', icon: MailCheck, label: 'Jóváhagyási sor' },
-            { to: '/eaisybooks/alerts', icon: AlertTriangle, label: 'Riasztások' },
-            { to: '/eaisybooks/tax-calendar', icon: Calendar, label: 'Adónaptár & Határidők' },
+            { to: `${prefix}/eaisybooks/missing-invoices`, icon: FileWarning, label: t('nav.items.missing_invoices', 'Hiányzó számlák'), badge: kpis?.missingItems, isDangerBadge: true },
+            { to: `${prefix}/eaisybooks/approval-queue`, icon: MailCheck, label: t('nav.items.approval_queue', 'Jóváhagyási sor') },
+            { to: `${prefix}/eaisybooks/alerts`, icon: AlertTriangle, label: t('nav.items.alerts', 'Riasztások') },
+            { to: `${prefix}/eaisybooks/tax-calendar`, icon: Calendar, label: t('nav.items.tax_calendar', 'Adónaptár & Határidők') },
           ].filter(item => {
-            const cleanPath = item.to.split('?')[0];
+            const cleanPath = item.to.replace(/^\/hr/, '').split('?')[0];
             const module = PATH_TO_MODULE[cleanPath];
             return !module || canAccess(module);
           }).map(item => {
@@ -174,16 +179,16 @@ export default function PortfolioNav() {
       {/* 2. Csoport: Portfólió */}
       <div className="border-t border-border/50 pt-3">
         <div className="px-3 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70">
-          Portfólió
+          {t('nav.sections.portfolio', 'Portfólió')}
         </div>
         <ul className="flex w-full min-w-0 flex-col gap-1">
           {[
-            { to: '/eaisybooks', icon: Briefcase, label: 'Portfólió', exact: true },
-            { to: '/eaisybooks?tab=payroll', icon: Calculator, label: 'Bérszámfejtés Ciklusok' },
-            { to: '/eaisybooks/reports', icon: BarChart2, label: 'Irodai Riportok' },
-            { to: '/eaisybooks/onboarding', icon: Rocket, label: 'Onboarding' },
+            { to: `${prefix}/eaisybooks`, icon: Briefcase, label: t('nav.items.portfolio', 'Portfólió'), exact: true },
+            { to: `${prefix}/eaisybooks?tab=payroll`, icon: Calculator, label: t('nav.items.payroll_cycles', 'Bérszámfejtés Ciklusok') },
+            { to: `${prefix}/eaisybooks/reports`, icon: BarChart2, label: t('nav.items.reports', 'Irodai Riportok') },
+            { to: `${prefix}/eaisybooks/onboarding`, icon: Rocket, label: t('nav.items.onboarding', 'Onboarding') },
           ].filter(item => {
-            const cleanPath = item.to.split('?')[0];
+            const cleanPath = item.to.replace(/^\/hr/, '').split('?')[0];
             const module = PATH_TO_MODULE[cleanPath];
             return !module || canAccess(module);
           }).map(item => {
@@ -271,15 +276,15 @@ export default function PortfolioNav() {
       {/* 3. Csoport: Segítség */}
       <div className="border-t border-border/50 pt-3">
         <div className="px-3 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70">
-          Segítség
+          {t('nav.sections.help', 'Segítség')}
         </div>
         <ul className="flex w-full min-w-0 flex-col gap-1">
           {[
-            { to: '/eaisybooks/ai-assistant', icon: Bot, label: 'AI Asszisztens', isAi: true },
-            { to: '/eaisybooks/tickets', icon: TicketCheck, label: 'Hibajegyek', badge: unreadTicketCount },
-            { to: '/eaisybooks/help', icon: HelpCircle, label: 'Segítség' },
+            { to: `${prefix}/eaisybooks/ai-assistant`, icon: Bot, label: t('nav.items.ai_assistant', 'AI Asszisztens'), isAi: true },
+            { to: `${prefix}/eaisybooks/tickets`, icon: TicketCheck, label: t('nav.items.tickets', 'Hibajegyek'), badge: unreadTicketCount },
+            { to: `${prefix}/eaisybooks/help`, icon: HelpCircle, label: t('nav.items.help', 'Segítség') },
           ].filter(item => {
-            const cleanPath = item.to.split('?')[0];
+            const cleanPath = item.to.replace(/^\/hr/, '').split('?')[0];
             const module = PATH_TO_MODULE[cleanPath];
             return !module || canAccess(module);
           }).map(item => {
@@ -345,7 +350,7 @@ export default function PortfolioNav() {
               )}
             >
               <Settings className={cn("h-4 w-4 shrink-0 transition-colors", !isOpen && groupHasActive ? "text-primary" : "text-muted-foreground group-hover/trigger:text-primary")} />
-              <span className="flex-1 text-left text-[11px] font-bold uppercase tracking-wider">Beállítások</span>
+              <span className="flex-1 text-left text-[11px] font-bold uppercase tracking-wider">{t('nav.sections.settings', 'Beállítások')}</span>
               <ChevronRight className={cn("h-3.5 w-3.5 transition-transform duration-200", isOpen ? 'rotate-90' : '', !isOpen && groupHasActive ? 'text-primary' : 'text-muted-foreground')} />
               {!isOpen && groupHasActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/5 rounded-r-md bg-primary" />}
             </button>

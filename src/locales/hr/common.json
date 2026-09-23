@@ -235,6 +235,33 @@
     "copied": "Kopirano",
     "failed": "Kopiranje nije uspjelo.",
     "click_to_copy": "Kliknite za kopiranje"
+  },
+  "notifications": {
+    "congratulations": "Čestitamo!",
+    "file_processed_desc": "Sljedeća datoteka je uspješno obrađena: {{fileName}}",
+    "invoice_processed_title": "Račun obrađen!",
+    "invoices_processed_title": "Računi obrađeni!",
+    "vouchers_processed_title": "Blagajnički dokumenti obrađeni!",
+    "salaries_processed_title": "Plaće/doprinosi obrađeni!",
+    "bank_statement_processed_title": "Bankovni izvadak obrađen!",
+    "report_processed_title": "Izvještaj obrađen!",
+    "transactions_processed_title": "Transakcije obrađene!",
+    "multi_invoice_processed_desc": "{{fileName}} — {{count}} računa uspješno obrađeno.",
+    "single_file_processed_desc": "{{fileName}} je uspješno obrađen.",
+    "invoice_processed_desc": "{{fileName}} uspješno obrađen.",
+    "doc_matched_title": "Dokument uparen!",
+    "doc_matched_desc": "{{fileName}} uspješno je uparen s prijevozom.",
+    "doc_recorded_title": "Dokument evidentiran",
+    "doc_recorded_desc": "{{fileName}} — čeka odgovarajući račun.",
+    "escalation_needed_title": "Potrebna eskalacija",
+    "escalation_needed_desc": "{{fileName}} — odstupanje, potrebna ručna provjera.",
+    "doc_escalated_title": "Dokument eskaliran",
+    "doc_escalated_desc": "{{fileName}} se ne može automatski upariti — potrebna je ručna provjera.",
+    "report_processed_desc": "Sljedeći izvještaj je uspješno obrađen: {{fileName}}",
+    "doc_retroactive_matched_title": "{{label}} naknadno uparen!",
+    "doc_retroactive_matched_desc": "{{fileName}} je uparen s prijevozom.",
+    "pdf_export_done_title": "PDF izvoz završen!",
+    "pdf_export_done_desc": "{{count}} računa izvezeno. Idite na stranicu Računi za preuzimanje."
   }
 }
 

@@ -149,8 +149,12 @@ export function RootRedirect() {
 }
 
 export function AccountyRootRedirect() {
+  const location = useLocation();
   const { selectedCompany, eaisybooksCompanyIds, isInitialLoading } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
+
+  const isHr = location.pathname.startsWith('/hr');
+  const prefix = isHr ? '/hr' : '';
 
   // Determine synchronously if we need to redirect
   const switchPending = localStorage.getItem('visibill_switch_pending');
@@ -161,9 +165,9 @@ export function AccountyRootRedirect() {
     const eaisybillCompanyId = localStorage.getItem('eaisybill_selected_company_id');
 
     if (eaisybillCompanyId && eaisybillCompanyId !== eaisybooksCompanyId && eaisybooksCompanyIds.includes(eaisybillCompanyId)) {
-      redirectTarget = `/eaisybooks/${eaisybillCompanyId}/${dateFromFormatted}_${dateToFormatted}/overview`;
+      redirectTarget = `${prefix}/eaisybooks/${eaisybillCompanyId}/${dateFromFormatted}_${dateToFormatted}/overview`;
     } else if (eaisybooksCompanyId && eaisybooksCompanyIds.includes(eaisybooksCompanyId)) {
-      redirectTarget = `/eaisybooks/${eaisybooksCompanyId}/${dateFromFormatted}_${dateToFormatted}/overview`;
+      redirectTarget = `${prefix}/eaisybooks/${eaisybooksCompanyId}/${dateFromFormatted}_${dateToFormatted}/overview`;
     }
   }
 
@@ -242,30 +246,36 @@ export function PasswordRecoveryRedirect() {
 export function AccountyLegacyClientRedirect() {
   const params = useParams();
   const location = useLocation();
+  const isHr = location.pathname.startsWith('/hr');
+  const prefix = isHr ? '/hr' : '';
   const match = location.pathname.match(/\/client\/([^\/]+)/);
   const resolvedId = match ? match[1] : (params.id || '');
   const { dateFromFormatted, dateToFormatted } = useDateRange();
   const suffix = location.pathname.split(new RegExp(`/client/${resolvedId}`, 'i'))[1] || '';
   const page = suffix.startsWith('/') ? suffix.slice(1) : suffix;
-  return <Navigate to={`/eaisybooks/${resolvedId}/${dateFromFormatted}_${dateToFormatted}/${page}${location.search}`} replace />;
+  return <Navigate to={`${prefix}/eaisybooks/${resolvedId}/${dateFromFormatted}_${dateToFormatted}/${page}${location.search}`} replace />;
 }
 
 export function PayrollLegacyRedirect() {
   const params = useParams();
   const location = useLocation();
+  const isHr = location.pathname.startsWith('/hr');
+  const prefix = isHr ? '/hr' : '';
   const match = location.pathname.match(/\/payroll\/([^\/]+)/);
   const resolvedId = match ? match[1] : (params.id || '');
   const { dateFromFormatted, dateToFormatted } = useDateRange();
   const suffix = location.pathname.split(new RegExp(`/payroll/${resolvedId}`, 'i'))[1] || '';
   const page = suffix.startsWith('/') ? suffix.slice(1) : suffix;
-  return <Navigate to={`/eaisybooks/${resolvedId}/${dateFromFormatted}_${dateToFormatted}/payroll/${page}${location.search}`} replace />;
+  return <Navigate to={`${prefix}/eaisybooks/${resolvedId}/${dateFromFormatted}_${dateToFormatted}/payroll/${page}${location.search}`} replace />;
 }
 
 export function MissingInvoicesLegacyRedirect() {
   const params = useParams();
   const location = useLocation();
+  const isHr = location.pathname.startsWith('/hr');
+  const prefix = isHr ? '/hr' : '';
   const match = location.pathname.match(/\/missing-invoices\/([^\/]+)/);
   const resolvedId = match ? match[1] : (params.id || '');
   const { dateFromFormatted, dateToFormatted } = useDateRange();
-  return <Navigate to={`/eaisybooks/${resolvedId}/${dateFromFormatted}_${dateToFormatted}/missing-invoices${location.search}`} replace />;
+  return <Navigate to={`${prefix}/eaisybooks/${resolvedId}/${dateFromFormatted}_${dateToFormatted}/missing-invoices${location.search}`} replace />;
 }

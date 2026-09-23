@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDateRange } from '@/contexts/DateRangeContext';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   Users, Calculator, FileText, Calendar, Clock, TrendingUp,
   Plus, Search, ArrowUpRight, Banknote, UserPlus, ChevronRight,
@@ -81,7 +82,7 @@ function KpiCard({ title, value, subtitle, icon: Icon, accentColor = 'teal' }: {
 }
 
 // ── Status badge ──
-function CycleStatusBadge({ status }: { status: string }) {
+function CycleStatusBadge({ status, isHr }: { status: string; isHr?: boolean }) {
   const styles: Record<string, string> = {
     draft: 'bg-muted text-foreground/90 dark:bg-muted dark:text-foreground/90',
     data_collection: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400',
@@ -93,7 +94,7 @@ function CycleStatusBadge({ status }: { status: string }) {
     submitted: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
     closed: 'bg-muted text-muted-foreground dark:bg-muted dark:text-foreground/90',
   };
-  const labels: Record<string, string> = {
+  const labelsHu: Record<string, string> = {
     draft: 'Tervezet',
     data_collection: 'Adatbekérés',
     review: 'Ellenőrzés',
@@ -104,6 +105,18 @@ function CycleStatusBadge({ status }: { status: string }) {
     submitted: 'Beküldve',
     closed: 'Lezárva',
   };
+  const labelsHr: Record<string, string> = {
+    draft: 'Nacrt',
+    data_collection: 'Prikupljanje podataka',
+    review: 'Pregled',
+    calculating: 'Obračunavanje...',
+    calculated: 'Obračunato',
+    approved: 'Odobreno',
+    documents: 'Dokumenti',
+    submitted: 'Poslano',
+    closed: 'Zatvoreno',
+  };
+  const labels = isHr ? labelsHr : labelsHu;
 
   return (
     <span className={cn('px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider', styles[status] || styles.draft)}>
@@ -113,11 +126,17 @@ function CycleStatusBadge({ status }: { status: string }) {
 }
 
 // ── Month name helper ──
-const MONTHS = ['Január', 'Február', 'Március', 'Április', 'Május', 'Június', 'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'];
+const MONTHS_HU = ['Január', 'Február', 'Március', 'Április', 'Május', 'Június', 'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'];
+const MONTHS_HR = ['Siječanj', 'Veljača', 'Ožujak', 'Travanj', 'Svibanj', 'Lipanj', 'Srpanj', 'Kolovoz', 'Rujan', 'Listopad', 'Studeni', 'Prosinac'];
 
 export default function PayrollDashboardPage() {
+  const { t, i18n } = useTranslation('accounty');
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
+  const isHr = prefix === '/hr' || i18n.language === 'hr';
+  const MONTHS = isHr ? MONTHS_HR : MONTHS_HU;
   const [searchQuery, setSearchQuery] = useState('');
   const [reconstructionOpen, setReconstructionOpen] = useState(false);
   const [exitModalOpen, setExitModalOpen] = useState(false);
@@ -182,11 +201,11 @@ export default function PayrollDashboardPage() {
 
   const handleOpenExitDocs = () => {
     if (employees.length === 0) {
-      navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees`);
+      navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees`);
       return;
     }
     if (employees.length === 1) {
-      navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/${employees[0].id}/exit-docs`);
+      navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/${employees[0].id}/exit-docs`);
       return;
     }
     setExitSearchQuery('');
@@ -225,11 +244,11 @@ export default function PayrollDashboardPage() {
               if (window.history.state && window.history.state.idx > 0) {
                 navigate(-1);
               } else {
-                navigate('/eaisybooks?tab=payroll');
+                navigate(`${prefix}/eaisybooks?tab=payroll`);
               }
             }}
             className="flex items-center justify-center w-8 h-8 mt-1.5 shrink-0 rounded-lg border border-border bg-card hover:bg-muted transition-colors shadow-sm"
-            title="Vissza"
+            title={t('common.back')}
           >
             <ChevronLeft className="w-5 h-5 text-muted-foreground" />
           </button>
@@ -241,8 +260,8 @@ export default function PayrollDashboardPage() {
                 <span className="text-xs font-semibold text-muted-foreground">{currentClientName}</span>
               )}
             </div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Bérszámfejtés</h1>
-            <p className="text-xs text-muted-foreground mt-1">Foglalkoztatottak, havi ciklusok és bevallások kezelése</p>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">{t('payroll_dashboard.title')}</h1>
+            <p className="text-xs text-muted-foreground mt-1">{t('payroll_dashboard.subtitle')}</p>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -252,46 +271,46 @@ export default function PayrollDashboardPage() {
             className="flex items-center gap-2 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 shadow-xs"
           >
             <Sparkles className="w-4 h-4 text-blue-500" />
-            Számfejtés Rekonstrukció
+            {t('payroll_dashboard.btn_reconstruction')}
           </Button>
           <Button
-            onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/import`)}
+            onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/import`)}
             variant="outline"
             className="flex items-center gap-2"
           >
             <Upload className="w-4 h-4" />
-            Importálás
+            {t('payroll_dashboard.btn_import')}
           </Button>
           <Button
-            onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/dividends`)}
+            onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/dividends`)}
             variant="outline"
             className="flex items-center gap-2 border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
           >
             <Coins className="w-4 h-4 text-emerald-600" />
-            Osztalék
+            {t('payroll_dashboard.btn_dividends')}
           </Button>
           <Button
-            onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/settings`)}
+            onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/settings`)}
             variant="outline"
             className="flex items-center gap-2"
           >
             <Settings className="w-4 h-4" />
-            Beállítások
+            {t('payroll_dashboard.btn_settings')}
           </Button>
           <Button
-            onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/new`)}
+            onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/new`)}
             variant="outline"
             className="flex items-center gap-2"
           >
             <UserPlus className="w-4 h-4" />
-            Új dolgozó
+            {t('payroll_dashboard.btn_new_employee')}
           </Button>
           <Button
-            onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/cycle/new`)}
+            onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/cycle/new`)}
             className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
-            Új havi ciklus
+            {t('payroll_dashboard.btn_new_cycle')}
           </Button>
         </div>
       </div>
@@ -305,29 +324,31 @@ export default function PayrollDashboardPage() {
             </div>
             <div>
               <h3 className="font-bold text-foreground text-sm">
-                Új cég bérszámfejtésének beüzemelése & korábbi számfejtések feltöltése
+                {t('payroll_dashboard.banner_title')}
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Töltsd fel a korábban a NAV-nak beadott 08-as (2608 / 2508 / 2408) ÁNYK XML fájlokat, és a rendszer 1 kattintással felépíti az összes dolgozót, jogviszonyt és a lezárt havi bérszámfejtési ciklusokat!
+                {t('payroll_dashboard.banner_desc')}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <Button
               size="sm"
-              onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/import`)}
+              onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/import`)}
               variant="outline"
               className="text-xs"
             >
-              Excel Sablon
+              {t('payroll_dashboard.banner_btn_excel')}
             </Button>
-            <Button
-              size="sm"
-              onClick={() => setReconstructionOpen(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white text-xs gap-1.5 shadow-sm shadow-blue-600/20"
-            >
-              <Sparkles className="w-3.5 h-3.5" /> NAV 08 XML Rekonstrukció
-            </Button>
+            {!isHr && (
+              <Button
+                size="sm"
+                onClick={() => setReconstructionOpen(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white text-xs gap-1.5 shadow-sm shadow-blue-600/20"
+              >
+                <Sparkles className="w-3.5 h-3.5" /> {t('payroll_dashboard.banner_btn_xml')}
+              </Button>
+            )}
           </div>
         </div>
       )}
@@ -335,28 +356,28 @@ export default function PayrollDashboardPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
-          title="Aktív foglalkoztatottak"
+          title={t('payroll_dashboard.kpi_active_employees')}
           value={kpis.activeEmployees}
           icon={Users}
           accentColor="teal"
         />
         <KpiCard
-          title="Nyitott ciklusok"
+          title={t('payroll_dashboard.kpi_open_cycles')}
           value={kpis.pendingCycles}
-          subtitle={kpis.hasCurrent ? 'Aktuális havi ciklus fut' : 'Nincs aktuális ciklus'}
+          subtitle={kpis.hasCurrent ? t('payroll_dashboard.kpi_active_cycle_running') : t('payroll_dashboard.kpi_no_active_cycle')}
           icon={Calculator}
           accentColor="blue"
         />
         <KpiCard
-          title="Bevallások"
+          title={t('payroll_dashboard.kpi_filings')}
           value={kpis.pendingFilings}
-          subtitle="Beküldésre váró"
+          subtitle={t('payroll_dashboard.kpi_filings_pending')}
           icon={FileText}
           accentColor="amber"
         />
         <KpiCard
-          title="Minimálbér 2026"
-          value={taxParams ? formatAmount(taxParams.minimum_wage) : '322 800 Ft'}
+          title={t('payroll_dashboard.kpi_minimum_wage', { year: taxYear || 2026 })}
+          value={isHr ? '970,00 €' : (taxParams ? formatAmount(taxParams.minimum_wage) : '322 800 Ft')}
           icon={Banknote}
           accentColor="violet"
         />
@@ -368,14 +389,14 @@ export default function PayrollDashboardPage() {
         {/* ── Foglalkoztatottak panel ── */}
         <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
           <div className="p-5 border-b border-border flex items-center justify-between">
-            <h2 className="text-lg font-bold text-foreground">Foglalkoztatottak</h2>
+            <h2 className="text-lg font-bold text-foreground">{t('payroll_dashboard.panel_employees_title')}</h2>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees`)}
+              onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees`)}
               className="text-xs text-primary font-semibold flex items-center gap-1"
             >
-              Összes <ArrowUpRight className="w-3.5 h-3.5" />
+              {t('payroll_dashboard.panel_employees_all')} <ArrowUpRight className="w-3.5 h-3.5" />
             </Button>
           </div>
 
@@ -383,7 +404,7 @@ export default function PayrollDashboardPage() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Keresés név, TAJ, adóazonosító..."
+                placeholder={t('payroll_dashboard.panel_employees_search')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 bg-muted/40 dark:bg-background border-transparent text-sm h-9"
@@ -395,13 +416,13 @@ export default function PayrollDashboardPage() {
             {filteredEmployees.length === 0 ? (
               <div className="py-12 text-center text-sm text-muted-foreground">
                 <Users className="w-8 h-8 mx-auto mb-2 text-muted-foreground/60" />
-                {employees.length === 0 ? 'Még nincsenek foglalkoztatottak' : 'Nincs találat'}
+                {employees.length === 0 ? t('payroll_dashboard.panel_employees_empty') : t('payroll_dashboard.panel_employees_no_match')}
               </div>
             ) : (
               filteredEmployees.map((emp) => (
                 <div
                   key={emp.id}
-                  onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/${emp.id}`)}
+                  onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/${emp.id}`)}
                   className="px-5 py-3.5 flex items-center gap-3 hover:bg-muted/50 cursor-pointer transition-colors group"
                 >
                   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-sm font-bold text-primary">
@@ -421,7 +442,7 @@ export default function PayrollDashboardPage() {
                     title="Kilépő dokumentumok megtekintése"
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/${emp.id}/exit-docs`);
+                      navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/${emp.id}/exit-docs`);
                     }}
                     className={cn(
                       "text-xs h-7 px-2.5 transition-all shrink-0",
@@ -431,7 +452,7 @@ export default function PayrollDashboardPage() {
                     )}
                   >
                     <LogOut className="w-3 h-3 mr-1" />
-                    Kilépő iratok
+                    {t('payroll_dashboard.panel_employees_exit_docs')}
                   </Button>
                   <span className={cn(
                     'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase shrink-0',
@@ -440,7 +461,7 @@ export default function PayrollDashboardPage() {
                     emp.status === 'terminated' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300' :
                     'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground'
                   )}>
-                    {emp.status === 'active' ? 'Aktív' : emp.status === 'pending' ? 'Függő' : emp.status === 'terminated' ? 'Kilépett' : emp.status}
+                    {emp.status === 'active' ? t('payroll_dashboard.status_active') : emp.status === 'pending' ? t('payroll_dashboard.status_pending') : emp.status === 'terminated' ? t('payroll_dashboard.status_terminated') : emp.status}
                   </span>
                   <ChevronRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-primary transition-colors shrink-0" />
                 </div>
@@ -452,14 +473,14 @@ export default function PayrollDashboardPage() {
         {/* ── Havi ciklusok panel ── */}
         <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
           <div className="p-5 border-b border-border flex items-center justify-between">
-            <h2 className="text-lg font-bold text-foreground">Havi ciklusok</h2>
+            <h2 className="text-lg font-bold text-foreground">{t('payroll_dashboard.panel_cycles_title')}</h2>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/cycle/new`)}
+              onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/cycle/new`)}
               className="text-xs text-primary font-semibold flex items-center gap-1"
             >
-              <Plus className="w-3.5 h-3.5" /> Új ciklus
+              <Plus className="w-3.5 h-3.5" /> {t('payroll_dashboard.panel_cycles_new')}
             </Button>
           </div>
 
@@ -467,13 +488,13 @@ export default function PayrollDashboardPage() {
             {recentCycles.length === 0 ? (
               <div className="py-12 text-center text-sm text-muted-foreground">
                 <Calendar className="w-8 h-8 mx-auto mb-2 text-muted-foreground/60" />
-                Még nincs bérszámfejtési ciklus
+                {t('payroll_dashboard.panel_cycles_empty')}
               </div>
             ) : (
               recentCycles.map((cycle) => (
                 <div
                   key={cycle.id}
-                  onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/cycle/${cycle.id}`)}
+                  onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/cycle/${cycle.id}`)}
                   className="px-5 py-4 flex items-center gap-4 hover:bg-muted/50 cursor-pointer transition-colors group"
                 >
                   <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/20 flex flex-col items-center justify-center">
@@ -502,11 +523,11 @@ export default function PayrollDashboardPage() {
                         ))}
                       </div>
                       <span className="text-[11px] text-muted-foreground">
-                        {cycle.current_step}/8 lépés
+                        {t('payroll_dashboard.panel_cycles_step_count', { current: cycle.current_step, total: 8 })}
                       </span>
                     </div>
                   </div>
-                  <CycleStatusBadge status={cycle.status} />
+                  <CycleStatusBadge status={cycle.status} isHr={isHr} />
                   <ChevronRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-primary transition-colors" />
                 </div>
               ))
@@ -518,11 +539,11 @@ export default function PayrollDashboardPage() {
       {/* ── Bevallások ── */}
       <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
         <div className="p-5 border-b border-border flex items-center justify-between">
-          <h2 className="text-lg font-bold text-foreground">NAV Bevallások</h2>
+          <h2 className="text-lg font-bold text-foreground">{t('payroll_dashboard.panel_filings_title')}</h2>
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/filings`)}
+            onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/filings`)}
             className="text-xs text-primary font-semibold flex items-center gap-1"
           >
             Összes <ArrowUpRight className="w-3.5 h-3.5" />
@@ -533,11 +554,11 @@ export default function PayrollDashboardPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border/50">
-                <th className="px-5 py-3 text-left text-xs font-medium text-muted-foreground">Típus</th>
-                <th className="px-5 py-3 text-left text-xs font-medium text-muted-foreground">Időszak</th>
-                <th className="px-5 py-3 text-left text-xs font-medium text-muted-foreground">Csatorna</th>
-                <th className="px-5 py-3 text-left text-xs font-medium text-muted-foreground">Státusz</th>
-                <th className="px-5 py-3 text-left text-xs font-medium text-muted-foreground">Beküldve</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-muted-foreground">{t('payroll_dashboard.th_type')}</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-muted-foreground">{t('payroll_dashboard.th_period')}</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-muted-foreground">{t('payroll_dashboard.th_channel')}</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-muted-foreground">{t('payroll_dashboard.th_status')}</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-muted-foreground">{t('payroll_dashboard.th_submitted')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
@@ -545,7 +566,7 @@ export default function PayrollDashboardPage() {
                 <tr>
                   <td colSpan={5} className="px-5 py-12 text-center text-sm text-muted-foreground">
                     <FileText className="w-8 h-8 mx-auto mb-2 text-muted-foreground/60" />
-                    Nincs bevallás
+                    {t('payroll_dashboard.panel_filings_empty')}
                   </td>
                 </tr>
               ) : (
@@ -583,7 +604,23 @@ export default function PayrollDashboardPage() {
       </div>
 
       {/* Quick info: Tax params */}
-      {taxParams && (
+      {isHr ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          {[
+            { label: 'MIO I. (1. stup)', value: '15%' },
+            { label: 'MIO II. (2. stup)', value: '5%' },
+            { label: 'Zdravstveno', value: '16.5%' },
+            { label: 'Min. bruto plaća', value: '970,00 €' },
+            { label: 'Osnovni odbitak', value: '600,00 €' },
+            { label: 'Porez na dohodak', value: '20% / 30%' },
+          ].map((item) => (
+            <div key={item.label} className="bg-card rounded-lg border border-border/50 p-3 text-center">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{item.label}</p>
+              <p className="text-sm font-bold text-foreground mt-1">{item.value}</p>
+            </div>
+          ))}
+        </div>
+      ) : taxParams ? (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
           {[
             { label: 'SZJA', value: `${(taxParams.szja_rate * 100).toFixed(0)}%` },
@@ -599,22 +636,22 @@ export default function PayrollDashboardPage() {
             </div>
           ))}
         </div>
-      )}
+      ) : null}
 
       {/* Quick Action Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
         {[
-          { path: 'filings', icon: FileText, title: 'NAV Bevallások', desc: '08-as, M30 generálás', color: 'blue', action: 'Megnyitás' },
-          { path: 'reports', icon: TrendingUp, title: 'Riportok', desc: 'Bérelőzmény, trendek', color: 'violet', action: 'Megtekintés' },
-          { path: 'declarations', icon: FileText, title: 'Nyilatkozatok', desc: 'SZJA kedvezmények', color: 'teal', action: 'Megnyitás' },
-          { path: 'documents', icon: FileText, title: 'Dokumentumok', desc: 'Bérjegyzék, utalás', color: 'blue', action: 'Megnyitás' },
-          { path: 'exit-docs', icon: LogOut, title: 'Kilépő csomag', desc: 'Munkaviszony-megszűnés, Mt. 80. §', color: 'rose', action: 'Megnyitás', isExitDocs: true },
-          { path: 'year-end', icon: Calendar, title: 'Év végi feladatok', desc: 'M30, SZJA, szabadság', color: 'amber', action: 'Megnyitás' },
-          { path: 'advanced-reports', icon: TrendingUp, title: 'Haladó riportok', desc: 'Anomália, egyéni riport', color: 'violet', action: 'Megnyitás' },
-          { path: 'portal', icon: Building2, title: 'Ügyfélportál', desc: 'Adatbekérés, chat', color: 'amber', action: 'Megnyitás' },
-          { path: 'tax-params', icon: Calculator, title: 'Paraméterek', desc: 'Adókulcsok, minimálbér', color: 'teal', action: 'Szerkesztés' },
-          { path: 'settings', icon: Settings, title: 'Beállítások', desc: 'Cégspecifikus konfiguráció', color: 'slate', action: 'Megnyitás' },
-          { path: 'employees', icon: Users, title: 'Foglalkoztatottak', desc: 'Adatok, jogviszonyok', color: 'blue', action: 'Összes' },
+          { path: 'filings', icon: FileText, title: t('payroll_dashboard.quick_card_filings'), desc: t('payroll_dashboard.quick_card_filings_desc'), color: 'blue', action: t('payroll_dashboard.action_open') },
+          { path: 'reports', icon: TrendingUp, title: t('payroll_dashboard.quick_card_reports'), desc: t('payroll_dashboard.quick_card_reports_desc'), color: 'violet', action: t('payroll_dashboard.action_view') },
+          { path: 'declarations', icon: FileText, title: t('payroll_dashboard.quick_card_declarations'), desc: t('payroll_dashboard.quick_card_declarations_desc'), color: 'teal', action: t('payroll_dashboard.action_open') },
+          { path: 'documents', icon: FileText, title: t('payroll_dashboard.quick_card_documents'), desc: t('payroll_dashboard.quick_card_documents_desc'), color: 'blue', action: t('payroll_dashboard.action_open') },
+          { path: 'exit-docs', icon: LogOut, title: t('payroll_dashboard.quick_card_exit'), desc: t('payroll_dashboard.quick_card_exit_desc'), color: 'rose', action: t('payroll_dashboard.action_open'), isExitDocs: true },
+          { path: 'year-end', icon: Calendar, title: t('payroll_dashboard.quick_card_year_end'), desc: t('payroll_dashboard.quick_card_year_end_desc'), color: 'amber', action: t('payroll_dashboard.action_open') },
+          { path: 'advanced-reports', icon: TrendingUp, title: t('payroll_dashboard.quick_card_advanced_reports'), desc: t('payroll_dashboard.quick_card_advanced_reports_desc'), color: 'violet', action: t('payroll_dashboard.action_open') },
+          { path: 'portal', icon: Building2, title: t('payroll_dashboard.quick_card_portal'), desc: t('payroll_dashboard.quick_card_portal_desc'), color: 'amber', action: t('payroll_dashboard.action_open') },
+          { path: 'tax-params', icon: Calculator, title: t('payroll_dashboard.quick_card_tax_params'), desc: t('payroll_dashboard.quick_card_tax_params_desc'), color: 'teal', action: t('payroll_dashboard.action_edit') },
+          { path: 'settings', icon: Settings, title: t('payroll_dashboard.quick_card_settings'), desc: t('payroll_dashboard.quick_card_settings_desc'), color: 'slate', action: t('payroll_dashboard.action_open') },
+          { path: 'employees', icon: Users, title: t('payroll_dashboard.quick_card_employees'), desc: t('payroll_dashboard.quick_card_employees_desc'), color: 'blue', action: t('payroll_dashboard.panel_employees_all') },
         ].map((card) => {
           const colorMap: Record<string, string> = {
             blue: 'bg-blue-100 dark:bg-blue-900/30',
@@ -639,7 +676,7 @@ export default function PayrollDashboardPage() {
                 if ('isExitDocs' in card && card.isExitDocs) {
                   handleOpenExitDocs();
                 } else {
-                  navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/${card.path}`);
+                  navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/${card.path}`);
                 }
               }}
               className="bg-card rounded-lg border border-border shadow-soft p-5 hover:border-primary/30 cursor-pointer transition-all group"
@@ -708,7 +745,7 @@ export default function PayrollDashboardPage() {
                   key={emp.id}
                   onClick={() => {
                     setExitModalOpen(false);
-                    navigate(`/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/${emp.id}/exit-docs`);
+                    navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/${emp.id}/exit-docs`);
                   }}
                   className="py-3 px-3 rounded-lg flex items-center justify-between hover:bg-muted/60 cursor-pointer transition-colors group"
                 >
