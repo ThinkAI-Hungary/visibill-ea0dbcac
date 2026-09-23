@@ -46,12 +46,35 @@ export interface CurrencyMatchResult {
 
 export function checkGlAccountCurrencyMatch(
   glNumber: string | undefined | null,
-  currency: string | undefined | null
+  currency: string | undefined | null,
+  glAccountCurrency?: string | null,
+  isMulticurrency?: boolean | null
 ): CurrencyMatchResult {
   if (!glNumber) return { isMatch: true };
+  const bCurr = (currency || 'HUF').toUpperCase().trim();
   const clean = glNumber.replace(/\./g, '').trim();
-  const isHuf = !currency || currency.toUpperCase() === 'HUF';
 
+  // 1. Explicit database configuration check
+  if (glAccountCurrency) {
+    const gaCurr = glAccountCurrency.toUpperCase().trim();
+    if (gaCurr !== bCurr) {
+      return {
+        isMatch: false,
+        warning: `A bankszámla devizaneme (${bCurr}) eltér a főkönyvi szám dedikált devizanemétől (${gaCurr}).`,
+      };
+    }
+    return { isMatch: true };
+  }
+
+  if (isMulticurrency === false && bCurr !== 'HUF') {
+    return {
+      isMatch: false,
+      warning: `A főkönyvi szám (${glNumber}) kizárólag forintos tételek könyvelésére van beállítva. ${bCurr} számlához devizás főkönyvi szám szükséges.`,
+    };
+  }
+
+  // 2. Fallback heuristic
+  const isHuf = bCurr === 'HUF';
   if (isHuf) {
     if (clean.startsWith('386') || clean.startsWith('382')) {
       return {
@@ -61,11 +84,10 @@ export function checkGlAccountCurrencyMatch(
     }
     return { isMatch: true };
   } else {
-    const curr = currency.toUpperCase();
     if (clean.startsWith('384') || clean.startsWith('381')) {
       return {
         isMatch: false,
-        warning: `A bankszámla ${curr} devizanemű, de a kiválasztott főkönyvi szám (${glNumber}) forintos elszámolási számla. ${curr} bankszámlához a 386-os devizaszámla ajánlott.`,
+        warning: `A bankszámla ${bCurr} devizanemű, de a kiválasztott főkönyvi szám (${glNumber}) forintos elszámolási számla. ${bCurr} bankszámlához a 386-os devizaszámla ajánlott.`,
       };
     }
     return { isMatch: true };
@@ -178,7 +200,7 @@ export function BankAccountsTab({ companyId }: Props) {
     queryFn: async () => {
       let query = supabase
         .from('gl_accounts')
-        .select('id, gl_number, short_name');
+        .select('id, gl_number, short_name, currency, is_multicurrency');
       if (activePresetId) {
         query = query.or(`preset_id.eq.${activePresetId},company_id.eq.${companyId}`);
       } else {
@@ -195,8 +217,8 @@ export function BankAccountsTab({ companyId }: Props) {
   // Sorted bank GL accounts for Add form (prioritizing currency matches)
   const sortedBankGlAccounts = useMemo(() => {
     return [...bankGlAccounts].sort((a, b) => {
-      const aMatch = checkGlAccountCurrencyMatch(a.gl_number, currency).isMatch;
-      const bMatch = checkGlAccountCurrencyMatch(b.gl_number, currency).isMatch;
+      const aMatch = checkGlAccountCurrencyMatch(a.gl_number, currency, a.currency, a.is_multicurrency).isMatch;
+      const bMatch = checkGlAccountCurrencyMatch(b.gl_number, currency, b.currency, b.is_multicurrency).isMatch;
       if (aMatch && !bMatch) return -1;
       if (!aMatch && bMatch) return 1;
       return a.gl_number.localeCompare(b.gl_number);
@@ -217,15 +239,15 @@ export function BankAccountsTab({ companyId }: Props) {
   // Active mismatch warnings for Add form
   const selectedAddGl = bankGlAccounts.find(g => g.id === selectedGlAccountId);
   const selectedAddJournal = bankJournals.find(j => j.id === selectedJournalId);
-  const addGlMatch = checkGlAccountCurrencyMatch(selectedAddGl?.gl_number, currency);
+  const addGlMatch = checkGlAccountCurrencyMatch(selectedAddGl?.gl_number, currency, selectedAddGl?.currency, selectedAddGl?.is_multicurrency);
   const addJournalMatch = checkJournalCurrencyMatch(selectedAddJournal?.currency, currency);
 
   // Sorted lists and mismatch warnings for Edit dialog
   const editAccCurrency = editingAccount?.currency || 'HUF';
   const sortedEditBankGlAccounts = useMemo(() => {
     return [...bankGlAccounts].sort((a, b) => {
-      const aMatch = checkGlAccountCurrencyMatch(a.gl_number, editAccCurrency).isMatch;
-      const bMatch = checkGlAccountCurrencyMatch(b.gl_number, editAccCurrency).isMatch;
+      const aMatch = checkGlAccountCurrencyMatch(a.gl_number, editAccCurrency, a.currency, a.is_multicurrency).isMatch;
+      const bMatch = checkGlAccountCurrencyMatch(b.gl_number, editAccCurrency, b.currency, b.is_multicurrency).isMatch;
       if (aMatch && !bMatch) return -1;
       if (!aMatch && bMatch) return 1;
       return a.gl_number.localeCompare(b.gl_number);
@@ -244,7 +266,7 @@ export function BankAccountsTab({ companyId }: Props) {
 
   const selectedEditGl = bankGlAccounts.find(g => g.id === editGlAccountId);
   const selectedEditJournal = bankJournals.find(j => j.id === editJournalId);
-  const editGlMatch = checkGlAccountCurrencyMatch(selectedEditGl?.gl_number, editAccCurrency);
+  const editGlMatch = checkGlAccountCurrencyMatch(selectedEditGl?.gl_number, editAccCurrency, selectedEditGl?.currency, selectedEditGl?.is_multicurrency);
   const editJournalMatch = checkJournalCurrencyMatch(selectedEditJournal?.currency, editAccCurrency);
 
   const accountFormat = detectAccountFormat(accountNumber);
@@ -620,7 +642,7 @@ export function BankAccountsTab({ companyId }: Props) {
                         <SelectContent>
                           <SelectItem value="none">— Nincs hozzárendelve —</SelectItem>
                           {sortedBankGlAccounts.map(g => {
-                            const gMatch = checkGlAccountCurrencyMatch(g.gl_number, currency);
+                            const gMatch = checkGlAccountCurrencyMatch(g.gl_number, currency, g.currency, g.is_multicurrency);
                             return (
                               <SelectItem key={g.id} value={g.id}>
                                 {g.gl_number} - {g.short_name} {!gMatch.isMatch ? '⚠️ (Eltérő deviza)' : ''}
@@ -729,7 +751,7 @@ export function BankAccountsTab({ companyId }: Props) {
                         {(() => {
                           const j = bankJournals.find(bj => bj.id === acc.journal_id);
                           const g = bankGlAccounts.find(ga => ga.id === acc.gl_account_id);
-                          const gMatch = g ? checkGlAccountCurrencyMatch(g.gl_number, acc.currency) : { isMatch: true };
+                          const gMatch = g ? checkGlAccountCurrencyMatch(g.gl_number, acc.currency, g.currency, g.is_multicurrency) : { isMatch: true };
                           const jMatch = j ? checkJournalCurrencyMatch(j.currency, acc.currency) : { isMatch: true };
                           const hasMismatch = !gMatch.isMatch || !jMatch.isMatch;
 
@@ -823,7 +845,7 @@ export function BankAccountsTab({ companyId }: Props) {
                 <SelectContent>
                   <SelectItem value="none">— Nincs hozzárendelve —</SelectItem>
                   {sortedEditBankGlAccounts.map(g => {
-                    const gMatch = checkGlAccountCurrencyMatch(g.gl_number, editAccCurrency);
+                    const gMatch = checkGlAccountCurrencyMatch(g.gl_number, editAccCurrency, g.currency, g.is_multicurrency);
                     return (
                       <SelectItem key={g.id} value={g.id}>
                         {g.gl_number} - {g.short_name} {!gMatch.isMatch ? '⚠️ (Eltérő deviza)' : ''}

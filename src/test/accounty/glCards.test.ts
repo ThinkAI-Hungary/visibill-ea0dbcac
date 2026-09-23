@@ -92,4 +92,93 @@ describe('General Ledger & Analytic Cards PDF Generator', () => {
     expect(doc.internal.getNumberOfPages()).toBeGreaterThanOrEqual(1);
     expect(doc.output('blob').size).toBeGreaterThan(1000);
   });
+
+  it('generates a valid multi-currency G/L Account Card PDF for 3861 EUR Devizabank', () => {
+    const cardData: GlAccountCardPdfData = {
+      companyName: 'Kolos Transport Kft.',
+      companyTaxNumber: '11223344-2-42',
+      glNumber: '3861',
+      glShortName: 'EUR Devizabetétszámla',
+      dateFrom: '2026-01-01',
+      dateTo: '2026-12-31',
+      openingBalance: 400000,
+      totalDebit: 1000000,
+      totalCredit: 600000,
+      closingBalance: 800000,
+      hasForeignCurrency: true,
+      foreignCurrency: 'EUR',
+      foreignOpeningBalance: 1000,
+      totalForeignDebit: 2500,
+      totalForeignCredit: 1500,
+      foreignClosingBalance: 2000,
+      items: [
+        {
+          posting_date: '2026-01-01',
+          document_id: 'NYITÓ',
+          journal_code: 'NY',
+          contra_gl_number: '491',
+          partner_name: '-',
+          description: 'Időszak eleji nyitó devizaegyenleg',
+          debit_amount: 400000,
+          credit_amount: 0,
+          running_balance: 400000,
+          foreign_amount: 1000,
+          foreign_currency: 'EUR',
+          foreign_running_balance: 1000,
+        },
+        {
+          posting_date: '2026-02-10',
+          document_id: 'BK-2026/01',
+          journal_code: 'BE',
+          contra_gl_number: '3161',
+          partner_name: 'Nemzetközi Vevő GmbH',
+          description: 'Devizás vevő kifizetés',
+          debit_amount: 1000000,
+          credit_amount: 0,
+          running_balance: 1400000,
+          foreign_amount: 2500,
+          foreign_currency: 'EUR',
+          foreign_running_balance: 3500,
+        },
+      ],
+    };
+
+    const doc = generateGlAccountCardPdf(cardData);
+    expect(doc).toBeDefined();
+    expect(doc.internal.getNumberOfPages()).toBeGreaterThanOrEqual(1);
+    expect(doc.output('blob').size).toBeGreaterThan(1000);
+  });
+
+  it('generates a valid multi-currency Balance Confirmation Letter PDF with foreign currency summaries', () => {
+    const confirmData: BalanceConfirmationPdfData = {
+      companyName: 'Kolos Transport Kft.',
+      companyAddress: '1111 Budapest, Váci út 1.',
+      companyTaxNumber: '11223344-2-42',
+      partnerName: 'Euro Logistics SRL',
+      partnerAddress: 'Bukarest, Str. Principala 5.',
+      partnerTaxNumber: 'RO12345678',
+      statementDate: '2026-09-24',
+      totalOpenBalance: 480000,
+      currencySummaries: [
+        { currency: 'EUR', openBalance: 1200 },
+      ],
+      invoices: [
+        {
+          document_id: 'INV-2026/999',
+          issue_date: '2026-08-01',
+          due_date: '2026-08-30',
+          original_amount: 480000,
+          open_amount: 480000,
+          overdue_days: 25,
+          foreign_amount: 1200,
+          currency: 'EUR',
+        },
+      ],
+    };
+
+    const doc = generateBalanceConfirmationPdf(confirmData);
+    expect(doc).toBeDefined();
+    expect(doc.internal.getNumberOfPages()).toBeGreaterThanOrEqual(1);
+    expect(doc.output('blob').size).toBeGreaterThan(1000);
+  });
 });

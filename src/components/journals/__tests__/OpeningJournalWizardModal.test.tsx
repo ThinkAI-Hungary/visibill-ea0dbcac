@@ -249,6 +249,11 @@ describe('OpeningJournalWizardModal Component', () => {
       // Name based detection
       expect(isForeignCurrencyAccount('3849', 'Egyedi deviza számla')).toBe(true);
 
+      // Direct database is_multicurrency flag and currency
+      expect(isForeignCurrencyAccount('3899', 'Egyéb', true, null)).toBe(true);
+      expect(isForeignCurrencyAccount('3899', 'Egyéb', false, 'EUR')).toBe(true);
+      expect(isForeignCurrencyAccount('3899', 'Egyéb', false, 'HUF')).toBe(false);
+
       // Standard HUF accounts
       expect(isForeignCurrencyAccount('111', 'Ingatlanok')).toBe(false);
       expect(isForeignCurrencyAccount('311', 'Belföldi vevők')).toBe(false);

@@ -46,6 +46,22 @@ describe('BankAccountsTab - Currency Match & Safeguards (Blind Spot 1)', () => {
       expect(checkGlAccountCurrencyMatch(undefined, 'EUR').isMatch).toBe(true);
       expect(checkGlAccountCurrencyMatch('', 'HUF').isMatch).toBe(true);
     });
+
+    it('enforces database dedicated currency matching when configured in gl_accounts', () => {
+      // Direct DB match
+      expect(checkGlAccountCurrencyMatch('3861', 'EUR', 'EUR', true).isMatch).toBe(true);
+      expect(checkGlAccountCurrencyMatch('3841', 'HUF', 'HUF', false).isMatch).toBe(true);
+
+      // Dedicated currency mismatch
+      const mismatch = checkGlAccountCurrencyMatch('3861', 'EUR', 'USD', true);
+      expect(mismatch.isMatch).toBe(false);
+      expect(mismatch.warning).toContain('eltér a főkönyvi szám dedikált devizanemétől');
+
+      // Non-multicurrency GL account paired with foreign bank account
+      const notMulti = checkGlAccountCurrencyMatch('3899', 'EUR', null, false);
+      expect(notMulti.isMatch).toBe(false);
+      expect(notMulti.warning).toContain('kizárólag forintos tételek könyvelésére van beállítva');
+    });
   });
 
   describe('checkJournalCurrencyMatch', () => {

@@ -15,6 +15,7 @@ import {
   ChevronsLeft, ChevronsRight, Filter 
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { formatNumberLocale } from '@/lib/locale/formatters';
 import { generateGlAccountCardPdf, GlAccountCardPdfData } from '@/lib/ledgerCardPdfs';
 import { GlDateBasis, GlPostingStatus } from '@/lib/glData';
 import { useTranslation } from 'react-i18next';
@@ -67,7 +68,7 @@ export function GlAccountCardView({
       if (!companyId && !presetId) return [];
 
       // 1. Fetch from gl_accounts by preset_id or company_id
-      let query = supabase.from('gl_accounts').select('id, gl_number, short_name');
+      let query = supabase.from('gl_accounts').select('id, gl_number, short_name, currency, is_multicurrency');
       if (presetId && companyId) {
         query = query.or(`preset_id.eq.${presetId},company_id.eq.${companyId}`);
       } else if (presetId) {
@@ -78,10 +79,16 @@ export function GlAccountCardView({
 
       const { data: presetAccs, error } = await query.order('gl_number', { ascending: true }).limit(2000);
       
-      const accMap = new Map<string, { id: string; gl_number: string; short_name: string }>();
+      const accMap = new Map<string, { id: string; gl_number: string; short_name: string; currency?: string | null; is_multicurrency?: boolean }>();
       (presetAccs || []).forEach(a => {
         const cleanNum = a.gl_number.replace(/\.$/, '');
-        accMap.set(cleanNum, { id: a.id, gl_number: cleanNum, short_name: a.short_name });
+        accMap.set(cleanNum, { 
+          id: a.id, 
+          gl_number: cleanNum, 
+          short_name: a.short_name,
+          currency: a.currency || null,
+          is_multicurrency: a.is_multicurrency || false,
+        });
       });
 
       // 2. Add defaults if map empty
@@ -113,6 +120,7 @@ export function GlAccountCardView({
       if (!companyId) return { openingBalance: 0, items: [], totalDebit: 0, totalCredit: 0, closingBalance: 0 };
 
       const cleanGlPrefix = selectedGlNumber.replace(/\.$/, '');
+      const selectedAcc = glAccounts.find(g => g.gl_number === cleanGlPrefix || g.gl_number.startsWith(cleanGlPrefix));
 
       // 1. Try RPC first
       const { data: rpcData, error: rpcErr } = await (supabase.rpc as any)('get_gl_account_card_items', {
@@ -134,15 +142,43 @@ export function GlAccountCardView({
         
         let tDebit = 0;
         let tCredit = 0;
+        let fDebit = 0;
+        let fCredit = 0;
+        let detectedCurrency = selectedAcc?.currency || null;
+        
+        // Find currency if not explicitly set
+        if (!detectedCurrency) {
+          const fxRow = items.find(i => i.currency && i.currency !== 'HUF');
+          if (fxRow) detectedCurrency = fxRow.currency;
+        }
+
+        const openingFx = openingRow ? Number(openingRow.foreign_amount || 0) : 0;
+        let runningFx = openingFx;
+
         items.forEach(i => {
           if (i.document_id !== 'NYITÓ') {
-            tDebit += Number(i.debit_amount || 0);
-            tCredit += Number(i.credit_amount || 0);
+            const deb = Number(i.debit_amount || 0);
+            const cred = Number(i.credit_amount || 0);
+            tDebit += deb;
+            tCredit += cred;
+
+            const fAmt = Number(i.foreign_amount || 0);
+            if (fAmt > 0) {
+              if (deb > 0) {
+                fDebit += fAmt;
+                runningFx += fAmt;
+              } else {
+                fCredit += fAmt;
+                runningFx -= fAmt;
+              }
+            }
           }
+          i.foreign_running_balance = runningFx;
         });
 
         const lastRow = items[items.length - 1];
         const closingBal = lastRow ? Number(lastRow.running_balance || 0) : openingBal;
+        const hasFx = Boolean(detectedCurrency || fDebit > 0 || fCredit > 0 || openingFx !== 0);
 
         return {
           openingBalance: openingBal,
@@ -150,6 +186,12 @@ export function GlAccountCardView({
           totalDebit: tDebit,
           totalCredit: tCredit,
           closingBalance: closingBal,
+          hasForeignCurrency: hasFx,
+          foreignCurrency: detectedCurrency || 'EUR',
+          foreignOpeningBalance: openingFx,
+          totalForeignDebit: fDebit,
+          totalForeignCredit: fCredit,
+          foreignClosingBalance: runningFx,
         };
       }
 
@@ -209,6 +251,15 @@ export function GlAccountCardView({
       let running = openingBal;
       let tDebit = 0;
       let tCredit = 0;
+      let fDebit = 0;
+      let fCredit = 0;
+      let detectedCurrency = selectedAcc?.currency || null;
+
+      // Find currency if not explicitly set
+      if (!detectedCurrency) {
+        const fxRow = filteredLines.find((l: any) => l.header?.currency && l.header.currency !== 'HUF');
+        if (fxRow) detectedCurrency = fxRow.header.currency;
+      }
 
       // Sort period items chronologically
       periodItems.sort((a, b) => {
@@ -218,6 +269,7 @@ export function GlAccountCardView({
       });
 
       const processedItems: any[] = [];
+      let runningFx = 0;
 
       if (includeOpening) {
         processedItems.push({
@@ -237,6 +289,9 @@ export function GlAccountCardView({
           dc_type: openingBal >= 0 ? 'T' : 'K',
           debit_amount: openingBal >= 0 ? openingBal : 0,
           credit_amount: openingBal < 0 ? Math.abs(openingBal) : 0,
+          foreign_amount: null,
+          currency: detectedCurrency || 'HUF',
+          foreign_running_balance: 0,
           running_balance: running,
         });
       }
@@ -247,6 +302,17 @@ export function GlAccountCardView({
         running += deb - cred;
         tDebit += deb;
         tCredit += cred;
+
+        const fAmt = Number(line.foreign_amount || 0);
+        if (fAmt > 0) {
+          if (deb > 0) {
+            fDebit += fAmt;
+            runningFx += fAmt;
+          } else {
+            fCredit += fAmt;
+            runningFx -= fAmt;
+          }
+        }
 
         processedItems.push({
           line_id: line.id,
@@ -266,11 +332,14 @@ export function GlAccountCardView({
           debit_amount: deb,
           credit_amount: cred,
           foreign_amount: line.foreign_amount,
-          currency: line.header?.currency || 'HUF',
+          currency: line.header?.currency || detectedCurrency || 'HUF',
           project_name: line.project?.name,
+          foreign_running_balance: runningFx,
           running_balance: running,
         });
       });
+
+      const hasFx = Boolean(detectedCurrency || fDebit > 0 || fCredit > 0);
 
       return {
         openingBalance: openingBal,
@@ -278,6 +347,12 @@ export function GlAccountCardView({
         totalDebit: tDebit,
         totalCredit: tCredit,
         closingBalance: running,
+        hasForeignCurrency: hasFx,
+        foreignCurrency: detectedCurrency || 'EUR',
+        foreignOpeningBalance: 0,
+        totalForeignDebit: fDebit,
+        totalForeignCredit: fCredit,
+        foreignClosingBalance: runningFx,
       };
     },
     enabled: !!companyId,
@@ -337,6 +412,12 @@ export function GlAccountCardView({
       totalDebit: cardData.totalDebit,
       totalCredit: cardData.totalCredit,
       closingBalance: cardData.closingBalance,
+      hasForeignCurrency: cardData.hasForeignCurrency,
+      foreignCurrency: cardData.foreignCurrency,
+      foreignOpeningBalance: cardData.foreignOpeningBalance,
+      totalForeignDebit: cardData.totalForeignDebit,
+      totalForeignCredit: cardData.totalForeignCredit,
+      foreignClosingBalance: cardData.foreignClosingBalance,
       items: filteredItems.map((i: any) => ({
         posting_date: i.posting_date,
         document_date: i.document_date,
@@ -349,6 +430,9 @@ export function GlAccountCardView({
         debit_amount: Number(i.debit_amount || 0),
         credit_amount: Number(i.credit_amount || 0),
         running_balance: Number(i.running_balance || 0),
+        foreign_amount: i.foreign_amount,
+        foreign_currency: i.currency,
+        foreign_running_balance: i.foreign_running_balance,
       })),
     };
 
@@ -368,9 +452,13 @@ export function GlAccountCardView({
       [t('accounting:general_ledger.account_card.export_cols.contra_gl')]: item.contra_gl_number || '-',
       [t('accounting:general_ledger.account_card.export_cols.partner')]: item.partner_name || '-',
       [t('accounting:general_ledger.account_card.export_cols.description')]: item.description,
-      [t('accounting:general_ledger.account_card.export_cols.debit', { currency: item.currency || 'HUF' })]: Number(item.debit_amount || 0),
-      [t('accounting:general_ledger.account_card.export_cols.credit', { currency: item.currency || 'HUF' })]: Number(item.credit_amount || 0),
-      [t('accounting:general_ledger.account_card.export_cols.running_balance', { currency: item.currency || 'HUF' })]: Number(item.running_balance || 0),
+      [t('accounting:general_ledger.account_card.export_cols.debit', { currency: 'HUF' })]: Number(item.debit_amount || 0),
+      [t('accounting:general_ledger.account_card.export_cols.credit', { currency: 'HUF' })]: Number(item.credit_amount || 0),
+      [t('accounting:general_ledger.account_card.export_cols.running_balance', { currency: 'HUF' })]: Number(item.running_balance || 0),
+      ...(cardData?.hasForeignCurrency ? {
+        'Deviza összeg': item.foreign_amount ? `${Number(item.foreign_amount).toFixed(2)} ${item.currency || cardData.foreignCurrency}` : '-',
+        'Deviza futó egyenleg': item.foreign_running_balance != null ? `${Number(item.foreign_running_balance).toFixed(2)} ${cardData.foreignCurrency}` : '-',
+      } : {}),
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportRows);
@@ -482,27 +570,55 @@ export function GlAccountCardView({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-card border border-border/60 rounded-xl p-3 flex flex-col justify-between">
           <span className="text-xs text-muted-foreground font-medium">{t('accounting:general_ledger.account_card.opening_balance')}</span>
-          <span className={`text-base font-bold tabular-nums mt-1 ${cardData?.openingBalance && cardData.openingBalance < 0 ? 'text-destructive' : 'text-foreground'}`}>
-            {formatCurrency(cardData?.openingBalance || 0)}
-          </span>
+          <div>
+            <span className={`text-base font-bold tabular-nums mt-1 ${cardData?.openingBalance && cardData.openingBalance < 0 ? 'text-destructive' : 'text-foreground'}`}>
+              {formatCurrency(cardData?.openingBalance || 0)}
+            </span>
+            {cardData?.hasForeignCurrency && cardData.foreignOpeningBalance != null && cardData.foreignOpeningBalance !== 0 && (
+              <span className="block text-[11px] font-semibold text-muted-foreground tabular-nums">
+                ({formatNumberLocale(cardData.foreignOpeningBalance, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {cardData.foreignCurrency})
+              </span>
+            )}
+          </div>
         </div>
         <div className="bg-card border border-amber-500/20 bg-amber-500/5 rounded-xl p-3 flex flex-col justify-between">
           <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">{t('accounting:general_ledger.account_card.period_debit')}</span>
-          <span className="text-base font-bold tabular-nums text-amber-600 dark:text-amber-400 mt-1">
-            +{formatCurrency(cardData?.totalDebit || 0)}
-          </span>
+          <div>
+            <span className="text-base font-bold tabular-nums text-amber-600 dark:text-amber-400 mt-1">
+              +{formatCurrency(cardData?.totalDebit || 0)}
+            </span>
+            {cardData?.hasForeignCurrency && cardData.totalForeignDebit != null && cardData.totalForeignDebit > 0 && (
+              <span className="block text-[11px] font-semibold text-amber-700/80 dark:text-amber-300/80 tabular-nums">
+                (+{formatNumberLocale(cardData.totalForeignDebit, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {cardData.foreignCurrency})
+              </span>
+            )}
+          </div>
         </div>
         <div className="bg-card border border-sky-500/20 bg-sky-500/5 rounded-xl p-3 flex flex-col justify-between">
           <span className="text-xs text-sky-700 dark:text-sky-400 font-medium">{t('accounting:general_ledger.account_card.period_credit')}</span>
-          <span className="text-base font-bold tabular-nums text-sky-600 dark:text-sky-400 mt-1">
-            -{formatCurrency(cardData?.totalCredit || 0)}
-          </span>
+          <div>
+            <span className="text-base font-bold tabular-nums text-sky-600 dark:text-sky-400 mt-1">
+              -{formatCurrency(cardData?.totalCredit || 0)}
+            </span>
+            {cardData?.hasForeignCurrency && cardData.totalForeignCredit != null && cardData.totalForeignCredit > 0 && (
+              <span className="block text-[11px] font-semibold text-sky-700/80 dark:text-sky-300/80 tabular-nums">
+                (-{formatNumberLocale(cardData.totalForeignCredit, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {cardData.foreignCurrency})
+              </span>
+            )}
+          </div>
         </div>
         <div className="bg-card border border-emerald-500/20 bg-emerald-500/5 rounded-xl p-3 flex flex-col justify-between">
           <span className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">{t('accounting:general_ledger.account_card.closing_balance')}</span>
-          <span className="text-base font-bold tabular-nums text-emerald-600 dark:text-emerald-400 mt-1">
-            {formatCurrency(cardData?.closingBalance || 0)}
-          </span>
+          <div>
+            <span className="text-base font-bold tabular-nums text-emerald-600 dark:text-emerald-400 mt-1">
+              {formatCurrency(cardData?.closingBalance || 0)}
+            </span>
+            {cardData?.hasForeignCurrency && cardData.foreignClosingBalance != null && (
+              <span className="block text-[11px] font-semibold text-emerald-700/90 dark:text-emerald-300/90 tabular-nums">
+                ({formatNumberLocale(cardData.foreignClosingBalance, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {cardData.foreignCurrency})
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -661,12 +777,27 @@ export function GlAccountCardView({
                       </td>
                       <td className="py-2 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400 font-medium">
                         {item.debit_amount > 0 ? `+${formatCurrency(item.debit_amount)}` : '-'}
+                        {item.foreign_amount && item.currency && item.currency !== 'HUF' && item.debit_amount > 0 && (
+                          <span className="block text-[10px] text-muted-foreground font-normal">
+                            +{formatNumberLocale(Number(item.foreign_amount), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {item.currency}
+                          </span>
+                        )}
                       </td>
                       <td className="py-2 px-3 text-right tabular-nums text-sky-600 dark:text-sky-400 font-medium">
                         {item.credit_amount > 0 ? `-${formatCurrency(item.credit_amount)}` : '-'}
+                        {item.foreign_amount && item.currency && item.currency !== 'HUF' && item.credit_amount > 0 && (
+                          <span className="block text-[10px] text-muted-foreground font-normal">
+                            -{formatNumberLocale(Number(item.foreign_amount), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {item.currency}
+                          </span>
+                        )}
                       </td>
                       <td className="py-2 px-3 text-right tabular-nums font-bold text-foreground">
                         {formatCurrency(item.running_balance)}
+                        {item.foreign_running_balance != null && cardData?.hasForeignCurrency && (
+                          <span className="block text-[10px] text-muted-foreground font-normal">
+                            {formatNumberLocale(Number(item.foreign_running_balance), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {cardData.foreignCurrency}
+                          </span>
+                        )}
                       </td>
                     </tr>
                   );

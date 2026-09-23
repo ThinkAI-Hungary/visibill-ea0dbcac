@@ -1,8 +1,9 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { normalizeHungarianForPdf, formatHungarianCurrency, formatHungarianDate } from './documents/encoding/hungarianEncoding';
+import { normalizeHungarianForPdf, formatHungarianCurrency, formatHungarianNumber, formatHungarianDate } from './documents/encoding/hungarianEncoding';
 
 const hu = (text: string | null | undefined): string => normalizeHungarianForPdf(text || '');
+const formatFx = (amount: number, curr: string): string => `${formatHungarianNumber(amount, 2)} ${curr}`;
 
 export interface GlAccountCardPdfData {
   companyName: string;
@@ -16,6 +17,12 @@ export interface GlAccountCardPdfData {
   totalDebit: number;
   totalCredit: number;
   closingBalance: number;
+  hasForeignCurrency?: boolean;
+  foreignCurrency?: string;
+  foreignOpeningBalance?: number;
+  totalForeignDebit?: number;
+  totalForeignCredit?: number;
+  foreignClosingBalance?: number;
   items: Array<{
     posting_date: string;
     document_date?: string;
@@ -28,6 +35,9 @@ export interface GlAccountCardPdfData {
     debit_amount: number;
     credit_amount: number;
     running_balance: number;
+    foreign_amount?: number | null;
+    foreign_currency?: string | null;
+    foreign_running_balance?: number | null;
   }>;
 }
 
@@ -40,6 +50,7 @@ export interface BalanceConfirmationPdfData {
   partnerTaxNumber?: string;
   statementDate: string;
   totalOpenBalance: number;
+  currencySummaries?: Array<{ currency: string; openBalance: number }>;
   invoices: Array<{
     document_id: string;
     issue_date: string;
@@ -47,6 +58,8 @@ export interface BalanceConfirmationPdfData {
     original_amount: number;
     open_amount: number;
     overdue_days: number;
+    foreign_amount?: number | null;
+    currency?: string | null;
   }>;
 }
 
@@ -79,49 +92,101 @@ export function generateGlAccountCardPdf(data: GlAccountCardPdfData): jsPDF {
   // Summary Banner Cards
   const cardW = (contentWidth - 12) / 4; // 4 cards
   const fmt = (n: number) => formatHungarianCurrency(n);
+  const cardH = data.hasForeignCurrency ? 18 : 14;
 
   const cards = [
-    { label: 'Nyitó egyenleg', val: fmt(data.openingBalance), bg: [241, 245, 249], fg: [51, 65, 85] },
-    { label: 'Időszaki Tartozik (T)', val: fmt(data.totalDebit), bg: [254, 243, 199], fg: [180, 83, 9] },
-    { label: 'Időszaki Követel (K)', val: fmt(data.totalCredit), bg: [224, 242, 254], fg: [3, 105, 161] },
-    { label: 'Záró egyenleg', val: fmt(data.closingBalance), bg: [220, 252, 231], fg: [21, 128, 61] },
+    { 
+      label: 'Nyitó egyenleg', 
+      val: fmt(data.openingBalance), 
+      fx: (data.hasForeignCurrency && data.foreignOpeningBalance != null && data.foreignOpeningBalance !== 0) 
+        ? `(${formatFx(data.foreignOpeningBalance, data.foreignCurrency || 'EUR')})` 
+        : null,
+      bg: [241, 245, 249], 
+      fg: [51, 65, 85] 
+    },
+    { 
+      label: 'Időszaki Tartozik (T)', 
+      val: fmt(data.totalDebit), 
+      fx: (data.hasForeignCurrency && data.totalForeignDebit != null && data.totalForeignDebit > 0)
+        ? `(+${formatFx(data.totalForeignDebit, data.foreignCurrency || 'EUR')})`
+        : null,
+      bg: [254, 243, 199], 
+      fg: [180, 83, 9] 
+    },
+    { 
+      label: 'Időszaki Követel (K)', 
+      val: fmt(data.totalCredit), 
+      fx: (data.hasForeignCurrency && data.totalForeignCredit != null && data.totalForeignCredit > 0)
+        ? `(-${formatFx(data.totalForeignCredit, data.foreignCurrency || 'EUR')})`
+        : null,
+      bg: [224, 242, 254], 
+      fg: [3, 105, 161] 
+    },
+    { 
+      label: 'Záró egyenleg', 
+      val: fmt(data.closingBalance), 
+      fx: (data.hasForeignCurrency && data.foreignClosingBalance != null)
+        ? `(${formatFx(data.foreignClosingBalance, data.foreignCurrency || 'EUR')})`
+        : null,
+      bg: [220, 252, 231], 
+      fg: [21, 128, 61] 
+    },
   ];
 
   cards.forEach((c, i) => {
     const cx = margin + i * (cardW + 4);
     doc.setFillColor(c.bg[0], c.bg[1], c.bg[2]);
-    doc.roundedRect(cx, y, cardW, 14, 2, 2, 'F');
+    doc.roundedRect(cx, y, cardW, cardH, 2, 2, 'F');
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100);
-    doc.text(hu(c.label), cx + 4, y + 5);
-    doc.setFontSize(10);
+    doc.text(hu(c.label), cx + 4, y + 4.5);
+    doc.setFontSize(9.5);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(c.fg[0], c.fg[1], c.fg[2]);
-    doc.text(hu(c.val), cx + 4, y + 11);
+    doc.text(hu(c.val), cx + 4, y + 10);
+    if (c.fx) {
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(c.fg[0], c.fg[1], c.fg[2]);
+      doc.text(hu(c.fx), cx + 4, y + 15);
+    }
   });
 
-  y += 18;
+  y += cardH + 4;
 
   // Detailed Table
-  const bodyRows = data.items.map(item => [
-    formatHungarianDate(item.posting_date),
-    hu(item.document_id),
-    hu(item.journal_code),
-    hu(item.contra_gl_number),
-    hu(item.partner_name || '-'),
-    hu(item.description),
-    item.debit_amount > 0 ? formatHungarianCurrency(item.debit_amount) : '-',
-    item.credit_amount > 0 ? formatHungarianCurrency(item.credit_amount) : '-',
-    formatHungarianCurrency(item.running_balance),
-  ]);
+  const bodyRows = data.items.map(item => {
+    const hasItemFx = item.foreign_amount != null && item.foreign_currency && item.foreign_currency !== 'HUF';
+    const deb = item.debit_amount > 0 
+      ? (hasItemFx ? `${formatHungarianCurrency(item.debit_amount)}\n(+${formatFx(Number(item.foreign_amount), item.foreign_currency!)})` : formatHungarianCurrency(item.debit_amount))
+      : '-';
+    const cred = item.credit_amount > 0 
+      ? (hasItemFx ? `${formatHungarianCurrency(item.credit_amount)}\n(-${formatFx(Number(item.foreign_amount), item.foreign_currency!)})` : formatHungarianCurrency(item.credit_amount))
+      : '-';
+    const run = item.foreign_running_balance != null && data.hasForeignCurrency
+      ? `${formatHungarianCurrency(item.running_balance)}\n(${formatFx(Number(item.foreign_running_balance), data.foreignCurrency || 'EUR')})`
+      : formatHungarianCurrency(item.running_balance);
+
+    return [
+      formatHungarianDate(item.posting_date),
+      hu(item.document_id),
+      hu(item.journal_code),
+      hu(item.contra_gl_number),
+      hu(item.partner_name || '-'),
+      hu(item.description),
+      deb,
+      cred,
+      run,
+    ];
+  });
 
   autoTable(doc, {
     startY: y,
     margin: { left: margin, right: margin },
     tableWidth: contentWidth,
     head: [[
-      hu('Dátum'), hu('Bizonylatszám'), hu('Napló'), hu('Ellenszámla'), hu('Partner'), hu('Megjegyzés / Szöveg'), hu('Tartozik (Ft)'), hu('Követel (Ft)'), hu('Göngyölt egyenleg')
+      hu('Dátum'), hu('Bizonylatszám'), hu('Napló'), hu('Ellenszámla'), hu('Partner'), hu('Megjegyzés / Szöveg'), hu('Tartozik'), hu('Követel'), hu('Göngyölt egyenleg')
     ]],
     body: bodyRows,
     theme: 'grid',
@@ -219,22 +284,41 @@ export function generateBalanceConfirmationPdf(data: BalanceConfirmationPdfData)
   y += splitIntro.length * 4.5 + 4;
 
   // Open Items Table
-  const tableRows = data.invoices.map(inv => [
-    hu(inv.document_id),
-    formatHungarianDate(inv.issue_date),
-    formatHungarianDate(inv.due_date),
-    formatHungarianCurrency(inv.original_amount),
-    formatHungarianCurrency(inv.open_amount),
-    inv.overdue_days > 0 ? hu(`${inv.overdue_days} nap`) : hu('Lejáraton belüli'),
-  ]);
+  const tableRows = data.invoices.map(inv => {
+    const hasFx = inv.foreign_amount != null && inv.currency && inv.currency !== 'HUF';
+    const origStr = hasFx 
+      ? `${formatHungarianCurrency(inv.original_amount)}\n(${formatFx(Number(inv.foreign_amount), inv.currency!)})`
+      : formatHungarianCurrency(inv.original_amount);
+    const openStr = hasFx 
+      ? `${formatHungarianCurrency(inv.open_amount)}\n(${formatFx(Number(inv.foreign_amount), inv.currency!)})`
+      : formatHungarianCurrency(inv.open_amount);
+
+    return [
+      hu(inv.document_id),
+      formatHungarianDate(inv.issue_date),
+      formatHungarianDate(inv.due_date),
+      origStr,
+      openStr,
+      inv.overdue_days > 0 ? hu(`${inv.overdue_days} nap`) : hu('Lejáraton belüli'),
+    ];
+  });
+
+  const fxFootList = (data.currencySummaries || [])
+    .filter(s => s.currency !== 'HUF' && s.openBalance !== 0)
+    .map(s => `${formatFx(s.openBalance, s.currency)}`)
+    .join(', ');
+
+  const footOpenStr = fxFootList 
+    ? `${formatHungarianCurrency(data.totalOpenBalance)}\n(${fxFootList})`
+    : formatHungarianCurrency(data.totalOpenBalance);
 
   autoTable(doc, {
     startY: y,
     margin: { left: margin, right: margin },
     tableWidth: contentWidth,
-    head: [[hu('Bizonylatszám'), hu('Kelt'), hu('Esedékesség'), hu('Eredeti bruttó (Ft)'), hu('Nyitott egyenleg (Ft)'), hu('Lejárat')]],
+    head: [[hu('Bizonylatszám'), hu('Kelt'), hu('Esedékesség'), hu('Eredeti bruttó'), hu('Nyitott egyenleg'), hu('Lejárat')]],
     body: tableRows,
-    foot: [[hu('Összesen nyitott egyenleg:'), '', '', '', formatHungarianCurrency(data.totalOpenBalance), '']],
+    foot: [[hu('Összesen nyitott egyenleg:'), '', '', '', footOpenStr, '']],
     theme: 'grid',
     headStyles: { fillColor: [24, 43, 73], textColor: 255, fontSize: 8.5, fontStyle: 'bold' },
     bodyStyles: { fontSize: 8.5 },

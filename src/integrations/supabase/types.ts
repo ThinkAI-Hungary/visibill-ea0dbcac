@@ -7078,9 +7078,11 @@ export type Database = {
         Row: {
           company_id: string | null
           created_at: string | null
+          currency: string | null
           description: string | null
           gl_number: string
           id: string
+          is_multicurrency: boolean
           parent_id: string | null
           preset_id: string
           short_name: string
@@ -7089,9 +7091,11 @@ export type Database = {
         Insert: {
           company_id?: string | null
           created_at?: string | null
+          currency?: string | null
           description?: string | null
           gl_number: string
           id?: string
+          is_multicurrency?: boolean
           parent_id?: string | null
           preset_id: string
           short_name: string
@@ -7100,9 +7104,11 @@ export type Database = {
         Update: {
           company_id?: string | null
           created_at?: string | null
+          currency?: string | null
           description?: string | null
           gl_number?: string
           id?: string
+          is_multicurrency?: boolean
           parent_id?: string | null
           preset_id?: string
           short_name?: string

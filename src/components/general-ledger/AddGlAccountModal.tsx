@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Plus, BookOpen, AlertCircle, CheckCircle2, ArrowDownRight } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Loader2, Plus, BookOpen, AlertCircle, CheckCircle2, ArrowDownRight, Coins } from 'lucide-react';
 import { invalidateGlQueries } from '@/lib/cache';
 import { fetchAllGlAccountsByPreset } from '@/lib/glData';
 
@@ -51,6 +52,8 @@ export function AddGlAccountModal({
   const [shortName, setShortName] = useState('');
   const [description, setDescription] = useState('');
   const [accountType, setAccountType] = useState<'BALANCE_SHEET' | 'PROFIT_LOSS'>('BALANCE_SHEET');
+  const [isMulticurrency, setIsMulticurrency] = useState(false);
+  const [currency, setCurrency] = useState<string>('ANY');
 
   // Fetch current preset accounts to detect duplicates and parent accounts
   const { data: existingAccounts = [] } = useQuery({
@@ -69,6 +72,8 @@ export function AddGlAccountModal({
       setShortName('');
       setDescription('');
       setAccountType('BALANCE_SHEET');
+      setIsMulticurrency(false);
+      setCurrency('ANY');
     }
   }, [open]);
 
@@ -89,7 +94,19 @@ export function AddGlAccountModal({
         setAccountType('PROFIT_LOSS');
       }
     }
-  }, [firstDigit]);
+
+    // Auto-detect multicurrency based on Hungarian accounting standards
+    const clean = cleanedGlNumber.replace(/\./g, '');
+    if (clean.startsWith('386') || clean.startsWith('382') || clean.startsWith('316') || clean.startsWith('4542')) {
+      setIsMulticurrency(true);
+      if (clean.startsWith('386') && currency === 'ANY') {
+        setCurrency('EUR'); // Most common default for foreign bank
+      }
+    } else if (clean.startsWith('384') || clean.startsWith('381')) {
+      setIsMulticurrency(false);
+      setCurrency('HUF');
+    }
+  }, [firstDigit, cleanedGlNumber]);
 
   // Detect parent account (e.g. if creating 4712, check if 471 exists)
   const detectedParent = useMemo(() => {
@@ -125,12 +142,18 @@ export function AddGlAccountModal({
       if (!shortName.trim()) throw new Error('A megnevezés megadása kötelező!');
       if (isDuplicate) throw new Error(`A(z) ${cleanedGlNumber} főkönyvi szám már létezik ebben a számlatükörben!`);
 
+      const effectiveCurrency = isMulticurrency 
+        ? (currency === 'ANY' ? null : currency)
+        : (currency === 'HUF' ? 'HUF' : null);
+
       const payload = {
         preset_id: presetId,
         gl_number: cleanedGlNumber,
         short_name: shortName.trim(),
         description: description.trim() || null,
         parent_id: detectedParent?.id || null,
+        is_multicurrency: isMulticurrency,
+        currency: effectiveCurrency,
       };
 
       const { data, error } = await supabase
@@ -265,6 +288,63 @@ export function AddGlAccountModal({
                 </SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Devizakezelés / Második érték */}
+          <div className="rounded-lg border border-border/70 p-3 bg-muted/20 space-y-3">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="isMulticurrency"
+                checked={isMulticurrency}
+                onCheckedChange={(checked) => {
+                  const val = !!checked;
+                  setIsMulticurrency(val);
+                  if (val && currency === 'HUF') {
+                    setCurrency('EUR');
+                  }
+                }}
+              />
+              <div className="grid gap-0.5 leading-none">
+                <Label
+                  htmlFor="isMulticurrency"
+                  className="text-xs font-semibold cursor-pointer flex items-center gap-1.5"
+                >
+                  <Coins className="w-3.5 h-3.5 text-primary" />
+                  Devizás számla / Második érték követése
+                </Label>
+                <p className="text-[11px] text-muted-foreground">
+                  Kapcsold be, ha a számlára devizás tételek fognak könyvelődni (pl. 386 devizás bank, 316 külföldi vevő).
+                </p>
+              </div>
+            </div>
+
+            {isMulticurrency && (
+              <div className="space-y-1.5 pt-1 pl-6">
+                <Label htmlFor="currencySelect" className="text-[11px] font-semibold text-muted-foreground">
+                  Hozzárendelt devizanem
+                </Label>
+                <Select
+                  value={currency}
+                  onValueChange={setCurrency}
+                >
+                  <SelectTrigger id="currencySelect" className="text-xs h-8 bg-background">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="EUR" className="text-xs">EUR — Euró (Fix devizás bank / pénztár)</SelectItem>
+                    <SelectItem value="USD" className="text-xs">USD — Amerikai dollár</SelectItem>
+                    <SelectItem value="CHF" className="text-xs">CHF — Svájci frank</SelectItem>
+                    <SelectItem value="GBP" className="text-xs">GBP — Brit font</SelectItem>
+                    <SelectItem value="ANY" className="text-xs">Tetszőleges / Többdevizás analitika (pl. Vevő, Szállító)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-[10px] text-muted-foreground">
+                  {currency === 'ANY' 
+                    ? 'A számlára bármilyen devizanemű tétel könyvelhető lesz másodlagos devizaértékkel.'
+                    : `A számlára könyvelt devizás tételek alapértelmezett pénzneme ${currency} lesz.`}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Leírás (opcionális) */}

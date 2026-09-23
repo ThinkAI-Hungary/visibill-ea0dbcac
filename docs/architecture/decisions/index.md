@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-09-23  
-> **Összesen:** 154 döntés | ✅ Decided: 152 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-09-24  
+> **Összesen:** 156 döntés | ✅ Decided: 154 | ⛔ Superseded: 2
 
 ---
 
@@ -188,6 +188,8 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-139 | Tranzakciós jutalék (fee_amount) és kötegelt számlaszám-feloldás | ✅ Decided | [A-139](./A-139-transaction-fee-amount-and-batch-invoice-resolution.md) |
 | A-140 | Multi-Jurisdiction Cégkezelés (country_code), Horvát Rendszerszintű Számlatükör Hierarchia (számla_hr) és Dinamikus Főkönyvi Devizanem-Kezelés | ✅ Decided | [A-140](./A-140-multi-jurisdiction-and-croatian-chart-of-accounts.md) |
 | A-141 | Globális Fejléc Dátumválasztó Mellé Helyezett Nyelvválasztó (Inline DatePicker Companion Pattern) és Oldalsáv Tehermentesítés | ✅ Decided | [A-141](./A-141-global-header-inline-datepicker-language-switcher.md) |
+| A-142 | Kettős Könyvvitel Szerinti Kötelező Kontírszám Szabályok és Vevői Kontírválasztó (311–317 + ÁFA 467/466) | ✅ Decided | [A-142](./A-142-customer-and-vat-gl-rules-enforcement.md) |
+| A-143 | Devizás Főkönyvi Számlakezelés (gl_accounts), Bankszámla Deviza Védelem, Devizás Számlakarton és Többdevizás Partner Analitika | ✅ Decided | [A-143](./A-143-multicurrency-chart-of-accounts-and-general-ledger.md) |
 
 ## 💳 Fizetés
 

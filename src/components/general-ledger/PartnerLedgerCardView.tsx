@@ -8,8 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Printer, UserCheck, AlertTriangle, CheckCircle2, FileText, ArrowRightLeft } from 'lucide-react';
+import { Search, Printer, UserCheck, AlertTriangle, CheckCircle2, FileText, ArrowRightLeft, ArrowLeft, Coins } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { formatNumberLocale } from '@/lib/locale/formatters';
 import { generateBalanceConfirmationPdf, BalanceConfirmationPdfData } from '@/lib/ledgerCardPdfs';
 import { useTranslation } from 'react-i18next';
 import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
@@ -63,6 +64,7 @@ export function PartnerLedgerCardView({
           id,
           dc_type,
           amount,
+          foreign_amount,
           header:acc_journal_headers!inner(
             id,
             company_id,
@@ -70,6 +72,7 @@ export function PartnerLedgerCardView({
             document_date,
             document_id,
             description,
+            currency,
             partner_id,
             partner:partners(id, name, tax_number, address)
           ),
@@ -93,6 +96,7 @@ export function PartnerLedgerCardView({
         invoiced: number;
         paid: number;
         open_net: number;
+        currencies: Record<string, { invoiced: number; paid: number; open_net: number }>;
         invoices: any[];
       }> = {};
 
@@ -101,9 +105,10 @@ export function PartnerLedgerCardView({
         const pName = line.header?.partner?.name || 'Nincs partner';
         const pTax = line.header?.partner?.tax_number || '';
         const pAddr = line.header?.partner?.address || '';
-        const glNum = line.gl_account?.gl_number || '';
+        const glNum = (line.gl_account?.gl_number || '').replace(/\./g, '');
 
-        if (!glNum.startsWith('311') && !glNum.startsWith('454')) return;
+        // Match Customer (31*) and Supplier (454*, 455*) accounts
+        if (!glNum.startsWith('31') && !glNum.startsWith('454') && !glNum.startsWith('455')) return;
 
         if (!partnerMap[pId]) {
           partnerMap[pId] = {
@@ -114,23 +119,45 @@ export function PartnerLedgerCardView({
             invoiced: 0,
             paid: 0,
             open_net: 0,
+            currencies: {},
             invoices: [],
           };
         }
 
         const amt = Number(line.amount || 0);
-        const isCustomer = glNum.startsWith('311');
+        const curr = (line.header?.currency || 'HUF').toUpperCase().trim();
+        const fAmt = line.foreign_amount != null && Number(line.foreign_amount) > 0 
+          ? Number(line.foreign_amount) 
+          : (curr === 'HUF' ? amt : 0);
+
+        if (!partnerMap[pId].currencies[curr]) {
+          partnerMap[pId].currencies[curr] = { invoiced: 0, paid: 0, open_net: 0 };
+        }
+
+        const isCustomer = glNum.startsWith('31');
 
         if (isCustomer) {
-          if (line.dc_type === 'T') partnerMap[pId].invoiced += amt;
-          else partnerMap[pId].paid += amt;
+          if (line.dc_type === 'T') {
+            partnerMap[pId].invoiced += amt;
+            partnerMap[pId].currencies[curr].invoiced += fAmt;
+          } else {
+            partnerMap[pId].paid += amt;
+            partnerMap[pId].currencies[curr].paid += fAmt;
+          }
         } else {
           // Supplier
-          if (line.dc_type === 'K') partnerMap[pId].invoiced += amt;
-          else partnerMap[pId].paid += amt;
+          if (line.dc_type === 'K') {
+            partnerMap[pId].invoiced += amt;
+            partnerMap[pId].currencies[curr].invoiced += fAmt;
+          } else {
+            partnerMap[pId].paid += amt;
+            partnerMap[pId].currencies[curr].paid += fAmt;
+          }
         }
 
         partnerMap[pId].open_net = partnerMap[pId].invoiced - partnerMap[pId].paid;
+        partnerMap[pId].currencies[curr].open_net = 
+          partnerMap[pId].currencies[curr].invoiced - partnerMap[pId].currencies[curr].paid;
 
         // Record document item
         partnerMap[pId].invoices.push({
@@ -140,8 +167,10 @@ export function PartnerLedgerCardView({
           issue_date: line.header?.posting_date,
           due_date: line.header?.document_date || line.header?.posting_date,
           amount: amt,
+          foreign_amount: line.foreign_amount != null ? Number(line.foreign_amount) : null,
+          currency: curr,
           dc_type: line.dc_type,
-          gl_number: glNum,
+          gl_number: line.gl_account?.gl_number,
           description: line.header?.description,
         });
       });
@@ -180,6 +209,13 @@ export function PartnerLedgerCardView({
   // Handle PDF Balance Confirmation Letter
   const handlePrintConfirmation = () => {
     if (!activePartner) return;
+
+    const currencySummaries = activePartner.currencies
+      ? Object.entries(activePartner.currencies)
+          .filter(([c, st]: [string, any]) => c !== 'HUF' && st.open_net !== 0)
+          .map(([currency, st]: [string, any]) => ({ currency, openBalance: st.open_net }))
+      : [];
+
     const pdfData: BalanceConfirmationPdfData = {
       companyName,
       partnerName: activePartner.partner_name,
@@ -187,6 +223,7 @@ export function PartnerLedgerCardView({
       partnerTaxNumber: activePartner.partner_tax_number,
       statementDate: dateTo,
       totalOpenBalance: activePartner.open_net,
+      currencySummaries,
       invoices: activePartner.invoices.map(i => ({
         document_id: i.document_id,
         issue_date: i.issue_date,
@@ -194,6 +231,8 @@ export function PartnerLedgerCardView({
         original_amount: i.amount,
         open_amount: i.amount,
         overdue_days: 15, // Calculated overdue
+        foreign_amount: i.foreign_amount,
+        currency: i.currency,
       })),
     };
 
@@ -282,16 +321,44 @@ export function PartnerLedgerCardView({
 
       {/* Table */}
       <Card className="border-border/60 shadow-xs">
-        <CardHeader className="py-3 px-4 bg-muted/40 border-b flex flex-row items-center justify-between">
-          <CardTitle className="text-sm font-bold flex items-center gap-2">
-            <UserCheck className="w-4 h-4 text-primary" />
-            {activePartner 
-              ? t('accounting:general_ledger.partner_ledger_card.title_partner', { name: activePartner.partner_name, defaultValue: `${activePartner.partner_name} Folyószámla Kartonja` })
-              : t('accounting:general_ledger.partner_ledger_card.title_all', 'Partner Folyószámlák Összesítője')}
-          </CardTitle>
-          <span className="text-xs font-semibold text-primary">
-            {t('accounting:general_ledger.partner_ledger_card.open_total', { amount: formatCurrency(partnerCardData?.openTotal || 0, defaultCurrency), defaultValue: `Összes nyitott állomány: ${formatCurrency(partnerCardData?.openTotal || 0, defaultCurrency)}` })}
-          </span>
+        <CardHeader className="py-3 px-4 bg-muted/40 border-b flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            {activePartner && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs gap-1 -ml-1 text-muted-foreground hover:text-foreground"
+                onClick={() => setSelectedPartnerId('all')}
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Vissza az összes partnerhez
+              </Button>
+            )}
+            <CardTitle className="text-sm font-bold flex items-center gap-2">
+              <UserCheck className="w-4 h-4 text-primary" />
+              {activePartner 
+                ? t('accounting:general_ledger.partner_ledger_card.title_partner', { name: activePartner.partner_name, defaultValue: `${activePartner.partner_name} Folyószámla Kartonja` })
+                : t('accounting:general_ledger.partner_ledger_card.title_all', 'Partner Folyószámlák Összesítője')}
+            </CardTitle>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {activePartner && activePartner.currencies && (
+              <div className="flex flex-wrap items-center gap-1.5 mr-2">
+                {Object.entries(activePartner.currencies).map(([curr, st]: [string, any]) => (
+                  st.open_net !== 0 ? (
+                    <Badge key={curr} variant="outline" className="text-[11px] px-2 py-0.5 font-mono font-bold bg-primary/10 text-primary border-primary/20">
+                      <Coins className="w-3 h-3 mr-1" />
+                      {formatNumberLocale(st.open_net, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {curr}
+                    </Badge>
+                  ) : null
+                ))}
+              </div>
+            )}
+            <span className="text-xs font-semibold text-primary">
+              {t('accounting:general_ledger.partner_ledger_card.open_total', { amount: formatCurrency(partnerCardData?.openTotal || 0, defaultCurrency), defaultValue: `Összes nyitott állomány: ${formatCurrency(partnerCardData?.openTotal || 0, defaultCurrency)}` })}
+            </span>
+          </div>
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
           {isLoading ? (
@@ -303,7 +370,65 @@ export function PartnerLedgerCardView({
             <div className="py-12 text-center text-muted-foreground text-sm italic">
               {t('accounting:general_ledger.partner_ledger_card.no_data', 'Nincs megjeleníthető partner folyószámla adat.')}
             </div>
+          ) : activePartner ? (
+            /* ── Egyedi partner számla listája ── */
+            <table className="w-full text-xs text-left">
+              <thead className="bg-muted/50 border-b text-muted-foreground font-semibold">
+                <tr>
+                  <th className="py-2.5 px-3">Bizonylatszám</th>
+                  <th className="py-2.5 px-3">Dátum</th>
+                  <th className="py-2.5 px-3">Esedékesség</th>
+                  <th className="py-2.5 px-3">Főkönyvi szám</th>
+                  <th className="py-2.5 px-3">Szöveg / Megnevezés</th>
+                  <th className="py-2.5 px-3 text-right">Deviza összeg</th>
+                  <th className="py-2.5 px-3 text-right font-bold">Könyvelt összeg ({currencyLabel})</th>
+                  <th className="py-2.5 px-3 text-center">Irány</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/60">
+                {activePartner.invoices.map((inv: any, idx: number) => {
+                  const hasFx = inv.foreign_amount != null && inv.currency && inv.currency !== 'HUF';
+                  return (
+                    <tr key={inv.line_id || idx} className="hover:bg-muted/40 transition-colors">
+                      <td className="py-2 px-3 font-mono font-bold text-foreground">
+                        {inv.document_id || '-'}
+                      </td>
+                      <td className="py-2 px-3 font-mono text-muted-foreground">
+                        {inv.issue_date ? inv.issue_date.replace(/-/g, '.') : '-'}
+                      </td>
+                      <td className="py-2 px-3 font-mono text-muted-foreground">
+                        {inv.due_date ? inv.due_date.replace(/-/g, '.') : '-'}
+                      </td>
+                      <td className="py-2 px-3 font-mono font-semibold text-primary">
+                        {inv.gl_number || '-'}
+                      </td>
+                      <td className="py-2 px-3 max-w-[240px] truncate" title={inv.description}>
+                        {inv.description || '-'}
+                      </td>
+                      <td className="py-2 px-3 text-right tabular-nums">
+                        {hasFx ? (
+                          <span className="font-semibold text-primary">
+                            {formatNumberLocale(inv.foreign_amount, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {inv.currency}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </td>
+                      <td className="py-2 px-3 text-right tabular-nums font-bold text-foreground">
+                        {formatCurrency(inv.amount, defaultCurrency)}
+                      </td>
+                      <td className="py-2 px-3 text-center">
+                        <Badge variant="outline" className={`text-[10px] px-1.5 py-0 font-mono ${inv.dc_type === 'T' ? 'bg-amber-500/10 text-amber-600 border-amber-500/20' : 'bg-sky-500/10 text-sky-600 border-sky-500/20'}`}>
+                          {inv.dc_type === 'T' ? 'Tartozik' : 'Követel'}
+                        </Badge>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           ) : (
+            /* ── Partnerek összesítő listája többdevizás bontással ── */
             <table className="w-full text-xs text-left">
               <thead className="bg-muted/50 border-b text-muted-foreground font-semibold">
                 <tr>
@@ -316,40 +441,58 @@ export function PartnerLedgerCardView({
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
-                {partnerCardData.partnersSummary.map((p: any) => (
-                  <tr
-                    key={p.partner_id}
-                    onClick={() => setSelectedPartnerId(p.partner_id)}
-                    className="hover:bg-muted/40 transition-colors cursor-pointer"
-                  >
-                    <td className="py-2.5 px-3 font-semibold text-primary">
-                      {p.partner_name}
-                    </td>
-                    <td className="py-2.5 px-3 font-mono text-muted-foreground">
-                      {p.partner_tax_number || '-'}
-                    </td>
-                    <td className="py-2.5 px-3 text-right tabular-nums">
-                      {formatCurrency(p.invoiced, defaultCurrency)}
-                    </td>
-                    <td className="py-2.5 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400">
-                      {formatCurrency(p.paid, defaultCurrency)}
-                    </td>
-                    <td className="py-2.5 px-3 text-right tabular-nums font-bold text-foreground">
-                      {formatCurrency(p.open_net, defaultCurrency)}
-                    </td>
-                    <td className="py-2.5 px-3 text-center">
-                      {p.open_net === 0 ? (
-                        <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px]">
-                          <CheckCircle2 className="w-3 h-3 mr-1" /> {t('accounting:general_ledger.partner_ledger_card.status_settled', 'Rendezve')}
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[10px]">
-                          <AlertTriangle className="w-3 h-3 mr-1" /> {t('accounting:general_ledger.partner_ledger_card.status_open', 'Nyitott')}
-                        </Badge>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                {partnerCardData.partnersSummary.map((p: any) => {
+                  const fxEntries = p.currencies 
+                    ? Object.entries(p.currencies).filter(([c, st]: [string, any]) => c !== 'HUF' && st.open_net !== 0)
+                    : [];
+
+                  return (
+                    <tr
+                      key={p.partner_id}
+                      onClick={() => setSelectedPartnerId(p.partner_id)}
+                      className="hover:bg-muted/40 transition-colors cursor-pointer"
+                    >
+                      <td className="py-2.5 px-3 font-semibold text-primary">
+                        {p.partner_name}
+                      </td>
+                      <td className="py-2.5 px-3 font-mono text-muted-foreground">
+                        {p.partner_tax_number || '-'}
+                      </td>
+                      <td className="py-2.5 px-3 text-right tabular-nums">
+                        {formatCurrency(p.invoiced, defaultCurrency)}
+                      </td>
+                      <td className="py-2.5 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400">
+                        {formatCurrency(p.paid, defaultCurrency)}
+                      </td>
+                      <td className="py-2.5 px-3 text-right tabular-nums font-bold text-foreground">
+                        <div>{formatCurrency(p.open_net, defaultCurrency)}</div>
+                        {fxEntries.length > 0 && (
+                          <div className="flex flex-wrap justify-end gap-1 mt-0.5">
+                            {fxEntries.map(([c, st]: [string, any]) => (
+                              <span
+                                key={c}
+                                className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.2 rounded bg-primary/10 text-primary border border-primary/20"
+                              >
+                                {formatNumberLocale(st.open_net, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {c}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        {p.open_net === 0 ? (
+                          <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px]">
+                            <CheckCircle2 className="w-3 h-3 mr-1" /> {t('accounting:general_ledger.partner_ledger_card.status_settled', 'Rendezve')}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[10px]">
+                            <AlertTriangle className="w-3 h-3 mr-1" /> {t('accounting:general_ledger.partner_ledger_card.status_open', 'Nyitott')}
+                          </Badge>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}

@@ -67,9 +67,10 @@ export async function generateDraftsFallback(
 
   const validGlIds = new Set((glAccounts || []).map(g => g.id));
 
-  // Filter valid mapped items (MUST have a valid gl_account_id in gl_accounts, NOT nil UUID)
+  // Filter valid mapped items (MUST have a valid gl_account_id in gl_accounts, NOT nil UUID, and be net items or bank txs)
   const validItems = items.filter(
     (item: any) =>
+      ['transactions', 'invoice_items', 'nav_invoice_items'].includes(item.source_table) &&
       item.gl_account_id &&
       item.gl_account_id !== '00000000-0000-0000-0000-000000000000' &&
       validGlIds.has(item.gl_account_id) &&

@@ -18,13 +18,15 @@
 | short_name | character varying(255) | — |  |
 | description | text | ✓ |  |
 | parent_id | uuid | ✓ |  |
+| currency | text | ✓ | `NULL` |
+| is_multicurrency | boolean | — | `false` |
 | created_at | timestamp with time zone | ✓ | `now()` |
 | updated_at | timestamp with time zone | ✓ | `now()` |
 | company_id | uuid | ✓ |  |
 
 **FK:** `company_id` → `companies.id`, `parent_id` → `gl_accounts.id`, `preset_id` → `chart_of_accounts_presets.id`
 
-**Indexek:** `gl_accounts_preset_id_gl_number_key`, `idx_gl_accounts_company_id`, `idx_gl_accounts_parent_id`, `idx_gl_accounts_preset_id`
+**Indexek:** `gl_accounts_preset_id_gl_number_key`, `idx_gl_accounts_company_id`, `idx_gl_accounts_parent_id`, `idx_gl_accounts_preset_id`, `idx_gl_accounts_multicurrency`
 
 ---
 

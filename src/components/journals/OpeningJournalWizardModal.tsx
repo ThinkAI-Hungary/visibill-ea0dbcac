@@ -42,7 +42,20 @@ export interface OpeningLineInput {
   description: string;
 }
 
-export const isForeignCurrencyAccount = (glNumber: string = '', shortName: string = ''): boolean => {
+export const isForeignCurrencyAccount = (
+  glNumber: string = '',
+  shortName: string = '',
+  isMulticurrency?: boolean | null,
+  accountCurrency?: string | null
+): boolean => {
+  // 1. Explicit database configuration check
+  if (isMulticurrency === true) return true;
+  if (accountCurrency && accountCurrency.toUpperCase() !== 'HUF') return true;
+  if (isMulticurrency === false && (!accountCurrency || accountCurrency.toUpperCase() === 'HUF')) {
+    return false;
+  }
+
+  // 2. Fallback heuristic
   const clean = glNumber.replace(/\./g, '').trim();
   return (
     clean.startsWith('386') || // Devizabetétszámla
@@ -520,9 +533,10 @@ export default function OpeningJournalWizardModal({
         if (selected) {
           current.gl_number = selected.gl_number;
           current.gl_name = selected.short_name;
-          if (isForeignCurrencyAccount(selected.gl_number, selected.short_name) && !current.is_foreign) {
+          const isFx = isForeignCurrencyAccount(selected.gl_number, selected.short_name, selected.is_multicurrency, selected.currency);
+          if (isFx && !current.is_foreign) {
             current.is_foreign = true;
-            if (!current.currency) current.currency = 'EUR';
+            if (!current.currency) current.currency = selected.currency || 'EUR';
             if (current.exchange_rate == null || current.exchange_rate === 0) {
               const found = findMnbRateForDate(mnbExchangeRates, current.currency, postingDate);
               if (found) current.exchange_rate = found.rate;
@@ -618,7 +632,7 @@ export default function OpeningJournalWizardModal({
       const cleanItemKonto = item.gl_number.replace(/\./g, '').trim();
       const matched = glAccounts.find(g => g.gl_number.replace(/\./g, '').trim() === cleanItemKonto);
       if (matched) {
-        const isFx = isForeignCurrencyAccount(matched.gl_number, matched.short_name);
+        const isFx = isForeignCurrencyAccount(matched.gl_number, matched.short_name, matched.is_multicurrency, matched.currency);
         newLines.push({
           gl_account_id: matched.id,
           gl_number: matched.gl_number,
@@ -626,7 +640,7 @@ export default function OpeningJournalWizardModal({
           dc_type: item.dc_type,
           amount: item.amount,
           is_foreign: isFx,
-          currency: isFx ? 'EUR' : undefined,
+          currency: isFx ? (matched.currency || 'EUR') : undefined,
           description: item.description || 'Importált nyitó egyenleg'
         });
       } else {
