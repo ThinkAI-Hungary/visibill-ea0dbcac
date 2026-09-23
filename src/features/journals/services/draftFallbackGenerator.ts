@@ -47,20 +47,21 @@ export async function generateDraftsFallback(
   // Fakov GL Account Resolution:
   // Suppliers: 4541 (Belföldi), 4542 (Külföldi), 4543 (Fordított ÁFA / FAD)
   // Customers: 3111 (Belföldi), 3112 (Külföldi), 3113 (Fordított ÁFA / FAD)
-  // VAT: 466 (Levonható), 4668 (Arányosítandó / nem levonható), 467 (Fizetendő)
-  const glSupp1Id = glAccounts?.find(g => g.gl_number === '4541')?.id || glAccounts?.find(g => g.gl_number.startsWith('454'))?.id;
-  const glSupp2Id = glAccounts?.find(g => g.gl_number === '4542')?.id || glSupp1Id;
-  const glSupp3Id = glAccounts?.find(g => g.gl_number === '4543')?.id || glSupp1Id;
+  const glClean = (g: any) => (g.gl_number || '').replace(/\./g, '');
+
+  const glSupp1Id = glAccounts?.find(g => glClean(g) === '4541')?.id || glAccounts?.find(g => glClean(g).startsWith('454'))?.id;
+  const glSupp2Id = glAccounts?.find(g => glClean(g) === '4542')?.id || glSupp1Id;
+  const glSupp3Id = glAccounts?.find(g => glClean(g) === '4543')?.id || glSupp1Id;
   const glSuppId = glSupp1Id || glAccounts?.[0]?.id;
 
-  const glCust1Id = glAccounts?.find(g => g.gl_number === '3111')?.id || glAccounts?.find(g => g.gl_number.startsWith('311'))?.id;
-  const glCust2Id = glAccounts?.find(g => g.gl_number === '3112')?.id || glCust1Id;
-  const glCust3Id = glAccounts?.find(g => g.gl_number === '3113')?.id || glCust1Id;
+  const glCust1Id = glAccounts?.find(g => glClean(g) === '3111')?.id || glAccounts?.find(g => glClean(g).startsWith('311'))?.id;
+  const glCust2Id = glAccounts?.find(g => glClean(g) === '3112')?.id || glCust1Id;
+  const glCust3Id = glAccounts?.find(g => glClean(g) === '3113')?.id || glCust1Id;
   const glCustId = glCust1Id || glAccounts?.[0]?.id;
 
-  const glVatDedId = glAccounts?.find(g => g.gl_number === '4661')?.id || glAccounts?.find(g => g.gl_number === '466')?.id;
-  const glVatProRataId = glAccounts?.find(g => g.gl_number === '4668')?.id;
-  const glVatPayId = glAccounts?.find(g => g.gl_number === '4671')?.id || glAccounts?.find(g => g.gl_number === '467')?.id;
+  const glVatDedId = glAccounts?.find(g => glClean(g) === '4661')?.id || glAccounts?.find(g => glClean(g) === '466')?.id || glAccounts?.find(g => glClean(g).startsWith('466'))?.id;
+  const glVatProRataId = glAccounts?.find(g => glClean(g) === '4668')?.id;
+  const glVatPayId = glAccounts?.find(g => glClean(g) === '4671')?.id || glAccounts?.find(g => glClean(g) === '467')?.id || glAccounts?.find(g => glClean(g).startsWith('467'))?.id;
 
   if (!glCustId || !glSuppId) return 0;
 
@@ -98,10 +99,10 @@ export async function generateDraftsFallback(
 
   const [parentInvRes, parentNavRes] = await Promise.all([
     parentInvIds.length > 0
-      ? supabase.from('invoices').select('id, service_period_end, is_continuous, partner_tax_number, currency').in('id', parentInvIds)
+      ? supabase.from('invoices').select('id, service_period_end, is_continuous, partner_tax_number, currency, partner_gl_number, vat_gl_number').in('id', parentInvIds)
       : Promise.resolve({ data: [] }),
     parentNavIds.length > 0
-      ? supabase.from('nav_invoices').select('id, service_period_end, is_continuous, seller_tax_number, buyer_tax_number, currency').in('id', parentNavIds)
+      ? supabase.from('nav_invoices').select('id, service_period_end, is_continuous, seller_tax_number, buyer_tax_number, currency, partner_gl_number, vat_gl_number').in('id', parentNavIds)
       : Promise.resolve({ data: [] })
   ]);
 
@@ -118,6 +119,8 @@ export async function generateDraftsFallback(
     is_continuous: boolean;
     partner_tax_number: string | null;
     currency: string | null;
+    partner_gl_number: string | null;
+    vat_gl_number: string | null;
   }>();
 
   invRes.data?.forEach((i: any) => {
@@ -130,6 +133,8 @@ export async function generateDraftsFallback(
       is_continuous: !!parent?.is_continuous,
       partner_tax_number: parent?.partner_tax_number || null,
       currency: parent?.currency || null,
+      partner_gl_number: parent?.partner_gl_number || null,
+      vat_gl_number: parent?.vat_gl_number || null,
     });
   });
 
@@ -143,6 +148,8 @@ export async function generateDraftsFallback(
       is_continuous: !!parent?.is_continuous,
       partner_tax_number: parent?.seller_tax_number || parent?.buyer_tax_number || null,
       currency: parent?.currency || null,
+      partner_gl_number: parent?.partner_gl_number || null,
+      vat_gl_number: parent?.vat_gl_number || null,
     });
   });
 
@@ -327,8 +334,18 @@ export async function generateDraftsFallback(
       const isForeignPartner = currency !== 'HUF' || 
                                (vatDetail?.partner_tax_number ? !vatDetail.partner_tax_number.trim().toUpperCase().startsWith('HU') : false);
 
-      const targetCustId = isReverseCharge ? glCust3Id : (isForeignPartner ? glCust2Id : glCust1Id);
-      const targetSuppId = isReverseCharge ? glSupp3Id : (isForeignPartner ? glSupp2Id : glSupp1Id);
+      const invPartnerGl = vatDetail?.partner_gl_number;
+      let targetCustId = isReverseCharge ? glCust3Id : (isForeignPartner ? glCust2Id : glCust1Id);
+      if (invPartnerGl && ['311', '312', '315', '316', '317'].includes(invPartnerGl)) {
+        const found = glAccounts?.find(g => glClean(g) === invPartnerGl || glClean(g).startsWith(invPartnerGl));
+        if (found) targetCustId = found.id;
+      }
+
+      let targetSuppId = isReverseCharge ? glSupp3Id : (isForeignPartner ? glSupp2Id : glSupp1Id);
+      if (invPartnerGl && invPartnerGl.startsWith('454')) {
+        const found = glAccounts?.find(g => glClean(g) === invPartnerGl || glClean(g).startsWith(invPartnerGl));
+        if (found) targetSuppId = found.id;
+      }
 
       if (isOutbound) {
         if (!targetCustId || !validGlIds.has(targetCustId) || !validGlIds.has(item.gl_account_id)) {
@@ -340,7 +357,12 @@ export async function generateDraftsFallback(
         }
       }
 
-      const targetVatAccountId = isOutbound ? effectiveVatPayId : effectiveVatDedId;
+      const invVatGl = vatDetail?.vat_gl_number;
+      let targetVatAccountId = isOutbound ? effectiveVatPayId : effectiveVatDedId;
+      if (invVatGl) {
+        const found = glAccounts?.find(g => glClean(g) === invVatGl || glClean(g).startsWith(invVatGl));
+        if (found) targetVatAccountId = found.id;
+      }
       const hufNet = amount;
       const foreignNet = foreignAmount;
       let hufVat = 0;

@@ -39,6 +39,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCompany } from '@/contexts/CompanyContext';
 import { checkBuyerTaxMismatch } from '@/lib/invoiceMatchingUtils';
 import { InvoiceVatCodeSelector } from '@/components/vat/InvoiceVatCodeSelector';
+import { InvoiceGlAccountSelector } from '@/components/invoices/InvoiceGlAccountSelector';
 
 interface InvoiceDetailPopupProps {
   open: boolean;
@@ -86,6 +87,9 @@ interface FullInvoice {
   feldolgozva: string | null;
   vat_code_id?: string | null;
   vat_row_override?: string | null;
+  partner_gl_number?: string | null;
+  vat_gl_number?: string | null;
+  invoice_direction?: string | null;
 }
 
 const invoiceTypeLabels = INVOICE_TYPE_LABELS;
@@ -314,7 +318,7 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
     try {
       const { data, error } = await supabase
         .from('invoices')
-        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, elado_cim, elado_vat_id, vevo_nev, vevo_cim, vevo_vat_id, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, fizetesi_mod, fizetesi_hatarido, fizetve, statusz, image_url, melleklet_url, invoice_direction, reference_number, category_id, project_id, transaction_id, afa_kulcsok_bontasban, forditott_adozas, onszamlazas, penzforgalmi_elszamolas, bankszamlaszam_iban, fizetendo_osszeg, invoice_type, termek_szolgaltatas_tipusa, adojogi_megjegyzes, adomentesseg_hivatkozas, dokumentum_azonosito, elolegszamla_hivatkozas, elszamolt_eloleg_osszeg, letrehozva, frissitve, company_id, email_uzenet_id, feldolgozva, invoice_uploads_id, user_id, vat_code_id, vat_row_override')
+        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, elado_cim, elado_vat_id, vevo_nev, vevo_cim, vevo_vat_id, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, fizetesi_mod, fizetesi_hatarido, fizetve, statusz, image_url, melleklet_url, invoice_direction, reference_number, category_id, project_id, transaction_id, afa_kulcsok_bontasban, forditott_adozas, onszamlazas, penzforgalmi_elszamolas, bankszamlaszam_iban, fizetendo_osszeg, invoice_type, termek_szolgaltatas_tipusa, adojogi_megjegyzes, adomentesseg_hivatkozas, dokumentum_azonosito, elolegszamla_hivatkozas, elszamolt_eloleg_osszeg, letrehozva, frissitve, company_id, email_uzenet_id, feldolgozva, invoice_uploads_id, user_id, vat_code_id, vat_row_override, partner_gl_number, vat_gl_number')
         .eq('id', invoiceId)
         .maybeSingle();
 
@@ -634,6 +638,23 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
                           currentVatCodeId={invoice.vat_code_id}
                           currentVatRowOverride={invoice.vat_row_override}
                           direction={invoice.invoice_direction === 'outbound' ? 'OUTBOUND' : 'INBOUND'}
+                          onUpdated={fetchInvoice}
+                        />
+                      </div>
+
+                      {/* Kettős könyvviteli kontírozás (Vevő 311-317 / Szállító 454 + ÁFA 467/466) */}
+                      <div className="pt-2.5 mt-1 border-t border-border/20 space-y-1.5">
+                        <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                          Kettős könyvviteli kontírozás
+                        </div>
+                        <InvoiceGlAccountSelector
+                          invoiceId={invoice.id}
+                          companyId={invoice.company_id}
+                          invoiceNumber={invoice.bizonylatsorszam}
+                          direction={invoice.invoice_direction === 'outbound' ? 'OUTBOUND' : 'INBOUND'}
+                          currency={invoice.penznem}
+                          currentPartnerGlNumber={invoice.partner_gl_number}
+                          currentVatGlNumber={invoice.vat_gl_number}
                           onUpdated={fetchInvoice}
                         />
                       </div>
