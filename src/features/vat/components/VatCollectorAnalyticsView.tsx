@@ -7,13 +7,33 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileSpreadsheet, ChevronDown, ChevronRight, ChevronLeft, Layers, FileText, Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { 
+  FileSpreadsheet, 
+  ChevronDown, 
+  ChevronRight, 
+  ChevronLeft, 
+  Layers, 
+  FileText, 
+  Loader2, 
+  Filter, 
+  X, 
+  Search, 
+  RotateCcw,
+  Percent,
+  BookOpen,
+  ArrowUpRight,
+  ArrowDownLeft,
+  ChevronsUpDown,
+  ChevronsDownUp
+} from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
 import { exportVatCollectorAnalyticsExcel, VatCollectorGroup } from '@/lib/glExport';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
 import { useDateRange } from '@/contexts/DateRangeContext';
-import { formatVatRate } from '@/lib/utils';
+import { useActivePreset } from '@/hooks/useActivePreset';
+import { fetchAllGlAccountsByPreset } from '@/lib/glData';
 
 interface VatCollectorAnalyticsViewProps {
   year?: number;
@@ -25,6 +45,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
+  const { activePresetId } = useActivePreset(selectedCompany?.id);
 
   // Compute effective date interval from props or DateRangeContext
   const effectiveDateFrom = useMemo(() => {
@@ -42,29 +63,55 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
     return dateToFormatted;
   }, [year, periodMonth, dateToFormatted]);
 
-  const [expandedCodes, setExpandedCodes] = useState<Set<string>>(new Set(['25', '05', 'FAD']));
+  const [collapsedCodes, setCollapsedCodes] = useState<Set<string>>(new Set());
   const [isExporting, setIsExporting] = useState(false);
+
+  // Filter states: Irány (Vevő/Szállító), ÁFA kód & Kontír
+  const [selectedDirectionFilter, setSelectedDirectionFilter] = useState<'ALL' | 'OUTBOUND' | 'INBOUND'>('ALL');
+  const [selectedVatCodeFilter, setSelectedVatCodeFilter] = useState<string>('ALL');
+  const [selectedGlFilter, setSelectedGlFilter] = useState<string>('ALL');
+  const [glSearchTerm, setGlSearchTerm] = useState<string>('');
 
   // Pagination states
   const [pageSize, setPageSize] = useState<number>(20);
   const [groupPages, setGroupPages] = useState<Record<string, number>>({});
 
-  // Query invoice items with VAT codes filtered by interval
+  // Fetch all GL accounts for preset to get names / descriptions
+  const { data: glAccounts = [] } = useQuery({
+    queryKey: ['glAccountsForVatAnalytics', activePresetId],
+    queryFn: async () => {
+      if (!activePresetId) return [];
+      return await fetchAllGlAccountsByPreset(activePresetId);
+    },
+    enabled: !!activePresetId,
+    staleTime: 60_000,
+  });
+
+  const glAccountMap = useMemo(() => {
+    const map = new Map<string, string>();
+    glAccounts.forEach((acc) => {
+      const label = acc.name || acc.short_name || '';
+      map.set(acc.gl_number, label);
+    });
+    return map;
+  }, [glAccounts]);
+
+  // Query invoice items with VAT codes, direction & GL classifications filtered by interval
   const { data: rawItems = [], isLoading } = useQuery({
-    queryKey: ['vatCollectorItems', selectedCompany?.id, effectiveDateFrom, effectiveDateTo],
+    queryKey: ['vatCollectorItems', selectedCompany?.id, effectiveDateFrom, effectiveDateTo, activePresetId],
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
 
       const [navInvsRes, subInvsRes] = await Promise.all([
         supabase
           .from('nav_invoices')
-          .select('id, invoice_number, supplier_name, customer_name, invoice_delivery_date, invoice_issue_date, invoice_net_amount, invoice_vat_amount')
+          .select('id, invoice_number, supplier_name, customer_name, invoice_delivery_date, invoice_issue_date, invoice_net_amount, invoice_vat_amount, partner_gl_number, vat_gl_number, invoice_direction')
           .eq('company_id', selectedCompany.id)
           .or(`invoice_delivery_date.gte.${effectiveDateFrom},and(invoice_delivery_date.is.null,invoice_issue_date.gte.${effectiveDateFrom})`)
           .or(`invoice_delivery_date.lte.${effectiveDateTo},and(invoice_delivery_date.is.null,invoice_issue_date.lte.${effectiveDateTo})`),
         supabase
           .from('invoices')
-          .select('id, bizonylatsorszam, elado_nev, vevo_nev, teljesites_datuma, kibocsatas_datuma, adoalap_osszesen, afa_osszeg_osszesen')
+          .select('id, bizonylatsorszam, elado_nev, vevo_nev, teljesites_datuma, kibocsatas_datuma, adoalap_osszesen, afa_osszeg_osszesen, partner_gl_number, vat_gl_number, invoice_direction')
           .eq('company_id', selectedCompany.id)
           .or(`teljesites_datuma.gte.${effectiveDateFrom},and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${effectiveDateFrom})`)
           .or(`teljesites_datuma.lte.${effectiveDateTo},and(teljesites_datuma.is.null,kibocsatas_datuma.lte.${effectiveDateTo})`),
@@ -83,13 +130,13 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
         navIds.length > 0
           ? supabase
               .from('nav_invoice_items')
-              .select('id, nav_invoice_id, net_amount, vat_amount, vat_rate, vat_code')
+              .select('id, nav_invoice_id, net_amount, vat_amount, vat_rate, vat_code, gl_classifications')
               .in('nav_invoice_id', navIds)
           : Promise.resolve({ data: [] }),
         subIds.length > 0
           ? supabase
               .from('invoice_items')
-              .select('id, invoice_id, net_amount, vat_amount, vat_rate, vat_code')
+              .select('id, invoice_id, net_amount, vat_amount, vat_rate, vat_code, gl_classifications')
               .in('invoice_id', subIds)
           : Promise.resolve({ data: [] }),
       ]);
@@ -125,14 +172,30 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
         return '25';
       };
 
+      const resolveItemGl = (glClassifications: any) => {
+        if (!glClassifications) return null;
+        if (activePresetId && glClassifications[activePresetId]?.gl_number) {
+          return String(glClassifications[activePresetId].gl_number);
+        }
+        const firstVal = Object.values(glClassifications)[0] as any;
+        return firstVal?.gl_number ? String(firstVal.gl_number) : null;
+      };
+
       const processedNavIds = new Set<string>();
       (navItemsRes.data || []).forEach((i: any) => {
         processedNavIds.add(i.nav_invoice_id);
         const inv = navMap.get(i.nav_invoice_id);
         const dateStr = inv?.invoice_delivery_date || inv?.invoice_issue_date || '';
+        const glNum = resolveItemGl(i.gl_classifications);
+        const direction = ((inv as any)?.invoice_direction || 'INBOUND').toUpperCase() as 'INBOUND' | 'OUTBOUND';
         items.push({
           id: `nav_${i.id}`,
           code: getCode(i.vat_rate, i.vat_code),
+          vat_code: i.vat_code || null,
+          gl_number: glNum,
+          direction,
+          partner_gl_number: (inv as any)?.partner_gl_number || null,
+          vat_gl_number: (inv as any)?.vat_gl_number || null,
           invoice_number: inv?.invoice_number || 'Névtelen',
           partner_name: inv?.supplier_name || inv?.customer_name || 'Ismeretlen partner',
           fulfillment_date: dateStr,
@@ -147,6 +210,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
         if (!processedNavIds.has(inv.id)) {
           const net = Number(inv.invoice_net_amount || 0);
           const vat = Number(inv.invoice_vat_amount || 0);
+          const direction = ((inv as any)?.invoice_direction || 'INBOUND').toUpperCase() as 'INBOUND' | 'OUTBOUND';
           if (net !== 0 || vat !== 0) {
             const rate = net > 0 ? vat / net : 0;
             const code = Math.round(rate * 100) === 27 ? '25' : Math.round(rate * 100) === 18 ? '18' : Math.round(rate * 100) === 5 ? '05' : vat === 0 ? 'TAM' : '25';
@@ -154,6 +218,11 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
             items.push({
               id: `nav_inv_${inv.id}`,
               code,
+              vat_code: null,
+              gl_number: null,
+              direction,
+              partner_gl_number: (inv as any)?.partner_gl_number || null,
+              vat_gl_number: (inv as any)?.vat_gl_number || null,
               invoice_number: inv.invoice_number || 'Névtelen',
               partner_name: inv.supplier_name || inv.customer_name || 'Ismeretlen partner',
               fulfillment_date: dateStr,
@@ -170,9 +239,16 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
         processedSubIds.add(i.invoice_id);
         const inv = subMap.get(i.invoice_id);
         const dateStr = inv?.teljesites_datuma || inv?.kibocsatas_datuma || '';
+        const glNum = resolveItemGl(i.gl_classifications);
+        const direction = ((inv as any)?.invoice_direction || 'INBOUND').toUpperCase() as 'INBOUND' | 'OUTBOUND';
         items.push({
           id: `sub_${i.id}`,
           code: getCode(i.vat_rate, i.vat_code),
+          vat_code: i.vat_code || null,
+          gl_number: glNum,
+          direction,
+          partner_gl_number: (inv as any)?.partner_gl_number || null,
+          vat_gl_number: (inv as any)?.vat_gl_number || null,
           invoice_number: inv?.bizonylatsorszam || 'Névtelen',
           partner_name: inv?.elado_nev || inv?.vevo_nev || 'Ismeretlen partner',
           fulfillment_date: dateStr,
@@ -187,6 +263,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
         if (!processedSubIds.has(inv.id)) {
           const net = Number(inv.adoalap_osszesen || 0);
           const vat = Number(inv.afa_osszeg_osszesen || 0);
+          const direction = ((inv as any)?.invoice_direction || 'INBOUND').toUpperCase() as 'INBOUND' | 'OUTBOUND';
           if (net !== 0 || vat !== 0) {
             const rate = net > 0 ? vat / net : 0;
             const code = Math.round(rate * 100) === 27 ? '25' : Math.round(rate * 100) === 18 ? '18' : Math.round(rate * 100) === 5 ? '05' : vat === 0 ? 'TAM' : '25';
@@ -194,6 +271,11 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
             items.push({
               id: `sub_inv_${inv.id}`,
               code,
+              vat_code: null,
+              gl_number: null,
+              direction,
+              partner_gl_number: (inv as any)?.partner_gl_number || null,
+              vat_gl_number: (inv as any)?.vat_gl_number || null,
               invoice_number: inv.bizonylatsorszam || 'Névtelen',
               partner_name: inv.elado_nev || inv.vevo_nev || 'Ismeretlen partner',
               fulfillment_date: dateStr,
@@ -210,27 +292,136 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
     enabled: !!selectedCompany?.id,
   });
 
+  // Calculate direction counts for tabs
+  const directionCounts = useMemo(() => {
+    let outbound = 0;
+    let inbound = 0;
+    rawItems.forEach((i) => {
+      if (i.direction === 'OUTBOUND') outbound++;
+      else inbound++;
+    });
+    return { all: rawItems.length, outbound, inbound };
+  }, [rawItems]);
+
+  // Calculate distinct available ÁFA codes present in rawItems
+  const availableVatCodes = useMemo(() => {
+    const set = new Set<string>();
+    rawItems.forEach((item) => {
+      if (item.code) set.add(item.code);
+      if (item.vat_code) set.add(item.vat_code);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'hu'));
+  }, [rawItems]);
+
+  // Calculate distinct available GL accounts present in rawItems
+  const availableGlAccounts = useMemo(() => {
+    const set = new Set<string>();
+    let hasUnclassified = false;
+    rawItems.forEach((item) => {
+      if (item.gl_number) {
+        set.add(item.gl_number);
+      } else {
+        hasUnclassified = true;
+      }
+      if (item.partner_gl_number) {
+        set.add(item.partner_gl_number);
+      }
+      if (item.vat_gl_number) {
+        set.add(item.vat_gl_number);
+      }
+    });
+
+    const accounts = Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    return { accounts, hasUnclassified };
+  }, [rawItems]);
+
+  // Helper for friendly VAT code descriptions in filter dropdown
+  const getVatCodeLabel = (code: string) => {
+    switch (code) {
+      case '25': return t('accounting:vat_return.analytics_view.codes.25', 'Normál belföldi 27% (Gyűjtőkód 25)');
+      case '05': return t('accounting:vat_return.analytics_view.codes.05', 'Kedvezményes belföldi 5% (Gyűjtőkód 05)');
+      case '18': return t('accounting:vat_return.analytics_view.codes.18', 'Kedvezményes belföldi 18% (Gyűjtőkód 18)');
+      case 'FAD': return t('accounting:vat_return.analytics_view.codes.FAD', 'Fordított adózás (FAD)');
+      case 'AAM': return t('accounting:vat_return.analytics_view.codes.AAM', 'Alanyi adómentes (AAM)');
+      case 'TAM': return t('accounting:vat_return.analytics_view.codes.TAM', 'Tárgyi adómentes (TAM)');
+      case 'EXP': return t('accounting:vat_return.analytics_view.codes.EXP', 'Termékexport (EXP)');
+      default: return code;
+    }
+  };
+
+  // Filter raw items based on active filters (Direction, ÁFA kód & Kontír)
+  const filteredItems = useMemo(() => {
+    return rawItems.filter((item) => {
+      // 1. Irány (Vevő / Szállító) filter
+      if (selectedDirectionFilter !== 'ALL') {
+        if (item.direction !== selectedDirectionFilter) return false;
+      }
+
+      // 2. ÁFA kód filter
+      if (selectedVatCodeFilter !== 'ALL') {
+        const matchCollector = item.code === selectedVatCodeFilter;
+        const matchVatCode = item.vat_code === selectedVatCodeFilter;
+        if (!matchCollector && !matchVatCode) return false;
+      }
+
+      // 3. Kontír dropdown filter
+      if (selectedGlFilter !== 'ALL') {
+        if (selectedGlFilter === 'UNCLASSIFIED') {
+          if (item.gl_number) return false;
+        } else {
+          const matchNetGl = item.gl_number === selectedGlFilter;
+          const matchPartnerGl = item.partner_gl_number === selectedGlFilter;
+          const matchVatGl = item.vat_gl_number === selectedGlFilter;
+          if (!matchNetGl && !matchPartnerGl && !matchVatGl) return false;
+        }
+      }
+
+      // 4. Quick search term (invoice, partner, GL number, GL name, VAT code)
+      if (glSearchTerm.trim()) {
+        const term = glSearchTerm.trim().toLowerCase();
+        const matchInvoice = item.invoice_number ? item.invoice_number.toLowerCase().includes(term) : false;
+        const matchPartner = item.partner_name ? item.partner_name.toLowerCase().includes(term) : false;
+        const matchNet = item.gl_number ? item.gl_number.toLowerCase().includes(term) : false;
+        const matchPartnerGl = item.partner_gl_number ? item.partner_gl_number.toLowerCase().includes(term) : false;
+        const matchVatGl = item.vat_gl_number ? item.vat_gl_number.toLowerCase().includes(term) : false;
+        const matchGlName = item.gl_number && glAccountMap.get(item.gl_number)?.toLowerCase().includes(term);
+        const matchVatCode = (item.vat_code || item.code)?.toLowerCase().includes(term);
+        if (!matchInvoice && !matchPartner && !matchNet && !matchPartnerGl && !matchVatGl && !matchGlName && !matchVatCode) return false;
+      }
+
+      return true;
+    });
+  }, [rawItems, selectedDirectionFilter, selectedVatCodeFilter, selectedGlFilter, glSearchTerm, glAccountMap]);
+
+  // Active sub-filters (Search, ÁFA kód, Kontír - excluding Direction, which is the main view tab)
+  const hasActiveSubFilters =
+    selectedVatCodeFilter !== 'ALL' ||
+    selectedGlFilter !== 'ALL' ||
+    glSearchTerm.trim() !== '';
+
+  const handleResetSubFilters = () => {
+    setSelectedVatCodeFilter('ALL');
+    setSelectedGlFilter('ALL');
+    setGlSearchTerm('');
+  };
+
+  // Scope total for the active direction tab (before sub-filters)
+  const currentScopeTotal =
+    selectedDirectionFilter === 'OUTBOUND'
+      ? directionCounts.outbound
+      : selectedDirectionFilter === 'INBOUND'
+      ? directionCounts.inbound
+      : directionCounts.all;
+
+  // Group filtered items into VAT collector groups
   const groups = useMemo<VatCollectorGroup[]>(() => {
     const map = new Map<string, VatCollectorGroup>();
 
-    const getLabel = (c: string) => {
-      switch (c) {
-        case '25': return t('accounting:vat_return.analytics_view.codes.25', 'Normál belföldi 27% (NAV Gyűjtőkód 25)');
-        case '05': return t('accounting:vat_return.analytics_view.codes.05', 'Kedvezményes belföldi 5% (NAV Gyűjtőkód 05)');
-        case '18': return t('accounting:vat_return.analytics_view.codes.18', 'Kedvezményes belföldi 18% (NAV Gyűjtőkód 18)');
-        case 'FAD': return t('accounting:vat_return.analytics_view.codes.FAD', 'Fordított adózás (FAD, mentes)');
-        case 'AAM': return t('accounting:vat_return.analytics_view.codes.AAM', 'Alanyi adómentes (AAM, mentes)');
-        case 'TAM': return t('accounting:vat_return.analytics_view.codes.TAM', 'Közérdekű vagy speciális adómentes (TAM, mentes)');
-        case 'EXP': return t('accounting:vat_return.analytics_view.codes.EXP', 'Termékexport 3. országba (mentes)');
-        default: return t('accounting:vat_return.analytics_view.codes.custom', { code: c, defaultValue: `Különleges gyűjtőkód (${c}, mentes)` });
-      }
-    };
-
-    rawItems.forEach(item => {
+    filteredItems.forEach((item) => {
       if (!map.has(item.code)) {
         map.set(item.code, {
           code: item.code,
-          label: getLabel(item.code),
+          label: getVatCodeLabel(item.code),
           items: [],
           total_net: 0,
           total_vat: 0,
@@ -246,15 +437,31 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
     });
 
     return Array.from(map.values()).sort((a, b) => a.code.localeCompare(b.code));
-  }, [rawItems, t]);
+  }, [filteredItems, t]);
+
+  const handleDirectionChange = (newDir: 'ALL' | 'OUTBOUND' | 'INBOUND') => {
+    if (selectedDirectionFilter === newDir) return;
+    setSelectedDirectionFilter(newDir);
+    setCollapsedCodes(new Set());
+    setGroupPages({});
+  };
 
   const toggleExpand = (code: string) => {
-    setExpandedCodes(prev => {
+    setCollapsedCodes((prev) => {
       const next = new Set(prev);
       if (next.has(code)) next.delete(code);
       else next.add(code);
       return next;
     });
+  };
+
+  const areAnyExpanded = groups.length > 0 && groups.some((g) => !collapsedCodes.has(g.code));
+  const toggleExpandAll = () => {
+    if (areAnyExpanded) {
+      setCollapsedCodes(new Set(groups.map((g) => g.code)));
+    } else {
+      setCollapsedCodes(new Set());
+    }
   };
 
   const handleExport = async () => {
@@ -264,7 +471,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
       await exportVatCollectorAnalyticsExcel(groups, selectedCompany?.name || 'Cég');
       toast({
         title: t('accounting:vat_return.analytics_view.toast_export_success_title', 'Sikeres exportálás'),
-        description: t('accounting:vat_return.analytics_view.toast_export_success_desc', 'Az ÁFA Gyűjtőkódos Analitika Excel fájl elkészült.')
+        description: t('accounting:vat_return.analytics_view.toast_export_success_desc', 'Az ÁFA Gyűjtőkódos Analitika Excel fájl elkészült.'),
       });
     } catch (e: any) {
       toast({ title: t('common:status.error', 'Export hiba'), description: e.message, variant: 'destructive' });
@@ -274,11 +481,14 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
   };
 
   const totals = useMemo(() => {
-    return groups.reduce((acc, g) => ({
-      net: acc.net + g.total_net,
-      vat: acc.vat + g.total_vat,
-      gross: acc.gross + g.total_gross,
-    }), { net: 0, vat: 0, gross: 0 });
+    return groups.reduce(
+      (acc, g) => ({
+        net: acc.net + g.total_net,
+        vat: acc.vat + g.total_vat,
+        gross: acc.gross + g.total_gross,
+      }),
+      { net: 0, vat: 0, gross: 0 }
+    );
   }, [groups]);
 
   return (
@@ -290,7 +500,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
             {t('accounting:vat_return.analytics_view.card_title', 'ÁFA Gyűjtőkód Szerinti Analitikus Kimutatás')}
           </CardTitle>
           <CardDescription>
-            {t('accounting:vat_return.analytics_view.card_description', 'NAV adóhatósági ellenőrzéseknek megfelelő bizonylat-analitika ÁFA gyűjtőkódonként csoportosítva (Fakov Kft. elvárás).')}
+            {t('accounting:vat_return.analytics_view.card_description', 'NAV adóhatósági ellenőrzéseknek megfelelő bizonylat-analitika ÁFA gyűjtőkódonként csoportosítva.')}
           </CardDescription>
           <div className="flex items-center gap-2 mt-2">
             <Badge variant="secondary" className="font-mono text-xs bg-muted/60 text-foreground border border-border">
@@ -299,11 +509,34 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
           </div>
         </div>
 
-        <div className="flex items-center gap-3 self-end sm:self-auto">
-          <div className="flex items-center gap-2 text-xs">
-            <span className="text-muted-foreground font-medium">{t('accounting:vat_return.analytics_view.items_per_page', 'Tétel / oldal:')}</span>
+        <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+          {/* Mindent kinyit / Mindent becsuk gomb */}
+          {groups.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleExpandAll}
+              className="h-8 text-xs gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground shrink-0 whitespace-nowrap"
+            >
+              {areAnyExpanded ? (
+                <>
+                  <ChevronsDownUp className="h-3.5 w-3.5" />
+                  Mindent becsuk
+                </>
+              ) : (
+                <>
+                  <ChevronsUpDown className="h-3.5 w-3.5" />
+                  Mindent kinyit
+                </>
+              )}
+            </Button>
+          )}
+
+          {/* Tétel / oldal választó */}
+          <div className="flex items-center gap-1.5 text-xs shrink-0">
+            <span className="text-muted-foreground font-medium whitespace-nowrap">{t('accounting:vat_return.analytics_view.items_per_page', 'Tétel / oldal:')}</span>
             <Select value={String(pageSize)} onValueChange={(val) => setPageSize(Number(val))}>
-              <SelectTrigger className="w-[110px] h-8 text-xs bg-background">
+              <SelectTrigger className="w-[105px] h-8 text-xs bg-background shrink-0 whitespace-nowrap">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -320,7 +553,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
             onClick={handleExport}
             disabled={isExporting || groups.length === 0}
             variant="outline"
-            className="gap-2 border-primary/30 text-primary hover:bg-primary/10 cursor-pointer h-8 text-xs"
+            className="gap-2 border-primary/30 text-primary hover:bg-primary/10 cursor-pointer h-8 text-xs shadow-2xs shrink-0 whitespace-nowrap"
           >
             {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4 text-emerald-600" />}
             {t('accounting:vat_return.analytics_view.export_excel', 'Export (Excel)')}
@@ -329,17 +562,281 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
       </CardHeader>
 
       <CardContent>
+        {/* Vevő / Szállító irány választó + Élő Mini-KPI Összesítő sáv */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-3.5 pb-3.5 border-b border-border/40">
+          {/* Szegmentált Irány választó */}
+          <div className="inline-flex items-center p-1 bg-muted/50 rounded-xl border border-border/60 shadow-2xs shrink-0">
+            <button
+              type="button"
+              onClick={() => handleDirectionChange('ALL')}
+              className={cn(
+                "h-8.5 px-3 text-xs font-medium rounded-lg transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap shrink-0 border",
+                selectedDirectionFilter === 'ALL'
+                  ? "bg-background text-foreground shadow-xs border-border/50 font-semibold"
+                  : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/60"
+              )}
+            >
+              <span className="whitespace-nowrap">Összes bizonylat</span>
+              <span className={cn(
+                "text-[11px] font-mono px-1.5 py-0.5 rounded-full font-normal transition-colors leading-none shrink-0",
+                selectedDirectionFilter === 'ALL' ? "bg-muted text-foreground font-semibold" : "bg-muted/80 text-muted-foreground"
+              )}>
+                {directionCounts.all}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleDirectionChange('OUTBOUND')}
+              className={cn(
+                "h-8.5 px-3 text-xs font-medium rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 border",
+                selectedDirectionFilter === 'OUTBOUND'
+                  ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/40 shadow-xs font-semibold"
+                  : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/60"
+              )}
+            >
+              <ArrowUpRight className={cn("h-3.5 w-3.5 shrink-0", selectedDirectionFilter === 'OUTBOUND' ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")} />
+              <span className="whitespace-nowrap">Vevői számlák (Kimenő)</span>
+              <span className={cn(
+                "text-[11px] font-mono px-1.5 py-0.5 rounded-full font-normal transition-colors leading-none shrink-0",
+                selectedDirectionFilter === 'OUTBOUND' ? "bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 font-semibold" : "bg-muted/80 text-muted-foreground"
+              )}>
+                {directionCounts.outbound}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleDirectionChange('INBOUND')}
+              className={cn(
+                "h-8.5 px-3 text-xs font-medium rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 border",
+                selectedDirectionFilter === 'INBOUND'
+                  ? "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/40 shadow-xs font-semibold"
+                  : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/60"
+              )}
+            >
+              <ArrowDownLeft className={cn("h-3.5 w-3.5 shrink-0", selectedDirectionFilter === 'INBOUND' ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground")} />
+              <span className="whitespace-nowrap">Szállítói számlák (Bejövő)</span>
+              <span className={cn(
+                "text-[11px] font-mono px-1.5 py-0.5 rounded-full font-normal transition-colors leading-none shrink-0",
+                selectedDirectionFilter === 'INBOUND' ? "bg-blue-500/20 text-blue-800 dark:text-blue-200 font-semibold" : "bg-muted/80 text-muted-foreground"
+              )}>
+                {directionCounts.inbound}
+              </span>
+            </button>
+          </div>
+
+          {/* Élő Mini-KPI Összesítők a szűrt adatokra */}
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="h-8.5 flex items-center gap-1.5 px-3 rounded-lg bg-muted/40 border border-border/40 text-xs whitespace-nowrap shrink-0">
+              <span className="text-muted-foreground">Nettó:</span>
+              <span className="font-mono font-semibold tabular-nums text-foreground">
+                {formatCurrency(totals.net, 'HUF')}
+              </span>
+            </div>
+            <div className="h-8.5 flex items-center gap-1.5 px-3 rounded-lg bg-primary/10 border border-primary/25 text-xs whitespace-nowrap shrink-0">
+              <span className="text-primary font-medium">ÁFA:</span>
+              <span className="font-mono font-bold tabular-nums text-primary">
+                {formatCurrency(totals.vat, 'HUF')}
+              </span>
+            </div>
+            <div className="h-8.5 flex items-center gap-1.5 px-3 rounded-lg bg-muted/40 border border-border/40 text-xs whitespace-nowrap shrink-0">
+              <span className="text-muted-foreground">Bruttó:</span>
+              <span className="font-mono font-semibold tabular-nums text-foreground">
+                {formatCurrency(totals.gross, 'HUF')}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Részletes szűrőpanel: Gyorskereső, ÁFA kód és Kontír választó */}
+        <div className="bg-muted/20 border border-border/60 rounded-xl p-3 mb-4 shadow-2xs space-y-2.5">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Keresőmező */}
+            <div className="relative flex-1 min-w-[220px] max-w-[340px]">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Keresés (partner, bizonylat, kontír)..."
+                value={glSearchTerm}
+                onChange={(e) => setGlSearchTerm(e.target.value)}
+                className={cn(
+                  "h-8.5 pl-8 pr-7 text-xs bg-background border-border/60 transition-all focus:border-primary",
+                  glSearchTerm && "border-primary/50 bg-primary/5"
+                )}
+              />
+              {glSearchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setGlSearchTerm('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer p-0.5 rounded-full"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+
+            {/* ÁFA kód szűrő */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Select value={selectedVatCodeFilter} onValueChange={setSelectedVatCodeFilter}>
+                <SelectTrigger className={cn(
+                  "w-[210px] h-8.5 text-xs bg-background border-border/60 transition-all shrink-0",
+                  selectedVatCodeFilter !== 'ALL' && "border-primary/60 bg-primary/5 text-primary font-medium"
+                )}>
+                  <div className="flex items-center gap-1.5 truncate">
+                    <Percent className="h-3 w-3 text-muted-foreground shrink-0" />
+                    <SelectValue placeholder="Összes ÁFA kód" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="max-h-72">
+                  <SelectItem value="ALL" className="text-xs font-medium">
+                    Összes ÁFA kód
+                  </SelectItem>
+                  {availableVatCodes.map((code) => {
+                    const label = getVatCodeLabel(code);
+                    return (
+                      <SelectItem key={code} value={code} className="text-xs font-mono">
+                        {label !== code ? `${code} — ${label}` : code}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Kontírszám szűrő */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Select value={selectedGlFilter} onValueChange={setSelectedGlFilter}>
+                <SelectTrigger className={cn(
+                  "w-[240px] h-8.5 text-xs bg-background border-border/60 transition-all shrink-0",
+                  selectedGlFilter !== 'ALL' && "border-primary/60 bg-primary/5 text-primary font-medium"
+                )}>
+                  <div className="flex items-center gap-1.5 truncate">
+                    <BookOpen className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <SelectValue placeholder="Összes kontírszám" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="max-h-72">
+                  <SelectItem value="ALL" className="text-xs font-medium">
+                    Összes kontírszám
+                  </SelectItem>
+                  {availableGlAccounts.hasUnclassified && (
+                    <SelectItem value="UNCLASSIFIED" className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                      ⚠️ Nem kontírozott tételek
+                    </SelectItem>
+                  )}
+                  {availableGlAccounts.accounts.map((acc) => {
+                    const name = glAccountMap.get(acc);
+                    return (
+                      <SelectItem key={acc} value={acc} className="text-xs font-mono">
+                        {acc}{name ? ` — ${name}` : ''}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Tétel számláló és gyors reset ha van aktív szűrő */}
+            <div className="flex items-center gap-2 ml-auto shrink-0">
+              <div className="h-8.5 flex items-center text-xs font-mono text-muted-foreground bg-background px-2.5 rounded-lg border border-border/60 shadow-2xs whitespace-nowrap shrink-0">
+                {hasActiveSubFilters ? (
+                  <span>
+                    Szűrt: <strong className="text-foreground">{filteredItems.length}</strong> / {currentScopeTotal} tétel
+                  </span>
+                ) : (
+                  <span>
+                    Összesen: <strong className="text-foreground">{currentScopeTotal}</strong> bizonylat
+                  </span>
+                )}
+              </div>
+
+              {hasActiveSubFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleResetSubFilters}
+                  className="h-8.5 px-2.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 gap-1.5 cursor-pointer transition-colors shrink-0"
+                  title="Kereső és szűrők visszaállítása"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Szűrők törlése
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Aktív szűrőcímkék (Chips) - CSAK ha van tényleges al-szűrő (kereső, áfa kód, kontír) */}
+          {hasActiveSubFilters && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-border/40 text-xs">
+              <span className="text-[11px] font-semibold text-muted-foreground mr-1">Aktív szűrők:</span>
+
+              {selectedVatCodeFilter !== 'ALL' && (
+                <Badge variant="secondary" className="gap-1 pl-2 pr-1 py-0.5 text-[11px] font-normal border border-border/60">
+                  <span className="text-muted-foreground">ÁFA kód:</span>
+                  <span className="font-semibold text-foreground">{selectedVatCodeFilter}</span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedVatCodeFilter('ALL')}
+                    className="hover:bg-muted p-0.5 rounded-full cursor-pointer ml-0.5 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+
+              {selectedGlFilter !== 'ALL' && (
+                <Badge variant="secondary" className="gap-1 pl-2 pr-1 py-0.5 text-[11px] font-normal border border-border/60">
+                  <span className="text-muted-foreground">Kontír:</span>
+                  <span className="font-semibold text-foreground">
+                    {selectedGlFilter === 'UNCLASSIFIED' ? 'Nem kontírozott' : selectedGlFilter}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedGlFilter('ALL')}
+                    className="hover:bg-muted p-0.5 rounded-full cursor-pointer ml-0.5 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+
+              {glSearchTerm.trim() !== '' && (
+                <Badge variant="secondary" className="gap-1 pl-2 pr-1 py-0.5 text-[11px] font-normal border border-border/60">
+                  <span className="text-muted-foreground">Keresés:</span>
+                  <span className="font-semibold text-foreground max-w-[130px] truncate">"{glSearchTerm.trim()}"</span>
+                  <button
+                    type="button"
+                    onClick={() => setGlSearchTerm('')}
+                    className="hover:bg-muted p-0.5 rounded-full cursor-pointer ml-0.5 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+            </div>
+          )}
+        </div>
+
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        ) : groups.length === 0 ? (
+        ) : rawItems.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <FileText className="h-10 w-10 mx-auto mb-2 opacity-40" />
             <p className="font-medium">{t('accounting:vat_return.analytics_view.empty', 'Nincsenek ÁFA gyűjtőkódos bizonylatok az adott időszakban.')}</p>
           </div>
+        ) : groups.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground border border-dashed rounded-lg">
+            <Filter className="h-10 w-10 mx-auto mb-2 opacity-40 text-primary" />
+            <p className="font-medium text-foreground">Nincs a megadott szűrési feltételeknek megfelelő tétel.</p>
+            <p className="text-xs text-muted-foreground mt-1">Próbáld meg módosítani az Irány, ÁFA kód vagy Kontír szűrőt.</p>
+            <Button variant="outline" size="sm" onClick={handleResetSubFilters} className="mt-3 gap-1.5 cursor-pointer text-xs">
+              <RotateCcw className="h-3.5 w-3.5" /> Szűrők visszaállítása
+            </Button>
+          </div>
         ) : (
-          <div className="rounded-lg border border-border/50 overflow-hidden">
+          <div key={selectedDirectionFilter} className="rounded-lg border border-border/50 overflow-hidden animate-in fade-in-50 duration-150">
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/40 hover:bg-muted/40">
@@ -347,6 +844,8 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
                   <TableHead className="font-semibold">{t('accounting:vat_return.analytics_view.col_code_doc', 'ÁFA Gyűjtőkód / Bizonylatszám')}</TableHead>
                   <TableHead className="font-semibold">{t('accounting:vat_return.analytics_view.col_partner_name', 'Partner neve')}</TableHead>
                   <TableHead className="text-center font-semibold">{t('accounting:vat_return.analytics_view.col_fulfillment_date', 'Teljesítés dátuma')}</TableHead>
+                  <TableHead className="text-center font-semibold w-24">ÁFA kód</TableHead>
+                  <TableHead className="text-center font-semibold w-28">Kontír</TableHead>
                   <TableHead className="text-right font-semibold">{t('accounting:vat_return.analytics_view.col_net_amount', 'Nettó alap')}</TableHead>
                   <TableHead className="text-right font-semibold">{t('accounting:vat_return.analytics_view.col_vat_amount', 'ÁFA összeg')}</TableHead>
                   <TableHead className="text-right font-semibold">{t('accounting:vat_return.analytics_view.col_gross_amount', 'Bruttó érték')}</TableHead>
@@ -354,8 +853,8 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
               </TableHeader>
 
               <TableBody>
-                {groups.map(group => {
-                  const isExpanded = expandedCodes.has(group.code);
+                {groups.map((group) => {
+                  const isExpanded = !collapsedCodes.has(group.code);
                   const page = groupPages[group.code] || 1;
                   const totalGroupItems = group.items.length;
                   const totalPages = pageSize === -1 ? 1 : Math.ceil(totalGroupItems / pageSize);
@@ -366,12 +865,12 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
                       {/* Group Header Row */}
                       <TableRow
                         onClick={() => toggleExpand(group.code)}
-                        className="bg-primary/5 hover:bg-primary/10 cursor-pointer transition-colors border-b border-border/30 font-semibold"
+                        className="bg-primary/5 hover:bg-primary/10 cursor-pointer border-b border-border/30 font-semibold"
                       >
                         <TableCell className="text-center py-3">
                           {isExpanded ? <ChevronDown className="h-4 w-4 text-primary mx-auto" /> : <ChevronRight className="h-4 w-4 text-primary mx-auto" />}
                         </TableCell>
-                        <TableCell colSpan={2} className="py-3">
+                        <TableCell colSpan={3} className="py-3">
                           <div className="flex items-center gap-2">
                             <Badge variant="outline" className="font-mono bg-primary/10 text-primary border-primary/30">
                               {t('accounting:vat_return.analytics_view.code_badge', { code: group.code, defaultValue: `Gyűjtőkód ${group.code}` })}
@@ -382,6 +881,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
                             </span>
                           </div>
                         </TableCell>
+                        <TableCell className="text-center text-xs text-muted-foreground">-</TableCell>
                         <TableCell className="text-center text-xs text-muted-foreground">-</TableCell>
                         <TableCell className="text-right font-mono text-foreground font-bold py-3">
                           {formatCurrency(group.total_net, 'HUF')}
@@ -395,41 +895,77 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
                       </TableRow>
 
                       {/* Detail Item Rows */}
-                      {isExpanded && pagedItems.map((item, index) => (
-                        <TableRow key={item.id || `${item.invoice_number}_${index}`} className="hover:bg-muted/30 text-xs transition-colors">
-                          <TableCell className="text-center text-muted-foreground/50">•</TableCell>
-                          <TableCell className="font-mono font-medium pl-6">
-                            {item.invoice_number}
-                          </TableCell>
-                          <TableCell className="font-medium text-muted-foreground">
-                            {item.partner_name}
-                          </TableCell>
-                          <TableCell className="text-center font-mono text-muted-foreground">
-                            {item.fulfillment_date ? item.fulfillment_date.substring(0, 10).replace(/-/g, '.') : '-'}
-                          </TableCell>
-                          <TableCell className="text-right font-mono tabular-nums">
-                            {formatCurrency(item.net_amount, 'HUF')}
-                          </TableCell>
-                          <TableCell className="text-right font-mono tabular-nums text-primary font-medium">
-                            {formatCurrency(item.vat_amount, 'HUF')}
-                          </TableCell>
-                          <TableCell className="text-right font-mono tabular-nums font-medium">
-                            {formatCurrency(item.gross_amount, 'HUF')}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {isExpanded &&
+                        pagedItems.map((item, index) => (
+                          <TableRow key={item.id || `${item.invoice_number}_${index}`} className="hover:bg-muted/30 text-xs">
+                            <TableCell className="text-center text-muted-foreground/50">•</TableCell>
+                            <TableCell className="font-mono font-medium pl-6">
+                              <div className="flex items-center gap-2">
+                                <span>{item.invoice_number}</span>
+                                {item.direction === 'OUTBOUND' ? (
+                                  <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
+                                    Vevő
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30">
+                                    Szállító
+                                  </Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="font-medium text-muted-foreground">
+                              {item.partner_name}
+                            </TableCell>
+                            <TableCell className="text-center font-mono text-muted-foreground">
+                              {item.fulfillment_date ? item.fulfillment_date.substring(0, 10).replace(/-/g, '.') : '-'}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded font-mono text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20">
+                                {item.vat_code || item.code}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {item.gl_number ? (
+                                <span
+                                  className="inline-flex items-center gap-1 font-mono text-xs font-semibold px-2 py-0.5 rounded bg-muted text-foreground border border-border/40"
+                                  title={glAccountMap.get(item.gl_number) || ''}
+                                >
+                                  {item.partner_gl_number ? (
+                                    <>
+                                      <span className="opacity-70 font-normal text-[10px]">{item.partner_gl_number} →</span>
+                                      <span>{item.gl_number}</span>
+                                    </>
+                                  ) : (
+                                    <span>{item.gl_number}</span>
+                                  )}
+                                </span>
+                              ) : (
+                                <span className="text-[11px] text-muted-foreground/60 italic">Nincs</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right font-mono tabular-nums">
+                              {formatCurrency(item.net_amount, 'HUF')}
+                            </TableCell>
+                            <TableCell className="text-right font-mono tabular-nums text-primary font-medium">
+                              {formatCurrency(item.vat_amount, 'HUF')}
+                            </TableCell>
+                            <TableCell className="text-right font-mono tabular-nums font-medium">
+                              {formatCurrency(item.gross_amount, 'HUF')}
+                            </TableCell>
+                          </TableRow>
+                        ))}
 
                       {/* Group Pagination Bar */}
                       {isExpanded && totalGroupItems > (pageSize > 0 ? pageSize : totalGroupItems) && pageSize !== -1 && (
                         <TableRow className="bg-muted/20 hover:bg-muted/20 border-b border-border/30">
-                          <TableCell colSpan={7} className="py-2 px-6">
+                          <TableCell colSpan={9} className="py-2 px-6">
                             <div className="flex items-center justify-between text-xs text-muted-foreground">
                               <div>
                                 {t('accounting:vat_return.analytics_view.pagination_info', {
                                   from: (page - 1) * pageSize + 1,
                                   to: Math.min(page * pageSize, totalGroupItems),
                                   total: totalGroupItems,
-                                  defaultValue: `Megjelenítve: ${(page - 1) * pageSize + 1} - ${Math.min(page * pageSize, totalGroupItems)} / ${totalGroupItems} tétel`
+                                  defaultValue: `Megjelenítve: ${(page - 1) * pageSize + 1} - ${Math.min(page * pageSize, totalGroupItems)} / ${totalGroupItems} tétel`,
                                 })}
                               </div>
                               <div className="flex items-center gap-1.5">
@@ -439,7 +975,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
                                   disabled={page === 1}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setGroupPages(prev => ({ ...prev, [group.code]: page - 1 }));
+                                    setGroupPages((prev) => ({ ...prev, [group.code]: page - 1 }));
                                   }}
                                   className="h-7 px-2 text-xs bg-background"
                                 >
@@ -454,7 +990,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
                                   disabled={page >= totalPages}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setGroupPages(prev => ({ ...prev, [group.code]: page + 1 }));
+                                    setGroupPages((prev) => ({ ...prev, [group.code]: page + 1 }));
                                   }}
                                   className="h-7 px-2 text-xs bg-background"
                                 >
@@ -471,7 +1007,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
 
                 {/* Grand Total Row */}
                 <TableRow className="bg-muted/80 font-bold border-t-2 border-border">
-                  <TableCell colSpan={4} className="py-3 text-right">
+                  <TableCell colSpan={6} className="py-3 text-right">
                     {t('accounting:vat_return.analytics_view.grand_total', 'ÖSSZESEN (NAV ÁFA Analitika):')}
                   </TableCell>
                   <TableCell className="text-right font-mono tabular-nums py-3 text-base">

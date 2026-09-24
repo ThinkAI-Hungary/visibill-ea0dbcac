@@ -310,7 +310,7 @@ export const exportGlAnalyticalExcel = async (
   URL.revokeObjectURL(url);
 };
 
-// ── NAV ÁFA Gyűjtőkódos Analitika Export (Fakov Kft. elvárás) ──
+// ── NAV ÁFA Gyűjtőkódos Analitika Export ──
 
 export interface VatCollectorGroup {
   code: string;
@@ -320,6 +320,9 @@ export interface VatCollectorGroup {
     invoice_number: string;
     partner_name: string;
     fulfillment_date: string;
+    vat_code?: string | null;
+    gl_number?: string | null;
+    direction?: string | null;
     net_amount: number;
     vat_amount: number;
     gross_amount: number;
@@ -346,7 +349,10 @@ export const exportVatCollectorAnalyticsExcel = async (
   ws.columns = [
     { header: 'ÁFA Gyűjtőkód / Bizonylatszám', key: 'col1', width: 34 },
     { header: 'Partner neve', key: 'col2', width: 35 },
+    { header: 'Irány (Vevő/Szállító)', key: 'col_dir', width: 22 },
     { header: 'Teljesítés dátuma', key: 'col3', width: 18 },
+    { header: 'ÁFA kód', key: 'col4', width: 14 },
+    { header: 'Kontír (Főkönyv)', key: 'col5', width: 18 },
     { header: 'Nettó alap (HUF)', key: 'net', width: 20 },
     { header: 'ÁFA összeg (HUF)', key: 'vat', width: 20 },
     { header: 'Bruttó érték (HUF)', key: 'gross', width: 20 },
@@ -367,7 +373,10 @@ export const exportVatCollectorAnalyticsExcel = async (
     const groupHeaderRow = ws.addRow({
       col1: `Gyűjtőkód: ${group.code} — ${group.label}`,
       col2: '',
+      col_dir: '',
       col3: '',
+      col4: '',
+      col5: '',
       net: group.total_net,
       vat: group.total_vat,
       gross: group.total_gross,
@@ -383,7 +392,10 @@ export const exportVatCollectorAnalyticsExcel = async (
       const itemRow = ws.addRow({
         col1: `    ${item.invoice_number}`,
         col2: item.partner_name,
+        col_dir: item.direction === 'OUTBOUND' ? 'Vevői (Kimenő)' : (item.direction === 'INBOUND' ? 'Szállítói (Bejövő)' : '-'),
         col3: item.fulfillment_date ? item.fulfillment_date.substring(0, 10).replace(/-/g, '.') : '-',
+        col4: item.vat_code || '-',
+        col5: item.gl_number || '-',
         net: item.net_amount,
         vat: item.vat_amount,
         gross: item.gross_amount,
@@ -404,7 +416,10 @@ export const exportVatCollectorAnalyticsExcel = async (
   const totalRow = ws.addRow({
     col1: 'ÖSSZESEN (NAV ÁFA Analitika)',
     col2: '',
+    col_dir: '',
     col3: '',
+    col4: '',
+    col5: '',
     net: grandNet,
     vat: grandVat,
     gross: grandGross,

@@ -1249,7 +1249,7 @@
     },
     "analytics_view": {
       "card_title": "ÁFA Gyűjtőkód Szerinti Analitikus Kimutatás",
-      "card_description": "NAV adóhatósági ellenőrzéseknek megfelelő bizonylat-analitika ÁFA gyűjtőkódonként csoportosítva (Fakov Kft. elvárás).",
+      "card_description": "NAV adóhatósági ellenőrzéseknek megfelelő bizonylat-analitika ÁFA gyűjtőkódonként csoportosítva.",
       "items_per_page": "Tétel / oldal:",
       "all_items": "Összes tétel",
       "items_count": "{{count}} tétel",
