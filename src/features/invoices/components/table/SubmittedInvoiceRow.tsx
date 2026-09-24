@@ -16,6 +16,7 @@ import { InvoiceVatCodeSelector } from '@/components/vat/InvoiceVatCodeSelector'
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
+import { resolveLinkedInvoices } from '../../utils/invoiceRelations';
 import type { SubmittedInvoice, NavInvoice, TransactionRecord } from '../../types';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
@@ -58,6 +59,7 @@ export function SubmittedInvoiceRow({
     setSubmittedItemsDialogOpen,
     setInvoiceParam,
     linkedInvoicesLoading,
+    linkedInvoicesMap,
     invalidateInvoiceData,
     setApprovalDialogOpen,
     setSelectedInvoiceForApproval,
@@ -104,7 +106,7 @@ export function SubmittedInvoiceRow({
       matchedSubmitted: [] as SubmittedInvoice[],
       matchedTransactions: Array.from(allTxMap.values()),
       matchedNav,
-      linkedInvoices: [] as any[],
+      linkedInvoices: resolveLinkedInvoices(subInvoice, linkedInvoicesMap),
     };
   };
 

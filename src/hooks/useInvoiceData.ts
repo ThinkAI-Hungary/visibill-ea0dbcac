@@ -38,6 +38,7 @@ export interface NavInvoice {
   currency: string | null;
   payment_method: string | null;
   invoice_operation: string | null;
+  original_invoice_number?: string | null;
   payment_date: string | null;
   paid: boolean | null;
   submitted: boolean | null;

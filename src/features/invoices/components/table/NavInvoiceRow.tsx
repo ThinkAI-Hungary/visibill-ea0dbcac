@@ -19,7 +19,8 @@ import { getDateFnsLocale } from '@/lib/locale/formatters';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
 import type { NavInvoice, SubmittedInvoice, TransactionRecord } from '../../types';
-import type { SuggestedSubmittedInvoiceWithScore } from '../../utils/invoiceRelations';
+import { resolveLinkedInvoices, type SuggestedSubmittedInvoiceWithScore } from '../../utils/invoiceRelations';
+import type { LinkedInvoice } from '../expanded-row/types';
 import { supabase } from '@/integrations/supabase/client';
 
 interface NavInvoiceRowProps {
@@ -123,6 +124,7 @@ function NavInvoiceRowComponent({
     setItemsDialogOpen,
     setInvoiceParam,
     linkedInvoicesLoading,
+    linkedInvoicesMap,
     invalidateInvoiceData,
     navIdToCourierReportsMap,
     setSuggestedLinkDialogOpen,
@@ -167,11 +169,23 @@ function NavInvoiceRowComponent({
       (pageInvoiceIdToTransactionsMap.get(sub.id) || []).forEach(tx => allTxMap.set(tx.id, tx));
     });
 
+    let linkedInvoices: LinkedInvoice[] = [];
+    if (matchedSubmitted.length > 0) {
+      linkedInvoices = resolveLinkedInvoices(matchedSubmitted[0], linkedInvoicesMap);
+    } else if (navInvoice.original_invoice_number || navInvoice.invoice_number) {
+      const pseudoSub = {
+        id: navInvoice.id,
+        bizonylatsorszam: navInvoice.invoice_number,
+        reference_number: navInvoice.original_invoice_number,
+      } as SubmittedInvoice;
+      linkedInvoices = resolveLinkedInvoices(pseudoSub, linkedInvoicesMap);
+    }
+
     return {
       matchedSubmitted,
       matchedTransactions: Array.from(allTxMap.values()),
       matchedNav: [] as NavInvoice[],
-      linkedInvoices: [] as any[],
+      linkedInvoices,
       matchedCourierReports: navIdToCourierReportsMap.get(navInvoice.id) || [],
     };
   };
@@ -658,6 +672,7 @@ function NavInvoiceRowComponent({
           matchedTransactions={matches.matchedTransactions}
           matchedCourierReports={matches.matchedCourierReports}
           linkedInvoices={matches.linkedInvoices}
+          invoiceReferenceNumber={invoice.original_invoice_number || (matches.matchedSubmitted[0]?.reference_number ?? null)}
           linkedInvoicesLoading={linkedInvoicesLoading}
           onViewInvoice={(inv) => {
             setSelectedInvoice(inv as any);

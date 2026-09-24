@@ -3,8 +3,8 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { FilePreviewModal } from '@/components/ui/FilePreviewModal';
 import { Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchInvoiceChain, InvoiceChainItem } from '@/features/invoices/utils/invoiceChainFetch';
+import { INVOICE_TYPE_LABELS } from '@/types/invoices';
 
 export interface InvoiceAttachmentItem {
   id?: string;
@@ -23,6 +23,9 @@ interface InvoiceForDialog {
   image_url?: string;
   melleklet_url?: string;
   attachments?: InvoiceAttachmentItem[] | null;
+  company_id?: string;
+  reference_number?: string;
+  elolegszamla_hivatkozas?: string;
 }
 
 interface InvoiceImageDialogProps {
@@ -32,17 +35,12 @@ interface InvoiceImageDialogProps {
   isLoading?: boolean;
 }
 
-const INVOICE_TYPE_LABELS: Record<string, string> = {
-  invoice: 'Számla',
-  credit_note: 'Jóváíró számla',
-  proforma: 'Díjbekérő',
-  advance: 'Előlegszámla',
-};
-
 const InvoiceImageDialog = ({ invoice, open, onClose, isLoading: externalLoading }: InvoiceImageDialogProps) => {
   const { t, i18n } = useTranslation(['invoices', 'common']);
   const [activeFileIndex, setActiveFileIndex] = useState(0);
   const [dbAttachments, setDbAttachments] = useState<InvoiceAttachmentItem[]>([]);
+  const [companionInvoices, setCompanionInvoices] = useState<InvoiceChainItem[]>([]);
+  const [currentRole, setCurrentRole] = useState<string>('Számla');
 
   useEffect(() => {
     if (open) {
@@ -53,32 +51,38 @@ const InvoiceImageDialog = ({ invoice, open, onClose, isLoading: externalLoading
   useEffect(() => {
     if (!open || !invoice) {
       setDbAttachments([]);
+      setCompanionInvoices([]);
       return;
     }
 
-    if (Array.isArray(invoice.attachments) && invoice.attachments.length > 0) {
-      setDbAttachments(invoice.attachments);
-      return;
-    }
+    let isCurrent = true;
 
-    const invId = invoice.id;
-    const invNum = invoice.bizonylatsorszam;
+    fetchInvoiceChain({
+      invoiceId: invoice.id,
+      bizonylatsorszam: invoice.bizonylatsorszam,
+      companyId: invoice.company_id,
+      referenceNumber: invoice.reference_number,
+      elolegszamlaHivatkozas: invoice.elolegszamla_hivatkozas,
+      invoiceType: invoice.invoice_type,
+    })
+      .then(({ currentDbInvoice, companionInvoices: companions, currentRole: role }) => {
+        if (!isCurrent) return;
+        if (currentDbInvoice?.attachments && Array.isArray(currentDbInvoice.attachments)) {
+          setDbAttachments(currentDbInvoice.attachments as unknown as InvoiceAttachmentItem[]);
+        } else if (Array.isArray(invoice.attachments)) {
+          setDbAttachments(invoice.attachments);
+        }
+        setCompanionInvoices(companions);
+        setCurrentRole(role);
+      })
+      .catch(err => {
+        console.warn('Failed to fetch invoice chain:', err);
+      });
 
-    let query = supabase.from('invoices').select('attachments');
-    if (invId) {
-      query = query.or(`id.eq.${invId}${invNum ? `,bizonylatsorszam.eq.${invNum}` : ''}`);
-    } else if (invNum) {
-      query = query.eq('bizonylatsorszam', invNum);
-    } else {
-      return;
-    }
-
-    query.maybeSingle().then(({ data }) => {
-      if (data?.attachments && Array.isArray(data.attachments)) {
-        setDbAttachments(data.attachments as unknown as InvoiceAttachmentItem[]);
-      }
-    });
-  }, [open, invoice?.id, invoice?.bizonylatsorszam, invoice?.attachments]);
+    return () => {
+      isCurrent = false;
+    };
+  }, [open, invoice?.id, invoice?.bizonylatsorszam]);
 
   if (!open) return null;
 
@@ -95,36 +99,83 @@ const InvoiceImageDialog = ({ invoice, open, onClose, isLoading: externalLoading
     );
   }
 
-  const getInvoiceIdentifier = (inv: InvoiceForDialog) => {
+  const getInvoiceIdentifier = (inv: InvoiceForDialog | InvoiceChainItem) => {
     if (inv.bizonylatsorszam) return inv.bizonylatsorszam;
-    if (inv.dokumentum_azonosito) return inv.dokumentum_azonosito;
+    if ('dokumentum_azonosito' in inv && inv.dokumentum_azonosito) return inv.dokumentum_azonosito;
     if (inv.invoice_type) return t(`invoices:types.${inv.invoice_type}`, INVOICE_TYPE_LABELS[inv.invoice_type] || inv.invoice_type);
     return 'N/A';
   };
 
-  const getDisplayName = (inv: InvoiceForDialog, url: string, fallbackName?: string) => {
+  const getDisplayName = (
+    inv: InvoiceForDialog | InvoiceChainItem,
+    url: string,
+    roleTag?: string,
+    fallbackName?: string
+  ) => {
     const identifier = fallbackName || getInvoiceIdentifier(inv);
     const cleanUrl = url.split('?')[0];
     const urlExt = cleanUrl.split('.').pop()?.toLowerCase() || '';
     const knownExts = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'csv', 'tsv', 'xls', 'xlsx', 'xlsm'];
-    return knownExts.includes(urlExt) ? `${identifier}.${urlExt}` : identifier;
+    const extSuffix = knownExts.includes(urlExt) ? `.${urlExt}` : '.pdf';
+
+    if (roleTag) {
+      return `${identifier} (${roleTag})${extSuffix}`;
+    }
+    return `${identifier}${extSuffix}`;
   };
 
-  // Collect all available files (primary invoice image, melleklet_url, and attachments)
+  // Collect all available files:
+  // 1. Primary invoice image & melleklet
+  // 2. Companion invoices in chain (storno, advance, final, correction, etc.)
+  // 3. Attachments
   const files: { url: string; name: string }[] = [];
+  const hasChain = companionInvoices.length > 0;
   const primaryUrl = invoice.image_url || invoice.melleklet_url;
+
   if (primaryUrl) {
     files.push({
       url: primaryUrl,
-      name: getDisplayName(invoice, primaryUrl),
+      name: getDisplayName(invoice, primaryUrl, hasChain ? currentRole : undefined),
     });
   }
+
   if (invoice.melleklet_url && invoice.image_url && invoice.melleklet_url !== invoice.image_url) {
     files.push({
       url: invoice.melleklet_url,
-      name: `${getDisplayName(invoice, invoice.melleklet_url)} (Melléklet)`,
+      name: getDisplayName(invoice, invoice.melleklet_url, 'Melléklet'),
     });
   }
+
+  // Add companion invoices in chain
+  companionInvoices.forEach(comp => {
+    const compPrimaryUrl = comp.image_url || comp.melleklet_url;
+    if (compPrimaryUrl && !files.some(f => f.url === compPrimaryUrl)) {
+      files.push({
+        url: compPrimaryUrl,
+        name: getDisplayName(comp, compPrimaryUrl, comp.relationRole || 'Számla'),
+      });
+    }
+
+    if (comp.melleklet_url && comp.image_url && comp.melleklet_url !== comp.image_url && !files.some(f => f.url === comp.melleklet_url)) {
+      files.push({
+        url: comp.melleklet_url,
+        name: getDisplayName(comp, comp.melleklet_url, 'Melléklet'),
+      });
+    }
+
+    if (Array.isArray(comp.attachments)) {
+      comp.attachments.forEach(att => {
+        if (att && att.url && !files.some(f => f.url === att.url)) {
+          files.push({
+            url: att.url,
+            name: att.name || `${comp.bizonylatsorszam} Melléklet`,
+          });
+        }
+      });
+    }
+  });
+
+  // Add primary invoice attachments
   const allAttachments = (Array.isArray(invoice.attachments) && invoice.attachments.length > 0)
     ? invoice.attachments
     : dbAttachments;
@@ -215,13 +266,14 @@ const InvoiceImageDialog = ({ invoice, open, onClose, isLoading: externalLoading
     );
   }
 
-  const currentFile = files[activeFileIndex] || files[0];
+  const safeActiveIndex = activeFileIndex < files.length ? activeFileIndex : 0;
+  const currentFile = files[safeActiveIndex] || files[0];
 
   return (
     <FilePreviewModal
       previewFile={currentFile}
       files={files}
-      activeFileIndex={activeFileIndex}
+      activeFileIndex={safeActiveIndex}
       onSelectFile={setActiveFileIndex}
       onClose={onClose}
     />

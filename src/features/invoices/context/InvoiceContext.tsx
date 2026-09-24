@@ -31,7 +31,7 @@ import type {
   InvoiceAction,
 } from '../types';
 import { TAB_SLUGS, SLUG_TO_TAB, TAB_TO_SLUG } from '../types';
-import type { SuggestedSubmittedInvoiceWithScore } from '../utils/invoiceRelations';
+import { buildLinkedInvoicesMap, type SuggestedSubmittedInvoiceWithScore } from '../utils/invoiceRelations';
 
 import {
   InvoiceFilterContext,
@@ -69,6 +69,10 @@ export interface InvoiceContextValue
   submittedInvoices: SubmittedInvoice[];
   linkedInvoicesPool: SubmittedInvoice[];
   linkedInvoicesLoading: boolean;
+  linkedInvoicesMap: {
+    byBizonylat: Map<string, SubmittedInvoice[]>;
+    byReference: Map<string, SubmittedInvoice[]>;
+  };
   partners: Partner[];
   categories: Category[];
   projects: Project[];
@@ -241,6 +245,10 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
     credentialsExist,
     invalidateInvoiceData,
   } = useInvoiceData(companyId, enabled, dateFromFormatted, dateToFormatted, selectedCompany?.id);
+
+  const linkedInvoicesMap = useMemo(() => {
+    return buildLinkedInvoicesMap(submittedInvoices, linkedInvoicesPool);
+  }, [submittedInvoices, linkedInvoicesPool]);
 
   const { effectiveSettings } = useCompanySettings();
   const defaultDateBasis = (effectiveSettings?.gl_date_basis as string) || 'kibocsatas';
@@ -1030,6 +1038,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       submittedInvoices,
       linkedInvoicesPool,
       linkedInvoicesLoading,
+      linkedInvoicesMap,
       partners,
       categories,
       projects,
@@ -1119,6 +1128,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       submittedInvoices,
       linkedInvoicesPool,
       linkedInvoicesLoading,
+      linkedInvoicesMap,
       partners,
       categories,
       projects,

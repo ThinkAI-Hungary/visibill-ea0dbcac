@@ -185,7 +185,17 @@ export function buildLinkedInvoicesMap(
   submittedInvoices: SubmittedInvoice[],
   linkedInvoicesPool: SubmittedInvoice[]
 ) {
-  const allInvoices = [...submittedInvoices, ...linkedInvoicesPool];
+  const uniqueInvoices = new Map<string, SubmittedInvoice>();
+  (submittedInvoices || []).forEach(inv => {
+    if (inv?.id) uniqueInvoices.set(inv.id, inv);
+  });
+  (linkedInvoicesPool || []).forEach(inv => {
+    if (inv?.id && !uniqueInvoices.has(inv.id)) {
+      uniqueInvoices.set(inv.id, inv);
+    }
+  });
+
+  const allInvoices = Array.from(uniqueInvoices.values());
   const byBizonylat = new Map<string, SubmittedInvoice[]>();
   const byReference = new Map<string, SubmittedInvoice[]>();
 
@@ -193,11 +203,13 @@ export function buildLinkedInvoicesMap(
     if (inv.bizonylatsorszam) {
       const key = normalizeInvoiceNumber(inv.bizonylatsorszam);
       const arr = byBizonylat.get(key) || [];
-      arr.push(inv);
+      if (!arr.some(x => x.id === inv.id)) {
+        arr.push(inv);
+      }
       byBizonylat.set(key, arr);
     }
     if (inv.reference_number) {
-      const refs = inv.reference_number.split(',').map(r => r.trim()).filter(Boolean);
+      const refs = inv.reference_number.split(/[,;\n]+/).map(r => r.trim()).filter(Boolean);
       refs.forEach(ref => {
         const key = normalizeInvoiceNumber(ref);
         const arr = byReference.get(key) || [];
@@ -208,7 +220,7 @@ export function buildLinkedInvoicesMap(
       });
     }
     if (inv.elolegszamla_hivatkozas) {
-      const refs = inv.elolegszamla_hivatkozas.split(',').map(r => r.trim()).filter(Boolean);
+      const refs = inv.elolegszamla_hivatkozas.split(/[,;\n]+/).map(r => r.trim()).filter(Boolean);
       refs.forEach(ref => {
         const key = normalizeInvoiceNumber(ref);
         const arr = byReference.get(key) || [];
@@ -227,16 +239,17 @@ export function resolveLinkedInvoices(
   invoice: SubmittedInvoice,
   linkedInvoicesMap: { byBizonylat: Map<string, SubmittedInvoice[]>; byReference: Map<string, SubmittedInvoice[]> }
 ): LinkedInvoiceWithRelation[] {
+  if (!invoice || !linkedInvoicesMap) return [];
   const linked: LinkedInvoiceWithRelation[] = [];
   const visited = new Set([invoice.id]);
 
   const getParentRefs = (inv: SubmittedInvoice): string[] => {
     const refs: string[] = [];
     if (inv.reference_number) {
-      inv.reference_number.split(',').map(r => r.trim()).filter(Boolean).forEach(r => refs.push(r));
+      inv.reference_number.split(/[,;\n]+/).map(r => r.trim()).filter(Boolean).forEach(r => refs.push(r));
     }
     if (inv.elolegszamla_hivatkozas) {
-      inv.elolegszamla_hivatkozas.split(',').map(r => r.trim()).filter(Boolean).forEach(r => refs.push(r));
+      inv.elolegszamla_hivatkozas.split(/[,;\n]+/).map(r => r.trim()).filter(Boolean).forEach(r => refs.push(r));
     }
     return refs;
   };

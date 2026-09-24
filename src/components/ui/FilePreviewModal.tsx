@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Download, ExternalLink, X, FileText, Loader, Loader2, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -94,99 +94,92 @@ function CsvPreviewComponent({ url }: { url: string }) {
   );
 }
 
+// ── File Extension Extraction ──────────────────────────────────────────────────
+export function getFileExtension(name: string, url?: string): string {
+  // 1. Try URL first if it has a recognized extension
+  if (url) {
+    const cleanUrl = url.split('?')[0].split('#')[0];
+    const urlExt = (cleanUrl.split('.').pop() || '').toLowerCase();
+    if (['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'csv', 'tsv', 'xls', 'xlsx', 'xlsm'].includes(urlExt)) {
+      return urlExt;
+    }
+  }
+
+  // 2. Strip any trailing parenthesized tags like " (Sztornó)"
+  const cleanName = name.replace(/\s*\([^)]*\)\s*$/, '').trim();
+  const nameExt = (cleanName.split('.').pop() || '').toLowerCase();
+  if (['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'csv', 'tsv', 'xls', 'xlsx', 'xlsm'].includes(nameExt)) {
+    return nameExt;
+  }
+
+  // 3. Fallback to raw extension
+  return (name.split('.').pop() || '').toLowerCase();
+}
+
 // ── FilePreviewContent ─────────────────────────────────────────────────────────
 // Renders the content area based on file extension.
 // Supported: PDF (native iframe), image, Excel (Office Online), CSV (table), fallback (download link).
 
 export function FilePreviewContent({ previewFile }: { previewFile: PreviewFile }) {
   const { t } = useTranslation(['common']);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const ext = (previewFile.name.split('.').pop() || '').toLowerCase();
+  const [isSwitching, setIsSwitching] = useState<boolean>(false);
+  const previousUrlRef = useRef<string>(previewFile.url);
+
+  const ext = getFileExtension(previewFile.name, previewFile.url);
   const isPdf = ext === 'pdf';
   const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(ext);
   const isCsv = ['csv', 'tsv'].includes(ext);
   const isExcel = ['xls', 'xlsx', 'xlsm'].includes(ext);
 
   useEffect(() => {
-    // Unsupported files or CSV handle their own display/fetch
-    if (!isPdf && !isImage && !isExcel) {
-      setIsLoading(false);
+    // If it's the same URL (initial mount or same file), no switch state needed!
+    if (previewFile.url === previousUrlRef.current) {
       return;
     }
 
-    setIsLoading(true);
+    // A real tab switch happened between different files!
+    setIsSwitching(true);
     let isCancelled = false;
-    const startTime = Date.now();
-    const minDisplayMs = 400; // Guarantee the user clearly sees the spinner during switch
 
-    fetch(previewFile.url)
-      .then(() => {
-        if (isCancelled) return;
-        const elapsed = Date.now() - startTime;
-        const remaining = Math.max(0, minDisplayMs - elapsed);
-        setTimeout(() => {
-          if (!isCancelled) {
-            setIsLoading(false);
-          }
-        }, remaining);
-      })
-      .catch(() => {
-        if (!isCancelled) {
-          const elapsed = Date.now() - startTime;
-          const remaining = Math.max(0, minDisplayMs - elapsed);
-          setTimeout(() => {
-            if (!isCancelled) {
-              setIsLoading(false);
-            }
-          }, remaining);
-        }
-      });
-
-    // Safety timeout: Ensure spinner dismisses even if fetch hangs
-    const safetyTimer = setTimeout(() => {
+    // Small smooth transition so the user gets clean visual feedback during switch
+    const switchTimer = setTimeout(() => {
       if (!isCancelled) {
-        setIsLoading(false);
+        previousUrlRef.current = previewFile.url;
+        setIsSwitching(false);
       }
-    }, 3500);
+    }, 200);
 
     return () => {
       isCancelled = true;
-      clearTimeout(safetyTimer);
+      clearTimeout(switchTimer);
     };
-  }, [previewFile.url, isPdf, isImage, isExcel]);
+  }, [previewFile.url]);
 
   return (
     <div className="w-full h-full relative overflow-hidden bg-background">
-      {/* Loading Overlay */}
-      {isLoading && (
-        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-card/90 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="flex flex-col items-center gap-3 p-6 rounded-xl bg-background/95 border border-border/60 shadow-2xl max-w-xs text-center">
-            <Loader2 className="h-9 w-9 animate-spin text-primary" />
-            <div className="space-y-1">
-              <p className="text-sm font-semibold text-foreground">
-                {t('common:file_preview.loading', 'Dokumentum betöltése...')}
-              </p>
-              <p className="text-xs text-muted-foreground truncate max-w-[220px]">
-                {previewFile.name}
-              </p>
-            </div>
+      {/* Switch Loading Overlay - only shows when switching between tabs */}
+      {isSwitching && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/60 backdrop-blur-xs animate-in fade-in duration-100">
+          <div className="flex items-center gap-2.5 px-4 py-2 rounded-lg bg-card/95 border border-border shadow-md text-foreground text-xs font-medium">
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            <span>{t('common:file_preview.loading', 'Dokumentum betöltése...')}</span>
           </div>
         </div>
       )}
 
       {/* PDF View */}
-      {!isLoading && isPdf && (
+      {isPdf && (
         <iframe
           key={previewFile.url}
           src={`${previewFile.url}#toolbar=1`}
-          className="w-full h-full border-0 animate-in fade-in duration-200"
+          className="w-full h-full border-0"
           title={t('common:file_preview.pdf_title', { name: previewFile.name, defaultValue: `PDF előnézet: ${previewFile.name}` })}
         />
       )}
 
       {/* Image View */}
-      {!isLoading && isImage && (
-        <div className="w-full h-full flex items-center justify-center p-6 overflow-auto bg-black/20 animate-in fade-in duration-200">
+      {isImage && (
+        <div className="w-full h-full flex items-center justify-center p-6 overflow-auto bg-black/20">
           <img
             key={previewFile.url}
             src={previewFile.url}
@@ -197,11 +190,11 @@ export function FilePreviewContent({ previewFile }: { previewFile: PreviewFile }
       )}
 
       {/* Excel View */}
-      {!isLoading && isExcel && (
+      {isExcel && (
         <iframe
           key={previewFile.url}
           src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(previewFile.url)}`}
-          className="w-full h-full border-0 bg-background animate-in fade-in duration-200"
+          className="w-full h-full border-0 bg-background"
           title={t('common:file_preview.excel_title', { name: previewFile.name, defaultValue: `Excel előnézet: ${previewFile.name}` })}
         />
       )}
@@ -264,7 +257,7 @@ export function FilePreviewModal({
   const { t } = useTranslation(['common']);
   if (!previewFile) return null;
 
-  const ext = (previewFile.name.split('.').pop() || '').toLowerCase();
+  const ext = getFileExtension(previewFile.name, previewFile.url);
 
   return createPortal(
     <div

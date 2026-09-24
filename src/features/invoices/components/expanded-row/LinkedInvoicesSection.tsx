@@ -32,12 +32,26 @@ export function LinkedInvoicesSection({
   };
 
   // Detect broken chain: reference_number exists but no matching linked invoice found
-  const hasBrokenChain =
-    !linkedInvoicesLoading &&
-    !!invoiceReferenceNumber &&
-    !linkedInvoices.some(
-      (inv) => inv.bizonylatsorszam?.toUpperCase() === invoiceReferenceNumber.toUpperCase()
-    );
+  const refTokens = React.useMemo(() => {
+    return (invoiceReferenceNumber || '')
+      .split(/[,;\n]+/)
+      .map((r) => r.trim())
+      .filter(Boolean);
+  }, [invoiceReferenceNumber]);
+
+  const missingRefs = React.useMemo(() => {
+    if (linkedInvoicesLoading || refTokens.length === 0) return [];
+    return refTokens.filter((ref) => {
+      const normRef = ref.toUpperCase();
+      return !linkedInvoices.some(
+        (inv) =>
+          inv.bizonylatsorszam?.trim().toUpperCase() === normRef ||
+          inv.bizonylatsorszam?.trim().replace(/\s+/g, '').toUpperCase() === normRef.replace(/\s+/g, '')
+      );
+    });
+  }, [linkedInvoicesLoading, refTokens, linkedInvoices]);
+
+  const hasBrokenChain = missingRefs.length > 0;
 
   return (
     <>
@@ -54,7 +68,7 @@ export function LinkedInvoicesSection({
                     <span className="text-muted-foreground ml-1.5">
                       {t('invoices:expanded_linked.broken_chain_desc', '— A következő hivatkozott bizonylat(ok) hiányoznak vagy törölték őket:')}{' '}
                       <code className="font-mono text-[11px] bg-muted px-1 rounded">
-                        {invoiceReferenceNumber}
+                        {missingRefs.join(', ')}
                       </code>
                     </span>
                   </div>
@@ -64,8 +78,8 @@ export function LinkedInvoicesSection({
             <TooltipContent side="bottom" className="max-w-xs">
               <p className="text-xs">
                 {t('invoices:expanded_linked.broken_chain_tooltip', {
-                  number: invoiceReferenceNumber,
-                  defaultValue: `A(z) ${invoiceReferenceNumber} sorszámú bizonylat nem található a rendszerben. Lehetséges, hogy még nem töltötték fel, törölték, vagy hibás a hivatkozás.`
+                  number: missingRefs.join(', '),
+                  defaultValue: `A(z) ${missingRefs.join(', ')} sorszámú bizonylat nem található a rendszerben. Lehetséges, hogy még nem töltötték fel, törölték, vagy hibás a hivatkozás.`
                 })}
               </p>
             </TooltipContent>
