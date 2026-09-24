@@ -170,8 +170,8 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceItemsDialog.tsx": {
-    "mtime": 1790206132.380269,
-    "ast_hash": "4c15c228769ce4746161d75ae452104d",
+    "mtime": 1790247916.455506,
+    "ast_hash": "eb11d1b531d9ab9c03042572da0776dd",
     "semantic_hash": ""
   },
   "src/components/LiveNotificationProvider.tsx": {
@@ -1105,8 +1105,8 @@
     "semantic_hash": "6747508d5cec296e87b5bb5c4a52dca9"
   },
   "src/lib/glExport.ts": {
-    "mtime": 1788953071.142676,
-    "ast_hash": "f9db6096263d16695f01a0e6265bcdb7",
+    "mtime": 1790247916.4588962,
+    "ast_hash": "dcfe69cca4e01be688dc822f70dd4f87",
     "semantic_hash": ""
   },
   "src/lib/helpers.ts": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790209798.6983602,
-    "ast_hash": "e94eb1ce44a2eb8d261e072eb8e32860",
+    "mtime": 1790248053.8700888,
+    "ast_hash": "183b06b05665d76b2667e1fa9e1fbdb6",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3385,8 +3385,8 @@
     "semantic_hash": ""
   },
   "docs/design/11-data-display-tables.md": {
-    "mtime": 1788705844.6112995,
-    "ast_hash": "949d70712c853bd3489f127e630d9783",
+    "mtime": 1790248148.0853703,
+    "ast_hash": "c7411bcf14caf6e8a52a1c5b9ed9db7f",
     "semantic_hash": ""
   },
   "docs/design/12-dialogs-modals.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1790204660.6065078,
-    "ast_hash": "779b403bc6e5646c7731678e0f4c613d",
+    "mtime": 1790248113.6977758,
+    "ast_hash": "de8ed9e2c03b3ed02659e0e1d6c1b6ab",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -3810,8 +3810,8 @@
     "semantic_hash": ""
   },
   "src/components/vat/VatRowDrillDown.tsx": {
-    "mtime": 1789910901.8804264,
-    "ast_hash": "02669917e41718d701c680e479ca69dc",
+    "mtime": 1790247916.4560263,
+    "ast_hash": "96ded04b92f1d13489f8321cd847112c",
     "semantic_hash": ""
   },
   "src/components/vat/VatTrendChart.tsx": {
@@ -6225,8 +6225,8 @@
     "semantic_hash": ""
   },
   "docs/design/13-file-preview-pattern.md": {
-    "mtime": 1788131141.9867055,
-    "ast_hash": "0a0651e59fdabae7e361e888ea17392c",
+    "mtime": 1790248130.3861055,
+    "ast_hash": "3c549e1a922e67353a6c7f71085e3f86",
     "semantic_hash": ""
   },
   "docs/glossary/01-business-and-domain/brands-and-naming.md": {
@@ -7665,8 +7665,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/NavInvoiceRow.tsx": {
-    "mtime": 1790215603.879995,
-    "ast_hash": "d58e96a3f214640112ef74638e758786",
+    "mtime": 1790247916.45706,
+    "ast_hash": "cc7d545985204e3fa437aa5758715264",
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/NavInvoiceTable.tsx": {
@@ -8285,8 +8285,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/VatCalculatorView.tsx": {
-    "mtime": 1789910901.8835976,
-    "ast_hash": "df097c143ae04e731cb856ac8395fe3d",
+    "mtime": 1790247916.4575827,
+    "ast_hash": "ce33f8ce15322f7d4f9977485623e3ae",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatNav65Replica.tsx": {
@@ -10005,8 +10005,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/VatCollectorAnalyticsView.tsx": {
-    "mtime": 1790100407.637214,
-    "ast_hash": "b95369774ccb02040ce937591a8de538",
+    "mtime": 1790247916.4583917,
+    "ast_hash": "4019c988cfc981eaf13c307aec951231",
     "semantic_hash": ""
   },
   "src/test/accounty/sportsbaseVatAlignment.test.ts": {
@@ -10260,8 +10260,8 @@
     "semantic_hash": ""
   },
   "src/locales/hu/accounting.json": {
-    "mtime": 1790164813.2773705,
-    "ast_hash": "39881bf30e3a3ed85cf01af3bf723ea5",
+    "mtime": 1790247916.459417,
+    "ast_hash": "7b0dc340b6dad2ecc1283c0f06a4dfc1",
     "semantic_hash": ""
   },
   "src/locales/hu/categories.json": {
@@ -11997,6 +11997,41 @@
   "src/features/invoices/utils/invoiceChainFetch.ts": {
     "mtime": 1790214380.287112,
     "ast_hash": "3130af6d089a1997c4bbcb4264a7043d",
+    "semantic_hash": ""
+  },
+  "scripts/backfill_customer_names.mjs": {
+    "mtime": 1790247916.4544685,
+    "ast_hash": "31d3e06a4ce249f5bd59655cddc73a12",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260924105500_include_all_suppliers_in_vat_return_m_lines.sql": {
+    "mtime": 1790247916.4614217,
+    "ast_hash": "90aa3f2f4968ff295a77605479fadbba",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260924114500_sync_outbound_customer_name_from_submitted_invoices.sql": {
+    "mtime": 1790247916.4614217,
+    "ast_hash": "65adcbf02927a05146bd818e4c7100cf",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-146-private-customer-name-enrichment-and-vat-analytics.md": {
+    "mtime": 1790247916.4523938,
+    "ast_hash": "95f8ffad3fa1c5437bab9f6fbe50aea5",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-147-bidirectional-invoice-chaining-and-preview-tabs.md": {
+    "mtime": 1790248018.1022966,
+    "ast_hash": "573eed50b75be20f6bb05afa46082be2",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-110-private-customer-name-display-and-vat-analytics-ux.md": {
+    "mtime": 1790247916.4534285,
+    "ast_hash": "8274556589b2c563e228b0cc221a3d7a",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-111-invoice-chain-and-multi-document-preview-ux.md": {
+    "mtime": 1790248033.815867,
+    "ast_hash": "2fce971f95930a24df4d872031111375",
     "semantic_hash": ""
   }
 }

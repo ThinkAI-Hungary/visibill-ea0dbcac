@@ -58,18 +58,15 @@ A `FilePreviewContent` a **fájlnév kiterjesztése** alapján választja ki a r
 A URL-ekből érkező fájloknál (pl. Supabase Storage) a neve nem feltétlenül tartalmaz kiterjesztést (pl. bizonylatsorszám: `D-THINK-130`). Ilyen esetben az URL-ből kell kinyerni a kiterjesztést:
 
 ```tsx
-// ❌ ROSSZ — nincs kiterjesztés, fallback-be esik
-openPreview({ url: fileUrl, name: invoice.bizonylatsorszam });
+// ❌ ROSSZ — nincs kiterjesztés vagy zárójeles utótag mögé ragad
+openPreview({ url: fileUrl, name: `${invoice.bizonylatsorszam} (Sztornó)` }); // hiba: ismeretlen típus
 
-// ✅ HELYES — kiterjesztés az URL-ből
-const cleanUrl = fileUrl.split('?')[0];
-const ext = cleanUrl.split('.').pop()?.toLowerCase() || '';
-const knownExts = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'csv', 'tsv', 'xls', 'xlsx', 'xlsm'];
-const name = knownExts.includes(ext) ? `${invoice.bizonylatsorszam}.${ext}` : invoice.bizonylatsorszam;
+// ✅ HELYES — kiterjesztés az elnevezés végén marad vagy getFileExtension feloldja
+const name = `${invoice.bizonylatsorszam} (Sztornó).pdf`;
 openPreview({ url: fileUrl, name });
 ```
 
-> Ez a pattern már implementálva van az `InvoiceImageDialog`-ban (`getDisplayName` helper).
+> **Automatikus Feloldás (`getFileExtension`):** A `FilePreviewModal` és `FilePreviewContent` beépített `getFileExtension(name, url)` segédfüggvénye ellenőrzi az URL-t és a fájlnevet. Ha a fájlnév zárójeles szerepkört tartalmaz (pl. `THINK-2026-44 (Sztornó)`), a segédfüggvény levágja a zárójelet a kiterjesztés olvasásakor, vagy az URL-ből nyeri ki a formátumot (`.pdf`).
 
 ---
 
@@ -98,32 +95,23 @@ openPreview({ url: data.signedUrl, name: fileName });
 
 ## Modal viselkedés
 
-- **Portal-alapú** (`createPortal` → `document.body`) — nincs z-index konfliktus semmi szűlővel
+- **Portal-alapú** (`createPortal` → `document.body`) — nincs z-index konfliktus semmi szülővel
 - **z-index: 110** — minden Dialog, Sheet és Sidebar felett
 - **Háttérkattintás** (backdrop) → bezárás
-- **Escape** — jelenleg **nem** implementált keyboard handler; ha szükséges, a hívó komponensnek kell kezelnie
+- **Escape** — billentyűzet-kezelő a modál zárásához
 - **Header gombok:** Letöltés (`download`), Megnyitás új lapon (`target="_blank"`), Bezárás (`×`)
 
 ---
 
 ## Speciális esetek
 
-### Wrapper komponens meglévő API-val (InvoiceImageDialog)
+### Többdokumentumos Számlaláncolat és Melléklet Lapozó (InvoiceImageDialog)
 
-Ha egy komponensnek saját props interface-t kell fenntartania (pl. `invoice` objektum, `isLoading` state), a `FilePreviewModal`-t belülről hívja — a hívóhelyeket nem kell módosítani:
-
-```tsx
-// InvoiceImageDialog — megtartja a props interface-t, belül FilePreviewModal-t használ
-const InvoiceImageDialog = ({ invoice, open, onClose, isLoading }) => {
-  if (!open) return null;
-  if (isLoading || !invoice) return <LoadingPortal />;
-
-  const displayUrl = invoice.image_url || invoice.melleklet_url;
-  const name = getDisplayName(invoice, displayUrl); // kiterjesztés URL-ből!
-
-  return <FilePreviewModal previewFile={{ url: displayUrl, name }} onClose={onClose} />;
-};
-```
+Az `InvoiceImageDialog` nem csupán az adott bizonylat közvetlen képét mutatja, hanem a `fetchInvoiceChain` segédfüggvénnyel lekéri a bizonylathoz kapcsolódó teljes láncolatot:
+- **Alapszámla ↔ Sztornó / Helyesbítő / Végszámla** bizonylatok képei
+- **`invoices.attachments`** többszörös munkalapok, szerződések, teljesítésigazolások
+- **Szerepkör-címkék:** A füleken automatikusan megjelenik a szerepkör: `(Alapszámla)`, `(Sztornó)`, `(Végszámla)`, `(Melléklet 1)`.
+- **Villódzásmentes Tab-váltás:** A tabok közötti váltáskor a modal a helyén marad, nincs layout-shift; a tartalomterületen finom áttűnés és betöltés-jelző fut le.
 
 ### Csak a tartalom terület kell (beágyazott nézet)
 

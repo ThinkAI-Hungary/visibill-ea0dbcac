@@ -384,14 +384,18 @@ Részletes leírás: [04-component-library.md](./04-component-library.md#copyabl
 
 ## Expanded Row Pattern
 
-**Fájl:** `components/ExpandedInvoiceRow.tsx` (24KB)
+**Fájl:** `src/features/invoices/components/expanded-row/ExpandedInvoiceRow.tsx` (facade: `components/ExpandedInvoiceRow.tsx`)
 
 Számla táblázat sorok kibonthatók részletes nézetté, ami tartalmazza:
-- Számla képe/PDF
-- Tételek listája
+- Számla képe/PDF és gyors műveletek
+- Tételek listája és ÁFA analitika
 - Párosítási információk (tranzakció, beküldött számla, NAV számla)
 - **AI indoklás** megjelenítése a párosított tranzakción (ha van `reason` mező)
-- Hivatkozott számlák láncolata (linked invoices)
+- **Hivatkozott számlák láncolata (`LinkedInvoicesSection`):**
+  - Kétirányú in-memory feloldás (`resolveLinkedInvoices`) az `InvoiceContext.linkedInvoicesMap` segítségével.
+  - Alapszámla ↔ Sztornó / Végszámla / Előlegszámla kártyák közvetlen számlakép-megnyitással.
+  - Irány-jelvények: `Hivatkozott bizonylat` (szülő) és `Hivatkozó bizonylat` (gyermek).
+  - **Broken Chain Guard:** Csak akkor jelenít meg amber színű figyelmeztetést, ha a referenciaszám(ok) ténylegesen nem találhatók meg a rendszerben (vesszővel tagolt több referenciaszám támogatása).
 - Futárszolgálat riportok (courier reports)
 - Szerkesztési/leválasztási/jóváhagyási lehetőségek
 - Tranzakció kézi hozzárendelés (inline search)
