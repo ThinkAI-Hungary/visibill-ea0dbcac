@@ -38,7 +38,6 @@ import {
   ChevronRight,
   AlertTriangle,
   CheckCircle2,
-  Pencil,
   Shield,
   Search,
   X,
@@ -64,19 +63,7 @@ interface VatCalculatorViewProps {
 
 export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
   const { t } = useTranslation(['accounting', 'common']);
-  const qc = useQueryClient();
   const [proRataCalculatorOpen, setProRataCalculatorOpen] = React.useState(false);
-  const [isManualEditMode, setIsManualEditMode] = React.useState(false);
-  const [activeEditRows, setActiveEditRows] = React.useState<Set<string>>(new Set());
-
-  const toggleEditRow = (rowNum: string) => {
-    setActiveEditRows(prev => {
-      const next = new Set(prev);
-      if (next.has(rowNum)) next.delete(rowNum);
-      else next.add(rowNum);
-      return next;
-    });
-  };
   const {
 
     selectedCompany,
@@ -614,26 +601,7 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
         </Card>
       ) : (
         <>
-          <div className="flex items-center justify-between pb-1">
-            <div className="flex items-center gap-2">
-              <Button
-                variant={isManualEditMode ? 'default' : 'outline'}
-                size="sm"
-                className={cn(
-                  "h-7 text-xs gap-1.5 transition-colors",
-                  isManualEditMode && "bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
-                )}
-                onClick={() => setIsManualEditMode(!isManualEditMode)}
-              >
-                <Pencil className="w-3.5 h-3.5" />
-                {isManualEditMode ? 'Kézi szerkesztés bekapcsolva' : 'Kézi felülbírálás (✏️)'}
-              </Button>
-              {isManualEditMode && (
-                <span className="text-[11px] text-amber-600 font-medium animate-in fade-in">
-                  Írd át közvetlenül a sorok adóalapját és adóját (ezer Ft-ban)
-                </span>
-              )}
-            </div>
+          <div className="flex items-center justify-end pb-1">
             <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
               <Switch checked={showAllRows} onCheckedChange={setShowAllRows} className="scale-75" />
               Minden sor megjelenítése
@@ -646,10 +614,9 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
             const hasData = rowsWithData.length > 0;
             const isOpen = openSections.has(sec.key);
             const displayRows =
-              sec.key === 'detail' || showAllRows
+              showAllRows
                 ? sectionRows
                 : sectionRows.filter((r) => lineMap[r.row_number] || r.is_summary);
-            const isSectionEditable = !isFinalized && (isManualEditMode || sec.key === 'detail');
             const summaryRow = sectionRows.find((r) => r.is_summary);
             const summaryTax = summaryRow ? getVal(summaryRow.row_number, 'tax') : 0;
 
@@ -692,23 +659,11 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                 </button>
                 {isOpen && displayRows.length > 0 && (
                   <div className="divide-y divide-border/30 animate-in fade-in slide-in-from-top-1 duration-200">
-                    {isSectionEditable && (
-                      <div className="flex items-center gap-2 px-4 py-1.5 bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs border-b border-amber-500/20">
-                        <Pencil className="w-3 h-3 shrink-0" />
-                        <span>
-                          Kézi szerkesztés — írd be a kívánt értéket közvetlenül a mezőkbe (eFt-ban)
-                        </span>
-                      </div>
-                    )}
                     <div className="grid grid-cols-12 gap-2 px-4 py-2 text-xs font-medium text-muted-foreground bg-muted/20">
                       <div className="col-span-1">Sor</div>
                       <div className={hasPrevData ? 'col-span-3' : 'col-span-7'}>Megnevezés</div>
-                      <div className="col-span-2 text-right">
-                        {isSectionEditable ? 'Adóalap (eFt)' : 'Adóalap'}
-                      </div>
-                      <div className="col-span-2 text-right">
-                        {isSectionEditable ? 'Adó (eFt)' : 'Adó'}
-                      </div>
+                      <div className="col-span-2 text-right">Adóalap (eFt)</div>
+                      <div className="col-span-2 text-right">Adó (eFt)</div>
                       {hasPrevData && <div className="col-span-2 text-right">Előző hó</div>}
                       {hasPrevData && <div className="col-span-2 text-right">Δ</div>}
                     </div>
@@ -726,11 +681,6 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                           ['01', '02', '03', '04', '05', '06', '07', '08', '18', '27', '29', '45', '63', '64', '65', '66', '67', '77', '91', '92'].includes(row.row_number));
                       const isDrillExpanded = expandedFormRow === row.row_number;
 
-                      const isRowEditable =
-                        !isFinalized &&
-                        !isSummary &&
-                        (isManualEditMode || activeEditRows.has(row.row_number) || sec.key === 'detail');
-
                       return (
                         <React.Fragment key={row.row_number}>
                           <div
@@ -739,7 +689,7 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                               isSummary
                                 ? 'bg-primary/5 font-semibold border-t-2 border-primary/20'
                                 : 'hover:bg-muted/20',
-                              !line && !isRowEditable && 'opacity-40',
+                              !line && 'opacity-40',
                               hasDrillData && 'cursor-pointer',
                               isDrillExpanded && 'bg-primary/5 border-l-2 border-l-primary'
                             )}
@@ -753,7 +703,7 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                                 (isDrillExpanded ? (
                                    <ChevronDown className="w-3 h-3 text-primary" />
                                 ) : (
-                                  <ChevronRight className="w-3 h-3 text-muted-foreground/50" />
+                                   <ChevronRight className="w-3 h-3 text-muted-foreground/50" />
                                 ))}
                               {row.row_number}.
                             </div>
@@ -767,26 +717,10 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                               title={row.label}
                             >
                               <span className="break-words">{row.label}</span>
-                              {!isSummary && !isFinalized && (
-                                <button
-                                  type="button"
-                                  className={cn(
-                                    "p-1 rounded transition-colors inline-flex items-center shrink-0",
-                                    isRowEditable ? "text-amber-600 bg-amber-500/15" : "text-muted-foreground/30 hover:text-foreground hover:bg-muted"
-                                  )}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleEditRow(row.row_number);
-                                  }}
-                                  title={isRowEditable ? "Szerkesztés bezárása" : "Sor kézi felülbírálása (✏️)"}
-                                >
-                                  <Pencil className="w-3 h-3" />
-                                </button>
-                              )}
                               {line && !isSummary && line.is_calculated === false && (
                                 <div className="inline-flex items-center gap-1 shrink-0">
                                   <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20">
-                                    ✏️ kézi
+                                    egyedi érték
                                   </span>
                                   <button
                                     type="button"
@@ -811,47 +745,11 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                             </div>
                             {row.has_base && (
                               <div className="col-span-2 text-right tabular-nums text-xs">
-                                {isRowEditable ? (
-                                  <input
-                                    type="number"
-                                    className="w-full text-right bg-muted/40 border border-border/80 rounded px-2 py-1 text-xs tabular-nums focus:bg-muted/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                    placeholder="0"
-                                    value={
-                                      editDrafts[row.row_number]?.base ??
-                                      (line?.base_amount_rounded || '')
-                                    }
-                                    onChange={(e) =>
-                                      handleDetailEdit(row.row_number, 'base', e.target.value)
-                                    }
-                                    onClick={(e) => e.stopPropagation()}
-                                  />
-                                ) : line ? (
-                                  fmtEft(line.base_amount_rounded)
-                                ) : (
-                                  ''
-                                )}
+                                {line ? fmtEft(line.base_amount_rounded) : ''}
                               </div>
                             )}
                             <div className="col-span-2 text-right tabular-nums text-xs font-medium">
-                              {isRowEditable && row.has_tax ? (
-                                <input
-                                  type="number"
-                                  className="w-full text-right bg-muted/40 border border-border/80 rounded px-2 py-1 text-xs tabular-nums font-medium focus:bg-muted/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                  placeholder="0"
-                                  value={
-                                    editDrafts[row.row_number]?.tax ??
-                                    (line?.tax_amount_rounded || '')
-                                  }
-                                  onChange={(e) =>
-                                    handleDetailEdit(row.row_number, 'tax', e.target.value)
-                                  }
-                                  onClick={(e) => e.stopPropagation()}
-                                />
-                              ) : row.has_tax && line ? (
-                                fmtEft(line.tax_amount_rounded)
-                              ) : (
-                                ''
-                              )}
+                              {row.has_tax && line ? fmtEft(line.tax_amount_rounded) : ''}
                             </div>
                             {hasPrevData && (
                               <div className="col-span-2 text-right tabular-nums text-muted-foreground text-xs">
