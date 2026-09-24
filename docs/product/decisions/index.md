@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-24  
-> **Összesen:** 104 döntés | ✅ Decided: 100 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 105 döntés | ✅ Decided: 101 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -45,6 +45,7 @@
 | P-096 | Számlák Kötegelt Automatikus Kategorizálása, Valós Idejű Progress és Toast UX | ✅ Decided | [P-096](./P-096-auto-categorize-invoices-batch-progress-and-toast-ux.md) |
 | P-103 | Számlák Teljesítés Dátuma Szűrés és Dátum Alap Kapcsoló UX | ✅ Decided | [P-103](./P-103-invoices-delivery-date-and-date-basis-filtering-ux.md) |
 | P-109 | Determinisztikus Számlatétel Szabály Motor és Quick Save UX | ✅ Decided | [P-109](./P-109-invoice-item-rules-and-quick-save-ux.md) |
+| P-111 | Számlaláncolatok Megjelenítése, Kapcsolt Bizonylatok és Többdokumentumos Számlakép Lapozó UX | ✅ Decided | [P-111](./P-111-invoice-chain-and-multi-document-preview-ux.md) |
 
 ## 🔄 Tranzakció & Párosítás
 
