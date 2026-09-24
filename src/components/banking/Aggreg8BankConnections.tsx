@@ -26,6 +26,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
 
 interface Props {
   companyId: string;
@@ -39,6 +40,9 @@ export function Aggreg8BankConnections({ companyId, isOwner = true }: Props) {
     isError,
     error,
     isFlowLoading,
+    isAddingBank,
+    syncingConsentId,
+    extendingConsentId,
     isSyncing,
     refetch,
     startAddBankFlow,
@@ -49,14 +53,45 @@ export function Aggreg8BankConnections({ companyId, isOwner = true }: Props) {
 
   const [deletingConsent, setDeletingConsent] = useState<Aggreg8Consent | null>(null);
 
-  // Helper for formatting Hungarian currency
-  const formatCurrency = (amount: number | null | undefined, currency = 'HUF') => {
-    if (amount === null || amount === undefined) return '—';
-    return new Intl.NumberFormat('hu-HU', {
-      style: 'currency',
-      currency: currency,
-      maximumFractionDigits: currency === 'HUF' ? 0 : 2,
-    }).format(amount);
+  // Helper for displaying bank/integration name
+  const getDisplayBankName = (bankName: string | null | undefined) => {
+    if (!bankName || bankName === 'Aggreg8 Bank' || bankName === 'Ismeretlen Bank') {
+      return 'Aggreg8.io integráció';
+    }
+    return bankName;
+  };
+  // Helper for formatting Hungarian date
+  const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return '—';
+    try {
+      return new Date(dateStr).toLocaleDateString('hu-HU', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  // Helper for formatting Hungarian date + time
+  const formatDateTime = (dateStr: string | null | undefined) => {
+    if (!dateStr) return '—';
+    try {
+      const d = new Date(dateStr);
+      const datePart = d.toLocaleDateString('hu-HU', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      const timePart = d.toLocaleTimeString('hu-HU', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      return `${datePart} ${timePart}`;
+    } catch {
+      return dateStr;
+    }
   };
 
   // Helper for PSD2 expiration countdown
@@ -77,17 +112,25 @@ export function Aggreg8BankConnections({ companyId, isOwner = true }: Props) {
 
     if (diffDays <= 14) {
       return (
-        <Badge variant="outline" className="border-amber-500 text-amber-600 dark:text-amber-400 flex items-center gap-1">
+        <Badge
+          variant="outline"
+          className="border-amber-500 text-amber-600 dark:text-amber-400 flex items-center gap-1 font-medium"
+          title={`Érvényes eddig: ${formatDate(expirationDateStr)}`}
+        >
           <AlertTriangle className="h-3 w-3" />
-          {diffDays} nap van hátra
+          Még {diffDays} nap van hátra
         </Badge>
       );
     }
 
     return (
-      <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 flex items-center gap-1">
+      <Badge
+        variant="secondary"
+        className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 flex items-center gap-1 font-medium"
+        title={`Érvényes eddig: ${formatDate(expirationDateStr)}`}
+      >
         <CheckCircle2 className="h-3 w-3" />
-        {diffDays} nap érvényes
+        Még {diffDays} napig érvényes
       </Badge>
     );
   };
@@ -134,13 +177,16 @@ export function Aggreg8BankConnections({ companyId, isOwner = true }: Props) {
       <Card className="border border-border shadow-sm">
       <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <CardTitle className="text-lg font-semibold flex items-center gap-2">
               <Landmark className="h-5 w-5 text-primary" />
-              Élő Banki Kapcsolatok (PSD2 Open Banking)
+              Automatikus banki szinkronizáció
             </CardTitle>
             <Badge variant="outline" className="text-xs bg-primary/5 text-primary border-primary/20">
               Aggreg8
+            </Badge>
+            <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+              Valós idejű
             </Badge>
             {isSyncing && (
               <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20 flex items-center gap-1.5 animate-pulse">
@@ -157,17 +203,22 @@ export function Aggreg8BankConnections({ companyId, isOwner = true }: Props) {
         {isOwner && (
           <Button
             onClick={startAddBankFlow}
-            disabled={isFlowLoading}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-colors duration-150 shrink-0"
+            disabled={isFlowLoading || isSyncing}
+            className={cn(
+              "font-medium transition-all duration-150 shrink-0",
+              (isFlowLoading || isSyncing) && !isAddingBank
+                ? "bg-muted text-muted-foreground italic border border-border/50 cursor-not-allowed hover:bg-muted font-normal shadow-none pointer-events-none"
+                : "bg-primary hover:bg-primary/90 text-primary-foreground"
+            )}
           >
-            {isFlowLoading ? (
+            {isAddingBank ? (
               <>
                 <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                 Csatlakozás...
               </>
             ) : (
               <>
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className={cn("h-4 w-4 mr-2", (isFlowLoading || isSyncing) && "opacity-50")} />
                 Új bank csatlakoztatása
               </>
             )}
@@ -191,12 +242,26 @@ export function Aggreg8BankConnections({ companyId, isOwner = true }: Props) {
             {isOwner && (
               <Button
                 onClick={startAddBankFlow}
-                disabled={isFlowLoading}
+                disabled={isFlowLoading || isSyncing}
                 variant="outline"
-                className="border-primary/40 hover:bg-primary/5 text-primary font-medium transition-colors duration-150"
+                className={cn(
+                  "font-medium transition-all duration-150",
+                  (isFlowLoading || isSyncing) && !isAddingBank
+                    ? "bg-muted text-muted-foreground italic border border-border/50 cursor-not-allowed hover:bg-muted font-normal shadow-none pointer-events-none"
+                    : "border-primary/40 hover:bg-primary/5 text-primary"
+                )}
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Bank csatlakoztatása most
+                {isAddingBank ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Csatlakozás...
+                  </>
+                ) : (
+                  <>
+                    <Plus className={cn("h-4 w-4 mr-2", (isFlowLoading || isSyncing) && "opacity-50")} />
+                    Bank csatlakoztatása most
+                  </>
+                )}
               </Button>
             )}
           </div>
@@ -214,7 +279,7 @@ export function Aggreg8BankConnections({ companyId, isOwner = true }: Props) {
                     {consent.bank_logo_url ? (
                       <img
                         src={consent.bank_logo_url}
-                        alt={consent.bank_name || 'Bank'}
+                        alt={getDisplayBankName(consent.bank_name)}
                         className="h-9 w-9 object-contain rounded-md bg-white p-1 border border-border"
                       />
                     ) : (
@@ -224,16 +289,16 @@ export function Aggreg8BankConnections({ companyId, isOwner = true }: Props) {
                     )}
                     <div>
                       <h4 className="text-base font-semibold text-foreground leading-tight">
-                        {consent.bank_name || 'Ismeretlen Bank'}
+                        {getDisplayBankName(consent.bank_name)}
                       </h4>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        Létrehozva: {new Date(consent.created_at).toLocaleDateString('hu-HU')}
+                        Létrehozva: {formatDate(consent.created_at)}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {getExpirationBadge(consent.passive_sync_expiration_date)}
+                    {getExpirationBadge(consent.passive_sync_expiration_date || consent.active_sync_expiration_date)}
                   </div>
                 </div>
 
@@ -244,29 +309,45 @@ export function Aggreg8BankConnections({ companyId, isOwner = true }: Props) {
                   </div>
 
                   {consent.accounts && consent.accounts.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className={cn("grid gap-2.5", consent.accounts.length > 1 ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1")}>
                       {consent.accounts.map((acc) => (
                         <div
                           key={acc.id}
-                          className="bg-muted/40 border border-border/50 rounded-lg p-3 flex items-center justify-between"
+                          className="bg-muted/40 border border-border/50 rounded-lg p-3 sm:p-3.5 space-y-2.5 transition-colors"
                         >
-                          <div className="space-y-0.5 overflow-hidden pr-2">
-                            <div className="text-sm font-medium text-foreground truncate">
+                          <div className="space-y-0.5 min-w-0">
+                            <div className="text-sm font-semibold text-foreground truncate">
                               {acc.account_name || 'Folyószámla'}
                             </div>
                             <div className="text-xs font-mono text-muted-foreground truncate">
                               {acc.account_number}
                             </div>
                           </div>
-                          <div className="text-right shrink-0">
-                            <div className="text-sm font-semibold text-primary">
-                              {formatCurrency(acc.balance, acc.currency)}
+
+                          <div className="pt-2 border-t border-border/40 flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1.5">
+                              <span>Csatlakoztatva:</span>
+                              <span className="font-medium text-foreground/90">
+                                {formatDate(acc.created_at)}
+                              </span>
                             </div>
-                            {acc.last_synced_at && (
-                              <div className="text-[10px] text-muted-foreground">
-                                Szinkr.: {new Date(acc.last_synced_at).toLocaleDateString('hu-HU')}
-                              </div>
-                            )}
+                            <div className="flex items-center gap-1.5">
+                              <span title="Automatikusan szinkronizálva az Aggreg8 háttérfolyamata vagy manuális frissítés által">
+                                Utolsó szinkronizáció:
+                              </span>
+                              {acc.last_synced_at ? (
+                                <span className="font-medium text-foreground/90">
+                                  {formatDateTime(acc.last_synced_at)}
+                                </span>
+                              ) : (
+                                <span className="italic text-muted-foreground/70">Még nem történt</span>
+                              )}
+                              {typeof acc.last_synced_count === 'number' && acc.last_synced_count > 0 && (
+                                <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                  +{acc.last_synced_count} tétel
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -276,46 +357,71 @@ export function Aggreg8BankConnections({ companyId, isOwner = true }: Props) {
                   )}
                 </div>
 
-                {/* Card Actions Footer */}
-                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/50">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => startOnDemandSync(consent.info_sharing_consent_id)}
-                      disabled={isFlowLoading}
-                      className="text-xs h-8 transition-colors duration-150"
-                    >
-                      <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                      Frissítés most
-                    </Button>
+                {/* Card Actions Footer - Only for Company Owners */}
+                {isOwner && (
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/50">
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const isThisSyncing = syncingConsentId === consent.info_sharing_consent_id;
+                        return (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => startOnDemandSync(consent.info_sharing_consent_id)}
+                            disabled={isFlowLoading || isSyncing}
+                            className={cn(
+                              "text-xs h-8 transition-colors duration-150",
+                              isThisSyncing && "border-primary/60 text-primary bg-primary/5"
+                            )}
+                          >
+                            <RefreshCw
+                              className={cn(
+                                "h-3.5 w-3.5 mr-1.5",
+                                isThisSyncing && "animate-spin text-primary"
+                              )}
+                            />
+                            {isThisSyncing ? 'Frissítés...' : 'Frissítés most'}
+                          </Button>
+                        );
+                      })()}
 
-                    {isOwner && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => startExtendConsent(consent.info_sharing_consent_id)}
-                        disabled={isFlowLoading}
-                        className="text-xs h-8 transition-colors duration-150"
-                      >
-                        <Calendar className="h-3.5 w-3.5 mr-1.5" />
-                        180 napos megújítás
-                      </Button>
-                    )}
-                  </div>
+                      {(() => {
+                        const isThisExtending = extendingConsentId === consent.info_sharing_consent_id;
+                        return (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => startExtendConsent(consent.info_sharing_consent_id)}
+                            disabled={isFlowLoading || isSyncing}
+                            className={cn(
+                              "text-xs h-8 transition-colors duration-150",
+                              isThisExtending && "border-primary/60 text-primary bg-primary/5"
+                            )}
+                          >
+                            <Calendar
+                              className={cn(
+                                "h-3.5 w-3.5 mr-1.5",
+                                isThisExtending && "animate-spin text-primary"
+                              )}
+                            />
+                            {isThisExtending ? 'Megújítás...' : '180 napos megújítás'}
+                          </Button>
+                        );
+                      })()}
+                    </div>
 
-                  {isOwner && (
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => setDeletingConsent(consent)}
-                      className="text-xs h-8 text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
+                      disabled={isFlowLoading || isSyncing}
+                      className="text-xs h-8 text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors duration-150 disabled:opacity-50"
                     >
                       <Trash2 className="h-3.5 w-3.5 mr-1.5" />
                       Kapcsolat bontása
                     </Button>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -338,7 +444,7 @@ export function Aggreg8BankConnections({ companyId, isOwner = true }: Props) {
         <AlertDialogHeader>
           <AlertDialogTitle>Biztosan bontani szeretnéd ezt a bankkapcsolatot?</AlertDialogTitle>
           <AlertDialogDescription>
-            A(z) <span className="font-semibold text-foreground">{deletingConsent?.bank_name}</span> banki hozzáférési jogosultság visszavonásra kerül. Az automatikus háttérszinkronizáció leáll, a korábban már leszinkronizált tranzakciók viszont megmaradnak a rendszerben.
+            A(z) <span className="font-semibold text-foreground">{getDisplayBankName(deletingConsent?.bank_name)}</span> banki hozzáférési jogosultság visszavonásra kerül. Az automatikus háttérszinkronizáció leáll, a korábban már leszinkronizált tranzakciók viszont megmaradnak a rendszerben.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

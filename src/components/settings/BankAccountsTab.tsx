@@ -453,9 +453,12 @@ export function BankAccountsTab({ companyId }: Props) {
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-semibold text-base">Élő Banki Kapcsolatok (PSD2 Open Banking)</h3>
+                <h3 className="font-semibold text-base">Automatikus banki szinkronizáció</h3>
                 <Badge variant="outline" className="text-xs bg-primary/5 text-primary border-primary/20">
                   Aggreg8
+                </Badge>
+                <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                  Valós idejű
                 </Badge>
                 {consents.length > 0 ? (
                   <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 text-xs flex items-center gap-1">

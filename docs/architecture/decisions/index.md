@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-24  
-> **Összesen:** 158 döntés | ✅ Decided: 156 | ⛔ Superseded: 2
+> **Összesen:** 159 döntés | ✅ Decided: 157 | ⛔ Superseded: 2
 
 ---
 
@@ -91,6 +91,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-041 | Mailgun Webhook Concurrent Dedup — Háromrétegű Idempotency | ✅ Decided | [A-041](./A-041-mailgun-concurrent-dedup.md) |
 | A-052 | Multi-Profile IMAP/SMTP Levelező Fiókok és Vault Integráció | ✅ Decided | [A-052](./A-052-multi-profile-email-accounts-vault-integration.md) |
 | A-113 | NAV Számlatételek ÁFA és Bruttó Összeg Automatikus Kalkulációja (Közműszámlák) | ✅ Decided | [A-113](./A-113-nav-invoice-items-vat-gross-auto-calculation.md) |
+| A-119 | Aggreg8 PSD2 Open Banking AISP Integráció, Dedikált Proxy Relay és Valós Idejű Szinkronizáció | ✅ Decided | [A-119](./A-119-aggreg8-psd2-open-banking-integration.md) |
 | A-130 | NAV Automatikus Szinkronizáció Hajnali Idő-ablakos Terheléselosztása (Load Staggering) | ✅ Decided | [A-130](./A-130-nav-auto-sync-dawn-load-staggering.md) |
 
 ## 🗄️ Adatbázis & Pénzügy

@@ -1060,8 +1060,8 @@
     "semantic_hash": ""
   },
   "src/integrations/supabase/types.ts": {
-    "mtime": 1790209941.1177664,
-    "ast_hash": "66c2b381570fe29bc692fd1322467ced",
+    "mtime": 1790251046.2170582,
+    "ast_hash": "96abd2036762b2d4cb74e967732e29f6",
     "semantic_hash": ""
   },
   "src/lib/annualReportPdf.ts": {
@@ -1490,8 +1490,8 @@
     "semantic_hash": ""
   },
   "src/pages/Integrations.tsx": {
-    "mtime": 1790156021.5513055,
-    "ast_hash": "6daee9a92bd81b69b904b5a41c5e34d3",
+    "mtime": 1790252006.265355,
+    "ast_hash": "b1006f931a984d57d1865ccdfec96acc",
     "semantic_hash": ""
   },
   "src/pages/InvoicesPage.tsx": {
@@ -3015,8 +3015,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-005-edge-functions.md": {
-    "mtime": 1789912592.6216664,
-    "ast_hash": "a01cc046532945132d229266e02e4108",
+    "mtime": 1790256539.0773995,
+    "ast_hash": "a43baa589abd502dd455f4ce24ff8720",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-006-python-worker.md": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790248053.8700888,
-    "ast_hash": "183b06b05665d76b2667e1fa9e1fbdb6",
+    "mtime": 1790256437.5878906,
+    "ast_hash": "083c7602c0a9d0556b176fb84d673a88",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -5050,8 +5050,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/06-transactions-bank.md": {
-    "mtime": 1790151524.9587536,
-    "ast_hash": "37273dc995b94e573eaf6c8878afaf2b",
+    "mtime": 1790256502.4686573,
+    "ast_hash": "93d90db5c736d4df1139253ca31ed3c5",
     "semantic_hash": ""
   },
   "docs/architecture/database/07-general-ledger.md": {
@@ -6065,8 +6065,8 @@
     "semantic_hash": ""
   },
   "src/components/settings/BankAccountsTab.tsx": {
-    "mtime": 1790200677.7387686,
-    "ast_hash": "138e9debfdf66e07a8bb04560912d1e0",
+    "mtime": 1790251992.1919348,
+    "ast_hash": "53397a1745d67eadb7ceb95ffc4e5054",
     "semantic_hash": ""
   },
   "src/components/ui/FilePreviewModal.tsx": {
@@ -9315,8 +9315,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/edge-functions.md": {
-    "mtime": 1790091679.4495277,
-    "ast_hash": "435ac58210e8c178a16add4acbea6591",
+    "mtime": 1790256520.6980753,
+    "ast_hash": "b14284b50e2a524d71ee63b6cbf35af1",
     "semantic_hash": ""
   },
   "docs/architecture/rpc-catalog.md": {
@@ -10980,23 +10980,23 @@
     "semantic_hash": ""
   },
   "src/components/banking/Aggreg8BankConnections.tsx": {
-    "mtime": 1790095135.5969806,
-    "ast_hash": "a38b2d67478e622dbffd0ac7b2b8baa3",
+    "mtime": 1790252919.5046923,
+    "ast_hash": "141654dd9376c2893bf76f5bc2d11b90",
     "semantic_hash": ""
   },
   "src/hooks/useAggreg8.ts": {
-    "mtime": 1789611394.2387168,
-    "ast_hash": "ca3b348d4325429012097767228f43ef",
+    "mtime": 1790255939.0465007,
+    "ast_hash": "d80209c0a9627363328ddbc7b5145bb3",
     "semantic_hash": ""
   },
   "supabase/functions/aggreg8-api/index.ts": {
-    "mtime": 1790095135.5989883,
-    "ast_hash": "1597d465ee22b5eb64dc60c2b493dcb4",
+    "mtime": 1790255918.5696852,
+    "ast_hash": "0cc973957d978165821b435a4e8a3edb",
     "semantic_hash": ""
   },
   "supabase/functions/aggreg8-callback/index.ts": {
-    "mtime": 1790095135.5989883,
-    "ast_hash": "56a34251ab64622f7a2cfa056585f792",
+    "mtime": 1790254926.8439603,
+    "ast_hash": "750888f8bc56b63ad8e96d19822e6ccb",
     "semantic_hash": ""
   },
   "supabase/migrations/20260917030000_aggreg8_integration.sql": {
@@ -11010,13 +11010,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-119-aggreg8-psd2-open-banking-integration.md": {
-    "mtime": 1790095135.5460496,
-    "ast_hash": "82335fbeff3f3e23e37716e6828bfcb6",
+    "mtime": 1790256459.7962484,
+    "ast_hash": "ea783547825ff84df6471d24ee843c37",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-087-aggreg8-bank-connections-and-sync-ui-ux.md": {
-    "mtime": 1789608917.451067,
-    "ast_hash": "bd78d47a168ff844b284e57f11387500",
+    "mtime": 1790256484.7874527,
+    "ast_hash": "0f84b149560b4121cf6f7fb12d90a037",
     "semantic_hash": ""
   },
   "supabase/migrations/20260917032000_transactions_a8_fields.sql": {
@@ -12032,6 +12032,21 @@
   "docs/product/decisions/P-111-invoice-chain-and-multi-document-preview-ux.md": {
     "mtime": 1790248033.815867,
     "ast_hash": "2fce971f95930a24df4d872031111375",
+    "semantic_hash": ""
+  },
+  "supabase/functions/_shared/aggreg8-sync.ts": {
+    "mtime": 1790256097.2578402,
+    "ast_hash": "cccf6b92d01afcbac0531d837124da3e",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260924143000_add_last_synced_count_to_aggreg8_accounts.sql": {
+    "mtime": 1790251002.177473,
+    "ast_hash": "5689b40928ba07a4ce58e59e1365d702",
+    "semantic_hash": ""
+  },
+  "src/test/banking/aggreg8Connections.test.tsx": {
+    "mtime": 1790255565.1969302,
+    "ast_hash": "d86ad0490c1be315e1597b2cbac64a12",
     "semantic_hash": ""
   }
 }

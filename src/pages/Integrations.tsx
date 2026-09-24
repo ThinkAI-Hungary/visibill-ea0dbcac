@@ -324,8 +324,8 @@ const Integrations = () => {
         items: [
           {
             id: 'banking',
-            title: 'Banki Kapcsolatok',
-            subtitle: 'PSD2 Open Banking (Aggreg8)',
+            title: 'Banki Szinkronizáció',
+            subtitle: 'Valós idejű kapcsolat (Aggreg8)',
             icon: Landmark,
             color: 'text-sky-600 bg-sky-50 dark:bg-sky-950/40 border-sky-200 dark:border-sky-800',
             badgeText: consents.length > 0 ? `${consents.length} bank` : 'Nincs kapcsolat',
