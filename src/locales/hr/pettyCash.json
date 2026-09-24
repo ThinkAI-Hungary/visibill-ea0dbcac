@@ -45,6 +45,11 @@
     "register_label": "Blagajna:",
     "all_registers": "Sve blagajne",
     "items_count": "{{count}} stavki",
+    "opening_balance": "Početno stanje",
+    "period_income": "Prihodi razdoblja (+)",
+    "period_expense": "Rashodi razdoblja (-)",
+    "period_turnover": "Promet razdoblja",
+    "closing_balance": "Završno stanje",
     "empty": "Nema stavki u tekućem razdoblju",
     "table": {
       "index": "#",
@@ -70,12 +75,14 @@
         "currency": "Valuta"
       },
       "summary": {
-        "title": "Ukupno",
+        "title": "Sažetak razdoblja",
         "currency": "Valuta",
+        "opening": "Početno stanje",
         "items": "Stavke",
-        "income": "Uplata",
-        "expense": "Isplata",
-        "net": "Neto"
+        "income": "Uplata (+)",
+        "expense": "Isplata (-)",
+        "net": "Promet razdoblja",
+        "closing": "Završno stanje"
       }
     }
   },
@@ -217,11 +224,18 @@
     "title_edit": "Uređivanje blagajničke stavke",
     "title_invoice": "Virmanski račun podmiren u gotovini",
     "title_manual": "Ručna blagajnička stavka",
-    "desc_invoice": "Odaberite otvorene izlazne račune koji su podmireni gotovinom.",
+    "desc_invoice": "Odaberite otvorene izlazne ili ulazne račune koji su podmireni gotovinom.",
     "desc_manual": "Ručni unos ili izmjena primitka ili izdatka u blagajni.",
     "invoice_selected_count": "Odabrano računa: {{count}}",
-    "invoice_available_count": "Dostupno otvorenih izlaznih računa: {{count}}",
+    "invoice_available_count": "Dostupno otvorenih računa: {{count}}",
     "select_invoices_btn": "Odabir računa ({{selected}}/{{total}})",
+    "filter_all": "Svi ({{count}})",
+    "filter_outbound": "Kupci / Primitak ({{count}})",
+    "filter_inbound": "Dobavljači / Izdatak ({{count}})",
+    "badge_outbound": "Kupac (+)",
+    "badge_inbound": "Dobavljač (-)",
+    "net_income": "Blagajnički primitak",
+    "net_expense": "Blagajnički izdatak",
     "due_expired": "Dospjelo:",
     "due_date": "Rok:",
     "register_label": "Blagajna",

@@ -42,6 +42,7 @@ import {
   Search,
   X,
   Calculator,
+  CornerDownRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { VatTrendChart } from '@/components/vat/VatTrendChart';
@@ -773,6 +774,46 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                               </div>
                             )}
                           </div>
+                          {row.row_number === '66' && (
+                            <div
+                              className="grid grid-cols-12 gap-2 px-4 py-1.5 text-xs items-center bg-muted/10 hover:bg-muted/20 border-t border-border/15 cursor-pointer transition-colors"
+                              onClick={() => {
+                                setExpandedFormRow(isDrillExpanded ? null : '66');
+                              }}
+                              title="Kattints a 66-os sor fordított adózású (FAD) tételeinek megtekintéséhez"
+                            >
+                              <div className="col-span-1 pl-4 flex items-center text-muted-foreground/40">
+                                <CornerDownRight className="w-3.5 h-3.5 shrink-0" />
+                              </div>
+                              <div
+                                className={cn(
+                                  'text-xs leading-relaxed py-0.5 text-muted-foreground font-normal',
+                                  hasPrevData ? 'col-span-5' : 'col-span-9'
+                                )}
+                              >
+                                ebből: fordított adózás alá eső ügylet után levont adó
+                              </div>
+                              <div className="col-span-2 text-right tabular-nums text-xs font-mono font-medium text-foreground/80">
+                                {fmtEft(lineMap['66_fad']?.tax_amount_rounded ?? lineMap['29']?.tax_amount_rounded ?? 0)}
+                              </div>
+                              {hasPrevData && (
+                                <div className="col-span-2 text-right tabular-nums text-muted-foreground/60 text-xs font-mono">
+                                  {fmtEft(prevLineMap['66_fad']?.tax_amount_rounded ?? prevLineMap['29']?.tax_amount_rounded ?? 0)}
+                                </div>
+                              )}
+                              {hasPrevData && (
+                                <div className="col-span-2 text-right tabular-nums text-xs font-medium font-mono text-muted-foreground">
+                                  {(() => {
+                                    const curFad = lineMap['66_fad']?.tax_amount_rounded ?? lineMap['29']?.tax_amount_rounded ?? 0;
+                                    const prevFad = prevLineMap['66_fad']?.tax_amount_rounded ?? prevLineMap['29']?.tax_amount_rounded ?? 0;
+                                    const d = curFad - prevFad;
+                                    if (d === 0) return '';
+                                    return `${d > 0 ? '+' : ''}${formatThousands(d)}`;
+                                  })()}
+                                </div>
+                              )}
+                            </div>
+                          )}
                           {isDrillExpanded && selectedCompany?.id && (
                             <VatRowDrillDown
                               rowNumber={row.row_number}

@@ -241,12 +241,24 @@ export function buildVatReturnXml(data: XmlExportData): string {
   data.lines.forEach((line) => {
     const rowNum = parseInt(line.row_number, 10);
     if (!isNaN(rowNum) && rowNum >= 37 && rowNum <= 75) {
+      if (line.row_number === '66_fad') {
+        if (line.tax_amount_rounded != null && line.tax_amount_rounded > 0) {
+          xml += `      <mezo eazon="0C0001C0066DA">${line.tax_amount_rounded}</mezo>\n`;
+        }
+        return;
+      }
       const rowPad = String(rowNum).padStart(4, '0');
       if (line.base_amount_rounded != null) {
         xml += `      <mezo eazon="0C0001C${rowPad}BA">${line.base_amount_rounded}</mezo>\n`;
       }
       if (line.tax_amount_rounded != null) {
         xml += `      <mezo eazon="0C0001C${rowPad}CA">${line.tax_amount_rounded}</mezo>\n`;
+      }
+      if (rowNum === 66 && !data.lines.some((l) => l.row_number === '66_fad')) {
+        const line29 = data.lines.find((l) => l.row_number === '29');
+        if (line29?.tax_amount_rounded != null && line29.tax_amount_rounded > 0) {
+          xml += `      <mezo eazon="0C0001C0066DA">${line29.tax_amount_rounded}</mezo>\n`;
+        }
       }
     }
   });

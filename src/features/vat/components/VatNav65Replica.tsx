@@ -140,6 +140,15 @@ export function VatNav65Replica({
       isBase: false,
     },
     {
+      num: '66',
+      subBadge: 'FAD',
+      type: 'Levonható',
+      label: '66. sor: fordított adózás alá eső ügylet után levont adó',
+      val: getVal('66_fad', 'tax') || getVal('29', 'tax'),
+      isBase: false,
+      isFadBox: true,
+    },
+    {
       num: '77',
       type: 'Levonható',
       label: 'Tárgyi eszköz beszerzés levonható adója a 76. sorból',
@@ -220,40 +229,54 @@ export function VatNav65Replica({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {fields.map((f, idx) => (
-            <div
-              key={idx}
-              className={cn(
-                'p-3.5 rounded-lg border flex flex-col justify-between min-h-[120px] transition-all hover:shadow-sm',
-                f.isSummary
-                  ? 'bg-stone-200/90 border-stone-300 text-stone-800'
-                  : 'bg-amber-50/70 border-amber-200 text-amber-900'
-              )}
-            >
-              <div className="flex items-start justify-between">
-                <span
-                  className={cn(
-                    'font-mono font-black text-xs px-2 py-0.5 rounded',
-                    f.isSummary ? 'bg-stone-300 text-stone-800' : 'bg-amber-200 text-amber-800'
-                  )}
-                >
-                  {f.num}. sor
-                </span>
-                <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider">
-                  {f.type}
-                </span>
+          {fields.map((f, idx) => {
+            const isFadBox = (f as any).isFadBox;
+            const subBadge = (f as any).subBadge;
+            return (
+              <div
+                key={idx}
+                className={cn(
+                  'p-3.5 rounded-lg border flex flex-col justify-between min-h-[120px] transition-all hover:shadow-sm',
+                  f.isSummary
+                    ? 'bg-stone-200/90 border-stone-300 text-stone-800'
+                    : isFadBox
+                    ? 'bg-purple-50/80 border-purple-200 text-purple-900'
+                    : 'bg-amber-50/70 border-amber-200 text-amber-900'
+                )}
+              >
+                <div className="flex items-start justify-between">
+                  <span
+                    className={cn(
+                      'font-mono font-black text-xs px-2 py-0.5 rounded',
+                      f.isSummary
+                        ? 'bg-stone-300 text-stone-800'
+                        : isFadBox
+                        ? 'bg-purple-200 text-purple-800'
+                        : 'bg-amber-200 text-amber-800'
+                    )}
+                  >
+                    {f.num}. sor {subBadge ? `(${subBadge})` : ''}
+                  </span>
+                  <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider">
+                    {f.type}
+                  </span>
+                </div>
+                <p className="text-[11px] font-medium leading-normal my-2.5">{f.label}</p>
+                <div className="flex justify-between items-end border-t pt-2 border-stone-200/50">
+                  <span className="text-[9px] text-stone-400">
+                    {f.isBase
+                      ? 'adóalap (eFt)'
+                      : isFadBox
+                      ? 'levont FAD adó (eFt)'
+                      : 'adó összege (eFt)'}
+                  </span>
+                  <span className="font-mono text-xs font-black tabular-nums">
+                    {fmtEft(f.val)}
+                  </span>
+                </div>
               </div>
-              <p className="text-[11px] font-medium leading-normal my-2.5">{f.label}</p>
-              <div className="flex justify-between items-end border-t pt-2 border-stone-200/50">
-                <span className="text-[9px] text-stone-400">
-                  {f.isBase ? 'adóalap (eFt)' : 'adó összege (eFt)'}
-                </span>
-                <span className="font-mono text-xs font-black tabular-nums">
-                  {fmtEft(f.val)}
-                </span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>

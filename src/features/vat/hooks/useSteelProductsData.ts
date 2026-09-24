@@ -33,16 +33,18 @@ export function isSteelCandidate(item: {
   if (code.startsWith('72') || code.startsWith('73')) return true;
   const rate = (item.vat_rate || '').toUpperCase();
   if (rate.includes('ACEL') || rate.includes('HULL') || rate.includes('FAD')) return true;
-  const desc = (item.line_description || '').toLowerCase();
+  const desc = (item.line_description || '').trim();
+  if (/^7[23]\d{2}/.test(desc)) return true;
+  const descLower = desc.toLowerCase();
   if (
-    desc.includes('acél') ||
-    desc.includes('betonacél') ||
-    desc.includes('zártszelvény') ||
-    desc.includes('idomacél') ||
-    desc.includes('gerenda') ||
-    desc.includes('lemez') ||
-    desc.includes('háló') ||
-    desc.includes('fémhulladék')
+    descLower.includes('acél') ||
+    descLower.includes('betonacél') ||
+    descLower.includes('zártszelvény') ||
+    descLower.includes('idomacél') ||
+    descLower.includes('gerenda') ||
+    descLower.includes('lemez') ||
+    descLower.includes('háló') ||
+    descLower.includes('fémhulladék')
   ) {
     return true;
   }

@@ -318,6 +318,48 @@ describe('vatReturnXml (NAV ÁNYK 2665A / 2665M Generator)', () => {
       expect(xml).toContain('<mezo eazon="0F0001D0105EA">120</mezo>');
     });
   });
+
+  describe('Row 66 FAD (Reverse Charge) deductible tax sub-box export', () => {
+    it('correctly exports 0C0001C0066DA when 66_fad line is provided', () => {
+      const xml = buildVatReturnXml({
+        companyName: 'Test FAD Kft',
+        companyTaxNumber: '12345678-2-41',
+        companyAddress: 'Budapest',
+        periodYear: 2026,
+        periodMonth: 2,
+        frequency: 'H',
+        lines: [
+          { row_number: '66', base_amount_rounded: 262, tax_amount_rounded: 71 },
+          { row_number: '66_fad', base_amount_rounded: 100, tax_amount_rounded: 27 },
+        ],
+        mLines: [],
+      });
+
+      expect(xml).toContain('<mezo eazon="0C0001C0066BA">262</mezo>');
+      expect(xml).toContain('<mezo eazon="0C0001C0066CA">71</mezo>');
+      expect(xml).toContain('<mezo eazon="0C0001C0066DA">27</mezo>');
+    });
+
+    it('falls back to row 29 tax when 66_fad is not explicitly in lines', () => {
+      const xml = buildVatReturnXml({
+        companyName: 'Test FAD Kft',
+        companyTaxNumber: '12345678-2-41',
+        companyAddress: 'Budapest',
+        periodYear: 2026,
+        periodMonth: 2,
+        frequency: 'H',
+        lines: [
+          { row_number: '29', base_amount_rounded: 100, tax_amount_rounded: 27 },
+          { row_number: '66', base_amount_rounded: 262, tax_amount_rounded: 71 },
+        ],
+        mLines: [],
+      });
+
+      expect(xml).toContain('<mezo eazon="0C0001C0066BA">262</mezo>');
+      expect(xml).toContain('<mezo eazon="0C0001C0066CA">71</mezo>');
+      expect(xml).toContain('<mezo eazon="0C0001C0066DA">27</mezo>');
+    });
+  });
 });
 
 

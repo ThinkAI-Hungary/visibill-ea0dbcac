@@ -34,16 +34,21 @@ export interface PettyCashEntry {
   partner_id: string | null;
 }
 
-/** Open (unpaid) outbound invoice available for cash settlement */
-export interface OpenOutboundInvoice {
+/** Open (unpaid) invoice available for cash settlement (inbound or outbound) */
+export interface OpenSettlementInvoice {
   id: string;
   bizonylatsorszam: string;
-  vevo_nev: string;
+  invoice_direction?: string;
+  vevo_nev?: string;
+  elado_nev?: string;
+  partner_name?: string;
   brutto_vegosszeg: number;
   kibocsatas_datuma: string;
   fizetesi_hatarido: string | null;
   penznem: string;
 }
+
+export type OpenOutboundInvoice = OpenSettlementInvoice;
 
 export interface RoutingRule {
   id: string;

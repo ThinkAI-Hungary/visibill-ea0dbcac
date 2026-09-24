@@ -12,21 +12,31 @@ interface GLRow {
   isRoot?: boolean;
 }
 
+export interface GlExportOptions {
+  excludeZeroRows?: boolean;
+}
+
 export const exportGlExcel = async (
   processedRows: GLRow[],
   companyName: string = 'Vállalkozás',
   footerTotal: number = 0,
   dateBasis?: 'kibocsatas' | 'teljesites',
   dateFrom?: string,
-  dateTo?: string
+  dateTo?: string,
+  options?: GlExportOptions
 ) => {
   const { default: ExcelJS } = await import('exceljs');
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'eaisybill';
   workbook.created = new Date();
 
+  const excludeZero = options?.excludeZeroRows ?? false;
+  const rowsToExport = excludeZero
+    ? processedRows.filter(row => Math.abs(row.balance || 0) > 0.001)
+    : processedRows;
+
   const basisLabel = dateBasis === 'teljesites' ? 'Teljesítés dátuma' : 'Kibocsátás kelte';
-  const worksheet = workbook.addWorksheet('Főkönyvi Kivonat', {
+  const worksheet = workbook.addWorksheet(excludeZero ? 'Főkönyvi Kivonat (0 nélkül)' : 'Főkönyvi Kivonat', {
     views: [{ showGridLines: false }],
     properties: {
       outlineProperties: {
@@ -57,7 +67,7 @@ export const exportGlExcel = async (
   const numberFormat = '#,##0.00';
 
   // Add Data
-  for (const row of processedRows) {
+  for (const row of rowsToExport) {
     // Skip hidden rows - only show visible ones
     if (row.isItem) {
       // Transaction item row
@@ -165,8 +175,9 @@ export const exportGlExcel = async (
 
   const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
   const basisSuffix = dateBasis === 'teljesites' ? '_teljesites_alapjan' : '_kibocsatas_alapjan';
+  const zeroSuffix = excludeZero ? '_0_nelkul' : '';
   const rangePart = (dateFrom && dateTo) ? `_${dateFrom}_${dateTo}` : (dateFrom ? `_${dateFrom}` : '');
-  const filename = `Fokonyvikivonat_${companyName.replace(/[^a-zA-Z0-9]/g, '_')}${rangePart}${basisSuffix}_${timestamp}.xlsx`;
+  const filename = `Fokonyvikivonat_${companyName.replace(/[^a-zA-Z0-9]/g, '_')}${rangePart}${zeroSuffix}${basisSuffix}_${timestamp}.xlsx`;
 
   const link = document.createElement('a');
   link.href = url;
@@ -185,15 +196,21 @@ export const exportGlAnalyticalExcel = async (
   footerTotal: number = 0,
   dateBasis?: 'kibocsatas' | 'teljesites',
   dateFrom?: string,
-  dateTo?: string
+  dateTo?: string,
+  options?: GlExportOptions
 ) => {
   const { default: ExcelJS } = await import('exceljs');
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'eaisybill';
   workbook.created = new Date();
 
+  const excludeZero = options?.excludeZeroRows ?? false;
+  const rowsToExport = excludeZero
+    ? processedRows.filter(row => Math.abs(row.balance || 0) > 0.001)
+    : processedRows;
+
   const basisLabel = dateBasis === 'teljesites' ? 'Teljesítés' : 'Kibocsátás';
-  const ws = workbook.addWorksheet('Analitikus Kivonat', {
+  const ws = workbook.addWorksheet(excludeZero ? 'Analitikus Kivonat (0 nélkül)' : 'Analitikus Kivonat', {
     views: [{ showGridLines: false }],
   });
 
@@ -218,7 +235,7 @@ export const exportGlAnalyticalExcel = async (
   let totalDebit = 0;
   let totalCredit = 0;
 
-  for (const row of processedRows) {
+  for (const row of rowsToExport) {
     const debit = row.balance > 0 ? row.balance : 0;
     const credit = row.balance < 0 ? Math.abs(row.balance) : 0;
 
@@ -298,8 +315,9 @@ export const exportGlAnalyticalExcel = async (
 
   const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
   const basisSuffix = dateBasis === 'teljesites' ? '_teljesites_alapjan' : '_kibocsatas_alapjan';
+  const zeroSuffix = excludeZero ? '_0_nelkul' : '';
   const rangePart = (dateFrom && dateTo) ? `_${dateFrom}_${dateTo}` : (dateFrom ? `_${dateFrom}` : '');
-  const filename = `Analitikus_Kivonat_${companyName.replace(/[^a-zA-Z0-9]/g, '_')}${rangePart}${basisSuffix}_${timestamp}.xlsx`;
+  const filename = `Analitikus_Kivonat_${companyName.replace(/[^a-zA-Z0-9]/g, '_')}${rangePart}${zeroSuffix}${basisSuffix}_${timestamp}.xlsx`;
 
   const link = document.createElement('a');
   link.href = url;

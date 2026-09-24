@@ -45,6 +45,11 @@
     "register_label": "Pénztár:",
     "all_registers": "Összes pénztár",
     "items_count": "{{count}} tétel",
+    "opening_balance": "Nyitó egyenleg",
+    "period_income": "Időszaki bevétel (+)",
+    "period_expense": "Időszaki kiadás (-)",
+    "period_turnover": "Időszaki forgalom",
+    "closing_balance": "Záró egyenleg",
     "empty": "Nincs tétel az aktuális időszakban",
     "table": {
       "index": "#",
@@ -70,12 +75,14 @@
         "currency": "Valuta"
       },
       "summary": {
-        "title": "Összesítés",
+        "title": "Időszaki összesítés",
         "currency": "Valuta",
+        "opening": "Nyitó egyenleg",
         "items": "Tételek",
-        "income": "Bevétel",
-        "expense": "Kiadás",
-        "net": "Nettó"
+        "income": "Bevétel (+)",
+        "expense": "Kiadás (-)",
+        "net": "Időszaki forgalom",
+        "closing": "Záró egyenleg"
       }
     }
   },
@@ -217,11 +224,18 @@
     "title_edit": "Pénztári tétel szerkesztése",
     "title_invoice": "Utalásos számla KP-ban rendezve",
     "title_manual": "Manuális pénztári tétel",
-    "desc_invoice": "Válaszd ki a nyitott kimenő számlákat, amelyeket készpénzben rendeztek.",
+    "desc_invoice": "Válaszd ki a nyitott kimenő vagy bejövő számlákat, amelyeket készpénzben rendeztek.",
     "desc_manual": "Kézi bevétel vagy kiadás rögzítése vagy módosítása a házipénztárba.",
     "invoice_selected_count": "{{count}} számla kiválasztva",
-    "invoice_available_count": "{{count}} nyitott kimenő számla érhető el",
+    "invoice_available_count": "{{count}} nyitott számla érhető el",
     "select_invoices_btn": "Számlák kiválasztása ({{selected}}/{{total}})",
+    "filter_all": "Összes ({{count}})",
+    "filter_outbound": "Vevői / Bevétel ({{count}})",
+    "filter_inbound": "Szállítói / Kiadás ({{count}})",
+    "badge_outbound": "Vevői (+)",
+    "badge_inbound": "Szállítói (-)",
+    "net_income": "Pénztári bevétel",
+    "net_expense": "Pénztári kiadás",
     "due_expired": "Lejárt:",
     "due_date": "Hat.idő:",
     "register_label": "Pénztár",

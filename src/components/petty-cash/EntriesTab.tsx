@@ -87,13 +87,27 @@ export default function EntriesTab() {
   const [printingEntry, setPrintingEntry] = useState<PettyCashEntry | null>(null);
   const [signatureOpen, setSignatureOpen] = useState(false);
 
-  // Keyboard shortcut: Insert key opens manual entry modal
+  // Keyboard shortcuts:
+  // - F4 or Alt+Z: opens Cash Closing (Pénztárzárás) dialog
+  // - Insert, Alt+N, or '+': opens Manual Entry modal
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Insert' && writable && !showManualDialog && !showClosingDialog && !showTransferDialog && !signatureOpen) {
-        const target = e.target as HTMLElement | null;
-        const isInput = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable;
-        if (!isInput) {
+      // F4 or Alt+Z: toggle cash closing dialog
+      if (e.key === 'F4' || (e.altKey && (e.key === 'z' || e.key === 'Z'))) {
+        e.preventDefault();
+        setShowClosingDialog(prev => !prev);
+        return;
+      }
+
+      const target = e.target as HTMLElement | null;
+      const isInput = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable;
+
+      const isIns = e.key === 'Insert';
+      const isAltN = (e.altKey || (!isInput && e.ctrlKey)) && (e.key === 'n' || e.key === 'N');
+      const isPlus = !isInput && (e.key === '+' || e.key === 'Add');
+
+      if ((isIns || isAltN || isPlus) && writable && !showManualDialog && !showClosingDialog && !showTransferDialog && !signatureOpen) {
+        if (!isInput || isIns || isAltN) {
           e.preventDefault();
           setEditingEntry(null);
           setShowManualDialog(true);
@@ -594,9 +608,17 @@ export default function EntriesTab() {
           </div>
         </div>
         <div className="flex gap-2">
-          {/* F4: Cash closing button */}
-          <Button size="sm" variant="outline" onClick={() => setShowClosingDialog(true)} disabled={entries.length === 0} className="border-indigo-500/20 hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+          {/* F4 / Alt+Z: Cash closing button */}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowClosingDialog(true)}
+            className="border-indigo-500/20 hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
+          >
             <BookOpen className="w-4 h-4 mr-1 text-indigo-500" /> {t('pettyCash:entries.cash_closing', 'Pénztárzárás')}
+            <kbd className="ml-1.5 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono font-medium rounded border border-current/25 bg-current/10 text-current opacity-90">
+              F4 / Alt+Z
+            </kbd>
           </Button>
           <Button size="sm" variant="outline" onClick={() => syncEntries.mutate()} disabled={syncEntries.isPending} className="border-emerald-500/20 hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
             {syncEntries.isPending ? <Loader2 className="w-4 h-4 mr-1 animate-spin text-emerald-500" /> : <ArrowRightLeft className="w-4 h-4 mr-1 text-emerald-500" />}
@@ -617,7 +639,7 @@ export default function EntriesTab() {
           <Button size="sm" onClick={() => { setEditingEntry(null); setShowManualDialog(true); }} disabled={!writable} className="shadow-sm">
             <Plus className="w-4 h-4 mr-1" /> {t('pettyCash:entries.manual_entry', 'Manuális tétel')}
             <kbd className="ml-1.5 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono font-medium rounded border border-current/25 bg-current/10 text-current opacity-90">
-              Ins
+              Ins / Alt+N
             </kbd>
           </Button>
         </div>
@@ -877,6 +899,7 @@ export default function EntriesTab() {
         entries={entries}
         registers={registers}
         registerMap={registerMap}
+        companyId={companyId}
       />
 
       {/* Inter-register Transfer Dialog */}
@@ -1407,26 +1430,48 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
 
   // ─── Invoice settlement mode ────────────────────────────────────────────
   const [invoiceMode, setInvoiceMode] = useState(false);
+  const [invoiceFilter, setInvoiceFilter] = useState<'all' | 'OUTBOUND' | 'INBOUND'>('all');
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
 
-  // Fetch open outbound invoices for this company
+  // Fetch open unpaid invoices (outbound sales & inbound expenses) for this company
   const { data: openInvoices = [] } = useQuery({
-    queryKey: ['open-outbound-invoices', companyId],
+    queryKey: ['open-settlement-invoices', companyId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('invoices')
-        .select('id, bizonylatsorszam, vevo_nev, brutto_vegosszeg, kibocsatas_datuma, fizetesi_hatarido, penznem')
+        .select('id, bizonylatsorszam, invoice_direction, vevo_nev, elado_nev, brutto_vegosszeg, kibocsatas_datuma, fizetesi_hatarido, penznem')
         .eq('company_id', companyId)
-        .in('invoice_direction', ['OUTBOUND', 'outbound'])
         .eq('fizetve', false)
         .is('transaction_id', null)
         .not('exclude_from_accounting', 'is', true)
         .order('fizetesi_hatarido', { ascending: true });
       if (error) throw error;
-      return (data || []) as OpenOutboundInvoice[];
+      return (data || []).map((inv: any) => ({
+        ...inv,
+        partner_name: inv.invoice_direction?.toUpperCase() === 'INBOUND'
+          ? (inv.elado_nev || 'Ismeretlen szállító')
+          : (inv.vevo_nev || 'Ismeretlen vevő')
+      })) as OpenSettlementInvoice[];
     },
     enabled: !!companyId && open,
   });
+
+  const filteredOpenInvoices = useMemo(() => {
+    if (invoiceFilter === 'all') return openInvoices;
+    return openInvoices.filter(inv => inv.invoice_direction?.toUpperCase() === invoiceFilter);
+  }, [openInvoices, invoiceFilter]);
+
+  const outboundCount = useMemo(() => openInvoices.filter(i => i.invoice_direction?.toUpperCase() === 'OUTBOUND').length, [openInvoices]);
+  const inboundCount = useMemo(() => openInvoices.filter(i => i.invoice_direction?.toUpperCase() === 'INBOUND').length, [openInvoices]);
+
+  const selectedNetSum = useMemo(() => {
+    return openInvoices
+      .filter(inv => selectedInvoiceIds.has(inv.id))
+      .reduce((sum, inv) => {
+        const amt = Number(inv.brutto_vegosszeg) || 0;
+        return inv.invoice_direction?.toUpperCase() === 'INBOUND' ? sum - amt : sum + amt;
+      }, 0);
+  }, [openInvoices, selectedInvoiceIds]);
 
   React.useEffect(() => {
     if (open) {
@@ -1595,6 +1640,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashEntries(companyId) });
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashSummary(companyId) });
       if (result?.isInvoice) {
+        qc.invalidateQueries({ queryKey: ['open-settlement-invoices', companyId] });
         qc.invalidateQueries({ queryKey: ['open-outbound-invoices', companyId] });
         qc.invalidateQueries({ queryKey: ['invoices'] });
       }
@@ -1674,7 +1720,14 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
       } else if (isAltK || (isBareK && !isFreeTextInput)) {
         e.preventDefault();
         setForm(f => ({ ...f, isExpense: true }));
-      } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      } else if (e.key === 'Enter') {
+        const isTextarea = target?.tagName === 'TEXTAREA';
+        if (isTextarea && !e.ctrlKey && !e.metaKey) {
+          return; // Allow multiline in textarea unless Ctrl/Cmd+Enter
+        }
+        if (target?.getAttribute('data-action') === 'cancel' || target?.getAttribute('data-action') === 'delete') {
+          return; // Don't intercept cancel or delete buttons
+        }
         e.preventDefault();
         const rawAmount = parseFloat(form.amount) || 0;
         const isValid = Boolean(form.register_id?.trim()) && registers.length > 0 && (invoiceMode ? selectedInvoiceIds.size > 0 : (rawAmount > 0 && !!form.description?.trim()));
@@ -1757,25 +1810,70 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
 
           {/* Invoice multiselect panel */}
           {invoiceMode && (
-            <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
+            <div className="space-y-2.5 animate-in slide-in-from-top-2 duration-200">
+              {/* Direction filter tabs */}
+              <div className="flex gap-1.5 p-1 bg-muted/60 rounded-md border border-border/50 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setInvoiceFilter('all')}
+                  className={cn(
+                    'flex-1 py-1 px-2 rounded font-medium text-xs transition-all text-center',
+                    invoiceFilter === 'all' ? 'bg-background text-foreground shadow-sm font-semibold' : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {t('pettyCash:manual_entry_dialog.filter_all', { count: openInvoices.length, defaultValue: `Összes (${openInvoices.length})` })}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInvoiceFilter('OUTBOUND')}
+                  className={cn(
+                    'flex-1 py-1 px-2 rounded font-medium text-xs transition-all text-center',
+                    invoiceFilter === 'OUTBOUND' ? 'bg-background text-emerald-600 dark:text-emerald-400 shadow-sm font-semibold' : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {t('pettyCash:manual_entry_dialog.filter_outbound', { count: outboundCount, defaultValue: `Vevői (${outboundCount})` })}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInvoiceFilter('INBOUND')}
+                  className={cn(
+                    'flex-1 py-1 px-2 rounded font-medium text-xs transition-all text-center',
+                    invoiceFilter === 'INBOUND' ? 'bg-background text-destructive shadow-sm font-semibold' : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {t('pettyCash:manual_entry_dialog.filter_inbound', { count: inboundCount, defaultValue: `Szállítói (${inboundCount})` })}
+                </button>
+              </div>
+
               <div className="flex items-center justify-between">
                 <Label className="text-xs">
                   {t('pettyCash:manual_entry_dialog.select_invoices_btn', {
                     selected: selectedInvoiceIds.size,
-                    total: openInvoices.length
+                    total: filteredOpenInvoices.length
                   })}
                 </Label>
                 {selectedInvoiceIds.size > 0 && (
-                  <p className="text-xs font-bold text-blue-600 dark:text-blue-400 font-mono tabular-nums">
-                    Σ {formatNumberLocale(openInvoices
-                      .filter(inv => selectedInvoiceIds.has(inv.id))
-                      .reduce((s, inv) => s + (Number(inv.brutto_vegosszeg) || 0), 0))} HUF
+                  <p className={cn(
+                    'text-xs font-bold font-mono tabular-nums',
+                    selectedNetSum >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'
+                  )}>
+                    Σ {selectedNetSum >= 0 ? '+' : ''}{formatNumberLocale(selectedNetSum)} HUF{' '}
+                    <span className="text-[10px] font-normal opacity-80">
+                      ({selectedNetSum >= 0
+                        ? t('pettyCash:manual_entry_dialog.net_income', 'Pénztári bevétel')
+                        : t('pettyCash:manual_entry_dialog.net_expense', 'Pénztári kiadás')})
+                    </span>
                   </p>
                 )}
               </div>
-              <div className="max-h-48 overflow-y-auto rounded-lg border border-border divide-y divide-border/50">
-                {openInvoices.map(inv => {
+              <div className="max-h-52 overflow-y-auto rounded-lg border border-border divide-y divide-border/50">
+                {filteredOpenInvoices.length === 0 ? (
+                  <div className="p-4 text-center text-xs text-muted-foreground">
+                    {t('pettyCash:closing_dialog.empty', 'Nincs nyitott számla a kiválasztott szűrővel')}
+                  </div>
+                ) : filteredOpenInvoices.map(inv => {
                   const isSelected = selectedInvoiceIds.has(inv.id);
+                  const isInbound = inv.invoice_direction?.toUpperCase() === 'INBOUND';
                   const amount = Number(inv.brutto_vegosszeg) || 0;
                   return (
                     <button
@@ -1791,20 +1889,26 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
                       className={cn(
                         'w-full flex items-center gap-3 px-3 py-2 text-left transition-all',
                         isSelected
-                          ? 'bg-blue-50 dark:bg-blue-900/15'
+                          ? (isInbound ? 'bg-red-50 dark:bg-red-950/20' : 'bg-emerald-50 dark:bg-emerald-950/20')
                           : 'hover:bg-muted/50'
                       )}
                     >
                       <div className={cn(
                         'rounded border-2 flex items-center justify-center shrink-0 transition-all',
                         isSelected
-                          ? 'bg-blue-500 border-blue-500 text-white'
+                          ? (isInbound ? 'bg-destructive border-destructive text-white' : 'bg-emerald-600 border-emerald-600 text-white')
                           : 'border-muted-foreground/30'
                       )} style={{ width: '18px', height: '18px' }}>
                         {isSelected && <Check className="w-3 h-3" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
+                          <Badge variant="outline" className={cn(
+                            'text-[9px] px-1 py-0 font-medium shrink-0',
+                            isInbound ? 'border-destructive/40 text-destructive bg-destructive/10' : 'border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10'
+                          )}>
+                            {isInbound ? t('pettyCash:manual_entry_dialog.badge_inbound', 'Szállítói (-)') : t('pettyCash:manual_entry_dialog.badge_outbound', 'Vevői (+)')}
+                          </Badge>
                           <p className="text-xs font-bold text-foreground font-mono">
                             {inv.bizonylatsorszam}
                           </p>
@@ -1813,12 +1917,15 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
                           </span>
                         </div>
                         <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-                          {inv.vevo_nev}
+                          {inv.partner_name || (isInbound ? inv.elado_nev : inv.vevo_nev) || '—'}
                         </p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="text-xs font-bold font-mono tabular-nums text-foreground">
-                          {formatNumberLocale(amount)} {inv.penznem || 'HUF'}
+                        <p className={cn(
+                          'text-xs font-bold font-mono tabular-nums',
+                          isInbound ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400'
+                        )}>
+                          {isInbound ? '-' : '+'}{formatNumberLocale(amount)} {inv.penznem || 'HUF'}
                         </p>
                         {inv.fizetesi_hatarido && (
                           <p className={cn(
@@ -2034,8 +2141,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
               {t('pettyCash:manual_entry_dialog.delete_btn')}
             </Button>
           ) : <div />}
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleClose}>{t('pettyCash:manual_entry_dialog.cancel_btn')}</Button>
+          <div className="flex flex-row-reverse gap-2">
             <Button
               onClick={() => save.mutate()}
               disabled={
@@ -2047,6 +2153,9 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
             >
               {save.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
               {editingEntry ? t('pettyCash:manual_entry_dialog.save_btn') : t('pettyCash:manual_entry_dialog.record_btn')}
+            </Button>
+            <Button variant="outline" data-action="cancel" onClick={handleClose}>
+              {t('pettyCash:manual_entry_dialog.cancel_btn')}
             </Button>
           </div>
         </DialogFooter>

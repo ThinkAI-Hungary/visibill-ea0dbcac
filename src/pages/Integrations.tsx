@@ -27,6 +27,7 @@ import {
 import EmailAliasManager from '@/components/EmailAliasManager';
 import EmailSettingsForm from '@/components/integrations/EmailSettingsForm';
 import NavCredentialsForm from '@/components/nav/NavCredentialsForm';
+import NavUpoM2mCard from '@/components/integrations/NavUpoM2mCard';
 import SzamlazzAgentForm from '@/components/integrations/SzamlazzAgentForm';
 import { Aggreg8BankConnections } from '@/components/banking/Aggreg8BankConnections';
 import { ApiKeysCard } from '@/components/settings/ApiKeysCard';
@@ -346,6 +347,15 @@ const Integrations = () => {
                     ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
                     : 'bg-muted text-muted-foreground',
                 },
+                {
+                  id: 'nav_upo',
+                  title: 'NAV Ügyfélportál (ÜPO) M2M',
+                  subtitle: 'Dolgozói jogviszonyok (T1041) & EFO',
+                  icon: Shield,
+                  color: 'text-blue-600 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800',
+                  badgeText: 'M2M Gép-gép',
+                  badgeClass: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+                },
               ]
             : []),
         ],
@@ -628,6 +638,13 @@ const Integrations = () => {
                   </Tabs>
                 </CardContent>
               </Card>
+              </div>
+            )}
+
+            {/* ── PANEL 2/B: NAV Ügyfélportál (ÜPO) M2M ── */}
+            {hasNavIntegration && (
+              <div className={activeTab === 'nav_upo' ? 'block' : 'hidden'}>
+                <NavUpoM2mCard companyId={selectedCompany?.id} isOwner={isOwner} />
               </div>
             )}
 

@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { FileDown, BookOpen, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import { format } from 'date-fns';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { getActiveLocale } from '@/lib/locale/formatters';
 import type { PettyCashEntry, PettyCashRegister } from './types';
@@ -25,16 +27,17 @@ interface CashClosingDialogProps {
   entries: PettyCashEntry[];
   registers: PettyCashRegister[];
   registerMap: Record<string, PettyCashRegister>;
+  companyId?: string;
 }
 
 export default function CashClosingDialog({
-  open, onOpenChange, entries, registers, registerMap,
+  open, onOpenChange, entries, registers, registerMap, companyId,
 }: CashClosingDialogProps) {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['pettyCash', 'common']);
   const { dateFromFormatted, dateToFormatted } = useDateRange();
   const [selectedRegister, setSelectedRegister] = useState<string>('all');
 
-  // Filter entries for the selected register
+  // Filter entries for the selected register in the active period
   const filteredEntries = useMemo(() => {
     let result = entries;
     if (selectedRegister !== 'all') {
@@ -46,17 +49,115 @@ export default function CashClosingDialog({
     );
   }, [entries, selectedRegister]);
 
-  // Group by currency for summary
+  // Query configured opening balances for the company's registers
+  const { data: openingBalances = [] } = useQuery({
+    queryKey: ['cash-closing-opening-balances', companyId],
+    queryFn: async () => {
+      if (!companyId || registers.length === 0) return [];
+      const { data, error } = await supabase
+        .from('petty_cash_opening_balances')
+        .select('*')
+        .in('register_id', registers.map(r => r.id));
+      if (error) {
+        console.error('Error fetching opening balances for cash closing:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: open && !!companyId && registers.length > 0,
+  });
+
+  // Query prior entries (before dateFromFormatted) to calculate opening balance at period start
+  const { data: priorEntries = [] } = useQuery({
+    queryKey: ['cash-closing-prior-entries', companyId, dateFromFormatted],
+    queryFn: async () => {
+      if (!companyId || !dateFromFormatted) return [];
+      const { data, error } = await supabase
+        .from('petty_cash_entries')
+        .select('register_id, currency, amount, entry_date')
+        .eq('company_id', companyId)
+        .lt('entry_date', dateFromFormatted);
+      if (error) {
+        console.error('Error fetching prior entries for cash closing:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: open && !!companyId && !!dateFromFormatted,
+  });
+
+  // Group by currency with full accounting calculation:
+  // Opening Balance + Period Income - Period Expense = Period Net Turnover
+  // Closing Balance = Opening Balance + Period Net Turnover
   const currencySummary = useMemo(() => {
-    const m: Record<string, { income: number; expense: number; count: number }> = {};
-    filteredEntries.forEach(e => {
-      if (!m[e.currency]) m[e.currency] = { income: 0, expense: 0, count: 0 };
-      m[e.currency].count++;
-      if (e.amount >= 0) m[e.currency].income += e.amount;
-      else m[e.currency].expense += e.amount;
+    const targetRegIds = selectedRegister === 'all'
+      ? new Set(registers.map(r => r.id))
+      : new Set([selectedRegister]);
+
+    const currencies = new Set<string>();
+    filteredEntries.forEach(e => currencies.add(e.currency));
+    openingBalances
+      .filter(ob => targetRegIds.has(ob.register_id))
+      .forEach(ob => currencies.add(ob.currency));
+    priorEntries
+      .filter(pe => targetRegIds.has(pe.register_id))
+      .forEach(pe => currencies.add(pe.currency));
+
+    if (currencies.size === 0 && registers.length > 0) {
+      registers.forEach(r => r.currencies.forEach(c => currencies.add(c)));
+    }
+    if (currencies.size === 0) {
+      currencies.add('HUF');
+    }
+
+    const m: Record<string, {
+      opening: number;
+      income: number;
+      expense: number;
+      net: number;
+      closing: number;
+      count: number;
+    }> = {};
+
+    currencies.forEach(cur => {
+      // 1. Configured initial opening balance
+      const relevantOpenings = openingBalances.filter(ob =>
+        targetRegIds.has(ob.register_id) && ob.currency === cur
+      );
+      const configuredOpening = relevantOpenings.reduce((sum, ob) => sum + (Number(ob.amount) || 0), 0);
+
+      // 2. Entries occurring before the start date (dateFromFormatted)
+      const relevantPrior = priorEntries.filter(pe =>
+        targetRegIds.has(pe.register_id) && pe.currency === cur
+      );
+      const priorSum = relevantPrior.reduce((sum, pe) => sum + (Number(pe.amount) || 0), 0);
+
+      const opening = roundHuf(configuredOpening + priorSum, cur);
+
+      // 3. Current period entries
+      const periodForCur = filteredEntries.filter(e => e.currency === cur);
+      let income = 0;
+      let expense = 0;
+      periodForCur.forEach(e => {
+        if (e.amount >= 0) income += e.amount;
+        else expense += e.amount;
+      });
+
+      const net = roundHuf(income + expense, cur);
+      const closing = roundHuf(opening + net, cur);
+
+      m[cur] = {
+        opening,
+        income: roundHuf(income, cur),
+        expense: roundHuf(expense, cur),
+        net,
+        closing,
+        count: periodForCur.length,
+      };
     });
+
     return Object.entries(m).sort(([a], [b]) => a === 'HUF' ? -1 : b === 'HUF' ? 1 : a.localeCompare(b));
-  }, [filteredEntries]);
+  }, [registers, selectedRegister, openingBalances, priorEntries, filteredEntries]);
 
   const registerName = selectedRegister === 'all'
     ? t('pettyCash:closing_dialog.all_registers')
@@ -90,13 +191,14 @@ export default function CashClosingDialog({
     }).join('');
 
     const summaryRows = currencySummary.map(([cur, s]) => {
-      const net = roundHuf(s.income + s.expense, cur);
       return `<tr>
         <td><strong>${cur}</strong></td>
+        <td class="right font-semibold">${roundHuf(s.opening, cur).toLocaleString(numLocale)}</td>
         <td class="right">${t('pettyCash:closing_dialog.items_count', { count: s.count })}</td>
         <td class="right green">${roundHuf(s.income, cur).toLocaleString(numLocale)}</td>
         <td class="right red">${roundHuf(Math.abs(s.expense), cur).toLocaleString(numLocale)}</td>
-        <td class="right" style="font-weight:700">${net.toLocaleString(numLocale)}</td>
+        <td class="right" style="font-weight:600">${s.net >= 0 ? '+' : ''}${roundHuf(s.net, cur).toLocaleString(numLocale)}</td>
+        <td class="right" style="font-weight:700">${roundHuf(s.closing, cur).toLocaleString(numLocale)}</td>
       </tr>`;
     }).join('');
 
@@ -113,12 +215,28 @@ export default function CashClosingDialog({
   .green { color: #16a34a; }
   .red { color: #dc2626; }
   .mono { font-family: 'Courier New', monospace; font-size: 10px; }
-  .summary { margin-top: 12px; border: 1px solid #ddd; border-radius: 4px; padding: 12px; background: #fafafa; }
+  .summary { margin-top: 16px; border: 1px solid #ddd; border-radius: 4px; padding: 12px; background: #fafafa; }
   .summary h2 { font-size: 13px; margin: 0 0 8px 0; }
   @media print { body { margin: 10mm; } }
 </style></head><body>
   <h1>📋 ${t('pettyCash:closing_dialog.pdf.page_title', { register: registerName })}</h1>
   <div class="meta">${t('pettyCash:closing_dialog.pdf.period', { from: dateFromFormatted, to: dateToFormatted })} | ${t('pettyCash:closing_dialog.pdf.generated_at', { date: format(new Date(), 'yyyy.MM.dd. HH:mm') })}</div>
+
+  <div class="summary" style="margin-top: 0; margin-bottom: 16px;">
+    <h2>${t('pettyCash:closing_dialog.pdf.summary.title', 'Időszaki összesítés')}</h2>
+    <table>
+      <thead><tr>
+        <th>${t('pettyCash:closing_dialog.pdf.summary.currency', 'Pénznem')}</th>
+        <th class="right">${t('pettyCash:closing_dialog.pdf.summary.opening', 'Nyitó egyenleg')}</th>
+        <th class="right">${t('pettyCash:closing_dialog.pdf.summary.items', 'Tételek')}</th>
+        <th class="right">${t('pettyCash:closing_dialog.pdf.summary.income', 'Bevétel (+)')}</th>
+        <th class="right">${t('pettyCash:closing_dialog.pdf.summary.expense', 'Kiadás (-)')}</th>
+        <th class="right">${t('pettyCash:closing_dialog.pdf.summary.net', 'Időszaki forgalom')}</th>
+        <th class="right">${t('pettyCash:closing_dialog.pdf.summary.closing', 'Záró egyenleg')}</th>
+      </tr></thead>
+      <tbody>${summaryRows}</tbody>
+    </table>
+  </div>
 
   <table>
     <thead><tr>
@@ -133,20 +251,6 @@ export default function CashClosingDialog({
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>
-
-  <div class="summary">
-    <h2>${t('pettyCash:closing_dialog.pdf.summary.title')}</h2>
-    <table>
-      <thead><tr>
-        <th>${t('pettyCash:closing_dialog.pdf.summary.currency')}</th>
-        <th class="right">${t('pettyCash:closing_dialog.pdf.summary.items')}</th>
-        <th class="right">${t('pettyCash:closing_dialog.pdf.summary.income')}</th>
-        <th class="right">${t('pettyCash:closing_dialog.pdf.summary.expense')}</th>
-        <th class="right">${t('pettyCash:closing_dialog.pdf.summary.net')}</th>
-      </tr></thead>
-      <tbody>${summaryRows}</tbody>
-    </table>
-  </div>
 </body></html>`;
 
     printWindow.document.write(html);
@@ -157,7 +261,7 @@ export default function CashClosingDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-primary" /> {t('pettyCash:closing_dialog.title')}
@@ -182,36 +286,66 @@ export default function CashClosingDialog({
             </Select>
           </div>
 
-          {/* Summary cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Detailed summary cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {currencySummary.map(([cur, s]) => {
-              const net = roundHuf(s.income + s.expense, cur);
               return (
                 <Card key={cur} className={cn(
-                  'transition-all',
-                  net < 0 && 'border-destructive/30'
+                  'transition-all border',
+                  s.closing < 0 && 'border-destructive/40 bg-destructive/5'
                 )}>
-                  <CardContent className="p-3 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <Badge variant="outline" className="text-xs">{cur}</Badge>
+                  <CardContent className="p-3.5 space-y-2">
+                    <div className="flex items-center justify-between pb-1 border-b border-border/50">
+                      <Badge variant="outline" className="text-xs font-bold">{cur}</Badge>
                       <span className="text-xs text-muted-foreground">{t('pettyCash:closing_dialog.items_count', { count: s.count })}</span>
                     </div>
-                    <div className="flex items-center gap-1 text-sm">
-                      <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-                      <span className="text-emerald-500 font-medium tabular-nums">
-                        {fmtBalance(roundHuf(s.income, cur), cur)}
+
+                    {/* Opening Balance */}
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">{t('pettyCash:closing_dialog.opening_balance', 'Nyitó egyenleg')}</span>
+                      <span className="font-semibold tabular-nums text-foreground">
+                        {fmtBalance(s.opening, cur)}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1 text-sm">
-                      <TrendingDown className="w-3.5 h-3.5 text-destructive" />
+
+                    {/* Period Income */}
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                        <TrendingUp className="w-3.5 h-3.5" />
+                        <span>{t('pettyCash:closing_dialog.period_income', 'Időszaki bevétel (+)')}</span>
+                      </div>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-medium tabular-nums">
+                        {fmtBalance(s.income, cur)}
+                      </span>
+                    </div>
+
+                    {/* Period Expense */}
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-1 text-destructive">
+                        <TrendingDown className="w-3.5 h-3.5" />
+                        <span>{t('pettyCash:closing_dialog.period_expense', 'Időszaki kiadás (-)')}</span>
+                      </div>
                       <span className="text-destructive font-medium tabular-nums">
-                        {fmtBalance(roundHuf(s.expense, cur), cur)}
+                        {fmtBalance(s.expense, cur)}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1 text-sm pt-1 border-t border-border/40">
-                      <Wallet className="w-3.5 h-3.5 text-primary" />
-                      <span className={cn('font-bold tabular-nums', net >= 0 ? 'text-foreground' : 'text-destructive')}>
-                        {fmtBalance(net, cur)}
+
+                    {/* Period Turnover (Net) */}
+                    <div className="flex items-center justify-between text-xs pt-1 border-t border-border/40">
+                      <span className="text-muted-foreground">{t('pettyCash:closing_dialog.period_turnover', 'Időszaki forgalom')}</span>
+                      <span className={cn('font-semibold tabular-nums', s.net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive')}>
+                        {fmtAmount(s.net, cur)}
+                      </span>
+                    </div>
+
+                    {/* Closing Balance */}
+                    <div className="flex items-center justify-between text-sm pt-1.5 border-t border-border font-bold">
+                      <div className="flex items-center gap-1.5">
+                        <Wallet className="w-4 h-4 text-primary" />
+                        <span>{t('pettyCash:closing_dialog.closing_balance', 'Záró egyenleg')}</span>
+                      </div>
+                      <span className={cn('tabular-nums font-bold text-base', s.closing >= 0 ? 'text-foreground' : 'text-destructive')}>
+                        {fmtBalance(s.closing, cur)}
                       </span>
                     </div>
                   </CardContent>
@@ -266,7 +400,7 @@ export default function CashClosingDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>{t('pettyCash:closing_dialog.close')}</Button>
-          <Button onClick={handleExportPdf} disabled={filteredEntries.length === 0}>
+          <Button onClick={handleExportPdf} disabled={filteredEntries.length === 0 && currencySummary.every(s => s[1].opening === 0)}>
             <FileDown className="w-4 h-4 mr-2" /> {t('pettyCash:closing_dialog.print_pdf')}
           </Button>
         </DialogFooter>

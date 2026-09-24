@@ -142,7 +142,11 @@
       "print_preview": "Nyomtatási előnézet",
       "print_pdf": "Nyomtatás / PDF",
       "export_excel": "Kivonat (Excel)",
+      "export_full": "Teljes kivonat",
+      "export_no_zeros": "0-ás sorok nélkül",
       "export_analytical_excel": "Analitikus kivonat (Excel)",
+      "export_full_analytics": "Teljes analitika",
+      "export_no_zeros_analytics": "0-ás sorok nélkül",
       "add_account": "Új főkönyvi szám"
     },
     "kpi": {

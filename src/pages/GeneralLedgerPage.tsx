@@ -6,7 +6,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Download, UploadCloud, Database, Bot, Loader2, Search, FileText, ChevronDown, Eye, Printer, Maximize2, Minimize2, FileUp, Trash2, BookOpen, Table2, Calendar, CalendarCheck, Layers, ShieldCheck, Plus, LayoutGrid, Columns, Filter, FolderTree, ListTree } from 'lucide-react';
+import { Download, UploadCloud, Database, Bot, Loader2, Search, FileText, ChevronDown, Eye, Printer, Maximize2, Minimize2, FileUp, Trash2, BookOpen, Table2, Calendar, CalendarCheck, Layers, ShieldCheck, Plus, LayoutGrid, Columns, Filter, FolderTree, ListTree, FileSpreadsheet } from 'lucide-react';
 import { UploadAuditXmlModal } from '@/components/general-ledger/UploadAuditXmlModal';
 import { AuditImportHistoryModal } from '@/components/general-ledger/AuditImportHistoryModal';
 import GeneralLedgerTable, { GeneralLedgerTableRef, GlViewGranularity } from '@/components/general-ledger/GeneralLedgerTable';
@@ -748,28 +748,52 @@ export default function GeneralLedgerPage() {
                       <ChevronDown className="h-4 w-4 ml-1" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent>
+                  <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuItem onClick={() => setShowPrintPreview(true)}>
-                      <Eye className="h-4 w-4 mr-2" />
-                      {t('accounting:general_ledger.toolbar.print_preview', 'Nyomtatási előnézet')}
+                      <Eye className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span>{t('accounting:general_ledger.toolbar.print_preview', 'Nyomtatási előnézet')}</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handlePrint}>
-                      <Printer className="h-4 w-4 mr-2" />
+                      <Printer className="h-4 w-4 mr-2 text-muted-foreground" />
                       <span className="flex-1">{t('accounting:general_ledger.toolbar.print_pdf', 'Nyomtatás / PDF')}</span>
                       <kbd className="ml-2 pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
                         Ctrl+P
                       </kbd>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => tableRef.current?.exportExcel(selectedCompany?.name)}>
-                      <Download className="h-4 w-4 mr-2" />
-                      {t('accounting:general_ledger.toolbar.export_excel', 'Kivonat (Excel)')}
-                    </DropdownMenuItem>
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <FileSpreadsheet className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span>{t('accounting:general_ledger.toolbar.export_excel', 'Kivonat (Excel)')}</span>
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent className="w-52">
+                        <DropdownMenuItem onClick={() => tableRef.current?.exportExcel(selectedCompany?.name, { excludeZeroRows: false })}>
+                          <Layers className="h-4 w-4 mr-2 text-muted-foreground" />
+                          <span>{t('accounting:general_ledger.toolbar.export_full', 'Teljes kivonat')}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => tableRef.current?.exportExcel(selectedCompany?.name, { excludeZeroRows: true })}>
+                          <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+                          <span>{t('accounting:general_ledger.toolbar.export_no_zeros', '0-ás sorok nélkül')}</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
                     {/* F6: Analytical export */}
-                    <DropdownMenuItem onClick={() => tableRef.current?.exportAnalyticalExcel(selectedCompany?.name)}>
-                      <Table2 className="h-4 w-4 mr-2" />
-                      {t('accounting:general_ledger.toolbar.export_analytical_excel', 'Analitikus kivonat (Excel)')}
-                    </DropdownMenuItem>
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <Table2 className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span>{t('accounting:general_ledger.toolbar.export_analytical_excel', 'Analitikus kivonat (Excel)')}</span>
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent className="w-52">
+                        <DropdownMenuItem onClick={() => tableRef.current?.exportAnalyticalExcel(selectedCompany?.name, { excludeZeroRows: false })}>
+                          <Layers className="h-4 w-4 mr-2 text-muted-foreground" />
+                          <span>{t('accounting:general_ledger.toolbar.export_full_analytics', 'Teljes analitika')}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => tableRef.current?.exportAnalyticalExcel(selectedCompany?.name, { excludeZeroRows: true })}>
+                          <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+                          <span>{t('accounting:general_ledger.toolbar.export_no_zeros_analytics', '0-ás sorok nélkül')}</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

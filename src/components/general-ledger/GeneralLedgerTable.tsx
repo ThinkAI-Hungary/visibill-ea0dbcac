@@ -103,8 +103,8 @@ function cleanIdVal(val: any): string {
 
 export interface GeneralLedgerTableRef {
   expandAllAndPrint: () => void;
-  exportExcel: (companyName?: string) => Promise<void>;
-  exportAnalyticalExcel: (companyName?: string) => Promise<void>; // F6
+  exportExcel: (companyName?: string, options?: { excludeZeroRows?: boolean }) => Promise<void>;
+  exportAnalyticalExcel: (companyName?: string, options?: { excludeZeroRows?: boolean }) => Promise<void>; // F6
   getStats: () => { accountCount: number; leafCount: number; totalDebit: number; totalCredit: number };
   expandAll: () => void;
   collapseAll: () => void;
@@ -1113,11 +1113,16 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         setIsPrinting(false);
       }, 300);
     },
-    exportExcel: async (companyName?: string) => {
-      await exportGlExcel(processedRows, companyName, footerTotals, dateBasis, dateFrom, dateTo);
+    exportExcel: async (companyName?: string, options?: { excludeZeroRows?: boolean }) => {
+      const shouldExcludeZero = options?.excludeZeroRows !== undefined ? options.excludeZeroRows : hideZeroBalances;
+      const rows = shouldExcludeZero
+        ? processedRows.filter(r => Math.abs(r.balance || 0) > 0.001)
+        : processedRows;
+      await exportGlExcel(rows, companyName, footerTotals, dateBasis, dateFrom, dateTo, { excludeZeroRows: shouldExcludeZero });
     },
-    exportAnalyticalExcel: async (companyName?: string) => {
+    exportAnalyticalExcel: async (companyName?: string, options?: { excludeZeroRows?: boolean }) => {
       if (!selectedCompany?.id || !presetId || !dbData) return;
+      const shouldExcludeZero = options?.excludeZeroRows !== undefined ? options.excludeZeroRows : hideZeroBalances;
       toast({ title: 'Exportálás folyamatban...', description: 'Analitikus tételek lekérése az Excelhez.' });
       try {
         const allItems = await fetchAllGlCategorizedItems({
@@ -1228,7 +1233,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
         const fullExportRows: any[] = [];
         let activeExportCids: Set<string> | null = null;
-        if (hideZeroBalances) {
+        if (shouldExcludeZero) {
           activeExportCids = new Set<string>();
           rawAccounts.forEach(acc => {
             const hasItems = itemsByGL.has(acc.cid) && (itemsByGL.get(acc.cid)?.length ?? 0) > 0;
@@ -1267,7 +1272,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         roots.sort(compareGlAccounts);
         roots.forEach(root => traverse(root, 0));
 
-        await exportGlAnalyticalExcel(fullExportRows, companyName, footerTotals, dateBasis, dateFrom, dateTo);
+        await exportGlAnalyticalExcel(fullExportRows, companyName, footerTotals, dateBasis, dateFrom, dateTo, { excludeZeroRows: shouldExcludeZero });
         toast({ title: 'Sikeres exportálás', description: 'Az analitikus Excel fájl elkészült.', className: 'bg-green-50 text-green-900 border-green-200' });
       } catch (err: any) {
         reportError({ type: 'db_query', component: 'GeneralLedgerTable', action: 'error', message: 'Export error:', error: err });

@@ -142,7 +142,11 @@
       "print_preview": "Pretpregled ispisa",
       "print_pdf": "Ispis / PDF",
       "export_excel": "Izvadak (Excel)",
+      "export_full": "Puni izvadak",
+      "export_no_zeros": "Bez nula",
       "export_analytical_excel": "Analitički izvadak (Excel)",
+      "export_full_analytics": "Puna analitika",
+      "export_no_zeros_analytics": "Bez nula",
       "add_account": "Novo konto"
     },
     "kpi": {
