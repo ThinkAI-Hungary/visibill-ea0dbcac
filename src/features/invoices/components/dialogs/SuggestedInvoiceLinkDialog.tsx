@@ -227,6 +227,7 @@ export function SuggestedInvoiceLinkDialog({
                   invoiceId={suggestedInvoice.id}
                   imageUrl={suggestedInvoice.image_url}
                   mellekletUrl={suggestedInvoice.melleklet_url}
+                  attachments={(suggestedInvoice as any).attachments}
                   isOpen={open}
                   interactive={true}
                   className="h-full"

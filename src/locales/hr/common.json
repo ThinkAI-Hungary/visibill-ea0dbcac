@@ -222,6 +222,7 @@
     "clear_filters": "Očisti filtre"
   },
   "file_preview": {
+    "loading": "Učitavanje dokumenta...",
     "pdf_title": "Pregled PDF-a: {{name}}",
     "excel_title": "Pregled Excela: {{name}}",
     "unsupported": "Vrsta datoteke ({{ext}}) ne može se prikazati u pretpregledu.",

@@ -222,6 +222,7 @@
     "clear_filters": "Szűrők törlése"
   },
   "file_preview": {
+    "loading": "Dokumentum betöltése...",
     "pdf_title": "PDF előnézet: {{name}}",
     "excel_title": "Excel előnézet: {{name}}",
     "unsupported": "A fájl típusa ({{ext}}) nem jeleníthető meg előnézetben.",

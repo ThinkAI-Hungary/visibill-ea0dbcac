@@ -145,8 +145,8 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceDetailPopup.tsx": {
-    "mtime": 1790200350.937524,
-    "ast_hash": "38ea47ef89a67d1fa45ef5210356ed74",
+    "mtime": 1790210028.5932014,
+    "ast_hash": "55b1f9f8874a25897bb8bdff914f4bf5",
     "semantic_hash": ""
   },
   "src/components/InvoiceEditDialog.tsx": {
@@ -160,13 +160,13 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceImageDialog.tsx": {
-    "mtime": 1789159282.972026,
-    "ast_hash": "705e8e69e14bc73d4ecc79b78e61ba6e",
+    "mtime": 1790212851.514377,
+    "ast_hash": "771cb04cb51124a9b0a6535b83ff2e92",
     "semantic_hash": ""
   },
   "src/components/InvoiceImagePreview.tsx": {
-    "mtime": 1788447964.7211967,
-    "ast_hash": "cfde3fc7741375ccfb208b9dfae0d975",
+    "mtime": 1790213165.858482,
+    "ast_hash": "e3266ba5cc01b2056deed2181a7038e4",
     "semantic_hash": ""
   },
   "src/components/InvoiceItemsDialog.tsx": {
@@ -975,8 +975,8 @@
     "semantic_hash": "f2a60e18bdf9a9d5b884b5b2a805ca4f"
   },
   "src/hooks/useInvoiceData.ts": {
-    "mtime": 1789910901.888356,
-    "ast_hash": "9e1f0907e4d823c1f07818337eb13f1c",
+    "mtime": 1790209711.3494558,
+    "ast_hash": "ed832fbaccea868a56016d60e11ea903",
     "semantic_hash": ""
   },
   "src/hooks/useInvoiceFilters.ts": {
@@ -1060,8 +1060,8 @@
     "semantic_hash": ""
   },
   "src/integrations/supabase/types.ts": {
-    "mtime": 1790200578.4472692,
-    "ast_hash": "99d733246e97155f17916fe8c6d1ef62",
+    "mtime": 1790209941.1177664,
+    "ast_hash": "66c2b381570fe29bc692fd1322467ced",
     "semantic_hash": ""
   },
   "src/lib/annualReportPdf.ts": {
@@ -1595,8 +1595,8 @@
     "semantic_hash": ""
   },
   "src/types/invoices.ts": {
-    "mtime": 1789561118.9689026,
-    "ast_hash": "f8c3c25bb0ec9674c2684a0d83015e21",
+    "mtime": 1790209566.71836,
+    "ast_hash": "77c475b39b35b6595b4a8ca9e54cdeae",
     "semantic_hash": ""
   },
   "src/utils/seedAccounty.ts": {
@@ -1685,8 +1685,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/get-invoice-image-url/index.ts": {
-    "mtime": 1788712068.6294458,
-    "ast_hash": "95011f8e0a23ba1540318a41042405b9",
+    "mtime": 1790209598.936459,
+    "ast_hash": "b4b1b7a16a67ecf40e794a06b9c89bcb",
     "semantic_hash": ""
   },
   "supabase/functions/invite-user/index.ts": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790204671.4544177,
-    "ast_hash": "9e6954302624716092b85b0634c7a0ef",
+    "mtime": 1790209798.6983602,
+    "ast_hash": "e94eb1ce44a2eb8d261e072eb8e32860",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -6070,8 +6070,8 @@
     "semantic_hash": ""
   },
   "src/components/ui/FilePreviewModal.tsx": {
-    "mtime": 1789515573.1281836,
-    "ast_hash": "7bb924cca7ab7a790dd0ebda23a460b2",
+    "mtime": 1790213507.2502964,
+    "ast_hash": "4df53046bc1b8c9b8e65e8834481382b",
     "semantic_hash": ""
   },
   "src/hooks/useEvTaxParams.ts": {
@@ -7630,8 +7630,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/components/dialogs/InvoiceDialogManager.tsx": {
-    "mtime": 1788445516.6993403,
-    "ast_hash": "d06d0c8ec976d738ea4aa2a2f3f1a0c4",
+    "mtime": 1790209690.0892074,
+    "ast_hash": "854a2568bfac9378c96a394aff2885fd",
     "semantic_hash": ""
   },
   "src/features/invoices/components/filters/InvoiceFilterBar.tsx": {
@@ -7665,8 +7665,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/NavInvoiceRow.tsx": {
-    "mtime": 1790157821.9501548,
-    "ast_hash": "8592283857b98ff143d64691c4aa931e",
+    "mtime": 1790209729.5630925,
+    "ast_hash": "fa14be27dc422a9878fe8954dad925bd",
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/NavInvoiceTable.tsx": {
@@ -7675,8 +7675,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/SubmittedInvoiceRow.tsx": {
-    "mtime": 1790157793.917096,
-    "ast_hash": "90c8eef80d6f955da7d0837d50b85df3",
+    "mtime": 1790209724.7819479,
+    "ast_hash": "27e4482db1f4f08536ab2232c449957a",
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/SubmittedInvoiceTable.tsx": {
@@ -8830,8 +8830,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/components/dialogs/SuggestedInvoiceLinkDialog.tsx": {
-    "mtime": 1789159282.9996321,
-    "ast_hash": "e320d88a73f8641299420f55878e9da0",
+    "mtime": 1790209737.25131,
+    "ast_hash": "f315e9212711e602d0fa99f05c433787",
     "semantic_hash": ""
   },
   "supabase/migrations/20260903170000_link_and_verify_submitted_invoice.sql": {
@@ -10125,8 +10125,8 @@
     "semantic_hash": ""
   },
   "src/locales/hr/common.json": {
-    "mtime": 1790153646.3483925,
-    "ast_hash": "83d59dd9f5a91f3580039a77f37c75e2",
+    "mtime": 1790213107.4832132,
+    "ast_hash": "9839a1801535459999ce34b4104ee30d",
     "semantic_hash": ""
   },
   "src/locales/hr/dashboard.json": {
@@ -10165,8 +10165,8 @@
     "semantic_hash": ""
   },
   "src/locales/hu/common.json": {
-    "mtime": 1790153639.0532844,
-    "ast_hash": "8bcbe8f3c4c11b0dec865a7a82ab3ad1",
+    "mtime": 1790213098.2454352,
+    "ast_hash": "99e44573af39e04b32601ef200e030da",
     "semantic_hash": ""
   },
   "src/locales/hu/dashboard.json": {
@@ -11972,6 +11972,26 @@
   "supabase/migrations/20260924140000_auto_sync_accounting_firm_members_to_eaisybooks.sql": {
     "mtime": 1790207509.583977,
     "ast_hash": "915852439dbce153fbd31329a8a1f5dd",
+    "semantic_hash": ""
+  },
+  "scripts/apply_worker_improvements_eb0177.py": {
+    "mtime": 1790209194.6385896,
+    "ast_hash": "8eba182e062cac00a89e1ffef7db4cf2",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260924000200_add_attachments_to_invoices.sql": {
+    "mtime": 1790209125.1565738,
+    "ast_hash": "bfdde9ab2d2fe119d255aabc1cbc363a",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-145-bulk-invoice-slicing-and-multi-attachment-architecture.md": {
+    "mtime": 1790209783.8880124,
+    "ast_hash": "d61804b391e755d6740d9e50e3dd5858",
+    "semantic_hash": ""
+  },
+  "scripts/test_worker_on_problematic_file.py": {
+    "mtime": 1790211844.101894,
+    "ast_hash": "86d1cd0617698bfd76956bf7aa744e13",
     "semantic_hash": ""
   }
 }

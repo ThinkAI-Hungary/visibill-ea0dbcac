@@ -7715,6 +7715,7 @@ export type Database = {
           manual_payment_note: string | null
           manual_payment_type: string | null
           melleklet_url: string | null
+          attachments: Json | null
           nav_status: string | null
           onszamlazas: boolean | null
           penzforgalmi_elszamolas: boolean | null
@@ -7737,6 +7738,10 @@ export type Database = {
           termek_szolgaltatas_tipusa: string | null
           transaction_id: string | null
           user_id: string
+          partner_gl_number: string | null
+          vat_code_id: string | null
+          vat_gl_number: string | null
+          vat_row_override: string | null
           vevo_cim: string | null
           vevo_nev: string
           vevo_vat_id: string | null
@@ -7792,6 +7797,7 @@ export type Database = {
           manual_payment_note?: string | null
           manual_payment_type?: string | null
           melleklet_url?: string | null
+          attachments?: Json | null
           nav_status?: string | null
           onszamlazas?: boolean | null
           penzforgalmi_elszamolas?: boolean | null
@@ -7814,6 +7820,10 @@ export type Database = {
           termek_szolgaltatas_tipusa?: string | null
           transaction_id?: string | null
           user_id: string
+          partner_gl_number?: string | null
+          vat_code_id?: string | null
+          vat_gl_number?: string | null
+          vat_row_override?: string | null
           vevo_cim?: string | null
           vevo_nev: string
           vevo_vat_id?: string | null
@@ -7869,6 +7879,7 @@ export type Database = {
           manual_payment_note?: string | null
           manual_payment_type?: string | null
           melleklet_url?: string | null
+          attachments?: Json | null
           nav_status?: string | null
           onszamlazas?: boolean | null
           penzforgalmi_elszamolas?: boolean | null
@@ -7891,6 +7902,10 @@ export type Database = {
           termek_szolgaltatas_tipusa?: string | null
           transaction_id?: string | null
           user_id?: string
+          partner_gl_number?: string | null
+          vat_code_id?: string | null
+          vat_gl_number?: string | null
+          vat_row_override?: string | null
           vevo_cim?: string | null
           vevo_nev?: string
           vevo_vat_id?: string | null

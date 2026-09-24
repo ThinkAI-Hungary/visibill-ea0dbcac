@@ -22,6 +22,15 @@ export const INVOICE_TYPE_LABELS: Record<string, string> = {
   penztargep_zaras: 'Pénztárgép zárás',
 };
 
+export interface InvoiceAttachment {
+  id?: string;
+  url: string;
+  name?: string;
+  type?: string;
+  uploaded_at?: string;
+  size?: number;
+}
+
 export interface BaseInvoice {
   id: string;
   user_id: string;
@@ -46,6 +55,9 @@ export interface BaseInvoice {
   skonto_amount?: number | null;
   skonto_shipping_amount?: number | null;
   skonto_selected?: boolean | null;
+  image_url?: string | null;
+  melleklet_url?: string | null;
+  attachments?: InvoiceAttachment[] | null;
 }
 
 export interface SimaInvoice extends BaseInvoice {
@@ -66,6 +78,7 @@ export interface SimaInvoice extends BaseInvoice {
   penznem?: string;
   statusz?: string;
   melleklet_url?: string;
+  attachments?: InvoiceAttachment[] | null;
   email_uzenet_id?: string;
   feldolgozva?: string;
   frissitve?: string;

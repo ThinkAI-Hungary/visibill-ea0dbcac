@@ -58,6 +58,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-120 | Csoportos ÁFA-alanyok Észlelése, Technikai Felhasználó Útmutatás és Szinkronizációs Védőháló | ✅ Decided | [A-120](./A-120-group-vat-entity-detection-and-technical-user-guidance.md) |
 | A-128 | Szigorított Számlaszám Határ-illesztés (Boundary Matching), Részhalmaz Kiszűrés (Subsumption Filter) és Többszörös Párosítási Jóváhagyási Kapu | ✅ Decided | [A-128](./A-128-strict-invoice-number-boundary-matching-and-subsumption-guard.md) |
 | A-129 | Partner-történeti Többségi Szabályú Számlakategorizálás & DB Triggerek | ✅ Decided | [A-129](./A-129-partner-history-majority-categorization.md) |
+| A-145 | Tömeges PDF Szeletelés (Physical Chunk Slicing), NAV Determinisztikus Fallback és Többszörös Mellékletkezelés | ✅ Decided | [A-145](./A-145-bulk-invoice-slicing-and-multi-attachment-architecture.md) |
 
 ## 🔒 Biztonság & Auth
 

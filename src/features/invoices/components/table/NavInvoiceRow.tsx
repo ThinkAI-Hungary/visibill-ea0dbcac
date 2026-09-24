@@ -571,6 +571,7 @@ function NavInvoiceRowComponent({
                       invoiceId={sub.id}
                       imageUrl={sub.image_url}
                       mellekletUrl={sub.melleklet_url}
+                      attachments={(sub as any).attachments}
                       isOpen={true}
                     />
                   </HoverCardContent>

@@ -1,8 +1,17 @@
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { FilePreviewModal } from '@/components/ui/FilePreviewModal';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface InvoiceAttachmentItem {
+  id?: string;
+  url: string;
+  name?: string;
+  type?: string;
+}
 
 interface InvoiceForDialog {
   id: string;
@@ -13,6 +22,7 @@ interface InvoiceForDialog {
   invoice_type?: string;
   image_url?: string;
   melleklet_url?: string;
+  attachments?: InvoiceAttachmentItem[] | null;
 }
 
 interface InvoiceImageDialogProps {
@@ -31,6 +41,44 @@ const INVOICE_TYPE_LABELS: Record<string, string> = {
 
 const InvoiceImageDialog = ({ invoice, open, onClose, isLoading: externalLoading }: InvoiceImageDialogProps) => {
   const { t, i18n } = useTranslation(['invoices', 'common']);
+  const [activeFileIndex, setActiveFileIndex] = useState(0);
+  const [dbAttachments, setDbAttachments] = useState<InvoiceAttachmentItem[]>([]);
+
+  useEffect(() => {
+    if (open) {
+      setActiveFileIndex(0);
+    }
+  }, [open, invoice?.id]);
+
+  useEffect(() => {
+    if (!open || !invoice) {
+      setDbAttachments([]);
+      return;
+    }
+
+    if (Array.isArray(invoice.attachments) && invoice.attachments.length > 0) {
+      setDbAttachments(invoice.attachments);
+      return;
+    }
+
+    const invId = invoice.id;
+    const invNum = invoice.bizonylatsorszam;
+
+    let query = supabase.from('invoices').select('attachments');
+    if (invId) {
+      query = query.or(`id.eq.${invId}${invNum ? `,bizonylatsorszam.eq.${invNum}` : ''}`);
+    } else if (invNum) {
+      query = query.eq('bizonylatsorszam', invNum);
+    } else {
+      return;
+    }
+
+    query.maybeSingle().then(({ data }) => {
+      if (data?.attachments && Array.isArray(data.attachments)) {
+        setDbAttachments(data.attachments as unknown as InvoiceAttachmentItem[]);
+      }
+    });
+  }, [open, invoice?.id, invoice?.bizonylatsorszam, invoice?.attachments]);
 
   if (!open) return null;
 
@@ -47,9 +95,53 @@ const InvoiceImageDialog = ({ invoice, open, onClose, isLoading: externalLoading
     );
   }
 
-  const displayUrl = invoice.image_url || invoice.melleklet_url;
+  const getInvoiceIdentifier = (inv: InvoiceForDialog) => {
+    if (inv.bizonylatsorszam) return inv.bizonylatsorszam;
+    if (inv.dokumentum_azonosito) return inv.dokumentum_azonosito;
+    if (inv.invoice_type) return t(`invoices:types.${inv.invoice_type}`, INVOICE_TYPE_LABELS[inv.invoice_type] || inv.invoice_type);
+    return 'N/A';
+  };
 
-  if (!displayUrl) {
+  const getDisplayName = (inv: InvoiceForDialog, url: string, fallbackName?: string) => {
+    const identifier = fallbackName || getInvoiceIdentifier(inv);
+    const cleanUrl = url.split('?')[0];
+    const urlExt = cleanUrl.split('.').pop()?.toLowerCase() || '';
+    const knownExts = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'csv', 'tsv', 'xls', 'xlsx', 'xlsm'];
+    return knownExts.includes(urlExt) ? `${identifier}.${urlExt}` : identifier;
+  };
+
+  // Collect all available files (primary invoice image, melleklet_url, and attachments)
+  const files: { url: string; name: string }[] = [];
+  const primaryUrl = invoice.image_url || invoice.melleklet_url;
+  if (primaryUrl) {
+    files.push({
+      url: primaryUrl,
+      name: getDisplayName(invoice, primaryUrl),
+    });
+  }
+  if (invoice.melleklet_url && invoice.image_url && invoice.melleklet_url !== invoice.image_url) {
+    files.push({
+      url: invoice.melleklet_url,
+      name: `${getDisplayName(invoice, invoice.melleklet_url)} (Melléklet)`,
+    });
+  }
+  const allAttachments = (Array.isArray(invoice.attachments) && invoice.attachments.length > 0)
+    ? invoice.attachments
+    : dbAttachments;
+
+  if (Array.isArray(allAttachments)) {
+    allAttachments.forEach((att, idx) => {
+      if (att && att.url && !files.some(f => f.url === att.url)) {
+        files.push({
+          url: att.url,
+          name: att.name || `Melléklet ${idx + 1}`,
+        });
+      }
+    });
+  }
+
+  // Fallback: If no physical image or attachment exists, show electronic voucher card
+  if (files.length === 0) {
     const localeCode = i18n.language === 'hr' ? 'hr-HR' : 'hu-HU';
     const formattedAmount = (invoice as any).amount ? new Intl.NumberFormat(localeCode).format(Math.abs((invoice as any).amount)) : '—';
     const currency = (invoice as any).currency || 'HUF';
@@ -117,34 +209,20 @@ const InvoiceImageDialog = ({ invoice, open, onClose, isLoading: externalLoading
           <div className="text-[10px] text-muted-foreground bg-muted/20 p-3 rounded-lg border border-border/40 text-center leading-relaxed">
             {t('invoices:dialogs.image.no_physical_image_desc')}
           </div>
-
-
         </div>
       </div>,
       document.body
     );
   }
 
-  const getInvoiceIdentifier = (inv: InvoiceForDialog) => {
-    if (inv.bizonylatsorszam) return inv.bizonylatsorszam;
-    if (inv.dokumentum_azonosito) return inv.dokumentum_azonosito;
-    if (inv.invoice_type) return t(`invoices:types.${inv.invoice_type}`, INVOICE_TYPE_LABELS[inv.invoice_type] || inv.invoice_type);
-    return 'N/A';
-  };
-
-  // Extract extension from URL (ignore query params/tokens) so FilePreviewModal
-  // can correctly detect PDF vs image vs fallback
-  const getDisplayName = (inv: InvoiceForDialog, url: string) => {
-    const identifier = getInvoiceIdentifier(inv);
-    const cleanUrl = url.split('?')[0];
-    const urlExt = cleanUrl.split('.').pop()?.toLowerCase() || '';
-    const knownExts = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'csv', 'tsv', 'xls', 'xlsx', 'xlsm'];
-    return knownExts.includes(urlExt) ? `${identifier}.${urlExt}` : identifier;
-  };
+  const currentFile = files[activeFileIndex] || files[0];
 
   return (
     <FilePreviewModal
-      previewFile={{ url: displayUrl, name: getDisplayName(invoice, displayUrl) }}
+      previewFile={currentFile}
+      files={files}
+      activeFileIndex={activeFileIndex}
+      onSelectFile={setActiveFileIndex}
       onClose={onClose}
     />
   );

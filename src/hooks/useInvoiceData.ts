@@ -91,6 +91,7 @@ export interface SubmittedInvoice {
   project_id: string | null;
   image_url: string | null;
   melleklet_url: string | null;
+  attachments?: any[] | null;
   invoice_direction: string | null;
   reference_number: string | null;
   fizetesi_mod: string | null;
@@ -163,7 +164,7 @@ export function useInvoiceData(
     queryFn: async () => {
       const { data, error } = await supabase
         .from('invoices')
-        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, elado_vat_id, vevo_nev, vevo_vat_id, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction, reference_number, fizetesi_mod, invoice_type, exclude_from_accounting, elolegszamla_hivatkozas, statusz, nav_status, approval_note, approved_at, is_accountant_reviewed')
+        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, elado_vat_id, vevo_nev, vevo_vat_id, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, attachments, invoice_direction, reference_number, fizetesi_mod, invoice_type, exclude_from_accounting, elolegszamla_hivatkozas, statusz, nav_status, approval_note, approved_at, is_accountant_reviewed')
         .eq('company_id', companyId)
         .or(`and(teljesites_datuma.gte.${dateFromFormatted},teljesites_datuma.lte.${dateToFormatted}),and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${dateFromFormatted},kibocsatas_datuma.lte.${dateToFormatted})`)
         .order('kibocsatas_datuma', { ascending: false })

@@ -120,6 +120,7 @@ export function InvoiceDialogManager() {
                 melleklet_url: selectedInvoice.melleklet_url,
                 elado_nev: selectedInvoice.elado_nev,
                 vevo_nev: selectedInvoice.vevo_nev,
+                attachments: (selectedInvoice as any).attachments,
               }
             : null
         }

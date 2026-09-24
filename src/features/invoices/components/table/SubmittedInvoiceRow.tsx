@@ -434,7 +434,7 @@ export function SubmittedInvoiceRow({
         </TableCell>
 
         <TableCell className="text-center">
-          {invoice.image_url || invoice.melleklet_url ? (
+          {invoice.image_url || invoice.melleklet_url || (Array.isArray(invoice.attachments) && invoice.attachments.length > 0) ? (
             <HoverCard openDelay={200} closeDelay={100}>
               <HoverCardTrigger asChild>
                 <Button
@@ -455,6 +455,7 @@ export function SubmittedInvoiceRow({
                   invoiceId={invoice.id}
                   imageUrl={invoice.image_url}
                   mellekletUrl={invoice.melleklet_url}
+                  attachments={invoice.attachments}
                   isOpen={true}
                 />
               </HoverCardContent>

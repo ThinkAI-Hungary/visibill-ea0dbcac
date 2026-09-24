@@ -82,6 +82,7 @@ interface FullInvoice {
   termek_szolgaltatas_tipusa: string | null;
   image_url: string | null;
   melleklet_url: string | null;
+  attachments?: Array<{ id?: string; url: string; name?: string; type?: string }> | null;
   letrehozva: string;
   frissitve: string;
   feldolgozva: string | null;
@@ -318,12 +319,12 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
     try {
       const { data, error } = await supabase
         .from('invoices')
-        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, elado_cim, elado_vat_id, vevo_nev, vevo_cim, vevo_vat_id, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, fizetesi_mod, fizetesi_hatarido, fizetve, statusz, image_url, melleklet_url, invoice_direction, reference_number, category_id, project_id, transaction_id, afa_kulcsok_bontasban, forditott_adozas, onszamlazas, penzforgalmi_elszamolas, bankszamlaszam_iban, fizetendo_osszeg, invoice_type, termek_szolgaltatas_tipusa, adojogi_megjegyzes, adomentesseg_hivatkozas, dokumentum_azonosito, elolegszamla_hivatkozas, elszamolt_eloleg_osszeg, letrehozva, frissitve, company_id, email_uzenet_id, feldolgozva, invoice_uploads_id, user_id, vat_code_id, vat_row_override, partner_gl_number, vat_gl_number')
+        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, elado_cim, elado_vat_id, vevo_nev, vevo_cim, vevo_vat_id, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, fizetesi_mod, fizetesi_hatarido, fizetve, statusz, image_url, melleklet_url, attachments, invoice_direction, reference_number, category_id, project_id, transaction_id, afa_kulcsok_bontasban, forditott_adozas, onszamlazas, penzforgalmi_elszamolas, bankszamlaszam_iban, fizetendo_osszeg, invoice_type, termek_szolgaltatas_tipusa, adojogi_megjegyzes, adomentesseg_hivatkozas, dokumentum_azonosito, elolegszamla_hivatkozas, elszamolt_eloleg_osszeg, letrehozva, frissitve, company_id, email_uzenet_id, feldolgozva, invoice_uploads_id, user_id, vat_code_id, vat_row_override, partner_gl_number, vat_gl_number')
         .eq('id', invoiceId)
         .maybeSingle();
 
       if (error) throw error;
-      setInvoice(data);
+      setInvoice((data as unknown as FullInvoice) ?? null);
     } catch (error) {
       reportError({ type: 'db_query', component: 'InvoiceDetailPopup', action: 'error', message: 'Error fetching invoice details:', error: error });
     } finally {
@@ -377,6 +378,14 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
                 </a>
               </Button>
             )}
+            {Array.isArray(invoice?.attachments) && invoice.attachments.map((att, idx) => (
+              <Button key={att.id || idx} variant="outline" size="sm" className="h-7 text-xs gap-1.5 transition-colors duration-150" asChild>
+                <a href={att.url} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-3 w-3" />
+                  <span>{att.name || `${t('invoices:dialogs.detail.attachment')} ${idx + 1}`}</span>
+                </a>
+              </Button>
+            ))}
             <Button
               variant="ghost"
               size="sm"

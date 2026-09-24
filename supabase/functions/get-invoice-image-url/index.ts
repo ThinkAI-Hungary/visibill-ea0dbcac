@@ -36,7 +36,7 @@ serve(async (req) => {
       )
     }
 
-    const { invoiceId } = await req.json()
+    const { invoiceId, attachmentIndex } = await req.json()
 
     if (!invoiceId) {
       return new Response(
@@ -48,7 +48,7 @@ serve(async (req) => {
     // Get invoice - RLS on invoices table enforces company membership access
     const { data: invoice, error: invoiceError } = await supabaseClient
       .from('invoices')
-      .select('image_url, melleklet_url')
+      .select('image_url, melleklet_url, attachments')
       .eq('id', invoiceId)
       .single()
 
@@ -60,8 +60,17 @@ serve(async (req) => {
       )
     }
 
-    const imageUrl = invoice.image_url || invoice.melleklet_url
-    if (!imageUrl) {
+    let targetUrl: string | null = null
+    if (attachmentIndex !== undefined && attachmentIndex !== null && Array.isArray(invoice.attachments) && invoice.attachments[attachmentIndex]) {
+      targetUrl = invoice.attachments[attachmentIndex]?.url || null
+    } else {
+      targetUrl = invoice.image_url || invoice.melleklet_url
+      if (!targetUrl && Array.isArray(invoice.attachments) && invoice.attachments.length > 0) {
+        targetUrl = invoice.attachments[0]?.url || null
+      }
+    }
+
+    if (!targetUrl) {
       return new Response(
         JSON.stringify({ error: 'No image URL found for this invoice' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -69,7 +78,7 @@ serve(async (req) => {
     }
 
     // Extract the file path from the storage URL
-    const url = new URL(imageUrl)
+    const url = new URL(targetUrl)
     const pathMatch = url.pathname.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)/)
     
     if (!pathMatch) {
