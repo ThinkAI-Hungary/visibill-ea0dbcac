@@ -287,7 +287,7 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
         .from('nav_invoices')
         .select(`
           id, invoice_number, supplier_name, customer_name, supplier_tax_number, customer_tax_number, invoice_direction,
-          invoice_delivery_date, currency, invoice_net_amount, invoice_vat_amount,
+          invoice_delivery_date, invoice_issue_date, ti_override, calculated_ti, currency, invoice_net_amount, invoice_vat_amount, is_reverse_charge,
           nav_invoice_items(id, line_number, line_description, net_amount, vat_amount, vat_rate, quantity, unit_price, deductible_percentage)
         `)
         .eq('company_id', companyId)
@@ -325,36 +325,114 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
       });
 
       // Filter in memory to match either item vat_rates or header-level rates if items aren't fetched yet
-      return enrichedInvoices.filter((inv: any) => {
+      return enrichedInvoices.map((inv: any) => {
         const suppTax = (inv.supplier_tax_number || '').trim().toUpperCase();
+        const custTax = (inv.customer_tax_number || '').trim().toUpperCase();
         const isEuSupplier = /^[A-Z]{2}/.test(suppTax) && !suppTax.startsWith('HU');
         const isForeign = isEuSupplier || (inv.currency && inv.currency !== 'HUF') || (suppTax !== '' && !suppTax.startsWith('HU') && !suppTax.includes('-') && !/^[0-9]{8}$/.test(suppTax));
+        const isDomestic = !isForeign;
+        const isInbound = inv.invoice_direction === 'INBOUND';
+        const isEuCustomer = /^[A-Z]{2}/.test(custTax) && !custTax.startsWith('HU');
 
-        if (rowNumber === '66' && isForeign) return false;
-        if (rowNumber === '67' && !isForeign) return false;
+        if (rowNumber === '66' && isForeign) return null;
+        if (rowNumber === '67' && !isForeign) return null;
         if (rowNumber === '45') {
           const hasAdvItem = (inv.nav_invoice_items || []).some((it: any) => (it.line_description || '').toLowerCase().includes('előleg'));
-          if (!hasAdvItem && !advanceNumbers.has(inv.invoice_number)) return false;
+          if (!hasAdvItem && !advanceNumbers.has(inv.invoice_number)) return null;
         }
         if (rowNumber === '77') {
-          if (!tangibleNumbers.has(inv.invoice_number)) return false;
+          if (!tangibleNumbers.has(inv.invoice_number)) return null;
         }
 
+        const isItemForThisRow = (it: any) => {
+          const rateStr = String(it.vat_rate || '').trim().toUpperCase();
+          const itNet = Number(it.net_amount || 0);
+          const itVat = Number(it.vat_amount || 0);
+
+          if (isInbound) {
+            if (rowNumber === '63') {
+              if (!isDomestic || inv.is_reverse_charge) return false;
+              if (itVat === 0 && itNet !== 0) return true;
+              return ['0', '0.0', '0.00', '0%', 'TAM', 'AAM', 'MENTES', 'K-AFA'].includes(rateStr);
+            }
+            if (rowNumber === '64') {
+              if (!isDomestic || inv.is_reverse_charge) return false;
+              return ['5%', '0.05', '5', '5.0', '5.00'].includes(rateStr) || (itNet !== 0 && Math.round((itVat / itNet) * 100) === 5);
+            }
+            if (rowNumber === '65') {
+              if (!isDomestic || inv.is_reverse_charge) return false;
+              return ['18%', '0.18', '18', '18.0', '18.00'].includes(rateStr) || (itNet !== 0 && Math.round((itVat / itNet) * 100) === 18);
+            }
+            if (rowNumber === '66') {
+              if (!isDomestic) return false;
+              if (inv.is_reverse_charge) return true;
+              return ['27%', '0.27', '27', '27.0', '27.00'].includes(rateStr) || (itNet !== 0 && Math.round((itVat / itNet) * 100) === 27);
+            }
+            if (rowNumber === '67') {
+              return isForeign;
+            }
+            if (rowNumber === '29') {
+              return inv.is_reverse_charge;
+            }
+          } else {
+            if (rowNumber === '01') {
+              return rateFilters.includes(rateStr);
+            }
+            if (rowNumber === '02') {
+              return isEuCustomer;
+            }
+            if (rowNumber === '04') {
+              return inv.is_reverse_charge;
+            }
+            if (rowNumber === '05') {
+              return ['5%', '0.05', '5', '5.0', '5.00'].includes(rateStr) || (itNet !== 0 && Math.round((itVat / itNet) * 100) === 5);
+            }
+            if (rowNumber === '06') {
+              return ['18%', '0.18', '18', '18.0', '18.00'].includes(rateStr) || (itNet !== 0 && Math.round((itVat / itNet) * 100) === 18);
+            }
+            if (rowNumber === '07') {
+              return ['27%', '0.27', '27', '27.0', '27.00'].includes(rateStr) || (itNet !== 0 && Math.round((itVat / itNet) * 100) === 27);
+            }
+            if (rowNumber === '08') {
+              return itVat === 0 || ['0', '0.0', '0.00', '0%', 'TAM', 'AAM', 'MENTES'].includes(rateStr);
+            }
+          }
+
+          if (rateFilters.includes(rateStr)) return true;
+          if (itNet > 0 && itVat > 0) {
+            const calcRate = Math.round((itVat / itNet) * 100);
+            return vatPercents.some((p: any) => Math.abs(Number(p) - calcRate) <= 1);
+          }
+          if (vatPercents.some((p: any) => Number(p) === 0) && itVat === 0 && itNet !== 0) return true;
+          return false;
+        };
+
         const items = inv.nav_invoice_items || [];
+        const matchingItems = items.filter(isItemForThisRow);
+
+        let matchesInvoice = false;
         if (items.length > 0) {
-          return items.some((it: any) => rateFilters.includes(String(it.vat_rate)));
+          matchesInvoice = matchingItems.length > 0;
+        } else {
+          const net = Number(inv.invoice_net_amount || 0);
+          const vat = Number(inv.invoice_vat_amount || 0);
+          if (rowNumber === '63') {
+            matchesInvoice = isDomestic && !inv.is_reverse_charge && vat === 0 && net !== 0;
+          } else if (net > 0 && vat > 0) {
+            const calcRate = Math.round((vat / net) * 100);
+            matchesInvoice = vatPercents.some((p: any) => Math.abs(Number(p) - calcRate) <= 1);
+          } else if (vatPercents.some((p: any) => Number(p) === 0) && vat === 0 && net !== 0) {
+            matchesInvoice = true;
+          }
         }
-        const net = Number(inv.invoice_net_amount || 0);
-        const vat = Number(inv.invoice_vat_amount || 0);
-        if (net > 0 && vat > 0) {
-          const calcRate = Math.round((vat / net) * 100);
-          return vatPercents.some((p: any) => Math.abs(Number(p) - calcRate) <= 1);
-        }
-        if (vatPercents.some((p: any) => Number(p) === 0) && vat === 0) {
-          return true;
-        }
-        return false;
-      });
+
+        if (!matchesInvoice) return null;
+
+        return {
+          ...inv,
+          matching_items: matchingItems.length > 0 ? matchingItems : items,
+        };
+      }).filter(Boolean);
     },
     enabled: !!companyId,
     staleTime: 30_000,
@@ -381,7 +459,7 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
   const grandNet = invoices.reduce((s: number, inv: any) => {
     const currency = inv.currency || 'HUF';
     const rate = getRate(currency);
-    const items = inv.nav_invoice_items || [];
+    const items = inv.matching_items && inv.matching_items.length > 0 ? inv.matching_items : (inv.nav_invoice_items || []);
     const isInbound = inv.invoice_direction === 'INBOUND';
     const netSum = items.length > 0
       ? items.reduce((is: number, i: any) => {
@@ -395,7 +473,7 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
   const grandVat = invoices.reduce((s: number, inv: any) => {
     const currency = inv.currency || 'HUF';
     const rate = getRate(currency);
-    const items = inv.nav_invoice_items || [];
+    const items = inv.matching_items && inv.matching_items.length > 0 ? inv.matching_items : (inv.nav_invoice_items || []);
     const isInbound = inv.invoice_direction === 'INBOUND';
     const vatSum = items.length > 0
       ? items.reduce((is: number, i: any) => {
@@ -425,14 +503,15 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
         const rate = getRate(currency);
         const isForeign = currency.toUpperCase() !== 'HUF';
 
-        const origNet = items.length > 0
-          ? items.reduce((s: number, i: any) => {
+        const displayItems = inv.matching_items && inv.matching_items.length > 0 ? inv.matching_items : items;
+        const origNet = displayItems.length > 0
+          ? displayItems.reduce((s: number, i: any) => {
               const ratio = isInbound ? (Number(i.deductible_percentage ?? 100) / 100.0) : 1.0;
               return s + ((Number(i.net_amount) || 0) * ratio);
             }, 0)
           : Number(inv.invoice_net_amount || 0);
-        const origVat = items.length > 0
-          ? items.reduce((s: number, i: any) => {
+        const origVat = displayItems.length > 0
+          ? displayItems.reduce((s: number, i: any) => {
               const ratio = isInbound ? (Number(i.deductible_percentage ?? 100) / 100.0) : 1.0;
               return s + ((Number(i.vat_amount) || 0) * ratio);
             }, 0)
