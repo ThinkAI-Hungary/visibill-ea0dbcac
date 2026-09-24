@@ -4907,6 +4907,7 @@ export type Database = {
           id: string
           last_ordinal_on_account: number | null
           last_synced_at: string | null
+          last_synced_count: number | null
           updated_at: string
         }
         Insert: {
@@ -4922,6 +4923,7 @@ export type Database = {
           id?: string
           last_ordinal_on_account?: number | null
           last_synced_at?: string | null
+          last_synced_count?: number | null
           updated_at?: string
         }
         Update: {
@@ -4937,6 +4939,7 @@ export type Database = {
           id?: string
           last_ordinal_on_account?: number | null
           last_synced_at?: string | null
+          last_synced_count?: number | null
           updated_at?: string
         }
         Relationships: [

@@ -2,14 +2,14 @@
 
 **Status:** Decided  
 **Date:** 2026-09-17  
-**Utoljára frissítve:** 2026-09-17  
+**Utoljára frissítve:** 2026-09-24  
 
 **Category:** Beállítások & Bankkapcsolatok UX  
 
 **Question:** Hogyan kezelje a Visibill a bankszámlák PSD2 alapú összekapcsolását, az Aggreg8 felugró ablakos folyamatát, a 180 napos hozzájárulási élettartamot és az élő szinkronizáció visszajelzéseit?
 
 **Decision:**
-A **Beállítások $\rightarrow$ Bankszámlák** aloldal felső kiemelt szekciójaként létrehoztunk egy dedikált **Aggreg8BankConnections** komponenst, amely a hagyományos kézi számlaszám-felvitel fölött biztosítja az automatikus bankkapcsolatok kezelését.
+Az Open Banking kapcsolatok dedikált kezelőfelületét az **Integrációk (`/integrations?tab=banking`)** menüpontban helyeztük el egy professzionális, kétoszlopos Master-Detail nézet részeként. A **Beállítások $\rightarrow$ Bankszámlák** lap tetején pedig egy kiemelt állapotkártya mutatja az aktív kapcsolatok számát, ahonnan egy kattintással átirányítjuk a felhasználót az Integrációk oldalra.
 
 ### 1. Négy Kötelező UI Állapot
 - **Betöltés (Loading):** Csontváz (Skeleton) animáció a meglévő kapcsolatok kártyáinak helyén.
@@ -17,7 +17,8 @@ A **Beállítások $\rightarrow$ Bankszámlák** aloldal felső kiemelt szekció
 - **Hibaállapot (Error State):** Alert sáv és újrapróbálkozás gomb (`refetch`).
 - **Aktív állapot (Connected State):** Csatlakoztatott bankkártya stílusú dobozok:
   - Bank neve és azonosítója (pl. OTP, Erste).
-  - Csatolt alszámlák listája számlaszámmal és IBAN-nal.
+  - Csatolt alszámlák listája számlaszámmal, IBAN-nal és valós idejű egyenleggel.
+  - Szinkronizált tételek száma és utolsó frissítés ideje (`last_synced_count` és `last_synced_at`).
   - 180 napos PSD2 hozzájárulási lejárati számláló és figyelmeztető badge:
     - Zöld badge: > 30 nap van hátra.
     - Sárga/Borostyán badge: < 30 nap van hátra.
@@ -41,12 +42,23 @@ A **Beállítások $\rightarrow$ Bankszámlák** aloldal felső kiemelt szekció
 ### 4. Beszédes Hibaüzenetek és Naplózás
 - Bármilyen konfigurációs hiányosság (pl. ha a szerveren még nincs beállítva az `A8_AIS_API_KEY` titok) vagy hálózati fennakadás esetén a rendszer nem rejtélyes 500-as hibakódot vagy technikai angol szakkifejezést dob, hanem pontos, barátságos magyar nyelvű Toast értesítésben magyarázza el a teendőt.
 
+### 5. Jogosultsági Védelem (RBAC)
+- A banki kapcsolatok kezelése (új bank hozzáadása, kézi azonnali szinkronizáció, kapcsolat törlése) szigorúan védett művelet:
+  - Kizárólag a cég adminisztrátora (`admin`), tulajdonosa (`owner`) vagy a központi rendszerfelügyelő (`is_management`) számára engedélyezett (`canManageBankConnections`).
+  - Más szerepkörök (pl. néző, könyvelő munkatárs) kizárólag olvasási joggal rendelkeznek az adatok felett; az akciógombok letiltásra kerülnek.
+
+### 6. Nagy Adatmennyiségű Szinkronizáció Visszajelzés (10 000+ Tétel)
+- Ha egy újonnan csatlakoztatott számlán a kezdeti szinkronizáció eléri az 50 oldalas (10 000 tétel) Edge Function plafont:
+  - A felület borostyánsárga információs Toast üzenettel nyugtatja meg a felhasználót: *„A kezdeti 10 000 tranzakció sikeresen megérkezett! A régebbi tételek letöltése a háttérben, megszakítás nélkül folytatódik...”*.
+  - A számla kártyáján lévő badge kiírja a letöltött tételek számát (`10 000+ tétel szinkronizálva`), megelőzve az aggodalmat, hogy az adatok egy része hiányozna.
+
 ## Rationale
 A bankkapcsolat beállítása bizalmi funkció. A felhasználónak minden pillanatban éreznie kell, hogy az adatai biztonságban vannak, tisztán látnia kell a PSD2 180 napos engedély állapotát, és azonnali, élő vizuális visszajelzést kell kapnia a háttérben zajló adatszinkronizációról.
 
 ## Kapcsolódó
 - [A-119: Aggreg8 PSD2 Open Banking Integráció](../../architecture/decisions/A-119-aggreg8-psd2-open-banking-integration.md)
 - [026-banking-integration.md (BRD)](../../business/decisions/026-banking-integration.md)
+- [Integrations.tsx Oldal](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/pages/Integrations.tsx)
 - [BankAccountsTab.tsx Komponens](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/components/settings/BankAccountsTab.tsx)
 - [Aggreg8BankConnections.tsx Komponens](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/components/banking/Aggreg8BankConnections.tsx)
 - [useAggreg8.ts Hook](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/hooks/useAggreg8.ts)

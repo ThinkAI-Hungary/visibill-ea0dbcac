@@ -344,6 +344,7 @@
 | `balance` | numeric | ✓ | NULL | Aktuális könyvelt egyenleg |
 | `available_balance` | numeric | ✓ | NULL | Rendelkezésre álló egyenleg |
 | `last_synced_at` | timestamp with time zone | ✓ | NULL | Utolsó sikeres szinkronizáció ideje |
+| `last_synced_count` | integer | — | `0` | Utolsó szinkronizáláskor letöltött tételek száma |
 | `created_at` | timestamp with time zone | — | `now()` | Létrehozás ideje |
 | `updated_at` | timestamp with time zone | — | `now()` | Módosítás ideje |
 

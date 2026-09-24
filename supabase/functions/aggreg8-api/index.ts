@@ -1,5 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import {
+  API_BASE_URL,
+  SYNC_UI_URL,
+  getCustomerToken,
+  getAggreg8Headers,
+  syncAccountTransactions,
+} from "../_shared/aggreg8-sync.ts";
 
 // ── Client Guard for Visibill Edge Functions ──
 const corsHeaders = {
@@ -74,88 +81,20 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const A8_AIS_API_KEY = Deno.env.get("A8_AIS_API_KEY") || "";
 const A8_ENV = (Deno.env.get("A8_ENVIRONMENT") || "sandbox").toLowerCase();
 
-const URLS = {
-  sandbox: {
-    apiUrl: "https://a8-ais-api.sandbox.aggreg8test.hu",
-    syncUiUrl: "https://a8-sync-ui.sandbox.aggreg8test.hu",
-  },
-  prod: {
-    apiUrl: "https://ais-api.aggreg8.hu",
-    syncUiUrl: "https://sync-ui.aggreg8.hu",
-  },
+const config = {
+  apiUrl: API_BASE_URL,
+  syncUiUrl: SYNC_UI_URL,
 };
 
-const config = A8_ENV === "prod" ? URLS.prod : URLS.sandbox;
-
-async function getCustomerToken(supabaseAdmin: any): Promise<string> {
-  const sanitize = (t: string | null | undefined): string => {
-    if (!t) return "";
-    return t.startsWith("Bearer ") ? t.slice(7).trim() : t.trim();
-  };
-
-  // 1. Check cached token in aggreg8_settings
-  const { data: settings } = await supabaseAdmin
-    .from("aggreg8_settings")
-    .select("customer_token, token_expires_at")
-    .eq("environment", A8_ENV)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  const now = new Date();
-  if (
-    settings?.customer_token &&
-    settings.token_expires_at &&
-    new Date(settings.token_expires_at).getTime() > now.getTime() + 5 * 60 * 1000
-  ) {
-    return sanitize(settings.customer_token);
-  }
-
-  if (!A8_AIS_API_KEY) {
-    throw new Error("Az Aggreg8 API kulcs (A8_AIS_API_KEY) még nincs beállítva a Supabase Secrets környezeti változók között. Kérjük add meg az SMS-ben kapott API kulcsot a Supabase Dashboard-on!");
-  }
-
-  // 2. Fetch fresh token from Aggreg8 GET /token
-  const res = await fetch(`${config.apiUrl}/token`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      apikey: A8_AIS_API_KEY,
-    },
-  });
-
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`Aggreg8 GET /token failed (${res.status}): ${errorText}`);
-  }
-
-  const tokenData = await res.json();
-  const rawToken = tokenData.token || tokenData;
-  const token = sanitize(String(rawToken || ""));
-  const expiresAt = new Date(now.getTime() + 175 * 60 * 1000).toISOString(); // ~2h 55m
-
-  // 3. Cache token
-  await supabaseAdmin.from("aggreg8_settings").upsert(
-    {
-      environment: A8_ENV,
-      customer_token: token,
-      token_expires_at: expiresAt,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "id" }
-  );
-
-  return token;
-}
 
 async function ensureAggreg8User(customerToken: string, email: string): Promise<string> {
   const res = await fetch(`${config.apiUrl}/users`, {
     method: "POST",
-    headers: {
+    headers: getAggreg8Headers({
       "Content-Type": "application/json",
       Accept: "application/json",
       Authorization: `Bearer ${customerToken}`,
-    },
+    }),
     body: JSON.stringify({ email }),
   });
 
@@ -194,21 +133,27 @@ serve(async (req) => {
       auth: { persistSession: false },
     });
 
-    const {
-      data: { user },
-      error: userErr,
-    } = await adminClient.auth.getUser(token);
+    const isServiceRole = token === SUPABASE_SERVICE_ROLE_KEY;
+    let user: any = null;
 
-    if (userErr || !user) {
-      console.warn("[aggreg8-api] Auth error:", userErr);
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (!isServiceRole) {
+      const {
+        data: { user: authUser },
+        error: userErr,
+      } = await adminClient.auth.getUser(token);
+
+      if (userErr || !authUser) {
+        console.warn("[aggreg8-api] Auth error:", userErr);
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      user = authUser;
     }
 
     const body = await req.json();
-    const { action, companyId, flowType, infoSharingConsentId, redirectUri, prefill } = body;
+    const { action, companyId, flowType, infoSharingConsentId, redirectUri, prefill, isContinuation } = body;
 
     if (!companyId) {
       return new Response(JSON.stringify({ error: "companyId is required" }), {
@@ -217,39 +162,50 @@ serve(async (req) => {
       });
     }
 
-    // Verify company membership
-    const { data: membership, error: memErr } = await adminClient
-      .from("company_members")
-      .select("role")
-      .eq("company_id", companyId)
-      .eq("user_id", user.id)
-      .maybeSingle();
+    let isCompanyOwner = false;
+    if (isServiceRole) {
+      // Belső rendszerhívás / háttérfolytatás esetén automatikusan felhatalmazott
+      isCompanyOwner = true;
+    } else {
+      // Verify company membership
+      const { data: membership, error: memErr } = await adminClient
+        .from("company_members")
+        .select("role")
+        .eq("company_id", companyId)
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-    if (memErr || !membership) {
-      return new Response(JSON.stringify({ error: "Access denied to company" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      if (memErr || !membership) {
+        return new Response(JSON.stringify({ error: "Access denied to company" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Verify company ownership for sensitive bank operations
+      const { data: comp } = await adminClient
+        .from("companies")
+        .select("owner_id")
+        .eq("id", companyId)
+        .maybeSingle();
+
+      isCompanyOwner = comp?.owner_id === user.id || membership.role === "owner";
     }
-
-    // Verify company ownership for sensitive bank operations
-    const { data: comp } = await adminClient
-      .from("companies")
-      .select("owner_id")
-      .eq("id", companyId)
-      .maybeSingle();
-
-    const isCompanyOwner = comp?.owner_id === user.id || membership.role === "owner";
 
     // ── Action: INIT FLOW (ADD_BANK, ON_DEMAND, EXTEND_CONSENT, DELETE_INFO_SHARING_CONSENT) ──
     if (action === "init-flow") {
       const type = flowType || "ADD_BANK";
 
-      // Security Guard: Only CEO/Owner can add a bank, extend consent, or delete consent
-      if ((type === "ADD_BANK" || type === "EXTEND_CONSENT" || type === "DELETE_INFO_SHARING_CONSENT") && !isCompanyOwner) {
+      // Security Guard: Only CEO/Owner can add a bank, trigger sync, extend consent, or delete consent
+      if (
+        (type === "ADD_BANK" || type === "ON_DEMAND" || type === "EXTEND_CONSENT" || type === "DELETE_INFO_SHARING_CONSENT") &&
+        !isCompanyOwner
+      ) {
         return new Response(
           JSON.stringify({ 
-            error: "Kizárólag a cég tulajdonosa (CEO/Owner) jogosult új banki kapcsolatot létesíteni vagy módosítani." 
+            success: false,
+            error: "Kizárólag a cég tulajdonosa (CEO/Owner) jogosult a banki kapcsolatot kezelni vagy szinkronizációt indítani.",
+            code: "PERMISSION_DENIED",
           }),
           {
             status: 403,
@@ -275,22 +231,65 @@ serve(async (req) => {
         (type === "ON_DEMAND" || type === "EXTEND_CONSENT" || type === "DELETE_INFO_SHARING_CONSENT") &&
         infoSharingConsentId
       ) {
+        // Ellenőrizzük, hogy a hozzájárulást melyik felhasználó hozta létre
+        const { data: consentRecord } = await adminClient
+          .from("aggreg8_consents")
+          .select("user_id, bank_name")
+          .eq("info_sharing_consent_id", infoSharingConsentId)
+          .maybeSingle();
+
+        if (consentRecord && consentRecord.user_id !== user.id) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: `Ezt a banki kapcsolatot (${consentRecord.bank_name || 'Bank'}) egy másik felhasználó hitelesítette. Az élő szinkronizációt és banki azonosítást kizárólag az a felhasználó tudja elindítani, aki a bankkapcsolatot létrehozta.`,
+              code: "CONSENT_USER_MISMATCH",
+            }),
+            {
+              status: 403,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+
         initPayload.infoSharingConsentId = infoSharingConsentId;
       }
 
       const res = await fetch(`${config.apiUrl}/user-flow/init`, {
         method: "POST",
-        headers: {
+        headers: getAggreg8Headers({
           "Content-Type": "application/json",
           Accept: "application/json",
           Authorization: `Bearer ${customerToken}`,
-        },
+        }),
         body: JSON.stringify(initPayload),
       });
 
       if (!res.ok) {
         const errText = await res.text();
-        throw new Error(`Aggreg8 init flow failed (${res.status}): ${errText}`);
+        console.warn(`[aggreg8-api] init flow failed (${res.status}):`, errText);
+
+        let userFriendlyMsg = "A banki művelet kezdeményezése sikertelen.";
+        if (res.status === 400) {
+          userFriendlyMsg = "A banki azonosítási kérelem érvénytelen, vagy a kapcsolódó hozzájárulás felhasználója eltér. Kérjük, próbáld újra a kapcsolatot létrehozó felhasználói fiókkal.";
+        } else if (res.status === 401) {
+          userFriendlyMsg = "A banki hitelesítés érvénytelen vagy lejárt. Kérjük, próbáld újra.";
+        } else if (res.status === 404) {
+          userFriendlyMsg = "A kiválasztott banki kapcsolat vagy számla nem található a banki szolgáltatónál.";
+        } else if (res.status === 429) {
+          userFriendlyMsg = "Túl sok szinkronizációs kérés érkezett rövid időn belül. Kérjük, várj pár percet az újabb próbálkozás előtt.";
+        } else if (res.status >= 500) {
+          userFriendlyMsg = "A banki aggregátor (Aggreg8) vagy a partnerbank szolgáltatása jelenleg átmenetileg nem elérhető. Kérjük, próbáld újra később.";
+        } else {
+          try {
+            const parsed = JSON.parse(errText);
+            if (parsed?.message) userFriendlyMsg = parsed.message;
+          } catch {
+            // ignore
+          }
+        }
+
+        throw new Error(userFriendlyMsg);
       }
 
       const flowRes = await res.json();
@@ -332,6 +331,141 @@ serve(async (req) => {
       );
     }
 
+    // ── Action: SYNC TRANSACTIONS (On-demand / post-flow instant sync) ──
+    if (action === "sync-transactions") {
+      if (!isCompanyOwner) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "Kizárólag a cég tulajdonosa jogosult a banki tranzakciók szinkronizálására.",
+            code: "PERMISSION_DENIED",
+          }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { infoSharingConsentId, requestedAfter } = body;
+
+      const consentQuery = adminClient
+        .from("aggreg8_consents")
+        .select("*")
+        .eq("company_id", companyId)
+        .neq("status", "deleted");
+
+      if (infoSharingConsentId) {
+        consentQuery.eq("info_sharing_consent_id", infoSharingConsentId);
+      }
+
+      const { data: consents, error: cErr } = await consentQuery.order("created_at", { ascending: false });
+
+      if (cErr) throw cErr;
+
+      if (!consents || consents.length === 0) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "Nem található aktív banki kapcsolat.",
+            totalSynced: 0,
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const customerToken = await getCustomerToken(adminClient);
+      let grandTotalSynced = 0;
+      let primaryBankName = "";
+      let hasMoreTransactions = false;
+
+      for (const consent of consents) {
+        if (!primaryBankName && consent.bank_name) {
+          primaryBankName = consent.bank_name;
+        }
+
+        let { data: accounts } = await adminClient
+          .from("aggreg8_accounts")
+          .select("*")
+          .eq("consent_id", consent.id);
+
+        // Ha a webhook még nem töltötte be a számlákat (friss bankcsatlakozási versenyhelyzet):
+        if (!accounts || accounts.length === 0) {
+          try {
+            const accRes = await fetch(`${config.apiUrl}/accounts?userId=${consent.a8_user_id}`, {
+              headers: getAggreg8Headers({
+                Accept: "application/json",
+                Authorization: `Bearer ${customerToken}`,
+              }),
+            });
+
+            if (accRes.ok) {
+              const accList = await accRes.json();
+              const rawAccounts = Array.isArray(accList) ? accList : (accList.accounts || []);
+              for (const rawAcc of rawAccounts) {
+                const { data: insAcc } = await adminClient
+                  .from("aggreg8_accounts")
+                  .upsert(
+                    {
+                      consent_id: consent.id,
+                      company_id: consent.company_id,
+                      a8_account_id: rawAcc.id || rawAcc._id,
+                      account_name: rawAcc.name || "Bankszámla",
+                      account_number: rawAcc.accountNumber || "N/A",
+                      currency: rawAcc.currency || "HUF",
+                      balance: rawAcc.balance ?? null,
+                      updated_at: new Date().toISOString(),
+                    },
+                    { onConflict: "a8_account_id" }
+                  )
+                  .select()
+                  .single();
+
+                if (insAcc) {
+                  accounts = [...(accounts || []), insAcc];
+                }
+              }
+            }
+          } catch (accFetchErr) {
+            console.warn("[aggreg8-api] Could not fetch accounts from API:", accFetchErr);
+          }
+        }
+
+        if (accounts && accounts.length > 0) {
+          for (const acc of accounts) {
+            const wasRecentlySyncedByWebhook =
+              !isContinuation &&
+              requestedAfter &&
+              acc.last_synced_at &&
+              new Date(acc.last_synced_at).getTime() >= new Date(requestedAfter).getTime() - 2000 &&
+              typeof acc.last_synced_count === "number" &&
+              acc.last_synced_count > 0;
+
+            if (wasRecentlySyncedByWebhook) {
+              grandTotalSynced += acc.last_synced_count;
+            } else {
+              const syncRes = await syncAccountTransactions(adminClient, customerToken, acc, consent.a8_user_id);
+              grandTotalSynced += syncRes.totalSynced;
+              if (syncRes.hasMore) {
+                hasMoreTransactions = true;
+              }
+            }
+          }
+        }
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          totalSynced: grandTotalSynced,
+          bankName: primaryBankName || "Bank",
+          isNewConnection: !infoSharingConsentId,
+          hasMore: hasMoreTransactions,
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
     // ── Action: LIST CONSENTS & ACCOUNTS ──
     if (action === "list-consents") {
       const { data: consents, error: cErr } = await adminClient
@@ -358,10 +492,10 @@ serve(async (req) => {
       const customerToken = await getCustomerToken(adminClient);
       const res = await fetch(`${config.apiUrl}/banks`, {
         method: "GET",
-        headers: {
+        headers: getAggreg8Headers({
           Accept: "application/json",
           Authorization: `Bearer ${customerToken}`,
-        },
+        }),
       });
 
       if (!res.ok) {
@@ -385,11 +519,11 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: err.message || "An unexpected error occurred",
+        error: err.message || "Váratlan hiba történt a banki kapcsolat kezelésekor.",
         code: isApiKeyMissing ? "A8_API_KEY_MISSING" : "OPERATION_FAILED",
       }),
       {
-        status: isApiKeyMissing ? 503 : 500,
+        status: isApiKeyMissing ? 503 : 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );

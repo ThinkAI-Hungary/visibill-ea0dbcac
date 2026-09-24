@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-09-17  
-**Utoljára frissítve:** 2026-09-22  
+**Utoljára frissítve:** 2026-09-24  
 
 ## Context
 
@@ -19,16 +19,17 @@ Az **Aggreg8 (AISP API v5.3.1)** felhőalapú banki aggregátorát integráltuk 
 - A Visibill **soha nem látja és nem tárolja a felhasználó netbankos belépési adatait vagy jelszavait**.
 - A felugró ablakban egyedi partner-branding jelenik meg a Visibill / Eaisybill logóval (185x55 px).
 
-### 2. Kettős Edge Function Architektúra és Token Sanitization
-- **Környezetkezelés (Sandbox vs Prod):**
-  - Vezérlés Supabase Secrets környezeti változókkal: `A8_ENVIRONMENT` (`sandbox` vagy `prod`), valamint `A8_AIS_API_KEY`.
+### 2. Kettős Edge Function Architektúra, Megosztott Motor és Proxy Relay
+- **Megosztott Szinkronizációs Motor (`supabase/functions/_shared/aggreg8-sync.ts`):**
+  - Központosítja az autentikációt, a partner token sanitization-t, az automatikus token frissítést és a lapozásos tranzakcióletöltést az `aggreg8-api` és `aggreg8-callback` között.
+- **Környezetkezelés és Dedikált Reverse Proxy Relay:**
   - Sandbox: `https://a8-ais-api.sandbox.aggreg8test.hu` és `https://a8-sync-ui.sandbox.aggreg8test.hu`.
   - Prod: `https://ais-api.aggreg8.hu` és `https://sync-ui.aggreg8.hu`.
-  - A rendszer dinamikusan vált a két környezet között a secrets átírásakor újrakódolás nélkül.
-- **Bearer Token Sanitization Védvonal:**
-  - Az Aggreg8 `GET /token` végpontja a tokent már eleve `Bearer ` előtaggal adja vissza (`{"token": "Bearer eyJ..."}`).
-  - Ha a kimenő kérés fejléce `Authorization: Bearer ${customerToken}` lenne sanitization nélkül, az Aggreg8 szerverei duplikált `Bearer Bearer ...` miatt **HTTP 401 Unauthorized** hibával elutasítanák a hívásokat.
-  - Ezért mind az `aggreg8-api`, mind az `aggreg8-callback` függvényekben a `getCustomerToken` szigorúan levágja az esetleges `Bearer ` prefixet mind a perzisztáláskor (`aggreg8_settings`), mind a kiolvasáskor, garantálva az idempotens és tiszta hitelesítést.
+  - **Statikus IP Whitelist Garancia (`64.226.83.137`):** Mivel a felhős Supabase Edge Function kimenő IP címe dinamikus, az éles Aggreg8 tűzfal IP-engedélyezési követelményét egy dedikált DigitalOcean Droplet reverse proxy-val (`https://a8.visibill.hu` $\rightarrow$ `64.226.83.137`) fedjük le.
+  - **Proxy Védelem (`A8_PROXY_SECRET`):** A proxy Dockerben futó Caddy v2 webszerver, amely szigorúan ellenőrzi az `X-A8-Proxy-Secret` fejlécet. Titkos kulcs nélkül (403 Forbidden) elutasít minden külső forgalmat.
+- **Bearer Token Sanitization & 401 Auto-Retry:**
+  - Az Aggreg8 token formátuma (`Bearer eyJ...`) miatt a motor elvégzi a prefix-tisztítást, megelőzve a duplikált `Bearer Bearer ...` 401 hibákat.
+  - A `fetchAggreg8WithRetry` wrapper HTTP 401 esetén automatikusan invalidálja az `aggreg8_settings` cache-t, új partner tokent igényel, és egyszer megismétli a hívást.
 - **`aggreg8-api` (`verify_jwt: true`):**
   - Védve van a Visibill kettős védelmi reteszével (`checkAutomationShield` és Supabase JWT autentikáció).
   - Szerepkörei:
@@ -37,24 +38,23 @@ Az **Aggreg8 (AISP API v5.3.1)** felhőalapú banki aggregátorát integráltuk 
     - SyncUI session indítása (`user-flow/init`): `ADD_BANK`, `ON_DEMAND`, `EXTEND_CONSENT`, `DELETE_INFO_SHARING_CONSENT`.
     - **Munkamenet-követés (Multi-Company Isolation):** Az indításkor kapott `userFlowId`-t azonnal naplózza az `aggreg8_webhook_logs` táblába `FLOW_INITIATED` típusú bejegyzésként a pontos `company_id` és `user_id` metaadatokkal.
     - Támogatott bankok listázása (`GET /banks`).
-  - Hiba esetén nem generikus 500-at dob, hanem strukturált HTTP 503 / 400 választ ad `A8_API_KEY_MISSING` vagy `OPERATION_FAILED` hibakóddal.
+  - Hiba esetén strukturált HTTP 503 / 400 választ ad `A8_API_KEY_MISSING` vagy `OPERATION_FAILED` hibakóddal.
 - **`aggreg8-callback` (`verify_jwt: false`):**
   - Nyilvános webhook végpont az Aggreg8 szerverek felé (`/functions/v1/aggreg8-callback`).
   - Események: `INFO_SHARING_CONSENT_CREATED`, `INFO_SHARING_CONSENT_EXTENDED`, `INFO_SHARING_CONSENT_DELETED`, `ACCOUNT_SYNCED`, `DATA_TRANSFER_SCHEDULED`, `TRANSACTIONS_CREATED`, `TRANSACTIONS_UPDATED`.
-  - **Determinisztikus Cégfeloldás (Session Mapping):** `INFO_SHARING_CONSENT_CREATED` eseménynél a `payload.userFlowInfo.userFlowId` kulcs alapján pontosan visszakeresi a cég- és felhasználó-azonosítót a `FLOW_INITIATED` naplóból (megszüntetve az első consent és többcéges téves hozzárendelés kockázatát).
-  - **Számlaszűrés (`consentedAccounts`):** Csak az adott folyamatban kifejezetten engedélyezett számlákat köti a céghez, megakadályozva a többcég-ugyanaz-a-tulajdonos számlakeveredést.
-  - Hozzájárulások perzisztálása az `aggreg8_consents` és `aggreg8_accounts` táblákba.
-  - Automatikus tranzakcióletöltés: lapozás kezelése `while (page < totalPages && page < 50)` ciklussal kezdeti szinkronizációkor (>200 tétel esetén).
+  - **Determinisztikus Cégfeloldás (Session Mapping):** `INFO_SHARING_CONSENT_CREATED` eseménynél a `payload.userFlowInfo.userFlowId` kulcs alapján pontosan visszakeresi a cég- és felhasználó-azonosítót a `FLOW_INITIATED` naplóból.
+  - **Számlaszűrés (`consentedAccounts`):** Csak az adott folyamatban kifejezetten engedélyezett számlákat köti a céghez.
+  - **Történeti Paginációs Plafon (10 000+ tranzakció) és PGMQ Chunking:** Kezdeti szinkronizációkor az Edge Function 50 oldalig (10 000 tétel) fut le a 60 másodperces időkorlát védelmében. Ha még maradt adat (`page < totalPages`), `hasMore: true` jelzést ad, és egy folytatási feladatot küld a `transaction_jobs` PGMQ sorba (`source: 'aggreg8_continuation'`), amit a háttér worker korlátlan idő alatt szinkronizál végig.
   - Upsert a `bank_transactions` és `transactions` táblákba külső duplikáció elleni védelemmel (`external_id` és `unique_transaction_entry`).
 
 ### 3. Adatbázis Séma és Nullability Migráció
-- **Új táblák:**
+- **Táblák:**
   - `aggreg8_consents`: Hozzájárulás állapota, 180 napos lejárat (`valid_until`), hozzáférési token, bank azonosító.
-  - `aggreg8_accounts`: Bankszámlaszám (IBAN), egyenleg, deviza, utolsó szinkronizáció.
+  - `aggreg8_accounts`: Bankszámlaszám (IBAN), egyenleg, deviza, utolsó szinkronizáció ideje (`last_synced_at`), valamint szinkronizált tételek száma (`last_synced_count`).
   - `aggreg8_settings`: Gyorsítótárazott partner customer token és környezet (`sandbox` / `prod`).
-- **DDL módosítás:**
-  - `ALTER TABLE public.bank_transactions ALTER COLUMN bank_statement_id DROP NOT NULL;`
-  - Korábban a tábla megkövetelte egy manuális kivonat feltöltési azonosítót (`bank_statement_id`). Az Open Banking tranzakciók közvetlen API-n keresztül érkeznek, ezért a mező opcionálissá tétele kötelező volt a megszakításmentes adatmentéshez.
+- **DDL migrációk:**
+  - `ALTER TABLE public.bank_transactions ALTER COLUMN bank_statement_id DROP NOT NULL;` (Open Banking direkt tranzakciók tárolása).
+  - `ALTER TABLE public.aggreg8_accounts ADD COLUMN IF NOT EXISTS last_synced_count INTEGER NOT NULL DEFAULT 0;` (`20260924143000_add_last_synced_count_to_aggreg8_accounts.sql`).
 
 ### 4. Aszinkron Háttér-feldolgozás (Python Worker & PGMQ)
 - Az `aggreg8-callback` a sikeresen szinkronizált tranzakciók azonosítóival (`a8_transaction_ids`) felad egy feladatot a `transaction_jobs` PGMQ sorba (`source: 'aggreg8'`).
