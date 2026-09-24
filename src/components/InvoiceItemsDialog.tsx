@@ -24,7 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatCurrency, cn, formatVatRate, is27PercentVatRate, normalizeVatRatePercent } from '@/lib/utils';
-import { Package, Package2, CheckCircle2, Info, Loader2, Check, Pencil, FileSpreadsheet, X, ArrowUpDown, ChevronUp, ChevronDown, MessageSquare, Sparkles, Wallet, Lock } from 'lucide-react';
+import { Package, Package2, CheckCircle2, Info, Loader2, Check, Pencil, FileSpreadsheet, X, ArrowUpDown, ChevronUp, ChevronDown, MessageSquare, Sparkles, Wallet, Lock, Landmark } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActivePreset } from '@/hooks/useActivePreset';
@@ -51,6 +51,7 @@ import { useProjectList } from '@/hooks/useProjectList';
 import { Label } from '@/components/ui/label';
 import { NavInvoiceVatSummaryCard } from '@/components/nav/NavInvoiceVatSummaryCard';
 import { InvoiceRuleQuickSaveDialog, type InvoiceRuleQuickSaveItem } from '@/components/invoices/InvoiceRuleQuickSaveDialog';
+import { InvoiceGlAccountSelector } from '@/components/invoices/InvoiceGlAccountSelector';
 
 interface InvoiceLineItem {
   id: string;
@@ -191,8 +192,8 @@ export function InvoiceItemsDialog({
     queryFn: async () => {
       const table = source === 'submitted' ? 'invoices' : 'nav_invoices';
       const selectFields = source === 'submitted'
-        ? 'project_id, invoice_direction, kibocsatas_datuma, penznem, bizonylatsorszam, elado_vat_id, elado_nev, vevo_vat_id, vevo_nev, forditott_adozas'
-        : 'project_id, invoice_direction, invoice_issue_date, currency, vat_summary, is_reverse_charge, supplier_tax_number, supplier_name, customer_tax_number, customer_name';
+        ? 'project_id, invoice_direction, kibocsatas_datuma, penznem, bizonylatsorszam, elado_vat_id, elado_nev, vevo_vat_id, vevo_nev, forditott_adozas, partner_gl_number, vat_gl_number'
+        : 'project_id, invoice_direction, invoice_issue_date, currency, vat_summary, is_reverse_charge, supplier_tax_number, supplier_name, customer_tax_number, customer_name, partner_gl_number, vat_gl_number';
 
       const { data, error } = await supabase
         .from(table as any)
@@ -243,6 +244,8 @@ export function InvoiceItemsDialog({
         customer_name: (data as any)?.customer_name || (data as any)?.vevo_nev || null,
         vat_summary: vatSummary,
         is_reverse_charge: isRc,
+        partner_gl_number: (data as any)?.partner_gl_number || null,
+        vat_gl_number: (data as any)?.vat_gl_number || null,
       } as {
         project_id?: string | null;
         invoice_direction?: string;
@@ -258,6 +261,8 @@ export function InvoiceItemsDialog({
         supplier_name?: string | null;
         customer_tax_number?: string | null;
         customer_name?: string | null;
+        partner_gl_number?: string | null;
+        vat_gl_number?: string | null;
       } | null;
     },
     enabled: open && !!invoiceId,
@@ -419,7 +424,21 @@ export function InvoiceItemsDialog({
     placeholderData: keepPreviousData,
   });
 
-  const isOutbound = invoiceDirection === 'OUTBOUND';
+  const isOutbound = invoiceDirection === 'OUTBOUND' || ((parentInvoice as any)?.invoice_direction || '').toUpperCase() === 'OUTBOUND';
+
+  const effectivePartnerGl = useMemo(() => {
+    if (parentInvoice?.partner_gl_number) return parentInvoice.partner_gl_number;
+    const invCurrency = currency || parentInvoice?.currency || parentInvoice?.penznem || 'HUF';
+    if (isOutbound) {
+      return (invCurrency && invCurrency.toUpperCase() !== 'HUF') ? '312' : '311';
+    }
+    return (invCurrency && invCurrency.toUpperCase() !== 'HUF') ? '4542' : '4541';
+  }, [parentInvoice?.partner_gl_number, isOutbound, currency, parentInvoice?.currency, parentInvoice?.penznem]);
+
+  const effectiveVatGl = useMemo(() => {
+    if (parentInvoice?.vat_gl_number) return parentInvoice.vat_gl_number;
+    return isOutbound ? '467' : '466';
+  }, [parentInvoice?.vat_gl_number, isOutbound]);
 
   // Check if any items belong to already posted/finalized journals ('KONYVELT')
   const itemIds = useMemo(() => items.map(it => it.id), [items]);
@@ -1438,16 +1457,43 @@ export function InvoiceItemsDialog({
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <TooltipProvider delayDuration={150}>
           <DialogContent className="max-w-7xl max-h-[85vh] overflow-hidden flex flex-col">
-            <DialogHeader className="pb-4 border-b border-border/50">
-              <DialogTitle className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Package className="h-5 w-5 text-primary" />
+            <DialogHeader className="pb-3 border-b border-border/50">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pr-8">
+                <DialogTitle className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Package className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground text-sm font-normal">{t('invoices:dialogs.items.title')}</span>
+                    <p className="font-mono text-xl font-bold tracking-tight">{invoiceNumber}</p>
+                  </div>
+                </DialogTitle>
+
+                {/* Vevői & ÁFA kontír card */}
+                <div className="bg-card border border-border/50 px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-xs">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider mr-1 shrink-0">
+                    <Landmark className="h-3.5 w-3.5 text-primary" />
+                    <span>{isOutbound ? 'Vevői & ÁFA kontír' : 'Szállítói & ÁFA kontír'}</span>
+                  </div>
+                  <InvoiceGlAccountSelector
+                    invoiceId={source === 'submitted' ? invoiceId : undefined}
+                    navInvoiceId={source === 'nav' ? invoiceId : undefined}
+                    invoiceNumber={invoiceNumber}
+                    companyId={selectedCompany?.id}
+                    direction={isOutbound ? 'OUTBOUND' : 'INBOUND'}
+                    currency={currency || parentInvoice?.currency || parentInvoice?.penznem || 'HUF'}
+                    currentPartnerGlNumber={parentInvoice?.partner_gl_number}
+                    currentVatGlNumber={parentInvoice?.vat_gl_number}
+                    onUpdated={() => {
+                      queryClient.invalidateQueries({ queryKey: ['parentInvoice', source, invoiceId] });
+                      queryClient.invalidateQueries({ queryKey: ['invoice-gl-account'] });
+                      queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
+                      queryClient.invalidateQueries({ queryKey: ['glBalances'] });
+                    }}
+                    compact
+                  />
                 </div>
-                <div>
-                  <span className="text-muted-foreground text-sm font-normal">{t('invoices:dialogs.items.title')}</span>
-                  <p className="font-mono text-xl font-bold tracking-tight">{invoiceNumber}</p>
-                </div>
-              </DialogTitle>
+              </div>
             </DialogHeader>
 
             <div className="flex-1 overflow-auto mt-4">
@@ -1505,11 +1551,11 @@ export function InvoiceItemsDialog({
                         {renderSortableHeader('quantity', t('invoices:dialogs.items.table.quantity'), 'right', 'text-right')}
                         {renderSortableHeader('unit_price', t('invoices:dialogs.items.table.unit_price'), 'right', 'text-right')}
                         {renderSortableHeader('net_amount', t('invoices:dialogs.items.table.net'), 'right', 'text-right')}
-                        {renderSortableHeader('vat_rate', t('invoices:dialogs.items.table.vat'), 'center', 'text-center w-[90px]')}
+                        {renderSortableHeader('vat_rate', t('invoices:dialogs.items.table.vat'), 'center', 'text-center w-[110px]')}
                         {renderSortableHeader('vat_amount', t('invoices:dialogs.items.table.vat_amount'), 'right', 'text-right')}
                         {!isOutbound && renderSortableHeader('deductible_percentage', t('invoices:dialogs.items.table.deductibility'), 'center', 'text-center w-[140px]')}
                         {renderSortableHeader('gross_amount', t('invoices:dialogs.items.table.gross'), 'right', 'text-right')}
-                        {renderSortableHeader('gl_classifications', t('invoices:dialogs.items.table.gl'), 'center', 'text-center')}
+                        {renderSortableHeader('gl_classifications', t('invoices:dialogs.items.table.gl'), 'center', 'text-center min-w-[120px]')}
                         <TableHead className="font-semibold w-[200px]">{t('invoices:dialogs.items.table.project')}</TableHead>
                         <TableHead className="font-semibold text-center w-12">{t('invoices:dialogs.items.table.note')}</TableHead>
                         <TableHead className="text-center font-semibold w-[75px]">
@@ -1628,83 +1674,109 @@ export function InvoiceItemsDialog({
                             );
 
                             const relevantVatCodes = vatCodes.filter(c => c.direction === direction);
+                            const itemVatAmt = getVatAmount(item);
 
                             return (
-                              <DropdownMenu>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <DropdownMenuTrigger asChild>
-                                      <button
-                                        type="button"
-                                        disabled={updatingVatCodeItemId === item.id}
-                                        className={cn(
-                                          "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border shadow-xs transition-all cursor-pointer group",
-                                          badgeData.isManual
-                                            ? "bg-primary/15 text-primary border-primary/30 hover:bg-primary/25"
-                                            : badgeData.isLearned
-                                            ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/25"
-                                            : "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
-                                        )}
-                                      >
-                                        {updatingVatCodeItemId === item.id ? (
-                                          <Loader2 className="w-3 h-3 animate-spin" />
-                                        ) : badgeData.isLearned ? (
-                                          <Sparkles className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
-                                        ) : badgeData.isManual ? (
-                                          <Pencil className="w-2.5 h-2.5 text-primary shrink-0 opacity-70 group-hover:opacity-100" />
-                                        ) : null}
-                                        <span className="font-mono font-bold">{badgeData.displayCode}</span>
-                                        <span className="text-[11px] opacity-80">({badgeData.rateLabel})</span>
-                                      </button>
-                                    </DropdownMenuTrigger>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top" className="text-xs z-[120] max-w-xs text-center whitespace-pre-line">
-                                    {badgeData.tooltipText}
-                                  </TooltipContent>
-                                </Tooltip>
+                              <div className="flex flex-col items-center justify-center gap-1">
+                                <DropdownMenu>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <DropdownMenuTrigger asChild>
+                                        <button
+                                          type="button"
+                                          disabled={updatingVatCodeItemId === item.id}
+                                          className={cn(
+                                            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border shadow-xs transition-all cursor-pointer group",
+                                            badgeData.isManual
+                                              ? "bg-primary/15 text-primary border-primary/30 hover:bg-primary/25"
+                                              : badgeData.isLearned
+                                              ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/25"
+                                              : "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+                                          )}
+                                        >
+                                          {updatingVatCodeItemId === item.id ? (
+                                            <Loader2 className="w-3 h-3 animate-spin" />
+                                          ) : badgeData.isLearned ? (
+                                            <Sparkles className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
+                                          ) : badgeData.isManual ? (
+                                            <Pencil className="w-2.5 h-2.5 text-primary shrink-0 opacity-70 group-hover:opacity-100" />
+                                          ) : null}
+                                          <span className="font-mono font-bold">{badgeData.displayCode}</span>
+                                          <span className="text-[11px] opacity-80">({badgeData.rateLabel})</span>
+                                        </button>
+                                      </DropdownMenuTrigger>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="text-xs z-[120] max-w-xs text-center whitespace-pre-line">
+                                      {badgeData.tooltipText}
+                                    </TooltipContent>
+                                  </Tooltip>
 
-                                <DropdownMenuContent align="center" className="w-72 max-h-72 overflow-y-auto z-[120]">
-                                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-b mb-1">
-                                    Áfakód választás ({direction === 'OUTBOUND' ? 'Kimenő' : 'Bejövő'})
-                                  </div>
-                                  {relevantVatCodes.map(vc => {
-                                    const isSelected = item.vat_code_id === vc.id || (!item.vat_code_id && resolved.matchedCode.code === vc.code);
-                                    return (
+                                  <DropdownMenuContent align="center" className="w-72 max-h-72 overflow-y-auto z-[120]">
+                                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-b mb-1">
+                                      Áfakód választás ({direction === 'OUTBOUND' ? 'Kimenő' : 'Bejövő'})
+                                    </div>
+                                    {relevantVatCodes.map(vc => {
+                                      const isSelected = item.vat_code_id === vc.id || (!item.vat_code_id && resolved.matchedCode.code === vc.code);
+                                      return (
+                                        <DropdownMenuItem
+                                          key={vc.id || vc.code}
+                                          onClick={() => {
+                                            setUpdatingVatCodeItemId(item.id);
+                                            handleSaveVatCodeOverride([item], vc.id || null);
+                                          }}
+                                          className={cn(
+                                            "flex items-center justify-between text-xs cursor-pointer py-1.5",
+                                            isSelected && "bg-primary/10 font-medium"
+                                          )}
+                                        >
+                                          <div className="flex flex-col truncate pr-2">
+                                            <div className="flex items-center gap-1.5 font-mono">
+                                              <span className="font-bold">{displayMode === 'nav' ? vc.code : (vc.legacy_code || vc.code)}</span>
+                                              <span className="text-[11px] text-muted-foreground">({vc.vat_percent}%)</span>
+                                            </div>
+                                            <span className="text-[11px] text-muted-foreground truncate">{vc.label}</span>
+                                          </div>
+                                          {isSelected && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+                                        </DropdownMenuItem>
+                                      );
+                                    })}
+                                    {item.vat_code_id && (
                                       <DropdownMenuItem
-                                        key={vc.id || vc.code}
                                         onClick={() => {
                                           setUpdatingVatCodeItemId(item.id);
-                                          handleSaveVatCodeOverride([item], vc.id || null);
+                                          handleSaveVatCodeOverride([item], null);
                                         }}
-                                        className={cn(
-                                          "flex items-center justify-between text-xs cursor-pointer py-1.5",
-                                          isSelected && "bg-primary/10 font-medium"
-                                        )}
+                                        className="text-xs text-destructive focus:text-destructive border-t mt-1 cursor-pointer"
                                       >
-                                        <div className="flex flex-col truncate pr-2">
-                                          <div className="flex items-center gap-1.5 font-mono">
-                                            <span className="font-bold">{displayMode === 'nav' ? vc.code : (vc.legacy_code || vc.code)}</span>
-                                            <span className="text-[11px] text-muted-foreground">({vc.vat_percent}%)</span>
-                                          </div>
-                                          <span className="text-[11px] text-muted-foreground truncate">{vc.label}</span>
-                                        </div>
-                                        {isSelected && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+                                        Visszaállítás törvényi alapértelmezettre
                                       </DropdownMenuItem>
-                                    );
-                                  })}
-                                  {item.vat_code_id && (
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        setUpdatingVatCodeItemId(item.id);
-                                        handleSaveVatCodeOverride([item], null);
-                                      }}
-                                      className="text-xs text-destructive focus:text-destructive border-t mt-1 cursor-pointer"
-                                    >
-                                      Visszaállítás törvényi alapértelmezettre
-                                    </DropdownMenuItem>
-                                  )}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+
+                                {/* ÁFA kontír címke */}
+                                {itemVatAmt && itemVatAmt > 0 ? (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-mono font-medium text-muted-foreground/80 px-1.5 py-0.5 rounded bg-muted/40 border border-border/30 cursor-default">
+                                        <Lock className="w-2.5 h-2.5 opacity-60 shrink-0" />
+                                        <span>ÁFA: {effectiveVatGl}</span>
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="bottom" className="text-xs z-[120]">
+                                      <p>
+                                        {isOutbound
+                                          ? `Követel (K) fizetendő ÁFA számla: ${effectiveVatGl}`
+                                          : `Tartozik (T) levonható ÁFA számla: ${effectiveVatGl}`}
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                ) : (
+                                  <span className="text-[10px] font-mono text-muted-foreground/40">
+                                    ÁFA: -
+                                  </span>
+                                )}
+                              </div>
                             );
                           })()}
                         </TableCell>
@@ -1785,7 +1857,7 @@ export function InvoiceItemsDialog({
                         <TableCell className="text-right font-mono font-medium">
                           {formatAmount(getGrossAmount(item))}
                         </TableCell>
-                        <TableCell className="text-center">
+                        <TableCell className="text-center whitespace-nowrap">
                           {(() => {
                             // Try the active preset first, otherwise fallback to the first available classification key
                             const classification = (activePresetId && item.gl_classifications?.[activePresetId])
@@ -1794,6 +1866,8 @@ export function InvoiceItemsDialog({
                                   ? Object.values(item.gl_classifications)[0] 
                                   : null);
                             
+                            const netGl = classification?.gl_number;
+
                             return (
                               <Tooltip>
                                 <TooltipTrigger asChild>
@@ -1801,18 +1875,44 @@ export function InvoiceItemsDialog({
                                     type="button"
                                     onClick={(e) => { e.stopPropagation(); openGlEdit(item); }}
                                     className={cn(
-                                      "group/gl inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-colors cursor-pointer",
-                                      classification?.gl_number
-                                        ? "bg-primary/10 text-primary hover:bg-primary/20"
-                                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                                      "group/gl inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-medium transition-colors cursor-pointer border",
+                                      netGl
+                                        ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+                                        : "bg-muted text-muted-foreground border-border/40 hover:bg-muted/80"
                                     )}
                                   >
-                                    {classification?.gl_number || '-'}
-                                    <Pencil className="h-3 w-3 opacity-0 group-hover/gl:opacity-70 transition-opacity" />
+                                    {isOutbound ? (
+                                      <>
+                                        <span className="text-[11px] opacity-70 font-normal" title="Tartozik (T) vevőkövetelés">{effectivePartnerGl}</span>
+                                        <span className="opacity-40">→</span>
+                                        <span className="font-bold underline decoration-dotted underline-offset-2" title="Követel (K) árbevétel">
+                                          {netGl || '-'}
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <span className="font-bold underline decoration-dotted underline-offset-2" title="Tartozik (T) költség / ráfordítás">
+                                          {netGl || '-'}
+                                        </span>
+                                        <span className="opacity-40">→</span>
+                                        <span className="text-[11px] opacity-70 font-normal" title="Követel (K) szállítói kötelezettség">{effectivePartnerGl}</span>
+                                      </>
+                                    )}
+                                    <Pencil className="h-3 w-3 opacity-0 group-hover/gl:opacity-70 transition-opacity ml-0.5" />
                                   </button>
                                 </TooltipTrigger>
-                                <TooltipContent side="top" className="text-xs z-[120]">
-                                  {classification?.gl_number ? t('invoices:dialogs.items.click_to_modify_gl') : t('invoices:dialogs.items.click_to_classify_gl')}
+                                <TooltipContent side="top" className="text-xs z-[120] max-w-xs text-center">
+                                  <div className="space-y-1">
+                                    <p className="font-semibold">
+                                      {isOutbound
+                                        ? `T: ${effectivePartnerGl} (Vevőkövetelés) → K: ${netGl || 'Nincs'} (Árbevétel)`
+                                        : `T: ${netGl || 'Nincs'} (Költség/Ráfordítás) → K: ${effectivePartnerGl} (Szállítói kötelezettség)`
+                                      }
+                                    </p>
+                                    <p className="text-muted-foreground text-[11px]">
+                                      {netGl ? t('invoices:dialogs.items.click_to_modify_gl') : t('invoices:dialogs.items.click_to_classify_gl')}
+                                    </p>
+                                  </div>
                                 </TooltipContent>
                               </Tooltip>
                             );
