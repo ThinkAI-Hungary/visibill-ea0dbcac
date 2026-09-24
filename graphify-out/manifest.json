@@ -1690,8 +1690,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/invite-user/index.ts": {
-    "mtime": 1788712137.118154,
-    "ast_hash": "14146da78ca196a39091075f85cf3a47",
+    "mtime": 1790207421.8957424,
+    "ast_hash": "36787e1c4d09212c8b6821ec9e7b2386",
     "semantic_hash": ""
   },
   "supabase/functions/join-company/index.ts": {
@@ -11967,6 +11967,11 @@
   "supabase/migrations/20260924130000_update_invoice_item_rules_rpc_tax_and_escape.sql": {
     "mtime": 1790205397.5138047,
     "ast_hash": "f68fec69947a71e58bbae290e856b243",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260924140000_auto_sync_accounting_firm_members_to_eaisybooks.sql": {
+    "mtime": 1790207509.583977,
+    "ast_hash": "915852439dbce153fbd31329a8a1f5dd",
     "semantic_hash": ""
   }
 }

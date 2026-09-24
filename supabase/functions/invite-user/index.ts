@@ -135,6 +135,12 @@ Deno.serve(async (req) => {
       // User already exists — just add to company if requested
         const isAccountantRole = ["könyvelő", "senior_könyvelő", "asszisztens", "iroda_admin"].includes(role);
         if (isAccountantRole) {
+          // Grant eaisybooks_access in profile
+          await adminClient
+            .from("profiles")
+            .update({ eaisybooks_access: true, updated_at: new Date().toISOString() })
+            .eq("user_id", existingUser.id);
+
           // UPSERT: if already assigned to this company, update role/firm; otherwise insert
           const firmId = accounting_firm_id || company_id;
           const { error: upsertError } = await adminClient
@@ -145,6 +151,7 @@ Deno.serve(async (req) => {
               accounting_firm_id: firmId,
               role: role,
               is_primary: true,
+              is_main_accountant: false,
               kanban_status: "aktiv",
               source: "manual"
             }, {
@@ -244,6 +251,7 @@ Deno.serve(async (req) => {
     console.log("[INVITE-USER] User created:", newUserId, emailLower);
 
     // ── 6. Create profile (if trigger doesn't exist) ──
+    const isAccountantRole = ["könyvelő", "senior_könyvelő", "asszisztens", "iroda_admin"].includes(role);
     const { data: existingProfile } = await adminClient
       .from("profiles")
       .select("id")
@@ -257,6 +265,7 @@ Deno.serve(async (req) => {
           user_id: newUserId,
           name: name.trim(),
           email_verified: true,
+          eaisybooks_access: isAccountantRole,
         });
 
       if (profileError) {
@@ -265,15 +274,18 @@ Deno.serve(async (req) => {
       }
     } else {
       // Update name if profile was auto-created by trigger
+      const profileUpdates: Record<string, any> = { name: name.trim(), email_verified: true };
+      if (isAccountantRole) {
+        profileUpdates.eaisybooks_access = true;
+      }
       await adminClient
         .from("profiles")
-        .update({ name: name.trim(), email_verified: true })
+        .update(profileUpdates)
         .eq("user_id", newUserId);
     }
 
     // ── 7. Add to company (if requested) ──
     if (company_id) {
-      const isAccountantRole = ["könyvelő", "senior_könyvelő", "asszisztens", "iroda_admin"].includes(role);
       if (isAccountantRole) {
         // Add accountant assignment
         const firmIdNew = accounting_firm_id || company_id;
@@ -285,6 +297,7 @@ Deno.serve(async (req) => {
             accounting_firm_id: firmIdNew,
             role: role,
             is_primary: true,
+            is_main_accountant: false,
             kanban_status: "aktiv",
             source: "manual"
           });
