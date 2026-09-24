@@ -108,13 +108,15 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
           .select('id, invoice_number, supplier_name, customer_name, invoice_delivery_date, invoice_issue_date, invoice_net_amount, invoice_vat_amount, partner_gl_number, vat_gl_number, invoice_direction')
           .eq('company_id', selectedCompany.id)
           .or(`invoice_delivery_date.gte.${effectiveDateFrom},and(invoice_delivery_date.is.null,invoice_issue_date.gte.${effectiveDateFrom})`)
-          .or(`invoice_delivery_date.lte.${effectiveDateTo},and(invoice_delivery_date.is.null,invoice_issue_date.lte.${effectiveDateTo})`),
+          .or(`invoice_delivery_date.lte.${effectiveDateTo},and(invoice_delivery_date.is.null,invoice_issue_date.lte.${effectiveDateTo})`)
+          .limit(10000),
         supabase
           .from('invoices')
           .select('id, bizonylatsorszam, elado_nev, vevo_nev, teljesites_datuma, kibocsatas_datuma, adoalap_osszesen, afa_osszeg_osszesen, partner_gl_number, vat_gl_number, invoice_direction')
           .eq('company_id', selectedCompany.id)
           .or(`teljesites_datuma.gte.${effectiveDateFrom},and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${effectiveDateFrom})`)
-          .or(`teljesites_datuma.lte.${effectiveDateTo},and(teljesites_datuma.is.null,kibocsatas_datuma.lte.${effectiveDateTo})`),
+          .or(`teljesites_datuma.lte.${effectiveDateTo},and(teljesites_datuma.is.null,kibocsatas_datuma.lte.${effectiveDateTo})`)
+          .limit(10000),
       ]);
 
       const navInvs = navInvsRes.data || [];
@@ -137,20 +139,38 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
       const navIds = navInvs.map((i) => i.id);
       const subIds = standaloneSubInvs.map((i) => i.id);
 
-      const [navItemsRes, subItemsRes] = await Promise.all([
-        navIds.length > 0
-          ? supabase
-              .from('nav_invoice_items')
-              .select('id, nav_invoice_id, net_amount, vat_amount, vat_rate, vat_code, gl_classifications, line_description')
-              .in('nav_invoice_id', navIds)
-          : Promise.resolve({ data: [] }),
-        subIds.length > 0
-          ? supabase
-              .from('invoice_items')
-              .select('id, invoice_id, net_amount, vat_amount, vat_rate, vat_code, gl_classifications, line_description')
-              .in('invoice_id', subIds)
-          : Promise.resolve({ data: [] }),
+      // Safe chunked fetching in batches of 50 IDs to avoid HTTP 400 Bad Request (URI Too Long)
+      const navItemPromises: Promise<any>[] = [];
+      for (let i = 0; i < navIds.length; i += 50) {
+        const chunk = navIds.slice(i, i + 50);
+        navItemPromises.push(
+          supabase
+            .from('nav_invoice_items')
+            .select('id, nav_invoice_id, net_amount, vat_amount, vat_rate, vat_code, gl_classifications, line_description')
+            .in('nav_invoice_id', chunk)
+            .limit(10000)
+        );
+      }
+
+      const subItemPromises: Promise<any>[] = [];
+      for (let i = 0; i < subIds.length; i += 50) {
+        const chunk = subIds.slice(i, i + 50);
+        subItemPromises.push(
+          supabase
+            .from('invoice_items')
+            .select('id, invoice_id, net_amount, vat_amount, vat_rate, vat_code, gl_classifications, line_description')
+            .in('invoice_id', chunk)
+            .limit(10000)
+        );
+      }
+
+      const [navChunkResults, subChunkResults] = await Promise.all([
+        Promise.all(navItemPromises),
+        Promise.all(subItemPromises),
       ]);
+
+      const navItems = navChunkResults.flatMap((r) => r.data || []);
+      const subItems = subChunkResults.flatMap((r) => r.data || []);
 
       const items: any[] = [];
 
@@ -224,38 +244,59 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
         return firstVal?.gl_number ? String(firstVal.gl_number) : null;
       };
 
+      // Process nav items - aggregated by (nav_invoice_id + code + gl_number + vat_code)
+      // so each invoice appears cleanly as a document entry per VAT code & GL classification
       const processedNavIds = new Set<string>();
-      (navItemsRes.data || []).forEach((i: any) => {
+      const navItemAggMap = new Map<string, any>();
+
+      navItems.forEach((i: any) => {
         processedNavIds.add(i.nav_invoice_id);
         const inv = navMap.get(i.nav_invoice_id);
-        const dateStr = inv?.invoice_delivery_date || inv?.invoice_issue_date || '';
+        const code = getCode(i.vat_rate, i.vat_code, i.line_description, i.vat_amount);
         const glNum = resolveItemGl(i.gl_classifications);
-        const direction = ((inv as any)?.invoice_direction || 'INBOUND').toUpperCase() as 'INBOUND' | 'OUTBOUND';
-        const isOutbound = direction === 'OUTBOUND';
-        const matchedSub = subByNumMap.get(normalizeInvNum(inv?.invoice_number));
-        const resolvedCustomer = inv?.customer_name || matchedSub?.vevo_nev;
-        const isCustomerFromSubmitted = isOutbound && !inv?.customer_name && !!matchedSub?.vevo_nev;
-        const partnerName = isOutbound
-          ? (resolvedCustomer || 'Ismeretlen vevő')
-          : (inv?.supplier_name || matchedSub?.elado_nev || 'Ismeretlen szállító');
+        const vatCode = i.vat_code || null;
+        const aggKey = `${i.nav_invoice_id}_${code}_${glNum || 'none'}_${vatCode || 'none'}`;
 
-        items.push({
-          id: `nav_${i.id}`,
-          code: getCode(i.vat_rate, i.vat_code, i.line_description, i.vat_amount),
-          vat_code: i.vat_code || null,
-          gl_number: glNum,
-          direction,
-          partner_gl_number: (inv as any)?.partner_gl_number || null,
-          vat_gl_number: (inv as any)?.vat_gl_number || null,
-          invoice_number: inv?.invoice_number || 'Névtelen',
-          partner_name: partnerName,
-          is_customer_from_submitted: isCustomerFromSubmitted,
-          fulfillment_date: dateStr,
-          net_amount: Number(i.net_amount) || 0,
-          vat_amount: Number(i.vat_amount) || 0,
-          gross_amount: (Number(i.net_amount) || 0) + (Number(i.vat_amount) || 0),
-        });
+        const net = Number(i.net_amount) || 0;
+        const vat = Number(i.vat_amount) || 0;
+
+        if (navItemAggMap.has(aggKey)) {
+          const existing = navItemAggMap.get(aggKey);
+          existing.net_amount += net;
+          existing.vat_amount += vat;
+          existing.gross_amount += (net + vat);
+        } else {
+          const dateStr = inv?.invoice_delivery_date || inv?.invoice_issue_date || '';
+          const direction = ((inv as any)?.invoice_direction || 'INBOUND').toUpperCase() as 'INBOUND' | 'OUTBOUND';
+          const isOutbound = direction === 'OUTBOUND';
+          const matchedSub = subByNumMap.get(normalizeInvNum(inv?.invoice_number));
+          const resolvedCustomer = inv?.customer_name || matchedSub?.vevo_nev;
+          const isCustomerFromSubmitted = isOutbound && !inv?.customer_name && !!matchedSub?.vevo_nev;
+          const partnerName = isOutbound
+            ? (resolvedCustomer || 'Ismeretlen vevő')
+            : (inv?.supplier_name || matchedSub?.elado_nev || 'Ismeretlen szállító');
+
+          navItemAggMap.set(aggKey, {
+            id: `nav_${i.nav_invoice_id}_${code}_${glNum || 'none'}`,
+            invoice_id: i.nav_invoice_id,
+            code,
+            vat_code: vatCode,
+            gl_number: glNum,
+            direction,
+            partner_gl_number: (inv as any)?.partner_gl_number || null,
+            vat_gl_number: (inv as any)?.vat_gl_number || null,
+            invoice_number: inv?.invoice_number || 'Névtelen',
+            partner_name: partnerName,
+            is_customer_from_submitted: isCustomerFromSubmitted,
+            fulfillment_date: dateStr,
+            net_amount: net,
+            vat_amount: vat,
+            gross_amount: net + vat,
+          });
+        }
       });
+
+      items.push(...Array.from(navItemAggMap.values()));
 
       // Fallback for nav_invoices without item records yet
       navInvs.forEach((inv: any) => {
@@ -277,6 +318,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
 
             items.push({
               id: `nav_inv_${inv.id}`,
+              invoice_id: inv.id,
               code,
               vat_code: null,
               gl_number: null,
@@ -296,34 +338,53 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
       });
 
       const processedSubIds = new Set<string>();
-      (subItemsRes.data || []).forEach((i: any) => {
+      const subItemAggMap = new Map<string, any>();
+
+      subItems.forEach((i: any) => {
         processedSubIds.add(i.invoice_id);
         const inv = subMap.get(i.invoice_id);
-        const dateStr = inv?.teljesites_datuma || inv?.kibocsatas_datuma || '';
+        const code = getCode(i.vat_rate, i.vat_code, i.line_description, i.vat_amount);
         const glNum = resolveItemGl(i.gl_classifications);
-        const direction = ((inv as any)?.invoice_direction || 'INBOUND').toUpperCase() as 'INBOUND' | 'OUTBOUND';
-        const isOutbound = direction === 'OUTBOUND';
-        const partnerName = isOutbound
-          ? (inv?.vevo_nev || 'Ismeretlen vevő')
-          : (inv?.elado_nev || 'Ismeretlen szállító');
+        const vatCode = i.vat_code || null;
+        const aggKey = `${i.invoice_id}_${code}_${glNum || 'none'}_${vatCode || 'none'}`;
 
-        items.push({
-          id: `sub_${i.id}`,
-          code: getCode(i.vat_rate, i.vat_code, i.line_description, i.vat_amount),
-          vat_code: i.vat_code || null,
-          gl_number: glNum,
-          direction,
-          partner_gl_number: (inv as any)?.partner_gl_number || null,
-          vat_gl_number: (inv as any)?.vat_gl_number || null,
-          invoice_number: inv?.bizonylatsorszam || 'Névtelen',
-          partner_name: partnerName,
-          is_customer_from_submitted: isOutbound && !!inv?.vevo_nev,
-          fulfillment_date: dateStr,
-          net_amount: Number(i.net_amount) || 0,
-          vat_amount: Number(i.vat_amount) || 0,
-          gross_amount: (Number(i.net_amount) || 0) + (Number(i.vat_amount) || 0),
-        });
+        const net = Number(i.net_amount) || 0;
+        const vat = Number(i.vat_amount) || 0;
+
+        if (subItemAggMap.has(aggKey)) {
+          const existing = subItemAggMap.get(aggKey);
+          existing.net_amount += net;
+          existing.vat_amount += vat;
+          existing.gross_amount += (net + vat);
+        } else {
+          const dateStr = inv?.teljesites_datuma || inv?.kibocsatas_datuma || '';
+          const direction = ((inv as any)?.invoice_direction || 'INBOUND').toUpperCase() as 'INBOUND' | 'OUTBOUND';
+          const isOutbound = direction === 'OUTBOUND';
+          const partnerName = isOutbound
+            ? (inv?.vevo_nev || 'Ismeretlen vevő')
+            : (inv?.elado_nev || 'Ismeretlen szállító');
+
+          subItemAggMap.set(aggKey, {
+            id: `sub_${i.invoice_id}_${code}_${glNum || 'none'}`,
+            invoice_id: i.invoice_id,
+            code,
+            vat_code: vatCode,
+            gl_number: glNum,
+            direction,
+            partner_gl_number: (inv as any)?.partner_gl_number || null,
+            vat_gl_number: (inv as any)?.vat_gl_number || null,
+            invoice_number: inv?.bizonylatsorszam || 'Névtelen',
+            partner_name: partnerName,
+            is_customer_from_submitted: isOutbound && !!inv?.vevo_nev,
+            fulfillment_date: dateStr,
+            net_amount: net,
+            vat_amount: vat,
+            gross_amount: net + vat,
+          });
+        }
       });
+
+      items.push(...Array.from(subItemAggMap.values()));
 
       // Fallback for manual invoices without item records yet
       standaloneSubInvs.forEach((inv: any) => {
@@ -342,6 +403,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
 
             items.push({
               id: `sub_inv_${inv.id}`,
+              invoice_id: inv.id,
               code,
               vat_code: null,
               gl_number: null,
@@ -350,7 +412,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
               vat_gl_number: (inv as any)?.vat_gl_number || null,
               invoice_number: inv.bizonylatsorszam || 'Névtelen',
               partner_name: partnerName,
-              is_customer_from_submitted: isOutbound && !!inv.vevo_nev,
+              is_customer_from_submitted: isOutbound && !!inv?.vevo_nev,
               fulfillment_date: dateStr,
               net_amount: net,
               vat_amount: vat,
@@ -365,15 +427,18 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
     enabled: !!selectedCompany?.id,
   });
 
-  // Calculate direction counts for tabs
+  // Calculate direction counts for tabs based on unique invoices
   const directionCounts = useMemo(() => {
-    let outbound = 0;
-    let inbound = 0;
+    const seenOutbound = new Set<string>();
+    const seenInbound = new Set<string>();
     rawItems.forEach((i) => {
-      if (i.direction === 'OUTBOUND') outbound++;
-      else inbound++;
+      if (i.direction === 'OUTBOUND') {
+        seenOutbound.add(i.invoice_number);
+      } else {
+        seenInbound.add(i.invoice_number);
+      }
     });
-    return { all: rawItems.length, outbound, inbound };
+    return { all: seenOutbound.size + seenInbound.size, outbound: seenOutbound.size, inbound: seenInbound.size };
   }, [rawItems]);
 
   // Calculate distinct available ÁFA codes present in rawItems
@@ -419,7 +484,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
       case 'TAM': return t('accounting:vat_return.analytics_view.codes.TAM', 'Tárgyi adómentes (TAM)');
       case 'EXP': return t('accounting:vat_return.analytics_view.codes.EXP', 'Termékexport (EXP)');
       case 'AHK':
-      case 'ÁHK': return t('accounting:vat_return.analytics_view.codes.AHK', 'Áfa hatályán kívüli / DRS kupakdíj (ÁHK)');
+      case 'ÁHK': return t('accounting:vat_return.analytics_view.codes.AHK', 'Áfa hatályán kívüli (ÁHK)');
       default: return code;
     }
   };

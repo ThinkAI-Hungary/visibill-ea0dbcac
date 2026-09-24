@@ -98,7 +98,7 @@ const formatCurrency = (value: number) => {
 
 function cleanIdVal(val: any): string {
   if (val === null || val === undefined) return '';
-  return String(val).trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  return String(val).trim().replace(/\./g, '');
 }
 
 export interface GeneralLedgerTableRef {
@@ -110,6 +110,8 @@ export interface GeneralLedgerTableRef {
   collapseAll: () => void;
   navigateToEntity: (result: GlSearchResult) => Promise<void>;
 }
+
+export type GlViewGranularity = 'kontirok' | 'teteles';
 
 interface GeneralLedgerTableProps {
   presetId?: string;
@@ -126,6 +128,7 @@ interface GeneralLedgerTableProps {
   onLoadingChange?: (isLoading: boolean) => void;
   printLayoutMode?: 'synthetic' | 'analytical';
   viewLayout?: 'summary' | 'classic';
+  viewGranularity?: GlViewGranularity;
 }
 
 interface LoadMoreSentinelRowProps {
@@ -203,6 +206,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     onLoadingChange,
     printLayoutMode = 'analytical',
     viewLayout = 'summary',
+    viewGranularity = 'kontirok',
   } = props;
   const { selectedCompany } = useCompany();
   const { isCroatia, defaultCurrency } = useCompanyJurisdiction();
@@ -307,6 +311,96 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     placeholderData: isPolling ? (prev: any) => prev : undefined,
   });
 
+  // Batch categorized items query for 'teteles' mode (prevents N+1 on-demand fetches)
+  const { data: batchCategorizedItems, isLoading: isBatchItemsLoading } = useQuery({
+    queryKey: ['glCategorizedItems', presetId, selectedCompany?.id, dateFrom, dateTo, dateBasis, postingStatus],
+    queryFn: async () => {
+      if (!presetId || !selectedCompany?.id) return [];
+      try {
+        return await fetchAllGlCategorizedItems({
+          companyId: selectedCompany.id,
+          presetId,
+          dateFrom,
+          dateTo,
+          dateBasis,
+          postingStatus,
+          exchangeRates: exchangeRates || {},
+        });
+      } catch (error: any) {
+        reportError({ type: 'db_query', component: 'GeneralLedgerTable', action: 'error', message: 'Error fetching categorized GL items:', error });
+        return [];
+      }
+    },
+    enabled: viewGranularity === 'teteles' && !!presetId && !!selectedCompany?.id,
+    staleTime: 60 * 1000,
+  });
+
+  const batchItemsByGL = useMemo(() => {
+    if (!batchCategorizedItems || batchCategorizedItems.length === 0 || !dbData) return null;
+    const cleanId = cleanIdVal;
+    const glIdToCid = new Map<string, string>();
+    dbData.forEach(d => {
+      if (d.gl_account_id) {
+        glIdToCid.set(d.gl_account_id, cleanId(d.gl_number));
+      }
+    });
+
+    const itemsMap = new Map<string, LedgerItem[]>();
+    batchCategorizedItems.filter(i => !i.is_excluded).forEach(item => {
+      const isUnclass = !item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000';
+      const parentCid = isUnclass ? 'UNCLASSIFIED' : glIdToCid.get(item.gl_account_id);
+      if (!parentCid) return;
+      const pseudoCid = `${parentCid}_${item.item_id}`;
+
+      let displayDesc = item.description || item.partner || 'Névtelen tétel';
+      if (item.partner && item.description && item.partner !== item.description) {
+        displayDesc = `${item.partner} - ${item.description}`;
+      }
+      displayDesc = fixCharacterEncoding(displayDesc);
+
+      if (!itemsMap.has(parentCid)) {
+        itemsMap.set(parentCid, []);
+      }
+      itemsMap.get(parentCid)!.push({
+        id: `item_${item.item_id}`,
+        name: displayDesc,
+        balance: Number(item.amount) || 0,
+        hasChildren: false,
+        cid: pseudoCid,
+        isItem: true,
+        itemType: fixCharacterEncoding(item.item_type),
+        partner: fixCharacterEncoding(item.partner),
+        date: item.item_date,
+        sourceTable: item.source_table,
+        originalGlId: item.gl_account_id,
+        originalAmount: Number(item.original_amount) || 0,
+        originalCurrency: item.original_currency,
+        isTemporary: (!item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000' || item.is_temporary)
+      });
+    });
+    return itemsMap;
+  }, [batchCategorizedItems, dbData]);
+
+  // Keep track of user's expansion state when toggling between kontirok and teteles modes
+  const savedKontirokExpandedRef = useRef<Set<string> | null>(null);
+
+  useEffect(() => {
+    if (viewGranularity === 'teteles') {
+      if (!savedKontirokExpandedRef.current) {
+        savedKontirokExpandedRef.current = new Set(expandedRowIds);
+      }
+      if (dbData && dbData.length > 0) {
+        const allAccountIds = dbData.map(d => String(d.gl_number));
+        setExpandedRowIds(new Set(allAccountIds));
+      }
+    } else {
+      if (savedKontirokExpandedRef.current) {
+        setExpandedRowIds(savedKontirokExpandedRef.current);
+        savedKontirokExpandedRef.current = null;
+      }
+    }
+  }, [viewGranularity, dbData]);
+
   // On-demand loaded transaction items per account CID: Map<accountCid, LedgerItem[]>
   const [loadedAccountItems, setLoadedAccountItems] = useState<Map<string, LedgerItem[]>>(new Map());
   const [loadingAccountCids, setLoadingAccountCids] = useState<Set<string>>(new Set());
@@ -322,17 +416,17 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   }, [presetId, selectedCompany?.id, dateFrom, dateTo, dateBasis, postingStatus]);
 
   // Filter change detection: whenever filters change, show skeleton until query finishes
-  const currentFilterKey = `${presetId}_${selectedCompany?.id}_${dateFrom}_${dateTo}_${dateBasis}_${postingStatus}`;
+  const currentFilterKey = `${presetId}_${selectedCompany?.id}_${dateFrom}_${dateTo}_${dateBasis}_${postingStatus}_${viewGranularity}`;
   const [renderedFilterKey, setRenderedFilterKey] = useState(currentFilterKey);
 
   const isFilterChanging = currentFilterKey !== renderedFilterKey;
-  const isDataLoading = isLoading || isFilterChanging || !presetId || !dbData;
+  const isDataLoading = isLoading || (viewGranularity === 'teteles' && isBatchItemsLoading && !batchCategorizedItems) || isFilterChanging || !presetId || !dbData;
 
   useEffect(() => {
-    if (isFilterChanging && !isFetching) {
+    if (isFilterChanging && !isFetching && !isBatchItemsLoading) {
       setRenderedFilterKey(currentFilterKey);
     }
-  }, [isFilterChanging, isFetching, currentFilterKey]);
+  }, [isFilterChanging, isFetching, isBatchItemsLoading, currentFilterKey]);
 
   useEffect(() => {
     onLoadingChange?.(isDataLoading);
@@ -383,9 +477,6 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   // NOTE: Realtime subscription for GL tables (transactions, invoice_items,
   // nav_invoices, nav_invoice_items) is handled globally by LiveNotificationProvider.
   // No duplicate channel needed here — it already invalidates the relevant query caches.
-
-
-  const cleanIdVal = (id: any) => id ? String(id).replace(/\./g, '') : '';
 
   const handleSaveOverride = async () => {
     const itemsToUpdate = editingItem ? [editingItem] : tableData.filter(d => selectedItemIds.has(d.id));
@@ -505,7 +596,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       rawData.forEach(node => {
         const hasAccountChildren = (childrenMap.get(node.cid)?.length ?? 0) > 0;
         node.hasAccountChildren = hasAccountChildren;
-        node.hasChildren = hasAccountChildren || !!node.hasItemChildren;
+        const hasBatchItems = batchItemsByGL ? (batchItemsByGL.get(node.cid)?.length ?? 0) > 0 : false;
+        node.hasChildren = hasAccountChildren || !!node.hasItemChildren || hasBatchItems;
       });
 
       // Step 4: Fast balance & turnover rollup in O(N) by traversing ancestors
@@ -738,14 +830,19 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
             })
           : [];
 
+        const isTetelesMode = viewGranularity === 'teteles';
         const hasVisibleAccountChildren = visibleChildAccounts.length > 0;
+        const hasBatchItems = isTetelesMode && batchItemsByGL ? (batchItemsByGL.get(node.cid)?.length ?? 0) > 0 : false;
         const nodeToEmit = hideZeroBalances
           ? {
               ...node,
               hasAccountChildren: hasVisibleAccountChildren,
-              hasChildren: hasVisibleAccountChildren || node.hasItemChildren
+              hasChildren: hasVisibleAccountChildren || node.hasItemChildren || hasBatchItems
             }
-          : node;
+          : {
+              ...node,
+              hasChildren: node.hasAccountChildren || node.hasItemChildren || hasBatchItems
+            };
 
         // 1. Emit the account node itself
         combinedData.push(nodeToEmit);
@@ -759,7 +856,9 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
           const itemAncestors = [node.id, ...(node.ancestorIds || [])];
           const itemDepth = (node.depth || 0) + 1;
 
-          if (loadingAccountCids.has(node.cid)) {
+          const isBatchLoadingThisNode = isTetelesMode && isBatchItemsLoading && (!batchItemsByGL || !batchItemsByGL.has(node.cid)) && (node.directItemCount ?? 0) > 0;
+
+          if (isBatchLoadingThisNode || (!isTetelesMode && loadingAccountCids.has(node.cid))) {
             combinedData.push({
               id: `loading_${node.cid}`,
               name: t('accounting:general_ledger.loading_items', 'Tételek betöltése...'),
@@ -773,7 +872,9 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
               isRoot: false
             });
           } else {
-            let directItems = loadedAccountItems.get(node.cid) || [];
+            let directItems = (isTetelesMode && batchItemsByGL)
+              ? (batchItemsByGL.get(node.cid) || [])
+              : (loadedAccountItems.get(node.cid) || []);
 
             // If search is active, inject any searchResults for this account that might not yet be in directItems
             if (isSearchActive && searchResults.length > 0) {
@@ -852,8 +953,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                 });
               });
 
-              // If there are more items to load for this account, emit sentinel load-more row (only when not searching)
-              if (!isSearchActive && hasMoreAccountCids.has(node.cid)) {
+              // If there are more items to load for this account, emit sentinel load-more row (only when not searching and not in teteles batch mode)
+              if (!isTetelesMode && !isSearchActive && hasMoreAccountCids.has(node.cid)) {
                 const totalItemCount = node.directItemCount || 0;
                 combinedData.push({
                   id: `loadmore_${node.cid}`,
@@ -891,7 +992,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       return combinedData;
     }
     return [];
-  }, [dbData, loadedAccountItems, loadingAccountCids, hasMoreAccountCids, loadingMoreAccountCids, expandedRowIds, searchQuery, searchResults, hideZeroBalances, normalizeText, t]);
+  }, [dbData, loadedAccountItems, loadingAccountCids, hasMoreAccountCids, loadingMoreAccountCids, expandedRowIds, searchQuery, searchResults, hideZeroBalances, normalizeText, t, viewGranularity, batchItemsByGL, isBatchItemsLoading]);
 
   const orphanItem = dbData?.find(d => d.gl_number === 'UNCLASSIFIED');
   const orphanCount = orphanItem ? Number(orphanItem.item_count || 0) : 0;
@@ -1462,7 +1563,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       return next;
     });
 
-    if (!isCurrentlyExpanded) {
+    if (!isCurrentlyExpanded && viewGranularity !== 'teteles') {
       const targetRow = tableData.find(d => d.id === id);
       if (targetRow && targetRow.hasItemChildren) {
         fetchAccountItemsOnDemand(targetRow.cid);
@@ -1472,6 +1573,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
   // Load items for any expanded leaf accounts on mount / expand restore
   useEffect(() => {
+    if (viewGranularity === 'teteles') return; // In teteles mode, batch query handles all items! Avoid N+1 requests!
     if (!dbData || !selectedCompany?.id || !presetId) return;
     expandedRowIds.forEach(id => {
       const row = tableData.find(d => d.id === id);
@@ -1479,10 +1581,11 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         fetchAccountItemsOnDemand(row.cid);
       }
     });
-  }, [expandedRowIds, tableData, dbData, selectedCompany?.id, presetId, fetchAccountItemsOnDemand]);
+  }, [viewGranularity, expandedRowIds, tableData, dbData, selectedCompany?.id, presetId, fetchAccountItemsOnDemand]);
 
   // When searchResults contains item matches for accounts that haven't loaded items yet, fetch them
   useEffect(() => {
+    if (viewGranularity === 'teteles') return; // In teteles mode, batch query handles all items! Avoid N+1 requests!
     if (!searchQuery.trim() || searchResults.length === 0 || !dbData || !selectedCompany?.id || !presetId) return;
 
     searchResults.forEach(res => {

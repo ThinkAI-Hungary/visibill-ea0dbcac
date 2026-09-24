@@ -37,6 +37,14 @@
     "balance_label": "Egyenleg:",
     "view_summary": "Összesítő",
     "view_classic": "Klasszikus",
+    "granularity_kontirok": "Kontírok",
+    "granularity_teteles": "Tételes",
+    "tooltips": {
+      "view_summary": "Összesítő nézet (Egyenleg + Forgalom T/K)",
+      "view_classic": "Klasszikus 4 oszlopos főkönyvi kivonat (Forgalom T/K, Egyenleg T/K)",
+      "granularity_kontirok": "Kontírok nézet (Összevont számlatükör fastruktúra - alapértelmezett)",
+      "granularity_teteles": "Tételes analitikus nézet (Minden számla alatt kibontva a könyvelt tételek)"
+    },
     "loading_items": "Tételek betöltése...",
     "opening_balance": "Nyitó egyenleg",
     "closing_balance": "Záró egyenleg",
@@ -1276,6 +1284,8 @@
         "FAD": "Fordított adózás (FAD vas/acél, építőipar, mezőgazdaság)",
         "AAM": "Alanyi adómentes (AAM)",
         "TAM": "Tárgyi adómentes (TAM)",
+        "AHK": "Áfa hatályán kívüli (ÁHK)",
+        "ÁHK": "Áfa hatályán kívüli (ÁHK)",
         "custom": "Különleges gyűjtőkód ({{code}})"
       }
     }

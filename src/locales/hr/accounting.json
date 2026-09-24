@@ -37,6 +37,14 @@
     "balance_label": "Saldo:",
     "view_summary": "Zbirni",
     "view_classic": "Klasični",
+    "granularity_kontirok": "Konta",
+    "granularity_teteles": "Stavke",
+    "tooltips": {
+      "view_summary": "Zbirni prikaz (Saldo + Promet D/P)",
+      "view_classic": "Klasični prikaz bruto bilance u 4 stupca (Promet D/P, Saldo D/P)",
+      "granularity_kontirok": "Zbirni prikaz konta (Zadano)",
+      "granularity_teteles": "Analitički prikaz sa svim proknjiženim stavkama"
+    },
     "loading_items": "Učitavanje stavki...",
     "opening_balance": "Početno stanje",
     "closing_balance": "Završno stanje",

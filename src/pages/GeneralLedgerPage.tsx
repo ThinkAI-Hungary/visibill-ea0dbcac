@@ -14,10 +14,10 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Download, UploadCloud, Database, Bot, Loader2, Search, FileText, ChevronDown, Eye, Printer, Maximize2, Minimize2, FileUp, Trash2, BookOpen, Table2, Calendar, CalendarCheck, Layers, ShieldCheck, Plus, LayoutGrid, Columns, Filter } from 'lucide-react';
+import { Download, UploadCloud, Database, Bot, Loader2, Search, FileText, ChevronDown, Eye, Printer, Maximize2, Minimize2, FileUp, Trash2, BookOpen, Table2, Calendar, CalendarCheck, Layers, ShieldCheck, Plus, LayoutGrid, Columns, Filter, FolderTree, ListTree } from 'lucide-react';
 import { UploadAuditXmlModal } from '@/components/general-ledger/UploadAuditXmlModal';
 import { AuditImportHistoryModal } from '@/components/general-ledger/AuditImportHistoryModal';
-import GeneralLedgerTable, { GeneralLedgerTableRef } from '@/components/general-ledger/GeneralLedgerTable';
+import GeneralLedgerTable, { GeneralLedgerTableRef, GlViewGranularity } from '@/components/general-ledger/GeneralLedgerTable';
 import { GlSearchAutocomplete } from '@/components/general-ledger/GlSearchAutocomplete';
 import { UploadChartOfAccountsModal } from '@/components/general-ledger/UploadChartOfAccountsModal';
 import { AddGlAccountModal } from '@/components/general-ledger/AddGlAccountModal';
@@ -123,6 +123,36 @@ export default function GeneralLedgerPage() {
   });
 
   const [viewLayout, setViewLayout] = useState<'summary' | 'classic'>('summary');
+
+  const urlGranularity = searchParams.get('granularity') as GlViewGranularity | null;
+  const [viewGranularity, setViewGranularity] = useState<GlViewGranularity>(() => {
+    if (urlGranularity === 'kontirok' || urlGranularity === 'teteles') return urlGranularity;
+    return 'kontirok';
+  });
+
+  // Keep viewGranularity in sync with URL parameter if changed externally or via back/forward
+  useEffect(() => {
+    const param = searchParams.get('granularity') as GlViewGranularity | null;
+    if (param === 'kontirok' || param === 'teteles') {
+      setViewGranularity(param);
+    } else if (!param) {
+      setViewGranularity('kontirok');
+    }
+  }, [searchParams]);
+
+  const handleGranularityChange = useCallback((newGranularity: GlViewGranularity) => {
+    if (newGranularity === viewGranularity) return;
+    setViewGranularity(newGranularity);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (newGranularity === 'kontirok') {
+        next.delete('granularity');
+      } else {
+        next.set('granularity', newGranularity);
+      }
+      return next;
+    }, { replace: true });
+  }, [viewGranularity, setSearchParams]);
 
   // Keep in sync with company default if no explicit URL parameter was provided
   useEffect(() => {
@@ -284,6 +314,41 @@ export default function GeneralLedgerPage() {
         >
           <Columns className="w-3.5 h-3.5 shrink-0" />
           <span>{t('accounting:general_ledger.view_classic', 'Klasszikus')}</span>
+        </button>
+      </CustomTooltip>
+    </div>
+  );
+
+  const renderGranularityToggle = () => (
+    <div className="inline-flex h-8 items-center rounded-lg border border-border/80 bg-background/80 p-0.5 shadow-2xs text-xs select-none shrink-0">
+      <CustomTooltip content={t('accounting:general_ledger.tooltips.granularity_kontirok', 'Kontírok nézet (Összevont számlatükör fastruktúra - alapértelmezett)')} side="bottom">
+        <button
+          type="button"
+          onClick={() => handleGranularityChange('kontirok')}
+          className={cn(
+            "inline-flex h-7 items-center justify-center gap-1.5 px-2.5 rounded-md text-xs transition-all cursor-pointer border whitespace-nowrap",
+            viewGranularity === 'kontirok'
+              ? "bg-muted text-foreground shadow-xs border-border/60 font-semibold"
+              : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
+          )}
+        >
+          <FolderTree className="w-3.5 h-3.5 shrink-0" />
+          <span>{t('accounting:general_ledger.granularity_kontirok', 'Kontírok')}</span>
+        </button>
+      </CustomTooltip>
+      <CustomTooltip content={t('accounting:general_ledger.tooltips.granularity_teteles', 'Tételes analitikus nézet (Minden számla alatt kibontva a könyvelt tételek)')} side="bottom">
+        <button
+          type="button"
+          onClick={() => handleGranularityChange('teteles')}
+          className={cn(
+            "inline-flex h-7 items-center justify-center gap-1.5 px-2.5 rounded-md text-xs transition-all cursor-pointer border whitespace-nowrap",
+            viewGranularity === 'teteles'
+              ? "bg-muted text-foreground shadow-xs border-border/60 font-semibold text-primary"
+              : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
+          )}
+        >
+          <ListTree className="w-3.5 h-3.5 shrink-0 text-primary" />
+          <span>{t('accounting:general_ledger.granularity_teteles', 'Tételes')}</span>
         </button>
       </CustomTooltip>
     </div>
@@ -867,6 +932,7 @@ export default function GeneralLedgerPage() {
               </div>
 
               <div className="flex items-center gap-2.5 shrink-0 ml-auto">
+                {renderGranularityToggle()}
                 {renderViewLayoutToggle()}
                 <span className="text-xs font-semibold text-muted-foreground bg-background px-3 py-1.5 rounded-lg border border-border flex items-center gap-2 shadow-2xs whitespace-nowrap">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
@@ -918,6 +984,7 @@ export default function GeneralLedgerPage() {
               postingStatus={postingStatus}
               hideZeroBalances={hideZeroBalances}
               viewLayout={viewLayout}
+              viewGranularity={viewGranularity}
               searchQuery={glSearchQuery}
               searchResults={glSearchResults}
               isPolling={isAIRunning}
