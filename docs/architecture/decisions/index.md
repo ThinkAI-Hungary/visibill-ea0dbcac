@@ -59,6 +59,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-128 | Szigorított Számlaszám Határ-illesztés (Boundary Matching), Részhalmaz Kiszűrés (Subsumption Filter) és Többszörös Párosítási Jóváhagyási Kapu | ✅ Decided | [A-128](./A-128-strict-invoice-number-boundary-matching-and-subsumption-guard.md) |
 | A-129 | Partner-történeti Többségi Szabályú Számlakategorizálás & DB Triggerek | ✅ Decided | [A-129](./A-129-partner-history-majority-categorization.md) |
 | A-145 | Tömeges PDF Szeletelés (Physical Chunk Slicing), NAV Determinisztikus Fallback és Többszörös Mellékletkezelés | ✅ Decided | [A-145](./A-145-bulk-invoice-slicing-and-multi-attachment-architecture.md) |
+| A-146 | Magánszemély Vevőnevek Gazdagítása és ÁFA Analitikai Deduplikáció | ✅ Decided | [A-146](./A-146-private-customer-name-enrichment-and-vat-analytics.md) |
 
 ## 🔒 Biztonság & Auth
 

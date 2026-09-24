@@ -136,7 +136,13 @@ function NavInvoiceRowComponent({
   const effectiveCategoryId = invoice.category_id || submittedMatches[0]?.category_id || null;
   const effectiveProjectId = invoice.project_id || submittedMatches[0]?.project_id || null;
 
-  const partnerName = getInvoicePartnerName(invoice);
+  const rawPartnerName = getInvoicePartnerName(invoice);
+  const isOutbound = invoice.invoice_direction === 'OUTBOUND';
+  const submittedVevo = submittedMatches[0]?.vevo_nev;
+  const isCustomerFromSubmitted = isOutbound && (!invoice.customer_name || invoice.customer_name === 'Ismeretlen partner' || invoice.customer_name === 'Ismeretlen vevő') && !!submittedVevo;
+  const partnerName = (isOutbound && (!invoice.customer_name || invoice.customer_name === 'Ismeretlen partner' || invoice.customer_name === 'Ismeretlen vevő'))
+    ? (submittedVevo || rawPartnerName)
+    : rawPartnerName;
   const matchStatus = (invoice as any).match_status || (invoice.paid ? 'matched' : 'unmatched');
   const isPaid = matchStatus === 'matched';
   const isPartiallyPaid = matchStatus === 'partially_paid';
@@ -237,14 +243,25 @@ function NavInvoiceRowComponent({
             {partnerName === 'Ismeretlen partner' ? (
               <span className="text-xs text-muted-foreground italic">Ismeretlen partner</span>
             ) : (
-              <CopyableCell
-                value={partnerName}
-                displayValue={partnerName.length > 16 ? partnerName.slice(0, 16) + '…' : partnerName}
-                truncate
-                maxWidth="100%"
-                className="font-medium text-xs"
-                ariaLabel={`${partnerName} másolása`}
-              />
+              <div className="flex items-center gap-1 min-w-0">
+                <CopyableCell
+                  value={partnerName}
+                  displayValue={partnerName.length > 16 ? partnerName.slice(0, 16) + '…' : partnerName}
+                  truncate
+                  maxWidth="100%"
+                  className="font-medium text-xs"
+                  ariaLabel={`${partnerName} másolása`}
+                />
+                {isCustomerFromSubmitted && (
+                  <span
+                    className="shrink-0 inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[9px] font-medium bg-primary/10 text-primary border border-primary/20 cursor-help"
+                    title="A vevő neve a beküldött saját számláról származik"
+                  >
+                    <FileText className="w-2.5 h-2.5" />
+                    Számláról
+                  </span>
+                )}
+              </div>
             )}
           </div>
         </TableCell>

@@ -119,6 +119,7 @@
 | P-084 | Hierarchikus Útvonalkövető (Breadcrumbs) Rendszer és Automatikus Route Resolver UX | ✅ Decided | [P-084](./P-084-hierarchical-breadcrumbs-navigation-ux.md) |
 | P-085 | eaisyBooks Portfólió Oldalsáv 4-Kategóriás Munkafolyamat-Alapú Csoportosítása UX | ✅ Decided | [P-085](./P-085-eaisybooks-portfolio-navigation-grouping-ux.md) |
 | P-097 | NAV 2665 Nyomtatvány Replika, 6/B Acélipari Analitika és ÁNYK Validáció UX | ✅ Decided | [P-097](./P-097-nav-2665-replica-steel-analytics-and-anyk-validation-ux.md) |
+| P-110 | Magánszemély Vevőnevek Megjelenítése és ÁFA Analitika UX | ✅ Decided | [P-110](./P-110-private-customer-name-display-and-vat-analytics-ux.md) |
 
 ## 🔍 Keresés
 

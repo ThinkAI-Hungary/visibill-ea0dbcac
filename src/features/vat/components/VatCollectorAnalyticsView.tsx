@@ -120,11 +120,22 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
       const navInvs = navInvsRes.data || [];
       const subInvs = subInvsRes.data || [];
 
+      const normalizeInvNum = (s?: string | null) => (s || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+      const existingNavNumbers = new Set(navInvs.map((i) => normalizeInvNum(i.invoice_number)).filter(Boolean));
+      // Only keep standalone manual invoices to avoid double-counting invoices already present in NAV
+      const standaloneSubInvs = subInvs.filter((i) => !existingNavNumbers.has(normalizeInvNum(i.bizonylatsorszam)));
+
       const navMap = new Map(navInvs.map((i) => [i.id, i]));
-      const subMap = new Map(subInvs.map((i) => [i.id, i]));
+      const subMap = new Map(standaloneSubInvs.map((i) => [i.id, i]));
+      const subByNumMap = new Map<string, any>();
+      subInvs.forEach((s) => {
+        if (s.bizonylatsorszam) {
+          subByNumMap.set(normalizeInvNum(s.bizonylatsorszam), s);
+        }
+      });
 
       const navIds = navInvs.map((i) => i.id);
-      const subIds = subInvs.map((i) => i.id);
+      const subIds = standaloneSubInvs.map((i) => i.id);
 
       const [navItemsRes, subItemsRes] = await Promise.all([
         navIds.length > 0
@@ -188,6 +199,14 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
         const dateStr = inv?.invoice_delivery_date || inv?.invoice_issue_date || '';
         const glNum = resolveItemGl(i.gl_classifications);
         const direction = ((inv as any)?.invoice_direction || 'INBOUND').toUpperCase() as 'INBOUND' | 'OUTBOUND';
+        const isOutbound = direction === 'OUTBOUND';
+        const matchedSub = subByNumMap.get(normalizeInvNum(inv?.invoice_number));
+        const resolvedCustomer = inv?.customer_name || matchedSub?.vevo_nev;
+        const isCustomerFromSubmitted = isOutbound && !inv?.customer_name && !!matchedSub?.vevo_nev;
+        const partnerName = isOutbound
+          ? (resolvedCustomer || 'Ismeretlen vevő')
+          : (inv?.supplier_name || matchedSub?.elado_nev || 'Ismeretlen szállító');
+
         items.push({
           id: `nav_${i.id}`,
           code: getCode(i.vat_rate, i.vat_code),
@@ -197,7 +216,8 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
           partner_gl_number: (inv as any)?.partner_gl_number || null,
           vat_gl_number: (inv as any)?.vat_gl_number || null,
           invoice_number: inv?.invoice_number || 'Névtelen',
-          partner_name: inv?.supplier_name || inv?.customer_name || 'Ismeretlen partner',
+          partner_name: partnerName,
+          is_customer_from_submitted: isCustomerFromSubmitted,
           fulfillment_date: dateStr,
           net_amount: Number(i.net_amount) || 0,
           vat_amount: Number(i.vat_amount) || 0,
@@ -211,10 +231,18 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
           const net = Number(inv.invoice_net_amount || 0);
           const vat = Number(inv.invoice_vat_amount || 0);
           const direction = ((inv as any)?.invoice_direction || 'INBOUND').toUpperCase() as 'INBOUND' | 'OUTBOUND';
+          const isOutbound = direction === 'OUTBOUND';
           if (net !== 0 || vat !== 0) {
             const rate = net > 0 ? vat / net : 0;
             const code = Math.round(rate * 100) === 27 ? '25' : Math.round(rate * 100) === 18 ? '18' : Math.round(rate * 100) === 5 ? '05' : vat === 0 ? 'TAM' : '25';
             const dateStr = inv.invoice_delivery_date || inv.invoice_issue_date || '';
+            const matchedSub = subByNumMap.get(normalizeInvNum(inv.invoice_number));
+            const resolvedCustomer = inv.customer_name || matchedSub?.vevo_nev;
+            const isCustomerFromSubmitted = isOutbound && !inv.customer_name && !!matchedSub?.vevo_nev;
+            const partnerName = isOutbound
+              ? (resolvedCustomer || 'Ismeretlen vevő')
+              : (inv.supplier_name || matchedSub?.elado_nev || 'Ismeretlen szállító');
+
             items.push({
               id: `nav_inv_${inv.id}`,
               code,
@@ -224,7 +252,8 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
               partner_gl_number: (inv as any)?.partner_gl_number || null,
               vat_gl_number: (inv as any)?.vat_gl_number || null,
               invoice_number: inv.invoice_number || 'Névtelen',
-              partner_name: inv.supplier_name || inv.customer_name || 'Ismeretlen partner',
+              partner_name: partnerName,
+              is_customer_from_submitted: isCustomerFromSubmitted,
               fulfillment_date: dateStr,
               net_amount: net,
               vat_amount: vat,
@@ -241,6 +270,11 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
         const dateStr = inv?.teljesites_datuma || inv?.kibocsatas_datuma || '';
         const glNum = resolveItemGl(i.gl_classifications);
         const direction = ((inv as any)?.invoice_direction || 'INBOUND').toUpperCase() as 'INBOUND' | 'OUTBOUND';
+        const isOutbound = direction === 'OUTBOUND';
+        const partnerName = isOutbound
+          ? (inv?.vevo_nev || 'Ismeretlen vevő')
+          : (inv?.elado_nev || 'Ismeretlen szállító');
+
         items.push({
           id: `sub_${i.id}`,
           code: getCode(i.vat_rate, i.vat_code),
@@ -250,7 +284,8 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
           partner_gl_number: (inv as any)?.partner_gl_number || null,
           vat_gl_number: (inv as any)?.vat_gl_number || null,
           invoice_number: inv?.bizonylatsorszam || 'Névtelen',
-          partner_name: inv?.elado_nev || inv?.vevo_nev || 'Ismeretlen partner',
+          partner_name: partnerName,
+          is_customer_from_submitted: isOutbound && !!inv?.vevo_nev,
           fulfillment_date: dateStr,
           net_amount: Number(i.net_amount) || 0,
           vat_amount: Number(i.vat_amount) || 0,
@@ -259,15 +294,20 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
       });
 
       // Fallback for manual invoices without item records yet
-      subInvs.forEach((inv: any) => {
+      standaloneSubInvs.forEach((inv: any) => {
         if (!processedSubIds.has(inv.id)) {
           const net = Number(inv.adoalap_osszesen || 0);
           const vat = Number(inv.afa_osszeg_osszesen || 0);
           const direction = ((inv as any)?.invoice_direction || 'INBOUND').toUpperCase() as 'INBOUND' | 'OUTBOUND';
+          const isOutbound = direction === 'OUTBOUND';
           if (net !== 0 || vat !== 0) {
             const rate = net > 0 ? vat / net : 0;
             const code = Math.round(rate * 100) === 27 ? '25' : Math.round(rate * 100) === 18 ? '18' : Math.round(rate * 100) === 5 ? '05' : vat === 0 ? 'TAM' : '25';
             const dateStr = inv.teljesites_datuma || inv.kibocsatas_datuma || '';
+            const partnerName = isOutbound
+              ? (inv.vevo_nev || 'Ismeretlen vevő')
+              : (inv.elado_nev || 'Ismeretlen szállító');
+
             items.push({
               id: `sub_inv_${inv.id}`,
               code,
@@ -277,7 +317,8 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
               partner_gl_number: (inv as any)?.partner_gl_number || null,
               vat_gl_number: (inv as any)?.vat_gl_number || null,
               invoice_number: inv.bizonylatsorszam || 'Névtelen',
-              partner_name: inv.elado_nev || inv.vevo_nev || 'Ismeretlen partner',
+              partner_name: partnerName,
+              is_customer_from_submitted: isOutbound && !!inv.vevo_nev,
               fulfillment_date: dateStr,
               net_amount: net,
               vat_amount: vat,
@@ -914,7 +955,18 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
                               </div>
                             </TableCell>
                             <TableCell className="font-medium text-muted-foreground">
-                              {item.partner_name}
+                              <div className="flex items-center gap-1.5">
+                                <span className="truncate max-w-[200px]" title={item.partner_name}>{item.partner_name}</span>
+                                {item.is_customer_from_submitted && (
+                                  <span
+                                    className="shrink-0 inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[9px] font-medium bg-primary/10 text-primary border border-primary/20 cursor-help"
+                                    title="A vevő neve a beküldött saját számláról származik"
+                                  >
+                                    <FileText className="w-2.5 h-2.5" />
+                                    Számláról
+                                  </span>
+                                )}
+                              </div>
                             </TableCell>
                             <TableCell className="text-center font-mono text-muted-foreground">
                               {item.fulfillment_date ? item.fulfillment_date.substring(0, 10).replace(/-/g, '.') : '-'}

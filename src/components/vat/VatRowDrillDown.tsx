@@ -1,11 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, ChevronDown, ChevronRight } from 'lucide-react';
+import { Loader2, ChevronDown, ChevronRight, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { reportError } from '@/lib/errorReporter';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { formatThousands } from '@/features/vat/types';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 
 /* ────────────────────────────────────────── */
@@ -299,18 +305,27 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
       const { data, error } = await query;
       if (error) { reportError({ type: 'db_query', component: 'VatRowDrillDown', action: 'error', message: 'drill error:', error: error }); return []; }
 
-      // Fetch items from invoices table for any invoices that have empty nav_invoice_items
+      // Fetch items and customer names from invoices table for any invoices
       const invNumbers = (data || []).map((d: any) => d.invoice_number).filter(Boolean);
       const appItemsMap: Record<string, any[]> = {};
+      const appVevoMap: Record<string, string> = {};
+      const norm = (s: string) => (s || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+
       if (invNumbers.length > 0) {
         const { data: appInvs } = await supabase
           .from('invoices')
-          .select('bizonylatsorszam, invoice_items(id, line_number, line_description, net_amount, vat_amount, vat_rate, quantity, unit_price, deductible_percentage, gl_classifications)')
+          .select('bizonylatsorszam, vevo_nev, invoice_items(id, line_number, line_description, net_amount, vat_amount, vat_rate, quantity, unit_price, deductible_percentage, gl_classifications)')
           .eq('company_id', companyId)
           .in('bizonylatsorszam', invNumbers);
         (appInvs || []).forEach((ai: any) => {
-          if (ai.bizonylatsorszam && ai.invoice_items && ai.invoice_items.length > 0) {
-            appItemsMap[ai.bizonylatsorszam] = ai.invoice_items;
+          const k = norm(ai.bizonylatsorszam);
+          if (k) {
+            if (ai.vevo_nev && ai.vevo_nev.trim()) {
+              appVevoMap[k] = ai.vevo_nev.trim();
+            }
+            if (ai.invoice_items && ai.invoice_items.length > 0) {
+              appItemsMap[ai.bizonylatsorszam] = ai.invoice_items;
+            }
           }
         });
       }
@@ -318,8 +333,15 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
       const enrichedInvoices = (data || []).map((inv: any) => {
         const navItems = inv.nav_invoice_items || [];
         const appItems = appItemsMap[inv.invoice_number] || [];
+        const submittedVevo = appVevoMap[norm(inv.invoice_number)] || null;
+        const isOutbound = inv.invoice_direction === 'OUTBOUND';
+        const isFromSub = isOutbound && (!inv.customer_name || inv.customer_name === 'Ismeretlen partner' || inv.customer_name === 'Ismeretlen vevő') && !!submittedVevo;
+        const effectiveCustomer = isFromSub ? submittedVevo : inv.customer_name;
+
         return {
           ...inv,
+          customer_name: effectiveCustomer,
+          is_customer_from_submitted: isFromSub,
           nav_invoice_items: navItems.length > 0 ? navItems : appItems,
         };
       });
@@ -534,7 +556,24 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
                 {isExpanded ? <ChevronDown className="w-3 h-3 shrink-0 text-primary" /> : <ChevronRight className="w-3 h-3 shrink-0 text-muted-foreground" />}
                 <span className="font-mono font-medium truncate">{inv.invoice_number}</span>
               </div>
-              <div className="col-span-3 truncate text-muted-foreground">{partner || '—'}</div>
+              <div className="col-span-3 truncate text-muted-foreground flex items-center gap-1.5" title={partner || '—'}>
+                <span className="truncate">{partner || '—'}</span>
+                {!isInbound && inv.is_customer_from_submitted && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="shrink-0 inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[9px] font-medium bg-primary/10 text-primary border border-primary/20 cursor-help">
+                          <FileText className="w-2.5 h-2.5" />
+                          Számláról
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        A vevő neve a beküldött saját számláról származik
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
               <div className="col-span-2 text-center tabular-nums text-muted-foreground">
                 {inv.invoice_delivery_date ? new Date(inv.invoice_delivery_date).toLocaleDateString('hu-HU') : '—'}
               </div>
