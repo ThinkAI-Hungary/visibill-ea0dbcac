@@ -367,6 +367,23 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
         }
 
         const isItemForThisRow = (it: any) => {
+          // Exclude DRS / Visszaváltási díj / Kupakdíj from ANY official VAT return row (Áfa tv. 71. §)
+          const desc = String(it.line_description || '').toLowerCase();
+          const vat = Number(it.vat_amount || 0);
+          if (vat === 0 && (
+            desc.includes('visszavált') ||
+            desc.includes('visszavalt') ||
+            desc.includes('drs') ||
+            desc.includes('betétdíj') ||
+            desc.includes('betetdij') ||
+            desc.includes('kupakdíj') ||
+            desc.includes('kupakdij') ||
+            desc.includes('palackdíj') ||
+            desc.includes('palackdij')
+          )) {
+            return false;
+          }
+
           const rateStr = String(it.vat_rate || '').trim().toUpperCase();
           const itNet = Number(it.net_amount || 0);
           const itVat = Number(it.vat_amount || 0);
@@ -594,7 +611,7 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
                 )}
               </div>
             </div>
-            {isExpanded && items.length > 0 && (
+            {isExpanded && displayItems.length > 0 && (
               <div className="bg-background/50 border border-border/20 rounded mx-6 mb-1.5 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
                 <div className="grid grid-cols-12 gap-2 px-3 py-1 text-[9px] font-semibold text-muted-foreground/50 uppercase tracking-wider bg-muted/10 border-b border-border/10">
                   <div className="col-span-4">Megnevezés</div>
@@ -603,7 +620,7 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
                   <div className="col-span-2 text-right">Nettó</div>
                   <div className="col-span-2 text-right">ÁFA</div>
                 </div>
-                {items.map((item: any, j: number) => {
+                {displayItems.map((item: any, j: number) => {
                   const deductible = Number(item.deductible_percentage ?? 100);
                   const isPartial = deductible < 100;
                   const itemNet = Number(item.net_amount || 0);
@@ -656,7 +673,7 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
                 })}
               </div>
             )}
-            {isExpanded && items.length === 0 && (
+            {isExpanded && displayItems.length === 0 && (
               <div className="bg-muted/10 border border-dashed border-border/40 rounded mx-6 mb-2 px-4 py-2.5 text-xs text-muted-foreground italic flex items-center gap-2 animate-in fade-in duration-150">
                 <span>Ehhez a bizonylathoz nincsenek részletező tételsorok rögzítve (fejléc-szintű összesítés).</span>
               </div>

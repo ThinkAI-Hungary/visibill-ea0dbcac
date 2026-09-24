@@ -146,3 +146,4 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 | 059 | Partner-történeti Többségi Számlakategorizálási Szabályzat | ✅ Decided | [059-partner-history-majority-categorization.md](./059-partner-history-majority-categorization.md) |
 | 060 | NAV 2665 ÁFA Bevallási Szabályok, Gyűjtőkódok és 6/B Acélipari Kötelezettség | ✅ Decided | [060-nav-2665-vat-rules-and-steel-reporting.md](./060-nav-2665-vat-rules-and-steel-reporting.md) |
 | 061 | Számlatétel Áfakód Felülbírálat és Gépi Tanulási (ML) Szabályrendszer | ✅ Decided | [061-invoice-vat-code-overrides-and-machine-learning.md](./061-invoice-vat-code-overrides-and-machine-learning.md) |
+| 062 | DRS Kötelező Visszaváltási Díj (Kupakdíj / Betétdíj) Kizárása az ÁFA Bevallásból | ✅ Decided | [062-drs-mandatory-deposit-fee-vat-exclusion.md](./062-drs-mandatory-deposit-fee-vat-exclusion.md) |

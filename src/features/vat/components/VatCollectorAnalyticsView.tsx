@@ -141,24 +141,51 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
         navIds.length > 0
           ? supabase
               .from('nav_invoice_items')
-              .select('id, nav_invoice_id, net_amount, vat_amount, vat_rate, vat_code, gl_classifications')
+              .select('id, nav_invoice_id, net_amount, vat_amount, vat_rate, vat_code, gl_classifications, line_description')
               .in('nav_invoice_id', navIds)
           : Promise.resolve({ data: [] }),
         subIds.length > 0
           ? supabase
               .from('invoice_items')
-              .select('id, invoice_id, net_amount, vat_amount, vat_rate, vat_code, gl_classifications')
+              .select('id, invoice_id, net_amount, vat_amount, vat_rate, vat_code, gl_classifications, line_description')
               .in('invoice_id', subIds)
           : Promise.resolve({ data: [] }),
       ]);
 
       const items: any[] = [];
 
-      const getCode = (rate: string | null, overrideCode?: string | null) => {
+      const isDrsItem = (desc?: string | null, vatAmount?: number | null, rate?: string | null) => {
+        if (!desc) return false;
+        const d = desc.toLowerCase();
+        const isVatZero = !vatAmount || Number(vatAmount) === 0;
+        const isRateNonTaxable = !rate || rate === '0' || rate === '0%' || rate.toLowerCase().includes('mentes') || rate.toLowerCase().includes('tam') || rate.toLowerCase().includes('aam') || rate.toLowerCase().includes('atk') || rate.toLowerCase().includes('ahk');
+        if (isVatZero || isRateNonTaxable) {
+          if (
+            d.includes('visszavált') ||
+            d.includes('visszavalt') ||
+            d.includes('drs') ||
+            d.includes('betétdíj') ||
+            d.includes('betetdij') ||
+            d.includes('kupakdíj') ||
+            d.includes('kupakdij') ||
+            d.includes('palackdíj') ||
+            d.includes('palackdij')
+          ) {
+            return true;
+          }
+        }
+        return false;
+      };
+
+      const getCode = (rate: string | null, overrideCode?: string | null, desc?: string | null, vatAmount?: number | null) => {
+        if (isDrsItem(desc, vatAmount, rate)) {
+          return 'ÁHK';
+        }
+
         if (overrideCode && overrideCode.trim()) {
           const oc = overrideCode.trim().toUpperCase();
-          if (['25', '05', '18', 'FAD', 'TAM', 'AAM', 'EXP'].includes(oc)) {
-            return oc;
+          if (['25', '05', '18', 'FAD', 'TAM', 'AAM', 'EXP', 'ÁHK', 'AHK'].includes(oc)) {
+            return oc === 'AHK' ? 'ÁHK' : oc;
           }
           if (oc.includes('FORD') || oc.includes('FAD')) return 'FAD';
           if (oc.includes('27')) return '25';
@@ -167,10 +194,14 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
           if (oc.includes('TAM') || oc.includes('0_LEV') || oc.includes('MENTES')) return 'TAM';
           if (oc.includes('AAM')) return 'AAM';
           if (oc.includes('EXP') || oc.includes('EXPORT')) return 'EXP';
+          if (oc.includes('AHK') || oc.includes('ÁHK') || oc.includes('DRS') || oc.includes('KIVUL')) return 'ÁHK';
           return overrideCode.trim();
         }
 
-        if (!rate) return '25';
+        if (!rate) {
+          if (vatAmount === 0 || !vatAmount) return 'TAM';
+          return '25';
+        }
         const u = rate.toUpperCase();
         if (u.includes('FAD') || u.includes('FORD') || u.includes('F.AFA') || u.includes('F_AFA') || u.includes('FAFA') || u.includes('REVERSE_CHARGE')) return 'FAD';
         if (rate === '0.27' || rate === '27' || rate === '27.0' || rate === '27.00' || rate === '27%') return '25';
@@ -179,6 +210,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
         if (u.includes('AAM')) return 'AAM';
         if (u.includes('TAM')) return 'TAM';
         if (u.includes('EXP')) return 'EXP';
+        if (u.includes('AHK') || u.includes('ÁHK') || u.includes('ATK') || u.includes('KIVUL')) return 'ÁHK';
         if (u === '0' || u === '0%' || u === '0.00' || u === 'MENTES') return 'TAM';
         return '25';
       };
@@ -209,7 +241,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
 
         items.push({
           id: `nav_${i.id}`,
-          code: getCode(i.vat_rate, i.vat_code),
+          code: getCode(i.vat_rate, i.vat_code, i.line_description, i.vat_amount),
           vat_code: i.vat_code || null,
           gl_number: glNum,
           direction,
@@ -277,7 +309,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
 
         items.push({
           id: `sub_${i.id}`,
-          code: getCode(i.vat_rate, i.vat_code),
+          code: getCode(i.vat_rate, i.vat_code, i.line_description, i.vat_amount),
           vat_code: i.vat_code || null,
           gl_number: glNum,
           direction,
@@ -386,6 +418,8 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
       case 'AAM': return t('accounting:vat_return.analytics_view.codes.AAM', 'Alanyi adómentes (AAM)');
       case 'TAM': return t('accounting:vat_return.analytics_view.codes.TAM', 'Tárgyi adómentes (TAM)');
       case 'EXP': return t('accounting:vat_return.analytics_view.codes.EXP', 'Termékexport (EXP)');
+      case 'AHK':
+      case 'ÁHK': return t('accounting:vat_return.analytics_view.codes.AHK', 'Áfa hatályán kívüli / DRS kupakdíj (ÁHK)');
       default: return code;
     }
   };
@@ -913,8 +947,18 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
                         </TableCell>
                         <TableCell colSpan={3} className="py-3">
                           <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="font-mono bg-primary/10 text-primary border-primary/30">
-                              {t('accounting:vat_return.analytics_view.code_badge', { code: group.code, defaultValue: `Gyűjtőkód ${group.code}` })}
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "font-mono",
+                                group.code === 'ÁHK'
+                                  ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
+                                  : "bg-primary/10 text-primary border-primary/30"
+                              )}
+                            >
+                              {group.code === 'ÁHK'
+                                ? 'ÁHK'
+                                : t('accounting:vat_return.analytics_view.code_badge', { code: group.code, defaultValue: `Gyűjtőkód ${group.code}` })}
                             </Badge>
                             <span>{group.label}</span>
                             <span className="text-xs text-muted-foreground font-normal">
