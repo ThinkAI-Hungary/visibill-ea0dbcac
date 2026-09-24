@@ -145,6 +145,8 @@
     "priority_medium": "Közepes",
     "priority_high": "Magas",
     "priority_critical": "Kritikus",
+    "category_label": "Kategória",
+    "select_category": "Válassz kategóriát (opcionális)...",
     "message_label": "Üzenet / Részletes leírás",
     "placeholder_bug": "Írja le a hibát minél részletesebben (pl. hol tapasztalta, mi történt)...",
     "placeholder_feedback": "Ossza meg véleményét vagy javaslatát...",

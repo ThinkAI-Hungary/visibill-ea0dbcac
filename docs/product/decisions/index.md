@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-09-24  
-> **Összesen:** 105 döntés | ✅ Decided: 101 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Utoljára frissítve:** 2026-09-25  
+> **Összesen:** 107 döntés | ✅ Decided: 103 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -135,6 +135,7 @@
 | P-035 | Hibajegy UI és workflow | ✅ Decided | [P-035](./P-035-ticket-system.md) |
 | P-070 | Management Dashboard Hibajegy Létrehozás Felhasználó Nevében UX | ✅ Decided | [P-070](./P-070-management-impersonated-ticket-creation-ux.md) |
 | P-078 | eaisyBill Tudástár (Knowledge Base) és Funkciókalauz UX | ✅ Decided | [P-078](./P-078-knowledge-base-ux-and-navigation.md) |
+| P-112 | In-App Fejlesztői Napló és Patchnotes Idővonal UX | ✅ Decided | [P-112](./P-112-in-app-changelog-timeline-ux.md) |
 
 ## 🛠️ Platform Üzemeltetés
 
@@ -144,6 +145,7 @@
 | P-061 | Management Worker Telemetry Decomposition & Calendar Month LLM UX | ✅ Decided | [P-061](./P-061-management-worker-telemetry-and-monthly-llm-ux.md) |
 | P-069 | Management Dashboard Hiba Dedublikáció, Fallback Lánc és Állapot Kormányzás UX | ✅ Decided | [P-069](./P-069-management-dashboard-error-dedup-and-fallback-chain-ux.md) |
 | P-094 | Műveleti Napló E-mail Események Megjelenítése és Számla Összekapcsolás UX | ✅ Decided | [P-094](./P-094-activity-log-email-ingestion-and-invoice-linking-ux.md) |
+| P-112 | In-App Fejlesztői Napló és Patchnotes Idővonal UX | ✅ Decided | [P-112](./P-112-in-app-changelog-timeline-ux.md) |
 
 ## 👥 Partnertörzs
 

@@ -70,8 +70,10 @@ import {
   Truck,
   AlertTriangle,
   CreditCard,
+  Sparkles,
 } from "lucide-react";
 import { useUnreadTicketCount } from "@/hooks/useTickets";
+import { useHasUnreadChangelog } from "@/hooks/useChangelog";
 import CompanySelector from "./CompanySelector";
 import AppModeSwitcher from "./AppModeSwitcher";
 import { useTranslation } from "react-i18next";
@@ -191,6 +193,7 @@ const prefetchMap: Record<string, () => Promise<unknown>> = {
   "/transfers": () => import("@/pages/TransfersPage"),
 
   "/knowledge-base": () => import("@/pages/KnowledgeBasePage"),
+  "/changelog": () => import("@/pages/ChangelogPage"),
   "/tickets": () => import("@/pages/TicketsPage"),
   "/shipments": () => import("@/pages/ShipmentMatchingDashboard"),
   "/shipments/import": () => import("@/pages/ShipmentImportPage"),
@@ -228,6 +231,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
   const { canAccess } = useEaisybillPermissions();
   const { hasAccess: hasAccountyAccess } = useHasAccountyAccess();
   const { data: unreadTicketCount = 0 } = useUnreadTicketCount();
+  const { hasUnread: hasUnreadChangelog } = useHasUnreadChangelog();
   const { t } = useTranslation(['navigation', 'common']);
 
   const currentPath = location.pathname;
@@ -569,6 +573,44 @@ export const AppSidebar = React.memo(function AppSidebar() {
                     </Tooltip>
                   </SidebarMenuItem>
                 )}
+                {/* Standalone Fejlesztői napló in collapsed mode */}
+                <SidebarMenuItem key="changelog" data-tour="changelog">
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <SidebarMenuButton
+                        isActive={isActive("/changelog")}
+                        disabled={hasNoCompany}
+                        asChild={!hasNoCompany}
+                        className={cn(
+                          "w-8 h-8 p-0 flex items-center justify-center rounded-md transition-all duration-200 relative",
+                          hasNoCompany 
+                            ? 'grayscale opacity-50 cursor-not-allowed' 
+                            : 'hover:bg-primary/10 hover:text-primary'
+                        )}
+                      >
+                        {hasNoCompany ? (
+                          <Sparkles className="h-4 w-4 shrink-0" />
+                        ) : (
+                          <Link
+                            to={`${basePath}/changelog`}
+                            onMouseEnter={() => handlePrefetch("/changelog")}
+                            onFocus={() => handlePrefetch("/changelog")}
+                            onTouchStart={() => handlePrefetch("/changelog")}
+                            className="flex items-center justify-center w-full h-full relative"
+                          >
+                            <Sparkles className="h-4 w-4 shrink-0" />
+                            {hasUnreadChangelog && (
+                              <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(20,212,184,0.6)]" />
+                            )}
+                          </Link>
+                        )}
+                      </SidebarMenuButton>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" align="center" className="text-xs">
+                      {t('items.changelog', { defaultValue: 'Fejlesztői napló' })}
+                    </TooltipContent>
+                  </Tooltip>
+                </SidebarMenuItem>
                 {/* Standalone Hibajegyek in collapsed mode */}
                 {canAccess('tickets') && (
                   <SidebarMenuItem key="tickets" data-tour="tickets">
@@ -774,6 +816,49 @@ export const AppSidebar = React.memo(function AppSidebar() {
                       )}
                     </Link>
                   )
+                )}
+                {/* Standalone Fejlesztői napló in expanded mode */}
+                {hasNoCompany ? (
+                  <div
+                    key="changelog"
+                    className="relative flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm font-medium transition-colors select-none grayscale opacity-50 cursor-not-allowed"
+                  >
+                    <Sparkles className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">
+                      {t('items.changelog', { defaultValue: 'Fejlesztői napló' })}
+                    </span>
+                  </div>
+                ) : (
+                  <Link
+                    key="changelog"
+                    to={`${basePath}/changelog`}
+                    onMouseEnter={() => handlePrefetch("/changelog")}
+                    onFocus={() => handlePrefetch("/changelog")}
+                    onTouchStart={() => handlePrefetch("/changelog")}
+                    className={cn(
+                      "relative flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm font-medium transition-colors select-none group/trigger",
+                      isActive("/changelog")
+                        ? "bg-primary/8 text-primary font-semibold"
+                        : "text-sidebar-foreground/70 hover:bg-primary/10 hover:text-primary"
+                    )}
+                  >
+                    <Sparkles className={cn(
+                      "h-4 w-4 shrink-0 transition-colors",
+                      isActive("/changelog") ? "text-primary" : "text-muted-foreground group-hover/trigger:text-primary"
+                    )} />
+                    <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider truncate">
+                      {t('items.changelog', { defaultValue: 'Fejlesztői napló' })}
+                    </span>
+                    {hasUnreadChangelog && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-primary/20 text-primary border border-primary/30 text-[9px] font-bold tracking-tight animate-pulse">
+                        ÚJ
+                      </span>
+                    )}
+                    {/* Active bar */}
+                    {isActive("/changelog") && (
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/5 rounded-r-md bg-primary" />
+                    )}
+                  </Link>
                 )}
                 {/* Standalone Hibajegyek in expanded mode */}
                 {canAccess('tickets') && (

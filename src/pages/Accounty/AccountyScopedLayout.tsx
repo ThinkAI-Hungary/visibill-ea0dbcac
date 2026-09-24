@@ -174,7 +174,10 @@ export default function AccountyScopedLayout() {
   const isSyncing = !isDateSynced;
 
   return (
-    <div style={isSyncing ? { opacity: 0, pointerEvents: 'none', minHeight: '50vh' } : undefined}>
+    <div 
+      className="h-full flex flex-col flex-1 min-h-0"
+      style={isSyncing ? { opacity: 0, pointerEvents: 'none', minHeight: '50vh' } : undefined}
+    >
       <Outlet />
     </div>
   );

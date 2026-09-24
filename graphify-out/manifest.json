@@ -30,8 +30,8 @@
     "semantic_hash": "b6fd1b3049065ccb1081335d010ab75f"
   },
   "package.json": {
-    "mtime": 1789080097.8504288,
-    "ast_hash": "cc007dc99e36da38e210ebad60818146",
+    "mtime": 1790290191.875252,
+    "ast_hash": "c2f318f98066bb41f284a378bbf6f41c",
     "semantic_hash": ""
   },
   "playwright.config.ts": {
@@ -65,13 +65,13 @@
     "semantic_hash": "823ffe21dc0ba7e09a4b999252d81cae"
   },
   "src/components/AppLayout.tsx": {
-    "mtime": 1790174295.967716,
-    "ast_hash": "1c1fd67ce26ceac355950b1194e7d4d0",
+    "mtime": 1790288912.9098043,
+    "ast_hash": "b7e21aaeb9e98b5965431af4af945d13",
     "semantic_hash": ""
   },
   "src/components/AppSidebar.tsx": {
-    "mtime": 1790173382.2667453,
-    "ast_hash": "a24af57161a1f265f99ba679abde93b1",
+    "mtime": 1790286828.1796083,
+    "ast_hash": "057933e05e0ff67fde92d51e3fbf3a5c",
     "semantic_hash": ""
   },
   "src/components/AssetActivationDialog.tsx": {
@@ -125,8 +125,8 @@
     "semantic_hash": ""
   },
   "src/components/FeedbackDialog.tsx": {
-    "mtime": 1789159282.9695165,
-    "ast_hash": "32719b562067ce268acb7628d8b0e3b9",
+    "mtime": 1790281982.0039415,
+    "ast_hash": "dd328e76dab314a79eab930eff384ef0",
     "semantic_hash": ""
   },
   "src/components/FeedbackFab.tsx": {
@@ -215,8 +215,8 @@
     "semantic_hash": ""
   },
   "src/components/ScopedLayout.tsx": {
-    "mtime": 1789516726.4246383,
-    "ast_hash": "53417d5049725efc8951e8cc93283249",
+    "mtime": 1790288893.4610996,
+    "ast_hash": "29814ff169ceb5135162acddcba35ef1",
     "semantic_hash": ""
   },
   "src/components/SupplierInvoiceAssignment.tsx": {
@@ -375,8 +375,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/GeneralLedgerTable.tsx": {
-    "mtime": 1790165006.2328782,
-    "ast_hash": "8f648bb6ca0e8e5b62ca16ef6e45bbe0",
+    "mtime": 1790274576.7796822,
+    "ast_hash": "685adc8b376d8b80439975f0828c427a",
     "semantic_hash": ""
   },
   "src/components/general-ledger/ManagePresetsModal.tsx": {
@@ -460,8 +460,8 @@
     "semantic_hash": ""
   },
   "src/components/settings/SecuritySection.tsx": {
-    "mtime": 1789561119.1487732,
-    "ast_hash": "88a9a9c012893bb3e21c30104d150ce4",
+    "mtime": 1790287817.5349505,
+    "ast_hash": "7de7e1aa998f766663c6b188a09d1852",
     "semantic_hash": ""
   },
   "src/components/settings/SystemSection.tsx": {
@@ -475,8 +475,8 @@
     "semantic_hash": ""
   },
   "src/components/tickets/TicketDetailView.tsx": {
-    "mtime": 1790178812.2317274,
-    "ast_hash": "acf1b9348685a6cb60f3157ac33e5d53",
+    "mtime": 1790281310.584793,
+    "ast_hash": "db8b20b584fb1ddc71d99da843d103dc",
     "semantic_hash": ""
   },
   "src/components/tickets/TicketPriorityBadge.tsx": {
@@ -1030,8 +1030,8 @@
     "semantic_hash": "64181f0f0c553cc19a7165ffe6353303"
   },
   "src/hooks/useTickets.ts": {
-    "mtime": 1790031217.1091816,
-    "ast_hash": "df7e028093ba1f5c9da299ea04075704",
+    "mtime": 1790284776.009422,
+    "ast_hash": "f68c97f2b960e692e5ddfe3bdfa7aa38",
     "semantic_hash": ""
   },
   "src/hooks/useTimeEntries.ts": {
@@ -1060,8 +1060,8 @@
     "semantic_hash": ""
   },
   "src/integrations/supabase/types.ts": {
-    "mtime": 1790251046.2170582,
-    "ast_hash": "96abd2036762b2d4cb74e967732e29f6",
+    "mtime": 1790281973.8400595,
+    "ast_hash": "9ff005a8f3136bd9ea66e3b0e58bcea0",
     "semantic_hash": ""
   },
   "src/lib/annualReportPdf.ts": {
@@ -1105,8 +1105,8 @@
     "semantic_hash": "6747508d5cec296e87b5bb5c4a52dca9"
   },
   "src/lib/glExport.ts": {
-    "mtime": 1790247916.4588962,
-    "ast_hash": "dcfe69cca4e01be688dc822f70dd4f87",
+    "mtime": 1790274576.7858953,
+    "ast_hash": "ff4e9762f8b97e07608b582beef5d274",
     "semantic_hash": ""
   },
   "src/lib/helpers.ts": {
@@ -1290,8 +1290,8 @@
     "semantic_hash": ""
   },
   "src/lib/vatReturnXml.ts": {
-    "mtime": 1789614399.1550717,
-    "ast_hash": "79516b0a72acd32cfa9f8fdc0f14d621",
+    "mtime": 1790274576.7858953,
+    "ast_hash": "8a1498885e16126a716e8cc91f3988c1",
     "semantic_hash": ""
   },
   "src/main.tsx": {
@@ -1480,8 +1480,8 @@
     "semantic_hash": ""
   },
   "src/pages/GeneralLedgerPage.tsx": {
-    "mtime": 1790164964.759296,
-    "ast_hash": "3d94b514cf1c6625ed12bcf78a512e27",
+    "mtime": 1790274576.7898946,
+    "ast_hash": "0c3853f07249ceb9ab71a599dd703f73",
     "semantic_hash": ""
   },
   "src/pages/Index.tsx": {
@@ -1490,8 +1490,8 @@
     "semantic_hash": ""
   },
   "src/pages/Integrations.tsx": {
-    "mtime": 1790252006.265355,
-    "ast_hash": "b1006f931a984d57d1865ccdfec96acc",
+    "mtime": 1790274576.7903984,
+    "ast_hash": "b9f88259caea42257b1ddb810a1188d5",
     "semantic_hash": ""
   },
   "src/pages/InvoicesPage.tsx": {
@@ -1560,8 +1560,8 @@
     "semantic_hash": ""
   },
   "src/pages/TicketsPage.tsx": {
-    "mtime": 1790177823.8650396,
-    "ast_hash": "0ad576e37d44cfba0e369f0b7a908cd1",
+    "mtime": 1790284573.1302302,
+    "ast_hash": "01c31f2c4d27a39c9956c646969360e9",
     "semantic_hash": ""
   },
   "src/pages/TransactionsPage.tsx": {
@@ -3015,7 +3015,7 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-005-edge-functions.md": {
-    "mtime": 1790256539.0773995,
+    "mtime": 1790257147.6666698,
     "ast_hash": "a43baa589abd502dd455f4ce24ff8720",
     "semantic_hash": ""
   },
@@ -3080,8 +3080,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-018-ticket-system.md": {
-    "mtime": 1789105494.542313,
-    "ast_hash": "9a00e90784028e4e71e9f446e3b99b1e",
+    "mtime": 1790282268.6828547,
+    "ast_hash": "8d6d098fe57de5dec2c8edd9008a43af",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-019-management-dashboard.md": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790256437.5878906,
-    "ast_hash": "083c7602c0a9d0556b176fb84d673a88",
+    "mtime": 1790287026.6515574,
+    "ast_hash": "0ab1fa386e89ae539d2c2ba0ae9318f9",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3325,8 +3325,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/index.md": {
-    "mtime": 1790166015.5513992,
-    "ast_hash": "ad02152f01a6a1c264ba8115b19e160e",
+    "mtime": 1790257147.4150245,
+    "ast_hash": "0bce73724adc0351254683b990ac269e",
     "semantic_hash": ""
   },
   "docs/business/overview.md": {
@@ -3360,8 +3360,8 @@
     "semantic_hash": ""
   },
   "docs/design/05-layout-navigation.md": {
-    "mtime": 1790175106.9776597,
-    "ast_hash": "23fc10dad65b1ee986957cb00e93f2b3",
+    "mtime": 1790289387.4548824,
+    "ast_hash": "6018962b366a1efb47773f454c474353",
     "semantic_hash": ""
   },
   "docs/design/07-loading-patterns.md": {
@@ -3555,8 +3555,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-035-ticket-system.md": {
-    "mtime": 1790178831.1109207,
-    "ast_hash": "4b17cfda331287fc7d89583b363007c3",
+    "mtime": 1790285279.325833,
+    "ast_hash": "94f70f1551efe8368486c67a1b64190e",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-036-management-dashboard.md": {
@@ -3570,13 +3570,13 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1790248113.6977758,
-    "ast_hash": "de8ed9e2c03b3ed02659e0e1d6c1b6ab",
+    "mtime": 1790289306.4499054,
+    "ast_hash": "12a257950db4cf248317a57e281cc545",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
-    "mtime": 1790037238.9539013,
-    "ast_hash": "f2e5438f9d7302b5c70d98784931d4f4",
+    "mtime": 1790289367.1302476,
+    "ast_hash": "0d2b7b7c3481c00b97db2ced67b7d995",
     "semantic_hash": ""
   },
   "docs/product/prd.md": {
@@ -3760,13 +3760,13 @@
     "semantic_hash": ""
   },
   "src/components/petty-cash/CashClosingDialog.tsx": {
-    "mtime": 1789159282.988568,
-    "ast_hash": "5526a86fde5d444f7d2bc224621cf9a3",
+    "mtime": 1790274576.7812476,
+    "ast_hash": "6d0e0a9629693efb1bce542401adc052",
     "semantic_hash": ""
   },
   "src/components/petty-cash/EntriesTab.tsx": {
-    "mtime": 1789682596.1546965,
-    "ast_hash": "ab5a119abaa264f820d2ad9020810a39",
+    "mtime": 1790274576.7817674,
+    "ast_hash": "74768ac4302fda622df4fd08edc32b7e",
     "semantic_hash": ""
   },
   "src/components/petty-cash/RegistersTab.tsx": {
@@ -3780,8 +3780,8 @@
     "semantic_hash": ""
   },
   "src/components/petty-cash/types.ts": {
-    "mtime": 1789681792.2331016,
-    "ast_hash": "bf5369b382e33c369014a4e89ec5de39",
+    "mtime": 1790274576.7822802,
+    "ast_hash": "5b3f77519695fdbae8b88f678ad5cb29",
     "semantic_hash": ""
   },
   "src/components/pnl/PnlChart.tsx": {
@@ -3810,8 +3810,8 @@
     "semantic_hash": ""
   },
   "src/components/vat/VatRowDrillDown.tsx": {
-    "mtime": 1790247916.4560263,
-    "ast_hash": "96ded04b92f1d13489f8321cd847112c",
+    "mtime": 1790274576.7827966,
+    "ast_hash": "65565af876796c74e53852f2e2e0dab4",
     "semantic_hash": ""
   },
   "src/components/vat/VatTrendChart.tsx": {
@@ -4040,8 +4040,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/ProfileSettingsPage.tsx": {
-    "mtime": 1790168409.2309916,
-    "ast_hash": "bd6a77d5cc42593fcff5eebd28a112b1",
+    "mtime": 1790287848.4588454,
+    "ast_hash": "697138bcc6a5a6063a54378ea08f9fa6",
     "semantic_hash": ""
   },
   "src/pages/Accounty/ProtectedAccountyRoute.tsx": {
@@ -5050,7 +5050,7 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/06-transactions-bank.md": {
-    "mtime": 1790256502.4686573,
+    "mtime": 1790257147.6656697,
     "ast_hash": "93d90db5c736d4df1139253ca31ed3c5",
     "semantic_hash": ""
   },
@@ -5115,13 +5115,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/19-platform-ops.md": {
-    "mtime": 1790037177.5828533,
-    "ast_hash": "90a2afabd06f330b55b731729fc88a61",
+    "mtime": 1790291146.0382307,
+    "ast_hash": "8181fbc90d9f44b64e6a8b730552038b",
     "semantic_hash": ""
   },
   "docs/architecture/database/20-tickets.md": {
-    "mtime": 1788976201.7615438,
-    "ast_hash": "d46f7e2aed11099aabc15fc4ce5543f5",
+    "mtime": 1790283600.2094958,
+    "ast_hash": "a588a4e41fd3a00baf642ecbccd74ea9",
     "semantic_hash": ""
   },
   "docs/architecture/database/21-master-data.md": {
@@ -6065,7 +6065,7 @@
     "semantic_hash": ""
   },
   "src/components/settings/BankAccountsTab.tsx": {
-    "mtime": 1790251992.1919348,
+    "mtime": 1790257147.729033,
     "ast_hash": "53397a1745d67eadb7ceb95ffc4e5054",
     "semantic_hash": ""
   },
@@ -6615,8 +6615,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/AccountyScopedLayout.tsx": {
-    "mtime": 1790168896.0833356,
-    "ast_hash": "3582dc7b7b95984f8ef6ea4bdb3b4907",
+    "mtime": 1790288835.5617065,
+    "ast_hash": "948e8ee797632e21103785ab197708fa",
     "semantic_hash": ""
   },
   "src/test/accounty/depreciation.test.ts": {
@@ -7460,8 +7460,8 @@
     "semantic_hash": ""
   },
   "src/features/management/api/types.ts": {
-    "mtime": 1788494456.1885176,
-    "ast_hash": "a2ccd65f4176f9157e3beb2f49f54236",
+    "mtime": 1790281179.446942,
+    "ast_hash": "77a5b6c1591479f33f43c0df8f07ef60",
     "semantic_hash": ""
   },
   "src/features/management/components/ControlCenter.tsx": {
@@ -7575,8 +7575,8 @@
     "semantic_hash": ""
   },
   "src/routes/accountyRoutes.tsx": {
-    "mtime": 1790166710.5161421,
-    "ast_hash": "2ca0ab01b968585c3b725df9c09ca427",
+    "mtime": 1790286756.4169493,
+    "ast_hash": "7bbb63534a2c6d37a59f6b416f9cb743",
     "semantic_hash": ""
   },
   "src/routes/authRoutes.tsx": {
@@ -7585,8 +7585,8 @@
     "semantic_hash": ""
   },
   "src/routes/eaisybillRoutes.tsx": {
-    "mtime": 1790032002.1476352,
-    "ast_hash": "0bb4ea9437a2fe95ad1cb253b6888e91",
+    "mtime": 1790286738.7109623,
+    "ast_hash": "b13ff5daa299d7e148529d8509e8600b",
     "semantic_hash": ""
   },
   "src/routes/redirects.tsx": {
@@ -8285,13 +8285,13 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/VatCalculatorView.tsx": {
-    "mtime": 1790247916.4575827,
-    "ast_hash": "ce33f8ce15322f7d4f9977485623e3ae",
+    "mtime": 1790274576.783857,
+    "ast_hash": "3700be55d3ced038917b91b0f516c44c",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatNav65Replica.tsx": {
-    "mtime": 1789910901.8847046,
-    "ast_hash": "9725d449980509926cd5bbc1871a42fe",
+    "mtime": 1790274576.784373,
+    "ast_hash": "e1292bb0d6c4f349238f3a9e9ab15688",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatReturnContainer.tsx": {
@@ -8640,8 +8640,8 @@
     "semantic_hash": ""
   },
   "src/lib/__tests__/vatReturnXml.test.ts": {
-    "mtime": 1789614440.8201106,
-    "ast_hash": "ef1c89a1d57f9984822663acf1e7e133",
+    "mtime": 1790274576.7848904,
+    "ast_hash": "4af604350861c6b2414668856724903f",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-080-nav-anyk-vat-return-xml-standardization.md": {
@@ -8955,8 +8955,8 @@
     "semantic_hash": ""
   },
   "src/features/management/components/tickets/ManagementCreateTicketDialog.tsx": {
-    "mtime": 1788972478.0205235,
-    "ast_hash": "4ad26e9c1fb441dbcff5c0fc0eb5718e",
+    "mtime": 1790281258.252342,
+    "ast_hash": "a71b434d4e0e5e8aa4b1e335ca2d1578",
     "semantic_hash": ""
   },
   "src/features/management/hooks/useManagementCreateTicket.ts": {
@@ -8965,8 +8965,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/handlers/ticketsHandler.ts": {
-    "mtime": 1790031217.1166916,
-    "ast_hash": "95c26347a05400e5843b2f719378893f",
+    "mtime": 1790282021.7950177,
+    "ast_hash": "ea0e04a289c1dda218dcada3fe4f5cc7",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-089-management-ticket-creation-on-behalf-of-user.md": {
@@ -9315,7 +9315,7 @@
     "semantic_hash": ""
   },
   "docs/architecture/edge-functions.md": {
-    "mtime": 1790256520.6980753,
+    "mtime": 1790257147.667669,
     "ast_hash": "b14284b50e2a524d71ee63b6cbf35af1",
     "semantic_hash": ""
   },
@@ -10005,8 +10005,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/VatCollectorAnalyticsView.tsx": {
-    "mtime": 1790247916.4583917,
-    "ast_hash": "4019c988cfc981eaf13c307aec951231",
+    "mtime": 1790257147.4816375,
+    "ast_hash": "e3c91bfc0f37c627dd7e6141e68003f5",
     "semantic_hash": ""
   },
   "src/test/accounty/sportsbaseVatAlignment.test.ts": {
@@ -10125,8 +10125,8 @@
     "semantic_hash": ""
   },
   "src/locales/hr/common.json": {
-    "mtime": 1790213107.4832132,
-    "ast_hash": "9839a1801535459999ce34b4104ee30d",
+    "mtime": 1790281588.8166974,
+    "ast_hash": "974df8e775e32c9938b041e3fb268962",
     "semantic_hash": ""
   },
   "src/locales/hr/dashboard.json": {
@@ -10140,8 +10140,8 @@
     "semantic_hash": ""
   },
   "src/locales/hr/navigation.json": {
-    "mtime": 1789049341.4434736,
-    "ast_hash": "03dbcc417c39dd25cfa614f3905e6128",
+    "mtime": 1790286854.7790701,
+    "ast_hash": "4fd46d6674ad3c484bc62bf823c6ae03",
     "semantic_hash": ""
   },
   "src/locales/hr/partners.json": {
@@ -10165,8 +10165,8 @@
     "semantic_hash": ""
   },
   "src/locales/hu/common.json": {
-    "mtime": 1790213098.2454352,
-    "ast_hash": "99e44573af39e04b32601ef200e030da",
+    "mtime": 1790281582.184534,
+    "ast_hash": "7be1dd6fb62466905141ab6aece6cc59",
     "semantic_hash": ""
   },
   "src/locales/hu/dashboard.json": {
@@ -10180,8 +10180,8 @@
     "semantic_hash": ""
   },
   "src/locales/hu/navigation.json": {
-    "mtime": 1789159282.6177466,
-    "ast_hash": "d5fd06a1ba2b88d3daff3fffe9ce7776",
+    "mtime": 1790286841.0847354,
+    "ast_hash": "427eaac378b2d00d030faca586878683",
     "semantic_hash": ""
   },
   "src/locales/hu/partners.json": {
@@ -10220,8 +10220,8 @@
     "semantic_hash": ""
   },
   "src/locales/hr/accounting.json": {
-    "mtime": 1790164946.812673,
-    "ast_hash": "7d0cb7f5985cfbf27830dd0bade103f5",
+    "mtime": 1790274576.786898,
+    "ast_hash": "9ee43adb85bf427571ecf3b0ab4e4ad8",
     "semantic_hash": ""
   },
   "src/locales/hr/categories.json": {
@@ -10235,8 +10235,8 @@
     "semantic_hash": ""
   },
   "src/locales/hr/pettyCash.json": {
-    "mtime": 1789561118.967903,
-    "ast_hash": "2781bdb7c69739153550c0357bd095c3",
+    "mtime": 1790274576.7878957,
+    "ast_hash": "33da2e289edb8ef7e5149865b26f1783",
     "semantic_hash": ""
   },
   "src/locales/hr/projects.json": {
@@ -10250,8 +10250,8 @@
     "semantic_hash": ""
   },
   "src/locales/hr/tickets.json": {
-    "mtime": 1790178784.2589717,
-    "ast_hash": "973fcc71c69d03bb5671f133e9b777f6",
+    "mtime": 1790284592.2127402,
+    "ast_hash": "7c0c6f67d2cf0bffd5585eee82532200",
     "semantic_hash": ""
   },
   "src/locales/hr/transfers.json": {
@@ -10260,8 +10260,8 @@
     "semantic_hash": ""
   },
   "src/locales/hu/accounting.json": {
-    "mtime": 1790247916.459417,
-    "ast_hash": "7b0dc340b6dad2ecc1283c0f06a4dfc1",
+    "mtime": 1790274576.7878957,
+    "ast_hash": "4f439d52769cb57d444ff57a8caf59ca",
     "semantic_hash": ""
   },
   "src/locales/hu/categories.json": {
@@ -10275,8 +10275,8 @@
     "semantic_hash": ""
   },
   "src/locales/hu/pettyCash.json": {
-    "mtime": 1789561118.967903,
-    "ast_hash": "3b921166783f95e23e0783259369861d",
+    "mtime": 1790274576.7888947,
+    "ast_hash": "97e80eea9f54db5e4b28670883aa5f82",
     "semantic_hash": ""
   },
   "src/locales/hu/projects.json": {
@@ -10290,8 +10290,8 @@
     "semantic_hash": ""
   },
   "src/locales/hu/tickets.json": {
-    "mtime": 1790178779.085266,
-    "ast_hash": "5e5588f34dfcd77b654d1617674e2b8b",
+    "mtime": 1790284583.9128532,
+    "ast_hash": "cc05898dead8958d5296c581209ed059",
     "semantic_hash": ""
   },
   "src/locales/hu/transfers.json": {
@@ -10420,8 +10420,8 @@
     "semantic_hash": ""
   },
   "src/test/tickets/ticketNotFound.test.tsx": {
-    "mtime": 1790031217.113181,
-    "ast_hash": "d76831ed5753afc692f442786b936311",
+    "mtime": 1790283441.8774922,
+    "ast_hash": "6b27efbc6cf5153a6923ac4f247fa76a",
     "semantic_hash": ""
   },
   "src/lib/documents/__tests__/payslipPreviewAndDownload.test.ts": {
@@ -10500,8 +10500,8 @@
     "semantic_hash": ""
   },
   "src/test/tickets/ticketFreezeReproduce.test.tsx": {
-    "mtime": 1790031217.113181,
-    "ast_hash": "a2175d8199408eecf20d85cd568871a2",
+    "mtime": 1790283461.6236858,
+    "ast_hash": "070dc28530f12541d48a2f71e79e4fcb",
     "semantic_hash": ""
   },
   "src/test/transfersResolution.test.ts": {
@@ -10880,8 +10880,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/customer-api/index.ts": {
-    "mtime": 1790174408.9920323,
-    "ast_hash": "55045b77f479920423e5c8515f713683",
+    "mtime": 1790281218.4651825,
+    "ast_hash": "0c943c2856fe1735e74a6dc2b3723ae3",
     "semantic_hash": ""
   },
   "supabase/migrations/20260916140000_customer_api_and_keys.sql": {
@@ -10980,22 +10980,22 @@
     "semantic_hash": ""
   },
   "src/components/banking/Aggreg8BankConnections.tsx": {
-    "mtime": 1790252919.5046923,
+    "mtime": 1790257147.729033,
     "ast_hash": "141654dd9376c2893bf76f5bc2d11b90",
     "semantic_hash": ""
   },
   "src/hooks/useAggreg8.ts": {
-    "mtime": 1790255939.0465007,
-    "ast_hash": "d80209c0a9627363328ddbc7b5145bb3",
+    "mtime": 1790257147.7300327,
+    "ast_hash": "7ba4b55fb9da2d2a5bb3c9259808ac30",
     "semantic_hash": ""
   },
   "supabase/functions/aggreg8-api/index.ts": {
-    "mtime": 1790255918.5696852,
-    "ast_hash": "0cc973957d978165821b435a4e8a3edb",
+    "mtime": 1790282033.7087233,
+    "ast_hash": "a124e70bb2c42a85f15309316a9c2c83",
     "semantic_hash": ""
   },
   "supabase/functions/aggreg8-callback/index.ts": {
-    "mtime": 1790254926.8439603,
+    "mtime": 1790257147.7340336,
     "ast_hash": "750888f8bc56b63ad8e96d19822e6ccb",
     "semantic_hash": ""
   },
@@ -11010,13 +11010,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-119-aggreg8-psd2-open-banking-integration.md": {
-    "mtime": 1790256459.7962484,
+    "mtime": 1790257147.6666698,
     "ast_hash": "ea783547825ff84df6471d24ee843c37",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-087-aggreg8-bank-connections-and-sync-ui-ux.md": {
-    "mtime": 1790256484.7874527,
-    "ast_hash": "0f84b149560b4121cf6f7fb12d90a037",
+    "mtime": 1790257147.6686685,
+    "ast_hash": "1cd2bac3aaf57a80ab2f68acda2d9666",
     "semantic_hash": ""
   },
   "supabase/migrations/20260917032000_transactions_a8_fields.sql": {
@@ -11420,8 +11420,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/hooks/useSteelProductsData.ts": {
-    "mtime": 1790075076.1671813,
-    "ast_hash": "464936b295b01ab138012bfe871ffc34",
+    "mtime": 1790274576.7848904,
+    "ast_hash": "205f1455c4e69544818a944b3da0a354",
     "semantic_hash": ""
   },
   "src/lib/nav/__tests__/navTaxpayer.test.ts": {
@@ -11860,13 +11860,13 @@
     "semantic_hash": ""
   },
   "src/test/tickets/ticketSlaVisibility.test.tsx": {
-    "mtime": 1790177945.5285943,
-    "ast_hash": "18d51d13c3b50a5302c9cc1b9742596b",
+    "mtime": 1790283446.4799812,
+    "ast_hash": "2d73ed649c413957fe26fb4e74bb2fe0",
     "semantic_hash": ""
   },
   "src/test/tickets/ticketAssigneeReassignment.test.tsx": {
-    "mtime": 1790180051.115387,
-    "ast_hash": "659bdb56bfc3810572433708e59460cf",
+    "mtime": 1790283434.706156,
+    "ast_hash": "38b9218d218d1e8efc767db4d0e5585e",
     "semantic_hash": ""
   },
   "src/test/tickets/useUpdateTicketAssignee.test.tsx": {
@@ -12035,18 +12035,193 @@
     "semantic_hash": ""
   },
   "supabase/functions/_shared/aggreg8-sync.ts": {
-    "mtime": 1790256097.2578402,
-    "ast_hash": "cccf6b92d01afcbac0531d837124da3e",
+    "mtime": 1790257147.7340336,
+    "ast_hash": "0bfa8527c504eb19eaa6b9940edd91d3",
     "semantic_hash": ""
   },
   "supabase/migrations/20260924143000_add_last_synced_count_to_aggreg8_accounts.sql": {
-    "mtime": 1790251002.177473,
-    "ast_hash": "5689b40928ba07a4ce58e59e1365d702",
+    "mtime": 1790257147.73649,
+    "ast_hash": "a5867176a0e3b809ff1364f517fbd74d",
     "semantic_hash": ""
   },
   "src/test/banking/aggreg8Connections.test.tsx": {
-    "mtime": 1790255565.1969302,
-    "ast_hash": "d86ad0490c1be315e1597b2cbac64a12",
+    "mtime": 1790257147.7330344,
+    "ast_hash": "1785a0656ac51faa276606dade1f3a53",
+    "semantic_hash": ""
+  },
+  "src/components/general-ledger/__tests__/GeneralLedgerGranularityToggle.test.tsx": {
+    "mtime": 1790257147.479638,
+    "ast_hash": "77c47e4d2b66cd8fdcd22bffb689dc6f",
+    "semantic_hash": ""
+  },
+  "src/components/integrations/NavUpoM2mCard.tsx": {
+    "mtime": 1790274576.7807271,
+    "ast_hash": "dbe46cc65df055e46362b0285d92ca8a",
+    "semantic_hash": ""
+  },
+  "src/components/tickets/TicketCategoryBadge.tsx": {
+    "mtime": 1790281070.2581697,
+    "ast_hash": "bd0d9c53336c52a3a0fdd53cddbf4949",
+    "semantic_hash": ""
+  },
+  "src/components/tickets/TicketCategorySelect.tsx": {
+    "mtime": 1790281425.35261,
+    "ast_hash": "e5f2a6259456f8843094cc9200687795",
+    "semantic_hash": ""
+  },
+  "src/test/tickets/ticketCategories.test.ts": {
+    "mtime": 1790282259.4993303,
+    "ast_hash": "357404bf88c67afb2a7c76cc6b69182d",
+    "semantic_hash": ""
+  },
+  "src/test/vat/drsExclusion.test.ts": {
+    "mtime": 1790257147.4876728,
+    "ast_hash": "c29d434035aa30441b3be9fc9d36901d",
+    "semantic_hash": ""
+  },
+  "src/utils/ticketCategories.ts": {
+    "mtime": 1790282240.264034,
+    "ast_hash": "c3339db28a85f81989ed0a77cada2cf5",
+    "semantic_hash": ""
+  },
+  "supabase/functions/nav-m2m-proxy/index.ts": {
+    "mtime": 1790274576.791406,
+    "ast_hash": "8d280d4dc3ae9fd3c3abf9b823925257",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260924140000_exclude_drs_deposit_fee_from_vat_return.sql": {
+    "mtime": 1790257147.4906743,
+    "ast_hash": "8dc365bc1008cd0bb10af54bbf8da289",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260924163000_nav_upo_m2m.sql": {
+    "mtime": 1790274576.792403,
+    "ast_hash": "6f8415756bd4d67fe13c2ce4e0bc6bb0",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260924180000_add_row66_fad_to_vat_return.sql": {
+    "mtime": 1790274576.7939065,
+    "ast_hash": "c170cf0ff988b88e4fed71963b1cd05c",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260924190000_include_fad_steel_in_row29.sql": {
+    "mtime": 1790274576.7949116,
+    "ast_hash": "bb55e5cb75736228146d0315c34478ff",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260924200000_petty_cash_inbound_settlement.sql": {
+    "mtime": 1790274576.7949116,
+    "ast_hash": "b31ac8dfa558cad0201f771561fd820c",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260924210000_add_category_to_feedback.sql": {
+    "mtime": 1790281025.5548463,
+    "ast_hash": "4c7ec975fdd8ef0bcb5a049b43bddcd8",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-144-general-ledger-batch-itemized-view-architecture.md": {
+    "mtime": 1790257147.412514,
+    "ast_hash": "46b5b25bd40ddf1c92dcf4153cafc389",
+    "semantic_hash": ""
+  },
+  "docs/business/decisions/062-drs-mandatory-deposit-fee-vat-exclusion.md": {
+    "mtime": 1790257147.4140184,
+    "ast_hash": "5e0cb630c5dfb258817310864ff60274",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-107-general-ledger-granularity-kontirok-teteles-view.md": {
+    "mtime": 1790257147.4170284,
+    "ast_hash": "3d0f57bec140ec3bd43e04ff084c9317",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260924220000_hybrid_ticket_access_rls.sql": {
+    "mtime": 1790283157.8872335,
+    "ast_hash": "55a82a1f47378fa10dc3a11eed7815dd",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-148-accounting-firm-ticket-sharing-and-hybrid-access.md": {
+    "mtime": 1790285254.583758,
+    "ast_hash": "8c22bd2ecf5849757e59654f66e19bf3",
+    "semantic_hash": ""
+  },
+  "src/test/tickets/colleagueUnreadAndCompanySearch.test.tsx": {
+    "mtime": 1790284637.535848,
+    "ast_hash": "bccfb6b44cd5ce875d68a3ff100bf140",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260924231500_ticket_race_guard_and_colleague_unread.sql": {
+    "mtime": 1790284489.3072047,
+    "ast_hash": "494eb40099b6f0455281a7a2ebac5f57",
+    "semantic_hash": ""
+  },
+  "src/components/changelog/ChangelogEntryCard.tsx": {
+    "mtime": 1790288927.9799187,
+    "ast_hash": "41a72a770a23b94526c6f42ddbb517c7",
+    "semantic_hash": ""
+  },
+  "src/components/changelog/ChangelogHeader.tsx": {
+    "mtime": 1790290210.1788707,
+    "ast_hash": "a22dbe4598239e9b8dd938c0516c67de",
+    "semantic_hash": ""
+  },
+  "src/components/changelog/ChangelogTimeline.tsx": {
+    "mtime": 1790288859.484273,
+    "ast_hash": "f8a65b45ebc09a40d181479d41662f3e",
+    "semantic_hash": ""
+  },
+  "src/hooks/useChangelog.ts": {
+    "mtime": 1790286667.4899287,
+    "ast_hash": "50da177b5fc19e8482bf2d801dd64c35",
+    "semantic_hash": ""
+  },
+  "src/pages/ChangelogPage.tsx": {
+    "mtime": 1790288849.9370322,
+    "ast_hash": "17f4497492bc8621b854bedc56a09e1f",
+    "semantic_hash": ""
+  },
+  "src/test/changelog/changelog.test.tsx": {
+    "mtime": 1790288085.9624407,
+    "ast_hash": "76f68d40dd5249e61413297d21cc7429",
+    "semantic_hash": ""
+  },
+  "src/types/changelog.ts": {
+    "mtime": 1790286657.9639807,
+    "ast_hash": "3efeed81e676de469fe562ef04566525",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260924235000_create_changelog_entries.sql": {
+    "mtime": 1790286633.1969955,
+    "ast_hash": "1018109679a32be180f4cf885912af23",
+    "semantic_hash": ""
+  },
+  "public/changelog-mockup.html": {
+    "mtime": 1790288111.292684,
+    "ast_hash": "3c6e6e9da94d777b0ade3c1ed3fc0977",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-149-in-app-changelog-and-patchnotes-system.md": {
+    "mtime": 1790291123.8661878,
+    "ast_hash": "b75008c9d9f9d070dac605f1706b31fe",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-112-in-app-changelog-timeline-ux.md": {
+    "mtime": 1790291136.6204338,
+    "ast_hash": "722f33ccf63d509947afe64ea64c5177",
+    "semantic_hash": ""
+  },
+  "src/components/changelog/ChangelogTimelineSkeleton.tsx": {
+    "mtime": 1790288529.8267303,
+    "ast_hash": "f69a4a6db1759c225dd1376d3acb761a",
+    "semantic_hash": ""
+  },
+  "src/config/version.ts": {
+    "mtime": 1790291115.6434917,
+    "ast_hash": "eb96ea4fa870838ce571404958652c55",
+    "semantic_hash": ""
+  },
+  ".agents/skills/visibill-patchnote/SKILL.md": {
+    "mtime": 1790291311.8349543,
+    "ast_hash": "6588659dc8084b41aa6c359b7cf5b061",
     "semantic_hash": ""
   }
 }

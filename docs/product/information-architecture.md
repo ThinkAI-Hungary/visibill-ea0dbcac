@@ -113,6 +113,8 @@ Visibill
 │   ├── /exchange-rates            Árfolyamok (MNB)
 │   ├── /notes                     Jegyzetek (osztott kétpaneles)
 │   ├── /knowledge-base/:articleId? Tudástár és Funkciókalauz (10 kategória, 40 cikk)
+│   ├── /changelog                 Fejlesztői napló (in-app patchnotes idővonal, P-112, A-149)
+│   ├── /tickets/:ticketId?        Hibajegyek és ügyfélszolgálat (P-035, A-018)
 │   ├── /settings/:tab?            Beállítások
 │   ├── /analytics/:tab?           Analitika
 │   └── /vat-return/:tab?          ÁFA bevallás

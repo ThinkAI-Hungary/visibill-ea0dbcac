@@ -1,12 +1,13 @@
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { Suspense, memo, useEffect, useState } from "react";
 import { GlobalDatePicker } from "@/components/GlobalDatePicker";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePdfExportNotifications } from "@/hooks/usePdfExportNotifications";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { cn } from "@/lib/utils";
 
 interface AppLayoutProps {
   children?: React.ReactNode;
@@ -40,12 +41,21 @@ const StableFallback = () => <div className="h-full w-full" aria-busy="true" />;
 /**
  * ContentArea — memoized content shell.
  * Holds the Suspense boundary for lazy route chunks. Independent from TopBar.
+ * Automatically adapts layout for pages requiring pinned headers and internal scrolling (e.g. changelog).
  */
 const ContentArea = memo(function ContentArea({ children }: { children?: React.ReactNode }) {
+  const location = useLocation();
+  const isChangelog = location.pathname.includes('/changelog');
+
   return (
     <main 
-      className="flex-1 overflow-y-auto bg-background p-6 print:p-0 print:overflow-visible"
-      style={{ scrollbarGutter: 'stable' }}
+      className={cn(
+        "flex-1 bg-background print:p-0 print:overflow-visible",
+        isChangelog 
+          ? "min-h-0 overflow-hidden flex flex-col p-6 h-full" 
+          : "overflow-y-auto p-6"
+      )}
+      style={{ scrollbarGutter: isChangelog ? undefined : 'stable' }}
     >
       <Suspense fallback={<StableFallback />}>
         {children || <Outlet />}

@@ -145,6 +145,8 @@
     "priority_medium": "Srednji",
     "priority_high": "Visok",
     "priority_critical": "Kritičan",
+    "category_label": "Kategorija",
+    "select_category": "Odaberite kategoriju (opcionalno)...",
     "message_label": "Poruka / Detaljan opis",
     "placeholder_bug": "Opišite grešku što detaljnije (npr. gdje se dogodila, što se dogodilo)...",
     "placeholder_feedback": "Podijelite svoje mišljenje ili prijedlog...",

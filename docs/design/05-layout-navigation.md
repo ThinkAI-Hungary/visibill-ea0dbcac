@@ -40,8 +40,8 @@
 | **`src/routes/redirects.tsx`** | `RootRedirect`, `AccountyRootRedirect`, `LegacyRedirect` egységes motor |
 | **`src/routes/shellComponents.tsx`** | `ProtectedPage`, `RemoveInitialLoader`, `ScrollToTop` segédkomponensek |
 | **`ProtectedLayout`** | Auth & Lifecycle gate — hidegindításkor LoadingSpinner, meleg váltáskor instant SPA (ADR A-115) |
-| **`AppLayout`** | Shell layout — Sidebar + TopBar + Content. Stabil, nem mount-ol újra |
-| **`ScopedLayout`** | URL ↔ Context szinkronizáció layer |
+| **`AppLayout`** | Shell layout — Sidebar + TopBar + Content. Stabil, nem mount-ol újra. Deklaratív flex-containment támogatás belső görgetéses nézetekhez (`isChangelog`, A-149) |
+| **`ScopedLayout`** | URL ↔ Context szinkronizáció layer. Teljes magasságú (`h-full flex flex-col flex-1 min-h-0`) flex-lánc tartó |
 | **`LanguageRouteSync`** | Reaktív i18n szinkronizáció: URL útvonal alapján azonnal vált `hu` és `hr` között (ADR A-109) |
 | **`LanguageRouteWrapper`** | Dedikált nyelvi környezetet biztosító route wrapper komponens |
 | **`AccountyShellProvider`** | Központi 0-prop provider az eaisyBooks moduláris héjához (`useAccountyShell()`, ADR A-114) |

@@ -107,7 +107,7 @@ async function ensureAggreg8User(customerToken: string, email: string): Promise<
   return userObj.userId || userObj.id || userObj._id;
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   // CORS preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders, status: 200 });

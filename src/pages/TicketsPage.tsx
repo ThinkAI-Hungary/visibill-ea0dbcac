@@ -52,6 +52,7 @@ import {
   ChevronLeft,
   HelpCircle,
   TicketPlus,
+  Building2,
   X,
   AlertCircle,
 } from "lucide-react";
@@ -68,6 +69,8 @@ import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { TicketStatusBadge } from "@/components/tickets/TicketStatusBadge";
 import { useTranslation } from "react-i18next";
 import { TicketPriorityBadge } from "@/components/tickets/TicketPriorityBadge";
+import { TicketCategoryBadge } from "@/components/tickets/TicketCategoryBadge";
+import { TicketCategorySelect } from "@/components/tickets/TicketCategorySelect";
 import { TicketDetailView } from "@/components/tickets/TicketDetailView";
 import {
   useTickets,
@@ -110,6 +113,7 @@ export const matchTicketSearch = (t: Ticket, rawSearch: string): boolean => {
   const matchesUserName = (t.user_name || '').toLowerCase().includes(query);
   const matchesCreatedByName = (t.created_by_name || '').toLowerCase().includes(query);
   const matchesAssignedToName = (t.assigned_to_name || '').toLowerCase().includes(query);
+  const matchesCategory = (t.category || '').toLowerCase().includes(query);
 
   return Boolean(
     matchesNumber ||
@@ -118,7 +122,8 @@ export const matchTicketSearch = (t: Ticket, rawSearch: string): boolean => {
     matchesCompany ||
     matchesUserName ||
     matchesCreatedByName ||
-    matchesAssignedToName
+    matchesAssignedToName ||
+    matchesCategory
   );
 };
 
@@ -172,8 +177,10 @@ export default function TicketsPage({
   const [selectedStatuses, setSelectedStatuses] = useState<TicketStatus[]>(ACTIVE_TICKET_STATUSES);
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [serviceFilter, setServiceFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [slaFilter, setSlaFilter] = useState<'all' | 'overdue_48h'>('all');
   const [search, setSearch] = useState("");
+  const [companySearch, setCompanySearch] = useState("");
 
   const { user } = useAuth();
   const [showAllTickets, setShowAllTickets] = useState(false);
@@ -272,12 +279,20 @@ export default function TicketsPage({
   // Filters and Sorting for Global Tickets List
   const filteredTickets = useMemo(() => {
     const isSearchActive = Boolean(search && search.trim().length > 0);
+    const companyQuery = companySearch.trim().toLowerCase();
 
     const filtered = tickets.filter((t) => {
       const matchesSearch = matchTicketSearch(t, search);
+      const matchesCompany = !companyQuery || (t.company_name || '').toLowerCase().includes(companyQuery);
 
       const matchesPriority = priorityFilter === "all" || t.priority === priorityFilter;
       const matchesService = serviceFilter === "all" || t.service === serviceFilter;
+      const matchesCategory =
+        categoryFilter === "all"
+          ? true
+          : categoryFilter === "none"
+            ? !t.category
+            : t.category === categoryFilter;
       const matchesSla = slaFilter === "all" || Boolean(t.sla?.isOverdue48h);
       
       // Unread tickets or explicit text searches should never be hidden by the active status filter
@@ -296,34 +311,37 @@ export default function TicketsPage({
       const matchesOwner = !isAdmin || showAllTickets || !user ||
         t.assigned_to === user.id || t.assigned_to === null || isNyitott;
 
-      return matchesSearch && matchesPriority && matchesService && matchesSla && matchesStatus && matchesOwner;
+      return matchesSearch && matchesCompany && matchesPriority && matchesService && matchesCategory && matchesSla && matchesStatus && matchesOwner;
     });
 
     return sortTicketsByUnreadAndDate(filtered);
-  }, [tickets, search, priorityFilter, serviceFilter, slaFilter, selectedStatuses, isAdmin, showAllTickets, user]);
+  }, [tickets, search, companySearch, priorityFilter, serviceFilter, categoryFilter, slaFilter, selectedStatuses, isAdmin, showAllTickets, user]);
 
-  // Tickets for Console View (Unresolved tickets filtered by search and owner, sorted with unread first)
+  // Tickets for Console View (Unresolved tickets filtered by search, company and owner, sorted with unread first)
   const consoleTickets = useMemo(() => {
     const isSearchActive = Boolean(search && search.trim().length > 0);
+    const companyQuery = companySearch.trim().toLowerCase();
+
     const filtered = tickets
       .filter((t) => t.has_unread || isSearchActive || t.status !== "resolved")
       .filter((t) => {
         const isNyitott = t.status === "created" || t.status === "new" || t.status === "open";
         const matchesOwner = !isAdmin || showAllTickets || !user ||
           t.assigned_to === user.id || t.assigned_to === null || isNyitott;
-        return matchesOwner;
+        const matchesCompany = !companyQuery || (t.company_name || '').toLowerCase().includes(companyQuery);
+        return matchesOwner && matchesCompany;
       })
       .filter((t) => matchTicketSearch(t, search));
 
     return sortTicketsByUnreadAndDate(filtered);
-  }, [tickets, search, isAdmin, showAllTickets, user]);
+  }, [tickets, search, companySearch, isAdmin, showAllTickets, user]);
 
   const [page, setPage] = useState(1);
   const pageSize = embeddedInManagement && isAdmin ? 25 : 15;
 
   React.useEffect(() => {
     setPage(1);
-  }, [search, selectedStatuses, priorityFilter, serviceFilter, slaFilter, showAllTickets]);
+  }, [search, companySearch, selectedStatuses, priorityFilter, serviceFilter, categoryFilter, slaFilter, showAllTickets]);
 
   const totalPages = Math.ceil(filteredTickets.length / pageSize);
   const paginatedTickets = useMemo(() => {
@@ -782,6 +800,25 @@ export default function TicketsPage({
                   </button>
                 )}
               </div>
+              <div className="relative w-full md:w-[210px] shrink-0">
+                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder={t('tickets:company_search_placeholder', 'Szűrés cégre...')}
+                  value={companySearch}
+                  onChange={(e) => setCompanySearch(e.target.value)}
+                  className={`pl-9 ${companySearch ? 'pr-9' : ''} h-10`}
+                />
+                {companySearch && (
+                  <button
+                    type="button"
+                    onClick={() => setCompanySearch('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label={t('tickets:clear_company_search', 'Cég szűrő törlése')}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
               <div className="flex flex-wrap gap-2.5">
                 <Popover>
                   <PopoverTrigger asChild>
@@ -789,13 +826,13 @@ export default function TicketsPage({
                       <span className="truncate">
                         {selectedStatuses.length === 3 && ACTIVE_TICKET_STATUSES.every(s => selectedStatuses.includes(s))
                           ? (() => {
-                              const res = t('tickets:status_filter.active_count', { count: 3, defaultValue: 'Aktív jegyek (3)' });
-                              return typeof res === 'string' ? res.replace('{{count}}', '3') : 'Aktív jegyek (3)';
+                              const res = String(t('tickets:status_filter.active_count', { count: 3, defaultValue: 'Aktív jegyek (3)' }));
+                              return res.replace('{{count}}', '3');
                             })()
                           : selectedStatuses.length === 4
                           ? (() => {
-                              const res = t('tickets:status_filter.all_count', { count: 4, defaultValue: 'Összes státusz (4)' });
-                              return typeof res === 'string' ? res.replace('{{count}}', '4') : 'Összes státusz (4)';
+                              const res = String(t('tickets:status_filter.all_count', { count: 4, defaultValue: 'Összes státusz (4)' }));
+                              return res.replace('{{count}}', '4');
                             })()
                           : selectedStatuses.length === 0
                           ? t('tickets:status_filter.active', 'Aktív jegyek')
@@ -882,6 +919,17 @@ export default function TicketsPage({
                     <SelectItem value="accounty">eaisyBooks</SelectItem>
                   </SelectContent>
                 </Select>
+
+                <div className="w-[180px] shrink-0">
+                  <TicketCategorySelect
+                    value={categoryFilter}
+                    onChange={(cat) => setCategoryFilter(cat || "all")}
+                    placeholder={t('tickets:category_filter.placeholder', 'Kategória')}
+                    triggerClassName="h-10 text-xs sm:text-xs"
+                    popoverWidth="w-[300px]"
+                    isFilterMode={true}
+                  />
+                </div>
                 {isAdmin && (
                   <div className="flex items-center gap-2 h-10 border border-input rounded-md px-3 bg-background/50 hover:bg-accent/50 transition-colors shrink-0">
                     <Checkbox
@@ -932,7 +980,8 @@ export default function TicketsPage({
                   <TableHead className="w-[60px]">{t('tickets:table.col_type', 'Típus')}</TableHead>
                   <TableHead className="w-[110px]">{t('tickets:table.col_system', 'Rendszer')}</TableHead>
                   <TableHead>{t('tickets:table.col_subject', 'Tárgy')}</TableHead>
-                  {isAdmin && <TableHead className="w-[180px]">{t('tickets:table.col_user_company', 'Bejelentő & Cég')}</TableHead>}
+                  <TableHead className="w-[140px]">{t('tickets:table.col_category', 'Kategória')}</TableHead>
+                  <TableHead className="w-[180px]">{t('tickets:table.col_user_company', 'Bejelentő & Cég')}</TableHead>
                   {isAdmin && <TableHead className="w-[180px] min-w-[170px]">{t('tickets:table.col_assignee', 'Felelős')}</TableHead>}
                   <TableHead className="w-[170px] min-w-[165px] text-center">{t('tickets:table.col_status', 'Státusz')}</TableHead>
                   <TableHead className="w-[130px] min-w-[125px] text-center">{t('tickets:table.col_priority', 'Prioritás')}</TableHead>
@@ -941,10 +990,10 @@ export default function TicketsPage({
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableSkeleton rows={15} columns={isAdmin ? 9 : 7} />
+                  <TableSkeleton rows={15} columns={isAdmin ? 10 : 9} />
                 ) : filteredTickets.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={isAdmin ? 9 : 7} className="text-center py-16 text-muted-foreground">
+                    <TableCell colSpan={isAdmin ? 10 : 9} className="text-center py-16 text-muted-foreground">
                       <div className="flex flex-col items-center justify-center gap-3">
                         <Inbox className="h-12 w-12 opacity-40" />
                         <p className="text-sm">{t('tickets:table.empty_state', 'Nincs a szűrésnek megfelelő hibajegy')}</p>
@@ -1027,16 +1076,21 @@ export default function TicketsPage({
                           );
                         })()}
                       </TableCell>
-                      {isAdmin && (
-                        <TableCell>
-                          <div className="space-y-0.5">
-                            <p className="text-xs font-medium truncate max-w-[160px]">{ticket.user_name || ticket.user_email}</p>
-                            <p className="text-[10px] text-muted-foreground truncate max-w-[160px]">
-                              {ticket.company_name}
-                            </p>
-                          </div>
-                        </TableCell>
-                      )}
+                      <TableCell>
+                        {ticket.category ? (
+                          <TicketCategoryBadge category={ticket.category} />
+                        ) : (
+                          <span className="text-xs text-muted-foreground/40 italic">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-0.5">
+                          <p className="text-xs font-medium truncate max-w-[160px]">{ticket.user_name || ticket.user_email}</p>
+                          <p className="text-[10px] text-muted-foreground truncate max-w-[160px]">
+                            {ticket.company_name}
+                          </p>
+                        </div>
+                      </TableCell>
                       {isAdmin && (
                         <TableCell className="whitespace-nowrap">
                           <span className="text-xs font-medium text-foreground/80 whitespace-nowrap">
@@ -1186,7 +1240,12 @@ export default function TicketsPage({
                     <span className="text-[10px] text-muted-foreground truncate max-w-[120px]">
                       {t_item.company_name}
                     </span>
-                    <TicketPriorityBadge priority={t_item.priority} />
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {t_item.category && (
+                        <TicketCategoryBadge category={t_item.category} showIcon={false} className="text-[9px] px-1.5 py-0" />
+                      )}
+                      <TicketPriorityBadge priority={t_item.priority} />
+                    </div>
                   </div>
                 </button>
               );

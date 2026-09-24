@@ -31,6 +31,7 @@ export interface Ticket {
   id: string;
   ticket_number: string | null;
   type: string;
+  category?: string | null;
   service: string | null;
   message: string;
   status: string;
@@ -210,18 +211,27 @@ export function useTickets(statusFilter?: TicketStatus | "all") {
           (t as any).resolution_requested_by !== user.id
         );
         const confirmationRequestedAt = (t as any).resolution_requested_at || null;
+        const isMyTicket = Boolean(
+          (t.user_id && t.user_id === user.id) ||
+          (t.created_by && t.created_by === user.id)
+        );
+        // Only support admins or the ticket's reporter/creator should see unread status:
+        // Colleagues in the same firm can collaborate, but tickets will not show as unread for them.
+        const canBeUnreadForUser = Boolean(isSupportAdmin || isManagement || isMyTicket);
 
         let hasUnread = false;
-        if (latestOther && (!lastRead || latestOther > lastRead)) {
-          hasUnread = true;
-        } else if (isCreatedByOther && (!lastRead || t.created_at > lastRead)) {
-          hasUnread = true;
-        } else if (
-          isConfirmationRequestedByOther &&
-          confirmationRequestedAt &&
-          (!lastRead || confirmationRequestedAt > lastRead)
-        ) {
-          hasUnread = true;
+        if (canBeUnreadForUser) {
+          if (latestOther && (!lastRead || latestOther > lastRead)) {
+            hasUnread = true;
+          } else if (isCreatedByOther && (!lastRead || t.created_at > lastRead)) {
+            hasUnread = true;
+          } else if (
+            isConfirmationRequestedByOther &&
+            confirmationRequestedAt &&
+            (!lastRead || confirmationRequestedAt > lastRead)
+          ) {
+            hasUnread = true;
+          }
         }
 
         const commentsForTicket = ticketCommentsListMap.get(t.id) || [];
@@ -241,6 +251,7 @@ export function useTickets(statusFilter?: TicketStatus | "all") {
           id: t.id,
           ticket_number: t.ticket_number,
           type: t.type,
+          category: (t as any).category || null,
           service: (t as any).service || null,
           message: t.message,
           status: resolveEffectiveTicketStatus(t.status, t.assigned_to),
@@ -557,6 +568,36 @@ export function useUpdateTicketPriority() {
       const { error } = await supabase
         .from("feedback")
         .update({ priority })
+        .eq("id", feedbackId);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, { feedbackId }) => {
+      queryClient.invalidateQueries({ queryKey: ["ticket_detail", feedbackId] });
+      queryClient.invalidateQueries({ queryKey: ["ticket_events", feedbackId] });
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+    },
+  });
+}
+
+// ── Mutation: Update ticket category ──────────────────────────
+export function useUpdateTicketCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      feedbackId,
+      category,
+    }: {
+      feedbackId: string;
+      category: string | null;
+    }) => {
+      const { error } = await supabase
+        .from("feedback")
+        .update({
+          category: category || null,
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", feedbackId);
 
       if (error) throw error;

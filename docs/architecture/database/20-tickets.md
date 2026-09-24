@@ -1,6 +1,7 @@
 # 🎫 Hibajegy Rendszer
 
 > Ügyfélszolgálati hibajegy kommentek, olvasottsági állapot, események.
+> A hibajegyek szülő táblája a `feedback` (dokumentálva: `19-platform-ops.md`), amely tartalmazza a státuszt, prioritást és az opcionális `category` mezőt (`idx_feedback_category`).
 
 **Táblák ebben a csoportban:** 3
 
@@ -74,5 +75,18 @@
 - `status_changed` — státusz módosítás (old_value → new_value: pl. `created` / `assigned` / `in_progress` / `resolved`)
 - `comment_added` — hozzászólás
 - `assignee_changed` — felelős módosítás (old_value → new_value: felelős neve, vagy NULL ha nincs)
+- `resolution_requested` — support admin lezárási jóváhagyást kér az ügyféltől
+- `resolution_confirmed` — ügyfél vagy könyvelőirodai kolléga jóváhagyta a megoldást (`confirmed_by_colleague: true`)
+- `resolution_rejected` — ügyfél vagy könyvelőirodai kolléga elutasította a megoldást (`rejected_by_colleague: true`)
 
 ---
+
+### 🛡️ Hozzáférés-szabályozás (Hybrid RLS Policy)
+
+A hibajegyek hozzáférését a `public.can_access_ticket(p_company_id uuid, p_creator_id uuid)` `STABLE SECURITY DEFINER` függvény vezérli (`A-148`):
+1. **Support Admin / Management / ThinkAI:** korlátlan hozzáférés.
+2. **Bejelentő (Creator):** saját jegyhez közvetlen hozzáférés (`p_creator_id = auth.uid()`).
+3. **Cégtagság:** `companies.owner_id` vagy `company_members.user_id = auth.uid()`.
+4. **Könyvelői összerendelés:** közvetlen kijelölt könyvelő vagy a céget kezelő könyvelőiroda (`accounty_assignments.accounting_firm_id`) tagjai.
+5. **Azonos könyvelőiroda:** ha a jegyet nyitó kolléga és a bejelentkezett felhasználó azonos `accounting_firm_id`-hez tartoznak, látják és kezelhetik egymás jegyeit.
+

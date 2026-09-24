@@ -2272,7 +2272,7 @@ serve(async (req: Request) => {
 
             let query = admin
               .from("feedback")
-              .select("id, ticket_number, type, service, priority, status, message, company_id, company_name, user_email, user_name, page_url, attachments, waiting_for_user_confirmation, needs_staff_response, created_at, updated_at", { count: "exact" })
+              .select("id, ticket_number, type, category, service, priority, status, message, company_id, company_name, user_email, user_name, page_url, attachments, waiting_for_user_confirmation, needs_staff_response, created_at, updated_at", { count: "exact" })
               .eq("company_id", targetCompanyId);
 
             if (statusParam && statusParam !== "all") {
@@ -2409,6 +2409,7 @@ serve(async (req: Request) => {
                         company_id: targetCompanyId,
                         company_name: companyName,
                         type: ticketType,
+                        category: requestBody.category ? String(requestBody.category).trim() : null,
                         service: requestBody.service ? String(requestBody.service).toLowerCase() : "eaisybill",
                         priority: ticketPriority,
                         message: String(requestBody.message).trim(),
@@ -2418,7 +2419,7 @@ serve(async (req: Request) => {
                         status: "created",
                         attachments: Array.isArray(requestBody.attachments) ? requestBody.attachments : [],
                       })
-                      .select("id, ticket_number, type, service, priority, status, message, company_id, company_name, user_email, user_name, page_url, attachments, created_at, updated_at")
+                      .select("id, ticket_number, type, category, service, priority, status, message, company_id, company_name, user_email, user_name, page_url, attachments, created_at, updated_at")
                       .single();
 
                     if (insertErr) {

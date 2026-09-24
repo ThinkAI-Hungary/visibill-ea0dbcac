@@ -48,7 +48,9 @@ import {
   Plus,
   Eye,
   Trash2,
+  Tag,
 } from "lucide-react";
+import { TicketCategorySelect } from "@/components/tickets/TicketCategorySelect";
 import { useTranslation } from "react-i18next";
 
 const MAX_ATTACHMENTS = 5;
@@ -59,7 +61,7 @@ interface FeedbackDialogProps {
 }
 
 export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
-  const { t } = useTranslation(['common']);
+  const { t } = useTranslation('common');
   const { user } = useAuth();
   const { companies, selectedCompany } = useCompany();
   const { toast } = useToast();
@@ -68,6 +70,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
   const [service, setService] = useState<string>("");
   const [type, setType] = useState<string>("");
   const [priority, setPriority] = useState<string>("medium");
+  const [category, setCategory] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [attachments, setAttachments] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -82,6 +85,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
     setService("");
     setType("");
     setPriority("medium");
+    setCategory(null);
     setMessage("");
     setAttachments([]);
     setSubmitted(false);
@@ -204,6 +208,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
         type,
         service,
         priority,
+        category: category || null,
         message: message.trim(),
         user_email: user.email || null,
         user_name: user.user_metadata?.name || null,
@@ -373,6 +378,25 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            {/* Category selector (optional) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium flex items-center gap-1.5">
+                  <Tag className="h-3.5 w-3.5 text-primary" />
+                  {t('feedback.category_label', 'Kategória')}
+                </Label>
+                <span className="text-xs text-muted-foreground font-normal">
+                  {t('feedback.optional', 'opcionális')}
+                </span>
+              </div>
+              <TicketCategorySelect
+                value={category}
+                onChange={setCategory}
+                placeholder={t('feedback.select_category', 'Válassz kategóriát (opcionális)...')}
+                popoverWidth="w-[360px]"
+              />
             </div>
 
             {/* Message */}

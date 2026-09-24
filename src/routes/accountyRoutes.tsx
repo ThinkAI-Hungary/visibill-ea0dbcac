@@ -129,6 +129,7 @@ const SettingsPage = lazy(() => import("@/pages/Accounty/SettingsPage"));
 const PrivacyPolicyPage = lazy(() => import("@/pages/Accounty/PrivacyPolicyPage"));
 const HelpPage = lazy(() => import("@/pages/Accounty/HelpPage"));
 const TicketsPage = lazy(() => import("@/pages/TicketsPage"));
+const ChangelogPage = lazy(() => import("@/pages/ChangelogPage"));
 const ApprovalQueuePage = lazy(() => import("@/pages/Accounty/ApprovalQueuePage"));
 const AuditLogPage = lazy(() => import("@/pages/Accounty/AuditLogPage"));
 const GdprPage = lazy(() => import("@/pages/Accounty/GdprPage"));
@@ -361,6 +362,7 @@ function renderAccountyChildRoutes() {
       <Route path="privacy-policy" element={<Suspense fallback={<AccountyPageSkeleton />}><PrivacyPolicyPage /></Suspense>} />
       <Route path="help" element={<Suspense fallback={<AccountyPageSkeleton />}><HelpPage /></Suspense>} />
       <Route path="tickets/:ticketId?" element={<Suspense fallback={<AccountyPageSkeleton />}><TicketsPage /></Suspense>} />
+      <Route path="changelog" element={<Suspense fallback={<AccountyPageSkeleton />}><ChangelogPage /></Suspense>} />
       <Route path="approval-queue" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin', 'senior_könyvelő']}><Suspense fallback={<AccountyPageSkeleton />}><ApprovalQueuePage /></Suspense></ProtectedAccountyRoute>} />
 
       <Route path="new-client" element={<Suspense fallback={<AccountyPageSkeleton />}><NewClientPage /></Suspense>} />

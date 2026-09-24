@@ -6,6 +6,7 @@ export interface CreateTicketPayload {
   companyName?: string | null;
   service?: string;
   type: string;
+  category?: string | null;
   priority?: string;
   message: string;
   attachments?: string[];
@@ -29,6 +30,7 @@ export async function createTicketOnBehalf(
     companyName,
     service = "eaisybill",
     type = "feedback",
+    category,
     priority = "medium",
     message,
     attachments = [],
@@ -106,6 +108,7 @@ export async function createTicketOnBehalf(
       company_name: resolvedCompanyName,
       service,
       type,
+      category: category || null,
       priority,
       message: cleanMessage,
       page_url: pageUrl || "/management?view=tickets",
@@ -113,7 +116,7 @@ export async function createTicketOnBehalf(
       assigned_to: assignedTo || null,
       status: assignedTo ? "assigned" : "created",
     })
-    .select("id, ticket_number, status, priority, type, service, created_at, user_id, user_email, user_name, company_name, created_by")
+    .select("id, ticket_number, status, priority, type, category, service, created_at, user_id, user_email, user_name, company_name, created_by")
     .single();
 
   if (insertError) {
@@ -158,7 +161,7 @@ export async function sendOverdueTicketReminders(admin: SupabaseClient) {
     return { error: `Hiba a jegyek lekérdezésekor: ${error.message}` };
   }
 
-  const eligibleTickets = (overdueTickets || []).filter(t => 
+  const eligibleTickets = (overdueTickets || []).filter((t: any) => 
     !t.last_reminder_sent_at || t.last_reminder_sent_at <= cutoff24h
   );
 

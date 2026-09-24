@@ -51,3 +51,6 @@ graphify-out/[0-9]*/
 # Client sample files
 docs/*.xml
 
+# Session summaries
+session-summary/
+

@@ -3,8 +3,10 @@
   "subtitle_admin": "Összes beérkezett hibajegy és visszajelzés",
   "subtitle_user": "Az Ön által beküldött hibajegyek és visszajelzések",
   "new_ticket": "Új hibajegy nyitása",
-  "search_placeholder": "Keresés jegyszám, üzenet, cég vagy email alapján...",
+  "search_placeholder": "Keresés jegyszám, üzenet vagy email alapján...",
   "clear_search": "Keresés törlése",
+  "company_search_placeholder": "Szűrés cégre...",
+  "clear_company_search": "Cég szűrő törlése",
   "show_all_tickets": "Összes ticket",
   "unread": "Olvasatlan",
   "unassigned": "Nincs",
@@ -60,6 +62,11 @@
     "placeholder": "Szolgáltatás",
     "all": "Összes platform"
   },
+  "category_filter": {
+    "placeholder": "Kategória",
+    "all": "Összes kategória",
+    "none": "Kategória nélküliek"
+  },
   "types": {
     "bug": "Hibajelentés",
     "feedback": "Visszajelzés",
@@ -70,6 +77,7 @@
     "col_type": "Típus",
     "col_system": "Rendszer",
     "col_subject": "Tárgy",
+    "col_category": "Kategória",
     "col_user_company": "Bejelentő & Cég",
     "col_assignee": "Felelős",
     "col_status": "Státusz",
@@ -169,6 +177,8 @@
     "copy_link_tooltip": "Kattints a link másolásához",
     "prop_type": "Típus",
     "prop_priority": "Prioritás",
+    "prop_category": "Kategória",
+    "prop_no_category": "Nincs megadva",
     "prop_assignee": "Felelős",
     "prop_unassigned": "Nincs hozzárendelve",
     "toasts": {
@@ -192,7 +202,8 @@
       "ticket_already_assigned_desc": "Ezt a hibajegyet egy másik support munkatárs már magához rendelte.",
       "ticket_reassigned_title": "Felelős frissítve",
       "ticket_reassigned_desc": "A hibajegy felelőse sikeresen módosítva lett.",
-      "ticket_unassigned_desc": "A hibajegy felelőse sikeresen törölve lett."
+      "ticket_unassigned_desc": "A hibajegy felelőse sikeresen törölve lett.",
+      "category_updated_title": "Kategória frissítve"
     },
     "resolution_banner": {
       "ticket_closed_title": "Hibajegy lezárva",

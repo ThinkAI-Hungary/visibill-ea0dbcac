@@ -8,8 +8,8 @@ import * as useTicketsHooks from '@/hooks/useTickets';
 import * as authContext from '@/contexts/AuthContext';
 import fs from 'fs';
 
-const ticketData = JSON.parse(fs.readFileSync('scratch/ticket_eb0076.json', 'utf-8'))[0];
-const commentsData = JSON.parse(fs.readFileSync('scratch/comments_eb0076.json', 'utf-8'));
+const ticketData = fs.existsSync('scratch/ticket_eb0076.json') ? JSON.parse(fs.readFileSync('scratch/ticket_eb0076.json', 'utf-8'))[0] : { id: '6df997a3-21d8-408a-93e2-00cf73208865', ticket_number: 'EB-0076', status: 'created', priority: 'medium', service: 'eaisybill' };
+const commentsData = fs.existsSync('scratch/comments_eb0076.json') ? JSON.parse(fs.readFileSync('scratch/comments_eb0076.json', 'utf-8')) : [];
 
 vi.mock('@/lib/navigation', () => ({
   useScopedBasePath: vi.fn(() => '/test-company/2026-01-01_2026-12-31'),
@@ -37,6 +37,7 @@ vi.mock('@/hooks/useTickets', async () => {
     useUpdateTicketAttachments: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
     useRequestTicketResolution: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
     useUpdateTicketStaffResponse: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
+    useUpdateTicketCategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   };
 });
 

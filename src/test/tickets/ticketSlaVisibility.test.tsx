@@ -32,6 +32,7 @@ vi.mock('@/hooks/useTickets', () => ({
   useDeleteTicket: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
   useTickets: vi.fn(() => ({ data: [], isLoading: false, refetch: vi.fn() })),
   useUpdateTicketStaffResponse: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
+  useUpdateTicketCategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   resolveEffectiveTicketStatus: (status: string) => status,
 }));
 

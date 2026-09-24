@@ -145,10 +145,10 @@ export function ScopedLayout() {
           </div>
           <div className="space-y-2">
             <h1 className="text-2xl font-bold text-foreground">
-              {t('access_denied.title')}
+              {t('common:access_denied.title', 'Hozzáférés megtagadva')}
             </h1>
             <p className="text-muted-foreground leading-relaxed">
-              {t('access_denied.desc')}
+              {t('common:access_denied.desc', 'Nincs jogosultsága megtekinteni ezt az oldalt.')}
             </p>
           </div>
           <Button
@@ -159,7 +159,7 @@ export function ScopedLayout() {
             }}
             className="px-6"
           >
-            {t('access_denied.back_to_home')}
+            {t('common:access_denied.back_to_home', 'Vissza a főoldalra')}
           </Button>
         </div>
       </div>
@@ -200,7 +200,10 @@ export function ScopedLayout() {
   }
 
   return (
-    <div style={isSyncing ? { opacity: 0, pointerEvents: 'none', minHeight: '50vh' } : undefined}>
+    <div 
+      className="h-full flex flex-col flex-1 min-h-0"
+      style={isSyncing ? { opacity: 0, pointerEvents: 'none', minHeight: '50vh' } : undefined}
+    >
       <Outlet />
     </div>
   );

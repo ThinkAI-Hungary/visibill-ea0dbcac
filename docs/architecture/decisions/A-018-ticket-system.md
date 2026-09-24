@@ -24,6 +24,7 @@ feedback (fő tábla)
 ├── message: text
 ├── status: text ('created' | 'in_progress' | 'resolved')
 ├── priority: text ('low' | 'medium' | 'high' | 'critical')
+├── category: text (opcionális: 37 könyvelési/rendszer kategória, pl. áfa, főkönyv, SUP, bérjegyzék stb.)
 ├── page_url: text (automatikus — beküldés kontextusa)
 ├── attachments: text[] (Storage URL-ek)
 ├── ticket_number: text (trigger generálja)
@@ -256,4 +257,10 @@ idx_ticket_reads_feedback_user  ON ticket_reads(feedback_id, user_id)
 - **Közvetlen Csatolmánykezelés Nyitott Hibajegyhez:** A `feedback.attachments` tömb közvetlen módosítása a `useUpdateTicketAttachments` mutációval és a jegy fejlécében elhelyezett `+ Csatolmány hozzáadása` gombbal.
 - **Lebegő Eszköztáras Előnézeti Kártyák:** Új, egységes kártyás preview dizájn a feltöltött csatolmányokhoz (képeknél négyzetes előnézet, jobb felső lebegő kapszulában `Eye` előnézet és `Trash2` törlés gombok; dokumentumoknál dedikált típusjelvény és letöltési/törlési funkció).
 - **Egységes Radix Tooltip Architektúra:** A hibajegy komponensekben (`TicketDetailView`, `FeedbackDialog`, `ImageGalleryModal`, `rich-text-editor`) a natív `title` attribútumok ki lettek váltva `<TooltipProvider delayDuration={200}>` és `<Tooltip>` komponensekkel, biztosítva a finom időzítést és az app dizájnrendszeréhez illeszkedő sötét/világos buborékokat.
+- **Opcionális Hibajegy Kategóriák (`category`):**
+  - **37 előre definiált kategória:** A számlázási, könyvelési, banki, bér és rendszerfolyamatok pontosabb osztályozásához (pl. `áfa`, `főkönyv`, `banki tranzakciók`, `SUP`, `számla feldolgozás`, `besorolandó` stb. — lásd: `src/utils/ticketCategories.ts`).
+  - **Opcionális beküldés:** Létrehozáskor (`FeedbackDialog`, `ManagementCreateTicketDialog`) a megadása nem kötelező (default: `NULL`).
+  - **Kereshető Kategóriaválasztó (`TicketCategorySelect`):** Billentyűzet-barát, gépelésre szűrő Popover/Combobox komponens badge-előnézettel és gyors törlés lehetőséggel.
+  - **Retroaktív Kategorizálás:** Support és Management jogosultságú felhasználók utólag is módosíthatják vagy törölhetik a hibajegy kategóriáját közvetlenül a `TicketDetailView` jobb oldali strukturált adatok kártyáján (`useUpdateTicketCategory` mutáció segítségével).
+  - **Központi Szűrés és Keresés (`TicketsPage`):** A hibajegylistában dedikált kategória szűrő elérhető ("Összes kategória", "Kategória nélküliek", illetve a 37 kategória), a táblázatban és a Kezelőkonzolon megjelenik a `TicketCategoryBadge`, valamint a szabadszavas globális kereső (`matchTicketSearch`) a kategória szövegére is egyezést ad.
 

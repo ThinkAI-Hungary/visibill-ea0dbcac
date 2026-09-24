@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="hu" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fejlesztői Napló (Changelog) Layout Mockup — eaisybill</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            canvas: 'hsl(var(--background))',
+            card: 'hsl(var(--card))',
+            primary: {
+              DEFAULT: '#0d9488', // Teal 600
+              hover: '#0f766e',
+              subtle: 'rgba(13, 148, 136, 0.1)',
+              glow: 'rgba(13, 148, 136, 0.25)',
+            },
+            accent: '#14b8a6',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --background: 220 7% 97%;
+      --foreground: 210 14% 4%;
+      --card: 0 0% 100%;
+      --card-border: 222 10% 89%;
+      --sidebar: 0 0% 100%;
+      --sidebar-border: 222 10% 89%;
+      --muted: 220 5% 40%;
+    }
+    .dark {
+      --background: 210 14% 3%; /* #08090a */
+      --foreground: 210 7% 97%;
+      --card: 210 7% 6%; /* #0f1011 */
+      --card-border: 215 12% 14%; /* #1e242b */
+      --sidebar: 210 10% 4.5%; /* #0b0c0d */
+      --sidebar-border: 215 12% 12%;
+      --muted: 215 10% 55%;
+    }
+    body {
+      background-color: hsl(var(--background));
+      color: hsl(var(--foreground));
+      font-family: 'Inter', sans-serif;
+    }
+    .glass-header {
+      backdrop-filter: blur(12px);
+      background: rgba(15, 16, 17, 0.75);
+    }
+    .timeline-dot {
+      box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.18);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-teal-500/20 selection:text-teal-400">
+
+  <!-- TOP BAR: Controls for Mockup switcher & Dark mode -->
+  <header class="sticky top-0 z-50 border-b border-white/10 bg-black/60 backdrop-blur-md px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="h-7 w-7 rounded-md bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-teal-400 font-bold text-sm">
+        ✨
+      </div>
+      <div>
+        <h1 class="text-sm font-semibold text-white flex items-center gap-2">
+          Fejlesztői Napló <span class="text-xs px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/25">Layout Koncepciók</span>
+        </h1>
+        <p class="text-[11px] text-zinc-400">Interaktív dizájn token és elrendezés előnézet</p>
+      </div>
+    </div>
+
+    <!-- Layout Switcher Tabs -->
+    <div class="flex items-center gap-1.5 p-1 bg-zinc-900 border border-zinc-800 rounded-lg text-xs font-medium">
+      <button onclick="switchLayout('timeline')" id="btn-timeline" class="layout-btn px-3 py-1.5 rounded-md bg-teal-600 text-white shadow-sm transition-all flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        A) Vertikális Idővonal (Timeline)
+      </button>
+      <button onclick="switchLayout('cards')" id="btn-cards" class="layout-btn px-3 py-1.5 rounded-md text-zinc-400 hover:text-white transition-all flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+        B) Kártyás Rács (Cards Grid)
+      </button>
+      <button onclick="switchLayout('masterdetail')" id="btn-masterdetail" class="layout-btn px-3 py-1.5 rounded-md text-zinc-400 hover:text-white transition-all flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path></svg>
+        C) Kétoszlopos Fejlesztői (Master-Detail)
+      </button>
+    </div>
+
+    <!-- Theme toggle & Info -->
+    <div class="flex items-center gap-3">
+      <button onclick="toggleDarkMode()" class="p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white transition-colors text-xs flex items-center gap-1.5">
+        <span id="theme-icon">🌙</span> <span id="theme-label" class="hidden sm:inline">Sötét mód</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- APP SHELL CONTAINER -->
+  <div class="flex-1 flex overflow-hidden">
+    
+    <!-- LEFT SIDEBAR (Live simulation of AppSidebar) -->
+    <aside class="w-60 shrink-0 border-r border-zinc-800/80 bg-[#0b0c0d] flex flex-col justify-between p-3 select-none text-xs">
+      <div>
+        <!-- Company Header -->
+        <div class="p-2 mb-3 rounded-lg bg-zinc-900/60 border border-zinc-800 flex items-center gap-2.5">
+          <div class="w-7 h-7 rounded bg-teal-600/20 text-teal-400 font-bold flex items-center justify-center text-xs">V</div>
+          <div class="truncate">
+            <div class="font-semibold text-zinc-200 text-xs truncate">Ván Iroda Kft.</div>
+            <div class="text-[10px] text-zinc-500">eaisybill platform</div>
+          </div>
+        </div>
+
+        <!-- Main Nav items -->
+        <div class="space-y-1 text-zinc-400">
+          <div class="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Navigáció</div>
+          <div class="px-2.5 py-1.5 rounded-md hover:bg-white/5 flex items-center gap-2 text-zinc-400">
+            <span>📊</span> <span>Áttekintés</span>
+          </div>
+          <div class="px-2.5 py-1.5 rounded-md hover:bg-white/5 flex items-center gap-2 text-zinc-400">
+            <span>📄</span> <span>Számlák</span>
+          </div>
+          <div class="px-2.5 py-1.5 rounded-md hover:bg-white/5 flex items-center gap-2 text-zinc-400">
+            <span>🏦</span> <span>Banki tranzakciók</span>
+          </div>
+          <div class="px-2.5 py-1.5 rounded-md hover:bg-white/5 flex items-center gap-2 text-zinc-400">
+            <span>📒</span> <span>Főkönyvi karton</span>
+          </div>
+        </div>
+
+        <!-- Standalone items between divider -->
+        <div class="my-3 border-t border-zinc-800/80 pt-3 space-y-1">
+          <div class="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Támogatás</div>
+          
+          <!-- 1. Tudástár -->
+          <div class="px-2.5 py-1.5 rounded-md hover:bg-white/5 flex items-center gap-2 text-zinc-400 transition-colors">
+            <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+            <span class="flex-1">Tudástár</span>
+          </div>
+
+          <!-- 2. ✨ FEJLESZTŐI NAPLÓ (NEW ITEM IN PLACE) -->
+          <div class="relative px-2.5 py-1.5 rounded-md bg-teal-500/10 text-teal-400 font-semibold border-l-2 border-teal-500 flex items-center gap-2 shadow-[inset_0_0_12px_rgba(20,212,184,0.08)]">
+            <svg class="w-4 h-4 text-teal-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+            <span class="flex-1 truncate">Fejlesztői napló</span>
+            <span class="px-1.5 py-0.2 rounded-full bg-teal-500 text-black text-[9px] font-black uppercase tracking-tight shadow-[0_0_8px_rgba(20,212,184,0.6)]">ÚJ</span>
+          </div>
+
+          <!-- 3. Hibajegyek -->
+          <div class="px-2.5 py-1.5 rounded-md hover:bg-white/5 flex items-center gap-2 text-zinc-400 transition-colors">
+            <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span class="flex-1">Hibajegyek</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- User footer -->
+      <div class="p-2 rounded-lg bg-zinc-900/40 border border-zinc-800/60 flex items-center gap-2 text-zinc-400">
+        <div class="w-6 h-6 rounded-full bg-zinc-700 flex items-center justify-center text-[10px] text-white font-medium">VE</div>
+        <div class="truncate text-[11px] text-zinc-300">Ván Emese</div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT VIEW AREA -->
+    <main class="flex-1 overflow-y-auto bg-[#08090a] p-6 lg:p-10">
+
+      <!-- =============================================================== -->
+      <!-- OPTION A: VERTICAL TIMELINE VIEW (LINEAR STYLE)                -->
+      <!-- =============================================================== -->
+      <div id="view-timeline" class="layout-view max-w-4xl mx-auto space-y-8 animate-fadeIn">
+        
+        <!-- Header & Search -->
+        <div class="space-y-4 border-b border-zinc-800/80 pb-6">
+          <div class="flex items-center gap-2 text-teal-400 text-xs font-semibold uppercase tracking-wider">
+            <span class="inline-block w-2 h-2 rounded-full bg-teal-400 animate-ping"></span>
+            Folyamatos platform frissítések
+          </div>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-bold text-white tracking-tight">Fejlesztői Napló</h2>
+              <p class="text-sm text-zinc-400 mt-1">Kövesd nyomon az eaisybill és eaisyBooks napi javításait, újdonságait és fejlesztéseit.</p>
+            </div>
+            <!-- RSS / Feliratkozás jellegű gomb -->
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-zinc-500 font-mono">v2.2.5 • build 2026.09</span>
+            </div>
+          </div>
+
+          <!-- Filters & Search Toolbar -->
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+            <div class="flex items-center gap-1.5 overflow-x-auto text-xs">
+              <button class="filter-pill px-3 py-1.5 rounded-full bg-teal-500/15 text-teal-400 border border-teal-500/30 font-medium">Összes (14)</button>
+              <button class="filter-pill px-3 py-1.5 rounded-full bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800 font-medium">Új funkciók</button>
+              <button class="filter-pill px-3 py-1.5 rounded-full bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800 font-medium">Javítások</button>
+              <button class="filter-pill px-3 py-1.5 rounded-full bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800 font-medium">Fejlesztések</button>
+              <button class="filter-pill px-3 py-1.5 rounded-full bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800 font-medium">eaisyBooks</button>
+            </div>
+            
+            <div class="relative w-full sm:w-64">
+              <input type="text" placeholder="Keresés javítások között..." class="w-full px-3 py-1.5 pl-8 bg-zinc-900 border border-zinc-800 rounded-md text-xs text-zinc-200 placeholder:text-zinc-500 focus:outline-none focus:border-teal-500">
+              <svg class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vertical Timeline Feed -->
+        <div class="relative border-l border-zinc-800 ml-4 sm:ml-36 space-y-12 pb-12">
+
+          <!-- Entry 1: Ma / Legfrissebb -->
+          <div class="relative pl-6 sm:pl-8 group">
+            <!-- Timeline Date (Desktop Left Float) -->
+            <div class="sm:absolute sm:-left-36 sm:w-28 sm:text-right top-0.5 text-xs">
+              <span class="font-semibold text-teal-400 block">Ma</span>
+              <span class="text-zinc-500 font-mono text-[11px]">2026. szept. 24.</span>
+            </div>
+            
+            <!-- Timeline Bullet dot -->
+            <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-teal-500 border-4 border-[#08090a] timeline-dot"></div>
+
+            <!-- Card Content -->
+            <div class="p-5 rounded-xl bg-[#0f1011] border border-zinc-800/80 shadow-lg space-y-4 hover:border-zinc-700/80 transition-all">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold uppercase tracking-wider">Új funkció</span>
+                  <span class="px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20 text-[10px] font-medium">eaisyBill & Books</span>
+                </div>
+                <span class="text-[11px] text-zinc-500 font-mono">v2.2.5</span>
+              </div>
+
+              <div>
+                <h3 class="text-base font-bold text-white group-hover:text-teal-400 transition-colors">
+                  Könyvelőirodai hibajegy megosztás és szakmai kategóriák
+                </h3>
+                <p class="text-xs text-zinc-400 mt-1.5 leading-relaxed">
+                  Mostantól az egy irodában dolgozó könyvelők és asszisztensek közösen láthatják a kezelt cégek hibajegyeit. Nem fordulhat elő többszörös bejelentés ugyanarról a bizonylatról, és 37 előre definiált kategória segíti az azonnali áttekintést.
+                </p>
+              </div>
+
+              <!-- Structured Highlights -->
+              <div class="space-y-2 pt-2 border-t border-zinc-800/60 text-xs text-zinc-300">
+                <div class="flex items-start gap-2">
+                  <span class="text-teal-400 font-bold shrink-0">•</span>
+                  <div><strong class="text-white">Közös irodai hozzáférés:</strong> Az iroda tagjai látják egymás jegyeit a kezelt cégeknél, és jóváhagyhatják a megoldást.</div>
+                </div>
+                <div class="flex items-start gap-2">
+                  <span class="text-teal-400 font-bold shrink-0">•</span>
+                  <div><strong class="text-white">37 Szakmai kategória:</strong> Gyors combobox választó számlákhoz, főkönyvhöz, bankhoz és bérhez.</div>
+                </div>
+                <div class="flex items-start gap-2">
+                  <span class="text-teal-400 font-bold shrink-0">•</span>
+                  <div><strong class="text-white">Azonnali Cégkereső mező:</strong> Keresősáv a fejlécben, amellyel egy gépeléssel leszűrhető a több tucat kezelt ügyfélcég.</div>
+                </div>
+                <div class="flex items-start gap-2">
+                  <span class="text-teal-400 font-bold shrink-0">•</span>
+                  <div><strong class="text-white">Kollégális adatvédelem:</strong> A másnak küldött válaszok nem csinálnak felesleges piros értesítő pontot a te menüdben.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Entry 2: Tegnap -->
+          <div class="relative pl-6 sm:pl-8 group">
+            <div class="sm:absolute sm:-left-36 sm:w-28 sm:text-right top-0.5 text-xs">
+              <span class="font-semibold text-zinc-300 block">Tegnap</span>
+              <span class="text-zinc-500 font-mono text-[11px]">2026. szept. 23.</span>
+            </div>
+            
+            <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-zinc-600 border-4 border-[#08090a]"></div>
+
+            <div class="p-5 rounded-xl bg-[#0f1011] border border-zinc-800/80 shadow-lg space-y-4 hover:border-zinc-700/80 transition-all">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] font-bold uppercase tracking-wider">⚡ Fejlesztés</span>
+                  <span class="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[10px] font-medium">Bank & Főkönyv</span>
+                </div>
+                <span class="text-[11px] text-zinc-500 font-mono">v2.2.4</span>
+              </div>
+
+              <div>
+                <h3 class="text-base font-bold text-white group-hover:text-teal-400 transition-colors">
+                  Aggreg8 PSD2 Open Banking integráció & Devizás számlakarton
+                </h3>
+                <p class="text-xs text-zinc-400 mt-1.5 leading-relaxed">
+                  Élesítettük az automatizált banki tranzakció-letöltést, valamint a főkönyvben mostantól devizanemenként (EUR, USD, HUF) is vizsgálhatók a partneri számlaegyenlegek.
+                </p>
+              </div>
+
+              <div class="space-y-2 pt-2 border-t border-zinc-800/60 text-xs text-zinc-300">
+                <div class="flex items-start gap-2">
+                  <span class="text-teal-400 font-bold shrink-0">•</span>
+                  <div><strong class="text-white">10 000+ tételes pagináció:</strong> A nagyforgalmú bankszámlák betöltése mostantól akadásmentes.</div>
+                </div>
+                <div class="flex items-start gap-2">
+                  <span class="text-teal-400 font-bold shrink-0">•</span>
+                  <div><strong class="text-white">Napi MNB devizaárfolyam szinkron:</strong> Automatikus árfolyam-számítás a könyvelési naplóban.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Entry 3: Múlt héten -->
+          <div class="relative pl-6 sm:pl-8 group">
+            <div class="sm:absolute sm:-left-36 sm:w-28 sm:text-right top-0.5 text-xs">
+              <span class="font-semibold text-zinc-400 block">Múlt héten</span>
+              <span class="text-zinc-500 font-mono text-[11px]">2026. szept. 22.</span>
+            </div>
+            
+            <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-zinc-700 border-4 border-[#08090a]"></div>
+
+            <div class="p-5 rounded-xl bg-[#0f1011] border border-zinc-800/80 shadow-lg space-y-4 hover:border-zinc-700/80 transition-all">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-[10px] font-bold uppercase tracking-wider">🛠️ Javítás</span>
+                  <span class="px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 text-[10px] font-medium">ÁFA & NAV</span>
+                </div>
+                <span class="text-[11px] text-zinc-500 font-mono">v2.2.3</span>
+              </div>
+
+              <div>
+                <h3 class="text-base font-bold text-white group-hover:text-teal-400 transition-colors">
+                  NAV 2665 ÁFA bevallás és 65M összesítő jelentés frissítés
+                </h3>
+                <p class="text-xs text-zinc-400 mt-1.5 leading-relaxed">
+                  Finomhangoltuk a 6/B acélipari nyilatkozat sorait és a szabványos ÁNYK XML exportot a legújabb NAV specifikációnak megfelelően.
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- =============================================================== -->
+      <!-- OPTION B: CARD GRID VIEW                                        -->
+      <!-- =============================================================== -->
+      <div id="view-cards" class="layout-view hidden max-w-5xl mx-auto space-y-6 animate-fadeIn">
+        <div class="border-b border-zinc-800/80 pb-5">
+          <h2 class="text-2xl font-bold text-white">B) Kártyás Rács Elrendezés (Card Grid)</h2>
+          <p class="text-sm text-zinc-400 mt-1">Dinamikus, moduláris kártyák a legújabb frissítésekhez és patch-ekhez.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <!-- Card 1 -->
+          <div class="p-6 rounded-xl bg-[#0f1011] border border-zinc-800/80 flex flex-col justify-between hover:border-teal-500/50 transition-all">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-teal-400 font-mono">2026. szept. 24.</span>
+                <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">ÚJ FUNKCIÓ</span>
+              </div>
+              <h3 class="text-base font-bold text-white">Könyvelőirodai hibajegy megosztás</h3>
+              <p class="text-xs text-zinc-400 leading-relaxed">A könyvelőirodák kollégái közösen látják a kezelt cégek jegyeit, megakadályozva a duplikált hibabejelentéseket.</p>
+              <ul class="text-xs text-zinc-300 space-y-1.5 pt-2 border-t border-zinc-800/60">
+                <li>• 37 szakmai hibajegy kategória</li>
+                <li>• Cégkereső gyorsszűrő mező</li>
+                <li>• Értesítési szűrés társaknak</li>
+              </ul>
+            </div>
+            <div class="pt-4 mt-4 border-t border-zinc-800/40 flex items-center justify-between text-xs text-zinc-500">
+              <span>eaisyBill & Books</span>
+              <span class="text-teal-400 font-medium hover:underline cursor-pointer">Részletek megnyitása →</span>
+            </div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="p-6 rounded-xl bg-[#0f1011] border border-zinc-800/80 flex flex-col justify-between hover:border-teal-500/50 transition-all">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-zinc-400 font-mono">2026. szept. 23.</span>
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] font-bold">FEJLESZTÉS</span>
+              </div>
+              <h3 class="text-base font-bold text-white">Aggreg8 Open Banking & Devizakezelés</h3>
+              <p class="text-xs text-zinc-400 leading-relaxed">Közvetlen banki szinkronizáció és devizanem-alapú analitika a könyvelési főkönyvben.</p>
+              <ul class="text-xs text-zinc-300 space-y-1.5 pt-2 border-t border-zinc-800/60">
+                <li>• Automata banksor letöltés</li>
+                <li>• MNB árfolyam számítás</li>
+              </ul>
+            </div>
+            <div class="pt-4 mt-4 border-t border-zinc-800/40 flex items-center justify-between text-xs text-zinc-500">
+              <span>Bank & Főkönyv</span>
+              <span class="text-teal-400 font-medium hover:underline cursor-pointer">Részletek megnyitása →</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =============================================================== -->
+      <!-- OPTION C: MASTER-DETAIL VIEW (LIKE KNOWLEDGE BASE)              -->
+      <!-- =============================================================== -->
+      <div id="view-masterdetail" class="layout-view hidden max-w-5xl mx-auto space-y-6 animate-fadeIn">
+        <div class="border-b border-zinc-800/80 pb-5">
+          <h2 class="text-2xl font-bold text-white">C) Kétoszlopos Fejlesztői Nézet (Master-Detail)</h2>
+          <p class="text-sm text-zinc-400 mt-1">A Tudástárhoz hasonló elrendezés: bal oldalon a kiadások archívuma, jobb oldalon a teljes részletes dokumentáció.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 min-h-[500px]">
+          <!-- Left Column: List -->
+          <div class="md:col-span-4 rounded-xl bg-[#0f1011] border border-zinc-800/80 p-3 space-y-2">
+            <div class="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 px-2 py-1">Kiadások időrendben</div>
+            
+            <div class="p-3 rounded-lg bg-teal-500/10 border border-teal-500/30 text-teal-400 cursor-pointer">
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="font-bold">v2.2.5</span>
+                <span class="text-zinc-400 font-mono">2026.09.24</span>
+              </div>
+              <div class="text-xs font-semibold text-white mt-1 truncate">Könyvelőirodai hibajegy megosztás</div>
+              <div class="text-[10px] text-zinc-400 mt-0.5">37 kategória, cégkereső</div>
+            </div>
+
+            <div class="p-3 rounded-lg hover:bg-zinc-800/40 border border-transparent text-zinc-400 cursor-pointer transition-colors">
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="font-bold text-zinc-300">v2.2.4</span>
+                <span class="text-zinc-500 font-mono">2026.09.23</span>
+              </div>
+              <div class="text-xs font-medium text-zinc-300 mt-1 truncate">Aggreg8 Open Banking</div>
+              <div class="text-[10px] text-zinc-500 mt-0.5">PSD2 letöltés, devizás főkönyv</div>
+            </div>
+
+            <div class="p-3 rounded-lg hover:bg-zinc-800/40 border border-transparent text-zinc-400 cursor-pointer transition-colors">
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="font-bold text-zinc-300">v2.2.3</span>
+                <span class="text-zinc-500 font-mono">2026.09.22</span>
+              </div>
+              <div class="text-xs font-medium text-zinc-300 mt-1 truncate">NAV 2665 ÁFA bevallás</div>
+              <div class="text-[10px] text-zinc-500 mt-0.5">65M XML export javítás</div>
+            </div>
+          </div>
+
+          <!-- Right Column: Detail Document Reader -->
+          <div class="md:col-span-8 rounded-xl bg-[#0f1011] border border-zinc-800/80 p-6 space-y-6">
+            <div class="border-b border-zinc-800/80 pb-4">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">🚀 ÚJ FUNKCIÓ</span>
+                <span class="text-xs text-zinc-400 font-mono">2026. szeptember 24. • v2.2.5</span>
+              </div>
+              <h2 class="text-xl font-bold text-white">Könyvelőirodai hibajegy megosztás és szakmai kategóriák</h2>
+            </div>
+
+            <div class="space-y-4 text-xs text-zinc-300 leading-relaxed">
+              <p>Megkönnyítettük a könyvelőirodák mindennapi munkáját. Ha több kolléga könyvel ugyanazon a cégen, mostantól azonnal láthatják egymás hibajegyeit.</p>
+
+              <h4 class="text-sm font-semibold text-white pt-2">Főbb újdonságok és javítások:</h4>
+              <div class="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-2 font-mono text-[11px]">
+                <div class="text-emerald-400">+ Közös hozzáférés az iroda összes kezelt cégéhez</div>
+                <div class="text-emerald-400">+ 37 db szakmai hibajegy kategória (áfa, főkönyv, bér, stb.)</div>
+                <div class="text-emerald-400">+ Szabadszavas cégkereső a táblázat fejlécében</div>
+                <div class="text-blue-400">~ Versenyhelyzet védelem egyidejű jóváhagyás esetén</div>
+                <div class="text-blue-400">~ Unread értesítési szűrés: csak a bejelentőnél jelez a badge</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    function switchLayout(layoutName) {
+      // Hide all views
+      document.querySelectorAll('.layout-view').forEach(v => v.classList.add('hidden'));
+      // Show selected
+      document.getElementById('view-' + layoutName).classList.remove('hidden');
+
+      // Update button styling
+      document.querySelectorAll('.layout-btn').forEach(b => {
+        b.classList.remove('bg-teal-600', 'text-white');
+        b.classList.add('text-zinc-400');
+      });
+      const activeBtn = document.getElementById('btn-' + layoutName);
+      activeBtn.classList.add('bg-teal-600', 'text-white');
+      activeBtn.classList.remove('text-zinc-400');
+    }
+
+    function toggleDarkMode() {
+      const html = document.documentElement;
+      const isDark = html.classList.toggle('dark');
+      document.getElementById('theme-icon').textContent = isDark ? '🌙' : '☀️';
+      document.getElementById('theme-label').textContent = isDark ? 'Sötét mód' : 'Világos mód';
+    }
+  </script>
+</body>
+</html>

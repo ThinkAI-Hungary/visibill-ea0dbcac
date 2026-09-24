@@ -7,6 +7,7 @@ import { useCompany } from "@/contexts/CompanyContext";
 import { supabase } from "@/integrations/supabase/client";
 import { ContentSkeleton } from "@/components/ui/content-skeleton";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
+import { ChangeEmailDialog } from "@/components/ChangeEmailDialog";
 import { AccountyNotificationPreferences } from '@/components/settings/AccountyNotificationPreferences';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
@@ -354,6 +355,7 @@ export default function ProfileSettingsPage() {
   const [loading, setLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
 
   // Tab management via search params
@@ -650,6 +652,7 @@ export default function ProfileSettingsPage() {
         <TabsContent value="security">
           <SecuritySection
             onChangePassword={() => setPasswordDialogOpen(true)}
+            onChangeEmail={() => setEmailDialogOpen(true)}
             onExportData={handleExportData}
             exportLoading={exportLoading}
             showAvdh
@@ -658,6 +661,7 @@ export default function ProfileSettingsPage() {
       </Tabs>
 
       <ChangePasswordDialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen} />
+      <ChangeEmailDialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen} />
       <UnsavedChangesDialog open={showDialog} onConfirm={confirmNavigation} onCancel={cancelNavigation} />
     </div>
   );

@@ -270,6 +270,7 @@ export interface CreateTicketOnBehalfPayload {
   companyName?: string | null;
   service?: string; // 'eaisybill' | 'accounty'
   type: string; // 'bug' | 'feedback' | 'question'
+  category?: string | null;
   priority?: string; // 'low' | 'medium' | 'high' | 'critical'
   message: string;
   attachments?: string[];
@@ -286,6 +287,7 @@ export interface CreateTicketResponse {
     status: string;
     priority: string | null;
     type: string;
+    category?: string | null;
     service: string | null;
     created_at: string;
     user_id: string;

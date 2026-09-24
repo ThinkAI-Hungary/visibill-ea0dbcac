@@ -3,7 +3,7 @@
 **Status:** Decided  
 **Category:** Ügyfélszolgálat & Support  
 **BRD Reference:** Decision 036 (Hibajegy rendszer)  
-**Utolsó frissítés:** 2026-09-11
+**Utolsó frissítés:** 2026-09-24
 
 **Question:** Hogyan néz ki a hibajegy rendszer felülete?
 
@@ -11,7 +11,7 @@
 
 **Current Implementation:**
 - `FeedbackDialog.tsx` — Lebegő gyorsgombból és menükből elérhető visszajelzés beküldő modal:
-  - Szélesség: `sm:max-w-[720px]`, asztali nézeten 2 oszlopos reszponzív grid a választómezőkhöz (Cég, Szolgáltatás, Típus, Prioritás)
+  - Szélesség: `sm:max-w-[720px]`, asztali nézeten reszponzív grid a választómezőkhöz (Cég, Szolgáltatás, Típus, Prioritás és opcionális Kategória `TicketCategorySelect`)
   - Rich Text szerkesztő (`RichTextEditor`): formázott szövegbevitel (félkövér, dőlt, listák, címsorok, idézet, kód)
   - Állapotkezelés: automatikus `resetForm` és `editorKey` léptetés az `open` prop változásakor (megelőzve a korábbi form vagy confirmation beragadást)
   - Beküldés utáni megerősítés: zöld pipás siker ablak, ahol a „Bezárás” mellett elérhető az „Újabb visszajelzés” gomb is közvetlen sorozatos beküldéshez
@@ -75,5 +75,24 @@
   - **SLA Figyelmeztető Banner (`TicketSlaWarningBanner`):** Ha egy aktív hibajegy utolsó nem belső üzenete az ügyféltől érkezett és több mint 48 órája nem kapott hivatalos választ, a jegy tetején kiemelt piros figyelmeztetés jelenik meg a munkatársnak a várakozási idővel, valamint közvetlen „Nem igényel választ” és „Válasz írása” akciógombokkal.
   - **SLA Várakozási Badge (`TicketSlaBadge`):** 24 óra után borostyán, 48 óra után vörös kapszula badge mutatja a várakozási időt a listában és a fejlécben.
   - **Nem igényel választ (`needs_staff_response = false`):** Lehetővé teszi a support munkatársnak a figyelmeztetés elnémítását, ha az ügyfél üzenete nem igényel érdemi választ (pl. egyszerű köszönetnyilvánítás).
+- **Opcionális Szakmai Kategóriák (`category`):**
+  - **37 előre definiált kategória:** A felület (`ticketCategories.ts`) támogatja a leggyakoribb könyvelési, banki, bérszámfejtési és rendszerfeladatok kategorizálását (pl. `számlaképek`, `főkönyv`, `banki tranzakciók`, `áfa`, `bér xml`, `rendszer`, `besorolandó` stb.).
+  - **Kereshető Kategóriaválasztó (`TicketCategorySelect`):** Billentyűzet-barát, azonnal szűrő Popover/Combobox komponens, amely elérhető jegynyitáskor (`FeedbackDialog`, `ManagementCreateTicketDialog`), valamint retroaktívan a jegy részletes adatlapján (`TicketDetailView`).
+  - **Kategória szűrés & Keresés:** A táblázat fejlécében dedikált kategóriaszűrő dropdown ("Összes kategória", "Kategória nélküli", stb.) érhető el, a globális kereső egyezést ad a kategória nevére, a sorokban pedig színes `TicketCategoryBadge` jelzi a besorolást.
+- **Könyvelőirodai Hibajegy Megosztás és Cég Keresősáv (`companySearch`):**
+  - **Csapatmunka támogatása:** A könyvelőirodák munkatársai látják az iroda által kezelt cégek és kollégáik által nyitott hibajegyeket, elkerülve a párhuzamos hibabejelentéseket.
+  - **Bejelentő & Cég oszlop:** Minden felhasználó számára megjeleníti a jegyet nyitó kolléga nevét és a kapcsolódó ügyfélcég nevét.
+  - **Cég Keresősáv:** A táblázat fejlécében dedikált `Building2` ikonnal és törlés gombbal ellátott azonnali szöveges keresőmező érhető el, amellyel a könyvelők egyetlen gépeléssel leszűrhetik a listát a tucatnyi kezelt ügyfélcég közül a kívánt cégre.
+- **Megoldott Jegyek Alapértelmezett Elrejtése (`ACTIVE_TICKET_STATUSES`):**
+  - Mind a normál felhasználók, mind a könyvelőirodai tagok és management operátorok felületén alapértelmezetten kizárólag a függőben lévő, nyitott jegyek (`created`, `assigned`, `in_progress`) jelennek meg. A megoldott (`resolved`) jegyek nem terhelik a listát, és bármikor visszakereshetők a státusz szűrő vagy a szabadszavas kereső segítségével.
+- **Kollégális Olvasatlansági Izoláció (Unread Privacy):**
+  - Ha egy kolléga által nyitott jegyre válasz érkezik, a rendszer csak a konkrét bejelentő számára emeli ki olvasatlanként a jegyet és csak az ő oldalsávjában növeli az olvasatlan számlálót (`canBeUnreadForUser`), megkímélve az iroda többi tagját a félrevezető értesítésektől.
+- **Kollaboratív Jóváhagyás és Versenyhelyzet Védelem:**
+  - A jegyet kezelő iroda bármely tagja jóváhagyhatja a megoldást a `TicketResolutionBanner`-en keresztül. Az adatbázis tárolt eljárása (`respond_to_ticket_resolution`) tranzakciós szinten védi a párhuzamos jóváhagyási kísérleteket, megakadályozva a versenyhelyzeteket és a duplikált audit naplóbejegyzéseket.
 
-**Rationale:** Egy beépített ticket rendszer gyorsabb visszajelzési ciklust biztosít mint az email, és kontextust ad a fejlesztőknek (melyik oldalon, melyik cég kontextusban keletkezett a hiba). Az ügyfél általi megerősítő folyamat garantálja, hogy egyetlen hibajegy se záródjon le a felhasználó valós jóváhagyása nélkül.
+**Rationale:** Egy beépített ticket rendszer gyorsabb visszajelzési ciklust biztosít mint az email, és kontextust ad a fejlesztőknek (melyik oldalon, melyik cég kontextusban keletkezett a hiba). Az ügyfél általi megerősítő folyamat garantálja, hogy egyetlen hibajegy se záródjon le a felhasználó valós jóváhagyása nélkül. A könyvelőirodai hibrid megosztás és a céges keresősáv megszünteti az irodán belüli információs silókat anélkül, hogy a kollégákat felesleges unread értesítésekkel árasztaná el.
+
+## Kapcsolódó
+- [A-148: Könyvelőirodai Hibajegy Megosztás és Hibrid RLS](../../architecture/decisions/A-148-accounting-firm-ticket-sharing-and-hybrid-access.md)
+- [A-018: Hibajegy Rendszer Architektúra](../../architecture/decisions/A-018-ticket-system.md)
+- [P-070: Management Dashboard Hibajegy Létrehozás Felhasználó Nevében UX](./P-070-management-impersonated-ticket-creation-ux.md)

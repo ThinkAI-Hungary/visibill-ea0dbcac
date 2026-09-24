@@ -48,7 +48,9 @@ import {
   ChevronsUpDown,
   X,
   FileText,
+  Tag,
 } from "lucide-react";
+import { TicketCategorySelect } from "@/components/tickets/TicketCategorySelect";
 
 export interface ManagementUserOption {
   id: string;
@@ -100,6 +102,7 @@ export function ManagementCreateTicketDialog({
   const [service, setService] = useState<string>("eaisybill");
   const [type, setType] = useState<string>("bug");
   const [priority, setPriority] = useState<string>("medium");
+  const [category, setCategory] = useState<string | null>(null);
   const [assignedTo, setAssignedTo] = useState<string>(user?.id || "unassigned");
   const [message, setMessage] = useState<string>("");
   const [attachments, setAttachments] = useState<File[]>([]);
@@ -140,6 +143,7 @@ export function ManagementCreateTicketDialog({
     setService("eaisybill");
     setType("bug");
     setPriority("medium");
+    setCategory(null);
     setAssignedTo(user?.id || "unassigned");
     setMessage("");
     setAttachments([]);
@@ -247,6 +251,7 @@ export function ManagementCreateTicketDialog({
         companyName: finalCompanyName,
         service,
         type,
+        category: category || null,
         priority,
         message: message.trim(),
         attachments: attachmentUrls,
@@ -484,6 +489,25 @@ export function ManagementCreateTicketDialog({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {/* ═══ 3.5. Kategória Választó (Opcionális) ═══ */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                <Tag className="h-3.5 w-3.5 text-primary" />
+                Kategória (Besorolás)
+              </Label>
+              <span className="text-[11px] text-muted-foreground font-normal">
+                Opcionális
+              </span>
+            </div>
+            <TicketCategorySelect
+              value={category}
+              onChange={setCategory}
+              placeholder="Válassz kategóriát a 37 téma közül (opcionális)..."
+              popoverWidth="w-[380px]"
+            />
           </div>
 
           {/* ═══ 4. Szöveges Leírás (Rich Text Editor) ═══ */}

@@ -8,7 +8,7 @@ import { ApiKeysCard } from './ApiKeysCard';
 
 interface Props {
   onChangePassword: () => void;
-  onChangeEmail: () => void;
+  onChangeEmail?: () => void;
   onExportData: () => void;
   exportLoading: boolean;
   showAvdh?: boolean;
@@ -56,9 +56,11 @@ export function SecuritySection({ onChangePassword, onChangeEmail, onExportData,
             <Button variant="outline" className="w-full justify-start" onClick={onChangePassword}>
               {t('security.change_password', 'Jelszó megváltoztatása')}
             </Button>
-            <Button variant="outline" className="w-full justify-start" onClick={onChangeEmail}>
-              {t('security.change_email', 'Email cím megváltoztatása')}
-            </Button>
+            {onChangeEmail && (
+              <Button variant="outline" className="w-full justify-start" onClick={onChangeEmail}>
+                {t('security.change_email', 'Email cím megváltoztatása')}
+              </Button>
+            )}
             <Button variant="outline" className="w-full justify-start opacity-50" disabled>
               {t('security.two_factor', 'Kétfaktoros hitelesítés beállítása (hamarosan)')}
             </Button>

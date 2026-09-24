@@ -2,7 +2,7 @@
 
 > Hibalogok, audit trail, LLM költségek, API kulcsok, email aliasok, devizaárfolyamok, visszajelzések.
 
-**Táblák ebben a csoportban:** 13
+**Táblák ebben a csoportban:** 14
 
 ---
 
@@ -116,10 +116,11 @@
 | attachments | ARRAY | ✓ |  |
 | service | text | ✓ |  |
 | assigned_to | uuid | ✓ |  |
+| category | text | ✓ |  |
 
 **FK:** `company_id` → `companies.id`, `user_id` → `auth.users.id`, `assigned_to` → `auth.users.id`
 
-**Indexek:** `idx_feedback_company_id`, `idx_feedback_status`, `idx_feedback_user_id`
+**Indexek:** `idx_feedback_company_id`, `idx_feedback_status`, `idx_feedback_user_id`, `idx_feedback_category`
 
 **Státuszok (`feedback_status_check`):**
 - `'created'` / `'new'` / `'open'`: Nyitott
@@ -127,6 +128,9 @@
 - `'in_progress'`: Folyamatban
 - `'resolved'`: Megoldva
 *(Migráció: `20260909194500_ticket_statuses_assigned.sql`)*
+
+**Kategóriák (`category`):**
+Opcionális mező (`text`, default NULL), a 37 előre definiált könyvelési, banki, bér és rendszer kategóriával (lásd: `src/utils/ticketCategories.ts`, migráció: `20260924210000_add_category_to_feedback.sql`).
 
 ---
 
@@ -344,3 +348,31 @@
 | `updated_at` | timestamp with time zone | — | `now()` |
 
 **FK:** `company_id` → `companies.id`, `created_by` → `auth.users.id`
+ 
+---
+
+### `changelog_entries`
+
+> In-App Fejlesztői Napló (Patchnotes) bejegyzések tárolója. A publikált bejegyzéseket minden bejelentkezett felhasználó olvashatja, az új bejegyzéseket az automatizált AI skill (`visibill-patchnote`) vagy a menedzsment adminok rögzítik (A-149, P-112).
+
+**RLS:** ✅ | **Sorok:** ~3
+
+| Oszlop | Típus | Null | Default | Leírás |
+|--------|-------|------|---------|--------|
+| `id` | uuid | — | `gen_random_uuid()` | Elsődleges azonosító |
+| `version` | text | — | — | Kiadási verziószám (pl. `v2.2.5`) |
+| `release_date` | date | — | `current_date` | Kiadás hivatalos naptári dátuma |
+| `title` | text | — | — | Közérthető kiadási cím |
+| `summary` | text | — | — | Előny-központú összefoglaló leírás |
+| `category` | text | — | `'feature'` | Kategória (`feature`, `fix`, `improvement`, `perf`) |
+| `app_scope` | text | — | `'all'` | Érintett alkalmazás modul (`all`, `eaisybill`, `eaisybooks`) |
+| `items` | jsonb | — | `'[]'::jsonb` | Strukturált kiemelt pontok listája |
+| `is_published` | boolean | — | `true` | Publikált-e a bejegyzés |
+| `created_by` | uuid | ✓ | `auth.uid()` | Létrehozó felhasználó ID-ja |
+| `created_at` | timestamp with time zone | — | `now()` | Létrehozás időpontja |
+| `updated_at` | timestamp with time zone | — | `now()` | Utolsó módosítás időpontja |
+
+**FK:** `created_by` → `auth.users.id`
+
+**Indexek:** `idx_changelog_entries_release_date`, `idx_changelog_entries_category`, `idx_changelog_entries_app_scope`, `idx_changelog_entries_published`
+

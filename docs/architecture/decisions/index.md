@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-24  
-> **Összesen:** 159 döntés | ✅ Decided: 157 | ⛔ Superseded: 2
+> **Összesen:** 160 döntés | ✅ Decided: 158 | ⛔ Superseded: 2
 
 ---
 
@@ -208,6 +208,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 |---|--------|---------|------|
 | A-018 | Hibajegy rendszer architektúra (event sourcing, Realtime) | ✅ Decided | [A-018](./A-018-ticket-system.md) |
 | A-089 | Management Dashboard Hibajegy Létrehozás Felhasználó Nevében (Impersonated Ticket Creation) | ✅ Decided | [A-089](./A-089-management-ticket-creation-on-behalf-of-user.md) |
+| A-148 | Könyvelőirodai Hibajegy Megosztás és Hibrid RLS Hozzáférés-vezérlés | ✅ Decided | [A-148](./A-148-accounting-firm-ticket-sharing-and-hybrid-access.md) |
 
 ## 🛠️ Platform Üzemeltetés
 
@@ -228,6 +229,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-088 | Management Dashboard Adatkonzisztencia, Dedublikáció és Worker Fallback Ciklusvédelem | ✅ Decided | [A-088](./A-088-management-dashboard-dedup-and-worker-fallback-loop-prevention.md) |
 | A-117 | Hivatalos Ügyfél REST API v2.2.2 (Customer API), OpenAPI 3, Hibajegyek és M2M Átjáró | ✅ Decided | [A-117](./A-117-customer-rest-api-and-multi-company-keys.md) |
 | A-126 | Műveleti Napló E-mail Metaadatok Megőrzése és Retrospektív Számla-Összekapcsolás | ✅ Decided | [A-126](./A-126-audit-trail-email-ingestion-and-invoice-linking.md) |
+| A-149 | In-App Fejlesztői Napló (Patchnotes) Rendszer és Publikációs Pipeline | ✅ Decided | [A-149](./A-149-in-app-changelog-and-patchnotes-system.md) |
 
 
 

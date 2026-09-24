@@ -49,6 +49,7 @@ import {
   CheckCircle2,
   Check,
   Sparkles,
+  Tag,
 } from "lucide-react";
 import { uploadTicketImage, isAllowedTicketFile } from "@/lib/upload-ticket-image";
 import { TicketStatusBadge } from "./TicketStatusBadge";
@@ -57,6 +58,8 @@ import { ThinkAiBadge, ThinkAiIcon } from "./ThinkAiBadge";
 import { TicketResolutionBanner } from "./TicketResolutionBanner";
 import { TicketSlaBadge } from "./TicketSlaBadge";
 import { TicketSlaWarningBanner } from "./TicketSlaWarningBanner";
+import { TicketCategoryBadge } from "./TicketCategoryBadge";
+import { TicketCategorySelect } from "./TicketCategorySelect";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { RichTextContent } from "@/components/ui/rich-text-content";
 import {
@@ -76,6 +79,7 @@ import {
   useUpdateTicketAttachments,
   useRequestTicketResolution,
   useUpdateTicketStaffResponse,
+  useUpdateTicketCategory,
 } from "@/hooks/useTickets";
 import {
   AlertDialog,
@@ -117,6 +121,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
   const { mutate: markRead } = useMarkTicketRead();
   const { data: isAdmin, isLoading: isAdminLoading } = useIsSupportAdmin();
   const { mutate: updatePriority } = useUpdateTicketPriority();
+  const { mutate: updateCategory, isPending: isUpdatingCategory } = useUpdateTicketCategory();
   const { mutate: updateAssignee } = useUpdateTicketAssignee();
   const { data: supportAgents = [] } = useSupportAgents();
   const { mutateAsync: updateTicketAttachments, isPending: isUpdatingAttachments } = useUpdateTicketAttachments();
@@ -635,6 +640,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
             <h1 className="text-xl font-bold tracking-tight">{ticket.ticket_number || "—"}</h1>
             <TicketPriorityBadge priority={ticket.priority} />
             <TicketStatusBadge status={ticket.status} waitingForConfirmation={ticket.waiting_for_user_confirmation} />
+            {ticket.category && <TicketCategoryBadge category={ticket.category} />}
             {canManage && <TicketSlaBadge sla={ticket.sla} canManage={canManage} />}
             {canManage && ticket.needs_staff_response === false && ticket.status !== "resolved" && (
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shrink-0">
@@ -1706,6 +1712,51 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                           </div>
                         ) : (
                           <span className="text-xs text-muted-foreground italic">{t('detail.prop_unassigned')}</span>
+                        )
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Kategória */}
+                  <div className="flex items-center justify-between p-2.5 px-3 gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
+                      <Tag className="h-3.5 w-3.5 text-muted-foreground" />
+                      {t('detail.prop_category', 'Kategória')}
+                    </span>
+                    <div className="max-w-[65%]">
+                      {canManage ? (
+                        <TicketCategorySelect
+                          value={ticket.category}
+                          onChange={(val) => {
+                            updateCategory(
+                              { feedbackId: ticket.id, category: val },
+                              {
+                                onSuccess: () => {
+                                  toast({
+                                    title: t('detail.toasts.category_updated_title', 'Kategória frissítve'),
+                                    description: val ? `Új kategória: ${val}` : 'Kategória törölve.',
+                                  });
+                                },
+                                onError: (err: any) => {
+                                  toast({
+                                    variant: "destructive",
+                                    title: "Hiba",
+                                    description: err?.message || "Nem sikerült módosítani a kategóriát.",
+                                  });
+                                },
+                              }
+                            );
+                          }}
+                          disabled={isUpdatingCategory}
+                          placeholder="Válassz kategóriát..."
+                          triggerClassName="h-7 text-xs px-2.5 border-border/80 bg-background"
+                          popoverWidth="w-[280px]"
+                        />
+                      ) : (
+                        ticket.category ? (
+                          <TicketCategoryBadge category={ticket.category} />
+                        ) : (
+                          <span className="text-xs text-muted-foreground italic">{t('detail.prop_no_category', 'Nincs megadva')}</span>
                         )
                       )}
                     </div>
