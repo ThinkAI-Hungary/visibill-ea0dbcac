@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -72,7 +72,9 @@ export function SubmittedInvoiceRow({
 
   const isExpanded = expandedRowIds.has(invoice.id);
   const isSelected = selectedSubmittedIds.has(invoice.id);
-  const isLastViewed = lastViewedInvoiceId === invoice.id;
+  const subKey = useMemo(() => normalizeInvoiceNumber(invoice.bizonylatsorszam || ''), [invoice.bizonylatsorszam]);
+  const navMatches = useMemo(() => (subKey ? submittedToNavMap.get(subKey) || [] : []), [submittedToNavMap, subKey]);
+  const isLastViewed = lastViewedInvoiceId === invoice.id || (navMatches.length > 0 && navMatches.some(n => n.id === lastViewedInvoiceId));
 
   const [isOptimisticReviewed, setIsOptimisticReviewed] = useState<boolean | null>(null);
 
@@ -120,16 +122,24 @@ export function SubmittedInvoiceRow({
       <TableRow
         data-row-hover
         className={cn(
-          'group cursor-pointer transition-colors',
-          isSelected && 'bg-primary/5',
-          isLastViewed && 'ring-2 ring-primary/80 bg-primary/15 dark:bg-primary/25 border-l-4 border-l-primary font-medium',
-          !isSelected && !isLastViewed && isMatched && 'bg-[var(--row-matched-bg)]',
-          !isSelected && !isLastViewed && isPartiallyPaid && 'bg-blue-500/[0.06]',
-          !isSelected && !isLastViewed && isSuggested && 'bg-[var(--row-suggested-bg)]',
-          !isSelected && !isLastViewed && !isMatched && !isPartiallyPaid && !isSuggested && 'bg-[var(--row-unmatched-bg)]',
+          'group cursor-pointer transition-colors border-l-4',
+          // Matching status background: ALWAYS applied and never overridden by selection/focus
+          isMatched && 'bg-[var(--row-matched-bg)]',
+          isPartiallyPaid && 'bg-blue-500/[0.06]',
+          isSuggested && 'bg-[var(--row-suggested-bg)]',
+          !isMatched && !isPartiallyPaid && !isSuggested && 'bg-[var(--row-unmatched-bg)]',
+          // Selection and Focus indicators (border and ring, keeping the status color intact)
+          isLastViewed
+            ? 'border-l-primary ring-2 ring-primary/80 ring-inset brightness-[1.08] dark:brightness-[1.12]'
+            : isSelected
+              ? 'border-l-primary/60 ring-1 ring-primary/50 ring-inset brightness-[1.04] dark:brightness-[1.06]'
+              : 'border-l-transparent',
           isExpanded && 'border-b-0'
         )}
-        onClick={(e) => onRowClick(invoice.id, e)}
+        onClick={(e) => {
+          setLastViewedInvoiceId(invoice.id);
+          onRowClick(invoice.id, e);
+        }}
       >
         <TableCell className="pl-2">
           <div className="flex items-center gap-2">
@@ -427,6 +437,7 @@ export function SubmittedInvoiceRow({
                     setSelectedSubmittedForItems(invoice);
                     setSubmittedItemsDialogOpen(true);
                     setInvoiceParam(invoice.id);
+                    setLastViewedInvoiceId(invoice.id);
                   }}
                 >
                   <Package className="h-4 w-4" />

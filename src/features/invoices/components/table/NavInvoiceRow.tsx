@@ -206,17 +206,25 @@ function NavInvoiceRowComponent({
       <TableRow
         data-row-hover
         className={cn(
-          'group cursor-pointer transition-colors',
-          isSelected && 'bg-primary/10',
-          isLastViewed && 'ring-2 ring-primary/80 bg-primary/15 dark:bg-primary/25 border-l-4 border-l-primary font-medium',
-          !isSelected && !isLastViewed && isPaid && 'bg-[var(--row-matched-bg)]',
-          !isSelected && !isLastViewed && isPartiallyPaid && 'bg-blue-500/[0.06]',
-          !isSelected && !isLastViewed && isSuggested && 'bg-[var(--row-suggested-bg)]',
-          !isSelected && !isLastViewed && !isPaid && !isPartiallyPaid && !isSuggested && !isNettingCandidate && 'bg-[var(--row-unmatched-bg)]',
-          !isSelected && !isLastViewed && isNettingCandidate && !isPaid && !isPartiallyPaid && !isSuggested && 'bg-orange-500/[0.06]',
+          'group cursor-pointer transition-colors border-l-4',
+          // Matching status background: ALWAYS applied and never overridden by selection/focus
+          isPaid && 'bg-[var(--row-matched-bg)]',
+          isPartiallyPaid && 'bg-blue-500/[0.06]',
+          isSuggested && 'bg-[var(--row-suggested-bg)]',
+          isNettingCandidate && !isPaid && !isPartiallyPaid && !isSuggested && 'bg-orange-500/[0.06]',
+          !isPaid && !isPartiallyPaid && !isSuggested && !isNettingCandidate && 'bg-[var(--row-unmatched-bg)]',
+          // Selection and Focus indicators (border and ring, keeping the status color intact)
+          isLastViewed
+            ? 'border-l-primary ring-2 ring-primary/80 ring-inset brightness-[1.08] dark:brightness-[1.12]'
+            : isSelected
+              ? 'border-l-primary/60 ring-1 ring-primary/50 ring-inset brightness-[1.04] dark:brightness-[1.06]'
+              : 'border-l-transparent',
           isExpanded && 'border-b-0'
         )}
-        onClick={(e) => onRowClick(invoice.id, e)}
+        onClick={(e) => {
+          setLastViewedInvoiceId(invoice.id);
+          onRowClick(invoice.id, e);
+        }}
       >
         <TableCell className="pl-2">
           <div className="flex items-center gap-2">
@@ -673,6 +681,7 @@ function NavInvoiceRowComponent({
                     setSelectedNavInvoice(invoice);
                     setItemsDialogOpen(true);
                     setInvoiceParam(invoice.id);
+                    setLastViewedInvoiceId(invoice.id);
                   }}
                 >
                   <Package className="h-4 w-4" />

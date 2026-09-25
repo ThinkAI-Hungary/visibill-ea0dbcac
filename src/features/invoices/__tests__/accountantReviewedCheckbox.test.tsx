@@ -22,6 +22,9 @@ vi.mock('@/contexts/CompanyContext', () => ({
   useCompany: () => ({
     selectedCompany: { id: 'comp-1', tax_number: '12345678' },
   }),
+  useOptionalCompany: () => ({
+    selectedCompany: { id: 'comp-1', tax_number: '12345678' },
+  }),
 }));
 
 const mockInvalidateInvoiceData = vi.fn();
@@ -53,6 +56,8 @@ vi.mock('../context/useInvoiceContext', () => ({
     activePresetId: null,
     nettingInvoiceIds: new Set(),
     navIdToCourierReportsMap: new Map(),
+    lastViewedInvoiceId: null,
+    setLastViewedInvoiceId: vi.fn(),
   }),
 }));
 

@@ -24,6 +24,7 @@ export function InvoiceTableContainer() {
     paginatedSubmittedInvoices,
     setExpandedRowIds,
     invalidateInvoiceData,
+    setLastViewedInvoiceId,
   } = useInvoiceContext();
 
   const [, setSearchParams] = useSearchParams();
@@ -213,13 +214,14 @@ export function InvoiceTableContainer() {
     enabled: !!companyId,
   });
 
-  // 4. Handle row click (expansion + URL param sync)
+  // 4. Handle row click (expansion + URL param sync + focus selection)
   const handleRowClick = useCallback(
     (invoiceId: string, e: React.MouseEvent) => {
       const target = e.target as HTMLElement;
       if (target.closest('button, input, select, [role="checkbox"], [role="combobox"], [data-radix-collection-item]')) {
         return;
       }
+      setLastViewedInvoiceId(invoiceId);
       let isExpanding = false;
       setExpandedRowIds(prev => {
         const next = new Set(prev);
