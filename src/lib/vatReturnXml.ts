@@ -46,6 +46,16 @@ export interface XmlExportData {
 export const INVOICES_PER_M02_PAGE = 36;
 
 /**
+ * Rows on the official NAV 65A 0B lap that have a payable tax (CA) column.
+ * Tax-exempt rows (01 export, 02 intra-EU, 03 new vehicles, 04 reverse charge, 08 TAM, 11, 17, 23)
+ * only have a base (BA) column. Emitting CA causes ÁNYK rejection:
+ * "A sablon nem tartalmazza az adatállományban található (0B0001C0001CA mezőkódú) mezőt".
+ */
+export const ROWS_WITH_TAX_ON_0B = new Set([
+  5, 6, 7, 9, 10, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 24, 25, 26, 27, 28, 29, 30, 31, 35, 36
+]);
+
+/**
  * Converts invoice net/vat amounts to thousand HUF (E Ft).
  * By database and app contract (vat_return_m_lines.invoice_details), amounts in invoice_details
  * are stored in exact HUF (whole currency, e.g. 567000 Ft or micro-invoices like 450 Ft).
@@ -176,6 +186,7 @@ export function buildVatReturnXml(data: XmlExportData): string {
   const currentDate = new Date().toISOString().substring(0, 10).replace(/-/g, '');
   const year2Digit = String(data.periodYear % 100).padStart(2, '0');
   const formId = `${year2Digit}65`;
+  const formVersion = data.periodYear >= 2026 ? '2.0' : data.periodYear === 2025 ? '2.0' : '4.0';
   const mPartnerCount = data.mLines ? data.mLines.length : 0;
 
   let xml = `<?xml version="1.0" encoding="utf-8"?>\n`;
@@ -192,7 +203,7 @@ export function buildVatReturnXml(data: XmlExportData): string {
   xml += `  <nyomtatvany>\n`;
   xml += `    <nyomtatvanyinformacio>\n`;
   xml += `      <nyomtatvanyazonosito>${formId}A</nyomtatvanyazonosito>\n`;
-  xml += `      <nyomtatvanyverzio>4.0</nyomtatvanyverzio>\n`;
+  xml += `      <nyomtatvanyverzio>${formVersion}</nyomtatvanyverzio>\n`;
   xml += `      <adozo>\n`;
   xml += `        <nev>${escapeXml(data.companyName)}</nev>\n`;
   xml += `        <adoszam>${taxNum11}</adoszam>\n`;
@@ -230,7 +241,8 @@ export function buildVatReturnXml(data: XmlExportData): string {
       if (line.base_amount_rounded != null) {
         xml += `      <mezo eazon="0B0001C${rowPad}BA">${line.base_amount_rounded}</mezo>\n`;
       }
-      if (line.tax_amount_rounded != null) {
+      // Kizárólag az adóval rendelkező sorok kaphatnak CA (adó) mezőkódot a hivatalos NAV sablonban
+      if (ROWS_WITH_TAX_ON_0B.has(rowNum) && line.tax_amount_rounded != null) {
         xml += `      <mezo eazon="0B0001C${rowPad}CA">${line.tax_amount_rounded}</mezo>\n`;
       }
     }
@@ -251,7 +263,8 @@ export function buildVatReturnXml(data: XmlExportData): string {
       if (line.base_amount_rounded != null) {
         xml += `      <mezo eazon="0C0001C${rowPad}BA">${line.base_amount_rounded}</mezo>\n`;
       }
-      if (line.tax_amount_rounded != null) {
+      // 63. sor adómentes belföldi beszerzés (nincs adóoszlop)
+      if (rowNum !== 63 && line.tax_amount_rounded != null) {
         xml += `      <mezo eazon="0C0001C${rowPad}CA">${line.tax_amount_rounded}</mezo>\n`;
       }
       if (rowNum === 66 && !data.lines.some((l) => l.row_number === '66_fad')) {
@@ -333,7 +346,7 @@ export function buildVatReturnXml(data: XmlExportData): string {
       xml += `  <nyomtatvany>\n`;
       xml += `    <nyomtatvanyinformacio>\n`;
       xml += `      <nyomtatvanyazonosito>${formId}M</nyomtatvanyazonosito>\n`;
-      xml += `      <nyomtatvanyverzio>4.0</nyomtatvanyverzio>\n`;
+      xml += `      <nyomtatvanyverzio>${formVersion}</nyomtatvanyverzio>\n`;
       xml += `      <adozo>\n`;
       xml += `        <nev>${escapeXml(data.companyName)}</nev>\n`;
       xml += `        <adoszam>${taxNum11}</adoszam>\n`;

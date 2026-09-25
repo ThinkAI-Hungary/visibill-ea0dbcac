@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-09-01  
-**Utoljára frissítve:** 2026-09-17 (EB-0044: AbevJava 65A/65M Pozíciókód és Alnyomtatvány Szabványosítás)
+**Utoljára frissítve:** 2026-09-25 (EB-0044: Adómentes 0B Sorok CA Mező Kizárása és 2665 Nyomtatványverzió 2.0 Igazítás)
 
 ## Context
 A Visibill / eaisyBooks rendszer ÁFA moduljában a 65-ös ÁFA-bevallás XML letöltése korábban fiktív szöveges mezőneveket használt (`sor_01_alap`, `01_0001_adoszam_torzs`), és az azonosítója `2665` volt az ÁNYK által megkövetelt `2665A` (Főlap) és `2665M` (Alnyomtatványok) helyett. Továbbá az M-lapok belföldi összesítő adatai nem önálló `<nyomtatvany>` blokkokként, hanem a főnyomtatvány mezői közé ágyazva jelentek meg.
@@ -10,21 +10,26 @@ A Visibill / eaisyBooks rendszer ÁFA moduljában a 65-ös ÁFA-bevallás XML le
 Ennek következtében az Általános Nyomtatványkitöltő (ÁNYK / AbevJava) a fájl importálásakor azonnali elutasítást adott (EB-0044 hibajegy):  
 > *„Hibás típusú adatfile! Az alnyomtatvány nem a főnyomtatványhoz tartozik!”*
 
-A hiteles NAV ÁNYK XML referenciaminta (`docs/think_ai_2465_11.xml`) alapján a teljes generálási architektúra szabványosításra került.
+Később az adómentes export értékesítést (01. sor) tartalmazó bevallásoknál újabb sabloneltérés jelentkezett:
+> *„A sablon nem tartalmazza az adatállományban található (0B0001C0001CA mezőkódú) mezőt. Ez az adat nem kerül...”*  
+> *„[2010] Az 0. nyomtatványon a nyomtatványinformációs rész nincs összhangban az adatrésszel...”*
+
+A hiteles NAV ÁNYK XML referenciaminta (`docs/think_ai_2465_11.xml`) és a hatályos 2665 sablonszabályzat alapján a teljes generálási architektúra szabványosításra került.
 
 ## Decision
 1. **Hivatalos ÁNYK Burkoló (Envelope) és Névtér:**
    - A generált XML gyökéreleme: `<nyomtatvanyok xmlns="http://www.apeh.hu/abev/nyomtatvanyok/2005/01">`.
    - Kötelező `<abev>` blokk beépítése: `<hibakszama>0</hibakszama>`, `<hash>...</hash>`, `<programverzio>v.3.50.0</programverzio>`.
-   - **Főnyomtatvány azonosító:** `${periodYear % 100}65A` (pl. 2026-ra `2665A`, 2025-re `2565A`, 2024-re `2465A`), nyomtatványverzió: `4.0`.
-   - **Alnyomtatvány azonosító:** `${periodYear % 100}65M` (pl. 2026-ra `2665M`), nyomtatványverzió: `4.0`.
+   - **Főnyomtatvány azonosító:** `${periodYear % 100}65A` (pl. 2026-ra `2665A`, 2025-re `2565A`, 2024-re `2465A`), dinamikus nyomtatványverzió a NAV aktuális sablonjához: 2026-ra `2.0`, 2025-re `2.0`, 2024-re `4.0`.
+   - **Alnyomtatvány azonosító:** `${periodYear % 100}65M` (pl. 2026-ra `2665M`), dinamikus nyomtatványverzió a főlappal egyezően.
    - **Dátumformátum:** Szigorúan kötőjel nélküli 8 számjegyű dátum: `YYYYMMDD` (pl. `20260701`, `20260731`).
 
 2. **Hivatalos Pozíció-alapú Mezőkódolás (`eazon`):**
    - **0A lap (Főlap azonosítás & keltezés):**  
      `0A0001E001A` (11 jegyű adószám), `0A0001E006A` (cégnév), `0A0001E007A` (képviselő), `0A0001E008A` (telefon), `0A0001F001A` (időszak tól), `0A0001F002A` (időszak ig), `0A0001F006A` (gyakoriság: H/N/E), `0A0001F021A` (M-lapok száma), `0A0001I001A` (keltezés helye), `0A0001I002A` (keltezés ideje).
    - **0B lap (Fizetendő adó - 01..36. sorok):**  
-     Fejléc `0B0001B001A`. Adóalap: `0B0001C` + `padStart(sor, 4, '0')` + `BA`. Adó: `0B0001C` + `padStart(sor, 4, '0')` + `CA` (pl. 07. sor: `0B0001C0007BA` és `0B0001C0007CA`).
+     Fejléc `0B0001B001A`. Adóalap: `0B0001C` + `padStart(sor, 4, '0')` + `BA`.  
+     **Adó (CA) mezőkód szigorú whitelisting:** A NAV 65A sablonban kizárólag az adókulcsos sorok rendelkeznek `CA` (adó) oszloppal (`ROWS_WITH_TAX_ON_0B`: 05, 06, 07, 09, 10, 12..16, 18..22, 24..31, 35, 36). Az adómentes / fordított soroknál (01 export, 02 intra-EU, 03 új gépjármű, 04 belföldi fordított, 08 TAM, 11, 17, 23) **tilos `CA` mezőt generálni**, még 0 Ft esetén is, mert az ÁNYK sablonja ismeretlen mezőként elutasítja.
    - **0C lap (Levonható adó - 37..75. sorok):**  
      Fejléc `0C0001B001A`. Adóalap: `0C0001C` + `padStart(sor, 4, '0')` + `BA`. Adó: `0C0001C` + `padStart(sor, 4, '0')` + `CA` (pl. 64. sor: `0C0001C0064BA` és `0C0001C0064CA`).
    - **0D lap (Elszámolás - 76..86. sorok):**  

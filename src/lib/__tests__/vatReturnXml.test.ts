@@ -45,7 +45,7 @@ describe('vatReturnXml (NAV ÁNYK 2665A / 2665M Generator)', () => {
 
     // Főnyomtatvány: 2665A
     expect(xml).toContain('<nyomtatvanyazonosito>2665A</nyomtatvanyazonosito>');
-    expect(xml).toContain('<nyomtatvanyverzio>4.0</nyomtatvanyverzio>');
+    expect(xml).toContain('<nyomtatvanyverzio>2.0</nyomtatvanyverzio>');
     expect(xml).toContain('<adoszam>13086905208</adoszam>');
     expect(xml).toContain('<tol>20260701</tol>');
     expect(xml).toContain('<ig>20260731</ig>');
@@ -64,7 +64,9 @@ describe('vatReturnXml (NAV ÁNYK 2665A / 2665M Generator)', () => {
     // 0B Fizetendő sorok (pos-coded: 0B0001C{row}BA/CA)
     expect(xml).toContain('<mezo eazon="0B0001B001A">13086905208</mezo>');
     expect(xml).toContain('<mezo eazon="0B0001C0001BA">1</mezo>');
-    expect(xml).toContain('<mezo eazon="0B0001C0001CA">0</mezo>');
+    // 01. sor adómentes export a 65A főlapon: a NAV ÁNYK sablon nem tartalmaz CA mezőt (0B0001C0001CA)
+    const mainFormXml = xml.split('<nyomtatvanyazonosito>2665M')[0];
+    expect(mainFormXml).not.toContain('0B0001C0001CA');
     expect(xml).toContain('<mezo eazon="0B0001C0007BA">7375</mezo>');
     expect(xml).toContain('<mezo eazon="0B0001C0007CA">1991</mezo>');
 
@@ -358,6 +360,47 @@ describe('vatReturnXml (NAV ÁNYK 2665A / 2665M Generator)', () => {
       expect(xml).toContain('<mezo eazon="0C0001C0066BA">262</mezo>');
       expect(xml).toContain('<mezo eazon="0C0001C0066CA">71</mezo>');
       expect(xml).toContain('<mezo eazon="0C0001C0066DA">27</mezo>');
+    });
+  });
+
+  describe('EB-0044: Exclude CA tax field for tax-exempt rows on 0B (01, 02, 03, 04, 08, 11, 17, 23) and 0C (63)', () => {
+    it('does not emit CA field for row 01 (export) even if tax_amount_rounded is 0', () => {
+      const xml = buildVatReturnXml({
+        companyName: 'TS Consult Kft.',
+        companyTaxNumber: '13086905-2-08',
+        companyAddress: '9024 Győr, Hunyadi u. 6.',
+        periodYear: 2026,
+        periodMonth: 8,
+        frequency: 'H',
+        lines: [
+          { row_number: '01', base_amount_rounded: 277, tax_amount_rounded: 0 },
+          { row_number: '07', base_amount_rounded: 7159, tax_amount_rounded: 1933 },
+          { row_number: '36', base_amount_rounded: 7436, tax_amount_rounded: 1933 },
+          { row_number: '63', base_amount_rounded: 50, tax_amount_rounded: 0 },
+          { row_number: '64', base_amount_rounded: 20, tax_amount_rounded: 1 },
+          { row_number: '66', base_amount_rounded: 216, tax_amount_rounded: 58 },
+          { row_number: '76', base_amount_rounded: 236, tax_amount_rounded: 59 },
+          { row_number: '83', base_amount_rounded: 0, tax_amount_rounded: 1874 },
+        ],
+        mLines: [],
+      });
+
+      // 2026 form version is 2.0
+      expect(xml).toContain('<nyomtatvanyverzio>2.0</nyomtatvanyverzio>');
+
+      // Row 01 base is present, CA is NEVER emitted
+      expect(xml).toContain('<mezo eazon="0B0001C0001BA">277</mezo>');
+      expect(xml).not.toContain('0B0001C0001CA');
+
+      // Row 63 base is present, CA is NEVER emitted
+      expect(xml).toContain('<mezo eazon="0C0001C0063BA">50</mezo>');
+      expect(xml).not.toContain('0C0001C0063CA');
+
+      // Taxable rows (07, 36, 64, 66) have CA
+      expect(xml).toContain('<mezo eazon="0B0001C0007CA">1933</mezo>');
+      expect(xml).toContain('<mezo eazon="0B0001C0036CA">1933</mezo>');
+      expect(xml).toContain('<mezo eazon="0C0001C0064CA">1</mezo>');
+      expect(xml).toContain('<mezo eazon="0C0001C0066CA">58</mezo>');
     });
   });
 });

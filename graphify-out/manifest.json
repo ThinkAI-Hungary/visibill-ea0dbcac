@@ -30,8 +30,8 @@
     "semantic_hash": "b6fd1b3049065ccb1081335d010ab75f"
   },
   "package.json": {
-    "mtime": 1790294978.5775995,
-    "ast_hash": "723c2b534cac78afc60085604f29c499",
+    "mtime": 1790299111.4982471,
+    "ast_hash": "cc5da879e2442d46be5f82c9fd16b392",
     "semantic_hash": ""
   },
   "playwright.config.ts": {
@@ -1290,8 +1290,8 @@
     "semantic_hash": ""
   },
   "src/lib/vatReturnXml.ts": {
-    "mtime": 1790274576.7858953,
-    "ast_hash": "8a1498885e16126a716e8cc91f3988c1",
+    "mtime": 1790301678.6338823,
+    "ast_hash": "2d0ec439febcc43d6fcebdade6cad608",
     "semantic_hash": ""
   },
   "src/main.tsx": {
@@ -8640,8 +8640,8 @@
     "semantic_hash": ""
   },
   "src/lib/__tests__/vatReturnXml.test.ts": {
-    "mtime": 1790274576.7848904,
-    "ast_hash": "4af604350861c6b2414668856724903f",
+    "mtime": 1790301748.1408718,
+    "ast_hash": "acde17c9b96d1352d23883325e01ff09",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-080-nav-anyk-vat-return-xml-standardization.md": {
@@ -11694,16 +11694,6 @@
     "ast_hash": "eef9b0f5380351ec334faad44e919f05",
     "semantic_hash": ""
   },
-  "docs/nav_api_jogosultsag_riport.html": {
-    "mtime": 1790091679.450046,
-    "ast_hash": "95b01f6f3dc50fafd61a3711bb25e9f4",
-    "semantic_hash": ""
-  },
-  "docs/nav_api_jogosultsag_riport.pdf": {
-    "mtime": 1790091679.4521122,
-    "ast_hash": "805afb41ba83bb1bddd60bbd06ad1098",
-    "semantic_hash": ""
-  },
   "src/features/invoices/__tests__/InvoiceFilterBarDateBasis.test.tsx": {
     "mtime": 1790091679.2828782,
     "ast_hash": "ef8495a32c8c0534ae3aa0e8677cc1d1",
@@ -12215,8 +12205,8 @@
     "semantic_hash": ""
   },
   "src/config/version.ts": {
-    "mtime": 1790294963.2699258,
-    "ast_hash": "cb0a5ae81b4f8705eb3143093f453dd1",
+    "mtime": 1790299118.4784124,
+    "ast_hash": "c715f6104c1d173bcdfdccf46c77fcf0",
     "semantic_hash": ""
   },
   ".agents/skills/visibill-patchnote/SKILL.md": {
