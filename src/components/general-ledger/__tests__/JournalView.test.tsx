@@ -10,6 +10,9 @@ vi.mock('@/contexts/CompanyContext', () => ({
   useCompany: () => ({
     selectedCompany: { id: 'company-123', name: 'Test Kft.' },
   }),
+  useOptionalCompany: () => ({
+    selectedCompany: { id: 'company-123', name: 'Test Kft.' },
+  }),
 }));
 
 vi.mock('@/hooks/useExchangeRates', () => ({
@@ -25,6 +28,10 @@ vi.mock('@/integrations/supabase/client', () => ({
 
 vi.mock('@/hooks/use-toast', () => ({
   toast: vi.fn(),
+}));
+
+vi.mock('@/lib/errorReporter', () => ({
+  reportError: vi.fn(),
 }));
 
 describe('JournalView - logical types and unclassified label', () => {
@@ -133,5 +140,90 @@ describe('JournalView - logical types and unclassified label', () => {
     expect(screen.getByText('Számla')).toBeInTheDocument();
     expect(screen.getByText('Naplótétel')).toBeInTheDocument();
     expect(screen.getByText('NAV Számla')).toBeInTheDocument();
+  });
+
+  it('renders compound booking items sharing the exact same item_id without duplicate key collisions', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const sharedId = '63feda39-dbba-48e1-bb45-a51dfe8b41f2';
+    const compoundItems = [
+      {
+        item_id: sharedId,
+        item_date: '2026-09-10',
+        partner: 'Compound Partner Kft.',
+        description: 'XML Könyvelési tétel (Tartozik oldal)',
+        gl_account_id: 'acc-debit-1',
+        gl_number: '511.',
+        gl_name: 'Anyagköltség',
+        item_type: 'XML Könyvelési tétel (T)',
+        amount: 50000,
+        source_table: 'journal_entry',
+        is_excluded: false,
+      },
+      {
+        item_id: sharedId,
+        item_date: '2026-09-10',
+        partner: 'Compound Partner Kft.',
+        description: 'XML Könyvelési tétel (Követel oldal)',
+        gl_account_id: 'acc-credit-1',
+        gl_number: '4541.',
+        gl_name: 'Szállítók',
+        item_type: 'XML Könyvelési tétel (K)',
+        amount: -50000,
+        source_table: 'journal_entry',
+        is_excluded: false,
+      },
+    ];
+
+    vi.spyOn(glDataModule, 'fetchAllGlCategorizedItems').mockResolvedValue(compoundItems as any);
+    vi.spyOn(glDataModule, 'fetchAllGlBalances').mockResolvedValue([] as any);
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <JournalView presetId="preset-1" />
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Compound Partner Kft.').length).toBe(2);
+    });
+
+    // Check that neither console.error nor console.warn reported key warnings
+    const keyWarnings = [...consoleErrorSpy.mock.calls, ...consoleWarnSpy.mock.calls].filter(args =>
+      args.some(arg => typeof arg === 'string' && arg.includes('same key'))
+    );
+    expect(keyWarnings).toHaveLength(0);
+
+    consoleErrorSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
+  });
+
+  it('renders error state with retry button and reports error when items query fails', async () => {
+    vi.spyOn(glDataModule, 'fetchAllGlCategorizedItems').mockRejectedValue(new Error('Statement timeout 57014'));
+    vi.spyOn(glDataModule, 'fetchAllGlBalances').mockResolvedValue([]);
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <JournalView presetId="preset-1" />
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Hiba történt a könyvelési tételek betöltése közben')).toBeInTheDocument();
+      expect(screen.getByText('Statement timeout 57014')).toBeInTheDocument();
+    });
+
+    const { reportError } = await import('@/lib/errorReporter');
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'db_query',
+        component: 'JournalView',
+        action: 'fetchAllGlCategorizedItems',
+        message: 'Statement timeout 57014',
+      })
+    );
+
+    expect(screen.getByRole('button', { name: /Újrapróbálás/i })).toBeInTheDocument();
   });
 });

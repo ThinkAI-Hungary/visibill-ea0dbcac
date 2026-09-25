@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-09-24  
-> **Összesen:** 160 döntés | ✅ Decided: 158 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-09-25  
+> **Összesen:** 161 döntés | ✅ Decided: 159 | ⛔ Superseded: 2
 
 ---
 
@@ -129,6 +129,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-129 | Partner-történeti Többségi Szabályú Számlakategorizálás & DB Triggerek | ✅ Decided | [A-129](./A-129-partner-history-majority-categorization.md) |
 | A-138 | Számlák Teljesítés Dátuma és Dátum Alap RPC Szűrés | ✅ Decided | [A-138](./A-138-invoices-delivery-date-and-date-basis-rpc-filters.md) |
 | A-139 | Tranzakciós jutalék (fee_amount) és kötegelt számlaszám-feloldás | ✅ Decided | [A-139](./A-139-transaction-fee-amount-and-batch-invoice-resolution.md) |
+| A-150 | Főkönyvi Lekérdezés Teljesítmény, Hibakezelési Reziliencia & DOM/Layout Védelem | ✅ Decided | [A-150](./A-150-gl-performance-resilience-and-layout-hardening.md) |
 
 ## 🖥️ Frontend
 

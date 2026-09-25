@@ -547,9 +547,19 @@ export default function AccountantManagementPage() {
           return (
             <div key={acc.userId} className="bg-card border border-border rounded-lg overflow-hidden shadow-sm">
               {/* Header row */}
-              <button
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={() => setExpandedUser(isExpanded ? null : acc.userId)}
-                className="w-full flex items-center gap-4 px-5 py-4 hover:bg-muted/30 transition-colors text-left"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    if (e.target === e.currentTarget) {
+                      e.preventDefault();
+                      setExpandedUser(isExpanded ? null : acc.userId);
+                    }
+                  }
+                }}
+                className="w-full flex items-center gap-4 px-5 py-4 hover:bg-muted/30 transition-colors text-left cursor-pointer select-none"
               >
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center text-sm font-bold text-primary shrink-0">
                   {acc.name.charAt(0).toUpperCase()}
@@ -578,7 +588,7 @@ export default function AccountantManagementPage() {
                   />
                 </div>
                 <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-              </button>
+              </div>
 
               {/* Expanded: company list */}
               {isExpanded && (

@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790287026.6515574,
-    "ast_hash": "0ab1fa386e89ae539d2c2ba0ae9318f9",
+    "mtime": 1790294651.6010306,
+    "ast_hash": "9fef25eb014ca65847c4bff2a25649d9",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3360,8 +3360,8 @@
     "semantic_hash": ""
   },
   "docs/design/05-layout-navigation.md": {
-    "mtime": 1790289387.4548824,
-    "ast_hash": "6018962b366a1efb47773f454c474353",
+    "mtime": 1790294661.9425478,
+    "ast_hash": "5b169f7143d0e86180fa254ed3c46a4e",
     "semantic_hash": ""
   },
   "docs/design/07-loading-patterns.md": {
@@ -3745,8 +3745,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/JournalView.tsx": {
-    "mtime": 1790165206.9213693,
-    "ast_hash": "32db91841e8f6387573a877f764de49d",
+    "mtime": 1790293077.8420925,
+    "ast_hash": "678d8730297929728e58a5973c0d485b",
     "semantic_hash": ""
   },
   "src/components/general-ledger/UploadAuditXmlModal.tsx": {
@@ -3930,8 +3930,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/AccountantManagementPage.tsx": {
-    "mtime": 1790168409.1733005,
-    "ast_hash": "6f342928b1b78ac5f77525ae09193855",
+    "mtime": 1790294212.3294272,
+    "ast_hash": "d3756b0aa0f720b5393dbe16330778cb",
     "semantic_hash": ""
   },
   "src/pages/Accounty/AdminTaxParametersPage.tsx": {
@@ -7075,8 +7075,8 @@
     "semantic_hash": ""
   },
   "src/pages/JournalsPage.tsx": {
-    "mtime": 1790200350.9415214,
-    "ast_hash": "2d29b17730bfcc4b51563e44145520e7",
+    "mtime": 1790294728.65499,
+    "ast_hash": "8a639a36b24cbb5ed834b6d04db7489e",
     "semantic_hash": ""
   },
   "supabase/migrations/20260824120000_optimize_query_rpcs.sql": {
@@ -8905,8 +8905,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/__tests__/JournalView.test.tsx": {
-    "mtime": 1788487677.3884745,
-    "ast_hash": "5271772e475ea2f31140f02a532068f5",
+    "mtime": 1790293100.27168,
+    "ast_hash": "b4fe1c86353e702424c72bf0b9856df4",
     "semantic_hash": ""
   },
   "src/components/general-ledger/__tests__/GeneralLedgerComparisonTable.test.tsx": {
@@ -12220,8 +12220,28 @@
     "semantic_hash": ""
   },
   ".agents/skills/visibill-patchnote/SKILL.md": {
-    "mtime": 1790291311.8349543,
-    "ast_hash": "6588659dc8084b41aa6c359b7cf5b061",
+    "mtime": 1790291414.446921,
+    "ast_hash": "da3ad58f7979a8f9fd84bbdf10fee21a",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260925013000_add_missing_realtime_tables.sql": {
+    "mtime": 1790292231.861676,
+    "ast_hash": "51cab6d2d0ad4c752dec3f4d619ddd94",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260925014000_optimize_get_gl_balances_performance.sql": {
+    "mtime": 1790292319.074627,
+    "ast_hash": "41cc7a7b3ea735027c1c383fd7df7066",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260925015000_optimize_get_gl_categorized_items_performance.sql": {
+    "mtime": 1790292971.965438,
+    "ast_hash": "39b89ec1321c6a8ce9c4661161d4e7f2",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-150-gl-performance-resilience-and-layout-hardening.md": {
+    "mtime": 1790294633.438584,
+    "ast_hash": "07fd172d2b30ea2acf2d9d1f58f26c03",
     "semantic_hash": ""
   }
 }

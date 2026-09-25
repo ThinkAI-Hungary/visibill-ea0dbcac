@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn, fixCharacterEncoding } from '@/lib/utils';
-import { Search, Download, Loader2, BookOpen, ArrowUpDown } from 'lucide-react';
+import { Search, Download, Loader2, BookOpen, ArrowUpDown, AlertCircle, RefreshCw } from 'lucide-react';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { exportToFile } from '@/lib/exportUtils';
 import { toast } from '@/hooks/use-toast';
@@ -17,6 +17,7 @@ import { fetchAllGlBalances, fetchAllGlCategorizedItems, GlDateBasis, GlPostingS
 import { useTranslation } from 'react-i18next';
 import { getLocalizedGlAccountName, getLocalizedGlItemType } from '@/lib/glUtils';
 import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
+import { reportError } from '@/lib/errorReporter';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  F7: JOURNAL VIEW (Naplófőkönyv)
@@ -102,7 +103,13 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat(isCroatia ? 'hr-HR' : 'hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
 
-  const { data: rawItems = [], isLoading } = useQuery({
+  const {
+    data: rawItems = [],
+    isLoading,
+    isError,
+    error: itemsError,
+    refetch,
+  } = useQuery({
     queryKey: ['glJournalItems', selectedCompany?.id, presetId, dateFrom, dateTo, dateBasis, postingStatus],
     queryFn: async () => {
       if (!selectedCompany?.id || !presetId) return [];
@@ -118,7 +125,23 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
         });
         return (data || []) as unknown as JournalEntry[];
       } catch (error) {
-        return [];
+        reportError({
+          type: 'db_query',
+          severity: 'error',
+          component: 'JournalView',
+          action: 'fetchAllGlCategorizedItems',
+          message: error instanceof Error ? error.message : 'Ismeretlen hiba a naplófőkönyvi tételek lekérdezésekor',
+          error,
+          context: {
+            companyId: selectedCompany.id,
+            presetId,
+            dateFrom,
+            dateTo,
+            dateBasis,
+            postingStatus,
+          },
+        });
+        throw error;
       }
     },
     enabled: !!selectedCompany?.id && !!presetId && !!exchangeRates,
@@ -126,7 +149,7 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
   });
 
   // Also fetch GL account mapping for display
-  const { data: glAccounts = [] } = useQuery({
+  const { data: glAccounts = [], refetch: refetchAccounts } = useQuery({
     queryKey: ['glBalances', presetId, selectedCompany?.id, dateFrom, dateTo, dateBasis, postingStatus],
     queryFn: async () => {
       if (!selectedCompany?.id || !presetId) return [];
@@ -142,6 +165,22 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
         });
         return data || [];
       } catch (error) {
+        reportError({
+          type: 'db_query',
+          severity: 'warning',
+          component: 'JournalView',
+          action: 'fetchAllGlBalances',
+          message: error instanceof Error ? error.message : 'Ismeretlen hiba a főkönyvi számlák lekérdezésekor',
+          error,
+          context: {
+            companyId: selectedCompany.id,
+            presetId,
+            dateFrom,
+            dateTo,
+            dateBasis,
+            postingStatus,
+          },
+        });
         return [];
       }
     },
@@ -305,7 +344,7 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
             ))}
           </SelectContent>
         </Select>
-        <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={handleExport} disabled={isLoading || filtered.length === 0}>
+        <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={handleExport} disabled={isLoading || isError || filtered.length === 0}>
           <Download className="w-4 h-4" /> {t('accounting:general_ledger.toolbar.export', 'Export')}
         </Button>
       </div>
@@ -314,6 +353,11 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
       <div className="flex items-center gap-4 text-xs text-muted-foreground bg-muted/40 px-4 py-2 rounded-lg">
         {isLoading ? (
           <Skeleton className="h-4 w-64 bg-muted/50 rounded" />
+        ) : isError ? (
+          <span className="text-destructive font-medium flex items-center gap-1.5">
+            <AlertCircle className="w-3.5 h-3.5" />
+            {t('accounting:general_ledger.journal_view.summary_error', 'A tételek betöltése nem sikerült')}
+          </span>
         ) : (
           <>
             <span>{filtered.length} {t('accounting:general_ledger.journal_view.items_count', 'tétel')}</span>
@@ -377,17 +421,45 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
                 </div>
               </div>
             ))
+          ) : isError ? (
+            <div className="py-12 text-center flex flex-col items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
+                <AlertCircle className="w-6 h-6" />
+              </div>
+              <div className="space-y-1 max-w-md">
+                <h3 className="text-sm font-semibold text-foreground">
+                  {t('accounting:general_ledger.journal_view.error_title', 'Hiba történt a könyvelési tételek betöltése közben')}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {(itemsError as Error)?.message || t('accounting:general_ledger.journal_view.error_desc', 'Nem sikerült lekérdezni a könyvelési tételeket az adatbázisból.')}
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  refetch();
+                  refetchAccounts();
+                }}
+                disabled={isLoading}
+                className="mt-2 gap-2"
+              >
+                <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
+                {t('common:retry', 'Újrapróbálás')}
+              </Button>
+            </div>
           ) : paginated.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground flex flex-col items-center gap-2">
               <BookOpen className="w-8 h-8 text-muted-foreground/40" />
               <p className="text-sm">{t('accounting:general_ledger.journal_view.no_items', 'Nincs naplófőkönyvi tétel a kiválasztott időszakban')}</p>
             </div>
           ) : (
-            paginated.map((item: any) => {
+            paginated.map((item: any, idx: number) => {
               const debit = item.amount > 0 ? item.amount : 0;
               const credit = item.amount < 0 ? Math.abs(item.amount) : 0;
+              const uniqueKey = `${item.source_table}_${item.item_id}_${item.gl_account_id || 'unclass'}_${item.item_type || ''}_${idx}`;
               return (
-                <div key={item.item_id} className="grid grid-cols-12 text-sm hover:bg-muted/30 transition-colors">
+                <div key={uniqueKey} className="grid grid-cols-12 text-sm hover:bg-muted/30 transition-colors">
                   <div className="col-span-1 p-2.5 text-center font-mono text-xs tabular-nums text-muted-foreground">
                     {item.item_date ? item.item_date.substring(0, 10).replace(/-/g, '.') : '—'}
                   </div>

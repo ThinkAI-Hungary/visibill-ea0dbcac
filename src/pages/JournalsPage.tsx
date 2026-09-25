@@ -46,6 +46,7 @@ import { InvoiceDetailPopup } from '@/components/InvoiceDetailPopup';
 import AddManualJournalEntryModal from '@/components/journals/AddManualJournalEntryModal';
 import OpeningJournalWizardModal from '@/components/journals/OpeningJournalWizardModal';
 import PeriodClosingSettings from '@/components/journals/PeriodClosingSettings';
+import AuditTrailDialog from '@/components/journals/AuditTrailDialog';
 import { getLocalizedJournalName, getNextDocumentId } from '@/lib/journalUtils';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { generatePettyCashDrafts, generateDraftsFallback } from '@/features/journals/services/draftFallbackGenerator';
@@ -1002,7 +1003,7 @@ export default function JournalsPage() {
       />
 
       {/* Horizontal Journals Selector */}
-      <div className="w-full flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none select-none">
+      <div className="w-full flex items-center gap-1.5 overflow-x-auto py-1 min-h-[3.5rem] scrollbar-none select-none shrink-0">
         <button
           onClick={() => setSelectedJournalId('munkalista')}
           className={cn(
