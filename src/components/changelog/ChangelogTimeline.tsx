@@ -63,11 +63,27 @@ export const ChangelogTimeline: React.FC<ChangelogTimelineProps> = ({ entries })
     }
   };
 
-  const formatRawDate = (dateStr?: string) => {
+  const formatRawDate = (dateStr?: string, createdAtStr?: string) => {
     if (!dateStr) return "";
     try {
       const date = parseISO(dateStr);
-      return format(date, "yyyy.MM.dd");
+      const baseDate = format(date, "yyyy.MM.dd");
+
+      let timePart = "";
+      if (dateStr.includes("T") || (dateStr.includes(":") && dateStr.includes(" "))) {
+        timePart = format(date, "HH:mm");
+      } else if (createdAtStr) {
+        try {
+          const createdDate = parseISO(createdAtStr);
+          if (format(date, "yyyy-MM-dd") === format(createdDate, "yyyy-MM-dd")) {
+            timePart = format(createdDate, "HH:mm");
+          }
+        } catch {
+          // ignore parsing error
+        }
+      }
+
+      return timePart ? `${baseDate} ${timePart}` : baseDate;
     } catch {
       return dateStr;
     }
@@ -100,12 +116,12 @@ export const ChangelogTimeline: React.FC<ChangelogTimelineProps> = ({ entries })
       className="flex-1 min-h-0 h-full w-full overflow-y-auto pr-3 sm:pr-6 scroll-smooth focus:outline-none [scrollbar-width:thin] [scrollbar-color:hsl(var(--primary)/0.4)_transparent] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-primary/40 hover:[&::-webkit-scrollbar-thumb]:bg-primary/70 [&::-webkit-scrollbar-thumb]:rounded-full"
     >
       {/* Vertical Timeline Body */}
-      <div className="relative border-l-2 border-border/80 ml-3 sm:ml-36 space-y-8 pb-12 pt-2">
+      <div className="relative border-l-2 border-border/80 ml-3 sm:ml-44 space-y-8 pb-12 pt-2">
         {entries.map((entry, index) => {
           const isActive = entry.id === activeEntryId;
           const isPassed = index <= activeIndex;
           const relativeDate = formatEntryDate(entry.release_date);
-          const rawDate = formatRawDate(entry.release_date);
+          const rawDate = formatRawDate(entry.release_date, entry.created_at);
 
           return (
             <div
@@ -119,7 +135,7 @@ export const ChangelogTimeline: React.FC<ChangelogTimelineProps> = ({ entries })
               {/* Timeline Date Label on Left Side (Desktop) */}
               <div
                 onClick={() => scrollToEntry(entry.id)}
-                className="sm:absolute sm:-left-36 sm:w-28 sm:text-right top-0.5 text-xs cursor-pointer select-none"
+                className="sm:absolute sm:-left-44 sm:w-36 sm:text-right top-0.5 text-xs cursor-pointer select-none mb-1 sm:mb-0"
               >
                 <span
                   className={cn(
@@ -133,7 +149,7 @@ export const ChangelogTimeline: React.FC<ChangelogTimelineProps> = ({ entries })
                 >
                   {relativeDate}
                 </span>
-                <span className="text-muted-foreground font-mono text-[11px]">
+                <span className="text-muted-foreground font-mono text-[11px] block whitespace-nowrap">
                   {rawDate}
                 </span>
               </div>
