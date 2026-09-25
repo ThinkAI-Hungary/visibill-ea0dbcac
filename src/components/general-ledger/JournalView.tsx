@@ -13,7 +13,7 @@ import { exportToFile } from '@/lib/exportUtils';
 import { toast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CustomTooltip } from '@/components/ui/custom-tooltip';
-import { fetchAllGlBalances, fetchAllGlCategorizedItems, GlDateBasis, GlPostingStatus } from '@/lib/glData';
+import { fetchAllGlAccountsByPreset, fetchAllGlCategorizedItems, GlDateBasis, GlPostingStatus } from '@/lib/glData';
 import { useTranslation } from 'react-i18next';
 import { getLocalizedGlAccountName, getLocalizedGlItemType } from '@/lib/glUtils';
 import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
@@ -148,49 +148,39 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
     staleTime: 30_000,
   });
 
-  // Also fetch GL account mapping for display
+  // Fetch GL account definitions for preset to display account names and numbers
   const { data: glAccounts = [], refetch: refetchAccounts } = useQuery({
-    queryKey: ['glBalances', presetId, selectedCompany?.id, dateFrom, dateTo, dateBasis, postingStatus],
+    queryKey: ['glAccountsByPreset', presetId],
     queryFn: async () => {
-      if (!selectedCompany?.id || !presetId) return [];
+      if (!presetId) return [];
       try {
-        const data = await fetchAllGlBalances({
-          companyId: selectedCompany.id,
-          presetId,
-          dateFrom,
-          dateTo,
-          dateBasis,
-          postingStatus,
-          exchangeRates: exchangeRates || {},
-        });
+        const data = await fetchAllGlAccountsByPreset(presetId);
         return data || [];
       } catch (error) {
         reportError({
           type: 'db_query',
           severity: 'warning',
           component: 'JournalView',
-          action: 'fetchAllGlBalances',
+          action: 'fetchAllGlAccountsByPreset',
           message: error instanceof Error ? error.message : 'Ismeretlen hiba a főkönyvi számlák lekérdezésekor',
           error,
-          context: {
-            companyId: selectedCompany.id,
-            presetId,
-            dateFrom,
-            dateTo,
-            dateBasis,
-            postingStatus,
-          },
+          context: { presetId },
         });
         return [];
       }
     },
-    enabled: !!selectedCompany?.id && !!presetId && !!exchangeRates,
-    staleTime: 30_000,
+    enabled: !!presetId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const glMap = useMemo(() => {
     const m: Record<string, { gl_number: string; short_name: string }> = {};
-    glAccounts.forEach((a: any) => { m[a.gl_account_id] = { gl_number: a.gl_number, short_name: fixCharacterEncoding(a.short_name) }; });
+    glAccounts.forEach((a: any) => {
+      const accountId = a.gl_account_id || a.id;
+      if (accountId) {
+        m[accountId] = { gl_number: a.gl_number, short_name: fixCharacterEncoding(a.short_name) };
+      }
+    });
     return m;
   }, [glAccounts]);
 

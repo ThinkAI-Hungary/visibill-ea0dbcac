@@ -30,7 +30,7 @@ import { useScopedNavigate } from '@/lib/navigation';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { reportError } from '@/lib/errorReporter';
-import { fetchAllGlCategorizedItems, fetchAllGlAccountsByPreset } from '@/lib/glData';
+import { fetchAllGlCategorizedItems, fetchAllGlAccountsByPreset, fetchGlItemsForAccount, GlCategorizedItem } from '@/lib/glData';
 import { getLocalizedPnlRowName } from '@/lib/pnlUtils';
 import { getActiveLocale } from '@/lib/locale/formatters';
 import PnlChart from '@/components/pnl/PnlChart'; // F9
@@ -636,22 +636,47 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
     enabled: !!selectedCompany?.id && !!presetId
   });
 
-  const { data: dbItems, isLoading: isLoadingItems } = useQuery({
-    queryKey: ['glItems', selectedCompany?.id, presetId, dateFrom, dateTo, exchangeRatesKey],
-    queryFn: async () => {
-      if (!selectedCompany?.id || !presetId) return [];
-      return await fetchAllGlCategorizedItems({
+  // On-demand GL categorized items per account (Főkönyv pattern: prevents initial 14-query pool storm)
+  const [loadedGlItems, setLoadedGlItems] = useState<Map<string, GlCategorizedItem[]>>(new Map());
+  const [loadingGlIds, setLoadingGlIds] = useState<Set<string>>(new Set());
+
+  // Reset cached items when filters change
+  useEffect(() => {
+    setLoadedGlItems(new Map());
+    setExpandedGl(new Set());
+  }, [dateFrom, dateTo, presetId, selectedCompany?.id, exchangeRatesKey]);
+
+  const fetchAccountItems = React.useCallback(async (glAccountId: string) => {
+    if (!selectedCompany?.id || !presetId || !glAccountId) return;
+    if (loadedGlItems.has(glAccountId) || loadingGlIds.has(glAccountId)) return;
+
+    setLoadingGlIds(prev => new Set(prev).add(glAccountId));
+    try {
+      const items = await fetchGlItemsForAccount({
         companyId: selectedCompany.id,
         presetId,
+        glAccountId,
         dateFrom: dateFrom || null,
         dateTo: dateTo || null,
         exchangeRates: exchangeRates || {},
       });
-    },
-    enabled: !!selectedCompany?.id && !!presetId
-  });
+      setLoadedGlItems(prev => {
+        const next = new Map(prev);
+        next.set(glAccountId, items);
+        return next;
+      });
+    } catch (err) {
+      reportError({ type: 'db_query', component: 'ProfitAndLoss', action: 'error', message: 'Hiba a számla tételeinek betöltésekor:', error: err });
+    } finally {
+      setLoadingGlIds(prev => {
+        const next = new Set(prev);
+        next.delete(glAccountId);
+        return next;
+      });
+    }
+  }, [selectedCompany?.id, presetId, dateFrom, dateTo, exchangeRates, loadedGlItems, loadingGlIds]);
 
-  // Fetch monthly P&L trend data
+  // Fetch monthly P&L trend data (Only when chart is visible, chunked to prevent DB timeout)
   const { data: trendData } = useQuery({
     queryKey: ['pnl_trend', selectedCompany?.id, presetId, dateFrom, dateTo, exchangeRatesKey],
     queryFn: async () => {
@@ -680,40 +705,47 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
         current = nextMonth;
       }
 
-      // Query in parallel
-      const results = await Promise.all(
-        periods.map(async (p) => {
-          const { data, error } = await supabase.rpc('get_pnl_report', {
-            p_company_id: selectedCompany.id,
-            p_preset_id: presetId,
-            p_date_from: p.start,
-            p_date_to: p.end,
-            p_exchange_rates: exchangeRates || {}
-          });
-          
-          if (error || !data) return { label: p.label, revenue: 0, cost: 0, profit: 0 };
-          
-          const revRow = data.find((r: any) => r.row_code === 'I.');
-          const operatingProfitRow = data.find((r: any) => r.row_code === 'A.');
-          const materialRow = data.find((r: any) => r.row_code === 'IV.');
-          const personnelRow = data.find((r: any) => r.row_code === 'V.');
-          
-          const revenue = Number(revRow?.balance) || 0;
-          const profit = Number(operatingProfitRow?.balance) || 0;
-          const cost = (Number(materialRow?.balance) || 0) + (Number(personnelRow?.balance) || 0);
-          
-          return {
-            label: p.label,
-            revenue,
-            cost,
-            profit,
-          };
-        })
-      );
+      // Chunked execution: max 2 simultaneous queries to prevent PostgREST connection pool saturation
+      const CHUNK_SIZE = 2;
+      const results: Array<{ label: string; revenue: number; cost: number; profit: number }> = [];
+
+      for (let i = 0; i < periods.length; i += CHUNK_SIZE) {
+        const chunk = periods.slice(i, i + CHUNK_SIZE);
+        const chunkResults = await Promise.all(
+          chunk.map(async (p) => {
+            const { data, error } = await supabase.rpc('get_pnl_report', {
+              p_company_id: selectedCompany.id,
+              p_preset_id: presetId,
+              p_date_from: p.start,
+              p_date_to: p.end,
+              p_exchange_rates: exchangeRates || {}
+            });
+            
+            if (error || !data) return { label: p.label, revenue: 0, cost: 0, profit: 0 };
+            
+            const revRow = data.find((r: any) => r.row_code === 'I.');
+            const operatingProfitRow = data.find((r: any) => r.row_code === 'A.');
+            const materialRow = data.find((r: any) => r.row_code === 'IV.');
+            const personnelRow = data.find((r: any) => r.row_code === 'V.');
+            
+            const revenue = Number(revRow?.balance) || 0;
+            const profit = Number(operatingProfitRow?.balance) || 0;
+            const cost = (Number(materialRow?.balance) || 0) + (Number(personnelRow?.balance) || 0);
+            
+            return {
+              label: p.label,
+              revenue,
+              cost,
+              profit,
+            };
+          })
+        );
+        results.push(...chunkResults);
+      }
       
       return results;
     },
-    enabled: !!selectedCompany?.id && !!presetId && !!dateFrom && !!dateTo
+    enabled: !!selectedCompany?.id && !!presetId && !!dateFrom && !!dateTo && showChart
   });
 
   // U7+F10: Load previous year frozen data from annual_reports
@@ -758,15 +790,19 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
 
   const toggleGl = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    const willExpand = !expandedGl.has(id);
     setExpandedGl(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
+    if (willExpand) {
+      fetchAccountItems(id);
+    }
   };
 
-  const expandAllPnl = () => {
+  const expandAllPnl = async () => {
     if (!pnlData) return;
     const romanIds = pnlData.filter(r => r.type === 'roman').map(r => r.pnl_structure_id);
     setExpandedRows(new Set(romanIds));
@@ -774,6 +810,30 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
     const glIds = pnlData.filter(r => r.type === 'roman' && ((r.gl_accounts as any[]) || []).length > 0)
       .flatMap(r => ((r.gl_accounts as any[]) || []).map((gl: any) => gl.gl_account_id));
     setExpandedGl(new Set(glIds));
+
+    // Batch load all items if expanding everything and not already loaded
+    if (selectedCompany?.id && presetId && loadedGlItems.size === 0) {
+      try {
+        const allItems = await fetchAllGlCategorizedItems({
+          companyId: selectedCompany.id,
+          presetId,
+          dateFrom: dateFrom || null,
+          dateTo: dateTo || null,
+          exchangeRates: exchangeRates || {},
+        });
+        const grouped = new Map<string, GlCategorizedItem[]>();
+        allItems.forEach(item => {
+          if (item.gl_account_id) {
+            const list = grouped.get(item.gl_account_id) || [];
+            list.push(item);
+            grouped.set(item.gl_account_id, list);
+          }
+        });
+        setLoadedGlItems(grouped);
+      } catch (err) {
+        reportError({ type: 'db_query', component: 'ProfitAndLoss', action: 'error', message: 'Hiba az összes tétel betöltésekor:', error: err });
+      }
+    }
   };
 
   const collapseAllPnl = () => {
@@ -874,7 +934,22 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
     }
 
     try {
-      await exportPnlExcel(processedData, dbItems, inThousands, selectedCompany?.name, t);
+      let exportItems: GlCategorizedItem[] = Array.from(loadedGlItems.values()).flat();
+      if (exportItems.length === 0 && selectedCompany?.id && presetId) {
+        toast({
+          title: t('common:status.loading', 'Betöltés...'),
+          description: t('accounting:profit_and_loss.toasts.export_loading_items', 'Részletes könyvelési tételek letöltése az exporthoz...'),
+        });
+        exportItems = await fetchAllGlCategorizedItems({
+          companyId: selectedCompany.id,
+          presetId,
+          dateFrom: dateFrom || null,
+          dateTo: dateTo || null,
+          exchangeRates: exchangeRates || {},
+        });
+      }
+
+      await exportPnlExcel(processedData, exportItems, inThousands, selectedCompany?.name, t);
       toast({ 
         title: t('accounting:profit_and_loss.toasts.export_success_title', 'Sikeres exportálás'), 
         description: t('accounting:profit_and_loss.toasts.export_success', 'Az eredménykimutatás letöltése megkezdődött.') 
@@ -1243,8 +1318,9 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                     <div className={cn("bg-muted/10 border-b border-border/50 pb-2 shadow-inner", !isExpanded && "hidden print:block")}>
                       {glAccounts.map((gl: any) => {
                         const isGlExpanded = expandedGl.has(gl.gl_account_id);
-                        const items = dbItems?.filter(i => i.gl_account_id === gl.gl_account_id) || [];
-                        const hasItems = items.length > 0;
+                        const items = loadedGlItems.get(gl.gl_account_id) || [];
+                        const isLoadingGl = loadingGlIds.has(gl.gl_account_id);
+                        const hasItems = Math.abs(gl.balance) > 0 || items.length > 0;
 
                         return (
                           <React.Fragment key={gl.gl_account_id}>
@@ -1258,11 +1334,13 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                               <div className="col-span-1"></div>
                               <div className="col-span-7 flex items-center gap-2 pl-4 text-muted-foreground">
                                 <div className="w-4 h-4 shrink-0 flex items-center justify-center">
-                                  {hasItems && (
+                                  {isLoadingGl ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                                  ) : hasItems ? (
                                     <div className="text-muted-foreground/50">
                                       {isGlExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                                     </div>
-                                  )}
+                                  ) : null}
                                 </div>
                                 <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/70">{gl.gl_number}</span>
                                 <span className="truncate">{getLocalizedGlAccountName(gl.gl_number, gl.short_name, t)}</span>
@@ -1274,9 +1352,15 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                             </div>
 
                             {/* Level 2: Transactions */}
-                            {hasItems && (
+                            {isGlExpanded && (
                               <div className={cn("bg-background/50 py-1 shadow-inner pl-12 pr-4 border-y border-border/20", !isGlExpanded && "hidden print:block")}>
-                                {items.map((item: any) => (
+                                {isLoadingGl ? (
+                                  <div className="py-2.5 pl-4 text-xs text-muted-foreground flex items-center gap-2">
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                                    <span>{t('common:status.loading', 'Tételek betöltése...')}</span>
+                                  </div>
+                                ) : items.length > 0 ? (
+                                  items.map((item: any) => (
                                   <div key={item.item_id} className="grid grid-cols-12 gap-4 py-1.5 items-center text-xs text-muted-foreground hover:text-foreground hover:bg-muted/40 px-2 rounded-md transition-colors">
                                     <div className="col-span-2 flex items-center gap-2">
                                       <ReceiptText className="w-3 h-3 opacity-50" />
@@ -1370,7 +1454,12 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                                       {formatValue(item.amount * (row.multiplier || 1))}
                                     </div>
                                   </div>
-                                ))}
+                                ))
+                              ) : (
+                                  <div className="py-2.5 pl-4 text-xs text-muted-foreground/70 italic">
+                                    {t('accounting:profit_and_loss.table.no_items', 'Nincsenek részletes tételek ehhez a főkönyvi számhoz a megadott időszakban.')}
+                                  </div>
+                                )}
                               </div>
                             )}
                           </React.Fragment>

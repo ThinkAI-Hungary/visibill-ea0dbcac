@@ -109,6 +109,7 @@ describe('JournalView - logical types and unclassified label', () => {
 
     vi.spyOn(glDataModule, 'fetchAllGlCategorizedItems').mockResolvedValue(mockItems as any);
     vi.spyOn(glDataModule, 'fetchAllGlBalances').mockResolvedValue(mockBalances as any);
+    vi.spyOn(glDataModule, 'fetchAllGlAccountsByPreset').mockResolvedValue(mockBalances as any);
 
     render(
       <QueryClientProvider client={queryClient}>
@@ -178,6 +179,7 @@ describe('JournalView - logical types and unclassified label', () => {
 
     vi.spyOn(glDataModule, 'fetchAllGlCategorizedItems').mockResolvedValue(compoundItems as any);
     vi.spyOn(glDataModule, 'fetchAllGlBalances').mockResolvedValue([] as any);
+    vi.spyOn(glDataModule, 'fetchAllGlAccountsByPreset').mockResolvedValue([] as any);
 
     render(
       <QueryClientProvider client={queryClient}>
@@ -202,6 +204,7 @@ describe('JournalView - logical types and unclassified label', () => {
   it('renders error state with retry button and reports error when items query fails', async () => {
     vi.spyOn(glDataModule, 'fetchAllGlCategorizedItems').mockRejectedValue(new Error('Statement timeout 57014'));
     vi.spyOn(glDataModule, 'fetchAllGlBalances').mockResolvedValue([]);
+    vi.spyOn(glDataModule, 'fetchAllGlAccountsByPreset').mockResolvedValue([]);
 
     render(
       <QueryClientProvider client={queryClient}>

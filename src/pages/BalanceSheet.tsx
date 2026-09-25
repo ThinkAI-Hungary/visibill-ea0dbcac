@@ -26,7 +26,7 @@ import { getLocalizedBsRowName } from '@/lib/bsUtils';
 import { getLocalizedGlAccountName } from '@/lib/glUtils';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { reportError } from '@/lib/errorReporter';
-import { fetchAllGlCategorizedItems, fetchAllGlAccountsByPreset } from '@/lib/glData';
+import { fetchAllGlCategorizedItems, fetchAllGlAccountsByPreset, fetchGlItemsForAccount, GlCategorizedItem } from '@/lib/glData';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -665,26 +665,45 @@ function BsViewTab({
   });
 
 
-  // 2nd-level drill-down: transaction items per GL account (paginated)
-  const { data: dbItems } = useQuery({
-    queryKey: ['glItems_bs', selectedCompany?.id, presetId, exchangeRates],
-    queryFn: async () => {
-      if (!selectedCompany?.id || !presetId) return [];
-      try {
-        return await fetchAllGlCategorizedItems({
-          companyId: selectedCompany.id,
-          presetId,
-          dateFrom: null,
-          dateTo: null,
-          exchangeRates: exchangeRates || {},
-        });
-      } catch (error) {
-        return [];
-      }
-    },
-    enabled: !!selectedCompany?.id && !!presetId
-  });
+  // On-demand GL categorized items per account (Főkönyv pattern: prevents initial massive query)
+  const [loadedGlItems, setLoadedGlItems] = useState<Map<string, GlCategorizedItem[]>>(new Map());
+  const [loadingGlIds, setLoadingGlIds] = useState<Set<string>>(new Set());
 
+  // Reset cached items when filters change
+  useEffect(() => {
+    setLoadedGlItems(new Map());
+    setExpandedGl(new Set());
+  }, [dateTo, presetId, selectedCompany?.id, exchangeRates]);
+
+  const fetchAccountItems = React.useCallback(async (glAccountId: string) => {
+    if (!selectedCompany?.id || !presetId || !glAccountId) return;
+    if (loadedGlItems.has(glAccountId) || loadingGlIds.has(glAccountId)) return;
+
+    setLoadingGlIds(prev => new Set(prev).add(glAccountId));
+    try {
+      const items = await fetchGlItemsForAccount({
+        companyId: selectedCompany.id,
+        presetId,
+        glAccountId,
+        dateFrom: null,
+        dateTo: dateTo || null,
+        exchangeRates: exchangeRates || {},
+      });
+      setLoadedGlItems(prev => {
+        const next = new Map(prev);
+        next.set(glAccountId, items);
+        return next;
+      });
+    } catch (err) {
+      reportError({ type: 'db_query', component: 'BalanceSheet', action: 'error', message: 'Hiba a számla tételeinek betöltésekor:', error: err });
+    } finally {
+      setLoadingGlIds(prev => {
+        const next = new Set(prev);
+        next.delete(glAccountId);
+        return next;
+      });
+    }
+  }, [selectedCompany?.id, presetId, dateTo, exchangeRates, loadedGlItems, loadingGlIds]);
 
   const formatValue = (val: number) => {
     const valConsolidated = val * conversionFactor;
@@ -701,7 +720,11 @@ function BsViewTab({
 
   const toggleGl = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    const willExpand = !expandedGl.has(id);
     setExpandedGl(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+    if (willExpand) {
+      fetchAccountItems(id);
+    }
   };
 
   const expandAllView = () => {
@@ -950,8 +973,9 @@ function BsViewTab({
             {glAccounts.map((gl: any) => {
               if (!gl.gl_account_id) return null;
               const isGlExpanded = expandedGl.has(gl.gl_account_id);
-              const items = dbItems?.filter((i: any) => i.gl_account_id === gl.gl_account_id) || [];
-              const hasItems = items.length > 0;
+              const items = loadedGlItems.get(gl.gl_account_id) || [];
+              const isLoadingGl = loadingGlIds.has(gl.gl_account_id);
+              const hasItems = Math.abs(gl.balance) > 0 || items.length > 0;
 
               return (
                 <React.Fragment key={gl.gl_account_id}>
@@ -965,11 +989,13 @@ function BsViewTab({
                     <div className="col-span-1"></div>
                     <div className="col-span-5 flex items-center gap-2 pl-16 text-muted-foreground">
                       <div className="w-4 h-4 shrink-0 flex items-center justify-center">
-                        {hasItems && (
+                        {isLoadingGl ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                        ) : hasItems ? (
                           <div className="text-muted-foreground/50">
                             {isGlExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                           </div>
-                        )}
+                        ) : null}
                       </div>
                       <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/70">{gl.gl_number}</span>
                       <span className="truncate">{getLocalizedGlAccountName(gl.gl_number, gl.short_name, t)}</span>
@@ -980,43 +1006,54 @@ function BsViewTab({
                   </div>
 
                   {/* Level 2: Transactions */}
-                  {hasItems && (
+                  {isGlExpanded && (
                     <div className={cn("bg-background/50 py-1 shadow-inner pl-12 pr-4 border-y border-border/20", !isGlExpanded && "hidden print:block")}>
-                      {items.map((item: any) => (
-                        <div key={item.item_id} className="grid grid-cols-12 gap-4 py-1.5 items-center text-xs text-muted-foreground hover:text-foreground hover:bg-muted/40 px-2 rounded-md transition-colors">
-                          <div className="col-span-2 flex items-center gap-2">
-                            <ReceiptText className="w-3 h-3 opacity-50" />
-                            {item.item_date?.substring(0, 10).replace(/-/g, '.')}
-                          </div>
-                          <div className="col-span-6 flex items-center gap-2 truncate" title={item.description || item.partner}>
-                            {item.partner && <span className="font-medium text-foreground/80 mr-2">{item.partner}</span>}
-                            <span className="truncate">{item.description}</span>
-                            {item.document_url && (
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setActiveDialogInvoice({
-                                    image_url: item.document_url,
-                                    bizonylatsorszam: item.description || 'Bizonylat',
-                                    elado_nev: item.partner || '-',
-                                    vevo_nev: '-'
-                                  });
-                                  setIsDialogInvoiceOpen(true);
-                                }} 
-                                className="ml-auto flex shrink-0 items-center gap-1 px-2 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary transition-colors text-[10px] font-medium cursor-pointer"
-                                title={t('accounting:balance_sheet.table.original_doc_view', 'Eredeti bizonylat megtekintése')}
-                              >
-                                <FileText className="w-3 h-3" />
-                                {t('accounting:balance_sheet.table.pdf_badge', 'PDF')}
-                              </button>
-                            )}
-                          </div>
-                          <div className="col-span-2"></div>
-                          <div className="col-span-2 text-right tabular-nums">
-                            {formatValue(row.section === 'liabilities' ? -(item.amount || 0) : (item.amount || 0))}
-                          </div>
+                      {isLoadingGl ? (
+                        <div className="py-2.5 pl-16 text-xs text-muted-foreground flex items-center gap-2">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                          <span>{t('common:status.loading', 'Tételek betöltése...')}</span>
                         </div>
-                      ))}
+                      ) : items.length > 0 ? (
+                        items.map((item: any) => (
+                          <div key={item.item_id} className="grid grid-cols-12 gap-4 py-1.5 items-center text-xs text-muted-foreground hover:text-foreground hover:bg-muted/40 px-2 rounded-md transition-colors">
+                            <div className="col-span-2 flex items-center gap-2">
+                              <ReceiptText className="w-3 h-3 opacity-50" />
+                              {item.item_date?.substring(0, 10).replace(/-/g, '.')}
+                            </div>
+                            <div className="col-span-6 flex items-center gap-2 truncate" title={item.description || item.partner}>
+                              {item.partner && <span className="font-medium text-foreground/80 mr-2">{item.partner}</span>}
+                              <span className="truncate">{item.description}</span>
+                              {item.document_url && (
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveDialogInvoice({
+                                      image_url: item.document_url,
+                                      bizonylatsorszam: item.description || 'Bizonylat',
+                                      elado_nev: item.partner || '-',
+                                      vevo_nev: '-'
+                                    });
+                                    setIsDialogInvoiceOpen(true);
+                                  }} 
+                                  className="ml-auto flex shrink-0 items-center gap-1 px-2 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary transition-colors text-[10px] font-medium cursor-pointer"
+                                  title={t('accounting:balance_sheet.table.original_doc_view', 'Eredeti bizonylat megtekintése')}
+                                >
+                                  <FileText className="w-3 h-3" />
+                                  {t('accounting:balance_sheet.table.pdf_badge', 'PDF')}
+                                </button>
+                              )}
+                            </div>
+                            <div className="col-span-2"></div>
+                            <div className="col-span-2 text-right tabular-nums">
+                              {formatValue(row.section === 'liabilities' ? -(item.amount || 0) : (item.amount || 0))}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="py-2.5 pl-16 text-xs text-muted-foreground/70 italic">
+                          {t('accounting:profit_and_loss.table.no_items', 'Nincsenek részletes tételek ehhez a főkönyvi számhoz a megadott időszakban.')}
+                        </div>
+                      )}
                     </div>
                   )}
                 </React.Fragment>

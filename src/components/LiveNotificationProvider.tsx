@@ -178,8 +178,13 @@ export function LiveNotificationProvider() {
     if (existing) clearTimeout(existing);
     debounceTimers.current.set(cacheKey, setTimeout(() => {
       keys.forEach(key => {
-        // Prefix match: [key, companyId] matches [key, companyId, dateFrom, dateTo, ...]
-        queryClientRef.current.invalidateQueries({ queryKey: [key, cid] });
+        if (key === 'glBalances' || key === 'glItems') {
+          // GL query keys have presetId first: [key, presetId, companyId, ...]
+          queryClientRef.current.invalidateQueries({ queryKey: [key] });
+        } else {
+          // Prefix match: [key, companyId] matches [key, companyId, dateFrom, dateTo, ...]
+          queryClientRef.current.invalidateQueries({ queryKey: [key, cid] });
+        }
       });
       debounceTimers.current.delete(cacheKey);
     }, 500));
@@ -502,10 +507,8 @@ export function LiveNotificationProvider() {
           'postgres_changes',
           { event: '*', schema: 'public', table: 'nav_invoice_items' },
           (payload) => {
-            invalidate('invoiceItems', 'filteredNavInvoices', 'analyticsVat');
-            // GL queries have presetId (not companyId) in position 2, so invalidate directly
-            queryClientRef.current.invalidateQueries({ queryKey: ['glBalances'] });
-            queryClientRef.current.invalidateQueries({ queryKey: ['glItems'] });
+            if (!isMyCompany(payload)) return;
+            invalidate('invoiceItems', 'filteredNavInvoices', 'analyticsVat', 'glBalances', 'glItems');
           }
         )
 
@@ -514,9 +517,8 @@ export function LiveNotificationProvider() {
           'postgres_changes',
           { event: '*', schema: 'public', table: 'invoice_items' },
           (payload) => {
-            invalidate('invoiceItems', 'filteredSubmittedInvoices', 'analyticsVat');
-            queryClientRef.current.invalidateQueries({ queryKey: ['glBalances'] });
-            queryClientRef.current.invalidateQueries({ queryKey: ['glItems'] });
+            if (!isMyCompany(payload)) return;
+            invalidate('invoiceItems', 'filteredSubmittedInvoices', 'analyticsVat', 'glBalances', 'glItems');
           }
         )
 

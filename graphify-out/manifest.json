@@ -30,8 +30,8 @@
     "semantic_hash": "b6fd1b3049065ccb1081335d010ab75f"
   },
   "package.json": {
-    "mtime": 1790290191.875252,
-    "ast_hash": "c2f318f98066bb41f284a378bbf6f41c",
+    "mtime": 1790294978.5775995,
+    "ast_hash": "723c2b534cac78afc60085604f29c499",
     "semantic_hash": ""
   },
   "playwright.config.ts": {
@@ -175,8 +175,8 @@
     "semantic_hash": ""
   },
   "src/components/LiveNotificationProvider.tsx": {
-    "mtime": 1790153889.0608315,
-    "ast_hash": "cc08ffd8bc3e79c85e8bb883e64dcb24",
+    "mtime": 1790298645.2456136,
+    "ast_hash": "18667e3d2253e738b633d9e054bc62fc",
     "semantic_hash": ""
   },
   "src/components/NylasEmailConnect.tsx": {
@@ -1460,8 +1460,8 @@
     "semantic_hash": ""
   },
   "src/pages/BalanceSheet.tsx": {
-    "mtime": 1790100407.637214,
-    "ast_hash": "483a81c61c8b93f3295329c7e4c4a81e",
+    "mtime": 1790297128.4840443,
+    "ast_hash": "94aa039c8ef984b67d375f4ba53e6184",
     "semantic_hash": ""
   },
   "src/pages/EmployeeRegister.tsx": {
@@ -1535,8 +1535,8 @@
     "semantic_hash": ""
   },
   "src/pages/ProfitAndLoss.tsx": {
-    "mtime": 1790100407.638716,
-    "ast_hash": "42210acb98fe04a2e2648750c4216d8b",
+    "mtime": 1790297178.8544662,
+    "ast_hash": "4c54bb35688a09dd6e3622b99951dd03",
     "semantic_hash": ""
   },
   "src/pages/Projects.tsx": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790294651.6010306,
-    "ast_hash": "9fef25eb014ca65847c4bff2a25649d9",
+    "mtime": 1790298817.4161515,
+    "ast_hash": "cd0ff149e13de9460f0f363b0c1ecc9b",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3745,8 +3745,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/JournalView.tsx": {
-    "mtime": 1790293077.8420925,
-    "ast_hash": "678d8730297929728e58a5973c0d485b",
+    "mtime": 1790298669.740839,
+    "ast_hash": "cd0e2b16690ec382cd1ce3c4b054e6b0",
     "semantic_hash": ""
   },
   "src/components/general-ledger/UploadAuditXmlModal.tsx": {
@@ -8905,8 +8905,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/__tests__/JournalView.test.tsx": {
-    "mtime": 1790293100.27168,
-    "ast_hash": "b4fe1c86353e702424c72bf0b9856df4",
+    "mtime": 1790298709.814859,
+    "ast_hash": "f8963caa2e92157a929a97314c109065",
     "semantic_hash": ""
   },
   "src/components/general-ledger/__tests__/GeneralLedgerComparisonTable.test.tsx": {
@@ -12215,8 +12215,8 @@
     "semantic_hash": ""
   },
   "src/config/version.ts": {
-    "mtime": 1790291115.6434917,
-    "ast_hash": "eb96ea4fa870838ce571404958652c55",
+    "mtime": 1790294963.2699258,
+    "ast_hash": "cb0a5ae81b4f8705eb3143093f453dd1",
     "semantic_hash": ""
   },
   ".agents/skills/visibill-patchnote/SKILL.md": {
@@ -12242,6 +12242,21 @@
   "docs/architecture/decisions/A-150-gl-performance-resilience-and-layout-hardening.md": {
     "mtime": 1790294633.438584,
     "ast_hash": "07fd172d2b30ea2acf2d9d1f58f26c03",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-151-pnl-and-balance-sheet-query-storm-elimination.md": {
+    "mtime": 1790297451.6080422,
+    "ast_hash": "06c7e499fe3e881d58f31725b78d186e",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260925031000_mark_read_only_rpcs_stable.sql": {
+    "mtime": 1790298534.663305,
+    "ast_hash": "02afc3c11f66e2263441e9a3fd67ecbd",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-152-rate-limiter-rpc-stability-and-realtime-leak-hardening.md": {
+    "mtime": 1790298771.9081848,
+    "ast_hash": "3dba11dc896b93fed95e62451fd049f8",
     "semantic_hash": ""
   }
 }
