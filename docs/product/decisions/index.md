@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-25  
-> **Összesen:** 111 döntés | ✅ Decided: 107 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 112 döntés | ✅ Decided: 108 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -211,5 +211,8 @@
 | P-068 | Főkönyvi Gyorskeresés, Összehasonlító Táblázat Pagináció és Felületi Ergonómia UX | ✅ Decided | [P-068](./P-068-gl-search-and-comparison-pagination-ux.md) |
 | P-071 | Biztonságos Számlatükör Törlés és Tételek Átkötése (Safe CoA Preset Remapping) UX | ✅ Decided | [P-071](./P-071-safe-chart-of-accounts-preset-deletion-and-remapping-ux.md) |
 | P-102 | Főkönyvi Kivonatok és Nyitó Egyenlegek Rugalmas Fájlimportja (Microfox & XML SpreadsheetML) UX | ✅ Decided | [P-102](./P-102-general-ledger-and-opening-balance-import-ux.md) |
+| P-105 | Főkönyvi Kivonat 2-Tier Eszköztár és Fastruktúra Kibontás/Összecsukás UX | ✅ Decided | [P-105](./P-105-general-ledger-toolbar-and-expand-collapse-ux.md) |
 | P-106 | Horvát Főkönyvi Kivonat és Nézetek Teljes Lokalizációja, Dinamikus Pénznem és Novo Konto UX | ✅ Decided | [P-106](./P-106-croatian-general-ledger-and-multicurrency-views.md) |
 | P-108 | Devizás Főkönyvi Számlakezelés, Bankszámla Safeguard és Többdevizás Karton/Analitika UX | ✅ Decided | [P-108](./P-108-multicurrency-chart-of-accounts-and-gl-card-ux.md) |
+| P-113 | Főkönyvi Kivonat Kontírok vs. Tételes Nézetváltó UX | ✅ Decided | [P-113](./P-113-general-ledger-granularity-kontirok-teteles-view.md) |
+| P-117 | Főkönyvi Kivonat Számlánkénti Összevonás és 4-Oszlopos Export UX | ✅ Decided | [P-117](./P-117-general-ledger-invoice-grouping-and-4col-export-ux.md) |

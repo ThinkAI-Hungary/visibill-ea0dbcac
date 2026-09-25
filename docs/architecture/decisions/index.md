@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-25  
-> **Összesen:** 165 döntés (158 egyedi döntési fájl) | ✅ Decided: 163 | ⛔ Superseded: 2
+> **Összesen:** 166 döntés (159 egyedi döntési fájl) | ✅ Decided: 164 | ⛔ Superseded: 2
 
 ---
 
@@ -202,6 +202,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-144 | Determinisztikus Számlatétel Szabály Motor (invoice_item_rules) és 1-Kattintásos Mentés Dialógus | ✅ Decided | [A-144](./A-144-deterministic-invoice-item-rules-engine.md) |
 | A-155 | Házipénztár Bejövő/Szállítói Számlák Kiegyenlítése és Időszaki Zárás Egyenleg Számítási Modell | ✅ Decided | [A-155](./A-155-petty-cash-inbound-settlement-and-period-closing.md) |
 | A-156 | Horvát ÁFA Bevallás (Obrazac PDV), Hivatalos Nyomtatvány Replika és HR Áfakód Architektúra | ✅ Decided | [A-156](./A-156-croatian-vat-return-obrazac-pdv-and-tax-codes.md) |
+| A-157 | Főkönyvi Kivonat Számlánkénti Összevonás (by_invoice) és 4-Oszlopos Excel Export Architektúra | ✅ Decided | [A-157](./A-157-general-ledger-invoice-grouping-and-4col-export.md) |
 
 ## 💳 Fizetés
 

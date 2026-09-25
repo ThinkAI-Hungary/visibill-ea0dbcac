@@ -9,6 +9,8 @@ import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
 import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw, Edit2, X, Check, ChevronsUpDown, FileText, Search, ArrowRightLeft } from 'lucide-react';
 import { exportGlExcel, exportGlAnalyticalExcel } from '@/lib/glExport';
 import { fetchAllGlBalances, fetchAllGlCategorizedItems, fetchGlItemsForAccount, GlDateBasis, GlPostingStatus, GlSearchResult } from '@/lib/glData';
+import { GlItemGroupingMode, enrichGlItemsWithInvoiceMeta, groupLedgerItemsByInvoice } from '@/lib/glInvoiceGrouping';
+export type { GlItemGroupingMode };
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
@@ -86,6 +88,11 @@ interface LedgerItem {
   ancestorIds?: string[];
   depth?: number;
   isRoot?: boolean;
+  invoiceId?: string | null;
+  invoiceNumber?: string | null;
+  groupedCount?: number;
+  groupedItemIds?: string[];
+  groupedDescriptions?: string[];
 }
 
 const formatCurrency = (value: number) => {
@@ -129,6 +136,7 @@ interface GeneralLedgerTableProps {
   printLayoutMode?: 'synthetic' | 'analytical';
   viewLayout?: 'summary' | 'classic';
   viewGranularity?: GlViewGranularity;
+  itemGrouping?: GlItemGroupingMode;
 }
 
 interface LoadMoreSentinelRowProps {
@@ -207,6 +215,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     printLayoutMode = 'analytical',
     viewLayout = 'summary',
     viewGranularity = 'kontirok',
+    itemGrouping = 'by_invoice',
   } = props;
   const { selectedCompany } = useCompany();
   const { isCroatia, defaultCurrency } = useCompanyJurisdiction();
@@ -317,7 +326,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     queryFn: async () => {
       if (!presetId || !selectedCompany?.id) return [];
       try {
-        return await fetchAllGlCategorizedItems({
+        const raw = await fetchAllGlCategorizedItems({
           companyId: selectedCompany.id,
           presetId,
           dateFrom,
@@ -326,6 +335,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
           postingStatus,
           exchangeRates: exchangeRates || {},
         });
+        return await enrichGlItemsWithInvoiceMeta(raw);
       } catch (error: any) {
         reportError({ type: 'db_query', component: 'GeneralLedgerTable', action: 'error', message: 'Error fetching categorized GL items:', error });
         return [];
@@ -335,7 +345,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     staleTime: 60 * 1000,
   });
 
-  const batchItemsByGL = useMemo(() => {
+  const rawBatchItemsByGL = useMemo(() => {
     if (!batchCategorizedItems || batchCategorizedItems.length === 0 || !dbData) return null;
     const cleanId = cleanIdVal;
     const glIdToCid = new Map<string, string>();
@@ -375,26 +385,43 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         originalGlId: item.gl_account_id,
         originalAmount: Number(item.original_amount) || 0,
         originalCurrency: item.original_currency,
-        isTemporary: (!item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000' || item.is_temporary)
+        isTemporary: (!item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000' || item.is_temporary),
+        invoiceId: item.invoice_id || null,
+        invoiceNumber: item.invoice_number || null,
       });
     });
     return itemsMap;
   }, [batchCategorizedItems, dbData]);
 
+  const batchItemsByGL = useMemo(() => {
+    if (!rawBatchItemsByGL) return null;
+    const groupedMap = new Map<string, LedgerItem[]>();
+    rawBatchItemsByGL.forEach((items, cid) => {
+      groupedMap.set(cid, groupLedgerItemsByInvoice(items, itemGrouping));
+    });
+    return groupedMap;
+  }, [rawBatchItemsByGL, itemGrouping]);
+
   // Keep track of user's expansion state when toggling between kontirok and teteles modes
   const savedKontirokExpandedRef = useRef<Set<string> | null>(null);
+  const prevViewGranularityRef = useRef<GlViewGranularity>(viewGranularity);
 
   useEffect(() => {
+    const isGranularityChange = prevViewGranularityRef.current !== viewGranularity;
+    prevViewGranularityRef.current = viewGranularity;
+
     if (viewGranularity === 'teteles') {
-      if (!savedKontirokExpandedRef.current) {
-        savedKontirokExpandedRef.current = new Set(expandedRowIds);
-      }
-      if (dbData && dbData.length > 0) {
-        const allAccountIds = dbData.map(d => String(d.gl_number));
-        setExpandedRowIds(new Set(allAccountIds));
+      if (isGranularityChange) {
+        if (!savedKontirokExpandedRef.current) {
+          savedKontirokExpandedRef.current = new Set(expandedRowIds);
+        }
+        if (dbData && dbData.length > 0) {
+          const allAccountIds = dbData.map(d => String(d.gl_number));
+          setExpandedRowIds(new Set(allAccountIds));
+        }
       }
     } else {
-      if (savedKontirokExpandedRef.current) {
+      if (isGranularityChange && savedKontirokExpandedRef.current) {
         setExpandedRowIds(savedKontirokExpandedRef.current);
         savedKontirokExpandedRef.current = null;
       }
@@ -402,14 +429,23 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   }, [viewGranularity, dbData]);
 
   // On-demand loaded transaction items per account CID: Map<accountCid, LedgerItem[]>
-  const [loadedAccountItems, setLoadedAccountItems] = useState<Map<string, LedgerItem[]>>(new Map());
+  const [loadedRawAccountItems, setLoadedRawAccountItems] = useState<Map<string, LedgerItem[]>>(new Map());
   const [loadingAccountCids, setLoadingAccountCids] = useState<Set<string>>(new Set());
   const [hasMoreAccountCids, setHasMoreAccountCids] = useState<Set<string>>(new Set());
   const [loadingMoreAccountCids, setLoadingMoreAccountCids] = useState<Set<string>>(new Set());
 
+  // Consolidated items according to itemGrouping mode ('by_invoice' vs 'detailed')
+  const loadedAccountItems = useMemo(() => {
+    const groupedMap = new Map<string, LedgerItem[]>();
+    loadedRawAccountItems.forEach((items, cid) => {
+      groupedMap.set(cid, groupLedgerItemsByInvoice(items, itemGrouping));
+    });
+    return groupedMap;
+  }, [loadedRawAccountItems, itemGrouping]);
+
   // Reset loaded account items when filters change
   useEffect(() => {
-    setLoadedAccountItems(new Map());
+    setLoadedRawAccountItems(new Map());
     setLoadingAccountCids(new Set());
     setHasMoreAccountCids(new Set());
     setLoadingMoreAccountCids(new Set());
@@ -470,7 +506,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
   const handleRefetchAll = () => {
     refetchBalances();
-    setLoadedAccountItems(new Map());
+    setLoadedRawAccountItems(new Map());
   };
 
 
@@ -479,7 +515,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   // No duplicate channel needed here — it already invalidates the relevant query caches.
 
   const handleSaveOverride = async () => {
-    const itemsToUpdate = editingItem ? [editingItem] : tableData.filter(d => selectedItemIds.has(d.id));
+    const itemsToUpdate = editingItem ? [editingItem] : tableData.filter(d => selectedItemIds.has(d.id) || (d.groupedItemIds && d.groupedItemIds.some(gid => selectedItemIds.has(gid))));
     if (itemsToUpdate.length === 0 || !selectedNewGL || !selectedCompany?.id || !session?.user.id) return;
     
     setIsSubmitting(true);
@@ -487,11 +523,34 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     const newGlItem = selectedNewGL === 'UNCLASSIFIED' ? null : dbData?.find(gl => gl.gl_account_id === selectedNewGL);
     const newGlNumber = newGlItem?.gl_number || '';
 
-    const payloadItems = itemsToUpdate.map(item => ({
-       item_id: item.id.replace('item_', ''),
-       source_table: item.sourceTable || '',
-       original_gl_account_id: item.originalGlId || null
-    }));
+    const payloadItems: { item_id: string; source_table: string; original_gl_account_id: string | null }[] = [];
+    const seenItemIds = new Set<string>();
+
+    itemsToUpdate.forEach(item => {
+      if (item.groupedItemIds && item.groupedItemIds.length > 0) {
+        item.groupedItemIds.forEach(gid => {
+          const rawId = gid.replace('item_', '');
+          if (!seenItemIds.has(rawId)) {
+            seenItemIds.add(rawId);
+            payloadItems.push({
+              item_id: rawId,
+              source_table: item.sourceTable || '',
+              original_gl_account_id: item.originalGlId || null
+            });
+          }
+        });
+      } else {
+        const rawId = item.id.replace('item_', '');
+        if (!seenItemIds.has(rawId)) {
+          seenItemIds.add(rawId);
+          payloadItems.push({
+            item_id: rawId,
+            source_table: item.sourceTable || '',
+            original_gl_account_id: item.originalGlId || null
+          });
+        }
+      }
+    });
 
     const { data, error } = await supabase.rpc('override_gl_classifications_batch', {
        p_items: payloadItems,
@@ -847,10 +906,16 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         // 1. Emit the account node itself
         combinedData.push(nodeToEmit);
 
-        // 2. Emit direct transaction items booked to this account
+        // Check if node is expanded and all its ancestors are expanded
+        const isNodeAncestorsExpanded = !node.ancestorIds || node.ancestorIds.length === 0 || node.ancestorIds.every(id => expandedRowIds.has(id));
+        const isNodeExpanded = isSearchActive 
+          ? (visibleAccountCids ? visibleAccountCids.has(node.cid) : true) 
+          : (isPrinting ? true : (expandedRowIds.has(node.id) && isNodeAncestorsExpanded));
+
+        // 2. Emit direct transaction items booked to this account ONLY if node and its ancestors are expanded
         const shouldExpandItems = isSearchActive 
           ? (itemMatchAccountCids.has(node.cid) || (directMatchAccountCids.has(node.cid) && node.hasItemChildren) || expandedRowIds.has(node.id))
-          : expandedRowIds.has(node.id);
+          : (isNodeExpanded && isNodeAncestorsExpanded);
 
         if (shouldExpandItems) {
           const itemAncestors = [node.id, ...(node.ancestorIds || [])];
@@ -1039,6 +1104,26 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     onStatsChange({ accountCount: glAccountsOnly.length, leafCount: leaves.length, totalDebit, totalCredit, classifiedItems: classifiedItemCount, totalItems: totalItemCount });
   }, [tableData, onStatsChange, dbData, orphanCount]);
 
+  // Calculate generic footer totals by summing root level items in O(N)
+  const footerTotals = useMemo(() => {
+    return tableData.reduce((acc, current) => {
+      // Ignore leaf item rows since their balances are already natively rolled up inside their parents
+      if (current.isItem || !current.isRoot) return acc;
+      return acc + current.balance;
+    }, 0);
+  }, [tableData]);
+
+  // Calculate classic 4-column totals (turnover Debit/Credit, balance Debit/Credit)
+  const classicTotals = useMemo(() => {
+    const glAccountsOnly = tableData.filter(d => !d.isItem);
+    const leaves = glAccountsOnly.filter(d => !d.hasAccountChildren);
+    const turnoverDebit = leaves.filter(d => d.balance > 0).reduce((s, d) => s + d.balance, 0);
+    const turnoverCredit = leaves.filter(d => d.balance < 0).reduce((s, d) => s + Math.abs(d.balance), 0);
+    const balanceDebit = turnoverDebit;
+    const balanceCredit = turnoverCredit;
+    return { turnoverDebit, turnoverCredit, balanceDebit, balanceCredit };
+  }, [tableData]);
+
 
   useEffect(() => {
     return () => {
@@ -1118,7 +1203,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       const rows = shouldExcludeZero
         ? processedRows.filter(r => Math.abs(r.balance || 0) > 0.001)
         : processedRows;
-      await exportGlExcel(rows, companyName, footerTotals, dateBasis, dateFrom, dateTo, { excludeZeroRows: shouldExcludeZero });
+      await exportGlExcel(rows, companyName, classicTotals, dateBasis, dateFrom, dateTo, { excludeZeroRows: shouldExcludeZero });
     },
     exportAnalyticalExcel: async (companyName?: string, options?: { excludeZeroRows?: boolean }) => {
       if (!selectedCompany?.id || !presetId || !dbData) return;
@@ -1134,6 +1219,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
           postingStatus,
           exchangeRates: exchangeRates || {},
         });
+        const enrichedItems = await enrichGlItemsWithInvoiceMeta(allItems);
 
         const cleanId = cleanIdVal;
         const glIdToCid = new Map<string, string>();
@@ -1144,7 +1230,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         });
 
         const itemsByGL = new Map<string, LedgerItem[]>();
-        allItems.filter(i => !i.is_excluded).forEach(item => {
+        enrichedItems.filter(i => !i.is_excluded).forEach(item => {
           const isUnclass = !item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000';
           const parentCid = isUnclass ? 'UNCLASSIFIED' : glIdToCid.get(item.gl_account_id);
           if (!parentCid) return;
@@ -1173,7 +1259,9 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
             originalGlId: item.gl_account_id,
             originalAmount: Number(item.original_amount) || 0,
             originalCurrency: item.original_currency,
-            isTemporary: (!item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000')
+            isTemporary: (!item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000'),
+            invoiceId: item.invoice_id || null,
+            invoiceNumber: item.invoice_number || null,
           });
         });
 
@@ -1254,7 +1342,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
             return;
           }
           fullExportRows.push({ ...node, depth, isRoot: depth === 0 });
-          const directItems = itemsByGL.get(node.cid);
+          const rawItems = itemsByGL.get(node.cid);
+          const directItems = rawItems ? groupLedgerItemsByInvoice(rawItems, itemGrouping) : [];
           if (directItems && directItems.length > 0) {
             directItems.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
             directItems.forEach(item => fullExportRows.push({ ...item, depth: depth + 1 }));
@@ -1272,7 +1361,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         roots.sort(compareGlAccounts);
         roots.forEach(root => traverse(root, 0));
 
-        await exportGlAnalyticalExcel(fullExportRows, companyName, footerTotals, dateBasis, dateFrom, dateTo, { excludeZeroRows: shouldExcludeZero });
+        await exportGlAnalyticalExcel(fullExportRows, companyName, classicTotals, dateBasis, dateFrom, dateTo, { excludeZeroRows: shouldExcludeZero });
         toast({ title: 'Sikeres exportálás', description: 'Az analitikus Excel fájl elkészült.', className: 'bg-green-50 text-green-900 border-green-200' });
       } catch (err: any) {
         reportError({ type: 'db_query', component: 'GeneralLedgerTable', action: 'error', message: 'Export error:', error: err });
@@ -1302,7 +1391,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
   const fetchAccountItemsOnDemand = useCallback(async (targetCid: string) => {
     if (!dbData || !selectedCompany?.id || !presetId) return;
-    if (loadedAccountItems.has(targetCid) || loadingAccountCids.has(targetCid)) return;
+    if (loadedRawAccountItems.has(targetCid) || loadingAccountCids.has(targetCid)) return;
 
     setLoadingAccountCids(prev => new Set(prev).add(targetCid));
     try {
@@ -1326,7 +1415,9 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         offset: 0,
       });
 
-      const mappedItems: LedgerItem[] = items.map(item => {
+      const enriched = await enrichGlItemsWithInvoiceMeta(items);
+
+      const mappedItems: LedgerItem[] = enriched.map(item => {
         const isUnclass = !item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000';
         const parentCid = isUnclass ? 'UNCLASSIFIED' : targetCid;
         const pseudoCid = `${parentCid}_${item.item_id}`;
@@ -1351,11 +1442,13 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
           originalGlId: item.gl_account_id,
           originalAmount: Number(item.original_amount) || 0,
           originalCurrency: item.original_currency,
-          isTemporary: (!item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000' || item.is_temporary)
+          isTemporary: (!item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000' || item.is_temporary),
+          invoiceId: item.invoice_id || null,
+          invoiceNumber: item.invoice_number || null,
         };
       });
 
-      setLoadedAccountItems(prev => {
+      setLoadedRawAccountItems(prev => {
         const next = new Map(prev);
         next.set(targetCid, mappedItems);
         return next;
@@ -1379,13 +1472,13 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         return next;
       });
     }
-  }, [dbData, selectedCompany?.id, presetId, dateFrom, dateTo, dateBasis, postingStatus, exchangeRates, loadedAccountItems, loadingAccountCids]);
+  }, [dbData, selectedCompany?.id, presetId, dateFrom, dateTo, dateBasis, postingStatus, exchangeRates, loadedRawAccountItems, loadingAccountCids]);
 
   const fetchMoreAccountItems = useCallback(async (targetCid: string) => {
     if (!dbData || !selectedCompany?.id || !presetId) return;
     if (loadingMoreAccountCids.has(targetCid)) return;
 
-    const currentItems = loadedAccountItems.get(targetCid) || [];
+    const currentItems = loadedRawAccountItems.get(targetCid) || [];
     setLoadingMoreAccountCids(prev => new Set(prev).add(targetCid));
 
     try {
@@ -1407,7 +1500,9 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         offset: currentItems.length,
       });
 
-      const mappedItems: LedgerItem[] = items.map(item => {
+      const enriched = await enrichGlItemsWithInvoiceMeta(items);
+
+      const mappedItems: LedgerItem[] = enriched.map(item => {
         const isUnclass = !item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000';
         const parentCid = isUnclass ? 'UNCLASSIFIED' : targetCid;
         const pseudoCid = `${parentCid}_${item.item_id}`;
@@ -1432,11 +1527,13 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
           originalGlId: item.gl_account_id,
           originalAmount: Number(item.original_amount) || 0,
           originalCurrency: item.original_currency,
-          isTemporary: (!item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000' || item.is_temporary)
+          isTemporary: (!item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000' || item.is_temporary),
+          invoiceId: item.invoice_id || null,
+          invoiceNumber: item.invoice_number || null,
         };
       });
 
-      setLoadedAccountItems(prev => {
+      setLoadedRawAccountItems(prev => {
         const next = new Map(prev);
         const existing = prev.get(targetCid) || [];
         next.set(targetCid, [...existing, ...mappedItems]);
@@ -1459,7 +1556,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         return next;
       });
     }
-  }, [dbData, selectedCompany?.id, presetId, dateFrom, dateTo, dateBasis, postingStatus, exchangeRates, loadedAccountItems, loadingMoreAccountCids]);
+  }, [dbData, selectedCompany?.id, presetId, dateFrom, dateTo, dateBasis, postingStatus, exchangeRates, loadedRawAccountItems, loadingMoreAccountCids]);
 
   const handleNavigateToEntity = useCallback(async (result: GlSearchResult) => {
     const targetGl = result.target_gl_number || result.gl_number;
@@ -1562,6 +1659,12 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       const next = new Set(prev);
       if (isCurrentlyExpanded) {
         next.delete(id);
+        // Also prune all descendant IDs from expandedRowIds so child accounts don't keep ghost open state
+        tableData.forEach(d => {
+          if (!d.isItem && d.ancestorIds?.includes(id)) {
+            next.delete(d.id);
+          }
+        });
       } else {
         next.add(id);
       }
@@ -1627,7 +1730,9 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       const depth = item.depth || 0;
       
       const isVisibleOnScreen = isRoot || isSearchActive || (
-        item.ancestorIds ? item.ancestorIds.every(id => expandedRowIds.has(id)) : true
+        item.ancestorIds && item.ancestorIds.length > 0
+          ? item.ancestorIds.every(id => expandedRowIds.has(id))
+          : false
       );
       let isVisibleDuringPrint = isRoot || (
         item.ancestorIds ? item.ancestorIds.every(id => {
@@ -1643,26 +1748,6 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       return { ...item, isVisibleOnScreen, isVisibleDuringPrint, isRoot, depth };
     });
   }, [expandedRowIds, tableData, categoriesWithItems, printLayoutMode, searchQuery]);
-
-  // Calculate generic footer totals by summing root level items in O(N)
-  const footerTotals = useMemo(() => {
-    return tableData.reduce((acc, current) => {
-      // Ignore leaf item rows since their balances are already natively rolled up inside their parents
-      if (current.isItem || !current.isRoot) return acc;
-      return acc + current.balance;
-    }, 0);
-  }, [tableData]);
-
-  // Calculate classic 4-column totals (turnover Debit/Credit, balance Debit/Credit)
-  const classicTotals = useMemo(() => {
-    const glAccountsOnly = tableData.filter(d => !d.isItem);
-    const leaves = glAccountsOnly.filter(d => !d.hasAccountChildren);
-    const turnoverDebit = leaves.filter(d => d.balance > 0).reduce((s, d) => s + d.balance, 0);
-    const turnoverCredit = leaves.filter(d => d.balance < 0).reduce((s, d) => s + Math.abs(d.balance), 0);
-    const balanceDebit = turnoverDebit;
-    const balanceCredit = turnoverCredit;
-    return { turnoverDebit, turnoverCredit, balanceDebit, balanceCredit };
-  }, [tableData]);
 
   // Calculate total amount for currently selected items
   const selectedItemsSum = useMemo(() => {
@@ -1930,8 +2015,26 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                              <div className="print:hidden h-full flex items-center" onClick={e => e.stopPropagation()}>
                                {row.sourceTable !== 'acc_journal_lines' && row.sourceTable !== 'journal_entry' ? (
                                  <Checkbox 
-                                   checked={selectedItemIds.has(row.id)} 
-                                   onCheckedChange={() => toggleItemSelection(row.id)}
+                                   checked={
+                                     row.groupedItemIds && row.groupedItemIds.length > 0
+                                       ? row.groupedItemIds.every(id => selectedItemIds.has(id))
+                                       : selectedItemIds.has(row.id)
+                                   } 
+                                   onCheckedChange={() => {
+                                     if (row.groupedItemIds && row.groupedItemIds.length > 0) {
+                                       const allSelected = row.groupedItemIds.every(id => selectedItemIds.has(id));
+                                       setSelectedItemIds(prev => {
+                                         const next = new Set(prev);
+                                         row.groupedItemIds!.forEach(id => {
+                                           if (allSelected) next.delete(id);
+                                           else next.add(id);
+                                         });
+                                         return next;
+                                       });
+                                     } else {
+                                       toggleItemSelection(row.id);
+                                     }
+                                   }}
                                  />
                                ) : (
                                  <div className="w-4" />
@@ -1975,11 +2078,35 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                             </div>
                           )}
                         </div>
-                        <CustomTooltip content={row.isItem ? getLocalizedGlItemDescription(row.name, t) : row.name} side="top">
+                        <CustomTooltip 
+                          content={
+                            row.groupedDescriptions && row.groupedDescriptions.length > 1 ? (
+                              <div className="space-y-1 max-w-sm">
+                                <p className="font-semibold text-xs border-b border-border/40 pb-1">{row.name}</p>
+                                <div className="max-h-48 overflow-y-auto space-y-1 text-[11px] text-muted-foreground">
+                                  {row.groupedDescriptions.map((desc, idx) => (
+                                    <div key={idx} className="flex items-start gap-1.5">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-primary/60 shrink-0 mt-1" />
+                                      <span className="break-words">{desc}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : (
+                              row.isItem ? getLocalizedGlItemDescription(row.name, t) : row.name
+                            )
+                          } 
+                          side="top"
+                        >
                           <span className={cn("break-words min-w-0 font-medium leading-normal", isRoot ? "uppercase font-semibold text-foreground" : "", row.isItem ? "text-muted-foreground italic" : "")}>
                             {row.isItem ? getLocalizedGlItemDescription(row.name, t) : row.name}
                           </span>
                         </CustomTooltip>
+                        {row.isItem && row.groupedCount && row.groupedCount > 1 && (
+                          <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-semibold whitespace-nowrap border border-primary/20">
+                            {row.groupedCount} {t('accounting:general_ledger.grouped_items_badge', 'tétel')}
+                          </span>
+                        )}
                         {row.isItem && row.itemType && (
                           <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-muted whitespace-nowrap text-muted-foreground hidden lg:inline-block">
                             {getLocalizedGlItemType(row.itemType, t)}

@@ -24,6 +24,8 @@ export interface GlCategorizedItem {
   item_date: string;
   is_temporary: boolean;
   is_excluded?: boolean;
+  invoice_id?: string | null;
+  invoice_number?: string | null;
 }
 
 export type GlAccountRow = Database['public']['Tables']['gl_accounts']['Row'];

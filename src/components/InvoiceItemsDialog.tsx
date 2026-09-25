@@ -2264,7 +2264,7 @@ export function InvoiceItemsDialog({
           } 
         }}
       >
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           {(() => {
             const isNegative = glEditItem 
               ? ((glEditItem.net_amount ?? 0) < 0 || (glEditItem.gross_amount ?? 0) < 0)
@@ -2526,87 +2526,53 @@ export function InvoiceItemsDialog({
                         <Label className="text-xs text-muted-foreground">
                           {isOutbound ? 'Vevőkövetelés főkönyvi száma:' : 'Szállítói kötelezettség főkönyvi száma:'}
                         </Label>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                          {isOutbound ? (
-                            <>
-                              <Button
-                                type="button"
-                                variant={selectedPartnerGl === '311' ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => { setSelectedPartnerGl('311'); setCustomPartnerGlInput('311'); }}
-                                className="justify-start font-mono text-xs"
-                              >
-                                311 • Belföldi vevők (HUF)
-                              </Button>
-                              <Button
-                                type="button"
-                                variant={selectedPartnerGl === '312' ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => { setSelectedPartnerGl('312'); setCustomPartnerGlInput('312'); }}
-                                className="justify-start font-mono text-xs"
-                              >
-                                312 • Külföldi vevők (Deviza)
-                              </Button>
-                              <Button
-                                type="button"
-                                variant={selectedPartnerGl === '315' ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => { setSelectedPartnerGl('315'); setCustomPartnerGlInput('315'); }}
-                                className="justify-start font-mono text-xs"
-                              >
-                                315 • Kapcsolt vállalkozás
-                              </Button>
-                            </>
-                          ) : (
-                            <>
-                              <Button
-                                type="button"
-                                variant={selectedPartnerGl === '4541' ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => { setSelectedPartnerGl('4541'); setCustomPartnerGlInput('4541'); }}
-                                className="justify-start font-mono text-xs"
-                              >
-                                4541 • Belföldi szállítók (HUF)
-                              </Button>
-                              <Button
-                                type="button"
-                                variant={selectedPartnerGl === '4542' ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => { setSelectedPartnerGl('4542'); setCustomPartnerGlInput('4542'); }}
-                                className="justify-start font-mono text-xs"
-                              >
-                                4542 • Külföldi szállítók (Deviza)
-                              </Button>
-                              <Button
-                                type="button"
-                                variant={selectedPartnerGl === '4543' ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => { setSelectedPartnerGl('4543'); setCustomPartnerGlInput('4543'); }}
-                                className="justify-start font-mono text-xs"
-                              >
-                                4543 • Belföldi szolgáltatók
-                              </Button>
-                              <Button
-                                type="button"
-                                variant={selectedPartnerGl === '454' ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => { setSelectedPartnerGl('454'); setCustomPartnerGlInput('454'); }}
-                                className="justify-start font-mono text-xs"
-                              >
-                                454 • Szállítók (összevont)
-                              </Button>
-                              <Button
-                                type="button"
-                                variant={selectedPartnerGl === '479' ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => { setSelectedPartnerGl('479'); setCustomPartnerGlInput('479'); }}
-                                className="justify-start font-mono text-xs"
-                              >
-                                479 • Egyéb kötelezettségek
-                              </Button>
-                            </>
-                          )}
-                        </div>
+                        {(() => {
+                          const partnerOptions = isOutbound ? [
+                            { code: '311', label: 'Belföldi vevők (HUF)' },
+                            { code: '312', label: 'Külföldi vevők (Deviza)' },
+                            { code: '315', label: 'Kapcsolt vállalkozás' },
+                          ] : [
+                            { code: '4541', label: 'Belföldi szállítók (HUF)' },
+                            { code: '4542', label: 'Külföldi szállítók (Deviza)' },
+                            { code: '4543', label: 'Belföldi szolgáltatók' },
+                            { code: '454', label: 'Szállítók (összevont)' },
+                            { code: '479', label: 'Egyéb kötelezettségek' },
+                          ];
+
+                          return (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              {partnerOptions.map(opt => {
+                                const isSelected = selectedPartnerGl === opt.code;
+                                return (
+                                  <Button
+                                    key={opt.code}
+                                    type="button"
+                                    variant={isSelected ? 'default' : 'outline'}
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedPartnerGl(opt.code);
+                                      setCustomPartnerGlInput(opt.code);
+                                    }}
+                                    className={cn(
+                                      "h-auto min-h-[38px] py-2 px-3 justify-start font-mono text-xs text-left whitespace-normal leading-normal transition-all",
+                                      isSelected
+                                        ? "bg-primary/20 border-primary text-primary font-semibold ring-1 ring-primary/30"
+                                        : "bg-background/80 hover:bg-muted/80 text-muted-foreground hover:text-foreground border-border/70"
+                                    )}
+                                  >
+                                    <span className={cn("font-bold shrink-0", isSelected ? "text-primary" : "text-foreground")}>
+                                      {opt.code}
+                                    </span>
+                                    <span className="mx-2 text-muted-foreground/40 shrink-0">•</span>
+                                    <span className="break-words flex-1">
+                                      {opt.label}
+                                    </span>
+                                  </Button>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       <div className="space-y-1.5 pt-1">

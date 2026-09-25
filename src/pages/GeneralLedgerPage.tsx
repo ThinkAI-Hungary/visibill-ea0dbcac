@@ -14,10 +14,10 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Download, UploadCloud, Database, Bot, Loader2, Search, FileText, ChevronDown, Eye, Printer, Maximize2, Minimize2, FileUp, Trash2, BookOpen, Table2, Calendar, CalendarCheck, Layers, ShieldCheck, Plus, LayoutGrid, Columns, Filter, FolderTree, ListTree, FileSpreadsheet } from 'lucide-react';
+import { Download, UploadCloud, Database, Bot, Loader2, Search, FileText, ChevronDown, Eye, Printer, Maximize2, Minimize2, FileUp, Trash2, BookOpen, Table2, Calendar, CalendarCheck, Layers, ShieldCheck, Plus, LayoutGrid, Columns, Filter, FolderTree, ListTree, FileSpreadsheet, Receipt, ListFilter } from 'lucide-react';
 import { UploadAuditXmlModal } from '@/components/general-ledger/UploadAuditXmlModal';
 import { AuditImportHistoryModal } from '@/components/general-ledger/AuditImportHistoryModal';
-import GeneralLedgerTable, { GeneralLedgerTableRef, GlViewGranularity } from '@/components/general-ledger/GeneralLedgerTable';
+import GeneralLedgerTable, { GeneralLedgerTableRef, GlViewGranularity, GlItemGroupingMode } from '@/components/general-ledger/GeneralLedgerTable';
 import { GlSearchAutocomplete } from '@/components/general-ledger/GlSearchAutocomplete';
 import { UploadChartOfAccountsModal } from '@/components/general-ledger/UploadChartOfAccountsModal';
 import { AddGlAccountModal } from '@/components/general-ledger/AddGlAccountModal';
@@ -153,6 +153,43 @@ export default function GeneralLedgerPage() {
       return next;
     }, { replace: true });
   }, [viewGranularity, setSearchParams]);
+
+  const urlItemGrouping = searchParams.get('item_grouping') as GlItemGroupingMode | null;
+  const [itemGrouping, setItemGrouping] = useState<GlItemGroupingMode>(() => {
+    if (urlItemGrouping === 'by_invoice' || urlItemGrouping === 'detailed') return urlItemGrouping;
+    try {
+      const stored = localStorage.getItem('visibill_gl_item_grouping');
+      if (stored === 'by_invoice' || stored === 'detailed') return stored as GlItemGroupingMode;
+    } catch (e) {}
+    return 'by_invoice';
+  });
+
+  // Keep itemGrouping in sync with URL parameter if changed externally or via back/forward
+  useEffect(() => {
+    const param = searchParams.get('item_grouping') as GlItemGroupingMode | null;
+    if (param === 'by_invoice' || param === 'detailed') {
+      setItemGrouping(param);
+    } else if (!param) {
+      setItemGrouping('by_invoice');
+    }
+  }, [searchParams]);
+
+  const handleItemGroupingChange = useCallback((newGrouping: GlItemGroupingMode) => {
+    if (newGrouping === itemGrouping) return;
+    setItemGrouping(newGrouping);
+    try {
+      localStorage.setItem('visibill_gl_item_grouping', newGrouping);
+    } catch (e) {}
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (newGrouping === 'by_invoice') {
+        next.delete('item_grouping');
+      } else {
+        next.set('item_grouping', newGrouping);
+      }
+      return next;
+    }, { replace: true });
+  }, [itemGrouping, setSearchParams]);
 
   // Keep in sync with company default if no explicit URL parameter was provided
   useEffect(() => {
@@ -349,6 +386,41 @@ export default function GeneralLedgerPage() {
         >
           <ListTree className="w-3.5 h-3.5 shrink-0 text-primary" />
           <span>{t('accounting:general_ledger.granularity_teteles', 'Tételes')}</span>
+        </button>
+      </CustomTooltip>
+    </div>
+  );
+
+  const renderItemGroupingToggle = () => (
+    <div className="inline-flex h-8 items-center rounded-lg border border-border/80 bg-background/80 p-0.5 shadow-2xs text-xs select-none shrink-0">
+      <CustomTooltip content={t('accounting:general_ledger.item_grouping.by_invoice_tooltip', 'Számlánkénti összevonás: egy számlán szereplő és azonos kontírszámra könyvelt tételek egy sorként, összesítve jelennek meg (alapértelmezett)')} side="bottom">
+        <button
+          type="button"
+          onClick={() => handleItemGroupingChange('by_invoice')}
+          className={cn(
+            "inline-flex h-7 items-center justify-center gap-1.5 px-2.5 rounded-md text-xs transition-all cursor-pointer border whitespace-nowrap",
+            itemGrouping === 'by_invoice'
+              ? "bg-muted text-foreground shadow-xs border-border/60 font-semibold text-primary"
+              : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
+          )}
+        >
+          <Receipt className="w-3.5 h-3.5 shrink-0 text-primary" />
+          <span>{t('accounting:general_ledger.item_grouping.by_invoice', 'Számlánként')}</span>
+        </button>
+      </CustomTooltip>
+      <CustomTooltip content={t('accounting:general_ledger.item_grouping.detailed_tooltip', 'Tételes bontás: minden számlatétel különálló sorként jelenik meg')} side="bottom">
+        <button
+          type="button"
+          onClick={() => handleItemGroupingChange('detailed')}
+          className={cn(
+            "inline-flex h-7 items-center justify-center gap-1.5 px-2.5 rounded-md text-xs transition-all cursor-pointer border whitespace-nowrap",
+            itemGrouping === 'detailed'
+              ? "bg-muted text-foreground shadow-xs border-border/60 font-semibold text-primary"
+              : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
+          )}
+        >
+          <ListFilter className="w-3.5 h-3.5 shrink-0" />
+          <span>{t('accounting:general_ledger.item_grouping.detailed', 'Tételes')}</span>
         </button>
       </CustomTooltip>
     </div>
@@ -995,6 +1067,13 @@ export default function GeneralLedgerPage() {
                   </span>
                   {renderHideZeroToggle()}
                 </div>
+                {/* Tételek összevonása / bontása kapcsoló */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground/80 text-[11px] font-medium">
+                    {t('accounting:general_ledger.item_grouping_label', 'Tételek:')}
+                  </span>
+                  {renderItemGroupingToggle()}
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -1009,6 +1088,7 @@ export default function GeneralLedgerPage() {
               hideZeroBalances={hideZeroBalances}
               viewLayout={viewLayout}
               viewGranularity={viewGranularity}
+              itemGrouping={itemGrouping}
               searchQuery={glSearchQuery}
               searchResults={glSearchResults}
               isPolling={isAIRunning}

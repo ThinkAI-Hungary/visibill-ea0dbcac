@@ -497,6 +497,26 @@ A `useAccountyPermissions` hook ellenőrzi a modul-szintű jogokat. Ha az `accou
 
 ---
 
+### Főkönyvi Kivonat (`/general-ledger`)
+
+**Layout:** 2-Tier Eszköztár + Hierarchikus számlatükör fastruktúra és tételes táblázat
+
+**URL Paraméterek & Állapotkezelés:**
+- `?granularity=kontirok|teteles` – Nézet granularitás: `kontirok` (alapértelmezett számlaszintű összegzés) vs. `teteles` (összes aktív számlaosztály és kontír kinyitása)
+- `?item_grouping=by_invoice|itemized` – Tétel-összevonás kapcsoló: `by_invoice` (alapértelmezett számlánkénti összevonás kontíronként) vs. `itemized` (részletes soronkénti tétellista); `localStorage`-ban is perzisztált
+- `?date_basis=accounting|delivery` – Dátum alap (számviteli vs. teljesítési dátum)
+- `?posting_status=all|posted_only` – Könyvelési státusz szűrő
+
+**Fő Funkciók:**
+- **Számlánkénti Tétel-összevonás:** Azonos kontíron az egy számlán szereplő tételek 1 sorba vonódnak össze kék jelvénnyel (`{count} tétel`), az összegek szummázásával. A különböző számlák külön sorok maradnak.
+- **Részletező Tooltip:** Az összevont számlasor megnevezése fölé húzva az egeret egy áttekintő buborék mutatja meg az eredeti tételsorokat és összegeket.
+- **Tömeges Kijelölés és Átkontírozás:** Az összevont sor kijelölése a háttérben az összes egyedi mögöttes tételt (`groupedItemIds`) automatikusan átadja a műveletsávnak.
+- **4-Oszlopos Statisztikai és Analitikus Export:** Excel (.xlsx) és CSV export 2 szintes fejléccel és 4 diszkrét pénzügyi oszloppal (Forgalom Tartozik, Forgalom Követel, Egyenleg Tartozik, Egyenleg Követel) és automatikus összegző záróképletekkel.
+
+> **Kapcsolódó döntések:** [P-117](./decisions/P-117-general-ledger-invoice-grouping-and-4col-export-ux.md) · [P-113](./decisions/P-113-general-ledger-granularity-kontirok-teteles-view.md) · [P-105](./decisions/P-105-general-ledger-toolbar-and-expand-collapse-ux.md) · [A-157](../architecture/decisions/A-157-general-ledger-invoice-grouping-and-4col-export.md) · [A-153](../architecture/decisions/A-153-general-ledger-batch-itemized-view-architecture.md)
+
+---
+
 ## 7. Rendszer Tudásbázis és Funkciókalauz (Knowledge Base)
 
 A rendszer teljes menü- és funkcióstruktúrájának részletes, fájlonkénti leírását az alábbi tudásbázis tartalmazza:
