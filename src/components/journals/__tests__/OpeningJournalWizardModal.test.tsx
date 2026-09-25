@@ -119,7 +119,7 @@ describe('OpeningJournalWizardModal Component', () => {
     await waitFor(() => {
       expect(screen.getByText(/Import/i)).toBeInTheDocument();
       expect(screen.getByText('Sor hozzáadása')).toBeInTheDocument();
-      expect(screen.getByText(/491 Nyitómérleg Eltérés/i)).toBeInTheDocument();
+      expect(screen.getByText(/491 Nyitó\s*mérleg/i)).toBeInTheDocument();
     });
   });
 

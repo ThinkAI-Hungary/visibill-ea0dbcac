@@ -953,6 +953,14 @@ export default function JournalsPage() {
   const selectedJournal = journals.find((j: any) => j.id === selectedJournalId);
   const isNyJournal = selectedJournal?.code === 'NY';
 
+  const handleOpenOpeningWizard = useCallback(() => {
+    const nyJ = journals.find((j: any) => j.code === 'NY');
+    if (nyJ) {
+      setSelectedJournalId(nyJ.id);
+    }
+    setOpeningWizardOpen(true);
+  }, [journals]);
+
   return (
     <TooltipProvider>
       <div className="flex flex-col space-y-4 p-6 min-h-[calc(100vh-4rem)] bg-background">
@@ -962,7 +970,25 @@ export default function JournalsPage() {
         title={t('accounting:journals.title', 'Könyvelési Naplók')}
         description={t('accounting:journals.description', 'A vállalkozás kettős könyvvitelének naplónemenkénti, idősoros és zárt nyilvántartása.')}
         actions={
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            <Tooltip delayDuration={200}>
+              <TooltipTrigger asChild>
+                <Button
+                  size="default"
+                  onClick={handleOpenOpeningWizard}
+                  className="h-9 px-4 gap-2 font-bold text-xs sm:text-sm bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:via-teal-500 hover:to-emerald-600 text-white shadow-md shadow-emerald-950/20 dark:shadow-emerald-900/30 border border-emerald-400/40 ring-2 ring-emerald-500/20 hover:ring-emerald-500/40 transition-all hover:scale-[1.02] active:scale-[0.98] shrink-0"
+                >
+                  <BookOpen className="w-4 h-4 text-emerald-100 shrink-0" />
+                  <span>{t('accounting:journals.opening_entries_btn', 'Nyitó tételek')}</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs text-xs">
+                <p className="font-semibold">{t('accounting:journals.opening_entries_tooltip_title', 'Nyitó tételek & Varázsló')}</p>
+                <p className="text-muted-foreground text-[11px] mt-0.5">
+                  {t('accounting:journals.opening_entries_tooltip_desc', 'Előző évi mérleg és főkönyv nyitása a 491. Nyitómérleg számlával szemben, Audit XML / CSV importálás és egyeztetés.')}
+                </p>
+              </TooltipContent>
+            </Tooltip>
             <Tooltip delayDuration={200}>
               <TooltipTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setPeriodClosingOpen(true)}>
@@ -1085,13 +1111,13 @@ export default function JournalsPage() {
                   </div>
                   <div>
                     <h3 className="font-bold text-sm flex items-center gap-2">
-                      <span>{t('accounting:journals.opening.banner_title', 'Nyitó Napló (NY) — Sztv. 491. Technikai Nyitómérleg')}</span>
+                      <span>{t('accounting:journals.opening.banner_title', 'Nyitó Napló (NY) — Sztv. 491. Nyitó mérleg számla')}</span>
                       <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
                         {t('accounting:journals.opening.continuity_badge', 'Mérlegfolytonosság')}
                       </Badge>
                     </h3>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {t('accounting:journals.opening.banner_desc', 'Az előző évi záró mérleg felvezetése a 491. Nyitómérleg számlával szemben (Kötelező validáció: Σ T = Σ K).')}
+                      {t('accounting:journals.opening.banner_desc', 'Minden nyitás a 491. Nyitó mérleg számlával szemben történik (Kötelező validáció: Σ T = Σ K). (492 a Záró mérleg számla).')}
                     </p>
                   </div>
                 </div>

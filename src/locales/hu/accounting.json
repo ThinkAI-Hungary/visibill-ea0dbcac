@@ -560,8 +560,8 @@
       "acc_482": "Költségek, ráfordítások passzív időbeli elhatárolása",
       "acc_483": "Halasztott bevételek",
       "acc_49": "ÉVI MÉRLEGSZÁMLÁK",
-      "acc_491": "Nyitómérleg számla",
-      "acc_492": "Zárómérleg számla",
+      "acc_491": "Nyitó mérleg számla",
+      "acc_492": "Záró mérleg számla",
       "acc_493": "Mérleg szerinti eredmény elszámolási számla",
       "acc_5": "SZÁMLAOSZTÁLY: KÖLTSÉGNEMEK",
       "acc_51": "ANYAGKÖLTSÉG",
@@ -1554,7 +1554,7 @@
     "opening_wizard": {
       "title": "Nyitó tételek rögzítése & Varázsló",
       "badge": "Sztv. 491",
-      "description": "Évnyitás és mérlegfolytonosság felvezetése a 491. Nyitómérleg technikai számlával szemben",
+      "description": "Évnyitás és mérlegfolytonosság felvezetése a 491. Nyitó mérleg számlával szemben",
       "steps": {
         "step1": "Alapadatok",
         "step2": "Főkönyv & 491",
@@ -1564,7 +1564,7 @@
       },
       "step1": {
         "methodology_title": "Nyitás metodikája & Sztv. mérlegfolytonosság",
-        "methodology_desc": "A nyitás az előző üzleti év záró mérlegének felvezetése az új év 1. napjára. Az eszközök nyitása T Eszköz – K 491, a források nyitása T 491 – K Forrás. A nyitás után a 491-nek 0 Ft egyenleggel kell rendelkeznie.",
+        "methodology_desc": "Minden nyitás a 491. Nyitó mérleg számlával szemben történik (Eszközök: T Eszköz – K 491, Források: T 491 – K Forrás). A nyitás után a 491-es számla egyenlege 0 Ft-ra fut ki. (Az üzleti év végén a zárás a 492. Záró mérleg számlával szemben történik).",
         "existing_warning_title": "Már létezik nyitó bizonylat erre az üzleti évre ({{year}})",
         "existing_warning_desc": "A(z) {{year}}. évhez már rögzítésre került a(z) {{docId}} számú nyitó bizonylat (Könyvelési dátum: {{date}}, Státusz: {{status}}).",
         "rule_warning": "Az Sztv. mérlegfolytonossági szabályai szerint az évnyitás normál esetben évente egyszer történik. Újabb nyitás rögzítése megduplázhatja a nyitó egyenlegeket a 491-es számlával szemben!",
@@ -1585,7 +1585,7 @@
         "add_row": "Sor hozzáadása",
         "total_debit": "Össz T:",
         "total_credit": "Össz K:",
-        "imbalance_label": "491 Nyitómérleg Eltérés:",
+        "imbalance_label": "491 Nyitó mérleg eltérés:",
         "table_headers": {
           "gl_account": "Főkönyvi Számla (0–4, 9)",
           "sign": "Jel",
@@ -1599,7 +1599,7 @@
         "credit_label": "K (Forrás)",
         "comment_placeholder": "Megjegyzés...",
         "delete_row_tooltip": "Sor törlése",
-        "validation_error": "Sztv. validációs hiba: A nyitó bizonylat nem könyvelhető le, mert a Tartozik és Követel oldal nem egyezik meg (491-es technikai számla egyenlege eltér a nullától).",
+        "validation_error": "Sztv. validációs hiba: A nyitó bizonylat nem könyvelhető le, mert a Tartozik és Követel oldal nem egyezik meg (a 491. Nyitó mérleg számla egyenlege eltér a nullától).",
         "next_subledger": "Tovább az Analitikához"
       },
       "step3": {
@@ -1615,7 +1615,7 @@
       },
       "step4": {
         "success_title": "A Nyitó bizonylat sikeresen lekönyvelve!",
-        "success_desc": "A mérlegszámlák megnyitásra kerültek a 491-es technikai számlával szemben.",
+        "success_desc": "A mérlegszámlák megnyitásra kerültek a 491. Nyitó mérleg számlával szemben.",
         "reconciliations_title": "Nyitás utáni rendező tételek indítása (Sztv.)",
         "reconciliations_item1": "419 Adózott eredmény átvezetése a 413. Eredménytartalék számlára",
         "reconciliations_item2": "ÁFA számlák összevezetése (466 Előzetes és 467 Fizetendő kivezetése a 468-ra)",
@@ -1937,14 +1937,17 @@
     "period_closing_tooltip_desc": "Havi és negyedéves időszakok lezárása a visszadátumozott könyvelések megakadályozására.",
     "generate_drafts": "Javaslatok generálása",
     "new_manual_entry": "Új vegyes bizonylat",
+    "opening_entries_btn": "Nyitó tételek",
+    "opening_entries_tooltip_title": "Nyitó tételek & Varázsló",
+    "opening_entries_tooltip_desc": "Előző évi mérleg és főkönyv nyitása a 491. Nyitómérleg számlával szemben, Audit XML / CSV importálás és egyeztetés.",
     "worklist": "Munkalista",
     "drafts_sub": "Piszkozatok és feldolgozásra váró tételek",
     "pending_badge": "{{count}} db jóváhagyásra vár",
     "currency_label": "Devizanem:",
     "opening": {
-      "banner_title": "Nyitó Napló (NY) — Számviteli Nyitás Szükséges",
+      "banner_title": "Nyitó Napló (NY) — Sztv. 491. Nyitó mérleg számla",
       "continuity_badge": "Sztv. folytonosság",
-      "banner_desc": "Még nem található lekönyvelt nyitó egyenleg erre az üzleti évre. A számviteli törvény és a mérleg-folytonosság elve szerint az új évet a jóváhagyott előző évi záró mérleg adataival kell indítani.",
+      "banner_desc": "Minden nyitás a 491. Nyitó mérleg számlával szemben történik (Σ T = Σ K kötelező). Az üzleti év végén a könyvek lezárása a 492. Záró mérleg számlával szemben valósul meg.",
       "start_wizard": "Nyitó bizonylat rögzítése (Varázsló)"
     },
     "filters": {

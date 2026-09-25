@@ -354,10 +354,11 @@ export default function OpeningJournalWizardModal({
 
       if (headerErr) throw headerErr;
 
-      // 2. Insert Lines with 491 Technical Counter-Lines
-      // For every Asset T: insert T Eszköz and K 491
-      // For every Liability K: insert T 491 and K Forrás
-      const technicalAccount491 = glAccounts.find(g => g.gl_number.replace(/\./g, '').startsWith('491'));
+      // 2. Insert Lines with 491 Nyitó mérleg számla Counter-Lines
+      // Minden nyitás a 491-es Nyitó mérleg számlával szemben nyílik meg:
+      // For every Asset T: insert T Eszköz and K 491 (Nyitó mérleg számla)
+      // For every Liability K: insert T 491 (Nyitó mérleg számla) and K Forrás
+      const technicalAccount491 = glAccounts.find(g => g.gl_number.replace(/\./g, '').trim().startsWith('491'));
       
       const insertLines: any[] = [];
       let seq = 1;
@@ -384,8 +385,8 @@ export default function OpeningJournalWizardModal({
           description: lineDesc
         });
 
-        // Technical 491 counter line
-        if (technicalAccount491) {
+        // 491 Nyitó mérleg számla counter line (only if the line is not already 491 itself)
+        if (technicalAccount491 && line.gl_account_id !== technicalAccount491.id) {
           insertLines.push({
             header_id: header.id,
             sequence_number: seq++,
@@ -393,7 +394,7 @@ export default function OpeningJournalWizardModal({
             dc_type: line.dc_type === 'T' ? 'K' : 'T',
             amount: line.amount,
             foreign_amount: null,
-            description: `491 Technikai ellenszámla (${line.gl_number || ''})`
+            description: `491 Nyitó mérleg számla (${line.gl_number || ''})`
           });
         }
       }
