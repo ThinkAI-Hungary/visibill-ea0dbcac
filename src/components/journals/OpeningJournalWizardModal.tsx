@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2, Loader2, AlertCircle, CheckCircle2, BookOpen, ShieldCheck, ArrowRight, ArrowLeft, UploadCloud, RefreshCw, Sparkles, Scale, Check, AlertTriangle, Coins, ChevronsUpDown } from 'lucide-react';
+import { Plus, Trash2, Loader2, AlertCircle, CheckCircle2, BookOpen, ShieldCheck, ArrowRight, ArrowLeft, UploadCloud, RefreshCw, Sparkles, Scale, Check, AlertTriangle, Coins, ChevronsUpDown, FileSpreadsheet, PenLine } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 import { formatCurrencyLocale } from '@/lib/locale/formatters';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -21,11 +21,13 @@ import { CustomTooltip } from '@/components/ui/custom-tooltip';
 import { DatePicker } from '@/components/ui/date-picker';
 import { NumberInput } from '@/components/ui/number-input';
 import OpeningCSVImportModal from './OpeningCSVImportModal';
+import { UploadChartOfAccountsModal } from '@/components/general-ledger/UploadChartOfAccountsModal';
 
 interface OpeningJournalWizardModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   headerId?: string | null;
+  onEditExistingEntry?: (entryId: string) => void;
 }
 
 export interface OpeningLineInput {
@@ -110,7 +112,8 @@ export const findMnbRateForDate = (
 export default function OpeningJournalWizardModal({
   open,
   onOpenChange,
-  headerId
+  headerId,
+  onEditExistingEntry
 }: OpeningJournalWizardModalProps) {
   const { t } = useTranslation(['accounting', 'common']);
   const { selectedCompany } = useCompany();
@@ -145,6 +148,7 @@ export default function OpeningJournalWizardModal({
   const [openDropdownIndex, setOpenDropdownIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [csvImportOpen, setCsvImportOpen] = useState(false);
+  const [uploadCoaOpen, setUploadCoaOpen] = useState(false);
   const [reconcileResult, setReconcileResult] = useState<any>(null);
 
   // Full reset to Step 1 & initial form state
@@ -163,8 +167,22 @@ export default function OpeningJournalWizardModal({
     setOpenDropdownIndex(null);
     setSearchQuery('');
     setCsvImportOpen(false);
+    setUploadCoaOpen(false);
     setReconcileResult(null);
   }, [currentYear, t]);
+
+  const handleCoaUploadSuccess = useCallback(async (presetId: string) => {
+    setUploadCoaOpen(false);
+    await queryClient.invalidateQueries({ queryKey: ['active-preset'] });
+    await queryClient.invalidateQueries({ queryKey: ['gl-accounts-balance-sheet'] });
+    await queryClient.invalidateQueries({ queryKey: ['gl-accounts-lookup'] });
+    await queryClient.invalidateQueries({ queryKey: ['gl-accounts'] });
+    await queryClient.invalidateQueries({ queryKey: ['acc-presets'] });
+    toast({
+      title: t('dialogs.opening_wizard.toasts.coa_imported_title', { defaultValue: 'Számlatükör sikeresen importálva!' }),
+      description: t('dialogs.opening_wizard.toasts.coa_imported_desc', { defaultValue: 'Az új számlatükör aktív, a mérlegszámlák azonnal használhatók a nyitáshoz.' }),
+    });
+  }, [queryClient, t, toast]);
 
   // Handle modal closing with state reset
   const handleClose = useCallback(() => {
@@ -212,6 +230,48 @@ export default function OpeningJournalWizardModal({
       return data;
     },
     enabled: !!selectedCompany?.id && open,
+  });
+
+  // Mutation to unpost existing opening entry and open it for editing
+  const unpostAndEditMutation = useMutation({
+    mutationFn: async () => {
+      if (!existingOpeningEntry?.id) return null;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error(t('dialogs.opening_wizard.toasts.login_required', { defaultValue: 'Bejelentkezés szükséges.' }));
+
+      // If the entry is currently KONYVELT (posted), unpost it to KEZI_PISZKOZAT
+      if (existingOpeningEntry.status === 'KONYVELT') {
+        const { error } = await supabase.rpc('acc_unpost_journal_entry', {
+          p_header_id: existingOpeningEntry.id,
+          p_user_id: user.id,
+          p_reason: 'Nyitó tétel visszanyitása módosítás céljából'
+        });
+        if (error) throw error;
+      }
+      return existingOpeningEntry.id;
+    },
+    onSuccess: (headerId) => {
+      if (!headerId) return;
+      queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['existing-opening-entry'] });
+      queryClient.invalidateQueries({ queryKey: ['acc-ny-entries-count'] });
+      queryClient.invalidateQueries({ queryKey: ['acc-journal-entry-detail', headerId] });
+      toast({
+        title: t('dialogs.opening_wizard.toasts.edit_unpost_title', { defaultValue: 'Nyitó tétel megnyitása' }),
+        description: t('dialogs.opening_wizard.toasts.edit_unpost_desc', { 
+          defaultValue: 'A nyitó bizonylat megnyílt a szerkesztőfelületen.' 
+        }),
+      });
+      handleClose();
+      onEditExistingEntry?.(headerId);
+    },
+    onError: (err: any) => {
+      toast({
+        title: t('common:error', { defaultValue: 'Hiba történt' }),
+        description: err?.message || 'Nem sikerült visszanyitni a nyitó tételt.',
+        variant: 'destructive',
+      });
+    },
   });
 
   // Fetch NY Journal ID & currency
@@ -723,39 +783,41 @@ export default function OpeningJournalWizardModal({
               {wizardSteps.map((s, idx) => {
                 const isCurrent = step === s.id;
                 const isPassed = step > s.id;
+                const isBlocked = s.id > 1 && !!existingOpeningEntry;
+                const canClick = isPassed && !isBlocked;
                 return (
                   <button
                     key={s.id}
                     type="button"
-                    disabled={!isPassed}
-                    onClick={() => isPassed && setStep(s.id)}
+                    disabled={!canClick}
+                    onClick={() => canClick && setStep(s.id)}
                     className={cn(
-                      "relative flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs transition-colors duration-150 select-none text-left border",
-                      isCurrent && "bg-primary text-primary-foreground border-primary shadow-sm ring-1 ring-primary/20 font-semibold",
-                      isPassed && "bg-card hover:bg-muted/80 text-foreground border-emerald-500/30 dark:border-emerald-500/20 hover:border-emerald-500/50 cursor-pointer shadow-2xs",
-                      !isCurrent && !isPassed && "bg-muted/40 border-border/40 text-muted-foreground opacity-60 cursor-not-allowed"
+                      "relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition-all duration-150 select-none text-left border",
+                      isCurrent && "bg-primary/10 border-primary/50 text-foreground shadow-xs ring-1 ring-primary/25",
+                      isPassed && !isBlocked && "bg-card/80 hover:bg-muted/80 text-foreground border-emerald-500/30 dark:border-emerald-500/20 hover:border-emerald-500/50 cursor-pointer shadow-2xs",
+                      (!isCurrent && !isPassed) || isBlocked ? "bg-muted/20 border-border/40 text-muted-foreground/50 opacity-60 cursor-not-allowed" : ""
                     )}
                   >
                     {/* Step indicator circle */}
                     <span className={cn(
-                      "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors duration-150",
-                      isCurrent && "bg-primary-foreground text-primary shadow-2xs",
+                      "w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 transition-colors duration-150",
+                      isCurrent && "bg-primary text-primary-foreground shadow-xs ring-2 ring-primary/30",
                       isPassed && "bg-emerald-500 text-white shadow-2xs",
-                      !isCurrent && !isPassed && "bg-muted-foreground/15 text-muted-foreground"
+                      !isCurrent && !isPassed && "bg-muted text-muted-foreground/60 border border-border/40"
                     )}>
-                      {isPassed ? <Check className="w-3 h-3 stroke-[3]" /> : s.id}
+                      {isPassed ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : s.id}
                     </span>
 
                     <div className="flex flex-col min-w-0 leading-tight">
                       <span className={cn(
                         "text-[9px] uppercase tracking-wider font-semibold",
-                        isCurrent ? "text-primary-foreground/80" : isPassed ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/80"
+                        isCurrent ? "text-primary" : isPassed ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/60"
                       )}>
                         {t('dialogs.opening_wizard.steps.step_n', { index: idx + 1, defaultValue: `${idx + 1}. lépés` })}
                       </span>
                       <span className={cn(
                         "text-xs truncate mt-0.5",
-                        isCurrent ? "text-primary-foreground font-semibold" : "text-foreground font-medium"
+                        isCurrent ? "text-foreground font-semibold" : isPassed ? "text-foreground font-medium" : "text-muted-foreground"
                       )}>
                         {s.title}
                       </span>
@@ -771,22 +833,36 @@ export default function OpeningJournalWizardModal({
 
             {/* STEP 1: Basic Params */}
             {step === 1 && (
-              <div className="space-y-5 max-w-xl mx-auto py-4">
-                <div className="bg-primary/5 border border-primary/20 p-4 rounded-xl space-y-2">
-                  <h3 className="font-semibold text-sm flex items-center gap-2 text-primary">
-                    <ShieldCheck className="w-4 h-4" /> {t('dialogs.opening_wizard.step1.methodology_title', { defaultValue: 'Nyitás metodikája & Sztv. mérlegfolytonosság' })}
-                  </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {t('dialogs.opening_wizard.step1.methodology_desc', { defaultValue: 'A nyitás az előző üzleti év záró mérlegének felvezetése az új év 1. napjára. Az eszközök nyitása T Eszköz – K 491, a források nyitása T 491 – K Forrás. A nyitás után a 491-nek 0 Ft egyenleggel kell rendelkeznie.' })}
-                  </p>
+              <div className="space-y-5 max-w-4xl mx-auto py-1">
+                {/* Methodological Guidance Banner - Clean & Compact */}
+                <div className="flex items-start gap-3 p-3.5 rounded-xl bg-primary/5 border border-primary/20 text-xs">
+                  <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0 mt-0.5">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-semibold text-foreground text-xs flex items-center gap-2">
+                      <span>{t('dialogs.opening_wizard.step1.methodology_title', { defaultValue: 'Nyitás metodikája & Sztv. mérlegfolytonosság' })}</span>
+                      <Badge variant="outline" className="text-[10px] font-mono py-0 px-1.5 border-primary/30 bg-primary/10 text-primary">
+                        Σ T = Σ K
+                      </Badge>
+                    </h4>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      {t('dialogs.opening_wizard.step1.methodology_desc', { defaultValue: 'A nyitás az előző üzleti év záró mérlegének felvezetése az új év 1. napjára. Az eszközök nyitása T Eszköz – K 491, a források nyitása T 491 – K Forrás. A nyitás után a 491-es számla egyenlege 0 Ft-ra fut ki.' })}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Warning if opening entry already exists for this year */}
                 {existingOpeningEntry && (
-                  <div className="bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 p-4 rounded-xl space-y-2">
-                    <div className="flex items-center gap-2 font-semibold text-sm text-amber-700 dark:text-amber-400">
-                      <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                      <span>{t('dialogs.opening_wizard.step1.existing_warning_title', { year: accountingYear, defaultValue: `Már létezik nyitó bizonylat erre az üzleti évre (${accountingYear})` })}</span>
+                  <div className="bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 p-4 rounded-xl space-y-3 shadow-2xs">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2 font-semibold text-xs text-amber-700 dark:text-amber-400">
+                        <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                        <span>{t('dialogs.opening_wizard.step1.existing_warning_title', { year: accountingYear, defaultValue: `Már létezik nyitó bizonylat erre az üzleti évre (${accountingYear})` })}</span>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] font-mono border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-500/10 font-semibold">
+                        {existingOpeningEntry.document_id || 'NYITÓ'} ({existingOpeningEntry.status})
+                      </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground leading-relaxed">
                       {t('dialogs.opening_wizard.step1.existing_warning_desc', {
@@ -797,113 +873,192 @@ export default function OpeningJournalWizardModal({
                         defaultValue: `A(z) ${accountingYear}. évhez már rögzítésre került a(z) ${existingOpeningEntry.document_id || 'NYITÓ'} számú nyitó bizonylat (Könyvelési dátum: ${existingOpeningEntry.posting_date}, Státusz: ${existingOpeningEntry.status}).`
                       })}
                     </p>
-                    <p className="text-[11px] text-amber-700/90 dark:text-amber-400/90 leading-normal">
-                      {t('dialogs.opening_wizard.step1.rule_warning', { defaultValue: 'Az Sztv. mérlegfolytonossági szabályai szerint az évnyitás normál esetben évente egyszer történik. Újabb nyitás rögzítése megduplázhatja a nyitó egyenlegeket a 491-es számlával szemben!' })}
+                    <p className="text-[11px] text-amber-700/90 dark:text-amber-400/90 leading-normal font-medium">
+                      {t('dialogs.opening_wizard.step1.rule_warning', { defaultValue: 'Az Sztv. mérlegfolytonossági szabályai szerint az évnyitás normál esetben évente egyszer történik. Újabb nyitás rögzítése megduplázná a nyitó egyenlegeket a 491-es számlával szemben!' })}
                     </p>
+
+                    {/* Action button to modify the existing opening entry */}
+                    <div className="pt-2.5 border-t border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                      <span className="text-[11px] text-amber-800 dark:text-amber-300 font-medium">
+                        {t('dialogs.opening_wizard.step1.modify_hint', { defaultValue: 'A meglévő nyitó bizonylat megnyitható és szerkeszthető:' })}
+                      </span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => unpostAndEditMutation.mutate()}
+                        disabled={unpostAndEditMutation.isPending}
+                        className="gap-1.5 h-8 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white shadow-xs shrink-0"
+                      >
+                        {unpostAndEditMutation.isPending ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <PenLine className="w-3.5 h-3.5" />
+                        )}
+                        <span>{t('dialogs.opening_wizard.step1.edit_existing_btn', { defaultValue: 'Nyitó tétel módosítása' })}</span>
+                      </Button>
+                    </div>
                   </div>
                 )}
 
-                {/* Quick File Import Banner */}
-                <div className="p-4 rounded-xl border border-primary/25 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
-                  <div className="flex items-start gap-3">
-                    <div className="p-2.5 rounded-xl bg-primary/15 text-primary shrink-0">
-                      <UploadCloud className="w-5 h-5" />
+                {/* Quick File Import Cards Grid */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between px-0.5">
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                      {t('dialogs.opening_wizard.step1.quick_import_title', { defaultValue: 'Gyors nyitás fájlból (.xlsx, .xls, .csv, .json)' })}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">
+                      Automatikus beemelés & számlatükör beállítás
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    {/* Card 1: Számlatükör importálása */}
+                    <div className="group rounded-xl border border-border/70 bg-card/60 hover:bg-card/90 hover:border-emerald-500/40 transition-all duration-200 p-4 flex flex-col justify-between gap-3 shadow-2xs">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+                            <FileSpreadsheet className="w-4 h-4" />
+                          </div>
+                          <Badge variant="outline" className="text-[10px] font-normal bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25">
+                            .xlsx, .xls, .csv, .pdf
+                          </Badge>
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-bold text-foreground">
+                            {t('dialogs.opening_wizard.step1.upload_coa', { defaultValue: 'Számlatükör importálása' })}
+                          </h4>
+                          <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                            {t('dialogs.opening_wizard.step1.quick_import_desc', { defaultValue: 'Töltsd fel a vállalkozás egyedi számlatükrét. A 491-es és 492-es technikai számlákat a rendszer automatikusan biztosítja.' })}
+                          </p>
+                        </div>
+                      </div>
+                      <Button 
+                        type="button"
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => setUploadCoaOpen(true)}
+                        className="w-full gap-1.5 h-8 text-xs font-medium border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-300 shadow-2xs"
+                      >
+                        <FileSpreadsheet className="w-3.5 h-3.5" />
+                        {t('dialogs.opening_wizard.step1.upload_coa', { defaultValue: 'Számlatükör importálása' })}
+                      </Button>
                     </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-foreground flex items-center gap-2">
-                        {t('dialogs.opening_wizard.step1.quick_import_title', { defaultValue: 'Gyors nyitás fájlból (.xlsx, .xls, .csv, .json)' })}
-                        <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/30 py-0 px-1.5 font-normal">
-                          .xlsx, .xls, .csv
-                        </Badge>
-                      </h4>
-                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
-                        {t('dialogs.opening_wizard.step1.quick_import_desc', { defaultValue: 'Tölts fel exportált főkönyvi nyitóállományt, és a rendszer automatikusan betölti a számlákat és egyenlegeket!' })}
-                      </p>
+
+                    {/* Card 2: Nyitó egyenlegek feltöltése */}
+                    <div className="group rounded-xl border border-border/70 bg-card/60 hover:bg-card/90 hover:border-primary/40 transition-all duration-200 p-4 flex flex-col justify-between gap-3 shadow-2xs">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center border border-primary/20">
+                            <UploadCloud className="w-4 h-4" />
+                          </div>
+                          <Badge variant="outline" className="text-[10px] font-normal bg-primary/10 text-primary border-primary/25">
+                            Főkönyvi kivonat
+                          </Badge>
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-bold text-foreground">
+                            {t('dialogs.opening_wizard.step1.upload_btn', { defaultValue: 'Nyitó egyenlegek feltöltése' })}
+                          </h4>
+                          <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                            Exportált főkönyvi nyitóállomány beemelése automatikus mérleg-párosítással és kitöltéssel.
+                          </p>
+                        </div>
+                      </div>
+                      <Button 
+                        type="button"
+                        size="sm" 
+                        onClick={() => setCsvImportOpen(true)}
+                        disabled={!!existingOpeningEntry}
+                        className="w-full gap-1.5 h-8 text-xs font-medium shadow-2xs"
+                      >
+                        <UploadCloud className="w-3.5 h-3.5" />
+                        {t('dialogs.opening_wizard.step1.upload_btn', { defaultValue: 'Nyitó egyenlegek feltöltése' })}
+                      </Button>
                     </div>
                   </div>
-                  <Button 
-                    type="button"
-                    size="sm" 
-                    onClick={() => setCsvImportOpen(true)}
-                    className="gap-1.5 h-8 text-xs shrink-0 font-medium shadow-xs"
-                  >
-                    <UploadCloud className="w-4 h-4" />
-                    {t('dialogs.opening_wizard.step1.upload_btn', { defaultValue: 'Fájl feltöltése (.xlsx, .csv)' })}
-                  </Button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">{t('dialogs.opening_wizard.step1.tax_year', { defaultValue: 'Könyvelési Adóév' })}</Label>
-                    <Select value={accountingYear.toString()} onValueChange={(v) => setAccountingYear(parseInt(v))}>
-                      <SelectTrigger className="h-9 focus:border-primary focus-visible:border-primary">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: 5 }).map((_, i) => {
-                          const y = currentYear - 2 + i;
-                          return <SelectItem key={y} value={y.toString()}>{t('dialogs.opening_wizard.step1.business_year', { year: y, defaultValue: `${y}. üzleti év` })}</SelectItem>;
-                        })}
-                      </SelectContent>
-                    </Select>
+                {/* Form Parameters Box */}
+                <div className="rounded-xl border border-border/70 bg-card/40 p-4 space-y-4 shadow-2xs">
+                  <div className="border-b border-border/40 pb-2">
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                      Nyitási bizonylat paraméterei
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">{t('dialogs.opening_wizard.step1.tax_year', { defaultValue: 'Könyvelési Adóév' })}</Label>
+                      <Select value={accountingYear.toString()} onValueChange={(v) => setAccountingYear(parseInt(v))}>
+                        <SelectTrigger className="h-9 focus:border-primary focus-visible:border-primary bg-background">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 5 }).map((_, i) => {
+                            const y = currentYear - 2 + i;
+                            return <SelectItem key={y} value={y.toString()}>{t('dialogs.opening_wizard.step1.business_year', { year: y, defaultValue: `${y}. üzleti év` })}</SelectItem>;
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">{t('dialogs.opening_wizard.step1.transition_type', { defaultValue: 'Átállás típusa' })}</Label>
+                      <Select value={transitionType} onValueChange={(v: any) => setTransitionType(v)}>
+                        <SelectTrigger className="h-9 focus:border-primary focus-visible:border-primary bg-background">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="EVFORDULOS">{t('dialogs.opening_wizard.step1.transition_yearly', { defaultValue: 'Évfordulós átállás (Január 1.)' })}</SelectItem>
+                          <SelectItem value="EVKOZBENI">{t('dialogs.opening_wizard.step1.transition_interim', { defaultValue: 'Év közbeni átállás (Tört időszak)' })}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">{t('dialogs.opening_wizard.step1.document_number', { defaultValue: 'Bizonylatszám' })}</Label>
+                      <Input
+                        value={documentId}
+                        onChange={e => setDocumentId(e.target.value)}
+                        className="h-9 font-mono text-xs focus:border-primary focus-visible:border-primary bg-background"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">{t('dialogs.opening_wizard.step1.currency', { defaultValue: 'Pénznem' })}</Label>
+                      <Select value={currency} onValueChange={(v) => setCurrency(v)}>
+                        <SelectTrigger className="h-9 focus:border-primary focus-visible:border-primary bg-background">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="HUF">HUF (Ft)</SelectItem>
+                          <SelectItem value="EUR">EUR (€)</SelectItem>
+                          <SelectItem value="USD">USD ($)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">{t('dialogs.opening_wizard.step1.opening_date', { defaultValue: 'Nyitás Dátuma (Sztv. kötelező)' })}</Label>
+                      <DatePicker
+                        value={postingDate}
+                        onChange={(date) => date && setPostingDate(date)}
+                        disabled={transitionType === 'EVFORDULOS'}
+                        placeholder={t('dialogs.opening_wizard.step1.opening_date_placeholder', { defaultValue: 'Nyitás dátuma' })}
+                      />
+                    </div>
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">{t('dialogs.opening_wizard.step1.transition_type', { defaultValue: 'Átállás típusa' })}</Label>
-                    <Select value={transitionType} onValueChange={(v: any) => setTransitionType(v)}>
-                      <SelectTrigger className="h-9 focus:border-primary focus-visible:border-primary">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="EVFORDULOS">{t('dialogs.opening_wizard.step1.transition_yearly', { defaultValue: 'Évfordulós átállás (Január 1.)' })}</SelectItem>
-                        <SelectItem value="EVKOZBENI">{t('dialogs.opening_wizard.step1.transition_interim', { defaultValue: 'Év közbeni átállás (Tört időszak)' })}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">{t('dialogs.opening_wizard.step1.document_number', { defaultValue: 'Bizonylatszám' })}</Label>
+                    <Label className="text-xs font-semibold">{t('dialogs.opening_wizard.step1.source_doc', { defaultValue: 'Forrásdokumentum megnevezése / Hivatkozás' })}</Label>
                     <Input
-                      value={documentId}
-                      onChange={e => setDocumentId(e.target.value)}
-                      className="h-9 font-mono text-xs focus:border-primary focus-visible:border-primary"
+                      value={justification}
+                      onChange={e => setJustification(e.target.value)}
+                      className="h-9 text-xs focus:border-primary focus-visible:border-primary bg-background"
                     />
                   </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">{t('dialogs.opening_wizard.step1.currency', { defaultValue: 'Pénznem' })}</Label>
-                    <Select value={currency} onValueChange={(v) => setCurrency(v)}>
-                      <SelectTrigger className="h-9 focus:border-primary focus-visible:border-primary">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="EUR">EUR (€)</SelectItem>
-                        <SelectItem value="HUF">HUF (Ft)</SelectItem>
-                        <SelectItem value="USD">USD ($)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">{t('dialogs.opening_wizard.step1.opening_date', { defaultValue: 'Nyitás Dátuma (Sztv. kötelező)' })}</Label>
-                    <DatePicker
-                      value={postingDate}
-                      onChange={(date) => date && setPostingDate(date)}
-                      disabled={transitionType === 'EVFORDULOS'}
-                      placeholder={t('dialogs.opening_wizard.step1.opening_date_placeholder', { defaultValue: 'Nyitás dátuma' })}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">{t('dialogs.opening_wizard.step1.source_doc', { defaultValue: 'Forrásdokumentum megnevezése / Hivatkozás' })}</Label>
-                  <Input
-                    value={justification}
-                    onChange={e => setJustification(e.target.value)}
-                    className="h-9 text-xs focus:border-primary focus-visible:border-primary"
-                  />
                 </div>
               </div>
             )}
@@ -914,6 +1069,10 @@ export default function OpeningJournalWizardModal({
                 {/* Top Action Bar & Live 491 Balance Bar */}
                 <div className="flex flex-wrap items-center justify-between gap-3 bg-muted/40 p-3 rounded-xl border border-border/60">
                   <div className="flex flex-wrap items-center gap-2">
+                    <Button size="sm" variant="outline" onClick={() => setUploadCoaOpen(true)} className="gap-1.5 h-8 text-xs font-medium border-emerald-500/30 text-emerald-700 dark:text-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/15">
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      {t('dialogs.opening_wizard.step2.upload_coa', { defaultValue: 'Számlatükör importálása' })}
+                    </Button>
                     <Button size="sm" variant="outline" onClick={() => setCsvImportOpen(true)} className="gap-1.5 h-8 text-xs font-medium">
                       <UploadCloud className="w-3.5 h-3.5 text-muted-foreground" /> {t('dialogs.opening_wizard.step2.csv_import', { defaultValue: 'Importálás (.xlsx, .csv)' })}
                     </Button>
@@ -1349,9 +1508,33 @@ export default function OpeningJournalWizardModal({
               <Button variant="outline" size="sm" onClick={handleClose}>{t('dialogs.opening_wizard.navigation.close', { defaultValue: 'Bezárás' })}</Button>
 
               {step === 1 && (
-                <Button size="sm" onClick={() => setStep(2)} className="gap-1 text-xs">
-                  {t('dialogs.opening_wizard.step1.next_gl', { defaultValue: 'Tovább a Főkönyvhöz' })} <ArrowRight className="w-3.5 h-3.5" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  {existingOpeningEntry && (
+                    <Button 
+                      type="button"
+                      size="sm" 
+                      onClick={() => unpostAndEditMutation.mutate()}
+                      disabled={unpostAndEditMutation.isPending}
+                      className="gap-1.5 text-xs bg-amber-600 hover:bg-amber-700 text-white shadow-xs font-semibold"
+                    >
+                      {unpostAndEditMutation.isPending ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <PenLine className="w-3.5 h-3.5" />
+                      )}
+                      <span>{t('dialogs.opening_wizard.step1.edit_existing_btn', { defaultValue: 'Nyitó tétel módosítása' })}</span>
+                    </Button>
+                  )}
+                  <Button 
+                    size="sm" 
+                    onClick={() => setStep(2)} 
+                    disabled={!!existingOpeningEntry} 
+                    className="gap-1 text-xs"
+                    title={existingOpeningEntry ? t('dialogs.opening_wizard.step1.next_blocked_tooltip', { defaultValue: 'Már létezik nyitó tétel erre az évre. További nyitás nem rögzíthető.' }) : undefined}
+                  >
+                    {t('dialogs.opening_wizard.step1.next_gl', { defaultValue: 'Tovább a Főkönyvhöz' })} <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
               )}
 
               {step === 2 && (
@@ -1381,6 +1564,12 @@ export default function OpeningJournalWizardModal({
         open={csvImportOpen}
         onOpenChange={setCsvImportOpen}
         onImportGlBalances={handleImportGlBalances}
+      />
+
+      <UploadChartOfAccountsModal
+        open={uploadCoaOpen}
+        onOpenChange={setUploadCoaOpen}
+        onSuccess={handleCoaUploadSuccess}
       />
     </>
   );

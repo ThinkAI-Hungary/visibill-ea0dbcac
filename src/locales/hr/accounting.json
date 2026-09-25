@@ -1576,9 +1576,17 @@
         "transition_interim": "Prijelaz tijekom godine (Prijelazno razdoblje)",
         "source_doc": "Naziv izvornog dokumenta / Referenca",
         "default_justification": "Na temelju zaključne bilance i početnog izvatka glavne knjige prethodne godine",
+        "quick_import_title": "Brzi uvoz iz datoteke (.xlsx, .xls, .csv, .json)",
+        "quick_import_desc": "Učitajte izvezenu početnu glavnu knjigu ili uvezite novi kontni plan!",
+        "upload_coa": "Uvoz kontnog plana",
+        "upload_btn": "Učitaj početna stanja",
+        "edit_existing_btn": "Izmijeni početnu temeljnicu",
+        "modify_hint": "Postojeća početna temeljnica može se otvoriti i urediti:",
+        "next_blocked_tooltip": "Već postoji početna temeljnica za ovu godinu. Nije moguće unijeti dodatno otvaranje.",
         "next_gl": "Nastavi na Glavnu knjigu"
       },
       "step2": {
+        "upload_coa": "Uvoz kontnog plana",
         "csv_import": "Uvoz (.xlsx, .csv)",
         "add_row": "Dodaj redak",
         "total_debit": "Ukupno D:",
@@ -1630,7 +1638,11 @@
         "error_title": "Greška pri knjiženju",
         "login_required": "Potrebna je prijava.",
         "reconcile_success": "Stavke usklađenja su izvršene",
-        "reconcile_error": "Greška pri stavkama usklađenja"
+        "reconcile_error": "Greška pri stavkama usklađenja",
+        "coa_imported_title": "Kontni plan uspješno uvezen!",
+        "coa_imported_desc": "Novi kontni plan je aktivan, konti bilance su odmah dostupni za otvaranje.",
+        "edit_unpost_title": "Otvaranje početne temeljnice",
+        "edit_unpost_desc": "Početna temeljnica je ponovno otvorena i spremna za uređivanje."
       }
     },
     "opening_csv_import": {
@@ -1946,7 +1958,10 @@
       "banner_title": "Početni dnevnik (NY) — Potrebno računovodstveno otvaranje",
       "continuity_badge": "Kontinuitet bilance",
       "banner_desc": "Još nema proknjiženih početnih stanja za ovu poslovnu godinu. Prema zakonu o računovodstvu i načelu kontinuiteta bilance, nova godina mora započeti s podacima odobrene zaključne bilance prethodne godine.",
-      "start_wizard": "Evidentiraj početni nalog (Čarobnjak)"
+      "start_wizard": "Evidentiraj početni nalog (Čarobnjak)",
+      "upload_coa": "Uvoz kontnog plana",
+      "coa_imported_title": "Kontni plan uspješno uvezen!",
+      "coa_imported_desc": "Novi kontni plan je aktivan, konti bilance su odmah dostupni za otvaranje."
     },
     "filters": {
       "search_placeholder": "Pretraži po broju dokumenta, partneru ili napomeni...",

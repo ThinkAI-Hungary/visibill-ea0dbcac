@@ -1578,9 +1578,17 @@
         "transition_interim": "Év közbeni átállás (Tört időszak)",
         "source_doc": "Forrásdokumentum megnevezése / Hivatkozás",
         "default_justification": "Előző évi záró mérleg és nyitó főkönyvi kivonat alapján",
+        "quick_import_title": "Gyors nyitás fájlból (.xlsx, .xls, .csv, .json)",
+        "quick_import_desc": "Tölts fel exportált főkönyvi nyitóállományt vagy importálj új számlatükröt!",
+        "upload_coa": "Számlatükör importálása",
+        "upload_btn": "Nyitó egyenlegek feltöltése",
+        "edit_existing_btn": "Nyitó tétel módosítása",
+        "modify_hint": "A meglévő nyitó bizonylat megnyitható és szerkeszthető:",
+        "next_blocked_tooltip": "Már létezik nyitó tétel erre az évre. További nyitás nem rögzíthető.",
         "next_gl": "Tovább a Főkönyvhöz"
       },
       "step2": {
+        "upload_coa": "Számlatükör importálása",
         "csv_import": "Importálás (.xlsx, .csv)",
         "add_row": "Sor hozzáadása",
         "total_debit": "Össz T:",
@@ -1632,7 +1640,11 @@
         "error_title": "Könyvelési hiba",
         "login_required": "Bejelentkezés szükséges.",
         "reconcile_success": "Rendező tételek lefuttatva",
-        "reconcile_error": "Hiba a rendező tételeknél"
+        "reconcile_error": "Hiba a rendező tételeknél",
+        "coa_imported_title": "Számlatükör sikeresen importálva!",
+        "coa_imported_desc": "Az új számlatükör aktív, a mérlegszámlák azonnal használhatók a nyitáshoz.",
+        "edit_unpost_title": "Nyitó tétel megnyitása",
+        "edit_unpost_desc": "A nyitó bizonylat megnyílt a szerkesztőfelületen."
       }
     },
     "opening_csv_import": {
@@ -1948,7 +1960,10 @@
       "banner_title": "Nyitó Napló (NY) — Sztv. 491. Nyitó mérleg számla",
       "continuity_badge": "Sztv. folytonosság",
       "banner_desc": "Minden nyitás a 491. Nyitó mérleg számlával szemben történik (Σ T = Σ K kötelező). Az üzleti év végén a könyvek lezárása a 492. Záró mérleg számlával szemben valósul meg.",
-      "start_wizard": "Nyitó bizonylat rögzítése (Varázsló)"
+      "start_wizard": "Nyitó bizonylat rögzítése (Varázsló)",
+      "upload_coa": "Számlatükör importálása",
+      "coa_imported_title": "Számlatükör sikeresen importálva!",
+      "coa_imported_desc": "Az új számlatükör aktív, a mérlegszámlák azonnal használhatók a nyitáshoz."
     },
     "filters": {
       "search_placeholder": "Keresés bizonylatszám, partner vagy megjegyzés alapján...",

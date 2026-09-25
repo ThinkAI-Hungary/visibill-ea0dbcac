@@ -46,25 +46,34 @@ vi.mock('@/lib/glData', () => ({
   ]),
 }));
 
+let mockExistingOpeningEntry: any = null;
+
 // Mock supabase client
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
-    from: vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            maybeSingle: vi.fn().mockResolvedValue({
-              data: { id: 'journal-ny', code: 'NY', name: 'Nyitó Napló' },
-              error: null,
-            }),
+    from: vi.fn().mockImplementation((table: string) => {
+      const builder: any = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        neq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
+        insert: vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({ data: { id: 'hdr-1' }, error: null }),
           }),
         }),
-      }),
-      insert: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: { id: 'hdr-1' }, error: null }),
+        maybeSingle: vi.fn().mockImplementation(() => {
+          if (table === 'acc_journals') {
+            return Promise.resolve({ data: { id: 'journal-ny', code: 'NY', name: 'Nyitó Napló' }, error: null });
+          }
+          if (table === 'acc_journal_headers') {
+            return Promise.resolve({ data: mockExistingOpeningEntry, error: null });
+          }
+          return Promise.resolve({ data: null, error: null });
         }),
-      }),
+      };
+      return builder;
     }),
     rpc: vi.fn().mockResolvedValue({ data: { success: true }, error: null }),
     auth: {
@@ -77,6 +86,7 @@ describe('OpeningJournalWizardModal Component', () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
+    mockExistingOpeningEntry = null;
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
@@ -117,7 +127,6 @@ describe('OpeningJournalWizardModal Component', () => {
     fireEvent.click(nextButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/Import/i)).toBeInTheDocument();
       expect(screen.getByText('Sor hozzáadása')).toBeInTheDocument();
       expect(screen.getByText(/491 Nyitó\s*mérleg/i)).toBeInTheDocument();
     });
@@ -164,7 +173,7 @@ describe('OpeningJournalWizardModal Component', () => {
     fireEvent.click(screen.getByText(/Tovább a Főkönyvhöz/i));
 
     await waitFor(() => {
-      expect(screen.getByText(/Import/i)).toBeInTheDocument();
+      expect(screen.getByText('Sor hozzáadása')).toBeInTheDocument();
     });
 
     // Step 1 button in stepper is now passed, so it should be clickable
@@ -199,7 +208,7 @@ describe('OpeningJournalWizardModal Component', () => {
     // Step 1 -> Step 2
     fireEvent.click(screen.getByText(/Tovább a Főkönyvhöz/i));
     await waitFor(() => {
-      expect(screen.getByText(/Import/i)).toBeInTheDocument();
+      expect(screen.getByText('Sor hozzáadása')).toBeInTheDocument();
     });
 
     // Close modal (open=false)
@@ -366,6 +375,86 @@ describe('OpeningJournalWizardModal Component', () => {
         // Clicking bulk MNB button works without error
         const fetchAllMnbBtn = document.getElementById('fetch-all-mnb-rates-btn')!;
         fireEvent.click(fetchAllMnbBtn);
+      });
+    });
+
+    describe('Chart of Accounts Import at Opening', () => {
+      it('renders "Számlatükör importálása" button in Step 1 quick import banner', () => {
+        renderModal();
+        const coaBtn = screen.getByRole('button', { name: /Számlatükör importálása/i });
+        expect(coaBtn).toBeInTheDocument();
+      });
+
+      it('opens UploadChartOfAccountsModal when clicking "Számlatükör importálása"', async () => {
+        renderModal();
+        const coaBtn = screen.getByRole('button', { name: /Számlatükör importálása/i });
+        fireEvent.click(coaBtn);
+
+        await waitFor(() => {
+          expect(screen.getAllByText(/Számlatükör importálása/i).length).toBeGreaterThanOrEqual(2);
+        });
+      });
+
+      it('renders "Számlatükör importálása" button in Step 2 toolbar', async () => {
+        renderModal();
+
+        // Navigate to Step 2
+        fireEvent.click(screen.getByText(/Tovább a Főkönyvhöz/i));
+
+        await waitFor(() => {
+          expect(screen.getByText(/Sor hozzáadása/i)).toBeInTheDocument();
+        });
+
+        const coaBtns = screen.getAllByRole('button', { name: /Számlatükör importálása/i });
+        expect(coaBtns.length).toBeGreaterThanOrEqual(1);
+      });
+    });
+
+    describe('Existing Opening Entry Guard & Edit Button', () => {
+      it('disables "Tovább a Főkönyvhöz" button and displays "Nyitó tétel módosítása" when opening exists', async () => {
+        mockExistingOpeningEntry = {
+          id: 'existing-hdr-123',
+          document_id: 'NYITO-2026',
+          posting_date: '2026-01-01',
+          status: 'KONYVELT',
+        };
+
+        renderModal();
+
+        await waitFor(() => {
+          expect(screen.getByText(/Már létezik nyitó bizonylat erre az üzleti évre/i)).toBeInTheDocument();
+        });
+
+        const nextBtn = screen.getByRole('button', { name: /Tovább a Főkönyvhöz/i });
+        expect(nextBtn).toBeDisabled();
+
+        const modifyBtns = screen.getAllByRole('button', { name: /Nyitó tétel módosítása/i });
+        expect(modifyBtns.length).toBeGreaterThanOrEqual(1);
+      });
+
+      it('calls unpost RPC and onEditExistingEntry when clicking "Nyitó tétel módosítása"', async () => {
+        mockExistingOpeningEntry = {
+          id: 'existing-hdr-123',
+          document_id: 'NYITO-2026',
+          posting_date: '2026-01-01',
+          status: 'KONYVELT',
+        };
+
+        const onEditExistingEntry = vi.fn();
+        const onOpenChange = vi.fn();
+        renderModal({ onEditExistingEntry, onOpenChange });
+
+        await waitFor(() => {
+          expect(screen.getByText(/Már létezik nyitó bizonylat erre az üzleti évre/i)).toBeInTheDocument();
+        });
+
+        const modifyBtn = screen.getAllByRole('button', { name: /Nyitó tétel módosítása/i })[0];
+        fireEvent.click(modifyBtn);
+
+        await waitFor(() => {
+          expect(onEditExistingEntry).toHaveBeenCalledWith('existing-hdr-123');
+          expect(onOpenChange).toHaveBeenCalledWith(false);
+        });
       });
     });
   });

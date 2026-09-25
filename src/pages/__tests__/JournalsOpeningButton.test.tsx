@@ -34,4 +34,12 @@ describe('JournalsPage Prominent Nyitó tételek Button', () => {
     expect(hrLocale.journals.opening_entries_btn).toBe('Početna stanja');
     expect(hrLocale.journals.opening_entries_tooltip_title).toBe('Početna stanja i čarobnjak');
   });
+
+  it('renders "Számlatükör importálása" button and integrates UploadChartOfAccountsModal in JournalsPage', () => {
+    expect(fileContent).toContain('UploadChartOfAccountsModal');
+    expect(fileContent).toContain('setUploadCoaOpen(true)');
+    expect(fileContent).toContain('journals.opening.upload_coa');
+    expect(huLocale.journals.opening.upload_coa).toBe('Számlatükör importálása');
+    expect(hrLocale.journals.opening.upload_coa).toBe('Uvoz kontnog plana');
+  });
 });

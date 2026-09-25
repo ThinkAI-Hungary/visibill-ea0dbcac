@@ -270,6 +270,32 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
 
         if (insertData.length === 0) throw new Error(t('accounting:dialogs.upload_coa.toasts.no_valid_rows'));
 
+        // Standardize and ensure 491 (Nyitó mérleg számla) and 492 (Záró mérleg számla) exist
+        const has491 = insertData.some(d => d.gl_number.replace(/\./g, '').trim() === '491');
+        if (!has491) {
+          insertData.push({
+            preset_id: presetId,
+            gl_number: '491',
+            short_name: 'Nyitó mérleg számla',
+            description: null
+          });
+        }
+        const has492 = insertData.some(d => d.gl_number.replace(/\./g, '').trim() === '492');
+        if (!has492) {
+          insertData.push({
+            preset_id: presetId,
+            gl_number: '492',
+            short_name: 'Záró mérleg számla',
+            description: null
+          });
+        }
+
+        insertData.forEach(d => {
+          const clean = d.gl_number.replace(/\./g, '').trim();
+          if (clean === '491') d.short_name = 'Nyitó mérleg számla';
+          if (clean === '492') d.short_name = 'Záró mérleg számla';
+        });
+
         // 4. Chunk insert (Supabase typically handles bulk well up to a few thousands, but chunking is safer)
         const chunkSize = 1000;
         for (let i = 0; i < insertData.length; i += chunkSize) {

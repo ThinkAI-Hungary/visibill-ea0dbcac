@@ -45,6 +45,7 @@ import { formatCurrencyLocale, formatNumberLocale } from '@/lib/locale/formatter
 import { InvoiceDetailPopup } from '@/components/InvoiceDetailPopup';
 import AddManualJournalEntryModal from '@/components/journals/AddManualJournalEntryModal';
 import OpeningJournalWizardModal from '@/components/journals/OpeningJournalWizardModal';
+import { UploadChartOfAccountsModal } from '@/components/general-ledger/UploadChartOfAccountsModal';
 import PeriodClosingSettings from '@/components/journals/PeriodClosingSettings';
 import AuditTrailDialog from '@/components/journals/AuditTrailDialog';
 import { getLocalizedJournalName, getNextDocumentId } from '@/lib/journalUtils';
@@ -226,10 +227,23 @@ export default function JournalsPage() {
   // Modals state
   const [manualEntryOpen, setManualEntryOpen] = useState(false);
   const [openingWizardOpen, setOpeningWizardOpen] = useState(false);
+  const [uploadCoaOpen, setUploadCoaOpen] = useState(false);
   const [periodClosingOpen, setPeriodClosingOpen] = useState(false);
   const [auditEntryId, setAuditEntryId] = useState<string | null>(null);
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const [cloneData, setCloneData] = useState<any | null>(null);
+
+  const handleCoaUploadSuccess = useCallback(async (presetId: string) => {
+    setUploadCoaOpen(false);
+    await queryClient.invalidateQueries({ queryKey: ['active-preset'] });
+    await queryClient.invalidateQueries({ queryKey: ['gl-accounts'] });
+    await queryClient.invalidateQueries({ queryKey: ['gl-accounts-lookup'] });
+    await queryClient.invalidateQueries({ queryKey: ['acc-presets'] });
+    toast({
+      title: t('accounting:journals.opening.coa_imported_title', 'Számlatükör sikeresen importálva!'),
+      description: t('accounting:journals.opening.coa_imported_desc', 'Az új számlatükör aktív, a mérlegszámlák azonnal használhatók a nyitáshoz.'),
+    });
+  }, [queryClient, t, toast]);
 
   // Storno / Correction dialog state
   const [stornoOpen, setStornoOpen] = useState(false);
@@ -1123,6 +1137,14 @@ export default function JournalsPage() {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10 shadow-2xs" 
+                    onClick={() => setUploadCoaOpen(true)}
+                  >
+                    <FileSpreadsheet className="w-4 h-4" /> {t('accounting:journals.opening.upload_coa', 'Számlatükör importálása')}
+                  </Button>
                   <Button size="sm" className="gap-1.5 shadow-sm" onClick={() => setOpeningWizardOpen(true)}>
                     <BookOpen className="w-4 h-4" /> {t('accounting:journals.opening.start_wizard', 'Nyitó Varázsló indítása')}
                   </Button>
@@ -2212,6 +2234,17 @@ export default function JournalsPage() {
       <OpeningJournalWizardModal
         open={openingWizardOpen}
         onOpenChange={setOpeningWizardOpen}
+        onEditExistingEntry={(entryId) => {
+          setEditingEntryId(entryId);
+          setCloneData(null);
+          setManualEntryOpen(true);
+        }}
+      />
+
+      <UploadChartOfAccountsModal
+        open={uploadCoaOpen}
+        onOpenChange={setUploadCoaOpen}
+        onSuccess={handleCoaUploadSuccess}
       />
 
       <PeriodClosingSettings
