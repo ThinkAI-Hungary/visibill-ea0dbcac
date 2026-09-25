@@ -66,6 +66,8 @@ export function SubmittedInvoiceRow({
     getPaymentMethodLabel,
     lastViewedInvoiceId,
     setLastViewedInvoiceId,
+    setSelectedSubmittedIds,
+    setExpandedRowIds,
   } = useInvoiceContext();
   const { t } = useTranslation(['invoices', 'common']);
   const { hasNavIntegration, defaultCurrency } = useCompanyJurisdiction(selectedCompany);
@@ -138,17 +140,33 @@ export function SubmittedInvoiceRow({
         )}
         onClick={(e) => {
           setLastViewedInvoiceId(invoice.id);
+          setSelectedSubmittedIds(new Set([invoice.id]));
           onRowClick(invoice.id, e);
         }}
       >
         <TableCell className="pl-2">
           <div className="flex items-center gap-2">
-            <ChevronDown
-              className={cn(
-                'h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform duration-200',
-                isExpanded && 'rotate-180'
-              )}
-            />
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setExpandedRowIds(prev => {
+                  const next = new Set(prev);
+                  if (next.has(invoice.id)) next.delete(invoice.id);
+                  else next.add(invoice.id);
+                  return next;
+                });
+              }}
+              className="p-0.5 -m-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              aria-label={isExpanded ? 'Sor összecsukása' : 'Sor kibontása'}
+            >
+              <ChevronDown
+                className={cn(
+                  'h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform duration-200',
+                  isExpanded && 'rotate-180'
+                )}
+              />
+            </button>
             <Checkbox
               checked={isSelected}
               onCheckedChange={() => toggleSelectRow(invoice.id)}

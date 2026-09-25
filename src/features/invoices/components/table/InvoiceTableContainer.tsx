@@ -1,6 +1,5 @@
-import React, { useMemo, useCallback, useRef, useEffect } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router-dom';
 import { TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { normalizeInvoiceNumber } from '@/lib/invoiceMatchingUtils';
@@ -25,18 +24,9 @@ export function InvoiceTableContainer() {
     setExpandedRowIds,
     invalidateInvoiceData,
     setLastViewedInvoiceId,
+    setSelectedInvoiceIds,
+    setSelectedSubmittedIds,
   } = useInvoiceContext();
-
-  const [, setSearchParams] = useSearchParams();
-  const searchParamsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (searchParamsTimeoutRef.current) {
-        clearTimeout(searchParamsTimeoutRef.current);
-      }
-    };
-  }, []);
 
   // 1. Fetch matching NAV invoices for the submitted invoices displayed on the current page
   const pageSubmittedNumbers = useMemo(() => {
@@ -214,7 +204,7 @@ export function InvoiceTableContainer() {
     enabled: !!companyId,
   });
 
-  // 4. Handle row click (expansion + URL param sync + focus selection)
+  // 4. Handle row click (instant focus + selection + expansion without URL router delay)
   const handleRowClick = useCallback(
     (invoiceId: string, e: React.MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -222,36 +212,19 @@ export function InvoiceTableContainer() {
         return;
       }
       setLastViewedInvoiceId(invoiceId);
-      let isExpanding = false;
+      if (isSubmittedTab) {
+        setSelectedSubmittedIds(new Set([invoiceId]));
+      } else {
+        setSelectedInvoiceIds(new Set([invoiceId]));
+      }
       setExpandedRowIds(prev => {
         const next = new Set(prev);
-        isExpanding = !next.has(invoiceId);
-        if (isExpanding) next.add(invoiceId);
-        else next.delete(invoiceId);
+        if (next.has(invoiceId)) next.delete(invoiceId);
+        else next.add(invoiceId);
         return next;
       });
-
-      if (searchParamsTimeoutRef.current) {
-        clearTimeout(searchParamsTimeoutRef.current);
-      }
-      searchParamsTimeoutRef.current = setTimeout(() => {
-        setSearchParams(
-          sp => {
-            const p = new URLSearchParams(sp);
-            if (isExpanding) {
-              p.set('invoice', invoiceId);
-              p.delete('action');
-            } else {
-              p.delete('invoice');
-              p.delete('action');
-            }
-            return p;
-          },
-          { replace: true }
-        );
-      }, isExpanding ? 200 : 0);
     },
-    [setExpandedRowIds, setSearchParams]
+    [isSubmittedTab, setLastViewedInvoiceId, setSelectedInvoiceIds, setSelectedSubmittedIds, setExpandedRowIds]
   );
 
   // 5. Handle Toggle Exclude from accounting

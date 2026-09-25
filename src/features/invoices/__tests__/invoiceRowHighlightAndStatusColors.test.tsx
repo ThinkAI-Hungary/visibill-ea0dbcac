@@ -24,6 +24,9 @@ vi.mock('@/contexts/CompanyContext', () => ({
 }));
 
 const mockSetLastViewedInvoiceId = vi.fn();
+const mockSetSelectedInvoiceIds = vi.fn();
+const mockSetSelectedSubmittedIds = vi.fn();
+const mockSetExpandedRowIds = vi.fn();
 const mockToggleSelectRow = vi.fn();
 const mockOnRowClick = vi.fn();
 
@@ -37,6 +40,9 @@ let mockContextState = {
   selectedInvoiceIds: new Set<string>(),
   selectedNavIds: new Set<string>(),
   selectedSubmittedIds: new Set<string>(),
+  setSelectedInvoiceIds: mockSetSelectedInvoiceIds,
+  setSelectedSubmittedIds: mockSetSelectedSubmittedIds,
+  setExpandedRowIds: mockSetExpandedRowIds,
   toggleSelectRow: mockToggleSelectRow,
   expandedRowIds: new Set<string>(),
   setSelectedInvoice: vi.fn(),
@@ -183,9 +189,10 @@ describe('Invoice Table Row Status Colors & Focus Highlighting', () => {
     expect(row.className).not.toContain('bg-primary/15');
   });
 
-  it('calls setLastViewedInvoiceId when user clicks the row', () => {
+  it('calls setLastViewedInvoiceId and updates selection when user clicks the row', () => {
     mockContextState.lastViewedInvoiceId = null;
     mockSetLastViewedInvoiceId.mockClear();
+    mockSetSelectedInvoiceIds.mockClear();
     mockOnRowClick.mockClear();
 
     renderInTable(
@@ -203,6 +210,7 @@ describe('Invoice Table Row Status Colors & Focus Highlighting', () => {
     fireEvent.click(row);
 
     expect(mockSetLastViewedInvoiceId).toHaveBeenCalledWith('nav-unmatched-1');
+    expect(mockSetSelectedInvoiceIds).toHaveBeenCalledWith(new Set(['nav-unmatched-1']));
     expect(mockOnRowClick).toHaveBeenCalledWith('nav-unmatched-1', expect.anything());
   });
 
