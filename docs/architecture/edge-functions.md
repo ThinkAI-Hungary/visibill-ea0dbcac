@@ -1,7 +1,7 @@
 # Supabase Edge Functions Katalógus
 
-> **Utoljára frissítve:** 2026-09-22  
-> **Összesen:** 64 Deno Edge Function + `_shared/` közös modulok | **Runtime:** Deno (TypeScript) | **Platform:** Supabase Cloud
+> **Utoljára frissítve:** 2026-09-25  
+> **Összesen:** 65 Deno Edge Function + `_shared/` közös modulok | **Runtime:** Deno (TypeScript) | **Platform:** Supabase Cloud
 
 Ez a dokumentáció az eaisybill-prod rendszer összes Supabase Edge Function-jének hivatalos, autoritatív katalógusa. Részletezi az egyes funkciók célját, jogosultsági modelljét (`verify_jwt`), meghívási kontextusát (Frontend, pg_cron, Webhook, Postgres Trigger) és környezeti változóit.
 A funkciók forráskódja a [`supabase/functions/`](../../supabase/functions/) könyvtárban található. A technikai architektúra döntést az [A-005: Edge Functions a Serverless Logikához](./decisions/A-005-edge-functions.md), az adatbázis sémát a [database-schema.md](./database-schema.md), az eljárásokat pedig az [rpc-catalog.md](./rpc-catalog.md) írja le.
@@ -21,7 +21,7 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 
 ## Tartalomjegyzék
 
-1. [🏛️ NAV Integráció (8 db)](#1-nav-integráció)
+1. [🏛️ NAV Integráció (9 db)](#1-nav-integráció)
 2. [📧 Email Küldés & Riportok (10 db)](#2-email-küldés--riportok)
 3. [📥 Email Fogadás & Saját Levelező (5 db)](#3-email-fogadás--saját-levelező)
 4. [⚡ Queue & Export Generálás (2 db)](#4-queue--export-generálás)
@@ -37,9 +37,9 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 
 ---
 
-## 1. 🏛️ NAV Integráció (8 db)
+## 1. 🏛️ NAV Integráció (9 db)
 
-> NAV Online Számla v3 protokoll motor, hitelesítés, számla és adószám szinkronizáció.
+> NAV Online Számla v3 protokoll motor, hitelesítés, számla és adószám szinkronizáció, valamint NAV ÜPO M2M kapcsolat.
 
 | Edge Function | JWT Auth | Meghívó Réteg | Szükséges Környezeti Változók | Leírás és Üzleti Szerepkör |
 |---|:---:|---|---|---|
@@ -51,6 +51,7 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 | [`nav-query-outbound-invoices`](../../supabase/functions/nav-query-outbound-invoices/index.ts) | ✅ Kötelező | Frontend (InvoicesPage) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Kimenő számlák lekérdezése a NAV-ból és mentése a `nav_invoices` táblába `direction='outbound'` jelölővel. |
 | [`query-nav-invoices`](../../supabase/functions/query-nav-invoices/index.ts) | ✅ Kötelező | Frontend (NavSearchModal) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Egyedi számlakeresés és részletek lekérdezése NAV bizonylatszám vagy tranzakcióazonosító alapján. |
 | [`nav-tax-profile-sync`](../../supabase/functions/nav-tax-profile-sync/index.ts) | ❌ Nyilvános / Belső | pg_cron / Company onboarding | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Cég adózási státuszának, ÁFA csoportazonosítójának és telephelyeinek frissítése a NAV nyilvántartásból. |
+| [`nav-m2m-proxy`](../../supabase/functions/nav-m2m-proxy/index.ts) | ✅ Kötelező (vagy service_role / cron secret) | Frontend (NavUpoM2mCard) / pg_cron (`cron_sync_all`) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, NAV_M2M_CLIENT_ID, NAV_M2M_CLIENT_SECRET, CRON_SECRET` | NAV ÜPO (Ügyfélportál) M2M proxy: felhasználói token igénylés, nonce beváltás, SHA-256 digitális aláírás, kapcsolat aktiválás, KOMA teszt, valamint automatikus napi EFO és munkavállalói jogviszony szinkronizáció 90 napos audit naplózással (A-154, P-114). |
 
 ---
 

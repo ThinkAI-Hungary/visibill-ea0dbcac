@@ -10,9 +10,9 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 ## Decision
 
-**Supabase Edge Functions** (Deno runtime) — **64 deployed function** + `_shared/` közös kód.
+**Supabase Edge Functions** (Deno runtime) — **65 deployed function** + `_shared/` közös kód.
 
-> 📖 **Teljes, részletes katalógus:** Mind a 64 Edge Function részletes specifikációját, környezeti változóit és hívó rétegeit az autoritatív [Supabase Edge Functions Katalógus](../edge-functions.md) tartalmazza.
+> 📖 **Teljes, részletes katalógus:** Mind a 65 Edge Function részletes specifikációját, környezeti változóit és hívó rétegeit az autoritatív [Supabase Edge Functions Katalógus](../edge-functions.md) tartalmazza.
 
 **Közös kód:** `_shared/` mappa:
 - `_shared/nav/` — Központi NAV Online Számla v3 protokoll motor (`NavClient`), titkosítás (SHA-512, SHA3-512), XML borítéképítők/parszolók, és adatbázis szinkronizáció (`NavIngestionService`).
@@ -21,9 +21,9 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 ---
 
-### Teljes Edge Function Katalógus (64 db)
+### Teljes Edge Function Katalógus (65 db)
 
-#### 🏛️ NAV Integráció (8 db)
+#### 🏛️ NAV Integráció (9 db)
 
 | Function | JWT | Leírás |
 |----------|-----|--------|
@@ -35,6 +35,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | `nav-query-outbound-invoices` | ✅ | Kimenő számlák és tételsorok lekérdezése (`NavIngestionService`) |
 | `query-nav-invoices` | ✅ | NAV számlák keresése és szűrése (`NavIngestionService`) |
 | `nav-tax-profile-sync` | ❌ | Adószám profil szinkronizáció NAV-ból |
+| `nav-m2m-proxy` | ✅ | NAV ÜPO M2M (Ügyfélportál gép-gép) proxy, aktiválás, EFO és biztosítotti jogviszony szinkron |
 
 #### 📧 Email Küldés & Riportok (10 db)
 

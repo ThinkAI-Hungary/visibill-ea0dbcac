@@ -1,18 +1,20 @@
-# A-144: Főkönyvi Kivonat Kötegelt Tételes Adatbetöltés és Fastruktúra Renderelés
+# A-153: Főkönyvi Kivonat Kötegelt Tételes Adatbetöltés és Fastruktúra Renderelés
 
-**Státusz:** Elfogadva  
+**Status:** Decided  
 **Dátum:** 2026-09-24  
+**Utoljára frissítve:** 2026-09-25  
 **Érintett modulok:** `GeneralLedgerTable.tsx`, `GeneralLedgerPage.tsx`, `src/lib/glData.ts`  
 
 ---
 
-## 1. Kontextus és Technikai Kihívás
+## 1. Context & Technikai Kihívás
+
 A Főkönyvi kivonatban a hierarchikus számlatükör fastruktúra mellett elérhetővé kellett tenni a teljes tételes analitikus megjelenítést (számlák, banki tranzakciók, kézi vegyes könyvelések).
 Ha ezt számlánkénti on-demand lekérdezéssel oldanánk meg, több tucat vagy akár több száz egyedi PostgREST HTTP kérés indulna el párhuzamosan (N+1 lekérdezési anomália), ami hálózati torlódást, felesleges adatbázis terhelést és kliens-oldali fagyást eredményezne.
 
 ---
 
-## 2. Architektúra Döntés
+## 2. Decision
 
 ### 1. Reaktivált Batch Query Stratégia (`fetchAllGlCategorizedItems`)
 - Amikor `viewGranularity === 'teteles'`, a `GeneralLedgerTable` komponens a TanStack React Query segítségével aktivál egyetlen kötegelt lekérdezést:
@@ -35,7 +37,18 @@ Ha ezt számlánkénti on-demand lekérdezéssel oldanánk meg, több tucat vagy
 
 ---
 
-## 3. Minőségbiztosítás és Eredmények
-- **Build:** Sikeres (`vite build` 0 hibával).
-- **Unit tesztek:** `GeneralLedgerGranularityToggle.test.tsx` és `GeneralLedgerExpandToggle.test.tsx` sikeresen lefutottak.
-- **Böngészős Smoke teszt:** Automatikus browser subagent ellenőrizte a váltást, az URL szinkronizációt (`?granularity=teteles`), az elemek megjelenését és a hibamentes visszacsukást.
+## 3. Consequences
+
+- **Pozitív:**
+  - N+1 lekérdezési lavina megelőzése: tucatnyi kérés helyett 1 darab paginált RPC kérés fut le.
+  - Villámgyors UI reakcióidő (0 ms memóriaindex-alapú fa feltöltés).
+  - Kettős nézet: makroszintű kontírok és mikro-audit tételes lista azonnal váltható.
+- **Negatív / Kockázat:**
+  - Tízezres tételszám esetén nagyobb memóriaigény a kliensoldali Map indexeléshez (PostgREST chunking és React Query cache méret felügyeletet igényel).
+
+---
+
+## 4. Kapcsolódó
+- [P-113: Főkönyvi Kivonat Kontírok vs. Tételes Nézetváltó UX](../../product/decisions/P-113-general-ledger-granularity-kontirok-teteles-view.md)
+- [A-150: Főkönyvi Lekérdezés Teljesítmény és DOM/Layout Védelem](./A-150-gl-performance-resilience-and-layout-hardening.md)
+- [A-087: GL Adatbázis Keresés és Számlapagináció](./A-087-gl-database-search-and-account-pagination.md)

@@ -228,7 +228,8 @@ A sidebar 6 logikai, összecsukható (collapsible) csoportba rendezi a modulokat
 - Kijelentkezés
 - Téma váltó (dark/light)
 - Tudástár (`/knowledge-base`) – 50 hierarchikus útmutató az eaisyBill és eaisyBooks teljes menürendszeréhez
-- Hibajegyek gomb (olvasatlan badge számlálóval)
+- Fejlesztői napló (`/changelog`) – In-app patchnotes idővonal és kiadási jegyzék (P-112, A-149)
+- Hibajegyek gomb (`/tickets`, olvasatlan badge számlálóval)
 
 ---
 

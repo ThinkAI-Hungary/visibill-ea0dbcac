@@ -1,8 +1,8 @@
 # 🏛️ NAV Integráció
 
-> NAV Online Számla rendszer — bejövő/kimenő számlák, szinkron logok.
+> NAV Online Számla rendszer és NAV ÜPO (Ügyfélportál) M2M integráció — bejövő/kimenő számlák, szinkron logok, hitelesítő adatok és EFO nyilvántartás.
 
-**Táblák ebben a csoportban:** 3
+**Táblák ebben a csoportban:** 6
 
 ---
 
@@ -151,3 +151,97 @@
 ### `nav_invoices` (Kimenő számlák kezelése)
 
 > 💡 **Architekturális megjegyzés:** A rendszerben nincs különálló `nav_outbound_invoices` fizikai tábla. A NAV-ból szinkronizált kimenő számlák egységesen a központi `nav_invoices` táblában tárolódnak `invoice_direction = 'outbound'` attribútummal. A `nav-query-outbound-invoices` Edge Function és a felületi lekérdező eljárások (`get_filtered_nav_invoices`) ezen az oszlopon keresztül végzik a szűrést és aggregációt.
+
+---
+
+### `accounty_upo_credentials`
+
+**RLS:** ✅ | **Sorok:** ~5
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| id | uuid | — | `gen_random_uuid()` |
+| company_id | uuid | — | |
+| user_id | uuid | ✓ | |
+| environment | text | — | `'production'::text` (CHECK `IN ('production', 'development')`) |
+| client_id | text | — | `'kD67QsLcF8'::text` |
+| username | text | — | |
+| password_encrypted | text | ✓ | |
+| signature_key_encrypted | text | — | |
+| representation_tax_id | text | ✓ | |
+| status | text | — | `'active'::text` (CHECK `IN ('pending', 'active', 'expired', 'revoked', 'error')`) |
+| last_validated_at | timestamp with time zone | ✓ | |
+| last_sync_at | timestamp with time zone | ✓ | |
+| auto_efo_sync_enabled | boolean | — | `true` |
+| auto_employee_sync_enabled | boolean | — | `true` |
+| error_message | text | ✓ | |
+| created_at | timestamp with time zone | — | `now()` |
+| updated_at | timestamp with time zone | — | `now()` |
+
+**FK:** `company_id` → `companies.id` ON DELETE CASCADE, `user_id` → `auth.users.id` ON DELETE SET NULL  
+**Constraint:** `accounty_upo_credentials_company_env_key` UNIQUE (`company_id`, `environment`)  
+**Indexek:** `idx_accounty_upo_credentials_company`, `idx_accounty_upo_credentials_env`  
+**Architekturális leírás:** Lásd [A-154: NAV ÜPO M2M Integráció és Hitelesítési Biztonsági Architektúra](../decisions/A-154-nav-upo-m2m-integration-and-credential-security.md).
+
+---
+
+### `nav_m2m_audit_logs`
+
+**RLS:** ✅ | **Sorok:** ~50 (Kötelező 90 napos megőrzés NAV ÁSZF 6.2 szerint)
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| id | uuid | — | `gen_random_uuid()` |
+| company_id | uuid | — | |
+| user_id | uuid | ✓ | |
+| environment | text | — | `'production'::text` |
+| action | text | — | |
+| endpoint | text | — | |
+| request_id | text | ✓ | |
+| target_tax_id | text | ✓ | |
+| status_code | integer | ✓ | |
+| result_code | text | ✓ | |
+| result_message | text | ✓ | |
+| duration_ms | integer | ✓ | |
+| created_at | timestamp with time zone | — | `now()` |
+
+**FK:** `company_id` → `companies.id` ON DELETE CASCADE, `user_id` → `auth.users.id` ON DELETE SET NULL  
+**Indexek:** `idx_nav_m2m_audit_logs_company_created` (`company_id`, `created_at DESC`)
+
+---
+
+### `accounty_efo_entries`
+
+**RLS:** ✅ | **Sorok:** ~120 (Egyszerűsített foglalkoztatási kvóták és naptári napok)
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| id | uuid | — | `gen_random_uuid()` |
+| company_id | uuid | — | |
+| tax_id | text | — | (Munkavállaló adóazonosító jele) |
+| name | text | — | (Munkavállaló neve) |
+| taj_number | text | ✓ | |
+| target_year | integer | — | |
+| days_alkalmi | integer | — | `0` |
+| days_mezogazdasag | integer | — | `0` |
+| days_turisztika | integer | — | `0` |
+| days_filmipar | integer | — | `0` |
+| days_total_used | integer | — | `0` |
+| days_total_available | integer | — | `120` |
+| days_agri_available | integer | — | `90` |
+| last_sync_at | timestamp with time zone | — | `now()` |
+| created_at | timestamp with time zone | — | `now()` |
+| updated_at | timestamp with time zone | — | `now()` |
+
+**FK:** `company_id` → `companies.id` ON DELETE CASCADE  
+**Constraint:** `accounty_efo_entries_company_tax_year_key` UNIQUE (`company_id`, `tax_id`, `target_year`)  
+**Indexek:** `idx_accounty_efo_entries_company_year` (`company_id`, `target_year`)
+
+---
+
+### Kapcsolódó RPC Függvények (NAV ÜPO M2M)
+
+- **`get_upo_credentials_status(p_company_id UUID, p_env TEXT DEFAULT 'production') RETURNS JSONB`**:
+  `SECURITY DEFINER` eljárás. Ellenőrzi a hívó cégtagságát / adminisztrátori szerepkörét, és biztonságosan maszkolt formában (`abc••••xy`) adja vissza a regisztrált felhasználónevet és a kapcsolat állapotát (`is_connected`, `status`, `last_sync_at`, `auto_efo_sync_enabled`, `auto_employee_sync_enabled`), kizárva a nyers jelszót és aláírókulcsot.
+- **`revoke_upo_credentials(p_company_id UUID, p_env TEXT DEFAULT 'production') RETURNS BOOLEAN`**:
+  `SECURITY DEFINER` eljárás. Véglegesen törli a céges hitelesítő adatokat az `accounty_upo_credentials` táblából, és azonnal kötelező audit naplóbejegyzést generál a `nav_m2m_audit_logs` táblába.

@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-25  
-> **Összesen:** 161 döntés | ✅ Decided: 159 | ⛔ Superseded: 2
+> **Összesen:** 164 döntés (157 egyedi döntési fájl) | ✅ Decided: 162 | ⛔ Superseded: 2
 
 ---
 
@@ -30,12 +30,13 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | A-004 | PGMQ mint aszinkron queue | ✅ Decided | [A-004](./A-004-pgmq-queue.md) |
-| A-005 | Edge Functions (Deno) — 64 function teljes katalógus | ✅ Decided | [A-005](./A-005-edge-functions.md) |
+| A-005 | Edge Functions (Deno) — 65 function teljes katalógus | ✅ Decided | [A-005](./A-005-edge-functions.md) |
 | A-023 | Upload Dedup Védelem (DB Trigger + Frontend Mutex) | ✅ Decided | [A-023](./A-023-upload-dedup-protection.md) |
 | A-074 | PDF Export Edge Function Invocation Resilience | ✅ Decided | [A-074](./A-074-pdf-export-edge-function-invocation-resilience.md) |
 | A-130 | NAV Auto-Sync Hajnali Időablakos Terheléselosztás (Dawn Load Staggering) | ✅ Decided | [A-130](./A-130-nav-auto-sync-dawn-load-staggering.md) |
 | A-132 | NAV Online Számla v3.0 queryTaxpayer Integráció és Think AI Kft. Kulcs Fallback | ✅ Decided | [A-132](./A-132-nav-query-taxpayer-auto-fill.md) |
 | A-133 | NAV Online Számla v3.0 Hivatalos ÁFA Összesítő (<invoiceSummary>) és Áfakulcs-Megbontás Integráció | ✅ Decided | [A-133](./A-133-nav-official-invoice-summary-vat-breakdown.md) |
+| A-154 | NAV ÜPO (Ügyfélportál) M2M Integráció és Hitelesítési Biztonsági Architektúra | ✅ Decided | [A-154](./A-154-nav-upo-m2m-integration-and-credential-security.md) |
 
 ## 🤖 AI & Feldolgozás
 
@@ -132,6 +133,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-150 | Főkönyvi Lekérdezés Teljesítmény, Hibakezelési Reziliencia & DOM/Layout Védelem | ✅ Decided | [A-150](./A-150-gl-performance-resilience-and-layout-hardening.md) |
 | A-151 | Eredménykimutatás és Mérleg Lekérdezési Vihar Megszüntetése, Trend Chunking és Igény Szerinti (On-Demand) Tételes Fúrás | ✅ Decided | [A-151](./A-151-pnl-and-balance-sheet-query-storm-elimination.md) |
 | A-152 | Analitikai és Jelentéskészítő RPC Stabilitás (STABLE), PostgREST Rate Limiter Mentesség és Realtime Eseményszivárgás Védelem | ✅ Decided | [A-152](./A-152-rate-limiter-rpc-stability-and-realtime-leak-hardening.md) |
+| A-153 | Főkönyvi Kivonat Kötegelt Tételes Adatbetöltés és Fastruktúra Renderelés | ✅ Decided | [A-153](./A-153-general-ledger-batch-itemized-view-architecture.md) |
 
 ## 🖥️ Frontend
 
@@ -198,6 +200,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-142 | Kettős Könyvvitel Szerinti Kötelező Kontírszám Szabályok és Vevői Kontírválasztó (311–317 + ÁFA 467/466) | ✅ Decided | [A-142](./A-142-customer-and-vat-gl-rules-enforcement.md) |
 | A-143 | Devizás Főkönyvi Számlakezelés (gl_accounts), Bankszámla Deviza Védelem, Devizás Számlakarton és Többdevizás Partner Analitika | ✅ Decided | [A-143](./A-143-multicurrency-chart-of-accounts-and-general-ledger.md) |
 | A-144 | Determinisztikus Számlatétel Szabály Motor (invoice_item_rules) és 1-Kattintásos Mentés Dialógus | ✅ Decided | [A-144](./A-144-deterministic-invoice-item-rules-engine.md) |
+| A-155 | Házipénztár Bejövő/Szállítói Számlák Kiegyenlítése és Időszaki Zárás Egyenleg Számítási Modell | ✅ Decided | [A-155](./A-155-petty-cash-inbound-settlement-and-period-closing.md) |
 
 ## 💳 Fizetés
 

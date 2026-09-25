@@ -63,12 +63,19 @@
 | source_id | uuid | ✓ |  |
 | source_table | text | ✓ |  |
 | routed_by | text | — | `'default'::text` |
+| partner_id | uuid | ✓ |  |
 | created_at | timestamp with time zone | — | `now()` |
 | created_by | uuid | ✓ |  |
 
-**FK:** `company_id` → `companies.id`, `created_by` → `auth.users.id`, `register_id` → `petty_cash_registers.id`
+**FK:** `company_id` → `companies.id`, `created_by` → `auth.users.id`, `register_id` → `petty_cash_registers.id`, `partner_id` → `partners.id`
 
 **Indexek:** `idx_pce_company_date`, `idx_pce_register_date`, `idx_pce_source`
+
+**Kapcsolódó RPC — Számlakiegyenlítés (`settle_invoices_via_petty_cash`):**
+A `settle_invoices_via_petty_cash(p_company_id, p_register_id, p_entry_date, p_invoice_ids, p_description)` eljárás kétirányú:
+- **Kimenő (vevői) számlák:** `+brutto_vegosszeg` (pénztári bevétel).
+- **Bejövő (szállítói) számlák:** `-brutto_vegosszeg` (pénztári kiadás).
+- Egyedi számla esetén automatikusan feltölti a `partner_id`-t, beállítja a `source_type = 'invoice_settlement'` értéket, és atomi tranzakcióban a számlákat `fizetve = true` állapotra állítja. Lásd [A-155](../decisions/A-155-petty-cash-inbound-settlement-and-period-closing.md).
 
 ---
 

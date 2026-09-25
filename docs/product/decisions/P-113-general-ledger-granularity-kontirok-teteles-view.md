@@ -1,7 +1,9 @@
-# P-107: Főkönyvi Kivonat Kontírok vs. Tételes Nézetváltó UX
+# P-113: Főkönyvi Kivonat Kontírok vs. Tételes Nézetváltó UX
 
-**Státusz:** Elfogadva  
+**Status:** Decided  
 **Dátum:** 2026-09-24  
+**Utoljára frissítve:** 2026-09-25  
+**Kategória:** UI / Főkönyv & Riportok  
 **Érintett modulok:** Főkönyvi kivonat (`GeneralLedgerPage.tsx`), Számlatükör fastruktúra és tételes táblázat (`GeneralLedgerTable.tsx`)  
 
 ---
@@ -35,3 +37,10 @@ A felhasználói követelményeknek megfelelően az alapértelmezett állapot mi
 ## 3. Minőségbiztosítás és Verifikáció
 - Unit teszt: `src/components/general-ledger/__tests__/GeneralLedgerGranularityToggle.test.tsx`
 - Teljesítmény: Tételes módban egyetlen kötegelt RPC hívás fut le (`fetchAllGlCategorizedItems`), megszüntetve az N+1 lekérdezési kockázatot.
+
+---
+
+## 4. Kapcsolódó
+- [A-153: Főkönyvi Kivonat Kötegelt Tételes Adatbetöltés és Fastruktúra Renderelés](../../architecture/decisions/A-153-general-ledger-batch-itemized-view-architecture.md)
+- [P-105: Főkönyvi Kivonat 2-Tier Eszköztár és Fastruktúra Kibontás/Összecsukás UX](./P-105-general-ledger-toolbar-and-expand-collapse-ux.md)
+- [P-068: Főkönyvi Gyorskeresés és Pagináció UX](./P-068-gl-search-and-comparison-pagination-ux.md)

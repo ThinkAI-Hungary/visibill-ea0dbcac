@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-25  
-> **Összesen:** 107 döntés | ✅ Decided: 103 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 110 döntés | ✅ Decided: 106 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -46,6 +46,7 @@
 | P-103 | Számlák Teljesítés Dátuma Szűrés és Dátum Alap Kapcsoló UX | ✅ Decided | [P-103](./P-103-invoices-delivery-date-and-date-basis-filtering-ux.md) |
 | P-109 | Determinisztikus Számlatétel Szabály Motor és Quick Save UX | ✅ Decided | [P-109](./P-109-invoice-item-rules-and-quick-save-ux.md) |
 | P-111 | Számlaláncolatok Megjelenítése, Kapcsolt Bizonylatok és Többdokumentumos Számlakép Lapozó UX | ✅ Decided | [P-111](./P-111-invoice-chain-and-multi-document-preview-ux.md) |
+| P-115 | Házipénztár Bejövő/Szállítói Számlák Kiegyenlítése és Időszaki Zárás Egyenleg UX | ✅ Decided | [P-115](./P-115-petty-cash-inbound-settlement-and-period-closing-ux.md) |
 
 ## 🔄 Tranzakció & Párosítás
 
@@ -68,6 +69,7 @@
 | P-105 | Főkönyvi Kivonat 2-Tier Eszköztár és Hierarchikus Számlafa Kibontás/Összecsukás UX | ✅ Decided | [P-105](./P-105-general-ledger-toolbar-and-expand-collapse-ux.md) |
 | P-106 | Horvát Főkönyvi Kivonat és Nézetek Teljes Lokalizációja, Dinamikus Pénznem és Novo Konto UX | ✅ Decided | [P-106](./P-106-croatian-general-ledger-and-multicurrency-views.md) |
 | P-108 | Devizás Főkönyvi Számlakezelés, Bankszámla Safeguard és Többdevizás Karton/Analitika UX | ✅ Decided | [P-108](./P-108-multicurrency-chart-of-accounts-and-gl-card-ux.md) |
+| P-113 | Főkönyvi Kivonat Kontírok vs. Tételes Nézetváltó UX | ✅ Decided | [P-113](./P-113-general-ledger-granularity-kontirok-teteles-view.md) |
 
 ## 🔔 Értesítések & Kommunikáció
 
@@ -187,6 +189,7 @@
 | P-088 | Csoportos ÁFA-tagok NAV Online Számla Beállítási Figyelmeztetése és Varázsló UX | ✅ Decided | [P-088](./P-088-group-vat-nav-credentials-detection-and-sync-ux.md) |
 | P-098 | NAV Adózói Adatlekérdezés és Automatikus Cégkitöltés UX | ✅ Decided | [P-098](./P-098-company-taxpayer-lookup-ux.md) |
 | P-099 | Hivatalos NAV ÁFA Összesítő és Adókulcs-Megbontás Felületi Élmény (UX) | ✅ Decided | [P-099](./P-099-official-vat-summary-ui.md) |
+| P-114 | NAV ÜPO M2M Integráció, Felhasználói Hitelesítés és Napi Szinkronizáció UX | ✅ Decided | [P-114](./P-114-nav-upo-m2m-integration-ui-ux.md) |
 
 ## 💼 Projektek & Tárgyi Eszközök
 
