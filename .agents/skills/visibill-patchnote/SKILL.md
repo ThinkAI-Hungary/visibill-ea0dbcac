@@ -44,8 +44,8 @@ A skill egy **kimerítő alaposságú tényfeltáró motor**. A cél:
          ┌───────────────────────┴───────────────────────┐
          ▼                                               ▼
 [ 2. Dokumentációk Olvasása ]               [ 3. Session Summary Fájlok ]
-  • ADR-ek (A-xxx)                            • session-summary/YYYY-MM-DD/*.md
-  • PRD-k (P-xxx)                             • QA teszteredmények
+  • ADR-ek (A-xxx)                            • session-summary/Jani/ & Áron/
+  • PRD-k (P-xxx)                             • QA teszteredmények & refaktorok
   • DB sémák (docs/architecture/database/)    • Megvalósított döntések
          │                                               │
          └───────────────────────┬───────────────────────┘
@@ -75,9 +75,14 @@ A skill egy **kimerítő alaposságú tényfeltáró motor**. A cél:
   - Felületi tervek: `docs/design/*.md`
 * **Kötelező akció:** A skill **fizikailag olvassa be a vonatkozó fájlt a `view_file` eszközzel**, hogy megértse a valós üzleti hátteret, az ügyféloldali hasznot és a lehetséges mellékhatásokat.
 
-### 3. Pillér: Session Summary Bejegyzések Beolvasása
-* Listázd és olvasd el az adott időszakban keletkezett session összefoglalókat a `session-summary/` mappából.
-* A session összefoglalók tartalmazzák a lefuttatott teszteket, a refaktorált komponenseket és a felhasználóval egyeztetett tervezési elveket.
+### 3. Pillér: Session Summary Bejegyzések Beolvasása (Csapat-szintű Összefoglalók)
+* A Visibill projekten két fejlesztő dolgozik: **Jani** (`session-summary/Jani/`) és **Áron** (`session-summary/Áron/`).
+* A skillnek a vizsgált időszakban (pl. 48 óra vagy a megadott dátumtartomány) **mindkét fejlesztő** aznapi mappáit kötelezően fel kell térképeznie és beolvasnia:
+  - `session-summary/Jani/YYYY-MM-DD/*.md`
+  - `session-summary/Áron/YYYY-MM-DD/*.md`
+  *(Valamint a `session-summary/` bármely más almappáját, ha új fejlesztő csatlakozik).*
+* **Miért kritikus a kétirányú beolvasás:** Jani minden nap végén futtatja a `/visibill-patchnote` parancsot a napi kiadás publikálásához. Áron lokálisan a saját `Áron` mappájába logol, majd felpusholja a repóba. A skill Áron összefoglalóinak beolvasásával teljes képet kap a csapattárs által elvégzett backend/frontend javításokról, így az ő munkája is azonnal, hiánytalanul bekerül a termékfrissítések közé.
+* A session összefoglalók tartalmazzák a pontos hibaleírásokat, lefuttatott teszteket, refaktorált komponenseket és a döntési elveket.
 
 ### 4. Pillér: Már Publikált Bejegyzések Kiszűrése
 Kérdezd le az adatbázis legfrissebb bejegyzéseit, hogy megelőzd a duplikációt:
