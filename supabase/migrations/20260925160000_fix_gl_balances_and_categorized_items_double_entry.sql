@@ -392,10 +392,10 @@ BEGIN
       1::bigint AS sub_count
     FROM public.get_fx_differences(p_company_id, p_date_from, p_date_to) fd
     LEFT JOIN LATERAL (
-      SELECT g.id
-      FROM public.gl_accounts g
-      WHERE g.preset_id = p_preset_id
-        AND REPLACE(split_part(g.gl_number, '-', 1), '.', '') LIKE
+      SELECT ga.id
+      FROM public.gl_accounts ga
+      WHERE ga.preset_id = p_preset_id
+        AND REPLACE(split_part(ga.gl_number, '-', 1), '.', '') LIKE
             (CASE WHEN fd.fx_difference >= 0
               THEN COALESCE((SELECT fxs.fx_gain_gl_number FROM public.company_fx_settings fxs WHERE fxs.company_id = p_company_id LIMIT 1), '976')
               ELSE COALESCE((SELECT fxs.fx_loss_gl_number FROM public.company_fx_settings fxs WHERE fxs.company_id = p_company_id LIMIT 1), '876')
