@@ -12378,5 +12378,10 @@
     "mtime": 1790341701.552254,
     "ast_hash": "bec2a8ecfc9adc127d1db1700363883f",
     "semantic_hash": ""
+  },
+  "supabase/migrations/20260925170000_refactor_get_management_files_to_cte.sql": {
+    "mtime": 1790343219.8147058,
+    "ast_hash": "55ca4cf7188698709f0897484af847d5",
+    "semantic_hash": ""
   }
 }
