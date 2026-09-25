@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { ChangelogEntry, ChangelogAppScope, ChangelogCategory } from "@/types/changelog";
 
@@ -15,7 +15,8 @@ export function useChangelog(options?: ChangelogFilterOptions) {
   const { scope = "all", category = "all", searchQuery = "" } = options || {};
 
   return useQuery({
-    queryKey: ["changelog_entries", scope, category, searchQuery],
+    queryKey: ["changelog_entries", scope, category],
+    placeholderData: keepPreviousData,
     queryFn: async (): Promise<ChangelogEntry[]> => {
       let query = supabase
         .from("changelog_entries" as any)
@@ -55,7 +56,7 @@ export function useChangelog(options?: ChangelogFilterOptions) {
         created_by: row.created_by,
       }));
 
-      // In-memory search filtering if query is provided
+      // In-memory search filtering if query is provided directly to the hook
       if (searchQuery.trim()) {
         const q = searchQuery.trim().toLowerCase();
         entries = entries.filter((entry) => {
