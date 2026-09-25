@@ -76,13 +76,14 @@ export const exportGlExcel = async (
 
       const txRow = worksheet.addRow({
         gl_number: dateStr,
-        name: `      • ${partnerStr}${row.name}`,
+        name: `${partnerStr}${row.name}`,
         balance: row.balance,
       });
 
       txRow.font = { italic: true, color: { argb: 'FF6B7280' }, size: 9 };
       txRow.outlineLevel = 2;
       txRow.getCell('balance').numFmt = numberFormat;
+      txRow.getCell('name').alignment = { indent: 2 };
       txRow.getCell('gl_number').alignment = { indent: 1 };
     } else {
       // GL Account row
@@ -408,7 +409,7 @@ export const exportVatCollectorAnalyticsExcel = async (
 
     for (const item of group.items) {
       const itemRow = ws.addRow({
-        col1: `    ${item.invoice_number}`,
+        col1: item.invoice_number,
         col2: item.partner_name,
         col_dir: item.direction === 'OUTBOUND' ? 'Vevői (Kimenő)' : (item.direction === 'INBOUND' ? 'Szállítói (Bejövő)' : '-'),
         col3: item.fulfillment_date ? item.fulfillment_date.substring(0, 10).replace(/-/g, '.') : '-',
@@ -420,6 +421,7 @@ export const exportVatCollectorAnalyticsExcel = async (
       });
 
       itemRow.font = { size: 9, color: { argb: 'FF374151' } };
+      itemRow.getCell('col1').alignment = { indent: 1 };
       itemRow.getCell('net').numFmt = numFmt;
       itemRow.getCell('vat').numFmt = numFmt;
       itemRow.getCell('gross').numFmt = numFmt;

@@ -131,6 +131,8 @@ export interface InvoiceContextValue
     suggestedInvoice: SuggestedSubmittedInvoiceWithScore;
   } | null) => void;
   setInvoiceParam: (invoiceId: string | null, action?: InvoiceAction) => void;
+  lastViewedInvoiceId: string | null;
+  setLastViewedInvoiceId: (id: string | null) => void;
 
   // Export
   pdfExport: any;
@@ -183,6 +185,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
 
   // Dialog states
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [lastViewedInvoiceId, setLastViewedInvoiceId] = useState<string | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [itemsDialogOpen, setItemsDialogOpen] = useState(false);
   const [submittedItemsDialogOpen, setSubmittedItemsDialogOpen] = useState(false);
@@ -1088,6 +1091,8 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       selectedSuggestedLinkPair,
       setSelectedSuggestedLinkPair,
       setInvoiceParam,
+      lastViewedInvoiceId,
+      setLastViewedInvoiceId,
 
       pdfExport,
       dataExportDialogOpen,
@@ -1165,6 +1170,8 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       setSuggestedLinkDialogOpen,
       selectedInvoice,
       setSelectedInvoice,
+      lastViewedInvoiceId,
+      setLastViewedInvoiceId,
       selectedNavInvoice,
       setSelectedNavInvoice,
       selectedSubmittedForItems,

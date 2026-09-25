@@ -64,12 +64,15 @@ export function SubmittedInvoiceRow({
     setApprovalDialogOpen,
     setSelectedInvoiceForApproval,
     getPaymentMethodLabel,
+    lastViewedInvoiceId,
+    setLastViewedInvoiceId,
   } = useInvoiceContext();
   const { t } = useTranslation(['invoices', 'common']);
   const { hasNavIntegration, defaultCurrency } = useCompanyJurisdiction(selectedCompany);
 
   const isExpanded = expandedRowIds.has(invoice.id);
   const isSelected = selectedSubmittedIds.has(invoice.id);
+  const isLastViewed = lastViewedInvoiceId === invoice.id;
 
   const [isOptimisticReviewed, setIsOptimisticReviewed] = useState<boolean | null>(null);
 
@@ -117,12 +120,13 @@ export function SubmittedInvoiceRow({
       <TableRow
         data-row-hover
         className={cn(
-          'group cursor-pointer',
+          'group cursor-pointer transition-colors',
           isSelected && 'bg-primary/5',
-          !isSelected && isMatched && 'bg-[var(--row-matched-bg)]',
-          !isSelected && isPartiallyPaid && 'bg-blue-500/[0.06]',
-          !isSelected && isSuggested && 'bg-[var(--row-suggested-bg)]',
-          !isSelected && !isMatched && !isPartiallyPaid && !isSuggested && 'bg-[var(--row-unmatched-bg)]',
+          isLastViewed && 'ring-2 ring-primary/80 bg-primary/15 dark:bg-primary/25 border-l-4 border-l-primary font-medium',
+          !isSelected && !isLastViewed && isMatched && 'bg-[var(--row-matched-bg)]',
+          !isSelected && !isLastViewed && isPartiallyPaid && 'bg-blue-500/[0.06]',
+          !isSelected && !isLastViewed && isSuggested && 'bg-[var(--row-suggested-bg)]',
+          !isSelected && !isLastViewed && !isMatched && !isPartiallyPaid && !isSuggested && 'bg-[var(--row-unmatched-bg)]',
           isExpanded && 'border-b-0'
         )}
         onClick={(e) => onRowClick(invoice.id, e)}
@@ -447,6 +451,7 @@ export function SubmittedInvoiceRow({
                     setSelectedInvoice(invoice);
                     setImageDialogOpen(true);
                     setInvoiceParam(invoice.id, 'view');
+                    setLastViewedInvoiceId(invoice.id);
                   }}
                 >
                   <FileText className="h-4 w-4" />
@@ -505,6 +510,7 @@ export function SubmittedInvoiceRow({
           onViewInvoice={(inv) => {
             setSelectedInvoice(inv as any);
             setImageDialogOpen(true);
+            setLastViewedInvoiceId(inv.id);
           }}
           excludeFromAccounting={!!invoice.exclude_from_accounting}
           onToggleExclude={() => onToggleExclude(invoice.id, !!invoice.exclude_from_accounting)}

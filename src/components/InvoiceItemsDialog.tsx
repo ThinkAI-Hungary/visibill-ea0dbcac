@@ -24,7 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatCurrency, cn, formatVatRate, is27PercentVatRate, normalizeVatRatePercent } from '@/lib/utils';
-import { Package, Package2, CheckCircle2, Info, Loader2, Check, Pencil, FileSpreadsheet, X, ArrowUpDown, ChevronUp, ChevronDown, MessageSquare, Sparkles, Wallet, Lock, Landmark } from 'lucide-react';
+import { Package, Package2, CheckCircle2, Info, Loader2, Check, Pencil, FileSpreadsheet, X, ArrowUpDown, ArrowLeftRight, ChevronUp, ChevronDown, MessageSquare, Sparkles, Wallet, Lock, Landmark } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActivePreset } from '@/hooks/useActivePreset';
@@ -49,9 +49,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useProjectList } from '@/hooks/useProjectList';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { NavInvoiceVatSummaryCard } from '@/components/nav/NavInvoiceVatSummaryCard';
 import { InvoiceRuleQuickSaveDialog, type InvoiceRuleQuickSaveItem } from '@/components/invoices/InvoiceRuleQuickSaveDialog';
 import { InvoiceGlAccountSelector } from '@/components/invoices/InvoiceGlAccountSelector';
+import { computeLineItemDebitCreditSides } from '@/lib/invoiceGlSides';
 
 interface InvoiceLineItem {
   id: string;
@@ -159,13 +162,17 @@ export function InvoiceItemsDialog({
   const [bulkVatCodeId, setBulkVatCodeId] = useState<string>('');
   const [isSubmittingVatCode, setIsSubmittingVatCode] = useState(false);
 
-  // GL editing state
+  // GL editing state (Dual Tartozik and Követel editing)
   const [glEditItem, setGlEditItem] = useState<InvoiceLineItem | null>(null);
   const [isBulkGlEdit, setIsBulkGlEdit] = useState(false);
   const [glEditOpen, setGlEditOpen] = useState(false);
   const [glSearchQuery, setGlSearchQuery] = useState('');
   const [selectedNewGL, setSelectedNewGL] = useState<string>('');
   const [isGlSubmitting, setIsGlSubmitting] = useState(false);
+  const [activeEditSide, setActiveEditSide] = useState<'T' | 'K'>('T');
+  const [editIsSwapped, setEditIsSwapped] = useState<boolean>(false);
+  const [selectedPartnerGl, setSelectedPartnerGl] = useState<string>('');
+  const [customPartnerGlInput, setCustomPartnerGlInput] = useState<string>('');
 
   // Quick Rule prompt state
   const [quickRuleOpen, setQuickRuleOpen] = useState(false);
@@ -819,12 +826,24 @@ export function InvoiceItemsDialog({
     const classification = (activePresetId && item.gl_classifications?.[activePresetId])
       ? item.gl_classifications[activePresetId]
       : null;
+    const isNegative = (item.net_amount ?? 0) < 0 || (item.gross_amount ?? 0) < 0;
+    const isSwapped = Boolean(classification?.tk_swapped);
+    const initialPartnerGl = classification?.partner_gl_number || parentInvoice?.partner_gl_number || (isOutbound ? '311' : '4541');
+
     setGlEditItem(item);
     setIsBulkGlEdit(false);
     setSelectedNewGL(classification?.gl_account_id || '');
+    setEditIsSwapped(isSwapped);
+    setSelectedPartnerGl(initialPartnerGl);
+    setCustomPartnerGlInput(initialPartnerGl);
+
+    // Focus the item classification side by default
+    const itemIsOnT = isOutbound ? isNegative : !isNegative;
+    const effectiveItemSide = isSwapped ? (itemIsOnT ? 'K' : 'T') : (itemIsOnT ? 'T' : 'K');
+    setActiveEditSide(effectiveItemSide);
     setGlSearchQuery('');
     setGlEditOpen(true);
-  }, [activePresetId]);
+  }, [activePresetId, parentInvoice?.partner_gl_number, isOutbound]);
 
   // Open GL edit dialog in bulk mode for all selected items
   const openBulkGlEdit = useCallback(() => {
@@ -832,13 +851,18 @@ export function InvoiceItemsDialog({
     setGlEditItem(null);
     setIsBulkGlEdit(true);
     setSelectedNewGL('');
+    setEditIsSwapped(false);
+    const initialPartnerGl = parentInvoice?.partner_gl_number || (isOutbound ? '311' : '4541');
+    setSelectedPartnerGl(initialPartnerGl);
+    setCustomPartnerGlInput(initialPartnerGl);
+    setActiveEditSide(isOutbound ? 'K' : 'T');
     setGlSearchQuery('');
     setGlEditOpen(true);
-  }, [selectedIds]);
+  }, [selectedIds, parentInvoice?.partner_gl_number, isOutbound]);
 
   // Save GL override (+ sync twin item in the linked table)
   const handleSaveGlOverride = useCallback(async () => {
-    if (!selectedNewGL || !selectedCompany?.id || !session?.user.id || !activePresetId) return;
+    if (!selectedCompany?.id || !session?.user.id || !activePresetId) return;
     if (!isBulkGlEdit && !glEditItem) return;
 
     setIsGlSubmitting(true);
@@ -898,74 +922,140 @@ export function InvoiceItemsDialog({
       return;
     }
 
-    const { data, error } = await supabase.rpc('override_gl_classifications_batch', {
-      p_items: payloadItems,
-      p_new_gl_account_id: selectedNewGL === 'UNCLASSIFIED' ? null : selectedNewGL,
-      p_company_id: selectedCompany.id,
-      p_user_id: session.user.id,
-      p_preset_id: activePresetId,
-      p_new_gl_number: newGlNumber,
-    });
+    // Call override_gl_classifications_batch if a GL account was selected (or UNCLASSIFIED)
+    if (selectedNewGL) {
+      const { data, error } = await supabase.rpc('override_gl_classifications_batch', {
+        p_items: payloadItems,
+        p_new_gl_account_id: selectedNewGL === 'UNCLASSIFIED' ? null : selectedNewGL,
+        p_company_id: selectedCompany.id,
+        p_user_id: session.user.id,
+        p_preset_id: activePresetId,
+        p_new_gl_number: newGlNumber,
+      });
+
+      if (error || data === false) {
+        setIsGlSubmitting(false);
+        toast({ title: t('invoices:dialogs.items.toast_gl_error'), description: error?.message || '', variant: 'destructive' });
+        return;
+      }
+    }
+
+    // Persist tk_swapped and partner_gl_number in gl_classifications for target item(s) & twins
+    try {
+      const targetItems = isBulkGlEdit ? items.filter(i => selectedIds.has(i.id)) : (glEditItem ? [glEditItem] : []);
+      for (const it of targetItems) {
+        const existingClass = it.gl_classifications || {};
+        const updatedClass = {
+          ...existingClass,
+          [activePresetId]: {
+            ...(existingClass[activePresetId] || {}),
+            gl_account_id: selectedNewGL === 'UNCLASSIFIED' ? null : (selectedNewGL || existingClass[activePresetId]?.gl_account_id),
+            gl_number: selectedNewGL === 'UNCLASSIFIED' ? '' : (newGlNumber || existingClass[activePresetId]?.gl_number),
+            is_manual: true,
+            tk_swapped: editIsSwapped,
+            partner_gl_number: selectedPartnerGl || undefined,
+          }
+        };
+
+        await supabase.from(sourceTable as any).update({ gl_classifications: updatedClass }).eq('id', it.id);
+
+        const twins = await findTwinItems(it);
+        for (const twin of twins) {
+          const { data: twinItemData } = await supabase.from(twin.sourceTable as any).select('gl_classifications').eq('id', twin.id).maybeSingle();
+          const twinExisting = (twinItemData as any)?.gl_classifications || {};
+          const twinUpdated = {
+            ...twinExisting,
+            [activePresetId]: {
+              ...(twinExisting[activePresetId] || {}),
+              gl_account_id: selectedNewGL === 'UNCLASSIFIED' ? null : (selectedNewGL || twinExisting[activePresetId]?.gl_account_id),
+              gl_number: selectedNewGL === 'UNCLASSIFIED' ? '' : (newGlNumber || twinExisting[activePresetId]?.gl_number),
+              is_manual: true,
+              tk_swapped: editIsSwapped,
+              partner_gl_number: selectedPartnerGl || undefined,
+            }
+          };
+          await supabase.from(twin.sourceTable as any).update({ gl_classifications: twinUpdated }).eq('id', twin.id);
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to update tk_swapped in classifications:', err);
+    }
+
+    // If partner GL was modified, update partner_gl_number on invoices/nav_invoices
+    if (selectedPartnerGl && selectedPartnerGl !== parentInvoice?.partner_gl_number) {
+      try {
+        if (source === 'submitted') {
+          await supabase.from('invoices').update({ partner_gl_number: selectedPartnerGl, frissitve: new Date().toISOString() } as any).eq('id', invoiceId);
+          if (parentInvoice?.bizonylatsorszam) {
+            await supabase.from('nav_invoices').update({ partner_gl_number: selectedPartnerGl } as any).eq('invoice_number', parentInvoice.bizonylatsorszam);
+          }
+        } else {
+          await supabase.from('nav_invoices').update({ partner_gl_number: selectedPartnerGl } as any).eq('id', invoiceId);
+          if (invoiceNumber) {
+            await supabase.from('invoices').update({ partner_gl_number: selectedPartnerGl, frissitve: new Date().toISOString() } as any).eq('bizonylatsorszam', invoiceNumber);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to update invoice partner_gl_number:', err);
+      }
+    }
 
     setIsGlSubmitting(false);
+    setGlEditOpen(false);
 
-    if (error || data === false) {
-      toast({ title: t('invoices:dialogs.items.toast_gl_error'), description: error?.message || '', variant: 'destructive' });
-    } else {
-      setGlEditOpen(false);
+    const isSuppressed = typeof window !== 'undefined' && sessionStorage.getItem('suppress_invoice_rule_prompt') === 'true';
+    const targetItem = glEditItem || (isBulkGlEdit && items.length > 0 ? items.find(i => selectedIds.has(i.id)) : null);
+    const willOpenRulePrompt = !isSuppressed && selectedNewGL !== 'UNCLASSIFIED' && Boolean(newGlItem) && Boolean(targetItem);
 
-      const isSuppressed = typeof window !== 'undefined' && sessionStorage.getItem('suppress_invoice_rule_prompt') === 'true';
-      const targetItem = glEditItem || (isBulkGlEdit && items.length > 0 ? items.find(i => selectedIds.has(i.id)) : null);
-      const willOpenRulePrompt = !isSuppressed && selectedNewGL !== 'UNCLASSIFIED' && Boolean(newGlItem) && Boolean(targetItem);
-
-      // Only show immediate toast if rule dialog will NOT open
-      if (!willOpenRulePrompt) {
-        const count = isBulkGlEdit ? selectedIds.size : 1;
-        toast({ title: t('invoices:dialogs.items.toast_bulk_gl_success'), description: t('invoices:dialogs.items.toast_bulk_gl_success_desc', { count }) });
-      }
-
-      // Open quick rule prompt if a real GL number was selected and not suppressed
-      if (willOpenRulePrompt && targetItem && newGlItem) {
-        const isOutboundInvoice = invoiceDirection === 'OUTBOUND' || (parentInvoice as any)?.invoice_direction === 'OUTBOUND' || (parentInvoice as any)?.type === 'OUTBOUND';
-        const partnerTax = isOutboundInvoice
-          ? (parentInvoice?.customer_tax_number || (parentInvoice as any)?.partner_adoszam || '')
-          : (parentInvoice?.supplier_tax_number || (parentInvoice as any)?.partner_adoszam || '');
-        const partnerName = isOutboundInvoice
-          ? (parentInvoice?.customer_name || (parentInvoice as any)?.partner_nev || supplierName || '')
-          : (parentInvoice?.supplier_name || (parentInvoice as any)?.partner_nev || supplierName || '');
-
-        const assignedVatCodeObj = vatCodes.find(v => v.id === targetItem.vat_code_id);
-
-        setBookedRuleItem({
-          id: targetItem.id,
-          line_description: targetItem.line_description,
-          direction: isOutboundInvoice ? 'OUTBOUND' : 'INBOUND',
-          partner_tax_number: partnerTax,
-          partner_name: partnerName,
-          company_id: selectedCompany.id,
-        });
-        setBookedGlForRule({
-          id: newGlItem.id,
-          gl_number: newGlItem.gl_number,
-          short_name: newGlItem.short_name,
-        });
-        setBookedVatForRule(assignedVatCodeObj ? { id: assignedVatCodeObj.id, code: assignedVatCodeObj.code } : null);
-        setQuickRuleOpen(true);
-      }
-
-      setGlEditItem(null);
-      setIsBulkGlEdit(false);
-      if (isBulkGlEdit) {
-        setSelectedIds(new Set());
-      }
-      // Invalidate all relevant caches so every view refreshes
-      queryClient.invalidateQueries({ queryKey: ['invoiceItems'] });
-      queryClient.invalidateQueries({ queryKey: ['glBalances'] });
-      queryClient.invalidateQueries({ queryKey: ['glItems'] });
-      queryClient.invalidateQueries({ queryKey: ['filteredNavInvoices'] });
-      queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices'] });
+    // Only show immediate toast if rule dialog will NOT open
+    if (!willOpenRulePrompt) {
+      const count = isBulkGlEdit ? selectedIds.size : 1;
+      toast({ title: t('invoices:dialogs.items.toast_bulk_gl_success'), description: t('invoices:dialogs.items.toast_bulk_gl_success_desc', { count }) });
     }
-  }, [glEditItem, isBulkGlEdit, selectedIds, items, selectedNewGL, selectedCompany?.id, session?.user.id, activePresetId, source, glAccounts, vatCodes, invoiceDirection, parentInvoice, supplierName, queryClient, toast, findTwinItems]);
+
+    // Open quick rule prompt if a real GL number was selected and not suppressed
+    if (willOpenRulePrompt && targetItem && newGlItem) {
+      const isOutboundInvoice = invoiceDirection === 'OUTBOUND' || (parentInvoice as any)?.invoice_direction === 'OUTBOUND' || (parentInvoice as any)?.type === 'OUTBOUND';
+      const partnerTax = isOutboundInvoice
+        ? (parentInvoice?.customer_tax_number || (parentInvoice as any)?.partner_adoszam || '')
+        : (parentInvoice?.supplier_tax_number || (parentInvoice as any)?.partner_adoszam || '');
+      const partnerName = isOutboundInvoice
+        ? (parentInvoice?.customer_name || (parentInvoice as any)?.partner_nev || supplierName || '')
+        : (parentInvoice?.supplier_name || (parentInvoice as any)?.partner_nev || supplierName || '');
+
+      const assignedVatCodeObj = vatCodes.find(v => v.id === targetItem.vat_code_id);
+
+      setBookedRuleItem({
+        id: targetItem.id,
+        line_description: targetItem.line_description,
+        direction: isOutboundInvoice ? 'OUTBOUND' : 'INBOUND',
+        partner_tax_number: partnerTax,
+        partner_name: partnerName,
+        company_id: selectedCompany.id,
+      });
+      setBookedGlForRule({
+        id: newGlItem.id,
+        gl_number: newGlItem.gl_number,
+        short_name: newGlItem.short_name,
+      });
+      setBookedVatForRule(assignedVatCodeObj ? { id: assignedVatCodeObj.id, code: assignedVatCodeObj.code } : null);
+      setQuickRuleOpen(true);
+    }
+
+    setGlEditItem(null);
+    setIsBulkGlEdit(false);
+    if (isBulkGlEdit) {
+      setSelectedIds(new Set());
+    }
+    // Invalidate all relevant caches so every view refreshes
+    queryClient.invalidateQueries({ queryKey: ['invoiceItems'] });
+    queryClient.invalidateQueries({ queryKey: ['parentInvoice', source, invoiceId] });
+    queryClient.invalidateQueries({ queryKey: ['glBalances'] });
+    queryClient.invalidateQueries({ queryKey: ['glItems'] });
+    queryClient.invalidateQueries({ queryKey: ['filteredNavInvoices'] });
+    queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices'] });
+    queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
+  }, [glEditItem, isBulkGlEdit, selectedIds, items, selectedNewGL, editIsSwapped, selectedPartnerGl, selectedCompany?.id, session?.user.id, activePresetId, source, glAccounts, vatCodes, invoiceDirection, parentInvoice, supplierName, queryClient, toast, findTwinItems, t, invoiceId, invoiceNumber]);
 
   // Single or Bulk VAT Code Override Handler with Few-Shot ML Learning
   const handleSaveVatCodeOverride = useCallback(async (targetItems: InvoiceLineItem[], newVatCodeId: string | null) => {
@@ -1867,6 +1957,16 @@ export function InvoiceItemsDialog({
                                   : null);
                             
                             const netGl = classification?.gl_number;
+                            const partnerGl = classification?.partner_gl_number || effectivePartnerGl;
+                            const isSwapped = Boolean(classification?.tk_swapped);
+
+                            const sides = computeLineItemDebitCreditSides({
+                              item,
+                              isOutbound,
+                              netGl,
+                              partnerGl,
+                              isSwapped,
+                            });
 
                             return (
                               <Tooltip>
@@ -1876,41 +1976,51 @@ export function InvoiceItemsDialog({
                                     onClick={(e) => { e.stopPropagation(); openGlEdit(item); }}
                                     className={cn(
                                       "group/gl inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-medium transition-colors cursor-pointer border",
-                                      netGl
-                                        ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
-                                        : "bg-muted text-muted-foreground border-border/40 hover:bg-muted/80"
+                                      sides.isNegative 
+                                        ? "bg-amber-500/10 text-amber-900 dark:text-amber-200 border-amber-500/30 hover:bg-amber-500/20" 
+                                        : netGl
+                                          ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+                                          : "bg-muted text-muted-foreground border-border/40 hover:bg-muted/80"
                                     )}
                                   >
-                                    {isOutbound ? (
-                                      <>
-                                        <span className="text-[11px] opacity-70 font-normal" title="Tartozik (T) vevőkövetelés">{effectivePartnerGl}</span>
-                                        <span className="opacity-40">→</span>
-                                        <span className="font-bold underline decoration-dotted underline-offset-2" title="Követel (K) árbevétel">
-                                          {netGl || '-'}
-                                        </span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <span className="font-bold underline decoration-dotted underline-offset-2" title="Tartozik (T) költség / ráfordítás">
-                                          {netGl || '-'}
-                                        </span>
-                                        <span className="opacity-40">→</span>
-                                        <span className="text-[11px] opacity-70 font-normal" title="Követel (K) szállítói kötelezettség">{effectivePartnerGl}</span>
-                                      </>
+                                    <span 
+                                      className={cn(sides.debitIsItem ? "font-bold underline decoration-dotted underline-offset-2" : "text-[11px] opacity-70 font-normal")} 
+                                      title={`Tartozik (T) ${sides.debitRole}`}
+                                    >
+                                      {sides.debitGl}
+                                    </span>
+                                    <span className="opacity-40">→</span>
+                                    <span 
+                                      className={cn(sides.creditIsItem ? "font-bold underline decoration-dotted underline-offset-2" : "text-[11px] opacity-70 font-normal")} 
+                                      title={`Követel (K) ${sides.creditRole}`}
+                                    >
+                                      {sides.creditGl}
+                                    </span>
+                                    {sides.isNegative && (
+                                      <span className="text-[9px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 font-sans font-semibold">
+                                        (-)
+                                      </span>
+                                    )}
+                                    {isSwapped && (
+                                      <span className="text-[9px] px-1 py-0.2 rounded bg-primary/20 text-primary font-sans font-semibold" title="T ↔ K kézileg felcserélve">
+                                        ⇄
+                                      </span>
                                     )}
                                     <Pencil className="h-3 w-3 opacity-0 group-hover/gl:opacity-70 transition-opacity ml-0.5" />
                                   </button>
                                 </TooltipTrigger>
                                 <TooltipContent side="top" className="text-xs z-[120] max-w-xs text-center">
                                   <div className="space-y-1">
-                                    <p className="font-semibold">
-                                      {isOutbound
-                                        ? `T: ${effectivePartnerGl} (Vevőkövetelés) → K: ${netGl || 'Nincs'} (Árbevétel)`
-                                        : `T: ${netGl || 'Nincs'} (Költség/Ráfordítás) → K: ${effectivePartnerGl} (Szállítói kötelezettség)`
-                                      }
+                                    {sides.isNegative && (
+                                      <div className="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-700 dark:text-amber-300 mb-0.5">
+                                        Mínuszos tétel (jóváíró / helyesbítő)
+                                      </div>
+                                    )}
+                                    <p className="font-semibold font-mono">
+                                      T: {sides.debitGl} ({sides.debitRole}) → K: {sides.creditGl} ({sides.creditRole})
                                     </p>
                                     <p className="text-muted-foreground text-[11px]">
-                                      {netGl ? t('invoices:dialogs.items.click_to_modify_gl') : t('invoices:dialogs.items.click_to_classify_gl')}
+                                      {netGl ? t('invoices:dialogs.items.click_to_modify_gl') : t('invoices:dialogs.items.click_to_classify_gl')} (Tartozik és Követel oldal külön szerkeszthető)
                                     </p>
                                   </div>
                                 </TooltipContent>
@@ -2143,99 +2253,399 @@ export function InvoiceItemsDialog({
       </Dialog>
 
       {/* GL Edit Dialog */}
-      <Dialog open={glEditOpen} onOpenChange={(open) => { setGlEditOpen(open); if (!open) { setGlEditItem(null); setIsBulkGlEdit(false); setGlSearchQuery(''); } }}>
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
-            <DialogTitle>
-              {isBulkGlEdit ? t('invoices:dialogs.items.gl_dialog_title_bulk', { count: selectedIds.size }) : t('invoices:dialogs.items.gl_dialog_title_single')}
-            </DialogTitle>
-            <DialogDescription>
-              {isBulkGlEdit
-                ? t('invoices:dialogs.items.gl_dialog_desc_bulk', { count: selectedIds.size })
-                : t('invoices:dialogs.items.gl_dialog_desc_single', { name: glEditItem?.line_description || t('invoices:columns.item', 'Számlatétel') })
-              }
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-2 flex flex-col gap-4 w-full overflow-hidden">
-            <div className="bg-muted p-3 rounded-md border text-sm flex items-center justify-between w-full overflow-hidden gap-2">
-              <span className="font-medium text-muted-foreground whitespace-nowrap">{t('invoices:dialogs.items.gl_new_category')}</span>
-              <span className="font-bold text-foreground bg-background px-3 py-1.5 rounded border border-border shadow-sm truncate max-w-full">
-                {selectedNewGL === 'UNCLASSIFIED' ? <span className="text-muted-foreground italic">{t('invoices:dialogs.items.gl_unclassified_item')}</span> :
-                  (selectedNewGL && glAccounts.length > 0
-                  ? (() => {
-                      const gl = glAccounts.find(g => g.id === selectedNewGL);
-                      return gl ? `${gl.gl_number} ${gl.short_name}` : t('invoices:dialogs.items.gl_select_placeholder');
-                    })()
-                  : t('invoices:dialogs.items.gl_select_placeholder'))}
-              </span>
-            </div>
+      <Dialog 
+        open={glEditOpen} 
+        onOpenChange={(open) => { 
+          setGlEditOpen(open); 
+          if (!open) { 
+            setGlEditItem(null); 
+            setIsBulkGlEdit(false); 
+            setGlSearchQuery(''); 
+          } 
+        }}
+      >
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {(() => {
+            const isNegative = glEditItem 
+              ? ((glEditItem.net_amount ?? 0) < 0 || (glEditItem.gross_amount ?? 0) < 0)
+              : false;
 
-            <Command className="rounded-lg border shadow-sm w-full overflow-hidden h-[350px]" shouldFilter={false}>
-              <CommandInput 
-                placeholder={t('invoices:dialogs.items.gl_search_placeholder')} 
-                value={glSearchQuery}
-                onValueChange={setGlSearchQuery}
-                className="w-full"
-              />
-              <CommandList className="h-[300px] max-h-[300px] overflow-y-auto w-full overflow-x-hidden">
-                <CommandEmpty>{t('invoices:dialogs.items.gl_no_results')}</CommandEmpty>
-                <CommandGroup>
-                  <CommandItem
-                    key="unclassified"
-                    value="besorolatlan uncategorized eltavolitas nincs"
-                    onSelect={() => setSelectedNewGL('UNCLASSIFIED')}
-                    className="cursor-pointer py-2 w-full overflow-hidden flex items-center mb-1 text-muted-foreground bg-muted/30"
-                  >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4 shrink-0",
-                        selectedNewGL === 'UNCLASSIFIED' ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                    <span className={cn("truncate block w-full", selectedNewGL === 'UNCLASSIFIED' ? "font-bold text-foreground" : "font-medium")}>
-                      {t('invoices:dialogs.items.gl_unclassified_option')}
+            const currentClassification = (activePresetId && glEditItem?.gl_classifications?.[activePresetId])
+              ? glEditItem.gl_classifications[activePresetId]
+              : null;
+
+            const selectedGlAccount = selectedNewGL === 'UNCLASSIFIED'
+              ? null
+              : glAccounts.find(g => g.id === selectedNewGL);
+            
+            const currentItemGlNumber = selectedNewGL === 'UNCLASSIFIED' 
+              ? '' 
+              : (selectedGlAccount?.gl_number || currentClassification?.gl_number || '');
+
+            const currentPartnerGl = selectedPartnerGl || parentInvoice?.partner_gl_number || (isOutbound ? '311' : '4541');
+
+            // Calculate current sides based on editIsSwapped
+            const sides = computeLineItemDebitCreditSides({
+              item: glEditItem || { net_amount: 1, gross_amount: 1 },
+              isOutbound,
+              netGl: currentItemGlNumber,
+              partnerGl: currentPartnerGl,
+              isSwapped: editIsSwapped,
+            });
+
+            // Is the active side the item classification or the partner?
+            const activeSideIsItem = activeEditSide === 'T' ? sides.debitIsItem : sides.creditIsItem;
+
+            const initialItemGl = currentClassification?.gl_account_id || '';
+            const initialSwapped = Boolean(currentClassification?.tk_swapped);
+            const initialPartner = currentClassification?.partner_gl_number || parentInvoice?.partner_gl_number || (isOutbound ? '311' : '4541');
+
+            const hasChanged = isBulkGlEdit
+              ? Boolean(selectedNewGL || editIsSwapped || (selectedPartnerGl && selectedPartnerGl !== initialPartner))
+              : (selectedNewGL !== initialItemGl || editIsSwapped !== initialSwapped || selectedPartnerGl !== initialPartner);
+
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <ArrowLeftRight className="h-5 w-5 text-primary" />
+                    <span>
+                      {isBulkGlEdit 
+                        ? t('invoices:dialogs.items.gl_dialog_title_bulk', { count: selectedIds.size }) 
+                        : 'Főkönyvi kontírozás szerkesztése (Tartozik és Követel)'
+                      }
                     </span>
-                  </CommandItem>
-                  {glAccounts
-                    ?.filter(gl => !glSearchQuery || `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(glSearchQuery.toLowerCase()))
-                    .slice()
-                    .sort((a, b) => cleanGlNum(a.gl_number).localeCompare(cleanGlNum(b.gl_number)))
-                    .map(gl => {
-                      // Allow leaf nodes or 3+ digit synthetic/analytic accounts (e.g. 529, 5291)
-                      const clean = cleanGlNum(gl.gl_number);
-                      const isSelectable = clean.length >= 3 || !glAccounts.some(sub => cleanGlNum(sub.gl_number).startsWith(clean) && sub.id !== gl.id);
-                      if (!isSelectable) return null;
-                      
-                      return (
-                        <CommandItem
-                          key={gl.id}
-                          value={`${gl.gl_number} ${gl.short_name}`}
-                          onSelect={() => setSelectedNewGL(gl.id)}
-                          className="cursor-pointer py-2 w-full overflow-hidden flex items-center"
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4 text-primary shrink-0",
-                              selectedNewGL === gl.id ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          <span className={cn("truncate block w-full", selectedNewGL === gl.id ? "font-bold text-foreground" : "")}>
-                            {gl.gl_number} {gl.short_name}
+                  </DialogTitle>
+                  <DialogDescription asChild>
+                    <div className="space-y-1.5 pt-1 text-xs">
+                      <div className="font-medium text-foreground truncate">
+                        {isBulkGlEdit
+                          ? t('invoices:dialogs.items.gl_dialog_desc_bulk', { count: selectedIds.size })
+                          : (glEditItem?.line_description || 'Számlatétel')
+                        }
+                        {glEditItem?.net_amount != null && (
+                          <span className="ml-2 font-mono text-muted-foreground">
+                            (Nettó: {formatCurrency(glEditItem.net_amount, currency || 'HUF')})
                           </span>
-                        </CommandItem>
-                      );
-                  })}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setGlEditOpen(false)} disabled={isGlSubmitting}>{t('common:actions.cancel')}</Button>
-            <Button onClick={handleSaveGlOverride} disabled={!selectedNewGL || isGlSubmitting || (!isBulkGlEdit && glEditItem && selectedNewGL === (glEditItem.gl_classifications?.[activePresetId || '']?.gl_account_id || 'UNCLASSIFIED'))}>
-              {isGlSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              {t('common:actions.save')}
-            </Button>
-          </DialogFooter>
+                        )}
+                      </div>
+                      {isNegative && (
+                        <div className="p-2 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs flex items-center gap-2">
+                          <span className="font-bold shrink-0 px-1.5 py-0.5 rounded bg-amber-500/20 text-[10px]">MÍNUSZOS TÉTEL</span>
+                          <span>
+                            A magyar számviteli szabályok szerint jóváíró/mínuszos tételnél a partner (454/311) automatikusan a Tartozik oldalra, és a költség/bevétel csökkenés a Követel oldalra kerül.
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="py-2 flex flex-col gap-4 w-full">
+                  {/* Two Cards: Tartozik (T) and Követel (K) with Swap Button */}
+                  <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2.5 p-3 bg-muted/40 rounded-xl border border-border/60">
+                    {/* Tartozik (T) Card */}
+                    <div
+                      onClick={() => setActiveEditSide('T')}
+                      className={cn(
+                        "cursor-pointer rounded-lg p-3 transition-all border flex flex-col gap-1.5 select-none",
+                        activeEditSide === 'T'
+                          ? "bg-primary/10 border-primary ring-2 ring-primary/20 shadow-sm"
+                          : "bg-background border-border hover:border-primary/50 hover:bg-background/80"
+                      )}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-primary flex items-center gap-1.5">
+                          <span className="px-1.5 py-0.5 rounded bg-primary text-primary-foreground font-mono text-[10px] font-black">T</span>
+                          Tartozik oldal
+                        </span>
+                        {activeEditSide === 'T' ? (
+                          <Badge variant="outline" className="text-[10px] bg-primary/20 border-primary/30 text-primary py-0 px-1.5">
+                            Kijelölve
+                          </Badge>
+                        ) : null}
+                      </div>
+
+                      <div className="font-mono font-bold text-lg text-foreground tracking-tight truncate">
+                        {sides.debitGl || '-'}
+                      </div>
+
+                      <div className="text-[11px] text-muted-foreground truncate">
+                        <span className="font-medium text-foreground/80">{sides.debitRole}</span>
+                        {sides.debitIsItem ? (
+                          <span className="ml-1 opacity-70">
+                            {selectedGlAccount?.short_name ? `• ${selectedGlAccount.short_name}` : ''}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    {/* Swap T ↔ K Button */}
+                    <div className="flex flex-col items-center justify-center px-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setEditIsSwapped(prev => !prev)}
+                        title="Tartozik és Követel oldal megcserélése (T ↔ K)"
+                        className={cn(
+                          "h-10 w-10 rounded-full border shadow-sm transition-all",
+                          editIsSwapped
+                            ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
+                            : "bg-background hover:bg-primary/10 hover:text-primary hover:border-primary/40"
+                        )}
+                      >
+                        <ArrowLeftRight className="h-4 w-4" />
+                      </Button>
+                      <span className="text-[10px] font-semibold text-muted-foreground mt-1 font-mono">
+                        T ↔ K
+                      </span>
+                    </div>
+
+                    {/* Követel (K) Card */}
+                    <div
+                      onClick={() => setActiveEditSide('K')}
+                      className={cn(
+                        "cursor-pointer rounded-lg p-3 transition-all border flex flex-col gap-1.5 select-none",
+                        activeEditSide === 'K'
+                          ? "bg-primary/10 border-primary ring-2 ring-primary/20 shadow-sm"
+                          : "bg-background border-border hover:border-primary/50 hover:bg-background/80"
+                      )}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-primary flex items-center gap-1.5">
+                          <span className="px-1.5 py-0.5 rounded bg-primary text-primary-foreground font-mono text-[10px] font-black">K</span>
+                          Követel oldal
+                        </span>
+                        {activeEditSide === 'K' ? (
+                          <Badge variant="outline" className="text-[10px] bg-primary/20 border-primary/30 text-primary py-0 px-1.5">
+                            Kijelölve
+                          </Badge>
+                        ) : null}
+                      </div>
+
+                      <div className="font-mono font-bold text-lg text-foreground tracking-tight truncate">
+                        {sides.creditGl || '-'}
+                      </div>
+
+                      <div className="text-[11px] text-muted-foreground truncate">
+                        <span className="font-medium text-foreground/80">{sides.creditRole}</span>
+                        {sides.creditIsItem ? (
+                          <span className="ml-1 opacity-70">
+                            {selectedGlAccount?.short_name ? `• ${selectedGlAccount.short_name}` : ''}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section Label for Selected Side */}
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-xs font-semibold text-foreground flex items-center gap-2">
+                      <span className="px-1.5 py-0.5 rounded bg-muted text-foreground font-mono font-bold">
+                        {activeEditSide === 'T' ? 'T' : 'K'}
+                      </span>
+                      <span>
+                        {activeSideIsItem 
+                          ? `Tétel főkönyvi számlájának választása (${activeEditSide === 'T' ? 'Tartozik' : 'Követel'} oldal):` 
+                          : `Partner főkönyvi számlájának megadása (${activeEditSide === 'T' ? 'Tartozik' : 'Követel'} oldal):`
+                        }
+                      </span>
+                    </span>
+                    <span className="text-xs text-muted-foreground italic">
+                      {activeSideIsItem ? 'Költség / ráfordítás / árbevétel' : 'Partner számla (szállító / vevő)'}
+                    </span>
+                  </div>
+
+                  {/* If active side is ITEM CLASSIFICATION */}
+                  {activeSideIsItem ? (
+                    <div className="flex flex-col gap-2">
+                      <Command className="rounded-lg border shadow-sm w-full overflow-hidden h-[320px]" shouldFilter={false}>
+                        <CommandInput 
+                          placeholder={t('invoices:dialogs.items.gl_search_placeholder')} 
+                          value={glSearchQuery}
+                          onValueChange={setGlSearchQuery}
+                          className="w-full"
+                        />
+                        <CommandList className="h-[270px] max-h-[270px] overflow-y-auto w-full overflow-x-hidden">
+                          <CommandEmpty>{t('invoices:dialogs.items.gl_no_results')}</CommandEmpty>
+                          <CommandGroup>
+                            <CommandItem
+                              key="unclassified"
+                              value="besorolatlan uncategorized eltavolitas nincs"
+                              onSelect={() => setSelectedNewGL('UNCLASSIFIED')}
+                              className="cursor-pointer py-2 w-full overflow-hidden flex items-center mb-1 text-muted-foreground bg-muted/30"
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4 shrink-0",
+                                  selectedNewGL === 'UNCLASSIFIED' ? "opacity-100 text-primary" : "opacity-0"
+                                )}
+                              />
+                              <span className={cn("truncate block w-full", selectedNewGL === 'UNCLASSIFIED' ? "font-bold text-foreground" : "font-medium")}>
+                                {t('invoices:dialogs.items.gl_unclassified_option')}
+                              </span>
+                            </CommandItem>
+                            {glAccounts
+                              ?.filter(gl => !glSearchQuery || `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(glSearchQuery.toLowerCase()))
+                              .slice()
+                              .sort((a, b) => cleanGlNum(a.gl_number).localeCompare(cleanGlNum(b.gl_number)))
+                              .map(gl => {
+                                // Allow leaf nodes or 3+ digit synthetic/analytic accounts (e.g. 529, 5291)
+                                const clean = cleanGlNum(gl.gl_number);
+                                const isSelectable = clean.length >= 3 || !glAccounts.some(sub => cleanGlNum(sub.gl_number).startsWith(clean) && sub.id !== gl.id);
+                                if (!isSelectable) return null;
+                                
+                                return (
+                                  <CommandItem
+                                    key={gl.id}
+                                    value={`${gl.gl_number} ${gl.short_name}`}
+                                    onSelect={() => setSelectedNewGL(gl.id)}
+                                    className="cursor-pointer py-2 w-full overflow-hidden flex items-center"
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4 text-primary shrink-0",
+                                        selectedNewGL === gl.id ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    <span className={cn("truncate block w-full", selectedNewGL === gl.id ? "font-bold text-foreground" : "")}>
+                                      <span className="font-mono font-semibold">{gl.gl_number}</span> {gl.short_name}
+                                    </span>
+                                  </CommandItem>
+                                );
+                            })}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </div>
+                  ) : (
+                    /* If active side is PARTNER GL */
+                    <div className="flex flex-col gap-3 p-3 bg-muted/20 rounded-lg border">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">
+                          {isOutbound ? 'Vevőkövetelés főkönyvi száma:' : 'Szállítói kötelezettség főkönyvi száma:'}
+                        </Label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {isOutbound ? (
+                            <>
+                              <Button
+                                type="button"
+                                variant={selectedPartnerGl === '311' ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => { setSelectedPartnerGl('311'); setCustomPartnerGlInput('311'); }}
+                                className="justify-start font-mono text-xs"
+                              >
+                                311 • Belföldi vevők (HUF)
+                              </Button>
+                              <Button
+                                type="button"
+                                variant={selectedPartnerGl === '312' ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => { setSelectedPartnerGl('312'); setCustomPartnerGlInput('312'); }}
+                                className="justify-start font-mono text-xs"
+                              >
+                                312 • Külföldi vevők (Deviza)
+                              </Button>
+                              <Button
+                                type="button"
+                                variant={selectedPartnerGl === '315' ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => { setSelectedPartnerGl('315'); setCustomPartnerGlInput('315'); }}
+                                className="justify-start font-mono text-xs"
+                              >
+                                315 • Kapcsolt vállalkozás
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button
+                                type="button"
+                                variant={selectedPartnerGl === '4541' ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => { setSelectedPartnerGl('4541'); setCustomPartnerGlInput('4541'); }}
+                                className="justify-start font-mono text-xs"
+                              >
+                                4541 • Belföldi szállítók (HUF)
+                              </Button>
+                              <Button
+                                type="button"
+                                variant={selectedPartnerGl === '4542' ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => { setSelectedPartnerGl('4542'); setCustomPartnerGlInput('4542'); }}
+                                className="justify-start font-mono text-xs"
+                              >
+                                4542 • Külföldi szállítók (Deviza)
+                              </Button>
+                              <Button
+                                type="button"
+                                variant={selectedPartnerGl === '4543' ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => { setSelectedPartnerGl('4543'); setCustomPartnerGlInput('4543'); }}
+                                className="justify-start font-mono text-xs"
+                              >
+                                4543 • Belföldi szolgáltatók
+                              </Button>
+                              <Button
+                                type="button"
+                                variant={selectedPartnerGl === '454' ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => { setSelectedPartnerGl('454'); setCustomPartnerGlInput('454'); }}
+                                className="justify-start font-mono text-xs"
+                              >
+                                454 • Szállítók (összevont)
+                              </Button>
+                              <Button
+                                type="button"
+                                variant={selectedPartnerGl === '479' ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => { setSelectedPartnerGl('479'); setCustomPartnerGlInput('479'); }}
+                                className="justify-start font-mono text-xs"
+                              >
+                                479 • Egyéb kötelezettségek
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5 pt-1">
+                        <Label className="text-xs text-muted-foreground">Egyedi partner főkönyvi szám:</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder={isOutbound ? '311...' : '454...'}
+                            value={customPartnerGlInput}
+                            onChange={(e) => {
+                              const val = e.target.value.trim();
+                              setCustomPartnerGlInput(val);
+                              if (val) setSelectedPartnerGl(val);
+                            }}
+                            className="h-8 font-mono text-xs max-w-[200px]"
+                          />
+                          <span className="text-xs text-muted-foreground self-center">
+                            Aktív partner főkönyv: <strong className="font-mono text-foreground">{selectedPartnerGl || '-'}</strong>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <DialogFooter className="gap-2 sm:gap-0">
+                  <Button variant="outline" onClick={() => setGlEditOpen(false)} disabled={isGlSubmitting}>
+                    {t('common:actions.cancel')}
+                  </Button>
+                  <Button 
+                    onClick={handleSaveGlOverride} 
+                    disabled={isGlSubmitting || !hasChanged}
+                  >
+                    {isGlSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                    {t('common:actions.save')}
+                  </Button>
+                </DialogFooter>
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 

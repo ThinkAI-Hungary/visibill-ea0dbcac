@@ -129,10 +129,13 @@ function NavInvoiceRowComponent({
     navIdToCourierReportsMap,
     setSuggestedLinkDialogOpen,
     setSelectedSuggestedLinkPair,
+    lastViewedInvoiceId,
+    setLastViewedInvoiceId,
   } = useInvoiceContext();
 
   const navKey = useMemo(() => normalizeInvoiceNumber(invoice.invoice_number), [invoice.invoice_number]);
   const submittedMatches = useMemo(() => navToSubmittedMap.get(navKey) || [], [navToSubmittedMap, navKey]);
+  const isLastViewed = lastViewedInvoiceId === invoice.id || (submittedMatches.length > 0 && submittedMatches.some(s => s.id === lastViewedInvoiceId));
   const effectiveCategoryId = invoice.category_id || submittedMatches[0]?.category_id || null;
   const effectiveProjectId = invoice.project_id || submittedMatches[0]?.project_id || null;
 
@@ -205,11 +208,12 @@ function NavInvoiceRowComponent({
         className={cn(
           'group cursor-pointer transition-colors',
           isSelected && 'bg-primary/10',
-          !isSelected && isPaid && 'bg-[var(--row-matched-bg)]',
-          !isSelected && isPartiallyPaid && 'bg-blue-500/[0.06]',
-          !isSelected && isSuggested && 'bg-[var(--row-suggested-bg)]',
-          !isSelected && !isPaid && !isPartiallyPaid && !isSuggested && !isNettingCandidate && 'bg-[var(--row-unmatched-bg)]',
-          !isSelected && isNettingCandidate && !isPaid && !isPartiallyPaid && !isSuggested && 'bg-orange-500/[0.06]',
+          isLastViewed && 'ring-2 ring-primary/80 bg-primary/15 dark:bg-primary/25 border-l-4 border-l-primary font-medium',
+          !isSelected && !isLastViewed && isPaid && 'bg-[var(--row-matched-bg)]',
+          !isSelected && !isLastViewed && isPartiallyPaid && 'bg-blue-500/[0.06]',
+          !isSelected && !isLastViewed && isSuggested && 'bg-[var(--row-suggested-bg)]',
+          !isSelected && !isLastViewed && !isPaid && !isPartiallyPaid && !isSuggested && !isNettingCandidate && 'bg-[var(--row-unmatched-bg)]',
+          !isSelected && !isLastViewed && isNettingCandidate && !isPaid && !isPartiallyPaid && !isSuggested && 'bg-orange-500/[0.06]',
           isExpanded && 'border-b-0'
         )}
         onClick={(e) => onRowClick(invoice.id, e)}
@@ -592,6 +596,7 @@ function NavInvoiceRowComponent({
                       onClick={() => {
                         setSelectedInvoice(sub as any);
                         setImageDialogOpen(true);
+                        setLastViewedInvoiceId(invoice.id);
                       }}
                     >
                       <FileText className="h-4 w-4" />
@@ -694,6 +699,7 @@ function NavInvoiceRowComponent({
           onViewInvoice={(inv) => {
             setSelectedInvoice(inv as any);
             setImageDialogOpen(true);
+            setLastViewedInvoiceId(invoice.id);
           }}
           excludeFromAccounting={!!invoice.exclude_from_accounting}
           onToggleExclude={() => onToggleExclude(invoice.id, !!invoice.exclude_from_accounting)}

@@ -9,6 +9,7 @@ import {
 import { TAccountLedger } from '@/components/accounty/invoices/TAccountLedger';
 import { generateRLB60Content, generateNovitaxCsv, generateKulcsSoftXml } from '@/lib/bookkeepingExports';
 import type { CompanyInvoice } from '@/hooks/accounty/useAccountyClients';
+import { computeLineItemDebitCreditSides } from '@/lib/invoiceGlSides';
 
 // Mock TanStack Query & Supabase
 vi.mock('@tanstack/react-query', () => ({
@@ -193,4 +194,88 @@ describe('Brief Requirement: Customer Account Selection & Fixed VAT Account', ()
       expect(xml).toContain('<AfaFokonyv>467</AfaFokonyv>');
     });
   });
+
+  describe('Invoice Line Item Tartozik / Követel Sides (computeLineItemDebitCreditSides)', () => {
+    it('standard positive INBOUND expense: Tartozik = 511, Követel = 4541', () => {
+      const res = computeLineItemDebitCreditSides({
+        item: { net_amount: 50000, gross_amount: 63500 },
+        isOutbound: false,
+        netGl: '511',
+        partnerGl: '4541',
+        isSwapped: false,
+      });
+
+      expect(res.isNegative).toBe(false);
+      expect(res.debitGl).toBe('511');
+      expect(res.creditGl).toBe('4541');
+      expect(res.debitIsItem).toBe(true);
+      expect(res.creditIsItem).toBe(false);
+    });
+
+    it('negative INBOUND expense (credit note / storno): Tartozik = 4541, Követel = 511 (Hungarian standard)', () => {
+      const res = computeLineItemDebitCreditSides({
+        item: { net_amount: -1968.5, gross_amount: -2500 },
+        isOutbound: false,
+        netGl: '511',
+        partnerGl: '4541',
+        isSwapped: false,
+      });
+
+      // Requirement: "a mínuszos tételek a számlatételeknél, ott a tartozik lesz a 454"
+      expect(res.isNegative).toBe(true);
+      expect(res.debitGl).toBe('4541');
+      expect(res.creditGl).toBe('511');
+      expect(res.debitIsItem).toBe(false);
+      expect(res.creditIsItem).toBe(true);
+    });
+
+    it('manual T ↔ K swap inverts the sides', () => {
+      const res = computeLineItemDebitCreditSides({
+        item: { net_amount: -1968.5, gross_amount: -2500 },
+        isOutbound: false,
+        netGl: '511',
+        partnerGl: '4541',
+        isSwapped: true, // Swapped by accountant
+      });
+
+      expect(res.isNegative).toBe(true);
+      expect(res.debitGl).toBe('511');
+      expect(res.creditGl).toBe('4541');
+      expect(res.debitIsItem).toBe(true);
+      expect(res.creditIsItem).toBe(false);
+    });
+
+    it('standard positive OUTBOUND revenue: Tartozik = 311, Követel = 911', () => {
+      const res = computeLineItemDebitCreditSides({
+        item: { net_amount: 100000, gross_amount: 127000 },
+        isOutbound: true,
+        netGl: '911',
+        partnerGl: '311',
+        isSwapped: false,
+      });
+
+      expect(res.isNegative).toBe(false);
+      expect(res.debitGl).toBe('311');
+      expect(res.creditGl).toBe('911');
+      expect(res.debitIsItem).toBe(false);
+      expect(res.creditIsItem).toBe(true);
+    });
+
+    it('negative OUTBOUND revenue (credit note / storno): Tartozik = 911, Követel = 311', () => {
+      const res = computeLineItemDebitCreditSides({
+        item: { net_amount: -30000, gross_amount: -38100 },
+        isOutbound: true,
+        netGl: '911',
+        partnerGl: '311',
+        isSwapped: false,
+      });
+
+      expect(res.isNegative).toBe(true);
+      expect(res.debitGl).toBe('911');
+      expect(res.creditGl).toBe('311');
+      expect(res.debitIsItem).toBe(true);
+      expect(res.creditIsItem).toBe(false);
+    });
+  });
 });
+

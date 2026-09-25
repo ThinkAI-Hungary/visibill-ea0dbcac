@@ -2356,7 +2356,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                     .slice()
                     .sort((a,b) => cleanIdVal(a.gl_number).localeCompare(cleanIdVal(b.gl_number)))
                     .map(gl => {
-                      const isLeaf = !dbData.some(sub => cleanIdVal(sub.gl_number).startsWith(cleanIdVal(gl.gl_number)) && sub.gl_account_id !== gl.gl_account_id);
+                      const clean = cleanIdVal(gl.gl_number);
+                      const isLeaf = clean.length >= 3 || !dbData.some(sub => cleanIdVal(sub.gl_number).startsWith(clean) && sub.gl_account_id !== gl.gl_account_id);
                       if (!isLeaf) return null;
                       
                       return (
