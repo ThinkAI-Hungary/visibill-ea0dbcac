@@ -41,8 +41,9 @@ test_*.sh
 docs/architecture/ARCHITECT_LEARNING_ROADMAP.md
 docs/learning/
 
-# Scratch scripts
+# Scratch scripts & temporary files
 scratch/
+scratch_*
 
 # Graphify AST cache & backups
 graphify-out/cache/ast/
