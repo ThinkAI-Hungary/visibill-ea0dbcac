@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useDeferredValue } from "react";
 import { ChangelogHeader } from "@/components/changelog/ChangelogHeader";
 import { ChangelogTimeline } from "@/components/changelog/ChangelogTimeline";
 import { ChangelogTimelineSkeleton } from "@/components/changelog/ChangelogTimelineSkeleton";
@@ -16,13 +16,13 @@ export default function ChangelogPage() {
       : "all";
 
   const [searchQuery, setSearchQuery] = useState("");
+  const deferredSearchQuery = useDeferredValue(searchQuery);
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
   const [selectedScope, setSelectedScope] = useState<ChangelogAppScope | "all">(initialScope);
 
-  const { data: entries = [], isLoading } = useChangelog({
+  const { data: rawEntries = [], isLoading } = useChangelog({
     scope: selectedScope,
     category: selectedCategory,
-    searchQuery,
   });
 
   const { markAsRead } = useHasUnreadChangelog();
@@ -32,7 +32,22 @@ export default function ChangelogPage() {
     markAsRead();
   }, [markAsRead]);
 
-
+  // Client-side search filtering (0ms latency, zero skeleton flicker)
+  const filteredEntries = useMemo(() => {
+    if (!deferredSearchQuery.trim()) return rawEntries;
+    const q = deferredSearchQuery.trim().toLowerCase();
+    return rawEntries.filter((entry) => {
+      const matchTitle = entry.title.toLowerCase().includes(q);
+      const matchSummary = entry.summary.toLowerCase().includes(q);
+      const matchVersion = entry.version.toLowerCase().includes(q);
+      const matchItems = entry.items.some(
+        (item) =>
+          (item.title && item.title.toLowerCase().includes(q)) ||
+          (item.description && item.description.toLowerCase().includes(q))
+      );
+      return matchTitle || matchSummary || matchVersion || matchItems;
+    });
+  }, [rawEntries, deferredSearchQuery]);
 
   // Sync state with URL params
   const handleSelectCategory = (cat: string) => {
@@ -67,15 +82,15 @@ export default function ChangelogPage() {
           onSelectCategory={handleSelectCategory}
           selectedScope={selectedScope}
           onSelectScope={handleSelectScope}
-          totalCount={entries.length}
+          totalCount={filteredEntries.length}
         />
       </div>
 
       <div className="flex-1 min-h-0 h-full flex flex-col overflow-hidden">
-        {isLoading ? (
+        {isLoading && rawEntries.length === 0 ? (
           <ChangelogTimelineSkeleton />
         ) : (
-          <ChangelogTimeline entries={entries} />
+          <ChangelogTimeline entries={filteredEntries} />
         )}
       </div>
     </div>
