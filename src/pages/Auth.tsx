@@ -14,7 +14,7 @@ import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { reportAuthError } from '@/lib/errorReporter';
-import { useHasEaisybillAccess } from '@/hooks/useHasEaisybillAccess';
+import { useHasEaisybillAccess, useHasAccountyAccess } from '@/hooks/useHasEaisybillAccess';
 
 /* Tape showcase animations */
 const carouselStyle = document.createElement('style');
@@ -624,6 +624,7 @@ const Auth = () => {
   selectedDimsRef.current = selectedDims; // keep in sync on every render
 
   const { hasAccess: hasEaisybillAccess } = useHasEaisybillAccess();
+  const { hasAccess: hasAccountyAccess } = useHasAccountyAccess();
 
   useEffect(() => {
     // Don't auto-navigate after signup — user should see the email confirmation screen
@@ -647,12 +648,16 @@ const Auth = () => {
       return;
     }
 
-    if (user && !isRecoverySession && hasEaisybillAccess !== undefined) {
-      // Respect the eaisybooks toggle and language route
-      const target = resolveAuthTarget(returnTo, isEaisybooks, isHr);
+    if (user && !isRecoverySession && hasEaisybillAccess !== undefined && hasAccountyAccess !== undefined) {
+      // If user came with eaisybooks mode, only send them to eaisybooks if they actually have accounty access
+      const effectiveEaisybooks = isEaisybooks && hasAccountyAccess === true;
+      const cleanReturnTo = (!effectiveEaisybooks && returnTo && (returnTo.includes('eaisybooks') || returnTo.includes('accounty')))
+        ? (isHr ? '/hr' : '/')
+        : returnTo;
+      const target = resolveAuthTarget(cleanReturnTo, effectiveEaisybooks, isHr);
       navigate(target);
     }
-  }, [user, navigate, signUpSuccess, isUnverified, isEaisybooks, returnTo, hasEaisybillAccess, authSearchParams, isRecoverySession, isHr]);
+  }, [user, navigate, signUpSuccess, isUnverified, isEaisybooks, returnTo, hasEaisybillAccess, hasAccountyAccess, authSearchParams, isRecoverySession, isHr]);
 
   // Non-passive wheel listener — adds to scroll velocity for smooth momentum
   useEffect(() => {
@@ -919,9 +924,28 @@ const Auth = () => {
 
     if (!error) {
       const { data: { user: sessionUser } } = await supabase.auth.getUser();
-      // If user logged in with the eaisybooks toggle, send them to /accounty.
+      // If user logged in with the eaisybooks toggle, check if they actually have accounty access.
       // Otherwise navigate to '/' or '/hr' (or returnTo) — RootRedirect handles the rest.
-      const target = resolveAuthTarget(returnTo, isEaisybooks, isHr);
+      let effectiveEaisybooks = isEaisybooks;
+      if (isEaisybooks && sessionUser) {
+        const [profileRes, assignRes] = await Promise.all([
+          supabase.from('profiles').select('eaisybooks_access, is_support_admin, role').eq('user_id', sessionUser.id).maybeSingle(),
+          supabase.from('accounty_assignments').select('id', { count: 'exact', head: true }).eq('accountant_user_id', sessionUser.id),
+        ]);
+        const hasBooks = profileRes.data?.eaisybooks_access === true ||
+          profileRes.data?.is_support_admin === true ||
+          profileRes.data?.role === 'thinkai' ||
+          profileRes.data?.role === 'management' ||
+          (assignRes.count ?? 0) > 0;
+
+        if (!hasBooks) {
+          effectiveEaisybooks = false;
+        }
+      }
+      const cleanReturnTo = (!effectiveEaisybooks && returnTo && (returnTo.includes('eaisybooks') || returnTo.includes('accounty')))
+        ? (isHr ? '/hr' : '/')
+        : returnTo;
+      const target = resolveAuthTarget(cleanReturnTo, effectiveEaisybooks, isHr);
       navigate(target);
     }
 

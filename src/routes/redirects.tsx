@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useDateRange } from "@/contexts/DateRangeContext";
-import { useHasEaisybillAccess } from "@/hooks/useHasEaisybillAccess";
+import { useHasEaisybillAccess, useHasAccountyAccess } from "@/hooks/useHasEaisybillAccess";
 import { supabase } from "@/integrations/supabase/client";
 import { generateScopedPath } from "@/lib/navigation";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -41,6 +41,7 @@ export function RootRedirect() {
 
   // Check if they have eaisybill access
   const { hasAccess: hasEaisybillAccess, isLoading: accessLoading } = useHasEaisybillAccess();
+  const { hasAccess: hasAccountyAccess, isLoading: accountyLoading } = useHasAccountyAccess();
 
   // Check for active impersonation (support_admin) before management redirect
   // NOTE: Hook must be before any conditional returns (Rules of Hooks)
@@ -59,7 +60,7 @@ export function RootRedirect() {
   });
 
   // True while we are still initializing
-  const isInitializing = roleLoading || accessLoading || isInitialLoading;
+  const isInitializing = roleLoading || accessLoading || accountyLoading || isInitialLoading;
 
   useEffect(() => {
     if (isInitializing || !selectedCompany) return;
@@ -80,7 +81,7 @@ export function RootRedirect() {
     }
   }, [isInitializing, selectedCompany, companies, setSelectedCompany]);
 
-  if (roleLoading || accessLoading) return <LoadingSpinner message="" />;
+  if (roleLoading || accessLoading || accountyLoading) return <LoadingSpinner message="" />;
 
   // ThinkAI / management role → management dashboard (but NOT when impersonating)
   if (profileRole === 'management' || profileRole === 'thinkai') {
@@ -98,14 +99,17 @@ export function RootRedirect() {
   // - eaisybooks users → /accounty (they don't need eaisybill onboarding)
   // - eaisybill users (or unknown) → show eaisybill onboarding wizard
   if (!isInitialLoading && companies.length === 0) {
-    if (registrationSource === 'eaisybooks') {
+    if (registrationSource === 'eaisybooks' && hasAccountyAccess) {
       return <Navigate to="/eaisybooks" replace />;
     }
     return <Suspense fallback={<LoadingSpinner message="Betöltés..." />}><Index /></Suspense>;
   }
 
   if (hasEaisybillAccess === false) {
-    return <Navigate to="/eaisybooks" replace />;
+    if (hasAccountyAccess) {
+      return <Navigate to="/eaisybooks" replace />;
+    }
+    return <Suspense fallback={<LoadingSpinner message="Betöltés..." />}><Index /></Suspense>;
   }
 
   // Has companies but selectedCompany not yet resolved — wait

@@ -23,6 +23,7 @@ export interface VatCode {
 
 export interface FormRow {
   row_number: string;
+  country_code?: string;
   section: string;
   page: string;
   label: string;
@@ -121,6 +122,17 @@ export const fmtEft = (v: number | string | null | undefined): string => {
   const n = typeof v === 'number' ? v : Number(String(v).replace(/\s+/g, '').replace(',', '.'));
   if (isNaN(n)) return '—';
   return `${formatThousands(n)} eFt`;
+};
+
+export const fmtEur = (v: number | string | null | undefined): string => {
+  if (v === null || v === undefined || v === '') return '—';
+  const n = typeof v === 'number' ? v : Number(String(v).replace(/\s+/g, '').replace(',', '.'));
+  if (isNaN(n)) return '—';
+  return `${formatThousands(n, { decimals: 2 })} €`;
+};
+
+export const fmtVatAmount = (v: number | string | null | undefined, isCroatia: boolean): string => {
+  return isCroatia ? fmtEur(v) : fmtEft(v);
 };
 
 export interface VatProRataSettings {

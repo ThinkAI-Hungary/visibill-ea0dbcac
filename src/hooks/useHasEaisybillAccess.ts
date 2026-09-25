@@ -58,13 +58,21 @@ export function useHasAccountyAccess() {
   const { data: hasAccess, isPending } = useQuery({
     queryKey: ['has-accounty-access', user?.id],
     queryFn: async () => {
-      // First check if user profile has global eaisybooks_access = true
+      // First check if user profile has global eaisybooks_access = true, or platform management/support_admin role
       const { data: profile } = await supabase
         .from('profiles')
-        .select('eaisybooks_access')
+        .select('eaisybooks_access, role, is_support_admin')
         .eq('user_id', user!.id)
-        .single();
-      if (profile && profile.eaisybooks_access === true) return true;
+        .maybeSingle();
+      if (
+        profile &&
+        (profile.eaisybooks_access === true ||
+          profile.is_support_admin === true ||
+          profile.role === 'thinkai' ||
+          profile.role === 'management')
+      ) {
+        return true;
+      }
 
       // Standard check: user has an accounty_assignment
       const { count } = await supabase

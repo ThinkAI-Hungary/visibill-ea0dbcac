@@ -62,13 +62,15 @@ export function VatReturnContainer() {
     );
   }
 
+  const isCroatia = selectedCompany?.country_code === 'HR';
+
   return (
     <div className="container max-w-7xl py-6 space-y-6 print:py-0 page-animate">
       <PageHeader
         companyName={selectedCompany?.name}
-        breadcrumb={t('accounting:vat_return.breadcrumb', 'ÁFA Bevallás (2665)')}
-        title={t('accounting:vat_return.title', 'ÁFA Bevallás & Gyűjtőkódos Analitika')}
-        description={t('accounting:vat_return.description', '2665-ös nyomtatvány — ÁFA bevallás generálás és NAV gyűjtőkódos analitikus kimutatások')}
+        breadcrumb={isCroatia ? t('accounting:vat_return.breadcrumb_hr', 'Prijava PDV-a (Obrazac PDV)') : t('accounting:vat_return.breadcrumb', 'ÁFA Bevallás (2665)')}
+        title={isCroatia ? t('accounting:vat_return.title_hr', 'Prijava PDV-a i Analitika') : t('accounting:vat_return.title', 'ÁFA Bevallás & Gyűjtőkódos Analitika')}
+        description={isCroatia ? t('accounting:vat_return.description_hr', 'Obrazac PDV — Generiranje prijave PDV-a i porezni izvještaji') : t('accounting:vat_return.description', '2665-ös nyomtatvány — ÁFA bevallás generálás és NAV gyűjtőkódos analitikus kimutatások')}
       />
 
       <Tabs defaultValue="return" className="space-y-4">

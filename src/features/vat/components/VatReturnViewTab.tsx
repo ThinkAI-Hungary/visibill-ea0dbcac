@@ -43,8 +43,10 @@ import { MONTHS } from '../types';
 import { useVatReturnData } from '../hooks/useVatReturnData';
 import { useSteelProductsData } from '../hooks/useSteelProductsData';
 import { useToast } from '@/hooks/use-toast';
+import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
 import { VatCalculatorView } from './VatCalculatorView';
 import { VatNav65Replica } from './VatNav65Replica';
+import { VatObrazacPdvReplica } from './VatObrazacPdvReplica';
 import { VatSteelProductsSection } from './VatSteelProductsSection';
 
 export function VatReturnViewTab() {
@@ -72,6 +74,8 @@ export function VatReturnViewTab() {
     getVal,
   } = vatData;
 
+  const { isCroatia } = useCompanyJurisdiction(selectedCompany);
+
   const [showSteelWarningModal, setShowSteelWarningModal] = React.useState(false);
   const { incompleteSteelItems, hasIncompleteSteelItems } = useSteelProductsData(
     selectedCompany,
@@ -82,6 +86,13 @@ export function VatReturnViewTab() {
 
   const executeXmlDownload = () => {
     if (!vatReturn || !selectedCompany) return;
+    if (isCroatia) {
+      toast({
+        title: 'ePorezna / Obrazac PDV',
+        description: 'A horvát adóhatóság (Porezna uprava) felé a bevallás PDF nyomtatással vagy az ePorezna rendszeren keresztül nyújtható be.',
+      });
+      return;
+    }
     const taxNum = (selectedCompany as any).tax_number || '';
     if (!taxNum) {
       toast({
@@ -462,33 +473,45 @@ export function VatReturnViewTab() {
             )}
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
-            {t('accounting:vat_return.subtabs.replica', 'NAV 65 Nyomtatvány replika')}
+            {isCroatia ? 'Obrazac PDV replika' : t('accounting:vat_return.subtabs.replica', 'NAV 65 Nyomtatvány replika')}
           </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('steel')}
-            className={cn(
-              'px-4 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5',
-              viewMode === 'steel'
-                ? 'bg-background shadow-sm text-foreground font-bold'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <Scale className="w-3.5 h-3.5" />
-            6/B Acélipari kimutatás
-          </button>
+          {!isCroatia && (
+            <button
+              type="button"
+              onClick={() => setViewMode('steel')}
+              className={cn(
+                'px-4 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5',
+                viewMode === 'steel'
+                  ? 'bg-background shadow-sm text-foreground font-bold'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <Scale className="w-3.5 h-3.5" />
+              6/B Acélipari kimutatás
+            </button>
+          )}
         </div>
       )}
 
       {viewMode === 'nav65' ? (
-        <VatNav65Replica
-          selectedCompany={selectedCompany}
-          year={year}
-          month={month}
-          frequency={frequency}
-          getVal={getVal}
-        />
-      ) : viewMode === 'steel' ? (
+        isCroatia ? (
+          <VatObrazacPdvReplica
+            selectedCompany={selectedCompany}
+            year={year}
+            month={month}
+            frequency={frequency}
+            getVal={getVal}
+          />
+        ) : (
+          <VatNav65Replica
+            selectedCompany={selectedCompany}
+            year={year}
+            month={month}
+            frequency={frequency}
+            getVal={getVal}
+          />
+        )
+      ) : viewMode === 'steel' && !isCroatia ? (
         <VatSteelProductsSection
           selectedCompany={selectedCompany}
           year={year}

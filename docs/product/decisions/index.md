@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-25  
-> **Összesen:** 110 döntés | ✅ Decided: 106 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 111 döntés | ✅ Decided: 107 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -123,6 +123,7 @@
 | P-085 | eaisyBooks Portfólió Oldalsáv 4-Kategóriás Munkafolyamat-Alapú Csoportosítása UX | ✅ Decided | [P-085](./P-085-eaisybooks-portfolio-navigation-grouping-ux.md) |
 | P-097 | NAV 2665 Nyomtatvány Replika, 6/B Acélipari Analitika és ÁNYK Validáció UX | ✅ Decided | [P-097](./P-097-nav-2665-replica-steel-analytics-and-anyk-validation-ux.md) |
 | P-110 | Magánszemély Vevőnevek Megjelenítése és ÁFA Analitika UX | ✅ Decided | [P-110](./P-110-private-customer-name-display-and-vat-analytics-ux.md) |
+| P-116 | Horvát ÁFA Bevallás (Obrazac PDV), Hivatalos Nyomtatvány Replika és HR Áfakód Kezelés UX | ✅ Decided | [P-116](./P-116-croatian-vat-return-obrazac-pdv-and-codes-ux.md) |
 
 ## 🔍 Keresés
 
