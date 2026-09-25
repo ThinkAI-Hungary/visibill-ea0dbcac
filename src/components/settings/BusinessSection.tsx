@@ -17,6 +17,7 @@ import { formatAccountOnType, detectAccountFormat } from '@/lib/ibanUtils';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getJurisdictionRules } from '@/hooks/useCompanyJurisdiction';
+import { AccountingPolicySection } from './AccountingPolicySection';
 
 interface Company {
   id: string;
@@ -241,6 +242,13 @@ export function BusinessSection({
                 </div>
                 <Textarea id="company_description" value={companyDescription} onChange={e => setCompanyDescription(e.target.value)} placeholder="Mutasd be röviden a cég tevékenységét és üzletmenetét a pontosabb automatikus könyvelés érdekében..." rows={3} disabled={!isOwner} />
               </div>
+
+              {/* Számviteli politika feltöltési és szabálykezelési blokk */}
+              <AccountingPolicySection 
+                companyId={selectedCompany?.id} 
+                isOwner={isOwner} 
+              />
+
               <div className="flex items-center gap-4 pt-2">
                 {isOwner && (
                   <Button onClick={onSave} disabled={!companyName?.trim() || savingCompany}>

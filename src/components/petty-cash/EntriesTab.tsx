@@ -34,6 +34,7 @@ import { formatNumberLocale, formatDateLocale } from '@/lib/locale/formatters';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import SignatureDialog from './SignatureDialog';
 import { generateCashReceiptPdf } from '@/lib/cashReceiptPdf';
+import { useCompanyAccountingRule } from '@/hooks/useAccountingPolicy';
 
 // Add display label for opening balance source type
 const DISPLAY_SOURCE_LABELS: Record<string, string> = {
@@ -1546,6 +1547,14 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
     enabled: !!selectedPartnerId && selectedPartnerId !== 'none' && !!companyId && open,
   });
 
+  // Accounting policy rule for single payment cash limit
+  const { value: singlePaymentLimitRule } = useCompanyAccountingRule(
+    companyId,
+    'petty_cash_single_payment_limit',
+    { amount: 1000000 }
+  );
+  const singlePaymentLimit = Number(singlePaymentLimitRule?.amount) || 1000000;
+
   // U5: Amount validation
   const parsedAmount = parseFloat(form.amount) || 0;
   const databaseTotalExcludingCurrent = useMemo(() => {
@@ -1556,9 +1565,10 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
   const totalWithCurrent = databaseTotalExcludingCurrent + parsedAmount;
 
   const isAmountValid = parsedAmount > 0;
-  const isLargeAmount = form.currency === 'HUF'
+  const exceedsPolicySingleLimit = form.isExpense && form.currency === 'HUF' && parsedAmount > singlePaymentLimit;
+  const isLargeAmount = exceedsPolicySingleLimit || (form.currency === 'HUF'
     ? parsedAmount > 1_000_000
-    : parsedAmount > 5_000;
+    : parsedAmount > 5_000);
   const roundedPreview = parsedAmount > 0 && form.currency === 'HUF'
     ? roundHuf(parsedAmount, 'HUF')
     : null;
@@ -2072,13 +2082,23 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
               </button>
             </div>
           </div>
-          {/* U5: Large amount warning */}
-          {isLargeAmount && (
+          {/* U5: Policy single payment limit or large amount warning */}
+          {exceedsPolicySingleLimit ? (
+            <div className="flex items-center gap-2 p-2 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+              <span>
+                {t('pettyCash:manual_entry_dialog.policy_single_payment_warning', {
+                  limit: singlePaymentLimit.toLocaleString('hu-HU'),
+                  defaultValue: `Számviteli politika figyelmeztetés: A kiadás összege meghaladja a szabályzat szerinti egyedi kifizetési keretet (${singlePaymentLimit.toLocaleString('hu-HU')} Ft)!`,
+                })}
+              </span>
+            </div>
+          ) : isLargeAmount ? (
             <div className="flex items-center gap-2 p-2 rounded-md bg-amber-500/10 text-amber-600 text-xs">
               <AlertTriangle className="w-4 h-4 shrink-0" />
               {t('pettyCash:manual_entry_dialog.large_amount_warning')}
             </div>
-          )}
+          ) : null}
 
           {/* Related party prepared limit warning */}
           {isRelated && form.currency === 'HUF' && totalWithCurrent >= 1200000 && (

@@ -1125,7 +1125,7 @@ export function InvoiceItemsDialog({
     const isSorted = sortField === field;
     return (
       <TableHead 
-        className={cn("cursor-pointer select-none hover:bg-muted/40 transition-colors py-3 font-semibold", className)}
+        className={cn("cursor-pointer select-none hover:bg-muted/40 transition-colors py-2.5 font-semibold text-xs", className)}
         onClick={() => handleSort(field)}
       >
         <div className={cn(
@@ -1456,8 +1456,8 @@ export function InvoiceItemsDialog({
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <TooltipProvider delayDuration={150}>
-          <DialogContent className="max-w-7xl max-h-[85vh] overflow-hidden flex flex-col">
-            <DialogHeader className="pb-3 border-b border-border/50">
+          <DialogContent className="w-[96vw] max-w-[96vw] sm:max-w-[96vw] 2xl:max-w-[1800px] h-[92vh] max-h-[92vh] overflow-hidden flex flex-col p-4 sm:p-6">
+            <DialogHeader className="shrink-0 pb-3 border-b border-border/50">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pr-8">
                 <DialogTitle className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-primary/10">
@@ -1496,7 +1496,7 @@ export function InvoiceItemsDialog({
               </div>
             </DialogHeader>
 
-            <div className="flex-1 overflow-auto mt-4">
+            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden mt-3 pr-1">
               {!isOutbound && isTelecomInvoice && items.length > 0 && (
                 <div className="flex items-center justify-between bg-amber-500/10 border border-amber-500/25 rounded-lg px-4 py-2.5 mb-3 text-xs">
                   <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
@@ -1535,10 +1535,10 @@ export function InvoiceItemsDialog({
                 </div>
               ) : items.length === 0 ? null : (
                 <div className="rounded-lg border border-border/50 overflow-hidden">
-                  <Table>
+                  <Table containerClassName="overflow-x-auto">
                     <TableHeader>
                       <TableRow className="bg-muted/30 hover:bg-muted/30">
-                        <TableHead className="w-10">
+                        <TableHead className="w-10 px-2 text-center">
                           <Checkbox
                             checked={allSelected}
                             onCheckedChange={toggleAll}
@@ -1546,19 +1546,19 @@ export function InvoiceItemsDialog({
                             aria-label={t('invoices:dialogs.items.select_all')}
                           />
                         </TableHead>
-                        {renderSortableHeader('line_number', t('invoices:dialogs.items.table.line_number'), 'left', 'w-16')}
-                        {renderSortableHeader('line_description', t('invoices:dialogs.items.table.description'), 'left')}
-                        {renderSortableHeader('quantity', t('invoices:dialogs.items.table.quantity'), 'right', 'text-right')}
-                        {renderSortableHeader('unit_price', t('invoices:dialogs.items.table.unit_price'), 'right', 'text-right')}
-                        {renderSortableHeader('net_amount', t('invoices:dialogs.items.table.net'), 'right', 'text-right')}
-                        {renderSortableHeader('vat_rate', t('invoices:dialogs.items.table.vat'), 'center', 'text-center w-[110px]')}
-                        {renderSortableHeader('vat_amount', t('invoices:dialogs.items.table.vat_amount'), 'right', 'text-right')}
-                        {!isOutbound && renderSortableHeader('deductible_percentage', t('invoices:dialogs.items.table.deductibility'), 'center', 'text-center w-[140px]')}
-                        {renderSortableHeader('gross_amount', t('invoices:dialogs.items.table.gross'), 'right', 'text-right')}
-                        {renderSortableHeader('gl_classifications', t('invoices:dialogs.items.table.gl'), 'center', 'text-center min-w-[120px]')}
-                        <TableHead className="font-semibold w-[200px]">{t('invoices:dialogs.items.table.project')}</TableHead>
-                        <TableHead className="font-semibold text-center w-12">{t('invoices:dialogs.items.table.note')}</TableHead>
-                        <TableHead className="text-center font-semibold w-[75px]">
+                        {renderSortableHeader('line_number', t('invoices:dialogs.items.table.line_number'), 'center', 'w-10 text-center px-1 font-mono')}
+                        {renderSortableHeader('line_description', t('invoices:dialogs.items.table.description'), 'left', 'min-w-[180px] max-w-[340px] px-2')}
+                        {renderSortableHeader('quantity', t('invoices:dialogs.items.table.quantity'), 'right', 'text-right px-2 w-[85px] whitespace-nowrap')}
+                        {renderSortableHeader('unit_price', t('invoices:dialogs.items.table.unit_price'), 'right', 'text-right px-2 w-[90px] whitespace-nowrap')}
+                        {renderSortableHeader('net_amount', t('invoices:dialogs.items.table.net'), 'right', 'text-right px-2 w-[95px] whitespace-nowrap')}
+                        {renderSortableHeader('vat_rate', t('invoices:dialogs.items.table.vat'), 'center', 'text-center px-1 w-[100px] whitespace-nowrap')}
+                        {renderSortableHeader('vat_amount', t('invoices:dialogs.items.table.vat_amount'), 'right', 'text-right px-2 w-[90px] whitespace-nowrap')}
+                        {!isOutbound && renderSortableHeader('deductible_percentage', t('invoices:dialogs.items.table.deductibility'), 'center', 'text-center px-1 w-[105px] whitespace-nowrap')}
+                        {renderSortableHeader('gross_amount', t('invoices:dialogs.items.table.gross'), 'right', 'text-right px-2 w-[95px] whitespace-nowrap')}
+                        {renderSortableHeader('gl_classifications', t('invoices:dialogs.items.table.gl'), 'center', 'text-center px-1 w-[125px] whitespace-nowrap')}
+                        <TableHead className="font-semibold px-2 w-[145px] whitespace-nowrap">{t('invoices:dialogs.items.table.project')}</TableHead>
+                        <TableHead className="font-semibold text-center w-10 px-1 whitespace-nowrap">{t('invoices:dialogs.items.table.note')}</TableHead>
+                        <TableHead className="text-center font-semibold w-14 px-1 whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1">
                             {t('invoices:dialogs.items.table.accounting')}
                             <Tooltip>
@@ -1588,7 +1588,7 @@ export function InvoiceItemsDialog({
                             : index % 2 === 0 ? 'bg-transparent' : 'bg-muted/10'
                         )}
                       >
-                        <TableCell>
+                        <TableCell className="w-10 px-2 text-center">
                           {alreadyActivated ? (
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -1608,13 +1608,13 @@ export function InvoiceItemsDialog({
                             />
                           )}
                         </TableCell>
-                        <TableCell className="font-mono text-muted-foreground">
+                        <TableCell className="w-10 px-1 text-center font-mono text-muted-foreground text-xs">
                           {item.line_number}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="min-w-[180px] max-w-[340px] px-2">
                           <div className="flex items-center gap-2">
-                            <div className="flex-1">
-                              <p className="font-medium">{item.line_description || '-'}</p>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-xs leading-snug line-clamp-2 break-words" title={item.line_description || ''}>{item.line_description || '-'}</p>
                               <div className="flex items-center gap-2 mt-1">
                                 <ItemVtszWeightPopover
                                   item={item}
@@ -1623,23 +1623,23 @@ export function InvoiceItemsDialog({
                               </div>
                             </div>
                             {alreadyActivated && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success/10 text-success whitespace-nowrap">
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-success/10 text-success whitespace-nowrap shrink-0">
                                 <CheckCircle2 className="h-3 w-3" />
                                 {t('invoices:dialogs.items.already_activated')}
                               </span>
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="text-right font-mono">
+                        <TableCell className="text-right font-mono text-xs px-2 whitespace-nowrap">
                           {formatQuantity(item.quantity, item.unit_of_measure)}
                         </TableCell>
-                        <TableCell className="text-right font-mono">
+                        <TableCell className="text-right font-mono text-xs px-2 whitespace-nowrap">
                           {formatAmount(item.unit_price)}
                         </TableCell>
-                        <TableCell className="text-right font-mono">
+                        <TableCell className="text-right font-mono text-xs px-2 whitespace-nowrap font-medium">
                           {formatAmount(item.net_amount)}
                         </TableCell>
-                        <TableCell className="text-center">
+                        <TableCell className="text-center px-1 whitespace-nowrap">
                           {(() => {
                             const direction = isOutbound ? 'OUTBOUND' : 'INBOUND';
                             const isReverseCharge = parentInvoice?.is_reverse_charge ?? false;
@@ -1780,11 +1780,11 @@ export function InvoiceItemsDialog({
                             );
                           })()}
                         </TableCell>
-                        <TableCell className="text-right font-mono">
+                        <TableCell className="text-right font-mono text-xs px-2 whitespace-nowrap">
                           {formatAmount(getVatAmount(item))}
                         </TableCell>
                         {!isOutbound && (
-                          <TableCell className="text-center">
+                          <TableCell className="text-center px-1 whitespace-nowrap">
                             <div className="inline-flex items-center justify-center gap-1.5">
                               <Tooltip>
                                 <DropdownMenu>
@@ -1854,10 +1854,10 @@ export function InvoiceItemsDialog({
                             </div>
                           </TableCell>
                         )}
-                        <TableCell className="text-right font-mono font-medium">
+                        <TableCell className="text-right font-mono text-xs px-2 whitespace-nowrap font-semibold">
                           {formatAmount(getGrossAmount(item))}
                         </TableCell>
-                        <TableCell className="text-center whitespace-nowrap">
+                        <TableCell className="text-center px-1 whitespace-nowrap">
                           {(() => {
                             // Try the active preset first, otherwise fallback to the first available classification key
                             const classification = (activePresetId && item.gl_classifications?.[activePresetId])
@@ -1918,7 +1918,7 @@ export function InvoiceItemsDialog({
                             );
                           })()}
                         </TableCell>
-                        <TableCell className="min-w-[160px]">
+                        <TableCell className="px-1.5 w-[145px]">
                           <div className="flex items-center gap-1.5">
                             <Select
                               value={item.project_id || 'INHERITED'}
@@ -1969,7 +1969,7 @@ export function InvoiceItemsDialog({
                           item={item}
                           onSaveNotes={handleUpdateItemNotes}
                         />
-                        <TableCell className="text-center">
+                        <TableCell className="text-center w-14 px-1">
                           {item.exclude_from_accounting !== undefined ? (
                             <Checkbox
                               checked={!item.exclude_from_accounting}
@@ -2004,10 +2004,10 @@ export function InvoiceItemsDialog({
           </div>
 
           {items.length > 0 && (
-            <div className="border-t border-border/50 pt-5 mt-4">
-              <div className="flex justify-between items-end">
+            <div className="shrink-0 border-t border-border/50 pt-3 mt-3">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3">
                 {/* Activation & Bulk actions button — always rendered to prevent layout shift */}
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Button
                     className={cn("gap-2", !someSelected && "invisible pointer-events-none")}
                     onClick={() => setActivationDialogOpen(true)}
@@ -2087,7 +2087,7 @@ export function InvoiceItemsDialog({
                 </div>
 
                 {/* Totals */}
-                <div className="bg-muted/30 rounded-lg p-4 min-w-[320px]">
+                <div className="bg-muted/30 rounded-lg p-3 sm:p-4 min-w-[300px] shrink-0">
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">{t('invoices:dialogs.items.totals_net')}</span>
@@ -2517,7 +2517,7 @@ function ItemNoteCell({ item, onSaveNotes }: ItemNoteCellProps) {
   const hasNote = Boolean(item.notes && item.notes.trim().length > 0);
 
   return (
-    <TableCell className="text-center w-12" onClick={(e) => e.stopPropagation()}>
+    <TableCell className="text-center w-10 px-1" onClick={(e) => e.stopPropagation()}>
       <Popover open={open} onOpenChange={setOpen}>
         <Tooltip>
           <TooltipTrigger asChild>

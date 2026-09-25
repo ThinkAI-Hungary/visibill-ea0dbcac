@@ -13,9 +13,10 @@ import { useCompanyLocations } from '@/hooks/useCompanyLocations';
 import { useProjectList } from '@/hooks/useProjectList';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { supabase } from '@/integrations/supabase/client';
-import { Package2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Package2, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { reportError } from '@/lib/errorReporter';
+import { useCompanyAccountingRule } from '@/hooks/useAccountingPolicy';
 
 interface SelectedItem {
   id: string;
@@ -91,30 +92,41 @@ export function AssetActivationDialog({
     depreciationScheduleString: string;
   }>>([]);
 
+  const { value: lowValueThresholdRule } = useCompanyAccountingRule(
+    selectedCompany?.id,
+    'low_value_asset_threshold',
+    { amount: 200000 }
+  );
+  const lowValueLimit = Number(lowValueThresholdRule?.amount) || 200000;
+
   // Initialize forms when dialog opens
   useEffect(() => {
     if (open && selectedItems.length > 0) {
       setActiveTab(0);
-      setForms(selectedItems.map(item => ({
-        name: item.name,
-        description: '',
-        vtszTeszor: '',
-        acquisitionValue: item.grossAmount || item.netAmount,
-        activationDate: new Date().toISOString().split('T')[0],
-        usefulLifeYears: '3',
-        usefulLifeMonths: '0',
-        residualValue: '0',
-        taoTemplateId: '',
-        locationId: '',
-        projectId: invoiceInfo.projectId || '',
-        glAccountId: '',
-        depreciationMethod: 'linear',
-        performanceUnit: '',
-        totalPlannedPerformance: '',
-        depreciationScheduleString: '',
-      })));
+      setForms(selectedItems.map(item => {
+        const val = item.grossAmount || item.netAmount;
+        const isLowValue = val > 0 && val <= lowValueLimit;
+        return {
+          name: item.name,
+          description: '',
+          vtszTeszor: '',
+          acquisitionValue: val,
+          activationDate: new Date().toISOString().split('T')[0],
+          usefulLifeYears: isLowValue ? '0' : '3',
+          usefulLifeMonths: '0',
+          residualValue: '0',
+          taoTemplateId: '',
+          locationId: '',
+          projectId: invoiceInfo.projectId || '',
+          glAccountId: '',
+          depreciationMethod: isLowValue ? 'immediate' : 'linear',
+          performanceUnit: '',
+          totalPlannedPerformance: '',
+          depreciationScheduleString: '',
+        };
+      }));
     }
-  }, [open, selectedItems, invoiceInfo.projectId]);
+  }, [open, selectedItems, invoiceInfo.projectId, lowValueLimit]);
 
   const [submitting, setSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
@@ -128,7 +140,7 @@ export function AssetActivationDialog({
         const form = forms[i];
         const usefulMonths = parseInt(form.usefulLifeYears) * 12 + parseInt(form.usefulLifeMonths || '0');
 
-        if (!form.name.trim() || usefulMonths <= 0) {
+        if (!form.name.trim() || (form.depreciationMethod !== 'immediate' && usefulMonths <= 0)) {
           toast({
             title: t('common:status.error'),
             description: t('hr:fixed_assets.activation_dialog.validation_error', {
@@ -333,6 +345,15 @@ export function AssetActivationDialog({
                   </div>
                 </div>
 
+                {form.acquisitionValue > 0 && form.acquisitionValue <= lowValueLimit && (
+                  <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 p-2 rounded-md border border-emerald-500/20">
+                    <Sparkles className="h-3.5 w-3.5 shrink-0" />
+                    <span>
+                      Számviteli politika: Kisértékű eszköz (értékhatár: {lowValueLimit.toLocaleString('hu-HU')} Ft) &bull; Azonnali egyösszegű leírás beállítva.
+                    </span>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>{t('hr:fixed_assets.activation_dialog.useful_life_label')}</Label>
@@ -392,6 +413,17 @@ export function AssetActivationDialog({
                       <SelectItem value="immediate">{t('hr:fixed_assets.activation_dialog.depreciation_methods.immediate')}</SelectItem>
                     </SelectContent>
                   </Select>
+                  {form.acquisitionValue > 0 && form.acquisitionValue <= lowValueLimit && (
+                    <div className="flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-850 rounded px-2.5 py-1.5 mt-1.5">
+                      <Sparkles className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                      <span>
+                        {t('hr:fixed_assets.activation_dialog.policy_low_value_applied', {
+                          amount: lowValueLimit.toLocaleString('hu-HU'),
+                          defaultValue: `Számviteli politika: ${lowValueLimit.toLocaleString('hu-HU')} Ft alatti kisértékű eszköz azonnali egyösszegű leírásra került.`
+                        })}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {form.depreciationMethod === 'performance' && (

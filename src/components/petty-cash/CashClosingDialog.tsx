@@ -8,12 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { FileDown, BookOpen, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
+import { FileDown, BookOpen, TrendingUp, TrendingDown, Wallet, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { getActiveLocale } from '@/lib/locale/formatters';
+import { useCompanyAccountingRule } from '@/hooks/useAccountingPolicy';
 import type { PettyCashEntry, PettyCashRegister } from './types';
 import { fmtBalance, fmtAmount, SOURCE_LABELS, roundHuf } from './types';
 
@@ -36,6 +37,14 @@ export default function CashClosingDialog({
   const { t } = useTranslation(['pettyCash', 'common']);
   const { dateFromFormatted, dateToFormatted } = useDateRange();
   const [selectedRegister, setSelectedRegister] = useState<string>('all');
+
+  // Accounting policy rule for petty cash daily balance ceiling
+  const { value: dailyMaxBalanceRule } = useCompanyAccountingRule(
+    companyId,
+    'petty_cash_daily_max_balance',
+    { amount: 1500000 }
+  );
+  const dailyMaxLimit = Number(dailyMaxBalanceRule?.amount) || 1500000;
 
   // Filter entries for the selected register in the active period
   const filteredEntries = useMemo(() => {
@@ -348,6 +357,22 @@ export default function CashClosingDialog({
                         {fmtBalance(s.closing, cur)}
                       </span>
                     </div>
+
+                    {/* Accounting Policy Daily Cash Limit Check */}
+                    {cur === 'HUF' && s.closing > dailyMaxLimit && (
+                      <div className="flex items-start gap-1.5 p-2 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-[11px] mt-2">
+                        <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                        <div>
+                          <span className="font-semibold">{t('pettyCash:closing_dialog.policy_limit_exceeded', 'Számviteli politika figyelmeztetés')}:</span>
+                          <p className="mt-0.5">
+                            {t('pettyCash:closing_dialog.policy_limit_desc', {
+                              limit: dailyMaxLimit.toLocaleString('hu-HU'),
+                              defaultValue: `A záró készpénzállomány meghaladja a szabályzat szerinti napi maximumot (${dailyMaxLimit.toLocaleString('hu-HU')} Ft)!`,
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               );
