@@ -42,3 +42,13 @@ Létrehoztunk és élesítettünk egy natív, nagy teljesítményű PostgreSQL t
 
 ### Trade-offs:
 - A forrás táblák szerkezetének bővülésekor (új upload tábla) a `get_management_files` RPC-t is frissíteni kell a migrációkban.
+
+---
+
+## 4. Updates & Evolution
+
+* **2026-09-25 (CTE Refactor - 0A000 védelem & STABLE optimalizáció):**
+  * A korábbi ideiglenes táblás megvalósítást (`CREATE/DROP TEMP TABLE`) átírtuk tiszta CTE (`WITH raw_uploads AS (...), deduped_uploads AS (...)`) struktúrára.
+  * *Ok:* A `STABLE` jelöléssel ellátott függvényekben a PostgreSQL szigorúan tiltja a DDL műveleteket (`0A000: DROP TABLE is not allowed in a non-volatile function`).
+  * *Eredmény:* Nulla DDL, nincs katalógus-zárolás a kapcsolat-poolerben, a függvény 100%-ban tiszta `STABLE` és read-only tranzakció-kompatibilis, teljesítménye pedig ~1 másodperc alatt szolgálja ki a 11 000+ rekordos aggregációt. Migráció: `20260925170000_refactor_get_management_files_to_cte.sql`.
+
