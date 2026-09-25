@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Lock, Loader2, ArrowLeftRight } from 'lucide-react';
+import { Lock, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface CustomerGlOption {
@@ -31,6 +31,22 @@ export const ALLOWED_CUSTOMER_GL_OPTIONS: CustomerGlOption[] = [
 export const ALLOWED_SUPPLIER_GL_OPTIONS = [
   { code: '4541', label: '4541 - Belföldi szállítók', description: 'Belföldi szállítói kötelezettség' },
   { code: '4542', label: '4542 - Külföldi szállítók', description: 'Külföldi szállítói kötelezettség' },
+  { code: '4543', label: '4543 - Belföldi szolgáltatók', description: 'Belföldi szolgáltatási szállítók' },
+];
+
+export interface VatGlOption {
+  code: string;
+  label: string;
+  description: string;
+}
+
+export const ALLOWED_INBOUND_VAT_GL_OPTIONS: VatGlOption[] = [
+  { code: '466', label: '466 - Levonható ÁFA', description: 'Előzetesen felszámított általános forgalmi adó' },
+  { code: '4668', label: '4668 - Levonható ÁFA (4668)', description: 'Előzetesen felszámított ÁFA (4668)' },
+];
+
+export const ALLOWED_OUTBOUND_VAT_GL_OPTIONS: VatGlOption[] = [
+  { code: '467', label: '467 - Fizetendő ÁFA', description: 'Fizetendő általános forgalmi adó' },
 ];
 
 interface InvoiceGlAccountSelectorProps {
@@ -75,21 +91,21 @@ export function InvoiceGlAccountSelector({
     queryFn: async () => {
       if (invoiceId) {
         const { data } = await supabase.from('invoices').select('partner_gl_number, vat_gl_number').eq('id', invoiceId).maybeSingle();
-        if ((data as any)?.partner_gl_number) return data as any;
+        if ((data as any)?.partner_gl_number || (data as any)?.vat_gl_number) return data as any;
       }
       if (navInvoiceId) {
         const { data } = await supabase.from('nav_invoices').select('partner_gl_number, vat_gl_number').eq('id', navInvoiceId).maybeSingle();
-        if ((data as any)?.partner_gl_number) return data as any;
+        if ((data as any)?.partner_gl_number || (data as any)?.vat_gl_number) return data as any;
       }
       if (invoiceNumber) {
         const { data } = await supabase.from('nav_invoices').select('partner_gl_number, vat_gl_number').eq('invoice_number', invoiceNumber).maybeSingle();
-        if ((data as any)?.partner_gl_number) return data as any;
+        if ((data as any)?.partner_gl_number || (data as any)?.vat_gl_number) return data as any;
         const { data: invData } = await supabase.from('invoices').select('partner_gl_number, vat_gl_number').eq('bizonylatsorszam', invoiceNumber).maybeSingle();
-        if ((invData as any)?.partner_gl_number) return invData as any;
+        if ((invData as any)?.partner_gl_number || (invData as any)?.vat_gl_number) return invData as any;
       }
       return null;
     },
-    enabled: !currentPartnerGlNumber && !!(invoiceId || navInvoiceId || invoiceNumber),
+    enabled: (!currentPartnerGlNumber || !currentVatGlNumber) && !!(invoiceId || navInvoiceId || invoiceNumber),
     staleTime: 30_000,
   });
   const dbInvoiceGl = queryResult?.data;
@@ -105,16 +121,18 @@ export function InvoiceGlAccountSelector({
     return (currency && currency.toUpperCase() !== 'HUF') ? '4542' : '4541';
   }, [resolvedPartnerGl, isOutbound, currency]);
 
-  // Fixed VAT code: 467 for Outbound (payable), 466 for Inbound (deductible)
-  const fixedVatCode = isOutbound ? '467' : '466';
-  const fixedVatLabel = isOutbound ? '467 - Fizetendő ÁFA' : '466 - Levonható ÁFA';
+  // Determine active VAT GL code (support 466, 4668 for inbound, 467 for outbound)
+  const resolvedVatGl = currentVatGlNumber || dbInvoiceGl?.vat_gl_number;
+  const activeVatGl = useMemo(() => {
+    if (resolvedVatGl) return resolvedVatGl;
+    return isOutbound ? '467' : '466';
+  }, [resolvedVatGl, isOutbound]);
 
   const updateMutation = useMutation({
-    mutationFn: async (newPartnerGl: string) => {
-      const updates = {
-        partner_gl_number: newPartnerGl,
-        vat_gl_number: fixedVatCode,
-      };
+    mutationFn: async ({ partnerGl, vatGl }: { partnerGl?: string; vatGl?: string }) => {
+      const updates: Record<string, any> = {};
+      if (partnerGl !== undefined) updates.partner_gl_number = partnerGl;
+      if (vatGl !== undefined) updates.vat_gl_number = vatGl;
 
       if (invoiceId) {
         const { error } = await supabase
@@ -145,9 +163,7 @@ export function InvoiceGlAccountSelector({
     onSuccess: () => {
       toast({
         title: 'Kontírszám frissítve',
-        description: isOutbound
-          ? 'A vevői követelés kontírszáma sikeresen rögzítve.'
-          : 'A szállítói kötelezettség kontírszáma sikeresen rögzítve.',
+        description: 'A kontírozási beállítás sikeresen elmentve.',
       });
       queryClient.invalidateQueries({ queryKey: ['invoice-gl-account'] });
       queryClient.invalidateQueries({ queryKey: ['company-invoices'] });
@@ -167,13 +183,21 @@ export function InvoiceGlAccountSelector({
     },
   });
 
-  // Selected label for clean display
-  const selectedLabel = useMemo(() => {
+  // Selected partner label for clean display
+  const selectedPartnerLabel = useMemo(() => {
     if (isOutbound) {
       return ALLOWED_CUSTOMER_GL_OPTIONS.find((o) => o.code === activePartnerGl)?.label || activePartnerGl;
     }
     return ALLOWED_SUPPLIER_GL_OPTIONS.find((o) => o.code === activePartnerGl)?.label || activePartnerGl;
   }, [isOutbound, activePartnerGl]);
+
+  // Selected VAT label for clean display
+  const selectedVatLabel = useMemo(() => {
+    if (isOutbound) {
+      return ALLOWED_OUTBOUND_VAT_GL_OPTIONS.find((o) => o.code === activeVatGl)?.label || `${activeVatGl} - Fizetendő ÁFA`;
+    }
+    return ALLOWED_INBOUND_VAT_GL_OPTIONS.find((o) => o.code === activeVatGl)?.label || `${activeVatGl} - Levonható ÁFA`;
+  }, [isOutbound, activeVatGl]);
 
   return (
     <div className={cn("flex flex-wrap items-center gap-3", className)}>
@@ -187,7 +211,7 @@ export function InvoiceGlAccountSelector({
         </span>
         <Select
           value={activePartnerGl}
-          onValueChange={(val) => updateMutation.mutate(val)}
+          onValueChange={(val) => updateMutation.mutate({ partnerGl: val, vatGl: activeVatGl })}
           disabled={disabled || updateMutation.isPending}
         >
           <SelectTrigger className={cn("h-8 text-xs font-mono font-medium px-2.5 py-0 border-border/40 bg-background/60", compact ? "w-[175px]" : "w-[215px]")}>
@@ -198,7 +222,7 @@ export function InvoiceGlAccountSelector({
               </span>
             ) : (
               <SelectValue placeholder="Válassz...">
-                <span className="truncate">{selectedLabel}</span>
+                <span className="truncate">{selectedPartnerLabel}</span>
               </SelectValue>
             )}
           </SelectTrigger>
@@ -220,19 +244,47 @@ export function InvoiceGlAccountSelector({
         </Select>
       </div>
 
-      {/* Rögzített ÁFA Kontírszám Badge (Fix 467 / 466) */}
+      {/* ÁFA Kontírszám Selector (466 / 4668 for Inbound, 467 for Outbound) */}
       <div 
         className="flex items-center gap-1.5 shrink-0" 
         title={isOutbound ? 'Követel (K) fizetendő ÁFA számla' : 'Tartozik (T) levonható ÁFA számla'}
       >
         <span className="text-xs text-muted-foreground font-medium">ÁFA kontír:</span>
-        <Badge
-          variant="outline"
-          className="h-8 px-2 text-xs font-mono font-semibold gap-1.5 bg-muted/40 text-foreground border-border/40 select-none cursor-default"
-        >
-          <Lock className="h-3 w-3 text-muted-foreground" />
-          <span>{fixedVatLabel}</span>
-        </Badge>
+        {isOutbound ? (
+          <Badge
+            variant="outline"
+            className="h-8 px-2 text-xs font-mono font-semibold gap-1.5 bg-muted/40 text-foreground border-border/40 select-none cursor-default"
+          >
+            <Lock className="h-3 w-3 text-muted-foreground" />
+            <span>467 - Fizetendő ÁFA</span>
+          </Badge>
+        ) : (
+          <Select
+            value={activeVatGl}
+            onValueChange={(val) => updateMutation.mutate({ partnerGl: activePartnerGl, vatGl: val })}
+            disabled={disabled || updateMutation.isPending}
+          >
+            <SelectTrigger className={cn("h-8 text-xs font-mono font-medium px-2.5 py-0 border-border/40 bg-background/60", compact ? "w-[175px]" : "w-[215px]")}>
+              {updateMutation.isPending ? (
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Mentés...</span>
+                </span>
+              ) : (
+                <SelectValue placeholder="Válassz...">
+                  <span className="truncate">{selectedVatLabel}</span>
+                </SelectValue>
+              )}
+            </SelectTrigger>
+            <SelectContent className="text-xs z-50">
+              {ALLOWED_INBOUND_VAT_GL_OPTIONS.map((opt) => (
+                <SelectItem key={opt.code} value={opt.code} title={opt.description} className="text-xs py-1.5 cursor-pointer font-mono">
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
     </div>
   );

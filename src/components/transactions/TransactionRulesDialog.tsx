@@ -633,8 +633,9 @@ export function TransactionRulesDialog({ open: externalOpen, onOpenChange: exter
                               .sort((a, b) => cleanGlNum(a.gl_number).localeCompare(cleanGlNum(b.gl_number)))
                               .map(gl => {
                                 // Only show leaf nodes
-                                const isLeaf = !glAccounts.some(sub => cleanGlNum(sub.gl_number).startsWith(cleanGlNum(gl.gl_number)) && sub.id !== gl.id);
-                                if (!isLeaf) return null;
+                                const clean = cleanGlNum(gl.gl_number);
+                                const isSelectable = clean.length >= 3 || !glAccounts.some(sub => cleanGlNum(sub.gl_number).startsWith(clean) && sub.id !== gl.id);
+                                if (!isSelectable) return null;
                                 return (
                                   <CommandItem
                                     key={gl.id}

@@ -59,10 +59,10 @@ export function BulkBookTransactionsDialog({
           !glSearchQuery ||
           `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(glSearchQuery.toLowerCase());
         if (!queryMatch) return false;
-        const isLeaf = !glAccounts.some(
-          sub => cleanGlNum(sub.gl_number).startsWith(cleanGlNum(gl.gl_number)) && sub.id !== gl.id
+        const clean = cleanGlNum(gl.gl_number);
+        return clean.length >= 3 || !glAccounts.some(
+          sub => cleanGlNum(sub.gl_number).startsWith(clean) && sub.id !== gl.id
         );
-        return isLeaf;
       })
       .sort((a, b) => cleanGlNum(a.gl_number).localeCompare(cleanGlNum(b.gl_number)));
   }, [glAccounts, glSearchQuery]);

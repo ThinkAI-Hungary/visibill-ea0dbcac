@@ -53,6 +53,31 @@ describe('Brief Requirement: Customer Account Selection & Fixed VAT Account', ()
     });
   });
 
+  describe('ALLOWED_SUPPLIER_GL_OPTIONS & ALLOWED_INBOUND_VAT_GL_OPTIONS', () => {
+    it('contains 4541, 4542, 4543 for supplier accounts', () => {
+      const codes = ALLOWED_SUPPLIER_GL_OPTIONS.map(opt => opt.code);
+      expect(codes).toContain('4541');
+      expect(codes).toContain('4542');
+      expect(codes).toContain('4543');
+    });
+
+    it('renders 4668 VAT option correctly when passed as currentVatGlNumber', () => {
+      render(
+        <InvoiceGlAccountSelector
+          invoiceId="inv-vat-4668"
+          direction="INBOUND"
+          currency="HUF"
+          currentPartnerGlNumber="4543"
+          currentVatGlNumber="4668"
+        />
+      );
+
+      expect(screen.getByText('Szállítói számla:')).toBeInTheDocument();
+      expect(screen.getByText('4668 - Levonható ÁFA (4668)')).toBeInTheDocument();
+      expect(screen.getByText('4543 - Belföldi szolgáltatók')).toBeInTheDocument();
+    });
+  });
+
   describe('InvoiceGlAccountSelector Component', () => {
     it('renders customer account selector and fixed 467 VAT badge for OUTBOUND invoice', () => {
       render(

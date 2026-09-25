@@ -592,8 +592,9 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
                                     ?.filter(gl => !glSearchQuery || `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(glSearchQuery.toLowerCase()))
                                     .sort((a, b) => cleanGlNum(a.gl_number).localeCompare(cleanGlNum(b.gl_number)))
                                     .map(gl => {
-                                      const isLeaf = !glAccounts.some(sub => cleanGlNum(sub.gl_number).startsWith(cleanGlNum(gl.gl_number)) && sub.id !== gl.id);
-                                      if (!isLeaf) return null;
+                                      const clean = cleanGlNum(gl.gl_number);
+                                      const isSelectable = clean.length >= 3 || !glAccounts.some(sub => cleanGlNum(sub.gl_number).startsWith(clean) && sub.id !== gl.id);
+                                      if (!isSelectable) return null;
                                       
                                       return (
                                         <CommandItem

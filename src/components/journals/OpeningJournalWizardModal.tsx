@@ -848,13 +848,16 @@ export default function OpeningJournalWizardModal({
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">{t('dialogs.opening_wizard.step1.opening_date', { defaultValue: 'Nyitás Dátuma (Sztv. kötelező)' })}</Label>
-                    <DatePicker
-                      value={postingDate}
-                      onChange={(date) => date && setPostingDate(date)}
-                      disabled={transitionType === 'EVFORDULOS'}
-                      placeholder={t('dialogs.opening_wizard.step1.opening_date_placeholder', { defaultValue: 'Nyitás dátuma' })}
-                    />
+                    <Label className="text-xs font-semibold">{t('dialogs.opening_wizard.step1.transition_type', { defaultValue: 'Átállás típusa' })}</Label>
+                    <Select value={transitionType} onValueChange={(v: any) => setTransitionType(v)}>
+                      <SelectTrigger className="h-9 focus:border-primary focus-visible:border-primary">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="EVFORDULOS">{t('dialogs.opening_wizard.step1.transition_yearly', { defaultValue: 'Évfordulós átállás (Január 1.)' })}</SelectItem>
+                        <SelectItem value="EVKOZBENI">{t('dialogs.opening_wizard.step1.transition_interim', { defaultValue: 'Év közbeni átállás (Tört időszak)' })}</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
@@ -883,16 +886,13 @@ export default function OpeningJournalWizardModal({
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">{t('dialogs.opening_wizard.step1.transition_type', { defaultValue: 'Átállás típusa' })}</Label>
-                    <Select value={transitionType} onValueChange={(v: any) => setTransitionType(v)}>
-                      <SelectTrigger className="h-9 focus:border-primary focus-visible:border-primary">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="EVFORDULOS">{t('dialogs.opening_wizard.step1.transition_yearly', { defaultValue: 'Évfordulós átállás (Január 1.)' })}</SelectItem>
-                        <SelectItem value="EVKOZBENI">{t('dialogs.opening_wizard.step1.transition_interim', { defaultValue: 'Év közbeni átállás (Tört időszak)' })}</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label className="text-xs font-semibold">{t('dialogs.opening_wizard.step1.opening_date', { defaultValue: 'Nyitás Dátuma (Sztv. kötelező)' })}</Label>
+                    <DatePicker
+                      value={postingDate}
+                      onChange={(date) => date && setPostingDate(date)}
+                      disabled={transitionType === 'EVFORDULOS'}
+                      placeholder={t('dialogs.opening_wizard.step1.opening_date_placeholder', { defaultValue: 'Nyitás dátuma' })}
+                    />
                   </div>
                 </div>
 

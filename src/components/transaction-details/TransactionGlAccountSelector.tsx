@@ -167,13 +167,12 @@ export const TransactionGlAccountSelector: React.FC<TransactionGlAccountSelector
                           cleanGlNum(a.gl_number).localeCompare(cleanGlNum(b.gl_number))
                         )
                         .map(gl => {
-                          // Only show leaf nodes
-                          const isLeaf = !glAccounts.some(
-                            sub =>
-                              cleanGlNum(sub.gl_number).startsWith(cleanGlNum(gl.gl_number)) &&
-                              sub.id !== gl.id
+                          // Allow leaf nodes or 3+ digit accounts
+                          const clean = cleanGlNum(gl.gl_number);
+                          const isSelectable = clean.length >= 3 || !glAccounts.some(
+                            sub => cleanGlNum(sub.gl_number).startsWith(clean) && sub.id !== gl.id
                           );
-                          if (!isLeaf) return null;
+                          if (!isSelectable) return null;
 
                           return (
                             <CommandItem

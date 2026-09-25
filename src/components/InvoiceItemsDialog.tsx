@@ -2201,9 +2201,10 @@ export function InvoiceItemsDialog({
                     .slice()
                     .sort((a, b) => cleanGlNum(a.gl_number).localeCompare(cleanGlNum(b.gl_number)))
                     .map(gl => {
-                      // Only show leaf nodes (no children with same prefix)
-                      const isLeaf = !glAccounts.some(sub => cleanGlNum(sub.gl_number).startsWith(cleanGlNum(gl.gl_number)) && sub.id !== gl.id);
-                      if (!isLeaf) return null;
+                      // Allow leaf nodes or 3+ digit synthetic/analytic accounts (e.g. 529, 5291)
+                      const clean = cleanGlNum(gl.gl_number);
+                      const isSelectable = clean.length >= 3 || !glAccounts.some(sub => cleanGlNum(sub.gl_number).startsWith(clean) && sub.id !== gl.id);
+                      if (!isSelectable) return null;
                       
                       return (
                         <CommandItem
