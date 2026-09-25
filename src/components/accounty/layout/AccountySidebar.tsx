@@ -200,7 +200,7 @@ function AccountySidebarInner({ shell, props }: { shell: AccountyShellContextTyp
       }
     } finally {
       if (navigate) {
-        navigate('/auth?app=eaisybooks');
+        navigate(`${prefix}/auth`);
       }
     }
   };

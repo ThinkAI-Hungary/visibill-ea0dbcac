@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { formatThousands } from '@/features/vat/types';
+import { useCompany } from '@/contexts/CompanyContext';
 
 /* ────────────────────────────────────────── */
 /*  V6: VAT Trend Chart (12 months)            */
@@ -13,6 +14,8 @@ const MONTH_SHORT = ['jan','feb','már','ápr','máj','jún','júl','aug','szep'
 
 export function VatTrendChart({ companyId }: { companyId: string }) {
   const { t, i18n } = useTranslation(['accounting', 'common']);
+  const { selectedCompany } = useCompany();
+  const isCroatia = selectedCompany?.country_code === 'HR';
   const { data: history = [] } = useQuery({
     queryKey: ['vat_return_history', companyId],
     queryFn: async () => {
@@ -38,13 +41,13 @@ export function VatTrendChart({ companyId }: { companyId: string }) {
     }
     return {
       name: `${monthLabel} '${String(r.period_year).slice(-2)}`,
-      payable: Math.round((r.total_payable_tax || 0) / 1000),
-      deductible: Math.round((r.total_deductible_tax || 0) / 1000),
-      balance: Math.round((r.net_result || 0) / 1000),
+      payable: isCroatia ? Math.round(r.total_payable_tax || 0) : Math.round((r.total_payable_tax || 0) / 1000),
+      deductible: isCroatia ? Math.round(r.total_deductible_tax || 0) : Math.round((r.total_deductible_tax || 0) / 1000),
+      balance: isCroatia ? Math.round(r.net_result || 0) : Math.round((r.net_result || 0) / 1000),
     };
   });
 
-  const fmtTooltip = (v: number) => `${formatThousands(v)} eFt`;
+  const fmtTooltip = (v: number) => isCroatia ? `${formatThousands(v)} €` : `${formatThousands(v)} eFt`;
 
   const payableLabel = t('accounting:vat_return.chart.payable', 'Fizetendő');
   const deductibleLabel = t('accounting:vat_return.chart.deductible', 'Levonható');
@@ -83,7 +86,7 @@ export function VatTrendChart({ companyId }: { companyId: string }) {
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.4} />
               <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.5} />
-              <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.5} tickFormatter={(v: number) => formatThousands(v)} />
+              <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.5} tickFormatter={(v: number) => isCroatia ? `${formatThousands(v)} €` : formatThousands(v)} />
               <RechartsTooltip
                 contentStyle={{ fontSize: '11px', borderRadius: '8px', border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))' }}
                 formatter={(value: number, name: string) => [fmtTooltip(value), name]}

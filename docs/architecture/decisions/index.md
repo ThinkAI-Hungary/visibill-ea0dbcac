@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-25  
-> **Összesen:** 164 döntés (157 egyedi döntési fájl) | ✅ Decided: 162 | ⛔ Superseded: 2
+> **Összesen:** 165 döntés (158 egyedi döntési fájl) | ✅ Decided: 163 | ⛔ Superseded: 2
 
 ---
 
@@ -201,6 +201,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-143 | Devizás Főkönyvi Számlakezelés (gl_accounts), Bankszámla Deviza Védelem, Devizás Számlakarton és Többdevizás Partner Analitika | ✅ Decided | [A-143](./A-143-multicurrency-chart-of-accounts-and-general-ledger.md) |
 | A-144 | Determinisztikus Számlatétel Szabály Motor (invoice_item_rules) és 1-Kattintásos Mentés Dialógus | ✅ Decided | [A-144](./A-144-deterministic-invoice-item-rules-engine.md) |
 | A-155 | Házipénztár Bejövő/Szállítói Számlák Kiegyenlítése és Időszaki Zárás Egyenleg Számítási Modell | ✅ Decided | [A-155](./A-155-petty-cash-inbound-settlement-and-period-closing.md) |
+| A-156 | Horvát ÁFA Bevallás (Obrazac PDV), Hivatalos Nyomtatvány Replika és HR Áfakód Architektúra | ✅ Decided | [A-156](./A-156-croatian-vat-return-obrazac-pdv-and-tax-codes.md) |
 
 ## 💳 Fizetés
 

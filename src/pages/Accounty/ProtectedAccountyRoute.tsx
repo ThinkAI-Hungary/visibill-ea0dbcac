@@ -1,6 +1,8 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAccountyRole, AccountyRole } from './AccountyRoleContext';
+import { useHasAccountyAccess } from '@/hooks/useHasEaisybillAccess';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface ProtectedAccountyRouteProps {
   children: React.ReactNode;
@@ -74,3 +76,34 @@ const ROLE_HIERARCHY: Record<AccountyRole, number> = {
 export function hasMinimumRole(userRole: AccountyRole, minimumRole: AccountyRole): boolean {
   return (ROLE_HIERARCHY[userRole] ?? 0) >= (ROLE_HIERARCHY[minimumRole] ?? 0);
 }
+
+interface AccountyAccessGuardProps {
+  children: React.ReactNode;
+  fallbackTo?: string;
+}
+
+/**
+ * AccountyAccessGuard — module-level route guard for all eaisyBooks routes.
+ * If the user does not have permission to access the eaisyBooks module (neither profile flag,
+ * accounty assignments, nor platform management role), they are automatically redirected
+ * to fallbackTo (defaulting to eaisyBill '/' or '/hr').
+ */
+export function AccountyAccessGuard({
+  children,
+  fallbackTo = '/',
+}: AccountyAccessGuardProps) {
+  const { hasAccess, isLoading } = useHasAccountyAccess();
+
+  // While checking, render nothing or spinner (prevents flash of redirect or eaisybooks UI)
+  if (isLoading) {
+    return <LoadingSpinner message="" />;
+  }
+
+  // If user has no eaisybooks access, redirect them to eaisyBill
+  if (hasAccess === false) {
+    return <Navigate to={fallbackTo} replace />;
+  }
+
+  return <>{children}</>;
+}
+

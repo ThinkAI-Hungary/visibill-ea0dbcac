@@ -169,10 +169,14 @@ export function useVatReturnData() {
   });
 
   // 4. Form rows metadata
+  const companyCountry = selectedCompany?.country_code || 'HU';
   const { data: formRows = [] } = useQuery({
-    queryKey: ['vat_form_rows'],
+    queryKey: ['vat_form_rows', companyCountry],
     queryFn: async () => {
-      const { data, error } = await supabase.from('vat_form_rows').select('*').order('sort_order');
+      const { data, error } = await (supabase.from('vat_form_rows') as any)
+        .select('*')
+        .eq('country_code', companyCountry)
+        .order('sort_order');
       if (error) {
         reportError({
           type: 'db_query',

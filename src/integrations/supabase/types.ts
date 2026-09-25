@@ -11185,6 +11185,7 @@ export type Database = {
       }
       vat_form_rows: {
         Row: {
+          country_code: string
           has_base: boolean | null
           has_tax: boolean | null
           is_summary: boolean | null
@@ -11195,6 +11196,7 @@ export type Database = {
           sort_order: number
         }
         Insert: {
+          country_code?: string
           has_base?: boolean | null
           has_tax?: boolean | null
           is_summary?: boolean | null
@@ -11205,6 +11207,7 @@ export type Database = {
           sort_order?: number
         }
         Update: {
+          country_code?: string
           has_base?: boolean | null
           has_tax?: boolean | null
           is_summary?: boolean | null

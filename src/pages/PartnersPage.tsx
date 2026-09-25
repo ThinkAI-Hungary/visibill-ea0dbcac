@@ -818,7 +818,7 @@ export default function PartnersPage() {
 
 
   return (
-    <div className="h-full space-y-4 page-animate flex flex-col overflow-hidden">
+    <div className="space-y-4 page-animate flex flex-col min-h-full pb-8">
       {/* Page Header */}
       <div className="flex items-center justify-between shrink-0">
         <div>
@@ -901,10 +901,10 @@ export default function PartnersPage() {
       </Collapsible>
 
       {/* Main Splitscreen Container */}
-      <div className="flex-1 flex flex-col lg:flex-row gap-4 h-full min-h-[930px] overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0">
         {/* Left Pane: Master List & Toolbar */}
-        <Card className="flex-1 rounded-xl border-border/50 bg-card/50 backdrop-blur-sm flex flex-col min-h-0 overflow-hidden lg:w-3/5">
-          <CardContent className="p-4 flex flex-col h-full min-h-0 overflow-hidden space-y-3">
+        <Card className="flex-1 rounded-xl border-border/50 bg-card/50 backdrop-blur-sm flex flex-col lg:w-3/5">
+          <CardContent className="p-4 flex flex-col flex-1 space-y-3">
             {/* Unified Toolbar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
               <div className="flex items-center gap-3">
@@ -927,7 +927,7 @@ export default function PartnersPage() {
             </div>
 
             {/* Table Container */}
-            <div className="flex-1 border border-border/50 rounded-lg overflow-y-auto min-h-0">
+            <div className="flex-1 border border-border/50 rounded-lg overflow-auto min-h-[350px]">
               <Table className="table-fixed compact-table min-w-full">
                 <TableHeader className="sticky top-0 bg-background/95 backdrop-blur z-10 shadow-[0_1px_0_0_rgba(0,0,0,0.1)]">
                   <TableRow className="bg-muted/30 hover:bg-muted/30">
@@ -1068,9 +1068,9 @@ export default function PartnersPage() {
         </Card>
 
         {/* Right Pane: Detail Panel */}
-        <Card className="lg:w-2/5 rounded-xl border-border/50 bg-card/50 backdrop-blur-sm flex flex-col min-h-[900px] overflow-hidden">
+        <Card className="lg:w-2/5 rounded-xl border-border/50 bg-card/50 backdrop-blur-sm flex flex-col">
           {selectedPartner ? (
-            <div className="p-6 flex flex-col h-full overflow-y-auto space-y-6">
+            <div className="p-6 flex flex-col flex-1 space-y-6">
               {/* Header section */}
               <div className="flex items-start justify-between border-b border-border/40 pb-4">
                 <div className="flex items-center gap-3">
@@ -1393,7 +1393,7 @@ export default function PartnersPage() {
               </div>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-muted-foreground">
+            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-muted-foreground min-h-[350px]">
               <Avatar className="h-16 w-16 bg-muted border border-border/50 flex items-center justify-center text-muted-foreground mb-4">
                 <Info className="h-6 w-6" />
               </Avatar>

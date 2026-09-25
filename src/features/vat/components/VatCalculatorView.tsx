@@ -53,7 +53,8 @@ import { VatA60Table } from './VatA60Table';
 import { VatXmlValidationDialog } from './VatXmlValidationDialog';
 import { VatProRataSettingsCard } from './VatProRataSettingsCard';
 import { VatProRataCalculatorModal } from './VatProRataCalculatorModal';
-import { fmtEft, formatThousands } from '../types';
+import { fmtEft, fmtEur, fmtVatAmount, formatThousands } from '../types';
+import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
 import type { useVatReturnData } from '../hooks/useVatReturnData';
 
 type VatDataReturn = ReturnType<typeof useVatReturnData>;
@@ -121,6 +122,9 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
     setExpandedFormRow,
   } = vatData;
 
+  const { isCroatia } = useCompanyJurisdiction(selectedCompany);
+  const formatAmount = (val: number | string | null | undefined) => fmtVatAmount(val, isCroatia);
+
   const hasPrevData = prevLines.length > 0;
 
   const DeltaBadge = ({ current, prev }: { current: number; prev: number }) => {
@@ -141,13 +145,21 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
     );
   };
 
-  const sections = [
-    { key: 'payable', title: 'Fizetendő általános forgalmi adó (01–36)', page: 'A-01', icon: '📤' },
-    { key: 'detail', title: 'Részletező sorok (37–62)', page: 'A-02', icon: '📋' },
-    { key: 'deductible', title: 'Levonható ÁFA (63–79)', page: 'A-02/03', icon: '📥' },
-    { key: 'settlement', title: 'Elszámolás (82–86)', page: 'A-03', icon: '⚖️' },
-    { key: 'm_sheet', title: 'M-lap összesítő (105–109)', page: 'A-05', icon: '📊' },
-  ];
+  const sections = isCroatia
+    ? [
+        { key: 'exempt', title: 'I. Transakcije koje ne podliježu oporezivanju i oslobođene', page: 'PDV-1', icon: '📋' },
+        { key: 'payable', title: 'II. Oporezive transakcije (Obračunani PDV)', page: 'PDV-1', icon: '📤' },
+        { key: 'deductible', title: 'III. Obračunani pretporez (Odbitak PDV-a)', page: 'PDV-1', icon: '📥' },
+        { key: 'settlement', title: 'IV. Obveza PDV-a za uplatu / povrat', page: 'PDV-2', icon: '⚖️' },
+        { key: 'other', title: 'VI. Ostali podaci (Dugotrajna imovina)', page: 'PDV-2', icon: '🏢' },
+      ]
+    : [
+        { key: 'payable', title: 'Fizetendő általános forgalmi adó (01–36)', page: 'A-01', icon: '📤' },
+        { key: 'detail', title: 'Részletező sorok (37–62)', page: 'A-02', icon: '📋' },
+        { key: 'deductible', title: 'Levonható ÁFA (63–79)', page: 'A-02/03', icon: '📥' },
+        { key: 'settlement', title: 'Elszámolás (82–86)', page: 'A-03', icon: '⚖️' },
+        { key: 'm_sheet', title: 'M-lap összesítő (105–109)', page: 'A-05', icon: '📊' },
+      ];
 
   return (
     <>
@@ -336,58 +348,133 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
           )}
           style={{ animationDelay: '100ms' }}
         >
-          {[
-            {
-              label: t('accounting:vat_return.kpi.payable_tax', 'Fizetendő ÁFA (36.)'),
-              value: getVal('36', 'tax'),
-              prev: getPrevVal('36', 'tax'),
-              color: 'text-red-500',
-              bg: 'bg-red-500/10',
-              borderColor: 'border-red-500/20',
-              unpaidHint:
-                unpaidVatEft > 0
-                  ? t('accounting:vat_return.kpi.unpaid_hint', {
-                      amount: fmtEft(unpaidVatEft),
-                      defaultValue: `ebből kintlévőség: ${fmtEft(unpaidVatEft)}`,
-                    })
-                  : null,
-            },
-            {
-              label: t('accounting:vat_return.kpi.deductible_tax', 'Levonható ÁFA (76.)'),
-              value: getVal('76', 'tax'),
-              prev: getPrevVal('76', 'tax'),
-              color: 'text-emerald-600',
-              bg: 'bg-emerald-500/10',
-              borderColor: 'border-emerald-500/20',
-              unpaidHint: null,
-            },
-            {
-              label: t('accounting:vat_return.kpi.balance', 'Egyenleg (83.)'),
-              value: getVal('83', 'tax'),
-              prev: getPrevVal('83', 'tax'),
-              color: getVal('83', 'tax') > 0 ? 'text-red-500' : 'text-emerald-600',
-              bg: getVal('83', 'tax') > 0 ? 'bg-red-500/10' : 'bg-emerald-500/10',
-              borderColor: getVal('83', 'tax') > 0 ? 'border-red-500/20' : 'border-emerald-500/20',
-              unpaidHint:
-                unpaidVatEft > 0
-                  ? t('accounting:vat_return.kpi.balance_unpaid_hint', {
-                      amount: fmtEft(getVal('83', 'tax') - unpaidVatEft),
-                      defaultValue: `kintlévőség nélkül: ${fmtEft(getVal('83', 'tax') - unpaidVatEft)}`,
-                    })
-                  : null,
-            },
-            {
-              label: getVal('84', 'tax')
-                ? t('accounting:vat_return.kpi.payable_net', 'Befizetendő (84.)')
-                : t('accounting:vat_return.kpi.reclaimable_net', 'Visszaigénylés (85.)'),
-              value: getVal('84', 'tax') || getVal('85', 'tax'),
-              prev: getPrevVal('84', 'tax') || getPrevVal('85', 'tax'),
-              color: getVal('84', 'tax') ? 'text-red-500' : 'text-emerald-600',
-              bg: getVal('84', 'tax') ? 'bg-red-500/10' : 'bg-emerald-500/10',
-              borderColor: getVal('84', 'tax') ? 'border-red-500/20' : 'border-emerald-500/20',
-              unpaidHint: null,
-            },
-          ].map((kpi, idx) => (
+          {(isCroatia
+            ? [
+                {
+                  label: t('accounting:vat_return.kpi.payable_tax_hr', 'II. Obračunani PDV'),
+                  value: getVal('II', 'tax') || vatReturn?.total_payable_tax || 0,
+                  prev: getPrevVal('II', 'tax'),
+                  color: 'text-red-500',
+                  bg: 'bg-red-500/10',
+                  borderColor: 'border-red-500/20',
+                  unpaidHint: null,
+                },
+                {
+                  label: t('accounting:vat_return.kpi.deductible_tax_hr', 'III. Pretporez'),
+                  value: getVal('III', 'tax') || vatReturn?.total_deductible_tax || 0,
+                  prev: getPrevVal('III', 'tax'),
+                  color: 'text-emerald-600',
+                  bg: 'bg-emerald-500/10',
+                  borderColor: 'border-emerald-500/20',
+                  unpaidHint: null,
+                },
+                {
+                  label: t('accounting:vat_return.kpi.balance_hr', 'Saldo (II. - III.)'),
+                  value:
+                    (getVal('II', 'tax') || vatReturn?.total_payable_tax || 0) -
+                    (getVal('III', 'tax') || vatReturn?.total_deductible_tax || 0),
+                  prev: getPrevVal('II', 'tax') - getPrevVal('III', 'tax'),
+                  color:
+                    (getVal('II', 'tax') || vatReturn?.total_payable_tax || 0) -
+                      (getVal('III', 'tax') || vatReturn?.total_deductible_tax || 0) >
+                    0
+                      ? 'text-red-500'
+                      : 'text-emerald-600',
+                  bg:
+                    (getVal('II', 'tax') || vatReturn?.total_payable_tax || 0) -
+                      (getVal('III', 'tax') || vatReturn?.total_deductible_tax || 0) >
+                    0
+                      ? 'bg-red-500/10'
+                      : 'bg-emerald-500/10',
+                  borderColor:
+                    (getVal('II', 'tax') || vatReturn?.total_payable_tax || 0) -
+                      (getVal('III', 'tax') || vatReturn?.total_deductible_tax || 0) >
+                    0
+                      ? 'border-red-500/20'
+                      : 'border-emerald-500/20',
+                  unpaidHint: null,
+                },
+                {
+                  label:
+                    (getVal('IV', 'tax') || vatReturn?.amount_to_pay || (vatReturn?.net_result || 0) > 0)
+                      ? t('accounting:vat_return.kpi.payable_net_hr', 'IV. Obveza za uplatu')
+                      : (vatReturn?.amount_reclaimable || (vatReturn?.net_result || 0) < 0)
+                      ? t('accounting:vat_return.kpi.reclaimable_net_hr', 'IV. Za povrat')
+                      : t('accounting:vat_return.kpi.settlement_hr', 'IV. Obveza / Povrat'),
+                  value:
+                    getVal('IV', 'tax') ||
+                    vatReturn?.amount_to_pay ||
+                    vatReturn?.amount_reclaimable ||
+                    Math.abs(vatReturn?.net_result || 0),
+                  prev: getPrevVal('IV', 'tax'),
+                  color:
+                    getVal('IV', 'tax') || vatReturn?.amount_to_pay || (vatReturn?.net_result || 0) > 0
+                      ? 'text-red-500'
+                      : 'text-emerald-600',
+                  bg:
+                    getVal('IV', 'tax') || vatReturn?.amount_to_pay || (vatReturn?.net_result || 0) > 0
+                      ? 'bg-red-500/10'
+                      : 'bg-emerald-500/10',
+                  borderColor:
+                    getVal('IV', 'tax') || vatReturn?.amount_to_pay || (vatReturn?.net_result || 0) > 0
+                      ? 'border-red-500/20'
+                      : 'border-emerald-500/20',
+                  unpaidHint: null,
+                },
+              ]
+            : [
+                {
+                  label: t('accounting:vat_return.kpi.payable_tax', 'Fizetendő ÁFA (36.)'),
+                  value: getVal('36', 'tax'),
+                  prev: getPrevVal('36', 'tax'),
+                  color: 'text-red-500',
+                  bg: 'bg-red-500/10',
+                  borderColor: 'border-red-500/20',
+                  unpaidHint:
+                    unpaidVatEft > 0
+                      ? t('accounting:vat_return.kpi.unpaid_hint', {
+                          amount: formatAmount(unpaidVatEft),
+                          defaultValue: `ebből kintlévőség: ${formatAmount(unpaidVatEft)}`,
+                        })
+                      : null,
+                },
+                {
+                  label: t('accounting:vat_return.kpi.deductible_tax', 'Levonható ÁFA (76.)'),
+                  value: getVal('76', 'tax'),
+                  prev: getPrevVal('76', 'tax'),
+                  color: 'text-emerald-600',
+                  bg: 'bg-emerald-500/10',
+                  borderColor: 'border-emerald-500/20',
+                  unpaidHint: null,
+                },
+                {
+                  label: t('accounting:vat_return.kpi.balance', 'Egyenleg (83.)'),
+                  value: getVal('83', 'tax'),
+                  prev: getPrevVal('83', 'tax'),
+                  color: getVal('83', 'tax') > 0 ? 'text-red-500' : 'text-emerald-600',
+                  bg: getVal('83', 'tax') > 0 ? 'bg-red-500/10' : 'bg-emerald-500/10',
+                  borderColor: getVal('83', 'tax') > 0 ? 'border-red-500/20' : 'border-emerald-500/20',
+                  unpaidHint:
+                    unpaidVatEft > 0
+                      ? t('accounting:vat_return.kpi.balance_unpaid_hint', {
+                          amount: formatAmount(getVal('83', 'tax') - unpaidVatEft),
+                          defaultValue: `kintlévőség nélkül: ${formatAmount(getVal('83', 'tax') - unpaidVatEft)}`,
+                        })
+                      : null,
+                },
+                {
+                  label: getVal('84', 'tax')
+                    ? t('accounting:vat_return.kpi.payable_net', 'Befizetendő (84.)')
+                    : t('accounting:vat_return.kpi.reclaimable_net', 'Visszaigénylés (85.)'),
+                  value: getVal('84', 'tax') || getVal('85', 'tax'),
+                  prev: getPrevVal('84', 'tax') || getPrevVal('85', 'tax'),
+                  color: getVal('84', 'tax') ? 'text-red-500' : 'text-emerald-600',
+                  bg: getVal('84', 'tax') ? 'bg-red-500/10' : 'bg-emerald-500/10',
+                  borderColor: getVal('84', 'tax') ? 'border-red-500/20' : 'border-emerald-500/20',
+                  unpaidHint: null,
+                },
+              ]
+          ).map((kpi, idx) => (
             <Card
               key={kpi.label}
               className={cn(
@@ -402,7 +489,7 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                 </div>
                 <div className="min-w-0">
                   <div className={cn('text-2xl font-bold tabular-nums leading-tight', kpi.color)}>
-                    {vatReturn ? fmtEft(kpi.value) : '—'}
+                    {vatReturn ? formatAmount(kpi.value) : '—'}
                     <DeltaBadge current={kpi.value} prev={kpi.prev} />
                   </div>
                   <div className="text-[11px] text-muted-foreground mt-0.5 truncate">{kpi.label}</div>
@@ -432,66 +519,68 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
 
       {/* Carryforward + Validations + NAV XML Validator */}
       {vatReturn && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Manual Carryforward (82. sor) */}
-          <Card className="border-border/60">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-sm font-medium">{t('accounting:vat_return.cards.carryforward.title', 'Előző időszak áthozat (82. sor)')}</div>
-                <Badge variant="outline" className="text-[10px]">
-                  {t('accounting:vat_return.cards.carryforward.badge', 'manuálisan szerkeszthető')}
-                </Badge>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <div className="text-xs text-muted-foreground mb-1">
-                    {t('accounting:vat_return.cards.carryforward.auto_desc', {
-                      amount: fmtEft(prevLineMap['86']?.tax_amount_rounded ?? 0),
-                      defaultValue: `Automatikus (előző hó 86. sor): ${fmtEft(prevLineMap['86']?.tax_amount_rounded ?? 0)}`,
-                    })}
-                    {prevLineMap['86']?.tax_amount_rounded != null &&
-                      prevLineMap['86']?.tax_amount_rounded !== Number(carryforwardValue || 0) && (
-                        <Button
-                          variant="link"
-                          size="sm"
-                          className="h-auto p-0 ml-2 text-[10px] text-primary"
-                          onClick={() => {
-                            const prevVal = prevLineMap['86']?.tax_amount_rounded ?? 0;
-                            setCarryforwardValue(String(prevVal));
-                          }}
-                        >
-                          {t('accounting:vat_return.cards.carryforward.load_button', '← Betöltés')}
-                        </Button>
-                      )}
-                  </div>
-                  <div className="flex gap-2 items-center">
-                    <Input
-                      type="number"
-                      className="w-40 h-8 text-sm tabular-nums"
-                      placeholder={t('accounting:vat_return.cards.carryforward.unit', 'eFt')}
-                      value={carryforwardValue}
-                      onChange={(e) => setCarryforwardValue(e.target.value)}
-                      disabled={isFinalized}
-                    />
-                    <span className="text-xs text-muted-foreground">{t('accounting:vat_return.cards.carryforward.unit', 'eFt')}</span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8"
-                      disabled={saveCarryforward.isPending || isFinalized}
-                      onClick={() => saveCarryforward.mutate(Number(carryforwardValue) || 0)}
-                    >
-                      {saveCarryforward.isPending ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Save className="w-3.5 h-3.5" />
-                      )}
-                    </Button>
+        <div className={cn('grid gap-4', isCroatia ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3')}>
+          {/* Manual Carryforward (82. sor) - Only for HU */}
+          {!isCroatia && (
+            <Card className="border-border/60">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm font-medium">{t('accounting:vat_return.cards.carryforward.title', 'Előző időszak áthozat (82. sor)')}</div>
+                  <Badge variant="outline" className="text-[10px]">
+                    {t('accounting:vat_return.cards.carryforward.badge', 'manuálisan szerkeszthető')}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      {t('accounting:vat_return.cards.carryforward.auto_desc', {
+                        amount: formatAmount(prevLineMap['86']?.tax_amount_rounded ?? 0),
+                        defaultValue: `Automatikus (előző hó 86. sor): ${formatAmount(prevLineMap['86']?.tax_amount_rounded ?? 0)}`,
+                      })}
+                      {prevLineMap['86']?.tax_amount_rounded != null &&
+                        prevLineMap['86']?.tax_amount_rounded !== Number(carryforwardValue || 0) && (
+                          <Button
+                            variant="link"
+                            size="sm"
+                            className="h-auto p-0 ml-2 text-[10px] text-primary"
+                            onClick={() => {
+                              const prevVal = prevLineMap['86']?.tax_amount_rounded ?? 0;
+                              setCarryforwardValue(String(prevVal));
+                            }}
+                          >
+                            {t('accounting:vat_return.cards.carryforward.load_button', '← Betöltés')}
+                          </Button>
+                        )}
+                    </div>
+                    <div className="flex gap-2 items-center">
+                      <Input
+                        type="number"
+                        className="w-40 h-8 text-sm tabular-nums"
+                        placeholder={t('accounting:vat_return.cards.carryforward.unit', 'eFt')}
+                        value={carryforwardValue}
+                        onChange={(e) => setCarryforwardValue(e.target.value)}
+                        disabled={isFinalized}
+                      />
+                      <span className="text-xs text-muted-foreground">{t('accounting:vat_return.cards.carryforward.unit', 'eFt')}</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        disabled={saveCarryforward.isPending || isFinalized}
+                        onClick={() => saveCarryforward.mutate(Number(carryforwardValue) || 0)}
+                      >
+                        {saveCarryforward.isPending ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Save className="w-3.5 h-3.5" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Validation Warnings */}
           <Card className="border-border/60">
@@ -500,8 +589,8 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
               <div className="space-y-1.5">
                 {(() => {
                   const warnings: { msg: string; type: 'ok' | 'warn' | 'error' }[] = [];
-                  const payTax = getVal('36', 'tax');
-                  const dedTax = getVal('76', 'tax');
+                  const payTax = getVal(isCroatia ? 'II' : '36', 'tax') || (isCroatia ? vatReturn.total_payable_tax : 0);
+                  const dedTax = getVal(isCroatia ? 'III' : '76', 'tax') || (isCroatia ? vatReturn.total_deductible_tax : 0);
 
                   if (payTax === 0 && dedTax === 0) {
                     warnings.push({
@@ -510,41 +599,58 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                     });
                   } else {
                     warnings.push({
-                      msg: t('accounting:vat_return.cards.audit_points.summary', {
-                        pay: fmtEft(payTax),
-                        ded: fmtEft(dedTax),
-                        defaultValue: `Fizetendő: ${fmtEft(payTax)}, Levonható: ${fmtEft(dedTax)}`,
-                      }),
+                      msg: isCroatia
+                        ? `Za uplatu (II.): ${formatAmount(payTax)}, Pretporez (III.): ${formatAmount(dedTax)}`
+                        : t('accounting:vat_return.cards.audit_points.summary', {
+                            pay: formatAmount(payTax),
+                            ded: formatAmount(dedTax),
+                            defaultValue: `Fizetendő: ${formatAmount(payTax)}, Levonható: ${formatAmount(dedTax)}`,
+                          }),
                       type: 'ok',
                     });
                   }
 
-                  const mTotal = getVal('105', 'tax');
-                  if (dedTax > 0 && mTotal === 0) {
-                    warnings.push({
-                      msg: t('accounting:vat_return.cards.audit_points.m_sheet_empty_warning', 'M-lap üres, de van levonható ÁFA — ellenőrizd a partner adószámokat'),
-                      type: 'warn',
-                    });
-                  } else if (mTotal > 0) {
-                    warnings.push({
-                      msg: t('accounting:vat_return.cards.audit_points.m_sheet_summary', {
-                        total: fmtEft(mTotal),
-                        count: mLines.length,
-                        defaultValue: `M-lap összesítő: ${fmtEft(mTotal)} (${mLines.length} partner)`,
-                      }),
-                      type: 'ok',
-                    });
-                  }
+                  if (isCroatia) {
+                    const net = vatReturn.net_result ?? (payTax - dedTax);
+                    if (net > 0) {
+                      warnings.push({
+                        msg: `Konačna obveza za uplatu (IV.): ${formatAmount(net)}`,
+                        type: 'ok',
+                      });
+                    } else if (net < 0) {
+                      warnings.push({
+                        msg: `Pretporez za povrat (IV.): ${formatAmount(Math.abs(net))}`,
+                        type: 'ok',
+                      });
+                    }
+                  } else {
+                    const mTotal = getVal('105', 'tax');
+                    if (dedTax > 0 && mTotal === 0) {
+                      warnings.push({
+                        msg: t('accounting:vat_return.cards.audit_points.m_sheet_empty_warning', 'M-lap üres, de van levonható ÁFA — ellenőrizd a partner adószámokat'),
+                        type: 'warn',
+                      });
+                    } else if (mTotal > 0) {
+                      warnings.push({
+                        msg: t('accounting:vat_return.cards.audit_points.m_sheet_summary', {
+                          total: formatAmount(mTotal),
+                          count: mLines.length,
+                          defaultValue: `M-lap összesítő: ${formatAmount(mTotal)} (${mLines.length} partner)`,
+                        }),
+                        type: 'ok',
+                      });
+                    }
 
-                  const carry = getVal('86', 'tax');
-                  if (carry > 0) {
-                    warnings.push({
-                      msg: t('accounting:vat_return.cards.audit_points.next_month_carryforward', {
-                        amount: fmtEft(carry),
-                        defaultValue: `Következő hónapra átvihető: ${fmtEft(carry)}`,
-                      }),
-                      type: 'ok',
-                    });
+                    const carry = getVal('86', 'tax');
+                    if (carry > 0) {
+                      warnings.push({
+                        msg: t('accounting:vat_return.cards.audit_points.next_month_carryforward', {
+                          amount: formatAmount(carry),
+                          defaultValue: `Következő hónapra átvihető: ${formatAmount(carry)}`,
+                        }),
+                        type: 'ok',
+                      });
+                    }
                   }
 
                   return warnings.map((w, i) => (
@@ -572,18 +678,20 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
             </CardContent>
           </Card>
 
-          {/* NAV XML Validator */}
-          <VatXmlValidationDialog
-            selectedCompany={selectedCompany}
-            year={year}
-            month={month}
-            frequency={frequency}
-            lines={lines}
-            mLines={mLines}
-            xmlValidationResults={xmlValidationResults}
-            isValidatingXml={isValidatingXml}
-            runXmlValidationLocal={runXmlValidationLocal}
-          />
+          {/* NAV XML Validator - Only for HU */}
+          {!isCroatia && (
+            <VatXmlValidationDialog
+              selectedCompany={selectedCompany}
+              year={year}
+              month={month}
+              frequency={frequency}
+              lines={lines}
+              mLines={mLines}
+              xmlValidationResults={xmlValidationResults}
+              isValidatingXml={isValidatingXml}
+              runXmlValidationLocal={runXmlValidationLocal}
+            />
+          )}
         </div>
       )}
 
@@ -648,7 +756,7 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                   <div className="flex items-center gap-2">
                     {hasData && summaryTax !== 0 && (
                       <span className="text-sm font-semibold tabular-nums text-primary">
-                        {fmtEft(summaryTax)}
+                        {formatAmount(summaryTax)}
                       </span>
                     )}
                     {hasData && (
@@ -663,8 +771,8 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                     <div className="grid grid-cols-12 gap-2 px-4 py-2 text-xs font-medium text-muted-foreground bg-muted/20">
                       <div className="col-span-1">Sor</div>
                       <div className={hasPrevData ? 'col-span-3' : 'col-span-7'}>Megnevezés</div>
-                      <div className="col-span-2 text-right">Adóalap (eFt)</div>
-                      <div className="col-span-2 text-right">Adó (eFt)</div>
+                      <div className="col-span-2 text-right">{isCroatia ? 'Adóalap (€)' : 'Adóalap (eFt)'}</div>
+                      <div className="col-span-2 text-right">{isCroatia ? 'Adó (€)' : 'Adó (eFt)'}</div>
                       {hasPrevData && <div className="col-span-2 text-right">Előző hó</div>}
                       {hasPrevData && <div className="col-span-2 text-right">Δ</div>}
                     </div>
@@ -746,15 +854,15 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                             </div>
                             {row.has_base && (
                               <div className="col-span-2 text-right tabular-nums text-xs">
-                                {line ? fmtEft(line.base_amount_rounded) : ''}
+                                {line ? formatAmount(line.base_amount_rounded) : ''}
                               </div>
                             )}
                             <div className="col-span-2 text-right tabular-nums text-xs font-medium">
-                              {row.has_tax && line ? fmtEft(line.tax_amount_rounded) : ''}
+                              {row.has_tax && line ? formatAmount(line.tax_amount_rounded) : ''}
                             </div>
                             {hasPrevData && (
                               <div className="col-span-2 text-right tabular-nums text-muted-foreground text-xs">
-                                {row.has_tax && prevLine ? fmtEft(prevTax) : ''}
+                                {row.has_tax && prevLine ? formatAmount(prevTax) : ''}
                               </div>
                             )}
                             {hasPrevData && (
@@ -774,7 +882,7 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                               </div>
                             )}
                           </div>
-                          {row.row_number === '66' && (
+                          {row.row_number === '66' && !isCroatia && (
                             <div
                               className="grid grid-cols-12 gap-2 px-4 py-1.5 text-xs items-center bg-muted/10 hover:bg-muted/20 border-t border-border/15 cursor-pointer transition-colors"
                               onClick={() => {
@@ -794,11 +902,11 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                                 ebből: fordított adózás alá eső ügylet után levont adó
                               </div>
                               <div className="col-span-2 text-right tabular-nums text-xs font-mono font-medium text-foreground/80">
-                                {fmtEft(lineMap['66_fad']?.tax_amount_rounded ?? lineMap['29']?.tax_amount_rounded ?? 0)}
+                                {formatAmount(lineMap['66_fad']?.tax_amount_rounded ?? lineMap['29']?.tax_amount_rounded ?? 0)}
                               </div>
                               {hasPrevData && (
                                 <div className="col-span-2 text-right tabular-nums text-muted-foreground/60 text-xs font-mono">
-                                  {fmtEft(prevLineMap['66_fad']?.tax_amount_rounded ?? prevLineMap['29']?.tax_amount_rounded ?? 0)}
+                                  {formatAmount(prevLineMap['66_fad']?.tax_amount_rounded ?? prevLineMap['29']?.tax_amount_rounded ?? 0)}
                                 </div>
                               )}
                               {hasPrevData && (
@@ -994,10 +1102,10 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                         </div>
                         <div className="col-span-1 text-center">{ml.invoice_count}</div>
                         <div className="col-span-2 text-right tabular-nums">
-                          {fmtEft(ml.base_amount_rounded)}
+                          {formatAmount(ml.base_amount_rounded)}
                         </div>
                         <div className="col-span-2 text-right tabular-nums">
-                          {fmtEft(ml.tax_amount_rounded)}
+                          {formatAmount(ml.tax_amount_rounded)}
                         </div>
                         <div className="col-span-2 text-right text-xs tabular-nums text-muted-foreground">
                           {Math.round(ml.tax_27_amount / 1000)} /{' '}

@@ -336,12 +336,17 @@ export interface VatCollectorGroup {
   label: string;
   items: {
     id?: string;
+    invoice_id?: string;
+    code?: string;
     invoice_number: string;
     partner_name: string;
     fulfillment_date: string;
     vat_code?: string | null;
     gl_number?: string | null;
+    partner_gl_number?: string | null;
+    vat_gl_number?: string | null;
     direction?: string | null;
+    is_customer_from_submitted?: boolean;
     net_amount: number;
     vat_amount: number;
     gross_amount: number;
@@ -354,27 +359,28 @@ export interface VatCollectorGroup {
 export const exportVatCollectorAnalyticsExcel = async (
   groups: VatCollectorGroup[],
   companyName: string = 'Vállalkozás',
-  periodLabel: string = ''
+  periodLabel: string = '',
+  currency: string = 'HUF'
 ) => {
   const { default: ExcelJS } = await import('exceljs');
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'Visibill';
   workbook.created = new Date();
 
-  const ws = workbook.addWorksheet('ÁFA Gyűjtőkód Analitika', {
+  const ws = workbook.addWorksheet(currency === 'EUR' ? 'PDV Analitika' : 'ÁFA Gyűjtőkód Analitika', {
     views: [{ showGridLines: false }],
   });
 
   ws.columns = [
-    { header: 'ÁFA Gyűjtőkód / Bizonylatszám', key: 'col1', width: 34 },
-    { header: 'Partner neve', key: 'col2', width: 35 },
-    { header: 'Irány (Vevő/Szállító)', key: 'col_dir', width: 22 },
-    { header: 'Teljesítés dátuma', key: 'col3', width: 18 },
-    { header: 'ÁFA kód', key: 'col4', width: 14 },
-    { header: 'Kontír (Főkönyv)', key: 'col5', width: 18 },
-    { header: 'Nettó alap (HUF)', key: 'net', width: 20 },
-    { header: 'ÁFA összeg (HUF)', key: 'vat', width: 20 },
-    { header: 'Bruttó érték (HUF)', key: 'gross', width: 20 },
+    { header: currency === 'EUR' ? 'Zbirni kod PDV-a / Broj dokumenta' : 'ÁFA Gyűjtőkód / Bizonylatszám', key: 'col1', width: 34 },
+    { header: currency === 'EUR' ? 'Naziv partnera' : 'Partner neve', key: 'col2', width: 35 },
+    { header: currency === 'EUR' ? 'Smjer (Kupac/Dobavljač)' : 'Irány (Vevő/Szállító)', key: 'col_dir', width: 22 },
+    { header: currency === 'EUR' ? 'Datum isporuke' : 'Teljesítés dátuma', key: 'col3', width: 18 },
+    { header: currency === 'EUR' ? 'PDV oznaka' : 'ÁFA kód', key: 'col4', width: 14 },
+    { header: currency === 'EUR' ? 'Konto' : 'Kontír (Főkönyv)', key: 'col5', width: 18 },
+    { header: currency === 'EUR' ? 'Neto osnovica (EUR)' : `Nettó alap (${currency})`, key: 'net', width: 20 },
+    { header: currency === 'EUR' ? 'Iznos PDV-a (EUR)' : `ÁFA összeg (${currency})`, key: 'vat', width: 20 },
+    { header: currency === 'EUR' ? 'Bruto vrijednost (EUR)' : `Bruttó érték (${currency})`, key: 'gross', width: 20 },
   ];
 
   const headerRow = ws.getRow(1);
@@ -411,7 +417,9 @@ export const exportVatCollectorAnalyticsExcel = async (
       const itemRow = ws.addRow({
         col1: item.invoice_number,
         col2: item.partner_name,
-        col_dir: item.direction === 'OUTBOUND' ? 'Vevői (Kimenő)' : (item.direction === 'INBOUND' ? 'Szállítói (Bejövő)' : '-'),
+        col_dir: currency === 'EUR'
+          ? (item.direction === 'OUTBOUND' ? 'Izlazni (Kupac)' : (item.direction === 'INBOUND' ? 'Ulazni (Dobavljač)' : '-'))
+          : (item.direction === 'OUTBOUND' ? 'Vevői (Kimenő)' : (item.direction === 'INBOUND' ? 'Szállítói (Bejövő)' : '-')),
         col3: item.fulfillment_date ? item.fulfillment_date.substring(0, 10).replace(/-/g, '.') : '-',
         col4: item.vat_code || '-',
         col5: item.gl_number || '-',
@@ -434,7 +442,7 @@ export const exportVatCollectorAnalyticsExcel = async (
 
   // Grand Total Row
   const totalRow = ws.addRow({
-    col1: 'ÖSSZESEN (NAV ÁFA Analitika)',
+    col1: currency === 'EUR' ? 'UKUPNO (PDV analitika)' : 'ÖSSZESEN (NAV ÁFA Analitika)',
     col2: '',
     col_dir: '',
     col3: '',

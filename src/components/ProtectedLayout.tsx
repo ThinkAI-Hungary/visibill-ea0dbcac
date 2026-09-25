@@ -133,7 +133,7 @@ export function ProtectedLayout() {
       if (isEaisybooks) {
         authUrl += '&app=eaisybooks';
       }
-    } else if (isEaisybooks) {
+    } else if (isEaisybooks && !postSignout) {
       authUrl = `${baseAuth}?app=eaisybooks`;
     }
 

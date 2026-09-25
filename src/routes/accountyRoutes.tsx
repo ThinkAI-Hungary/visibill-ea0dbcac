@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from "react";
 import { Navigate, Route } from "react-router-dom";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { ProtectedAccountyRoute } from "@/pages/Accounty/ProtectedAccountyRoute";
+import { ProtectedAccountyRoute, AccountyAccessGuard } from "@/pages/Accounty/ProtectedAccountyRoute";
 import { ProtectedPage, RemoveInitialLoader } from "./shellComponents";
 import {
   AccountyRootRedirect,
@@ -414,10 +414,12 @@ export function renderAccountyRoutes() {
           path="/hr/eaisybooks/new-client"
           element={
             <ProtectedPage>
-              <Suspense fallback={<LoadingSpinner message="Učitavanje..." />}>
-                <RemoveInitialLoader />
-                <NewClientPage />
-              </Suspense>
+              <AccountyAccessGuard fallbackTo="/hr">
+                <Suspense fallback={<LoadingSpinner message="Učitavanje..." />}>
+                  <RemoveInitialLoader />
+                  <NewClientPage />
+                </Suspense>
+              </AccountyAccessGuard>
             </ProtectedPage>
           }
         />
@@ -428,7 +430,9 @@ export function renderAccountyRoutes() {
           element={
             <ProtectedPage>
               <RemoveInitialLoader />
-              <AccountyLayout />
+              <AccountyAccessGuard fallbackTo="/hr">
+                <AccountyLayout />
+              </AccountyAccessGuard>
             </ProtectedPage>
           }
         >
@@ -441,10 +445,12 @@ export function renderAccountyRoutes() {
         path="/eaisybooks/new-client"
         element={
           <ProtectedPage>
-            <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
-              <RemoveInitialLoader />
-              <NewClientPage />
-            </Suspense>
+            <AccountyAccessGuard fallbackTo="/">
+              <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
+                <RemoveInitialLoader />
+                <NewClientPage />
+              </Suspense>
+            </AccountyAccessGuard>
           </ProtectedPage>
         }
       />
@@ -455,7 +461,9 @@ export function renderAccountyRoutes() {
         element={
           <ProtectedPage>
             <RemoveInitialLoader />
-            <AccountyLayout />
+            <AccountyAccessGuard fallbackTo="/">
+              <AccountyLayout />
+            </AccountyAccessGuard>
           </ProtectedPage>
         }
       >

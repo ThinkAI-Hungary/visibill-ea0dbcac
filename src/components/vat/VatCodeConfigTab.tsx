@@ -61,7 +61,7 @@ function VatCodeDialog({ open, onOpenChange, code, formRows, onSave, saving }: {
     legacy_code: '',
     label: '',
     vat_percent: 27,
-    direction: 'INBOUND' as string,
+    direction: 'INBOUND' as 'OUTBOUND' | 'INBOUND',
     is_deductible: true,
     is_reverse_charge: false,
     is_eu: false,
@@ -243,12 +243,14 @@ export function VatCodeConfigTab() {
     enabled: !!selectedCompany?.id,
   });
 
+  const companyCountry = selectedCompany?.country_code || 'HU';
   const { data: formRows = [] } = useQuery({
-    queryKey: ['vat_form_rows'],
+    queryKey: ['vat_form_rows', companyCountry],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('vat_form_rows')
         .select('*')
+        .eq('country_code', companyCountry)
         .order('sort_order');
       if (error) throw error;
       return (data || []) as unknown as FormRow[];
@@ -260,9 +262,11 @@ export function VatCodeConfigTab() {
       if (!selectedCompany?.id) throw new Error('No company');
       const { error } = await supabase.rpc('seed_default_vat_codes', { p_company_id: selectedCompany.id });
       if (error) throw error;
-      // Also seed FAD-specific VAT codes
-      const { error: fadError } = await supabase.rpc('seed_fad_vat_codes', { p_company_id: selectedCompany.id });
-      if (fadError) console.warn('FAD seed warning:', fadError.message);
+      // Also seed FAD-specific VAT codes for Hungarian companies
+      if (companyCountry === 'HU') {
+        const { error: fadError } = await supabase.rpc('seed_fad_vat_codes', { p_company_id: selectedCompany.id });
+        if (fadError) console.warn('FAD seed warning:', fadError.message);
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['vat_codes'] });
@@ -288,7 +292,7 @@ export function VatCodeConfigTab() {
         const { error } = await supabase.from('vat_codes').update(code as any).eq('id', code.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('vat_codes').insert({ ...code, company_id: selectedCompany!.id });
+        const { error } = await supabase.from('vat_codes').insert({ ...code, company_id: selectedCompany!.id } as any);
         if (error) throw error;
       }
     },

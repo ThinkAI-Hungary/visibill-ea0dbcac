@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
 import { useTranslation } from 'react-i18next';
 import {
   DropdownMenu,
@@ -87,8 +88,36 @@ export function InvoiceVatCodeSelector({
     staleTime: 60_000,
   });
 
+  const { isCroatia } = useCompanyJurisdiction(selectedCompany);
+
   // 2. Build complete list of available VAT options
   const defaultOptions: VatCodeOption[] = React.useMemo(() => {
+    if (isCroatia) {
+      if (effectiveDirection === 'OUTBOUND') {
+        return [
+          { codeName: 'HR_IZL_25', label: '25% Isporuke u RH', targetRow: 'II.3', vatPercent: 25, direction: 'OUTBOUND', group: 'standard' },
+          { codeName: 'HR_IZL_13', label: '13% Isporuke u RH', targetRow: 'II.2', vatPercent: 13, direction: 'OUTBOUND', group: 'standard' },
+          { codeName: 'HR_IZL_5', label: '5% Isporuke u RH', targetRow: 'II.1', vatPercent: 5, direction: 'OUTBOUND', group: 'standard' },
+          { codeName: 'HR_IZL_TUZ_PRIJ', label: 'Tuzemni prijenos', targetRow: 'I.1', vatPercent: 0, direction: 'OUTBOUND', group: 'special' },
+          { codeName: 'HR_IZL_EU_DOB', label: 'Isporuke u EU (dobra)', targetRow: 'I.2', vatPercent: 0, direction: 'OUTBOUND', group: 'special' },
+          { codeName: 'HR_IZL_EU_USL', label: 'Usluge u EU', targetRow: 'I.4', vatPercent: 0, direction: 'OUTBOUND', group: 'special' },
+          { codeName: 'HR_IZL_IZVOZ', label: 'Izvoz u 3. zemlje', targetRow: 'I.6', vatPercent: 0, direction: 'OUTBOUND', group: 'special' },
+          { codeName: 'HR_IZL_OSL', label: 'Oslobođene isporuke', targetRow: 'I.8', vatPercent: 0, direction: 'OUTBOUND', group: 'exemption' },
+        ];
+      } else {
+        return [
+          { codeName: 'HR_UL_25_ODB', label: '25% Pretporez (odbitak)', targetRow: 'III.3', vatPercent: 25, direction: 'INBOUND', group: 'standard' },
+          { codeName: 'HR_UL_13_ODB', label: '13% Pretporez (odbitak)', targetRow: 'III.2', vatPercent: 13, direction: 'INBOUND', group: 'standard' },
+          { codeName: 'HR_UL_5_ODB', label: '5% Pretporez (odbitak)', targetRow: 'III.1', vatPercent: 5, direction: 'INBOUND', group: 'standard' },
+          { codeName: 'HR_UL_TUZ_PRIJ', label: 'Tuzemni prijenos (građevina)', targetRow: 'II.4', vatPercent: 25, direction: 'INBOUND', group: 'special' },
+          { codeName: 'HR_UL_EU_DOB', label: 'Stjecanje dobara iz EU', targetRow: 'II.7', vatPercent: 25, direction: 'INBOUND', group: 'special' },
+          { codeName: 'HR_UL_EU_USL', label: 'Primljene usluge iz EU', targetRow: 'II.10', vatPercent: 25, direction: 'INBOUND', group: 'special' },
+          { codeName: 'HR_UL_UVOZ', label: 'Uvoz dobara (plaćen PDV)', targetRow: 'III.14', vatPercent: 25, direction: 'INBOUND', group: 'special' },
+          { codeName: 'HR_UL_NEODB', label: 'Pretporez bez prava na odbitak', targetRow: 'III.12', vatPercent: 0, direction: 'INBOUND', group: 'exemption' },
+        ];
+      }
+    }
+
     if (effectiveDirection === 'OUTBOUND') {
       return [
         { codeName: 'KIM_27', label: '27% Értékesítés', targetRow: '07', vatPercent: 27, direction: 'OUTBOUND', group: 'standard' },
@@ -111,7 +140,7 @@ export function InvoiceVatCodeSelector({
         { codeName: 'TAM', label: 'Adómentes beszerzés', targetRow: '63', vatPercent: 0, direction: 'INBOUND', group: 'exemption' },
       ];
     }
-  }, [effectiveDirection]);
+  }, [effectiveDirection, isCroatia]);
 
   // Combine DB custom codes with default list
   const combinedOptions = React.useMemo(() => {
@@ -263,14 +292,14 @@ export function InvoiceVatCodeSelector({
                 "h-5 text-[10px] px-1.5 text-muted-foreground/60 hover:text-foreground border border-dashed border-border/50 hover:border-primary/40 rounded gap-1",
                 size === 'sm' ? 'h-5 text-[10px] px-1.5' : 'h-7 text-xs px-2'
               )}
-              title={t('invoices:vat_selector.override_title', 'ÁFA kód / 2665 bevallási sor felülbírálata')}
+              title={t('invoices:vat_selector.override_title', isCroatia ? 'PDV kod / Obrazac PDV redak' : 'ÁFA kód / 2665 bevallási sor felülbírálata')}
             >
               {isPending ? (
                 <Loader2 className="w-2.5 h-2.5 animate-spin" />
               ) : (
                 <Tag className="w-2.5 h-2.5" />
               )}
-              <span>{t('invoices:vat_selector.button_label', 'ÁFA kód')}</span>
+              <span>{t('invoices:vat_selector.button_label', isCroatia ? 'PDV kod' : 'ÁFA kód')}</span>
               <ChevronDown className="w-2.5 h-2.5 opacity-40" />
             </Button>
           )}
@@ -278,7 +307,7 @@ export function InvoiceVatCodeSelector({
 
         <DropdownMenuContent align="end" className="w-64 max-h-80 overflow-y-auto z-50">
           <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
-            {t('invoices:vat_selector.menu_title', 'ÁFA kód & 2665-ös bevallási sor')}
+            {t('invoices:vat_selector.menu_title', isCroatia ? 'PDV kod & Obrazac PDV redak' : 'ÁFA kód & 2665-ös bevallási sor')}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
 
