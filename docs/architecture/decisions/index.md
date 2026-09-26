@@ -94,7 +94,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-113 | NAV Számlatételek ÁFA és Bruttó Összeg Automatikus Kalkulációja (Közműszámlák) | ✅ Decided | [A-113](./A-113-nav-invoice-items-vat-gross-auto-calculation.md) |
 | A-119 | Aggreg8 PSD2 Open Banking AISP Integráció, Dedikált Proxy Relay és Valós Idejű Szinkronizáció | ✅ Decided | [A-119](./A-119-aggreg8-psd2-open-banking-integration.md) |
 | A-130 | NAV Automatikus Szinkronizáció Hajnali Idő-ablakos Terheléselosztása (Load Staggering) | ✅ Decided | [A-130](./A-130-nav-auto-sync-dawn-load-staggering.md) |
-| A-162 | Mailgun & IMAP Csatolmány Szűrési Szinkronizáció és Body-MIME Hardening | ✅ Decided | [A-162](./A-162-mailgun-and-imap-attachment-filtering-and-mime-hardening.md) |
+| A-162 | Mailgun & IMAP Csatolmány Szűrési Szinkronizáció, Storage Fájlnév-Szanálás és Body-MIME Hardening | ✅ Decided | [A-162](./A-162-mailgun-and-imap-attachment-filtering-and-mime-hardening.md) |
 
 ## 🗄️ Adatbázis & Pénzügy
 
