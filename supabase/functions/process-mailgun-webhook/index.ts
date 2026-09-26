@@ -1041,21 +1041,36 @@ serve(async (req) => {
     alias.company_id = alias.company_id && String(alias.company_id).trim() !== '' ? String(alias.company_id).trim() : null;
 
     // Helper: Érvényes számla csatolmány-e?
-    const isValidInvoiceAttachment = (file: File): boolean => {
-      const fileName = file.name.toLowerCase();
-      const fileType = file.type.toLowerCase();
+    const isValidInvoiceAttachment = (
+      fileOrName: File | { name: string; size: number; type?: string } | string,
+      fileSize?: number,
+      fileTypeInput?: string
+    ): boolean => {
+      let fileName: string;
+      let size: number;
+      let fileType: string;
+
+      if (typeof fileOrName === 'string') {
+        fileName = fileOrName.toLowerCase();
+        size = fileSize ?? 0;
+        fileType = (fileTypeInput ?? '').toLowerCase();
+      } else {
+        fileName = fileOrName.name.toLowerCase();
+        size = fileOrName.size;
+        fileType = (fileOrName.type || '').toLowerCase();
+      }
       
       // Minimális fájlméret (1KB) - túl kicsi fájlok kiszűrése (pl üres txt)
-      if (file.size < 1024) {
-        console.log(`Skipping too small file: ${file.name} (${file.size} bytes)`);
+      if (size < 1024) {
+        console.log(`Skipping too small file: ${fileName} (${size} bytes)`);
         return false;
       }
       
       // Képek esetében (png, jpg) szigorúbb méretkorlát (100KB)
       // Branding logók tipikusan 1-90KB, lefotózott számlák 200KB-5MB
       const isImage = fileType.startsWith('image/') || fileName.endsWith('.png') || fileName.endsWith('.jpg') || fileName.endsWith('.jpeg');
-      if (isImage && file.size < 100 * 1024) {
-        console.log(`Skipping small image (likely branding/signature): ${file.name} (${file.size} bytes)`);
+      if (isImage && size < 100 * 1024) {
+        console.log(`Skipping small image (likely branding/signature): ${fileName} (${size} bytes)`);
         return false;
       }
 
@@ -1074,13 +1089,13 @@ serve(async (req) => {
         'hírlevél', 'hirlevel',                            // newsletter
       ];
       if (junkKeywords.some(keyword => fileName.includes(keyword))) {
-        console.log(`Skipping file with junk keyword in name: ${file.name}`);
+        console.log(`Skipping file with junk keyword in name: ${fileName}`);
         return false;
       }
 
       // Inline email images: image001.png, image002.jpg, etc. (Outlook / Exchange pattern)
       if (/^image\d{1,4}\.(png|jpe?g|gif|bmp)$/.test(fileName)) {
-        console.log(`Skipping inline email image: ${file.name}`);
+        console.log(`Skipping inline email image: ${fileName}`);
         return false;
       }
 
@@ -1088,7 +1103,7 @@ serve(async (req) => {
       // These are typically inline images without meaningful filenames.
       // Genuine documents (e.g. attachment-1.pdf, attachment-2.xlsx) from forwarded emails are kept!
       if (/^attachment-\d+(\.(png|jpe?g|gif|bmp))?$/i.test(fileName)) {
-        console.log(`Skipping generic inline attachment: ${file.name}`);
+        console.log(`Skipping generic inline attachment: ${fileName}`);
         return false;
       }
 
@@ -1109,7 +1124,7 @@ serve(async (req) => {
       const hasAllowedExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
       
       if (!hasAllowedType && !hasAllowedExtension) {
-        console.log(`Skipping unsupported file: ${file.name} (type: ${fileType})`);
+        console.log(`Skipping unsupported file: ${fileName} (type: ${fileType})`);
         return false;
       }
       
@@ -1718,7 +1733,7 @@ serve(async (req) => {
                   console.log(`[BODY-MIME-FALLBACK] Archive has no supported files, skipping: ${attachName}`);
                   continue;
                 }
-              } else if (!isValidInvoiceAttachment(attachName, attachContentType)) {
+              } else if (!isValidInvoiceAttachment(attachName, attachBytes.length, attachContentType)) {
                 console.log(`[BODY-MIME-FALLBACK] Skipping unsupported attachment: ${attachName}`);
                 continue;
               } else {
@@ -1727,10 +1742,48 @@ serve(async (req) => {
               
               // Process each expanded file (same logic as the main attachment loop)
               for (const ef of expandedFiles) {
-                const classification = classifyAttachment(ef.name, senderDomain, sender);
-                const reason = getClassificationReason(ef.name, senderDomain, sender);
+                const { classification, bankHint, reportType, reason } = classifyAttachment(ef.name, subject, senderDomain, sender);
                 
-                console.log(`[BODY-MIME-FALLBACK] Classification for ${ef.name}: ${classification} (${reason})`);
+                console.log(`[BODY-MIME-FALLBACK] Processing file: ${ef.name} → ${classification} (reason: ${reason})${bankHint ? ` (bank: ${bankHint})` : ''}${reportType ? ` (report: ${reportType})` : ''}${ef.extractedFromArchive ? ` [from: ${ef.extractedFromArchive}]` : ''}`);
+
+                // ── Idempotency check ──
+                if (messageId) {
+                  let hasBeenProcessed = false;
+                  const tablesToCheck = ['transaction_uploads', 'invoice_uploads', 'report_uploads'];
+                  for (const table of tablesToCheck) {
+                    const { data: existingUpload } = await supabase
+                      .from(table)
+                      .select('id')
+                      .eq('company_id', alias.company_id)
+                      .eq('file_name', ef.name)
+                      .contains('metadata', { mailgun_message_id: messageId })
+                      .limit(1);
+
+                    if (existingUpload && existingUpload.length > 0) {
+                      hasBeenProcessed = true;
+                      break;
+                    }
+                  }
+
+                  if (!hasBeenProcessed) {
+                    const { data: llmRow } = await supabase
+                      .from('llm_koltsegek')
+                      .select('id')
+                      .eq('company_id', alias.company_id)
+                      .eq('file_name', ef.name)
+                      .contains('metadata', { mailgun_message_id: messageId })
+                      .limit(1);
+
+                    if (llmRow && llmRow.length > 0) {
+                      hasBeenProcessed = true;
+                    }
+                  }
+
+                  if (hasBeenProcessed) {
+                    console.log(`[BODY-MIME-FALLBACK] Skipping duplicate attachment: ${ef.name} (Message-Id: ${messageId})`);
+                    continue;
+                  }
+                }
                 
                 const storageBucket = classification === 'transaction'
                   ? 'transactions'
@@ -1789,16 +1842,25 @@ serve(async (req) => {
                       user_id: alias.user_id,
                       company_id: alias.company_id,
                       file_name: ef.name,
-                      file_url: publicUrl,
+                      file_type: ef.contentType,
                       file_size: ef.bytes.length,
+                      file_url: publicUrl,
                       upload_status: 'uploaded',
                       processing_status: 'pending',
-                      report_type: detectReportType(ef.name, senderDomain),
+                      report_type: reportType || 'gls',
                       metadata: emailMetadata,
                       notes: initialNote,
+                      email_sender_domain: senderDomain,
                     });
-                  if (reportError) console.error('[BODY-MIME-FALLBACK] Report insert error:', reportError);
-                  else console.log('[BODY-MIME-FALLBACK] Report upload created for:', ef.name);
+                  if (reportError) {
+                    if (isUniqueViolation(reportError)) {
+                      console.log(`[IDEMPOTENCY-DB] report_uploads duplicate skipped (unique_violation): ${ef.name}`);
+                    } else {
+                      console.error('[BODY-MIME-FALLBACK] Report insert error:', reportError);
+                    }
+                  } else {
+                    console.log('[BODY-MIME-FALLBACK] Report upload created for:', ef.name);
+                  }
                 } else if (classification === 'transaction') {
                   const { error: txError } = await supabase
                     .from('transaction_uploads')
@@ -1806,15 +1868,25 @@ serve(async (req) => {
                       user_id: alias.user_id,
                       company_id: alias.company_id,
                       file_name: ef.name,
-                      file_url: publicUrl,
+                      file_type: ef.contentType,
                       file_size: ef.bytes.length,
+                      file_url: publicUrl,
+                      upload_status: 'uploaded',
                       processing_status: 'pending',
-                      bank_hint: detectBankHint(ef.name, senderDomain, bodyPlain),
+                      ...(bankHint ? { bank_hint: bankHint } : {}),
                       metadata: emailMetadata,
                       notes: initialNote,
+                      email_sender_domain: senderDomain,
                     });
-                  if (txError) console.error('[BODY-MIME-FALLBACK] Transaction insert error:', txError);
-                  else console.log('[BODY-MIME-FALLBACK] Transaction upload created for:', ef.name);
+                  if (txError) {
+                    if (isUniqueViolation(txError)) {
+                      console.log(`[IDEMPOTENCY-DB] transaction_uploads duplicate skipped (unique_violation): ${ef.name}`);
+                    } else {
+                      console.error('[BODY-MIME-FALLBACK] Transaction insert error:', txError);
+                    }
+                  } else {
+                    console.log('[BODY-MIME-FALLBACK] Transaction upload created for:', ef.name);
+                  }
                 } else {
                   const { error: invError } = await supabase
                     .from('invoice_uploads')
@@ -1822,15 +1894,24 @@ serve(async (req) => {
                       user_id: alias.user_id,
                       company_id: alias.company_id,
                       file_name: ef.name,
-                      file_url: publicUrl,
+                      file_type: ef.contentType,
                       file_size: ef.bytes.length,
+                      file_url: publicUrl,
+                      upload_status: 'uploaded',
                       processing_status: 'pending',
-                      document_category: 'invoice',
                       metadata: emailMetadata,
                       notes: initialNote,
+                      email_sender_domain: senderDomain,
                     });
-                  if (invError) console.error('[BODY-MIME-FALLBACK] Invoice insert error:', invError);
-                  else console.log('[BODY-MIME-FALLBACK] Invoice upload created for:', ef.name);
+                  if (invError) {
+                    if (isUniqueViolation(invError)) {
+                      console.log(`[IDEMPOTENCY-DB] invoice_uploads duplicate skipped (unique_violation): ${ef.name}`);
+                    } else {
+                      console.error('[BODY-MIME-FALLBACK] Invoice insert error:', invError);
+                    }
+                  } else {
+                    console.log('[BODY-MIME-FALLBACK] Invoice upload created for:', ef.name);
+                  }
                 }
               }
             }
