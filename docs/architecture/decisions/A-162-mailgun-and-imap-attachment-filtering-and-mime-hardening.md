@@ -35,6 +35,8 @@ A korábbi működésben aszimmetria és technikai adósság állt fenn:
 3. **Unit Teszt Védelem:**
    - A `worker/test/unit_test/test_imap_sync.py` tesztkészlet kibővült a `TestAttachmentValidation` osztállyal (10 új teszteset, 100% lefedettség a szűrési ágakra).
    - Hozzáadásra került a `TestStorageFilenameSanitization` tesztosztály 6 dedikált tesztesettel (magyar ékezetek, Unicode kombináló mellékjelek, szóközök, speciális jelek, üres név fallback és mockolt storage feltöltés).
+   - Hozzáadásra került a `TestIdempotencyAndUserResolution` tesztosztály 5 dedikált tesztesettel (tételes fájlnév-szintű idempotencia, owner/admin feloldás a `company_members` táblából, és hiányzó tagság esetén tiszta hibakezelés).
+   - A tesztkészlet összesen 42 sikeres egységtesztre bővült.
 
 4. **IMAP Payload Séma Konzisztencia és 23502 Null Constraint Védelem:**
    - Az IMAP pipeline feltöltési logikájában (`imap_sync_pipeline.py`) az `insert_payload` korábban nem tartalmazta a `file_type` és `upload_status` mezőket.
@@ -44,11 +46,20 @@ A korábbi működésben aszimmetria és technikai adósság állt fenn:
 5. **Storage S3 Key Szanálás és Végtelen Ciklus / 400 InvalidKey Védelem:**
    - **`sanitize_filename(filename)` bevezetése:** A `worker/file_utils.py` modulban létrehozott segédfüggvény NFKD normalizációval felbontja a karaktereket, lefejti a kombináló diakritikus jeleket, a szóközöket és tiltott karaktereket aláhúzásjelre (`_`) cseréli, a fájlkiterjesztést megőrzi, és üres/szóköz nevek esetén biztonságos alapértéket ad (`unnamed_file` / `file`).
    - **Kétirányú szétválasztás:**
-     - Az S3 tárolási kulcs (`storage_path`) szigorúan a szanált nevet kapja: `f"{company_id}/{ts}-{sanitized_name}"`.
+     - Az S3 tárolási kulcs (`storage_path`) szigorúan a szanált nevet kapja: `f"{company_id}/{ts}_{att_idx}_{sanitized_name}"` (milliszekundumos időbélyeggel és csatolmány indexszámlálóval, garantálva, hogy egyazon másodpercen belüli vagy azonos nevű fájlok sem írják felül egymást az S3-ban).
      - Az adatbázis rekordban (`insert_payload['file_name']`) **megmarad az eredeti, emberileg olvasható fájlnév** a felhasználói felület számára.
    - **`upsert: "true"` védőháló:** Az `imap_sync_pipeline.py`, az `archive_expander.py` és a `db.py` (`upload_pdf_to_storage`) modulokban a storage feltöltés explicit `file_options={"content-type": content_type, "upsert": "true"}` beállítást kapott, megelőzve az újrapróbálkozásokból eredő ütközéseket.
    - **Archívum payload garancia:** Az `archive_expander.py` kicsomagolási logikájában az `insert_payload` szintén megkapta a `file_type: content_type` és `upload_status: "uploaded"` mezőket minden csatolmánytípusra, megelőzve a kibontott számlák Postgres 23502 not-null hibáját.
    - **7z kibontás kompatibilitás:** A `py7zr 1.x` verziókban kivezetett `readall()` helyett `tempfile.TemporaryDirectory` és `szf.extractall(tmpdir)` alapú lemezes kicsomagolásra tértünk át, amely verziófüggetlenül megbízható.
+
+6. **Tételes Csatolmány-szintű Idempotencia (Részleges Hiba Öngyógyítás):**
+   - Az `is_message_already_uploaded` kibővült az opcionális `file_name` paraméterrel: az ellenőrzés a `metadata->>message_id` és a `file_name` párosára vizsgál.
+   - Ha egy többcsatolmányos levél feldolgozása közben a 2. fájl feltöltése elbukik (emiatt a levél olvasatlan marad), az újrapróbálkozáskor a már sikeresen beszúrt 1. fájl nem kerül duplikálásra, a kimaradt 2. fájl pedig pótlólag feltöltődik és feldolgozódik.
+   - Amikor az összes csatolmány rendben bekerült a rendszerbe, a levél megkapja a `\Seen` jelölést.
+
+7. **Automatikus Tulajdonosi `user_id` Feloldás (`company_members`):**
+   - Ha a levelezési beállításokból hiányzik a `user_id` (pl. a legacy `sync_imap_for_company_sync` ágon), a worker automatikusan feloldja a céghez tartozó `owner` vagy `admin` felhasználó azonosítóját a `company_members` táblából.
+   - Ezzel kiküszöbölésre került az üres `""` string miatti Postgres UUID szintaktikai hiba és a `user_id NOT NULL` kényszer megsértése.
 
 ## Consequences
 
