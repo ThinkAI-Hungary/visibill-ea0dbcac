@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-26  
-> **Összesen:** 121 döntés | ✅ Decided: 117 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 122 döntés | ✅ Decided: 118 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -221,3 +221,4 @@
 | P-113 | Főkönyvi Kivonat Kontírok vs. Tételes Nézetváltó UX | ✅ Decided | [P-113](./P-113-general-ledger-granularity-kontirok-teteles-view.md) |
 | P-117 | Főkönyvi Kivonat Számlánkénti Összevonás és 4-Oszlopos Export UX | ✅ Decided | [P-117](./P-117-general-ledger-invoice-grouping-and-4col-export-ux.md) |
 | P-120 | Főkönyvi Bizonylatmegnyitó és NAV OSA Tételes Nézet UX | ✅ Decided | [P-120](./P-120-general-ledger-invoice-document-preview-and-osa-fallback-ux.md) |
+| P-122 | Főkönyv Felhasználói Élmény (UX), Letisztult Könyvelői Ergonómia és Zsúfoltság-Megszüntetés | ✅ Decided | [P-122](./P-122-general-ledger-ui-ux-restructuring-and-clutter-reduction.md) |

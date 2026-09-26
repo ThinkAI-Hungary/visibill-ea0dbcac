@@ -8470,6 +8470,10 @@ export type Database = {
           ti_override: string | null
           transaction_id: string | null
           user_id: string | null
+          partner_gl_number: string | null
+          vat_code_id: string | null
+          vat_gl_number: string | null
+          vat_row_override: string | null
           vat_summary: Json | null
         }
         Insert: {
@@ -8534,6 +8538,10 @@ export type Database = {
           ti_override?: string | null
           transaction_id?: string | null
           user_id?: string | null
+          partner_gl_number?: string | null
+          vat_code_id?: string | null
+          vat_gl_number?: string | null
+          vat_row_override?: string | null
           vat_summary?: Json | null
         }
         Update: {
@@ -8598,6 +8606,10 @@ export type Database = {
           ti_override?: string | null
           transaction_id?: string | null
           user_id?: string | null
+          partner_gl_number?: string | null
+          vat_code_id?: string | null
+          vat_gl_number?: string | null
+          vat_row_override?: string | null
           vat_summary?: Json | null
         }
         Relationships: [

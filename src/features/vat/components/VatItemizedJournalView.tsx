@@ -109,14 +109,14 @@ export function VatItemizedJournalView({
       const [navRes, subRes] = await Promise.all([
         supabase
           .from('nav_invoices')
-          .select('id, invoice_number, supplier_name, customer_name, supplier_tax_number, customer_tax_number, invoice_delivery_date, invoice_issue_date, payment_method, invoice_net_amount, invoice_vat_amount, invoice_gross_amount, invoice_direction, vat_row_override, is_reverse_charge, vat_rate')
+          .select('id, invoice_number, supplier_name, customer_name, supplier_tax_number, customer_tax_number, invoice_delivery_date, invoice_issue_date, payment_method, invoice_net_amount, invoice_vat_amount, invoice_gross_amount, invoice_direction, vat_row_override, is_reverse_charge')
           .eq('company_id', companyId)
           .or(`invoice_delivery_date.gte.${dateFrom},and(invoice_delivery_date.is.null,invoice_issue_date.gte.${dateFrom})`)
           .or(`invoice_delivery_date.lte.${dateTo},and(invoice_delivery_date.is.null,invoice_issue_date.lte.${dateTo})`)
           .limit(5000),
         supabase
           .from('invoices')
-          .select('id, bizonylatsorszam, elado_nev, vevo_nev, elado_vat_id, vevo_vat_id, teljesites_datuma, kibocsatas_datuma, fizetesi_hatarido, fizetesi_mod, adoalap_osszesen, afa_osszeg_osszesen, brutto_vegosszeg, invoice_direction, partner_gl_number, vat_gl_number, vat_row_override, is_reverse_charge, forditott_adozas, image_url, melleklet_url, invoice_uploads_id, attachments')
+          .select('id, bizonylatsorszam, elado_nev, vevo_nev, elado_vat_id, vevo_vat_id, teljesites_datuma, kibocsatas_datuma, fizetesi_hatarido, fizetesi_mod, adoalap_osszesen, afa_osszeg_osszesen, brutto_vegosszeg, invoice_direction, partner_gl_number, vat_gl_number, vat_row_override, forditott_adozas, image_url, melleklet_url, invoice_uploads_id, attachments')
           .eq('company_id', companyId)
           .or(`teljesites_datuma.gte.${dateFrom},and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${dateFrom})`)
           .or(`teljesites_datuma.lte.${dateTo},and(teljesites_datuma.is.null,kibocsatas_datuma.lte.${dateTo})`)
@@ -272,8 +272,7 @@ export function VatItemizedJournalView({
         const isFad =
           inv.vat_row_override === '29' ||
           inv.vat_row_override === '04' ||
-          Boolean(inv.is_reverse_charge) ||
-          Boolean((inv as any).forditott_adozas) ||
+          Boolean(inv.forditott_adozas) ||
           isReverseChargeVatRate((inv as any).vat_rate);
 
         let jType: 'szállító' | 'vevő' | 'pénztár' | 'vegyes';

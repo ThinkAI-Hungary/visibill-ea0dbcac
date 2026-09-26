@@ -19,6 +19,9 @@ import { UploadAuditXmlModal } from '@/components/general-ledger/UploadAuditXmlM
 import { AuditImportHistoryModal } from '@/components/general-ledger/AuditImportHistoryModal';
 import GeneralLedgerTable, { GeneralLedgerTableRef, GlViewGranularity, GlItemGroupingMode } from '@/components/general-ledger/GeneralLedgerTable';
 import { GlSearchAutocomplete } from '@/components/general-ledger/GlSearchAutocomplete';
+import { GlToolbar } from '@/components/general-ledger/GlToolbar';
+import { GlKpiBar } from '@/components/general-ledger/GlKpiBar';
+import { GlFilterBar } from '@/components/general-ledger/GlFilterBar';
 import { UploadChartOfAccountsModal } from '@/components/general-ledger/UploadChartOfAccountsModal';
 import { AddGlAccountModal } from '@/components/general-ledger/AddGlAccountModal';
 import { CustomTooltip } from '@/components/ui/custom-tooltip';
@@ -321,110 +324,7 @@ export default function GeneralLedgerPage() {
     </div>
   );
 
-  const renderViewLayoutToggle = () => (
-    <div className="inline-flex h-8 items-center rounded-lg border border-border/80 bg-background/80 p-0.5 shadow-2xs text-xs select-none shrink-0">
-      <CustomTooltip content={t('accounting:general_ledger.tooltips.view_summary', 'Összesítő nézet (Egyenleg + Forgalom T/K)')} side="bottom">
-        <button
-          type="button"
-          onClick={() => setViewLayout('summary')}
-          className={cn(
-            "inline-flex h-7 items-center justify-center gap-1.5 px-2.5 rounded-md text-xs transition-all cursor-pointer border whitespace-nowrap",
-            viewLayout === 'summary'
-              ? "bg-muted text-foreground shadow-xs border-border/60 font-semibold"
-              : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
-          )}
-        >
-          <LayoutGrid className="w-3.5 h-3.5 shrink-0" />
-          <span>{t('accounting:general_ledger.view_summary', 'Összesítő')}</span>
-        </button>
-      </CustomTooltip>
-      <CustomTooltip content={t('accounting:general_ledger.tooltips.view_classic', 'Klasszikus 4 oszlopos főkönyvi kivonat (Forgalom T/K, Egyenleg T/K)')} side="bottom">
-        <button
-          type="button"
-          onClick={() => setViewLayout('classic')}
-          className={cn(
-            "inline-flex h-7 items-center justify-center gap-1.5 px-2.5 rounded-md text-xs transition-all cursor-pointer border whitespace-nowrap",
-            viewLayout === 'classic'
-              ? "bg-muted text-foreground shadow-xs border-border/60 font-semibold"
-              : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
-          )}
-        >
-          <Columns className="w-3.5 h-3.5 shrink-0" />
-          <span>{t('accounting:general_ledger.view_classic', 'Klasszikus')}</span>
-        </button>
-      </CustomTooltip>
-    </div>
-  );
 
-  const renderGranularityToggle = () => (
-    <div className="inline-flex h-8 items-center rounded-lg border border-border/80 bg-background/80 p-0.5 shadow-2xs text-xs select-none shrink-0">
-      <CustomTooltip content={t('accounting:general_ledger.tooltips.granularity_kontirok', 'Kontírok nézet (Összevont számlatükör fastruktúra - alapértelmezett)')} side="bottom">
-        <button
-          type="button"
-          onClick={() => handleGranularityChange('kontirok')}
-          className={cn(
-            "inline-flex h-7 items-center justify-center gap-1.5 px-2.5 rounded-md text-xs transition-all cursor-pointer border whitespace-nowrap",
-            viewGranularity === 'kontirok'
-              ? "bg-muted text-foreground shadow-xs border-border/60 font-semibold"
-              : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
-          )}
-        >
-          <FolderTree className="w-3.5 h-3.5 shrink-0" />
-          <span>{t('accounting:general_ledger.granularity_kontirok', 'Kontírok')}</span>
-        </button>
-      </CustomTooltip>
-      <CustomTooltip content={t('accounting:general_ledger.tooltips.granularity_teteles', 'Tételes analitikus nézet (Minden számla alatt kibontva a könyvelt tételek)')} side="bottom">
-        <button
-          type="button"
-          onClick={() => handleGranularityChange('teteles')}
-          className={cn(
-            "inline-flex h-7 items-center justify-center gap-1.5 px-2.5 rounded-md text-xs transition-all cursor-pointer border whitespace-nowrap",
-            viewGranularity === 'teteles'
-              ? "bg-muted text-foreground shadow-xs border-border/60 font-semibold text-primary"
-              : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
-          )}
-        >
-          <ListTree className="w-3.5 h-3.5 shrink-0 text-primary" />
-          <span>{t('accounting:general_ledger.granularity_teteles', 'Tételes')}</span>
-        </button>
-      </CustomTooltip>
-    </div>
-  );
-
-  const renderItemGroupingToggle = () => (
-    <div className="inline-flex h-8 items-center rounded-lg border border-border/80 bg-background/80 p-0.5 shadow-2xs text-xs select-none shrink-0">
-      <CustomTooltip content={t('accounting:general_ledger.item_grouping.by_invoice_tooltip', 'Számlánkénti összevonás: egy számlán szereplő és azonos kontírszámra könyvelt tételek egy sorként, összesítve jelennek meg (alapértelmezett)')} side="bottom">
-        <button
-          type="button"
-          onClick={() => handleItemGroupingChange('by_invoice')}
-          className={cn(
-            "inline-flex h-7 items-center justify-center gap-1.5 px-2.5 rounded-md text-xs transition-all cursor-pointer border whitespace-nowrap",
-            itemGrouping === 'by_invoice'
-              ? "bg-muted text-foreground shadow-xs border-border/60 font-semibold text-primary"
-              : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
-          )}
-        >
-          <Receipt className="w-3.5 h-3.5 shrink-0 text-primary" />
-          <span>{t('accounting:general_ledger.item_grouping.by_invoice', 'Számlánként')}</span>
-        </button>
-      </CustomTooltip>
-      <CustomTooltip content={t('accounting:general_ledger.item_grouping.detailed_tooltip', 'Tételes bontás: minden számlatétel különálló sorként jelenik meg')} side="bottom">
-        <button
-          type="button"
-          onClick={() => handleItemGroupingChange('detailed')}
-          className={cn(
-            "inline-flex h-7 items-center justify-center gap-1.5 px-2.5 rounded-md text-xs transition-all cursor-pointer border whitespace-nowrap",
-            itemGrouping === 'detailed'
-              ? "bg-muted text-foreground shadow-xs border-border/60 font-semibold text-primary"
-              : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
-          )}
-        >
-          <ListFilter className="w-3.5 h-3.5 shrink-0" />
-          <span>{t('accounting:general_ledger.item_grouping.detailed', 'Tételes')}</span>
-        </button>
-      </CustomTooltip>
-    </div>
-  );
 
   const [isAllExpanded, setIsAllExpanded] = useState(false);
 
@@ -437,40 +337,7 @@ export default function GeneralLedgerPage() {
     }
   }, []);
 
-  const renderExpandCollapseToggle = () => (
-    <div className="inline-flex h-8 items-center rounded-lg border border-border/80 bg-background/80 p-0.5 shadow-2xs text-xs select-none shrink-0">
-      <CustomTooltip content={t('accounting:general_ledger.expand_all_tooltip', 'Összes főkönyvi szám és alábontás lenyitása')} side="bottom">
-        <button
-          type="button"
-          onClick={() => handleToggleExpandAll(true)}
-          className={cn(
-            "inline-flex h-7 items-center justify-center gap-1.5 px-2.5 rounded-md text-xs transition-all cursor-pointer border shrink-0 whitespace-nowrap",
-            isAllExpanded
-              ? "bg-muted text-foreground shadow-xs border-border/60 font-semibold text-primary"
-              : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
-          )}
-        >
-          <Maximize2 className="w-3.5 h-3.5 shrink-0" />
-          <span>{t('accounting:general_ledger.context_menu.expand_all', 'Mind kinyitása')}</span>
-        </button>
-      </CustomTooltip>
-      <CustomTooltip content={t('accounting:general_ledger.collapse_all_tooltip', 'Összes alszámla becsukása a főkategóriák szintjére')} side="bottom">
-        <button
-          type="button"
-          onClick={() => handleToggleExpandAll(false)}
-          className={cn(
-            "inline-flex h-7 items-center justify-center gap-1.5 px-2.5 rounded-md text-xs transition-all cursor-pointer border shrink-0 whitespace-nowrap",
-            !isAllExpanded
-              ? "bg-muted text-foreground shadow-xs border-border/60 font-semibold"
-              : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
-          )}
-        >
-          <Minimize2 className="w-3.5 h-3.5 shrink-0" />
-          <span>{t('accounting:general_ledger.context_menu.collapse_all', 'Mind összecsukása')}</span>
-        </button>
-      </CustomTooltip>
-    </div>
-  );
+
 
   const handleHideZeroChange = useCallback((hide: boolean) => {
     setHideZeroBalances(hide);
@@ -490,40 +357,7 @@ export default function GeneralLedgerPage() {
     }, { replace: true });
   }, [selectedCompany?.id, setSearchParams]);
 
-  const renderHideZeroToggle = () => (
-    <div className="inline-flex h-8 items-center rounded-lg border border-border/80 bg-background/80 p-0.5 shadow-2xs text-xs select-none">
-      <CustomTooltip content={t('accounting:general_ledger.hide_zero.all_tooltip', 'A teljes számlatükör megjelenítése forgalomtól függetlenül')} side="bottom">
-        <button
-          type="button"
-          onClick={() => handleHideZeroChange(false)}
-          className={cn(
-            "inline-flex h-7 items-center justify-center gap-1.5 px-2.5 rounded-md text-xs transition-all cursor-pointer border whitespace-nowrap",
-            !hideZeroBalances
-              ? "bg-muted text-foreground shadow-xs border-border/60 font-semibold"
-              : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
-          )}
-        >
-          <Layers className="w-3.5 h-3.5 shrink-0" />
-          <span>{t('accounting:general_ledger.hide_zero.all', 'Összes')}</span>
-        </button>
-      </CustomTooltip>
-      <CustomTooltip content={t('accounting:general_ledger.hide_zero.active_tooltip', 'Csak azok a számlák és hierarchikus összesítők jelennek meg, ahol könyvelési tétel vagy forgalom van')} side="bottom">
-        <button
-          type="button"
-          onClick={() => handleHideZeroChange(true)}
-          className={cn(
-            "inline-flex h-7 items-center justify-center gap-1.5 px-2.5 rounded-md text-xs transition-all cursor-pointer border whitespace-nowrap",
-            hideZeroBalances
-              ? "bg-muted text-foreground shadow-xs border-border/60 font-semibold text-primary"
-              : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50 font-medium"
-          )}
-        >
-          <Filter className="w-3.5 h-3.5 shrink-0 text-primary" />
-          <span>{t('accounting:general_ledger.hide_zero.active_only', 'Csak forgalom')}</span>
-        </button>
-      </CustomTooltip>
-    </div>
-  );
+
 
   const setActionParam = useCallback((action: string | null) => {
     setSearchParams(prev => {
@@ -745,240 +579,35 @@ export default function GeneralLedgerPage() {
         </Card>
       ) : (
         <>
-      <div className="flex flex-col gap-3 print:hidden">
+          <GlToolbar
+            activePresetId={activePresetId}
+            presets={presets}
+            isPresetsLoading={isPresetsLoading}
+            isPresetsPending={toggleActivePresetMutation.isPending}
+            isCroatia={isCroatia}
+            selectedCompanyName={selectedCompany?.name}
+            isAIRunning={isAIRunning}
+            onSelectPreset={handleSelectPreset}
+            onOpenManagePresets={handleOpenManage}
+            onOpenUploadPreset={handleOpenUpload}
+            onOpenAddAccount={() => setAddGlAccountOpen(true)}
+            onOpenManualEntry={() => setManualEntryOpen(true)}
+            onOpenUploadAuditXml={() => setAuditXmlModalOpen(true)}
+            onOpenAuditHistory={() => setAuditHistoryOpen(true)}
+            onRunAI={handleRunAI}
+            onShowPrintPreview={() => setShowPrintPreview(true)}
+            onPrint={handlePrint}
+            onExportExcel={(opts) => tableRef.current?.exportExcel(selectedCompany?.name, opts)}
+            onExportAnalyticalExcel={(opts) => tableRef.current?.exportAnalyticalExcel(selectedCompany?.name, opts)}
+          />
 
-          {/* Preset Selector & Action */}
-          <div className="flex items-center justify-end gap-3 bg-card p-3 rounded-xl border border-border shadow-sm">
-            <div className="flex items-center gap-2">
-              <Database className="w-4 h-4 text-primary" />
-              <Label className="whitespace-nowrap font-medium text-xs">
-                {t('accounting:general_ledger.toolbar.active_preset', 'Aktív Számlatükör:')}
-              </Label>
-              <Select value={activePresetId || ''} onValueChange={handleSelectPreset} disabled={toggleActivePresetMutation.isPending}>
-                <SelectTrigger className="w-[200px] h-9 text-sm">
-                  <SelectValue placeholder={t('accounting:general_ledger.toolbar.select_preset', 'Sablon kiválasztása')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {presets?.map(preset => {
-                    const isGeneric = preset.type === 'generic' || preset.name === 'számla_hr';
-                    const displayName = getPresetDisplayName(preset);
-                    return (
-                      <SelectItem key={preset.id} value={preset.id}>
-                        {displayName} {isGeneric ? ` ${t('accounting:general_ledger.toolbar.builtin_badge', '(Beépített)')}` : ''}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-9 gap-2 text-muted-foreground font-medium"
-                onClick={handleOpenManage}
-              >
-                <Settings2 className="w-4 h-4" />
-                <span>{t('accounting:general_ledger.toolbar.manage_presets', 'Sablonok kezelése')}</span>
-              </Button>
-            </div>
-            <div className="border-l pl-3 border-border/60 flex items-center gap-2">
-              <Button onClick={() => setAddGlAccountOpen(true)} size="sm" variant="outline" className="h-9 gap-2">
-                <Plus className="w-4 h-4" />
-                <span>{t('accounting:general_ledger.toolbar.add_account', 'Új főkönyvi szám')}</span>
-              </Button>
-              <Button onClick={handleOpenUpload} size="sm" className="h-9 gap-2">
-                <UploadCloud className="w-4 h-4" />
-                <span>{t('accounting:general_ledger.toolbar.upload_preset', 'Új sablon feltöltése')}</span>
-              </Button>
-              <Button onClick={() => setManualEntryOpen(true)} size="sm" variant="outline" className="h-9 gap-2 bg-primary/5 hover:bg-primary/10 text-primary border-primary/20">
-                <BookOpen className="w-4 h-4" />
-                <span>{t('accounting:general_ledger.toolbar.manual_entry', 'Vegyes bizonylat')}</span>
-              </Button>
-              <Button onClick={() => setAuditXmlModalOpen(true)} size="sm" variant="outline" className="h-9 gap-2">
-                <FileUp className="w-4 h-4" />
-                <span>{t('accounting:general_ledger.toolbar.xml_import', 'XML Import')}</span>
-              </Button>
-              <Button onClick={() => setAuditHistoryOpen(true)} size="sm" variant="outline" className="h-9 gap-2">
-                <FileText className="w-4 h-4" />
-                <span>{t('accounting:general_ledger.toolbar.xml_imports', 'XML Importok')}</span>
-              </Button>
-              <Button 
-                onClick={handleRunAI} 
-                disabled={isAIRunning}
-                size="sm" 
-                variant="secondary"
-                className="h-9 gap-2"
-              >
-                {isAIRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bot className="w-4 h-4" />}
-                <span>{t('accounting:general_ledger.toolbar.ai_classification', 'AI Besorolás')}</span>
-              </Button>
-              <div className="border-l pl-3 border-border/60 ml-1">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-9 gap-2">
-                      <Download className="h-4 w-4" />
-                      {t('accounting:general_ledger.toolbar.export', 'Export')}
-                      <ChevronDown className="h-4 w-4 ml-1" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuItem onClick={() => setShowPrintPreview(true)}>
-                      <Eye className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span>{t('accounting:general_ledger.toolbar.print_preview', 'Nyomtatási előnézet')}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handlePrint}>
-                      <Printer className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span className="flex-1">{t('accounting:general_ledger.toolbar.print_pdf', 'Nyomtatás / PDF')}</span>
-                      <kbd className="ml-2 pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
-                        Ctrl+P
-                      </kbd>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger>
-                        <FileSpreadsheet className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span>{t('accounting:general_ledger.toolbar.export_excel', 'Kivonat (Excel)')}</span>
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent className="w-52">
-                        <DropdownMenuItem onClick={() => tableRef.current?.exportExcel(selectedCompany?.name, { excludeZeroRows: false })}>
-                          <Layers className="h-4 w-4 mr-2 text-muted-foreground" />
-                          <span>{t('accounting:general_ledger.toolbar.export_full', 'Teljes kivonat')}</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => tableRef.current?.exportExcel(selectedCompany?.name, { excludeZeroRows: true })}>
-                          <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
-                          <span>{t('accounting:general_ledger.toolbar.export_no_zeros', '0-ás sorok nélkül')}</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuSubContent>
-                    </DropdownMenuSub>
-                    {/* F6: Analytical export */}
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger>
-                        <Table2 className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span>{t('accounting:general_ledger.toolbar.export_analytical_excel', 'Analitikus kivonat (Excel)')}</span>
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent className="w-52">
-                        <DropdownMenuItem onClick={() => tableRef.current?.exportAnalyticalExcel(selectedCompany?.name, { excludeZeroRows: false })}>
-                          <Layers className="h-4 w-4 mr-2 text-muted-foreground" />
-                          <span>{t('accounting:general_ledger.toolbar.export_full_analytics', 'Teljes analitika')}</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => tableRef.current?.exportAnalyticalExcel(selectedCompany?.name, { excludeZeroRows: true })}>
-                          <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
-                          <span>{t('accounting:general_ledger.toolbar.export_no_zeros_analytics', '0-ás sorok nélkül')}</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuSubContent>
-                    </DropdownMenuSub>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-          </div>
-      </div>
-
-      {/* ── KPI Summary Bar (F1) ── */}
-      {!isTableLoading && glStats && glStats.accountCount > 0 ? (() => {
-        const currencyLabel = defaultCurrency === 'HUF' ? 'Ft' : defaultCurrency;
-        const fmtCurrency = (v: number) => new Intl.NumberFormat(isCroatia ? 'hr-HR' : 'hu-HU').format(Math.round(v));
-        return (
-          <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 print:hidden">
-            <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
-              <div className="bg-primary/10 text-primary p-2 rounded-lg"><Database className="w-4 h-4" /></div>
-              <div>
-                <div className="text-lg font-bold tabular-nums">{glStats.accountCount}</div>
-                <div className="text-[11px] text-muted-foreground">{t('accounting:general_ledger.kpi.accounts', 'Főkönyvi számok')}</div>
-              </div>
-            </div>
-            <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
-              <div className="bg-blue-500/10 text-blue-600 p-2 rounded-lg"><FileText className="w-4 h-4" /></div>
-              <div>
-                <div className="text-lg font-bold tabular-nums">{glStats.leafCount}</div>
-                <div className="text-[11px] text-muted-foreground">{t('accounting:general_ledger.kpi.leaf_accounts', 'Analitikus számlák')}</div>
-              </div>
-            </div>
-            <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
-              <div className="bg-orange-500/10 text-orange-500 p-2 rounded-lg"><Download className="w-4 h-4 rotate-180" /></div>
-              <div>
-                <div className="text-lg font-bold tabular-nums">{fmtCurrency(glStats.totalDebit)}</div>
-                <div className="text-[11px] text-muted-foreground">
-                  {t('accounting:general_ledger.kpi.debit', { currency: currencyLabel, defaultValue: `Tartozik (${currencyLabel})` })}
-                </div>
-              </div>
-            </div>
-            <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
-              <div className="bg-sky-500/10 text-sky-500 p-2 rounded-lg"><Download className="w-4 h-4" /></div>
-              <div>
-                <div className="text-lg font-bold tabular-nums">{fmtCurrency(glStats.totalCredit)}</div>
-                <div className="text-[11px] text-muted-foreground">
-                  {t('accounting:general_ledger.kpi.credit', { currency: currencyLabel, defaultValue: `Követel (${currencyLabel})` })}
-                </div>
-              </div>
-            </div>
-          </div>
-          {/* ── Classification Progress Bar / Reserved Space (F2) ── */}
-          <div className="h-6 mt-3 print:hidden">
-            {glStats.totalItems > 0 && (() => {
-              const pct = Math.round((glStats.classifiedItems / glStats.totalItems) * 100);
-              return (
-                <div>
-                  <div className="flex justify-between text-[10px] text-muted-foreground mb-1 leading-none">
-                    <span>
-                      {t('accounting:general_ledger.kpi.classification_progress', {
-                        classified: glStats.classifiedItems,
-                        total: glStats.totalItems,
-                        defaultValue: `Besorolás: ${glStats.classifiedItems}/${glStats.totalItems} tétel`
-                      })}
-                    </span>
-                    <span className={pct === 100 ? 'text-emerald-600 font-semibold' : ''}>{pct}%</span>
-                  </div>
-                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div className={`h-full rounded-full transition-all duration-500 ${pct === 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-primary to-blue-500'}`} style={{ width: `${pct}%` }} />
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-          </>
-        );
-      })() : (
-        <div className="space-y-3 print:hidden animate-pulse">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
-              <div className="bg-primary/10 p-2 rounded-lg"><Skeleton className="w-4 h-4 rounded" /></div>
-              <div className="space-y-1.5 flex-1">
-                <Skeleton className="h-5 w-16 bg-muted/60" />
-                <Skeleton className="h-3 w-24 bg-muted/40" />
-              </div>
-            </div>
-            <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
-              <div className="bg-blue-500/10 p-2 rounded-lg"><Skeleton className="w-4 h-4 rounded" /></div>
-              <div className="space-y-1.5 flex-1">
-                <Skeleton className="h-5 w-16 bg-muted/60" />
-                <Skeleton className="h-3 w-24 bg-muted/40" />
-              </div>
-            </div>
-            <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
-              <div className="bg-orange-500/10 p-2 rounded-lg"><Skeleton className="w-4 h-4 rounded" /></div>
-              <div className="space-y-1.5 flex-1">
-                <Skeleton className="h-5 w-28 bg-muted/60" />
-                <Skeleton className="h-3 w-20 bg-muted/40" />
-              </div>
-            </div>
-            <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
-              <div className="bg-sky-500/10 p-2 rounded-lg"><Skeleton className="w-4 h-4 rounded" /></div>
-              <div className="space-y-1.5 flex-1">
-                <Skeleton className="h-5 w-28 bg-muted/60" />
-                <Skeleton className="h-3 w-20 bg-muted/40" />
-              </div>
-            </div>
-          </div>
-          <div className="h-6 mt-3 print:hidden space-y-1.5">
-            <div className="flex justify-between leading-none">
-              <Skeleton className="h-2.5 w-36 bg-muted/50" />
-              <Skeleton className="h-2.5 w-8 bg-muted/50" />
-            </div>
-            <Skeleton className="h-1.5 w-full rounded-full bg-muted/50" />
-          </div>
-        </div>
-      )}
+          <GlKpiBar
+            glStats={glStats}
+            isTableLoading={isTableLoading}
+            currencyLabel={defaultCurrency === 'HUF' ? 'Ft' : defaultCurrency}
+            isCroatia={isCroatia}
+            companyId={selectedCompany?.id}
+          />
 
       {/* F7: View tabs — Kivonat vs Kartonok vs Naplófőkönyv vs Összehasonlítás */}
       <Tabs value={activeViewTab} onValueChange={v => setActiveViewTab(v as any)} className="print:hidden">
@@ -1003,79 +632,37 @@ export default function GeneralLedgerPage() {
         <Card className="border-border/60 shadow-md print:border-none print:shadow-none print:bg-transparent content-animate">
           <CardHeader className="p-0 border-b border-border/40 bg-muted/30 relative z-30 overflow-visible print:hidden">
             <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-primary/40 via-primary/20 to-transparent"></div>
-            
-            {/* 1. sor: Keresés és Fa kibontás (bal) | Nézetváltó és Időszak (jobb) */}
-            <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <GlSearchAutocomplete
-                  companyId={selectedCompany?.id}
-                  presetId={activePresetId}
-                  placeholder={t('accounting:general_ledger.search_placeholder', 'Keresés a főkönyvben (szám, név, partner)...')}
-                  onQueryChange={setGlSearchQuery}
-                  onSearchResultsChange={setGlSearchResults}
-                  onSelect={(result) => {
-                    const term = result.entity_type === 'account' ? result.gl_number : (result.title || result.target_gl_number);
-                    setGlSearchQuery(term);
-                    tableRef.current?.navigateToEntity(result);
-                  }}
-                  onClear={() => {
-                    setGlSearchQuery('');
-                    setGlSearchResults([]);
-                  }}
-                />
-                <div className="h-5 w-px bg-border/60 shrink-0 hidden sm:block" />
-                {renderExpandCollapseToggle()}
-              </div>
-
-              <div className="flex items-center gap-2.5 shrink-0 ml-auto">
-                {renderGranularityToggle()}
-                {renderViewLayoutToggle()}
-                <span className="text-xs font-semibold text-muted-foreground bg-background px-3 py-1.5 rounded-lg border border-border flex items-center gap-2 shadow-2xs whitespace-nowrap">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-                  {dateFrom.replace(/-/g, '.')} - {dateTo.replace(/-/g, '.')}
-                </span>
-              </div>
-            </div>
-
-            {/* 2. sor: Dedikált adatszűrő sáv */}
-            <div className="flex items-center justify-between gap-3 px-4 py-2 border-t border-border/30 bg-muted/15 text-xs">
-              <div className="flex items-center gap-3.5 flex-wrap">
-                <div className="flex items-center gap-1.5 text-muted-foreground font-medium text-xs mr-0.5">
-                  <Filter className="w-3.5 h-3.5 text-primary" />
-                  <span className="font-semibold text-foreground/85">
-                    {t('accounting:general_ledger.filters_label', 'Szűrők:')}
-                  </span>
-                </div>
-                {/* Dátum alap kapcsoló */}
-                <div className="flex items-center gap-1.5">
-                  <span className="text-muted-foreground/80 text-[11px] font-medium">
-                    {t('accounting:general_ledger.date_label', 'Dátum:')}
-                  </span>
-                  {renderDateBasisToggle()}
-                </div>
-                {/* Státusz szűrő kapcsoló */}
-                <div className="flex items-center gap-1.5">
-                  <span className="text-muted-foreground/80 text-[11px] font-medium">
-                    {t('accounting:general_ledger.documents_label', 'Bizonylatok:')}
-                  </span>
-                  {renderPostingStatusToggle()}
-                </div>
-                {/* Nullás sorok kapcsoló */}
-                <div className="flex items-center gap-1.5">
-                  <span className="text-muted-foreground/80 text-[11px] font-medium">
-                    {t('accounting:general_ledger.balance_label', 'Egyenleg:')}
-                  </span>
-                  {renderHideZeroToggle()}
-                </div>
-                {/* Tételek összevonása / bontása kapcsoló */}
-                <div className="flex items-center gap-1.5">
-                  <span className="text-muted-foreground/80 text-[11px] font-medium">
-                    {t('accounting:general_ledger.item_grouping_label', 'Tételek:')}
-                  </span>
-                  {renderItemGroupingToggle()}
-                </div>
-              </div>
-            </div>
+            <GlFilterBar
+              selectedCompanyId={selectedCompany?.id}
+              activePresetId={activePresetId}
+              dateFrom={dateFrom}
+              dateTo={dateTo}
+              dateBasis={dateBasis}
+              postingStatus={postingStatus}
+              hideZeroBalances={hideZeroBalances}
+              viewLayout={viewLayout}
+              viewGranularity={viewGranularity}
+              itemGrouping={itemGrouping}
+              isAllExpanded={isAllExpanded}
+              onDateBasisChange={handleDateBasisChange}
+              onPostingStatusChange={handlePostingStatusChange}
+              onHideZeroChange={handleHideZeroChange}
+              onViewLayoutChange={setViewLayout}
+              onGranularityChange={handleGranularityChange}
+              onItemGroupingChange={handleItemGroupingChange}
+              onToggleExpandAll={handleToggleExpandAll}
+              onSearchQueryChange={setGlSearchQuery}
+              onSearchResultsChange={setGlSearchResults}
+              onSelectSearchResult={(result) => {
+                const term = result.entity_type === 'account' ? result.gl_number : (result.title || result.target_gl_number);
+                setGlSearchQuery(term);
+                tableRef.current?.navigateToEntity(result);
+              }}
+              onClearSearch={() => {
+                setGlSearchQuery('');
+                setGlSearchResults([]);
+              }}
+            />
           </CardHeader>
           <CardContent className="p-0">
             <GeneralLedgerTable

@@ -138,7 +138,7 @@ export function useVatScope({
           .limit(5000),
         supabase
           .from('invoices')
-          .select('id, bizonylatsorszam, adoalap_osszesen, afa_osszeg_osszesen, vat_row_override, is_reverse_charge, forditott_adozas, image_url, melleklet_url, invoice_uploads_id, attachments')
+          .select('id, bizonylatsorszam, adoalap_osszesen, afa_osszeg_osszesen, vat_row_override, forditott_adozas, image_url, melleklet_url, invoice_uploads_id, attachments')
           .eq('company_id', companyId)
           .or('invoice_direction.eq.INBOUND,invoice_direction.is.null')
           .or(`teljesites_datuma.gte.${dateFrom},and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${dateFrom})`)
@@ -240,8 +240,7 @@ export function useVatScope({
             const net = Number(s.adoalap_osszesen || 0);
             const vat = Number(s.afa_osszeg_osszesen || 0);
             const isFad =
-              Boolean(s.is_reverse_charge) ||
-              Boolean((s as any).forditott_adozas) ||
+              Boolean(s.forditott_adozas) ||
               s.vat_row_override === '29' ||
               s.vat_row_override === '04';
             classifyMissing(net, vat, isFad, s.vat_row_override);

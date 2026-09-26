@@ -38,7 +38,7 @@ describe('VAT Scope (Számlakép / OSA) Processing Logic & UI Tests', () => {
       const scope: VatScope = 'all';
       const filtered = mockInvoices.filter((inv) => {
         if (inv.invoice_direction === 'OUTBOUND') return true;
-        if (scope === 'with_image') return inv.has_image;
+        if ((scope as string) === 'with_image') return inv.has_image;
         return true;
       });
 

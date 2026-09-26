@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-26  
-> **Összesen:** 176 döntés (169 egyedi döntési fájl) | ✅ Decided: 174 | ⛔ Superseded: 2
+> **Összesen:** 177 döntés (170 egyedi döntési fájl) | ✅ Decided: 175 | ⛔ Superseded: 2
 
 ---
 
@@ -207,6 +207,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-159 | Hivatalos ÁFA Analitika Upgrade, M-lap Master–Detail és NAV OSA Keresztellenőrzés | ✅ Decided | [A-159](./A-159-statutory-vat-views-upgrade-and-osa-reconciliation.md) |
 | A-160 | Főkönyvi Bizonylatmegnyitó és NAV OSA Tételes Nézet Fallback Architektúra | ✅ Decided | [A-160](./A-160-general-ledger-invoice-document-preview-and-osa-fallback.md) |
 | A-161 | ÁFA Bevallás és Analitika Számlakép Hatókör (Scope) Szűrési Architektúra (OSA Teljes vs Számlaképes) | ✅ Decided | [A-161](./A-161-vat-image-scope-filtering.md) |
+| A-162 | Főkönyv UI & UX Modularizáció, Ergonómiai Átszervezés és Zsúfoltság-Megszüntetés | ✅ Decided | [A-162](./A-162-general-ledger-ui-ux-restructuring-and-clutter-reduction.md) |
 
 ## 💳 Fizetés
 

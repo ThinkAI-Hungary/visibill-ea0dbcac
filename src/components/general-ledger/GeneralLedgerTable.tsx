@@ -110,6 +110,7 @@ function cleanIdVal(val: any): string {
   if (val === null || val === undefined) return '';
   return String(val).trim().replace(/\./g, '');
 }
+const cleanId = cleanIdVal;
 
 export interface GeneralLedgerTableRef {
   expandAllAndPrint: () => void;
@@ -248,6 +249,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   const previousPresetIdRef = useRef<string | undefined>(presetId);
   const [hasSwitchedPreset, setHasSwitchedPreset] = useState(false);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
+  const allAccountsRef = useRef<LedgerItem[]>([]);
 
   useEffect(() => {
     // Determine if an actual switch happened (not just initial data load)
@@ -260,7 +262,11 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     }
   }, [presetId]);
 
-  const DEFAULT_EXPANDED_IDS = ['1', '2', '3', '31', '311', '4', '45', '454', '46', '466', '5', '8', '9', 'UNCLASSIFIED'];
+  const DEFAULT_EXPANDED_IDS = [
+    '1', '1.', '2', '2.', '3', '3.', '31', '31.', '311', '311.',
+    '4', '4.', '45', '45.', '454', '454.', '46', '46.', '466', '466.',
+    '5', '5.', '8', '8.', '9', '9.', 'UNCLASSIFIED'
+  ];
 
   // Cache tree expansion state in localStorage
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(() => {
@@ -427,7 +433,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
           savedKontirokExpandedRef.current = new Set(expandedRowIds);
         }
         if (dbData && dbData.length > 0) {
-          const allAccountIds = dbData.map(d => String(d.gl_number));
+          const allAccountIds = dbData.flatMap(d => [String(d.gl_number), cleanIdVal(d.gl_number)]);
           setExpandedRowIds(new Set(allAccountIds));
         }
       }
@@ -724,6 +730,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         node.depth = aIds.length;
         node.isRoot = aIds.length === 0;
       });
+      allAccountsRef.current = rawData;
 
       // ── Hierarchical search filter computation ──
       const isSearchActive = !!searchQuery && searchQuery.trim().length > 0;
@@ -821,7 +828,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
         const isDirectlyActive = (d: LedgerItem) => {
           const hasDirectItems = (d.directItemCount !== undefined && d.directItemCount > 0) ||
-            ((loadedAccountItems.get(d.cid)?.length ?? 0) > 0);
+            ((loadedAccountItems.get(d.cid)?.length ?? 0) > 0) ||
+            ((batchItemsByGL?.get(d.cid)?.length ?? 0) > 0);
           const hasDirectBalance = Math.abs(d.directFinalBalance || 0) > 0.001 ||
             Math.abs(d.directTempBalance || 0) > 0.001 ||
             (!d.hasAccountChildren && Math.abs(d.balance || 0) > 0.001);
@@ -918,14 +926,20 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         combinedData.push(nodeToEmit);
 
         // Check if node is expanded and all its ancestors are expanded
-        const isNodeAncestorsExpanded = !node.ancestorIds || node.ancestorIds.length === 0 || node.ancestorIds.every(id => expandedRowIds.has(id));
+        const isNodeAncestorsExpanded = !node.ancestorIds || node.ancestorIds.length === 0 || node.ancestorIds.every(id => expandedRowIds.has(id) || expandedRowIds.has(cleanId(id)));
         const isNodeExpanded = isSearchActive 
           ? (visibleAccountCids ? visibleAccountCids.has(node.cid) : true) 
-          : (isPrinting ? true : (expandedRowIds.has(node.id) && isNodeAncestorsExpanded));
+          : (isPrinting ? true : ((expandedRowIds.has(node.id) || expandedRowIds.has(cleanId(node.id))) && isNodeAncestorsExpanded));
+
+        // SUBTREE PRUNING: If this account node is not expanded (and search is not active),
+        // we do not emit any direct items and do not recurse into child accounts.
+        if (!isNodeExpanded) {
+          return;
+        }
 
         // 2. Emit direct transaction items booked to this account ONLY if node and its ancestors are expanded
         const shouldExpandItems = isSearchActive 
-          ? (itemMatchAccountCids.has(node.cid) || (directMatchAccountCids.has(node.cid) && node.hasItemChildren) || expandedRowIds.has(node.id))
+          ? (itemMatchAccountCids.has(node.cid) || (directMatchAccountCids.has(node.cid) && node.hasItemChildren) || expandedRowIds.has(node.id) || expandedRowIds.has(cleanId(node.id)))
           : (isNodeExpanded && isNodeAncestorsExpanded);
 
         if (shouldExpandItems) {
@@ -1105,14 +1119,14 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
   // ── Fire stats callback when tableData changes ──
   useEffect(() => {
-    if (!onStatsChange || tableData.length === 0 || !dbData) return;
-    const glAccountsOnly = tableData.filter(d => !d.isItem);
-    const leaves = glAccountsOnly.filter(d => !d.hasAccountChildren);
+    if (!onStatsChange || !dbData || dbData.length === 0) return;
+    const allAccounts = allAccountsRef.current.length > 0 ? allAccountsRef.current : tableData.filter(d => !d.isItem);
+    const leaves = allAccounts.filter(d => !d.hasAccountChildren);
     const totalDebit = leaves.filter(d => d.balance > 0).reduce((s, d) => s + d.balance, 0);
     const totalCredit = leaves.filter(d => d.balance < 0).reduce((s, d) => s + Math.abs(d.balance), 0);
     const totalItemCount = dbData.reduce((s, d) => s + Number(d.item_count || 0), 0);
     const classifiedItemCount = Math.max(0, totalItemCount - orphanCount);
-    onStatsChange({ accountCount: glAccountsOnly.length, leafCount: leaves.length, totalDebit, totalCredit, classifiedItems: classifiedItemCount, totalItems: totalItemCount });
+    onStatsChange({ accountCount: allAccounts.length, leafCount: leaves.length, totalDebit, totalCredit, classifiedItems: classifiedItemCount, totalItems: totalItemCount });
   }, [tableData, onStatsChange, dbData, orphanCount]);
 
   // Calculate generic footer totals by summing root level items in O(N)
@@ -1126,14 +1140,14 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
   // Calculate classic 4-column totals (turnover Debit/Credit, balance Debit/Credit)
   const classicTotals = useMemo(() => {
-    const glAccountsOnly = tableData.filter(d => !d.isItem);
-    const leaves = glAccountsOnly.filter(d => !d.hasAccountChildren);
+    const allAccounts = allAccountsRef.current.length > 0 ? allAccountsRef.current : tableData.filter(d => !d.isItem);
+    const leaves = allAccounts.filter(d => !d.hasAccountChildren);
     const turnoverDebit = leaves.filter(d => d.balance > 0).reduce((s, d) => s + d.balance, 0);
     const turnoverCredit = leaves.filter(d => d.balance < 0).reduce((s, d) => s + Math.abs(d.balance), 0);
     const balanceDebit = turnoverDebit;
     const balanceCredit = turnoverCredit;
     return { turnoverDebit, turnoverCredit, balanceDebit, balanceCredit };
-  }, [tableData]);
+  }, [tableData, dbData]);
 
 
   useEffect(() => {
@@ -1380,11 +1394,11 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       }
     },
     getStats: () => {
-      const glAccountsOnly = tableData.filter(d => !d.isItem);
-      const leaves = glAccountsOnly.filter(d => !d.hasAccountChildren);
+      const allAccounts = allAccountsRef.current.length > 0 ? allAccountsRef.current : tableData.filter(d => !d.isItem);
+      const leaves = allAccounts.filter(d => !d.hasAccountChildren);
       const totalDebit = leaves.filter(d => d.balance > 0).reduce((s, d) => s + d.balance, 0);
       const totalCredit = leaves.filter(d => d.balance < 0).reduce((s, d) => s + Math.abs(d.balance), 0);
-      return { accountCount: glAccountsOnly.length, leafCount: leaves.length, totalDebit, totalCredit };
+      return { accountCount: allAccounts.length, leafCount: leaves.length, totalDebit, totalCredit };
     },
     expandAll: handleExpandAll,
     collapseAll: handleCollapseAll,
@@ -1392,8 +1406,13 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   }));
 
   const handleExpandAll = () => {
-    const allWithChildren = tableData.filter(d => d.hasChildren).map(d => d.id);
-    setExpandedRowIds(new Set(allWithChildren));
+    if (dbData && dbData.length > 0) {
+      const allAccountIds = dbData.flatMap(d => [String(d.gl_number), cleanIdVal(d.gl_number)]);
+      setExpandedRowIds(new Set(allAccountIds));
+    } else {
+      const allWithChildren = tableData.filter(d => d.hasChildren).flatMap(d => [d.id, cleanIdVal(d.id)]);
+      setExpandedRowIds(new Set(allWithChildren));
+    }
   };
 
   const handleCollapseAll = () => {
@@ -1665,25 +1684,33 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
   const toggleRow = (id: string, hasChildren?: boolean) => {
     if (!hasChildren) return;
-    const isCurrentlyExpanded = expandedRowIds.has(id);
+    const cleanTargetId = cleanIdVal(id);
+    const isCurrentlyExpanded = expandedRowIds.has(id) || expandedRowIds.has(cleanTargetId);
+
     setExpandedRowIds((prev) => {
       const next = new Set(prev);
       if (isCurrentlyExpanded) {
         next.delete(id);
+        next.delete(cleanTargetId);
         // Also prune all descendant IDs from expandedRowIds so child accounts don't keep ghost open state
         tableData.forEach(d => {
-          if (!d.isItem && d.ancestorIds?.includes(id)) {
-            next.delete(d.id);
+          if (!d.isItem) {
+            const isDescendant = d.ancestorIds?.some(aId => aId === id || cleanIdVal(aId) === cleanTargetId);
+            if (isDescendant) {
+              next.delete(d.id);
+              next.delete(cleanIdVal(d.id));
+            }
           }
         });
       } else {
         next.add(id);
+        next.add(cleanTargetId);
       }
       return next;
     });
 
     if (!isCurrentlyExpanded && viewGranularity !== 'teteles') {
-      const targetRow = tableData.find(d => d.id === id);
+      const targetRow = tableData.find(d => d.id === id || cleanIdVal(d.id) === cleanTargetId);
       if (targetRow && targetRow.hasItemChildren) {
         fetchAccountItemsOnDemand(targetRow.cid);
       }
@@ -1695,7 +1722,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     if (viewGranularity === 'teteles') return; // In teteles mode, batch query handles all items! Avoid N+1 requests!
     if (!dbData || !selectedCompany?.id || !presetId) return;
     expandedRowIds.forEach(id => {
-      const row = tableData.find(d => d.id === id);
+      const cleanTargetId = cleanIdVal(id);
+      const row = tableData.find(d => d.id === id || cleanIdVal(d.id) === cleanTargetId);
       if (row && row.hasItemChildren) {
         fetchAccountItemsOnDemand(row.cid);
       }
@@ -1726,7 +1754,10 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     const result = new Set<string>();
     tableData.forEach(item => {
       if (item.isItem && item.ancestorIds) {
-        item.ancestorIds.forEach(id => result.add(id));
+        item.ancestorIds.forEach(id => {
+          result.add(id);
+          result.add(cleanIdVal(id));
+        });
       }
     });
     return result;
@@ -1742,13 +1773,13 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       
       const isVisibleOnScreen = isRoot || isSearchActive || (
         item.ancestorIds && item.ancestorIds.length > 0
-          ? item.ancestorIds.every(id => expandedRowIds.has(id))
+          ? item.ancestorIds.every(id => expandedRowIds.has(id) || expandedRowIds.has(cleanIdVal(id)))
           : false
       );
       let isVisibleDuringPrint = isRoot || (
         item.ancestorIds ? item.ancestorIds.every(id => {
           if (printLayoutMode === 'synthetic') return true;
-          return categoriesWithItems.has(id);
+          return categoriesWithItems.has(id) || categoriesWithItems.has(cleanIdVal(id));
         }) : true
       );
 
@@ -1943,7 +1974,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                   if (!shouldRender) return null;
 
                   const isRoot = row.isRoot;
-                  const isExpanded = expandedRowIds.has(row.id);
+                  const isExpanded = expandedRowIds.has(row.id) || expandedRowIds.has(cleanIdVal(row.id));
                   const isNegative = row.balance < 0;
                   const indentPadding = `${0.75 + (row.depth * 1.5)}rem`;
                   

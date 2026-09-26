@@ -94,14 +94,14 @@ export function VatAnnualMatrixView({
       const [navInvsRes, subInvsRes] = await Promise.all([
         supabase
           .from('nav_invoices')
-          .select('id, invoice_number, invoice_delivery_date, invoice_issue_date, invoice_net_amount, invoice_vat_amount, invoice_direction, is_reverse_charge, vat_row_override, vat_rate')
+          .select('id, invoice_number, invoice_delivery_date, invoice_issue_date, invoice_net_amount, invoice_vat_amount, invoice_direction, is_reverse_charge, vat_row_override')
           .eq('company_id', companyId)
           .or(`invoice_delivery_date.gte.${dateFrom},and(invoice_delivery_date.is.null,invoice_issue_date.gte.${dateFrom})`)
           .or(`invoice_delivery_date.lte.${dateTo},and(invoice_delivery_date.is.null,invoice_issue_date.lte.${dateTo})`)
           .limit(10000),
         supabase
           .from('invoices')
-          .select('id, bizonylatsorszam, teljesites_datuma, kibocsatas_datuma, adoalap_osszesen, afa_osszeg_osszesen, invoice_direction, is_reverse_charge, forditott_adozas, vat_row_override, image_url, melleklet_url, invoice_uploads_id, attachments')
+          .select('id, bizonylatsorszam, teljesites_datuma, kibocsatas_datuma, adoalap_osszesen, afa_osszeg_osszesen, invoice_direction, forditott_adozas, vat_row_override, image_url, melleklet_url, invoice_uploads_id, attachments')
           .eq('company_id', companyId)
           .or(`teljesites_datuma.gte.${dateFrom},and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${dateFrom})`)
           .or(`teljesites_datuma.lte.${dateTo},and(teljesites_datuma.is.null,kibocsatas_datuma.lte.${dateTo})`)
@@ -246,8 +246,7 @@ export function VatAnnualMatrixView({
         const base = Math.round(Number(inv.adoalap_osszesen) || 0);
         const tax = Math.round(Number(inv.afa_osszeg_osszesen) || 0);
         const isFad =
-          Boolean(inv.is_reverse_charge) ||
-          Boolean((inv as any).forditott_adozas) ||
+          Boolean(inv.forditott_adozas) ||
           inv.vat_row_override === '29' ||
           inv.vat_row_override === '04' ||
           isReverseChargeVatRate((inv as any).vat_rate);
