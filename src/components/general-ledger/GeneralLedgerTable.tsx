@@ -2120,7 +2120,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                             </div>
                           )}
                         </div>
-                        {row.isItem && (row.invoiceId || row.invoiceNumber) && (
+                        {row.isItem && (row.invoiceId || row.invoiceNumber || row.sourceTable?.includes('invoice')) && (
                           <CustomTooltip content={t('accounting:general_ledger.tooltips.view_document', 'Számlakép / Bizonylat megtekintése')} side="top">
                             <Button
                               variant="ghost"

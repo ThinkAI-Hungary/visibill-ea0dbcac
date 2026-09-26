@@ -2,7 +2,7 @@
 
 * **Státusz**: ✅ Elfogadva (Decided)
 * **Dátum**: 2026-09-26
-* **Kapcsolódó termékdöntések**: [P-066](./P-066-gl-date-basis-toggle-and-settings-ux.md), [P-067](./P-067-gl-posting-status-filter-and-journal-governance-ux.md), [P-105](./P-105-general-ledger-toolbar-and-expand-collapse-ux.md), [P-113](./P-113-general-ledger-granularity-kontirok-teteles-view.md), [P-117](./P-117-general-ledger-invoice-grouping-and-4col-export-ux.md), [P-120](./P-120-general-ledger-invoice-document-preview-and-osa-fallback-ux.md), [A-162](../architecture/decisions/A-162-general-ledger-ui-ux-restructuring-and-clutter-reduction.md)
+* **Kapcsolódó termékdöntések**: [P-066](./P-066-gl-date-basis-toggle-and-settings-ux.md), [P-067](./P-067-gl-posting-status-filter-and-journal-governance-ux.md), [P-105](./P-105-general-ledger-toolbar-and-expand-collapse-ux.md), [P-113](./P-113-general-ledger-granularity-kontirok-teteles-view.md), [P-117](./P-117-general-ledger-invoice-grouping-and-4col-export-ux.md), [P-120](./P-120-general-ledger-invoice-document-preview-and-osa-fallback-ux.md), [A-163](../architecture/decisions/A-163-general-ledger-ui-ux-restructuring-and-clutter-reduction.md)
 
 ---
 

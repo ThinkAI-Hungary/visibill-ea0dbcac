@@ -100,8 +100,13 @@ export function useGlInvoiceDocumentResolver(
       setResolvingItemId(item.id);
 
       try {
-        // 1. If sourceTable is invoice_items or invoices (uploaded/submitted invoice)
-        if (item.sourceTable === 'invoice_items' || item.sourceTable === 'invoices') {
+        // 1. If sourceTable is invoice_items, invoices, invoices_partner, or invoices_vat (uploaded/submitted invoice)
+        if (
+          item.sourceTable === 'invoice_items' ||
+          item.sourceTable === 'invoices' ||
+          item.sourceTable === 'invoices_partner' ||
+          item.sourceTable === 'invoices_vat'
+        ) {
           let subInv: any = null;
           if (invId) {
             const { data } = await supabase
@@ -177,8 +182,13 @@ export function useGlInvoiceDocumentResolver(
           }
         }
 
-        // 2. If sourceTable is nav_invoice_items or nav_invoices (NAV Online Számla)
-        if (item.sourceTable === 'nav_invoice_items' || item.sourceTable === 'nav_invoices') {
+        // 2. If sourceTable is nav_invoice_items, nav_invoices, nav_invoices_partner, or nav_invoices_vat (NAV Online Számla)
+        if (
+          item.sourceTable === 'nav_invoice_items' ||
+          item.sourceTable === 'nav_invoices' ||
+          item.sourceTable === 'nav_invoices_partner' ||
+          item.sourceTable === 'nav_invoices_vat'
+        ) {
           let navInv: any = null;
           if (invId) {
             const { data } = await supabase
@@ -241,6 +251,58 @@ export function useGlInvoiceDocumentResolver(
             });
             setIsNavItemsDialogOpen(true);
             return;
+          }
+        }
+
+        // 2.5. If sourceTable is transactions, check matched_invoice_id
+        if (item.sourceTable === 'transactions' && invId) {
+          const { data: tx } = await supabase
+            .from('transactions')
+            .select('matched_invoice_id')
+            .eq('id', invId)
+            .maybeSingle();
+          if (tx?.matched_invoice_id) {
+            const { data: subInv } = await supabase
+              .from('invoices')
+              .select(
+                'id, elado_nev, vevo_nev, bizonylatsorszam, dokumentum_azonosito, invoice_type, image_url, melleklet_url, attachments, company_id, reference_number, elolegszamla_hivatkozas'
+              )
+              .eq('id', tx.matched_invoice_id)
+              .maybeSingle();
+
+            const hasImage =
+              subInv &&
+              (Boolean(subInv.image_url) ||
+                Boolean(subInv.melleklet_url) ||
+                (Array.isArray(subInv.attachments) && subInv.attachments.length > 0));
+
+            if (hasImage) {
+              setActiveImageInvoice(subInv);
+              setIsImageDialogOpen(true);
+              return;
+            }
+
+            const { data: navInv } = await supabase
+              .from('nav_invoices')
+              .select(
+                'id, invoice_number, currency, invoice_issue_date, supplier_name, customer_name, invoice_direction, project_id'
+              )
+              .eq('id', tx.matched_invoice_id)
+              .maybeSingle();
+
+            if (navInv) {
+              setActiveNavInvoice({
+                id: navInv.id,
+                invoiceNumber: navInv.invoice_number,
+                currency: navInv.currency || item.originalCurrency || 'HUF',
+                source: 'nav',
+                invoiceDate: navInv.invoice_issue_date || undefined,
+                supplierName: navInv.supplier_name || item.partner || undefined,
+                invoiceDirection: navInv.invoice_direction || undefined,
+              });
+              setIsNavItemsDialogOpen(true);
+              return;
+            }
           }
         }
 

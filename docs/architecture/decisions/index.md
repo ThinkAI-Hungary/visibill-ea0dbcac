@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-09-26  
-> **Összesen:** 177 döntés (170 egyedi döntési fájl) | ✅ Decided: 175 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-09-27  
+> **Összesen:** 178 döntés (171 egyedi döntési fájl) | ✅ Decided: 176 | ⛔ Superseded: 2
 
 ---
 
@@ -94,6 +94,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-113 | NAV Számlatételek ÁFA és Bruttó Összeg Automatikus Kalkulációja (Közműszámlák) | ✅ Decided | [A-113](./A-113-nav-invoice-items-vat-gross-auto-calculation.md) |
 | A-119 | Aggreg8 PSD2 Open Banking AISP Integráció, Dedikált Proxy Relay és Valós Idejű Szinkronizáció | ✅ Decided | [A-119](./A-119-aggreg8-psd2-open-banking-integration.md) |
 | A-130 | NAV Automatikus Szinkronizáció Hajnali Idő-ablakos Terheléselosztása (Load Staggering) | ✅ Decided | [A-130](./A-130-nav-auto-sync-dawn-load-staggering.md) |
+| A-162 | Mailgun & IMAP Csatolmány Szűrési Szinkronizáció és Body-MIME Hardening | ✅ Decided | [A-162](./A-162-mailgun-and-imap-attachment-filtering-and-mime-hardening.md) |
 
 ## 🗄️ Adatbázis & Pénzügy
 
@@ -207,7 +208,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-159 | Hivatalos ÁFA Analitika Upgrade, M-lap Master–Detail és NAV OSA Keresztellenőrzés | ✅ Decided | [A-159](./A-159-statutory-vat-views-upgrade-and-osa-reconciliation.md) |
 | A-160 | Főkönyvi Bizonylatmegnyitó és NAV OSA Tételes Nézet Fallback Architektúra | ✅ Decided | [A-160](./A-160-general-ledger-invoice-document-preview-and-osa-fallback.md) |
 | A-161 | ÁFA Bevallás és Analitika Számlakép Hatókör (Scope) Szűrési Architektúra (OSA Teljes vs Számlaképes) | ✅ Decided | [A-161](./A-161-vat-image-scope-filtering.md) |
-| A-162 | Főkönyv UI & UX Modularizáció, Ergonómiai Átszervezés és Zsúfoltság-Megszüntetés | ✅ Decided | [A-162](./A-162-general-ledger-ui-ux-restructuring-and-clutter-reduction.md) |
+| A-163 | Főkönyv UI & UX Modularizáció, Ergonómiai Átszervezés és Zsúfoltság-Megszüntetés | ✅ Decided | [A-163](./A-163-general-ledger-ui-ux-restructuring-and-clutter-reduction.md) |
 
 ## 💳 Fizetés
 

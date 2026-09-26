@@ -1,4 +1,4 @@
-# A-162: Főkönyv UI & UX Modularizáció, Ergonómiai Átszervezés és Zsúfoltság-Megszüntetés
+# A-163: Főkönyv UI & UX Modularizáció, Ergonómiai Átszervezés és Zsúfoltság-Megszüntetés
 
 * **Státusz**: ✅ Elfogadva (Decided)
 * **Dátum**: 2026-09-26

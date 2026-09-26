@@ -26,6 +26,7 @@ export async function enrichGlItemsWithInvoiceMeta(
   const uncachedInvoiceHeaderIds: string[] = [];
   const uncachedNavInvoiceHeaderIds: string[] = [];
   const uncachedJournalEntryIds: string[] = [];
+  const uncachedTransactionIds: string[] = [];
 
   for (const item of items) {
     if (!item.item_id) continue;
@@ -42,12 +43,22 @@ export async function enrichGlItemsWithInvoiceMeta(
       uncachedNavItemIds.push(item.item_id);
     } else if (item.source_table === 'acc_journal_lines') {
       uncachedAccLineIds.push(item.item_id);
-    } else if (item.source_table === 'invoices') {
+    } else if (
+      item.source_table === 'invoices' ||
+      item.source_table === 'invoices_partner' ||
+      item.source_table === 'invoices_vat'
+    ) {
       uncachedInvoiceHeaderIds.push(item.item_id);
-    } else if (item.source_table === 'nav_invoices') {
+    } else if (
+      item.source_table === 'nav_invoices' ||
+      item.source_table === 'nav_invoices_partner' ||
+      item.source_table === 'nav_invoices_vat'
+    ) {
       uncachedNavInvoiceHeaderIds.push(item.item_id);
     } else if (item.source_table === 'journal_entry') {
       uncachedJournalEntryIds.push(item.item_id);
+    } else if (item.source_table === 'transactions') {
+      uncachedTransactionIds.push(item.item_id);
     }
   }
 
@@ -211,6 +222,52 @@ export async function enrichGlItemsWithInvoiceMeta(
     }
   }
 
+  // 7. Transactions with matched invoices
+  if (uncachedTransactionIds.length > 0) {
+    for (const batch of chunk(uncachedTransactionIds)) {
+      queries.push((async () => {
+        try {
+          const { data } = await supabase
+            .from('transactions')
+            .select('id, matched_invoice_id')
+            .in('id', batch)
+            .not('matched_invoice_id', 'is', null);
+          if (data && data.length > 0) {
+            const matchedInvIds = data.map(d => d.matched_invoice_id).filter(Boolean) as string[];
+            if (matchedInvIds.length > 0) {
+              const invMap = new Map<string, string>();
+              const { data: invRows } = await supabase
+                .from('invoices')
+                .select('id, bizonylatsorszam')
+                .in('id', matchedInvIds);
+              invRows?.forEach(r => invMap.set(r.id, r.bizonylatsorszam || ''));
+
+              const remainingIds = matchedInvIds.filter(id => !invMap.has(id));
+              if (remainingIds.length > 0) {
+                const { data: navRows } = await supabase
+                  .from('nav_invoices')
+                  .select('id, invoice_number')
+                  .in('id', remainingIds);
+                navRows?.forEach(r => invMap.set(r.id, r.invoice_number || ''));
+              }
+
+              data.forEach(tx => {
+                if (tx.matched_invoice_id && invMap.has(tx.matched_invoice_id)) {
+                  invoiceMetaCache.set(tx.id, {
+                    invoiceId: tx.matched_invoice_id,
+                    invoiceNumber: invMap.get(tx.matched_invoice_id) || '',
+                  });
+                }
+              });
+            }
+          }
+        } catch (e) {
+          console.warn('Error fetching transaction invoice metadata:', e);
+        }
+      })());
+    }
+  }
+
   if (queries.length > 0) {
     await Promise.all(queries);
   }
@@ -221,6 +278,14 @@ export async function enrichGlItemsWithInvoiceMeta(
       const meta = invoiceMetaCache.get(item.item_id)!;
       item.invoice_id = meta.invoiceId;
       item.invoice_number = meta.invoiceNumber;
+    }
+
+    // Fallback: extract voucher/invoice number from description if still empty
+    if (!item.invoice_number && item.description) {
+      const docMatch = item.description.match(/^([A-Za-z0-9\/-]{3,35})\s*[-•]/);
+      if (docMatch && docMatch[1] && !docMatch[1].toLowerCase().includes('áfa')) {
+        item.invoice_number = docMatch[1].trim();
+      }
     }
   }
 

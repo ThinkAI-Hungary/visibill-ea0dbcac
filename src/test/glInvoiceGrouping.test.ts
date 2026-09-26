@@ -102,4 +102,39 @@ describe('groupLedgerItemsByInvoice', () => {
     expect(detailed).toHaveLength(5);
     expect(detailed.map(d => d.id)).toEqual(['item_1', 'item_2', 'item_3', 'item_4', 'tx_bank_1']);
   });
+
+  it('preserves invoiceId, invoiceNumber and sourceTable for partner and VAT items', () => {
+    const partnerItems: GroupableLedgerItem[] = [
+      {
+        id: 'nav_partner_1',
+        name: 'Mehran Hasani - E-TXLG-2026-96 - Bruttó partner',
+        balance: 127000,
+        cid: '311_item_1',
+        isItem: true,
+        sourceTable: 'nav_invoices_partner',
+        invoiceId: 'nav_inv_96',
+        invoiceNumber: 'E-TXLG-2026-96',
+      },
+      {
+        id: 'nav_vat_1',
+        name: 'GEOTIM Kft. - E-TXLG-2026-72 - Bruttó partner',
+        balance: 142240,
+        cid: '311_item_2',
+        isItem: true,
+        sourceTable: 'nav_invoices_partner',
+        invoiceId: 'nav_inv_72',
+        invoiceNumber: 'E-TXLG-2026-72',
+      },
+    ];
+
+    const grouped = groupLedgerItemsByInvoice(partnerItems, 'by_invoice');
+    expect(grouped).toHaveLength(2);
+    expect(grouped[0].invoiceId).toBe('nav_inv_96');
+    expect(grouped[0].invoiceNumber).toBe('E-TXLG-2026-96');
+    expect(grouped[0].sourceTable).toBe('nav_invoices_partner');
+
+    expect(grouped[1].invoiceId).toBe('nav_inv_72');
+    expect(grouped[1].invoiceNumber).toBe('E-TXLG-2026-72');
+    expect(grouped[1].sourceTable).toBe('nav_invoices_partner');
+  });
 });

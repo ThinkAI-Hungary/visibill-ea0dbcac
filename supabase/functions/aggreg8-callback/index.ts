@@ -15,6 +15,62 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+interface DownstreamForwardConfig {
+  instance_name: string;
+  callback_url: string;
+  service_role_key: string;
+}
+
+async function forwardToDownstreamInstances(
+  supabaseAdmin: any,
+  payload: any,
+  sourceNotificationType: string
+): Promise<boolean> {
+  try {
+    const { data: configs, error } = await supabaseAdmin.rpc("get_instance_forward_config");
+    if (error) {
+      console.warn("[aggreg8-callback] Failed to get downstream instance configs:", error);
+      return false;
+    }
+    if (!configs || configs.length === 0) {
+      return false;
+    }
+
+    let handledByAny = false;
+    for (const cfg of configs as DownstreamForwardConfig[]) {
+      try {
+        console.log(
+          `[aggreg8-callback] Forwarding ${sourceNotificationType} to downstream instance: ${cfg.instance_name} (${cfg.callback_url})`
+        );
+        const res = await fetch(cfg.callback_url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${cfg.service_role_key}`,
+            "X-Forwarded-From": "eaisybill-prod",
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const resText = await res.text();
+        console.log(
+          `[aggreg8-callback] Downstream ${cfg.instance_name} status: ${res.status}, response: ${resText.slice(0, 120)}`
+        );
+        if (res.ok) {
+          handledByAny = true;
+        }
+      } catch (fwdErr) {
+        console.error(`[aggreg8-callback] Error forwarding to ${cfg.instance_name}:`, fwdErr);
+      }
+    }
+
+    return handledByAny;
+  } catch (err) {
+    console.error("[aggreg8-callback] Downstream forward dispatcher failed:", err);
+    return false;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders, status: 200 });
@@ -139,9 +195,19 @@ serve(async (req) => {
               existingConsent = newConsent;
             }
           } else {
-            console.error(
-              `[aggreg8-callback] Could not resolve company_id for infoSharingConsentId: ${infoSharingConsentId}, userFlowId: ${userFlowId}, a8UserId: ${a8UserId}`
+            console.log(
+              `[aggreg8-callback] company_id not resolved in eaisybill-prod for userFlowId: ${userFlowId}. Forwarding downstream...`
             );
+            const forwarded = await forwardToDownstreamInstances(
+              supabaseAdmin,
+              payload,
+              "INFO_SHARING_CONSENT_CREATED"
+            );
+            if (!forwarded) {
+              console.error(
+                `[aggreg8-callback] Could not resolve company_id in eaisybill-prod or downstream instances for infoSharingConsentId: ${infoSharingConsentId}, userFlowId: ${userFlowId}, a8UserId: ${a8UserId}`
+              );
+            }
           }
         }
 
@@ -220,7 +286,7 @@ serve(async (req) => {
       }
 
       case "INFO_SHARING_CONSENT_UPDATED": {
-        await supabaseAdmin
+        const { data: updatedConsent } = await supabaseAdmin
           .from("aggreg8_consents")
           .update({
             active_sync_enabled: activeSyncEnabled,
@@ -230,18 +296,32 @@ serve(async (req) => {
             status: "active",
             updated_at: new Date().toISOString(),
           })
-          .eq("info_sharing_consent_id", infoSharingConsentId);
+          .eq("info_sharing_consent_id", infoSharingConsentId)
+          .select("id")
+          .maybeSingle();
+
+        if (!updatedConsent) {
+          console.log(`[aggreg8-callback] Consent ${infoSharingConsentId} not found in eaisybill-prod, forwarding downstream...`);
+          await forwardToDownstreamInstances(supabaseAdmin, payload, "INFO_SHARING_CONSENT_UPDATED");
+        }
         break;
       }
 
       case "INFO_SHARING_CONSENT_DELETED": {
-        await supabaseAdmin
+        const { data: deletedConsent } = await supabaseAdmin
           .from("aggreg8_consents")
           .update({
             status: "deleted",
             updated_at: new Date().toISOString(),
           })
-          .eq("info_sharing_consent_id", infoSharingConsentId);
+          .eq("info_sharing_consent_id", infoSharingConsentId)
+          .select("id")
+          .maybeSingle();
+
+        if (!deletedConsent) {
+          console.log(`[aggreg8-callback] Consent ${infoSharingConsentId} not found in eaisybill-prod, forwarding downstream...`);
+          await forwardToDownstreamInstances(supabaseAdmin, payload, "INFO_SHARING_CONSENT_DELETED");
+        }
         break;
       }
 
@@ -281,6 +361,9 @@ serve(async (req) => {
                 await syncAccountTransactions(supabaseAdmin, customerToken, acc, consent.a8_user_id);
               }
             }
+          } else {
+            console.log(`[aggreg8-callback] Consent not found in eaisybill-prod for USER_FLOW_ENDED. Forwarding downstream...`);
+            await forwardToDownstreamInstances(supabaseAdmin, payload, "USER_FLOW_ENDED");
           }
         }
         break;
@@ -306,12 +389,16 @@ serve(async (req) => {
               await syncAccountTransactions(supabaseAdmin, customerToken, acc, consent.a8_user_id);
             }
           }
+        } else {
+          console.log(`[aggreg8-callback] Consent not found in eaisybill-prod for ${notificationType}. Forwarding downstream...`);
+          await forwardToDownstreamInstances(supabaseAdmin, payload, notificationType);
         }
         break;
       }
 
       default:
-        console.log(`[aggreg8-callback] Unhandled notificationType: ${notificationType}`);
+        console.log(`[aggreg8-callback] Unhandled notificationType in eaisybill-prod: ${notificationType}. Forwarding downstream...`);
+        await forwardToDownstreamInstances(supabaseAdmin, payload, notificationType || "UNKNOWN");
         break;
     }
 
