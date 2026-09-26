@@ -1,7 +1,7 @@
 # eaisybill-prod — Adatbázis Séma Áttekintés
 
-> **Utoljára frissítve:** 2026-09-22  
-> **Összesen:** 185 aktív alkalmazás-tábla (186 sémában) | **RLS:** mind engedélyezve (100% InitPlan & Single-Permissive optimalizált) | **FK Indexek:** 100% lefedettség | **Supabase PostgreSQL**
+> **Utoljára frissítve:** 2026-09-26  
+> **Összesen:** 187 aktív alkalmazás-tábla (188 sémában) | **RLS:** mind engedélyezve (100% InitPlan & Single-Permissive optimalizált) | **FK Indexek:** 100% lefedettség | **Supabase PostgreSQL**
 
 Ez a dokumentáció az eaisybill-prod Supabase projekt teljes adatbázis sémáját tartalmazza. Célja, hogy bármely fejlesztő és AI agent azonnal megértse a táblastruktúrát, kapcsolatokat és felhasználási kontextust.
 A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [PostgreSQL RPC Katalógus](./rpc-catalog.md), a serverless függvényeket az [Edge Functions Katalógus](./edge-functions.md), a biztonsági és indexelési irányelveket pedig az [A-092: Teljes Adatbázis Biztonsági és Teljesítménybeli Audit & Optimalizáció](./decisions/A-092-database-security-and-performance-optimization.md) dokumentálja.
@@ -13,7 +13,8 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 - [🔐 Auth & Felhasználók](./database/01-auth-users.md) — 6 tábla, ~73 sor
 - [🏢 Cégek & Tagság](./database/02-companies.md) — 8 tábla, ~122 sor
 - [🔑 Jogosultságok & Hozzáférés](./database/03-permissions.md) — 3 tábla, ~189 sor
-- [📄 Számlák & Bizonylatok](./database/04-invoices.md) — 10 tábla, ~30556 sor
+- [📄 Számlák & Bizonylatok](./database/04-invoices.md) — 12 tábla, ~30556 sor
+
 - [🏛️ NAV Integráció](./database/05-nav.md) — 3 tábla, ~164208 sor
 - [💳 Tranzakciók & Bank](./database/06-transactions-bank.md) — 13 tábla, ~7945 sor
 - [📊 Főkönyv (General Ledger)](./database/07-general-ledger.md) — 9 tábla, ~30771 sor
@@ -198,7 +199,10 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 | `profiles` | 🔐 Auth & Felhasználók | 7 | Felhasználói profilok és beállítások. |
 | `proforma_backup` | 📄 Számlák | 0 | Backup tábla. |
 | `projects` | 🏷️ Törzsadatok | 36 | Projektek törzsadatai és költségkeretei. |
+| `purchase_voucher_items` | 📄 Számlák & Bizonylatok | 0 | Mezőgazdasági felvásárlási jegyek tételsorai (kompenzációs felár 12%/7%). |
+| `purchase_vouchers` | 📄 Számlák & Bizonylatok | 0 | Mezőgazdasági felvásárlási jegy fejlécek, őstermelői adatok és kifizetések. |
 | `report_uploads` | 🏷️ Törzsadatok | 105 | Riport feltöltések. |
+
 | `reverse_charge_entries` | 🏷️ Törzsadatok | 0 | Fordított adózású tételek. |
 | `salary` | 💰 Bér & Munkaidő | 177 | Béradatok és levonások. |
 | `salary_files` | 💰 Bér & Munkaidő | 6 | Bérjegyzék fájlok. |

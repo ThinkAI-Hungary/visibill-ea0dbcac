@@ -32,8 +32,9 @@ import {
   RefreshCw,
   BookOpen,
 } from 'lucide-react';
-import { cn, formatCurrency } from '@/lib/utils';
-import { VatFrequency } from '../types';
+import { useSearchParams } from 'react-router-dom';
+import { cn, formatCurrency, isReverseChargeVatRate } from '@/lib/utils';
+import { VatFrequency, VatScope } from '../types';
 
 interface VatItemizedJournalViewProps {
   companyId: string;
@@ -41,6 +42,7 @@ interface VatItemizedJournalViewProps {
   month: number;
   frequency: VatFrequency;
   selectedCompany?: any;
+  vatScope?: VatScope;
 }
 
 interface JournalItem {
@@ -71,10 +73,13 @@ export function VatItemizedJournalView({
   month,
   frequency,
   selectedCompany,
+  vatScope,
 }: VatItemizedJournalViewProps) {
   const [negativeExpenses, setNegativeExpenses] = useState(true);
   const [journalFilter, setJournalFilter] = useState<'ALL' | 'szállító' | 'vevő' | 'pénztár' | 'vegyes'>('ALL');
   const [search, setSearch] = useState('');
+  const [searchParams] = useSearchParams();
+  const effectiveScope: VatScope = vatScope || (searchParams.get('vat_scope') as VatScope) || 'all';
 
   // Compute period dates
   const { dateFrom, dateTo, periodLabel } = useMemo(() => {
@@ -97,21 +102,21 @@ export function VatItemizedJournalView({
 
   // Query itemized journal invoices for the period
   const { data: journalItems = [], isLoading, refetch, isFetching } = useQuery({
-    queryKey: ['vat_itemized_journal', companyId, dateFrom, dateTo],
+    queryKey: ['vat_itemized_journal', companyId, dateFrom, dateTo, effectiveScope],
     queryFn: async () => {
       if (!companyId) return [];
 
       const [navRes, subRes] = await Promise.all([
         supabase
           .from('nav_invoices')
-          .select('id, invoice_number, supplier_name, customer_name, supplier_tax_number, customer_tax_number, invoice_delivery_date, invoice_issue_date, payment_method, invoice_net_amount, invoice_vat_amount, invoice_gross_amount, invoice_direction, vat_row_override')
+          .select('id, invoice_number, supplier_name, customer_name, supplier_tax_number, customer_tax_number, invoice_delivery_date, invoice_issue_date, payment_method, invoice_net_amount, invoice_vat_amount, invoice_gross_amount, invoice_direction, vat_row_override, is_reverse_charge, vat_rate')
           .eq('company_id', companyId)
           .or(`invoice_delivery_date.gte.${dateFrom},and(invoice_delivery_date.is.null,invoice_issue_date.gte.${dateFrom})`)
           .or(`invoice_delivery_date.lte.${dateTo},and(invoice_delivery_date.is.null,invoice_issue_date.lte.${dateTo})`)
           .limit(5000),
         supabase
           .from('invoices')
-          .select('id, bizonylatsorszam, elado_nev, vevo_nev, elado_vat_id, vevo_vat_id, teljesites_datuma, kibocsatas_datuma, fizetesi_hatarido, fizetesi_mod, adoalap_osszesen, afa_osszeg_osszesen, brutto_vegosszeg, invoice_direction, partner_gl_number, vat_gl_number, vat_row_override')
+          .select('id, bizonylatsorszam, elado_nev, vevo_nev, elado_vat_id, vevo_vat_id, teljesites_datuma, kibocsatas_datuma, fizetesi_hatarido, fizetesi_mod, adoalap_osszesen, afa_osszeg_osszesen, brutto_vegosszeg, invoice_direction, partner_gl_number, vat_gl_number, vat_row_override, is_reverse_charge, forditott_adozas, image_url, melleklet_url, invoice_uploads_id, attachments')
           .eq('company_id', companyId)
           .or(`teljesites_datuma.gte.${dateFrom},and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${dateFrom})`)
           .or(`teljesites_datuma.lte.${dateTo},and(teljesites_datuma.is.null,kibocsatas_datuma.lte.${dateTo})`)
@@ -124,7 +129,24 @@ export function VatItemizedJournalView({
       const navInvs = navRes.data || [];
       const subInvs = subRes.data || [];
 
+      // Check whether submitted invoice has an uploaded image/document
+      const hasImg = (s: any) => Boolean(
+        s.image_url ||
+        s.melleklet_url ||
+        s.invoice_uploads_id ||
+        (Array.isArray(s.attachments) && s.attachments.length > 0)
+      );
+
       const normalizeInvNum = (s?: string | null) => (s || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+
+      // Build map of submitted invoices with actual images
+      const subWithImageByNum = new Map<string, boolean>();
+      subInvs.forEach((s) => {
+        if (s.bizonylatsorszam && hasImg(s)) {
+          subWithImageByNum.set(normalizeInvNum(s.bizonylatsorszam), true);
+        }
+      });
+
       const existingNavNumbers = new Set(navInvs.map((i) => normalizeInvNum(i.invoice_number)).filter(Boolean));
       const standaloneSubInvs = subInvs.filter((i) => !existingNavNumbers.has(normalizeInvNum(i.bizonylatsorszam)));
 
@@ -138,7 +160,18 @@ export function VatItemizedJournalView({
       // Process NAV invoices
       navInvs.forEach((inv) => {
         const isOutbound = inv.invoice_direction === 'OUTBOUND';
+        if (!isOutbound && effectiveScope === 'with_image') {
+          const invNum = normalizeInvNum(inv.invoice_number);
+          if (!subWithImageByNum.has(invNum)) {
+            return; // Inbound invoice without image skipped in with_image scope
+          }
+        }
         const isCash = inv.payment_method === 'CASH' || inv.payment_method === 'Készpénz';
+        const isFad =
+          inv.vat_row_override === '29' ||
+          inv.vat_row_override === '04' ||
+          Boolean(inv.is_reverse_charge) ||
+          isReverseChargeVatRate((inv as any).vat_rate);
 
         let jType: 'szállító' | 'vevő' | 'pénztár' | 'vegyes';
         let entryNum = '';
@@ -149,7 +182,7 @@ export function VatItemizedJournalView({
         } else if (isOutbound) {
           jType = 'vevő';
           entryNum = `K${year % 100}/${String(seqVevo++).padStart(6, '0')}`;
-        } else if (inv.vat_row_override === '29' || inv.vat_row_override === '66') {
+        } else if (isFad || inv.vat_row_override === '29' || inv.vat_row_override === '66') {
           jType = 'vegyes';
           entryNum = `V/${String(seqVegyes++).padStart(6, '0')}`;
         } else {
@@ -158,8 +191,17 @@ export function VatItemizedJournalView({
         }
 
         const net = Math.round(Number(inv.invoice_net_amount) || 0);
-        const vat = Math.round(Number(inv.invoice_vat_amount) || 0);
-        const gross = Math.round(Number(inv.invoice_gross_amount) || net + vat);
+        let vat = Math.round(Number(inv.invoice_vat_amount) || 0);
+        if (isFad) {
+          if (!isOutbound) {
+            if (vat === 0 && net !== 0) {
+              vat = Math.round(net * 0.27);
+            }
+          } else {
+            vat = 0;
+          }
+        }
+        const gross = Math.round(Number(inv.invoice_gross_amount) || (isFad && !isOutbound ? net : net + vat));
 
         const partnerName = isOutbound
           ? inv.customer_name || 'Vevő partner'
@@ -171,19 +213,24 @@ export function VatItemizedJournalView({
 
         const rateNum = net > 0 && vat > 0 ? Math.round((vat / net) * 100) : 0;
         let rateLabel = 'mentes';
-        if (inv.vat_row_override === '29') rateLabel = 'FAD fordított';
-        else if (rateNum >= 24) rateLabel = '27%-os';
+        if (isFad) {
+          rateLabel = isOutbound ? 'FAD kimenő (0%)' : 'FAD (27%)';
+        } else if (rateNum >= 24) rateLabel = '27%-os';
         else if (rateNum >= 14) rateLabel = '18%-os';
         else if (rateNum >= 4) rateLabel = '5%-os';
 
         const netAccount = isOutbound ? '911K' : '529T';
-        const vatAccount = isOutbound ? '467K' : '466T';
+        const vatAccount = isFad
+          ? (isOutbound ? '—' : '4666T / 4676K')
+          : (isOutbound ? '467K' : '466T');
         let grossAccount = isOutbound ? '311T' : '4541K';
         if (isCash) grossAccount = '3811T';
 
         let rowCode = inv.vat_row_override || '';
         if (!rowCode) {
-          if (isOutbound) {
+          if (isFad) {
+            rowCode = isOutbound ? '04' : '29 / 66';
+          } else if (isOutbound) {
             rowCode = rateLabel === '27%-os' ? '01' : rateLabel === '18%-os' ? '03' : rateLabel === '5%-os' ? '05' : '07';
           } else {
             rowCode = rateLabel === '27%-os' ? '64' : rateLabel === '18%-os' ? '65' : rateLabel === '5%-os' ? '66' : '68';
@@ -198,7 +245,9 @@ export function VatItemizedJournalView({
           invoiceNumber: inv.invoice_number || '-',
           partnerCode: partnerTax.replace(/\D/g, '').substring(0, 8) || '-',
           partnerName,
-          description: isOutbound ? 'Értékesítés termék/szolgáltatás' : 'Beszerzés számla',
+          description: isFad
+            ? (isOutbound ? 'Fordított adózású értékesítés (04. sor)' : 'Fordított adózású beszerzés (29/66. sor)')
+            : (isOutbound ? 'Értékesítés termék/szolgáltatás' : 'Beszerzés számla'),
           projectCode: '',
           vatRateLabel: rateLabel,
           netAmount: net,
@@ -214,7 +263,18 @@ export function VatItemizedJournalView({
       // Process standalone submitted invoices
       standaloneSubInvs.forEach((inv) => {
         const isOutbound = inv.invoice_direction === 'OUTBOUND';
+        if (!isOutbound && effectiveScope === 'with_image') {
+          if (!hasImg(inv)) {
+            return; // Standalone inbound invoice without image skipped in with_image scope
+          }
+        }
         const isCash = inv.fizetesi_mod === 'CASH' || inv.fizetesi_mod === 'Készpénz';
+        const isFad =
+          inv.vat_row_override === '29' ||
+          inv.vat_row_override === '04' ||
+          Boolean(inv.is_reverse_charge) ||
+          Boolean((inv as any).forditott_adozas) ||
+          isReverseChargeVatRate((inv as any).vat_rate);
 
         let jType: 'szállító' | 'vevő' | 'pénztár' | 'vegyes';
         let entryNum = '';
@@ -225,7 +285,7 @@ export function VatItemizedJournalView({
         } else if (isOutbound) {
           jType = 'vevő';
           entryNum = `K${year % 100}/${String(seqVevo++).padStart(6, '0')}`;
-        } else if (inv.vat_row_override === '29' || inv.vat_row_override === '66') {
+        } else if (isFad || inv.vat_row_override === '29' || inv.vat_row_override === '66') {
           jType = 'vegyes';
           entryNum = `V/${String(seqVegyes++).padStart(6, '0')}`;
         } else {
@@ -234,8 +294,17 @@ export function VatItemizedJournalView({
         }
 
         const net = Math.round(Number(inv.adoalap_osszesen) || 0);
-        const vat = Math.round(Number(inv.afa_osszeg_osszesen) || 0);
-        const gross = Math.round(Number(inv.brutto_vegosszeg) || net + vat);
+        let vat = Math.round(Number(inv.afa_osszeg_osszesen) || 0);
+        if (isFad) {
+          if (!isOutbound) {
+            if (vat === 0 && net !== 0) {
+              vat = Math.round(net * 0.27);
+            }
+          } else {
+            vat = 0;
+          }
+        }
+        const gross = Math.round(Number(inv.brutto_vegosszeg) || (isFad && !isOutbound ? net : net + vat));
 
         const partnerName = isOutbound
           ? inv.vevo_nev || 'Vevő partner'
@@ -247,19 +316,24 @@ export function VatItemizedJournalView({
 
         const rateNum = net > 0 && vat > 0 ? Math.round((vat / net) * 100) : 0;
         let rateLabel = 'mentes';
-        if (inv.vat_row_override === '29') rateLabel = 'FAD fordított';
-        else if (rateNum >= 24) rateLabel = '27%-os';
+        if (isFad) {
+          rateLabel = isOutbound ? 'FAD kimenő (0%)' : 'FAD (27%)';
+        } else if (rateNum >= 24) rateLabel = '27%-os';
         else if (rateNum >= 14) rateLabel = '18%-os';
         else if (rateNum >= 4) rateLabel = '5%-os';
 
         const netAccount = isOutbound ? '911K' : '529T';
-        const vatAccount = inv.vat_gl_number ? `${inv.vat_gl_number}${isOutbound ? 'K' : 'T'}` : (isOutbound ? '467K' : '466T');
+        const vatAccount = isFad
+          ? (isOutbound ? '—' : '4666T / 4676K')
+          : inv.vat_gl_number ? `${inv.vat_gl_number}${isOutbound ? 'K' : 'T'}` : (isOutbound ? '467K' : '466T');
         let grossAccount = inv.partner_gl_number ? `${inv.partner_gl_number}${isOutbound ? 'T' : 'K'}` : (isOutbound ? '311T' : '4541K');
         if (isCash) grossAccount = '3811T';
 
         let rowCode = inv.vat_row_override || '';
         if (!rowCode) {
-          if (isOutbound) {
+          if (isFad) {
+            rowCode = isOutbound ? '04' : '29 / 66';
+          } else if (isOutbound) {
             rowCode = rateLabel === '27%-os' ? '01' : rateLabel === '18%-os' ? '03' : rateLabel === '5%-os' ? '05' : '07';
           } else {
             rowCode = rateLabel === '27%-os' ? '64' : rateLabel === '18%-os' ? '65' : rateLabel === '5%-os' ? '66' : '68';
@@ -274,7 +348,9 @@ export function VatItemizedJournalView({
           invoiceNumber: inv.bizonylatsorszam || '-',
           partnerCode: partnerTax.replace(/\D/g, '').substring(0, 8) || '-',
           partnerName,
-          description: isOutbound ? 'Értékesítés számla' : 'Beszerzés számla',
+          description: isFad
+            ? (isOutbound ? 'Fordított adózású értékesítés (04. sor)' : 'Fordított adózású beszerzés (29/66. sor)')
+            : (isOutbound ? 'Értékesítés termék/szolgáltatás' : 'Beszerzés számla'),
           projectCode: '',
           vatRateLabel: rateLabel,
           netAmount: net,
@@ -392,6 +468,17 @@ export function VatItemizedJournalView({
             <h2 className="text-base font-bold tracking-tight text-foreground">ÁFA analitika (Tételes ÁFA napló)</h2>
             <Badge variant="outline" className="text-xs bg-muted ml-1">
               {periodLabel}
+            </Badge>
+            <Badge
+              variant="outline"
+              className={cn(
+                'text-[11px] font-medium px-2 py-0.5 whitespace-nowrap ml-1',
+                effectiveScope === 'with_image'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300'
+                  : 'bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-950/40 dark:text-blue-300'
+              )}
+            >
+              {effectiveScope === 'with_image' ? 'Csak számlaképpel' : 'Minden számla'}
             </Badge>
           </div>
 

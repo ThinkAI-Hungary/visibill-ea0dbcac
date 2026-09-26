@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-09-25  
-> **Összesen:** 166 döntés (159 egyedi döntési fájl) | ✅ Decided: 164 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-09-26  
+> **Összesen:** 176 döntés (169 egyedi döntési fájl) | ✅ Decided: 174 | ⛔ Superseded: 2
 
 ---
 
@@ -205,6 +205,8 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-157 | Főkönyvi Kivonat Számlánkénti Összevonás (by_invoice) és 4-Oszlopos Excel Export Architektúra | ✅ Decided | [A-157](./A-157-general-ledger-invoice-grouping-and-4col-export.md) |
 | A-158 | Mezőgazdasági Felvásárlási Jegyek Modul és Bérügyi Integráció | ✅ Decided | [A-158](./A-158-agricultural-purchase-vouchers-module.md) |
 | A-159 | Hivatalos ÁFA Analitika Upgrade, M-lap Master–Detail és NAV OSA Keresztellenőrzés | ✅ Decided | [A-159](./A-159-statutory-vat-views-upgrade-and-osa-reconciliation.md) |
+| A-160 | Főkönyvi Bizonylatmegnyitó és NAV OSA Tételes Nézet Fallback Architektúra | ✅ Decided | [A-160](./A-160-general-ledger-invoice-document-preview-and-osa-fallback.md) |
+| A-161 | ÁFA Bevallás és Analitika Számlakép Hatókör (Scope) Szűrési Architektúra (OSA Teljes vs Számlaképes) | ✅ Decided | [A-161](./A-161-vat-image-scope-filtering.md) |
 
 ## 💳 Fizetés
 

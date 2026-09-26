@@ -310,6 +310,20 @@ export function VatReturnViewTab() {
             </Badge>
           )}
 
+          {vatReturn && (
+            <Badge
+              variant="outline"
+              className={cn(
+                'text-xs font-medium py-1 px-2 border',
+                (vatReturn as any).vat_scope === 'with_image'
+                  ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30'
+                  : 'bg-blue-500/10 text-blue-600 border-blue-500/30'
+              )}
+            >
+              {(vatReturn as any).vat_scope === 'with_image' ? 'Csak számlaképpel' : 'Minden számla'}
+            </Badge>
+          )}
+
           {/* ÁFA Arányosítás Modal Trigger */}
           {vatReturn && (
             <Button

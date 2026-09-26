@@ -200,6 +200,7 @@
 | created_at | timestamp with time zone | — | `now()` |
 | updated_at | timestamp with time zone | — | `now()` |
 | user_id | uuid | ✓ |  |
+| vat_scope | text | ✓ | `'all'::text` |
 
 **FK:** `company_id` → `companies.id`, `user_id` → `auth.users.id`
 

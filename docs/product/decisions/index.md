@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-09-25  
-> **Összesen:** 112 döntés | ✅ Decided: 108 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Utoljára frissítve:** 2026-09-26  
+> **Összesen:** 121 döntés | ✅ Decided: 117 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -124,6 +124,10 @@
 | P-097 | NAV 2665 Nyomtatvány Replika, 6/B Acélipari Analitika és ÁNYK Validáció UX | ✅ Decided | [P-097](./P-097-nav-2665-replica-steel-analytics-and-anyk-validation-ux.md) |
 | P-110 | Magánszemély Vevőnevek Megjelenítése és ÁFA Analitika UX | ✅ Decided | [P-110](./P-110-private-customer-name-display-and-vat-analytics-ux.md) |
 | P-116 | Horvát ÁFA Bevallás (Obrazac PDV), Hivatalos Nyomtatvány Replika és HR Áfakód Kezelés UX | ✅ Decided | [P-116](./P-116-croatian-vat-return-obrazac-pdv-and-codes-ux.md) |
+| P-118 | Mezőgazdasági Felvásárlási Jegyek Modul és Kompenzációs Felár UX | ✅ Decided | [P-118](./P-118-agricultural-purchase-vouchers-ux.md) |
+| P-119 | Törvényi ÁFA Nézetek, NAV OSA Rekonsziliáció és Fordított Adózás (FAD) UX | ✅ Decided | [P-119](./P-119-statutory-vat-views-upgrade-and-reverse-charge-ux.md) |
+| P-121 | ÁFA Bevallás és Analitika Számlakép Hatókör (Scope) Rádiógomb Választó UX | ✅ Decided | [P-121](./P-121-vat-image-scope-selector.md) |
+
 
 ## 🔍 Keresés
 
@@ -216,3 +220,4 @@
 | P-108 | Devizás Főkönyvi Számlakezelés, Bankszámla Safeguard és Többdevizás Karton/Analitika UX | ✅ Decided | [P-108](./P-108-multicurrency-chart-of-accounts-and-gl-card-ux.md) |
 | P-113 | Főkönyvi Kivonat Kontírok vs. Tételes Nézetváltó UX | ✅ Decided | [P-113](./P-113-general-ledger-granularity-kontirok-teteles-view.md) |
 | P-117 | Főkönyvi Kivonat Számlánkénti Összevonás és 4-Oszlopos Export UX | ✅ Decided | [P-117](./P-117-general-ledger-invoice-grouping-and-4col-export-ux.md) |
+| P-120 | Főkönyvi Bizonylatmegnyitó és NAV OSA Tételes Nézet UX | ✅ Decided | [P-120](./P-120-general-ledger-invoice-document-preview-and-osa-fallback-ux.md) |

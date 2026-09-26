@@ -11477,6 +11477,7 @@ export type Database = {
           user_id: string | null
           validated_at: string | null
           validation_errors: Json | null
+          vat_scope?: string | null
         }
         Insert: {
           amount_carryforward?: number | null
@@ -11503,6 +11504,7 @@ export type Database = {
           user_id?: string | null
           validated_at?: string | null
           validation_errors?: Json | null
+          vat_scope?: string | null
         }
         Update: {
           amount_carryforward?: number | null
@@ -11529,6 +11531,7 @@ export type Database = {
           user_id?: string | null
           validated_at?: string | null
           validation_errors?: Json | null
+          vat_scope?: string | null
         }
         Relationships: [
           {
@@ -11881,6 +11884,7 @@ export type Database = {
           p_frequency?: string
           p_month: number
           p_year: number
+          p_scope?: string
         }
         Returns: string
       }

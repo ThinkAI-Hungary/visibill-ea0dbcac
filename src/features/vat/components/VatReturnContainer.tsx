@@ -26,6 +26,9 @@ import { VatSteelProductsSection } from './VatSteelProductsSection';
 import { VatA60Table } from './VatA60Table';
 import { VatItemizedJournalView } from './VatItemizedJournalView';
 import { VatTourismTaxSection } from './VatTourismTaxSection';
+import { VatScopeRadioGroup } from './VatScopeRadioGroup';
+import { useVatScope } from '../hooks/useVatScope';
+import type { VatScope } from '../types';
 import { useVatReturnData } from '../hooks/useVatReturnData';
 import { useTranslation } from 'react-i18next';
 
@@ -85,7 +88,29 @@ export function VatReturnContainer() {
     isValidatingVies,
     handleViesCheck,
     setEuTypeOverrides,
+    calculate,
   } = vatData;
+
+  const {
+    vatScope,
+    setVatScope,
+    totalInboundCount,
+    withImageInboundCount,
+    missingImageCount,
+    isLoadingCounts,
+  } = useVatScope({
+    companyId: selectedCompany?.id,
+    year,
+    month,
+    frequency,
+  });
+
+  const handleScopeChange = useCallback(
+    (newScope: VatScope) => {
+      setVatScope(newScope);
+    },
+    [setVatScope]
+  );
 
   const handleTabChange = useCallback(
     (newTab: string) => {
@@ -142,6 +167,17 @@ export function VatReturnContainer() {
                 '2665-ös nyomtatvány — Hivatalos ÁFA bevallás, M-lapok, éves mátrix és tételes analitikus kimutatások'
               )
         }
+      />
+
+      {/* Prominent VAT Processing Scope Selector ("NAGY rádiógomb") */}
+      <VatScopeRadioGroup
+        value={vatScope}
+        onChange={handleScopeChange}
+        totalCount={totalInboundCount}
+        withImageCount={withImageInboundCount}
+        missingCount={missingImageCount}
+        isLoading={isLoadingCounts}
+        onOpenOsaCheck={() => handleTabChange('teteles_m')}
       />
 
       <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-3">
@@ -252,6 +288,7 @@ export function VatReturnContainer() {
               year={year}
               onYearChange={setYear}
               selectedCompany={selectedCompany}
+              vatScope={vatScope}
             />
           </VatReturnErrorBoundary>
         </TabsContent>
@@ -267,6 +304,7 @@ export function VatReturnContainer() {
                 month={month}
                 frequency={frequency}
                 selectedCompany={selectedCompany}
+                vatScope={vatScope}
               />
             </VatReturnErrorBoundary>
           </TabsContent>
@@ -310,6 +348,7 @@ export function VatReturnContainer() {
               month={month}
               frequency={frequency}
               selectedCompany={selectedCompany}
+              vatScope={vatScope}
             />
           </VatReturnErrorBoundary>
         </TabsContent>
@@ -317,7 +356,11 @@ export function VatReturnContainer() {
         {/* Tab 7: Gyűjtőkódos Analitika */}
         <TabsContent value="analytics" className="mt-0">
           <VatReturnErrorBoundary>
-            <VatCollectorAnalyticsView />
+            <VatCollectorAnalyticsView
+              year={year}
+              periodMonth={month}
+              vatScope={vatScope}
+            />
           </VatReturnErrorBoundary>
         </TabsContent>
 

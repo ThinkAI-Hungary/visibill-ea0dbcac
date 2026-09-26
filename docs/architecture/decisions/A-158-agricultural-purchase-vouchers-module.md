@@ -74,3 +74,10 @@ A magyar számviteli és adójogszabályok értelmében a felvásárló cégek a
 - **Megfelelőség:** 100%-os illeszkedés a magyar agrár- és adózási előírásokhoz (Áfa tv. 199. § és NAV 08).
 - **Zéró UI clutter:** Nem mezőgazdasági cégeknél az alapértelmezett állapot letisztult, csupán egy opcionális tab látható, ami egyetlen kattintással aktiválható szükség esetén.
 - **Pénzügyi pontosság:** Fillérre kerekített, szigorúan tesztelt számítások 16 zöld egységteszttel fedve.
+
+---
+
+## 4. Kapcsolódó
+- [P-118: Mezőgazdasági Felvásárlási Jegyek UX](../../product/decisions/P-118-agricultural-purchase-vouchers-ux.md)
+- [A-159: Hivatalos ÁFA Analitika Upgrade és NAV OSA Keresztellenőrzés](./A-159-statutory-vat-views-upgrade-and-osa-reconciliation.md)
+

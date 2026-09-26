@@ -27,6 +27,7 @@ import {
   ChevronsUpDown,
   ChevronsDownUp
 } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { formatCurrency, cn } from '@/lib/utils';
 import { exportVatCollectorAnalyticsExcel, VatCollectorGroup } from '@/lib/glExport';
 import { useToast } from '@/hooks/use-toast';
@@ -34,13 +35,15 @@ import { useTranslation } from 'react-i18next';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { fetchAllGlAccountsByPreset } from '@/lib/glData';
+import { VatScope } from '../types';
 
 interface VatCollectorAnalyticsViewProps {
   year?: number;
   periodMonth?: number;
+  vatScope?: VatScope;
 }
 
-export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAnalyticsViewProps) {
+export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCollectorAnalyticsViewProps) {
   const { t } = useTranslation(['accounting', 'common']);
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
@@ -49,6 +52,9 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
 
   const isCroatia = selectedCompany?.country_code === 'HR';
   const targetCurrency = isCroatia ? 'EUR' : 'HUF';
+
+  const [searchParams] = useSearchParams();
+  const effectiveScope: VatScope = vatScope || (searchParams.get('vat_scope') as VatScope) || 'all';
 
   // Compute effective date interval from props or DateRangeContext
   const effectiveDateFrom = useMemo(() => {
@@ -101,7 +107,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
 
   // Query invoice items with VAT codes, direction & GL classifications filtered by interval
   const { data: rawItems = [], isLoading } = useQuery({
-    queryKey: ['vatCollectorItems', selectedCompany?.id, effectiveDateFrom, effectiveDateTo, activePresetId],
+    queryKey: ['vatCollectorItems', selectedCompany?.id, effectiveDateFrom, effectiveDateTo, activePresetId, effectiveScope],
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
 
@@ -115,7 +121,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
           .limit(10000),
         supabase
           .from('invoices')
-          .select('id, bizonylatsorszam, elado_nev, vevo_nev, teljesites_datuma, kibocsatas_datuma, adoalap_osszesen, afa_osszeg_osszesen, partner_gl_number, vat_gl_number, invoice_direction')
+          .select('id, bizonylatsorszam, elado_nev, vevo_nev, teljesites_datuma, kibocsatas_datuma, adoalap_osszesen, afa_osszeg_osszesen, partner_gl_number, vat_gl_number, invoice_direction, image_url, melleklet_url, invoice_uploads_id, attachments')
           .eq('company_id', selectedCompany.id)
           .or(`teljesites_datuma.gte.${effectiveDateFrom},and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${effectiveDateFrom})`)
           .or(`teljesites_datuma.lte.${effectiveDateTo},and(teljesites_datuma.is.null,kibocsatas_datuma.lte.${effectiveDateTo})`)
@@ -125,7 +131,24 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
       const navInvs = navInvsRes.data || [];
       const subInvs = subInvsRes.data || [];
 
+      // Check whether submitted invoice has an uploaded image/document
+      const hasImg = (s: any) => Boolean(
+        s.image_url ||
+        s.melleklet_url ||
+        s.invoice_uploads_id ||
+        (Array.isArray(s.attachments) && s.attachments.length > 0)
+      );
+
       const normalizeInvNum = (s?: string | null) => (s || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+
+      // Build map of submitted invoices with actual images
+      const subWithImageByNum = new Map<string, boolean>();
+      subInvs.forEach((s) => {
+        if (s.bizonylatsorszam && hasImg(s)) {
+          subWithImageByNum.set(normalizeInvNum(s.bizonylatsorszam), true);
+        }
+      });
+
       const existingNavNumbers = new Set(navInvs.map((i) => normalizeInvNum(i.invoice_number)).filter(Boolean));
       // Only keep standalone manual invoices to avoid double-counting invoices already present in NAV
       const standaloneSubInvs = subInvs.filter((i) => !existingNavNumbers.has(normalizeInvNum(i.bizonylatsorszam)));
@@ -257,13 +280,27 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
       navItems.forEach((i: any) => {
         processedNavIds.add(i.nav_invoice_id);
         const inv = navMap.get(i.nav_invoice_id);
+        const direction = ((inv as any)?.invoice_direction || 'INBOUND').toUpperCase() as 'INBOUND' | 'OUTBOUND';
+        const isOutbound = direction === 'OUTBOUND';
+        if (!isOutbound && effectiveScope === 'with_image') {
+          const invNum = normalizeInvNum(inv?.invoice_number);
+          if (!subWithImageByNum.has(invNum)) {
+            return; // Inbound item without invoice scan skipped in with_image scope
+          }
+        }
+
         const code = getCode(i.vat_rate, i.vat_code, i.line_description, i.vat_amount);
         const glNum = resolveItemGl(i.gl_classifications);
         const vatCode = i.vat_code || null;
         const aggKey = `${i.nav_invoice_id}_${code}_${glNum || 'none'}_${vatCode || 'none'}`;
 
+        const dateStr = inv?.invoice_delivery_date || inv?.invoice_issue_date || '';
+
         const net = Number(i.net_amount) || 0;
-        const vat = Number(i.vat_amount) || 0;
+        let vat = Number(i.vat_amount) || 0;
+        if (code === 'FAD' && !isOutbound && vat === 0 && net !== 0) {
+          vat = Math.round(net * 0.27);
+        }
 
         if (navItemAggMap.has(aggKey)) {
           const existing = navItemAggMap.get(aggKey);
@@ -271,9 +308,6 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
           existing.vat_amount += vat;
           existing.gross_amount += (net + vat);
         } else {
-          const dateStr = inv?.invoice_delivery_date || inv?.invoice_issue_date || '';
-          const direction = ((inv as any)?.invoice_direction || 'INBOUND').toUpperCase() as 'INBOUND' | 'OUTBOUND';
-          const isOutbound = direction === 'OUTBOUND';
           const matchedSub = subByNumMap.get(normalizeInvNum(inv?.invoice_number));
           const resolvedCustomer = inv?.customer_name || matchedSub?.vevo_nev;
           const isCustomerFromSubmitted = isOutbound && !inv?.customer_name && !!matchedSub?.vevo_nev;
@@ -306,20 +340,32 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
       // Fallback for nav_invoices without item records yet
       navInvs.forEach((inv: any) => {
         if (!processedNavIds.has(inv.id)) {
-          const net = Number(inv.invoice_net_amount || 0);
-          const vat = Number(inv.invoice_vat_amount || 0);
           const direction = ((inv as any)?.invoice_direction || 'INBOUND').toUpperCase() as 'INBOUND' | 'OUTBOUND';
           const isOutbound = direction === 'OUTBOUND';
+          if (!isOutbound && effectiveScope === 'with_image') {
+            const invNum = normalizeInvNum(inv?.invoice_number);
+            if (!subWithImageByNum.has(invNum)) {
+              return;
+            }
+          }
+
+          const net = Number(inv.invoice_net_amount || 0);
+          const vat = Number(inv.invoice_vat_amount || 0);
           if (net !== 0 || vat !== 0) {
+            const isFad = (inv as any).is_reverse_charge || (inv as any).vat_row_override === '29' || (inv as any).vat_row_override === '04';
             const rate = net > 0 ? vat / net : 0;
-            const code = Math.round(rate * 100) === 27 || Math.round(rate * 100) === 25 ? '25' : Math.round(rate * 100) === 18 ? '18' : Math.round(rate * 100) === 13 ? '13' : Math.round(rate * 100) === 5 ? '05' : vat === 0 ? 'TAM' : '25';
+            const code = isFad ? 'FAD' : (Math.round(rate * 100) === 27 || Math.round(rate * 100) === 25 ? '25' : Math.round(rate * 100) === 18 ? '18' : Math.round(rate * 100) === 13 ? '13' : Math.round(rate * 100) === 5 ? '05' : vat === 0 ? 'TAM' : '25');
+            let effectiveVat = vat;
+            if (code === 'FAD' && !isOutbound && vat === 0 && net !== 0) {
+              effectiveVat = Math.round(net * 0.27);
+            }
             const dateStr = inv.invoice_delivery_date || inv.invoice_issue_date || '';
-            const matchedSub = subByNumMap.get(normalizeInvNum(inv.invoice_number));
-            const resolvedCustomer = inv.customer_name || matchedSub?.vevo_nev;
-            const isCustomerFromSubmitted = isOutbound && !inv.customer_name && !!matchedSub?.vevo_nev;
+            const matchedSub = subByNumMap.get(normalizeInvNum(inv?.invoice_number));
+            const resolvedCustomer = inv?.customer_name || matchedSub?.vevo_nev;
+            const isCustomerFromSubmitted = isOutbound && !inv?.customer_name && !!matchedSub?.vevo_nev;
             const partnerName = isOutbound
               ? (resolvedCustomer || t('accounting:vat_return.analytics_view.unknown_customer', 'Ismeretlen vevő'))
-              : (inv.supplier_name || matchedSub?.elado_nev || t('accounting:vat_return.analytics_view.unknown_supplier', 'Ismeretlen szállító'));
+              : (inv?.supplier_name || matchedSub?.elado_nev || t('accounting:vat_return.analytics_view.unknown_supplier', 'Ismeretlen szállító'));
 
             items.push({
               id: `nav_inv_${inv.id}`,
@@ -335,8 +381,8 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
               is_customer_from_submitted: isCustomerFromSubmitted,
               fulfillment_date: dateStr,
               net_amount: net,
-              vat_amount: vat,
-              gross_amount: net + vat,
+              vat_amount: effectiveVat,
+              gross_amount: net + effectiveVat,
             });
           }
         }
@@ -348,13 +394,26 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
       subItems.forEach((i: any) => {
         processedSubIds.add(i.invoice_id);
         const inv = subMap.get(i.invoice_id);
+        const direction = ((inv as any)?.invoice_direction || 'INBOUND').toUpperCase() as 'INBOUND' | 'OUTBOUND';
+        const isOutbound = direction === 'OUTBOUND';
+        if (!isOutbound && effectiveScope === 'with_image') {
+          if (!hasImg(inv)) {
+            return;
+          }
+        }
+
         const code = getCode(i.vat_rate, i.vat_code, i.line_description, i.vat_amount);
         const glNum = resolveItemGl(i.gl_classifications);
         const vatCode = i.vat_code || null;
         const aggKey = `${i.invoice_id}_${code}_${glNum || 'none'}_${vatCode || 'none'}`;
 
+        const dateStr = inv?.teljesites_datuma || inv?.kibocsatas_datuma || '';
+
         const net = Number(i.net_amount) || 0;
-        const vat = Number(i.vat_amount) || 0;
+        let vat = Number(i.vat_amount) || 0;
+        if (code === 'FAD' && !isOutbound && vat === 0 && net !== 0) {
+          vat = Math.round(net * 0.27);
+        }
 
         if (subItemAggMap.has(aggKey)) {
           const existing = subItemAggMap.get(aggKey);
@@ -362,9 +421,6 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
           existing.vat_amount += vat;
           existing.gross_amount += (net + vat);
         } else {
-          const dateStr = inv?.teljesites_datuma || inv?.kibocsatas_datuma || '';
-          const direction = ((inv as any)?.invoice_direction || 'INBOUND').toUpperCase() as 'INBOUND' | 'OUTBOUND';
-          const isOutbound = direction === 'OUTBOUND';
           const partnerName = isOutbound
             ? (inv?.vevo_nev || t('accounting:vat_return.analytics_view.unknown_customer', 'Ismeretlen vevő'))
             : (inv?.elado_nev || t('accounting:vat_return.analytics_view.unknown_supplier', 'Ismeretlen szállító'));
@@ -394,13 +450,23 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
       // Fallback for manual invoices without item records yet
       standaloneSubInvs.forEach((inv: any) => {
         if (!processedSubIds.has(inv.id)) {
-          const net = Number(inv.adoalap_osszesen || 0);
-          const vat = Number(inv.afa_osszeg_osszesen || 0);
           const direction = ((inv as any)?.invoice_direction || 'INBOUND').toUpperCase() as 'INBOUND' | 'OUTBOUND';
           const isOutbound = direction === 'OUTBOUND';
+          if (!isOutbound && effectiveScope === 'with_image') {
+            if (!hasImg(inv)) {
+              return;
+            }
+          }
+          const net = Number(inv.adoalap_osszesen || 0);
+          const vat = Number(inv.afa_osszeg_osszesen || 0);
           if (net !== 0 || vat !== 0) {
+            const isFad = (inv as any).is_reverse_charge || (inv as any).forditott_adozas || (inv as any).vat_row_override === '29' || (inv as any).vat_row_override === '04';
             const rate = net > 0 ? vat / net : 0;
-            const code = Math.round(rate * 100) === 27 || Math.round(rate * 100) === 25 ? '25' : Math.round(rate * 100) === 18 ? '18' : Math.round(rate * 100) === 13 ? '13' : Math.round(rate * 100) === 5 ? '05' : vat === 0 ? 'TAM' : '25';
+            const code = isFad ? 'FAD' : (Math.round(rate * 100) === 27 || Math.round(rate * 100) === 25 ? '25' : Math.round(rate * 100) === 18 ? '18' : Math.round(rate * 100) === 13 ? '13' : Math.round(rate * 100) === 5 ? '05' : vat === 0 ? 'TAM' : '25');
+            let effectiveVat = vat;
+            if (code === 'FAD' && !isOutbound && vat === 0 && net !== 0) {
+              effectiveVat = Math.round(net * 0.27);
+            }
             const dateStr = inv.teljesites_datuma || inv.kibocsatas_datuma || '';
             const partnerName = isOutbound
               ? (inv.vevo_nev || t('accounting:vat_return.analytics_view.unknown_customer', 'Ismeretlen vevő'))
@@ -420,8 +486,8 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
               is_customer_from_submitted: isOutbound && !!inv?.vevo_nev,
               fulfillment_date: dateStr,
               net_amount: net,
-              vat_amount: vat,
-              gross_amount: net + vat,
+              vat_amount: effectiveVat,
+              gross_amount: net + effectiveVat,
             });
           }
         }
@@ -658,6 +724,17 @@ export function VatCollectorAnalyticsView({ year, periodMonth }: VatCollectorAna
           <div className="flex items-center gap-2 mt-2">
             <Badge variant="secondary" className="font-mono text-xs bg-muted/60 text-foreground border border-border">
               {t('accounting:vat_return.analytics_view.active_period', 'Szűrt időszak:')} {effectiveDateFrom} – {effectiveDateTo}
+            </Badge>
+            <Badge
+              variant="outline"
+              className={cn(
+                'text-[11px] font-medium px-2 py-0.5 whitespace-nowrap',
+                effectiveScope === 'with_image'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300'
+                  : 'bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-950/40 dark:text-blue-300'
+              )}
+            >
+              {effectiveScope === 'with_image' ? 'Csak számlaképpel' : 'Minden számla'}
             </Badge>
           </div>
         </div>

@@ -2,7 +2,7 @@
 
 > Számlafeldolgozás, feltöltések, tételmutató, backup táblák.
 
-**Táblák ebben a csoportban:** 10
+**Táblák ebben a csoportban:** 12
 
 ---
 
@@ -330,4 +330,79 @@
 - INSERT: Cégtagok számára (`company_id IN (SELECT company_id FROM company_members WHERE user_id = auth.uid())`)
 
 > **Architektúra Döntés (2026-09-21):** Számlatételes ÁFA kód felülbírálások audit naplója és gépi tanulási bázisa — lásd [A-136](../decisions/A-136-invoice-vat-code-overrides-and-machine-learning.md).
+
+---
+
+### `purchase_vouchers`
+
+**RLS:** ✅ | **Sorok:** 0
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| id | uuid | — | `gen_random_uuid()` |
+| company_id | uuid | — | |
+| voucher_number | varchar(100) | — | |
+| producer_name | varchar(255) | — | |
+| producer_tax_id | varchar(50) | ✓ | |
+| producer_card_number | varchar(100) | ✓ | |
+| producer_address | text | ✓ | |
+| producer_bank_account | varchar(100) | ✓ | |
+| issue_date | date | — | `CURRENT_DATE` |
+| fulfillment_date | date | — | `CURRENT_DATE` |
+| payment_due_date | date | ✓ | |
+| payment_method | varchar(20) | — | `'CASH'` (CHECK in `'CASH'`, `'TRANSFER'`) |
+| net_amount | numeric(15,2) | — | `0` |
+| compensation_surcharge_rate | numeric(5,2) | — | `12.00` (CHECK in `12.00`, `7.00`, `0.00`) |
+| compensation_surcharge_amount | numeric(15,2) | — | `0` |
+| gross_amount | numeric(15,2) | — | `0` |
+| tax_deducted | numeric(15,2) | — | `0` |
+| paid_amount | numeric(15,2) | — | `0` |
+| payment_status | varchar(20) | — | `'unpaid'` (CHECK in `'unpaid'`, `'paid'`) |
+| paid_at | timestamptz | ✓ | |
+| payroll_period | varchar(7) | ✓ | |
+| payroll_processed | boolean | — | `false` |
+| description | text | ✓ | |
+| document_url | text | ✓ | |
+| created_at | timestamptz | — | `now()` |
+| updated_at | timestamptz | — | `now()` |
+| created_by | uuid | ✓ | |
+
+**FK:** `company_id` → `companies.id` ON DELETE CASCADE, `created_by` → `auth.users.id`
+
+**Indexek:** `idx_purchase_vouchers_company`, `idx_purchase_vouchers_date`, `idx_purchase_vouchers_status`, `idx_purchase_vouchers_payroll`
+
+**RLS policies:**
+- ALL: `has_company_access_via_cache(company_id)`
+
+> **Architektúra Döntés (2026-09-26):** Mezőgazdasági felvásárlási jegyek modul, kompenzációs felár (12%/7%) és bérügyi integráció — lásd [A-158](../decisions/A-158-agricultural-purchase-vouchers-module.md) és [P-118](../../product/decisions/P-118-agricultural-purchase-vouchers-ux.md).
+
+---
+
+### `purchase_voucher_items`
+
+**RLS:** ✅ | **Sorok:** 0
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| id | uuid | — | `gen_random_uuid()` |
+| voucher_id | uuid | — | |
+| company_id | uuid | — | |
+| item_name | varchar(255) | — | |
+| vtszt_kn_code | varchar(20) | ✓ | |
+| quantity | numeric(12,3) | — | `1` |
+| unit_of_measure | varchar(20) | — | `'kg'` |
+| unit_price | numeric(15,2) | — | `0` |
+| net_amount | numeric(15,2) | — | `0` |
+| compensation_rate | numeric(5,2) | — | `12.00` |
+| compensation_amount | numeric(15,2) | — | `0` |
+| gross_amount | numeric(15,2) | — | `0` |
+| created_at | timestamptz | — | `now()` |
+
+**FK:** `voucher_id` → `purchase_vouchers.id` ON DELETE CASCADE, `company_id` → `companies.id` ON DELETE CASCADE
+
+**Indexek:** `idx_purchase_voucher_items_voucher`, `idx_purchase_voucher_items_company`
+
+**RLS policies:**
+- ALL: `has_company_access_via_cache(company_id)`
+
 

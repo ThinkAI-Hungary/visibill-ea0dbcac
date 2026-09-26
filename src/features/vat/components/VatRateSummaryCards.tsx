@@ -56,19 +56,22 @@ export function VatRateSummaryCards({
     const d5Base = Number(lineMap['64']?.base_amount_rounded || 0);
     const d5Tax = Number(lineMap['64']?.tax_amount_rounded || 0);
 
-    // Mentes (01-04 sorok, export, EU mentes, belföldi mentes 142. §)
+    // Mentes (01, 02 sorok, export, EU mentes, 110. sor)
     const pMentesBase =
       Number(lineMap['01']?.base_amount_rounded || 0) +
       Number(lineMap['02']?.base_amount_rounded || 0) +
-      Number(lineMap['04']?.base_amount_rounded || 0) +
       Number(lineMap['110']?.base_amount_rounded || 0);
     const dMentesBase = Number(lineMap['63']?.base_amount_rounded || 0);
 
-    // Fordított adózás (FAD / 29. sor / 66. sor alábontás)
-    const pFadTax = Number(lineMap['29']?.tax_amount_rounded || 0);
-    const pFadBase = Number(lineMap['29']?.base_amount_rounded || 0);
-    const dFadTax = Number(lineMap['66_fad']?.tax_amount_rounded || pFadTax);
-    const dFadBase = Number(lineMap['66_fad']?.base_amount_rounded || pFadBase);
+    // Fordított adózás (FAD: 04. sor kimenő, 29. sor fizetendő, 66_fad levonható)
+    const p04Base = Number(lineMap['04']?.base_amount_rounded || 0);
+    const p29Tax = Number(lineMap['29']?.tax_amount_rounded || 0);
+    const p29Base = Number(lineMap['29']?.base_amount_rounded || (p29Tax > 0 ? Math.round(p29Tax / 0.27) : 0));
+    const dFadTax = Number(lineMap['66_fad']?.tax_amount_rounded || p29Tax);
+    const dFadBase = Number(lineMap['66_fad']?.base_amount_rounded || (dFadTax > 0 ? Math.round(dFadTax / 0.27) : p29Base));
+
+    const pFadBase = p29Base + p04Base;
+    const pFadTax = p29Tax;
 
     const groups: RateGroup[] = [
       {
@@ -109,7 +112,7 @@ export function VatRateSummaryCards({
       },
     ];
 
-    if (pFadBase > 0 || pFadTax > 0 || dFadTax > 0) {
+    if (pFadBase > 0 || pFadTax > 0 || dFadBase > 0 || dFadTax > 0) {
       groups.push({
         label: 'Fordított (FAD)',
         dotColor: 'bg-amber-500',

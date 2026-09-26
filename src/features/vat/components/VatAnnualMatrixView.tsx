@@ -30,8 +30,9 @@ import {
   TrendingDown,
   RefreshCw,
 } from 'lucide-react';
-import { cn, formatCurrency } from '@/lib/utils';
-import { MONTHS, formatThousands } from '../types';
+import { useSearchParams } from 'react-router-dom';
+import { cn, formatCurrency, isReverseChargeVatRate } from '@/lib/utils';
+import { MONTHS, formatThousands, VatScope } from '../types';
 
 import { useToast } from '@/hooks/use-toast';
 
@@ -40,6 +41,7 @@ interface VatAnnualMatrixViewProps {
   year: number;
   onYearChange: (year: number) => void;
   selectedCompany?: any;
+  vatScope?: VatScope;
 }
 
 interface MonthData {
@@ -49,6 +51,8 @@ interface MonthData {
   payable18Tax: number;
   payable5Base: number;
   payable5Tax: number;
+  payableFadBase: number;
+  payableFadTax: number;
   payableMentesBase: number;
 
   deductible27Base: number;
@@ -57,6 +61,8 @@ interface MonthData {
   deductible18Tax: number;
   deductible5Base: number;
   deductible5Tax: number;
+  deductibleFadBase: number;
+  deductibleFadTax: number;
   deductibleMentesBase: number;
 }
 
@@ -65,8 +71,12 @@ export function VatAnnualMatrixView({
   year,
   onYearChange,
   selectedCompany,
+  vatScope,
 }: VatAnnualMatrixViewProps) {
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const effectiveScope: VatScope = vatScope || (searchParams.get('vat_scope') as VatScope) || 'all';
+
   const [showBase, setShowBase] = useState(true);
   const [showTax, setShowTax] = useState(true);
   const [showEmptyRows, setShowEmptyRows] = useState(false);
@@ -74,7 +84,7 @@ export function VatAnnualMatrixView({
 
   // Query invoices across the entire year from nav_invoices and invoices
   const { data: rawMatrix, isLoading, refetch, isFetching } = useQuery({
-    queryKey: ['vat_annual_matrix', companyId, year],
+    queryKey: ['vat_annual_matrix', companyId, year, effectiveScope],
     queryFn: async () => {
       if (!companyId) return null;
 
@@ -84,14 +94,14 @@ export function VatAnnualMatrixView({
       const [navInvsRes, subInvsRes] = await Promise.all([
         supabase
           .from('nav_invoices')
-          .select('id, invoice_number, invoice_delivery_date, invoice_issue_date, invoice_net_amount, invoice_vat_amount, invoice_direction')
+          .select('id, invoice_number, invoice_delivery_date, invoice_issue_date, invoice_net_amount, invoice_vat_amount, invoice_direction, is_reverse_charge, vat_row_override, vat_rate')
           .eq('company_id', companyId)
           .or(`invoice_delivery_date.gte.${dateFrom},and(invoice_delivery_date.is.null,invoice_issue_date.gte.${dateFrom})`)
           .or(`invoice_delivery_date.lte.${dateTo},and(invoice_delivery_date.is.null,invoice_issue_date.lte.${dateTo})`)
           .limit(10000),
         supabase
           .from('invoices')
-          .select('id, bizonylatsorszam, teljesites_datuma, kibocsatas_datuma, adoalap_osszesen, afa_osszeg_osszesen, invoice_direction')
+          .select('id, bizonylatsorszam, teljesites_datuma, kibocsatas_datuma, adoalap_osszesen, afa_osszeg_osszesen, invoice_direction, is_reverse_charge, forditott_adozas, vat_row_override, image_url, melleklet_url, invoice_uploads_id, attachments')
           .eq('company_id', companyId)
           .or(`teljesites_datuma.gte.${dateFrom},and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${dateFrom})`)
           .or(`teljesites_datuma.lte.${dateTo},and(teljesites_datuma.is.null,kibocsatas_datuma.lte.${dateTo})`)
@@ -108,6 +118,22 @@ export function VatAnnualMatrixView({
       const navInvs = navInvsRes.data || [];
       const subInvs = subInvsRes.data || [];
 
+      // Check whether submitted invoice has an uploaded image/document
+      const hasImg = (s: any) => Boolean(
+        s.image_url ||
+        s.melleklet_url ||
+        s.invoice_uploads_id ||
+        (Array.isArray(s.attachments) && s.attachments.length > 0)
+      );
+
+      // Build map of submitted invoices with actual images
+      const subWithImageByNum = new Map<string, boolean>();
+      subInvs.forEach((s) => {
+        if (s.bizonylatsorszam && hasImg(s)) {
+          subWithImageByNum.set(normalizeInvNum(s.bizonylatsorszam), true);
+        }
+      });
+
       // Deduplicate manual invoices already present in nav_invoices
       const normalizeInvNum = (s?: string | null) => (s || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
       const existingNavNumbers = new Set(navInvs.map((i) => normalizeInvNum(i.invoice_number)).filter(Boolean));
@@ -121,6 +147,8 @@ export function VatAnnualMatrixView({
         payable18Tax: 0,
         payable5Base: 0,
         payable5Tax: 0,
+        payableFadBase: 0,
+        payableFadTax: 0,
         payableMentesBase: 0,
 
         deductible27Base: 0,
@@ -129,89 +157,141 @@ export function VatAnnualMatrixView({
         deductible18Tax: 0,
         deductible5Base: 0,
         deductible5Tax: 0,
+        deductibleFadBase: 0,
+        deductibleFadTax: 0,
         deductibleMentesBase: 0,
       }));
 
       // Process NAV invoices
       navInvs.forEach((inv) => {
+        const isOutbound = inv.invoice_direction === 'OUTBOUND';
+        if (!isOutbound && effectiveScope === 'with_image') {
+          const invNum = normalizeInvNum(inv.invoice_number);
+          if (!subWithImageByNum.has(invNum)) {
+            return; // Inbound invoice without image skipped in with_image scope
+          }
+        }
+
         const d = inv.invoice_delivery_date || inv.invoice_issue_date;
         if (!d) return;
         const mIdx = new Date(d).getMonth();
         if (mIdx < 0 || mIdx > 11) return;
 
-        const isOutbound = inv.invoice_direction === 'OUTBOUND';
         const base = Math.round(Number(inv.invoice_net_amount) || 0);
         const tax = Math.round(Number(inv.invoice_vat_amount) || 0);
-        const rate = base > 0 && tax > 0 ? Math.round((tax / base) * 100) : (tax > 0 ? 27 : 0);
+        const isFad =
+          Boolean(inv.is_reverse_charge) ||
+          inv.vat_row_override === '29' ||
+          inv.vat_row_override === '04' ||
+          isReverseChargeVatRate((inv as any).vat_rate);
 
         const target = months[mIdx];
-        if (isOutbound) {
-          if (rate >= 24) {
-            target.payable27Base += base;
-            target.payable27Tax += tax;
-          } else if (rate >= 14) {
-            target.payable18Base += base;
-            target.payable18Tax += tax;
-          } else if (rate >= 4) {
-            target.payable5Base += base;
-            target.payable5Tax += tax;
+        if (isFad) {
+          if (isOutbound) {
+            target.payableFadBase += base;
+            target.payableFadTax += 0;
           } else {
-            target.payableMentesBase += base;
+            const fadTax = tax > 0 ? tax : Math.round(base * 0.27);
+            target.payableFadBase += base;
+            target.payableFadTax += fadTax;
+            target.deductibleFadBase += base;
+            target.deductibleFadTax += fadTax;
           }
         } else {
-          if (rate >= 24) {
-            target.deductible27Base += base;
-            target.deductible27Tax += tax;
-          } else if (rate >= 14) {
-            target.deductible18Base += base;
-            target.deductible18Tax += tax;
-          } else if (rate >= 4) {
-            target.deductible5Base += base;
-            target.deductible5Tax += tax;
+          const rate = base > 0 && tax > 0 ? Math.round((tax / base) * 100) : (tax > 0 ? 27 : 0);
+          if (isOutbound) {
+            if (rate >= 24) {
+              target.payable27Base += base;
+              target.payable27Tax += tax;
+            } else if (rate >= 14) {
+              target.payable18Base += base;
+              target.payable18Tax += tax;
+            } else if (rate >= 4) {
+              target.payable5Base += base;
+              target.payable5Tax += tax;
+            } else {
+              target.payableMentesBase += base;
+            }
           } else {
-            target.deductibleMentesBase += base;
+            if (rate >= 24) {
+              target.deductible27Base += base;
+              target.deductible27Tax += tax;
+            } else if (rate >= 14) {
+              target.deductible18Base += base;
+              target.deductible18Tax += tax;
+            } else if (rate >= 4) {
+              target.deductible5Base += base;
+              target.deductible5Tax += tax;
+            } else {
+              target.deductibleMentesBase += base;
+            }
           }
         }
       });
 
       // Process standalone submitted invoices
       standaloneSubInvs.forEach((inv) => {
+        const isOutbound = inv.invoice_direction === 'OUTBOUND';
+        if (!isOutbound && effectiveScope === 'with_image') {
+          if (!hasImg(inv)) {
+            return; // Standalone inbound invoice without image skipped in with_image scope
+          }
+        }
+
         const d = inv.teljesites_datuma || inv.kibocsatas_datuma;
         if (!d) return;
         const mIdx = new Date(d).getMonth();
         if (mIdx < 0 || mIdx > 11) return;
 
-        const isOutbound = inv.invoice_direction === 'OUTBOUND';
         const base = Math.round(Number(inv.adoalap_osszesen) || 0);
         const tax = Math.round(Number(inv.afa_osszeg_osszesen) || 0);
-        const rate = base > 0 && tax > 0 ? Math.round((tax / base) * 100) : (tax > 0 ? 27 : 0);
+        const isFad =
+          Boolean(inv.is_reverse_charge) ||
+          Boolean((inv as any).forditott_adozas) ||
+          inv.vat_row_override === '29' ||
+          inv.vat_row_override === '04' ||
+          isReverseChargeVatRate((inv as any).vat_rate);
 
         const target = months[mIdx];
-        if (isOutbound) {
-          if (rate >= 24) {
-            target.payable27Base += base;
-            target.payable27Tax += tax;
-          } else if (rate >= 14) {
-            target.payable18Base += base;
-            target.payable18Tax += tax;
-          } else if (rate >= 4) {
-            target.payable5Base += base;
-            target.payable5Tax += tax;
+        if (isFad) {
+          if (isOutbound) {
+            target.payableFadBase += base;
+            target.payableFadTax += 0;
           } else {
-            target.payableMentesBase += base;
+            const fadTax = tax > 0 ? tax : Math.round(base * 0.27);
+            target.payableFadBase += base;
+            target.payableFadTax += fadTax;
+            target.deductibleFadBase += base;
+            target.deductibleFadTax += fadTax;
           }
         } else {
-          if (rate >= 24) {
-            target.deductible27Base += base;
-            target.deductible27Tax += tax;
-          } else if (rate >= 14) {
-            target.deductible18Base += base;
-            target.deductible18Tax += tax;
-          } else if (rate >= 4) {
-            target.deductible5Base += base;
-            target.deductible5Tax += tax;
+          const rate = base > 0 && tax > 0 ? Math.round((tax / base) * 100) : (tax > 0 ? 27 : 0);
+          if (isOutbound) {
+            if (rate >= 24) {
+              target.payable27Base += base;
+              target.payable27Tax += tax;
+            } else if (rate >= 14) {
+              target.payable18Base += base;
+              target.payable18Tax += tax;
+            } else if (rate >= 4) {
+              target.payable5Base += base;
+              target.payable5Tax += tax;
+            } else {
+              target.payableMentesBase += base;
+            }
           } else {
-            target.deductibleMentesBase += base;
+            if (rate >= 24) {
+              target.deductible27Base += base;
+              target.deductible27Tax += tax;
+            } else if (rate >= 14) {
+              target.deductible18Base += base;
+              target.deductible18Tax += tax;
+            } else if (rate >= 4) {
+              target.deductible5Base += base;
+              target.deductible5Tax += tax;
+            } else {
+              target.deductibleMentesBase += base;
+            }
           }
         }
       });
@@ -249,6 +329,8 @@ export function VatAnnualMatrixView({
       payable18Tax: 0,
       payable5Base: 0,
       payable5Tax: 0,
+      payableFadBase: 0,
+      payableFadTax: 0,
       payableMentesBase: 0,
 
       deductible27Base: 0,
@@ -257,6 +339,8 @@ export function VatAnnualMatrixView({
       deductible18Tax: 0,
       deductible5Base: 0,
       deductible5Tax: 0,
+      deductibleFadBase: 0,
+      deductibleFadTax: 0,
       deductibleMentesBase: 0,
     }));
   }, [rawMatrix]);
@@ -268,15 +352,15 @@ export function VatAnnualMatrixView({
 
   // Section 1: Payable (Fizetendő)
   const payableTotalBase = (m: MonthData) =>
-    m.payable27Base + m.payable18Base + m.payable5Base + m.payableMentesBase;
+    m.payable27Base + m.payable18Base + m.payable5Base + m.payableFadBase + m.payableMentesBase;
   const payableTotalTax = (m: MonthData) =>
-    m.payable27Tax + m.payable18Tax + m.payable5Tax;
+    m.payable27Tax + m.payable18Tax + m.payable5Tax + m.payableFadTax;
 
   // Section 2: Deductible (Visszaigényelhető)
   const deductibleTotalBase = (m: MonthData) =>
-    m.deductible27Base + m.deductible18Base + m.deductible5Base + m.deductibleMentesBase;
+    m.deductible27Base + m.deductible18Base + m.deductible5Base + m.deductibleFadBase + m.deductibleMentesBase;
   const deductibleTotalTax = (m: MonthData) =>
-    m.deductible27Tax + m.deductible18Tax + m.deductible5Tax;
+    m.deductible27Tax + m.deductible18Tax + m.deductible5Tax + m.deductibleFadTax;
 
   // Section 3: Net Balance (Fizetendő - Visszaigényelhető)
   const balanceTotalTax = (m: MonthData) => payableTotalTax(m) - deductibleTotalTax(m);
@@ -310,6 +394,8 @@ export function VatAnnualMatrixView({
       ...(showTax ? [formatRow('18%-os ÁFA', (m) => m.payable18Tax)] : []),
       ...(showBase ? [formatRow('5%-os alap', (m) => m.payable5Base)] : []),
       ...(showTax ? [formatRow('5%-os ÁFA', (m) => m.payable5Tax)] : []),
+      ...(showBase ? [formatRow('Fordított (FAD) alap', (m) => m.payableFadBase)] : []),
+      ...(showTax ? [formatRow('Fordított (FAD) ÁFA', (m) => m.payableFadTax)] : []),
       ...(showBase ? [formatRow('Mentes alap', (m) => m.payableMentesBase)] : []),
       ...(showBase ? [formatRow('ÖSSZESEN ALAP (Fizetendő)', payableTotalBase)] : []),
       ...(showTax ? [formatRow('ÖSSZESEN ÁFA (Fizetendő)', payableTotalTax)] : []),
@@ -321,6 +407,9 @@ export function VatAnnualMatrixView({
       ...(showTax ? [formatRow('18%-os ÁFA', (m) => m.deductible18Tax)] : []),
       ...(showBase ? [formatRow('5%-os alap', (m) => m.deductible5Base)] : []),
       ...(showTax ? [formatRow('5%-os ÁFA', (m) => m.deductible5Tax)] : []),
+      ...(showBase ? [formatRow('Fordított (FAD) alap', (m) => m.deductibleFadBase)] : []),
+      ...(showTax ? [formatRow('Fordított (FAD) ÁFA', (m) => m.deductibleFadTax)] : []),
+      ...(showBase ? [formatRow('Mentes alap', (m) => m.deductibleMentesBase)] : []),
       ...(showBase ? [formatRow('ÖSSZESEN ALAP (Visszaigényelhető)', deductibleTotalBase)] : []),
       ...(showTax ? [formatRow('ÖSSZESEN ÁFA (Visszaigényelhető)', deductibleTotalTax)] : []),
 
@@ -417,6 +506,18 @@ export function VatAnnualMatrixView({
               ))}
             </SelectContent>
           </Select>
+
+          <Badge
+            variant="outline"
+            className={cn(
+              'text-[11px] font-medium px-2 py-0.5 whitespace-nowrap hidden sm:inline-flex',
+              effectiveScope === 'with_image'
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300'
+                : 'bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-950/40 dark:text-blue-300'
+            )}
+          >
+            {effectiveScope === 'with_image' ? 'Csak számlaképpel' : 'Minden számla'}
+          </Badge>
 
           {/* Toggles */}
           <div className="flex items-center gap-3 pl-2 border-l border-border/60">
@@ -539,6 +640,8 @@ export function VatAnnualMatrixView({
                   {showTax && renderDataRow('18%-os ÁFA', (m) => m.payable18Tax, { emptyCheck: true })}
                   {showBase && renderDataRow('5%-os alap', (m) => m.payable5Base, { emptyCheck: true })}
                   {showTax && renderDataRow('5%-os ÁFA', (m) => m.payable5Tax, { emptyCheck: true })}
+                  {showBase && renderDataRow('Fordított (FAD) alap', (m) => m.payableFadBase, { emptyCheck: true })}
+                  {showTax && renderDataRow('Fordított (FAD) ÁFA', (m) => m.payableFadTax, { emptyCheck: true })}
                   {showBase && renderDataRow('Mentes alap', (m) => m.payableMentesBase, { emptyCheck: true })}
                   {showBase && renderDataRow('ÖSSZESEN ALAP', payableTotalBase, { isBold: true, bgClass: 'bg-muted/25 font-semibold' })}
                   {showTax && renderDataRow('ÖSSZESEN ÁFA', payableTotalTax, { isBold: true, bgClass: 'bg-muted/50 font-bold text-primary', textClass: 'text-primary font-bold' })}
@@ -555,6 +658,9 @@ export function VatAnnualMatrixView({
                   {showTax && renderDataRow('18%-os ÁFA', (m) => m.deductible18Tax, { emptyCheck: true })}
                   {showBase && renderDataRow('5%-os alap', (m) => m.deductible5Base, { emptyCheck: true })}
                   {showTax && renderDataRow('5%-os ÁFA', (m) => m.deductible5Tax, { emptyCheck: true })}
+                  {showBase && renderDataRow('Fordított (FAD) alap', (m) => m.deductibleFadBase, { emptyCheck: true })}
+                  {showTax && renderDataRow('Fordított (FAD) ÁFA', (m) => m.deductibleFadTax, { emptyCheck: true })}
+                  {showBase && renderDataRow('Mentes alap', (m) => m.deductibleMentesBase, { emptyCheck: true })}
                   {showBase && renderDataRow('ÖSSZESEN ALAP', deductibleTotalBase, { isBold: true, bgClass: 'bg-muted/25 font-semibold' })}
                   {showTax && renderDataRow('ÖSSZESEN ÁFA', deductibleTotalTax, { isBold: true, bgClass: 'bg-muted/50 font-bold text-indigo-600 dark:text-indigo-400', textClass: 'text-indigo-600 dark:text-indigo-400 font-bold' })}
 

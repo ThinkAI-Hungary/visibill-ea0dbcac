@@ -15,3 +15,5 @@ export { VatAnnualMatrixView } from './components/VatAnnualMatrixView';
 export { VatRateSummaryCards } from './components/VatRateSummaryCards';
 export { VatItemizedJournalView } from './components/VatItemizedJournalView';
 export { VatTourismTaxSection } from './components/VatTourismTaxSection';
+export { VatScopeRadioGroup } from './components/VatScopeRadioGroup';
+export { useVatScope } from './hooks/useVatScope';

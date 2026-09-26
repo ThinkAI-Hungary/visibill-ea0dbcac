@@ -2264,7 +2264,7 @@ export function InvoiceItemsDialog({
           } 
         }}
       >
-        <DialogContent className="max-w-2xl sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:max-w-3xl md:max-w-4xl max-h-[90vh] flex flex-col overflow-y-auto overflow-x-hidden">
           {(() => {
             const isNegative = glEditItem 
               ? ((glEditItem.net_amount ?? 0) < 0 || (glEditItem.gross_amount ?? 0) < 0)
@@ -2343,24 +2343,24 @@ export function InvoiceItemsDialog({
 
                 <div className="py-2 flex flex-col gap-4 w-full">
                   {/* Two Cards: Tartozik (T) and Követel (K) with Swap Button */}
-                  <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2.5 p-3 bg-muted/40 rounded-xl border border-border/60">
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 p-3.5 bg-muted/40 rounded-xl border border-border/60">
                     {/* Tartozik (T) Card */}
                     <div
                       onClick={() => setActiveEditSide('T')}
                       className={cn(
-                        "cursor-pointer rounded-lg p-3 transition-all border flex flex-col gap-1.5 select-none",
+                        "cursor-pointer rounded-lg p-3 transition-all border flex flex-col gap-1.5 select-none min-w-0",
                         activeEditSide === 'T'
                           ? "bg-primary/10 border-primary ring-2 ring-primary/20 shadow-sm"
                           : "bg-background border-border hover:border-primary/50 hover:bg-background/80"
                       )}
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-primary flex items-center gap-1.5">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-xs font-bold text-primary flex items-center gap-1.5 shrink-0">
                           <span className="px-1.5 py-0.5 rounded bg-primary text-primary-foreground font-mono text-[10px] font-black">T</span>
                           Tartozik oldal
                         </span>
                         {activeEditSide === 'T' ? (
-                          <Badge variant="outline" className="text-[10px] bg-primary/20 border-primary/30 text-primary py-0 px-1.5">
+                          <Badge variant="outline" className="text-[10px] bg-primary/20 border-primary/30 text-primary py-0 px-1.5 shrink-0">
                             Kijelölve
                           </Badge>
                         ) : null}
@@ -2381,7 +2381,7 @@ export function InvoiceItemsDialog({
                     </div>
 
                     {/* Swap T ↔ K Button */}
-                    <div className="flex flex-col items-center justify-center px-1">
+                    <div className="flex flex-col items-center justify-center px-1 shrink-0">
                       <Button
                         type="button"
                         variant="outline"
@@ -2406,19 +2406,19 @@ export function InvoiceItemsDialog({
                     <div
                       onClick={() => setActiveEditSide('K')}
                       className={cn(
-                        "cursor-pointer rounded-lg p-3 transition-all border flex flex-col gap-1.5 select-none",
+                        "cursor-pointer rounded-lg p-3 transition-all border flex flex-col gap-1.5 select-none min-w-0",
                         activeEditSide === 'K'
                           ? "bg-primary/10 border-primary ring-2 ring-primary/20 shadow-sm"
                           : "bg-background border-border hover:border-primary/50 hover:bg-background/80"
                       )}
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-primary flex items-center gap-1.5">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-xs font-bold text-primary flex items-center gap-1.5 shrink-0">
                           <span className="px-1.5 py-0.5 rounded bg-primary text-primary-foreground font-mono text-[10px] font-black">K</span>
                           Követel oldal
                         </span>
                         {activeEditSide === 'K' ? (
-                          <Badge variant="outline" className="text-[10px] bg-primary/20 border-primary/30 text-primary py-0 px-1.5">
+                          <Badge variant="outline" className="text-[10px] bg-primary/20 border-primary/30 text-primary py-0 px-1.5 shrink-0">
                             Kijelölve
                           </Badge>
                         ) : null}
@@ -2440,19 +2440,19 @@ export function InvoiceItemsDialog({
                   </div>
 
                   {/* Section Label for Selected Side */}
-                  <div className="flex items-center justify-between px-1">
-                    <span className="text-xs font-semibold text-foreground flex items-center gap-2">
-                      <span className="px-1.5 py-0.5 rounded bg-muted text-foreground font-mono font-bold">
+                  <div className="flex items-center justify-between gap-2 px-1">
+                    <span className="text-xs font-semibold text-foreground flex items-center gap-2 min-w-0">
+                      <span className="px-1.5 py-0.5 rounded bg-muted text-foreground font-mono font-bold shrink-0">
                         {activeEditSide === 'T' ? 'T' : 'K'}
                       </span>
-                      <span>
+                      <span className="truncate">
                         {activeSideIsItem 
                           ? `Tétel főkönyvi számlájának választása (${activeEditSide === 'T' ? 'Tartozik' : 'Követel'} oldal):` 
                           : `Partner főkönyvi számlájának megadása (${activeEditSide === 'T' ? 'Tartozik' : 'Követel'} oldal):`
                         }
                       </span>
                     </span>
-                    <span className="text-xs text-muted-foreground italic">
+                    <span className="text-xs text-muted-foreground italic shrink-0">
                       {activeSideIsItem ? 'Költség / ráfordítás / árbevétel' : 'Partner számla (szállító / vevő)'}
                     </span>
                   </div>
@@ -2474,7 +2474,7 @@ export function InvoiceItemsDialog({
                               key="unclassified"
                               value="besorolatlan uncategorized eltavolitas nincs"
                               onSelect={() => setSelectedNewGL('UNCLASSIFIED')}
-                              className="cursor-pointer py-2 w-full overflow-hidden flex items-center mb-1 text-muted-foreground bg-muted/30"
+                              className="cursor-pointer py-2 w-full overflow-hidden flex items-center mb-1 text-muted-foreground bg-muted/30 min-w-0"
                             >
                               <Check
                                 className={cn(
@@ -2482,7 +2482,7 @@ export function InvoiceItemsDialog({
                                   selectedNewGL === 'UNCLASSIFIED' ? "opacity-100 text-primary" : "opacity-0"
                                 )}
                               />
-                              <span className={cn("truncate block w-full", selectedNewGL === 'UNCLASSIFIED' ? "font-bold text-foreground" : "font-medium")}>
+                              <span className={cn("truncate block w-full min-w-0", selectedNewGL === 'UNCLASSIFIED' ? "font-bold text-foreground" : "font-medium")}>
                                 {t('invoices:dialogs.items.gl_unclassified_option')}
                               </span>
                             </CommandItem>
@@ -2501,7 +2501,7 @@ export function InvoiceItemsDialog({
                                     key={gl.id}
                                     value={`${gl.gl_number} ${gl.short_name}`}
                                     onSelect={() => setSelectedNewGL(gl.id)}
-                                    className="cursor-pointer py-2 w-full overflow-hidden flex items-center"
+                                    className="cursor-pointer py-2 w-full overflow-hidden flex items-center min-w-0"
                                   >
                                     <Check
                                       className={cn(
@@ -2509,7 +2509,7 @@ export function InvoiceItemsDialog({
                                         selectedNewGL === gl.id ? "opacity-100" : "opacity-0"
                                       )}
                                     />
-                                    <span className={cn("truncate block w-full", selectedNewGL === gl.id ? "font-bold text-foreground" : "")}>
+                                    <span className={cn("truncate block w-full min-w-0", selectedNewGL === gl.id ? "font-bold text-foreground" : "")}>
                                       <span className="font-mono font-semibold">{gl.gl_number}</span> {gl.short_name}
                                     </span>
                                   </CommandItem>
@@ -2577,7 +2577,7 @@ export function InvoiceItemsDialog({
 
                       <div className="space-y-1.5 pt-1">
                         <Label className="text-xs text-muted-foreground">Egyedi partner főkönyvi szám:</Label>
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Input
                             placeholder={isOutbound ? '311...' : '454...'}
                             value={customPartnerGlInput}
@@ -2597,7 +2597,7 @@ export function InvoiceItemsDialog({
                   )}
                 </div>
 
-                <DialogFooter className="gap-2 sm:gap-0">
+                <DialogFooter className="pt-3 border-t border-border/40 gap-2 sm:gap-2 sm:space-x-0 flex flex-row justify-end">
                   <Button variant="outline" onClick={() => setGlEditOpen(false)} disabled={isGlSubmitting}>
                     {t('common:actions.cancel')}
                   </Button>

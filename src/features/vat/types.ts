@@ -181,4 +181,7 @@ export interface VatSteelItemSummary {
   net_weight_kg: number;
 }
 
+export type VatScope = 'all' | 'with_image';
+
+
 

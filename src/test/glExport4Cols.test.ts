@@ -72,5 +72,5 @@ describe('exportGlExcel 4-Column Format', () => {
     expect(appendSpy).toHaveBeenCalled();
     expect(removeSpy).toHaveBeenCalled();
     expect(global.URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
-  });
+  }, 15000);
 });

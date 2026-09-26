@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -13,6 +14,7 @@ import type {
   VatFrequency,
   TaxValidationResult,
   XmlValidationCheck,
+  VatScope,
 } from '../types';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import {
@@ -23,6 +25,7 @@ import {
   calculateDeadlineCountdown,
   findSuspiciousReverseChargeInvoices,
 } from '../core/vatEngine';
+import { useVatScope } from './useVatScope';
 
 export function useVatReturnData() {
   const { selectedCompany } = useCompany();
@@ -90,9 +93,22 @@ export function useVatReturnData() {
   const [editDrafts, setEditDrafts] = useState<Record<string, { base?: number; tax?: number }>>({});
   const editTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
+  // URL scope for VAT calculations
+  const [searchParams] = useSearchParams();
+  const urlScope = searchParams.get('vat_scope');
+  const vatScope: VatScope = urlScope === 'with_image' ? 'with_image' : 'all';
+
+  // Live scope missing deductions (computed from inbounds)
+  const { missingDeductions } = useVatScope({
+    companyId: selectedCompany?.id,
+    year,
+    month,
+    frequency,
+  });
+
   // 1. Current return for period
   const { data: vatReturn, error: vatReturnError } = useQuery({
-    queryKey: ['vat_return', selectedCompany?.id, year, month, frequency],
+    queryKey: ['vat_return', selectedCompany?.id, year, month, frequency, vatScope],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('vat_returns')
@@ -229,6 +245,123 @@ export function useVatReturnData() {
     return m;
   }, [lines]);
 
+  // Dynamically adjust lineMap and lines when in with_image scope
+  const effectiveLineMap = useMemo(() => {
+    if (vatScope !== 'with_image' || !missingDeductions) {
+      return lineMap;
+    }
+
+    const m: Record<string, ReturnLine> = {};
+    for (const [k, v] of Object.entries(lineMap)) {
+      m[k] = { ...v };
+    }
+
+    const adjust = (row: string, subBaseEft: number, subTaxEft: number) => {
+      const orig = m[row] || {
+        id: `mock_${row}`,
+        vat_return_id: vatReturn?.id || '',
+        row_number: row,
+        base_amount_rounded: 0,
+        tax_amount_rounded: 0,
+      };
+      m[row] = {
+        ...orig,
+        base_amount_rounded: Math.max(0, (orig.base_amount_rounded || 0) - subBaseEft),
+        tax_amount_rounded: Math.max(0, (orig.tax_amount_rounded || 0) - subTaxEft),
+      };
+    };
+
+    if (missingDeductions.missing27BaseEft > 0 || missingDeductions.missing27TaxEft > 0) {
+      adjust('66', missingDeductions.missing27BaseEft, missingDeductions.missing27TaxEft);
+    }
+    if (missingDeductions.missing18BaseEft > 0 || missingDeductions.missing18TaxEft > 0) {
+      adjust('65', missingDeductions.missing18BaseEft, missingDeductions.missing18TaxEft);
+    }
+    if (missingDeductions.missing5BaseEft > 0 || missingDeductions.missing5TaxEft > 0) {
+      adjust('64', missingDeductions.missing5BaseEft, missingDeductions.missing5TaxEft);
+    }
+    if (missingDeductions.missingExemptBaseEft > 0) {
+      adjust('68', missingDeductions.missingExemptBaseEft, 0);
+      adjust('110', missingDeductions.missingExemptBaseEft, 0);
+    }
+
+    // Row 76 (Total Deductible Tax)
+    const orig76 = m['76'] || {
+      id: 'mock_76',
+      vat_return_id: vatReturn?.id || '',
+      row_number: '76',
+      base_amount_rounded: 0,
+      tax_amount_rounded: 0,
+    };
+    const new76Tax = Math.max(0, (orig76.tax_amount_rounded || 0) - missingDeductions.missingVatEft);
+    m['76'] = {
+      ...orig76,
+      tax_amount_rounded: new76Tax,
+    };
+
+    // Row 36 (Total Payable Tax) - unchanged
+    const payableTax36 = m['36']?.tax_amount_rounded || 0;
+    const new83Tax = payableTax36 - new76Tax;
+
+    const orig83 = m['83'] || {
+      id: 'mock_83',
+      vat_return_id: vatReturn?.id || '',
+      row_number: '83',
+      base_amount_rounded: 0,
+      tax_amount_rounded: 0,
+    };
+    m['83'] = {
+      ...orig83,
+      tax_amount_rounded: new83Tax,
+    };
+
+    const orig84 = m['84'] || {
+      id: 'mock_84',
+      vat_return_id: vatReturn?.id || '',
+      row_number: '84',
+      base_amount_rounded: 0,
+      tax_amount_rounded: 0,
+    };
+    m['84'] = {
+      ...orig84,
+      tax_amount_rounded: new83Tax > 0 ? new83Tax : 0,
+    };
+
+    const orig85 = m['85'] || {
+      id: 'mock_85',
+      vat_return_id: vatReturn?.id || '',
+      row_number: '85',
+      base_amount_rounded: 0,
+      tax_amount_rounded: 0,
+    };
+    m['85'] = {
+      ...orig85,
+      tax_amount_rounded: new83Tax < 0 ? Math.abs(new83Tax) : 0,
+    };
+
+    return m;
+  }, [lineMap, vatScope, missingDeductions, vatReturn?.id]);
+
+  const effectiveLines = useMemo(() => {
+    return Object.values(effectiveLineMap);
+  }, [effectiveLineMap]);
+
+  const effectiveVatReturn = useMemo(() => {
+    if (!vatReturn) return null;
+    if (vatScope !== 'with_image' || !missingDeductions) {
+      return vatReturn;
+    }
+    const newDed = Math.max(0, (vatReturn.total_deductible_tax || 0) - missingDeductions.missingVatEft * 1000);
+    const newNet = (vatReturn.total_payable_tax || 0) - newDed;
+    return {
+      ...vatReturn,
+      total_deductible_tax: newDed,
+      net_result: newNet,
+      amount_to_pay: newNet > 0 ? newNet : 0,
+      amount_reclaimable: newNet < 0 ? Math.abs(newNet) : 0,
+    };
+  }, [vatReturn, vatScope, missingDeductions]);
+
   const prevLineMap = useMemo(() => {
     const m: Record<string, ReturnLine> = {};
     for (const l of prevLines) m[l.row_number] = l;
@@ -237,11 +370,11 @@ export function useVatReturnData() {
 
   const getVal = useCallback(
     (row: string, col: 'base' | 'tax') => {
-      const line = lineMap[row];
+      const line = effectiveLineMap[row];
       if (!line) return 0;
       return (col === 'base' ? line.base_amount_rounded : line.tax_amount_rounded) ?? 0;
     },
-    [lineMap]
+    [effectiveLineMap]
   );
 
   const getPrevVal = useCallback(
@@ -493,23 +626,55 @@ export function useVatReturnData() {
 
   // Mutations
   const calculate = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase.rpc('calculate_vat_return', {
+    mutationFn: async (overrideScope?: VatScope) => {
+      const scopeToUse = overrideScope || vatScope;
+
+      // Try with p_scope first (matches post-migration RPC signature)
+      const res = await (supabase.rpc as any)('calculate_vat_return', {
         p_company_id: selectedCompany!.id,
         p_year: year,
         p_month: month,
         p_frequency: frequency,
+        p_scope: scopeToUse,
       });
-      if (error) throw error;
-      return data;
+
+      // If the remote DB hasn't been migrated with p_scope yet, fallback to legacy 4-param signature
+      if (
+        res.error &&
+        (res.error.code === 'PGRST202' ||
+          res.error.message?.includes('schema cache') ||
+          res.error.message?.includes('p_scope'))
+      ) {
+        console.warn(
+          'calculate_vat_return: falling back to 4-parameter RPC because p_scope migration is not yet applied to live DB',
+          res.error.message
+        );
+        const legacyRes = await supabase.rpc('calculate_vat_return', {
+          p_company_id: selectedCompany!.id,
+          p_year: year,
+          p_month: month,
+          p_frequency: frequency,
+        });
+        if (legacyRes.error) throw legacyRes.error;
+        return legacyRes.data;
+      }
+
+      if (res.error) throw res.error;
+      return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (_, overrideScope) => {
+      const scopeUsed = overrideScope || vatScope;
       qc.invalidateQueries({ queryKey: ['vat_return'] });
       qc.invalidateQueries({ queryKey: ['vat_return_lines'] });
       qc.invalidateQueries({ queryKey: ['vat_return_m_lines'] });
+      qc.invalidateQueries({ queryKey: ['vat_scope_inbound_counts'] });
+      qc.invalidateQueries({ queryKey: ['vat_annual_matrix'] });
+      qc.invalidateQueries({ queryKey: ['vat_itemized_journal'] });
+      qc.invalidateQueries({ queryKey: ['vatCollectorItems'] });
+      qc.invalidateQueries({ queryKey: ['fallback_m_lines'] });
       toast({
         title: 'Számítás kész',
-        description: `${year}/${String(month).padStart(2, '0')} bevallás generálva`,
+        description: `${year}/${String(month).padStart(2, '0')} bevallás generálva (${scopeUsed === 'with_image' ? 'Csak számlaképpel' : 'Minden számla'})`,
       });
     },
     onError: (e: any) => toast({ title: 'Hiba', description: e.message, variant: 'destructive' }),
@@ -798,6 +963,7 @@ export function useVatReturnData() {
 
   return {
     selectedCompany,
+    vatScope,
     year,
     setYear,
     month,
@@ -806,15 +972,15 @@ export function useVatReturnData() {
     setFrequency,
     viewMode,
     setViewMode,
-    vatReturn,
+    vatReturn: effectiveVatReturn,
     isFinalized,
-    lines,
+    lines: effectiveLines,
     mLines,
     filteredMLines,
     formRows,
     prevReturn,
     prevLines,
-    lineMap,
+    lineMap: effectiveLineMap,
     prevLineMap,
     getVal,
     getPrevVal,

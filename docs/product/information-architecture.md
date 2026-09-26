@@ -1,12 +1,13 @@
 # Visibill — Information Architecture & Navigation
 
-> **Verzió:** 1.7 | **Dátum:** 2026-09-22  
+> **Verzió:** 1.8 | **Dátum:** 2026-09-26  
 > **Forrás:** [AppSidebar.tsx](../../src/components/AppSidebar.tsx) · [App.tsx](../../src/App.tsx) · [AppModeSwitcher.tsx](../../src/components/AppModeSwitcher.tsx)  
-> **Kapcsolódó döntés:** [P-006 Sidebar Structure](./decisions/P-006-sidebar-structure.md) · [A-109 Horvát Lokalizáció & Route Architektúra](../architecture/decisions/A-109-eaisybill-i18n-croatia-localization-and-route-architecture.md) · [P-081 Horvát Demó UX](./decisions/P-081-eaisybill-croatia-localization-and-demo-ux.md) · [A-114 eaisyBooks Shell Collapse](../architecture/decisions/A-114-collapse-dual-mode-navigation-shell.md) · [A-115 Cold/Warm Hibrid Navigáció](../architecture/decisions/A-115-eaisybooks-eaisybill-cold-warm-hybrid-transition-and-route-resolution.md) · [P-083 AppModeSwitcher UX](./decisions/P-083-eaisybooks-eaisybill-app-mode-switcher-and-cold-warm-transition-ux.md) · [P-095 NAV OSA Tabok & Render UX](./decisions/P-095-nav-osa-tabs-performance-and-immediate-row-expansion-ux.md)
+> **Kapcsolódó döntés:** [P-006 Sidebar Structure](./decisions/P-006-sidebar-structure.md) · [A-109 Horvát Lokalizáció & Route Architektúra](../architecture/decisions/A-109-eaisybill-i18n-croatia-localization-and-route-architecture.md) · [P-081 Horvát Demó UX](./decisions/P-081-eaisybill-croatia-localization-and-demo-ux.md) · [A-114 eaisyBooks Shell Collapse](../architecture/decisions/A-114-collapse-dual-mode-navigation-shell.md) · [A-115 Cold/Warm Hibrid Navigáció](../architecture/decisions/A-115-eaisybooks-eaisybill-cold-warm-hybrid-transition-and-route-resolution.md) · [P-083 AppModeSwitcher UX](./decisions/P-083-eaisybooks-eaisybill-app-mode-switcher-and-cold-warm-transition-ux.md) · [P-095 NAV OSA Tabok & Render UX](./decisions/P-095-nav-osa-tabs-performance-and-immediate-row-expansion-ux.md) · [A-158 Mezőgazdasági Felvásárlási Jegyek](../architecture/decisions/A-158-agricultural-purchase-vouchers-module.md) · [A-159 Hivatalos ÁFA Analitika Upgrade](../architecture/decisions/A-159-statutory-vat-views-upgrade-and-osa-reconciliation.md) · [P-118 Felvásárlási Jegyek UX](./decisions/P-118-agricultural-purchase-vouchers-ux.md) · [P-119 Törvényi ÁFA Nézetek & FAD UX](./decisions/P-119-statutory-vat-views-upgrade-and-reverse-charge-ux.md)
 
 ---
 
 ## 1. URL Struktúra
+
 
 Az alkalmazás scoped URL pattern-t használ:
 
@@ -104,7 +105,7 @@ Visibill
 │   ├── /balance-sheet/:tab?       Mérleg
 │   ├── /annual-report             Beszámoló
 │   ├── /upload/:tab?              Feltöltés
-│   ├── /salaries/:tab?            Bérek / Járulékok
+│   ├── /salaries/:tab?            Bérek / Járulékok (tabok: /salaries [Alkalmazottak & NAV], /purchase_vouchers [Mezőgazdasági felvásárlási jegyek])
 │   ├── /working-time/:tab?        Munkaidő
 │   ├── /petty-cash/:tab?          Házipénztár
 │   ├── /teny/:tab?                Tárgyi eszközök (TENY)
@@ -117,7 +118,8 @@ Visibill
 │   ├── /tickets/:ticketId?        Hibajegyek és ügyfélszolgálat (P-035, A-018)
 │   ├── /settings/:tab?            Beállítások
 │   ├── /analytics/:tab?           Analitika
-│   └── /vat-return/:tab?          ÁFA bevallás
+│   └── /vat-return/:tab?          ÁFA bevallás (9 moduláris fül: 65-ös bevallás, Éves mátrix, Tételes M-lap, Fordított ÁFA, A60, ÁFA tétellista, Gyűjtőkódok, 26TFEJLH, Beállítások + NAV OSA ellenőrzés modal)
+
 │
 ├── eaisyBooks (/accounty/)                ← korábban: Accounty
 │   ├── /                          Portfólió (Grid/Lista/Kanban nézet)
@@ -205,7 +207,7 @@ A sidebar 6 logikai, összecsukható (collapsible) csoportba rendezi a modulokat
 - **Eredménykimutatás** (`/profit-and-loss`) – PnL riport
 - **Mérleg** (`/balance-sheet`) – Mérlegkimutatás
 - **Beszámoló** (`/annual-report`) – Éves számviteli beszámoló
-- **ÁFA Bevallás** (`/vat-return`) – Havi/negyedéves ÁFA analitika és bevallás
+- **ÁFA Bevallás** (`/vat-return`) – Havi/negyedéves ÁFA analitika és 2665 bevallás, beépített számlakép hatókör-választó rádiógombbal (Minden számla vs Csak számlaképpel, P-121, A-161)
 - **Napló** (`/journals`) – Kettős könyvviteli zárt naplók (Vevő, Szállító, Bank, Pénztár, Vegyes, Bérfeladás)
 
 ### 4. 👥 HR & Eszközök (`hr`)
@@ -485,6 +487,7 @@ A `useAccountyPermissions` hook ellenőrzi a modul-szintű jogokat. Ha az `accou
 - Oszlopok: Sorszám, Megnevezés, Mennyiség, Egységár, Nettó, ÁFA, Bruttó, **Főkönyvi szám (GL)**
 - GL szerkesztés: ceruza ikon → keresőmezős GL szám választó (`Command` komponens)
 - Preset-alapú: a GL besorolás a cég aktív preset-jéhez (`useActivePreset`) kötődik
+- **Kétoldalas T/K Kontírozás Szerkesztő Modál (2026-09-26):** A tétel főkönyvi mezőjére vagy a szerkesztésre kattintva megnyíló párbeszédablak kibővített asztali méretet (`w-[95vw] sm:max-w-3xl md:max-w-4xl`), explicit vízszintes túlcsordulás-védelmet (`overflow-x-hidden`) és `min-w-0` flex-guardokat kapott, biztosítva, hogy a Tartozik és Követel kártyák, a szintetikus számlamegnevezések és a lábléc akciógombjai (`Mégse` / `Mentés`) asztali felbontáson is levágás nélkül, rendezetten jelenjenek meg.
 
 **GL Twin Sync (2026-06-27):**
 - Ha a szerkesztett számla párosítva van (NAV `invoice_number` ↔ Beküldött `bizonylatsorszam` normalizálva)
@@ -512,8 +515,9 @@ A `useAccountyPermissions` hook ellenőrzi a modul-szintű jogokat. Ha az `accou
 - **Részletező Tooltip:** Az összevont számlasor megnevezése fölé húzva az egeret egy áttekintő buborék mutatja meg az eredeti tételsorokat és összegeket.
 - **Tömeges Kijelölés és Átkontírozás:** Az összevont sor kijelölése a háttérben az összes egyedi mögöttes tételt (`groupedItemIds`) automatikusan átadja a műveletsávnak.
 - **4-Oszlopos Statisztikai és Analitikus Export:** Excel (.xlsx) és CSV export 2 szintes fejléccel és 4 diszkrét pénzügyi oszloppal (Forgalom Tartozik, Forgalom Követel, Egyenleg Tartozik, Egyenleg Követel) és automatikus összegző záróképletekkel.
+- **Közvetlen Számlakép és NAV OSA Tételes Nézet Megnyitás:** A főkönyvi tételsorokban elhelyezett diszkrét nagyítós dokumentum ikon (`FileSearch`) segítségével közvetlenül a sorból előugrik a számlakép (`InvoiceImageDialog`), vagy ha a bizonylat még csak Online Számlából érkezett feltöltött kép nélkül, a strukturált NAV OSA tételes nézet (`InvoiceItemsDialog`). Működik mind a számlánként összevont (`by_invoice`), mind a részletes tételes (`itemized`) nézetben.
 
-> **Kapcsolódó döntések:** [P-117](./decisions/P-117-general-ledger-invoice-grouping-and-4col-export-ux.md) · [P-113](./decisions/P-113-general-ledger-granularity-kontirok-teteles-view.md) · [P-105](./decisions/P-105-general-ledger-toolbar-and-expand-collapse-ux.md) · [A-157](../architecture/decisions/A-157-general-ledger-invoice-grouping-and-4col-export.md) · [A-153](../architecture/decisions/A-153-general-ledger-batch-itemized-view-architecture.md)
+> **Kapcsolódó döntések:** [P-120](./decisions/P-120-general-ledger-invoice-document-preview-and-osa-fallback-ux.md) · [A-160](../architecture/decisions/A-160-general-ledger-invoice-document-preview-and-osa-fallback.md) · [P-117](./decisions/P-117-general-ledger-invoice-grouping-and-4col-export-ux.md) · [P-113](./decisions/P-113-general-ledger-granularity-kontirok-teteles-view.md) · [P-105](./decisions/P-105-general-ledger-toolbar-and-expand-collapse-ux.md) · [A-157](../architecture/decisions/A-157-general-ledger-invoice-grouping-and-4col-export.md) · [A-153](../architecture/decisions/A-153-general-ledger-batch-itemized-view-architecture.md)
 
 ---
 

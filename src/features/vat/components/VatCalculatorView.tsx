@@ -812,12 +812,19 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                               <div
                                 className={cn(
                                   'text-xs leading-relaxed py-0.5 text-muted-foreground font-normal',
-                                  hasPrevData ? 'col-span-5' : 'col-span-9'
+                                  hasPrevData ? 'col-span-3' : 'col-span-7'
                                 )}
                               >
-                                ebből: fordított adózás alá eső ügylet után levont adó
+                                ebből: fordított adózás (FAD)
                               </div>
-                              <div className="col-span-2 text-right tabular-nums text-xs font-mono font-medium text-foreground/80">
+                              <div className="col-span-2 text-right tabular-nums text-xs font-mono font-medium text-foreground/80" title="Fordított adózás adóalapja (nettó)">
+                                {formatAmount(
+                                  lineMap['66_fad']?.base_amount_rounded ??
+                                  lineMap['29']?.base_amount_rounded ??
+                                  (lineMap['66_fad']?.tax_amount_rounded ? Math.round(lineMap['66_fad'].tax_amount_rounded / 0.27) : (lineMap['29']?.tax_amount_rounded ? Math.round(lineMap['29'].tax_amount_rounded / 0.27) : 0))
+                                )}
+                              </div>
+                              <div className="col-span-2 text-right tabular-nums text-xs font-mono font-medium text-foreground/80" title="Fordított adózás levont adója (ÁFA)">
                                 {formatAmount(lineMap['66_fad']?.tax_amount_rounded ?? lineMap['29']?.tax_amount_rounded ?? 0)}
                               </div>
                               {hasPrevData && (

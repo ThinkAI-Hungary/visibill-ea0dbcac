@@ -66,10 +66,45 @@ A Visibill ÁFA moduljának felülvizsgálata és a bemutatott képernyők alapj
 
 ---
 
-## 3. Verifikáció és Minőségbiztosítás
+## 3. Fordított Adózás (FAD - Áfa tv. 142. §) Önadózási Adóalap és ÁFA Levezetés
+
+### Probléma és Gyökérok:
+A NAV Online Számla (OSA) rendszeréből beérkező XML-ekben a belföldi fordított adózású (FAD) számláknál az `invoice_vat_amount` technikai okokból **0 Ft**, mivel a számlakibocsátó (eladó) nem hárít át adót. 
+Korábban emiatt a rendszer a bejövő FAD tételeket automatikusan adómentes nettóként (`mentesBase`) kezelte 0 Ft ÁFA-val. Ez könyvelési és adózási szempontból hibás: az Áfa tv. 142. § értelmében a vevőnek önadózással fel kell számítania a 27%-os fizetendő ÁFÁ-t (29. sor), és levonási jog esetén ugyanezt az összeget le is vonhatja (66. sor alá tartozó FAD alsornál).
+
+### Megvalósított Törvényi Kezelés 5 ÁFA Nézetben:
+
+1. **Éves ÁFA Mátrix (`VatAnnualMatrixView.tsx`):**
+   - Hozzáadva a `Fordított (FAD) alap` és `Fordított (FAD) ÁFA` dedikált sor mind a Fizetendő, mind a Levonható szekcióhoz.
+   - Bejövő FAD esetén az adóalap mellé a 27%-os számított önadózási adó kerül felszámításra (`net * 0.27`). Kimenő FAD esetén (04. sor) az adóalap megjelenik, míg a felszámított adó 0 Ft (vevő adózik).
+   - CSV export szinkronizálva a FAD sorokkal.
+
+2. **ÁFA Kalkulátor Nézet (`VatCalculatorView.tsx`):**
+   - A 66. sor alatti alsornál (*"ebből: fordított adózás (FAD)"*) a korábbi egyetlen adóoszlop helyett két szinkronizált oszlop jelenik meg: **Adóalap (Nettó)** és **Levont adó (ÁFA)**.
+
+3. **Áfakulcsos Összesítő Kártyák (`VatRateSummaryCards.tsx`):**
+   - A kimenő FAD (04. sor) leválasztva a mentes (TAM/AAM) alapról.
+   - A FAD kártya egyszerre mutatja a nettó adóalapot és a törvényi ÁFA összeget.
+
+4. **Tételes ÁFA Analitika (`VatItemizedJournalView.tsx`):**
+   - Bejövő FAD tételeknél megjelenik a 27%-os számított ÁFA (`4666T / 4676K`), a `29 / 66` bevallási sorkód és a `FAD (27%)` kulcs.
+   - A partner felé fennálló bruttó kötelezettség a nettóval egyezik meg (az ÁFA elszámolása a NAV-val történik).
+
+5. **Gyűjtőkódos Analitika (`VatCollectorAnalyticsView.tsx`):**
+   - A `FAD` gyűjtőkód alatti bejövő tételeknél csoport- és tételszinten is kiszámításra kerül a 27%-os ÁFA.
+
+---
+
+## 4. Verifikáció és Minőségbiztosítás
 
 - **Egységtesztek:**
-  - `src/test/vatUpgradeViews.test.tsx`: 5 új egységteszt (OSA egyeztetés, TFEJLH 4%, Rate summary számítások).
-  - `src/test/vat/`: 43 meglévő ÁFA egységteszt hibátlanul lefutott (`43 passed`).
+  - `src/test/vatUpgradeViews.test.tsx`: OSA egyeztetés, TFEJLH 4%, Rate summary számítások.
+  - `src/features/vat/__tests__/vatCodeOverride.test.ts` (7 teszt): FAD és felülbírálási tesztek.
+  - `src/features/vat/__tests__/vatEngine.test.ts` (13 teszt): ÁFA kalkuláció és sorkódok.
+  - Összesen: 20/20 teszt sikeresen lefutott.
 - **Típusellenőrzés:**
-  - `npx tsc --noEmit` 0 hibával lefutott.
+  - `npx tsc --noEmit` 0 hibával lefutott (code 0).
+- **Kapcsolódó döntések:**
+  - [A-158: Mezőgazdasági Felvásárlási Jegyek Modul](./A-158-agricultural-purchase-vouchers-module.md)
+  - [P-119: Törvényi ÁFA Nézetek és Fordított Adózás (FAD) UX](../../product/decisions/P-119-statutory-vat-views-upgrade-and-reverse-charge-ux.md)
+

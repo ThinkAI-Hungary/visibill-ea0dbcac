@@ -82,9 +82,12 @@
 | `InvoiceFullEditDialog` | 42KB | Nagy | Teljes szerkesztés + Számlakép törlése kétlépcsős AlertDialog-gal (2026-09-06) |
 | `BulkDeleteDialog` | 5KB | Közepes | Kijelölt számlák tömeges törlése kétlépcsős döntési modállal (2026-09-06) |
 | `InvoiceImageDialog` | 5KB | Nagy | Számla kép nagyítás |
-| `InvoiceItemsDialog` | 15KB | Nagy | Számla tételek |
+| `InvoiceItemsDialog` | ~150KB | Kiemelt / Kétszintes | Számlatételek táblázat (`w-[96vw] max-w-[1800px] h-[92vh]`) + Beágyazott kétoldalas Főkönyvi Kontírozás Szerkesztő (`w-[95vw] sm:max-w-3xl md:max-w-4xl max-h-[90vh]`) |
 | `InvoiceFilesDialog` | 28KB | Nagy | Csatolt fájlok — batch delete, A/B mód (2026-06-24) |
 | `UploadedFilesModal` | 22KB | Nagy | Feltöltött fájlok (upload oldalon) — batch delete, A/B mód (2026-06-24) |
+
+> **💡 Számlatételes Főkönyvi Kontírozás Modál Méretezés & Túlcsordulás Védelem (2026-09-26):**  
+> A tételes kontírozás modál (`InvoiceItemsDialog` beágyazott `DialogContent`) asztali felbontáson kibővített szélességet kapott (`w-[95vw] sm:max-w-3xl md:max-w-4xl max-h-[90vh]`), biztosítva az `overflow-x-hidden` korlátozást és a `min-w-0` flex-védelmet. Így a kétoldalas Tartozik és Követel kártyák, a szintetikus számlamegnevezések és a lábléc műveleti gombjai (`Mégse` és `Mentés`) asztali és laptop kijelzőkön is tökéletesen a dobozon belül, levágás és nemkívánatos vízszintes görgetősáv nélkül jelennek meg.
 
 ### Tranzakció Dialog
 

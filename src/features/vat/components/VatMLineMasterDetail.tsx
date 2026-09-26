@@ -27,9 +27,10 @@ import {
   RefreshCw,
   X,
 } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { cn, formatCurrency } from '@/lib/utils';
 import { VatOsaCheckDialog } from './VatOsaCheckDialog';
-import { MLine, VatFrequency, formatThousands } from '../types';
+import { MLine, VatFrequency, formatThousands, VatScope } from '../types';
 
 interface VatMLineMasterDetailProps {
   mLines: MLine[];
@@ -38,6 +39,7 @@ interface VatMLineMasterDetailProps {
   month: number;
   frequency: VatFrequency;
   selectedCompany: any;
+  vatScope?: VatScope;
 }
 
 export function VatMLineMasterDetail({
@@ -47,10 +49,13 @@ export function VatMLineMasterDetail({
   month,
   frequency,
   selectedCompany,
+  vatScope,
 }: VatMLineMasterDetailProps) {
   const [search, setSearch] = useState('');
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
   const [isOsaDialogOpen, setIsOsaDialogOpen] = useState(false);
+  const [searchParams] = useSearchParams();
+  const effectiveScope: VatScope = vatScope || (searchParams.get('vat_scope') as VatScope) || 'all';
 
   // Compute period dates
   const { dateFrom, dateTo, periodLabel } = useMemo(() => {
@@ -73,23 +78,44 @@ export function VatMLineMasterDetail({
 
   // Fallback query if mLines is empty: aggregate domestic suppliers from nav_invoices
   const { data: fallbackMLines = [], refetch: refetchFallback, isFetching: isFetchingFallback } = useQuery({
-    queryKey: ['fallback_m_lines', companyId, dateFrom, dateTo],
+    queryKey: ['fallback_m_lines', companyId, dateFrom, dateTo, effectiveScope],
     queryFn: async () => {
       if (!companyId) return [];
 
-      const { data: navInvs = [], error } = await supabase
-        .from('nav_invoices')
-        .select('id, invoice_number, supplier_name, supplier_tax_number, invoice_delivery_date, invoice_issue_date, invoice_net_amount, invoice_vat_amount')
-        .eq('company_id', companyId)
-        .eq('invoice_direction', 'INBOUND')
-        .or(`invoice_delivery_date.gte.${dateFrom},and(invoice_delivery_date.is.null,invoice_issue_date.gte.${dateFrom})`)
-        .or(`invoice_delivery_date.lte.${dateTo},and(invoice_delivery_date.is.null,invoice_issue_date.lte.${dateTo})`)
-        .limit(5000);
+      const [navRes, subRes] = await Promise.all([
+        supabase
+          .from('nav_invoices')
+          .select('id, invoice_number, supplier_name, supplier_tax_number, invoice_delivery_date, invoice_issue_date, invoice_net_amount, invoice_vat_amount')
+          .eq('company_id', companyId)
+          .eq('invoice_direction', 'INBOUND')
+          .or(`invoice_delivery_date.gte.${dateFrom},and(invoice_delivery_date.is.null,invoice_issue_date.gte.${dateFrom})`)
+          .or(`invoice_delivery_date.lte.${dateTo},and(invoice_delivery_date.is.null,invoice_issue_date.lte.${dateTo})`)
+          .limit(5000),
+        effectiveScope === 'with_image'
+          ? supabase
+              .from('invoices')
+              .select('bizonylatsorszam, image_url, melleklet_url, invoice_uploads_id, attachments')
+              .eq('company_id', companyId)
+              .or('invoice_direction.eq.INBOUND,invoice_direction.is.null')
+              .or(`teljesites_datuma.gte.${dateFrom},and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${dateFrom})`)
+              .or(`teljesites_datuma.lte.${dateTo},and(teljesites_datuma.is.null,kibocsatas_datuma.lte.${dateTo})`)
+              .limit(5000)
+          : Promise.resolve({ data: [] }),
+      ]);
 
-      if (error) {
-        console.warn('Error fetching fallback nav_invoices for 65M:', error);
-        return [];
-      }
+      const navInvs = navRes.data || [];
+      const subInvs = (subRes as any)?.data || [];
+
+      const hasImg = (s: any) => Boolean(
+        s.image_url ||
+        s.melleklet_url ||
+        s.invoice_uploads_id ||
+        (Array.isArray(s.attachments) && s.attachments.length > 0)
+      );
+      const norm = (s?: string | null) => (s || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+      const allowedInvoiceNumbers = new Set(
+        subInvs.filter(hasImg).map((s: any) => norm(s.bizonylatsorszam)).filter(Boolean)
+      );
 
       const partnerMap = new Map<string, {
         partner_name: string;
@@ -109,6 +135,9 @@ export function VatMLineMasterDetail({
       }>();
 
       (navInvs || []).forEach((inv) => {
+        if (effectiveScope === 'with_image' && !allowedInvoiceNumbers.has(norm(inv.invoice_number))) {
+          return;
+        }
         const tax = inv.supplier_tax_number || '';
         const tax8 = tax.replace(/\D/g, '').substring(0, 8);
         if (!tax8) return;
@@ -352,6 +381,17 @@ export function VatMLineMasterDetail({
             </h2>
             <Badge variant="outline" className="text-xs bg-muted">
               {periodLabel}
+            </Badge>
+            <Badge
+              variant="outline"
+              className={cn(
+                'text-[11px] font-medium px-2 py-0.5 whitespace-nowrap ml-1',
+                effectiveScope === 'with_image'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300'
+                  : 'bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-950/40 dark:text-blue-300'
+              )}
+            >
+              {effectiveScope === 'with_image' ? 'Csak számlaképpel' : 'Minden számla'}
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground">

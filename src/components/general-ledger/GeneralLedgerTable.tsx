@@ -6,11 +6,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { cn, fixCharacterEncoding } from '@/lib/utils';
 import { getLocalizedGlAccountName, getLocalizedGlItemType, getLocalizedGlItemDescription } from '@/lib/glUtils';
 import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
-import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw, Edit2, X, Check, ChevronsUpDown, FileText, Search, ArrowRightLeft } from 'lucide-react';
+import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw, Edit2, X, Check, ChevronsUpDown, FileText, FileSearch, Search, ArrowRightLeft } from 'lucide-react';
 import { exportGlExcel, exportGlAnalyticalExcel } from '@/lib/glExport';
 import { fetchAllGlBalances, fetchAllGlCategorizedItems, fetchGlItemsForAccount, GlDateBasis, GlPostingStatus, GlSearchResult } from '@/lib/glData';
 import { GlItemGroupingMode, enrichGlItemsWithInvoiceMeta, groupLedgerItemsByInvoice } from '@/lib/glInvoiceGrouping';
 export type { GlItemGroupingMode };
+import { useGlInvoiceDocumentResolver } from '@/hooks/useGlInvoiceDocumentResolver';
+import InvoiceImageDialog from '@/components/InvoiceImageDialog';
+import { InvoiceItemsDialog } from '@/components/InvoiceItemsDialog';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
@@ -222,6 +225,14 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   const currencyLabel = defaultCurrency === 'HUF' ? 'Ft' : defaultCurrency;
   const { session } = useAuth();
   const { toast } = useToast();
+
+  // Document resolver for invoice image vs OSA itemized view
+  const {
+    resolvingItemId,
+    handleOpenDocument,
+    imageDialogProps,
+    itemsDialogProps,
+  } = useGlInvoiceDocumentResolver(selectedCompany?.id);
 
   // Dialog states for editing GL classification
   const [editingItem, setEditingItem] = useState<LedgerItem | null>(null);
@@ -2078,6 +2089,34 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                             </div>
                           )}
                         </div>
+                        {row.isItem && (row.invoiceId || row.invoiceNumber) && (
+                          <CustomTooltip content={t('accounting:general_ledger.tooltips.view_document', 'Számlakép / Bizonylat megtekintése')} side="top">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={resolvingItemId === row.id}
+                              className="h-6 w-6 rounded-md shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors p-0 print:hidden"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenDocument({
+                                  id: row.id,
+                                  invoiceId: row.invoiceId,
+                                  invoiceNumber: row.invoiceNumber,
+                                  sourceTable: row.sourceTable,
+                                  partner: row.partner,
+                                  originalCurrency: row.originalCurrency,
+                                });
+                              }}
+                              aria-label={t('accounting:general_ledger.tooltips.view_document', 'Számlakép / Bizonylat megtekintése')}
+                            >
+                              {resolvingItemId === row.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                              ) : (
+                                <FileSearch className="w-3.5 h-3.5 opacity-70 hover:opacity-100 text-muted-foreground hover:text-primary transition-opacity" />
+                              )}
+                            </Button>
+                          </CustomTooltip>
+                        )}
                         <CustomTooltip 
                           content={
                             row.groupedDescriptions && row.groupedDescriptions.length > 1 ? (
@@ -2610,6 +2649,24 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
           </div>
         </SheetContent>
       </Sheet>
+
+      <InvoiceImageDialog
+        invoice={imageDialogProps.invoice}
+        open={imageDialogProps.open}
+        onClose={imageDialogProps.onClose}
+      />
+
+      <InvoiceItemsDialog
+        open={itemsDialogProps.open}
+        onOpenChange={itemsDialogProps.onOpenChange}
+        invoiceId={itemsDialogProps.invoiceId}
+        invoiceNumber={itemsDialogProps.invoiceNumber}
+        currency={itemsDialogProps.currency}
+        source={itemsDialogProps.source}
+        invoiceDate={itemsDialogProps.invoiceDate}
+        supplierName={itemsDialogProps.supplierName}
+        invoiceDirection={itemsDialogProps.invoiceDirection}
+      />
 
       <FloatingBulkBar
         open={selectedItemIds.size > 0}
