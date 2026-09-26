@@ -50,6 +50,7 @@ import { ReturnHistoryTable } from '@/components/vat/ReturnHistoryTable';
 import { VatRowDrillDown, InvoiceItemsDrillDown } from '@/components/vat/VatRowDrillDown';
 import { VatMLineDrillDown } from './VatMLineDrillDown';
 import { VatA60Table } from './VatA60Table';
+import { VatRateSummaryCards } from './VatRateSummaryCards';
 import { VatXmlValidationDialog } from './VatXmlValidationDialog';
 import { VatProRataSettingsCard } from './VatProRataSettingsCard';
 import { VatProRataCalculatorModal } from './VatProRataCalculatorModal';
@@ -172,102 +173,6 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
           handleViesCheck={handleViesCheck}
           setEuTypeOverrides={setEuTypeOverrides}
         />
-      )}
-
-      {/* Status Bar */}
-      {vatReturn && (
-        <div className="flex items-center gap-3 bg-card px-4 py-2.5 rounded-xl border border-border shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
-          <span className="text-xs text-muted-foreground">{t('accounting:vat_return.status.label', 'Státusz:')}</span>
-          <Badge
-            className={cn('text-xs', {
-              'bg-amber-500/10 text-amber-600 border-amber-500/20':
-                (vatReturn as any).status === 'draft',
-              'bg-blue-500/10 text-blue-600 border-blue-500/20':
-                (vatReturn as any).status === 'validated',
-              'bg-emerald-500/10 text-emerald-600 border-emerald-500/20':
-                (vatReturn as any).status === 'finalized',
-            })}
-          >
-            {(vatReturn as any).status === 'draft'
-              ? t('accounting:vat_return.status.draft', 'Piszkozat')
-              : (vatReturn as any).status === 'validated'
-              ? t('accounting:vat_return.status.validated', 'Ellenőrzött')
-              : t('accounting:vat_return.status.finalized', 'Véglegesítve')}
-          </Badge>
-          <div className="ml-auto flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setProRataCalculatorOpen(true)}
-              className="gap-1.5"
-            >
-              <Calculator className="w-3.5 h-3.5" />
-              {t('accounting:vat_return.status.pro_rata_button', 'ÁFA Arányosítás')}
-            </Button>
-            {(vatReturn as any).status === 'draft' && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => validateReturn.mutate()}
-                disabled={validateReturn.isPending}
-              >
-                {validateReturn.isPending ? (
-                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
-                )}
-                {t('accounting:vat_return.status.check_done', 'Ellenőrzés kész')}
-              </Button>
-            )}
-            {(vatReturn as any).status === 'validated' && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button size="sm" disabled={finalizeReturn.isPending}>
-                    {finalizeReturn.isPending ? (
-                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                    ) : (
-                      <Shield className="w-3.5 h-3.5 mr-1.5" />
-                    )}
-                    {t('accounting:vat_return.status.finalize_button', 'Véglegesítés')}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>{t('accounting:vat_return.status.finalize_dialog_title', 'Bevallás véglegesítése')}</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {t('accounting:vat_return.status.finalize_dialog_desc', 'A véglegesítés után a bevallás sorai nem módosíthatók. Visszanyitás csak a „Visszanyitás" gombbal lehetséges.')}
-                      <br />
-                      <br />
-                      {t('accounting:vat_return.status.finalize_dialog_confirm', {
-                        period: `${year}/${String(month).padStart(2, '0')}`,
-                        defaultValue: `Biztosan véglegesíted a ${year}/${String(month).padStart(2, '0')} időszak bevallását?`,
-                      })}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>{t('accounting:vat_return.status.cancel', 'Mégse')}</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => finalizeReturn.mutate()}>
-                      {t('accounting:vat_return.status.finalize_button', 'Véglegesítés')}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-            {(vatReturn as any).status === 'finalized' && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => reopenReturn.mutate()}
-                disabled={reopenReturn.isPending}
-              >
-                {reopenReturn.isPending && (
-                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                )}
-                {t('accounting:vat_return.status.reopen_button', 'Visszanyitás')}
-              </Button>
-            )}
-          </div>
-        </div>
       )}
 
       {/* Pénzforgalmi ÁFA banner */}
@@ -513,6 +418,17 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
           </div>
         )}
       </div>
+
+      {/* Rate summary breakdown cards (ÁFA kulcsonkénti bontás: 27%, 18%, 5%, Mentes, FAD & Egyenleg) */}
+      {vatReturn && (
+        <VatRateSummaryCards
+          lines={lines as any[]}
+          lineMap={lineMap}
+          unpaidVatEft={unpaidVatEft}
+          periodLabel={`${year}. ${frequency === 'H' ? `${month}. hó` : frequency === 'N' ? `Q${month}` : 'év'}`}
+          isCroatia={isCroatia}
+        />
+      )}
 
       {/* ÁFA Trend Chart */}
       {vatReturn && selectedCompany?.id && <VatTrendChart companyId={selectedCompany.id} />}
@@ -1133,7 +1049,7 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
 
           {/* Previous Returns History */}
           {selectedCompany?.id && (
-            <Card className="border-border/60">
+            <Card className="border-border/60 mb-8">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium">Korábbi bevallások</CardTitle>
                 <CardDescription className="text-xs">Gyors áttekintés és navigáció</CardDescription>

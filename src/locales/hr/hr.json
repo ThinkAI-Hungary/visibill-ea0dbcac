@@ -4,6 +4,10 @@
     "subtitle": "Upravljanje plaćama i doprinosima zaposlenika",
     "uploaded_files": "Učitane datoteke",
     "cash_payout": "Gotovinska isplata",
+    "tabs": {
+      "overview": "Zaposlenici i porezi",
+      "purchase_vouchers": "Otkupni blokovi"
+    },
     "kpi": {
       "total_payments": "Ukupne isplate",
       "employee_count": "Broj zaposlenika",

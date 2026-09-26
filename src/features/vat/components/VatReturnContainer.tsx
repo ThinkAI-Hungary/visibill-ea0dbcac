@@ -1,5 +1,17 @@
-import React from 'react';
-import { Calculator, Settings2, AlertTriangle } from 'lucide-react';
+import React, { useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import {
+  Calculator,
+  CalendarRange,
+  Layers,
+  Scale,
+  ShieldCheck,
+  BookOpen,
+  FileSpreadsheet,
+  UtensilsCrossed,
+  Settings2,
+  AlertTriangle,
+} from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { PageHeader } from '@/components/ui/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,6 +19,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { VatCodeConfigTab } from '@/components/vat/VatCodeConfigTab';
 import { VatReturnViewTab } from './VatReturnViewTab';
+import { VatCollectorAnalyticsView } from './VatCollectorAnalyticsView';
+import { VatMLineMasterDetail } from './VatMLineMasterDetail';
+import { VatAnnualMatrixView } from './VatAnnualMatrixView';
+import { VatSteelProductsSection } from './VatSteelProductsSection';
+import { VatA60Table } from './VatA60Table';
+import { VatItemizedJournalView } from './VatItemizedJournalView';
+import { VatTourismTaxSection } from './VatTourismTaxSection';
+import { useVatReturnData } from '../hooks/useVatReturnData';
+import { useTranslation } from 'react-i18next';
 
 class VatReturnErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -46,13 +67,43 @@ class VatReturnErrorBoundary extends React.Component<
   }
 }
 
-import { VatCollectorAnalyticsView } from './VatCollectorAnalyticsView';
-import { Layers } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-
 export function VatReturnContainer() {
   const { t } = useTranslation(['accounting', 'common']);
   const { selectedCompany } = useCompany();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentTab = searchParams.get('tab') || 'return';
+
+  const vatData = useVatReturnData();
+  const {
+    year,
+    setYear,
+    month,
+    frequency,
+    mLines,
+    a60Calculations,
+    viesStatuses,
+    isValidatingVies,
+    handleViesCheck,
+    setEuTypeOverrides,
+  } = vatData;
+
+  const handleTabChange = useCallback(
+    (newTab: string) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (newTab === 'return') {
+            next.delete('tab');
+          } else {
+            next.set('tab', newTab);
+          }
+          return next;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
 
   if (!selectedCompany) {
     return (
@@ -65,46 +116,228 @@ export function VatReturnContainer() {
   const isCroatia = selectedCompany?.country_code === 'HR';
 
   return (
-    <div className="container max-w-7xl py-6 space-y-6 print:py-0 page-animate">
+    <div className="w-full max-w-none mx-auto px-2 sm:px-4 lg:px-6 pt-2 sm:pt-3 pb-24 space-y-4 print:py-0 page-animate">
       <PageHeader
         companyName={selectedCompany?.name}
-        breadcrumb={isCroatia ? t('accounting:vat_return.breadcrumb_hr', 'Prijava PDV-a (Obrazac PDV)') : t('accounting:vat_return.breadcrumb', 'ÁFA Bevallás (2665)')}
-        title={isCroatia ? t('accounting:vat_return.title_hr', 'Prijava PDV-a i Analitika') : t('accounting:vat_return.title', 'ÁFA Bevallás & Gyűjtőkódos Analitika')}
-        description={isCroatia ? t('accounting:vat_return.description_hr', 'Obrazac PDV — Generiranje prijave PDV-a i porezni izvještaji') : t('accounting:vat_return.description', '2665-ös nyomtatvány — ÁFA bevallás generálás és NAV gyűjtőkódos analitikus kimutatások')}
+        breadcrumb={
+          isCroatia
+            ? t('accounting:vat_return.breadcrumb_hr', 'Prijava PDV-a (Obrazac PDV)')
+            : t('accounting:vat_return.breadcrumb', 'ÁFA Bevallás (2665)')
+        }
+        title={
+          isCroatia
+            ? t('accounting:vat_return.title_hr', 'Prijava PDV-a i Analitika')
+            : t('accounting:vat_return.title', 'ÁFA Bevallás & Analitika')
+        }
+        description={
+          currentTab === 'matrix'
+            ? undefined
+            : isCroatia
+            ? t(
+                'accounting:vat_return.description_hr',
+                'Obrazac PDV — Generiranje prijave PDV-a i porezni izvještaji'
+              )
+            : t(
+                'accounting:vat_return.description',
+                '2665-ös nyomtatvány — Hivatalos ÁFA bevallás, M-lapok, éves mátrix és tételes analitikus kimutatások'
+              )
+        }
       />
 
-      <Tabs defaultValue="return" className="space-y-4">
-        <TabsList className="bg-muted/50 p-1">
+      <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-3">
+        {/* Navigation Tabs Bar */}
+        <TabsList className="bg-muted/60 p-1 flex flex-wrap lg:flex-nowrap overflow-x-auto justify-start h-auto gap-1 border border-border/60 rounded-xl scrollbar-none shadow-sm">
+          {/* 1. 65-ös Bevallás */}
           <TabsTrigger
             value="return"
-            className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="gap-1.5 text-xs py-2 px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg whitespace-nowrap"
           >
-            <Calculator className="w-4 h-4" /> {t('accounting:vat_return.tabs.return', 'Bevallás')}
+            <Calculator className="w-4 h-4 text-primary" />
+            {t('accounting:vat_return.tabs.return', '65-ös Bevallás')}
           </TabsTrigger>
+
+          {/* 2. Éves ÁFA Mátrix */}
+          <TabsTrigger
+            value="matrix"
+            className="gap-1.5 text-xs py-2 px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg whitespace-nowrap"
+          >
+            <CalendarRange className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            Éves Mátrix
+          </TabsTrigger>
+
+          {/* 3. Tételes M-lapok (NAV 65M) */}
+          {!isCroatia && (
+            <TabsTrigger
+              value="teteles_m"
+              className="gap-1.5 text-xs py-2 px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg whitespace-nowrap"
+            >
+              <Layers className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              Tételes M-lap
+            </TabsTrigger>
+          )}
+
+          {/* 4. Fordított ÁFA (07/08 lapok) */}
+          {!isCroatia && (
+            <TabsTrigger
+              value="forditott"
+              className="gap-1.5 text-xs py-2 px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg whitespace-nowrap"
+            >
+              <Scale className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              Fordított ÁFA (07/08)
+            </TabsTrigger>
+          )}
+
+          {/* 5. A60 Közösségi összesítő */}
+          {!isCroatia && (
+            <TabsTrigger
+              value="a60"
+              className="gap-1.5 text-xs py-2 px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg whitespace-nowrap"
+            >
+              <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              A60 Közösségi
+            </TabsTrigger>
+          )}
+
+          {/* 6. ÁFA Tétellista (Analitikus napló) */}
+          <TabsTrigger
+            value="journal"
+            className="gap-1.5 text-xs py-2 px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg whitespace-nowrap"
+          >
+            <BookOpen className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+            ÁFA Tétellista
+          </TabsTrigger>
+
+          {/* 7. Gyűjtőkódos Analitika */}
           <TabsTrigger
             value="analytics"
-            className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="gap-1.5 text-xs py-2 px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg whitespace-nowrap"
           >
-            <Layers className="w-4 h-4" /> {t('accounting:vat_return.tabs.analytics', 'Gyűjtőkódos Analitika')}
+            <FileSpreadsheet className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+            Gyűjtőkódok
           </TabsTrigger>
+
+          {/* 8. 26TFEJLH Turizmusfejlesztési hozzájárulás */}
+          {!isCroatia && (
+            <TabsTrigger
+              value="tourism"
+              className="gap-1.5 text-xs py-2 px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg whitespace-nowrap"
+            >
+              <UtensilsCrossed className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+              26TFEJLH
+            </TabsTrigger>
+          )}
+
+          {/* 9. Beállítások */}
           <TabsTrigger
             value="config"
-            className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="gap-1.5 text-xs py-2 px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg whitespace-nowrap"
           >
-            <Settings2 className="w-4 h-4" /> {t('accounting:vat_return.tabs.config', 'Beállítás')}
+            <Settings2 className="w-4 h-4 text-muted-foreground" />
+            {t('accounting:vat_return.tabs.config', 'Beállítás')}
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="return">
+
+        {/* Tab 1: 65-ös Bevallás & Főlap */}
+        <TabsContent value="return" className="mt-0">
           <VatReturnErrorBoundary>
             <VatReturnViewTab />
           </VatReturnErrorBoundary>
         </TabsContent>
-        <TabsContent value="analytics">
+
+        {/* Tab 2: Éves ÁFA Mátrix */}
+        <TabsContent value="matrix" className="mt-0">
+          <VatReturnErrorBoundary>
+            <VatAnnualMatrixView
+              companyId={selectedCompany.id}
+              year={year}
+              onYearChange={setYear}
+              selectedCompany={selectedCompany}
+            />
+          </VatReturnErrorBoundary>
+        </TabsContent>
+
+        {/* Tab 3: Tételes M-lapok (65M) + [NAV OSA Ellenőrzés] */}
+        {!isCroatia && (
+          <TabsContent value="teteles_m" className="mt-0">
+            <VatReturnErrorBoundary>
+              <VatMLineMasterDetail
+                mLines={mLines}
+                companyId={selectedCompany.id}
+                year={year}
+                month={month}
+                frequency={frequency}
+                selectedCompany={selectedCompany}
+              />
+            </VatReturnErrorBoundary>
+          </TabsContent>
+        )}
+
+        {/* Tab 4: Fordított ÁFA (07/08 lapok) */}
+        {!isCroatia && (
+          <TabsContent value="forditott" className="mt-0">
+            <VatReturnErrorBoundary>
+              <VatSteelProductsSection
+                selectedCompany={selectedCompany}
+                year={year}
+                month={month}
+                frequency={frequency}
+              />
+            </VatReturnErrorBoundary>
+          </TabsContent>
+        )}
+
+        {/* Tab 5: A60 Közösségi nyilatkozat */}
+        {!isCroatia && (
+          <TabsContent value="a60" className="mt-0">
+            <VatReturnErrorBoundary>
+              <VatA60Table
+                a60Calculations={a60Calculations}
+                viesStatuses={viesStatuses}
+                isValidatingVies={isValidatingVies}
+                handleViesCheck={handleViesCheck}
+                setEuTypeOverrides={setEuTypeOverrides}
+              />
+            </VatReturnErrorBoundary>
+          </TabsContent>
+        )}
+
+        {/* Tab 6: ÁFA Tétellista (Analitikus napló) */}
+        <TabsContent value="journal" className="mt-0">
+          <VatReturnErrorBoundary>
+            <VatItemizedJournalView
+              companyId={selectedCompany.id}
+              year={year}
+              month={month}
+              frequency={frequency}
+              selectedCompany={selectedCompany}
+            />
+          </VatReturnErrorBoundary>
+        </TabsContent>
+
+        {/* Tab 7: Gyűjtőkódos Analitika */}
+        <TabsContent value="analytics" className="mt-0">
           <VatReturnErrorBoundary>
             <VatCollectorAnalyticsView />
           </VatReturnErrorBoundary>
         </TabsContent>
-        <TabsContent value="config">
+
+        {/* Tab 8: 26TFEJLH Turizmus */}
+        {!isCroatia && (
+          <TabsContent value="tourism" className="mt-0">
+            <VatReturnErrorBoundary>
+              <VatTourismTaxSection
+                companyId={selectedCompany.id}
+                year={year}
+                month={month}
+                frequency={frequency}
+                selectedCompany={selectedCompany}
+              />
+            </VatReturnErrorBoundary>
+          </TabsContent>
+        )}
+
+        {/* Tab 9: Beállítások */}
+        <TabsContent value="config" className="mt-0">
           <VatCodeConfigTab />
         </TabsContent>
       </Tabs>

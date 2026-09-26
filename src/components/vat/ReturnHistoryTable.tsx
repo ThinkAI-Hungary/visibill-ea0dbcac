@@ -50,7 +50,7 @@ export function ReturnHistoryTable({ companyId, currentReturnId, onNavigate }: H
           <button
             key={rowKey}
             className={cn(
-              "grid grid-cols-12 gap-2 px-4 py-2.5 text-sm w-full text-left hover:bg-muted/30 transition-colors",
+              "grid grid-cols-12 gap-2 px-4 py-2.5 text-sm w-full text-left hover:bg-muted/30 transition-colors last:rounded-b-xl",
               ret.id === currentReturnId && "bg-primary/5 border-l-2 border-l-primary"
             )}
             onClick={() => onNavigate(ret.period_year, ret.period_month, ret.frequency)}

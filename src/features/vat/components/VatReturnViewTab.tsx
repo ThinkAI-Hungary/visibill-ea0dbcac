@@ -10,8 +10,10 @@ import {
   ShieldCheck,
   AlertTriangle,
   Scale,
+  CheckCircle2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -38,6 +40,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { MONTHS } from '../types';
 import { useVatReturnData } from '../hooks/useVatReturnData';
@@ -48,6 +51,7 @@ import { VatCalculatorView } from './VatCalculatorView';
 import { VatNav65Replica } from './VatNav65Replica';
 import { VatObrazacPdvReplica } from './VatObrazacPdvReplica';
 import { VatSteelProductsSection } from './VatSteelProductsSection';
+import { VatProRataCalculatorModal } from './VatProRataCalculatorModal';
 
 export function VatReturnViewTab() {
   const { t, i18n } = useTranslation(['accounting', 'common']);
@@ -71,12 +75,17 @@ export function VatReturnViewTab() {
     deadlineCountdown,
     postingAudit,
     calculate,
+    validateReturn,
+    finalizeReturn,
+    reopenReturn,
     getVal,
   } = vatData;
 
   const { isCroatia } = useCompanyJurisdiction(selectedCompany);
 
   const [showSteelWarningModal, setShowSteelWarningModal] = React.useState(false);
+  const [proRataCalculatorOpen, setProRataCalculatorOpen] = React.useState(false);
+
   const { incompleteSteelItems, hasIncompleteSteelItems } = useSteelProductsData(
     selectedCompany,
     year,
@@ -136,17 +145,19 @@ export function VatReturnViewTab() {
   ]);
 
   return (
-    <div className="space-y-5 page-animate">
-      {/* Period Selector + Actions */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 bg-card p-3 rounded-xl border border-border shadow-sm animate-in slide-in-from-top-2 duration-300">
-        <div className="flex items-center gap-3">
+    <div className="space-y-4 pb-12 page-animate">
+      {/* Unified Command & Control Header */}
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-card p-3 rounded-xl border border-border shadow-sm animate-in slide-in-from-top-2 duration-300">
+        {/* Left: Period Controls */}
+        <div className="flex flex-wrap items-center gap-2.5">
           {/* Frequency toggle */}
-          <div className="flex bg-muted/50 border rounded-lg p-0.5">
+          <div className="flex bg-muted/60 border border-border/60 rounded-lg p-0.5">
             <button
+              type="button"
               className={cn(
-                'px-3 py-1.5 text-xs font-medium rounded-md transition-all',
+                'px-3 py-1.5 text-xs font-semibold rounded-md transition-all',
                 frequency === 'H'
-                  ? 'bg-background shadow-sm text-foreground'
+                  ? 'bg-background shadow-sm text-foreground font-bold'
                   : 'text-muted-foreground hover:text-foreground'
               )}
               onClick={() => {
@@ -161,10 +172,11 @@ export function VatReturnViewTab() {
               {t('accounting:vat_return.period.monthly', 'Havi')}
             </button>
             <button
+              type="button"
               className={cn(
-                'px-3 py-1.5 text-xs font-medium rounded-md transition-all',
+                'px-3 py-1.5 text-xs font-semibold rounded-md transition-all',
                 frequency === 'N'
-                  ? 'bg-background shadow-sm text-foreground'
+                  ? 'bg-background shadow-sm text-foreground font-bold'
                   : 'text-muted-foreground hover:text-foreground'
               )}
               onClick={() => {
@@ -179,10 +191,11 @@ export function VatReturnViewTab() {
               {t('accounting:vat_return.period.quarterly', 'Negyedéves')}
             </button>
             <button
+              type="button"
               className={cn(
-                'px-3 py-1.5 text-xs font-medium rounded-md transition-all',
+                'px-3 py-1.5 text-xs font-semibold rounded-md transition-all',
                 frequency === 'E'
-                  ? 'bg-background shadow-sm text-foreground'
+                  ? 'bg-background shadow-sm text-foreground font-bold'
                   : 'text-muted-foreground hover:text-foreground'
               )}
               onClick={() => {
@@ -194,14 +207,14 @@ export function VatReturnViewTab() {
             </button>
           </div>
 
-          <div className="border-l pl-3 border-border/60 flex items-center gap-2">
+          <div className="border-l pl-2.5 border-border/60 flex items-center gap-2">
             <Select value={String(year)} onValueChange={(v) => setYear(+v)}>
-              <SelectTrigger className="w-24 h-9 text-sm">
+              <SelectTrigger className="w-24 h-9 text-xs font-medium">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {[2024, 2025, 2026].map((y) => (
-                  <SelectItem key={y} value={String(y)}>
+                  <SelectItem key={y} value={String(y)} className="text-xs">
                     {y}
                   </SelectItem>
                 ))}
@@ -210,7 +223,7 @@ export function VatReturnViewTab() {
 
             {frequency === 'H' && (
               <Select value={String(month)} onValueChange={(v) => setMonth(+v)}>
-                <SelectTrigger className="w-40 h-9 text-sm">
+                <SelectTrigger className="w-40 h-9 text-xs font-medium">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -218,7 +231,7 @@ export function VatReturnViewTab() {
                     const rawName = new Intl.DateTimeFormat(i18n.language === 'hr' ? 'hr-HR' : 'hu-HU', { month: 'long' }).format(new Date(year, i, 1));
                     const monthName = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1) : MONTHS[i];
                     return (
-                      <SelectItem key={i} value={String(i + 1)}>
+                      <SelectItem key={i} value={String(i + 1)} className="text-xs">
                         {String(i + 1).padStart(2, '0')} — {monthName}
                       </SelectItem>
                     );
@@ -229,45 +242,185 @@ export function VatReturnViewTab() {
 
             {frequency === 'N' && (
               <Select value={String(month)} onValueChange={(v) => setMonth(+v)}>
-                <SelectTrigger className="w-40 h-9 text-sm">
+                <SelectTrigger className="w-40 h-9 text-xs font-medium">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">{t('accounting:vat_return.period.q1', 'Q1 (jan–márc)')}</SelectItem>
-                  <SelectItem value="2">{t('accounting:vat_return.period.q2', 'Q2 (ápr–jún)')}</SelectItem>
-                  <SelectItem value="3">{t('accounting:vat_return.period.q3', 'Q3 (júl–szept)')}</SelectItem>
-                  <SelectItem value="4">{t('accounting:vat_return.period.q4', 'Q4 (okt–dec)')}</SelectItem>
+                  <SelectItem value="1" className="text-xs">{t('accounting:vat_return.period.q1', 'Q1 (jan–márc)')}</SelectItem>
+                  <SelectItem value="2" className="text-xs">{t('accounting:vat_return.period.q2', 'Q2 (ápr–jún)')}</SelectItem>
+                  <SelectItem value="3" className="text-xs">{t('accounting:vat_return.period.q3', 'Q3 (júl–szept)')}</SelectItem>
+                  <SelectItem value="4" className="text-xs">{t('accounting:vat_return.period.q4', 'Q4 (okt–dec)')}</SelectItem>
                 </SelectContent>
               </Select>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={() => calculate.mutate()}
-            disabled={calculate.isPending || isFinalized}
-            size="sm"
-            className="h-9 gap-2"
-          >
-            {calculate.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Calculator className="w-4 h-4" />
-            )}
-            {isFinalized
-              ? t('accounting:vat_return.period.finalized', 'Véglegesítve')
-              : calculate.isPending
-              ? t('accounting:vat_return.period.calculating', 'Számítás...')
-              : t('accounting:vat_return.period.calculate', 'Számítás')}
-          </Button>
+        {/* Center: View Switcher (Kalkulátor & Elemzés vs. NAV 65 Nyomtatvány replika) */}
+        {vatReturn && (
+          <div className="flex bg-muted/60 border border-border/70 rounded-lg p-0.5 shadow-inner">
+            <button
+              type="button"
+              onClick={() => setViewMode('calculator')}
+              className={cn(
+                'px-3.5 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5',
+                viewMode === 'calculator'
+                  ? 'bg-background shadow-sm text-foreground font-bold'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <Calculator className="w-3.5 h-3.5 text-primary" />
+              <span>{t('accounting:vat_return.subtabs.calculator', 'Kalkulátor & Elemzés')}</span>
+            </button>
 
+            <button
+              type="button"
+              onClick={() => setViewMode('nav65')}
+              className={cn(
+                'px-3.5 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5',
+                viewMode === 'nav65'
+                  ? 'bg-background shadow-sm text-foreground font-bold'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-blue-500" />
+              <span>{isCroatia ? 'Obrazac PDV replika' : t('accounting:vat_return.subtabs.replica', 'NAV 65 Nyomtatvány')}</span>
+            </button>
+          </div>
+        )}
+
+        {/* Right: Status & Actions */}
+        <div className="flex flex-wrap items-center gap-2 justify-end">
+          {vatReturn && (
+            <Badge
+              className={cn('text-xs font-semibold py-1 px-2.5 border', {
+                'bg-amber-500/10 text-amber-600 border-amber-500/20':
+                  (vatReturn as any).status === 'draft',
+                'bg-blue-500/10 text-blue-600 border-blue-500/20':
+                  (vatReturn as any).status === 'validated',
+                'bg-emerald-500/10 text-emerald-600 border-emerald-500/20':
+                  (vatReturn as any).status === 'finalized',
+              })}
+            >
+              {(vatReturn as any).status === 'draft'
+                ? t('accounting:vat_return.status.draft', 'Piszkozat')
+                : (vatReturn as any).status === 'validated'
+                ? t('accounting:vat_return.status.validated', 'Ellenőrzött')
+                : t('accounting:vat_return.status.finalized', 'Véglegesítve')}
+            </Badge>
+          )}
+
+          {/* ÁFA Arányosítás Modal Trigger */}
+          {vatReturn && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setProRataCalculatorOpen(true)}
+              className="h-9 gap-1.5 text-xs hidden sm:inline-flex"
+            >
+              <Scale className="w-3.5 h-3.5" />
+              <span>{t('accounting:vat_return.status.pro_rata_button', 'ÁFA Arányosítás')}</span>
+            </Button>
+          )}
+
+          {/* Workflow Actions */}
+          {isFinalized ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => reopenReturn.mutate()}
+              disabled={reopenReturn.isPending}
+              className="h-9 gap-1.5 text-xs"
+            >
+              {reopenReturn.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <span>{t('accounting:vat_return.status.reopen_button', 'Visszanyitás')}</span>
+            </Button>
+          ) : (vatReturn as any)?.status === 'validated' ? (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" disabled={finalizeReturn.isPending} className="h-9 gap-1.5 text-xs">
+                  {finalizeReturn.isPending ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                  )}
+                  <span>{t('accounting:vat_return.status.finalize_button', 'Véglegesítés')}</span>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    {t('accounting:vat_return.status.finalize_dialog_title', 'Bevallás véglegesítése')}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t(
+                      'accounting:vat_return.status.finalize_dialog_desc',
+                      'A véglegesítés után a bevallás sorai nem módosíthatók. Visszanyitás csak a „Visszanyitás" gombbal lehetséges.'
+                    )}
+                    <br />
+                    <br />
+                    {t('accounting:vat_return.status.finalize_dialog_confirm', {
+                      period: `${year}/${String(month).padStart(2, '0')}`,
+                      defaultValue: `Biztosan véglegesíted a ${year}/${String(month).padStart(2, '0')} időszak bevallását?`,
+                    })}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>
+                    {t('accounting:vat_return.status.cancel', 'Mégse')}
+                  </AlertDialogCancel>
+                  <AlertDialogAction onClick={() => finalizeReturn.mutate()}>
+                    {t('accounting:vat_return.status.finalize_button', 'Véglegesítés')}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              <Button
+                onClick={() => calculate.mutate()}
+                disabled={calculate.isPending}
+                size="sm"
+                className="h-9 gap-1.5 text-xs"
+              >
+                {calculate.isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Calculator className="w-3.5 h-3.5" />
+                )}
+                <span>
+                  {calculate.isPending
+                    ? t('accounting:vat_return.period.calculating', 'Számítás...')
+                    : t('accounting:vat_return.period.calculate', 'Számítás')}
+                </span>
+              </Button>
+              {vatReturn && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => validateReturn.mutate()}
+                  disabled={validateReturn.isPending}
+                  className="h-9 gap-1.5 text-xs"
+                >
+                  {validateReturn.isPending ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  )}
+                  <span>{t('accounting:vat_return.status.check_done', 'Ellenőrzés kész')}</span>
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* Export Dropdown */}
           <div className="border-l pl-2 border-border/60">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" disabled={!vatReturn} size="sm" className="h-9 gap-2">
-                  <Download className="w-4 h-4" /> {t('accounting:vat_return.period.export', 'Export')}{' '}
-                  <ChevronDown className="w-3 h-3 ml-1" />
+                <Button variant="outline" disabled={!vatReturn} size="sm" className="h-9 gap-1.5 text-xs">
+                  <Download className="w-3.5 h-3.5" />
+                  <span>{t('accounting:vat_return.period.export', 'Export')}</span>
+                  <ChevronDown className="w-3 h-3 ml-0.5" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -302,197 +455,146 @@ export function VatReturnViewTab() {
         </div>
       </div>
 
-      {/* VAT Filing Countdown Timer Banner */}
+      {/* VAT Filing Countdown & Journal Posting Audit Strip (Compact 2-Column Grid) */}
       {vatReturn && (
-        (() => {
-          const days = deadlineCountdown.daysLeft;
-          const isRed = days < 5;
-          const isOrange = days < 10 && days >= 5;
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 print:hidden">
+          {/* Left: Deadline Countdown */}
+          {(() => {
+            const days = deadlineCountdown.daysLeft;
+            const isRed = days < 5;
+            const isOrange = days < 10 && days >= 5;
 
-          const colorClass =
-            days < 0 || isRed
-              ? 'bg-red-500/10 border-red-500/20 text-red-700 dark:text-red-400'
-              : isOrange
-              ? 'bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-400'
-              : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400';
+            const colorClass =
+              days < 0 || isRed
+                ? 'bg-red-500/10 border-red-500/20 text-red-700 dark:text-red-400'
+                : isOrange
+                ? 'bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-400'
+                : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400';
 
-          const iconColor =
-            days < 0 || isRed
-              ? 'text-red-500'
-              : isOrange
-              ? 'text-amber-500'
-              : 'text-emerald-500';
+            const iconColor =
+              days < 0 || isRed
+                ? 'text-red-500'
+                : isOrange
+                ? 'text-amber-500'
+                : 'text-emerald-500';
 
-          return (
-            <div
-              className={cn(
-                'border p-3.5 rounded-xl flex items-center justify-between text-xs animate-in fade-in duration-200 print:hidden',
-                colorClass
-              )}
-            >
-              <span className="flex items-center gap-1.5 font-medium">
-                <Clock
-                  className={cn(
-                    'w-4 h-4 shrink-0',
-                    iconColor,
-                    (days < 0 || isRed) && 'animate-pulse'
-                  )}
-                />
-                {t('accounting:vat_return.deadlines.label', 'Beadási határidő:')} <strong>{deadlineCountdown.dateFormatted}</strong>
-                {days < 0 ? (
-                  <span className="ml-1 font-bold text-red-600 dark:text-red-400">
-                    {t('accounting:vat_return.deadlines.expired', '(LEJÁRT!)')}
-                  </span>
-                ) : (
-                  <span className="ml-1">
-                    {t('accounting:vat_return.deadlines.days_left', {
-                      days,
-                      defaultValue: `(még ${days} nap van hátra)`,
-                    })}
-                  </span>
-                )}
-              </span>
-              <span
+            return (
+              <div
                 className={cn(
-                  'font-bold px-2 py-0.5 rounded text-[10px]',
-                  days < 0 || isRed
-                    ? 'bg-red-500/20 text-red-700 dark:text-red-300'
-                    : isOrange
-                    ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
-                    : 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+                  'border py-2 px-3.5 rounded-xl flex items-center justify-between text-xs animate-in fade-in duration-200',
+                  colorClass
                 )}
               >
-                {days < 0
-                  ? t('accounting:vat_return.deadlines.badge_expired', {
-                      days: Math.abs(days),
-                      defaultValue: `${Math.abs(days)} napja lejárt`,
-                    })
-                  : t('accounting:vat_return.deadlines.badge_days_left', {
-                      days,
-                      defaultValue: `${days} nap hátra`,
-                    })}
-              </span>
-            </div>
-          );
-        })()
-      )}
+                <span className="flex items-center gap-1.5 font-medium truncate">
+                  <Clock
+                    className={cn(
+                      'w-4 h-4 shrink-0',
+                      iconColor,
+                      (days < 0 || isRed) && 'animate-pulse'
+                    )}
+                  />
+                  <span>
+                    {t('accounting:vat_return.deadlines.label', 'Beadási határidő:')}{' '}
+                    <strong>{deadlineCountdown.dateFormatted}</strong>
+                  </span>
+                  {days < 0 ? (
+                    <span className="ml-1 font-bold text-red-600 dark:text-red-400">
+                      {t('accounting:vat_return.deadlines.expired', '(LEJÁRT!)')}
+                    </span>
+                  ) : (
+                    <span className="ml-1 text-[11px] opacity-80">
+                      {t('accounting:vat_return.deadlines.days_left', {
+                        days,
+                        defaultValue: `(még ${days} nap)`,
+                      })}
+                    </span>
+                  )}
+                </span>
+                <span
+                  className={cn(
+                    'font-bold px-2 py-0.5 rounded text-[10px] shrink-0 ml-2',
+                    days < 0 || isRed
+                      ? 'bg-red-500/20 text-red-700 dark:text-red-300'
+                      : isOrange
+                      ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
+                      : 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+                  )}
+                >
+                  {days < 0
+                    ? t('accounting:vat_return.deadlines.badge_expired', {
+                        days: Math.abs(days),
+                        defaultValue: `${Math.abs(days)} napja lejárt`,
+                      })
+                    : t('accounting:vat_return.deadlines.badge_days_left', {
+                        days,
+                        defaultValue: `${days} nap hátra`,
+                      })}
+                </span>
+              </div>
+            );
+          })()}
 
-      {/* Accounting Journal Posting Audit Indicator */}
-      {vatReturn && postingAudit && (
-        <div
-          className={cn(
-            'border p-3.5 rounded-xl flex items-center justify-between text-xs animate-in fade-in duration-200 print:hidden',
-            postingAudit.isFullyPosted
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-800 dark:text-emerald-300'
-              : 'bg-amber-500/10 border-amber-500/20 text-amber-800 dark:text-amber-300'
-          )}
-        >
-          <div className="flex items-center gap-2">
-            {postingAudit.isFullyPosted ? (
-              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            ) : (
-              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-            )}
-            <span>
-              {postingAudit.isFullyPosted ? (
-                <>
-                  <strong>{t('accounting:vat_return.posting_status.closed_audited_title', 'Könyvelési állapot: Zárt & Ellenőrzött.')}</strong>{' '}
-                  {t('accounting:vat_return.posting_status.closed_audited_desc', {
-                    count: postingAudit.postedCount,
-                    defaultValue: `Az időszak összes (${postingAudit.postedCount} db) bizonylata le van könyvelve a naplókban.`,
-                  })}
-                </>
-              ) : postingAudit.totalCount > 0 ? (
-                <>
-                  <strong>{t('accounting:vat_return.posting_status.in_progress_title', 'Könyvelési állapot: Folyamatban.')}</strong>{' '}
-                  {t('accounting:vat_return.posting_status.in_progress_desc', {
-                    posted: postingAudit.postedCount,
-                    total: postingAudit.totalCount,
-                    pending: postingAudit.pendingCount,
-                    defaultValue: `Az időszakban ${postingAudit.postedCount} / ${postingAudit.totalCount} bizonylat van lekönyvelve (${postingAudit.pendingCount} db függő rendszerjavaslat van a naplókban).`,
-                  })}
-                </>
-              ) : (
-                <>
-                  <strong>{t('accounting:vat_return.posting_status.no_entries_title', 'Könyvelési állapot: Nincsenek naplótételek.')}</strong>{' '}
-                  {t('accounting:vat_return.posting_status.no_entries_desc', 'Az időszakra még nem találhatók lekönyvelt tételek a naplókban.')}
-                </>
-              )}
-            </span>
-          </div>
-          <span
-            className={cn(
-              'font-bold px-2 py-0.5 rounded text-[10px] shrink-0 ml-2',
-              postingAudit.isFullyPosted
-                ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
-                : 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
-            )}
-          >
-            {t('accounting:vat_return.posting_status.badge_posted', {
-              percent: postingAudit.isFullyPosted
-                ? 100
-                : postingAudit.totalCount > 0
-                ? Math.round((postingAudit.postedCount / postingAudit.totalCount) * 100)
-                : 0,
-              defaultValue: `${
-                postingAudit.isFullyPosted
-                  ? 100
-                  : postingAudit.totalCount > 0
-                  ? Math.round((postingAudit.postedCount / postingAudit.totalCount) * 100)
-                  : 0
-              }% Lekönyvelve`,
-            })}
-          </span>
-        </div>
-      )}
-
-      {/* Sub-Tab View Toggle Selector */}
-      {vatReturn && (
-        <div className="flex bg-muted/50 border rounded-lg p-0.5 w-max print:hidden">
-          <button
-            type="button"
-            onClick={() => setViewMode('calculator')}
-            className={cn(
-              'px-4 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5',
-              viewMode === 'calculator'
-                ? 'bg-background shadow-sm text-foreground font-bold'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <Calculator className="w-3.5 h-3.5" />
-            {t('accounting:vat_return.subtabs.calculator', 'Kalkulátor & M-lapok')}
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('nav65')}
-            className={cn(
-              'px-4 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5',
-              viewMode === 'nav65'
-                ? 'bg-background shadow-sm text-foreground font-bold'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5" />
-            {isCroatia ? 'Obrazac PDV replika' : t('accounting:vat_return.subtabs.replica', 'NAV 65 Nyomtatvány replika')}
-          </button>
-          {!isCroatia && (
-            <button
-              type="button"
-              onClick={() => setViewMode('steel')}
+          {/* Right: Journal Posting Audit */}
+          {postingAudit && (
+            <div
               className={cn(
-                'px-4 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5',
-                viewMode === 'steel'
-                  ? 'bg-background shadow-sm text-foreground font-bold'
-                  : 'text-muted-foreground hover:text-foreground'
+                'border py-2 px-3.5 rounded-xl flex items-center justify-between text-xs animate-in fade-in duration-200',
+                postingAudit.isFullyPosted
+                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-800 dark:text-emerald-300'
+                  : 'bg-amber-500/10 border-amber-500/20 text-amber-800 dark:text-amber-300'
               )}
             >
-              <Scale className="w-3.5 h-3.5" />
-              6/B Acélipari kimutatás
-            </button>
+              <div className="flex items-center gap-2 truncate">
+                {postingAudit.isFullyPosted ? (
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                )}
+                <span className="truncate">
+                  {postingAudit.isFullyPosted ? (
+                    <>
+                      <strong>{t('accounting:vat_return.posting_status.closed_audited_title', 'Könyvelés: Zárt & Ellenőrzött.')}</strong>{' '}
+                      <span className="text-[11px] opacity-80">({postingAudit.postedCount} db bizonylat)</span>
+                    </>
+                  ) : postingAudit.totalCount > 0 ? (
+                    <>
+                      <strong>{t('accounting:vat_return.posting_status.in_progress_title', 'Könyvelés: Folyamatban.')}</strong>{' '}
+                      <span className="text-[11px] opacity-80">{postingAudit.postedCount}/{postingAudit.totalCount} lekönyvelve ({postingAudit.pendingCount} függő)</span>
+                    </>
+                  ) : (
+                    <strong>{t('accounting:vat_return.posting_status.no_entries_title', 'Könyvelés: Nincsenek naplótételek.')}</strong>
+                  )}
+                </span>
+              </div>
+              <span
+                className={cn(
+                  'font-bold px-2 py-0.5 rounded text-[10px] shrink-0 ml-2',
+                  postingAudit.isFullyPosted
+                    ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+                    : 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
+                )}
+              >
+                {t('accounting:vat_return.posting_status.badge_posted', {
+                  percent: postingAudit.isFullyPosted
+                    ? 100
+                    : postingAudit.totalCount > 0
+                    ? Math.round((postingAudit.postedCount / postingAudit.totalCount) * 100)
+                    : 0,
+                  defaultValue: `${
+                    postingAudit.isFullyPosted
+                      ? 100
+                      : postingAudit.totalCount > 0
+                      ? Math.round((postingAudit.postedCount / postingAudit.totalCount) * 100)
+                      : 0
+                  }% Lekönyvelve`,
+                })}
+              </span>
+            </div>
           )}
         </div>
       )}
 
+      {/* Main View Mode Content */}
       {viewMode === 'nav65' ? (
         isCroatia ? (
           <VatObrazacPdvReplica
@@ -521,6 +623,13 @@ export function VatReturnViewTab() {
       ) : (
         <VatCalculatorView vatData={vatData} />
       )}
+
+      {/* Pro Rata Calculator Modal */}
+      <VatProRataCalculatorModal
+        open={proRataCalculatorOpen}
+        onOpenChange={setProRataCalculatorOpen}
+        year={year}
+      />
 
       {/* Pre-export steel items completeness warning dialog (Blind Spot 1 Guard) */}
       <AlertDialog open={showSteelWarningModal} onOpenChange={setShowSteelWarningModal}>

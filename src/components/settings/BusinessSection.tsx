@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Building2, AlertCircle, Info, MapPin, Plus, X, Sparkles, BookOpen, Calendar, CalendarCheck, Landmark, ExternalLink } from 'lucide-react';
+import { Building2, AlertCircle, Info, MapPin, Plus, X, Sparkles, BookOpen, Calendar, CalendarCheck, Landmark, ExternalLink, Wheat } from 'lucide-react';
 import { useCompanyLocations } from '@/hooks/useCompanyLocations';
 import { useToast } from '@/hooks/use-toast';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatAccountOnType, detectAccountFormat } from '@/lib/ibanUtils';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { getJurisdictionRules } from '@/hooks/useCompanyJurisdiction';
 import { AccountingPolicySection } from './AccountingPolicySection';
 
@@ -104,6 +105,25 @@ export function BusinessSection({
     } catch {
       // Revert optimistic state if mutation fails (error toast shown by mutation)
       setGlBasis(prevBasis);
+    }
+  };
+
+  const [hasPurchaseVouchers, setHasPurchaseVouchers] = useState(false);
+
+  useEffect(() => {
+    if (compEffectiveSettings) {
+      setHasPurchaseVouchers(Boolean(compEffectiveSettings.has_purchase_vouchers));
+    }
+  }, [compEffectiveSettings?.has_purchase_vouchers]);
+
+  const handleTogglePurchaseVouchers = async (checked: boolean) => {
+    if (compSaveMutation.isPending) return;
+    const prev = hasPurchaseVouchers;
+    setHasPurchaseVouchers(checked);
+    try {
+      await compSaveMutation.mutateAsync({ has_purchase_vouchers: checked });
+    } catch {
+      setHasPurchaseVouchers(prev);
     }
   };
 
@@ -551,6 +571,32 @@ export function BusinessSection({
                     </p>
                   </div>
                 </label>
+              </div>
+            </div>
+
+            {/* Opcionális agrár modul: Felvásárlási jegyek */}
+            <div className="pt-4 border-t border-border/60">
+              <div className="flex items-start justify-between gap-4 p-3.5 rounded-xl border border-border bg-card/60">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Wheat className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <Label htmlFor="toggle-purchase-vouchers" className="text-sm font-semibold cursor-pointer">
+                      Mezőgazdasági felvásárlási jegyek modul
+                    </Label>
+                    <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-600 bg-emerald-500/10">
+                      Agrár
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed max-w-xl">
+                    Őstermelői felvásárlások rögzítése, 12% és 7%-os kompenzációs felár számítása, és bérügyi NAV 08 adatszolgáltatás előkészítése a Bérek / járulékok menüpont alatt.
+                  </p>
+                </div>
+                <Switch
+                  id="toggle-purchase-vouchers"
+                  checked={hasPurchaseVouchers}
+                  onCheckedChange={handleTogglePurchaseVouchers}
+                  disabled={!isOwner || compSaveMutation.isPending}
+                />
               </div>
             </div>
           </CardContent>

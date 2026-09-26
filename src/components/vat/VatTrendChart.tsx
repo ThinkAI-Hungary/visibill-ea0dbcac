@@ -57,19 +57,22 @@ export function VatTrendChart({ companyId }: { companyId: string }) {
     <Card className="border-border/60 animate-in fade-in slide-in-from-bottom-2 duration-300">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
-          {t('accounting:vat_return.chart.title', 'ÁFA trend')}
+          <span>{t('accounting:vat_return.chart.title', 'ÁFA trend')}</span>
           <Badge variant="outline" className="text-[10px] font-normal">
             {t('accounting:vat_return.chart.months_count', {
               count: history.length,
               defaultValue: `${history.length} hónap`,
             })}
           </Badge>
+          <span className="text-[11px] text-muted-foreground font-normal">
+            ({isCroatia ? '€' : 'ezer Ft / eFt'})
+          </span>
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4 pt-0">
-        <div className="h-48">
+        <div className="h-52">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 18, right: 15, left: 10, bottom: 0 }}>
               <defs>
                 <linearGradient id="vatPayable" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#ef4444" stopOpacity={0.15} />
@@ -86,7 +89,16 @@ export function VatTrendChart({ companyId }: { companyId: string }) {
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.4} />
               <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.5} />
-              <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.5} tickFormatter={(v: number) => isCroatia ? `${formatThousands(v)} €` : formatThousands(v)} />
+              <YAxis
+                width={60}
+                tick={{ fontSize: 10 }}
+                stroke="hsl(var(--muted-foreground))"
+                strokeOpacity={0.5}
+                tickFormatter={(v: number) => {
+                  const formatted = formatThousands(v).replace(/\s/g, '\u00A0');
+                  return isCroatia ? `${formatted}\u00A0€` : formatted;
+                }}
+              />
               <RechartsTooltip
                 contentStyle={{ fontSize: '11px', borderRadius: '8px', border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))' }}
                 formatter={(value: number, name: string) => [fmtTooltip(value), name]}

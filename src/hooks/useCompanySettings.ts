@@ -17,6 +17,7 @@ const DEFAULT_SETTINGS: Omit<CompanyWorkSettings, 'id' | 'company_id' | 'created
   monthly_working_hours: 168,
   gl_date_basis: 'kibocsatas',
   vat_code_display_mode: 'legacy',
+  has_purchase_vouchers: false,
 };
 
 export function useCompanySettings() {
@@ -53,6 +54,7 @@ export function useCompanySettings() {
       monthly_working_hours?: number;
       gl_date_basis?: 'kibocsatas' | 'teljesites';
       vat_code_display_mode?: 'legacy' | 'nav';
+      has_purchase_vouchers?: boolean;
     }) => {
       if (!user || !selectedCompany) throw new Error('No user/company');
 
@@ -67,6 +69,7 @@ export function useCompanySettings() {
       if (form.monthly_working_hours !== undefined) payload.monthly_working_hours = form.monthly_working_hours;
       if (form.gl_date_basis !== undefined) payload.gl_date_basis = form.gl_date_basis;
       if (form.vat_code_display_mode !== undefined) (payload as any).vat_code_display_mode = form.vat_code_display_mode;
+      if (form.has_purchase_vouchers !== undefined) (payload as any).has_purchase_vouchers = form.has_purchase_vouchers;
 
       const { error } = await supabase
         .from('company_settings')
@@ -77,6 +80,9 @@ export function useCompanySettings() {
     onSuccess: () => {
       toast({ title: 'Siker', description: 'Beállítások mentve.' });
       invalidate();
+      if (selectedCompany?.id) {
+        queryClient.invalidateQueries({ queryKey: ['purchase-vouchers-settings', selectedCompany.id] });
+      }
     },
     onError: (err: Error) => {
       toast({
@@ -95,6 +101,7 @@ export function useCompanySettings() {
     monthly_working_hours: settings?.monthly_working_hours ?? DEFAULT_SETTINGS.monthly_working_hours,
     gl_date_basis: (settings?.gl_date_basis as 'kibocsatas' | 'teljesites') ?? DEFAULT_SETTINGS.gl_date_basis,
     vat_code_display_mode: (settings?.vat_code_display_mode as 'legacy' | 'nav') ?? DEFAULT_SETTINGS.vat_code_display_mode,
+    has_purchase_vouchers: Boolean(settings?.has_purchase_vouchers ?? DEFAULT_SETTINGS.has_purchase_vouchers),
   }), [settings]);
 
   return {

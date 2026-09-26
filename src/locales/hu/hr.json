@@ -4,6 +4,10 @@
     "subtitle": "Alkalmazottak bérének és járulékainak kezelése",
     "uploaded_files": "Feltöltött fájlok",
     "cash_payout": "KP kifizetés",
+    "tabs": {
+      "overview": "Alkalmazottak & NAV",
+      "purchase_vouchers": "Felvásárlási jegyek"
+    },
     "kpi": {
       "total_payments": "Összes kifizetés",
       "employee_count": "Alkalmazottak száma",

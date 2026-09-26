@@ -48,6 +48,7 @@ export interface CompanyWorkSettings {
   monthly_working_hours: number;
   gl_date_basis?: 'kibocsatas' | 'teljesites' | null;
   vat_code_display_mode?: 'legacy' | 'nav' | null;
+  has_purchase_vouchers?: boolean | null;
   created_at: string;
   updated_at: string;
 }

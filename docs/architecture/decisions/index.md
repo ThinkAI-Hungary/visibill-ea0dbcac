@@ -203,6 +203,8 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-155 | Házipénztár Bejövő/Szállítói Számlák Kiegyenlítése és Időszaki Zárás Egyenleg Számítási Modell | ✅ Decided | [A-155](./A-155-petty-cash-inbound-settlement-and-period-closing.md) |
 | A-156 | Horvát ÁFA Bevallás (Obrazac PDV), Hivatalos Nyomtatvány Replika és HR Áfakód Architektúra | ✅ Decided | [A-156](./A-156-croatian-vat-return-obrazac-pdv-and-tax-codes.md) |
 | A-157 | Főkönyvi Kivonat Számlánkénti Összevonás (by_invoice) és 4-Oszlopos Excel Export Architektúra | ✅ Decided | [A-157](./A-157-general-ledger-invoice-grouping-and-4col-export.md) |
+| A-158 | Mezőgazdasági Felvásárlási Jegyek Modul és Bérügyi Integráció | ✅ Decided | [A-158](./A-158-agricultural-purchase-vouchers-module.md) |
+| A-159 | Hivatalos ÁFA Analitika Upgrade, M-lap Master–Detail és NAV OSA Keresztellenőrzés | ✅ Decided | [A-159](./A-159-statutory-vat-views-upgrade-and-osa-reconciliation.md) |
 
 ## 💳 Fizetés
 

@@ -9,4 +9,9 @@ export { VatA60Table } from './components/VatA60Table';
 export { VatXmlValidationDialog } from './components/VatXmlValidationDialog';
 export { VatProRataSettingsCard } from './components/VatProRataSettingsCard';
 export { VatProRataCalculatorModal } from './components/VatProRataCalculatorModal';
-
+export { VatOsaCheckDialog } from './components/VatOsaCheckDialog';
+export { VatMLineMasterDetail } from './components/VatMLineMasterDetail';
+export { VatAnnualMatrixView } from './components/VatAnnualMatrixView';
+export { VatRateSummaryCards } from './components/VatRateSummaryCards';
+export { VatItemizedJournalView } from './components/VatItemizedJournalView';
+export { VatTourismTaxSection } from './components/VatTourismTaxSection';
