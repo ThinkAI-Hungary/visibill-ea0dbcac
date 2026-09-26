@@ -34,6 +34,11 @@ A korábbi működésben aszimmetria és technikai adósság állt fenn:
 3. **Unit Teszt Védelem:**
    - A `worker/test/unit_test/test_imap_sync.py` tesztkészlet kibővült a `TestAttachmentValidation` osztállyal (10 új teszteset, 100% lefedettség a szűrési ágakra).
 
+4. **IMAP Payload Séma Konzisztencia és 23502 Null Constraint Védelem:**
+   - Az IMAP pipeline feltöltési logikájában (`imap_sync_pipeline.py`) az `insert_payload` korábban nem tartalmazta a `file_type` és `upload_status` mezőket.
+   - Mivel az `invoice_uploads` táblában a `file_type TEXT NOT NULL` megszorítással jött létre, minden beérkező IMAP melléklet Postgres `23502 (null value in column "file_type" violates not-null constraint)` hibát generált.
+   - Beépítésre került a számított `content_type` (`mimetypes.guess_type`) átadása `file_type`-ként, valamint az explicit `"upload_status": "uploaded"`. Így mindkét bejövő csatorna garantáltan kitölti a kötelező oszlopokat.
+
 ## Consequences
 
 **Pozitív:**
