@@ -51,14 +51,30 @@ A zárási dialógusban és a nyomtatási/PDF export sablonban bevezetésre ker�
 ### 3. Negatív Kassza Integritási Védelem
 - Ha a számított záró egyenleg negatív ($C < 0$), a felület azonnal piros kiemeléssel (`border-destructive/40 bg-destructive/5`) és figyelmeztetéssel jelzi az anomáliát, segítve a könyvelőt az adminisztrációs vagy fizetési hibák felderítésében még a hivatalos zárás előtt.
 
+### 4. Pénztárzárási Összesítő Lábléc & PDF Záróív (2026-09-27)
+- **Felületi `TableFooter`:** A zárási dialógus bizonylatlistájának alján állandó összesítő lábléc jelenik meg, amely expliciten bemutatja:
+  - *Nyitó készpénzállomány*
+  - *Időszaki pénzforgalom (bevételek és kiadások egyenlege)*
+  - *Záró készpénzállomány*
+- **PDF Nyomtatvány Zárótáblázat:** A pénztárjelentés PDF export alján a könyvelői auditot támogató záró egyenleg-egyeztető táblázat generálódik.
+
+### 5. Billentyűzet-Központú Gyorsrögzítés és Összeg-Normalizálás (`EntriesTab.tsx`, `types.ts`)
+- **Ergonómiai gyorsbillentyűk:**
+  - `B` billentyű: Bevétel irány és fókuszváltás a rögzítés gombra.
+  - `K` billentyű: Kiadás irány és fókuszváltás a rögzítés gombra.
+  - `Enter` billentyű: Intelligens mentés validációval (hiányzó leírás/összeg esetén célzott fókusz és toast figyelmeztetés, a Tabulátoros mezőátugrás megelőzésével).
+- **Számszaki parszer (`parseCleanAmount`):**
+  - Kifejezetten támogatja a szóközös ezres tagolást (`1 940 675 Ft`), valamint a tizedesvesszők és pontok koherens lebegőpontos konverzióját.
+
 ---
 
 ## 3. Consequences
 
-- **Pozitív:**
-  - Szállítói és vevői számlák egységesen, egyetlen kattintással rendezhetők készpénzben.
-  - A számla fizetett státusza azonnal szinkronizálódik az ÁFA analitikával és a főkönyvvel.
-  - Számvitelileg pontos pénztárzárási jegyzőkönyv generálható PDF-ben nyitó és záró egyenlegekkel.
+### Pozitív:
+- Szállítói és vevői számlák egységesen, egyetlen kattintással rendezhetők készpénzben.
+- A számla fizetett státusza azonnal szinkronizálódik az ÁFA analitikával és a főkönyvvel.
+- Számvitelileg pontos pénztárzárási jegyzőkönyv generálható PDF-ben nyitó és záró egyenlegekkel.
+- A könyvelő egér nélkül, villámgyorsan tudja rögzíteni a készpénzes bizonylatokat a billentyűzetről.
 - **Negatív / Kockázat:**
   - Vegyes (vevői és szállítói egyszerre) kijelölés esetén a leírás összesített szöveggel generálódik, és a tételhez nem rendelhető egyetlen partner ID (ilyenkor a partner_id NULL marad, és a számlahivatkozások a leírásban szerepelnek).
 

@@ -66,7 +66,16 @@ route-olja a számlákat a helyes céghez az adószám alapján. Ez a `company_i
 `service_role`-lal hajtja végre (RLS bypass). A routing CSAK a user `company_members` tagságai
 között történik — más tenant adataihoz nem férhet hozzá. Lásd: worker `company_router.py`, ADR-027.
 
+## eaisyBooks Könyvelői és Support Admin RLS Kiterjesztés (2026-09-27)
+
+A külső könyvelők (`accounty_assignments`) és a központi technikai ügyfélszolgálat (`support_admin`) számára a kritikus törvényi bevallási táblák (`vat_returns`, `vat_return_lines`, `vat_return_m_lines`) és az általános cégjogosultsági segédfüggvény (`is_company_member_or_above`) kibővítésre került (migration: `20260927160000_fix_vat_returns_accounty_and_support_admin_rls.sql`):
+1. **`is_company_member_or_above(company_id)`**:
+   - `company_members` ellenőrzés mellett meghívja a `has_company_access_via_cache(p_company_id, 'accounty'::text)` függvényt, valamint az `is_support_admin()` ellenőrzést.
+2. **`vat_returns*` RLS szabályok konszolidációja**:
+   - Egységes `vat_returns_access`, `vat_return_lines_access`, `vat_return_m_lines_access` `FOR ALL` szabályok lettek bevezetve, amelyek `public.is_company_member_or_above(company_id) OR public.has_company_access_via_cache(company_id, 'accounty') OR public.is_support_admin()` feltételt használnak mind a `USING`, mind a `WITH CHECK` ágakban.
+
 ## Kapcsolódó
 - [A-092: Teljes Adatbázis Biztonsági és Teljesítménybeli Audit & Optimalizáció](./A-092-database-security-and-performance-optimization.md)
 - [A-072: Robust Accounting Firm Assignment RLS](./A-072-accounting-assignments-insert-rls.md)
+
 

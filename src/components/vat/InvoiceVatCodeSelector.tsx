@@ -120,24 +120,24 @@ export function InvoiceVatCodeSelector({
 
     if (effectiveDirection === 'OUTBOUND') {
       return [
-        { codeName: 'KIM_27', label: '27% Értékesítés', targetRow: '07', vatPercent: 27, direction: 'OUTBOUND', group: 'standard' },
-        { codeName: 'KIM_18', label: '18% Értékesítés', targetRow: '05', vatPercent: 18, direction: 'OUTBOUND', group: 'standard' },
-        { codeName: 'KIM_5', label: '5% Értékesítés', targetRow: '03', vatPercent: 5, direction: 'OUTBOUND', group: 'standard' },
-        { codeName: 'ELOLEG', label: 'Előleg számla (05-07)', targetRow: '45', vatPercent: 27, direction: 'OUTBOUND', group: 'special' },
-        { codeName: 'KIM_EU_SZOLG', label: 'EU szolgáltatásnyújtás', targetRow: '92', vatPercent: 0, direction: 'OUTBOUND', group: 'special' },
-        { codeName: 'KIM_ATHK', label: 'Közösségen kívüli / ATHK', targetRow: '91', vatPercent: 0, direction: 'OUTBOUND', group: 'special' },
-        { codeName: 'AAM', label: 'Adómentes értékesítés', targetRow: '01', vatPercent: 0, direction: 'OUTBOUND', group: 'exemption' },
+        { codeName: 'KIM_27', label: '27% Értékesítés (07. sor)', targetRow: '07', vatPercent: 27, direction: 'OUTBOUND', group: 'standard' },
+        { codeName: 'KIM_18', label: '18% Értékesítés (05. sor)', targetRow: '05', vatPercent: 18, direction: 'OUTBOUND', group: 'standard' },
+        { codeName: 'KIM_5', label: '5% Értékesítés (03. sor)', targetRow: '03', vatPercent: 5, direction: 'OUTBOUND', group: 'standard' },
+        { codeName: 'ELOLEG', label: 'Kapott előleg (07 + 45. sor)', targetRow: '45', vatPercent: 27, direction: 'OUTBOUND', group: 'special' },
+        { codeName: 'KIM_EU_SZOLG', label: 'EU szolgáltatásnyújtás (92. sor)', targetRow: '92', vatPercent: 0, direction: 'OUTBOUND', group: 'special' },
+        { codeName: 'KIM_ATHK', label: 'Közösségen kívüli / ATHK (91. sor)', targetRow: '91', vatPercent: 0, direction: 'OUTBOUND', group: 'special' },
+        { codeName: 'AAM', label: 'Adómentes értékesítés (01. sor)', targetRow: '01', vatPercent: 0, direction: 'OUTBOUND', group: 'exemption' },
       ];
     } else {
       return [
-        { codeName: 'BE_27', label: '27% Belföldi beszerzés', targetRow: '66', vatPercent: 27, direction: 'INBOUND', group: 'standard' },
-        { codeName: 'BE_18', label: '18% Belföldi beszerzés', targetRow: '65', vatPercent: 18, direction: 'INBOUND', group: 'standard' },
-        { codeName: 'BE_5', label: '5% Belföldi beszerzés', targetRow: '64', vatPercent: 5, direction: 'INBOUND', group: 'standard' },
-        { codeName: 'TARGYESZKOZ', label: 'Tárgyi eszköz / Beruházás', targetRow: '77', vatPercent: 27, direction: 'INBOUND', group: 'special' },
-        { codeName: 'FAD', label: 'Fordított adózás (FAD)', targetRow: '29', vatPercent: 0, direction: 'INBOUND', group: 'special' },
-        { codeName: 'EUK_SZOLG', label: 'EU szolgáltatás igénybevétel', targetRow: '18', vatPercent: 27, direction: 'INBOUND', group: 'special' },
-        { codeName: 'ATHK_SZOLG', label: '3. országbeli szolgáltatás', targetRow: '27', vatPercent: 27, direction: 'INBOUND', group: 'special' },
-        { codeName: 'TAM', label: 'Adómentes beszerzés', targetRow: '63', vatPercent: 0, direction: 'INBOUND', group: 'exemption' },
+        { codeName: 'BE_27', label: '27% Belföldi beszerzés (66. sor)', targetRow: '66', vatPercent: 27, direction: 'INBOUND', group: 'standard' },
+        { codeName: 'BE_18', label: '18% Belföldi beszerzés (65. sor)', targetRow: '65', vatPercent: 18, direction: 'INBOUND', group: 'standard' },
+        { codeName: 'BE_5', label: '5% Belföldi beszerzés (64. sor)', targetRow: '64', vatPercent: 5, direction: 'INBOUND', group: 'standard' },
+        { codeName: 'TARGYESZKOZ', label: 'Tárgyi eszköz / Beruházás (66 + 77. sor)', targetRow: '77', vatPercent: 27, direction: 'INBOUND', group: 'special' },
+        { codeName: 'FAD', label: 'Fordított adózás (29 + 66. sor)', targetRow: '29', vatPercent: 0, direction: 'INBOUND', group: 'special' },
+        { codeName: 'EUK_SZOLG', label: 'EU szolgáltatás igénybevétel (18 + 67. sor)', targetRow: '18', vatPercent: 27, direction: 'INBOUND', group: 'special' },
+        { codeName: 'ATHK_SZOLG', label: '3. országbeli szolgáltatás (27 + 67. sor)', targetRow: '27', vatPercent: 27, direction: 'INBOUND', group: 'special' },
+        { codeName: 'TAM', label: 'Adómentes beszerzés (63. sor)', targetRow: '63', vatPercent: 0, direction: 'INBOUND', group: 'exemption' },
       ];
     }
   }, [effectiveDirection, isCroatia]);
@@ -146,8 +146,18 @@ export function InvoiceVatCodeSelector({
   const combinedOptions = React.useMemo(() => {
     const list = [...defaultOptions];
     dbVatCodes.forEach((vc: any) => {
-      const targetRow = vc.target_rows?.[0]?.row || '';
-      if (!list.some(o => o.codeName === vc.code)) {
+      const rows = Array.isArray(vc.target_rows) ? vc.target_rows.map((r: any) => r.row).filter(Boolean) : [];
+      const uniqueRows = Array.from(new Set(rows)).join(', ');
+      const targetRow = uniqueRows || vc.target_rows?.[0]?.row || '';
+      const existingIdx = list.findIndex(o => o.codeName === vc.code);
+      if (existingIdx !== -1) {
+        list[existingIdx] = {
+          ...list[existingIdx],
+          codeId: vc.id,
+          label: vc.label || list[existingIdx].label,
+          targetRow: targetRow || list[existingIdx].targetRow,
+        };
+      } else {
         list.push({
           codeId: vc.id,
           codeName: vc.code,
@@ -243,8 +253,15 @@ export function InvoiceVatCodeSelector({
 
   // Find active selected label
   const activeSelection = React.useMemo(() => {
+    if (currentVatCodeId) {
+      const match = combinedOptions.find(o => o.codeId === currentVatCodeId);
+      if (match) return match;
+    }
     if (currentVatRowOverride) {
-      const match = combinedOptions.find(o => o.targetRow === currentVatRowOverride);
+      const match = combinedOptions.find(o => 
+        o.targetRow === currentVatRowOverride || 
+        o.targetRow?.split(',').map(s => s.trim()).includes(currentVatRowOverride)
+      );
       if (match) return match;
       return {
         codeName: currentVatRowOverride,
@@ -253,12 +270,8 @@ export function InvoiceVatCodeSelector({
         group: 'special' as const,
       };
     }
-    if (currentVatCodeId) {
-      const match = combinedOptions.find(o => o.codeId === currentVatCodeId);
-      if (match) return match;
-    }
     return null;
-  }, [currentVatRowOverride, currentVatCodeId, combinedOptions]);
+  }, [currentVatCodeId, currentVatRowOverride, combinedOptions]);
 
   const isPending = updateVatCodeMutation.isPending;
 

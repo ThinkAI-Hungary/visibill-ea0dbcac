@@ -38,9 +38,17 @@
   * Magyar: `vat.net_revenue` (*NETTÓ Árbevétel:*), `vat.net_costs` (*NETTÓ Költségek:*)
   * Horvát: `vat.net_revenue` (*NETO Prihodi:*), `vat.net_costs` (*NETO Troškovi:*)
 
+### 4. Hivatalos NAV 2665 Bevallási Sorbontás Nézet (`VatCollectorAnalyticsView.tsx`) (2026-09-27)
+* **„Bevallási sor szerint (2665 NAV)” nézetválasztó:** Az ÁFA analitika felületen a könyvelő egyetlen kattintással átválthat az általános kulcsbontásról a hivatalos NAV 2665 bevallási sorok szerinti analitikára.
+* **Bizonylatszámok és számlakapcsolatok feloldása:**
+  * A 27-es és 67-es bevallási sorokhoz (pl. belföldi fordított adózás, 27%-os általános levonható adó, import ÁFA) tartozó tételek közvetlenül listázzák a mögöttes számlaszámokat, partnereket és összegeket.
+  * Kiküszöböli a bizonylatazonosító nélküli tételekből adódó egyeztetési hibákat és azonnali tételes ellenőrzést biztosít az ÁNYK export előtt.
+
 ---
 
 ## Kapcsolódó
 - [P-005: Dashboard Widgetek & Elrendezés](./P-005-dashboard-layout.md)
 - [P-060: Modular UX for Statutory Reporting, VAT 2665 Calculator](./P-060-statutory-reporting-and-vat-return-modular-ux.md)
+- [P-126: NAV 2665 Hivatalos Nyomtatvány Digitális Replika UX](./P-126-nav-2665-official-tax-form-digital-replica-ux.md)
+- [A-159: Hivatalos ÁFA Analitika Upgrade, M-lap Master–Detail és NAV OSA Keresztellenőrzés](../../architecture/decisions/A-159-statutory-vat-views-upgrade-and-osa-reconciliation.md)
 - [P-081: Eaisybill Horvát Lokalizáció és Demó UX](./P-081-eaisybill-croatia-localization-and-demo-ux.md)

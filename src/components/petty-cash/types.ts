@@ -124,6 +124,17 @@ export function sanitizePartnerId(partnerId: string | null | undefined): string 
   return partnerId.trim();
 }
 
+/** Cleanly parse amount string handling Hungarian spaces, dots, and commas */
+export function parseCleanAmount(val: string | number | null | undefined): number {
+  if (val == null) return 0;
+  if (typeof val === 'number') return isNaN(val) ? 0 : val;
+  const str = String(val).trim();
+  if (!str) return 0;
+  const cleaned = str.replace(/\s+/g, '').replace(',', '.');
+  const num = parseFloat(cleaned);
+  return isNaN(num) ? 0 : num;
+}
+
 /** Validate petty cash manual entry and invoice settlement payloads before database mutation */
 export function validatePettyCashEntryPayload(params: {
   register_id: string | null | undefined;
@@ -149,4 +160,5 @@ export function validatePettyCashEntryPayload(params: {
   }
   return { valid: true };
 }
+
 

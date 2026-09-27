@@ -40,6 +40,16 @@ A bizonylatrögzítő ablakban a számlák kiválasztásához egy új, szegment�
 ### 3. Nyomtatási és PDF Export Integritás
 - A kinyomtatott vagy PDF-be exportált hivatalos pénztárjelentés fejléce a tételes bizonylatlista előtt egy dedikált összesítő táblázatot tartalmaz a nyitó, bevételezett, kiadott, forgalmi és záró egyenlegekkel, kielégítve a hatósági ellenőrzési követelményeket.
 
+### 4. Pénztárzárás Táblázat Lábléc & Záróegyenleg Egyeztető (2026-09-27)
+- **Állandó `TableFooter`:** A zárási dialógus alsó szegélyén megjelenő lábléc explicit számviteli egyeztetést ad a könyvelőnek:  
+  *Nyitó készpénzállomány + Időszaki pénzforgalom = Záró készpénzállomány*.
+- **PDF Export Zárótábla:** A generált záró PDF bizonylatlista után külön szekcióként záró egyeztető táblázat kerül kiírásra.
+
+### 5. Billentyűzet-Központú Villámgyors Rögzítés ('B', 'K', 'Enter')
+- **Irányváltás gombnyomás nélkül:** A könyvelő a `B` billentyűvel beállíthatja a Bevétel irányt, a `K` billentyűvel a Kiadás irányt, miközben a fókusz automatikusan a megfelelő beviteli mezőre vagy rögzítés gombra ugrik.
+- **`Enter` Mentés és Mezővédelem:** Az `Enter` lenyomásakor a rendszer lementi a tételt; ha az összeg vagy leírás hiányzik, azonnal a hiányzó mezőre fókuszál és toast üzenettel figyelmeztet, megakadályozva a félregépelt vagy üres bizonylatok rögzítését.
+- **Rugalmas Számformátumok:** A rendszer kezeli a szóközös ezres tagolású (`1 940 675`), valamint vesszős és pontozott tizedesű összegeket is (`parseCleanAmount`).
+
 ---
 
 ## 3. Kapcsolódó

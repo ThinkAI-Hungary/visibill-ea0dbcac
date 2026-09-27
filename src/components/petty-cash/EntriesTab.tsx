@@ -26,7 +26,7 @@ import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import type { PettyCashRegister, PettyCashEntry, OpenOutboundInvoice, SummaryRow } from './types';
-import { SOURCE_LABELS, SOURCE_COLORS, fmtAmount, fmtBalance, roundHuf, sanitizePartnerId, validatePettyCashEntryPayload } from './types';
+import { SOURCE_LABELS, SOURCE_COLORS, fmtAmount, fmtBalance, roundHuf, sanitizePartnerId, validatePettyCashEntryPayload, parseCleanAmount } from './types';
 import CashClosingDialog from './CashClosingDialog';
 import TransferDialog from './TransferDialog';
 import { getLocalizedRegisterName, getLocalizedEntryDescription } from '@/lib/pettyCashUtils';
@@ -1547,6 +1547,11 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
     enabled: !!selectedPartnerId && selectedPartnerId !== 'none' && !!companyId && open,
   });
 
+  // References for keyboard navigation and validation focus
+  const recordBtnRef = React.useRef<HTMLButtonElement>(null);
+  const descInputRef = React.useRef<HTMLInputElement>(null);
+  const amountInputRef = React.useRef<HTMLInputElement>(null);
+
   // Accounting policy rule for single payment cash limit
   const { value: singlePaymentLimitRule } = useCompanyAccountingRule(
     companyId,
@@ -1555,8 +1560,8 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
   );
   const singlePaymentLimit = Number(singlePaymentLimitRule?.amount) || 1000000;
 
-  // U5: Amount validation
-  const parsedAmount = parseFloat(form.amount) || 0;
+  // U5: Amount validation with robust Hungarian space/comma parsing
+  const parsedAmount = parseCleanAmount(form.amount);
   const databaseTotalExcludingCurrent = useMemo(() => {
     if (!editingEntry) return monthlyTotal;
     return Math.max(0, monthlyTotal - Math.abs(editingEntry.amount));
@@ -1574,9 +1579,16 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
     : null;
   const showRoundingHint = roundedPreview !== null && roundedPreview !== parsedAmount;
 
+  const selectTypeAndFocus = useCallback((isExpense: boolean) => {
+    setForm(f => ({ ...f, isExpense }));
+    setTimeout(() => {
+      recordBtnRef.current?.focus();
+    }, 40);
+  }, []);
+
   const save = useMutation({
     mutationFn: async () => {
-      const rawAmount = parseFloat(form.amount) || 0;
+      const rawAmount = parseCleanAmount(form.amount);
       const validation = validatePettyCashEntryPayload({
         register_id: form.register_id,
         amount: rawAmount,
@@ -1708,7 +1720,52 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
     if (onCancelEditing) onCancelEditing();
   };
 
-  // Keyboard shortcuts: B = Bevétel, K = Kiadás, Ctrl+Enter = Mentés
+  const handleAttemptSave = useCallback(() => {
+    if (save.isPending) return;
+
+    if (invoiceMode) {
+      if (selectedInvoiceIds.size === 0) {
+        toast({
+          title: t('common:error', 'Hiba'),
+          description: t('pettyCash:manual_entry_dialog.error_no_invoice_selected', 'Legalább egy számla kiválasztása kötelező!'),
+          variant: 'destructive',
+        });
+        return;
+      }
+    } else {
+      const amountNum = parseCleanAmount(form.amount);
+      if (!form.register_id?.trim()) {
+        toast({
+          title: t('common:error', 'Hiba'),
+          description: t('pettyCash:manual_entry_dialog.error_no_register', 'Pénztár kiválasztása kötelező!'),
+          variant: 'destructive',
+        });
+        return;
+      }
+      if (amountNum <= 0) {
+        toast({
+          title: t('common:error', 'Hiba'),
+          description: t('pettyCash:manual_entry_dialog.error_amount_required', 'Az összeg megadása kötelező!'),
+          variant: 'destructive',
+        });
+        amountInputRef.current?.focus();
+        return;
+      }
+      if (!form.description?.trim()) {
+        toast({
+          title: t('common:error', 'Hiba'),
+          description: t('pettyCash:manual_entry_dialog.error_description_required', 'A leírás megadása kötelező!'),
+          variant: 'destructive',
+        });
+        descInputRef.current?.focus();
+        return;
+      }
+    }
+
+    save.mutate();
+  }, [save, invoiceMode, selectedInvoiceIds.size, form.amount, form.description, form.register_id, t, toast]);
+
+  // Keyboard shortcuts: B = Bevétel, K = Kiadás, Enter = Mentés / Validáció
   useEffect(() => {
     if (!open) return;
 
@@ -1720,16 +1777,15 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
       const isBareK = !e.altKey && !e.ctrlKey && !e.metaKey && keyLower === 'k';
 
       const target = e.target as HTMLElement | null;
-      // Do not trigger bare B/K when typing inside free-text inputs (description, textareas)
-      const isFreeTextInput = target?.tagName === 'TEXTAREA' || 
-        (target?.tagName === 'INPUT' && (target as HTMLInputElement).type === 'text');
+      // Do not trigger bare B/K when typing inside free-text description inputs or textareas
+      const isFreeTextInput = target?.tagName === 'TEXTAREA' || target === descInputRef.current;
 
       if (isAltB || (isBareB && !isFreeTextInput)) {
         e.preventDefault();
-        setForm(f => ({ ...f, isExpense: false }));
+        selectTypeAndFocus(false);
       } else if (isAltK || (isBareK && !isFreeTextInput)) {
         e.preventDefault();
-        setForm(f => ({ ...f, isExpense: true }));
+        selectTypeAndFocus(true);
       } else if (e.key === 'Enter') {
         const isTextarea = target?.tagName === 'TEXTAREA';
         if (isTextarea && !e.ctrlKey && !e.metaKey) {
@@ -1739,17 +1795,13 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
           return; // Don't intercept cancel or delete buttons
         }
         e.preventDefault();
-        const rawAmount = parseFloat(form.amount) || 0;
-        const isValid = Boolean(form.register_id?.trim()) && registers.length > 0 && (invoiceMode ? selectedInvoiceIds.size > 0 : (rawAmount > 0 && !!form.description?.trim()));
-        if (isValid && !save.isPending) {
-          save.mutate();
-        }
+        handleAttemptSave();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, invoiceMode, selectedInvoiceIds.size, form.amount, form.description, form.register_id, registers.length, save]);
+  }, [open, selectTypeAndFocus, handleAttemptSave]);
 
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) handleClose(); }}>
@@ -2012,14 +2064,20 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
           </div>
           <div>
             <Label>{t('pettyCash:manual_entry_dialog.desc_label')}</Label>
-            <Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder={t('pettyCash:manual_entry_dialog.desc_placeholder')} />
+            <Input
+              ref={descInputRef}
+              value={form.description}
+              onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              placeholder={t('pettyCash:manual_entry_dialog.desc_placeholder')}
+            />
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-2">
               <Label>{t('pettyCash:manual_entry_dialog.amount_label')}</Label>
               <Input
-                type="number"
-                min="0"
+                ref={amountInputRef}
+                type="text"
+                inputMode="numeric"
                 value={form.amount}
                 onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
                 placeholder="0"
@@ -2050,7 +2108,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
             <div className="grid grid-cols-2 gap-2 p-1 bg-muted/60 rounded-lg border border-border/50">
               <button
                 type="button"
-                onClick={() => setForm(f => ({ ...f, isExpense: false }))}
+                onClick={() => selectTypeAndFocus(false)}
                 className={cn(
                   "flex items-center justify-center gap-2 py-2 px-3 rounded-md text-xs font-medium transition-all",
                   !form.isExpense
@@ -2066,7 +2124,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
               </button>
               <button
                 type="button"
-                onClick={() => setForm(f => ({ ...f, isExpense: true }))}
+                onClick={() => selectTypeAndFocus(true)}
                 className={cn(
                   "flex items-center justify-center gap-2 py-2 px-3 rounded-md text-xs font-medium transition-all",
                   form.isExpense
@@ -2163,13 +2221,9 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
           ) : <div />}
           <div className="flex flex-row-reverse gap-2">
             <Button
-              onClick={() => save.mutate()}
-              disabled={
-                save.isPending ||
-                !form.register_id?.trim() ||
-                registers.length === 0 ||
-                (invoiceMode ? selectedInvoiceIds.size === 0 : (!isAmountValid || !form.description.trim()))
-              }
+              ref={recordBtnRef}
+              onClick={handleAttemptSave}
+              disabled={save.isPending}
             >
               {save.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
               {editingEntry ? t('pettyCash:manual_entry_dialog.save_btn') : t('pettyCash:manual_entry_dialog.record_btn')}

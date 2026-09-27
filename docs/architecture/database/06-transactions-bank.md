@@ -69,7 +69,7 @@
 
 **FK:** `user_id` → `auth.users.id`
 
-**Indexek:** `idx_transaction_uploads_company_created`, `idx_transaction_uploads_detected_bank`, `idx_transaction_uploads_user_id`
+**Indexek:** `idx_transaction_uploads_company_created`, `idx_transaction_uploads_detected_bank`, `idx_transaction_uploads_user_id`, `idx_transaction_uploads_sha256` (partial B-Tree dedup)
 
 ---
 

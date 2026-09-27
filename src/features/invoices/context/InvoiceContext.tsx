@@ -664,13 +664,18 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
         invoice_number: inv.bizonylatsorszam || 'Nincs sorszám',
         direction: inv.invoice_direction === 'OUTBOUND' ? 'OUTBOUND' : 'INBOUND',
         partner_name: inv.invoice_direction === 'OUTBOUND' ? inv.vevo_nev || '–' : inv.elado_nev || '–',
+        partner_tax_number: inv.invoice_direction === 'OUTBOUND' ? (inv.vevo_vat_id || undefined) : (inv.elado_vat_id || undefined),
         issue_date: inv.kibocsatas_datuma || '',
         delivery_date: inv.teljesites_datuma || '',
+        due_date: (inv as any).fizetesi_hatarido || '',
+        payment_date: (inv as any).manual_payment_date || null,
+        transaction_id: (inv as any).transaction_id || null,
         payment_method: inv.fizetesi_mod || '',
         net_amount: inv.adoalap_osszesen || 0,
         gross_amount: inv.brutto_vegosszeg || 0,
         vat_amount: inv.afa_osszeg_osszesen || 0,
         currency: inv.penznem || 'HUF',
+        paid: (inv as any).fizetve ?? (inv.match_status === 'paid'),
         match_status: inv.match_status,
         paid_amount: inv.paid_amount,
         remaining_amount: inv.remaining_amount,
@@ -693,12 +698,15 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
         partner_tax_number: getPartnerTaxNumber(inv),
         issue_date: inv.invoice_issue_date || '',
         delivery_date: inv.invoice_delivery_date || '',
+        due_date: inv.payment_date || '',
+        payment_date: (inv as any).manual_payment_date || null,
+        transaction_id: inv.transaction_id || null,
         payment_method: inv.payment_method || '',
         net_amount: inv.invoice_net_amount || 0,
         gross_amount: inv.invoice_gross_amount || 0,
         vat_amount: inv.invoice_vat_amount || 0,
         currency: inv.currency || 'HUF',
-        paid: inv.paid,
+        paid: inv.paid ?? (inv.match_status === 'paid'),
         match_status: inv.match_status,
         paid_amount: inv.paid_amount,
         remaining_amount: inv.remaining_amount,
@@ -726,13 +734,68 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       exportLevel: ExportLevel = 'summary',
       sheetLayout: ExportSheetLayout = 'single'
     ) => {
-      const isBankOrCard = (pm: string) => {
-        const p = (pm || '').toLowerCase();
-        return p.includes('átutalás') || p.includes('transfer') || p.includes('bankkártya') || p.includes('card') || p.includes('kártya') || p.includes('utalás');
+      // 1. Batch resolve bank transactions for accurate payment date and tab routing
+      const directTxIds = selectedInvoices.map(i => i.transaction_id).filter(Boolean) as string[];
+      const invoiceIds = selectedInvoices.map(i => i.id);
+      const txDateMap = new Map<string, string>(); // invoice_id -> transaction_date
+
+      if (directTxIds.length > 0) {
+        const { data: txData } = await supabase
+          .from('transactions')
+          .select('id, transaction_date')
+          .in('id', directTxIds);
+        const idToDate = new Map((txData || []).map(t => [t.id, t.transaction_date]));
+        selectedInvoices.forEach(inv => {
+          if (inv.transaction_id && idToDate.has(inv.transaction_id)) {
+            txDateMap.set(inv.id, idToDate.get(inv.transaction_id)!);
+          }
+        });
+      }
+
+      if (invoiceIds.length > 0) {
+        const { data: multiMatches } = await supabase
+          .from('transaction_invoice_matches')
+          .select('invoice_id, transactions:transaction_id (transaction_date)')
+          .in('invoice_id', invoiceIds);
+        (multiMatches || []).forEach((mm: any) => {
+          if (mm.transactions?.transaction_date && !txDateMap.has(mm.invoice_id)) {
+            txDateMap.set(mm.invoice_id, mm.transactions.transaction_date);
+          }
+        });
+      }
+
+      const getPaymentDateDisplay = (inv: ExportableInvoice) => {
+        const txDate = txDateMap.get(inv.id);
+        if (txDate) return txDate;
+        if (inv.payment_date) return inv.payment_date;
+        if (inv.paid || inv.match_status === 'paid') {
+          return inv.due_date || 'Fizetve';
+        }
+        if (inv.match_status === 'partially_paid') {
+          return 'Részben fizetve';
+        }
+        return '—';
       };
 
-      const isCashOrPetty = (pm: string) => {
-        const p = (pm || '').toLowerCase();
+      const isBankOrCard = (inv: ExportableInvoice) => {
+        if (txDateMap.has(inv.id) || inv.transaction_id) return true;
+        const p = (inv.payment_method || '').toLowerCase();
+        return (
+          p.includes('átutalás') ||
+          p.includes('transfer') ||
+          p.includes('bankkártya') ||
+          p.includes('card') ||
+          p.includes('kártya') ||
+          p.includes('utalás') ||
+          p.includes('beszedés') ||
+          p.includes('sepa') ||
+          p.includes('direct debit') ||
+          p.includes('bank')
+        );
+      };
+
+      const isCashOrPetty = (inv: ExportableInvoice) => {
+        const p = (inv.payment_method || '').toLowerCase();
         return p.includes('készpénz') || p.includes('cash') || p.includes('kp') || p.includes('házipénztár') || p.includes('penztar');
       };
 
@@ -811,6 +874,8 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
           'Adószám',
           'Kibocsátás',
           'Teljesítés',
+          'Fizetési határidő',
+          'Fizetés dátuma',
           'Tétel sorszám',
           'Tétel megnevezése',
           'Mennyiség',
@@ -823,7 +888,6 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
           'Bruttó összeg (deviza)',
           'Kategória',
           'Projekt',
-          'Fizetve',
           'Beküldve',
         ];
 
@@ -840,6 +904,8 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
                 inv.partner_tax_number || '',
                 inv.issue_date,
                 inv.delivery_date,
+                inv.due_date || '—',
+                getPaymentDateDisplay(inv),
                 1,
                 'Főszámla összesítő (nincs tételes adat)',
                 1,
@@ -852,7 +918,6 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
                 inv.gross_amount,
                 inv.category_name || '',
                 inv.project_name || '',
-                inv.match_status === 'partially_paid' ? 'Részben fizetve' : (inv.paid ? 'Igen' : 'Nem'),
                 inv.submitted ? 'Igen' : 'Nem',
               ]);
             } else {
@@ -873,6 +938,8 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
                   inv.partner_tax_number || '',
                   inv.issue_date,
                   inv.delivery_date,
+                  inv.due_date || '—',
+                  getPaymentDateDisplay(inv),
                   idx + 1,
                   itemName,
                   qty,
@@ -885,7 +952,6 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
                   grossTotal,
                   inv.category_name || '',
                   inv.project_name || '',
-                  inv.match_status === 'partially_paid' ? 'Részben fizetve' : (inv.paid ? 'Igen' : 'Nem'),
                   inv.submitted ? 'Igen' : 'Nem',
                 ]);
               });
@@ -900,9 +966,9 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
         const filename = `teteles_kontirozo_${tabPrefix}_${safeCompanyName}_${dateStr}.${format}`;
 
         if (sheetLayout === 'by_payment_method' && format === 'xlsx') {
-          const bankInvoices = selectedInvoices.filter(i => isBankOrCard(i.payment_method || ''));
-          const cashInvoices = selectedInvoices.filter(i => isCashOrPetty(i.payment_method || ''));
-          const otherInvoices = selectedInvoices.filter(i => !isBankOrCard(i.payment_method || '') && !isCashOrPetty(i.payment_method || ''));
+          const bankInvoices = selectedInvoices.filter(i => isBankOrCard(i));
+          const cashInvoices = selectedInvoices.filter(i => !isBankOrCard(i) && isCashOrPetty(i));
+          const otherInvoices = selectedInvoices.filter(i => !isBankOrCard(i) && !isCashOrPetty(i));
 
           const tables = [
             {
@@ -965,13 +1031,14 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
         'Partner adószáma',
         'Kibocsátás kelte',
         'Teljesítés kelte',
+        'Fizetési határidő',
+        'Fizetés dátuma',
         'Pénznem',
         'Nettó összeg (deviza)',
         'ÁFA összeg (deviza)',
         'Bruttó összeg (deviza)',
         'Kategória',
         'Projekt',
-        'Fizetve',
         'Beküldve',
         'Forrás',
       ];
@@ -984,13 +1051,14 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
           inv.partner_tax_number || '',
           inv.issue_date,
           inv.delivery_date,
+          inv.due_date || '—',
+          getPaymentDateDisplay(inv),
           inv.currency,
           inv.net_amount,
           inv.vat_amount,
           inv.gross_amount,
           inv.category_name || '',
           inv.project_name || '',
-          inv.match_status === 'partially_paid' ? 'Részben fizetve' : (inv.paid ? 'Igen' : 'Nem'),
           inv.submitted ? 'Igen' : 'Nem',
           inv.source === 'nav' ? 'NAV Online' : 'Feltöltött bizonylat',
         ]);
@@ -1002,9 +1070,9 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       const filename = `${tabPrefix}_export_${safeCompanyName}_${dateStr}.${format}`;
 
       if (sheetLayout === 'by_payment_method' && format === 'xlsx') {
-        const bankInvoices = selectedInvoices.filter(i => isBankOrCard(i.payment_method || ''));
-        const cashInvoices = selectedInvoices.filter(i => isCashOrPetty(i.payment_method || ''));
-        const otherInvoices = selectedInvoices.filter(i => !isBankOrCard(i.payment_method || '') && !isCashOrPetty(i.payment_method || ''));
+        const bankInvoices = selectedInvoices.filter(i => isBankOrCard(i));
+        const cashInvoices = selectedInvoices.filter(i => !isBankOrCard(i) && isCashOrPetty(i));
+        const otherInvoices = selectedInvoices.filter(i => !isBankOrCard(i) && !isCashOrPetty(i));
 
         const tables = [
           {

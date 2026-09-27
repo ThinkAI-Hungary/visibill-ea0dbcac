@@ -127,6 +127,18 @@ Email webhook upload:
    - **Case 3b (Gyanús egyezés - azonos partner és összeg 30 napon belül, de eltérő sorszám):** Beszúrás `statusz = 'jovahagyasra_var'` státusszal és magyarázó `approval_note` figyelmeztetéssel (ADR A-084 könyvelői kapu).
 4. **Pre-push Teszt Védelem:** `test_bcommerce_duplicate_prevention.py` (13 egységteszt integrálva a `run_tests.py` futtatóba).
 
+### 2026-09-27: P4 Mailgun Webhook SHA-256 Tartalmi Deduplikáció és Szemét-Attachment Szűrés
+
+**Incidens / Tapasztalat:** A felhasználók által emailben továbbított számláknál gyakran ismétlődtek az azonos csatolmányok (pl. többször továbbküldött levelek, email aláírásban szereplő logók vagy technikai PDF-ek, mint az `image001.pdf`). Ezek a felesleges OCR és LLM hívások miatt nemkívánatos költséget generáltak és szemetelték a feltöltési listát.
+
+**Megoldás & Implementáció:**
+1. **Tartalmi SHA-256 Hash Kalkuláció:** A `process-mailgun-webhook` Edge Function mostantól kiszámítja a csatolmány bináris tartalmának SHA-256 lenyomatát (`file_hash`).
+2. **Részleges Egyedi Indexek (Migration: `20260927140000_add_sha256_upload_dedup_indexes.sql`):**
+   - Létrejött az `idx_invoice_uploads_company_file_hash` részleges index az `invoice_uploads` táblán.
+   - Ha egy adott céghez ugyanaz a fájltartalom (hash) már létezik feldolgozott (`processed`) vagy folyamatban lévő (`pending`, `processing`) státuszban, a rendszer azonnal kihagyja a duplikált mentést és PGMQ üzenetküldést.
+3. **Aláírás- és Szemét-Attachment Szűrés:** A webhook automatikusan eldobja a tipikus nem-számla csatolmányokat (pl. `image001.pdf`, `image001.png`, kicsi faviconok és tracking pixelek).
+4. **Költséghatékony Vision OCR:** Egyszerűbb, egyoldalas bizonylatokhoz a `gpt-4o-mini` Vision modell használata az OCR pontosság megtartása mellett drasztikusan csökkenti az API költségeket.
+
 ## Kapcsolódó
 - [A-004: PGMQ Queue](./A-004-pgmq-queue.md) — a dedup guard a `pgmq.send()` előtt fut
 - [A-007: LLM Strategy](./A-007-llm-strategy.md) — a felesleges hívások költségvonzata

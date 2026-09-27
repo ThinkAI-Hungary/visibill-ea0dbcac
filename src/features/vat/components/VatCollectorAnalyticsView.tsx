@@ -74,6 +74,167 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
 
   const [collapsedCodes, setCollapsedCodes] = useState<Set<string>>(new Set());
   const [isExporting, setIsExporting] = useState(false);
+  const [viewMode, setViewMode] = useState<'collector' | 'row'>('collector');
+
+  // Helper for friendly declaration row labels in Row View mode
+  const getDeclarationRowLabel = (row: string) => {
+    if (isCroatia) {
+      switch (row) {
+        case 'I.1': return 'I.1 Tuzemni prijenos porezne obveze';
+        case 'I.2': return 'I.2 Isporuke dobara unutar EU';
+        case 'I.4': return 'I.4 Obavljene usluge unutar EU';
+        case 'I.6': return 'I.6 Izvoz dobara';
+        case 'I.8': return 'I.8 Ostale oslobođene isporuke';
+        case 'II.1': return 'II.1 Isporuke po stopi 5%';
+        case 'II.2': return 'II.2 Isporuke po stopi 13%';
+        case 'II.3': return 'II.3 Isporuke po stopi 25%';
+        case 'II.4': return 'II.4 Tuzemni prijenos porezne obveze (građevina)';
+        case 'II.7': return 'II.7 Stjecanje dobara unutar EU';
+        case 'II.10': return 'II.10 Primljene usluge unutar EU';
+        case 'III.1': return 'III.1 Pretporez po stopi 5%';
+        case 'III.2': return 'III.2 Pretporez po stopi 13%';
+        case 'III.3': return 'III.3 Pretporez po stopi 25%';
+        case 'III.12': return 'III.12 Pretporez bez prava na odbitak';
+        case 'III.14': return 'III.14 Uvoz dobara';
+        default: return `Redak ${row}`;
+      }
+    }
+
+    switch (row) {
+      case '01': return '01. sor — Közösségen kívüli termékértékesítés / Alanyi mentes (AAM, Export)';
+      case '02': return '02. sor — Közösségen belüli adómentes termékértékesítés';
+      case '03': return '03. sor — Belföldi 5%-os értékesítés fizetendő adója';
+      case '04': return '04. sor — Belföldi fordított adózású értékesítés (FAD)';
+      case '05': return '05. sor — Belföldi 18%-os értékesítés fizetendő adója';
+      case '07': return '07. sor — Belföldi 27%-os értékesítés fizetendő adója';
+      case '08': return '08. sor — Közérdekű vagy speciális adómentes értékesítés (TAM)';
+      case '18': return '18. sor — Közösségi szolgáltatás igénybevétel fizetendő adója';
+      case '27': return '27. sor — 3. országbeli szolgáltatás fizetendő adója';
+      case '29': return '29. sor — Belföldi fordított adózás fizetendő adója (FAD)';
+      case '45': return '45. sor — Tájékoztató adat: Értékesítéshez kapott előleg adóalapja';
+      case '63': return '63. sor — Adólevonásra nem jogosító belföldi beszerzés (mentes)';
+      case '64': return '64. sor — Belföldi 5%-os beszerzés levonható adója';
+      case '65': return '65. sor — Belföldi 18%-os beszerzés levonható adója';
+      case '66': return '66. sor — Belföldi 27%-os beszerzés levonható adója';
+      case '67': return '67. sor — Import és fordított beszerzés levonható adója';
+      case '77': return '77. sor — Tárgyi eszköz beszerzés, beruházás levonható adója';
+      case '91': return '91. sor — ÁFA területi hatályán kívüli 3. országbeli szolgáltatások';
+      case '92': return '92. sor — ÁFA területi hatályán kívüli EU szolgáltatások (Áfa tv. 37. §)';
+      default: return `${row}. sor`;
+    }
+  };
+
+  const getItemDeclarationRows = (item: any): Array<{ row: string; base: number; vat: number; gross: number }> => {
+    const direction = item.direction || 'INBOUND';
+    const isOutbound = direction === 'OUTBOUND';
+    const net = Number(item.net_amount) || 0;
+    const vat = Number(item.vat_amount) || 0;
+    const gross = Number(item.gross_amount) || (net + vat);
+    const code = item.code || '';
+    const override = item.vat_row_override || null;
+    const isAdvance = item.is_advance || code === 'ELOLEG' || override === '45';
+    const isTangibleAsset = item.is_tangible_asset || code === 'TARGYESZKOZ' || override === '77';
+    const isFad = code === 'FAD' || override === '29' || override === '04';
+
+    const rows: Array<{ row: string; base: number; vat: number; gross: number }> = [];
+
+    if (override) {
+      if (override === '45') {
+        rows.push({ row: '07', base: net, vat: vat, gross: gross });
+        rows.push({ row: '45', base: net, vat: 0, gross: net });
+        return rows;
+      }
+      if (override === '77') {
+        rows.push({ row: '66', base: net, vat: vat, gross: gross });
+        rows.push({ row: '77', base: 0, vat: vat, gross: vat });
+        return rows;
+      }
+      if (override === '29') {
+        rows.push({ row: '29', base: net, vat: vat, gross: gross });
+        rows.push({ row: '66', base: net, vat: vat, gross: gross });
+        return rows;
+      }
+      rows.push({ row: override, base: net, vat: vat, gross: gross });
+      return rows;
+    }
+
+    if (isCroatia) {
+      if (isOutbound) {
+        if (code === '25') rows.push({ row: 'II.3', base: net, vat: vat, gross: gross });
+        else if (code === '13') rows.push({ row: 'II.2', base: net, vat: vat, gross: gross });
+        else if (code === '05') rows.push({ row: 'II.1', base: net, vat: vat, gross: gross });
+        else if (code === 'FAD') rows.push({ row: 'I.1', base: net, vat: 0, gross: net });
+        else if (code === 'EXP') rows.push({ row: 'I.6', base: net, vat: 0, gross: net });
+        else rows.push({ row: 'II.3', base: net, vat: vat, gross: gross });
+      } else {
+        if (code === '25') {
+          rows.push({ row: 'III.3', base: net, vat: vat, gross: gross });
+        } else if (code === '13') {
+          rows.push({ row: 'III.2', base: net, vat: vat, gross: gross });
+        } else if (code === '05') {
+          rows.push({ row: 'III.1', base: net, vat: vat, gross: gross });
+        } else if (code === 'TAM' || code === 'AAM') {
+          rows.push({ row: 'III.12', base: net, vat: 0, gross: net });
+        } else {
+          rows.push({ row: 'III.3', base: net, vat: vat, gross: gross });
+        }
+      }
+      return rows;
+    }
+
+    if (isOutbound) {
+      if (isFad) {
+        rows.push({ row: '04', base: net, vat: 0, gross: net });
+      } else if (code === '25') {
+        rows.push({ row: '07', base: net, vat: vat, gross: gross });
+        if (isAdvance) {
+          rows.push({ row: '45', base: net, vat: 0, gross: net });
+        }
+      } else if (code === '18') {
+        rows.push({ row: '05', base: net, vat: vat, gross: gross });
+      } else if (code === '05') {
+        rows.push({ row: '03', base: net, vat: vat, gross: gross });
+      } else if (code === 'AAM' || code === 'EXP') {
+        rows.push({ row: '01', base: net, vat: 0, gross: net });
+      } else if (code === 'TAM') {
+        rows.push({ row: '08', base: net, vat: 0, gross: net });
+      } else if (code === 'ÁHK' || code === 'AHK') {
+        rows.push({ row: '91', base: net, vat: 0, gross: net });
+      } else {
+        rows.push({ row: '07', base: net, vat: vat, gross: gross });
+        if (isAdvance) rows.push({ row: '45', base: net, vat: 0, gross: net });
+      }
+    } else {
+      // Inbound
+      if (isFad) {
+        const fadTax = vat > 0 ? vat : Math.round(net * 0.27);
+        rows.push({ row: '29', base: net, vat: fadTax, gross: net + fadTax });
+        rows.push({ row: '66', base: net, vat: fadTax, gross: net + fadTax });
+      } else if (code === '25') {
+        rows.push({ row: '66', base: net, vat: vat, gross: gross });
+        if (isTangibleAsset) {
+          rows.push({ row: '77', base: 0, vat: vat, gross: vat });
+        }
+      } else if (code === '18') {
+        rows.push({ row: '65', base: net, vat: vat, gross: gross });
+      } else if (code === '05') {
+        rows.push({ row: '64', base: net, vat: vat, gross: gross });
+      } else if (code === 'TAM' || code === 'AAM') {
+        rows.push({ row: '63', base: net, vat: 0, gross: net });
+      } else if (code === 'EUK_SZOLG') {
+        rows.push({ row: '18', base: net, vat: vat, gross: gross });
+        rows.push({ row: '67', base: net, vat: vat, gross: gross });
+      } else if (code === 'ATHK_SZOLG') {
+        rows.push({ row: '27', base: net, vat: vat, gross: gross });
+        rows.push({ row: '67', base: net, vat: vat, gross: gross });
+      } else {
+        rows.push({ row: '66', base: net, vat: vat, gross: gross });
+        if (isTangibleAsset) rows.push({ row: '77', base: 0, vat: vat, gross: vat });
+      }
+    }
+
+    return rows;
+  };
 
   // Filter states: Irány (Vevő/Szállító), ÁFA kód & Kontír
   const [selectedDirectionFilter, setSelectedDirectionFilter] = useState<'ALL' | 'OUTBOUND' | 'INBOUND'>('ALL');
@@ -114,14 +275,14 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
       const [navInvsRes, subInvsRes] = await Promise.all([
         supabase
           .from('nav_invoices')
-          .select('id, invoice_number, supplier_name, customer_name, invoice_delivery_date, invoice_issue_date, invoice_net_amount, invoice_vat_amount, invoice_direction')
+          .select('id, invoice_number, supplier_name, customer_name, invoice_delivery_date, invoice_issue_date, invoice_net_amount, invoice_vat_amount, invoice_direction, vat_row_override, vat_code_id, is_reverse_charge')
           .eq('company_id', selectedCompany.id)
           .or(`invoice_delivery_date.gte.${effectiveDateFrom},and(invoice_delivery_date.is.null,invoice_issue_date.gte.${effectiveDateFrom})`)
           .or(`invoice_delivery_date.lte.${effectiveDateTo},and(invoice_delivery_date.is.null,invoice_issue_date.lte.${effectiveDateTo})`)
           .limit(10000),
         supabase
           .from('invoices')
-          .select('id, bizonylatsorszam, elado_nev, vevo_nev, teljesites_datuma, kibocsatas_datuma, adoalap_osszesen, afa_osszeg_osszesen, partner_gl_number, vat_gl_number, invoice_direction, image_url, melleklet_url, invoice_uploads_id, attachments')
+          .select('id, bizonylatsorszam, elado_nev, vevo_nev, teljesites_datuma, kibocsatas_datuma, adoalap_osszesen, afa_osszeg_osszesen, partner_gl_number, vat_gl_number, invoice_direction, image_url, melleklet_url, invoice_uploads_id, attachments, vat_row_override, vat_code_id, invoice_type, adomentesseg_hivatkozas')
           .eq('company_id', selectedCompany.id)
           .or(`teljesites_datuma.gte.${effectiveDateFrom},and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${effectiveDateFrom})`)
           .or(`teljesites_datuma.lte.${effectiveDateTo},and(teljesites_datuma.is.null,kibocsatas_datuma.lte.${effectiveDateTo})`)
@@ -223,9 +384,16 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
         return false;
       };
 
-      const getCode = (rate: string | null, overrideCode?: string | null, desc?: string | null, vatAmount?: number | null) => {
+      const getCode = (
+        rate: string | null,
+        overrideCode?: string | null,
+        desc?: string | null,
+        vatAmount?: number | null,
+        isOutbound?: boolean,
+        adomentessegHivatkozas?: string | null
+      ) => {
         if (isDrsItem(desc, vatAmount, rate)) {
-          return 'ÁHK';
+          return isCroatia ? 'AHK' : 'ÁHK';
         }
 
         if (overrideCode && overrideCode.trim()) {
@@ -239,27 +407,47 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
           if (oc.includes('05') || oc.includes('_5_') || oc.endsWith('_5')) return '05';
           if (oc.includes('18')) return '18';
           if (oc.includes('TAM') || oc.includes('0_LEV') || oc.includes('MENTES')) return 'TAM';
-          if (oc.includes('AAM')) return 'AAM';
+          if (oc.includes('AAM') || oc.includes('ALANYI')) return 'AAM';
           if (oc.includes('EXP') || oc.includes('EXPORT')) return 'EXP';
           if (oc.includes('AHK') || oc.includes('ÁHK') || oc.includes('DRS') || oc.includes('KIVUL')) return isCroatia ? 'AHK' : 'ÁHK';
           return overrideCode.trim();
         }
 
+        const isVatZero = vatAmount === 0 || !vatAmount || Number(vatAmount) === 0;
+
         if (!rate) {
-          if (vatAmount === 0 || !vatAmount) return 'TAM';
+          if (isVatZero) {
+            const hivatkozas = (adomentessegHivatkozas || '').toLowerCase();
+            if (hivatkozas.includes('alanyi') || hivatkozas.includes('aam') || isOutbound) {
+              return 'AAM';
+            }
+            return 'TAM';
+          }
           return '25';
         }
+
         const u = rate.toUpperCase();
         if (u.includes('FAD') || u.includes('FORD') || u.includes('F.AFA') || u.includes('F_AFA') || u.includes('FAFA') || u.includes('REVERSE_CHARGE')) return 'FAD';
         if (rate === '0.27' || rate === '27' || rate === '27.0' || rate === '27.00' || rate === '27%' || rate === '0.25' || rate === '25' || rate === '25.0' || rate === '25.00' || rate === '25%') return '25';
         if (rate === '0.13' || rate === '13' || rate === '13.0' || rate === '13.00' || rate === '13%') return '13';
         if (rate === '0.05' || rate === '5' || rate === '5.0' || rate === '5.00' || rate === '5%') return '05';
         if (rate === '0.18' || rate === '18' || rate === '18.0' || rate === '18.00' || rate === '18%') return '18';
-        if (u.includes('AAM')) return 'AAM';
-        if (u.includes('TAM')) return 'TAM';
+        if (u.includes('AAM') || u.includes('ALANYI')) return 'AAM';
+        if (u.includes('TAM') || u.includes('TARGYI')) return 'TAM';
         if (u.includes('EXP')) return 'EXP';
         if (u.includes('AHK') || u.includes('ÁHK') || u.includes('ATK') || u.includes('KIVUL')) return isCroatia ? 'AHK' : 'ÁHK';
-        if (u === '0' || u === '0%' || u === '0.00' || u === 'MENTES') return 'TAM';
+        if (u === '0' || u === '0%' || u === '0.00' || u === 'MENTES') {
+          const hivatkozas = (adomentessegHivatkozas || '').toLowerCase();
+          if (hivatkozas.includes('alanyi') || hivatkozas.includes('aam') || isOutbound) {
+            return 'AAM';
+          }
+          return 'TAM';
+        }
+
+        if (isVatZero) {
+          return isOutbound ? 'AAM' : 'TAM';
+        }
+
         return '25';
       };
 
@@ -289,11 +477,33 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
           }
         }
 
-        const code = getCode(i.vat_rate, i.vat_code, i.line_description, i.vat_amount);
-        const glNum = resolveItemGl(i.gl_classifications);
+        const matchedSub = subByNumMap.get(normalizeInvNum(inv?.invoice_number));
+        const code = getCode(
+          i.vat_rate,
+          i.vat_code,
+          i.line_description,
+          i.vat_amount,
+          isOutbound,
+          matchedSub?.adomentesseg_hivatkozas
+        );
+        const glNum = resolveItemGl(i.gl_classifications) || resolveItemGl((inv as any)?.gl_classifications);
         const vatCode = i.vat_code || null;
-        const aggKey = `${i.nav_invoice_id}_${code}_${glNum || 'none'}_${vatCode || 'none'}`;
+        const override = (inv as any)?.vat_row_override || null;
+        const isAdvance =
+          (inv as any)?.invoice_type === 'ADVANCE' ||
+          (inv as any)?.invoice_type === 'elolegszamla' ||
+          override === '45' ||
+          i.vat_code === 'KIM_27_ELOLEG' ||
+          (i.vat_code && i.vat_code.includes('ELOLEG')) ||
+          (i.line_description && (i.line_description.toLowerCase().includes('előleg') || i.line_description.toLowerCase().includes('eloleg')));
+        const isTangibleAsset =
+          override === '77' ||
+          i.vat_code === 'BE_27_TARGYESZKOZ' ||
+          i.vat_code === 'BEJ_27_TARGYESZKOZ' ||
+          (i.vat_code && i.vat_code.includes('TARGYESZKOZ')) ||
+          (glNum && (glNum.startsWith('16') || glNum.startsWith('12') || glNum.startsWith('13') || glNum.startsWith('14')));
 
+        const aggKey = `${i.nav_invoice_id}_${code}_${glNum || 'none'}_${vatCode || 'none'}`;
         const dateStr = inv?.invoice_delivery_date || inv?.invoice_issue_date || '';
 
         const net = Number(i.net_amount) || 0;
@@ -307,8 +517,9 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
           existing.net_amount += net;
           existing.vat_amount += vat;
           existing.gross_amount += (net + vat);
+          existing.is_advance = existing.is_advance || isAdvance;
+          existing.is_tangible_asset = existing.is_tangible_asset || isTangibleAsset;
         } else {
-          const matchedSub = subByNumMap.get(normalizeInvNum(inv?.invoice_number));
           const resolvedCustomer = inv?.customer_name || matchedSub?.vevo_nev;
           const isCustomerFromSubmitted = isOutbound && !inv?.customer_name && !!matchedSub?.vevo_nev;
           const partnerName = isOutbound
@@ -331,6 +542,9 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
             net_amount: net,
             vat_amount: vat,
             gross_amount: net + vat,
+            is_advance: isAdvance,
+            is_tangible_asset: isTangibleAsset,
+            vat_row_override: override,
           });
         }
       });
@@ -349,30 +563,34 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
             }
           }
 
+          const matchedSub = subByNumMap.get(normalizeInvNum(inv?.invoice_number));
           const net = Number(inv.invoice_net_amount || 0);
           const vat = Number(inv.invoice_vat_amount || 0);
           if (net !== 0 || vat !== 0) {
             const isFad = (inv as any).is_reverse_charge || (inv as any).vat_row_override === '29' || (inv as any).vat_row_override === '04';
             const rate = net > 0 ? vat / net : 0;
-            const code = isFad ? 'FAD' : (Math.round(rate * 100) === 27 || Math.round(rate * 100) === 25 ? '25' : Math.round(rate * 100) === 18 ? '18' : Math.round(rate * 100) === 13 ? '13' : Math.round(rate * 100) === 5 ? '05' : vat === 0 ? 'TAM' : '25');
+            const code = isFad ? 'FAD' : (Math.round(rate * 100) === 27 || Math.round(rate * 100) === 25 ? '25' : Math.round(rate * 100) === 18 ? '18' : Math.round(rate * 100) === 13 ? '13' : Math.round(rate * 100) === 5 ? '05' : vat === 0 ? (isOutbound || matchedSub?.adomentesseg_hivatkozas?.includes('AAM') ? 'AAM' : 'TAM') : '25');
             let effectiveVat = vat;
             if (code === 'FAD' && !isOutbound && vat === 0 && net !== 0) {
               effectiveVat = Math.round(net * 0.27);
             }
             const dateStr = inv.invoice_delivery_date || inv.invoice_issue_date || '';
-            const matchedSub = subByNumMap.get(normalizeInvNum(inv?.invoice_number));
             const resolvedCustomer = inv?.customer_name || matchedSub?.vevo_nev;
             const isCustomerFromSubmitted = isOutbound && !inv?.customer_name && !!matchedSub?.vevo_nev;
             const partnerName = isOutbound
               ? (resolvedCustomer || t('accounting:vat_return.analytics_view.unknown_customer', 'Ismeretlen vevő'))
               : (inv?.supplier_name || matchedSub?.elado_nev || t('accounting:vat_return.analytics_view.unknown_supplier', 'Ismeretlen szállító'));
+            const override = (inv as any)?.vat_row_override || null;
+            const glNum = resolveItemGl((inv as any)?.gl_classifications);
+            const isAdvance = (inv as any)?.invoice_type === 'ADVANCE' || override === '45';
+            const isTangibleAsset = override === '77' || (glNum && (glNum.startsWith('16') || glNum.startsWith('12') || glNum.startsWith('13') || glNum.startsWith('14')));
 
             items.push({
               id: `nav_inv_${inv.id}`,
               invoice_id: inv.id,
               code,
               vat_code: null,
-              gl_number: null,
+              gl_number: glNum,
               direction,
               partner_gl_number: (inv as any)?.partner_gl_number || null,
               vat_gl_number: (inv as any)?.vat_gl_number || null,
@@ -383,6 +601,9 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
               net_amount: net,
               vat_amount: effectiveVat,
               gross_amount: net + effectiveVat,
+              is_advance: isAdvance,
+              is_tangible_asset: isTangibleAsset,
+              vat_row_override: override,
             });
           }
         }
@@ -402,11 +623,32 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
           }
         }
 
-        const code = getCode(i.vat_rate, i.vat_code, i.line_description, i.vat_amount);
-        const glNum = resolveItemGl(i.gl_classifications);
+        const code = getCode(
+          i.vat_rate,
+          i.vat_code,
+          i.line_description,
+          i.vat_amount,
+          isOutbound,
+          (inv as any)?.adomentesseg_hivatkozas
+        );
+        const glNum = resolveItemGl(i.gl_classifications) || resolveItemGl((inv as any)?.gl_classifications);
         const vatCode = i.vat_code || null;
-        const aggKey = `${i.invoice_id}_${code}_${glNum || 'none'}_${vatCode || 'none'}`;
+        const override = (inv as any)?.vat_row_override || null;
+        const isAdvance =
+          (inv as any)?.invoice_type === 'ADVANCE' ||
+          (inv as any)?.invoice_type === 'elolegszamla' ||
+          override === '45' ||
+          i.vat_code === 'KIM_27_ELOLEG' ||
+          (i.vat_code && i.vat_code.includes('ELOLEG')) ||
+          (i.line_description && (i.line_description.toLowerCase().includes('előleg') || i.line_description.toLowerCase().includes('eloleg')));
+        const isTangibleAsset =
+          override === '77' ||
+          i.vat_code === 'BE_27_TARGYESZKOZ' ||
+          i.vat_code === 'BEJ_27_TARGYESZKOZ' ||
+          (i.vat_code && i.vat_code.includes('TARGYESZKOZ')) ||
+          (glNum && (glNum.startsWith('16') || glNum.startsWith('12') || glNum.startsWith('13') || glNum.startsWith('14')));
 
+        const aggKey = `${i.invoice_id}_${code}_${glNum || 'none'}_${vatCode || 'none'}`;
         const dateStr = inv?.teljesites_datuma || inv?.kibocsatas_datuma || '';
 
         const net = Number(i.net_amount) || 0;
@@ -420,6 +662,8 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
           existing.net_amount += net;
           existing.vat_amount += vat;
           existing.gross_amount += (net + vat);
+          existing.is_advance = existing.is_advance || isAdvance;
+          existing.is_tangible_asset = existing.is_tangible_asset || isTangibleAsset;
         } else {
           const partnerName = isOutbound
             ? (inv?.vevo_nev || t('accounting:vat_return.analytics_view.unknown_customer', 'Ismeretlen vevő'))
@@ -441,6 +685,9 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
             net_amount: net,
             vat_amount: vat,
             gross_amount: net + vat,
+            is_advance: isAdvance,
+            is_tangible_asset: isTangibleAsset,
+            vat_row_override: override,
           });
         }
       });
@@ -462,7 +709,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
           if (net !== 0 || vat !== 0) {
             const isFad = (inv as any).is_reverse_charge || (inv as any).forditott_adozas || (inv as any).vat_row_override === '29' || (inv as any).vat_row_override === '04';
             const rate = net > 0 ? vat / net : 0;
-            const code = isFad ? 'FAD' : (Math.round(rate * 100) === 27 || Math.round(rate * 100) === 25 ? '25' : Math.round(rate * 100) === 18 ? '18' : Math.round(rate * 100) === 13 ? '13' : Math.round(rate * 100) === 5 ? '05' : vat === 0 ? 'TAM' : '25');
+            const code = isFad ? 'FAD' : (Math.round(rate * 100) === 27 || Math.round(rate * 100) === 25 ? '25' : Math.round(rate * 100) === 18 ? '18' : Math.round(rate * 100) === 13 ? '13' : Math.round(rate * 100) === 5 ? '05' : vat === 0 ? (isOutbound || inv.adomentesseg_hivatkozas?.includes('AAM') ? 'AAM' : 'TAM') : '25');
             let effectiveVat = vat;
             if (code === 'FAD' && !isOutbound && vat === 0 && net !== 0) {
               effectiveVat = Math.round(net * 0.27);
@@ -471,13 +718,17 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
             const partnerName = isOutbound
               ? (inv.vevo_nev || t('accounting:vat_return.analytics_view.unknown_customer', 'Ismeretlen vevő'))
               : (inv.elado_nev || t('accounting:vat_return.analytics_view.unknown_supplier', 'Ismeretlen szállító'));
+            const override = (inv as any)?.vat_row_override || null;
+            const glNum = resolveItemGl((inv as any)?.gl_classifications);
+            const isAdvance = (inv as any)?.invoice_type === 'ADVANCE' || (inv as any)?.invoice_type === 'elolegszamla' || override === '45';
+            const isTangibleAsset = override === '77' || (glNum && (glNum.startsWith('16') || glNum.startsWith('12') || glNum.startsWith('13') || glNum.startsWith('14')));
 
             items.push({
               id: `sub_inv_${inv.id}`,
               invoice_id: inv.id,
               code,
               vat_code: null,
-              gl_number: null,
+              gl_number: glNum,
               direction,
               partner_gl_number: (inv as any)?.partner_gl_number || null,
               vat_gl_number: (inv as any)?.vat_gl_number || null,
@@ -488,6 +739,9 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
               net_amount: net,
               vat_amount: effectiveVat,
               gross_amount: net + effectiveVat,
+              is_advance: isAdvance,
+              is_tangible_asset: isTangibleAsset,
+              vat_row_override: override,
             });
           }
         }
@@ -627,31 +881,70 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
       ? directionCounts.inbound
       : directionCounts.all;
 
-  // Group filtered items into VAT collector groups
+  // Group filtered items into VAT collector groups or NAV declaration row groups
   const groups = useMemo<VatCollectorGroup[]>(() => {
     const map = new Map<string, VatCollectorGroup>();
 
     filteredItems.forEach((item) => {
-      if (!map.has(item.code)) {
-        map.set(item.code, {
-          code: item.code,
-          label: getVatCodeLabel(item.code),
-          items: [],
-          total_net: 0,
-          total_vat: 0,
-          total_gross: 0,
+      if (viewMode === 'row') {
+        const declRows = getItemDeclarationRows(item);
+        declRows.forEach((dr) => {
+          const rowKey = dr.row;
+          if (!map.has(rowKey)) {
+            map.set(rowKey, {
+              code: rowKey,
+              label: getDeclarationRowLabel(rowKey),
+              items: [],
+              total_net: 0,
+              total_vat: 0,
+              total_gross: 0,
+            });
+          }
+          const grp = map.get(rowKey)!;
+          grp.items.push({
+            ...item,
+            declaration_row: dr.row,
+            net_amount: dr.base,
+            vat_amount: dr.vat,
+            gross_amount: dr.gross,
+          });
+          grp.total_net += dr.base;
+          grp.total_vat += dr.vat;
+          grp.total_gross += dr.gross;
         });
-      }
+      } else {
+        if (!map.has(item.code)) {
+          map.set(item.code, {
+            code: item.code,
+            label: getVatCodeLabel(item.code),
+            items: [],
+            total_net: 0,
+            total_vat: 0,
+            total_gross: 0,
+          });
+        }
 
-      const grp = map.get(item.code)!;
-      grp.items.push(item);
-      grp.total_net += item.net_amount;
-      grp.total_vat += item.vat_amount;
-      grp.total_gross += item.gross_amount;
+        const grp = map.get(item.code)!;
+        grp.items.push(item);
+        grp.total_net += item.net_amount;
+        grp.total_vat += item.vat_amount;
+        grp.total_gross += item.gross_amount;
+      }
     });
 
+    if (viewMode === 'row') {
+      return Array.from(map.values()).sort((a, b) => {
+        const numA = parseInt(a.code.replace(/\D/g, ''), 10);
+        const numB = parseInt(b.code.replace(/\D/g, ''), 10);
+        if (!isNaN(numA) && !isNaN(numB) && numA !== numB) {
+          return numA - numB;
+        }
+        return a.code.localeCompare(b.code, 'hu', { numeric: true });
+      });
+    }
+
     return Array.from(map.values()).sort((a, b) => a.code.localeCompare(b.code));
-  }, [filteredItems, t]);
+  }, [filteredItems, viewMode, t, isCroatia]);
 
   const handleDirectionChange = (newDir: 'ALL' | 'OUTBOUND' | 'INBOUND') => {
     if (selectedDirectionFilter === newDir) return;
@@ -686,11 +979,14 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
         groups,
         selectedCompany?.name || (isCroatia ? 'Tvrtka' : 'Cég'),
         `${effectiveDateFrom} – ${effectiveDateTo}`,
-        targetCurrency
+        targetCurrency,
+        viewMode
       );
       toast({
         title: t('accounting:vat_return.analytics_view.toast_export_success_title', 'Sikeres exportálás'),
-        description: t('accounting:vat_return.analytics_view.toast_export_success_desc', 'Az ÁFA Gyűjtőkódos Analitika Excel fájl elkészült.'),
+        description: viewMode === 'row'
+          ? (isCroatia ? 'Izvoz analitike po retcima PDV obrasca je dovršen.' : 'A 2665 Bevallási Sor Analitika Excel fájl elkészült.')
+          : t('accounting:vat_return.analytics_view.toast_export_success_desc', 'Az ÁFA Gyűjtőkódos Analitika Excel fájl elkészült.'),
       });
     } catch (e: any) {
       toast({ title: t('common:status.error', 'Export hiba'), description: e.message, variant: 'destructive' });
@@ -716,12 +1012,16 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
         <div>
           <CardTitle className="text-lg font-bold flex items-center gap-2">
             <Layers className="h-5 w-5 text-primary" />
-            {t('accounting:vat_return.analytics_view.card_title', 'ÁFA Gyűjtőkód Szerinti Analitikus Kimutatás')}
+            {viewMode === 'row'
+              ? (isCroatia ? 'Analitički Pregled po Retcima PDV Obrasca' : 'NAV 2665 Bevallási Sor Szerinti Analitikus Kimutatás')
+              : t('accounting:vat_return.analytics_view.card_title', 'ÁFA Gyűjtőkód Szerinti Analitikus Kimutatás')}
           </CardTitle>
           <CardDescription>
-            {t('accounting:vat_return.analytics_view.card_description', 'NAV adóhatósági ellenőrzéseknek megfelelő bizonylat-analitika ÁFA gyűjtőkódonként csoportosítva.')}
+            {viewMode === 'row'
+              ? (isCroatia ? 'Dokumenti grupirani prema službenim retcima obrasca PDV-a.' : 'A 2665-ös ÁFA bevallás hivatalos adóhatósági sorai (07, 45, 63, 66, 77 stb.) szerint rendezett bizonylat-analitika.')
+              : t('accounting:vat_return.analytics_view.card_description', 'NAV adóhatósági ellenőrzéseknek megfelelő bizonylat-analitika ÁFA gyűjtőkódonként csoportosítva.')}
           </CardDescription>
-          <div className="flex items-center gap-2 mt-2">
+          <div className="flex flex-wrap items-center gap-2 mt-2">
             <Badge variant="secondary" className="font-mono text-xs bg-muted/60 text-foreground border border-border">
               {t('accounting:vat_return.analytics_view.active_period', 'Szűrt időszak:')} {effectiveDateFrom} – {effectiveDateTo}
             </Badge>
@@ -739,7 +1039,48 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+        <div className="flex flex-wrap items-center gap-2 shrink-0 self-end sm:self-auto">
+          {/* Nézetmód választó: Gyűjtőkód vs Bevallási sor */}
+          <div className="inline-flex items-center p-0.5 bg-muted/60 rounded-lg border border-border/60 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                setViewMode('collector');
+                setCollapsedCodes(new Set());
+                setGroupPages({});
+              }}
+              className={cn(
+                "h-8 px-2.5 text-xs font-medium rounded-md transition-all cursor-pointer flex items-center gap-1.5",
+                viewMode === 'collector'
+                  ? "bg-background text-foreground shadow-xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Layers className="h-3.5 w-3.5" />
+              <span>Gyűjtőkód szerint</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setViewMode('row');
+                setCollapsedCodes(new Set());
+                setGroupPages({});
+              }}
+              className={cn(
+                "h-8 px-2.5 text-xs font-medium rounded-md transition-all cursor-pointer flex items-center gap-1.5",
+                viewMode === 'row'
+                  ? "bg-background text-primary shadow-xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <FileText className="h-3.5 w-3.5" />
+              <span>Bevallási sor szerint</span>
+              <span className="text-[10px] font-bold px-1 py-0 rounded bg-primary/10 text-primary border border-primary/20">
+                {isCroatia ? 'PDV' : '2665'}
+              </span>
+            </button>
+          </div>
+
           {/* Mindent kinyit / Mindent becsuk gomb */}
           {groups.length > 0 && (
             <Button
@@ -1079,10 +1420,16 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
               <TableHeader>
                 <TableRow className="bg-muted/40 hover:bg-muted/40">
                   <TableHead className="w-12 text-center">{t('accounting:vat_return.analytics_view.col_breakdown', 'Bontás')}</TableHead>
-                  <TableHead className="font-semibold">{t('accounting:vat_return.analytics_view.col_code_doc', 'ÁFA Gyűjtőkód / Bizonylatszám')}</TableHead>
+                  <TableHead className="font-semibold">
+                    {viewMode === 'row'
+                      ? (isCroatia ? 'Redak obrasca PDV / Broj dokumenta' : 'NAV 2665 Bevallási Sor / Bizonylatszám')
+                      : t('accounting:vat_return.analytics_view.col_code_doc', 'ÁFA Gyűjtőkód / Bizonylatszám')}
+                  </TableHead>
                   <TableHead className="font-semibold">{t('accounting:vat_return.analytics_view.col_partner_name', 'Partner neve')}</TableHead>
                   <TableHead className="text-center font-semibold">{t('accounting:vat_return.analytics_view.col_fulfillment_date', 'Teljesítés dátuma')}</TableHead>
-                  <TableHead className="text-center font-semibold w-24">{t('accounting:vat_return.analytics_view.col_vat_code', 'ÁFA kód')}</TableHead>
+                  <TableHead className="text-center font-semibold w-24">
+                    {viewMode === 'row' ? (isCroatia ? 'Redak' : 'Sor') : t('accounting:vat_return.analytics_view.col_vat_code', 'ÁFA kód')}
+                  </TableHead>
                   <TableHead className="text-center font-semibold w-28">{t('accounting:vat_return.analytics_view.col_gl_account', 'Kontír')}</TableHead>
                   <TableHead className="text-right font-semibold">{t('accounting:vat_return.analytics_view.col_net_amount', 'Nettó alap')}</TableHead>
                   <TableHead className="text-right font-semibold">{t('accounting:vat_return.analytics_view.col_vat_amount', 'ÁFA összeg')}</TableHead>
@@ -1114,14 +1461,18 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
                               variant="outline"
                               className={cn(
                                 "font-mono",
-                                group.code === 'ÁHK' || group.code === 'AHK'
-                                  ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
-                                  : "bg-primary/10 text-primary border-primary/30"
+                                viewMode === 'row'
+                                  ? "bg-primary/10 text-primary border-primary/30 font-semibold"
+                                  : (group.code === 'ÁHK' || group.code === 'AHK'
+                                      ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
+                                      : "bg-primary/10 text-primary border-primary/30")
                               )}
                             >
-                              {group.code === 'ÁHK' || group.code === 'AHK'
-                                ? (isCroatia ? 'AHK' : 'ÁHK')
-                                : t('accounting:vat_return.analytics_view.code_badge', { code: group.code, defaultValue: `Gyűjtőkód ${group.code}` })}
+                              {viewMode === 'row'
+                                ? (isCroatia ? `Redak ${group.code}` : `${group.code}. sor`)
+                                : (group.code === 'ÁHK' || group.code === 'AHK'
+                                    ? (isCroatia ? 'AHK' : 'ÁHK')
+                                    : t('accounting:vat_return.analytics_view.code_badge', { code: group.code, defaultValue: `Gyűjtőkód ${group.code}` }))}
                             </Badge>
                             <span>{group.label}</span>
                             <span className="text-xs text-muted-foreground font-normal">
@@ -1149,7 +1500,17 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
                             <TableCell className="text-center text-muted-foreground/50">•</TableCell>
                             <TableCell className="font-mono font-medium pl-6">
                               <div className="flex items-center gap-2">
-                                <span>{item.invoice_number}</span>
+                                <a
+                                  href={`/invoices?search=${encodeURIComponent(item.invoice_number)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="hover:underline hover:text-primary transition-colors flex items-center gap-1 cursor-pointer font-semibold"
+                                  onClick={(e) => e.stopPropagation()}
+                                  title="Ugrás a számlára"
+                                >
+                                  <span>{item.invoice_number}</span>
+                                  <ArrowUpRight className="h-3 w-3 opacity-60 text-muted-foreground hover:text-primary" />
+                                </a>
                                 {item.direction === 'OUTBOUND' ? (
                                   <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
                                     {t('accounting:vat_return.analytics_view.customer_badge', 'Vevő')}
@@ -1180,7 +1541,9 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
                             </TableCell>
                             <TableCell className="text-center">
                               <span className="inline-flex items-center px-2 py-0.5 rounded font-mono text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20">
-                                {item.vat_code || item.code}
+                                {viewMode === 'row' && item.declaration_row
+                                  ? (isCroatia ? `Redak ${item.declaration_row}` : `${item.declaration_row}. sor`)
+                                  : (item.vat_code || item.code)}
                               </span>
                             </TableCell>
                             <TableCell className="text-center">

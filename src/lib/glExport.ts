@@ -490,19 +490,29 @@ export const exportVatCollectorAnalyticsExcel = async (
   groups: VatCollectorGroup[],
   companyName: string = 'Vállalkozás',
   periodLabel: string = '',
-  currency: string = 'HUF'
+  currency: string = 'HUF',
+  titleMode: 'collector' | 'row' = 'collector'
 ) => {
   const { default: ExcelJS } = await import('exceljs');
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'Visibill';
   workbook.created = new Date();
 
-  const ws = workbook.addWorksheet(currency === 'EUR' ? 'PDV Analitika' : 'ÁFA Gyűjtőkód Analitika', {
+  const isRowMode = titleMode === 'row';
+  const defaultSheetName = currency === 'EUR' 
+    ? (isRowMode ? 'PDV Obrazac Analitika' : 'PDV Analitika')
+    : (isRowMode ? '2665 Bevallási Sor Analitika' : 'ÁFA Gyűjtőkód Analitika');
+
+  const ws = workbook.addWorksheet(defaultSheetName, {
     views: [{ showGridLines: false }],
   });
 
+  const firstColHeader = currency === 'EUR'
+    ? (isRowMode ? 'Redak obrasca PDV / Broj dokumenta' : 'Zbirni kod PDV-a / Broj dokumenta')
+    : (isRowMode ? 'NAV 2665 Bevallási Sor / Bizonylatszám' : 'ÁFA Gyűjtőkód / Bizonylatszám');
+
   ws.columns = [
-    { header: currency === 'EUR' ? 'Zbirni kod PDV-a / Broj dokumenta' : 'ÁFA Gyűjtőkód / Bizonylatszám', key: 'col1', width: 34 },
+    { header: firstColHeader, key: 'col1', width: 36 },
     { header: currency === 'EUR' ? 'Naziv partnera' : 'Partner neve', key: 'col2', width: 35 },
     { header: currency === 'EUR' ? 'Smjer (Kupac/Dobavljač)' : 'Irány (Vevő/Szállító)', key: 'col_dir', width: 22 },
     { header: currency === 'EUR' ? 'Datum isporuke' : 'Teljesítés dátuma', key: 'col3', width: 18 },
@@ -525,8 +535,12 @@ export const exportVatCollectorAnalyticsExcel = async (
   let grandGross = 0;
 
   for (const group of groups) {
+    const groupHeaderLabel = isRowMode
+      ? (group.label.includes('sor') ? group.label : `${group.code}. sor — ${group.label}`)
+      : `Gyűjtőkód: ${group.code} — ${group.label}`;
+
     const groupHeaderRow = ws.addRow({
-      col1: `Gyűjtőkód: ${group.code} — ${group.label}`,
+      col1: groupHeaderLabel,
       col2: '',
       col_dir: '',
       col3: '',
@@ -572,7 +586,9 @@ export const exportVatCollectorAnalyticsExcel = async (
 
   // Grand Total Row
   const totalRow = ws.addRow({
-    col1: currency === 'EUR' ? 'UKUPNO (PDV analitika)' : 'ÖSSZESEN (NAV ÁFA Analitika)',
+    col1: currency === 'EUR' 
+      ? (isRowMode ? 'UKUPNO (Obrazac PDV redci)' : 'UKUPNO (PDV analitika)')
+      : (isRowMode ? 'ÖSSZESEN (NAV 2665 Bevallási Sorok)' : 'ÖSSZESEN (NAV ÁFA Analitika)'),
     col2: '',
     col_dir: '',
     col3: '',
@@ -594,7 +610,8 @@ export const exportVatCollectorAnalyticsExcel = async (
   const url = URL.createObjectURL(blob);
 
   const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-  const filename = `AFA_Gyujtokodos_Analitika_${companyName.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.xlsx`;
+  const filenamePrefix = isRowMode ? 'AFA_Bevallasi_Sor_Analitika' : 'AFA_Gyujtokodos_Analitika';
+  const filename = `${filenamePrefix}_${companyName.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.xlsx`;
 
   const link = document.createElement('a');
   link.href = url;

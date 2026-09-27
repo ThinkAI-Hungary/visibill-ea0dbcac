@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -211,6 +211,20 @@ export default function CashClosingDialog({
       </tr>`;
     }).join('');
 
+    const tableFooterRows = currencySummary.map(([cur, s]) => {
+      return `<tr style="background:#f8fafc; font-weight:600; border-top:2px solid #cbd5e1;">
+        <td colspan="5" style="text-align:right;">${cur} — ${t('pettyCash:closing_dialog.pdf.summary.income', 'Bevétel (+)')} / ${t('pettyCash:closing_dialog.pdf.summary.expense', 'Kiadás (-)')} összesen:</td>
+        <td class="right green">${roundHuf(s.income, cur).toLocaleString(numLocale)}</td>
+        <td class="right red">${roundHuf(Math.abs(s.expense), cur).toLocaleString(numLocale)}</td>
+        <td class="right">${cur}</td>
+      </tr>
+      <tr style="background:#f1f5f9; font-weight:700; border-top:1px solid #cbd5e1;">
+        <td colspan="5" style="text-align:right;">${cur} — ${t('pettyCash:closing_dialog.opening_balance', 'Nyitó készpénzállomány')}: ${roundHuf(s.opening, cur).toLocaleString(numLocale)} ${cur} | ${t('pettyCash:closing_dialog.period_turnover', 'Időszaki forgalom')}: ${s.net >= 0 ? '+' : ''}${roundHuf(s.net, cur).toLocaleString(numLocale)} ${cur} | <strong>${t('pettyCash:closing_dialog.closing_balance', 'Záró készpénzállomány')}</strong>:</td>
+        <td colspan="2" class="right" style="font-size:12px; color:#1e293b; font-weight:800;">${roundHuf(s.closing, cur).toLocaleString(numLocale)}</td>
+        <td class="right"><strong>${cur}</strong></td>
+      </tr>`;
+    }).join('');
+
     const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>${t('pettyCash:closing_dialog.pdf.page_title', { register: registerName })}</title>
 <style>
@@ -259,7 +273,24 @@ export default function CashClosingDialog({
       <th class="right">${t('pettyCash:closing_dialog.pdf.table.currency')}</th>
     </tr></thead>
     <tbody>${rows}</tbody>
+    <tfoot>${tableFooterRows}</tfoot>
   </table>
+
+  <div class="summary" style="margin-top: 16px;">
+    <h2>📋 ${t('pettyCash:closing_dialog.pdf.closing_summary', 'Záró készpénzállomány levezetése (lista végén)')}</h2>
+    <table>
+      <thead><tr>
+        <th>${t('pettyCash:closing_dialog.pdf.summary.currency', 'Pénznem')}</th>
+        <th class="right">${t('pettyCash:closing_dialog.pdf.summary.opening', 'Nyitó készpénzállomány')}</th>
+        <th class="right">${t('pettyCash:closing_dialog.pdf.summary.items', 'Tételek')}</th>
+        <th class="right">${t('pettyCash:closing_dialog.pdf.summary.income', 'Bevétel (+)')}</th>
+        <th class="right">${t('pettyCash:closing_dialog.pdf.summary.expense', 'Kiadás (-)')}</th>
+        <th class="right">${t('pettyCash:closing_dialog.pdf.summary.net', 'Időszaki forgalom')}</th>
+        <th class="right" style="background:#eef2ff;">${t('pettyCash:closing_dialog.pdf.summary.closing', 'Záró készpénzállomány')}</th>
+      </tr></thead>
+      <tbody>${summaryRows}</tbody>
+    </table>
+  </div>
 </body></html>`;
 
     printWindow.document.write(html);
@@ -418,6 +449,28 @@ export default function CashClosingDialog({
                     </TableRow>
                   ))}
                 </TableBody>
+                <TableFooter className="bg-muted/70 font-semibold border-t-2 border-border">
+                  {currencySummary.map(([cur, s]) => (
+                    <TableRow key={cur} className="text-xs">
+                      <TableCell colSpan={2} className="font-bold text-foreground">
+                        {cur} {t('pettyCash:closing_dialog.footer_summary', 'Összesítés')}
+                      </TableCell>
+                      <TableCell colSpan={2} className="text-right text-muted-foreground text-[11px]">
+                        <span>{t('pettyCash:closing_dialog.opening_balance', 'Nyitó')}: <strong className="text-foreground">{fmtBalance(s.opening, cur)}</strong></span>
+                        <span className="mx-1.5">•</span>
+                        <span>{t('pettyCash:closing_dialog.period_turnover', 'Forgalom')}: <strong className={s.net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'}>{fmtAmount(s.net, cur)}</strong></span>
+                        <span className="mx-1.5">•</span>
+                        <span className="font-bold text-foreground">{t('pettyCash:closing_dialog.closing_balance', 'Záró')}:</span>
+                      </TableCell>
+                      <TableCell className={cn(
+                        'text-right font-bold text-sm tabular-nums',
+                        s.closing >= 0 ? 'text-foreground' : 'text-destructive'
+                      )}>
+                        {fmtBalance(s.closing, cur)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableFooter>
               </Table>
             </div>
           )}

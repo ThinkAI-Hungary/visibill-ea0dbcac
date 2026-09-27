@@ -610,11 +610,30 @@ export default function TransfersPage() {
 
       // 4. Map to TransferInvoice structures
       const manualTransfers: TransferInvoice[] = transferManual.map(inv => {
+        const norm = normalizeInvNum(inv.bizonylatsorszam);
+        const matchedNav = navByNumber.get(norm)?.[0];
+        const isSelfAsSeller = Boolean(
+          inv.elado_nev && selectedCompany?.name && 
+          inv.elado_nev.toLowerCase().trim().replace(/[^a-z0-9]/g, '') === selectedCompany.name.toLowerCase().trim().replace(/[^a-z0-9]/g, '')
+        );
+
+        const effectivePartnerName = isSelfAsSeller
+          ? (matchedNav?.supplier_name || (inv.vevo_nev && inv.vevo_nev !== selectedCompany.name ? inv.vevo_nev : inv.elado_nev) || 'Ismeretlen partner')
+          : (inv.elado_nev || 'Ismeretlen partner');
+
+        const effectiveTaxNumber = isSelfAsSeller
+          ? (matchedNav?.supplier_tax_number || inv.vevo_vat_id || inv.elado_vat_id)
+          : (inv.elado_vat_id || undefined);
+
         const resolvedAccount = inv.bankszamlaszam_iban || 
+          (effectiveTaxNumber ? bankAccountLookupMap[effectiveTaxNumber] : '') || 
+          (effectivePartnerName ? bankAccountLookupMap[effectivePartnerName.toLowerCase()] : '') || 
           (inv.elado_vat_id ? bankAccountLookupMap[inv.elado_vat_id] : '') || 
           (inv.elado_nev ? bankAccountLookupMap[inv.elado_nev.toLowerCase()] : '') || '';
 
-        const pRule = (inv.elado_vat_id ? partnerSkontoMap[inv.elado_vat_id] : null) ||
+        const pRule = (effectiveTaxNumber ? partnerSkontoMap[effectiveTaxNumber] : null) ||
+          (effectivePartnerName ? partnerSkontoMap[effectivePartnerName.toLowerCase().trim()] : null) ||
+          (inv.elado_vat_id ? partnerSkontoMap[inv.elado_vat_id] : null) ||
           (inv.elado_nev ? partnerSkontoMap[inv.elado_nev.toLowerCase().trim()] : null);
         const hasSkonto = Boolean(inv.has_skonto || pRule?.has_skonto);
         const skontoDays = (inv.has_skonto && inv.skonto_days) ? inv.skonto_days : (pRule?.skonto_days ?? 8);
@@ -634,8 +653,8 @@ export default function TransfersPage() {
           id: inv.id,
           source: 'manual',
           invoice_number: inv.bizonylatsorszam || '',
-          partner_name: inv.elado_nev || 'Ismeretlen partner',
-          partner_tax_number: inv.elado_vat_id || undefined,
+          partner_name: effectivePartnerName,
+          partner_tax_number: effectiveTaxNumber,
           issue_date: inv.kibocsatas_datuma || undefined,
           due_date: inv.fizetesi_hatarido
             ? new Date(inv.fizetesi_hatarido).toISOString().split('T')[0]

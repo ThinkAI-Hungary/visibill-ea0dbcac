@@ -1,7 +1,29 @@
 import { describe, it, expect } from 'vitest';
-import { sanitizePartnerId, validatePettyCashEntryPayload } from '@/components/petty-cash/types';
+import { sanitizePartnerId, validatePettyCashEntryPayload, parseCleanAmount } from '@/components/petty-cash/types';
 
 describe('Petty Cash Manual Entry Validation & Sanitization (Prove-It)', () => {
+  describe('parseCleanAmount', () => {
+    it('correctly parses plain numeric strings and numbers', () => {
+      expect(parseCleanAmount(15000)).toBe(15000);
+      expect(parseCleanAmount('15000')).toBe(15000);
+      expect(parseCleanAmount('0')).toBe(0);
+      expect(parseCleanAmount(null)).toBe(0);
+      expect(parseCleanAmount(undefined)).toBe(0);
+      expect(parseCleanAmount('')).toBe(0);
+    });
+
+    it('handles Hungarian thousand space separators', () => {
+      expect(parseCleanAmount('160 000')).toBe(160000);
+      expect(parseCleanAmount('1 940 675')).toBe(1940675);
+      expect(parseCleanAmount('  3 015 700  ')).toBe(3015700);
+    });
+
+    it('handles comma as decimal separator', () => {
+      expect(parseCleanAmount('123,45')).toBe(123.45);
+      expect(parseCleanAmount('1 234,56')).toBe(1234.56);
+    });
+  });
+
   describe('sanitizePartnerId', () => {
     it('returns null for "none", empty strings, whitespace, and falsy values', () => {
       expect(sanitizePartnerId('none')).toBeNull();

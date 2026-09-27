@@ -22,6 +22,9 @@ export interface ExportableInvoice {
   gross_amount: number;
   vat_amount: number;
   currency: string;
+  due_date?: string;
+  payment_date?: string | null;
+  transaction_id?: string | null;
   paid?: boolean;
   match_status?: string;
   paid_amount?: number | null;

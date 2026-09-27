@@ -131,7 +131,7 @@
 
 **FK:** `company_id` → `companies.id`
 
-**Indexek:** `idx_report_uploads_company`, `idx_report_uploads_company_created`, `idx_report_uploads_user`
+**Indexek:** `idx_report_uploads_company`, `idx_report_uploads_company_created`, `idx_report_uploads_user`, `idx_report_uploads_sha256` (partial B-Tree dedup)
 
 ---
 

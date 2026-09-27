@@ -252,13 +252,13 @@ export function VatReturnContainer() {
             ÁFA Tétellista
           </TabsTrigger>
 
-          {/* 7. Gyűjtőkódos Analitika */}
+          {/* 7. Gyűjtőkódos & Bevallási soros Analitika */}
           <TabsTrigger
             value="analytics"
             className="gap-1.5 text-xs py-2 px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg whitespace-nowrap"
           >
             <FileSpreadsheet className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-            Gyűjtőkódok
+            Gyűjtőkódok & Sorok
           </TabsTrigger>
 
           {/* 8. 26TFEJLH Turizmusfejlesztési hozzájárulás */}
