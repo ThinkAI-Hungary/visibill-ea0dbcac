@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-27  
-> **Összesen:** 125 döntés | ✅ Decided: 121 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 126 döntés | ✅ Decided: 122 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -128,6 +128,7 @@
 | P-119 | Törvényi ÁFA Nézetek, NAV OSA Rekonsziliáció és Fordított Adózás (FAD) UX | ✅ Decided | [P-119](./P-119-statutory-vat-views-upgrade-and-reverse-charge-ux.md) |
 | P-121 | ÁFA Bevallás és Analitika Számlakép Hatókör (Scope) Rádiógomb Választó UX | ✅ Decided | [P-121](./P-121-vat-image-scope-selector.md) |
 | P-125 | Társadalombiztosítási (TB) Bérszámfejtési Modul, Pre-Flight Ellenőrzés és Kilépő Igazolványok UX | ✅ Decided | [P-125](./P-125-tb-social-security-payroll-and-filing-ux.md) |
+| P-126 | NAV 2665 Hivatalos Nyomtatvány Digitális Replika UX („Semmit a kéznek, mindent a szemnek”) | ✅ Decided | [P-126](./P-126-nav-2665-official-tax-form-digital-replica-ux.md) |
 
 
 ## 🔍 Keresés

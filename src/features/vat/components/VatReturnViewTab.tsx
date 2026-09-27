@@ -625,6 +625,11 @@ export function VatReturnViewTab() {
             month={month}
             frequency={frequency}
             getVal={getVal}
+            onRecalculate={async () => {
+              await calculate.mutateAsync();
+            }}
+            isRecalculating={calculate.isPending}
+            mLines={mLines}
           />
         )
       ) : viewMode === 'steel' && !isCroatia ? (

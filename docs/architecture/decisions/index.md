@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-27  
-> **Összesen:** 181 döntés (168 egyedi döntési fájl) | ✅ Decided: 179 | ⛔ Superseded: 2
+> **Összesen:** 182 döntés (169 egyedi döntési fájl) | ✅ Decided: 180 | ⛔ Superseded: 2
 
 ---
 
@@ -212,6 +212,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-164 | Fejlesztési Tartalék és Tárgyi Eszközök Adatmodell, ÉCS Kalkuláció és API | ✅ Decided | [A-164](./A-164-development-reserve-fixed-assets-db-and-depreciation.md) |
 | A-165 | Kapcsolt Vállalkozások Adatmodell, Forgalmi Lekérdezések és Kontírozási Integráció | ✅ Decided | [A-165](./A-165-related-parties-schema-and-accounting-integration.md) |
 | A-166 | Magyar Társadalombiztosítási (TB) Adómotor, Minimális Járulékalap (Tbj. 27. §), Nyugdíj és 2608 M-lap Architektúra | ✅ Decided | [A-166](./A-166-tb-social-security-minimum-base-and-pensioner-payroll-engine.md) |
+| A-167 | NAV 2665 Hivatalos Nyomtatvány Digitális Replika Architektúra és Élő Adatkötés | ✅ Decided | [A-167](./A-167-nav-2665-official-tax-form-digital-replica.md) |
 
 ## 💳 Fizetés
 
