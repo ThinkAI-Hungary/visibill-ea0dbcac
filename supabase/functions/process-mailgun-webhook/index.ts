@@ -45,6 +45,75 @@ async function logError(supabase: any, entry: ErrorLogEntry): Promise<void> {
 const isUniqueViolation = (err: any): boolean =>
   err?.code === '23505' || err?.message?.includes('unique') || err?.message?.includes('duplicate key');
 
+// ── SHA-256 Content Deduplication Helpers ─────────────────────────────────────
+async function computeSha256(bytes: Uint8Array): Promise<string> {
+  const hashBuffer = await crypto.subtle.digest('SHA-256', bytes);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function isSha256Duplicate(
+  supabase: any,
+  companyId: string,
+  fileHash: string,
+  fileName?: string,
+  fileSize?: number,
+): Promise<boolean> {
+  if (!companyId || !fileHash) return false;
+  const tablesToCheck = ['invoice_uploads', 'transaction_uploads', 'report_uploads'];
+
+  // 1. Primary: check partial index on metadata->>'sha256' across upload tables
+  // Excludes failed records ('error', 'failed') so retry attempts and fallbacks are never blocked
+  for (const table of tablesToCheck) {
+    try {
+      const { data } = await supabase
+        .from(table)
+        .select('id, processing_status, upload_status')
+        .eq('company_id', companyId)
+        .eq('metadata->>sha256', fileHash)
+        .neq('processing_status', 'error')
+        .neq('upload_status', 'failed')
+        .limit(1);
+
+      if (data && data.length > 0) {
+        return true;
+      }
+    } catch (e) {
+      console.error(`[isSha256Duplicate] Error checking ${table} for sha256:`, e);
+    }
+  }
+
+  // 2. Secondary fallback: check exact file_name + file_size within last 14 days
+  // (covers older records ingested before SHA-256 hashing was enabled)
+  // Excludes failed records to preserve cross-pipeline fallback and manual retry
+  if (fileName && fileSize && fileSize > 0) {
+    const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+    for (const table of tablesToCheck) {
+      try {
+        const { data } = await supabase
+          .from(table)
+          .select('id, processing_status, upload_status')
+          .eq('company_id', companyId)
+          .eq('file_name', fileName)
+          .eq('file_size', fileSize)
+          .gt('created_at', cutoff)
+          .neq('processing_status', 'error')
+          .neq('upload_status', 'failed')
+          .limit(1);
+
+        if (data && data.length > 0) {
+          return true;
+        }
+      } catch (e) {
+        console.error(`[isSha256Duplicate] Error checking ${table} for fallback:`, e);
+      }
+    }
+  }
+
+  return false;
+}
+
+
 // Helper function to verify Mailgun webhook signature using Web Crypto API
 async function verifySignature(timestamp: string, token: string, signature: string, signingKey: string): Promise<boolean> {
   const encoder = new TextEncoder();
@@ -1093,9 +1162,10 @@ serve(async (req) => {
         return false;
       }
 
-      // Inline email images: image001.png, image002.jpg, etc. (Outlook / Exchange pattern)
-      if (/^image\d{1,4}\.(png|jpe?g|gif|bmp)$/.test(fileName)) {
-        console.log(`Skipping inline email image: ${fileName}`);
+      // Inline email images: image001.png, image002.jpg, etc. (Outlook / Exchange pattern) + junk image001.pdf
+      const baseName = fileName.split(/[/\\]/).pop() || fileName;
+      if (/^image\d{1,4}\.(png|jpe?g|gif|bmp)$/.test(baseName) || baseName === 'image001.pdf') {
+        console.log(`Skipping inline email image / junk PDF: ${fileName}`);
         return false;
       }
 
@@ -1413,6 +1483,13 @@ serve(async (req) => {
           const { classification, bankHint, reportType, reason } = classifyAttachment(ef.name, subject, senderDomain, sender);
           console.log(`Processing file: ${ef.name} → ${classification} (reason: ${reason})${bankHint ? ` (bank: ${bankHint})` : ''}${reportType ? ` (report: ${reportType})` : ''}${ef.extractedFromArchive ? ` [from: ${ef.extractedFromArchive}]` : ''}`);
 
+          // ── Content SHA-256 deduplication (cross-email & forwarded threads) ──
+          const fileHash = await computeSha256(ef.bytes);
+          if (await isSha256Duplicate(supabase, alias.company_id, fileHash, ef.name, ef.bytes.length)) {
+            console.log(`[IDEMPOTENCY-SHA256] Skipping duplicate attachment: ${ef.name} (SHA-256: ${fileHash.slice(0, 12)}...)`);
+            continue;
+          }
+
           // ── Mailgun retry idempotency check ──
           // If we have a Message-Id, check if this exact attachment from this
           // email has already been processed. Prevents duplicate processing
@@ -1546,6 +1623,7 @@ serve(async (req) => {
             company_name: alias.company_name,
             sender,
             subject,
+            sha256: fileHash,
             received_at: new Date().toISOString(),
             ...(messageId ? { mailgun_message_id: messageId } : {}),
             // Track archive source for debugging
@@ -1746,6 +1824,13 @@ serve(async (req) => {
                 
                 console.log(`[BODY-MIME-FALLBACK] Processing file: ${ef.name} → ${classification} (reason: ${reason})${bankHint ? ` (bank: ${bankHint})` : ''}${reportType ? ` (report: ${reportType})` : ''}${ef.extractedFromArchive ? ` [from: ${ef.extractedFromArchive}]` : ''}`);
 
+                // ── Content SHA-256 deduplication (cross-email & forwarded threads) ──
+                const fileHash = await computeSha256(ef.bytes);
+                if (await isSha256Duplicate(supabase, alias.company_id, fileHash, ef.name, ef.bytes.length)) {
+                  console.log(`[BODY-MIME-FALLBACK][IDEMPOTENCY-SHA256] Skipping duplicate attachment: ${ef.name} (SHA-256: ${fileHash.slice(0, 12)}...)`);
+                  continue;
+                }
+
                 // ── Idempotency check ──
                 if (messageId) {
                   let hasBeenProcessed = false;
@@ -1817,6 +1902,7 @@ serve(async (req) => {
                   company_name: alias.company_name,
                   sender,
                   subject,
+                  sha256: fileHash,
                   received_at: new Date().toISOString(),
                   ...(messageId ? { mailgun_message_id: messageId } : {}),
                   extracted_from_body_mime: true,
