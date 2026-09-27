@@ -2264,7 +2264,7 @@ export function InvoiceItemsDialog({
           } 
         }}
       >
-        <DialogContent className="w-[95vw] sm:max-w-3xl md:max-w-4xl max-h-[90vh] flex flex-col overflow-y-auto overflow-x-hidden">
+        <DialogContent className="w-[95vw] sm:w-[92vw] md:w-full max-w-5xl max-h-[90vh] flex flex-col overflow-y-auto overflow-x-hidden p-6">
           {(() => {
             const isNegative = glEditItem 
               ? ((glEditItem.net_amount ?? 0) < 0 || (glEditItem.gross_amount ?? 0) < 0)
@@ -2348,7 +2348,7 @@ export function InvoiceItemsDialog({
                     <div
                       onClick={() => setActiveEditSide('T')}
                       className={cn(
-                        "cursor-pointer rounded-lg p-3 transition-all border flex flex-col gap-1.5 select-none min-w-0",
+                        "cursor-pointer rounded-lg p-3 transition-all border flex flex-col gap-1.5 select-none min-w-0 overflow-hidden",
                         activeEditSide === 'T'
                           ? "bg-primary/10 border-primary ring-2 ring-primary/20 shadow-sm"
                           : "bg-background border-border hover:border-primary/50 hover:bg-background/80"
@@ -2406,7 +2406,7 @@ export function InvoiceItemsDialog({
                     <div
                       onClick={() => setActiveEditSide('K')}
                       className={cn(
-                        "cursor-pointer rounded-lg p-3 transition-all border flex flex-col gap-1.5 select-none min-w-0",
+                        "cursor-pointer rounded-lg p-3 transition-all border flex flex-col gap-1.5 select-none min-w-0 overflow-hidden",
                         activeEditSide === 'K'
                           ? "bg-primary/10 border-primary ring-2 ring-primary/20 shadow-sm"
                           : "bg-background border-border hover:border-primary/50 hover:bg-background/80"
@@ -2460,14 +2460,14 @@ export function InvoiceItemsDialog({
                   {/* If active side is ITEM CLASSIFICATION */}
                   {activeSideIsItem ? (
                     <div className="flex flex-col gap-2">
-                      <Command className="rounded-lg border shadow-sm w-full overflow-hidden h-[320px]" shouldFilter={false}>
+                      <Command className="rounded-lg border shadow-sm w-full overflow-hidden h-[340px]" shouldFilter={false}>
                         <CommandInput 
                           placeholder={t('invoices:dialogs.items.gl_search_placeholder')} 
                           value={glSearchQuery}
                           onValueChange={setGlSearchQuery}
                           className="w-full"
                         />
-                        <CommandList className="h-[270px] max-h-[270px] overflow-y-auto w-full overflow-x-hidden">
+                        <CommandList className="h-[290px] max-h-[290px] overflow-y-auto w-full overflow-x-hidden">
                           <CommandEmpty>{t('invoices:dialogs.items.gl_no_results')}</CommandEmpty>
                           <CommandGroup>
                             <CommandItem
@@ -2540,7 +2540,7 @@ export function InvoiceItemsDialog({
                           ];
 
                           return (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                               {partnerOptions.map(opt => {
                                 const isSelected = selectedPartnerGl === opt.code;
                                 return (
@@ -2597,7 +2597,7 @@ export function InvoiceItemsDialog({
                   )}
                 </div>
 
-                <DialogFooter className="pt-3 border-t border-border/40 gap-2 sm:gap-2 sm:space-x-0 flex flex-row justify-end">
+                <DialogFooter className="pt-3 border-t border-border/40 gap-2 sm:gap-2 sm:space-x-0 flex flex-row justify-end shrink-0">
                   <Button variant="outline" onClick={() => setGlEditOpen(false)} disabled={isGlSubmitting}>
                     {t('common:actions.cancel')}
                   </Button>
