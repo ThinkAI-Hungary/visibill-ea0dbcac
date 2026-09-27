@@ -597,6 +597,7 @@ export async function generatePettyCashDrafts(
   const glRevId = glAccounts?.find(g => g.gl_number === '9111')?.id || glAccounts?.find(g => g.gl_number.startsWith('91'))?.id || glCashId;
   const glExpId = glAccounts?.find(g => g.gl_number === '529')?.id || glAccounts?.find(g => g.gl_number.startsWith('52'))?.id || glCashId;
   const glPayrollId = glAccounts?.find(g => g.gl_number === '4711')?.id || glAccounts?.find(g => g.gl_number.startsWith('471'))?.id || glExpId;
+  const glDelegationId = glAccounts?.find(g => g.gl_number === '526')?.id || glAccounts?.find(g => g.gl_number.startsWith('526'))?.id;
 
   if (!glCashId) return 0;
 
@@ -635,6 +636,19 @@ export async function generatePettyCashDrafts(
     }
   }
 
+  // Fallback lookup: match invoices by document number if manual entry has invoice number in description
+  const { data: allCompanyInvoices } = await supabase
+    .from('invoices')
+    .select('id, invoice_direction, bizonylatsorszam')
+    .eq('company_id', companyId);
+
+  const invoiceByDocMap = new Map<string, any>();
+  for (const inv of (allCompanyInvoices || [])) {
+    if (inv.bizonylatsorszam) {
+      invoiceByDocMap.set(inv.bizonylatsorszam.trim().toUpperCase(), inv);
+    }
+  }
+
   let createdCount = 0;
   for (const pce of (rawPce || [])) {
     if (pce.source_type === 'opening_balance') continue;
@@ -647,7 +661,21 @@ export async function generatePettyCashDrafts(
     const amount = Math.abs(Number(pce.amount));
     const docId = `KP-${pce.id.substring(0, 8).toUpperCase()}`;
 
-    const linkedInv = pce.source_id ? invoiceMap[pce.source_id] : null;
+    let linkedInv = pce.source_id ? invoiceMap[pce.source_id] : null;
+    if (!linkedInv && pce.description) {
+      const descUpper = pce.description.trim().toUpperCase();
+      if (invoiceByDocMap.has(descUpper)) {
+        linkedInv = invoiceByDocMap.get(descUpper);
+      } else {
+        for (const [docNum, inv] of invoiceByDocMap.entries()) {
+          if (docNum.length >= 4 && descUpper.includes(docNum)) {
+            linkedInv = inv;
+            break;
+          }
+        }
+      }
+    }
+
     const partnerId = pce.partner_id || null;
     const isExpense = Number(pce.amount) < 0;
 
@@ -671,7 +699,12 @@ export async function generatePettyCashDrafts(
       line2 = { sequence_number: 2, gl_account_id: glRevId, dc_type: 'K', amount, description: desc };
     } else {
       const lower = (pce.description || '').toLowerCase();
-      const targetExpGl = (lower.includes('bér') || lower.includes('fizetés')) ? glPayrollId : glExpId;
+      let targetExpGl = glExpId;
+      if (lower.includes('bér') || lower.includes('fizetés')) {
+        targetExpGl = glPayrollId;
+      } else if (glDelegationId && (lower.includes('kiküldet') || lower.includes('kikuldet') || lower.includes('napidíj') || lower.includes('napidij'))) {
+        targetExpGl = glDelegationId;
+      }
       line1 = { sequence_number: 1, gl_account_id: targetExpGl, dc_type: 'T', amount, description: desc };
       line2 = { sequence_number: 2, gl_account_id: glCashId, dc_type: 'K', amount, description: desc };
     }

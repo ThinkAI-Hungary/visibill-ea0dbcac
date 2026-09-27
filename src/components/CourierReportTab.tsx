@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { RefreshCw, Search, X, CheckCircle2, AlertCircle, MinusCircle, Eye, FileText, Landmark, RotateCcw, Link2, Check, Sparkles, CalendarDays, ArrowUpDown, ArrowUp, ArrowDown, Trash2, TrendingUp, Loader2, Info } from 'lucide-react';
+import { RefreshCw, Search, X, CheckCircle2, AlertCircle, MinusCircle, Eye, FileText, Landmark, RotateCcw, Link2, Check, Sparkles, CalendarDays, ArrowUpDown, ArrowUp, ArrowDown, Trash2, TrendingUp, Loader2, Info, Download, ChevronDown, FileSpreadsheet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { getDateFnsLocale, formatDateLocale, formatCurrencyLocale } from '@/lib/locale/formatters';
@@ -26,6 +26,9 @@ import { toast } from '@/hooks/use-toast';
 import { ReportFilesDialog } from '@/components/courier/ReportFilesDialog';
 import { reportError } from '@/lib/errorReporter';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useDateRange } from '@/contexts/DateRangeContext';
+import { exportData } from '@/lib/exportCsv';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -693,6 +696,9 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
   const { t } = useTranslation(['transactions', 'common']);
   const statusConfig = getStatusConfig(t);
 
+  // Global date range fallback
+  const { dateFrom: globalDateFrom, dateTo: globalDateTo } = useDateRange();
+
   // Local date override (undefined = follow global date range)
   const [localDateFrom, setLocalDateFrom] = useState<Date | null | undefined>(undefined);
   const [localDateTo, setLocalDateTo] = useState<Date | null | undefined>(undefined);
@@ -771,6 +777,115 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
     const total = items.reduce((sum, r) => sum + (r.cod_amount ?? 0), 0);
     return { matched, partial, unmatched, total };
   }, [filteredReports]);
+
+  // Export handling
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportCourierReports = async (exportFormat: 'xlsx' | 'csv') => {
+    if (!selectedCompany?.id) return;
+    setIsExporting(true);
+    try {
+      let reportsToExport: CourierReport[] = [];
+
+      if (selectedIds.size > 0) {
+        reportsToExport = filteredReports.filter(r => selectedIds.has(r.id));
+      } else {
+        if (totalCount > filteredReports.length) {
+          let query = supabase
+            .from('courier_reports')
+            .select('*, matched_nav_invoice:nav_invoices(id, invoice_number, invoice_gross_amount, supplier_name, currency)')
+            .eq('company_id', selectedCompany.id)
+            .eq('report_type', reportType)
+            .neq('row_type', 'total')
+            .order(sortField, { ascending: sortDirection === 'asc' })
+            .order('created_at', { ascending: true });
+
+          const effDateFrom = localDateFrom !== undefined ? localDateFrom : globalDateFrom;
+          const effDateTo = localDateTo !== undefined ? localDateTo : globalDateTo;
+          const dateFromStr = effDateFrom ? format(effDateFrom, 'yyyy-MM-dd') : '';
+          const dateToStr = effDateTo ? format(effDateTo, 'yyyy-MM-dd') : '';
+
+          if (dateFromStr) query = query.gte('delivery_date', dateFromStr);
+          if (dateToStr) query = query.lte('delivery_date', dateToStr);
+          if (filters.matchStatus !== 'all') {
+            query = query.eq('match_status', filters.matchStatus);
+          }
+          if (filters.search) {
+            query = query.or(
+              `reference_number.ilike.%${filters.search}%,package_number.ilike.%${filters.search}%,recipient_name.ilike.%${filters.search}%,recipient_address.ilike.%${filters.search}%`
+            );
+          }
+          query = query.range(0, 49999);
+
+          const { data, error } = await query;
+          if (!error && data) {
+            let res = data as CourierReport[];
+            if (filters.amountMin) {
+              const min = parseFloat(filters.amountMin);
+              if (!isNaN(min)) res = res.filter(r => (r.cod_amount ?? 0) >= min);
+            }
+            if (filters.amountMax) {
+              const max = parseFloat(filters.amountMax);
+              if (!isNaN(max)) res = res.filter(r => (r.cod_amount ?? 0) <= max);
+            }
+            reportsToExport = res;
+          } else {
+            reportsToExport = filteredReports;
+          }
+        } else {
+          reportsToExport = filteredReports;
+        }
+      }
+
+      if (reportsToExport.length === 0) {
+        toast({ title: 'Nincs exportálható adat' });
+        return;
+      }
+
+      const headers = [
+        'Kézbesítés dátuma',
+        'Csomagszám / Bizonylat',
+        'Hivatkozási szám',
+        'Utánvét összege',
+        'Pénznem',
+        'Címzett / Partner',
+        'Cím',
+        'Tranzakció párosítva',
+        'NAV számlaszám',
+        'Státusz'
+      ];
+
+      const rows = reportsToExport.map(r => {
+        const statusLabel = r.match_status === 'full' ? 'Párosított'
+          : r.match_status === 'partial_trx' ? 'Tranzakció párosítva'
+          : r.match_status === 'partial_nav' ? 'NAV számla párosítva'
+          : r.match_status === 'total' ? 'Összesítő'
+          : 'Párosítatlan';
+
+        return [
+          r.delivery_date || '',
+          r.package_number || r.report_number || '',
+          r.reference_number || '',
+          r.cod_amount != null ? r.cod_amount : '',
+          'HUF',
+          r.recipient_name || '',
+          r.recipient_address || '',
+          r.matched_transaction_id ? 'Igen' : 'Nem',
+          r.matched_nav_invoice?.invoice_number || '',
+          statusLabel
+        ];
+      });
+
+      const filename = `${reportType}_riportok_${reportsToExport.length}db`;
+      await exportData(filename, headers, rows, exportFormat);
+      toast({ title: `${reportsToExport.length} riport sor exportálva (${exportFormat.toUpperCase()})` });
+    } catch (err: any) {
+      console.error('Courier export error:', err);
+      toast({ title: 'Export sikertelen', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   if (!selectedCompany) {
     return (
@@ -883,6 +998,25 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
                 </Tooltip>
               </TooltipProvider>
               <ReportFilesDialog reportType={reportType} />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs" disabled={isExporting || totalCount === 0}>
+                    {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                    <span>{t('common:export', 'Exportálás')}</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => handleExportCourierReports('xlsx')} className="gap-2 text-xs">
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                    <span>{t('transactions:export.excel', 'Excel export (.xlsx)')}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExportCourierReports('csv')} className="gap-2 text-xs">
+                    <FileText className="w-4 h-4 text-blue-600" />
+                    <span>{t('transactions:export.csv', 'CSV export (.csv)')}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </CardHeader>
@@ -1026,6 +1160,16 @@ const CourierReportTab = ({ reportType }: CourierReportTabProps) => {
               >
                 <Trash2 className="h-3.5 w-3.5 mr-1.5" />
                 {t('courier_tab.bulk.delete', 'Törlés')}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs bg-background/50 hover:bg-background"
+                onClick={() => handleExportCourierReports('xlsx')}
+                disabled={isExporting}
+              >
+                <Download className="h-3.5 w-3.5 mr-1.5" />
+                {t('common:export', 'Kijelöltek exportálása')}
               </Button>
               <Button
                 variant="ghost"

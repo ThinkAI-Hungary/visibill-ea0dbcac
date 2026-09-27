@@ -53,6 +53,7 @@ const BANK_CONFIG: Record<string, { label: string; fullName: string; color: stri
   mbh:        { label: 'MBH',        fullName: 'MBH Bank Nyrt.',              color: 'bg-indigo-500',  bgClass: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20' },
   mkb:        { label: 'MKB',        fullName: 'MKB Bank Nyrt.',              color: 'bg-teal-600',    bgClass: 'bg-teal-500/10 text-teal-700 dark:text-teal-400 border-teal-500/20' },
   oberbank:   { label: 'Oberbank',   fullName: 'Oberbank AG Magyarországi Fióktelep', color: 'bg-cyan-600',    bgClass: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/20' },
+  simplepay:  { label: 'SimplePay',  fullName: 'OTP Mobil Kft. (SimplePay)',          color: 'bg-emerald-600', bgClass: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20' },
 };
 
 const FIXED_TABS = ['general', 'gls', 'mpl', 'mixpack'] as const;
@@ -123,7 +124,8 @@ const TransactionsPage = () => {
 
   const openDataExportDialog = useCallback(async (
     format: 'csv' | 'xlsx' | 'pdf' = 'xlsx',
-    preSelectedIds?: string[]
+    preSelectedIds?: string[],
+    customTxs?: Transaction[]
   ) => {
     setDataExportFormat(format);
     if (preSelectedIds && preSelectedIds.length > 0) {
@@ -135,8 +137,8 @@ const TransactionsPage = () => {
     setIsPreparingExport(true);
     setDataExportDialogOpen(true);
     try {
-      let txList = filteredTransactions;
-      if (totalCount > filteredTransactions.length) {
+      let txList = customTxs || filteredTransactions;
+      if (!customTxs && totalCount > filteredTransactions.length) {
         txList = await fetchAllFilteredTransactions();
       }
 
@@ -151,7 +153,7 @@ const TransactionsPage = () => {
       setExportableTransactions(enriched);
     } catch (err) {
       console.error('Failed to prepare transactions for export:', err);
-      setExportableTransactions(filteredTransactions.map(tx => ({ ...tx })));
+      setExportableTransactions((customTxs || filteredTransactions).map(tx => ({ ...tx })));
     } finally {
       setIsPreparingExport(false);
     }
@@ -1053,6 +1055,9 @@ const TransactionsPage = () => {
                   dateFromStr={dateFromStr}
                   dateToStr={dateToStr}
                   onOpenDetails={handleOpenDetails}
+                  onExport={(format, bankTxs) => openDataExportDialog(format, undefined, bankTxs)}
+                  uploadBankMap={uploadBankMap}
+                  bankConfig={BANK_CONFIG}
                 />
               </TabsContent>
             );
@@ -1087,7 +1092,7 @@ const TransactionsPage = () => {
 // ── Bank Transaction Tab (U1 + U2 + F3) ──
 // Fetches and displays transactions for a specific detected bank with KPI cards and balance tracking
 
-function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFromStr, dateToStr, onOpenDetails }: {
+function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFromStr, dateToStr, onOpenDetails, onExport, uploadBankMap, bankConfig }: {
   bankKey: string;
   bankLabel: string;
   uploadIds: string[];
@@ -1095,6 +1100,9 @@ function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFrom
   dateFromStr: string;
   dateToStr: string;
   onOpenDetails: (tx: Transaction) => void;
+  onExport?: (format: 'xlsx' | 'csv' | 'pdf', txs: Transaction[]) => void;
+  uploadBankMap?: Record<string, string>;
+  bankConfig?: Record<string, { label: string; fullName?: string; bgClass: string }>;
 }) {
   const { t, i18n } = useTranslation(['transactions', 'common']);
   const isHr = i18n.language === 'hr';
@@ -1217,6 +1225,39 @@ function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFrom
     );
   }
 
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportClick = async (format: 'xlsx' | 'csv' | 'pdf') => {
+    if (!onExport) return;
+    setIsExporting(true);
+    try {
+      let txsToExport = transactions;
+      if (totalCount > transactions.length) {
+        let query = supabase
+          .from('transactions')
+          .select('*')
+          .eq('company_id', companyId)
+          .in('upload_id', uploadIds)
+          .order('transaction_date', { ascending: false });
+
+        if (dateFromStr) query = query.gte('transaction_date', dateFromStr);
+        if (dateToStr) query = query.lte('transaction_date', dateToStr);
+        query = query.range(0, 49999);
+
+        const { data, error } = await query;
+        if (!error && data) {
+          txsToExport = data as unknown as Transaction[];
+        }
+      }
+      onExport(format, txsToExport);
+    } catch (err) {
+      console.error('Error fetching all bank txs for export:', err);
+      onExport(format, transactions);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* U1: KPI Summary Cards */}
@@ -1265,9 +1306,37 @@ function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFrom
                 </CardDescription>
               </div>
             </div>
-            <Badge variant="outline" className={cn("text-xs px-2 py-1", bgClass)}>
-              {bankLabel}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className={cn("text-xs px-2 py-1", bgClass)}>
+                {bankLabel}
+              </Badge>
+              {onExport && totalCount > 0 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs" disabled={isExporting}>
+                      {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                      <span>{t('common:export', 'Exportálás')}</span>
+                      <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem onClick={() => handleExportClick('xlsx')} className="gap-2 text-xs">
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>{t('transactions:export.excel', 'Excel export (.xlsx)')}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExportClick('csv')} className="gap-2 text-xs">
+                      <FileText className="w-3.5 h-3.5 text-blue-600" />
+                      <span>{t('transactions:export.csv', 'CSV export (.csv)')}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => handleExportClick('pdf')} className="gap-2 text-xs">
+                      <FileDown className="w-3.5 h-3.5 text-rose-600" />
+                      <span>{t('transactions:export.pdf', 'Nyomtatási nézet / PDF')}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -1279,6 +1348,12 @@ function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFrom
             onClearFilters={() => {}}
             onSort={() => {}}
             onOpenDetails={onOpenDetails}
+            uploadBankMap={uploadBankMap}
+            bankConfig={bankConfig}
+            onBulkExport={onExport ? (ids, format) => {
+              const selected = transactions.filter(t => ids.includes(t.id));
+              onExport(format, selected);
+            } : undefined}
           />
           {totalCount > pageSize && (
             <UnifiedPagination

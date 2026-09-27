@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-09-27  
-> **Összesen:** 183 döntés (170 egyedi döntési fájl) | ✅ Decided: 181 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-09-28  
+> **Összesen:** 184 döntés (171 egyedi döntési fájl) | ✅ Decided: 182 | ⛔ Superseded: 2
 
 ---
 
@@ -214,6 +214,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-166 | Magyar Társadalombiztosítási (TB) Adómotor, Minimális Járulékalap (Tbj. 27. §), Nyugdíj és 2608 M-lap Architektúra | ✅ Decided | [A-166](./A-166-tb-social-security-minimum-base-and-pensioner-payroll-engine.md) |
 | A-167 | NAV 2665 Hivatalos Nyomtatvány Digitális Replika Architektúra és Élő Adatkötés | ✅ Decided | [A-167](./A-167-nav-2665-official-tax-form-digital-replica.md) |
 | A-168 | Számla Export Banki Tranzakció Feloldás, Skontó-Dátum Architektúra és Intelligens Fül-Válogatás | ✅ Decided | [A-168](./A-168-invoice-export-transaction-resolution-and-skonto-dates.md) |
+| A-169 | B2C Kimenő Számlák NAV Anonimizáció-Feloldása, Bizonylat Normalizálás és Automatikus Jóváhagyási Trigger Lánc | ✅ Decided | [A-169](./A-169-b2c-nav-anonymization-and-submitted-invoice-sync.md) |
 
 ## 💳 Fizetés
 

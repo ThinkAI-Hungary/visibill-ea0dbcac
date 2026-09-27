@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-09-27  
-> **Összesen:** 127 döntés | ✅ Decided: 123 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Utoljára frissítve:** 2026-09-28  
+> **Összesen:** 129 döntés | ✅ Decided: 125 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -58,6 +58,7 @@
 | P-018 | Manuális párosítás felülírás + ML tanulás + deviza-tudatos | ✅ Decided | [P-018](./P-018-manual-matching.md) |
 | P-090 | Banki Tranzakciós Fájlok és Kivonatok Kezelő Dialógus (TransactionFilesDialog) UX | ✅ Decided | [P-090](./P-090-transaction-uploaded-files-management-dialog-ux.md) |
 | P-104 | Tranzakció jutalék és számlaszám exportálása | ✅ Decided | [P-104](./P-104-transaction-fee-and-invoice-number-export-ux.md) |
+| P-129 | Futárriportok és Banki Tranzakciók Teljes Időszaki Exportálása és Szűrt Letöltése UX | ✅ Decided | [P-129](./P-129-courier-and-bank-transactions-full-period-export-ux.md) |
 
 ## 📒 Főkönyv & Riportok
 
@@ -228,3 +229,4 @@
 | P-117 | Főkönyvi Kivonat Számlánkénti Összevonás és 4-Oszlopos Export UX | ✅ Decided | [P-117](./P-117-general-ledger-invoice-grouping-and-4col-export-ux.md) |
 | P-120 | Főkönyvi Bizonylatmegnyitó és NAV OSA Tételes Nézet UX | ✅ Decided | [P-120](./P-120-general-ledger-invoice-document-preview-and-osa-fallback-ux.md) |
 | P-122 | Főkönyv Felhasználói Élmény (UX), Letisztult Könyvelői Ergonómia és Zsúfoltság-Megszüntetés | ✅ Decided | [P-122](./P-122-general-ledger-ui-ux-restructuring-and-clutter-reduction.md) |
+| P-128 | Könyvelési Naplók Tömeges Kontírozása és Vizuális T/K Kontíroszlop UX | ✅ Decided | [P-128](./P-128-journals-bulk-gl-reassignment-and-tk-column-ux.md) |

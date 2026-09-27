@@ -253,7 +253,10 @@ export function isNavAndSubmittedInvoiceMatch(
   const navNum = normalizeInvoiceNumber(navInvoice.invoice_number);
   const subNum = normalizeInvoiceNumber(submittedInvoice.bizonylatsorszam);
 
-  if (!navNum || !subNum || navNum !== subNum) {
+  const cleanNum = (s: string) => s.replace(/[^A-Z0-9]/g, '').replace(/^(SZA|SZL|SZLA|DIJ)/, '');
+  const numMatches = navNum === subNum || (cleanNum(navNum).length >= 4 && cleanNum(navNum) === cleanNum(subNum));
+
+  if (!navNum || !subNum || !numMatches) {
     return false;
   }
 

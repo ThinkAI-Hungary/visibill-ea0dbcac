@@ -451,6 +451,10 @@ export default function TransfersPage() {
 
       // ── ADVANCED PAIRING & STATUS SYNC LOGIC ──
       const normalizeInvNum = (num: string) => (num || '').replace(/[^A-Za-z0-9]/g, '').toLowerCase();
+      const stripDocPrefix = (num: string) => {
+        const norm = normalizeInvNum(num);
+        return norm.replace(/^(sza|szl|szla|dij)/, '');
+      };
 
       const matchedInvoiceIds = new Set<string>();
       const submittedIdToTransactionsMap = new Map<string, any[]>();
@@ -470,8 +474,13 @@ export default function TransfersPage() {
         manualById.set(inv.id, inv);
         if (inv.bizonylatsorszam) {
           const norm = normalizeInvNum(inv.bizonylatsorszam);
+          const stripped = stripDocPrefix(inv.bizonylatsorszam);
           if (!manualByNumber.has(norm)) manualByNumber.set(norm, []);
           manualByNumber.get(norm)!.push(inv);
+          if (stripped && stripped.length >= 4 && stripped !== norm) {
+            if (!manualByNumber.has(stripped)) manualByNumber.set(stripped, []);
+            manualByNumber.get(stripped)!.push(inv);
+          }
         }
       });
 
@@ -479,8 +488,13 @@ export default function TransfersPage() {
       (historicNavInvoices || []).forEach(inv => {
         if (inv.invoice_number) {
           const norm = normalizeInvNum(inv.invoice_number);
+          const stripped = stripDocPrefix(inv.invoice_number);
           if (!navByNumber.has(norm)) navByNumber.set(norm, []);
           navByNumber.get(norm)!.push(inv);
+          if (stripped && stripped.length >= 4 && stripped !== norm) {
+            if (!navByNumber.has(stripped)) navByNumber.set(stripped, []);
+            navByNumber.get(stripped)!.push(inv);
+          }
         }
       });
 
@@ -772,8 +786,11 @@ export default function TransfersPage() {
 
       combinedTransfers.forEach(inv => {
         const norm = normalizeInvNum(inv.invoice_number);
-        if (!seenInvoiceNumbers.has(norm)) {
+        const stripped = stripDocPrefix(inv.invoice_number);
+        const hasStripped = Boolean(stripped && stripped.length >= 4 && seenInvoiceNumbers.has(stripped));
+        if (!seenInvoiceNumbers.has(norm) && !hasStripped) {
           seenInvoiceNumbers.add(norm);
+          if (stripped && stripped.length >= 4) seenInvoiceNumbers.add(stripped);
           deduplicatedTransfers.push(inv);
         }
       });
