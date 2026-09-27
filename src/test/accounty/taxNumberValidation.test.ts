@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateHungarianTaxNumber } from '../../pages/VatReturnPage';
+import { validateHungarianTaxNumber } from '@/features/vat';
 
 describe('Hungarian Tax Number Validation', () => {
   it('should validate valid Hungarian tax numbers (e.g., EURODIFFERENT Kft)', () => {

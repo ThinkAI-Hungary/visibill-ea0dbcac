@@ -40,7 +40,9 @@ export function useVatReturnData() {
   const [year, setYearState] = useState(initialYear);
   const [month, setMonthState] = useState(initialMonth);
   const [frequency, setFrequency] = useState<VatFrequency>('H');
-  const [viewMode, setViewMode] = useState<'calculator' | 'nav65' | 'steel'>('calculator');
+  const [searchParams] = useSearchParams();
+  const initialViewMode = searchParams.get('view') === 'nav65' || searchParams.get('view') === 'replica' ? 'nav65' : 'calculator';
+  const [viewMode, setViewMode] = useState<'calculator' | 'nav65' | 'steel'>(initialViewMode);
 
   const setYear = useCallback((newYear: number) => {
     setYearState(newYear);
@@ -94,7 +96,6 @@ export function useVatReturnData() {
   const editTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   // URL scope for VAT calculations
-  const [searchParams] = useSearchParams();
   const urlScope = searchParams.get('vat_scope');
   const vatScope: VatScope = urlScope === 'with_image' ? 'with_image' : 'all';
 

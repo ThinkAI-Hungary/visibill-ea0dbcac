@@ -121,6 +121,7 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
     setExpandedInvoice,
     expandedFormRow,
     setExpandedFormRow,
+    setViewMode,
   } = vatData;
 
   const { isCroatia } = useCompanyJurisdiction(selectedCompany);
@@ -619,9 +620,30 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
       {/* A-Lap Table */}
       {!vatReturn ? (
         <Card className="border-border/60">
-          <CardContent className="p-8 text-center text-muted-foreground">
-            <FileSpreadsheet className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <CardContent className="p-8 text-center text-muted-foreground space-y-3">
+            <FileSpreadsheet className="w-12 h-12 mx-auto mb-2 opacity-30 text-primary" />
             <p className="text-sm">Nyomd meg a „Számítás" gombot a bevallás generálásához</p>
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <Button
+                size="sm"
+                onClick={() => calculate.mutate()}
+                disabled={calculate.isPending}
+                className="gap-1.5"
+              >
+                {calculate.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calculator className="w-4 h-4" />}
+                <span>Számítás futtatása</span>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setViewMode('nav65')}
+                className="gap-1.5 border-blue-500/40 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 font-medium"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-blue-500" />
+                <span>{isCroatia ? 'Obrazac PDV replika megtekintése' : 'NAV 65 nyomtatvány replika megtekintése'}</span>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ) : (

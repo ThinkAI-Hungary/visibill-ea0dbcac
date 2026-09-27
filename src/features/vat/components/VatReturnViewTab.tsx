@@ -257,37 +257,35 @@ export function VatReturnViewTab() {
         </div>
 
         {/* Center: View Switcher (Kalkulátor & Elemzés vs. NAV 65 Nyomtatvány replika) */}
-        {vatReturn && (
-          <div className="flex bg-muted/60 border border-border/70 rounded-lg p-0.5 shadow-inner">
-            <button
-              type="button"
-              onClick={() => setViewMode('calculator')}
-              className={cn(
-                'px-3.5 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5',
-                viewMode === 'calculator'
-                  ? 'bg-background shadow-sm text-foreground font-bold'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              <Calculator className="w-3.5 h-3.5 text-primary" />
-              <span>{t('accounting:vat_return.subtabs.calculator', 'Kalkulátor & Elemzés')}</span>
-            </button>
+        <div className="flex bg-muted/60 border border-border/70 rounded-lg p-0.5 shadow-inner">
+          <button
+            type="button"
+            onClick={() => setViewMode('calculator')}
+            className={cn(
+              'px-3.5 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5',
+              viewMode === 'calculator'
+                ? 'bg-background shadow-sm text-foreground font-bold'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <Calculator className="w-3.5 h-3.5 text-primary" />
+            <span>{t('accounting:vat_return.subtabs.calculator', 'Kalkulátor & Elemzés')}</span>
+          </button>
 
-            <button
-              type="button"
-              onClick={() => setViewMode('nav65')}
-              className={cn(
-                'px-3.5 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5',
-                viewMode === 'nav65'
-                  ? 'bg-background shadow-sm text-foreground font-bold'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-blue-500" />
-              <span>{isCroatia ? 'Obrazac PDV replika' : t('accounting:vat_return.subtabs.replica', 'NAV 65 Nyomtatvány')}</span>
-            </button>
-          </div>
-        )}
+          <button
+            type="button"
+            onClick={() => setViewMode('nav65')}
+            className={cn(
+              'px-3.5 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5',
+              viewMode === 'nav65'
+                ? 'bg-background shadow-sm text-blue-600 dark:text-blue-400 font-bold'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-blue-500" />
+            <span>{isCroatia ? 'Obrazac PDV replika' : 'NAV 65 nyomtatvány replika'}</span>
+          </button>
+        </div>
 
         {/* Right: Status & Actions */}
         <div className="flex flex-wrap items-center gap-2 justify-end">
@@ -427,6 +425,29 @@ export function VatReturnViewTab() {
             </div>
           )}
 
+          {/* NAV 65 Nyomtatvány Replika Button */}
+          <Button
+            type="button"
+            variant={viewMode === 'nav65' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode(viewMode === 'nav65' ? 'calculator' : 'nav65')}
+            className={cn(
+              'h-9 gap-1.5 text-xs font-semibold shadow-sm transition-all',
+              viewMode === 'nav65'
+                ? 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600'
+                : 'border-blue-500/40 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40'
+            )}
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <span>
+              {viewMode === 'nav65'
+                ? 'Vissza a kalkulátorhoz'
+                : isCroatia
+                ? 'Obrazac PDV replika'
+                : 'NAV 65 nyomtatvány replika'}
+            </span>
+          </Button>
+
           {/* Export Dropdown */}
           <div className="border-l pl-2 border-border/60">
             <DropdownMenu>
@@ -438,6 +459,10 @@ export function VatReturnViewTab() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setViewMode('nav65')}>
+                  <FileSpreadsheet className="w-4 h-4 mr-2 text-blue-500" />
+                  <span>{isCroatia ? 'Obrazac PDV replika megnyitása' : 'NAV 65 nyomtatvány replika megnyitása'}</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => {
                     if (!vatReturn || !selectedCompany) return;
