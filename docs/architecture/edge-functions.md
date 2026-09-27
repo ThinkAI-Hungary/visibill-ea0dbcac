@@ -1,7 +1,7 @@
 # Supabase Edge Functions Katalógus
 
-> **Utoljára frissítve:** 2026-09-25  
-> **Összesen:** 65 Deno Edge Function + `_shared/` közös modulok | **Runtime:** Deno (TypeScript) | **Platform:** Supabase Cloud
+> **Utoljára frissítve:** 2026-09-27  
+> **Összesen:** 66 Deno Edge Function + `_shared/` közös modulok | **Runtime:** Deno (TypeScript) | **Platform:** Supabase Cloud
 
 Ez a dokumentáció az eaisybill-prod rendszer összes Supabase Edge Function-jének hivatalos, autoritatív katalógusa. Részletezi az egyes funkciók célját, jogosultsági modelljét (`verify_jwt`), meghívási kontextusát (Frontend, pg_cron, Webhook, Postgres Trigger) és környezeti változóit.
 A funkciók forráskódja a [`supabase/functions/`](../../supabase/functions/) könyvtárban található. A technikai architektúra döntést az [A-005: Edge Functions a Serverless Logikához](./decisions/A-005-edge-functions.md), az adatbázis sémát a [database-schema.md](./database-schema.md), az eljárásokat pedig az [rpc-catalog.md](./rpc-catalog.md) írja le.
@@ -27,7 +27,7 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 4. [⚡ Queue & Export Generálás (2 db)](#4-queue--export-generálás)
 5. [🔐 Auth & Felhasználókezelés (4 db)](#5-auth--felhasználókezelés)
 6. [🔑 NAV Hitelesítő Adatok (2 db)](#6-nav-hitelesítő-adatok)
-7. [📱 eaisyBooks / Accounty Modul (15 db)](#7-eaisybooks--accounty-modul)
+7. [📱 eaisyBooks / Accounty Modul (16 db)](#7-eaisybooks--accounty-modul)
 8. [🔗 Nylas Email Integráció (2 db)](#8-nylas-email-integráció)
 9. [🛠️ Management, Üzemeltetés & AI Segédek (9 db)](#9-management,-üzemeltetés--ai-segédek)
 10. [🔌 Külső Integrációk & API (1 db)](#10-külső-integrációk--api)
@@ -123,7 +123,7 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 
 ---
 
-## 7. 📱 eaisyBooks / Accounty Modul (15 db)
+## 7. 📱 eaisyBooks / Accounty Modul (16 db)
 
 > Könyvelőirodai ERP funkciók: automatikus hiánydetektálás, határidők, XML bevallásgenerálás, Web Push és AI asszisztens.
 
@@ -144,6 +144,7 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 | [`send-accounty-digest`](../../supabase/functions/send-accounty-digest/index.ts) | ❌ Nyilvános / Belső | pg_cron (óránkénti vizsgálat) | `RESEND_API_KEY, SUPABASE_URL` | Napi/heti összesítő értesítő email (Digest) kiküldése könyvelőknek, elkerülve az értesítés-dömpinget (A-034). |
 | [`validate-partner-code`](../../supabase/functions/validate-partner-code/index.ts) | ❌ Nyilvános / Belső | Frontend (JoinCompanyAsAccountantPage) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Könyvelői meghívó kód (share_token) ellenőrzése és cégadatok megjelenítése regisztráció előtt. |
 | [`join-company-as-accountant`](../../supabase/functions/join-company-as-accountant/index.ts) | ❌ Nyilvános / Belső | Frontend (JoinCompanyAsAccountantPage) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Könyvelő-ügyfél összerendelés létrehozása az `accounty_assignments` táblában és hozzáférés biztosítása. |
+| [`process-accounting-policy`](../../supabase/functions/process-accounting-policy/index.ts) | ✅ Kötelező | Frontend (useAccountingPolicy) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GEMINI_API_KEY` | Számviteli politika dokumentumok (PDF/szöveg) feldolgozása Gemini AI-val, leírási szabályok, maradványérték és értékhatárok automatikus kinyerése. |
 
 ---
 

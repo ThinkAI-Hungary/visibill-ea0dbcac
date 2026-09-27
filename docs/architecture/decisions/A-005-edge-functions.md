@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2025-09  
-**Utoljára frissítve:** 2026-09-17
+**Utoljára frissítve:** 2026-09-27
 
 ## Context
 
@@ -10,9 +10,9 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 ## Decision
 
-**Supabase Edge Functions** (Deno runtime) — **65 deployed function** + `_shared/` közös kód.
+**Supabase Edge Functions** (Deno runtime) — **66 deployed function** + `_shared/` közös kód.
 
-> 📖 **Teljes, részletes katalógus:** Mind a 65 Edge Function részletes specifikációját, környezeti változóit és hívó rétegeit az autoritatív [Supabase Edge Functions Katalógus](../edge-functions.md) tartalmazza.
+> 📖 **Teljes, részletes katalógus:** Mind a 66 Edge Function részletes specifikációját, környezeti változóit és hívó rétegeit az autoritatív [Supabase Edge Functions Katalógus](../edge-functions.md) tartalmazza.
 
 **Közös kód:** `_shared/` mappa:
 - `_shared/nav/` — Központi NAV Online Számla v3 protokoll motor (`NavClient`), titkosítás (SHA-512, SHA3-512), XML borítéképítők/parszolók, és adatbázis szinkronizáció (`NavIngestionService`).
@@ -21,7 +21,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 ---
 
-### Teljes Edge Function Katalógus (65 db)
+### Teljes Edge Function Katalógus (66 db)
 
 #### 🏛️ NAV Integráció (9 db)
 
@@ -104,6 +104,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | `send-accounty-digest` | ❌ | Napi/heti Digest email kiküldése a könyvelőknek (óránkénti cron). |
 | `validate-partner-code` | ❌ | Meghívó kód (share_token) read-only validáció — cég adatok visszaadása |
 | `join-company-as-accountant` | ❌ | Meghívó kód → `accounty_assignments` INSERT (könyvelő hozzárendelés) |
+| `process-accounting-policy` | ✅ | Számviteli politika dokumentumok (PDF/szöveg) feldolgozása Gemini AI-val, leírási szabályok és értékhatárok kinyerése |
 
 #### 🔗 Nylas Email Integráció (2 db)
 

@@ -33,7 +33,7 @@ A Visibill egy három rétegű rendszer:
 │  ├─────────────────────────────────────────┤ │
 │  │  Storage (számla képek, PDF-ek)         │ │
 │  ├─────────────────────────────────────────┤ │
-│  │  Edge Functions (59 Deno function)      │ │
+│  │  Edge Functions (66 Deno function)      │ │
 │  │   • NAV sync (_shared/nav), email       │ │
 │  │   • MNB árfolyam letöltés (SOAP API)    │ │
 │  │   • CORS, auth validation               │ │
@@ -148,9 +148,9 @@ Dashboard: FxDifferencesSection (KPI kártyák + bar chart + tételszintű tábl
 |-----------|----------|
 | [database-schema.md](./database-schema.md) | **Teljes adatbázis séma áttekintés: 180 alkalmazás-tábla, 22 funkcionális csoport, sorszámok, RLS** |
 | [rpc-catalog.md](./rpc-catalog.md) | **PostgreSQL RPC és tárolt eljárás katalógus: 132 hívható RPC + 72 trigger függvény** |
-| [edge-functions.md](./edge-functions.md) | **Supabase Edge Functions master katalógus: 59 Deno szervermentes funkció és API integráció** |
+| [edge-functions.md](./edge-functions.md) | **Supabase Edge Functions master katalógus: 66 Deno szervermentes funkció és API integráció** |
 | [eaisybooks-architecture.md](./eaisybooks-architecture.md) | **eaisyBooks (Accounty) master architektúra dokumentáció: dual-mode router, RBAC, modulok** |
-| [decisions/index.md](./decisions/index.md) | 21 architekturális döntés (ADR-ek, köztük A-102) |
+| [decisions/index.md](./decisions/index.md) | 178 architekturális döntés (ADR-ek, köztük A-163) |
 | [frontend-tech-stack.md](./frontend-tech-stack.md) | Frontend tech stack, build, provider hierarchy |
 | [frontend-state-management.md](./frontend-state-management.md) | React Context, React Query, Realtime invalidáció |
 | [frontend-auth-onboarding.md](./frontend-auth-onboarding.md) | Auth flow, session management, onboarding |

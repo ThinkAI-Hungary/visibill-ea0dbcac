@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-27  
-> **Összesen:** 178 döntés (171 egyedi döntési fájl) | ✅ Decided: 176 | ⛔ Superseded: 2
+> **Összesen:** 178 döntés (165 egyedi döntési fájl) | ✅ Decided: 176 | ⛔ Superseded: 2
 
 ---
 
@@ -30,7 +30,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | A-004 | PGMQ mint aszinkron queue | ✅ Decided | [A-004](./A-004-pgmq-queue.md) |
-| A-005 | Edge Functions (Deno) — 65 function teljes katalógus | ✅ Decided | [A-005](./A-005-edge-functions.md) |
+| A-005 | Edge Functions (Deno) — 66 function teljes katalógus | ✅ Decided | [A-005](./A-005-edge-functions.md) |
 | A-023 | Upload Dedup Védelem (DB Trigger + Frontend Mutex) | ✅ Decided | [A-023](./A-023-upload-dedup-protection.md) |
 | A-074 | PDF Export Edge Function Invocation Resilience | ✅ Decided | [A-074](./A-074-pdf-export-edge-function-invocation-resilience.md) |
 | A-130 | NAV Auto-Sync Hajnali Időablakos Terheléselosztás (Dawn Load Staggering) | ✅ Decided | [A-130](./A-130-nav-auto-sync-dawn-load-staggering.md) |

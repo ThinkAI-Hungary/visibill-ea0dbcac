@@ -502,7 +502,7 @@ A `useAccountyPermissions` hook ellenőrzi a modul-szintű jogokat. Ha az `accou
 
 ### Főkönyvi Kivonat (`/general-ledger`)
 
-**Layout:** 2-Tier Eszköztár + Hierarchikus számlatükör fastruktúra és tételes táblázat
+**Layout:** Moduláris ergonómiai architektúra: Elsődleges Műveleti Sáv (GlToolbar), Összecsukható KPI Sáv (GlKpiBar) és Szegmentált Szűrősáv (GlFilterBar) + Hierarchikus számlatükör fastruktúra és tételes táblázat
 
 **URL Paraméterek & Állapotkezelés:**
 - `?granularity=kontirok|teteles` – Nézet granularitás: `kontirok` (alapértelmezett számlaszintű összegzés) vs. `teteles` (összes aktív számlaosztály és kontír kinyitása)
@@ -517,7 +517,7 @@ A `useAccountyPermissions` hook ellenőrzi a modul-szintű jogokat. Ha az `accou
 - **4-Oszlopos Statisztikai és Analitikus Export:** Excel (.xlsx) és CSV export 2 szintes fejléccel és 4 diszkrét pénzügyi oszloppal (Forgalom Tartozik, Forgalom Követel, Egyenleg Tartozik, Egyenleg Követel) és automatikus összegző záróképletekkel.
 - **Közvetlen Számlakép és NAV OSA Tételes Nézet Megnyitás:** A főkönyvi tételsorokban elhelyezett diszkrét nagyítós dokumentum ikon (`FileSearch`) segítségével közvetlenül a sorból előugrik a számlakép (`InvoiceImageDialog`), vagy ha a bizonylat még csak Online Számlából érkezett feltöltött kép nélkül, a strukturált NAV OSA tételes nézet (`InvoiceItemsDialog`). Működik mind a számlánként összevont (`by_invoice`), mind a részletes tételes (`itemized`) nézetben.
 
-> **Kapcsolódó döntések:** [P-120](./decisions/P-120-general-ledger-invoice-document-preview-and-osa-fallback-ux.md) · [A-160](../architecture/decisions/A-160-general-ledger-invoice-document-preview-and-osa-fallback.md) · [P-117](./decisions/P-117-general-ledger-invoice-grouping-and-4col-export-ux.md) · [P-113](./decisions/P-113-general-ledger-granularity-kontirok-teteles-view.md) · [P-105](./decisions/P-105-general-ledger-toolbar-and-expand-collapse-ux.md) · [A-157](../architecture/decisions/A-157-general-ledger-invoice-grouping-and-4col-export.md) · [A-153](../architecture/decisions/A-153-general-ledger-batch-itemized-view-architecture.md)
+> **Kapcsolódó döntések:** [P-122](./decisions/P-122-general-ledger-ui-ux-restructuring-and-clutter-reduction.md) · [A-163](../architecture/decisions/A-163-general-ledger-ui-ux-restructuring-and-clutter-reduction.md) · [P-120](./decisions/P-120-general-ledger-invoice-document-preview-and-osa-fallback-ux.md) · [A-160](../architecture/decisions/A-160-general-ledger-invoice-document-preview-and-osa-fallback.md) · [P-117](./decisions/P-117-general-ledger-invoice-grouping-and-4col-export-ux.md) · [P-113](./decisions/P-113-general-ledger-granularity-kontirok-teteles-view.md) · [P-105](./decisions/P-105-general-ledger-toolbar-and-expand-collapse-ux.md) · [A-157](../architecture/decisions/A-157-general-ledger-invoice-grouping-and-4col-export.md) · [A-153](../architecture/decisions/A-153-general-ledger-batch-itemized-view-architecture.md)
 
 ---
 
