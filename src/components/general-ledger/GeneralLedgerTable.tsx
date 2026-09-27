@@ -96,6 +96,7 @@ interface LedgerItem {
   groupedCount?: number;
   groupedItemIds?: string[];
   groupedDescriptions?: string[];
+  rowKey?: string;
 }
 
 const formatCurrency = (value: number) => {
@@ -373,11 +374,16 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     });
 
     const itemsMap = new Map<string, LedgerItem[]>();
+    const occurrenceMap = new Map<string, number>();
+
     batchCategorizedItems.filter(i => !i.is_excluded).forEach(item => {
       const isUnclass = !item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000';
       const parentCid = isUnclass ? 'UNCLASSIFIED' : glIdToCid.get(item.gl_account_id);
       if (!parentCid) return;
-      const pseudoCid = `${parentCid}_${item.item_id}`;
+      const baseKey = `${parentCid}_${item.source_table || 'item'}_${item.item_id}`;
+      const occ = occurrenceMap.get(baseKey) || 0;
+      occurrenceMap.set(baseKey, occ + 1);
+      const pseudoCid = occ === 0 ? baseKey : `${baseKey}_${occ}`;
 
       let displayDesc = item.description || item.partner || 'Névtelen tétel';
       if (item.partner && item.description && item.partner !== item.description) {
@@ -981,6 +987,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                 matchingSearchResults.forEach(r => {
                   const itemId = `item_${r.entity_id.replace('item_', '')}`;
                   if (!existingIds.has(itemId)) {
+                    existingIds.add(itemId);
                     let displayDesc = r.title || 'Névtelen tétel';
                     if (r.subtitle && !displayDesc.includes(r.subtitle)) {
                       displayDesc = `${displayDesc} - ${r.subtitle}`;
@@ -990,7 +997,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                       name: fixCharacterEncoding(displayDesc),
                       balance: Number(r.amount) || 0,
                       hasChildren: false,
-                      cid: `${node.cid}_${r.entity_id}`,
+                      cid: `${node.cid}_search_${r.entity_id}`,
                       isItem: true,
                       itemType: fixCharacterEncoding(r.item_type || ''),
                       partner: fixCharacterEncoding(r.title),
@@ -1447,10 +1454,14 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
       const enriched = await enrichGlItemsWithInvoiceMeta(items);
 
+      const occurrenceMap = new Map<string, number>();
       const mappedItems: LedgerItem[] = enriched.map(item => {
         const isUnclass = !item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000';
         const parentCid = isUnclass ? 'UNCLASSIFIED' : targetCid;
-        const pseudoCid = `${parentCid}_${item.item_id}`;
+        const baseKey = `${parentCid}_${item.source_table || 'item'}_${item.item_id}`;
+        const occ = occurrenceMap.get(baseKey) || 0;
+        occurrenceMap.set(baseKey, occ + 1);
+        const pseudoCid = occ === 0 ? baseKey : `${baseKey}_${occ}`;
 
         let displayDesc = item.description || item.partner || 'Névtelen tétel';
         if (item.partner && item.description && item.partner !== item.description) {
@@ -1532,10 +1543,20 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
       const enriched = await enrichGlItemsWithInvoiceMeta(items);
 
+      const occurrenceMap = new Map<string, number>();
+      currentItems.forEach(it => {
+        if (it.cid) {
+          occurrenceMap.set(it.cid, (occurrenceMap.get(it.cid) || 0) + 1);
+        }
+      });
+
       const mappedItems: LedgerItem[] = enriched.map(item => {
         const isUnclass = !item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000';
         const parentCid = isUnclass ? 'UNCLASSIFIED' : targetCid;
-        const pseudoCid = `${parentCid}_${item.item_id}`;
+        const baseKey = `${parentCid}_${item.source_table || 'item'}_${item.item_id}`;
+        const occ = occurrenceMap.get(baseKey) || 0;
+        occurrenceMap.set(baseKey, occ + 1);
+        const pseudoCid = occ === 0 ? baseKey : `${baseKey}_${occ}`;
 
         let displayDesc = item.description || item.partner || 'Névtelen tétel';
         if (item.partner && item.description && item.partner !== item.description) {
@@ -1620,13 +1641,13 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         await fetchAccountItemsOnDemand(targetCid);
       }
       // Ensure the selected search result is guaranteed to be in the rendered list even if it was beyond the first 100 items
-      setLoadedAccountItems(prev => {
+      setLoadedRawAccountItems(prev => {
         const next = new Map(prev);
         const existingList = next.get(targetCid) || [];
         const alreadyPresent = existingList.some(it => it.id === expectedItemId);
         if (!alreadyPresent) {
           const parentCid = targetCid;
-          const pseudoCid = `${parentCid}_${result.entity_id}`;
+          const pseudoCid = `${parentCid}_${result.source_table || 'search'}_${result.entity_id}`;
           let displayDesc = result.title || 'Névtelen tétel';
           if (result.subtitle && !displayDesc.includes(result.subtitle)) {
             displayDesc = `${displayDesc} - ${result.subtitle}`;
@@ -1766,8 +1787,9 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   // Determine if a row should be visible based on expanded state of its ancestors in O(1) per row
   const processedRows = useMemo(() => {
     const isSearchActive = !!searchQuery && searchQuery.trim().length > 0;
+    const seenKeys = new Set<string>();
 
-    return tableData.map(item => {
+    return tableData.map((item, index) => {
       const isRoot = !!item.isRoot;
       const depth = item.depth || 0;
       
@@ -1786,8 +1808,23 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       if (printLayoutMode === 'synthetic' && item.isItem) {
         isVisibleDuringPrint = false;
       }
+
+      // Generate guaranteed unique, stable key for React list rendering
+      const baseKey = item.isLoadingRow
+        ? `loading_${item.cid || item.id}`
+        : item.isLoadMoreRow
+        ? `loadmore_${item.cid || item.id}`
+        : item.isItem
+        ? (item.cid ? `item_${item.cid}` : `item_${item.id}`)
+        : `acc_${item.cid || item.id}`;
+
+      let rowKey = baseKey;
+      if (seenKeys.has(rowKey)) {
+        rowKey = `${rowKey}_${index}`;
+      }
+      seenKeys.add(rowKey);
       
-      return { ...item, isVisibleOnScreen, isVisibleDuringPrint, isRoot, depth };
+      return { ...item, isVisibleOnScreen, isVisibleDuringPrint, isRoot, depth, rowKey };
     });
   }, [expandedRowIds, tableData, categoriesWithItems, printLayoutMode, searchQuery]);
 
@@ -1990,7 +2027,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                   if (row.isLoadingRow) {
                     return (
                       <div
-                        key={row.id}
+                        key={row.rowKey || row.id}
                         className={cn(
                           "grid divide-x divide-border/10 bg-muted/20 animate-pulse items-center",
                           gridColsClass,
@@ -2022,7 +2059,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                   if (row.isLoadMoreRow && row.targetCid) {
                     return (
                       <LoadMoreSentinelRow
-                        key={row.id}
+                        key={row.rowKey || row.id}
                         row={row}
                         hiddenClass={hiddenClass}
                         indentPadding={indentPadding}
@@ -2035,7 +2072,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
                   return (
                     <div 
-                      key={row.id} 
+                      key={row.rowKey || row.id} 
                       id={`row_${row.id}`}
                       className={cn(
                         "group divide-x divide-border/10 transition-colors hover:bg-muted/40",
@@ -2389,8 +2426,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                   </button>
                   {expandedRowIds.has('__excluded__') && (
                     <div className="divide-y divide-amber-200/30">
-                      {excludedItems.map(item => (
-                        <div key={item.id} className="grid grid-cols-12 px-5 py-1.5 text-xs text-amber-800/70 dark:text-amber-400/70 hover:bg-amber-500/10 transition-colors">
+                      {excludedItems.map((item, idx) => (
+                        <div key={`${item.id}_${idx}`} className="grid grid-cols-12 px-5 py-1.5 text-xs text-amber-800/70 dark:text-amber-400/70 hover:bg-amber-500/10 transition-colors">
                           <div className="col-span-2 font-mono tabular-nums text-center">
                             {item.date ? item.date.substring(0, 10).replace(/-/g, '.') : ''}
                           </div>
@@ -2559,7 +2596,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                       
                       return (
                         <CommandItem
-                          key={gl.gl_account_id}
+                          key={`${gl.gl_account_id || gl.gl_number}_${clean}`}
                           value={`${gl.gl_number} ${gl.short_name}`}
                           onSelect={() => setSelectedNewGL(gl.gl_account_id)}
                           className="cursor-pointer py-2 w-full overflow-hidden flex items-center"
@@ -2616,11 +2653,11 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
               </div>
             ) : (
               <div className="space-y-3">
-                {journalEntries.map((entry: any) => {
+                {journalEntries.map((entry: any, idx: number) => {
                   const isDebit = entry.debit_account === selectedLeafAccount?.code;
                   return (
                     <div 
-                      key={entry.id} 
+                      key={entry.id || `entry_${idx}`} 
                       className="border rounded-xl p-4 bg-card hover:bg-muted/30 transition-all text-xs space-y-2.5 relative overflow-hidden"
                     >
                       <div className={cn(

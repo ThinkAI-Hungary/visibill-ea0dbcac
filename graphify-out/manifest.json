@@ -375,8 +375,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/GeneralLedgerTable.tsx": {
-    "mtime": 1790464458.38451,
-    "ast_hash": "fa76945caa724a8cac059067ca01eea8",
+    "mtime": 1790467121.901714,
+    "ast_hash": "b84b5cb9170900c6476a359e70e629b0",
     "semantic_hash": ""
   },
   "src/components/general-ledger/ManagePresetsModal.tsx": {
@@ -7335,33 +7335,33 @@
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/InvoiceTableContainer.tsx": {
-    "mtime": 1790456443.9195902,
-    "ast_hash": "862885c96579adedf3379c201d82d914",
+    "mtime": 1790466411.5378659,
+    "ast_hash": "87983d36aeb06ed25f170118dca29a06",
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/NavInvoiceRow.tsx": {
-    "mtime": 1790456443.9195902,
-    "ast_hash": "bf6acb73835c8b30632cb540df94c3cd",
+    "mtime": 1790466379.0352573,
+    "ast_hash": "8cb1404c49ed79bbacbf708c4b7a18cd",
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/NavInvoiceTable.tsx": {
-    "mtime": 1789918477.6407576,
-    "ast_hash": "860ebe66f95fcdfdaf634b2362a2eb92",
+    "mtime": 1790466422.4982238,
+    "ast_hash": "43a316e036bcdba3da2e7acd48c6111a",
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/SubmittedInvoiceRow.tsx": {
-    "mtime": 1790456443.9201138,
-    "ast_hash": "7607e42db0c64108af6cfdde3026c4b2",
+    "mtime": 1790466397.6184752,
+    "ast_hash": "99b7cc645b76bea27e1f7b73ff46f10d",
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/SubmittedInvoiceTable.tsx": {
-    "mtime": 1789918495.8844066,
-    "ast_hash": "a95b7faa890fb26668f7e4228c9533e2",
+    "mtime": 1790466431.9593184,
+    "ast_hash": "bea37a47ae7aa66943a548f84bbf3a59",
     "semantic_hash": ""
   },
   "src/features/invoices/context/InvoiceContext.tsx": {
-    "mtime": 1790350291.1922753,
-    "ast_hash": "042a4130a26688879aea175fff5f65b4",
+    "mtime": 1790466458.6115472,
+    "ast_hash": "df88a1872a3025b5cbc4e10c0249203a",
     "semantic_hash": ""
   },
   "src/features/invoices/context/useInvoiceContext.ts": {
@@ -7700,8 +7700,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/context/InvoiceSelectionContext.tsx": {
-    "mtime": 1788703588.310587,
-    "ast_hash": "d44a6bb8737ad3e1302dbf727d2b71bc",
+    "mtime": 1790466329.2496226,
+    "ast_hash": "3745982b0fa7077f7b54bb080d11be09",
     "semantic_hash": ""
   },
   "src/features/invoices/context/index.ts": {
@@ -11945,8 +11945,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/__tests__/invoiceRowHighlightAndStatusColors.test.tsx": {
-    "mtime": 1790456443.9190633,
-    "ast_hash": "3a282fef565f16cc24e496cff32f793d",
+    "mtime": 1790466469.8365316,
+    "ast_hash": "a3056bbbad8271119b6311036bc433f6",
     "semantic_hash": ""
   },
   "src/features/purchase-vouchers/components/PurchaseVoucherDialog.tsx": {
@@ -12120,8 +12120,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-162-mailgun-and-imap-attachment-filtering-and-mime-hardening.md": {
-    "mtime": 1790464973.652363,
-    "ast_hash": "4052ddb762cf454f4239aa42da81bc34",
+    "mtime": 1790465738.8793218,
+    "ast_hash": "e3f34bfb4dc0a1976ddee58269ec6010",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-163-general-ledger-ui-ux-restructuring-and-clutter-reduction.md": {
@@ -12207,6 +12207,26 @@
   "docs/images/gl_redesign_mockup.jpg": {
     "mtime": 1790462263.5197365,
     "ast_hash": "d7221085dd3a2610ccf1cfefa04d6497",
+    "semantic_hash": ""
+  },
+  "src/components/general-ledger/__tests__/GeneralLedgerUniqueKeys.test.tsx": {
+    "mtime": 1790467138.3492026,
+    "ast_hash": "5ecb952eaf073a8fab08e3dc883cd18b",
+    "semantic_hash": ""
+  },
+  "src/features/invoices/__tests__/invoiceMultiselect.test.tsx": {
+    "mtime": 1790466309.9042687,
+    "ast_hash": "bd5caeb1a72ebd7df324cdc191c7eb62",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-09-27/summary-013651-imap-attachment-filtering-storage-sanitization-idempotency.md": {
+    "mtime": 1790465829.9347806,
+    "ast_hash": "b6062fcdc9339d34476d564b6b339c33",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-09-27/summary-015000-invoices-multiselect-and-range-selection.md": {
+    "mtime": 1790466599.4704232,
+    "ast_hash": "b9935d87f84269681aa8ded59efaf1f3",
     "semantic_hash": ""
   }
 }
