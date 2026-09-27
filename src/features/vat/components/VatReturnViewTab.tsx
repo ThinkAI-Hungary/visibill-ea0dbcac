@@ -59,6 +59,7 @@ export function VatReturnViewTab() {
   const vatData = useVatReturnData();
   const {
     selectedCompany,
+    vatScope,
     year,
     setYear,
     month,
@@ -312,13 +313,13 @@ export function VatReturnViewTab() {
             <Badge
               variant="outline"
               className={cn(
-                'text-xs font-medium py-1 px-2 border',
-                (vatReturn as any).vat_scope === 'with_image'
+                'text-xs font-medium py-1 px-2 border transition-colors',
+                vatScope === 'with_image'
                   ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30'
                   : 'bg-blue-500/10 text-blue-600 border-blue-500/30'
               )}
             >
-              {(vatReturn as any).vat_scope === 'with_image' ? 'Csak számlaképpel' : 'Minden számla'}
+              {vatScope === 'with_image' ? 'Csak számlaképpel' : 'Minden számla'}
             </Badge>
           )}
 
@@ -424,29 +425,6 @@ export function VatReturnViewTab() {
               )}
             </div>
           )}
-
-          {/* NAV 65 Nyomtatvány Replika Button */}
-          <Button
-            type="button"
-            variant={viewMode === 'nav65' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode(viewMode === 'nav65' ? 'calculator' : 'nav65')}
-            className={cn(
-              'h-9 gap-1.5 text-xs font-semibold shadow-sm transition-all',
-              viewMode === 'nav65'
-                ? 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600'
-                : 'border-blue-500/40 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40'
-            )}
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5" />
-            <span>
-              {viewMode === 'nav65'
-                ? 'Vissza a kalkulátorhoz'
-                : isCroatia
-                ? 'Obrazac PDV replika'
-                : 'NAV 65 nyomtatvány replika'}
-            </span>
-          </Button>
 
           {/* Export Dropdown */}
           <div className="border-l pl-2 border-border/60">

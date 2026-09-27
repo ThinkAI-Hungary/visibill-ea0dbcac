@@ -19,8 +19,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { VatCodeConfigTab } from '@/components/vat/VatCodeConfigTab';
 import { VatReturnViewTab } from './VatReturnViewTab';
-import { VatNav65Replica } from './VatNav65Replica';
-import { VatObrazacPdvReplica } from './VatObrazacPdvReplica';
 import { VatCollectorAnalyticsView } from './VatCollectorAnalyticsView';
 import { VatMLineMasterDetail } from './VatMLineMasterDetail';
 import { VatAnnualMatrixView } from './VatAnnualMatrixView';
@@ -78,7 +76,8 @@ export function VatReturnContainer() {
   const { tab: pathTab } = useParams<{ tab?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const currentTab = searchParams.get('tab') || pathTab || 'return';
+  const rawTab = searchParams.get('tab') || pathTab || 'return';
+  const currentTab = rawTab === 'replica' ? 'return' : rawTab;
 
   const vatData = useVatReturnData();
   const {
@@ -202,15 +201,6 @@ export function VatReturnContainer() {
             {t('accounting:vat_return.tabs.return', '65-ös Bevallás')}
           </TabsTrigger>
 
-          {/* NAV 65 Nyomtatvány Replika */}
-          <TabsTrigger
-            value="replica"
-            className="gap-1.5 text-xs py-2 px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg whitespace-nowrap font-medium text-blue-600 dark:text-blue-400"
-          >
-            <FileSpreadsheet className="w-4 h-4 text-blue-500" />
-            {isCroatia ? 'Obrazac PDV replika' : 'NAV 65 nyomtatvány replika'}
-          </TabsTrigger>
-
           {/* 2. Éves ÁFA Mátrix */}
           <TabsTrigger
             value="matrix"
@@ -296,34 +286,6 @@ export function VatReturnContainer() {
         <TabsContent value="return" className="mt-0">
           <VatReturnErrorBoundary>
             <VatReturnViewTab />
-          </VatReturnErrorBoundary>
-        </TabsContent>
-
-        {/* Tab: NAV 65 Nyomtatvány Replika */}
-        <TabsContent value="replica" className="mt-0">
-          <VatReturnErrorBoundary>
-            {isCroatia ? (
-              <VatObrazacPdvReplica
-                selectedCompany={selectedCompany}
-                year={year}
-                month={month}
-                frequency={frequency}
-                getVal={getVal}
-              />
-            ) : (
-              <VatNav65Replica
-                selectedCompany={selectedCompany}
-                year={year}
-                month={month}
-                frequency={frequency}
-                getVal={getVal}
-                onRecalculate={async () => {
-                  await calculate.mutateAsync();
-                }}
-                isRecalculating={calculate.isPending}
-                mLines={mLines}
-              />
-            )}
           </VatReturnErrorBoundary>
         </TabsContent>
 
