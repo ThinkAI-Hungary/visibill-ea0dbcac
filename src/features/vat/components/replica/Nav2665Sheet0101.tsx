@@ -10,9 +10,9 @@ interface Nav2665Sheet0101Props {
  */
 export function Nav2665Sheet0101({ getVal }: Nav2665Sheet0101Props) {
   return (
-    <div className="border border-neutral-900 bg-white select-text">
+    <div className="border border-black bg-white select-text">
       {/* Subheader */}
-      <div className="bg-neutral-100 border-b border-neutral-900 px-3 py-1 flex justify-between items-center text-[10px] font-bold">
+      <div className="bg-neutral-100 border-b border-black px-3 py-1 flex justify-between items-center text-[10px] font-bold">
         <span className="uppercase text-neutral-800">Fizetendő általános forgalmi adó</span>
         <span className="text-neutral-500 font-normal italic">
           Az adatokat ezer forintban kell feltüntetni!
@@ -22,22 +22,22 @@ export function Nav2665Sheet0101({ getVal }: Nav2665Sheet0101Props) {
       {/* Main Table */}
       <table className="w-full border-collapse">
         <thead>
-          <tr className="border-b-2 border-neutral-900 bg-neutral-100 text-[9px] font-bold text-neutral-800 text-center uppercase tracking-tight">
-            <th className="w-9 border-r border-neutral-900 p-1"></th>
-            <th className="border-r border-neutral-900 p-1 font-sans">a</th>
-            <th className="w-32 sm:w-36 border-r border-neutral-900 p-1">
+          <tr className="bg-neutral-100 text-[9px] font-bold text-neutral-800 text-center uppercase tracking-tight">
+            <th className="w-8 sm:w-9 border-r border-b-2 border-black p-1 print:py-0.5"></th>
+            <th className="border-r border-b-2 border-black p-1 font-sans print:py-0.5">a</th>
+            <th className="w-28 sm:w-36 border-r border-b-2 border-black p-1 print:py-0.5">
               <div>Az adó alapja</div>
-              <div className="text-[8px] font-normal text-neutral-500 italic lowercase">
+              <div className="text-[8px] font-normal text-neutral-500 italic lowercase print:text-[7.5px]">
                 (tényleges vagy helyesbített)
               </div>
             </th>
-            <th className="w-32 sm:w-36 border-r border-neutral-900 p-1">
+            <th className="w-28 sm:w-36 border-r border-b-2 border-black p-1 print:py-0.5">
               <div>Az adó összege</div>
-              <div className="text-[8px] font-normal text-neutral-500 italic lowercase">
+              <div className="text-[8px] font-normal text-neutral-500 italic lowercase print:text-[7.5px]">
                 (tényleges vagy helyesbített)
               </div>
             </th>
-            <th className="w-9 p-1"></th>
+            <th className="w-8 sm:w-9 border-b-2 border-black p-1 print:py-0.5"></th>
           </tr>
         </thead>
         <tbody>
@@ -98,13 +98,13 @@ export function Nav2665Sheet0101({ getVal }: Nav2665Sheet0101Props) {
           <Nav2665TableRow
             rowNum="09"
             title="Különleges eljárással megállapított adó"
-            hasBase={false}
+            baseVal={getVal('09', 'base')}
             taxVal={getVal('09', 'tax')}
           />
           <Nav2665TableRow
             rowNum="10"
             title="Saját vállalkozáson belül végzett beruházás után fizetendő adó"
-            hasBase={false}
+            baseVal={getVal('10', 'base')}
             taxVal={getVal('10', 'tax')}
           />
           <Nav2665TableRow

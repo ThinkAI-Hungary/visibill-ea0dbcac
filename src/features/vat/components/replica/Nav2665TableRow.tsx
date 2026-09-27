@@ -46,64 +46,56 @@ export function Nav2665TableRow({
   return (
     <tr
       className={cn(
-        'border-b border-neutral-900 text-[11px] leading-tight select-none transition-colors hover:bg-amber-50/40',
+        'border-b border-black text-[11px] leading-tight select-none transition-colors hover:bg-amber-50/40 print:text-[9.5px] print:leading-[1.15]',
         isSummary ? 'bg-neutral-100 font-bold' : 'bg-white',
         className
       )}
     >
       {/* Left row number */}
-      <td className="w-9 border-r border-neutral-900 text-center font-mono text-[11px] font-bold text-neutral-900 p-1">
+      <td className="w-8 sm:w-9 border-r border-b border-black text-center font-mono text-[10px] sm:text-[11px] font-bold text-black py-0.5 px-1 print:py-[1.5px] print:px-0.5">
         {rowNum}.
       </td>
 
       {/* Description */}
-      <td className="border-r border-neutral-900 p-1.5 text-neutral-900 font-sans">
-        <div className="flex flex-col gap-0.5">
-          <span className={cn('text-[11px] leading-tight', isSummary && 'font-bold')}>{title}</span>
-          {note && <span className="text-[9px] text-neutral-500 italic leading-none">{note}</span>}
+      <td className="border-r border-b border-black py-0.5 px-1.5 print:py-[1.5px] print:px-1 text-black font-sans">
+        <div className="flex flex-col gap-0">
+          <span className={cn('text-[10.5px] sm:text-[11px] leading-tight print:text-[9px] print:leading-[1.1]', isSummary && 'font-bold')}>{title}</span>
+          {note && <span className="text-[8px] text-neutral-500 italic leading-none">{note}</span>}
         </div>
       </td>
 
       {/* Column b: Az adó alapja */}
       <td className={cn(
-        'w-32 sm:w-36 border-r border-neutral-900 p-1 text-right font-mono text-[12px] tabular-nums relative',
-        !hasBase && 'bg-neutral-100/80 cursor-not-allowed'
+        'w-28 sm:w-36 border-r border-b border-black py-0.5 px-1 print:py-[1.5px] print:px-1 text-right font-mono text-[11px] sm:text-[12px] print:text-[10px] tabular-nums relative',
+        !hasBase && 'bg-neutral-50/40 print:bg-transparent'
       )}>
         {hasBase ? (
           <div className="flex items-center justify-end h-full px-1">
-            <span className={cn('font-bold text-neutral-900', isSummary && 'text-[13px]')}>
+            <span className={cn('font-bold text-black', isSummary && 'text-[12px] sm:text-[13px]')}>
               {formattedBase || (baseVal === 0 ? '0' : '')}
             </span>
-            <span className="text-[7px] text-neutral-400 absolute bottom-0.5 right-1 select-none">ezer</span>
+            <span className="text-[7px] text-neutral-400 absolute bottom-0.5 right-1 select-none print:text-[6.5px]">ezer</span>
           </div>
-        ) : (
-          <div className="h-full w-full flex items-center justify-center">
-            <div className="w-full h-[1px] bg-neutral-300" />
-          </div>
-        )}
+        ) : null}
       </td>
 
       {/* Column c: Az adó összege */}
       <td className={cn(
-        'w-32 sm:w-36 border-r border-neutral-900 p-1 text-right font-mono text-[12px] tabular-nums relative',
-        !hasTax && 'bg-neutral-100/80 cursor-not-allowed'
+        'w-28 sm:w-36 border-r border-b border-black py-0.5 px-1 print:py-[1.5px] print:px-1 text-right font-mono text-[11px] sm:text-[12px] print:text-[10px] tabular-nums relative',
+        !hasTax && 'bg-neutral-50/40 print:bg-transparent'
       )}>
         {hasTax ? (
           <div className="flex items-center justify-end h-full px-1">
-            <span className={cn('font-bold text-neutral-900', isSummary && 'text-[13px]')}>
+            <span className={cn('font-bold text-black', isSummary && 'text-[12px] sm:text-[13px]')}>
               {formattedTax || (taxVal === 0 ? '0' : '')}
             </span>
-            <span className="text-[7px] text-neutral-400 absolute bottom-0.5 right-1 select-none">ezer</span>
+            <span className="text-[7px] text-neutral-400 absolute bottom-0.5 right-1 select-none print:text-[6.5px]">ezer</span>
           </div>
-        ) : (
-          <div className="h-full w-full flex items-center justify-center">
-            <div className="w-full h-[1px] bg-neutral-300" />
-          </div>
-        )}
+        ) : null}
       </td>
 
       {/* Right row number */}
-      <td className="w-9 text-center font-mono text-[11px] font-bold text-neutral-900 p-1">
+      <td className="w-8 sm:w-9 border-b border-black text-center font-mono text-[10px] sm:text-[11px] font-bold text-black py-0.5 px-1 print:py-[1.5px] print:px-0.5">
         {rowNum}.
       </td>
     </tr>

@@ -153,7 +153,11 @@ export function Nav2665ReplicaContainer({
         @media print {
           @page {
             size: A4 portrait !important;
-            margin: 8mm 6mm !important;
+            margin: 6mm 5mm !important;
+          }
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
           html, body, #root {
             height: auto !important;
@@ -178,6 +182,27 @@ export function Nav2665ReplicaContainer({
             background: white !important;
             transform: none !important;
           }
+          .nav2665-printable-root table {
+            border-collapse: collapse !important;
+            border-spacing: 0 !important;
+            width: 100% !important;
+          }
+          .nav2665-printable-root table th,
+          .nav2665-printable-root table td {
+            border-color: #000000 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .nav2665-printable-root table tbody td {
+            border-bottom: 1px solid #000000 !important;
+          }
+          .nav2665-printable-root table thead th {
+            border-bottom: 2px solid #000000 !important;
+          }
+          .nav2665-printable-root table tr {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
           .nav2665-page-frame {
             break-after: page !important;
             page-break-after: always !important;
@@ -187,14 +212,16 @@ export function Nav2665ReplicaContainer({
             margin: 0 auto !important;
             max-width: 100% !important;
             width: 100% !important;
+            padding: 6px 10px !important;
             transform: none !important;
             border: 1.5px solid #000000 !important;
+            box-sizing: border-box !important;
           }
           .nav2665-page-frame:last-child {
             break-after: auto !important;
             page-break-after: auto !important;
           }
-          .print\\:hidden,
+          .print\:hidden,
           header,
           nav,
           aside,

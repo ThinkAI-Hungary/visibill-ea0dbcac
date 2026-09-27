@@ -12,9 +12,9 @@ export function Nav2665Sheet0102({ getVal }: Nav2665Sheet0102Props) {
   const row66FadTax = getVal('66_fad', 'tax') || getVal('29', 'tax');
 
   return (
-    <div className="border border-neutral-900 bg-white select-text">
+    <div className="border border-black bg-white select-text">
       {/* Subheader */}
-      <div className="bg-neutral-100 border-b border-neutral-900 px-3 py-1 flex justify-between items-center text-[10px] font-bold">
+      <div className="bg-neutral-100 border-b border-black px-3 py-1 flex justify-between items-center text-[10px] font-bold">
         <span className="uppercase text-neutral-800">Tájékoztató adatok és Levonható ÁFA</span>
         <span className="text-neutral-500 font-normal italic">
           Az adatokat ezer forintban kell feltüntetni!
@@ -23,22 +23,22 @@ export function Nav2665Sheet0102({ getVal }: Nav2665Sheet0102Props) {
 
       <table className="w-full border-collapse">
         <thead>
-          <tr className="border-b-2 border-neutral-900 bg-neutral-100 text-[9px] font-bold text-neutral-800 text-center uppercase tracking-tight">
-            <th className="w-9 border-r border-neutral-900 p-1"></th>
-            <th className="border-r border-neutral-900 p-1 font-sans">a</th>
-            <th className="w-32 sm:w-36 border-r border-neutral-900 p-1">
+          <tr className="bg-neutral-100 text-[9px] font-bold text-neutral-800 text-center uppercase tracking-tight">
+            <th className="w-8 sm:w-9 border-r border-b-2 border-black p-1 print:py-0.5"></th>
+            <th className="border-r border-b-2 border-black p-1 font-sans print:py-0.5">a</th>
+            <th className="w-28 sm:w-36 border-r border-b-2 border-black p-1 print:py-0.5">
               <div>Az adó alapja</div>
-              <div className="text-[8px] font-normal text-neutral-500 italic lowercase">
+              <div className="text-[8px] font-normal text-neutral-500 italic lowercase print:text-[7.5px]">
                 (tényleges vagy helyesbített)
               </div>
             </th>
-            <th className="w-32 sm:w-36 border-r border-neutral-900 p-1">
+            <th className="w-28 sm:w-36 border-r border-b-2 border-black p-1 print:py-0.5">
               <div>Az adó összege</div>
-              <div className="text-[8px] font-normal text-neutral-500 italic lowercase">
+              <div className="text-[8px] font-normal text-neutral-500 italic lowercase print:text-[7.5px]">
                 (tényleges vagy helyesbített)
               </div>
             </th>
-            <th className="w-9 p-1"></th>
+            <th className="w-8 sm:w-9 border-b-2 border-black p-1 print:py-0.5"></th>
           </tr>
         </thead>
         <tbody>
