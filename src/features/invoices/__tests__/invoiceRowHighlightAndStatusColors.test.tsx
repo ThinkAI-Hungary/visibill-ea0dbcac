@@ -189,10 +189,11 @@ describe('Invoice Table Row Status Colors & Focus Highlighting', () => {
     expect(row.className).not.toContain('bg-primary/15');
   });
 
-  it('calls setLastViewedInvoiceId and updates selection when user clicks the row', () => {
+  it('calls setLastViewedInvoiceId and onRowClick without overwriting selection when user clicks the row', () => {
     mockContextState.lastViewedInvoiceId = null;
     mockSetLastViewedInvoiceId.mockClear();
     mockSetSelectedInvoiceIds.mockClear();
+    mockToggleSelectRow.mockClear();
     mockOnRowClick.mockClear();
 
     renderInTable(
@@ -210,8 +211,11 @@ describe('Invoice Table Row Status Colors & Focus Highlighting', () => {
     fireEvent.click(row);
 
     expect(mockSetLastViewedInvoiceId).toHaveBeenCalledWith('nav-unmatched-1');
-    expect(mockSetSelectedInvoiceIds).toHaveBeenCalledWith(new Set(['nav-unmatched-1']));
+    expect(mockSetSelectedInvoiceIds).not.toHaveBeenCalled();
     expect(mockOnRowClick).toHaveBeenCalledWith('nav-unmatched-1', expect.anything());
+
+    fireEvent.click(row, { ctrlKey: true });
+    expect(mockToggleSelectRow).toHaveBeenCalledWith('nav-unmatched-1', false);
   });
 
   it('preserves matching status colors on SubmittedInvoiceRow when focused or selected', () => {

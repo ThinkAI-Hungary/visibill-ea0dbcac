@@ -8,9 +8,10 @@ export interface InvoiceSelectionContextValue {
   activeSelection: Set<string>;
   activeSetSelected: React.Dispatch<React.SetStateAction<Set<string>>>;
   toggleSelectAll: () => void;
-  toggleSelectRow: (id: string) => void;
+  toggleSelectRow: (id: string, shiftKey?: boolean) => void;
   isRowSelected: (id: string) => boolean;
   isAllSelected: boolean;
+  isSomeSelected: boolean;
   clearSelection: () => void;
 
   expandedRowIds: Set<string>;

@@ -52,6 +52,7 @@ export function NavInvoiceTable({
     setKpiFilter,
     clearFilters,
     isAllSelected,
+    isSomeSelected,
     toggleSelectAll,
     expandAllRows,
     collapseAllRows,
@@ -126,7 +127,7 @@ export function NavInvoiceTable({
                     <div className="flex items-center gap-2">
                       <div className="w-3.5" />
                       <Checkbox
-                        checked={isAllSelected}
+                        checked={isAllSelected ? true : isSomeSelected ? 'indeterminate' : false}
                         onCheckedChange={() => toggleSelectAll()}
                         aria-label={t('invoices:table.select_all', { defaultValue: 'Összes kijelölése' })}
                       />

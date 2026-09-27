@@ -66,7 +66,6 @@ export function SubmittedInvoiceRow({
     getPaymentMethodLabel,
     lastViewedInvoiceId,
     setLastViewedInvoiceId,
-    setSelectedSubmittedIds,
     setExpandedRowIds,
   } = useInvoiceContext();
   const { t } = useTranslation(['invoices', 'common']);
@@ -139,8 +138,14 @@ export function SubmittedInvoiceRow({
           isExpanded && 'border-b-0'
         )}
         onClick={(e) => {
+          const target = e.target as HTMLElement;
+          if (target.closest('button, input, select, [role="checkbox"], [role="combobox"], [data-radix-collection-item], a')) {
+            return;
+          }
           setLastViewedInvoiceId(invoice.id);
-          setSelectedSubmittedIds(new Set([invoice.id]));
+          if (e.ctrlKey || e.metaKey || e.shiftKey) {
+            toggleSelectRow(invoice.id, e.shiftKey);
+          }
           onRowClick(invoice.id, e);
         }}
       >
@@ -169,7 +174,17 @@ export function SubmittedInvoiceRow({
             </button>
             <Checkbox
               checked={isSelected}
-              onCheckedChange={() => toggleSelectRow(invoice.id)}
+              onCheckedChange={() => {}}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleSelectRow(invoice.id, e.shiftKey);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === ' ' || e.key === 'Enter') {
+                  e.stopPropagation();
+                  toggleSelectRow(invoice.id, e.shiftKey);
+                }
+              }}
               aria-label={`${invoice.bizonylatsorszam || invoice.id} kijelölése`}
             />
           </div>

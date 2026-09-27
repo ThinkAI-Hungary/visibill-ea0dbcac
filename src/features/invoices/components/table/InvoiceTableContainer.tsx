@@ -24,8 +24,6 @@ export function InvoiceTableContainer() {
     setExpandedRowIds,
     invalidateInvoiceData,
     setLastViewedInvoiceId,
-    setSelectedInvoiceIds,
-    setSelectedSubmittedIds,
   } = useInvoiceContext();
 
   // 1. Fetch matching NAV invoices for the submitted invoices displayed on the current page
@@ -212,11 +210,6 @@ export function InvoiceTableContainer() {
         return;
       }
       setLastViewedInvoiceId(invoiceId);
-      if (isSubmittedTab) {
-        setSelectedSubmittedIds(new Set([invoiceId]));
-      } else {
-        setSelectedInvoiceIds(new Set([invoiceId]));
-      }
       setExpandedRowIds(prev => {
         const next = new Set(prev);
         if (next.has(invoiceId)) next.delete(invoiceId);
@@ -224,7 +217,7 @@ export function InvoiceTableContainer() {
         return next;
       });
     },
-    [isSubmittedTab, setLastViewedInvoiceId, setSelectedInvoiceIds, setSelectedSubmittedIds, setExpandedRowIds]
+    [setLastViewedInvoiceId, setExpandedRowIds]
   );
 
   // 5. Handle Toggle Exclude from accounting

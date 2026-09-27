@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -405,17 +405,35 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
   // ── Bulk Actions state & Selection ──
   const activeSelection = isSubmittedTab ? selectedSubmittedIds : selectedInvoiceIds;
   const activeSetSelected = isSubmittedTab ? setSelectedSubmittedIds : setSelectedInvoiceIds;
+  const lastSelectedIdRef = useRef<string | null>(null);
 
   const toggleSelectRow = useCallback(
-    (id: string) => {
+    (id: string, shiftKey?: boolean) => {
+      const activeList = isSubmittedTab ? paginatedSubmittedInvoices : paginatedNavInvoices;
       activeSetSelected(prev => {
         const next = new Set(prev);
-        if (next.has(id)) next.delete(id);
-        else next.add(id);
+        const currentIdx = activeList.findIndex(inv => inv.id === id);
+        const lastIdx =
+          lastSelectedIdRef.current !== null
+            ? activeList.findIndex(inv => inv.id === lastSelectedIdRef.current)
+            : -1;
+
+        if (shiftKey && lastIdx !== -1 && currentIdx !== -1) {
+          const start = Math.min(lastIdx, currentIdx);
+          const end = Math.max(lastIdx, currentIdx);
+          for (let i = start; i <= end; i++) {
+            next.add(activeList[i].id);
+          }
+        } else {
+          if (next.has(id)) next.delete(id);
+          else next.add(id);
+        }
+
+        lastSelectedIdRef.current = id;
         return next;
       });
     },
-    [activeSetSelected]
+    [isSubmittedTab, paginatedSubmittedInvoices, paginatedNavInvoices, activeSetSelected]
   );
 
   const toggleSelectAll = useCallback(() => {
@@ -441,9 +459,15 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
     return activeList.length > 0 && activeList.every(i => activeSelection.has(i.id));
   }, [isSubmittedTab, paginatedSubmittedInvoices, paginatedNavInvoices, activeSelection]);
 
+  const isSomeSelected = useMemo(() => {
+    const activeList = isSubmittedTab ? paginatedSubmittedInvoices : paginatedNavInvoices;
+    return activeList.length > 0 && activeList.some(i => activeSelection.has(i.id)) && !isAllSelected;
+  }, [isSubmittedTab, paginatedSubmittedInvoices, paginatedNavInvoices, activeSelection, isAllSelected]);
+
   const clearSelection = useCallback(() => {
     setSelectedInvoiceIds(new Set());
     setSelectedSubmittedIds(new Set());
+    lastSelectedIdRef.current = null;
   }, []);
 
   // ── Row expansion helpers ──
@@ -992,6 +1016,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       toggleSelectRow,
       isRowSelected,
       isAllSelected,
+      isSomeSelected,
       clearSelection,
       expandedRowIds,
       setExpandedRowIds,
@@ -1011,6 +1036,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       toggleSelectRow,
       isRowSelected,
       isAllSelected,
+      isSomeSelected,
       clearSelection,
       expandedRowIds,
       setExpandedRowIds,
