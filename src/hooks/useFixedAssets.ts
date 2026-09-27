@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { FixedAsset, AssetEvent, TaoTemplate } from '@/types/fixed-assets';
 import { reportError } from '@/lib/errorReporter';
 import { generateAssetActivationProtocolBlob, AssetProtocolData } from '@/lib/assetActivationProtocolPdf';
+import { postDevelopmentReserveReleaseToLedger } from '@/lib/fixed-assets/developmentReserveAutoPoster';
 
 export const DEPRECIATION_METHOD_LABELS: Record<string, string> = {
   linear: 'Lineáris (Egyenletes)',
@@ -83,6 +84,8 @@ export async function generateAndAttachAssetProtocolPdf(assetId: string, company
       usefulLifeYears: usefulYears,
       residualValue: asset.residual_value,
       taoRatePercent: asset.tao_template?.tao_rate_percent,
+      developmentReserveAmount: asset.development_reserve_amount,
+      developmentReserveYear: asset.development_reserve?.creation_year,
     };
 
     const blob = generateAssetActivationProtocolBlob(protocolData);
@@ -184,7 +187,8 @@ export function useFixedAssets(companyId: string | undefined) {
           location:company_locations(id, name, address, location_type),
           project:projects(id, name, project_code, color, icon),
           tao_template:tao_depreciation_templates(id, name, tao_rate_percent),
-          gl_account:gl_accounts(id, gl_number, short_name)
+          gl_account:gl_accounts(id, gl_number, short_name),
+          development_reserve:development_reserves(id, creation_year, reserve_amount, expiration_date)
         `)
         .eq('company_id', companyId)
         .order('created_at', { ascending: false });
@@ -209,7 +213,8 @@ export function useFixedAssetDetail(assetId: string | null) {
             location:company_locations(id, name, address, location_type),
             project:projects(id, name, project_code, color, icon),
             tao_template:tao_depreciation_templates(id, name, tao_rate_percent),
-            gl_account:gl_accounts(id, gl_number, short_name)
+            gl_account:gl_accounts(id, gl_number, short_name),
+            development_reserve:development_reserves(id, creation_year, reserve_amount, expiration_date)
           `)
           .eq('id', assetId)
           .single(),
@@ -298,6 +303,8 @@ export function useCreateFixedAsset() {
       sourceInvoiceNumber: string | null;
       supplierName: string | null;
       glAccountId: string | null;
+      developmentReserveId?: string | null;
+      developmentReserveAmount?: number;
     }) => {
       // 1. Insert fixed asset
       const { data: asset, error: assetError } = await supabase
@@ -329,6 +336,8 @@ export function useCreateFixedAsset() {
           source_invoice_number: params.sourceInvoiceNumber,
           supplier_name: params.supplierName,
           gl_account_id: params.glAccountId,
+          development_reserve_id: params.developmentReserveId || null,
+          development_reserve_amount: params.developmentReserveAmount || 0,
         })
         .select()
         .single();
@@ -350,6 +359,7 @@ export function useCreateFixedAsset() {
             activation_date: params.activationDate,
             activated_by: params.activatedByName,
             ...(params.projectId ? { project_id: params.projectId } : {}),
+            ...(params.developmentReserveAmount ? { development_reserve_amount: params.developmentReserveAmount } : {}),
           },
         });
 
@@ -368,11 +378,37 @@ export function useCreateFixedAsset() {
         });
       }
 
+      // 4. Automatikusan lekönyveli a fejlesztési tartalék feloldását (T 414 - K 413) a Vegyes naplóba
+      if (params.developmentReserveAmount && params.developmentReserveAmount > 0) {
+        try {
+          await postDevelopmentReserveReleaseToLedger({
+            companyId: params.companyId,
+            userId: params.userId,
+            assetId: asset.id,
+            assetName: params.name,
+            inventoryNumber: params.inventoryNumber,
+            reserveAmount: params.developmentReserveAmount,
+            activationDate: params.activationDate,
+          });
+        } catch (postErr) {
+          reportError({
+            type: 'db_query',
+            component: 'useFixedAssets',
+            action: 'useCreateFixedAsset:reservePosting',
+            message: 'Auto development reserve posting failed',
+            error: postErr,
+          });
+        }
+      }
+
       return asset;
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['fixedAssets', variables.companyId] });
       queryClient.invalidateQueries({ queryKey: ['project-fixed-assets'] });
+      queryClient.invalidateQueries({ queryKey: ['developmentReserves', variables.companyId] });
+      queryClient.invalidateQueries({ queryKey: ['acc_journal_headers', variables.companyId] });
+      queryClient.invalidateQueries({ queryKey: ['journal-entries', variables.companyId] });
     },
   });
 }

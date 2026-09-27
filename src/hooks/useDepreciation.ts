@@ -13,6 +13,7 @@ export function calculateDepreciation(params: {
   activationDate: Date;
   usefulLifeMonths: number;
   taoRatePercent: number;
+  developmentReserveAmount?: number;
   calculationDate?: Date;
   disposalDate?: Date;
   depreciationMethod?: string;
@@ -27,6 +28,7 @@ export function calculateDepreciation(params: {
     activationDate,
     usefulLifeMonths,
     taoRatePercent,
+    developmentReserveAmount,
     calculationDate = new Date(),
     disposalDate,
     depreciationMethod = 'linear',
@@ -188,11 +190,13 @@ export function calculateDepreciation(params: {
   accountingAccumulated = Math.min(accountingAccumulated, accountingDepreciableBase);
   const accountingBookValue = Math.max(residualValue, acquisitionValue - accountingAccumulated);
 
-  // ── Tao ÉCS (Tax) — Mindig lineáris, a bekerülési érték alapján ──
-  const taxMonthly = acquisitionValue * (taoRatePercent / 100) / 12;
+  // ── Tao ÉCS (Tax) — Mindig lineáris, a fejlesztési tartalékkal csökkentett alap alapján (Tao. tv. 7. § (15)) ──
+  const devReserveDeduction = Math.max(0, developmentReserveAmount || 0);
+  const taxBase = Math.max(0, acquisitionValue - devReserveDeduction);
+  const taxMonthly = taxBase > 0 ? (taxBase * (taoRatePercent / 100)) / 12 : 0;
   const rawTaxAccumulated = taxMonthly * elapsedMonths;
-  const taxAccumulated = Math.min(rawTaxAccumulated, acquisitionValue);
-  const taxBookValue = Math.max(0, acquisitionValue - taxAccumulated);
+  const taxAccumulated = Math.min(rawTaxAccumulated, taxBase);
+  const taxBookValue = Math.max(0, taxBase - taxAccumulated);
 
   return {
     accounting: {
@@ -206,6 +210,64 @@ export function calculateDepreciation(params: {
       accumulated: Math.round(taxAccumulated),
       bookValue: Math.round(taxBookValue),
       ratePercent: taoRatePercent,
+      taxBase: Math.round(taxBase),
+      developmentReserveDeduction: Math.round(devReserveDeduction),
     },
   };
 }
+
+/**
+ * Egy adott adóévre (naptári évre) vonatkozó számviteli és Tao ÉCS kiszámítása.
+ * Figyelembe veszi a fejlesztési tartalék miatti adóalap-csökkentést (Tao. tv. 7. § (15)).
+ */
+export function calculateAnnualDepreciation(params: {
+  acquisitionValue: number;
+  residualValue: number;
+  activationDate: Date | string;
+  usefulLifeMonths: number;
+  taoRatePercent: number;
+  developmentReserveAmount?: number;
+  year: number;
+  disposalDate?: Date | string;
+  depreciationMethod?: string;
+  totalPlannedPerformance?: number | null;
+  depreciationSchedule?: number[] | null;
+  performanceLogs?: Array<{ date: string | Date; amount: number }> | null;
+}): { accounting: number; tax: number } {
+  const actDate = typeof params.activationDate === 'string'
+    ? new Date(params.activationDate)
+    : params.activationDate;
+
+  const dispDate = params.disposalDate
+    ? (typeof params.disposalDate === 'string' ? new Date(params.disposalDate) : params.disposalDate)
+    : undefined;
+
+  const startOfYear = new Date(params.year, 0, 1);
+  const endOfYear = new Date(params.year + 1, 0, 1);
+
+  if (actDate >= endOfYear || (dispDate && dispDate <= startOfYear)) {
+    return { accounting: 0, tax: 0 };
+  }
+
+  const atEnd = calculateDepreciation({
+    ...params,
+    activationDate: actDate,
+    disposalDate: dispDate,
+    calculationDate: endOfYear,
+  });
+
+  const atStart = actDate >= startOfYear
+    ? { accounting: { accumulated: 0 }, tax: { accumulated: 0 } }
+    : calculateDepreciation({
+        ...params,
+        activationDate: actDate,
+        disposalDate: dispDate,
+        calculationDate: startOfYear,
+      });
+
+  return {
+    accounting: Math.max(0, atEnd.accounting.accumulated - atStart.accounting.accumulated),
+    tax: Math.max(0, atEnd.tax.accumulated - atStart.tax.accumulated),
+  };
+}
+

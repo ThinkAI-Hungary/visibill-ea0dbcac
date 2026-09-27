@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-27  
-> **Összesen:** 178 döntés (165 egyedi döntési fájl) | ✅ Decided: 176 | ⛔ Superseded: 2
+> **Összesen:** 180 döntés (167 egyedi döntési fájl) | ✅ Decided: 178 | ⛔ Superseded: 2
 
 ---
 
@@ -209,6 +209,8 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-160 | Főkönyvi Bizonylatmegnyitó és NAV OSA Tételes Nézet Fallback Architektúra | ✅ Decided | [A-160](./A-160-general-ledger-invoice-document-preview-and-osa-fallback.md) |
 | A-161 | ÁFA Bevallás és Analitika Számlakép Hatókör (Scope) Szűrési Architektúra (OSA Teljes vs Számlaképes) | ✅ Decided | [A-161](./A-161-vat-image-scope-filtering.md) |
 | A-163 | Főkönyv UI & UX Modularizáció, Ergonómiai Átszervezés és Zsúfoltság-Megszüntetés | ✅ Decided | [A-163](./A-163-general-ledger-ui-ux-restructuring-and-clutter-reduction.md) |
+| A-164 | Fejlesztési Tartalék és Tárgyi Eszközök Adatmodell, ÉCS Kalkuláció és API | ✅ Decided | [A-164](./A-164-development-reserve-fixed-assets-db-and-depreciation.md) |
+| A-165 | Kapcsolt Vállalkozások Adatmodell, Forgalmi Lekérdezések és Kontírozási Integráció | ✅ Decided | [A-165](./A-165-related-parties-schema-and-accounting-integration.md) |
 
 ## 💳 Fizetés
 

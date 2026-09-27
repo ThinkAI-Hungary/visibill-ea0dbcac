@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-27  
-> **Összesen:** 122 döntés | ✅ Decided: 118 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 124 döntés | ✅ Decided: 120 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -202,6 +202,9 @@
 |---|--------|---------|------|
 | P-050 | Projekt interaktív folyamatábra (Flowchart) UX és logika | ✅ Decided | [P-050](./P-050-project-flowchart-ux.md) |
 | P-052 | Tárgyi Eszközök Projektekhez Rendelése (TENY Project Assignment) UX | ✅ Decided | [P-052](./P-052-fixed-assets-project-assignment-ux.md) |
+| P-123 | Fejlesztési Tartalék és Tárgyi Eszköz Nyilvántartás (TENY) Összekapcsolása UX | ✅ Decided | [P-123](./P-123-development-reserve-teny-ux.md) |
+| P-124 | Kapcsolt Vállalkozások Kezelése és Forgalmi Kimutatása a Partnertörzsben | ✅ Decided | [P-124](./P-124-related-parties-management-and-turnover-ux.md) |
+
 
 ## 📖 Könyvelés & Banki Utalások
 

@@ -5,10 +5,11 @@ import { useFixedAssets, useFixedAssetDetail } from '@/hooks/useFixedAssets';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import { AssetListTable } from '@/components/fixed-assets/AssetListTable';
 import { AssetDetailPanel } from '@/components/fixed-assets/AssetDetailPanel';
+import { DevelopmentReservesTab } from '@/components/fixed-assets/DevelopmentReservesTab';
 import { ContentSkeleton } from '@/components/ui/content-skeleton';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
-import { Package2, ShieldCheck } from 'lucide-react';
+import { Package2, ShieldCheck, PiggyBank } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 // Lazy-load heavy dialog to keep initial chunk small
@@ -24,6 +25,16 @@ export default function FixedAssetsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { canWrite: canWriteModule } = useEaisybillPermissions();
   const writable = canWriteModule('fixed_assets');
+
+  const currentTab = searchParams.get('tab') || 'assets';
+  const handleTabChange = useCallback((tab: string) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (tab === 'assets') next.delete('tab');
+      else next.set('tab', tab);
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
 
   const { data: assets = [], isLoading } = useFixedAssets(selectedCompany?.id);
   const { data: detailData, isFetching: detailLoading } = useFixedAssetDetail(selectedAssetId);
@@ -102,32 +113,58 @@ export default function FixedAssetsPage() {
           </div>
 
           {/* Header actions */}
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              onClick={handleOpenInventory}
-              disabled={activeCount === 0 || !writable}
-            >
-              <ShieldCheck className="h-4 w-4" />
-              {t('hr:fixed_assets.inventory_check', 'Leltár ellenőrzés')}
-            </Button>
+          <div className="flex items-center gap-3">
+            {/* Tabs Pill */}
+            <div className="flex rounded-lg border border-border/60 bg-muted/30 p-1">
+              <button
+                onClick={() => handleTabChange('assets')}
+                className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${currentTab === 'assets' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <Package2 className="h-3.5 w-3.5" />
+                Eszközök ({assets.length})
+              </button>
+              <button
+                onClick={() => handleTabChange('development_reserves')}
+                className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${currentTab === 'development_reserves' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <PiggyBank className="h-3.5 w-3.5 text-amber-500" />
+                Fejlesztési Tartalékok
+              </button>
+            </div>
+
+            {currentTab === 'assets' && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={handleOpenInventory}
+                disabled={activeCount === 0 || !writable}
+              >
+                <ShieldCheck className="h-4 w-4" />
+                {t('hr:fixed_assets.inventory_check', 'Leltár ellenőrzés')}
+              </Button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Master-Detail Layout */}
-      <div className="flex-1 flex min-h-0 overflow-y-auto overflow-x-hidden">
-        {/* Left panel: Asset List (60%) — stays in place */}
-        <div className="w-[60%] shrink-0 grow-0 overflow-hidden border-r border-border/50 flex flex-col sticky top-0 self-start min-h-0 max-h-[calc(100vh-8rem)]">
-          <AssetListTable
-            assets={assets}
-            loading={isLoading}
-            selectedAssetId={selectedAssetId}
-            onSelectAsset={handleSelectAsset}
-          />
+      {/* Main Body */}
+      {currentTab === 'development_reserves' ? (
+        <div className="flex-1 overflow-y-auto">
+          <DevelopmentReservesTab />
         </div>
+      ) : (
+        /* Master-Detail Layout */
+        <div className="flex-1 flex min-h-0 overflow-y-auto overflow-x-hidden">
+          {/* Left panel: Asset List (60%) — stays in place */}
+          <div className="w-[60%] shrink-0 grow-0 overflow-hidden border-r border-border/50 flex flex-col sticky top-0 self-start min-h-0 max-h-[calc(100vh-8rem)]">
+            <AssetListTable
+              assets={assets}
+              loading={isLoading}
+              selectedAssetId={selectedAssetId}
+              onSelectAsset={handleSelectAsset}
+            />
+          </div>
 
         {/* Right panel: Asset Detail (40%) — full height, no scroll */}
         <div className="w-[40%] shrink-0 grow-0 overflow-hidden">
@@ -156,6 +193,7 @@ export default function FixedAssetsPage() {
           )}
         </div>
       </div>
+    )}
 
       {/* Inventory Check Dialog — lazy loaded */}
       <Suspense fallback={null}>

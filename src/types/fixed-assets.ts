@@ -25,6 +25,23 @@ export interface AssetProject {
   icon: string | null;
 }
 
+export interface DevelopmentReserve {
+  id: string;
+  company_id: string;
+  user_id: string | null;
+  creation_year: number;
+  reserve_amount: number;
+  expiration_date: string;
+  description: string | null;
+  gl_account_id: string | null;
+  created_at: string;
+  updated_at: string;
+  // Computed / joined fields
+  utilized_amount?: number;
+  remaining_amount?: number;
+  status?: 'active' | 'exhausted' | 'expired';
+}
+
 export interface FixedAsset {
   id: string;
   company_id: string;
@@ -51,6 +68,8 @@ export interface FixedAsset {
   activated_by_user_id: string | null;
   activated_by_name: string | null;
   gl_account_id: string | null;
+  development_reserve_id: string | null;
+  development_reserve_amount: number;
   source_invoice_id: string | null;
   source_invoice_type: 'submitted' | 'nav' | null;
   source_invoice_number: string | null;
@@ -64,6 +83,7 @@ export interface FixedAsset {
   project?: AssetProject;
   tao_template?: TaoTemplate;
   gl_account?: { id: string; gl_number: string; short_name: string };
+  development_reserve?: DevelopmentReserve;
 }
 
 export interface AssetEvent {
@@ -91,6 +111,8 @@ export interface DepreciationResult {
     accumulated: number;
     bookValue: number;
     ratePercent: number;
+    taxBase?: number;
+    developmentReserveDeduction?: number;
   };
 }
 

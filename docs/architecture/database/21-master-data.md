@@ -80,10 +80,18 @@
 | skonto_days | integer | ✓ |  | ← Skontó fizetési határidő (napok száma a számla kibocsátásától) |
 | skonto_percent | numeric | ✓ |  | ← Skontó kedvezmény mértéke százalékban (pl. 2.0%) |
 | skonto_excludes_shipping | boolean | — | `true` | ← Szállítási/fuvardíj kizárása a kedvezményalapból |
+| related_party | boolean | ✓ | `false` | ← Kapcsolt vállalkozás-e |
+| relation_type | text | ✓ |  | ← Kapcsoltság jellege ('parent', 'subsidiary', 'sister', 'owner_interest', 'other') |
+| ownership_percent | numeric | ✓ |  | ← Tulajdoni részesedés százaléka (0-100%) |
+| valid_from | date | ✓ |  | ← Kapcsoltság kezdete |
+| valid_to | date | ✓ |  | ← Kapcsoltság vége |
+| parent_partner_id | uuid | ✓ |  | ← Cégcsoport / Anyacég partner hivatkozás |
+| custom_gl_account_id | uuid | ✓ |  | ← Egyedi felülírt kapcsolt főkönyvi számla (312/455) |
+| related_party_notes | text | ✓ |  | ← Kapcsoltsági megjegyzések |
 
-**FK:** `company_id` → `companies.id`, `default_project_id` → `projects.id`
+**FK:** `company_id` → `companies.id`, `default_project_id` → `projects.id`, `parent_partner_id` → `partners.id`, `custom_gl_account_id` → `gl_accounts.id`
 
-**Indexek:** `idx_partners_company_tax`, `idx_partners_default_project`, `idx_partners_exclude`, `partners_company_id_tax_number_key`
+**Indexek:** `idx_partners_company_tax`, `idx_partners_default_project`, `idx_partners_exclude`, `idx_partners_related_party`, `idx_partners_parent_partner_id`, `idx_partners_custom_gl_account`, `partners_company_id_tax_number_key`
 
 **⚠️ tax_number konvenciók:**
 - Magyar partnerek: valós adószám (`12345678-2-42`)

@@ -8890,6 +8890,13 @@ export type Database = {
           name: string
           partner_type: string
           related_party: boolean | null
+          relation_type?: 'parent' | 'subsidiary' | 'sister' | 'owner_interest' | 'other' | null
+          ownership_percent?: number | null
+          valid_from?: string | null
+          valid_to?: string | null
+          parent_partner_id?: string | null
+          custom_gl_account_id?: string | null
+          related_party_notes?: string | null
           skonto_days: number | null
           skonto_excludes_shipping: boolean | null
           skonto_percent: number | null
@@ -8913,6 +8920,13 @@ export type Database = {
           name: string
           partner_type?: string
           related_party?: boolean | null
+          relation_type?: 'parent' | 'subsidiary' | 'sister' | 'owner_interest' | 'other' | null
+          ownership_percent?: number | null
+          valid_from?: string | null
+          valid_to?: string | null
+          parent_partner_id?: string | null
+          custom_gl_account_id?: string | null
+          related_party_notes?: string | null
           skonto_days?: number | null
           skonto_excludes_shipping?: boolean | null
           skonto_percent?: number | null
@@ -8936,6 +8950,13 @@ export type Database = {
           name?: string
           partner_type?: string
           related_party?: boolean | null
+          relation_type?: 'parent' | 'subsidiary' | 'sister' | 'owner_interest' | 'other' | null
+          ownership_percent?: number | null
+          valid_from?: string | null
+          valid_to?: string | null
+          parent_partner_id?: string | null
+          custom_gl_account_id?: string | null
+          related_party_notes?: string | null
           skonto_days?: number | null
           skonto_excludes_shipping?: boolean | null
           skonto_percent?: number | null
@@ -8956,6 +8977,20 @@ export type Database = {
             columns: ["default_project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partners_parent_partner_id_fkey"
+            columns: ["parent_partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partners_custom_gl_account_id_fkey"
+            columns: ["custom_gl_account_id"]
+            isOneToOne: false
+            referencedRelation: "gl_accounts"
             referencedColumns: ["id"]
           },
         ]

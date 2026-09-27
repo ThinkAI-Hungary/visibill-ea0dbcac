@@ -38,6 +38,7 @@ export function DepreciationCards({ asset, performanceLogs }: DepreciationCardsP
     activationDate: parseLocalDate(asset.activation_date),
     usefulLifeMonths: asset.useful_life_months,
     taoRatePercent: taoRate,
+    developmentReserveAmount: asset.development_reserve_amount,
     disposalDate: asset.disposal_date ? parseLocalDate(asset.disposal_date) : undefined,
     depreciationMethod: asset.depreciation_method,
     performanceUnit: asset.performance_unit,
@@ -51,6 +52,8 @@ export function DepreciationCards({ asset, performanceLogs }: DepreciationCardsP
   const usefulLifeLabel = usefulLifeRemMonths > 0
     ? `${usefulLifeYears} év ${usefulLifeRemMonths} hó`
     : `${usefulLifeYears} év`;
+
+  const hasDevReserve = Number(asset.development_reserve_amount) > 0;
 
   return (
     <div className="space-y-3">
@@ -94,7 +97,14 @@ export function DepreciationCards({ asset, performanceLogs }: DepreciationCardsP
 
         {/* Tao ÉCS */}
         <div className="rounded-lg border border-border/50 p-4 bg-muted/20">
-          <h5 className="text-sm font-bold mb-3 text-foreground">Tao ÉCS</h5>
+          <div className="flex items-center justify-between mb-3">
+            <h5 className="text-sm font-bold text-foreground">Tao ÉCS</h5>
+            {hasDevReserve && (
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                Fejlesztési tart.
+              </span>
+            )}
+          </div>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Tao Sablon:</span>
@@ -106,11 +116,28 @@ export function DepreciationCards({ asset, performanceLogs }: DepreciationCardsP
               <span className="text-muted-foreground">ÉCS Kulcs:</span>
               <span className="font-medium">{result.tax.ratePercent}%</span>
             </div>
+            {hasDevReserve && (
+              <>
+                <div className="flex justify-between text-xs text-amber-600">
+                  <span>Felhasznált tartalék:</span>
+                  <span className="font-medium">-{formatCurrency(asset.development_reserve_amount, asset.currency)}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Tao ÉCS alap:</span>
+                  <span className="font-medium">{formatCurrency(result.tax.taxBase || 0, asset.currency)}</span>
+                </div>
+              </>
+            )}
             <div className="h-px bg-border/50 my-2" />
             <div className="flex justify-between">
               <span className="text-foreground font-medium">Tao Érték:</span>
               <span className="font-bold text-primary">{formatCurrency(result.tax.bookValue, asset.currency)}</span>
             </div>
+            {hasDevReserve && (result.tax.taxBase === 0) && (
+              <p className="text-[11px] text-muted-foreground italic mt-1 leading-tight">
+                A Tao. tv. 7. § (15) szerint az eszközre Tao ÉCS nem számolható el.
+              </p>
+            )}
           </div>
         </div>
       </div>

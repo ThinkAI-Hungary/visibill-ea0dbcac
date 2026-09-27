@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateDepreciation } from '../../hooks/useDepreciation';
+import { calculateDepreciation, calculateAnnualDepreciation } from '../../hooks/useDepreciation';
 
 describe('calculateDepreciation', () => {
   const baseParams = {
@@ -123,4 +123,72 @@ describe('calculateDepreciation', () => {
     expect(res.accounting.accumulated).toBe(1500000);
     expect(res.accounting.bookValue).toBe(0);
   });
+
+  it('sets Tao ÉCS to 0 when asset is 100% funded with development reserve (Tao. tv. 7. § (15))', () => {
+    const res = calculateDepreciation({
+      ...baseParams,
+      calculationDate: new Date('2027-01-01'),
+      depreciationMethod: 'linear',
+      developmentReserveAmount: 1500000,
+    });
+
+    // Accounting is unaffected: 500000
+    expect(res.accounting.accumulated).toBe(500000);
+    expect(res.accounting.bookValue).toBe(1000000);
+
+    // Tax depreciation is zeroed out:
+    expect(res.tax.monthly).toBe(0);
+    expect(res.tax.accumulated).toBe(0);
+    expect(res.tax.bookValue).toBe(0);
+    expect(res.tax.taxBase).toBe(0);
+    expect(res.tax.developmentReserveDeduction).toBe(1500000);
+  });
+
+  it('calculates proportional Tao ÉCS when partially funded with development reserve', () => {
+    const res = calculateDepreciation({
+      ...baseParams,
+      calculationDate: new Date('2027-01-01'),
+      depreciationMethod: 'linear',
+      developmentReserveAmount: 500000,
+    });
+
+    // Accounting remains full basis: 500000
+    expect(res.accounting.accumulated).toBe(500000);
+    expect(res.accounting.bookValue).toBe(1000000);
+
+    // Tax depreciation base = 1500000 - 500000 = 1000000
+    // Tax accumulated after 1 year (20% of 1000000) = 200000
+    expect(res.tax.taxBase).toBe(1000000);
+    expect(res.tax.developmentReserveDeduction).toBe(500000);
+    expect(res.tax.accumulated).toBe(200000);
+    expect(res.tax.bookValue).toBe(800000);
+    expect(res.tax.monthly).toBe(Math.round(1000000 * 0.20 / 12));
+  });
+
+  it('calculates annual depreciation for a specific tax year with development reserve reduction', () => {
+    const annual = calculateAnnualDepreciation({
+      ...baseParams,
+      year: 2026,
+      developmentReserveAmount: 500000,
+    });
+
+    // 2026 is Year 1:
+    // Accounting linear 36 months on 1500000 => 500000 Ft/yr
+    expect(annual.accounting).toBe(500000);
+
+    // Tax linear 20% on (1500000 - 500000) = 1000000 => 200000 Ft/yr
+    expect(annual.tax).toBe(200000);
+  });
+
+  it('returns 0 depreciation if asset is activated after the tax year', () => {
+    const annual = calculateAnnualDepreciation({
+      ...baseParams,
+      activationDate: new Date('2027-06-01'),
+      year: 2026,
+    });
+
+    expect(annual.accounting).toBe(0);
+    expect(annual.tax).toBe(0);
+  });
 });
+

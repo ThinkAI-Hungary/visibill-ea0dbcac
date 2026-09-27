@@ -1,11 +1,14 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Link, useParams, useSearchParams , useLocation } from 'react-router-dom';
 import {
-  ArrowLeft, ArrowRight, Calculator, Landmark, Save, Loader2,
+  ArrowLeft, ArrowRight, Calculator, Landmark, Save, Loader2, Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAccountyClients } from '@/hooks/accounty';
 import { useTaoYearly, useSaveTaoYearly } from '@/hooks/useAdminData';
+import { useDevelopmentReserves } from '@/hooks/useDevelopmentReserves';
+import { useFixedAssets } from '@/hooks/useFixedAssets';
+import { calculateAnnualDepreciation } from '@/hooks/useDepreciation';
 import { toast } from '@/hooks/use-toast';
 import {
   STEPS, DECREASING_ITEMS, INCREASING_ITEMS, CREDIT_ITEMS, DONATION_ITEMS,
@@ -41,9 +44,11 @@ export default function TaoYearEndWizardPage() {
 
 
   // DB hooks
-  const companyUuid = client?.id; // actual UUID for DB
+  const companyUuid = client?.id || id; // actual UUID for DB
   const { data: savedData, isLoading: loadingData } = useTaoYearly(companyUuid, taxYear);
   const saveMutation = useSaveTaoYearly();
+  const { data: devReserves = [] } = useDevelopmentReserves(companyUuid);
+  const { data: fixedAssets = [] } = useFixedAssets(companyUuid);
 
 
   // ── Form state ──
@@ -159,6 +164,73 @@ export default function TaoYearEndWizardPage() {
       payableTax,
     };
   }, [data]);
+
+  // ── TENY és Fejlesztési Tartalék összefoglaló ──
+  const tenySummary = useMemo(() => {
+    const reservesCreatedThisYear = devReserves.filter(r => r.creation_year === taxYear);
+    const totalReserveCreated = reservesCreatedThisYear.reduce((s, r) => s + (Number(r.reserve_amount) || 0), 0);
+
+    let totalAccountingDep = 0;
+    let totalTaxDep = 0;
+
+    fixedAssets.forEach(asset => {
+      const dep = calculateAnnualDepreciation({
+        acquisitionValue: asset.acquisition_value,
+        residualValue: asset.residual_value,
+        activationDate: asset.activation_date,
+        usefulLifeMonths: asset.useful_life_months,
+        taoRatePercent: asset.tao_template?.tao_rate_percent || 0,
+        developmentReserveAmount: asset.development_reserve_amount,
+        year: taxYear,
+        disposalDate: asset.disposal_date ? asset.disposal_date : undefined,
+        depreciationMethod: asset.depreciation_method,
+        totalPlannedPerformance: asset.total_planned_performance,
+        depreciationSchedule: asset.depreciation_schedule,
+      });
+      totalAccountingDep += dep.accounting;
+      totalTaxDep += dep.tax;
+    });
+
+    const depDiff = Math.max(0, Math.round(totalAccountingDep) - Math.round(totalTaxDep));
+
+    return {
+      totalReserveCreated,
+      totalAccountingDep: Math.round(totalAccountingDep),
+      totalTaxDep: Math.round(totalTaxDep),
+      depDiff: Math.round(depDiff),
+      hasAssets: fixedAssets.length > 0,
+      hasReserves: reservesCreatedThisYear.length > 0,
+    };
+  }, [devReserves, fixedAssets, taxYear]);
+
+  const handleApplyStep1Teny = () => {
+    upd('depreciation', tenySummary.totalAccountingDep);
+    toast({
+      title: 'Számviteli ÉCS betöltve',
+      description: `TENY számviteli értékcsökkenés (${fmt(tenySummary.totalAccountingDep)} Ft) beillesztve a beszámoló sorba.`,
+    });
+  };
+
+  const handleApplyStep3Teny = () => {
+    if (tenySummary.totalReserveCreated > 0) {
+      updItem('decreasing', 'investment_allowance', tenySummary.totalReserveCreated);
+    }
+    if (tenySummary.totalTaxDep > 0) {
+      updItem('decreasing', 'depreciation_tax', tenySummary.totalTaxDep);
+    }
+    toast({
+      title: 'TENY csökkentő tételek betöltve',
+      description: `Fejlesztési tartalék (${fmt(tenySummary.totalReserveCreated)} Ft) és Tao ÉCS (${fmt(tenySummary.totalTaxDep)} Ft) beillesztve.`,
+    });
+  };
+
+  const handleApplyStep4Teny = () => {
+    updItem('increasing', 'depreciation_diff', tenySummary.depDiff);
+    toast({
+      title: 'ÉCS különbözet betöltve',
+      description: `Számviteli-adó ÉCS különbözet (${fmt(tenySummary.depDiff)} Ft) beillesztve.`,
+    });
+  };
 
 
   // Save to DB
@@ -294,6 +366,93 @@ export default function TaoYearEndWizardPage() {
                 <p className="text-xs text-muted-foreground">{currentStepDef.desc}</p>
               </div>
             </div>
+
+            {/* TENY Integrációs Bannerek */}
+            {step === 1 && tenySummary.totalAccountingDep > 0 && (
+              <div className="mb-5 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 flex items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-blue-600 shrink-0" />
+                  <div>
+                    <span className="font-semibold text-blue-950 dark:text-blue-200">
+                      TENY Számviteli ÉCS elérhető ({taxYear}):
+                    </span>{' '}
+                    <span className="font-bold text-foreground">{fmt(tenySummary.totalAccountingDep)} Ft</span>
+                    <span className="text-muted-foreground ml-1">({fixedAssets.length} eszköz alapján)</span>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleApplyStep1Teny}
+                  className="h-7 text-xs bg-white dark:bg-card border-blue-300 text-blue-700 hover:bg-blue-50"
+                >
+                  Érték átvétele
+                </Button>
+              </div>
+            )}
+
+            {step === 3 && (tenySummary.totalReserveCreated > 0 || tenySummary.totalTaxDep > 0) && (
+              <div className="mb-5 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 flex items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2">
+                  <Landmark className="w-4 h-4 text-amber-600 shrink-0" />
+                  <div>
+                    <span className="font-semibold text-amber-950 dark:text-amber-200">
+                      TENY és Tartalék nyilvántartás ({taxYear}):
+                    </span>
+                    <div className="text-[11px] text-muted-foreground mt-0.5 space-x-2">
+                      {tenySummary.totalReserveCreated > 0 && (
+                        <span>
+                          Fejlesztési tartalék képzés (7.§ (1) f)): <strong>{fmt(tenySummary.totalReserveCreated)} Ft</strong>
+                        </span>
+                      )}
+                      {tenySummary.totalTaxDep > 0 && (
+                        <span>
+                          Adó szerinti ÉCS (7.§ (1) d)): <strong>{fmt(tenySummary.totalTaxDep)} Ft</strong>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleApplyStep3Teny}
+                  className="h-7 text-xs bg-white dark:bg-card border-amber-300 text-amber-700 hover:bg-amber-50 shrink-0"
+                >
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  Tételek átvétele
+                </Button>
+              </div>
+            )}
+
+            {step === 4 && tenySummary.depDiff > 0 && (
+              <div className="mb-5 p-3 rounded-lg bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800 flex items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2">
+                  <Calculator className="w-4 h-4 text-rose-600 shrink-0" />
+                  <div>
+                    <span className="font-semibold text-rose-950 dark:text-rose-200">
+                      Számviteli-adó ÉCS különbözet (8.§ (1) b)):
+                    </span>{' '}
+                    <span className="font-bold text-foreground">{fmt(tenySummary.depDiff)} Ft</span>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      Számviteli ÉCS ({fmt(tenySummary.totalAccountingDep)}) − Adó ÉCS ({fmt(tenySummary.totalTaxDep)})
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleApplyStep4Teny}
+                  className="h-7 text-xs bg-white dark:bg-card border-rose-300 text-rose-700 hover:bg-rose-50 shrink-0"
+                >
+                  Különbözet átvétele
+                </Button>
+              </div>
+            )}
+
             {renderCurrentStep()}
           </div>
 

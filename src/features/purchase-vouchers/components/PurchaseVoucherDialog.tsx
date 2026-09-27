@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2, Loader2, Sparkles, FileText, CheckCircle2 } from 'lucide-react';
+import { Plus, Trash2, Loader2, Sparkles, FileText, CheckCircle2, Eye } from 'lucide-react';
 import { DatePicker } from '@/components/ui/date-picker';
 import { NumberInput } from '@/components/ui/number-input';
 import { formatCurrency } from '@/lib/utils';
@@ -183,9 +183,24 @@ export const PurchaseVoucherDialog: React.FC<PurchaseVoucherDialogProps> = ({
                 </DialogDescription>
               </div>
             </div>
-            <Badge variant="outline" className="text-xs font-mono border-primary/30 text-primary bg-primary/5">
-              {voucherNumber || 'Új bizonylat'}
-            </Badge>
+            <div className="flex items-center gap-2">
+              {voucher?.document_url && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(voucher.document_url!, '_blank', 'noopener,noreferrer')}
+                  className="h-7 text-[11px] gap-1.5 px-2.5 font-medium border-primary/30 text-primary hover:bg-primary/10"
+                  title="Eredeti bizonylat megnyitása"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>Bizonylat megtekintése</span>
+                </Button>
+              )}
+              <Badge variant="outline" className="text-xs font-mono border-primary/30 text-primary bg-primary/5">
+                {voucherNumber || 'Új bizonylat'}
+              </Badge>
+            </div>
           </div>
         </DialogHeader>
 

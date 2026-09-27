@@ -91,8 +91,19 @@ export function AssetListTable({ assets, loading, selectedAssetId, onSelectAsset
                   onClick={() => onSelectAsset(asset.id)}
                 >
                   <TableCell className="font-mono text-muted-foreground text-xs">{index + 1}.</TableCell>
-                  <TableCell className="font-mono text-xs">{asset.inventory_number}</TableCell>
-                  <TableCell className="font-medium max-w-[240px] truncate" title={asset.name}>{asset.name}</TableCell>
+                  <TableCell className="font-medium max-w-[240px]" title={asset.name}>
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="truncate">{asset.name}</span>
+                      {Number(asset.development_reserve_amount) > 0 && (
+                        <span
+                          className="shrink-0 text-[10px] font-semibold px-1 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30"
+                          title={`Fejlesztési tartalék: ${Number(asset.development_reserve_amount).toLocaleString('hu-HU')} Ft`}
+                        >
+                          FT
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="text-center">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ASSET_STATUS_COLORS[asset.status]}`}>
                       {t(`hr:fixed_assets.status.${asset.status}`, { defaultValue: ASSET_STATUS_LABELS[asset.status] })}

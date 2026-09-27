@@ -299,6 +299,78 @@ export function usePurchaseVouchers() {
     },
   });
 
+  // 7. Upload Voucher Files Mutation (OCR & AI Ingestion)
+  const uploadVouchersMutation = useMutation({
+    mutationFn: async (files: File[]) => {
+      if (!companyId) throw new Error('Cég azonosító hiányzik.');
+      if (!files || files.length === 0) return [];
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Nem vagy bejelentkezve.');
+
+      const uploadedResults = [];
+
+      for (const file of files) {
+        const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const storagePath = `${user.id}/${Date.now()}-${sanitizedName}`;
+
+        const { data: storageData, error: storageError } = await supabase.storage
+          .from('invoice-uploads')
+          .upload(storagePath, file, { upsert: true });
+
+        if (storageError) {
+          throw new Error(`Fájl feltöltési hiba (${file.name}): ${storageError.message}`);
+        }
+
+        const { data: urlData } = supabase.storage
+          .from('invoice-uploads')
+          .getPublicUrl(storageData.path);
+
+        const { data: uploadRecord, error: insertError } = await supabase
+          .from('invoice_uploads')
+          .insert({
+            user_id: user.id,
+            company_id: companyId,
+            file_name: file.name,
+            file_url: urlData.publicUrl,
+            file_size: file.size,
+            file_type: file.type,
+            upload_status: 'uploaded',
+            processing_status: 'pending',
+            document_category: 'purchase_voucher',
+            metadata: {
+              source: 'purchase_vouchers_tab',
+              uploaded_at: new Date().toISOString(),
+            },
+          })
+          .select('id')
+          .single();
+
+        if (insertError) {
+          throw new Error(`Adatbázis hiba: ${insertError.message}`);
+        }
+
+        uploadedResults.push({ file_name: file.name, upload_id: uploadRecord?.id, file_url: urlData.publicUrl });
+      }
+
+      return uploadedResults;
+    },
+    onSuccess: (results) => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-vouchers', companyId] });
+      toast({
+        title: 'Bizonylat sikeresen feltöltve',
+        description: `${results.length} db felvásárlási jegy beküldve az AI feldolgozó rendszerbe.`,
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: 'Feltöltési hiba',
+        description: err.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   // Filtered Vouchers
   const filteredVouchers = useMemo(() => {
     return filterVouchers(vouchers, { search, statusFilter });
@@ -323,6 +395,7 @@ export function usePurchaseVouchers() {
     saveVoucherMutation,
     deleteVoucherMutation,
     togglePaymentStatusMutation,
+    uploadVouchersMutation,
     refetch,
     refetchSettings,
   };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,8 @@ import {
   Search,
   FileSpreadsheet,
   Download,
+  Upload,
+  Eye,
   Filter,
   CheckCircle2,
   Clock,
@@ -24,6 +26,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
+import { useFilePreview, FilePreviewModal } from '@/components/ui/FilePreviewModal';
 import { usePurchaseVouchers } from '../hooks/usePurchaseVouchers';
 import { PurchaseVoucherKpiCards } from './PurchaseVoucherKpiCards';
 import { PurchaseVoucherDialog } from './PurchaseVoucherDialog';
@@ -43,10 +46,13 @@ export const PurchaseVouchersTab: React.FC = () => {
     saveVoucherMutation,
     deleteVoucherMutation,
     togglePaymentStatusMutation,
+    uploadVouchersMutation,
   } = usePurchaseVouchers();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingVoucher, setEditingVoucher] = useState<PurchaseVoucher | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { previewFile, openPreview, closePreview } = useFilePreview();
 
   const handleOpenAdd = () => {
     setEditingVoucher(null);
@@ -172,6 +178,33 @@ export const PurchaseVouchersTab: React.FC = () => {
 
         {/* Jobb oldali Akciógombok */}
         <div className="flex items-center gap-2">
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept=".pdf,.png,.jpg,.jpeg,.webp"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files && e.target.files.length > 0) {
+                uploadVouchersMutation.mutate(Array.from(e.target.files));
+                e.target.value = '';
+              }
+            }}
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadVouchersMutation.isPending}
+            className="h-8.5 text-xs gap-1.5 font-medium hover:text-foreground border-border/80"
+          >
+            {uploadVouchersMutation.isPending ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+            ) : (
+              <Upload className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            )}
+            <span>Felvásárlási jegy feltöltése</span>
+          </Button>
           <Button
             size="sm"
             variant="outline"
@@ -237,7 +270,19 @@ export const PurchaseVouchersTab: React.FC = () => {
                     <tr key={v.id} className="hover:bg-muted/20 transition-colors">
                       {/* Bizonylatszám */}
                       <td className="py-2.5 px-3 font-mono font-bold text-foreground">
-                        {v.voucher_number}
+                        <div className="flex items-center gap-1.5">
+                          <span>{v.voucher_number}</span>
+                          {v.document_url && (
+                            <button
+                              type="button"
+                              onClick={() => openPreview({ url: v.document_url!, name: `${v.voucher_number}.pdf` })}
+                              className="text-primary/70 hover:text-primary transition-colors cursor-pointer"
+                              title="Bizonylat megtekintése"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </td>
 
                       {/* Dátum */}
@@ -318,7 +363,7 @@ export const PurchaseVouchersTab: React.FC = () => {
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-500/10 gap-1 text-[10px] font-semibold py-0.5">
-                              <Clock className="w-3 h-3" /> Utalásra vár
+                              <Clock className="w-3 h-3" /> {v.payment_method === 'TRANSFER' ? 'Utalásra vár' : 'Kifizetésre vár'}
                             </Badge>
                           )}
                         </button>
@@ -327,6 +372,18 @@ export const PurchaseVouchersTab: React.FC = () => {
                       {/* Műveletek */}
                       <td className="py-2.5 px-2 text-center">
                         <div className="flex items-center justify-center gap-1">
+                          {v.document_url && (
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => openPreview({ url: v.document_url!, name: `${v.voucher_number}.pdf` })}
+                              className="h-7 w-7 text-muted-foreground hover:text-primary"
+                              title="Bizonylat előnézete"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
                           <Button
                             type="button"
                             size="icon"
@@ -369,6 +426,12 @@ export const PurchaseVouchersTab: React.FC = () => {
         voucher={editingVoucher}
         onSave={saveVoucherMutation.mutateAsync}
         isLoading={saveVoucherMutation.isPending}
+      />
+
+      {/* 5. Fájl előnézet Modal */}
+      <FilePreviewModal
+        previewFile={previewFile}
+        onClose={closePreview}
       />
     </div>
   );

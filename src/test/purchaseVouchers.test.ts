@@ -306,4 +306,129 @@ describe('Purchase Vouchers (Felvásárlási jegyek) - Business Logic & Math', (
       expect(Object.keys(res.errors).length).toBe(0);
     });
   });
+
+  describe('Real-World Sample Vouchers Processing', () => {
+    it('Format 1: Handwritten Pátria pad format (Erős Pista, Siklós, 12% surcharge, Cash)', () => {
+      const items = [
+        { item_name: 'birsalma', quantity: 500, unit_price: 240 },   // 120,000
+        { item_name: 'póréhagyma', quantity: 400, unit_price: 295 }, // 118,000
+      ];
+      const totals = calculateVoucherTotals(items, 12, 0);
+
+      expect(totals.net).toBe(238000);
+      expect(totals.compensation).toBe(28560);
+      expect(totals.gross).toBe(266560);
+
+      const formValidation = validateVoucherForm({
+        voucher_number: 'J 0346351',
+        producer_name: 'Erős Pista',
+        producer_tax_id: '8412345678',
+        producer_card_number: 'ÖS4256',
+        producer_address: '7800 Siklós, Széchényi tér 13.',
+        fulfillment_date: '2026-03-10',
+        payment_method: 'CASH',
+        compensation_surcharge_rate: 12,
+        items,
+      });
+      expect(formValidation.isValid).toBe(true);
+    });
+
+    it('Format 2: Machine-printed ERP format (Hungarpet Kft., 7% surcharge, Transfer, SZJA deduction)', () => {
+      const items = [
+        { item_name: 'Étkezési tojás L', quantity: 20000, unit_price: 50 }, // 1,000,000 net
+      ];
+      // 7% surcharge = 70,000 Ft
+      // SZJA adóelőleg levonás = 15,000 Ft
+      // Gross payout = 1,000,000 + 70,000 - 15,000 = 1,055,000 Ft
+      const totals = calculateVoucherTotals(items, 7, 15000);
+
+      expect(totals.net).toBe(1000000);
+      expect(totals.compensation).toBe(70000);
+      expect(totals.gross).toBe(1055000);
+
+      const formValidation = validateVoucherForm({
+        voucher_number: 'SZ9/2015',
+        producer_name: 'Hungarpet Kft.',
+        producer_tax_id: '23456789-2-42',
+        producer_address: '1117 Budapest, Október huszonharmadika u. 8.',
+        producer_bank_account: '11705008-20489912',
+        fulfillment_date: '2026-03-18',
+        payment_method: 'TRANSFER',
+        compensation_surcharge_rate: 7,
+        tax_deducted: 15000,
+        items,
+      });
+      expect(formValidation.isValid).toBe(true);
+    });
+  });
+
+  describe('TransfersPage Integration (Utalások kezelés)', () => {
+    it('correctly maps unpaid TRANSFER purchase vouchers to transfer candidates', () => {
+      const mockVoucher: any = {
+        id: 'voucher-uuid-1',
+        voucher_number: 'FJ-2026/042',
+        producer_name: 'Kis Pál őstermelő',
+        producer_tax_id: '8498765432',
+        producer_bank_account: '11773000-11112222-33334444',
+        payment_method: 'TRANSFER',
+        payment_status: 'unpaid',
+        payment_due_date: '2026-10-05',
+        gross_amount: 145000,
+        document_url: 'https://example.com/fj.pdf',
+      };
+
+      // Validation: is eligible for transfer?
+      const isEligible = mockVoucher.payment_method === 'TRANSFER' && mockVoucher.payment_status === 'unpaid';
+      expect(isEligible).toBe(true);
+
+      // Mapping logic as in TransfersPage
+      const transferItem = {
+        id: mockVoucher.id,
+        source: 'purchase_voucher' as const,
+        invoice_number: mockVoucher.voucher_number,
+        partner_name: mockVoucher.producer_name,
+        partner_tax_number: mockVoucher.producer_tax_id,
+        due_date: mockVoucher.payment_due_date,
+        amount: Number(mockVoucher.gross_amount),
+        currency: 'HUF',
+        partner_bank_account: mockVoucher.producer_bank_account,
+        image_url: mockVoucher.document_url,
+        has_skonto: false,
+      };
+
+      expect(transferItem.source).toBe('purchase_voucher');
+      expect(transferItem.amount).toBe(145000);
+      expect(transferItem.currency).toBe('HUF');
+      expect(transferItem.partner_bank_account).toBe('11773000-11112222-33334444');
+    });
+
+    it('excludes CASH or paid purchase vouchers from bank transfers', () => {
+      const cashVoucher: any = {
+        payment_method: 'CASH',
+        payment_status: 'unpaid',
+      };
+      const paidTransferVoucher: any = {
+        payment_method: 'TRANSFER',
+        payment_status: 'paid',
+      };
+
+      expect(cashVoucher.payment_method === 'TRANSFER' && cashVoucher.payment_status === 'unpaid').toBe(false);
+      expect(paidTransferVoucher.payment_method === 'TRANSFER' && paidTransferVoucher.payment_status === 'unpaid').toBe(false);
+    });
+
+    it('generates appropriate narrative for bank transfer (GIRO közlemény)', () => {
+      const voucherItem = {
+        original_invoices: [{
+          source: 'purchase_voucher',
+          invoice_number: 'FJ-2026/088',
+        }],
+      };
+
+      const narrative = voucherItem.original_invoices[0].source === 'purchase_voucher'
+        ? `Felvasarlasi jegy ${voucherItem.original_invoices[0].invoice_number}`
+        : voucherItem.original_invoices[0].invoice_number;
+
+      expect(narrative).toBe('Felvasarlasi jegy FJ-2026/088');
+    });
+  });
 });

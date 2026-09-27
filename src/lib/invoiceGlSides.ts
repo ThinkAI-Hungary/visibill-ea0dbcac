@@ -102,3 +102,21 @@ export function computeLineItemDebitCreditSides(params: {
     isSwapped,
   };
 }
+
+/**
+ * Feloldja az alapértelmezett partner főkönyvi számlaszámot kapcsolt vagy független partner esetén:
+ * - Vevő (outbound): Kapcsolt partner esetén '3121' (Követelések kapcsolt vállalkozással szemben), független esetén '311'
+ * - Szállító (inbound): Kapcsolt partner esetén '4551' (Kötelezettségek kapcsolt vállalkozással szemben), független esetén '454'
+ */
+export function getDefaultPartnerGlNumber(params: {
+  isOutbound: boolean;
+  isRelatedParty?: boolean;
+  customGlNumber?: string | null;
+}): string {
+  if (params.customGlNumber) return params.customGlNumber;
+  if (params.isRelatedParty) {
+    return params.isOutbound ? '3121' : '4551';
+  }
+  return params.isOutbound ? '311' : '454';
+}
+

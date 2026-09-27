@@ -31,7 +31,7 @@ export function ManagementRoute() {
       const { data, error } = await supabase
         .from('profiles')
         .select('name, email_verified, role')
-        .eq('id', user.id)
+        .eq('user_id', user.id)
         .single();
       if (error) return { role: null };
       return data;

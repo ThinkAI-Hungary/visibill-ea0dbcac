@@ -1,7 +1,7 @@
 # eaisybill-prod — Adatbázis Séma Áttekintés
 
-> **Utoljára frissítve:** 2026-09-26  
-> **Összesen:** 187 aktív alkalmazás-tábla (188 sémában) | **RLS:** mind engedélyezve (100% InitPlan & Single-Permissive optimalizált) | **FK Indexek:** 100% lefedettség | **Supabase PostgreSQL**
+> **Utoljára frissítve:** 2026-09-27  
+> **Összesen:** 188 aktív alkalmazás-tábla (189 sémában) | **RLS:** mind engedélyezve (100% InitPlan & Single-Permissive optimalizált) | **FK Indexek:** 100% lefedettség | **Supabase PostgreSQL**
 
 Ez a dokumentáció az eaisybill-prod Supabase projekt teljes adatbázis sémáját tartalmazza. Célja, hogy bármely fejlesztő és AI agent azonnal megértse a táblastruktúrát, kapcsolatokat és felhasználási kontextust.
 A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [PostgreSQL RPC Katalógus](./rpc-catalog.md), a serverless függvényeket az [Edge Functions Katalógus](./edge-functions.md), a biztonsági és indexelési irányelveket pedig az [A-092: Teljes Adatbázis Biztonsági és Teljesítménybeli Audit & Optimalizáció](./decisions/A-092-database-security-and-performance-optimization.md) dokumentálja.
@@ -20,7 +20,7 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 - [📊 Főkönyv (General Ledger)](./database/07-general-ledger.md) — 9 tábla, ~30771 sor
 - [💰 Bér & Munkaidő](./database/08-salary-hr.md) — 5 tábla, ~341 sor
 - [🏦 Házipénztár](./database/09-petty-cash.md) — 5 tábla, ~1227 sor
-- [📦 Tárgyi Eszközök](./database/10-assets.md) — 3 tábla, ~0 sor
+- [📦 Tárgyi Eszközök](./database/10-assets.md) — 4 tábla, ~35 sor
 - [🚚 Szállítmányozás](./database/11-shipping.md) — 4 tábla, ~0 sor
 - [📋 Éves Beszámoló & ÁFA](./database/12-annual-reports.md) — 11 tábla, ~1934 sor
 - [📘 eaisyBooks — Alap](./database/13-eaisybooks-core.md) — 16 tábla, ~26176 sor
@@ -158,6 +158,7 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 | `company_settings` | 🏢 Cégek & Tagság | 4 | Cég általános működési beállításai. |
 | `courier_reports` | 🏷️ Törzsadatok | 113 | Futárszolgálati elszámolások (GLS, MPL, FoxPost). |
 | `daily_exchange_rates` | 🛠️ Platform & Üzemeltetés | 5395 | MNB napi hivatalos devizaárfolyamok. |
+| `development_reserves` | 📦 Tárgyi Eszközök | 0 | Cégenként képzett fejlesztési tartalék keretek és lejárati idők (Tao. 7. § (1) f)) |
 | `dunning_sends` | 🛠️ Platform & Üzemeltetés | 0 | Kiküldött fizetési felszólítások naplója. |
 | `eaisybill_module_permissions` | 🔑 Jogosultságok | 0 | eaisybill modulonkénti felhasználói engedélyek. |
 | `egyszerusitett_szamla_backup` | 📄 Számlák | 0 | Backup tábla. |

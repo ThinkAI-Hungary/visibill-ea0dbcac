@@ -45,7 +45,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { toast } from "@/hooks/use-toast";
-import { Search, Plus, Pencil, Trash2, Info, RotateCcw, ChevronDown, BarChart3, Calendar, Banknote, Percent, Clock, Truck } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Info, RotateCcw, ChevronDown, BarChart3, Calendar, Banknote, Percent, Clock, Truck, Building2 } from "lucide-react";
 import { format } from "date-fns";
 import { hu } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
@@ -68,6 +68,15 @@ import {
 } from "@/components/partners/PartnerInvoiceDetailDialog";
 import { decodeHtmlEntities, getInitials as _getInitials, getAvatarColor } from '@/lib/helpers';
 import { parseTaxNumber } from '@/lib/validationUtils';
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RelatedPartyTurnoverTab } from "@/components/partners/RelatedPartyTurnoverTab";
+import {
+  RelationType,
+  RELATION_TYPE_LABELS,
+  RELATION_TYPE_COLORS,
+} from "@/types/related-parties";
+import { useActivePreset } from "@/hooks/useActivePreset";
 
 const DEFAULT_PAGE_SIZE = 15;
 
@@ -95,6 +104,13 @@ interface Partner {
   custom_color?: string | null;
   custom_bg_color?: string | null;
   related_party?: boolean;
+  relation_type?: RelationType | null;
+  ownership_percent?: number | null;
+  valid_from?: string | null;
+  valid_to?: string | null;
+  parent_partner_id?: string | null;
+  custom_gl_account_id?: string | null;
+  related_party_notes?: string | null;
   has_skonto?: boolean;
   skonto_days?: number | null;
   skonto_percent?: number | null;
@@ -137,6 +153,13 @@ export default function PartnersPage() {
     custom_color: "",
     custom_bg_color: "",
     related_party: false,
+    relation_type: "" as RelationType | "",
+    ownership_percent: "" as number | "",
+    valid_from: "",
+    valid_to: "",
+    parent_partner_id: "",
+    custom_gl_account_id: "",
+    related_party_notes: "",
     has_skonto: false,
     skonto_days: 8,
     skonto_percent: 2.0,
@@ -145,6 +168,41 @@ export default function PartnersPage() {
   const [emailError, setEmailError] = useState("");
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  // Tab state: 'partners' | 'related_turnover'
+  const currentTab = searchParams.get('tab') || 'partners';
+  const handleTabChange = (val: string) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (val === 'partners') next.delete('tab');
+      else next.set('tab', val);
+      return next;
+    }, { replace: true });
+  };
+
+  // Chart of accounts query for related party custom GL accounts
+  const { activePresetId } = useActivePreset(selectedCompany?.id);
+  const { data: coaAccounts = [] } = useQuery({
+    queryKey: ['partner-gl-accounts', activePresetId, selectedCompany?.id],
+    queryFn: async () => {
+      if (!selectedCompany?.id) return [];
+      let query = supabase
+        .from('gl_accounts')
+        .select('id, gl_number, short_name');
+      if (activePresetId) {
+        query = query.or(`preset_id.eq.${activePresetId},company_id.eq.${selectedCompany.id}`);
+      } else {
+        query = query.eq('company_id', selectedCompany.id);
+      }
+      const { data, error } = await query
+        .or('gl_number.like.3%,gl_number.like.4%')
+        .order('gl_number');
+      if (error) return [];
+      return data || [];
+    },
+    enabled: !!selectedCompany?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
   // Invoice detail dialog state
   const [selectedInvoiceForDetail, setSelectedInvoiceForDetail] = useState<PartnerInvoice | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
@@ -192,7 +250,7 @@ export default function PartnersPage() {
       const [{ data: partnerData, error: partnerError }, { data: navInvoicesData }, { data: uploadedCounts }] = await Promise.all([
         supabase
           .from("partners")
-          .select("id, name, tax_number, address, email, partner_type, company_id, user_id, default_project_id, created_at, updated_at, exclude_from_accounting, custom_monogram, custom_color, custom_bg_color, related_party")
+          .select("id, name, tax_number, address, email, partner_type, company_id, user_id, default_project_id, created_at, updated_at, exclude_from_accounting, custom_monogram, custom_color, custom_bg_color, related_party, relation_type, ownership_percent, valid_from, valid_to, parent_partner_id, custom_gl_account_id, related_party_notes, has_skonto, skonto_days, skonto_percent, skonto_excludes_shipping")
           .eq("company_id", selectedCompany.id)
           .order("name", { ascending: true }),
         supabase.from("nav_invoices").select("supplier_tax_number, customer_tax_number, supplier_name, customer_name").eq("company_id", selectedCompany.id),
@@ -494,6 +552,13 @@ export default function PartnersPage() {
         user_id: user.id,
         company_id: selectedCompany?.id || null,
         related_party: data.related_party || false,
+        relation_type: data.related_party ? (data.relation_type || null) : null,
+        ownership_percent: data.related_party && data.ownership_percent !== "" ? Number(data.ownership_percent) : null,
+        valid_from: data.related_party && data.valid_from ? data.valid_from : null,
+        valid_to: data.related_party && data.valid_to ? data.valid_to : null,
+        parent_partner_id: data.related_party && data.parent_partner_id ? data.parent_partner_id : null,
+        custom_gl_account_id: data.related_party && data.custom_gl_account_id ? data.custom_gl_account_id : null,
+        related_party_notes: data.related_party && data.related_party_notes ? data.related_party_notes.trim() : null,
         has_skonto: data.has_skonto || false,
         skonto_days: data.has_skonto ? (data.skonto_days ? Number(data.skonto_days) : 8) : null,
         skonto_percent: data.has_skonto ? (data.skonto_percent ? Number(data.skonto_percent) : 2.0) : null,
@@ -535,6 +600,7 @@ export default function PartnersPage() {
         queryClient.invalidateQueries({ queryKey: ['due-transfer-invoices'] });
         queryClient.invalidateQueries({ queryKey: ['inbound-invoices'] });
         queryClient.invalidateQueries({ queryKey: ['nav-invoices'] });
+        queryClient.invalidateQueries({ queryKey: ['relatedPartyTurnover'] });
       }
       toast({
         title: editingPartner ? t('partners:toasts.partner_updated', "Partner frissítve") : t('partners:toasts.partner_created', "Partner létrehozva"),
@@ -652,6 +718,13 @@ export default function PartnersPage() {
         custom_color: partner.custom_color || "",
         custom_bg_color: partner.custom_bg_color || "",
         related_party: partner.related_party || false,
+        relation_type: partner.relation_type || "",
+        ownership_percent: partner.ownership_percent != null ? partner.ownership_percent : "",
+        valid_from: partner.valid_from || "",
+        valid_to: partner.valid_to || "",
+        parent_partner_id: partner.parent_partner_id || "",
+        custom_gl_account_id: partner.custom_gl_account_id || "",
+        related_party_notes: partner.related_party_notes || "",
         has_skonto: partner.has_skonto || false,
         skonto_days: partner.skonto_days ?? 8,
         skonto_percent: partner.skonto_percent ?? 2.0,
@@ -669,6 +742,13 @@ export default function PartnersPage() {
         custom_color: "",
         custom_bg_color: "",
         related_party: false,
+        relation_type: "",
+        ownership_percent: "",
+        valid_from: "",
+        valid_to: "",
+        parent_partner_id: "",
+        custom_gl_account_id: "",
+        related_party_notes: "",
         has_skonto: false,
         skonto_days: 8,
         skonto_percent: 2.0,
@@ -693,6 +773,13 @@ export default function PartnersPage() {
       custom_color: "",
       custom_bg_color: "",
       related_party: false,
+      relation_type: "",
+      ownership_percent: "",
+      valid_from: "",
+      valid_to: "",
+      parent_partner_id: "",
+      custom_gl_account_id: "",
+      related_party_notes: "",
       has_skonto: false,
       skonto_days: 8,
       skonto_percent: 2.0,
@@ -817,20 +904,52 @@ export default function PartnersPage() {
   };
 
 
+  const relatedCount = useMemo(() => {
+    return (partners as Partner[] | undefined)?.filter(p => p.related_party).length || 0;
+  }, [partners]);
+
   return (
     <div className="space-y-4 page-animate flex flex-col min-h-full pb-8">
       {/* Page Header */}
-      <div className="flex items-center justify-between shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{t('partners:title', 'Partnertörzs')}</h1>
           <p className="text-muted-foreground text-sm">
             {t('partners:subtitle', 'Vevők és szállítók kezelése és pénzügyi áttekintése')}
           </p>
         </div>
-        <Button onClick={() => handleOpenDialog()} className="gap-2" disabled={!writable} title={!writable ? t('common:no_permission', 'Nincs írási jogosultságod') : undefined}>
-          <Plus className="h-4 w-4" /> {t('partners:actions.new_partner', 'Új partner hozzáadása')}
-        </Button>
+        <div className="flex items-center gap-3">
+          <Tabs value={currentTab} onValueChange={handleTabChange}>
+            <TabsList className="bg-muted/60 p-1">
+              <TabsTrigger value="partners" className="text-xs">
+                Partnerek
+                {partners && partners.length > 0 && (
+                  <span className="ml-1.5 text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+                    {partners.length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="related_turnover" className="text-xs gap-1.5">
+                Kapcsolt vállalkozások forgalma
+                {relatedCount > 0 && (
+                  <Badge variant="outline" className="ml-1 text-[9px] h-4 px-1.5 bg-amber-500/10 text-amber-600 border-amber-500/20 font-bold">
+                    {relatedCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          {currentTab === 'partners' && (
+            <Button onClick={() => handleOpenDialog()} className="gap-2" disabled={!writable} title={!writable ? t('common:no_permission', 'Nincs írási jogosultságod') : undefined}>
+              <Plus className="h-4 w-4" /> {t('partners:actions.new_partner', 'Új partner hozzáadása')}
+            </Button>
+          )}
+        </div>
       </div>
+
+      {currentTab === 'partners' ? (
+        <>
 
       {/* ── Ranking & Analytics Section (collapsible) ── */}
       <Collapsible open={rankingOpen} onOpenChange={handleRankingToggle} className="shrink-0">
@@ -1250,6 +1369,103 @@ export default function PartnersPage() {
                 </div>
               </div>
 
+              {/* Kapcsolt vállalkozási adatok */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <Building2 className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                    Kapcsolt vállalkozási adatok
+                  </h4>
+                  {selectedPartner.related_party ? (
+                    <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-600 border-amber-500/20 font-semibold">
+                      Kapcsolt partner
+                    </Badge>
+                  ) : (
+                    <span className="text-[10px] text-muted-foreground">Független</span>
+                  )}
+                </div>
+                <div className="border border-border/30 rounded-xl p-4 bg-muted/10 space-y-2.5">
+                  {selectedPartner.related_party ? (
+                    <div className="space-y-2 text-xs">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <span className="text-[10px] text-muted-foreground font-semibold block">Kapcsolati típus</span>
+                          <span className="font-semibold text-foreground">
+                            {selectedPartner.relation_type ? (RELATION_TYPE_LABELS[selectedPartner.relation_type] || selectedPartner.relation_type) : 'Kapcsolt viszony'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-muted-foreground font-semibold block">Tulajdoni hányad</span>
+                          <span className="font-semibold text-foreground">
+                            {selectedPartner.ownership_percent != null ? `${selectedPartner.ownership_percent}%` : 'Nem megadott'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {(selectedPartner.valid_from || selectedPartner.valid_to) && (
+                        <div className="text-[11px] text-muted-foreground pt-1 border-t border-border/20">
+                          Érvényesség: {selectedPartner.valid_from ? formatDateLocale(selectedPartner.valid_from, 'yyyy. MM. dd.') : 'kezdetektől'} – {selectedPartner.valid_to ? formatDateLocale(selectedPartner.valid_to, 'yyyy. MM. dd.') : 'visszavonásig'}
+                        </div>
+                      )}
+
+                      {selectedPartner.parent_partner_id && (
+                        <div className="text-[11px] text-muted-foreground pt-1 border-t border-border/20">
+                          Szülő partner:{' '}
+                          <span className="font-semibold text-foreground">
+                            {(partners as Partner[] | undefined)?.find(p => p.id === selectedPartner.parent_partner_id)?.name || 'Kijelölt szülő'}
+                          </span>
+                        </div>
+                      )}
+
+                      {selectedPartner.related_party_notes && (
+                        <div className="text-[11px] text-muted-foreground pt-1 border-t border-border/20 italic">
+                          „{selectedPartner.related_party_notes}”
+                        </div>
+                      )}
+
+                      <div className="pt-2 flex items-center justify-between border-t border-border/20">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            handleTabChange('related_turnover');
+                          }}
+                          className="h-7 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-500/10 gap-1 p-0 px-2"
+                        >
+                          <BarChart3 className="h-3 w-3" />
+                          Forgalom kimutatás
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenDialog(selectedPartner)}
+                          className="h-7 text-xs gap-1"
+                          disabled={!writable}
+                        >
+                          <Pencil className="h-3 w-3" /> Módosítás
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Ez a partner független piaci szereplő.</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          handleOpenDialog(selectedPartner);
+                          setFormData(prev => ({ ...prev, related_party: true }));
+                        }}
+                        className="h-7 text-xs gap-1 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                        disabled={!writable}
+                      >
+                        <Plus className="h-3 w-3" /> Kapcsolttá tétel
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Partner Számlák — tabbed */}
               <div className="space-y-3 shrink-0">
                 {/* Tab header */}
@@ -1405,6 +1621,19 @@ export default function PartnersPage() {
           )}
         </Card>
       </div>
+        </>
+      ) : (
+        <RelatedPartyTurnoverTab
+          onEditPartner={(pId) => {
+            const p = (partners as Partner[] | undefined)?.find(x => x.id === pId);
+            if (p) handleOpenDialog(p);
+          }}
+          onSelectPartner={(pId) => {
+            handleTabChange('partners');
+            selectPartner(pId);
+          }}
+        />
+      )}
 
       {/* Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -1462,23 +1691,168 @@ export default function PartnersPage() {
               )}
             </div>
             
-            <div className="flex items-center space-x-2 pt-2">
-              <Checkbox
-                id="related_party"
-                checked={formData.related_party}
-                onCheckedChange={(checked) => setFormData({ ...formData, related_party: !!checked })}
-              />
-              <div className="grid gap-1.5 leading-none">
-                <Label
-                  htmlFor="related_party"
-                  className="text-xs font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                >
-                  {t('partners:modal.related_party_label', 'Kapcsolt vállalkozás')}
-                </Label>
-                <p className="text-[10px] text-muted-foreground">
-                  {t('partners:modal.related_party_hint', 'A céggel kapcsolt vállalkozási viszonyban álló partner (limit ellenőrzéshez).')}
-                </p>
+            {/* ── Kapcsolt vállalkozás beállítások ── */}
+            <div className="space-y-3 pt-3 border-t border-border/50">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="related_party" className="text-xs font-semibold text-foreground flex items-center gap-1.5 cursor-pointer">
+                    <Building2 className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                    {t('partners:modal.related_party_label', 'Kapcsolt vállalkozás')}
+                  </Label>
+                  <p className="text-[11px] text-muted-foreground">
+                    {t('partners:modal.related_party_hint', 'Külön főkönyvi számlák (3121, 4551, 912) és forgalmi kimutatások.')}
+                  </p>
+                </div>
+                <Switch
+                  id="related_party"
+                  checked={formData.related_party}
+                  onCheckedChange={(checked) => setFormData({ ...formData, related_party: checked })}
+                />
               </div>
+
+              {formData.related_party && (
+                <div className="space-y-3 p-3.5 rounded-lg bg-amber-500/5 border border-amber-500/20 animate-in fade-in-50 duration-200">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Relation Type */}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="relation_type" className="text-xs font-medium text-foreground">
+                        Kapcsolati típus <span className="text-destructive">*</span>
+                      </Label>
+                      <Select
+                        value={formData.relation_type || 'other'}
+                        onValueChange={(val) => setFormData({ ...formData, relation_type: val as RelationType })}
+                      >
+                        <SelectTrigger id="relation_type" className="h-8 text-xs bg-background">
+                          <SelectValue placeholder="Válassz típust..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="parent" className="text-xs">Anyavállalat</SelectItem>
+                          <SelectItem value="subsidiary" className="text-xs">Leányvállalat</SelectItem>
+                          <SelectItem value="sister" className="text-xs">Közös vezetésű / Testvérvállalat</SelectItem>
+                          <SelectItem value="owner_interest" className="text-xs">Tulajdonos egyéb érdekeltsége</SelectItem>
+                          <SelectItem value="other" className="text-xs">Egyéb kapcsolt viszony</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Ownership percent */}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="ownership_percent" className="text-xs font-medium text-foreground">
+                        Tulajdoni hányad (%)
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="ownership_percent"
+                          type="number"
+                          step="0.01"
+                          min={0}
+                          max={100}
+                          value={formData.ownership_percent}
+                          onChange={(e) => setFormData({ ...formData, ownership_percent: e.target.value === '' ? '' : Number(e.target.value) })}
+                          placeholder="pl. 100 vagy 50"
+                          className="h-8 text-xs pr-7 bg-background"
+                        />
+                        <span className="absolute right-2.5 top-2 text-xs text-muted-foreground pointer-events-none">%</span>
+                      </div>
+                    </div>
+
+                    {/* Valid from & to */}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="valid_from" className="text-xs font-medium text-foreground">
+                        Kapcsoltság kezdete
+                      </Label>
+                      <Input
+                        id="valid_from"
+                        type="date"
+                        value={formData.valid_from}
+                        onChange={(e) => setFormData({ ...formData, valid_from: e.target.value })}
+                        className="h-8 text-xs bg-background"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="valid_to" className="text-xs font-medium text-foreground">
+                        Kapcsoltság vége
+                      </Label>
+                      <Input
+                        id="valid_to"
+                        type="date"
+                        value={formData.valid_to}
+                        onChange={(e) => setFormData({ ...formData, valid_to: e.target.value })}
+                        className="h-8 text-xs bg-background"
+                      />
+                    </div>
+
+                    {/* Parent partner select */}
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label htmlFor="parent_partner_id" className="text-xs font-medium text-foreground">
+                        Szülő partner (csoportfej / anyacég a törzsből)
+                      </Label>
+                      <Select
+                        value={formData.parent_partner_id || 'none'}
+                        onValueChange={(val) => setFormData({ ...formData, parent_partner_id: val === 'none' ? '' : val })}
+                      >
+                        <SelectTrigger id="parent_partner_id" className="h-8 text-xs bg-background">
+                          <SelectValue placeholder="Nincs szülő partner kijelölve" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-56">
+                          <SelectItem value="none" className="text-xs text-muted-foreground">
+                            (Nincs külön szülő partner)
+                          </SelectItem>
+                          {(partners as Partner[] | undefined || [])
+                            .filter((p) => p.id !== editingPartner?.id)
+                            .map((p) => (
+                              <SelectItem key={p.id} value={p.id} className="text-xs">
+                                {decodeHtmlEntities(p.name)} {p.tax_number ? `(${displayTaxNumber(p.tax_number)})` : ''}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Custom GL account select */}
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label htmlFor="custom_gl_account_id" className="text-xs font-medium text-foreground">
+                        Egyedi főkönyvi számlaszám hozzárendelés (opcionális)
+                      </Label>
+                      <Select
+                        value={formData.custom_gl_account_id || 'default'}
+                        onValueChange={(val) => setFormData({ ...formData, custom_gl_account_id: val === 'default' ? '' : val })}
+                      >
+                        <SelectTrigger id="custom_gl_account_id" className="h-8 text-xs bg-background">
+                          <SelectValue placeholder="Alapértelmezett (Vevő: 3121, Szállító: 4551)" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-56">
+                          <SelectItem value="default" className="text-xs text-muted-foreground">
+                            Alapértelmezett automatikus (3121 / 4551)
+                          </SelectItem>
+                          {coaAccounts.map((acc: any) => (
+                            <SelectItem key={acc.id} value={acc.id} className="text-xs font-mono">
+                              {acc.gl_number} - {acc.short_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[10px] text-muted-foreground">
+                        Ha üresen hagyod, az automata vevő oldalon 3121-re, szállító oldalon 4551-re könyvel.
+                      </p>
+                    </div>
+
+                    {/* Related party notes */}
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label htmlFor="related_party_notes" className="text-xs font-medium text-foreground">
+                        Megjegyzések / Indoklás a kapcsolt viszonyról
+                      </Label>
+                      <Textarea
+                        id="related_party_notes"
+                        value={formData.related_party_notes}
+                        onChange={(e) => setFormData({ ...formData, related_party_notes: e.target.value })}
+                        placeholder="pl. 100%-os közvetett tulajdon, közös ügyvezetés, stb."
+                        className="text-xs min-h-[60px] bg-background"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* ── Gyorsfizetési kedvezmény (Skontó) ── */}

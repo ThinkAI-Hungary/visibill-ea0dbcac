@@ -12,6 +12,7 @@ import { useTaoTemplates, useCreateFixedAsset, generateInventoryNumber, useAsset
 import { useCompanyLocations } from '@/hooks/useCompanyLocations';
 import { useProjectList } from '@/hooks/useProjectList';
 import { useActivePreset } from '@/hooks/useActivePreset';
+import { useDevelopmentReserves } from '@/hooks/useDevelopmentReserves';
 import { supabase } from '@/integrations/supabase/client';
 import { Package2, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -59,6 +60,8 @@ export function AssetActivationDialog({
   const { projects = [] } = useProjectList();
   const { activePresetId } = useActivePreset(selectedCompany?.id);
   const { data: glAccounts = [] } = useAssetGlAccounts(selectedCompany?.id, activePresetId);
+  const { data: developmentReserves = [] } = useDevelopmentReserves(selectedCompany?.id);
+  const activeReserves = developmentReserves.filter(r => (r.remaining_amount || 0) > 0);
   const createAsset = useCreateFixedAsset();
 
   // Profile name for the activated_by field
@@ -90,6 +93,9 @@ export function AssetActivationDialog({
     performanceUnit: string;
     totalPlannedPerformance: string;
     depreciationScheduleString: string;
+    useDevelopmentReserve: boolean;
+    developmentReserveId: string;
+    developmentReserveAmount: number;
   }>>([]);
 
   const { value: lowValueThresholdRule } = useCompanyAccountingRule(
@@ -123,6 +129,9 @@ export function AssetActivationDialog({
           performanceUnit: '',
           totalPlannedPerformance: '',
           depreciationScheduleString: '',
+          useDevelopmentReserve: false,
+          developmentReserveId: activeReserves[0]?.id || '',
+          developmentReserveAmount: val,
         };
       }));
     }
@@ -189,6 +198,8 @@ export function AssetActivationDialog({
           sourceInvoiceNumber: invoiceInfo.invoiceNumber,
           supplierName: invoiceInfo.supplierName,
           glAccountId: form.glAccountId || null,
+          developmentReserveId: form.useDevelopmentReserve ? form.developmentReserveId || null : null,
+          developmentReserveAmount: form.useDevelopmentReserve ? Number(form.developmentReserveAmount) || 0 : 0,
         });
       }
 
@@ -549,6 +560,81 @@ export function AssetActivationDialog({
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+                  )}
+                </div>
+
+                {/* Fejlesztési Tartalék Szekció */}
+                <div className="border-t pt-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`dev-reserve-check-${index}`}
+                        checked={Boolean(form.useDevelopmentReserve)}
+                        onChange={e => {
+                          const checked = e.target.checked;
+                          updateForm(index, 'useDevelopmentReserve', checked);
+                          if (checked && !form.developmentReserveId && activeReserves.length > 0) {
+                            updateForm(index, 'developmentReserveId', activeReserves[0].id);
+                            updateForm(index, 'developmentReserveAmount', Math.min(form.acquisitionValue, activeReserves[0].remaining_amount || 0));
+                          }
+                        }}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      />
+                      <Label htmlFor={`dev-reserve-check-${index}`} className="text-sm font-semibold cursor-pointer">
+                        Fejlesztési tartalék terhére aktiválva (Tao. tv. 7. § (15))
+                      </Label>
+                    </div>
+                    {activeReserves.length === 0 && (
+                      <span className="text-[11px] text-muted-foreground italic">
+                        Nincs aktív szabad fejlesztési tartalék rögzítve
+                      </span>
+                    )}
+                  </div>
+
+                  {form.useDevelopmentReserve && (
+                    <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-lg space-y-3 animate-in slide-in-from-top-1 duration-200">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Fejlesztési Tartalék Keret</Label>
+                          <Select
+                            value={form.developmentReserveId}
+                            onValueChange={v => {
+                              updateForm(index, 'developmentReserveId', v);
+                              const res = developmentReserves.find(r => r.id === v);
+                              if (res) {
+                                updateForm(index, 'developmentReserveAmount', Math.min(form.acquisitionValue, res.remaining_amount || 0));
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue placeholder="Válassz keretet..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {developmentReserves.map(r => (
+                                <SelectItem key={r.id} value={r.id} className="text-xs">
+                                  {r.creation_year}. évi keret (Szabad: {(r.remaining_amount || 0).toLocaleString('hu-HU')} Ft, Lejárat: {r.expiration_date})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Felhasznált Összeg (Ft)</Label>
+                          <Input
+                            type="number"
+                            value={form.developmentReserveAmount}
+                            onChange={e => updateForm(index, 'developmentReserveAmount', parseFloat(e.target.value) || 0)}
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-tight">
+                        <strong>Adózási hatás:</strong> A felhasznált összeg mértékéig az eszközre a társasági adó törvény szerinti értékcsökkenési leírás (Tao ÉCS) nem számolható el.
+                      </p>
                     </div>
                   )}
                 </div>

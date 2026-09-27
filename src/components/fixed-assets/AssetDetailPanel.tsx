@@ -6,7 +6,7 @@ import { formatCurrency } from '@/lib/utils';
 import { DepreciationCards } from './DepreciationCards';
 import type { FixedAsset, AssetEvent } from '@/types/fixed-assets';
 import { ASSET_STATUS_LABELS, ASSET_STATUS_COLORS } from '@/types/fixed-assets';
-import { QrCode, FileText, ShieldCheck, ArrowRightLeft, Trash2, PlusCircle, CheckCircle, Upload, ExternalLink, Loader2, ShieldOff, Receipt, FolderKanban, RefreshCw, FileCheck } from 'lucide-react';
+import { QrCode, FileText, ShieldCheck, ArrowRightLeft, Trash2, PlusCircle, CheckCircle, Upload, ExternalLink, Loader2, ShieldOff, Receipt, FolderKanban, RefreshCw, FileCheck, Landmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -24,6 +24,7 @@ const TransferDialog = lazy(() => import('./TransferDialog').then(m => ({ defaul
 const ReactivationDialog = lazy(() => import('./ReactivationDialog').then(m => ({ default: m.ReactivationDialog })));
 const DisposalDialog = lazy(() => import('./DisposalDialog').then(m => ({ default: m.DisposalDialog })));
 const QrLabelDialog = lazy(() => import('./QrLabelDialog').then(m => ({ default: m.QrLabelDialog })));
+const DevelopmentReserveAssignDialog = lazy(() => import('./DevelopmentReserveAssignDialog').then(m => ({ default: m.DevelopmentReserveAssignDialog })));
 
 function parseLocalDate(ymdStr: string): Date {
   const parts = ymdStr.split('-');
@@ -69,6 +70,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
   const [reactivationOpen, setReactivationOpen] = useState(false);
   const [disposalOpen, setDisposalOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
+  const [reserveAssignOpen, setReserveAssignOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [sourceInvoiceUrl, setSourceInvoiceUrl] = useState<string | null>(null);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
@@ -338,6 +340,35 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
             <p className="font-semibold font-mono text-sm">{asset.gl_account.gl_number} — {asset.gl_account.short_name}</p>
           </div>
         )}
+        <div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Fejlesztési tartalék</span>
+            {isActive && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-5 px-1.5 text-[11px] text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40"
+                onClick={() => setReserveAssignOpen(true)}
+              >
+                Kezelés
+              </Button>
+            )}
+          </div>
+          <p className="font-semibold text-amber-600">
+            {Number(asset.development_reserve_amount) > 0 ? (
+              <>
+                {formatCurrency(asset.development_reserve_amount, asset.currency)}
+                {asset.development_reserve?.creation_year && (
+                  <span className="text-xs font-normal text-muted-foreground ml-1">
+                    ({asset.development_reserve.creation_year}. évi keret)
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="text-muted-foreground font-normal text-xs">Nincs hozzárendelve</span>
+            )}
+          </p>
+        </div>
         {asset.disposal_date && (
           <div>
             <span className="text-muted-foreground">{t('fixed_assets.detail.disposal_date')}</span>
@@ -528,6 +559,17 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
           <ArrowRightLeft className="h-4 w-4" />
           {t('fixed_assets.detail.btn_transfer')}
         </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-950/40"
+          disabled={!isActive}
+          onClick={() => setReserveAssignOpen(true)}
+        >
+          <Landmark className="h-4 w-4" />
+          Fejlesztési tartalék
+        </Button>
       </div>
 
       {/* Timeline */}
@@ -712,6 +754,13 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
         {reactivationOpen && <ReactivationDialog open={reactivationOpen} onOpenChange={setReactivationOpen} asset={asset} />}
         {disposalOpen && <DisposalDialog open={disposalOpen} onOpenChange={setDisposalOpen} asset={asset} />}
         {qrOpen && <QrLabelDialog open={qrOpen} onOpenChange={setQrOpen} asset={asset} />}
+        {reserveAssignOpen && (
+          <DevelopmentReserveAssignDialog
+            open={reserveAssignOpen}
+            onOpenChange={setReserveAssignOpen}
+            asset={asset}
+          />
+        )}
       </Suspense>
     </div>
   );

@@ -47,6 +47,7 @@ import {
   normalizeAccountNumber,
   formatAccountOnType,
 } from '@/lib/ibanUtils';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -54,6 +55,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription as DialogDesc,
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -102,7 +104,7 @@ const WEEKDAYS_HR = ['P', 'U', 'S', 'Č', 'P', 'S', 'N'];
 
 interface TransferInvoice {
   id: string;
-  source: 'manual' | 'nav';
+  source: 'manual' | 'nav' | 'purchase_voucher';
   invoice_number: string;
   partner_name: string;
   partner_tax_number?: string;
@@ -166,7 +168,8 @@ export default function TransfersPage() {
     return inv.amount;
   };
 
-  const handleToggleSkonto = async (itemKey: string, invoiceId: string, source: 'manual' | 'nav', newSelected: boolean) => {
+  const handleToggleSkonto = async (itemKey: string, invoiceId: string, source: 'manual' | 'nav' | 'purchase_voucher', newSelected: boolean) => {
+    if (source === 'purchase_voucher') return;
     setSkontoOverrides(prev => ({ ...prev, [itemKey]: newSelected, [invoiceId]: newSelected }));
     const targetTable = source === 'nav' ? 'nav_invoices' : 'invoices';
     supabase
@@ -182,9 +185,12 @@ export default function TransfersPage() {
     if (!item.original_invoices || item.original_invoices.length === 0) return '';
     if (item.original_invoices.length === 1) {
       const inv = item.original_invoices[0];
+      if (inv.source === 'purchase_voucher') {
+        return `Felvasarlasi jegy ${inv.invoice_number}`;
+      }
       return formatTransferNarrative(inv.invoice_number, isSkontoActive(inv), inv.skonto_percent);
     }
-    return `Szamlak: ${item.original_invoices.map((inv: any) => formatTransferNarrative(inv.invoice_number, isSkontoActive(inv), inv.skonto_percent)).join(', ')}`;
+    return `Szamlak: ${item.original_invoices.map((inv: any) => inv.source === 'purchase_voucher' ? `FJ ${inv.invoice_number}` : formatTransferNarrative(inv.invoice_number, isSkontoActive(inv), inv.skonto_percent)).join(', ')}`;
   };
 
   // Bank account validation check (GIRO CDV & International IBAN Modulo 97)
@@ -320,6 +326,16 @@ export default function TransfersPage() {
         .eq('paid', false);
 
       if (navErr) throw navErr;
+
+      // Fetch unpaid purchase vouchers with TRANSFER payment method
+      const { data: vouchersData, error: vouchersErr } = await supabase
+        .from('purchase_vouchers')
+        .select('id, voucher_number, producer_name, producer_tax_id, producer_bank_account, issue_date, fulfillment_date, payment_due_date, gross_amount, payment_status, document_url')
+        .eq('company_id', selectedCompany.id)
+        .eq('payment_method', 'TRANSFER')
+        .eq('payment_status', 'unpaid');
+
+      if (vouchersErr) console.warn("Error fetching purchase vouchers for transfers:", vouchersErr);
 
       // Fetch all historic manual invoices for this company
       const { data: historicInvoices } = await supabase
@@ -697,6 +713,34 @@ export default function TransfersPage() {
         };
       });
 
+      const voucherTransfers: TransferInvoice[] = (vouchersData || []).map(v => {
+        const taxNumber = v.producer_tax_id || '';
+        const resolvedAccount = v.producer_bank_account ||
+          (taxNumber ? bankAccountLookupMap[taxNumber] : '') ||
+          (v.producer_name ? bankAccountLookupMap[v.producer_name.toLowerCase()] : '') || '';
+
+        const dueDate = v.payment_due_date
+          ? new Date(v.payment_due_date).toISOString().split('T')[0]
+          : (v.fulfillment_date
+            ? new Date(v.fulfillment_date).toISOString().split('T')[0]
+            : (v.issue_date ? new Date(v.issue_date).toISOString().split('T')[0] : today));
+
+        return {
+          id: v.id,
+          source: 'purchase_voucher',
+          invoice_number: v.voucher_number || '',
+          partner_name: v.producer_name || 'Ismeretlen őstermelő',
+          partner_tax_number: taxNumber || undefined,
+          issue_date: v.issue_date || undefined,
+          due_date: dueDate,
+          amount: Number(v.gross_amount) || 0,
+          currency: 'HUF',
+          partner_bank_account: resolvedAccount,
+          image_url: v.document_url || undefined,
+          has_skonto: false,
+        };
+      });
+
       // 5. Combine and Deduplicate by normalized invoice number
       const combinedTransfers = [...manualTransfers, ...navTransfers];
       const seenInvoiceNumbers = new Set<string>();
@@ -713,6 +757,11 @@ export default function TransfersPage() {
           seenInvoiceNumbers.add(norm);
           deduplicatedTransfers.push(inv);
         }
+      });
+
+      // Add purchase vouchers directly
+      voucherTransfers.forEach(v => {
+        deduplicatedTransfers.push(v);
       });
 
       return deduplicatedTransfers;
@@ -801,6 +850,18 @@ export default function TransfersPage() {
             }
           }
         });
+
+        // Fetch purchase vouchers
+        const { data: vouchersPaid } = await supabase
+          .from('purchase_vouchers')
+          .select('id, payment_status')
+          .in('id', allInvoiceIds);
+
+        (vouchersPaid || []).forEach(v => {
+          if (v.payment_status === 'paid') {
+            paidInvoiceIds.add(v.id);
+          }
+        });
       }
 
       // Map and update status dynamically (Read-Repair)
@@ -876,11 +937,16 @@ export default function TransfersPage() {
         }
       }
 
-      // 2. Save back to manual invoice if it's manual
+      // 2. Save back to manual invoice if it's manual, or purchase voucher
       if (invoice.source === 'manual') {
         await supabase
           .from('invoices')
           .update({ bankszamlaszam_iban: formatted })
+          .eq('id', invoice.id);
+      } else if (invoice.source === 'purchase_voucher') {
+        await supabase
+          .from('purchase_vouchers')
+          .update({ producer_bank_account: formatted })
           .eq('id', invoice.id);
       }
 
@@ -919,6 +985,19 @@ export default function TransfersPage() {
       const invoicesToSettle = settleItem.original_invoices;
 
       for (const inv of invoicesToSettle) {
+        if (inv.source === 'purchase_voucher') {
+          const { error: pvErr } = await supabase
+            .from('purchase_vouchers')
+            .update({
+              payment_status: 'paid',
+              paid_amount: inv.amount,
+              paid_at: new Date(settlePaymentDate).toISOString(),
+            })
+            .eq('id', inv.id);
+          if (pvErr) console.warn("Failed to settle purchase voucher:", pvErr);
+          continue;
+        }
+
         // Try calling RPC record_manual_invoice_payment
         const { error: rpcErr } = await supabase.rpc('record_manual_invoice_payment', {
           p_invoice_id: inv.id,
@@ -1789,16 +1868,23 @@ export default function TransfersPage() {
                                 />
                               </TableCell>
                               <TableCell className="!align-top pt-3">
-                                <div className="flex items-center gap-2">
-                                  <User className="h-4 w-4 text-muted-foreground/80 shrink-0" />
-                                  <CopyableCell
-                                    value={item.partner_name}
-                                    displayValue={item.partner_name.length > 13 ? item.partner_name.slice(0, 13) + '…' : item.partner_name}
-                                    truncate
-                                    maxWidth="100%"
-                                    className="font-semibold text-foreground text-xs"
-                                    ariaLabel={`${item.partner_name} másolása`}
-                                  />
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <div className="flex items-center gap-2">
+                                    <User className="h-4 w-4 text-muted-foreground/80 shrink-0" />
+                                    <CopyableCell
+                                      value={item.partner_name}
+                                      displayValue={item.partner_name.length > 13 ? item.partner_name.slice(0, 13) + '…' : item.partner_name}
+                                      truncate
+                                      maxWidth="100%"
+                                      className="font-semibold text-foreground text-xs"
+                                      ariaLabel={`${item.partner_name} másolása`}
+                                    />
+                                  </div>
+                                  {item.original_invoices.some(inv => inv.source === 'purchase_voucher') && (
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-500/40 text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 font-semibold gap-1">
+                                      Őstermelő
+                                    </Badge>
+                                  )}
                                 </div>
                                 <div className="text-[10px] text-muted-foreground font-mono mt-1 max-w-[200px] truncate" title={getItemNarrative(item)}>
                                    {t('transfers:table.narrative_prefix', 'Közlemény:')} {getItemNarrative(item).slice(0, 140)}
@@ -1810,32 +1896,45 @@ export default function TransfersPage() {
                                     {item.original_invoices.map((inv, i) => (
                                       <span 
                                         key={inv.id || i} 
-                                        className="inline-flex items-center gap-1.5 bg-muted/80 hover:bg-muted border border-border/50 px-2 py-1 rounded-md text-xs text-foreground font-mono transition-colors shadow-xs"
+                                        className={cn(
+                                          "inline-flex items-center gap-1.5 border px-2 py-1 rounded-md text-xs font-mono transition-colors shadow-xs",
+                                          inv.source === 'purchase_voucher'
+                                            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300"
+                                            : "bg-muted/80 hover:bg-muted border-border/50 text-foreground"
+                                        )}
                                       >
-                                        <FileText className="h-3 w-3 text-muted-foreground shrink-0" />
+                                        {inv.source === 'purchase_voucher' ? (
+                                          <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border-emerald-500/40 text-emerald-700 dark:text-emerald-400 bg-emerald-500/15 font-semibold">
+                                            FJ
+                                          </Badge>
+                                        ) : (
+                                          <FileText className="h-3 w-3 text-muted-foreground shrink-0" />
+                                        )}
                                         <span className="font-semibold">{inv.invoice_number || t('transfers:table.no_number', 'Sorszám nélkül')}</span>
                                         
                                         <div className="flex items-center gap-0.5 ml-1 pl-1 border-l border-border/60">
                                           {/* View Items */}
-                                          <Tooltip>
-                                            <TooltipTrigger asChild>
-                                              <button
-                                                type="button"
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  setViewingInvoice(inv);
-                                                  setItemsDialogOpen(true);
-                                                }}
-                                                className="p-1 hover:text-primary hover:bg-primary/10 rounded transition-colors text-muted-foreground cursor-pointer"
-                                                aria-label="Tételek megtekintése"
-                                              >
-                                                <Package className="h-3 w-3" />
-                                              </button>
-                                            </TooltipTrigger>
-                                            <TooltipContent side="top" className="text-xs">
-                                              Tételek megtekintése
-                                            </TooltipContent>
-                                          </Tooltip>
+                                          {inv.source !== 'purchase_voucher' && (
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <button
+                                                  type="button"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setViewingInvoice(inv);
+                                                    setItemsDialogOpen(true);
+                                                  }}
+                                                  className="p-1 hover:text-primary hover:bg-primary/10 rounded transition-colors text-muted-foreground cursor-pointer"
+                                                  aria-label="Tételek megtekintése"
+                                                >
+                                                  <Package className="h-3 w-3" />
+                                                </button>
+                                              </TooltipTrigger>
+                                              <TooltipContent side="top" className="text-xs">
+                                                Tételek megtekintése
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          )}
 
                                           {/* View Invoice Image / PDF */}
                                           <Tooltip>
@@ -1858,13 +1957,13 @@ export default function TransfersPage() {
                                                   setImageDialogOpen(true);
                                                 }}
                                                 className="p-1 hover:text-primary hover:bg-primary/10 rounded transition-colors text-muted-foreground cursor-pointer"
-                                                aria-label="Számlakép megtekintése"
+                                                aria-label={inv.source === 'purchase_voucher' ? "Bizonylat megtekintése" : "Számlakép megtekintése"}
                                               >
                                                 <Eye className="h-3 w-3" />
                                               </button>
                                             </TooltipTrigger>
                                             <TooltipContent side="top" className="text-xs">
-                                              Számlakép / Előnézet
+                                              {inv.source === 'purchase_voucher' ? "Bizonylat megtekintése" : "Számlakép / Előnézet"}
                                             </TooltipContent>
                                           </Tooltip>
                                         </div>

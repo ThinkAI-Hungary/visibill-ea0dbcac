@@ -2,7 +2,7 @@
 
 > Tárgyi eszközök nyilvántartása, értékcsökkenési események, TAO sablonok.
 
-**Táblák ebben a csoportban:** 3
+**Táblák ebben a csoportban:** 4
 
 ---
 
@@ -42,10 +42,35 @@
 | created_at | timestamp with time zone | ✓ | `now()` |
 | updated_at | timestamp with time zone | ✓ | `now()` |
 | gl_account_id | uuid | ✓ |  |
+| development_reserve_id | uuid | ✓ |  |
+| development_reserve_amount | numeric | ✓ | `0.00` |
 
-**FK:** `activated_by_user_id` → `auth.users.id`, `company_id` → `companies.id`, `gl_account_id` → `gl_accounts.id`, `location_id` → `company_locations.id`, `project_id` → `projects.id`, `tao_template_id` → `tao_depreciation_templates.id`, `user_id` → `auth.users.id`
+**FK:** `activated_by_user_id` → `auth.users.id`, `company_id` → `companies.id`, `development_reserve_id` → `development_reserves.id`, `gl_account_id` → `gl_accounts.id`, `location_id` → `company_locations.id`, `project_id` → `projects.id`, `tao_template_id` → `tao_depreciation_templates.id`, `user_id` → `auth.users.id`
 
-**Indexek:** `fixed_assets_company_id_inventory_number_key`, `idx_fixed_assets_activated_by_user_id`, `idx_fixed_assets_company`, `idx_fixed_assets_gl_account_id`, `idx_fixed_assets_location_id`, `idx_fixed_assets_project_id`, `idx_fixed_assets_tao_template_id`, `idx_fixed_assets_user_id`
+**Indexek:** `fixed_assets_company_id_inventory_number_key`, `idx_fixed_assets_activated_by_user_id`, `idx_fixed_assets_company`, `idx_fixed_assets_dev_reserve`, `idx_fixed_assets_gl_account_id`, `idx_fixed_assets_location_id`, `idx_fixed_assets_project_id`, `idx_fixed_assets_tao_template_id`, `idx_fixed_assets_user_id`
+
+---
+
+### `development_reserves`
+
+**RLS:** ✅ | **Sorok:** ~0
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| id | uuid | — | `gen_random_uuid()` |
+| company_id | uuid | — | |
+| user_id | uuid | ✓ | |
+| creation_year | integer | — | |
+| reserve_amount | numeric | — | |
+| expiration_date | date | — | |
+| description | text | ✓ | |
+| gl_account_id | uuid | ✓ | |
+| created_at | timestamp with time zone | ✓ | `now()` |
+| updated_at | timestamp with time zone | ✓ | `now()` |
+
+**FK:** `company_id` → `companies.id`, `user_id` → `auth.users.id`, `gl_account_id` → `gl_accounts.id`
+
+**Indexek:** `idx_development_reserves_company`, `idx_development_reserves_year`
 
 ---
 

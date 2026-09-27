@@ -1,8 +1,8 @@
 # Visibill — Information Architecture & Navigation
 
-> **Verzió:** 1.8 | **Dátum:** 2026-09-26  
+> **Verzió:** 1.9 | **Dátum:** 2026-09-27  
 > **Forrás:** [AppSidebar.tsx](../../src/components/AppSidebar.tsx) · [App.tsx](../../src/App.tsx) · [AppModeSwitcher.tsx](../../src/components/AppModeSwitcher.tsx)  
-> **Kapcsolódó döntés:** [P-006 Sidebar Structure](./decisions/P-006-sidebar-structure.md) · [A-109 Horvát Lokalizáció & Route Architektúra](../architecture/decisions/A-109-eaisybill-i18n-croatia-localization-and-route-architecture.md) · [P-081 Horvát Demó UX](./decisions/P-081-eaisybill-croatia-localization-and-demo-ux.md) · [A-114 eaisyBooks Shell Collapse](../architecture/decisions/A-114-collapse-dual-mode-navigation-shell.md) · [A-115 Cold/Warm Hibrid Navigáció](../architecture/decisions/A-115-eaisybooks-eaisybill-cold-warm-hybrid-transition-and-route-resolution.md) · [P-083 AppModeSwitcher UX](./decisions/P-083-eaisybooks-eaisybill-app-mode-switcher-and-cold-warm-transition-ux.md) · [P-095 NAV OSA Tabok & Render UX](./decisions/P-095-nav-osa-tabs-performance-and-immediate-row-expansion-ux.md) · [A-158 Mezőgazdasági Felvásárlási Jegyek](../architecture/decisions/A-158-agricultural-purchase-vouchers-module.md) · [A-159 Hivatalos ÁFA Analitika Upgrade](../architecture/decisions/A-159-statutory-vat-views-upgrade-and-osa-reconciliation.md) · [P-118 Felvásárlási Jegyek UX](./decisions/P-118-agricultural-purchase-vouchers-ux.md) · [P-119 Törvényi ÁFA Nézetek & FAD UX](./decisions/P-119-statutory-vat-views-upgrade-and-reverse-charge-ux.md) · [A-163 Főkönyv UI/UX Modularizáció](../architecture/decisions/A-163-general-ledger-ui-ux-restructuring-and-clutter-reduction.md) · [P-122 Főkönyv Ergonómia UX](./decisions/P-122-general-ledger-ui-ux-restructuring-and-clutter-reduction.md)
+> **Kapcsolódó döntés:** [P-006 Sidebar Structure](./decisions/P-006-sidebar-structure.md) · [A-109 Horvát Lokalizáció & Route Architektúra](../architecture/decisions/A-109-eaisybill-i18n-croatia-localization-and-route-architecture.md) · [P-081 Horvát Demó UX](./decisions/P-081-eaisybill-croatia-localization-and-demo-ux.md) · [A-114 eaisyBooks Shell Collapse](../architecture/decisions/A-114-collapse-dual-mode-navigation-shell.md) · [A-115 Cold/Warm Hibrid Navigáció](../architecture/decisions/A-115-eaisybooks-eaisybill-cold-warm-hybrid-transition-and-route-resolution.md) · [P-083 AppModeSwitcher UX](./decisions/P-083-eaisybooks-eaisybill-app-mode-switcher-and-cold-warm-transition-ux.md) · [P-095 NAV OSA Tabok & Render UX](./decisions/P-095-nav-osa-tabs-performance-and-immediate-row-expansion-ux.md) · [A-158 Mezőgazdasági Felvásárlási Jegyek](../architecture/decisions/A-158-agricultural-purchase-vouchers-module.md) · [A-159 Hivatalos ÁFA Analitika Upgrade](../architecture/decisions/A-159-statutory-vat-views-upgrade-and-osa-reconciliation.md) · [P-118 Felvásárlási Jegyek UX](./decisions/P-118-agricultural-purchase-vouchers-ux.md) · [P-119 Törvényi ÁFA Nézetek & FAD UX](./decisions/P-119-statutory-vat-views-upgrade-and-reverse-charge-ux.md) · [A-163 Főkönyv UI/UX Modularizáció](../architecture/decisions/A-163-general-ledger-ui-ux-restructuring-and-clutter-reduction.md) · [P-122 Főkönyv Ergonómia UX](./decisions/P-122-general-ledger-ui-ux-restructuring-and-clutter-reduction.md) · [A-164 Fejlesztési Tartalék Tárgyi Eszköz Kapcsolat](../architecture/decisions/A-164-development-reserve-fixed-assets-db-and-depreciation.md) · [P-123 Fejlesztési Tartalék & TÉNY UX](./decisions/P-123-development-reserve-teny-ux.md) · [A-165 Kapcsolt Vállalkozások Adatmodell & Könyvelés](../architecture/decisions/A-165-related-parties-schema-and-accounting-integration.md) · [P-124 Kapcsolt Vállalkozások & Forgalom UX](./decisions/P-124-related-parties-management-and-turnover-ux.md)
 
 ---
 
@@ -95,11 +95,11 @@ Visibill
 │   ├── /                          Irányítópult (Dashboard)
 │   ├── /categories                Kategóriák (GL számok kezelése)
 │   ├── /projects                  Projektek
-│   ├── /partners                  Partnertörzs
+│   ├── /partners                  Partnertörzs (felső tabok: /partners [Partnertörzs & Kapcsolt profil], ?tab=related [Kapcsolt vállalkozások forgalma & Art. 114. § / Tao 18. § küszöbök])
 │   ├── /invoices/:tab?            Számlák
 │   ├── /kintlevo/:tab?            Kintlévőség
 │   ├── /transactions/:tab?        Tranzakciók (+ Futár riportok tab)
-│   ├── /transfers                 Szállítói utalások (GIRO / SEPA)
+│   ├── /transfers                 Szállítói utalások (GIRO / SEPA + Felvásárlási jegy / Őstermelő bizonylat-összevonás)
 │   ├── /general-ledger/:tab?      Főkönyv
 │   ├── /profit-and-loss/:tab?     Eredménykimutatás
 │   ├── /balance-sheet/:tab?       Mérleg
@@ -108,7 +108,7 @@ Visibill
 │   ├── /salaries/:tab?            Bérek / Járulékok (tabok: /salaries [Alkalmazottak & NAV], /purchase_vouchers [Mezőgazdasági felvásárlási jegyek])
 │   ├── /working-time/:tab?        Munkaidő
 │   ├── /petty-cash/:tab?          Házipénztár
-│   ├── /teny/:tab?                Tárgyi eszközök (TENY)
+│   ├── /teny/:tab?                Tárgyi eszközök (TENY felső tabok: /teny [Eszközök], /teny?tab=development_reserves [Fejlesztési tartalékok nyilvántartása, Tao. 7. § (1) f) & Tao ÉCS tiltás])
 │   ├── /shipments/:tab?           Fuvarok és Szállítmányozás (CMR, import, eszkaláció)
 │   ├── /integrations              Integrációk (NAV, bank)
 │   ├── /exchange-rates            Árfolyamok (MNB)
@@ -451,12 +451,33 @@ A `useAccountyPermissions` hook ellenőrzi a modul-szintű jogokat. Ha az `accou
   - **Tab switcher** — NAV | Beküldött (darabszámmal)
   - **Kattintható kártyák** → `PartnerInvoiceDetailDialog`
 
+**Kapcsolt Vállalkozási Beállítások és Forgalmi Kimutatás (2026-09-27):**
+- **Felső Tab Pill Navigáció:**
+  - `Partnerek`: Master–Detail partnertörzs lista.
+  - `Kapcsolt vállalkozások`: Dedikált forgalmi és egyenlegkimutatási nézet (`RelatedPartyTurnoverTab`).
+- **Partner Űrlap Kapcsoltsági Panel:**
+  - `related_party` (Switch): Kapcsolt vállalkozás jelölés.
+  - `relation_type` (Select): Anyavállalat (`parent`), Leányvállalat (`subsidiary`), Közös vezetésű / Testvér (`sister`), Tulajdonos egyéb érdekeltsége (`owner_interest`), Egyéb (`other`).
+  - `ownership_percent`: Tulajdoni részesedés százaléka (0-100%).
+  - `valid_from` & `valid_to`: Kapcsoltság időbeli érvényessége.
+  - `parent_partner_id`: Cégcsoport / Anyacég kiválasztása a meglévő partnertörzsből.
+  - `custom_gl_account_id`: Egyedi felülírt kapcsolt főkönyvi számla (automatikus 3121 / 4551 helyett).
+- **Forgalmi Kimutatás (`RelatedPartyTurnoverTab`):**
+  - **KPI Kártyák:** Összes forgalom, Kimenő értékesítés, Bejövő beszerzés, Nyitott szaldó.
+  - **Havi Készpénzforgalom Figyelő (Art. 114. §):** Automatikusan jelzi a készpénzes kifizetéseket kapcsolt felek között, piros figyelmeztetéssel az 1,5 millió Ft-os havi törvényi korlát átlépésekor.
+  - **Transzferár Indikátor (Tao. tv. 18. §):** Éves 100M Ft-os dokumentációs határérték követése partnerenként.
+  - **Export:** Excel (.xlsx) és CSV export lehetőség.
+- **Automatikus Könyvelési Kontírozás (`invoiceGlSides.ts`):**
+  - Vevői követelés kapcsolt partnernél: `312` / `3121` (Követelések kapcsolt vállalkozással szemben).
+  - Árbevétel kapcsolt partnernél: `912` (Belföldi értékesítés árbevétele kapcsolt vállalkozással szemben).
+  - Szállítói kötelezettség kapcsolt partnernél: `455` / `4551` (Kötelezettségek kapcsolt vállalkozással szemben).
+
 **PartnerInvoiceDetailDialog:**
 - Fejléc: számlaszám, ellenpartner, dátumok, bruttó összeg, fizetési mód, irány badge, forrás badge
 - Tételek táblázat: Megnevezés, Mennyiség, Egység, Nettó, ÁFA, Bruttó, **Főkönyvi szám**
 - Adatforrás: `nav_invoice_items` (NAV) vagy `invoice_items` (Beküldött)
 
-> **Kapcsolódó döntés:** [P-040](./decisions/P-040-partners-invoice-panel.md)
+> **Kapcsolódó döntések:** [P-124](./decisions/P-124-related-parties-management-and-turnover-ux.md) · [A-165](../architecture/decisions/A-165-related-parties-schema-and-accounting-integration.md) · [P-040](./decisions/P-040-partners-invoice-panel.md) · [P-044](./decisions/P-044-foreign-partner-display.md)
 
 ---
 
@@ -518,6 +539,48 @@ A `useAccountyPermissions` hook ellenőrzi a modul-szintű jogokat. Ha az `accou
 - **Közvetlen Számlakép és NAV OSA Tételes Nézet Megnyitás:** A főkönyvi tételsorokban elhelyezett diszkrét nagyítós dokumentum ikon (`FileSearch`) segítségével közvetlenül a sorból előugrik a számlakép (`InvoiceImageDialog`), vagy ha a bizonylat még csak Online Számlából érkezett feltöltött kép nélkül, a strukturált NAV OSA tételes nézet (`InvoiceItemsDialog`). Működik mind a számlánként összevont (`by_invoice`), mind a részletes tételes (`itemized`) nézetben.
 
 > **Kapcsolódó döntések:** [P-122](./decisions/P-122-general-ledger-ui-ux-restructuring-and-clutter-reduction.md) · [A-163](../architecture/decisions/A-163-general-ledger-ui-ux-restructuring-and-clutter-reduction.md) · [P-120](./decisions/P-120-general-ledger-invoice-document-preview-and-osa-fallback-ux.md) · [A-160](../architecture/decisions/A-160-general-ledger-invoice-document-preview-and-osa-fallback.md) · [P-117](./decisions/P-117-general-ledger-invoice-grouping-and-4col-export-ux.md) · [P-113](./decisions/P-113-general-ledger-granularity-kontirok-teteles-view.md) · [P-105](./decisions/P-105-general-ledger-toolbar-and-expand-collapse-ux.md) · [A-157](../architecture/decisions/A-157-general-ledger-invoice-grouping-and-4col-export.md) · [A-153](../architecture/decisions/A-153-general-ledger-batch-itemized-view-architecture.md)
+
+---
+
+### Tárgyi Eszközök és Fejlesztési Tartalék (`/teny`)
+
+**Layout:** Kétlapfüles felső Pill váltó (`assets` vs. `development_reserves`) + Master–Detail eszköznyilvántartó felület
+
+**1. Eszközök Lapfül (`/teny?tab=assets`):**
+- **Bal oldali lista (60%):** Leltári szám, megnevezés, aktiválás dátuma, bruttó bekerülési érték, könyv szerinti nettó érték, státusz badge (`Aktív`, `Kivezetve`), Fejlesztési tartalék badge.
+- **Jobb oldali panel (40% - `AssetDetailPanel`):**
+  - Eszköz alapadatok és számlakapcsolat (eredeti számla száma, szállító neve).
+  - Csatolt dokumentumok és generált Aktiválási Jegyzőkönyv (PDF letöltés és megtekintés).
+  - **Kettős Értékcsökkenés Kártyák (`DepreciationCards`):**
+    - Számviteli ÉCS: bekerülési érték és maradványérték alapján havonta elszámolt összeg.
+    - Tao ÉCS: ha az eszköz fejlesztési tartalékból valósult meg, a Tao ÉCS alap a tartalék összegével csökken. 100%-os tartalékfedezet esetén a havi és halmozott Tao ÉCS pontosan 0 Ft (Tao. tv. 7. § (15) bek.).
+  - **Fejlesztési Tartalék Műveletek:** Már aktivált eszköz esetén közvetlen dialógus (`DevelopmentReserveAssignDialog`) a tartalék utólagos hozzárendelésére vagy leválasztására.
+
+**2. Fejlesztési Tartalékok Lapfül (`/teny?tab=development_reserves` - `DevelopmentReservesTab`):**
+- **Összesítő Statisztikai Kártyák:**
+  - Összes képzett fejlesztési tartalék (Ft).
+  - Tárgyi eszközökre felhasznált összeg (Ft).
+  - Szabad beruházási keret (Ft).
+  - Következő lejáró keret összege és határideje (képzés éve + 4 év).
+- **Keretek Részletes Táblázata:**
+  - Képzés éve, Eredeti keretösszeg, Felhasznált keret (allokált eszközök összege), Szabad egyenleg, Felhasználási határidő, Státusz (`Aktív`, `Kimerült`, `Lejárt`).
+- **„+ Új fejlesztési tartalék” Gomb és Dialógus:** Évszám, összeg és megjegyzés/határozatszám megadásával új keret rögzítése.
+
+**3. Tárgyi Eszköz Aktiválási Varázsló (`AssetActivationDialog`):**
+- Opcionális `Fejlesztési tartalék felhasználásával valósult meg` kapcsoló.
+- Szabad tartalékkeret kiválasztása legördülő menüből (év és szabad egyenleg kijelzéssel).
+- Felhasznált összeg rögzítése és automatikus Tao ÉCS tiltás/csökkentés.
+
+**4. Automatikus Vegyes Napló Könyvelés (`developmentReserveAutoPoster`):**
+- Tartalék aktiválásakor vagy utólagos hozzárendelésekor automatikusan létrejön a Vegyes napló tétel: **T 414 (Lekötött tartalék) — K 413 (Eredménytartalék)**, `FT-FELOLD-[Leltári szám]` bizonylatszámmal.
+- Tartalék leválasztásakor a tétel visszavonásra/törlésre kerül.
+
+**5. Tao Éves Zárás Varázsló Integráció (`TaoYearEndWizardPage`):**
+- **1. lépés (Beszámoló):** TENY számviteli ÉCS automatikus átvétele gombnyomásra.
+- **3. lépés (7. § Csökkentő tételek):** Tárgyévben képzett fejlesztési tartalék (7. § (1) f)) és Tao ÉCS (7. § (1) d)) automatikus betöltése.
+- **4. lépés (8. § Növelő tételek):** Számviteli vs. Tao ÉCS különbözet (8. § (1) b)) automatikus betöltése.
+
+> **Kapcsolódó döntések:** [P-123](./decisions/P-123-development-reserve-teny-ux.md) · [A-164](../architecture/decisions/A-164-development-reserve-fixed-assets-db-and-depreciation.md) · [P-052](./decisions/P-052-fixed-assets-project-assignment-ux.md)
 
 ---
 

@@ -39,6 +39,8 @@ export interface AssetProtocolData {
   acquisitionValue: number;
   incidentalCost?: number;
   nonDeductibleVat?: number;
+  developmentReserveAmount?: number;
+  developmentReserveYear?: number;
   glAccountNumber?: string;
   glAccountName?: string;
   accountingVoucherNumber?: string;
@@ -176,6 +178,9 @@ export function generateAssetActivationProtocolPdf(data: AssetProtocolData): jsP
   renderSectionTable([
     ['Üzembe helyezés (aktiválás) időpontja:', formatHungarianDate(data.activationDate)],
     ['Aktivált (bekerülési) bruttó érték (Ft):', formatHungarianCurrency(data.acquisitionValue)],
+    ['Ebből fejlesztési tartalék felhasználás (Ft):', data.developmentReserveAmount && data.developmentReserveAmount > 0 
+      ? `${formatHungarianCurrency(data.developmentReserveAmount)}${data.developmentReserveYear ? ` (${data.developmentReserveYear}. évi keretből)` : ''} — Tao. tv. 7. § (15)` 
+      : 'Nem történt felhasználás'],
     ['Ebből járulékos költségek (szállítás, szerelés stb.) (Ft):', formatHungarianCurrency(data.incidentalCost || 0)],
     ['Le nem vonható áfa a bekerülési értékben (Ft):', formatHungarianCurrency(data.nonDeductibleVat || 0)],
     ['Eszköz főkönyvi száma:', data.glAccountNumber ? `${data.glAccountNumber} - ${data.glAccountName || ''}` : '-'],
@@ -189,6 +194,7 @@ export function generateAssetActivationProtocolPdf(data: AssetProtocolData): jsP
 
   // ── 4. TERV SZERINTI ÉRTÉKCSÖKKENÉS ADATAI ──
   renderSectionHeader('4. TERV SZERINTI ÉRTÉKCSÖKKENÉS ADATAI');
+  const taoBase = Math.max(0, data.acquisitionValue - (data.developmentReserveAmount || 0));
   renderSectionTable([
     ['Értékcsökkenési leírás kezdete:', formatHungarianDate(data.depreciationStartDate || data.activationDate)],
     ['Leírási mód:', data.depreciationMethodLabel],
@@ -197,6 +203,9 @@ export function generateAssetActivationProtocolPdf(data: AssetProtocolData): jsP
     ['Maradványérték (Ft):', formatHungarianCurrency(data.residualValue || 0)],
     ['Értékcsökkenés főkönyvi száma:', data.depreciationGlAccount || '5711 - Tárgyi eszközök értékcsökkenési leírása'],
     ['Adótörvény szerinti écs-kulcs (%):', data.taoRatePercent ? `${data.taoRatePercent}%` : '-'],
+    ['Adótörvény (Tao) szerinti écs-alap (Ft):', data.developmentReserveAmount && data.developmentReserveAmount > 0
+      ? `${formatHungarianCurrency(taoBase)} (Fejlesztési tartalékkal csökkentve)`
+      : formatHungarianCurrency(data.acquisitionValue)],
   ]);
 
   if (y > ph - 90) {
