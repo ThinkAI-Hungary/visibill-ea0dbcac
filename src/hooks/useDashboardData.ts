@@ -109,11 +109,37 @@ export interface Invoice {
   elado_nev: string;
   vevo_nev: string;
   brutto_vegosszeg: number;
+  adoalap_osszesen?: number;
+  afa_osszeg_osszesen?: number;
   kibocsatas_datuma: string;
+  teljesites_datuma?: string;
   statusz: string;
   penznem?: string;
   category_id?: string;
+  company_id?: string;
   image_url?: string;
+  melleklet_url?: string;
+  attachments?: any[];
+  invoice_uploads_id?: string;
+  reference_number?: string;
+  elolegszamla_hivatkozas?: string;
+  invoice_direction?: string;
+  invoice_type?: string;
+  nav_status?: string;
+  category_name?: string;
+  project_name?: string;
+}
+
+export interface CategoryStatItem {
+  id: string;
+  name: string;
+  description: string;
+  color: string;
+  icon: string | null;
+  invoiceCount: number;
+  totalAmount: number;
+  currencyTotals: Record<string, number>;
+  percentage: number;
 }
 
 interface RawInvoice {
@@ -286,7 +312,32 @@ export function useDashboardData() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('invoices')
-        .select('id, bizonylatsorszam, elado_nev, vevo_nev, brutto_vegosszeg, kibocsatas_datuma, statusz, penznem, category_id, image_url, reference_number, categories(name), projects(name)')
+        .select(`
+          id,
+          bizonylatsorszam,
+          elado_nev,
+          vevo_nev,
+          brutto_vegosszeg,
+          adoalap_osszesen,
+          afa_osszeg_osszesen,
+          kibocsatas_datuma,
+          teljesites_datuma,
+          statusz,
+          penznem,
+          category_id,
+          company_id,
+          image_url,
+          melleklet_url,
+          attachments,
+          invoice_uploads_id,
+          reference_number,
+          elolegszamla_hivatkozas,
+          invoice_direction,
+          invoice_type,
+          nav_status,
+          categories(name),
+          projects(name)
+        `)
         .eq('company_id', companyId)
         .order('kibocsatas_datuma', { ascending: false })
         .limit(10);
@@ -855,6 +906,104 @@ export function useDashboardData() {
     placeholderData: keepPreviousData,
   });
 
+  // ── Category breakdown (server-side aggregated) ──
+  const { data: categoryBreakdownStats = [] } = useQuery<CategoryStatItem[]>({
+    queryKey: ['categoryBreakdown', companyId, dateFromFormatted, dateToFormatted],
+    queryFn: async () => {
+      // 1. Fetch categories for this company
+      const { data: catRows, error: catErr } = await supabase
+        .from('categories')
+        .select('id, name, description, color, icon')
+        .eq('company_id', companyId);
+      if (catErr) throw catErr;
+      if (!catRows?.length) return [];
+
+      // 2. Fetch invoices with category_id in the date range
+      let invQuery = supabase
+        .from('invoices')
+        .select('id, bizonylatsorszam, category_id, brutto_vegosszeg, penznem')
+        .eq('company_id', companyId)
+        .not('category_id', 'is', null);
+      if (dateFromFormatted && dateToFormatted) {
+        invQuery = invQuery
+          .gte('kibocsatas_datuma', dateFromFormatted)
+          .lte('kibocsatas_datuma', dateToFormatted);
+      }
+
+      let navQuery = supabase
+        .from('nav_invoices')
+        .select('id, invoice_number, category_id, invoice_gross_amount, currency')
+        .eq('company_id', companyId)
+        .not('category_id', 'is', null);
+      if (dateFromFormatted && dateToFormatted) {
+        navQuery = navQuery
+          .gte('invoice_issue_date', dateFromFormatted)
+          .lte('invoice_issue_date', dateToFormatted);
+      }
+
+      const [invRes, navRes] = await Promise.all([invQuery, navQuery]);
+      if (invRes.error) throw invRes.error;
+      if (navRes.error) throw navRes.error;
+
+      // Group and deduplicate invoices across tables by clean invoice number
+      const catMap = new Map<string, { count: number; total: number; currencyTotals: Record<string, number> }>();
+      const seenInvoiceNumbers = new Set<string>();
+
+      (invRes.data || []).forEach((row: any) => {
+        const cleanNumber = (row.bizonylatsorszam || '').trim().replace(/\s+/g, '');
+        if (cleanNumber) seenInvoiceNumbers.add(cleanNumber);
+
+        const catId = row.category_id;
+        const existing = catMap.get(catId) || { count: 0, total: 0, currencyTotals: {} };
+        existing.count += 1;
+        const cur = row.penznem || baseCurrency;
+        const gross = Number(row.brutto_vegosszeg || 0);
+        existing.currencyTotals[cur] = (existing.currencyTotals[cur] || 0) + gross;
+        existing.total += convertToSelectedCurrency(gross, cur, baseCurrency);
+        catMap.set(catId, existing);
+      });
+
+      (navRes.data || []).forEach((row: any) => {
+        const cleanNumber = (row.invoice_number || '').trim().replace(/\s+/g, '');
+        if (cleanNumber && seenInvoiceNumbers.has(cleanNumber)) {
+          return; // Skip duplicate invoice already counted from invoices table
+        }
+        if (cleanNumber) seenInvoiceNumbers.add(cleanNumber);
+
+        const catId = row.category_id;
+        const existing = catMap.get(catId) || { count: 0, total: 0, currencyTotals: {} };
+        existing.count += 1;
+        const cur = row.currency || baseCurrency;
+        const gross = Number(row.invoice_gross_amount || 0);
+        existing.currencyTotals[cur] = (existing.currencyTotals[cur] || 0) + gross;
+        existing.total += convertToSelectedCurrency(gross, cur, baseCurrency);
+        catMap.set(catId, existing);
+      });
+
+      const allTotal = Array.from(catMap.values()).reduce((s, v) => s + v.total, 0);
+
+      return catRows
+        .filter(c => catMap.has(c.id))
+        .map(c => {
+          const agg = catMap.get(c.id)!;
+          return {
+            id: c.id,
+            name: c.name,
+            description: c.description || '',
+            color: c.color || '#6366F1',
+            icon: c.icon || null,
+            invoiceCount: agg.count,
+            totalAmount: agg.total,
+            currencyTotals: agg.currencyTotals,
+            percentage: allTotal > 0 ? (agg.total / allTotal) * 100 : 0,
+          };
+        })
+        .sort((a, b) => b.totalAmount - a.totalAmount);
+    },
+    enabled: !!user && !!companyId,
+    placeholderData: keepPreviousData,
+  });
+
   return {
     // Auth & company
     user,
@@ -882,6 +1031,7 @@ export function useDashboardData() {
     vatBreakdown,
     exchangeRates,
     categoryBreakdownData,
+    categoryBreakdownStats,
 
     // Helpers
     convertToSelectedCurrency,

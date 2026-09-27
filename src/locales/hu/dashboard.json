@@ -39,14 +39,14 @@
       "button": "Számlák megtekintése"
     },
     "upload_invoices": {
-      "title": "Számlák feltöltése",
-      "desc": "Új számlák kézi feltöltése",
+      "title": "Bizonylatfeltöltés",
+      "desc": "Új számlák és bizonylatok feltöltése",
       "button": "Fájlok feltöltése"
     },
-    "project_management": {
-      "title": "Projekt Kezelés",
-      "desc": "Projektek szerkesztése és rendszerezése",
-      "button": "Projektek kezelése"
+    "transactions": {
+      "title": "Tranzakciók",
+      "desc": "Banki tranzakciók és számlapárosítások áttekintése",
+      "button": "Tranzakciók megtekintése"
     }
   },
   "recent_invoices": {
@@ -67,10 +67,32 @@
     "title": "Projekt összefoglaló",
     "description": "Számlák megoszlása projektek szerint",
     "empty": "Még nincsenek projekthez rendelt számlák",
+    "empty_title": "Még nincsenek aktív projektek",
+    "empty_desc": "Rendelj számlákat projektekhez a költséghelyek és büdzsék pontos nyomon követéséhez.",
+    "view_projects": "Projektek",
     "invoices_count": "{{count}} számla",
     "total": "Összesen:",
     "average": "Átlag: {{amount}} / számla",
-    "active_project": "Aktív projekt"
+    "active_project": "Aktív projekt",
+    "kpi_avg_invoice": "Átlag bizonylat",
+    "kpi_allocation_status": "Allokáció",
+    "fully_allocated": "100% Lefedve",
+    "kpi_active_count": "Aktív projektek",
+    "project_count_val": "{{count}} projekt",
+    "kpi_allocated_total": "Összes keret",
+    "create_project_title": "Új projekt indítása",
+    "create_project_desc": "Rendelj számlákat költséghelyekhez",
+    "new_project_btn": "Új projekt"
+  },
+  "category_breakdown": {
+    "title": "Kategória összefoglaló",
+    "description": "Számlák megoszlása kategóriák szerint",
+    "view_categories": "Kategóriák",
+    "empty_title": "Még nincsenek kategorizált számlák",
+    "empty_desc": "Rendelj számlákat költségkategóriákhoz a kiadások részletes elemzéséhez.",
+    "manage_title": "Kategóriák kezelése",
+    "manage_desc": "Rendszerezd számláidat költségkategóriákba",
+    "new_category_btn": "Új kategória"
   },
   "revenue_expenses_chart": {
     "title": "Kiadások és bevételek a {{year}}. időszakra",
@@ -123,28 +145,41 @@
   },
   "inbound_status": {
     "title": "Bejövő számlák állapota",
+    "description": "Fizetési kötelezettségek & hiányzó bizonylatok",
+    "view_invoices": "Számlák",
     "payable": "Fizetendő",
     "missing": "Hiányzó",
     "payable_amount": "Fizetendő összeg:",
     "missing_amount": "Hiányzó összeg:",
     "empty": "Nincs megjeleníthető számla",
+    "empty_desc": "Minden bejövő számla rendezve van vagy nem érkezett új tétel.",
     "invoice_number": "Bizonylatsorszám",
     "issue_date": "Kibocsátás",
     "supplier": "Szállító",
     "gross": "Bruttó",
     "more_invoices": "+ {{count}} további számla",
     "missing_invoices_notice": "{{count}} számla vár beküldésre",
-    "submit": "Beküldés"
+    "submit": "Beküldés",
+    "pay": "Fizetés",
+    "unpaid": "Kifizetetlen",
+    "missing_voucher": "Hiányzó bizonylat",
+    "open_all": "Összes megtekintése"
   },
   "unmatched_items": {
     "title": "Nem párosított tételek",
+    "description": "Banki fedezet vagy számlapár nélküli bizonylatok",
+    "view_transactions": "Tranzakciók",
+    "view_invoices": "Számlák",
     "nav_invoices": "NAV számlák",
     "transactions": "Tranzakciók",
     "all_nav_matched": "Minden NAV számla párosítva van!",
     "all_tx_matched": "Minden tranzakció párosítva van!",
+    "empty_desc": "Nincsenek párosítatlan tételek a kiválasztott időszakban.",
     "direction": "Irány",
     "inbound": "Be",
     "outbound": "Ki",
+    "supplier": "Szállító",
+    "customer": "Vevő",
     "invoice_number": "Bizonylatsorszám",
     "issue_date": "Kibocsátás",
     "partner": "Partner",
@@ -157,7 +192,11 @@
     "more_tx": "+ {{count}} további tranzakció",
     "more_invoices": "+ {{count}} további számla",
     "unmatched_nav_summary": "{{count}} számla nincs tranzakcióhoz párosítva · Összesen: {{total}}",
-    "unmatched_tx_summary": "{{count}} tranzakció nincs számlához párosítva · Összesen: {{total}}"
+    "unmatched_tx_summary": "{{count}} tranzakció nincs számlához párosítva · Összesen: {{total}}",
+    "open_balance": "Nyitott egyenleg:",
+    "unmatched_amount": "Párosítatlan összeg:",
+    "match": "Párosít",
+    "open_all": "Összes megnyitása"
   },
   "fx_differences": {
     "title": "Árfolyam-különbözetek",

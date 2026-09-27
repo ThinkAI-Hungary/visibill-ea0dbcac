@@ -3,6 +3,10 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import VatSection from '@/components/dashboard/VatSection';
 
+vi.mock('@/lib/navigation', () => ({
+  useScopedNavigate: () => vi.fn(),
+}));
+
 // Mock i18next
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

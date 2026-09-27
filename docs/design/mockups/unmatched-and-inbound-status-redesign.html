@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="hu" class="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Eaisybill — Nem párosított tételek & Bejövő számlák állapota Újratervezés</title>
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ==========================================================================
+       EAISYBILL DESIGN TOKENS (HSL Alapú, 100% szinkronban az index.css-szel)
+       ========================================================================== */
+    :root {
+      --background: 220 7% 97%;          /* #f5f6f7 */
+      --foreground: 210 14% 4%;          /* #090b0e */
+      --card: 0 0% 100%;                 /* #ffffff */
+      --card-foreground: 210 14% 4%;
+      
+      --primary: 174 83% 32%;             /* #0D9488 Teal */
+      --primary-foreground: 0 0% 100%;
+      --primary-subtle: 174 83% 96%;      /* #F0FDFA */
+      --primary-glow: rgba(13, 148, 136, 0.15);
+
+      --secondary: 220 14% 96%;
+      --secondary-foreground: 210 14% 4%;
+      --muted: 220 7% 94%;               /* #eceef1 */
+      --muted-foreground: 220 5% 42%;    /* #676c74 */
+      
+      --border: 222 10% 89%;             /* #e2e4e8 */
+      --input: 220 10% 89%;
+      --ring: 174 83% 32%;
+
+      --success: 142 71% 45%;            /* #22c55e */
+      --success-subtle: 142 71% 96%;
+      --warning: 38 92% 50%;             /* #f59e0b */
+      --warning-subtle: 48 96% 96%;
+      --destructive: 0 84% 60%;          /* #ef4444 */
+      --destructive-subtle: 0 86% 97%;
+      --info: 217 91% 60%;               /* #3b82f6 */
+      --info-subtle: 214 95% 97%;
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-xl: 18px;
+
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+      --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+      --shadow-card-hover: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    }
+
+    html.dark {
+      --background: 222 25% 10%;         /* #121824 */
+      --foreground: 210 20% 98%;
+      --card: 223 23% 13%;              /* #182030 */
+      --card-foreground: 210 20% 98%;
+      
+      --primary: 174 83% 36%;
+      --primary-foreground: 0 0% 100%;
+      --primary-subtle: 174 83% 16%;
+      --primary-glow: rgba(13, 148, 136, 0.25);
+
+      --secondary: 222 20% 18%;
+      --secondary-foreground: 210 20% 98%;
+      --muted: 222 18% 18%;
+      --muted-foreground: 218 11% 65%;
+      
+      --border: 222 18% 22%;
+      --input: 222 18% 22%;
+      --ring: 174 83% 40%;
+
+      --success: 142 71% 45%;
+      --success-subtle: 142 71% 14%;
+      --warning: 38 92% 50%;
+      --warning-subtle: 38 92% 16%;
+      --destructive: 0 84% 60%;
+      --destructive-subtle: 0 84% 16%;
+      --info: 217 91% 60%;
+      --info-subtle: 217 91% 16%;
+
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.25);
+      --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px -1px rgba(0, 0, 0, 0.2);
+      --shadow-card-hover: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: hsl(var(--background));
+      color: hsl(var(--foreground));
+      line-height: 1.5;
+      padding: 2rem 1.5rem 5rem;
+      min-height: 100vh;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: 'Outfit', 'Inter', sans-serif;
+      letter-spacing: -0.02em;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* ==========================================================================
+       TOP CONTROL BAR
+       ========================================================================== */
+    .top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid hsl(var(--border));
+    }
+
+    .title-group h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .badge-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.2rem 0.65rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      border-radius: 9999px;
+      background: hsl(var(--primary-subtle));
+      color: hsl(var(--primary));
+      border: 1px solid hsl(var(--primary) / 0.2);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-live::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: hsl(var(--primary));
+      box-shadow: 0 0 6px hsl(var(--primary));
+    }
+
+    .top-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.5rem 0.9rem;
+      font-size: 0.82rem;
+      font-weight: 500;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: 1px solid hsl(var(--border));
+      background: hsl(var(--card));
+      color: hsl(var(--foreground));
+      user-select: none;
+    }
+
+    .btn:hover {
+      background: hsl(var(--muted));
+      border-color: hsl(var(--border) / 0.8);
+    }
+
+    .btn-primary {
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      border-color: hsl(var(--primary));
+    }
+
+    .btn-primary:hover {
+      background: hsl(var(--primary) / 0.9);
+      border-color: hsl(var(--primary) / 0.9);
+    }
+
+    .btn-sm {
+      padding: 0.25rem 0.6rem;
+      font-size: 0.75rem;
+      height: 28px;
+    }
+
+    /* Option Switcher Tabs */
+    .option-tabs {
+      display: flex;
+      gap: 0.5rem;
+      background: hsl(var(--muted));
+      padding: 0.35rem;
+      border-radius: var(--radius-lg);
+      margin-bottom: 2rem;
+      overflow-x: auto;
+    }
+
+    .option-tab-btn {
+      flex: 1;
+      min-width: 200px;
+      padding: 0.65rem 1rem;
+      border: none;
+      background: transparent;
+      border-radius: var(--radius-md);
+      font-size: 0.86rem;
+      font-weight: 600;
+      color: hsl(var(--muted-foreground));
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .option-tab-btn .tab-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      color: hsl(var(--foreground));
+    }
+
+    .option-tab-btn .tab-desc {
+      font-size: 0.74rem;
+      font-weight: 400;
+      color: hsl(var(--muted-foreground));
+    }
+
+    .option-tab-btn.active {
+      background: hsl(var(--card));
+      color: hsl(var(--primary));
+      box-shadow: var(--shadow-sm);
+    }
+
+    .option-tab-btn.active .tab-title {
+      color: hsl(var(--primary));
+    }
+
+    /* Concept Container */
+    .concept-panel {
+      display: none;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    .concept-panel.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Banner / Explanation */
+    .info-banner {
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-left: 4px solid hsl(var(--primary));
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.75rem;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .info-banner-text h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: hsl(var(--foreground));
+      margin-bottom: 0.25rem;
+    }
+
+    .info-banner-text p {
+      font-size: 0.82rem;
+      color: hsl(var(--muted-foreground));
+    }
+
+    .pill-tag {
+      padding: 0.2rem 0.55rem;
+      border-radius: 9999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      background: hsl(var(--primary-subtle));
+      color: hsl(var(--primary));
+    }
+
+    /* ==========================================================================
+       SHARED CARD STYLES (Matching Fintech Dense Split)
+       ========================================================================== */
+    .card {
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border) / 0.8);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      border-color: hsl(var(--border));
+      box-shadow: var(--shadow-card-hover);
+    }
+
+    .card-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid hsl(var(--border) / 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      background: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--card)) 85%, hsl(var(--muted) / 0.2) 100%);
+    }
+
+    .card-header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .icon-box {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .icon-box-primary {
+      background: hsl(var(--primary-subtle));
+      color: hsl(var(--primary));
+    }
+
+    .icon-box-warning {
+      background: hsl(var(--warning-subtle));
+      color: hsl(var(--warning));
+    }
+
+    .icon-box-destructive {
+      background: hsl(var(--destructive-subtle));
+      color: hsl(var(--destructive));
+    }
+
+    .icon-box-info {
+      background: hsl(var(--info-subtle));
+      color: hsl(var(--info));
+    }
+
+    .card-title {
+      font-size: 0.96rem;
+      font-weight: 600;
+      color: hsl(var(--foreground));
+      line-height: 1.2;
+    }
+
+    .card-desc {
+      font-size: 0.74rem;
+      color: hsl(var(--muted-foreground));
+      margin-top: 0.15rem;
+    }
+
+    .card-body {
+      flex: 1;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Sub-tabs inside cards */
+    .card-subtabs {
+      display: flex;
+      background: hsl(var(--muted) / 0.5);
+      border-bottom: 1px solid hsl(var(--border) / 0.6);
+      padding: 0.35rem 0.75rem 0;
+      gap: 0.5rem;
+    }
+
+    .subtab-btn {
+      padding: 0.45rem 0.85rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border: none;
+      background: transparent;
+      color: hsl(var(--muted-foreground));
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.15s ease;
+    }
+
+    .subtab-btn:hover {
+      color: hsl(var(--foreground));
+    }
+
+    .subtab-btn.active {
+      color: hsl(var(--primary));
+      border-bottom-color: hsl(var(--primary));
+    }
+
+    .subtab-badge {
+      font-size: 0.68rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 9999px;
+      background: hsl(var(--muted));
+      color: hsl(var(--foreground));
+      font-weight: 600;
+    }
+
+    .subtab-btn.active .subtab-badge {
+      background: hsl(var(--primary-subtle));
+      color: hsl(var(--primary));
+    }
+
+    /* Mini Stat Strip */
+    .stat-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.65rem 1.25rem;
+      background: hsl(var(--muted) / 0.25);
+      border-bottom: 1px solid hsl(var(--border) / 0.4);
+      font-size: 0.76rem;
+    }
+
+    .stat-strip-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .stat-label {
+      color: hsl(var(--muted-foreground));
+    }
+
+    .stat-value {
+      font-weight: 600;
+      color: hsl(var(--foreground));
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Scrollable Dense List */
+    .dense-list {
+      flex: 1;
+      overflow-y: auto;
+      max-height: 380px;
+      padding: 0.35rem 0.65rem;
+    }
+
+    .dense-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.55rem 0.65rem;
+      border-radius: var(--radius-md);
+      transition: background-color 0.15s ease;
+      cursor: pointer;
+      border-bottom: 1px solid hsl(var(--border) / 0.3);
+      gap: 0.75rem;
+    }
+
+    .dense-row:last-child {
+      border-bottom: none;
+    }
+
+    .dense-row:hover {
+      background-color: hsl(var(--muted) / 0.5);
+    }
+
+    .row-left {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .direction-badge {
+      width: 24px;
+      height: 24px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .direction-inbound {
+      background: hsl(var(--destructive-subtle));
+      color: hsl(var(--destructive));
+      border: 1px solid hsl(var(--destructive) / 0.2);
+    }
+
+    .direction-outbound {
+      background: hsl(var(--success-subtle));
+      color: hsl(var(--success));
+      border: 1px solid hsl(var(--success) / 0.2);
+    }
+
+    .direction-bank {
+      background: hsl(var(--info-subtle));
+      color: hsl(var(--info));
+      border: 1px solid hsl(var(--info) / 0.2);
+    }
+
+    .row-meta {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .row-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: hsl(var(--foreground));
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .row-subtitle {
+      font-size: 0.72rem;
+      color: hsl(var(--muted-foreground));
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 0.1rem;
+    }
+
+    .row-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-shrink: 0;
+      text-align: right;
+    }
+
+    .row-amount {
+      font-size: 0.82rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .row-amount.positive {
+      color: hsl(var(--success));
+    }
+
+    .row-amount.negative {
+      color: hsl(var(--destructive));
+    }
+
+    .row-date {
+      font-size: 0.7rem;
+      color: hsl(var(--muted-foreground));
+      white-space: nowrap;
+    }
+
+    .action-btn {
+      padding: 0.3rem 0.65rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      border: 1px solid hsl(var(--border));
+      background: hsl(var(--card));
+      color: hsl(var(--foreground));
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: all 0.15s ease;
+    }
+
+    .action-btn:hover {
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      border-color: hsl(var(--primary));
+    }
+
+    .action-btn-danger:hover {
+      background: hsl(var(--destructive));
+      color: #fff;
+      border-color: hsl(var(--destructive));
+    }
+
+    /* Bottom footer in cards */
+    .card-footer {
+      padding: 0.75rem 1.25rem;
+      border-top: 1px solid hsl(var(--border) / 0.4);
+      background: hsl(var(--muted) / 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    /* Grid layouts */
+    .grid-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 1024px) {
+      .grid-2col {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ==========================================================================
+       OPTION 2: UNIFIED COCKPIT STYLES
+       ========================================================================== */
+    .cockpit-kpi-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    @media (max-width: 900px) {
+      .cockpit-kpi-bar {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .cockpit-kpi-item {
+      padding: 0.9rem 1.1rem;
+      border-radius: var(--radius-md);
+      border: 1px solid hsl(var(--border));
+      background: hsl(var(--card));
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cockpit-kpi-item::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: transparent;
+      transition: background 0.2s ease;
+    }
+
+    .cockpit-kpi-item:hover {
+      border-color: hsl(var(--primary) / 0.5);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-card);
+    }
+
+    .cockpit-kpi-item.active {
+      border-color: hsl(var(--primary));
+      background: hsl(var(--primary-subtle) / 0.2);
+    }
+
+    .cockpit-kpi-item.active::before {
+      background: hsl(var(--primary));
+    }
+
+    .cockpit-kpi-item.urgent.active::before {
+      background: hsl(var(--destructive));
+    }
+    .cockpit-kpi-item.urgent.active {
+      border-color: hsl(var(--destructive));
+    }
+
+    .cockpit-kpi-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: hsl(var(--muted-foreground));
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .cockpit-kpi-val {
+      font-size: 1.4rem;
+      font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+      color: hsl(var(--foreground));
+      line-height: 1.1;
+      margin-top: 0.15rem;
+    }
+
+    .cockpit-kpi-sub {
+      font-size: 0.73rem;
+      color: hsl(var(--muted-foreground));
+    }
+
+    /* Tag badges */
+    .tag {
+      font-size: 0.68rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+    }
+
+    .tag-danger {
+      background: hsl(var(--destructive-subtle));
+      color: hsl(var(--destructive));
+    }
+
+    .tag-warning {
+      background: hsl(var(--warning-subtle));
+      color: hsl(var(--warning));
+    }
+
+    .tag-primary {
+      background: hsl(var(--primary-subtle));
+      color: hsl(var(--primary));
+    }
+
+    .tag-neutral {
+      background: hsl(var(--muted));
+      color: hsl(var(--muted-foreground));
+    }
+
+    /* Quick Action Header Bar */
+    .cockpit-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1.25rem;
+      border-bottom: 1px solid hsl(var(--border) / 0.5);
+      background: hsl(var(--muted) / 0.2);
+    }
+
+    .cockpit-toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.84rem;
+      font-weight: 600;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1.5rem;
+      color: hsl(var(--muted-foreground));
+    }
+
+    .empty-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.75rem;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- Top Control Bar -->
+    <header class="top-bar">
+      <div class="title-group">
+        <h1>
+          <span>⚡ Pénzügyi Teendők & Ellenőrzés</span>
+          <span class="badge-live">Fintech Redesign 2026</span>
+        </h1>
+        <p style="font-size: 0.85rem; color: hsl(var(--muted-foreground)); margin-top: 0.25rem;">
+          A korábbi rideg, teljes szélességű táblázatok modernizálása és szerves beillesztése a Dashboard 2.0 hierarchiába.
+        </p>
+      </div>
+
+      <div class="top-controls">
+        <button class="btn" id="themeToggleBtn" onclick="toggleTheme()">
+          <span id="themeIcon">🌙</span> <span id="themeLabel">Dark mód</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Option Selector Tabs -->
+    <div class="option-tabs">
+      <button class="option-tab-btn active" onclick="switchOption(1)">
+        <span class="tab-title">1. Opció: Fintech Side-by-Side Split</span>
+        <span class="tab-desc">2 db szinkronizált 520px kártya (Párosítatlan vs. Bejövő állapot)</span>
+      </button>
+
+      <button class="option-tab-btn" onclick="switchOption(2)">
+        <span class="tab-title">2. Opció: Unified Financial Cockpit ⭐</span>
+        <span class="tab-desc">1 db fókuszált vezérlőpult 4 interaktív KPI kártyával & teendő-szűrővel</span>
+      </button>
+
+      <button class="option-tab-btn" onclick="switchOption(3)">
+        <span class="tab-title">3. Opció: Action-First Dense Grid</span>
+        <span class="tab-desc">Közvetlen 1-kattintásos gyorsműveletek (Párosítás, Feltöltés) soronként</span>
+      </button>
+    </div>
+
+    <!-- ======================================================================
+         CONCEPT 1: FINTECH SIDE-BY-SIDE SPLIT
+         ====================================================================== -->
+    <div id="option1" class="concept-panel active">
+      <div class="info-banner">
+        <div class="info-banner-text">
+          <h3>1. Opció — Kétoszlopos Szimmetrikus Fintech Split (Ajánlott a kiegyensúlyozott rács kedvelőinek)</h3>
+          <p>
+            Tökéletesen harmonizál a felső 3-as osztatú rács (`Legutóbbi számlák` | `Projekt` | `Kategória`) 520px-es kártyamagasságával és design nyelvével.
+            Bal oldalon a <strong>Párosítatlan tételek</strong> (NAV & Bank váltófülekkel), jobb oldalon a <strong>Bejövő számlák állapota</strong> (Fizetendő szállítók & Hiányzó bizonylat-beküldés).
+          </p>
+        </div>
+        <span class="pill-tag">Szimmetrikus Grid</span>
+      </div>
+
+      <div class="grid-2col">
+        
+        <!-- CARD 1: NEM PÁROSÍTOTT TÉTELEK -->
+        <div class="card" style="height: 520px;">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="icon-box icon-box-primary">🔗</div>
+              <div>
+                <h3 class="card-title">Nem párosított tételek</h3>
+                <p class="card-desc">Banki fedezet vagy számlapár nélküli bizonylatok</p>
+              </div>
+            </div>
+            <button class="btn btn-sm" onclick="alert('Navigálás: /transactions')">Tranzakciók megnyitása →</button>
+          </div>
+
+          <div class="card-subtabs">
+            <button class="subtab-btn active" onclick="switchCardSubtab(this, 'c1-nav')">
+              NAV számlák <span class="subtab-badge">24</span>
+            </button>
+            <button class="subtab-btn" onclick="switchCardSubtab(this, 'c1-bank')">
+              Banki mozgások <span class="subtab-badge">9</span>
+            </button>
+          </div>
+
+          <div class="stat-strip">
+            <div class="stat-strip-item">
+              <span class="stat-label">Nyitott egyenleg:</span>
+              <span class="stat-value" style="color: hsl(var(--primary));">14 820 450 Ft</span>
+            </div>
+            <div class="stat-strip-item">
+              <span class="stat-label">Legrégebbi:</span>
+              <span class="stat-value">2026. 03. 12.</span>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div class="dense-list" id="c1-nav-list">
+              
+              <!-- Item 1 -->
+              <div class="dense-row">
+                <div class="row-left">
+                  <div class="direction-badge direction-inbound" title="Bejövő számla">↙</div>
+                  <div class="row-meta">
+                    <div class="row-title">
+                      <span>INV-2026-0891</span>
+                      <span class="tag tag-danger">Szállító</span>
+                    </div>
+                    <div class="row-subtitle">Google Ireland Ltd. • Kártyás fizetés</div>
+                  </div>
+                </div>
+                <div class="row-right">
+                  <div>
+                    <div class="row-amount negative">-184 200 Ft</div>
+                    <div class="row-date">2026. 09. 21.</div>
+                  </div>
+                  <button class="action-btn" title="Párosítás tranzakcióval">Párosít</button>
+                </div>
+              </div>
+
+              <!-- Item 2 -->
+              <div class="dense-row">
+                <div class="row-left">
+                  <div class="direction-badge direction-outbound" title="Kimenő számla">↗</div>
+                  <div class="row-meta">
+                    <div class="row-title">
+                      <span>THINK-2026-44</span>
+                      <span class="tag tag-primary">Vevő</span>
+                    </div>
+                    <div class="row-subtitle">Wagner Global Services • Átutalás (30 nap)</div>
+                  </div>
+                </div>
+                <div class="row-right">
+                  <div>
+                    <div class="row-amount positive">+4 825 000 Ft</div>
+                    <div class="row-date">2026. 09. 18.</div>
+                  </div>
+                  <button class="action-btn" title="Párosítás tranzakcióval">Párosít</button>
+                </div>
+              </div>
+
+              <!-- Item 3 -->
+              <div class="dense-row">
+                <div class="row-left">
+                  <div class="direction-badge direction-inbound" title="Bejövő számla">↙</div>
+                  <div class="row-meta">
+                    <div class="row-title">
+                      <span>A15701858/0779/00006</span>
+                      <span class="tag tag-danger">Szállító</span>
+                    </div>
+                    <div class="row-subtitle">Magyar Posta Zrt. • Készpénz/Átutalás</div>
+                  </div>
+                </div>
+                <div class="row-right">
+                  <div>
+                    <div class="row-amount negative">-5 790 Ft</div>
+                    <div class="row-date">2026. 09. 15.</div>
+                  </div>
+                  <button class="action-btn" title="Párosítás tranzakcióval">Párosít</button>
+                </div>
+              </div>
+
+              <!-- Item 4 -->
+              <div class="dense-row">
+                <div class="row-left">
+                  <div class="direction-badge direction-inbound" title="Bejövő számla">↙</div>
+                  <div class="row-meta">
+                    <div class="row-title">
+                      <span>9762E0F0-0205</span>
+                      <span class="tag tag-danger">Szállító</span>
+                    </div>
+                    <div class="row-subtitle">Anthropic, PBC • Bankkártya (USD)</div>
+                  </div>
+                </div>
+                <div class="row-right">
+                  <div>
+                    <div class="row-amount negative">-45,00 USD</div>
+                    <div class="row-date">2026. 09. 10.</div>
+                  </div>
+                  <button class="action-btn" title="Párosítás tranzakcióval">Párosít</button>
+                </div>
+              </div>
+
+              <!-- Item 5 -->
+              <div class="dense-row">
+                <div class="row-left">
+                  <div class="direction-badge direction-outbound" title="Kimenő számla">↗</div>
+                  <div class="row-meta">
+                    <div class="row-title">
+                      <span>THINK-2026-39</span>
+                      <span class="tag tag-primary">Vevő</span>
+                    </div>
+                    <div class="row-subtitle">Trend-Art Media Nonprofit Kft. • Átutalás</div>
+                  </div>
+                </div>
+                <div class="row-right">
+                  <div>
+                    <div class="row-amount positive">+950 000 Ft</div>
+                    <div class="row-date">2026. 09. 08.</div>
+                  </div>
+                  <button class="action-btn" title="Párosítás tranzakcióval">Párosít</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <span style="font-size: 0.74rem; color: hsl(var(--muted-foreground));">+ 19 további párosítatlan számla</span>
+            <button class="btn btn-sm btn-primary" onclick="alert('Áttekintés megnyitása')">Összes párosítása →</button>
+          </div>
+        </div>
+
+        <!-- CARD 2: BEJÖVŐ SZÁMLÁK ÁLLAPOTA -->
+        <div class="card" style="height: 520px;">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="icon-box icon-box-warning">📥</div>
+              <div>
+                <h3 class="card-title">Bejövő számlák állapota</h3>
+                <p class="card-desc">Fizetési kötelezettségek & hiányzó bizonylatok</p>
+              </div>
+            </div>
+            <button class="btn btn-sm" onclick="alert('Navigálás: /invoices')">Számlatár megnyitása →</button>
+          </div>
+
+          <div class="card-subtabs">
+            <button class="subtab-btn active" onclick="switchCardSubtab(this, 'c2-pay')">
+              Fizetendő szállítók <span class="subtab-badge">14</span>
+            </button>
+            <button class="subtab-btn" onclick="switchCardSubtab(this, 'c2-miss')">
+              Hiányzó bizonylat <span class="subtab-badge" style="background: hsl(var(--destructive-subtle)); color: hsl(var(--destructive));">6</span>
+            </button>
+          </div>
+
+          <div class="stat-strip">
+            <div class="stat-strip-item">
+              <span class="stat-label">Fizetendő összeg:</span>
+              <span class="stat-value" style="color: hsl(var(--destructive));">5 480 300 Ft</span>
+            </div>
+            <div class="stat-strip-item">
+              <span class="stat-label">Beküldésre vár:</span>
+              <span class="stat-value" style="color: hsl(var(--warning));">6 db számlakép</span>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div class="dense-list" id="c2-pay-list">
+              
+              <!-- Item 1: Missing Voucher Urgent -->
+              <div class="dense-row" style="background: hsl(var(--warning-subtle) / 0.3);">
+                <div class="row-left">
+                  <div class="direction-badge" style="background: hsl(var(--warning-subtle)); color: hsl(var(--warning)); border: 1px solid hsl(var(--warning)/0.3);">⚠️</div>
+                  <div class="row-meta">
+                    <div class="row-title">
+                      <span>TRNDR-2026-20</span>
+                      <span class="tag tag-danger">Hiányzó PDF</span>
+                    </div>
+                    <div class="row-subtitle">Trend-Art Media Nonprofit Kft. • Adószám: 14820129-2-41</div>
+                  </div>
+                </div>
+                <div class="row-right">
+                  <div>
+                    <div class="row-amount">384 000 Ft</div>
+                    <div class="row-date">Fiz. hat.: 2026. 09. 30.</div>
+                  </div>
+                  <button class="action-btn btn-primary" onclick="alert('Feltöltés modal megnyitása: TRNDR-2026-20')">Feltöltés</button>
+                </div>
+              </div>
+
+              <!-- Item 2 -->
+              <div class="dense-row">
+                <div class="row-left">
+                  <div class="direction-badge direction-inbound">↙</div>
+                  <div class="row-meta">
+                    <div class="row-title">
+                      <span>371004925EU</span>
+                      <span class="tag tag-neutral">Kifizetetlen</span>
+                    </div>
+                    <div class="row-subtitle">Secretlab NL B.V. • 14 napja lejárt</div>
+                  </div>
+                </div>
+                <div class="row-right">
+                  <div>
+                    <div class="row-amount negative">697,00 EUR</div>
+                    <div class="row-date">2026. 09. 14.</div>
+                  </div>
+                  <button class="action-btn" onclick="alert('Kifizetés rögzítése')">Fizetés</button>
+                </div>
+              </div>
+
+              <!-- Item 3 -->
+              <div class="dense-row">
+                <div class="row-left">
+                  <div class="direction-badge direction-inbound">↙</div>
+                  <div class="row-meta">
+                    <div class="row-title">
+                      <span>A01902005/2146/00002</span>
+                      <span class="tag tag-neutral">Kifizetetlen</span>
+                    </div>
+                    <div class="row-subtitle">Gál-Gók Kft • Banki átutalás</div>
+                  </div>
+                </div>
+                <div class="row-right">
+                  <div>
+                    <div class="row-amount negative">13 590 Ft</div>
+                    <div class="row-date">2026. 09. 24.</div>
+                  </div>
+                  <button class="action-btn" onclick="alert('Kifizetés rögzítése')">Fizetés</button>
+                </div>
+              </div>
+
+              <!-- Item 4: Missing Voucher -->
+              <div class="dense-row" style="background: hsl(var(--warning-subtle) / 0.3);">
+                <div class="row-left">
+                  <div class="direction-badge" style="background: hsl(var(--warning-subtle)); color: hsl(var(--warning)); border: 1px solid hsl(var(--warning)/0.3);">⚠️</div>
+                  <div class="row-meta">
+                    <div class="row-title">
+                      <span>CEL-2026-9812</span>
+                      <span class="tag tag-danger">Hiányzó PDF</span>
+                    </div>
+                    <div class="row-subtitle">Celonis Inc. • Online szoftverlicenc</div>
+                  </div>
+                </div>
+                <div class="row-right">
+                  <div>
+                    <div class="row-amount">19,00 USD</div>
+                    <div class="row-date">2026. 09. 20.</div>
+                  </div>
+                  <button class="action-btn btn-primary" onclick="alert('Feltöltés modal megnyitása: CEL-2026-9812')">Feltöltés</button>
+                </div>
+              </div>
+
+              <!-- Item 5 -->
+              <div class="dense-row">
+                <div class="row-left">
+                  <div class="direction-badge direction-inbound">↙</div>
+                  <div class="row-meta">
+                    <div class="row-title">
+                      <span>321044026</span>
+                      <span class="tag tag-neutral">Kifizetetlen</span>
+                    </div>
+                    <div class="row-subtitle">Senetic Magyarország Kft. • IT Eszközök</div>
+                  </div>
+                </div>
+                <div class="row-right">
+                  <div>
+                    <div class="row-amount negative">68 552 Ft</div>
+                    <div class="row-date">2026. 09. 23.</div>
+                  </div>
+                  <button class="action-btn" onclick="alert('Kifizetés rögzítése')">Fizetés</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <span style="font-size: 0.74rem; color: hsl(var(--muted-foreground));">6 hiányzó számla vár azonnali feltöltésre</span>
+            <button class="btn btn-sm btn-primary" onclick="alert('Kötegelt bizonylatfeltöltő megnyitása')">Bizonylatok feltöltése 📤</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- ======================================================================
+         CONCEPT 2: UNIFIED FINANCIAL COCKPIT (THE ACTION HUB)
+         ====================================================================== -->
+    <div id="option2" class="concept-panel">
+      <div class="info-banner">
+        <div class="info-banner-text">
+          <h3>2. Opció — Unified Financial Cockpit (Egyesített Teendőközpont — Kiemelten Ajánlott! ⭐)</h3>
+          <p>
+            Megszünteti a duplikációt a „Nem párosított” és „Bejövő állapot” között! Egyetlen elegáns kártyába szervezi az összes teendőt 4 azonnal átlátható KPI füllel.
+            A felhasználó 1 másodperc alatt látja: hány bizonylat hiányzik, mennyi a kifizetetlen szállító, és mely banki tételek várnak párosításra.
+          </p>
+        </div>
+        <span class="pill-tag" style="background: hsl(var(--warning-subtle)); color: hsl(var(--warning));">Best UX Practice</span>
+      </div>
+
+      <!-- 4 KPI Switcher Tiles -->
+      <div class="cockpit-kpi-bar">
+        
+        <div class="cockpit-kpi-item urgent active" onclick="selectCockpitKpi(this, 'tab-missing')">
+          <div class="cockpit-kpi-header">
+            <span>Hiányzó Bizonylatok</span>
+            <span class="tag tag-danger">Sürgős teendő</span>
+          </div>
+          <div class="cockpit-kpi-val" style="color: hsl(var(--destructive));">6 db</div>
+          <div class="cockpit-kpi-sub">NAV-ban van, de nincs kép csatolva</div>
+        </div>
+
+        <div class="cockpit-kpi-item" onclick="selectCockpitKpi(this, 'tab-payable')">
+          <div class="cockpit-kpi-header">
+            <span>Kifizetetlen Szállítók</span>
+            <span class="tag tag-warning">Likviditás</span>
+          </div>
+          <div class="cockpit-kpi-val">5,48 M Ft</div>
+          <div class="cockpit-kpi-sub">14 db bejövő számla banki pár nélkül</div>
+        </div>
+
+        <div class="cockpit-kpi-item" onclick="selectCockpitKpi(this, 'tab-bank-tx')">
+          <div class="cockpit-kpi-header">
+            <span>Párosítatlan Banki Tételek</span>
+            <span class="tag tag-primary">Egyeztetés</span>
+          </div>
+          <div class="cockpit-kpi-val">9 db</div>
+          <div class="cockpit-kpi-sub">Kivonaton szerepel, nincs számlapár</div>
+        </div>
+
+        <div class="cockpit-kpi-item" onclick="selectCockpitKpi(this, 'tab-unpaid-out')">
+          <div class="cockpit-kpi-header">
+            <span>Kintlévőség (Vevők)</span>
+            <span class="tag tag-neutral">Követelés</span>
+          </div>
+          <div class="cockpit-kpi-val">8,25 M Ft</div>
+          <div class="cockpit-kpi-sub">5 db kiállított számla vár kifizetésre</div>
+        </div>
+
+      </div>
+
+      <!-- Unified Main Card with dynamic content based on active KPI tile -->
+      <div class="card">
+        
+        <div class="cockpit-toolbar">
+          <div class="cockpit-toolbar-left">
+            <span id="cockpitCurrentTitle">📁 Hiányzó Bizonylatok (NAV számlák csatolmány nélkül)</span>
+            <span class="badge-live" style="font-size: 0.68rem;" id="cockpitItemCountBadge">6 tétel</span>
+          </div>
+
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="text" placeholder="Gyorskeresés partnerre vagy számra..." style="padding: 0.35rem 0.75rem; font-size: 0.76rem; border-radius: var(--radius-sm); border: 1px solid hsl(var(--border)); background: hsl(var(--card)); color: hsl(var(--foreground)); width: 220px;">
+            <button class="btn btn-sm btn-primary" onclick="alert('Tömeges feltöltés indítása')">
+              <span>📤</span> Csoportos Feltöltés
+            </button>
+          </div>
+        </div>
+
+        <div class="dense-list" style="max-height: 440px;" id="cockpitList">
+          
+          <div class="dense-row">
+            <div class="row-left">
+              <div class="direction-badge" style="background: hsl(var(--warning-subtle)); color: hsl(var(--warning));">📄</div>
+              <div class="row-meta">
+                <div class="row-title">
+                  <span>TRNDR-2026-20</span>
+                  <span class="tag tag-danger">Nincs számlakép</span>
+                </div>
+                <div class="row-subtitle">Trend-Art Media Nonprofit Kft. • Fizetési határidő: 2026. 09. 30.</div>
+              </div>
+            </div>
+            <div class="row-right">
+              <div>
+                <div class="row-amount negative">384 000 Ft</div>
+                <div class="row-date">Kiállítva: 2026. 09. 24.</div>
+              </div>
+              <button class="action-btn btn-primary" onclick="alert('Fájl feltöltése')">Bizonylat feltöltése</button>
+            </div>
+          </div>
+
+          <div class="dense-row">
+            <div class="row-left">
+              <div class="direction-badge" style="background: hsl(var(--warning-subtle)); color: hsl(var(--warning));">📄</div>
+              <div class="row-meta">
+                <div class="row-title">
+                  <span>CEL-2026-9812</span>
+                  <span class="tag tag-danger">Nincs számlakép</span>
+                </div>
+                <div class="row-subtitle">Celonis Inc. • Online szoftverlicenc (USD)</div>
+              </div>
+            </div>
+            <div class="row-right">
+              <div>
+                <div class="row-amount negative">19,00 USD</div>
+                <div class="row-date">Kiállítva: 2026. 09. 20.</div>
+              </div>
+              <button class="action-btn btn-primary" onclick="alert('Fájl feltöltése')">Bizonylat feltöltése</button>
+            </div>
+          </div>
+
+          <div class="dense-row">
+            <div class="row-left">
+              <div class="direction-badge" style="background: hsl(var(--warning-subtle)); color: hsl(var(--warning));">📄</div>
+              <div class="row-meta">
+                <div class="row-title">
+                  <span>A15701858/0779/00006</span>
+                  <span class="tag tag-danger">Nincs számlakép</span>
+                </div>
+                <div class="row-subtitle">Magyar Posta Zrt. • Csomagküldési szolgáltatás</div>
+              </div>
+            </div>
+            <div class="row-right">
+              <div>
+                <div class="row-amount negative">5 790 Ft</div>
+                <div class="row-date">Kiállítva: 2026. 09. 15.</div>
+              </div>
+              <button class="action-btn btn-primary" onclick="alert('Fájl feltöltése')">Bizonylat feltöltése</button>
+            </div>
+          </div>
+
+          <div class="dense-row">
+            <div class="row-left">
+              <div class="direction-badge" style="background: hsl(var(--warning-subtle)); color: hsl(var(--warning));">📄</div>
+              <div class="row-meta">
+                <div class="row-title">
+                  <span>321044026</span>
+                  <span class="tag tag-danger">Nincs számlakép</span>
+                </div>
+                <div class="row-subtitle">Senetic Magyarország Kft. • IT Irodaszer & Kiegészítők</div>
+              </div>
+            </div>
+            <div class="row-right">
+              <div>
+                <div class="row-amount negative">68 552 Ft</div>
+                <div class="row-date">Kiállítva: 2026. 09. 23.</div>
+              </div>
+              <button class="action-btn btn-primary" onclick="alert('Fájl feltöltése')">Bizonylat feltöltése</button>
+            </div>
+          </div>
+
+          <div class="dense-row">
+            <div class="row-left">
+              <div class="direction-badge" style="background: hsl(var(--warning-subtle)); color: hsl(var(--warning));">📄</div>
+              <div class="row-meta">
+                <div class="row-title">
+                  <span>INV-2026-X812</span>
+                  <span class="tag tag-danger">Nincs számlakép</span>
+                </div>
+                <div class="row-subtitle">Anthropic, PBC • AI API szolgáltatások</div>
+              </div>
+            </div>
+            <div class="row-right">
+              <div>
+                <div class="row-amount negative">45,00 USD</div>
+                <div class="row-date">Kiállítva: 2026. 09. 10.</div>
+              </div>
+              <button class="action-btn btn-primary" onclick="alert('Fájl feltöltése')">Bizonylat feltöltése</button>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="card-footer">
+          <span style="font-size: 0.74rem; color: hsl(var(--muted-foreground));">
+            Tipp: A feltöltött PDF-ekből és képekből az AI automatikusan kinyeri a tételeket és összepárosítja a NAV adatokkal.
+          </span>
+          <button class="btn btn-sm" onclick="alert('Megnyitás a Számlák menüpontban szűrve')">Részletes táblázat megnyitása →</button>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ======================================================================
+         CONCEPT 3: ACTION-FIRST DENSE GRID
+         ====================================================================== -->
+    <div id="option3" class="concept-panel">
+      <div class="info-banner">
+        <div class="info-banner-text">
+          <h3>3. Opció — Action-First Dense Grid (Maximális sebesség a könyvelőknek)</h3>
+          <p>
+            Kifejezetten operatív könyvelői és adminisztrátori használatra tervezve: sűrített, nagy információ-sűrűségű táblázatos sorok közvetlen gyorsművelet gombokkal (egy kattintásos feltöltés, azonnali párosítási javaslat).
+          </p>
+        </div>
+        <span class="pill-tag">Power-User Nézet</span>
+      </div>
+
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-header">
+          <div class="card-header-left">
+            <div class="icon-box icon-box-destructive">⚡</div>
+            <div>
+              <h3 class="card-title">Gyorsintézést igénylő számlák & bizonylatok</h3>
+              <p class="card-desc">Lejárt vagy hiányzó bizonylatú tételek azonnali jóváhagyással</p>
+            </div>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-sm" onclick="alert('Szűrés')">Szűrés ▾</button>
+            <button class="btn btn-sm btn-primary" onclick="alert('Tömeges feltöltés')">+ Új bizonylat</button>
+          </div>
+        </div>
+
+        <div class="dense-list" style="max-height: 340px;">
+          <!-- Dense row with inline multi-actions -->
+          <div class="dense-row">
+            <div class="row-left">
+              <span class="tag tag-danger" style="font-size: 0.7rem;">Hiányzó bizonylat</span>
+              <div class="row-meta">
+                <span class="row-title">TRNDR-2026-20 • Trend-Art Media Nonprofit Kft.</span>
+                <span class="row-subtitle">NAV összeg: 384 000 Ft • Határidő: 2026. 09. 30.</span>
+              </div>
+            </div>
+            <div class="row-right">
+              <button class="action-btn btn-primary" onclick="alert('Feltöltés')">Feltöltés 📤</button>
+              <button class="action-btn" onclick="alert('Tétel kihagyása')">Kihagyás</button>
+            </div>
+          </div>
+
+          <div class="dense-row">
+            <div class="row-left">
+              <span class="tag tag-warning" style="font-size: 0.7rem;">Párosítatlan bank</span>
+              <div class="row-meta">
+                <span class="row-title">BANK-TX-9012 • Raiffeisen HUF -184 200 Ft</span>
+                <span class="row-subtitle">Közlemény: GOOGLE *ADS98124912 Dublin • Ajánlott pár: INV-2026-0891 (98% match)</span>
+              </div>
+            </div>
+            <div class="row-right">
+              <button class="action-btn btn-primary" style="background: hsl(var(--success)); border-color: hsl(var(--success));" onclick="alert('Gyorspárosítás elfogadva!')">Párosítás (98%) ✓</button>
+              <button class="action-btn" onclick="alert('Manuális kiválasztás')">Keresés</button>
+            </div>
+          </div>
+
+          <div class="dense-row">
+            <div class="row-left">
+              <span class="tag tag-danger" style="font-size: 0.7rem;">Lejárt fizetés</span>
+              <div class="row-meta">
+                <span class="row-title">371004925EU • Secretlab NL B.V.</span>
+                <span class="row-subtitle">697,00 EUR • 14 napja lejárt kötelezettség</span>
+              </div>
+            </div>
+            <div class="row-right">
+              <button class="action-btn" onclick="alert('Banki utalás előkészítése')">Utalás rögzítése</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-footer">
+          <span style="font-size: 0.74rem; color: hsl(var(--muted-foreground));">Összesen 15 gyorsbeavatkozást igénylő tétel</span>
+          <button class="btn btn-sm btn-primary" onclick="alert('Mind párosítása')">Mind jóváhagyása (Auto-Match)</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Theme toggle logic
+    function toggleTheme() {
+      const html = document.documentElement;
+      const isDark = html.classList.toggle('dark');
+      const icon = document.getElementById('themeIcon');
+      const label = document.getElementById('themeLabel');
+      if (isDark) {
+        icon.textContent = '☀️';
+        label.textContent = 'Világos mód';
+      } else {
+        icon.textContent = '🌙';
+        label.textContent = 'Dark mód';
+      }
+    }
+
+    // Switch Option Tabs
+    function switchOption(index) {
+      document.querySelectorAll('.option-tab-btn').forEach((btn, idx) => {
+        btn.classList.toggle('active', idx === index - 1);
+      });
+      document.querySelectorAll('.concept-panel').forEach((panel, idx) => {
+        panel.classList.toggle('active', idx === index - 1);
+      });
+    }
+
+    // Subtab switcher in Option 1
+    function switchCardSubtab(btn, targetId) {
+      const parent = btn.parentElement;
+      parent.querySelectorAll('.subtab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    // Cockpit KPI Tile switcher in Option 2
+    function selectCockpitKpi(tile, key) {
+      document.querySelectorAll('.cockpit-kpi-item').forEach(el => el.classList.remove('active'));
+      tile.classList.add('active');
+
+      const titleEl = document.getElementById('cockpitCurrentTitle');
+      const badgeEl = document.getElementById('cockpitItemCountBadge');
+
+      if (key === 'tab-missing') {
+        titleEl.textContent = '📁 Hiányzó Bizonylatok (NAV számlák csatolmány nélkül)';
+        badgeEl.textContent = '6 tétel';
+      } else if (key === 'tab-payable') {
+        titleEl.textContent = '💳 Kifizetetlen Szállítói Számlák (Banki kifizetésre vár)';
+        badgeEl.textContent = '14 tétel • 5 480 300 Ft';
+      } else if (key === 'tab-bank-tx') {
+        titleEl.textContent = '🏦 Párosítatlan Banki Mozgások (Számlapár nélkül)';
+        badgeEl.textContent = '9 tétel • 1 920 400 Ft';
+      } else if (key === 'tab-unpaid-out') {
+        titleEl.textContent = '📈 Kintlévőségek (Vevői számlák kifizetésre várva)';
+        badgeEl.textContent = '5 tétel • 8 250 000 Ft';
+      }
+    }
+  </script>
+</body>
+</html>

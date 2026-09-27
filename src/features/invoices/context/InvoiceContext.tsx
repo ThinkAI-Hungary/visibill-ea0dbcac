@@ -346,6 +346,127 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
     }, { replace: true });
   }, [clearFilters, setKpiFilter, setSearchParams]);
 
+  // ── Auto-open invoice from URL (?invoice=<id>&action=<action>) ──
+  const invoiceIdFromUrl = searchParams.get('invoice');
+  const actionFromUrl = searchParams.get('action') as InvoiceAction | null;
+  const autoOpenedDialogInvoiceIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!invoiceIdFromUrl || !selectedCompany?.id) {
+      autoOpenedDialogInvoiceIdRef.current = null;
+      return;
+    }
+
+    let cancelled = false;
+
+    const handleNavInvoiceMatch = (navInv: NavInvoice) => {
+      if (cancelled) return;
+
+      // Switch tab if direction doesn't match current tab
+      if (navInv.invoice_direction === 'INBOUND' && activeTab !== 'INBOUND') {
+        setActiveTab('INBOUND');
+      } else if (navInv.invoice_direction === 'OUTBOUND' && activeTab !== 'OUTBOUND') {
+        setActiveTab('OUTBOUND');
+      }
+
+      setSelectedNavInvoice(navInv);
+      setLastViewedInvoiceId(navInv.id);
+      setExpandedRowIds(prev => new Set(prev).add(navInv.id));
+
+      if (actionFromUrl === 'items' && autoOpenedDialogInvoiceIdRef.current !== navInv.id) {
+        autoOpenedDialogInvoiceIdRef.current = navInv.id;
+        setItemsDialogOpen(true);
+      }
+    };
+
+    // 1. Try finding in loaded nav invoices
+    const match = filteredAndSortedNavInvoices.find(inv => inv.id === invoiceIdFromUrl);
+    if (match) {
+      handleNavInvoiceMatch(match);
+      const idx = filteredAndSortedNavInvoices.findIndex(inv => inv.id === invoiceIdFromUrl);
+      if (idx !== -1) {
+        const targetPage = Math.floor(idx / navPageSize) + 1;
+        if (targetPage !== navCurrentPage) {
+          setNavCurrentPage(targetPage);
+        }
+      }
+      return;
+    }
+
+    // 2. Fallback: fetch from Supabase
+    (async () => {
+      const { data: navData } = await supabase
+        .from('nav_invoices')
+        .select('*')
+        .eq('id', invoiceIdFromUrl)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (navData) {
+        handleNavInvoiceMatch(navData as unknown as NavInvoice);
+        return;
+      }
+
+      // 3. Fallback: check submitted invoices
+      const { data: subData } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('id', invoiceIdFromUrl)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (subData) {
+        const sub = subData as unknown as SubmittedInvoice;
+        setSelectedInvoice(sub);
+        setSelectedSubmittedForItems(sub);
+        setLastViewedInvoiceId(sub.id);
+        setExpandedRowIds(prev => new Set(prev).add(sub.id));
+
+        if (sub.invoice_type === 'outbound' && activeTab !== 'SUBMITTED_OUTBOUND') {
+          setActiveTab('SUBMITTED_OUTBOUND');
+        } else if (sub.invoice_type !== 'outbound' && activeTab !== 'SUBMITTED_INBOUND') {
+          setActiveTab('SUBMITTED_INBOUND');
+        }
+
+        if (autoOpenedDialogInvoiceIdRef.current !== sub.id) {
+          autoOpenedDialogInvoiceIdRef.current = sub.id;
+          if (actionFromUrl === 'view') {
+            setImageDialogOpen(true);
+          } else if (actionFromUrl === 'edit') {
+            setEditDialogOpen(true);
+          } else if (actionFromUrl === 'items') {
+            setSubmittedItemsDialogOpen(true);
+          }
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    invoiceIdFromUrl,
+    actionFromUrl,
+    selectedCompany?.id,
+    filteredAndSortedNavInvoices,
+    activeTab,
+    setActiveTab,
+    setSelectedNavInvoice,
+    setLastViewedInvoiceId,
+    setExpandedRowIds,
+    setItemsDialogOpen,
+    setSelectedInvoice,
+    setSelectedSubmittedForItems,
+    setImageDialogOpen,
+    setEditDialogOpen,
+    setSubmittedItemsDialogOpen,
+    navPageSize,
+    navCurrentPage,
+    setNavCurrentPage,
+  ]);
+
   // ── Sync ALL view state → URL query params ──
   useEffect(() => {
     setSearchParams(

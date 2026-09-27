@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TrendingUp, TrendingDown, ArrowUpDown, ChevronDown, ChevronRight, CandlestickChart, Info, BookOpen, Pencil, Check, X } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { getActiveLocale } from '@/lib/locale/formatters';
@@ -435,9 +435,9 @@ const FxDifferencesSection = React.memo(function FxDifferencesSection({
 
   return (
     <Collapsible open={isOpen} onOpenChange={onOpenChange}>
-      <Card className="border-border/50">
+      <Card className="border border-border/80 shadow-card overflow-hidden">
         <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors rounded-t-lg">
+          <CardHeader className={cn("cursor-pointer hover:bg-muted/30 transition-colors rounded-t-lg", isOpen && "border-b border-border/40")}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center">
@@ -474,7 +474,7 @@ const FxDifferencesSection = React.memo(function FxDifferencesSection({
         </CollapsibleTrigger>
 
         <CollapsibleContent>
-          <CardContent className="space-y-6 pt-0">
+          <CardContent className="space-y-6 pt-6">
             {/* KPI row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="rounded-lg bg-muted/30 p-3">

@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 import { getActiveLocale } from '@/lib/locale/formatters';
 import type { NavVatData, VatCategoryData } from '@/hooks/useDashboardData';
 import type { VatRegime } from '@/contexts/CompanyContext';
+import QuickActions from '@/components/dashboard/QuickActions';
 
 interface VatSectionProps {
   navVatData: NavVatData | undefined;
@@ -106,8 +107,8 @@ const VatSection = React.memo(function VatSection({
 
   return (
     <Collapsible open={vatSectionOpen} onOpenChange={onVatSectionOpenChange}>
-      <Card>
-        <CardHeader className="pb-2">
+      <Card className="border border-border/80 shadow-card overflow-hidden">
+        <CardHeader className={cn("px-6 py-4 space-y-0", vatSectionOpen && "border-b border-border/40")}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="text-lg font-medium">{t('vat.title', 'ÁFA kimutatás')}</span>
@@ -131,38 +132,45 @@ const VatSection = React.memo(function VatSection({
         </CardHeader>
 
         <CollapsibleContent>
-          <CardContent className="pt-4">
+          <CardContent className="p-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Left side - VAT bar chart */}
-              <div>
-                <h3 className={`text-lg font-semibold mb-6 ${isRefundable ? 'text-emerald-600 dark:text-emerald-400' : 'text-purple-600 dark:text-purple-400'}`}>
-                  {formatCurrency(Math.abs(displayVatPosition), selectedCurrency)}{' '}
-                  {isRefundable ? t('vat.refundable_vat', 'Visszaigényelhető ÁFA') : t('vat.payable_vat', 'Fizetendő ÁFA')}{' '}
-                  ({displayedPeriod})
-                </h3>
-                <div className="space-y-6">
-                  {vatBarData.map((item) => (
-                    <div key={item.name} className="space-y-2">
-                      <div className="flex items-center gap-4">
-                        <div className="w-3 rounded" style={{ minHeight: '40px', backgroundColor: item.color }} />
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm text-muted-foreground">{item.name}</span>
-                            <span className="font-semibold">{formatCurrency(item.value, selectedCurrency)}</span>
-                          </div>
-                          <div className="h-8 bg-muted rounded overflow-hidden">
-                            <div
-                              className="h-full rounded transition-all"
-                              style={{
-                                width: maxVatValue > 0 ? `${(Math.abs(item.value) / maxVatValue) * 100}%` : '0%',
-                                backgroundColor: item.color
-                              }}
-                            />
+              {/* Left side - VAT bar chart & Quick Actions */}
+              <div className="flex flex-col justify-between">
+                <div>
+                  <h3 className={`text-lg font-semibold mb-6 ${isRefundable ? 'text-emerald-600 dark:text-emerald-400' : 'text-purple-600 dark:text-purple-400'}`}>
+                    {formatCurrency(Math.abs(displayVatPosition), selectedCurrency)}{' '}
+                    {isRefundable ? t('vat.refundable_vat', 'Visszaigényelhető ÁFA') : t('vat.payable_vat', 'Fizetendő ÁFA')}{' '}
+                    ({displayedPeriod})
+                  </h3>
+                  <div className="space-y-6">
+                    {vatBarData.map((item) => (
+                      <div key={item.name} className="space-y-2">
+                        <div className="flex items-center gap-4">
+                          <div className="w-3 rounded" style={{ minHeight: '40px', backgroundColor: item.color }} />
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm text-muted-foreground">{item.name}</span>
+                              <span className="font-semibold">{formatCurrency(item.value, selectedCurrency)}</span>
+                            </div>
+                            <div className="h-8 bg-muted rounded overflow-hidden">
+                              <div
+                                className="h-full rounded transition-all"
+                                style={{
+                                  width: maxVatValue > 0 ? `${(Math.abs(item.value) / maxVatValue) * 100}%` : '0%',
+                                  backgroundColor: item.color
+                                }}
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                </div>
+
+                {/* Quick actions filling the remaining height */}
+                <div className="pt-6 mt-6 border-t border-border/40">
+                  <QuickActions embedded />
                 </div>
               </div>
 

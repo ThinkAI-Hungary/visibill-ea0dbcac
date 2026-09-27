@@ -1,0 +1,1643 @@
+<!DOCTYPE html>
+<html lang="hu" class="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Eaisybill — KPI Kártyák Újratervezése (Mockup Design Options)</title>
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ==========================================================================
+       EAISYBILL DESIGN TOKENS (HSL Alapú, 100% szinkronban az index.css-szel)
+       ========================================================================== */
+    :root {
+      /* Core Canvas & Surfaces */
+      --background: 220 7% 97%;          /* #f5f6f7 */
+      --foreground: 210 14% 4%;          /* #090b0e */
+      --card: 0 0% 100%;                 /* #ffffff */
+      --card-foreground: 210 14% 4%;
+      --popover: 0 0% 100%;
+      --popover-foreground: 210 14% 4%;
+      
+      /* Primary Brand (Fintech Teal) */
+      --primary: 174 83% 32%;             /* #0D9488 */
+      --primary-foreground: 0 0% 100%;
+      --primary-subtle: 174 83% 96%;      /* #F0FDFA */
+      --primary-glow: rgba(13, 148, 136, 0.15);
+
+      /* Secondary & Muted */
+      --secondary: 220 14% 96%;
+      --secondary-foreground: 210 14% 4%;
+      --muted: 220 7% 94%;               /* #eceef1 */
+      --muted-foreground: 220 5% 42%;    /* #676c74 */
+      
+      /* Borders & Inputs */
+      --border: 222 10% 89%;             /* #e2e4e8 */
+      --input: 220 10% 89%;
+      --ring: 174 83% 32%;
+
+      /* Semantic Statuses */
+      --success: 142 71% 45%;            /* #22c55e */
+      --success-subtle: 142 71% 96%;
+      --warning: 41 100% 30%;            /* #9a6700 */
+      --warning-subtle: 45 93% 96%;
+      --destructive: 0 84% 60%;          /* #ef4444 */
+      --destructive-subtle: 0 86% 97%;
+      --info: 217 91% 60%;               /* #3b82f6 */
+      --info-subtle: 214 95% 97%;
+
+      /* Radii */
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-full: 9999px;
+
+      /* Shadows */
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-card: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+      --shadow-hover: 0 4px 12px rgba(0,0,0,0.08);
+
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-display: 'Outfit', var(--font-sans);
+    }
+
+    html.dark {
+      --background: 210 14% 3%;          /* #08090a */
+      --foreground: 210 7% 97%;          /* #f5f6f7 */
+      --card: 210 7% 5%;                 /* #0f1011 */
+      --card-foreground: 210 7% 97%;
+      --popover: 210 5% 9%;              /* #161718 */
+      --popover-foreground: 210 7% 97%;
+
+      --primary: 170 82% 45%;            /* #14D4B8 */
+      --primary-foreground: 210 14% 3%;
+      --primary-subtle: 170 82% 10%;     /* #042f2c */
+      --primary-glow: rgba(20, 212, 184, 0.22);
+
+      --secondary: 210 5% 10%;
+      --secondary-foreground: 210 7% 97%;
+      --muted: 210 5% 10%;               /* #1c1e21 */
+      --muted-foreground: 220 5% 55%;
+
+      --border: 225 9% 15%;             /* #23252a */
+      --input: 210 5% 20%;
+      --ring: 170 82% 45%;
+
+      --success-subtle: 142 71% 8%;
+      --warning-subtle: 41 85% 8%;
+      --destructive-subtle: 0 84% 10%;
+      --info-subtle: 217 91% 10%;
+
+      --shadow-card: 0 1px 3px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04);
+      --shadow-hover: 0 6px 16px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: hsl(var(--background));
+      color: hsl(var(--foreground));
+      line-height: 1.5;
+      font-size: 13.5px;
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: 80px;
+    }
+
+    /* ==========================================================================
+       TOP CONTROL HEADER
+       ========================================================================== */
+    .top-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: hsl(var(--card) / 0.88);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid hsl(var(--border));
+      padding: 12px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 17px;
+      letter-spacing: -0.5px;
+      color: hsl(var(--foreground));
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .brand-logo .dot {
+      color: hsl(var(--primary));
+    }
+
+    .tag-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      background: hsl(var(--primary-subtle));
+      color: hsl(var(--primary));
+      border: 1px solid hsl(var(--primary) / 0.25);
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    .tabs-group {
+      display: flex;
+      align-items: center;
+      background: hsl(var(--muted));
+      padding: 3px;
+      border-radius: var(--radius-md);
+      gap: 2px;
+    }
+
+    .tab-btn {
+      padding: 6px 14px;
+      border-radius: calc(var(--radius-md) - 2px);
+      border: none;
+      background: transparent;
+      color: hsl(var(--muted-foreground));
+      font-size: 12.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tab-btn:hover {
+      color: hsl(var(--foreground));
+    }
+
+    .tab-btn.active {
+      background: hsl(var(--card));
+      color: hsl(var(--foreground));
+      font-weight: 600;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .theme-toggle-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius-md);
+      color: hsl(var(--foreground));
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .theme-toggle-btn:hover {
+      background: hsl(var(--muted));
+    }
+
+    /* ==========================================================================
+       PAGE CONTAINER
+       ========================================================================== */
+    .container {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 28px 24px;
+    }
+
+    .page-header {
+      margin-bottom: 24px;
+    }
+
+    .welcome-title {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+
+    .welcome-desc {
+      color: hsl(var(--muted-foreground));
+      font-size: 14px;
+    }
+
+    .net-gross-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .net-label {
+      color: hsl(var(--primary));
+      font-weight: 600;
+      border-bottom: 2px solid hsl(var(--primary));
+      padding-bottom: 1px;
+    }
+
+    .gross-label {
+      color: hsl(var(--muted-foreground));
+      cursor: pointer;
+    }
+
+    .mockup-desc-banner {
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius-lg);
+      padding: 18px 22px;
+      margin-bottom: 28px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .banner-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 18px;
+    }
+
+    .banner-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .banner-text {
+      color: hsl(var(--muted-foreground));
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .highlight-pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: hsl(var(--primary-subtle));
+      color: hsl(var(--primary));
+    }
+
+    /* ==========================================================================
+       GRID SYSTEM
+       ========================================================================== */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    @media (max-width: 1100px) {
+      .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .kpi-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ==========================================================================
+       CURRENT STATE (PROBLEM DEMONSTRATION)
+       ========================================================================== */
+    .current-card {
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      display: flex;
+      flex-col;
+      justify-content: center;
+      min-height: 160px;
+      position: relative;
+    }
+
+    .current-card.success {
+      border-color: rgba(34, 197, 94, 0.25);
+      background: rgba(34, 197, 94, 0.04);
+    }
+    .current-card.info {
+      border-color: rgba(59, 130, 246, 0.25);
+      background: rgba(59, 130, 246, 0.04);
+    }
+    .current-card.destructive {
+      border-color: rgba(239, 68, 68, 0.25);
+      background: rgba(239, 68, 68, 0.04);
+    }
+
+    .current-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .current-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: hsl(var(--muted-foreground));
+    }
+
+    .current-value {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 6px;
+      line-height: 1.25;
+    }
+
+    .current-desc {
+      font-size: 11.5px;
+      color: hsl(var(--muted-foreground));
+    }
+
+    /* Visual Red ruler showing horizontal misalignment */
+    .ruler-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 42px;
+      height: 1.5px;
+      background: rgba(239, 68, 68, 0.65);
+      border-top: 1px dashed #ef4444;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* ==========================================================================
+       OPTION 1: FINTECH EXECUTIVE (RECOMMENDED)
+       - Fixed Header Height (h-9) with pinned icon
+       - Primary Aggregated Amount in selected currency (Large text-2xl font-bold)
+       - Secondary Currency Pill Tray below
+       ========================================================================== */
+    .opt1-card {
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius-lg);
+      padding: 16px 18px;
+      height: 168px; /* Strict identical height */
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: var(--shadow-card);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .opt1-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
+      border-color: hsl(var(--primary) / 0.4);
+    }
+
+    .opt1-card.variant-success {
+      border-color: hsl(var(--success) / 0.28);
+      background: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--success-subtle)) 100%);
+    }
+    .opt1-card.variant-info {
+      border-color: hsl(var(--info) / 0.28);
+      background: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--info-subtle)) 100%);
+    }
+    .opt1-card.variant-destructive {
+      border-color: hsl(var(--destructive) / 0.28);
+      background: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--destructive-subtle)) 100%);
+    }
+
+    /* Pinned top bar: guaranteed 36px fixed height */
+    .opt1-header {
+      height: 36px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .opt1-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: hsl(var(--muted-foreground));
+      line-height: 1.35;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .opt1-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: hsl(var(--muted));
+      color: hsl(var(--muted-foreground));
+    }
+
+    .variant-success .opt1-icon {
+      background: hsl(var(--success-subtle));
+      color: hsl(var(--success));
+    }
+    .variant-info .opt1-icon {
+      background: hsl(var(--info-subtle));
+      color: hsl(var(--info));
+    }
+    .variant-destructive .opt1-icon {
+      background: hsl(var(--destructive-subtle));
+      color: hsl(var(--destructive));
+    }
+
+    .opt1-body {
+      margin-top: 4px;
+    }
+
+    .opt1-primary-val {
+      font-family: var(--font-sans);
+      font-size: 23px;
+      font-weight: 700;
+      letter-spacing: -0.6px;
+      color: hsl(var(--foreground));
+      line-height: 1.15;
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+    }
+
+    .opt1-primary-val .curr-suffix {
+      font-size: 15px;
+      font-weight: 500;
+      color: hsl(var(--muted-foreground));
+    }
+
+    /* Multi-currency tray at bottom */
+    .opt1-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      min-height: 26px;
+      border-top: 1px dashed hsl(var(--border) / 0.6);
+      padding-top: 6px;
+      margin-top: 6px;
+    }
+
+    .opt1-desc-tag {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: hsl(var(--muted-foreground));
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 110px;
+    }
+
+    .opt1-currency-pills {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .curr-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: hsl(var(--secondary));
+      color: hsl(var(--secondary-foreground));
+      border: 1px solid hsl(var(--border));
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.2px;
+    }
+
+    .curr-pill .iso {
+      color: hsl(var(--muted-foreground));
+      font-size: 9.5px;
+    }
+
+    /* ==========================================================================
+       OPTION 2: STRUCTURED CURRENCY MATRIX
+       - Fixed Header Bar with clean hairline border
+       - Dedicated Table Rows with ISO Badges and Right-aligned Numbers
+       ========================================================================== */
+    .opt2-card {
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius-lg);
+      height: 184px; /* Fix standard height */
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      transition: all 0.15s ease;
+    }
+
+    .opt2-card:hover {
+      box-shadow: var(--shadow-hover);
+      border-color: hsl(var(--primary) / 0.45);
+    }
+
+    .opt2-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid hsl(var(--border) / 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 44px;
+      background: hsl(var(--muted) / 0.35);
+    }
+
+    .opt2-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: hsl(var(--muted-foreground));
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .opt2-content {
+      padding: 12px 16px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .opt2-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12.5px;
+      line-height: 1.35;
+      padding-bottom: 5px;
+      border-bottom: 1px solid hsl(var(--primary) / 0.25);
+    }
+
+    .opt2-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .opt2-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: hsl(var(--primary-subtle));
+      color: hsl(var(--primary));
+      border: 1px solid hsl(var(--primary) / 0.2);
+      letter-spacing: 0.5px;
+    }
+
+    .opt2-amount {
+      font-weight: 600;
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+      color: hsl(var(--foreground));
+      letter-spacing: -0.2px;
+    }
+
+    .opt2-single-amount {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+    }
+
+    .opt2-footer {
+      padding: 6px 16px;
+      border-top: 1px solid hsl(var(--border) / 0.4);
+      background: hsl(var(--card));
+      font-size: 11px;
+      color: hsl(var(--muted-foreground));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* ==========================================================================
+       OPTION 3: INTERACTIVE SEGMENTED CARDS
+       - 1 Big Hero Number
+       - Interactive Currency Pill Switcher inside the card header
+       ========================================================================== */
+    .opt3-card {
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      height: 162px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: var(--shadow-card);
+      transition: all 0.15s ease;
+    }
+
+    .opt3-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      height: 38px;
+    }
+
+    .opt3-title-wrap {
+      flex: 1;
+    }
+
+    .opt3-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: hsl(var(--muted-foreground));
+    }
+
+    .opt3-segmented {
+      display: inline-flex;
+      align-items: center;
+      background: hsl(var(--muted));
+      padding: 2px;
+      border-radius: var(--radius-sm);
+      gap: 1px;
+    }
+
+    .opt3-seg-btn {
+      border: none;
+      background: transparent;
+      padding: 2px 6px;
+      font-size: 10px;
+      font-weight: 600;
+      color: hsl(var(--muted-foreground));
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .opt3-seg-btn:hover {
+      color: hsl(var(--foreground));
+    }
+
+    .opt3-seg-btn.active {
+      background: hsl(var(--card));
+      color: hsl(var(--primary));
+      box-shadow: var(--shadow-sm);
+    }
+
+    .opt3-value {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.6px;
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+      margin: 4px 0;
+      color: hsl(var(--foreground));
+    }
+
+    .opt3-footer {
+      font-size: 11.5px;
+      color: hsl(var(--muted-foreground));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid hsl(var(--border) / 0.5);
+      padding-top: 8px;
+    }
+
+    /* ==========================================================================
+       COMPARISON TABLE & SPECIFICATION BOX
+       ========================================================================== */
+    .spec-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 24px;
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      font-size: 13px;
+    }
+
+    .spec-table th, .spec-table td {
+      padding: 12px 18px;
+      text-align: left;
+      border-bottom: 1px solid hsl(var(--border));
+    }
+
+    .spec-table th {
+      background: hsl(var(--muted) / 0.5);
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: hsl(var(--muted-foreground));
+    }
+
+    .spec-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .tag-check {
+      color: hsl(var(--success));
+      font-weight: 600;
+    }
+
+    .tag-warn {
+      color: hsl(var(--warning));
+      font-weight: 600;
+    }
+
+    .tag-bad {
+      color: hsl(var(--destructive));
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Controls -->
+  <header class="top-toolbar">
+    <div class="brand-section">
+      <div class="brand-logo">eaisybill<span class="dot">.</span></div>
+      <span class="tag-badge">📐 KPI Cards Redesign Mockup</span>
+    </div>
+
+    <div class="tabs-group">
+      <button class="tab-btn" onclick="switchView('current')">
+        <span>⚠️</span> Jelenlegi (Hibás)
+      </button>
+      <button class="tab-btn active" onclick="switchView('opt1')">
+        <span>💎</span> 1. Opció (Ajánlott)
+      </button>
+      <button class="tab-btn" onclick="switchView('opt2')">
+        <span>📊</span> 2. Opció (Matrix)
+      </button>
+      <button class="tab-btn" onclick="switchView('opt3')">
+        <span>⚡</span> 3. Opció (Interactive)
+      </button>
+      <button class="tab-btn" onclick="switchView('comparison')">
+        <span>⚖️</span> Összehasonlítás
+      </button>
+    </div>
+
+    <div>
+      <button class="theme-toggle-btn" onclick="toggleTheme()">
+        <span id="theme-icon">🌙</span> Sötét mód
+      </button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="page-header">
+      <h1 class="welcome-title">Jó estét, János!</h1>
+      <p class="welcome-desc">Itt van a vállalkozásod teljes áttekintése</p>
+      
+      <div class="net-gross-toggle">
+        <span class="net-label">Nettó</span>
+        <span style="opacity: 0.5;">●</span>
+        <span class="gross-label">Bruttó</span>
+      </div>
+    </div>
+
+    <!-- VIEW 1: CURRENT (PROBLEMATIC) STATE -->
+    <div id="view-current" style="display: none;">
+      <div class="mockup-desc-banner" style="border-left: 4px solid #ef4444;">
+        <div class="banner-icon" style="background: rgba(239,68,68,0.1); color: #ef4444;">⚠️</div>
+        <div>
+          <div class="banner-title" style="color: #ef4444;">
+            Jelenlegi Implementáció Problémája (Élő képernyőkép rekonstrukció)
+          </div>
+          <div class="banner-text">
+            <strong>Miért csúsznak el a fejlécek?</strong><br/>
+            1. A többdevizás összegek egyszerűen <code>|</code> jellel vannak összefűzve egyetlen stringként. Amikor 3 deviza van (Kiadás, Szállítók), az összeg 3 sorba törik, megnövelve a kártya magasságát (~200px+).<br/>
+            2. A <code>flex flex-col justify-center</code> miatt a kevesebb szöveget tartalmazó kártyákon (ÁFA, Feltöltés) a fejléc vertikálisan lejjebb húzódik.<br/>
+            3. A hosszú címek (pl. <em>„KIFIZETETLEN BEJÖVŐ SZÁMLÁK (NETTÓ)”</em>) 2 sorba törnek, tovább billentve a fejléc és az ikon vízszintes vonalát.<br/>
+            4. A piros szaggatott vonal jelzi a fejlécek elcsúszását!
+          </div>
+        </div>
+      </div>
+
+      <!-- Current Cards Grid with simulated visual ruler -->
+      <div class="kpi-grid" style="position: relative;">
+        <!-- Visual Alignment Ruler -->
+        <div class="ruler-line"></div>
+
+        <!-- 1. Számla feltöltése -->
+        <div class="current-card">
+          <div class="current-header">
+            <span class="current-title">Számla feltöltése</span>
+            <span>📤</span>
+          </div>
+          <div class="current-value">319</div>
+          <div class="current-desc">239 Befejezve</div>
+        </div>
+
+        <!-- 2. Összes bevétel -->
+        <div class="current-card success">
+          <div class="current-header">
+            <span class="current-title">Összes bevétel (Nettó)</span>
+            <span style="color: #22c55e;">↗</span>
+          </div>
+          <div class="current-value">
+            60 331,30 EUR |<br/>105 054 326 Ft
+          </div>
+          <div class="current-desc">OUTBOUND</div>
+        </div>
+
+        <!-- 3. Kintlévőség -->
+        <div class="current-card info">
+          <div class="current-header">
+            <span class="current-title">Kintlévőség (Nettó)</span>
+            <span style="color: #3b82f6;">📈</span>
+          </div>
+          <div class="current-value">
+            57 231,30 EUR |<br/>- 1 753 650 Ft
+          </div>
+          <div class="current-desc">Kifizetetlen kimenő számlák</div>
+        </div>
+
+        <!-- 4. Házipénztár -->
+        <div class="current-card destructive">
+          <div class="current-header">
+            <span class="current-title">Házipénztár</span>
+            <span style="color: #ef4444;">💵</span>
+          </div>
+          <div class="current-value">- 180 000 Ft</div>
+          <div class="current-desc">Pénztár egyenleg</div>
+        </div>
+
+        <!-- 5. Összes kiadás (3 lines of currency!) -->
+        <div class="current-card destructive">
+          <div class="current-header">
+            <span class="current-title">Összes kiadás (Nettó)</span>
+            <span style="color: #ef4444;">↙</span>
+          </div>
+          <div class="current-value">
+            71 459,42 EUR |<br/>61 075,48 USD |<br/>67 811 812 Ft
+          </div>
+          <div class="current-desc">INBOUND</div>
+        </div>
+
+        <!-- 6. ÁFA (1 line, centers vertically causing massive header offset) -->
+        <div class="current-card destructive">
+          <div class="current-header">
+            <span class="current-title">ÁFA</span>
+            <span style="color: #ef4444;">€</span>
+          </div>
+          <div class="current-value">23 961 286 Ft</div>
+          <div class="current-desc">Összes - Levonható</div>
+        </div>
+
+        <!-- 7. Kifizetetlen bejövő (2-line title + 3 lines of value!) -->
+        <div class="current-card destructive">
+          <div class="current-header">
+            <span class="current-title">Kifizetetlen bejövő számlák (Nettó)</span>
+            <span style="color: #ef4444;">📁</span>
+          </div>
+          <div class="current-value">
+            71 100,17 EUR |<br/>58 960,06 USD |<br/>15 528 031 Ft
+          </div>
+          <div class="current-desc">Kifizetetlen bejövő számlák</div>
+        </div>
+
+        <!-- Empty 8th slot (layout imbalance) -->
+        <div style="border: 2px dashed hsl(var(--border)); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: hsl(var(--muted-foreground)); font-size: 12px; font-style: italic;">
+          [ Üres 8. kártyahely a jelenlegi 4 oszlopos rácsban ]
+        </div>
+      </div>
+    </div>
+
+
+    <!-- VIEW 2: OPTION 1 (FINTECH EXECUTIVE - RECOMMENDED) -->
+    <div id="view-opt1">
+      <div class="mockup-desc-banner" style="border-left: 4px solid hsl(var(--primary));">
+        <div class="banner-icon" style="background: hsl(var(--primary-subtle)); color: hsl(var(--primary));">💎</div>
+        <div>
+          <div class="banner-title">
+            1. Opció (Ajánlott): „Fintech Executive” — Fő Konszolidált Érték + Deviza Címkék (Pills)
+            <span class="highlight-pill">Pixel-Perfect Fejléc Zárolás</span>
+          </div>
+          <div class="banner-text">
+            <strong>Működési elv:</strong><br/>
+            • <strong>Fejléc rögzítés:</strong> Minden kártya fejlécének magassága szigorúan fix <code>36px</code>, felülre rögzítve (nem középre!). A címek és ikonok egyetlen szigorú vízszintes tengelyre esnek.<br/>
+            • <strong>Konszolidált összeg:</strong> A kártya a cég választott devizájában (pl. HUF) számított aggregált főösszeget mutatja kiemelten (23px, bold, tabular-nums).<br/>
+            • <strong>Deviza Pill Tray:</strong> Ha több deviza van a háttérben, az alsó sávban tiszta, strukturált kapszulákban (Pill Badges) sorakoznak az eredeti tételek (pl. <code>€ 60.3k</code>, <code>$ 61.1k</code>).<br/>
+            • <strong>Kiegyensúlyozott 8. Kártya:</strong> A hiányzó helyre bekerült az <em>„Operatív Eredmény”</em> (Nettó Cash-Flow: Bevétel - Kiadás), így megszűnt a lyuk a rácsból!
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <!-- 1. Számla feltöltése -->
+        <div class="opt1-card">
+          <div class="opt1-header">
+            <span class="opt1-title">Számla feltöltése</span>
+            <div class="opt1-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+          </div>
+          <div class="opt1-body">
+            <div class="opt1-primary-val">
+              319 <span class="curr-suffix">db bizonylat</span>
+            </div>
+          </div>
+          <div class="opt1-footer">
+            <span class="opt1-desc-tag">Feldolgozás</span>
+            <div class="opt1-currency-pills">
+              <span class="curr-pill" style="color: hsl(var(--success)); background: hsl(var(--success-subtle));">
+                ✓ 239 befejezve
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Összes bevétel -->
+        <div class="opt1-card variant-success">
+          <div class="opt1-header">
+            <span class="opt1-title">Összes bevétel (Nettó)</span>
+            <div class="opt1-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+            </div>
+          </div>
+          <div class="opt1-body">
+            <div class="opt1-primary-val">
+              129 186 846 <span class="curr-suffix">Ft</span>
+            </div>
+          </div>
+          <div class="opt1-footer">
+            <span class="opt1-desc-tag">Outbound</span>
+            <div class="opt1-currency-pills">
+              <span class="curr-pill"><span class="iso">EUR</span> 60 331,30</span>
+              <span class="curr-pill"><span class="iso">HUF</span> 105,05 M</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Kintlévőség -->
+        <div class="opt1-card variant-info">
+          <div class="opt1-header">
+            <span class="opt1-title">Kintlévőség (Nettó)</span>
+            <div class="opt1-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            </div>
+          </div>
+          <div class="opt1-body">
+            <div class="opt1-primary-val">
+              21 138 870 <span class="curr-suffix">Ft</span>
+            </div>
+          </div>
+          <div class="opt1-footer">
+            <span class="opt1-desc-tag">Vevői számlák</span>
+            <div class="opt1-currency-pills">
+              <span class="curr-pill"><span class="iso">EUR</span> 57 231,30</span>
+              <span class="curr-pill" style="color: hsl(var(--destructive));"><span class="iso">HUF</span> -1,75 M</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Házipénztár -->
+        <div class="opt1-card variant-destructive">
+          <div class="opt1-header">
+            <span class="opt1-title">Házipénztár</span>
+            <div class="opt1-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
+            </div>
+          </div>
+          <div class="opt1-body">
+            <div class="opt1-primary-val" style="color: hsl(var(--destructive));">
+              - 180 000 <span class="curr-suffix">Ft</span>
+            </div>
+          </div>
+          <div class="opt1-footer">
+            <span class="opt1-desc-tag">Pénztár egyenleg</span>
+            <div class="opt1-currency-pills">
+              <span class="curr-pill" style="color: hsl(var(--destructive)); background: hsl(var(--destructive-subtle));">
+                ⚠️ Negatív egyenleg
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Összes kiadás -->
+        <div class="opt1-card variant-destructive">
+          <div class="opt1-header">
+            <span class="opt1-title">Összes kiadás (Nettó)</span>
+            <div class="opt1-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="17" y1="7" x2="7" y2="17"/><polyline points="17 17 7 17 7 7"/></svg>
+            </div>
+          </div>
+          <div class="opt1-body">
+            <div class="opt1-primary-val">
+              119 018 732 <span class="curr-suffix">Ft</span>
+            </div>
+          </div>
+          <div class="opt1-footer">
+            <span class="opt1-desc-tag">Inbound</span>
+            <div class="opt1-currency-pills">
+              <span class="curr-pill"><span class="iso">EUR</span> 71,5k</span>
+              <span class="curr-pill"><span class="iso">USD</span> 61,1k</span>
+              <span class="curr-pill"><span class="iso">HUF</span> 67,8M</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. Fizetendő ÁFA -->
+        <div class="opt1-card variant-destructive">
+          <div class="opt1-header">
+            <span class="opt1-title">Fizetendő ÁFA</span>
+            <div class="opt1-icon">
+              <span style="font-weight: 700; font-size: 13px;">€</span>
+            </div>
+          </div>
+          <div class="opt1-body">
+            <div class="opt1-primary-val">
+              23 961 286 <span class="curr-suffix">Ft</span>
+            </div>
+          </div>
+          <div class="opt1-footer">
+            <span class="opt1-desc-tag">NAV Pozíció</span>
+            <div class="opt1-currency-pills">
+              <span class="curr-pill">Összes - Levonható</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. Szállítói kötelezettség -->
+        <div class="opt1-card variant-destructive">
+          <div class="opt1-header">
+            <span class="opt1-title">Kifizetetlen bejövő számlák</span>
+            <div class="opt1-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+          </div>
+          <div class="opt1-body">
+            <div class="opt1-primary-val">
+              65 783 319 <span class="curr-suffix">Ft</span>
+            </div>
+          </div>
+          <div class="opt1-footer">
+            <span class="opt1-desc-tag">Szállítói tartozás</span>
+            <div class="opt1-currency-pills">
+              <span class="curr-pill"><span class="iso">EUR</span> 71,1k</span>
+              <span class="curr-pill"><span class="iso">USD</span> 58,9k</span>
+              <span class="curr-pill"><span class="iso">HUF</span> 15,5M</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 8. ÚJ: Pénzügyi eredmény / Cash-flow balance -->
+        <div class="opt1-card variant-success" style="border: 1.5px solid hsl(var(--primary) / 0.5);">
+          <div class="opt1-header">
+            <span class="opt1-title" style="color: hsl(var(--primary));">Operatív Eredmény (Nettó)</span>
+            <div class="opt1-icon" style="background: hsl(var(--primary-subtle)); color: hsl(var(--primary));">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+            </div>
+          </div>
+          <div class="opt1-body">
+            <div class="opt1-primary-val" style="color: hsl(var(--primary));">
+              + 10 168 114 <span class="curr-suffix">Ft</span>
+            </div>
+          </div>
+          <div class="opt1-footer">
+            <span class="opt1-desc-tag">Bevétel - Kiadás</span>
+            <div class="opt1-currency-pills">
+              <span class="curr-pill" style="background: hsl(var(--primary-subtle)); color: hsl(var(--primary)); font-weight: 700;">
+                + 7,9% Cash Flow
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- VIEW 3: OPTION 2 (STRUCTURED CURRENCY MATRIX) -->
+    <div id="view-opt2" style="display: none;">
+      <div class="mockup-desc-banner" style="border-left: 4px solid #3b82f6;">
+        <div class="banner-icon" style="background: rgba(59,130,246,0.1); color: #3b82f6;">📊</div>
+        <div>
+          <div class="banner-title">
+            2. Opció: „Structured Currency Matrix” — Strukturált Deviza-Sorok
+            <span class="highlight-pill" style="background: rgba(59,130,246,0.15); color: #3b82f6;">Számviteli Részletesség</span>
+          </div>
+          <div class="banner-text">
+            <strong>Működési elv:</strong><br/>
+            • <strong>Dedikált fejléc sáv:</strong> A kártya felső 44px-e egy elválasztott szürke sáv, így a fejlécek és az ikonok 100%-ban azonos magasságban futnak.<br/>
+            • <strong>Devizánkénti sorok:</strong> Nincs elválasztó <code>|</code> pipe! Helyette tiszta, rendezett sorok jelennek meg, bal oldalon ISO címkével (<code>EUR</code>, <code>USD</code>, <code>HUF</code>), jobb oldalon jobbra zárt, <code>tabular-nums</code> formázott összegekkel.<br/>
+            • <strong>Konzisztens magasság:</strong> Szigorúan 184px, a többdevizás tételek egymás alá illeszkednek átláthatóan.
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <!-- 1. Számla feltöltése -->
+        <div class="opt2-card">
+          <div class="opt2-header">
+            <span class="opt2-title">Számla feltöltése</span>
+            <span>📤</span>
+          </div>
+          <div class="opt2-content">
+            <div class="opt2-single-amount">319 db</div>
+            <div style="font-size: 12px; color: hsl(var(--muted-foreground));">Feldolgozott bizonylat</div>
+          </div>
+          <div class="opt2-footer">
+            <span>Állapot</span>
+            <span style="color: hsl(var(--success)); font-weight: 600;">239 befejezve</span>
+          </div>
+        </div>
+
+        <!-- 2. Összes bevétel -->
+        <div class="opt2-card">
+          <div class="opt2-header">
+            <span class="opt2-title">Összes bevétel (Nettó)</span>
+            <span style="color: hsl(var(--success));">↗</span>
+          </div>
+          <div class="opt2-content">
+            <div class="opt2-row">
+              <span class="opt2-badge">EUR</span>
+              <span class="opt2-amount">60 331,30 €</span>
+            </div>
+            <div class="opt2-row">
+              <span class="opt2-badge">HUF</span>
+              <span class="opt2-amount">105 054 326 Ft</span>
+            </div>
+          </div>
+          <div class="opt2-footer">
+            <span>Irány: OUTBOUND</span>
+            <span style="font-weight: 600;">2 deviza</span>
+          </div>
+        </div>
+
+        <!-- 3. Kintlévőség -->
+        <div class="opt2-card">
+          <div class="opt2-header">
+            <span class="opt2-title">Kintlévőség (Nettó)</span>
+            <span style="color: hsl(var(--info));">📈</span>
+          </div>
+          <div class="opt2-content">
+            <div class="opt2-row">
+              <span class="opt2-badge">EUR</span>
+              <span class="opt2-amount">57 231,30 €</span>
+            </div>
+            <div class="opt2-row">
+              <span class="opt2-badge">HUF</span>
+              <span class="opt2-amount" style="color: hsl(var(--destructive));">- 1 753 650 Ft</span>
+            </div>
+          </div>
+          <div class="opt2-footer">
+            <span>Kifizetetlen kimenő</span>
+            <span style="font-weight: 600;">2 deviza</span>
+          </div>
+        </div>
+
+        <!-- 4. Házipénztár -->
+        <div class="opt2-card">
+          <div class="opt2-header">
+            <span class="opt2-title">Házipénztár</span>
+            <span style="color: hsl(var(--destructive));">💵</span>
+          </div>
+          <div class="opt2-content">
+            <div class="opt2-single-amount" style="color: hsl(var(--destructive));">- 180 000 Ft</div>
+            <div style="font-size: 12px; color: hsl(var(--destructive)); font-weight: 500;">Pénztárhiány / korrekció szükséges</div>
+          </div>
+          <div class="opt2-footer">
+            <span>Egyenleg</span>
+            <span style="color: hsl(var(--destructive)); font-weight: 600;">Negatív</span>
+          </div>
+        </div>
+
+        <!-- 5. Összes kiadás -->
+        <div class="opt2-card">
+          <div class="opt2-header">
+            <span class="opt2-title">Összes kiadás (Nettó)</span>
+            <span style="color: hsl(var(--destructive));">↙</span>
+          </div>
+          <div class="opt2-content">
+            <div class="opt2-row">
+              <span class="opt2-badge">EUR</span>
+              <span class="opt2-amount">71 459,42 €</span>
+            </div>
+            <div class="opt2-row">
+              <span class="opt2-badge">USD</span>
+              <span class="opt2-amount">61 075,48 $</span>
+            </div>
+            <div class="opt2-row">
+              <span class="opt2-badge">HUF</span>
+              <span class="opt2-amount">67 811 812 Ft</span>
+            </div>
+          </div>
+          <div class="opt2-footer">
+            <span>Irány: INBOUND</span>
+            <span style="font-weight: 600;">3 deviza</span>
+          </div>
+        </div>
+
+        <!-- 6. Fizetendő ÁFA -->
+        <div class="opt2-card">
+          <div class="opt2-header">
+            <span class="opt2-title">Fizetendő ÁFA</span>
+            <span style="color: hsl(var(--destructive)); font-weight: 700;">€</span>
+          </div>
+          <div class="opt2-content">
+            <div class="opt2-single-amount">23 961 286 Ft</div>
+            <div style="font-size: 12px; color: hsl(var(--muted-foreground));">Összes - Levonható ÁFA</div>
+          </div>
+          <div class="opt2-footer">
+            <span>NAV egyenleg</span>
+            <span style="color: hsl(var(--destructive)); font-weight: 600;">Fizetendő</span>
+          </div>
+        </div>
+
+        <!-- 7. Szállítói köt. -->
+        <div class="opt2-card">
+          <div class="opt2-header">
+            <span class="opt2-title">Szállítói kötelezettség</span>
+            <span style="color: hsl(var(--destructive));">📁</span>
+          </div>
+          <div class="opt2-content">
+            <div class="opt2-row">
+              <span class="opt2-badge">EUR</span>
+              <span class="opt2-amount">71 100,17 €</span>
+            </div>
+            <div class="opt2-row">
+              <span class="opt2-badge">USD</span>
+              <span class="opt2-amount">58 960,06 $</span>
+            </div>
+            <div class="opt2-row">
+              <span class="opt2-badge">HUF</span>
+              <span class="opt2-amount">15 528 031 Ft</span>
+            </div>
+          </div>
+          <div class="opt2-footer">
+            <span>Kifizetetlen bejövő</span>
+            <span style="font-weight: 600;">3 deviza</span>
+          </div>
+        </div>
+
+        <!-- 8. Operatív egyenleg -->
+        <div class="opt2-card" style="border-color: hsl(var(--primary) / 0.45);">
+          <div class="opt2-header" style="background: hsl(var(--primary-subtle));">
+            <span class="opt2-title" style="color: hsl(var(--primary));">Pénzügyi Egyenleg</span>
+            <span style="color: hsl(var(--primary)); font-weight: 700;">⚖️</span>
+          </div>
+          <div class="opt2-content">
+            <div class="opt2-single-amount" style="color: hsl(var(--primary));">+ 10 168 114 Ft</div>
+            <div style="font-size: 12px; color: hsl(var(--primary));">Pozitív működési fedezet</div>
+          </div>
+          <div class="opt2-footer">
+            <span>Konszolidált</span>
+            <span style="color: hsl(var(--primary)); font-weight: 700;">+ 7,9%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- VIEW 4: OPTION 3 (INTERACTIVE SEGMENTED CARDS) -->
+    <div id="view-opt3" style="display: none;">
+      <div class="mockup-desc-banner" style="border-left: 4px solid #14D4B8;">
+        <div class="banner-icon" style="background: rgba(20,212,184,0.1); color: #14D4B8;">⚡</div>
+        <div>
+          <div class="banner-title">
+            3. Opció: „Interactive Segmented” — Kártyaszintű Devizaváltó
+            <span class="highlight-pill">1 Nagy Összeg · Kattintható Gombok</span>
+          </div>
+          <div class="banner-text">
+            <strong>Működési elv:</strong><br/>
+            • <strong>Mindig 1 nagy összeg:</strong> Soha nincs több soros tördelés. Minden kártyán egyetlen 26px méretű összeg látható.<br/>
+            • <strong>Kattintható devizagombok a kártyán:</strong> Próbáld ki a gombokat az <em>Összes bevétel</em> vagy <em>Összes kiadás</em> kártyán! A <code>[HUF]</code>, <code>[EUR]</code>, <code>[USD]</code> gombokra kattintva a kártya azonnal átváltja az összeget!<br/>
+            • <strong>100% rögzített kártyamagasság:</strong> 162px minden dobozra, nulla elcsúszás a teljes felületen.
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <!-- 1. Számla feltöltése -->
+        <div class="opt3-card">
+          <div class="opt3-header">
+            <div class="opt3-title-wrap">
+              <span class="opt3-title">Számla feltöltése</span>
+            </div>
+            <span>📤</span>
+          </div>
+          <div>
+            <div class="opt3-value">319</div>
+            <div style="font-size: 12px; color: hsl(var(--muted-foreground));">Feldolgozott számlák</div>
+          </div>
+          <div class="opt3-footer">
+            <span>Státusz</span>
+            <span style="color: hsl(var(--success)); font-weight: 600;">239 befejezve</span>
+          </div>
+        </div>
+
+        <!-- 2. Összes bevétel with Interactive Buttons -->
+        <div class="opt3-card">
+          <div class="opt3-header">
+            <div class="opt3-title-wrap">
+              <span class="opt3-title">Összes bevétel (Nettó)</span>
+            </div>
+            <div class="opt3-segmented">
+              <button class="opt3-seg-btn active" onclick="setOpt3Currency(this, 'opt3-rev', '105 054 326 Ft')">HUF</button>
+              <button class="opt3-seg-btn" onclick="setOpt3Currency(this, 'opt3-rev', '60 331,30 €')">EUR</button>
+              <button class="opt3-seg-btn" onclick="setOpt3Currency(this, 'opt3-rev', '129 186 846 Ft')">Össz.</button>
+            </div>
+          </div>
+          <div>
+            <div class="opt3-value" id="opt3-rev">105 054 326 Ft</div>
+            <div style="font-size: 12px; color: hsl(var(--muted-foreground));">Kattints a fenti gombokra!</div>
+          </div>
+          <div class="opt3-footer">
+            <span>Kimenő számlák</span>
+            <span style="color: hsl(var(--success)); font-weight: 600;">OUTBOUND ↗</span>
+          </div>
+        </div>
+
+        <!-- 3. Kintlévőség -->
+        <div class="opt3-card">
+          <div class="opt3-header">
+            <div class="opt3-title-wrap">
+              <span class="opt3-title">Kintlévőség (Nettó)</span>
+            </div>
+            <div class="opt3-segmented">
+              <button class="opt3-seg-btn active" onclick="setOpt3Currency(this, 'opt3-kint', '57 231,30 €')">EUR</button>
+              <button class="opt3-seg-btn" onclick="setOpt3Currency(this, 'opt3-kint', '-1 753 650 Ft')">HUF</button>
+              <button class="opt3-seg-btn" onclick="setOpt3Currency(this, 'opt3-kint', '21 138 870 Ft')">Össz.</button>
+            </div>
+          </div>
+          <div>
+            <div class="opt3-value" id="opt3-kint">57 231,30 €</div>
+            <div style="font-size: 12px; color: hsl(var(--muted-foreground));">Kifizetetlen kimenő számlák</div>
+          </div>
+          <div class="opt3-footer">
+            <span>Vevői tartozás</span>
+            <span style="color: hsl(var(--info)); font-weight: 600;">2 deviza</span>
+          </div>
+        </div>
+
+        <!-- 4. Házipénztár -->
+        <div class="opt3-card">
+          <div class="opt3-header">
+            <div class="opt3-title-wrap">
+              <span class="opt3-title">Házipénztár</span>
+            </div>
+            <span>💵</span>
+          </div>
+          <div>
+            <div class="opt3-value" style="color: hsl(var(--destructive));">- 180 000 Ft</div>
+            <div style="font-size: 12px; color: hsl(var(--destructive));">Negatív készpénzegyenleg</div>
+          </div>
+          <div class="opt3-footer">
+            <span>Pénztár</span>
+            <span style="color: hsl(var(--destructive)); font-weight: 600;">Figyelmeztetés</span>
+          </div>
+        </div>
+
+        <!-- 5. Összes kiadás with 3 currencies -->
+        <div class="opt3-card">
+          <div class="opt3-header">
+            <div class="opt3-title-wrap">
+              <span class="opt3-title">Összes kiadás (Nettó)</span>
+            </div>
+            <div class="opt3-segmented">
+              <button class="opt3-seg-btn active" onclick="setOpt3Currency(this, 'opt3-exp', '67 811 812 Ft')">HUF</button>
+              <button class="opt3-seg-btn" onclick="setOpt3Currency(this, 'opt3-exp', '71 459,42 €')">EUR</button>
+              <button class="opt3-seg-btn" onclick="setOpt3Currency(this, 'opt3-exp', '61 075,48 $')">USD</button>
+              <button class="opt3-seg-btn" onclick="setOpt3Currency(this, 'opt3-exp', '119 018 732 Ft')">Össz.</button>
+            </div>
+          </div>
+          <div>
+            <div class="opt3-value" id="opt3-exp">67 811 812 Ft</div>
+            <div style="font-size: 12px; color: hsl(var(--muted-foreground));">Válts devizát a gombsorral!</div>
+          </div>
+          <div class="opt3-footer">
+            <span>Bejövő számlák</span>
+            <span style="color: hsl(var(--destructive)); font-weight: 600;">INBOUND ↙</span>
+          </div>
+        </div>
+
+        <!-- 6. Fizetendő ÁFA -->
+        <div class="opt3-card">
+          <div class="opt3-header">
+            <div class="opt3-title-wrap">
+              <span class="opt3-title">Fizetendő ÁFA</span>
+            </div>
+            <span style="font-weight: 700; font-size: 14px;">€</span>
+          </div>
+          <div>
+            <div class="opt3-value">23 961 286 Ft</div>
+            <div style="font-size: 12px; color: hsl(var(--muted-foreground));">Összes - Levonható ÁFA</div>
+          </div>
+          <div class="opt3-footer">
+            <span>NAV Egyenleg</span>
+            <span style="color: hsl(var(--destructive)); font-weight: 600;">Fizetendő</span>
+          </div>
+        </div>
+
+        <!-- 7. Szállítói tartozás -->
+        <div class="opt3-card">
+          <div class="opt3-header">
+            <div class="opt3-title-wrap">
+              <span class="opt3-title">Kifizetetlen bejövő</span>
+            </div>
+            <div class="opt3-segmented">
+              <button class="opt3-seg-btn active" onclick="setOpt3Currency(this, 'opt3-unpaid', '15 528 031 Ft')">HUF</button>
+              <button class="opt3-seg-btn" onclick="setOpt3Currency(this, 'opt3-unpaid', '71 100,17 €')">EUR</button>
+              <button class="opt3-seg-btn" onclick="setOpt3Currency(this, 'opt3-unpaid', '58 960,06 $')">USD</button>
+            </div>
+          </div>
+          <div>
+            <div class="opt3-value" id="opt3-unpaid">15 528 031 Ft</div>
+            <div style="font-size: 12px; color: hsl(var(--muted-foreground));">Szállítói számlák</div>
+          </div>
+          <div class="opt3-footer">
+            <span>Tartozás</span>
+            <span style="color: hsl(var(--destructive)); font-weight: 600;">3 deviza</span>
+          </div>
+        </div>
+
+        <!-- 8. Operatív fedezet -->
+        <div class="opt3-card" style="border-color: hsl(var(--primary) / 0.5);">
+          <div class="opt3-header">
+            <div class="opt3-title-wrap">
+              <span class="opt3-title" style="color: hsl(var(--primary));">Pénzügyi Egyenleg</span>
+            </div>
+            <span style="color: hsl(var(--primary));">⚖️</span>
+          </div>
+          <div>
+            <div class="opt3-value" style="color: hsl(var(--primary));">+ 10 168 114 Ft</div>
+            <div style="font-size: 12px; color: hsl(var(--primary));">Nettó eredmény</div>
+          </div>
+          <div class="opt3-footer">
+            <span>Cash Flow</span>
+            <span style="color: hsl(var(--primary)); font-weight: 700;">+ 7,9%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- VIEW 5: COMPARISON -->
+    <div id="view-comparison" style="display: none;">
+      <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">Dizájn Opciók Részletes Összehasonlítása</h2>
+      <p style="color: hsl(var(--muted-foreground)); margin-bottom: 20px;">
+        Az alábbi táblázat összefoglalja a 3 tervezési irány technikai, üzleti és felhasználói élménybeli különbségeit.
+      </p>
+
+      <table class="spec-table">
+        <thead>
+          <tr>
+            <th>Szempont</th>
+            <th>Jelenlegi (Hibás)</th>
+            <th>1. Opció (Fintech Executive - Ajánlott)</th>
+            <th>2. Opció (Currency Matrix)</th>
+            <th>3. Opció (Interactive Segmented)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Fejléc Igazítás (Header Alignment)</strong></td>
+            <td><span class="tag-bad">❌ Elcsúszik</span> (vertikálisan és horizontálisan is)</td>
+            <td><span class="tag-check">✅ 100% Fix</span> (szigorú 36px fejléc zóna)</td>
+            <td><span class="tag-check">✅ 100% Fix</span> (44px leválasztott sáv)</td>
+            <td><span class="tag-check">✅ 100% Fix</span> (38px rögzített sáv)</td>
+          </tr>
+          <tr>
+            <td><strong>Többdevizás megjelenítés</strong></td>
+            <td><span class="tag-bad">❌ Kaotikus</span> (<code>|</code> elválasztós sortörések)</td>
+            <td><span class="tag-check">✅ Fő aggregált érték</span> + letisztult Pill Badges</td>
+            <td><span class="tag-check">✅ Strukturált táblázat</span> ISO címkékkel</td>
+            <td><span class="tag-check">✅ 1 kiemelt szám</span> + lapozható minigombok</td>
+          </tr>
+          <tr>
+            <td><strong>Kártya Magasság Stabilitás</strong></td>
+            <td><span class="tag-bad">❌ Változó</span> (150px - 220px között ingadozik)</td>
+            <td><span class="tag-check">✅ Fix 168px</span> minden kártyán</td>
+            <td><span class="tag-check">✅ Fix 184px</span> minden kártyán</td>
+            <td><span class="tag-check">✅ Fix 162px</span> minden kártyán</td>
+          </tr>
+          <tr>
+            <td><strong>Grid Elrendezés (Rács)</strong></td>
+            <td><span class="tag-warn">⚠️ 7 kártya</span> (1 lyuk a 4 oszlopos rácsban)</td>
+            <td><span class="tag-check">✅ 8 kártya</span> (+ Cash Flow egyenleg kártya)</td>
+            <td><span class="tag-check">✅ 8 kártya</span> (+ Pénzügyi egyenleg kártya)</td>
+            <td><span class="tag-check">✅ 8 kártya</span> (+ Pénzügyi egyenleg kártya)</td>
+          </tr>
+          <tr>
+            <td><strong>Vezetői / Könyvelői használhatóság</strong></td>
+            <td>Nehezen olvasható, csúnya</td>
+            <td><strong>Azonnali összkép</strong> a cég alapdevizájában, devizás részletekkel</td>
+            <td><strong>Minden deviza egyszerre látható</strong>, de kevésbé vizuális</td>
+            <td><strong>Rendkívül letisztult</strong>, interaktív mélyfúrással</td>
+          </tr>
+          <tr>
+            <td><strong>Implementációs komplexitás</strong></td>
+            <td>—</td>
+            <td>Alacsony (könnyen illeszthető a <code>MetricCard.tsx</code>-be)</td>
+            <td>Közepes (új micro-tábla renderelés)</td>
+            <td>Közepes (lokális state a kiválasztott devizához)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const isDark = html.classList.toggle('dark');
+      document.getElementById('theme-icon').textContent = isDark ? '☀️' : '🌙';
+    }
+
+    function switchView(viewId) {
+      // Hide all views
+      ['current', 'opt1', 'opt2', 'opt3', 'comparison'].forEach(id => {
+        const el = document.getElementById('view-' + id);
+        if (el) el.style.display = 'none';
+      });
+
+      // Show selected
+      const target = document.getElementById('view-' + viewId);
+      if (target) target.style.display = 'block';
+
+      // Update button active states
+      const buttons = document.querySelectorAll('.tab-btn');
+      buttons.forEach(btn => btn.classList.remove('active'));
+      const activeIdx = { 'current': 0, 'opt1': 1, 'opt2': 2, 'opt3': 3, 'comparison': 4 }[viewId];
+      if (buttons[activeIdx]) buttons[activeIdx].classList.add('active');
+    }
+
+    function setOpt3Currency(btn, targetId, value) {
+      // Update active state in segmented group
+      const parent = btn.parentElement;
+      parent.querySelectorAll('.opt3-seg-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      // Update value
+      const valEl = document.getElementById(targetId);
+      if (valEl) {
+        valEl.textContent = value;
+      }
+    }
+  </script>
+</body>
+</html>

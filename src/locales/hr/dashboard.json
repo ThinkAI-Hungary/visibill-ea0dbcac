@@ -39,14 +39,14 @@
       "button": "Pregledaj račune"
     },
     "upload_invoices": {
-      "title": "Prijenos računa",
-      "desc": "Ručni prijenos novih računa",
+      "title": "Prijenos dokumenta",
+      "desc": "Ručni prijenos novih računa i dokumenata",
       "button": "Prenesi datoteke"
     },
-    "project_management": {
-      "title": "Upravljanje projektima",
-      "desc": "Uređivanje i organizacija projekata",
-      "button": "Upravljaj projektima"
+    "transactions": {
+      "title": "Transakcije",
+      "desc": "Pregled bankovnih transakcija i uparivanja računa",
+      "button": "Prikaži transakcije"
     }
   },
   "recent_invoices": {
@@ -67,10 +67,32 @@
     "title": "Pregled projekata",
     "description": "Raspodjela računa po projektima",
     "empty": "Još nema računa dodijeljenih projektima",
+    "empty_title": "Još nema aktivnih projekata",
+    "empty_desc": "Dodijelite račune projektima za točno praćenje mjesta troška i proračuna.",
+    "view_projects": "Projekti",
     "invoices_count": "{{count}} računa",
     "total": "Ukupno:",
     "average": "Prosječno: {{amount}} / račun",
-    "active_project": "Aktivni projekt"
+    "active_project": "Aktivni projekt",
+    "kpi_avg_invoice": "Prosječni račun",
+    "kpi_allocation_status": "Alokacija",
+    "fully_allocated": "100% Pokriveno",
+    "kpi_active_count": "Aktivni projekti",
+    "project_count_val": "{{count}} projekt",
+    "kpi_allocated_total": "Ukupni proračun",
+    "create_project_title": "Pokreni novi projekt",
+    "create_project_desc": "Dodijelite račune mjestima troška",
+    "new_project_btn": "Novi projekt"
+  },
+  "category_breakdown": {
+    "title": "Pregled kategorija",
+    "description": "Raspodjela računa po kategorijama",
+    "view_categories": "Kategorije",
+    "empty_title": "Još nema kategoriziranih računa",
+    "empty_desc": "Dodijelite račune kategorijama troškova za detaljnu analizu troškova.",
+    "manage_title": "Upravljanje kategorijama",
+    "manage_desc": "Organizirajte račune u kategorije troškova",
+    "new_category_btn": "Nova kategorija"
   },
   "revenue_expenses_chart": {
     "title": "Prihodi i rashodi za {{year}}. godinu",
@@ -123,28 +145,41 @@
   },
   "inbound_status": {
     "title": "Status ulaznih računa",
+    "description": "Obveze plaćanja i dokumenti koji nedostaju",
+    "view_invoices": "Računi",
     "payable": "Za plaćanje",
     "missing": "Nedostaje",
     "payable_amount": "Iznos za plaćanje:",
     "missing_amount": "Iznos koji nedostaje:",
     "empty": "Nema računa za prikaz",
+    "empty_desc": "Svi ulazni računi su podmireni ili nema novih stavki.",
     "invoice_number": "Broj računa",
     "issue_date": "Datum izdavanja",
     "supplier": "Dobavljač",
     "gross": "Bruto",
     "more_invoices": "+ još {{count}} računa",
     "missing_invoices_notice": "{{count}} računa čeka na slanje",
-    "submit": "Pošalji"
+    "submit": "Pošalji",
+    "pay": "Plaćanje",
+    "unpaid": "Neplaćeno",
+    "missing_voucher": "Nedostaje prilog",
+    "open_all": "Prikaži sve"
   },
   "unmatched_items": {
     "title": "Nepovezane stavke",
+    "description": "Stavke bez bankovnog pokrića ili računa",
+    "view_transactions": "Transakcije",
+    "view_invoices": "Računi",
     "nav_invoices": "Porezni računi",
     "transactions": "Transakcije",
     "all_nav_matched": "Svi porezni računi su povezani!",
     "all_tx_matched": "Sve transakcije su povezane!",
+    "empty_desc": "Nema nepovezanih stavki u odabranom razdoblju.",
     "direction": "Smjer",
     "inbound": "Ul",
     "outbound": "Iz",
+    "supplier": "Dobavljač",
+    "customer": "Kupac",
     "invoice_number": "Broj računa",
     "issue_date": "Datum izdavanja",
     "partner": "Partner",
@@ -157,7 +192,11 @@
     "more_tx": "+ još {{count}} transakcija",
     "more_invoices": "+ još {{count}} računa",
     "unmatched_nav_summary": "{{count}} računa nije povezano s transakcijom · Ukupno: {{total}}",
-    "unmatched_tx_summary": "{{count}} transakcija nije povezano s računom · Ukupno: {{total}}"
+    "unmatched_tx_summary": "{{count}} transakcija nije povezano s računom · Ukupno: {{total}}",
+    "open_balance": "Otvoreni saldo:",
+    "unmatched_amount": "Nepovezani iznos:",
+    "match": "Poveži",
+    "open_all": "Otvori sve"
   },
   "fx_differences": {
     "title": "Tečajne razlike",

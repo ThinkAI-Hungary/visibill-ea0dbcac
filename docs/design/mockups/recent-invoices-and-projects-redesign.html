@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="hu" class="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Eaisybill — Legutóbbi Számlák & Projekt Összefoglaló Layout Mockup</title>
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ==========================================================================
+       EAISYBILL DESIGN TOKENS (HSL Alapú, 100% szinkronban az index.css-szel)
+       ========================================================================== */
+    :root {
+      --background: 220 7% 97%;          /* #f5f6f7 */
+      --foreground: 210 14% 4%;          /* #090b0e */
+      --card: 0 0% 100%;                 /* #ffffff */
+      --card-foreground: 210 14% 4%;
+      
+      --primary: 174 83% 32%;             /* #0D9488 */
+      --primary-foreground: 0 0% 100%;
+      --primary-subtle: 174 83% 96%;      /* #F0FDFA */
+      --primary-glow: rgba(13, 148, 136, 0.15);
+
+      --secondary: 220 14% 96%;
+      --secondary-foreground: 210 14% 4%;
+      --muted: 220 7% 94%;               /* #eceef1 */
+      --muted-foreground: 220 5% 42%;    /* #676c74 */
+      
+      --border: 222 10% 89%;             /* #e2e4e8 */
+      --input: 220 10% 89%;
+      --ring: 174 83% 32%;
+
+      --success: 142 71% 45%;            /* #22c55e */
+      --success-subtle: 142 71% 96%;
+      --warning: 41 100% 30%;            /* #9a6700 */
+      --warning-subtle: 45 93% 96%;
+      --destructive: 0 84% 60%;          /* #ef4444 */
+      --destructive-subtle: 0 86% 97%;
+      --info: 217 91% 60%;               /* #3b82f6 */
+      --info-subtle: 214 95% 97%;
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-full: 9999px;
+
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-card: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+      --shadow-hover: 0 4px 12px rgba(0,0,0,0.08);
+
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-display: 'Outfit', var(--font-sans);
+    }
+
+    html.dark {
+      --background: 210 14% 3%;          /* #08090a */
+      --foreground: 210 7% 97%;          /* #f5f6f7 */
+      --card: 210 7% 5%;                 /* #0f1011 */
+      --card-foreground: 210 7% 97%;
+
+      --primary: 170 82% 45%;            /* #14D4B8 */
+      --primary-foreground: 210 14% 3%;
+      --primary-subtle: 170 82% 10%;     /* #042f2c */
+      --primary-glow: rgba(20, 212, 184, 0.22);
+
+      --secondary: 210 5% 10%;
+      --secondary-foreground: 210 7% 97%;
+      --muted: 210 5% 10%;               /* #1c1e21 */
+      --muted-foreground: 220 5% 55%;
+
+      --border: 225 9% 15%;             /* #23252a */
+      --input: 210 5% 20%;
+      --ring: 170 82% 45%;
+
+      --success-subtle: 142 71% 8%;
+      --warning-subtle: 41 85% 8%;
+      --destructive-subtle: 0 84% 10%;
+      --info-subtle: 217 91% 10%;
+
+      --shadow-card: 0 1px 3px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04);
+      --shadow-hover: 0 6px 16px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: hsl(var(--background));
+      color: hsl(var(--foreground));
+      line-height: 1.5;
+      font-size: 13.5px;
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: 80px;
+    }
+
+    /* Top Controls */
+    .top-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: hsl(var(--card) / 0.88);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid hsl(var(--border));
+      padding: 12px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 17px;
+      color: hsl(var(--foreground));
+    }
+
+    .brand-logo .dot { color: hsl(var(--primary)); }
+
+    .tag-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      background: hsl(var(--primary-subtle));
+      color: hsl(var(--primary));
+      border: 1px solid hsl(var(--primary) / 0.25);
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .tabs-group {
+      display: flex;
+      align-items: center;
+      background: hsl(var(--muted));
+      padding: 3px;
+      border-radius: var(--radius-md);
+      gap: 2px;
+    }
+
+    .tab-btn {
+      padding: 6px 14px;
+      border-radius: calc(var(--radius-md) - 2px);
+      border: none;
+      background: transparent;
+      color: hsl(var(--muted-foreground));
+      font-size: 12.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tab-btn:hover { color: hsl(var(--foreground)); }
+
+    .tab-btn.active {
+      background: hsl(var(--card));
+      color: hsl(var(--foreground));
+      font-weight: 600;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .theme-toggle-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius-md);
+      color: hsl(var(--foreground));
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .container {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 28px 24px;
+    }
+
+    .mockup-desc-banner {
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .banner-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 16px;
+    }
+
+    .banner-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 3px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .banner-text {
+      color: hsl(var(--muted-foreground));
+      font-size: 12.5px;
+      line-height: 1.5;
+    }
+
+    .highlight-pill {
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: hsl(var(--primary-subtle));
+      color: hsl(var(--primary));
+    }
+
+    /* Common Card Styles */
+    .dashboard-panel {
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid hsl(var(--border) / 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      shrink: 0;
+    }
+
+    .panel-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .panel-icon-wrap {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: hsl(var(--primary-subtle));
+      color: hsl(var(--primary));
+      flex-shrink: 0;
+    }
+
+    .panel-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: hsl(var(--foreground));
+      line-height: 1.2;
+    }
+
+    .panel-subtitle {
+      font-size: 12px;
+      color: hsl(var(--muted-foreground));
+      margin-top: 2px;
+    }
+
+    .btn-action {
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      border: 1px solid hsl(var(--border));
+      background: hsl(var(--card));
+      color: hsl(var(--foreground));
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-action:hover {
+      background: hsl(var(--muted));
+      border-color: hsl(var(--border) / 0.8);
+    }
+
+    /* Badges */
+    .badge-status {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: var(--radius-full);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .badge-success {
+      background: hsl(var(--success-subtle));
+      color: hsl(var(--success));
+      border: 1px solid hsl(var(--success) / 0.25);
+    }
+
+    .badge-warning {
+      background: hsl(var(--warning-subtle));
+      color: hsl(var(--warning));
+      border: 1px solid hsl(var(--warning) / 0.25);
+    }
+
+    .badge-neutral {
+      background: hsl(var(--secondary));
+      color: hsl(var(--secondary-foreground));
+      border: 1px solid hsl(var(--border));
+    }
+
+    /* ==========================================================================
+       VIEW 1: CURRENT STATE (PROBLEM MOCKUP)
+       ========================================================================== */
+    .current-layout {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .current-invoice-box {
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: hsl(var(--card));
+    }
+
+    .current-void-box {
+      border: 2px dashed hsl(var(--destructive) / 0.4);
+      background: hsl(var(--destructive-subtle) / 0.3);
+      border-radius: var(--radius-md);
+      padding: 30px 20px;
+      text-align: center;
+      color: hsl(var(--destructive));
+      font-weight: 600;
+      font-size: 13px;
+      margin-top: 16px;
+    }
+
+    /* ==========================================================================
+       OPTION 1: FINTECH DENSE SPLIT (RECOMMENDED)
+       - Height synchronized containers (500px)
+       - Clean table rows (no box-in-box) with primary subtle hover
+       - ScrollArea for invoices with sticky header
+       - Project card with mini KPIs & visual progress
+       ========================================================================== */
+    .opt1-layout {
+      display: grid;
+      grid-template-columns: 3fr 2fr;
+      gap: 20px;
+      align-items: stretch;
+    }
+
+    @media (max-width: 1024px) {
+      .opt1-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .opt1-panel {
+      height: 520px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Dense Invoices Table */
+    .opt1-invoice-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 6px 12px;
+    }
+
+    .opt1-invoice-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      border-bottom: 1px solid hsl(var(--border) / 0.4);
+      transition: all 0.12s ease;
+      cursor: pointer;
+    }
+
+    .opt1-invoice-row:last-child {
+      border-bottom: none;
+    }
+
+    .opt1-invoice-row:hover {
+      background: hsl(var(--muted) / 0.5);
+    }
+
+    .opt1-inv-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .opt1-type-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .type-outbound {
+      background: hsl(var(--success-subtle));
+      color: hsl(var(--success));
+    }
+
+    .type-inbound {
+      background: hsl(var(--info-subtle));
+      color: hsl(var(--info));
+    }
+
+    .opt1-inv-meta {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .opt1-inv-num-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 2px;
+    }
+
+    .opt1-inv-num {
+      font-weight: 700;
+      font-size: 13px;
+      color: hsl(var(--foreground));
+      letter-spacing: -0.2px;
+    }
+
+    .opt1-inv-partners {
+      font-size: 11.5px;
+      color: hsl(var(--muted-foreground));
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 320px;
+    }
+
+    .opt1-inv-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-align: right;
+      shrink: 0;
+    }
+
+    .opt1-inv-amount {
+      font-weight: 700;
+      font-size: 13.5px;
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+      color: hsl(var(--foreground));
+    }
+
+    .opt1-inv-date {
+      font-size: 11px;
+      color: hsl(var(--muted-foreground));
+      margin-top: 1px;
+    }
+
+    .opt1-eye-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid hsl(var(--border));
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: hsl(var(--muted-foreground));
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .opt1-eye-btn:hover {
+      background: hsl(var(--card));
+      color: hsl(var(--primary));
+      border-color: hsl(var(--primary) / 0.4);
+    }
+
+    /* Project Side */
+    .opt1-project-body {
+      flex: 1;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow-y: auto;
+    }
+
+    .opt1-proj-item {
+      padding: 14px 16px;
+      border-radius: var(--radius-md);
+      background: hsl(var(--muted) / 0.35);
+      border: 1px solid hsl(var(--border) / 0.6);
+      margin-bottom: 12px;
+    }
+
+    .opt1-proj-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .opt1-proj-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: hsl(var(--foreground));
+    }
+
+    .opt1-progress-bar {
+      height: 6px;
+      width: 100%;
+      background: hsl(var(--muted));
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      margin: 10px 0;
+    }
+
+    .opt1-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, hsl(var(--primary)) 0%, #14D4B8 100%);
+      border-radius: var(--radius-full);
+    }
+
+    .opt1-proj-stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px dashed hsl(var(--border));
+    }
+
+    .opt1-mini-stat {
+      font-size: 11px;
+      color: hsl(var(--muted-foreground));
+    }
+
+    .opt1-mini-stat-val {
+      font-size: 14px;
+      font-weight: 700;
+      color: hsl(var(--foreground));
+      margin-top: 2px;
+      font-feature-settings: "tnum";
+    }
+
+    .opt1-empty-proj-cta {
+      padding: 16px;
+      border-radius: var(--radius-md);
+      border: 1px dashed hsl(var(--primary) / 0.35);
+      background: hsl(var(--primary-subtle) / 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: auto;
+    }
+
+    /* ==========================================================================
+       OPTION 2: BENTO MATRIX (SEGMENTED STACK & TIMELINE)
+       ========================================================================== */
+    .opt2-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .opt2-panel {
+      height: 500px;
+    }
+
+    /* Stacked Project Bar */
+    .opt2-stacked-bar {
+      height: 12px;
+      border-radius: 6px;
+      display: flex;
+      overflow: hidden;
+      margin: 16px 0;
+      gap: 2px;
+    }
+
+    .opt2-bar-seg {
+      height: 100%;
+    }
+
+    /* ==========================================================================
+       OPTION 3: TABBED UNIFIED VIEW
+       ========================================================================== */
+    .opt3-panel {
+      min-height: 480px;
+    }
+
+    .opt3-table-header {
+      display: grid;
+      grid-template-columns: 1.5fr 2fr 1.2fr 1fr 1.5fr 60px;
+      padding: 10px 16px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: hsl(var(--muted-foreground));
+      background: hsl(var(--muted) / 0.3);
+      border-bottom: 1px solid hsl(var(--border));
+    }
+
+    .opt3-table-row {
+      display: grid;
+      grid-template-columns: 1.5fr 2fr 1.2fr 1fr 1.5fr 60px;
+      padding: 12px 16px;
+      align-items: center;
+      border-bottom: 1px solid hsl(var(--border) / 0.4);
+      font-size: 13px;
+    }
+
+    .opt3-table-row:hover {
+      background: hsl(var(--muted) / 0.3);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Controls -->
+  <header class="top-toolbar">
+    <div class="brand-section">
+      <div class="brand-logo">eaisybill<span class="dot">.</span></div>
+      <span class="tag-badge">📐 Legutóbbi Számlák & Projekt Layout</span>
+    </div>
+
+    <div class="tabs-group">
+      <button class="tab-btn" onclick="switchView('current')">
+        <span>⚠️</span> Jelenlegi (Aránytalan)
+      </button>
+      <button class="tab-btn active" onclick="switchView('opt1')">
+        <span>💎</span> 1. Opció (Fintech Dense Split)
+      </button>
+      <button class="tab-btn" onclick="switchView('opt2')">
+        <span>📊</span> 2. Opció (Bento Matrix)
+      </button>
+      <button class="tab-btn" onclick="switchView('opt3')">
+        <span>📑</span> 3. Opció (Tabbed Hybrid)
+      </button>
+    </div>
+
+    <div>
+      <button class="theme-toggle-btn" onclick="toggleTheme()">
+        <span id="theme-icon">🌙</span> Sötét mód
+      </button>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <!-- VIEW 1: CURRENT STATE (PROBLEM DEMONSTRATION) -->
+    <div id="view-current" style="display: none;">
+      <div class="mockup-desc-banner" style="border-left: 4px solid #ef4444;">
+        <div class="banner-icon" style="background: rgba(239,68,68,0.1); color: #ef4444;">⚠️</div>
+        <div>
+          <div class="banner-title" style="color: #ef4444;">
+            Jelenlegi Layout Problémái (Élő képernyőkép alapján)
+          </div>
+          <div class="banner-text">
+            <strong>1. Magassági Aránytalanság (Height Mismatch):</strong> A bal oldali számlalista 7-10 tétel esetén ~800px+ magasra nyúlik, míg a jobb oldali projekt összefoglaló mindössze ~220px. Emiatt a jobb oldalon egy óriási, üres fehér lyuk keletkezik.<br/>
+            <strong>2. „Doboz a dobozban” vizuális zaj:</strong> Minden számla különálló, vastag keretes kártyát kap (p-4 padding), ami rengeteg helyet pazarol és nehezen szkennelhetővé teszi a listát.<br/>
+            <strong>3. Nincs belső görgetés:</strong> A bal oldal korlátlanul tolja lefelé az egész oldalt.
+          </div>
+        </div>
+      </div>
+
+      <div class="current-layout">
+        <!-- Left: Huge stretching invoices -->
+        <div class="dashboard-panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Legutóbbi számlák</div>
+              <div class="panel-subtitle">Az utoljára feldolgozott számlák áttekintése</div>
+            </div>
+            <button class="btn-action">Összes megtekintése</button>
+          </div>
+          <div style="padding: 16px;">
+            <div class="current-invoice-box">
+              <div>
+                <div style="font-weight: 600; margin-bottom: 2px;">9762E0F0-0205 <span class="badge-status badge-warning">Jóváhagyásra vár</span></div>
+                <div style="font-size: 12px; color: #666;">Anthropic, PBC → Think AI Kft</div>
+                <div style="font-size: 11px; color: #999;">2026. 09. 26.</div>
+              </div>
+              <div style="text-align: right; font-weight: 700;">45,00 USD 👁️</div>
+            </div>
+            <div class="current-invoice-box">
+              <div>
+                <div style="font-weight: 600; margin-bottom: 2px;">TRNDR-2026-20 <span class="badge-status badge-success">Feldolgozva</span></div>
+                <div style="font-size: 12px; color: #666;">Trend-Art Media Nonprofit Kft. → Think Ai Kft.</div>
+                <div style="font-size: 11px; color: #999;">2026. 09. 25.</div>
+              </div>
+              <div style="text-align: right; font-weight: 700;">384 999 Ft 👁️</div>
+            </div>
+            <div class="current-invoice-box">
+              <div>
+                <div style="font-weight: 600; margin-bottom: 2px;">A9179304-0126 <span class="badge-status badge-warning">Jóváhagyásra vár</span></div>
+                <div style="font-size: 12px; color: #666;">Celonis Inc. → Think Ai Kft</div>
+                <div style="font-size: 11px; color: #999;">2026. 09. 24.</div>
+              </div>
+              <div style="text-align: right; font-weight: 700;">19,00 USD 👁️</div>
+            </div>
+            <div class="current-invoice-box">
+              <div>
+                <div style="font-weight: 600; margin-bottom: 2px;">A15701858/0779/00006 <span class="badge-status badge-success">Feldolgozva</span></div>
+                <div style="font-size: 12px; color: #666;">Magyar Posta Zrt. → Think AI Kft.</div>
+                <div style="font-size: 11px; color: #999;">2026. 09. 24.</div>
+              </div>
+              <div style="text-align: right; font-weight: 700;">5 790 Ft 👁️</div>
+            </div>
+            <div class="current-invoice-box">
+              <div>
+                <div style="font-weight: 600; margin-bottom: 2px;">A01902005/2146/00002 <span class="badge-status badge-success">Feldolgozva</span></div>
+                <div style="font-size: 12px; color: #666;">Gál-Gók Kft → THINK AI KFT.</div>
+                <div style="font-size: 11px; color: #999;">2026. 09. 24.</div>
+              </div>
+              <div style="text-align: right; font-weight: 700;">13 590 Ft 👁️</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Short project box leaving huge blank hole -->
+        <div>
+          <div class="dashboard-panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Projekt összefoglaló</div>
+                <div class="panel-subtitle">Számlák megoszlása projektek szerint</div>
+              </div>
+            </div>
+            <div style="padding: 16px;">
+              <div style="display: flex; justify-content: space-between; font-weight: 700;">
+                <span>teszt projekt</span>
+                <span class="badge-status badge-neutral">1 számla</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-top: 6px;">
+                <span>Összesen: 425 450 Ft</span>
+                <span>100.0%</span>
+              </div>
+              <div style="height: 6px; background: #eee; border-radius: 4px; margin: 8px 0;">
+                <div style="width: 100%; height: 100%; background: #0D9488; border-radius: 4px;"></div>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 11px; color: #888;">
+                <span>Átlag: 425 450 Ft / számla</span>
+                <span>↗ Aktív projekt</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="current-void-box">
+            ⚠️ Hatalmas üres fehér tér a jelenlegi elrendezésben! (~550px magasság elpazarolva)
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- VIEW 2: OPTION 1 (FINTECH DENSE SPLIT - RECOMMENDED) -->
+    <div id="view-opt1">
+      <div class="mockup-desc-banner" style="border-left: 4px solid hsl(var(--primary));">
+        <div class="banner-icon" style="background: hsl(var(--primary-subtle)); color: hsl(var(--primary));">💎</div>
+        <div>
+          <div class="banner-title">
+            1. Opció (Ajánlott): „Fintech Dense Split” — Szinkronizált Magasság & Kompakt Lista
+            <span class="highlight-pill">3:2 Arány · Zárt Elrendezés</span>
+          </div>
+          <div class="banner-text">
+            <strong>Megoldások:</strong><br/>
+            • <strong>Szinkronizált Magasság (520px):</strong> Mindkét kártya azonos, fix magasságú keretet kap. A jobb oldalon megszűnik az üres űr!<br/>
+            • <strong>Tiszta tranzakciós lista (Left):</strong> Eltűntek a vastag belső dobozok; helyettük tiszta, halvány elválasztású kompakt sorok szerepelnek, beépített zökkenőmentes görgetősávval (ScrollArea).<br/>
+            • <strong>Bizonylat Típus Ikonok:</strong> Minden számla előtt zöld/kék mini jelzés jelzi a Kimenő (OUT) vagy Bejövő (IN) jellegét.<br/>
+            • <strong>Gazdagított Projekt Panel (Right):</strong> Kiegészül projekt KPI blokkokkal (Összesített költség, Átlagos bizonylatérték, Aktív projektek), valamint egy gyorslink gombbal az új projekthez.
+          </div>
+        </div>
+      </div>
+
+      <div class="opt1-layout">
+        <!-- Left: Dense Recent Invoices with Scrollable Container -->
+        <div class="dashboard-panel opt1-panel">
+          <div class="panel-header">
+            <div class="panel-title-group">
+              <div class="panel-icon-wrap">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              </div>
+              <div>
+                <div class="panel-title">Legutóbbi számlák</div>
+                <div class="panel-subtitle">Valós idejű bejövő és kimenő bizonylatfolyam</div>
+              </div>
+            </div>
+            <button class="btn-action">
+              Összes megtekintése
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+
+          <div class="opt1-invoice-list">
+            <!-- Item 1 -->
+            <div class="opt1-invoice-row">
+              <div class="opt1-inv-left">
+                <div class="opt1-type-badge type-inbound" title="Bejövő számla">↙</div>
+                <div class="opt1-inv-meta">
+                  <div class="opt1-inv-num-row">
+                    <span class="opt1-inv-num">9762E0F0-0205</span>
+                    <span class="badge-status badge-warning">Jóváhagyásra vár</span>
+                  </div>
+                  <div class="opt1-inv-partners">Anthropic, PBC → Think AI Kft</div>
+                </div>
+              </div>
+              <div class="opt1-inv-right">
+                <div>
+                  <div class="opt1-inv-amount">45,00 USD</div>
+                  <div class="opt1-inv-date">2026. 09. 26.</div>
+                </div>
+                <button class="opt1-eye-btn" title="Számlakép megtekintése">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Item 2 -->
+            <div class="opt1-invoice-row">
+              <div class="opt1-inv-left">
+                <div class="opt1-type-badge type-inbound" title="Bejövő számla">↙</div>
+                <div class="opt1-inv-meta">
+                  <div class="opt1-inv-num-row">
+                    <span class="opt1-inv-num">TRNDR-2026-20</span>
+                    <span class="badge-status badge-success">Feldolgozva</span>
+                  </div>
+                  <div class="opt1-inv-partners">Trend-Art Media Nonprofit Kft. → Think Ai Kft.</div>
+                </div>
+              </div>
+              <div class="opt1-inv-right">
+                <div>
+                  <div class="opt1-inv-amount">384 999 Ft</div>
+                  <div class="opt1-inv-date">2026. 09. 25.</div>
+                </div>
+                <button class="opt1-eye-btn" title="Számlakép megtekintése">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Item 3 -->
+            <div class="opt1-invoice-row">
+              <div class="opt1-inv-left">
+                <div class="opt1-type-badge type-inbound" title="Bejövő számla">↙</div>
+                <div class="opt1-inv-meta">
+                  <div class="opt1-inv-num-row">
+                    <span class="opt1-inv-num">A9179304-0126</span>
+                    <span class="badge-status badge-warning">Jóváhagyásra vár</span>
+                  </div>
+                  <div class="opt1-inv-partners">Celonis Inc. → Think Ai Kft</div>
+                </div>
+              </div>
+              <div class="opt1-inv-right">
+                <div>
+                  <div class="opt1-inv-amount">19,00 USD</div>
+                  <div class="opt1-inv-date">2026. 09. 24.</div>
+                </div>
+                <button class="opt1-eye-btn" title="Számlakép megtekintése">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Item 4 -->
+            <div class="opt1-invoice-row">
+              <div class="opt1-inv-left">
+                <div class="opt1-type-badge type-inbound" title="Bejövő számla">↙</div>
+                <div class="opt1-inv-meta">
+                  <div class="opt1-inv-num-row">
+                    <span class="opt1-inv-num">A15701858/0779/00006</span>
+                    <span class="badge-status badge-success">Feldolgozva</span>
+                  </div>
+                  <div class="opt1-inv-partners">Magyar Posta Zrt. → Think AI Kft.</div>
+                </div>
+              </div>
+              <div class="opt1-inv-right">
+                <div>
+                  <div class="opt1-inv-amount">5 790 Ft</div>
+                  <div class="opt1-inv-date">2026. 09. 24.</div>
+                </div>
+                <button class="opt1-eye-btn" title="Számlakép megtekintése">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Item 5 -->
+            <div class="opt1-invoice-row">
+              <div class="opt1-inv-left">
+                <div class="opt1-type-badge type-outbound" title="Kimenő számla">↗</div>
+                <div class="opt1-inv-meta">
+                  <div class="opt1-inv-num-row">
+                    <span class="opt1-inv-num">A01902005/2146/00002</span>
+                    <span class="badge-status badge-success">Feldolgozva</span>
+                  </div>
+                  <div class="opt1-inv-partners">Think AI Kft → Gál-Gók Kft</div>
+                </div>
+              </div>
+              <div class="opt1-inv-right">
+                <div>
+                  <div class="opt1-inv-amount">13 590 Ft</div>
+                  <div class="opt1-inv-date">2026. 09. 24.</div>
+                </div>
+                <button class="opt1-eye-btn" title="Számlakép megtekintése">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Item 6 -->
+            <div class="opt1-invoice-row">
+              <div class="opt1-inv-left">
+                <div class="opt1-type-badge type-inbound" title="Bejövő számla">↙</div>
+                <div class="opt1-inv-meta">
+                  <div class="opt1-inv-num-row">
+                    <span class="opt1-inv-num">A0192005/2146/00003</span>
+                    <span class="badge-status badge-warning">Jóváhagyásra vár</span>
+                  </div>
+                  <div class="opt1-inv-partners">GAL-GO KFT → THINK AI KFT.</div>
+                </div>
+              </div>
+              <div class="opt1-inv-right">
+                <div>
+                  <div class="opt1-inv-amount">7 350 Ft</div>
+                  <div class="opt1-inv-date">2026. 09. 24.</div>
+                </div>
+                <button class="opt1-eye-btn" title="Számlakép megtekintése">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Enriched Balanced Project Breakdown -->
+        <div class="dashboard-panel opt1-panel">
+          <div class="panel-header">
+            <div class="panel-title-group">
+              <div class="panel-icon-wrap" style="background: hsl(var(--primary-subtle)); color: hsl(var(--primary));">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <div>
+                <div class="panel-title">Projekt összefoglaló</div>
+                <div class="panel-subtitle">Költségek és számlák projektmegoszlása</div>
+              </div>
+            </div>
+            <button class="btn-action">
+              Projektek
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+
+          <div class="opt1-project-body">
+            <!-- Active Project Card -->
+            <div>
+              <div class="opt1-proj-item">
+                <div class="opt1-proj-top">
+                  <div>
+                    <div class="opt1-proj-name">teszt projekt</div>
+                    <div style="font-size: 11.5px; color: hsl(var(--muted-foreground));">Fő működési alprojekt</div>
+                  </div>
+                  <span class="badge-status badge-success">1 számla</span>
+                </div>
+
+                <div class="opt1-progress-bar">
+                  <div class="opt1-progress-fill" style="width: 100%;"></div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                  <span style="color: hsl(var(--muted-foreground));">Allokált keret:</span>
+                  <span style="font-weight: 700; color: hsl(var(--foreground));">425 450 Ft (100%)</span>
+                </div>
+              </div>
+
+              <!-- Secondary Mini KPI Grid filling the void -->
+              <div class="opt1-proj-stats-grid">
+                <div>
+                  <div class="opt1-mini-stat">Átlagos bizonylatérték</div>
+                  <div class="opt1-mini-stat-val">425 450 Ft</div>
+                </div>
+                <div>
+                  <div class="opt1-mini-stat">Allokáció státusz</div>
+                  <div class="opt1-mini-stat-val" style="color: hsl(var(--success));">100% Lefedve</div>
+                </div>
+                <div>
+                  <div class="opt1-mini-stat">Aktív projektek</div>
+                  <div class="opt1-mini-stat-val">1 projekt</div>
+                </div>
+                <div>
+                  <div class="opt1-mini-stat">Nem allokált számlák</div>
+                  <div class="opt1-mini-stat-val">0 Ft</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom CTA banner closing the container -->
+            <div class="opt1-empty-proj-cta">
+              <div>
+                <div style="font-weight: 700; font-size: 12.5px; color: hsl(var(--primary));">Új projekt létrehozása</div>
+                <div style="font-size: 11px; color: hsl(var(--muted-foreground));">Rendelj számlákat egyedi költséghelyekhez</div>
+              </div>
+              <button class="btn-action" style="background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); border: none;">
+                + Új projekt
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- VIEW 3: OPTION 2 (BENTO MATRIX) -->
+    <div id="view-opt2" style="display: none;">
+      <div class="mockup-desc-banner" style="border-left: 4px solid #3b82f6;">
+        <div class="banner-icon" style="background: rgba(59,130,246,0.1); color: #3b82f6;">📊</div>
+        <div>
+          <div class="banner-title">
+            2. Opció: „Bento Matrix” — Szimmetrikus 1:1 Megosztás & Stacked Progress
+            <span class="highlight-pill" style="background: rgba(59,130,246,0.15); color: #3b82f6;">50% - 50% Elrendezés</span>
+          </div>
+          <div class="banner-text">
+            <strong>Működési elv:</strong><br/>
+            • <strong>1:1 Hasábos elrendezés:</strong> Mindkét szekció azonos szélességű kártyát kap egymás mellett.<br/>
+            • <strong>Segmented Stacked Bar:</strong> A projekteknél a költségmegoszlás egy többszínű összefüggő szegmens sávban jelenik meg.<br/>
+            • <strong>Tömör táblázat:</strong> A számlák tömör táblázatként futnak, 6 bizonylat azonnal látható görgetés nélkül.
+          </div>
+        </div>
+      </div>
+
+      <div class="opt2-layout">
+        <!-- Invoices Bento -->
+        <div class="dashboard-panel opt2-panel">
+          <div class="panel-header">
+            <div class="panel-title">Legutóbbi számlák</div>
+            <button class="btn-action">Összes (319)</button>
+          </div>
+          <div style="padding: 12px; overflow-y: auto; height: 420px;">
+            <div class="opt1-invoice-row">
+              <span class="badge-status badge-warning">Jóváhagyásra vár</span>
+              <span style="font-weight: 700;">9762E0F0-0205</span>
+              <span style="color: hsl(var(--muted-foreground)); font-size: 12px;">Anthropic, PBC</span>
+              <span style="font-weight: 700;">45,00 USD</span>
+            </div>
+            <div class="opt1-invoice-row">
+              <span class="badge-status badge-success">Feldolgozva</span>
+              <span style="font-weight: 700;">TRNDR-2026-20</span>
+              <span style="color: hsl(var(--muted-foreground)); font-size: 12px;">Trend-Art Media</span>
+              <span style="font-weight: 700;">384 999 Ft</span>
+            </div>
+            <div class="opt1-invoice-row">
+              <span class="badge-status badge-warning">Jóváhagyásra vár</span>
+              <span style="font-weight: 700;">A9179304-0126</span>
+              <span style="color: hsl(var(--muted-foreground)); font-size: 12px;">Celonis Inc.</span>
+              <span style="font-weight: 700;">19,00 USD</span>
+            </div>
+            <div class="opt1-invoice-row">
+              <span class="badge-status badge-success">Feldolgozva</span>
+              <span style="font-weight: 700;">A15701858</span>
+              <span style="color: hsl(var(--muted-foreground)); font-size: 12px;">Magyar Posta</span>
+              <span style="font-weight: 700;">5 790 Ft</span>
+            </div>
+            <div class="opt1-invoice-row">
+              <span class="badge-status badge-success">Feldolgozva</span>
+              <span style="font-weight: 700;">A01902005</span>
+              <span style="color: hsl(var(--muted-foreground)); font-size: 12px;">Gál-Gók Kft</span>
+              <span style="font-weight: 700;">13 590 Ft</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Projects Bento -->
+        <div class="dashboard-panel opt2-panel">
+          <div class="panel-header">
+            <div class="panel-title">Projekt megoszlás</div>
+            <span class="badge-status badge-success">100% lefedettség</span>
+          </div>
+          <div style="padding: 20px;">
+            <div style="font-size: 12px; color: hsl(var(--muted-foreground));">Allokált költségarány</div>
+            <div class="opt2-stacked-bar">
+              <div class="opt2-bar-seg" style="width: 100%; background: #0D9488;" title="teszt projekt (100%)"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 20px;">
+              <span><strong>teszt projekt:</strong> 425 450 Ft</span>
+              <span style="font-weight: 700; color: #0D9488;">100.0%</span>
+            </div>
+
+            <div style="background: hsl(var(--muted) / 0.4); border-radius: var(--radius-md); padding: 16px; margin-top: 20px;">
+              <div style="font-weight: 700; font-size: 13px; margin-bottom: 4px;">Projekt alapú kimutatás</div>
+              <div style="font-size: 12px; color: hsl(var(--muted-foreground));">
+                A havi számlák 1 aktív projekthez vannak rendelve. Nyiss új projektet költséghelyek nyomon követéséhez.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- VIEW 4: OPTION 3 (TABBED HYBRID) -->
+    <div id="view-opt3" style="display: none;">
+      <div class="mockup-desc-banner" style="border-left: 4px solid #14D4B8;">
+        <div class="banner-icon" style="background: rgba(20,212,184,0.1); color: #14D4B8;">📑</div>
+        <div>
+          <div class="banner-title">
+            3. Opció: „Tabbed Hybrid” — Egyetlen Széles Prémium Munkaterület
+            <span class="highlight-pill">Full-Width Asztali Részletesség</span>
+          </div>
+          <div class="banner-text">
+            <strong>Működési elv:</strong><br/>
+            • Ahelyett, hogy a számlák és projektek versenyeznének a szűk oszlopokért, **egyetlen teljes szélességű prémium kártyába** olvadnak össze fülváltóval: <code>[ Legutóbbi számlák (7) ]</code> és <code>[ Projekt összefoglaló (1) ]</code>.<br/>
+            • A számláknál így elfér a Partner, Bizonylatszám, Dátum, Státusz és Összeg is egyetlen kényelmes, nem-zsúfolt sorban!
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-panel opt3-panel">
+        <div class="panel-header">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="tab-btn active" style="font-size: 13.5px; padding: 7px 16px;">
+              📄 Legutóbbi számlák (7)
+            </button>
+            <button class="tab-btn" style="font-size: 13.5px; padding: 7px 16px;">
+              📁 Projektek analitikája (1)
+            </button>
+          </div>
+          <button class="btn-action">Számlák táblázat megnyitása →</button>
+        </div>
+
+        <div class="opt3-table-header">
+          <div>Bizonylatszám</div>
+          <div>Partnerkapcsolat</div>
+          <div>Dátum</div>
+          <div>Státusz</div>
+          <div style="text-align: right;">Bruttó összeg</div>
+          <div style="text-align: center;">Kép</div>
+        </div>
+
+        <div class="opt3-table-row">
+          <div style="font-weight: 700;">9762E0F0-0205</div>
+          <div style="color: hsl(var(--muted-foreground));">Anthropic, PBC → Think AI Kft</div>
+          <div>2026. 09. 26.</div>
+          <div><span class="badge-status badge-warning">Jóváhagyásra vár</span></div>
+          <div style="text-align: right; font-weight: 700;">45,00 USD</div>
+          <div style="text-align: center;"><button class="opt1-eye-btn" style="margin: 0 auto;">👁️</button></div>
+        </div>
+
+        <div class="opt3-table-row">
+          <div style="font-weight: 700;">TRNDR-2026-20</div>
+          <div style="color: hsl(var(--muted-foreground));">Trend-Art Media Nonprofit Kft. → Think Ai Kft.</div>
+          <div>2026. 09. 25.</div>
+          <div><span class="badge-status badge-success">Feldolgozva</span></div>
+          <div style="text-align: right; font-weight: 700;">384 999 Ft</div>
+          <div style="text-align: center;"><button class="opt1-eye-btn" style="margin: 0 auto;">👁️</button></div>
+        </div>
+
+        <div class="opt3-table-row">
+          <div style="font-weight: 700;">A9179304-0126</div>
+          <div style="color: hsl(var(--muted-foreground));">Celonis Inc. → Think Ai Kft</div>
+          <div>2026. 09. 24.</div>
+          <div><span class="badge-status badge-warning">Jóváhagyásra vár</span></div>
+          <div style="text-align: right; font-weight: 700;">19,00 USD</div>
+          <div style="text-align: center;"><button class="opt1-eye-btn" style="margin: 0 auto;">👁️</button></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const isDark = html.classList.toggle('dark');
+      document.getElementById('theme-icon').textContent = isDark ? '☀️' : '🌙';
+    }
+
+    function switchView(viewId) {
+      ['current', 'opt1', 'opt2', 'opt3'].forEach(id => {
+        const el = document.getElementById('view-' + id);
+        if (el) el.style.display = 'none';
+      });
+
+      const target = document.getElementById('view-' + viewId);
+      if (target) target.style.display = 'block';
+
+      const buttons = document.querySelectorAll('.tab-btn');
+      buttons.forEach(btn => btn.classList.remove('active'));
+      const activeIdx = { 'current': 0, 'opt1': 1, 'opt2': 2, 'opt3': 3 }[viewId];
+      if (buttons[activeIdx]) buttons[activeIdx].classList.add('active');
+    }
+  </script>
+</body>
+</html>

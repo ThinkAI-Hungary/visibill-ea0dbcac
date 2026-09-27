@@ -160,8 +160,8 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceImageDialog.tsx": {
-    "mtime": 1790214953.705981,
-    "ast_hash": "5c6735e06ad83dd8eb5bb568ed2318f7",
+    "mtime": 1790469263.5245814,
+    "ast_hash": "bfa611a82754e86ae20cd8c5cb3abad1",
     "semantic_hash": ""
   },
   "src/components/InvoiceImagePreview.tsx": {
@@ -260,8 +260,8 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/DashboardMetrics.tsx": {
-    "mtime": 1789159282.976025,
-    "ast_hash": "1011912e8e01f2b1c531b0922c3b6ac4",
+    "mtime": 1790474100.7558544,
+    "ast_hash": "c3ac7777b4d4d4b81eec70e922a09215",
     "semantic_hash": ""
   },
   "src/components/dashboard/DashboardPageSkeleton.tsx": {
@@ -270,9 +270,9 @@
     "semantic_hash": "cecdab54f114f60bb77810301ff65447"
   },
   "src/components/dashboard/DashboardSkeleton.tsx": {
-    "mtime": 1772416213.6299832,
-    "ast_hash": "a4917a08794893da49fe3ae1e2fbe401",
-    "semantic_hash": "a4917a08794893da49fe3ae1e2fbe401"
+    "mtime": 1790472063.0285778,
+    "ast_hash": "f4454374df26cd22af220dbf335cb391",
+    "semantic_hash": ""
   },
   "src/components/dashboard/DashboardWelcome.tsx": {
     "mtime": 1789080097.8546803,
@@ -285,13 +285,13 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/InvoiceStatusTables.tsx": {
-    "mtime": 1789159282.976025,
-    "ast_hash": "42b3a537fdefe0d55e7b39eda5d9b085",
+    "mtime": 1790474777.4407141,
+    "ast_hash": "6ea760d4722b68244394c2c6bfba8d84",
     "semantic_hash": ""
   },
   "src/components/dashboard/MetricCard.tsx": {
-    "mtime": 1789159282.976025,
-    "ast_hash": "0a4c4e18aa536578b8313f2cf7a9df39",
+    "mtime": 1790474196.5110278,
+    "ast_hash": "29904c2d3cbd17ce85f4e929c580f229",
     "semantic_hash": ""
   },
   "src/components/dashboard/ProfileSummary.tsx": {
@@ -300,18 +300,18 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/ProjectBreakdown.tsx": {
-    "mtime": 1789159282.9775286,
-    "ast_hash": "a39a3fab01a5e80411125b978d4895f8",
+    "mtime": 1790470291.096211,
+    "ast_hash": "c352d4ddd9eb798657666bbf194eab9f",
     "semantic_hash": ""
   },
   "src/components/dashboard/QuickActions.tsx": {
-    "mtime": 1789159282.9775286,
-    "ast_hash": "198e5378914516410aac50f626cfce2e",
+    "mtime": 1790470853.033817,
+    "ast_hash": "6f0c18336b19950093dabbeca6fd9791",
     "semantic_hash": ""
   },
   "src/components/dashboard/RecentInvoices.tsx": {
-    "mtime": 1789688462.1198003,
-    "ast_hash": "88d29b0ec91ee5f4aed8a5da03c8ccc5",
+    "mtime": 1790471582.9333148,
+    "ast_hash": "4e78061762251c880690246a66991309",
     "semantic_hash": ""
   },
   "src/components/dashboard/RevenueExpensesChart.tsx": {
@@ -320,8 +320,8 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/UnmatchedItemsModal.tsx": {
-    "mtime": 1789159282.978534,
-    "ast_hash": "6534261966b89fdf1834bd926ca792f1",
+    "mtime": 1790473849.442032,
+    "ast_hash": "d886deb9ae8f3de7267a9092789154f1",
     "semantic_hash": ""
   },
   "src/components/dashboard/UserActivityDialog.tsx": {
@@ -375,8 +375,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/GeneralLedgerTable.tsx": {
-    "mtime": 1790467121.901714,
-    "ast_hash": "b84b5cb9170900c6476a359e70e629b0",
+    "mtime": 1790467278.1779742,
+    "ast_hash": "19438c02d001e3d5b5804cba174e35c8",
     "semantic_hash": ""
   },
   "src/components/general-ledger/ManagePresetsModal.tsx": {
@@ -700,9 +700,9 @@
     "semantic_hash": ""
   },
   "src/components/ui/scroll-area.tsx": {
-    "mtime": 1772416213.6397972,
-    "ast_hash": "f86e3f716ed7c692309c1a48d85ce2c9",
-    "semantic_hash": "f86e3f716ed7c692309c1a48d85ce2c9"
+    "mtime": 1790470590.463624,
+    "ast_hash": "aa1ad825094b3e89ae64d9b9b1406c83",
+    "semantic_hash": ""
   },
   "src/components/ui/select.tsx": {
     "mtime": 1788548029.7447639,
@@ -935,8 +935,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useDashboardData.ts": {
-    "mtime": 1790160507.6450293,
-    "ast_hash": "3190ec723de8d9b4beb1aa9e6b96a8ee",
+    "mtime": 1790470001.5106204,
+    "ast_hash": "a3dcb9fd8259227fd0393e1c3cf85a23",
     "semantic_hash": ""
   },
   "src/hooks/useDashboardPreferences.ts": {
@@ -1485,8 +1485,8 @@
     "semantic_hash": ""
   },
   "src/pages/Index.tsx": {
-    "mtime": 1790160382.2350473,
-    "ast_hash": "36984f202dc6991c5eb4935703db5bed",
+    "mtime": 1790472364.891985,
+    "ast_hash": "356d64a32c880366ac43848ccc6e6402",
     "semantic_hash": ""
   },
   "src/pages/Integrations.tsx": {
@@ -7360,8 +7360,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/context/InvoiceContext.tsx": {
-    "mtime": 1790466458.6115472,
-    "ast_hash": "df88a1872a3025b5cbc4e10c0249203a",
+    "mtime": 1790472872.2742455,
+    "ast_hash": "9a9ddfc4435dae632da7691fc97da15b",
     "semantic_hash": ""
   },
   "src/features/invoices/context/useInvoiceContext.ts": {
@@ -9660,8 +9660,8 @@
     "semantic_hash": ""
   },
   "src/locales/hr/dashboard.json": {
-    "mtime": 1789688490.6685317,
-    "ast_hash": "ef95f32797c7f429c237ac2959818b72",
+    "mtime": 1790472883.2144763,
+    "ast_hash": "469dbba833cb0a2994b5b7f9eb5a5903",
     "semantic_hash": ""
   },
   "src/locales/hr/invoices.json": {
@@ -9700,8 +9700,8 @@
     "semantic_hash": ""
   },
   "src/locales/hu/dashboard.json": {
-    "mtime": 1789688483.3258965,
-    "ast_hash": "4c6bfde96376dd34d3110c46e748026f",
+    "mtime": 1790472879.9160664,
+    "ast_hash": "65d67b19df5dea8cd57c1ee76cf0c66f",
     "semantic_hash": ""
   },
   "src/locales/hu/invoices.json": {
@@ -11515,8 +11515,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/utils/invoiceChainFetch.ts": {
-    "mtime": 1790214380.287112,
-    "ast_hash": "3130af6d089a1997c4bbcb4264a7043d",
+    "mtime": 1790469168.709314,
+    "ast_hash": "578c11fc674a8381c8adb13400d98934",
     "semantic_hash": ""
   },
   "scripts/backfill_customer_names.mjs": {
@@ -12227,6 +12227,71 @@
   "session-summary/Jani/2026-09-27/summary-015000-invoices-multiselect-and-range-selection.md": {
     "mtime": 1790466599.4704232,
     "ast_hash": "b9935d87f84269681aa8ded59efaf1f3",
+    "semantic_hash": ""
+  },
+  "src/test/metricCardStructured.test.tsx": {
+    "mtime": 1790468186.305594,
+    "ast_hash": "f5296d721d181825ee97089b404b2fe7",
+    "semantic_hash": ""
+  },
+  "src/test/recentInvoicesAndProjects.test.tsx": {
+    "mtime": 1790470892.3844824,
+    "ast_hash": "b469fcc02b34f6a1bcfa106e66d78913",
+    "semantic_hash": ""
+  },
+  "docs/design/dashboard-kpi-cards-redesign.md": {
+    "mtime": 1790467899.6073437,
+    "ast_hash": "8aa77c5f4b6f1c51a63d281b9853af67",
+    "semantic_hash": ""
+  },
+  "docs/design/mockups/dashboard-kpi-card-redesign-options.html": {
+    "mtime": 1790468252.6907282,
+    "ast_hash": "b649d36dc1278f56d58992615f8a9bbc",
+    "semantic_hash": ""
+  },
+  "docs/design/mockups/recent-invoices-and-projects-redesign.html": {
+    "mtime": 1790468509.7712162,
+    "ast_hash": "8c7830568cbf97a3dac93abeffb2d14e",
+    "semantic_hash": ""
+  },
+  "docs/design/recent-invoices-and-project-breakdown-redesign.md": {
+    "mtime": 1790468804.1067512,
+    "ast_hash": "41ab510ce86d13338191db57847b5bca",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-09-27/summary-020300-gl-duplicate-key-fix-and-setloadedrawaccountitems.md": {
+    "mtime": 1790467367.8174882,
+    "ast_hash": "0a28687a63435cd02b781502ab0b558b",
+    "semantic_hash": ""
+  },
+  "src/components/dashboard/CategoryBreakdown.tsx": {
+    "mtime": 1790470304.158457,
+    "ast_hash": "11e21dcf897beb0490f980aa4747cbce",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-09-27/summary-031200-dashboard-redesign-fintech-split-categories-and-reorder.md": {
+    "mtime": 1790471646.3525233,
+    "ast_hash": "17f9a00e163defa241f01967918b7a9d",
+    "semantic_hash": ""
+  },
+  "src/test/unmatchedAndInboundStatus.test.tsx": {
+    "mtime": 1790474842.288031,
+    "ast_hash": "c5450ad730d6b6d4764ddf390764e958",
+    "semantic_hash": ""
+  },
+  "docs/design/mockups/unmatched-and-inbound-status-redesign.html": {
+    "mtime": 1790471797.9322457,
+    "ast_hash": "86ddc904b9a1605be1e2134184552710",
+    "semantic_hash": ""
+  },
+  "docs/design/unmatched-and-inbound-status-redesign.md": {
+    "mtime": 1790471809.672688,
+    "ast_hash": "66698671058e87de86b1c88c5cb377e1",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260927050000_fix_nav_invoice_submitted_matching.sql": {
+    "mtime": 1790474737.0145607,
+    "ast_hash": "c9a098e436175851653b4e1c0ffefc2a",
     "semantic_hash": ""
   }
 }

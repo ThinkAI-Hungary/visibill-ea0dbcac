@@ -76,9 +76,9 @@ export async function fetchInvoiceChain(params: {
 
   // 1. Fetch current invoice from DB to get fresh company_id, reference_number, elolegszamla_hivatkozas, attachments, etc.
   let currentDbInvoice: any = null;
-  let invQuery = supabase
+    let invQuery = supabase
     .from('invoices')
-    .select('id, company_id, bizonylatsorszam, reference_number, elolegszamla_hivatkozas, invoice_type, image_url, melleklet_url, attachments');
+    .select('id, company_id, bizonylatsorszam, reference_number, elolegszamla_hivatkozas, invoice_type, image_url, melleklet_url, attachments, invoice_uploads_id, adoalap_osszesen, brutto_vegosszeg, teljesites_datuma, kibocsatas_datuma, penznem, nav_status, elado_nev, vevo_nev');
 
   if (invoiceId) {
     invQuery = invQuery.or(`id.eq.${invoiceId}${bizonylatsorszam ? `,bizonylatsorszam.eq.${bizonylatsorszam}` : ''}`);

@@ -44,8 +44,8 @@ const RevenueExpensesChart = React.memo(function RevenueExpensesChart({
 
   return (
     <Collapsible open={revenueSectionOpen} onOpenChange={onRevenueSectionOpenChange}>
-      <Card>
-        <CardHeader className="pb-2">
+      <Card className="border border-border/80 shadow-card overflow-hidden">
+        <CardHeader className={cn("px-6 py-4 space-y-0", revenueSectionOpen && "border-b border-border/40")}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="text-lg font-medium">
@@ -64,7 +64,7 @@ const RevenueExpensesChart = React.memo(function RevenueExpensesChart({
         </CardHeader>
 
         <CollapsibleContent>
-          <CardContent className="pt-4">
+          <CardContent className="p-6">
             {/* Filters row */}
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
               <div className="flex flex-wrap items-center gap-4">

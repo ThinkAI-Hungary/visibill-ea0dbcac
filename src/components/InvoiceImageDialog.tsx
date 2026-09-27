@@ -5,6 +5,8 @@ import { FilePreviewModal } from '@/components/ui/FilePreviewModal';
 import { Loader2 } from 'lucide-react';
 import { fetchInvoiceChain, InvoiceChainItem } from '@/features/invoices/utils/invoiceChainFetch';
 import { INVOICE_TYPE_LABELS } from '@/types/invoices';
+import { supabase } from '@/integrations/supabase/client';
+import { cn, formatCurrency } from '@/lib/utils';
 
 export interface InvoiceAttachmentItem {
   id?: string;
@@ -20,12 +22,20 @@ interface InvoiceForDialog {
   bizonylatsorszam?: string;
   dokumentum_azonosito?: string;
   invoice_type?: string;
-  image_url?: string;
-  melleklet_url?: string;
-  attachments?: InvoiceAttachmentItem[] | null;
+  image_url?: string | null;
+  melleklet_url?: string | null;
+  attachments?: InvoiceAttachmentItem[] | any[] | null;
   company_id?: string;
   reference_number?: string;
   elolegszamla_hivatkozas?: string;
+  invoice_uploads_id?: string;
+  adoalap_osszesen?: number;
+  brutto_vegosszeg?: number;
+  teljesites_datuma?: string;
+  kibocsatas_datuma?: string;
+  penznem?: string;
+  nav_status?: string;
+  statusz?: string;
 }
 
 interface InvoiceImageDialogProps {
@@ -41,6 +51,8 @@ const InvoiceImageDialog = ({ invoice, open, onClose, isLoading: externalLoading
   const [dbAttachments, setDbAttachments] = useState<InvoiceAttachmentItem[]>([]);
   const [companionInvoices, setCompanionInvoices] = useState<InvoiceChainItem[]>([]);
   const [currentRole, setCurrentRole] = useState<string>('Számla');
+  const [dbInvoice, setDbInvoice] = useState<any>(null);
+  const [uploadFile, setUploadFile] = useState<{ url: string; name: string } | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -52,6 +64,8 @@ const InvoiceImageDialog = ({ invoice, open, onClose, isLoading: externalLoading
     if (!open || !invoice) {
       setDbAttachments([]);
       setCompanionInvoices([]);
+      setDbInvoice(null);
+      setUploadFile(null);
       return;
     }
 
@@ -65,15 +79,46 @@ const InvoiceImageDialog = ({ invoice, open, onClose, isLoading: externalLoading
       elolegszamlaHivatkozas: invoice.elolegszamla_hivatkozas,
       invoiceType: invoice.invoice_type,
     })
-      .then(({ currentDbInvoice, companionInvoices: companions, currentRole: role }) => {
+      .then(async ({ currentDbInvoice, companionInvoices: companions, currentRole: role }) => {
         if (!isCurrent) return;
+        setDbInvoice(currentDbInvoice);
+
         if (currentDbInvoice?.attachments && Array.isArray(currentDbInvoice.attachments)) {
           setDbAttachments(currentDbInvoice.attachments as unknown as InvoiceAttachmentItem[]);
         } else if (Array.isArray(invoice.attachments)) {
-          setDbAttachments(invoice.attachments);
+          setDbAttachments(invoice.attachments as unknown as InvoiceAttachmentItem[]);
         }
         setCompanionInvoices(companions);
         setCurrentRole(role);
+
+        // Fallback: If no direct image/melleklet URL is found on invoice or currentDbInvoice,
+        // check whether an invoice_uploads record exists with file_url
+        const hasDirectFile = Boolean(
+          invoice.image_url ||
+          invoice.melleklet_url ||
+          currentDbInvoice?.image_url ||
+          currentDbInvoice?.melleklet_url
+        );
+
+        const uploadId = invoice.invoice_uploads_id || currentDbInvoice?.invoice_uploads_id;
+        if (!hasDirectFile && uploadId) {
+          try {
+            const { data: uploadRow } = await supabase
+              .from('invoice_uploads')
+              .select('file_url, file_name')
+              .eq('id', uploadId)
+              .maybeSingle();
+
+            if (isCurrent && uploadRow?.file_url) {
+              setUploadFile({
+                url: uploadRow.file_url,
+                name: uploadRow.file_name || 'Bizonylat.pdf',
+              });
+            }
+          } catch (e) {
+            console.warn('Failed to fetch invoice_uploads fallback:', e);
+          }
+        }
       })
       .catch(err => {
         console.warn('Failed to fetch invoice chain:', err);
@@ -82,7 +127,7 @@ const InvoiceImageDialog = ({ invoice, open, onClose, isLoading: externalLoading
     return () => {
       isCurrent = false;
     };
-  }, [open, invoice?.id, invoice?.bizonylatsorszam]);
+  }, [open, invoice?.id, invoice?.bizonylatsorszam, invoice?.image_url, invoice?.melleklet_url]);
 
   if (!open) return null;
 
@@ -124,25 +169,43 @@ const InvoiceImageDialog = ({ invoice, open, onClose, isLoading: externalLoading
     return `${identifier}${extSuffix}`;
   };
 
+  const mergedInvoice = {
+    ...dbInvoice,
+    ...invoice,
+  };
+
   // Collect all available files:
-  // 1. Primary invoice image & melleklet
+  // 1. Primary invoice image & melleklet (from prop or DB)
   // 2. Companion invoices in chain (storno, advance, final, correction, etc.)
   // 3. Attachments
   const files: { url: string; name: string }[] = [];
   const hasChain = companionInvoices.length > 0;
-  const primaryUrl = invoice.image_url || invoice.melleklet_url;
+  
+  const primaryUrl =
+    invoice.melleklet_url ||
+    invoice.image_url ||
+    dbInvoice?.melleklet_url ||
+    dbInvoice?.image_url ||
+    uploadFile?.url;
 
   if (primaryUrl) {
     files.push({
       url: primaryUrl,
-      name: getDisplayName(invoice, primaryUrl, hasChain ? currentRole : undefined),
+      name: uploadFile?.url === primaryUrl && uploadFile.name
+        ? uploadFile.name
+        : getDisplayName(mergedInvoice, primaryUrl, hasChain ? currentRole : undefined),
     });
   }
 
-  if (invoice.melleklet_url && invoice.image_url && invoice.melleklet_url !== invoice.image_url) {
+  // Secondary file if melleklet and image both exist and differ
+  const secondaryUrl =
+    (invoice.image_url && invoice.melleklet_url && invoice.image_url !== invoice.melleklet_url ? invoice.image_url : null) ||
+    (dbInvoice?.image_url && dbInvoice?.melleklet_url && dbInvoice?.image_url !== dbInvoice?.melleklet_url ? dbInvoice.image_url : null);
+
+  if (secondaryUrl && !files.some(f => f.url === secondaryUrl)) {
     files.push({
-      url: invoice.melleklet_url,
-      name: getDisplayName(invoice, invoice.melleklet_url, 'Melléklet'),
+      url: secondaryUrl,
+      name: getDisplayName(mergedInvoice, secondaryUrl, 'Számlakép'),
     });
   }
 
@@ -178,7 +241,7 @@ const InvoiceImageDialog = ({ invoice, open, onClose, isLoading: externalLoading
   // Add primary invoice attachments
   const allAttachments = (Array.isArray(invoice.attachments) && invoice.attachments.length > 0)
     ? invoice.attachments
-    : dbAttachments;
+    : (Array.isArray(dbAttachments) && dbAttachments.length > 0 ? dbAttachments : dbInvoice?.attachments);
 
   if (Array.isArray(allAttachments)) {
     allAttachments.forEach((att, idx) => {
@@ -194,9 +257,37 @@ const InvoiceImageDialog = ({ invoice, open, onClose, isLoading: externalLoading
   // Fallback: If no physical image or attachment exists, show electronic voucher card
   if (files.length === 0) {
     const localeCode = i18n.language === 'hr' ? 'hr-HR' : 'hu-HU';
-    const formattedAmount = (invoice as any).amount ? new Intl.NumberFormat(localeCode).format(Math.abs((invoice as any).amount)) : '—';
-    const currency = (invoice as any).currency || 'HUF';
-    const invoiceDate = (invoice as any).date || '—';
+    const currency = mergedInvoice.penznem || (invoice as any).currency || 'HUF';
+
+    const netAmountVal = mergedInvoice.adoalap_osszesen ?? (invoice as any).amount;
+    const grossAmountVal = mergedInvoice.brutto_vegosszeg ?? (invoice as any).brutto_vegosszeg;
+
+    const formattedNet = netAmountVal != null && !isNaN(Number(netAmountVal))
+      ? formatCurrency(Math.abs(Number(netAmountVal)), currency)
+      : null;
+
+    const formattedGross = grossAmountVal != null && !isNaN(Number(grossAmountVal))
+      ? formatCurrency(Math.abs(Number(grossAmountVal)), currency)
+      : null;
+
+    const issueDate = mergedInvoice.kibocsatas_datuma || (invoice as any).date;
+    const fulfillmentDate = mergedInvoice.teljesites_datuma;
+
+    let dateDisplay = '—';
+    if (fulfillmentDate && issueDate && fulfillmentDate !== issueDate) {
+      dateDisplay = `${fulfillmentDate} (Kelt: ${issueDate})`;
+    } else if (fulfillmentDate || issueDate) {
+      dateDisplay = (fulfillmentDate || issueDate)!;
+    }
+
+    // Determine whether this was an uploaded / manual invoice or a pure NAV electronic invoice
+    const isBekuldott = Boolean(
+      mergedInvoice.invoice_uploads_id ||
+      mergedInvoice.melleklet_url ||
+      mergedInvoice.image_url ||
+      mergedInvoice.statusz === 'feldolgozas_alatt' ||
+      (mergedInvoice.statusz === 'feldolgozva' && !mergedInvoice.nav_status)
+    );
 
     return createPortal(
       <div
@@ -219,46 +310,74 @@ const InvoiceImageDialog = ({ invoice, open, onClose, isLoading: externalLoading
           {/* Header */}
           <div className="flex justify-between items-start border-b pb-4">
             <div>
-              <h3 className="text-lg font-bold text-primary">{t('invoices:dialogs.image.electronic_voucher')}</h3>
-              <p className="text-xs text-muted-foreground">{t('invoices:dialogs.image.nav_source_desc')}</p>
+              <h3 className="text-lg font-bold text-primary">
+                {isBekuldott
+                  ? t('invoices:dialogs.image.submitted_voucher', 'Beküldött Bizonylat')
+                  : t('invoices:dialogs.image.electronic_voucher', 'Elektronikus Bizonylat')}
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                {isBekuldott
+                  ? t('invoices:dialogs.image.submitted_source_desc', 'Feldolgozott számla adatai')
+                  : t('invoices:dialogs.image.nav_source_desc', 'NAV Online Számlarendszerből importált adatok')}
+              </p>
             </div>
-            <span className="text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 px-2 py-1 rounded-full border border-emerald-500/20">
-              {t('invoices:dialogs.image.verified_data')}
+            <span className={cn(
+              "text-[10px] font-semibold px-2 py-1 rounded-full border",
+              isBekuldott
+                ? "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400"
+                : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400"
+            )}>
+              {isBekuldott
+                ? t('invoices:dialogs.image.submitted_data', 'Beküldött bizonylat')
+                : t('invoices:dialogs.image.verified_data', 'NAV hitelesített adat')}
             </span>
           </div>
 
           {/* Details */}
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('invoices:dialogs.image.seller')}</p>
-              <p className="font-semibold">{invoice.elado_nev}</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('invoices:dialogs.image.seller', 'Eladó (Szállító)')}</p>
+              <p className="font-semibold">{mergedInvoice.elado_nev || '—'}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('invoices:dialogs.image.buyer')}</p>
-              <p className="font-semibold">{invoice.vevo_nev}</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('invoices:dialogs.image.buyer', 'Vevő (Megrendelő)')}</p>
+              <p className="font-semibold">{mergedInvoice.vevo_nev || '—'}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4 text-sm border-t pt-4">
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('invoices:dialogs.image.invoice_number')}</p>
-              <p className="font-mono">{invoice.bizonylatsorszam || invoice.dokumentum_azonosito || 'N/A'}</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('invoices:dialogs.image.invoice_number', 'Bizonylatszám')}</p>
+              <p className="font-mono font-semibold">{mergedInvoice.bizonylatsorszam || mergedInvoice.dokumentum_azonosito || 'N/A'}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('invoices:dialogs.image.fulfillment_issue')}</p>
-              <p className="font-semibold">{invoiceDate}</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('invoices:dialogs.image.fulfillment_issue', 'Teljesítés / Kelt')}</p>
+              <p className="font-semibold">{dateDisplay}</p>
             </div>
           </div>
 
           {/* Amount Box */}
           <div className="bg-muted/40 border rounded-xl p-4 flex justify-between items-center text-sm">
-            <span className="font-semibold text-muted-foreground">{t('invoices:dialogs.image.net_total')}</span>
-            <span className="text-lg font-bold tabular-nums text-primary">{formattedAmount} {currency}</span>
+            <div>
+              <span className="font-semibold text-muted-foreground block text-xs">
+                {formattedGross ? t('invoices:dialogs.image.gross_total', 'Bruttó végösszeg') : t('invoices:dialogs.image.net_total', 'Nettó végösszeg')}
+              </span>
+              {formattedNet && formattedGross && formattedNet !== formattedGross && (
+                <span className="text-[11px] text-muted-foreground/80 block mt-0.5">
+                  Nettó: {formattedNet}
+                </span>
+              )}
+            </div>
+            <span className="text-lg font-bold tabular-nums text-primary">
+              {formattedGross || formattedNet || '—'}
+            </span>
           </div>
 
           {/* Info footer */}
           <div className="text-[10px] text-muted-foreground bg-muted/20 p-3 rounded-lg border border-border/40 text-center leading-relaxed">
-            {t('invoices:dialogs.image.no_physical_image_desc')}
+            {isBekuldott
+              ? t('invoices:dialogs.image.no_physical_image_submitted_desc', 'A bizonylat adatai strukturáltan rögzítésre kerültek a rendszerben. Fizikai képfájl jelenleg nem elérhető.')
+              : t('invoices:dialogs.image.no_physical_image_desc', 'Ez a számla nem rendelkezik fizikai képfájllal, mivel közvetlenül a NAV Online Számlarendszerből, XML adatformátumban került strukturált feldolgozásra.')}
           </div>
         </div>
       </div>,
@@ -281,4 +400,3 @@ const InvoiceImageDialog = ({ invoice, open, onClose, isLoading: externalLoading
 };
 
 export default InvoiceImageDialog;
-

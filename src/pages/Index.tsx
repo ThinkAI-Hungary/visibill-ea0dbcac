@@ -19,12 +19,12 @@ import FxDifferencesSection from '@/components/dashboard/FxDifferencesSection';
 import RevenueExpensesChart from '@/components/dashboard/RevenueExpensesChart';
 import RecentInvoices from '@/components/dashboard/RecentInvoices';
 import ProjectBreakdown from '@/components/dashboard/ProjectBreakdown';
+import { CategoryBreakdown } from '@/components/dashboard/CategoryBreakdown';
 
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
+import { InvoiceItemsDialog } from '@/components/InvoiceItemsDialog';
 import InvoiceStatusTables from '@/components/dashboard/InvoiceStatusTables';
 import UnmatchedSection from '@/components/dashboard/UnmatchedItemsModal';
-import ProfileSummary from '@/components/dashboard/ProfileSummary';
-import QuickActions from '@/components/dashboard/QuickActions';
 import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { getDateFnsLocale, getActiveLocale } from '@/lib/locale/formatters';
@@ -33,11 +33,14 @@ import type { Invoice } from '@/hooks/useDashboardData';
 
 /**
  * Wrapper that isolates dialog state so opening/closing the image preview
- * does NOT re-render the entire Dashboard (P0-3 fix).
+ * or invoice items dialog does NOT re-render the entire Dashboard (P0-3 fix).
  */
 function RecentInvoicesWithDialog({ invoices }: { invoices: Invoice[] }) {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const [itemsInvoice, setItemsInvoice] = useState<Invoice | null>(null);
+  const [isItemsOpen, setIsItemsOpen] = useState(false);
 
   const handleViewInvoice = useCallback((invoice: Invoice) => {
     setSelectedInvoice(invoice);
@@ -49,14 +52,44 @@ function RecentInvoicesWithDialog({ invoices }: { invoices: Invoice[] }) {
     setSelectedInvoice(null);
   }, []);
 
+  const handleRowClick = useCallback((invoice: Invoice) => {
+    setItemsInvoice(invoice);
+    setIsItemsOpen(true);
+  }, []);
+
+  const handleItemsOpenChange = useCallback((open: boolean) => {
+    setIsItemsOpen(open);
+    if (!open) {
+      setItemsInvoice(null);
+    }
+  }, []);
+
   return (
     <>
-      <RecentInvoices invoices={invoices} onViewInvoice={handleViewInvoice} />
+      <RecentInvoices
+        invoices={invoices}
+        onViewInvoice={handleViewInvoice}
+        onRowClick={handleRowClick}
+      />
       <InvoiceImageDialog
         invoice={selectedInvoice}
         open={isDialogOpen}
         onClose={handleClose}
       />
+      {itemsInvoice && (
+        <InvoiceItemsDialog
+          open={isItemsOpen}
+          onOpenChange={handleItemsOpenChange}
+          invoiceId={itemsInvoice.id}
+          invoiceNumber={itemsInvoice.bizonylatsorszam || ''}
+          currency={itemsInvoice.penznem || 'HUF'}
+          source="submitted"
+          invoiceDate={itemsInvoice.kibocsatas_datuma || undefined}
+          supplierName={itemsInvoice.elado_nev || undefined}
+          projectId={itemsInvoice.category_id || undefined}
+          invoiceDirection={itemsInvoice.invoice_direction || undefined}
+        />
+      )}
     </>
   );
 }
@@ -77,6 +110,7 @@ const Index = () => {
     invoices, analyticsLoading,
     vatBreakdown, exchangeRates,
     categoryBreakdownData,
+    categoryBreakdownStats,
     convertToSelectedCurrency,
     buildMonthlyData,
   } = useDashboardData();
@@ -193,19 +227,25 @@ const Index = () => {
           vatRegime={selectedCompany?.vat_regime}
         />
 
-        <FxDifferencesSection
-          fxDifferences={fxDifferences}
-          fxMonthlySummary={fxMonthlySummary}
-          isOpen={prefs.fxSectionOpen}
-          onOpenChange={prefs.setFxSectionOpen}
-          fxGlSettings={fxGlSettings}
-          glAccounts={glAccounts}
-          onSaveFxGl={handleSaveFxGl}
-        />
+        {/* Main Dashboard Grid: 3-column layout (Invoices | Projects | Categories) */}
+        <div className="grid gap-6 grid-cols-1 xl:grid-cols-3 items-start">
+          <RecentInvoicesWithDialog invoices={invoices} />
 
-        <UnmatchedSection />
+          <ProjectBreakdown
+            projects={categoryBreakdownData}
+            totalAmount={Object.values(metrics?.totalAmountByCurrency || {}).reduce((sum, val) => sum + val, 0)}
+          />
 
-        <InvoiceStatusTables />
+          <CategoryBreakdown
+            categories={categoryBreakdownStats}
+          />
+        </div>
+
+        {/* Operational Status Grid: 2-column layout (Unmatched Items | Inbound Status) */}
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 items-start">
+          <UnmatchedSection />
+          <InvoiceStatusTables />
+        </div>
 
         <RevenueExpensesChart
           monthlyData={monthlyData}
@@ -219,32 +259,15 @@ const Index = () => {
           onSetShowBrutto={prefs.setShowBrutto}
         />
 
-        {/* Main Dashboard Grid */}
-        <div className="grid gap-6 lg:grid-cols-3">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="lg:col-span-2">
-                  <RecentInvoicesWithDialog invoices={invoices} />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{t('dashboard:sections.recent_invoices_tooltip', 'A legutóbb feldolgozott számlák listája')}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <div className="space-y-6">
-
-            <ProjectBreakdown
-              projects={categoryBreakdownData}
-              totalAmount={Object.values(metrics?.totalAmountByCurrency || {}).reduce((sum, val) => sum + val, 0)}
-            />
-          </div>
-        </div>
-
-        <ProfileSummary profile={profile} email={user?.email} />
-        <QuickActions />
+        <FxDifferencesSection
+          fxDifferences={fxDifferences}
+          fxMonthlySummary={fxMonthlySummary}
+          isOpen={prefs.fxSectionOpen}
+          onOpenChange={prefs.setFxSectionOpen}
+          fxGlSettings={fxGlSettings}
+          glAccounts={glAccounts}
+          onSaveFxGl={handleSaveFxGl}
+        />
       </main>
 
       {/* InvoiceImageDialog is now inside RecentInvoicesWithDialog */}
