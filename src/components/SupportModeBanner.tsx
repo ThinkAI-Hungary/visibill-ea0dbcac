@@ -176,7 +176,7 @@ export function SupportModeBanner() {
 
   return createPortal(
     <div
-      className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-between px-4 py-2 bg-primary text-primary-foreground"
+      className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-between px-4 py-2 bg-primary text-primary-foreground print:hidden"
       style={{
         fontSize: '13px',
         fontWeight: 600,

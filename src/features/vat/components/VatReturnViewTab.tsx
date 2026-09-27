@@ -145,9 +145,9 @@ export function VatReturnViewTab() {
   ]);
 
   return (
-    <div className="space-y-4 pb-12 page-animate">
+    <div className="space-y-4 pb-12 print:pb-0 page-animate">
       {/* Unified Command & Control Header */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-card p-3 rounded-xl border border-border shadow-sm animate-in slide-in-from-top-2 duration-300">
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-card p-3 rounded-xl border border-border shadow-sm animate-in slide-in-from-top-2 duration-300 print:hidden">
         {/* Left: Period Controls */}
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Frequency toggle */}

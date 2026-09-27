@@ -149,8 +149,9 @@ export function VatReturnContainer() {
   const isCroatia = selectedCompany?.country_code === 'HR';
 
   return (
-    <div className="w-full max-w-none mx-auto px-2 sm:px-4 lg:px-6 pt-2 sm:pt-3 pb-24 space-y-4 print:py-0 page-animate">
+    <div className="w-full max-w-none mx-auto px-2 sm:px-4 lg:px-6 pt-2 sm:pt-3 pb-24 space-y-4 print:py-0 print:p-0 print:m-0 page-animate">
       <PageHeader
+        className="print:hidden"
         companyName={selectedCompany?.name}
         breadcrumb={
           isCroatia
@@ -179,6 +180,7 @@ export function VatReturnContainer() {
 
       {/* Prominent VAT Processing Scope Selector ("NAGY rádiógomb") */}
       <VatScopeRadioGroup
+        className="print:hidden"
         value={vatScope}
         onChange={handleScopeChange}
         totalCount={totalInboundCount}
@@ -188,9 +190,9 @@ export function VatReturnContainer() {
         onOpenOsaCheck={() => handleTabChange('teteles_m')}
       />
 
-      <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-3">
+      <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-3 print:space-y-0">
         {/* Navigation Tabs Bar */}
-        <TabsList className="bg-muted/60 p-1 flex flex-wrap lg:flex-nowrap overflow-x-auto justify-start h-auto gap-1 border border-border/60 rounded-xl scrollbar-none shadow-sm">
+        <TabsList className="print:hidden bg-muted/60 p-1 flex flex-wrap lg:flex-nowrap overflow-x-auto justify-start h-auto gap-1 border border-border/60 rounded-xl scrollbar-none shadow-sm">
           {/* 1. 65-ös Bevallás */}
           <TabsTrigger
             value="return"

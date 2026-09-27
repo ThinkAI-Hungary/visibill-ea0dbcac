@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -135,12 +135,77 @@ export function Nav2665ReplicaContainer({
     }
   };
 
+  useEffect(() => {
+    document.body.classList.add('printing-nav65');
+    return () => {
+      document.body.classList.remove('printing-nav65');
+    };
+  }, []);
+
   const handlePrint = () => {
     window.print();
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 print:space-y-0">
+      {/* Print isolation style for A4 portrait tax return pages */}
+      <style>{`
+        @media print {
+          @page {
+            size: A4 portrait !important;
+            margin: 8mm 6mm !important;
+          }
+          html, body, #root {
+            height: auto !important;
+            min-height: auto !important;
+            overflow: visible !important;
+            background: white !important;
+          }
+          body * {
+            visibility: hidden !important;
+          }
+          .nav2665-printable-root,
+          .nav2665-printable-root * {
+            visibility: visible !important;
+          }
+          .nav2665-printable-root {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+            transform: none !important;
+          }
+          .nav2665-page-frame {
+            break-after: page !important;
+            page-break-after: always !important;
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+            box-shadow: none !important;
+            margin: 0 auto !important;
+            max-width: 100% !important;
+            width: 100% !important;
+            transform: none !important;
+            border: 1.5px solid #000000 !important;
+          }
+          .nav2665-page-frame:last-child {
+            break-after: auto !important;
+            page-break-after: auto !important;
+          }
+          .print\\:hidden,
+          header,
+          nav,
+          aside,
+          [data-sidebar],
+          .support-mode-banner {
+            display: none !important;
+            visibility: hidden !important;
+          }
+        }
+      `}</style>
+
       {/* 1. TOP TOOLBAR: Sheet Selector | Zoom | Actions */}
       <Card className="border border-stone-300 shadow-sm bg-neutral-50/90 print:hidden">
         <CardHeader className="p-3 border-b border-stone-200">
@@ -150,11 +215,8 @@ export function Nav2665ReplicaContainer({
                 2665
               </div>
               <div>
-                <h3 className="font-serif font-black text-base tracking-tight text-neutral-900 flex items-center gap-2">
+                <h3 className="font-serif font-black text-base tracking-tight text-neutral-900">
                   NAV 2665A Hivatalos Nyomtatvány Hiteles Replika
-                  <Badge variant="outline" className="text-[10px] font-mono bg-white text-neutral-700">
-                    Semmit a kéznek, mindent a szemnek
-                  </Badge>
                 </h3>
                 <p className="text-[11px] text-neutral-500 font-mono">
                   {selectedCompany?.name} ({selectedCompany?.tax_number}) · {year}. {frequency === 'H' ? `${month}. hó` : frequency === 'N' ? `Q${month}` : 'év'}
@@ -354,12 +416,13 @@ export function Nav2665ReplicaContainer({
 
       {/* 2. RENDERED PAGES IN A4 SHEETS */}
       <div
-        className="w-full overflow-x-auto py-2 bg-neutral-200/50 print:bg-transparent rounded-lg print:p-0 flex flex-col items-center"
+        className="nav2665-printable-root w-full overflow-x-auto py-2 bg-neutral-200/50 print:bg-white rounded-lg print:p-0 flex flex-col items-center"
         style={{
           transformOrigin: 'top center',
         }}
       >
         <div
+          className="print:!transform-none"
           style={{
             transform: zoomLevel !== 100 ? `scale(${zoomLevel / 100})` : undefined,
             transformOrigin: 'top center',

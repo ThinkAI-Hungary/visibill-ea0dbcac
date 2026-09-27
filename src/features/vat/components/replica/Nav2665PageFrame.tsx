@@ -32,7 +32,7 @@ export function Nav2665PageFrame({
   return (
     <div
       className={cn(
-        'w-full max-w-[880px] mx-auto bg-white text-neutral-900 border-2 border-neutral-900 shadow-xl print:shadow-none print:border-neutral-900 p-4 sm:p-7 relative font-sans transition-all print:max-w-none print:w-full print:p-4 print:m-0 print:break-after-page my-6 select-text',
+        'nav2665-page-frame w-full max-w-[880px] mx-auto bg-white text-neutral-900 border-2 border-neutral-900 shadow-xl print:shadow-none print:border-neutral-900 p-4 sm:p-7 relative font-sans transition-all print:max-w-none print:w-full print:p-4 print:m-0 my-6 select-text',
         className
       )}
       style={{

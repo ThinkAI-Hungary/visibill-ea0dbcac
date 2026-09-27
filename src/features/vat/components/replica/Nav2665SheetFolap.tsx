@@ -65,7 +65,7 @@ export function Nav2665SheetFolap({
       <div className="grid grid-cols-12 border-2 border-neutral-900 mb-2">
         {/* Left: Coat of Arms + NAV */}
         <div className="col-span-3 border-r-2 border-neutral-900 p-2 flex flex-col items-center justify-center text-center">
-          <Nav2665CoatOfArms width={34} height={46} />
+          <Nav2665CoatOfArms width={36} height={52} className="h-12 w-auto max-h-[50px]" />
           <span className="text-[9px] font-bold text-neutral-900 mt-1 uppercase tracking-tight">
             Nemzeti Adó- és Vámhivatal
           </span>

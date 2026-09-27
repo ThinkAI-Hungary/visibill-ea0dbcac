@@ -39,7 +39,7 @@ export function VatScopeRadioGroup({
   return (
     <div
       className={cn(
-        'w-full bg-gradient-to-b from-card via-card/95 to-muted/20 border border-border/80 shadow-sm rounded-2xl p-3 sm:p-4 transition-all duration-200',
+        'w-full bg-gradient-to-b from-card via-card/95 to-muted/20 border border-border/80 shadow-sm rounded-2xl p-3 sm:p-4 transition-all duration-200 print:hidden',
         className
       )}
     >
