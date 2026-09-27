@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
           .from('user_nav_credentials')
           .update({
             validation_status: result.status,
-            validation_error: result.error,
+            validation_error: result.error || (result.status === 'invalid' ? result.message : null),
             last_validated_at: new Date().toISOString()
           });
 

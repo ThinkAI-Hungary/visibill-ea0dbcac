@@ -110,7 +110,7 @@ export class NavIngestionService {
       }
 
       // 7. Hitelesítő adatok státuszának előléptetése 'valid'-ra (ADR A-012 / A-024)
-      await this.promoteValidationStatus(options.userId, effectiveCompanyId);
+      await this.promoteValidationStatus(options.userId, effectiveCompanyId, options.direction);
 
       // 8. Szinkronizációs log lezárása sikeres státusszal
       if (syncLogId) {
@@ -136,17 +136,43 @@ export class NavIngestionService {
 
     } catch (err: any) {
       // Hiba naplózása a sync logba
+      const errMsg = err?.message || String(err);
       if (syncLogId) {
         await this.supabase
           .from('nav_sync_logs')
           .update({
             status: 'failed',
-            error_message: err?.message || String(err),
+            error_message: errMsg,
             completed_at: new Date().toISOString(),
             duration_ms: Date.now() - startTime
           })
           .eq('id', syncLogId);
       }
+
+      // Ha a bejövő (INBOUND) számlák lekérdezése 403 / FORBIDDEN jogosultsági hiba miatt bukott el,
+      // jelöljük a user_nav_credentials rekordot invalid-ként a pontos magyarázattal,
+      // így a felhasználó a felületen azonnal látja a teendőt, és az auto-sync sem próbálkozik feleslegesen.
+      if (
+        options.direction === 'INBOUND' &&
+        (errMsg.includes('FORBIDDEN') || errMsg.includes('Jogosultság szükséges') || errMsg.includes('403'))
+      ) {
+        try {
+          const matchFilter = effectiveCompanyId
+            ? { company_id: effectiveCompanyId }
+            : { user_id: options.userId };
+          await this.supabase
+            .from('user_nav_credentials')
+            .update({
+              validation_status: 'invalid',
+              validation_error: 'A technikai felhasználó kulcsai helyesek, de hiányzik a „Számlák lekérdezése” jogosultság a NAV portálon! Kérjük, engedélyezd az onlineszamla.nav.gov.hu felületen.',
+              last_validated_at: new Date().toISOString()
+            })
+            .match(matchFilter);
+        } catch (credUpdateErr) {
+          console.warn('[NavIngestionService] Failed to update invalid status for forbidden credentials:', credUpdateErr);
+        }
+      }
+
       throw err;
     }
   }
@@ -363,11 +389,25 @@ export class NavIngestionService {
   /**
    * Hitelesítő adatok validációs státuszának előléptetése 'valid'-ra.
    */
-  async promoteValidationStatus(userId: string, companyId: string | null): Promise<void> {
+  async promoteValidationStatus(userId: string, companyId: string | null, direction?: NavInvoiceDirection): Promise<void> {
     try {
       const matchFilter = companyId
-        ? { user_id: userId, company_id: companyId }
+        ? { company_id: companyId }
         : { user_id: userId };
+
+      // Ha csak OUTBOUND szinkron futott le sikeresen, de a bejövő számlák lekérdezése hiányzik,
+      // ne írjuk felül a meglévő 'invalid' státuszt!
+      if (direction === 'OUTBOUND') {
+        const { data: existing } = await this.supabase
+          .from('user_nav_credentials')
+          .select('validation_status, validation_error')
+          .match(matchFilter)
+          .maybeSingle();
+
+        if (existing?.validation_status === 'invalid' && existing?.validation_error?.includes('Számlák lekérdezése')) {
+          return;
+        }
+      }
 
       await this.supabase
         .from('user_nav_credentials')

@@ -255,10 +255,16 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
       // If validation failed, do NOT save credentials
       if (!validationData?.success || validationData?.status !== 'valid') {
         setValidationStatus('invalid');
+        const isPermissionIssue = 
+          validationData?.message?.includes('Számlák lekérdezése') || 
+          validationData?.error?.includes('FORBIDDEN') ||
+          validationData?.error?.includes('Jogosultság szükséges');
+
         toast({
-          title: 'Sikertelen NAV kapcsolat',
+          title: isPermissionIssue ? 'Hiányzó NAV jogosultság' : 'Sikertelen NAV kapcsolat',
           description: validationData?.message || 'A megadott hitelesítő adatok érvénytelenek. A kapcsolat nem kerül mentésre.',
-          variant: 'destructive'
+          variant: 'destructive',
+          duration: 8000
         });
         return;
       }

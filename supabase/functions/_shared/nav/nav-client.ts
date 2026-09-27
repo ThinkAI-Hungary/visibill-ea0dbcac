@@ -73,11 +73,55 @@ export class NavClient {
       const isValid = xmlResponse.includes('<funcCode>OK</funcCode>') || xmlResponse.includes('<encodedExchangeToken>');
       const validationError = !isValid ? parseNavError(xmlResponse) : null;
 
+      if (!isValid) {
+        return {
+          valid: false,
+          status: 'invalid',
+          message: validationError || 'Érvénytelen hitelesítő adatok',
+          error: validationError,
+          requestId,
+          env,
+          details: xmlResponse
+        };
+      }
+
+      // ── Step 2: Próba INBOUND lekérdezés a "Számlák lekérdezése" jogosultság ellenőrzésére ──
+      // A NAV Online Számla 3.0-ban a technikai felhasználó tokenExchange-e sikeres lehet akkor is,
+      // ha a webes felületen nincs bepipálva a "Számlák lekérdezése" (bejövő számlák letöltése).
+      try {
+        const today = new Date().toISOString().slice(0, 10);
+        await this.queryInvoiceDigest({
+          direction: 'INBOUND',
+          dateFrom: today,
+          dateTo: today,
+          page: 1
+        });
+      } catch (inboundErr: any) {
+        const inboundErrMsg = inboundErr?.message || String(inboundErr);
+        if (
+          inboundErrMsg.includes('FORBIDDEN') ||
+          inboundErrMsg.includes('Jogosultság szükséges') ||
+          inboundErrMsg.includes('403')
+        ) {
+          return {
+            valid: false,
+            status: 'invalid',
+            message: 'A technikai felhasználó kulcsai helyesek, de hiányzik a „Számlák lekérdezése” jogosultság a NAV portálon! Kérjük, engedélyezd az onlineszamla.nav.gov.hu felületen.',
+            error: 'FORBIDDEN: Jogosultság szükséges (Számlák lekérdezése nincs engedélyezve)',
+            requestId,
+            env,
+            details: inboundErrMsg
+          };
+        }
+        // Ha nem jogosultsági hiba, hanem pl. átmeneti NAV hálózati timeout, nem bukik el a hitelesítés
+        console.warn('[NavClient.validateCredentials] Inbound probe non-fatal warning:', inboundErrMsg);
+      }
+
       return {
-        valid: isValid,
-        status: isValid ? 'valid' : 'invalid',
-        message: isValid ? 'A hitelesítő adatok sikeresen ellenőrizve' : validationError || 'Érvénytelen hitelesítő adatok',
-        error: validationError,
+        valid: true,
+        status: 'valid',
+        message: 'A hitelesítő adatok és a számlalekérdezési jogosultságok sikeresen ellenőrizve',
+        error: null,
         requestId,
         env,
         details: xmlResponse
