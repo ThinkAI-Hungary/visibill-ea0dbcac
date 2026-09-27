@@ -2,7 +2,7 @@
 
 **Status:** Decided
 **Date:** 2026-06-29
-**Utoljára frissítve:** 2026-07-20
+**Utoljára frissítve:** 2026-09-27
 
 ## Context
 
@@ -145,9 +145,25 @@ const getMergeKey = (normTax: string): string => {
 };
 ```
 
+## 2026-09-27 bővítések
+
+### D8: Idempotens Upsert és Versenyhelyzet Védelem (Worker / ADR-074)
+
+Párhuzamos kötegelt számlafeltöltések (PDF/ZIP, IMAP sync) során több worker szál egyidejűleg észlelhette úgy, hogy az adott adószámú partner még nem létezik a cégben. A közvetlen `.insert()` végrehajtásakor a második szál elbukott:
+`ERROR: duplicate key value violates unique constraint "partners_company_id_tax_number_key" (PostgreSQL 23505)`.
+
+**Megoldás:**
+1. A worker közvetlen `.insert()` helyett PostgREST `.upsert(data, on_conflict="company_id,tax_number", ignore_duplicates=True)` eljárást használ, ami PostgreSQL szinten `INSERT ... ON CONFLICT (company_id, tax_number) DO NOTHING` utasítássá fordul. Így megszűnik a PostgreSQL rendszerszintű ERROR logolása és a tranzakció abortálása.
+2. Ha az `ignore_duplicates` miatt 0 sor került beszúrásra vagy hálózati szinten ütközési kivétel keletkezik, a kód azonnal re-fetcheli az adatbázisból a párhuzamosan létrejött partnert (`select id, partner_type, address where company_id = X and tax_number = Y`).
+3. Ha szükséges, automatikusan felminősíti a meglévő partner típusát (`partner_type -> 'both'`), ha az újonnan érkezett számla eltérő irányú volt, és pótolja az esetlegesen hiányzó címet.
+4. Lásd részletesen: Worker `docs/DECISIONS.md` **ADR-074**.
+
 ## Kapcsolódó
 - [A-012: NAV Online Számla API v3 integráció](./A-012-nav-integration.md) — NAV sync partner caching logika
+- [A-025: Cross-company Invoice Routing](./A-025-cross-company-routing.md) — Duplikátum és cégátirányítási védelem
 - [A-027: Partner Ranking & Treemap](./A-027-partner-ranking-treemap.md) — Rangsor logika, NULL-vat LATERAL JOIN
 - [P-040: Partnertörzs dual-table számlák](../product/decisions/P-040-partners-invoice-panel.md) — Partner UI
 - [P-044: Külföldi partner megjelenítés](../product/decisions/P-044-foreign-partner-display.md) — Frontend FOREIGN: kezelés
+- Worker ADR: `docs/DECISIONS.md` ADR-074 (Idempotens Partner Upsert & Company Router Pre-check)
+
 

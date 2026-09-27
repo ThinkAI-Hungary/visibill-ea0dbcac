@@ -13,11 +13,14 @@
   2. `transaction_jobs` — Banki tranzakció lista feldolgozás (klasszifikáció, matching)
   3. `gl_classification_jobs` — Főkönyvi besorolás LLM-mel
   4. `report_jobs` — Futárszolgálat riport feldolgozás (3-way matching)
-- **Multi-company invoice routing** (2026-07-02, frissítve: 2026-09-03):
+- **Multi-company invoice routing** (2026-07-02, frissítve: 2026-09-03, 2026-09-27):
   - Ha a feltöltő user több céghez van rendelve (`company_members`), a worker 2-tier matching (Tier 1 adószám, Tier 2 normalizált cégnév + cím) alapján automatikusan átmozgatja a számlát a helyes céghez
   - **Intra-group védelem (2026-09-03):** Ha az aktuális cég a számla kiállítója (eladó) vagy vevője, a számla nem kerül átirányításra. Ez megőrzi a kibocsátó cégnél feltöltött kimenő számlaképeket és a kimenő NAV rekordokkal való összerendelést.
+  - **Előzetes duplikátum-szűrés (2026-09-27):** Átirányítás előtt közvetlen bizonylatsorszám ellenőrzés fut, megelőzve a PostgreSQL `23505` hibákat.
   - Audit log az eredeti cég naplójában (`action = 'átirányítás'`)
   - Implementáció: `company_router.py` (Lásd: [A-025 Cross-company Routing](../../architecture/decisions/A-025-cross-company-routing.md))
+- **Auto partner upsert & race condition védelem** (2026-09-27):
+  - PostgREST `on_conflict` és `ignore_duplicates=True` védelem a párhuzamos számlafeltöltésekből fakadó partner ütközések megelőzésére (Lásd: [A-024 Partner Upsert Strategy](../../architecture/decisions/A-024-partner-upsert-strategy.md))
 - **Matching pipeline** (tranzakció → számla):
   - Heurisztikus matching (szám, összeg, dátum, partner név)
   - AI fallback (LLM-alapú párosítás kontextussal)

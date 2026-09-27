@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-07-02  
-**Utoljára frissítve:** 2026-09-03
+**Utoljára frissítve:** 2026-09-27
 
 ## Context
 
@@ -41,9 +41,11 @@ a Think AI Kft. alá tölti fel. A worker automatikusan szétszortírozza.
    - **Vevő match** → INBOUND (a cég a vevő) — prioritás ha mindkettő match-el
    - **Eladó match** → OUTBOUND (a cég az eladó)
 7. Routing alkalmazása:
-   - **Normál eset:** `invoices` UPDATE ELŐSZÖR → `invoice_uploads` UPDATE UTÁNA
-   - **Duplikátum eset:** Ha a target cégnél már létezik azonos bizonylatsorszámú számla:
-     - Meglévő invoice upsert-elődik friss adatokkal
+   - **Előzetes Duplikátum Szűrés (2026-09-27 / ADR-074):** Az `invoices.company_id` frissítése ELŐTT a worker egy gyors `SELECT id FROM invoices WHERE company_id = target_company_id AND bizonylatsorszam = ... LIMIT 1` lekérdezést futtat.
+     - **Megelőző Merge:** Ha a célcégnél már létezik a számla, nem kísérel meg hibára futó `UPDATE`-et (megelőzve a PostgreSQL `23505 invoices_company_id_bizonylatsorszam_key` rendszerszintű ERROR logolását), hanem közvetlenül a `_handle_duplicate_merge()` fut le.
+     - **Normál eset:** Ha nem létezik duplikátum: `invoices` UPDATE ELŐSZÖR → `invoice_uploads` UPDATE UTÁNA (versenyhelyzeti fallback `try...except 23505` védelemmel).
+   - **Duplikátum merge művelet:**
+     - Meglévő invoice upsert-elődik friss adatokkal a célcégnél
      - Duplikátum invoice törlése az eredeti cégnél
      - Upload átmozgatása a target céghez
 8. Audit log INSERT az eredeti cég naplójába (`action = 'átirányítás'`, `match_type` a details-ben)
@@ -79,6 +81,7 @@ inkonzisztens állapotban.
 - [A-003: Multi-tenancy RLS](./A-003-multi-tenancy-rls.md)
 - [A-011: Email Processing](./A-011-email-processing.md)
 - [A-017: Security Architecture](./A-017-security-architecture.md) (audit trail)
+- [A-024: Partner Upsert Strategy](./A-024-partner-upsert-strategy.md) (partner race condition védelem)
 - [BDR 009: Multi-company Model](../../business/decisions/009-multi-company-model.md)
 - [BDR 034: Worker Pipeline](../../business/decisions/034-worker-pipeline.md)
-- Worker docs: `DECISIONS.md` ADR-027 (routing) + ADR-028 (poison pill)
+- Worker docs: `DECISIONS.md` ADR-027 (routing) + ADR-028 (poison pill) + ADR-074 (Idempotens Partner Upsert & Company Router Pre-check)

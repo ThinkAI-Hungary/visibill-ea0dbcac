@@ -285,13 +285,13 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/InvoiceStatusTables.tsx": {
-    "mtime": 1790474777.4407141,
-    "ast_hash": "6ea760d4722b68244394c2c6bfba8d84",
+    "mtime": 1790475056.6975513,
+    "ast_hash": "3edd0406f12e78b8acd35433023415fe",
     "semantic_hash": ""
   },
   "src/components/dashboard/MetricCard.tsx": {
-    "mtime": 1790474196.5110278,
-    "ast_hash": "29904c2d3cbd17ce85f4e929c580f229",
+    "mtime": 1790475483.9317155,
+    "ast_hash": "d46d8eefe694edcfd5cb71a31d722d56",
     "semantic_hash": ""
   },
   "src/components/dashboard/ProfileSummary.tsx": {
@@ -305,8 +305,8 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/QuickActions.tsx": {
-    "mtime": 1790470853.033817,
-    "ast_hash": "6f0c18336b19950093dabbeca6fd9791",
+    "mtime": 1790475831.6092281,
+    "ast_hash": "087cce3aa63a937f85391227fc7787f4",
     "semantic_hash": ""
   },
   "src/components/dashboard/RecentInvoices.tsx": {
@@ -315,13 +315,13 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/RevenueExpensesChart.tsx": {
-    "mtime": 1789159282.978534,
-    "ast_hash": "4cc1fb3204a37a6c5b6acf7fc96aef4a",
+    "mtime": 1790475784.2378275,
+    "ast_hash": "470a24af90b1025c886541923a95d4eb",
     "semantic_hash": ""
   },
   "src/components/dashboard/UnmatchedItemsModal.tsx": {
-    "mtime": 1790473849.442032,
-    "ast_hash": "d886deb9ae8f3de7267a9092789154f1",
+    "mtime": 1790475046.1387188,
+    "ast_hash": "3b759c039cdffa070866acac85d0527a",
     "semantic_hash": ""
   },
   "src/components/dashboard/UserActivityDialog.tsx": {
@@ -330,8 +330,8 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/VatSection.tsx": {
-    "mtime": 1790160530.5533361,
-    "ast_hash": "b1d20a41b8919b987d1b994247b71c46",
+    "mtime": 1790475772.3296976,
+    "ast_hash": "80a2ea6daa319c11071e6cd4bd29fcc7",
     "semantic_hash": ""
   },
   "src/components/fixed-assets/AssetDetailPanel.tsx": {
@@ -1485,8 +1485,8 @@
     "semantic_hash": ""
   },
   "src/pages/Index.tsx": {
-    "mtime": 1790472364.891985,
-    "ast_hash": "356d64a32c880366ac43848ccc6e6402",
+    "mtime": 1790475276.0828252,
+    "ast_hash": "f350c8228b89479d22da12cfc24a24f4",
     "semantic_hash": ""
   },
   "src/pages/Integrations.tsx": {
@@ -3295,8 +3295,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/034-worker-pipeline.md": {
-    "mtime": 1788403667.1375277,
-    "ast_hash": "dacf119bc5ff196cfd127ec70125ad03",
+    "mtime": 1790478684.1044788,
+    "ast_hash": "ae1d97105886e50ef1b3a6801143a8eb",
     "semantic_hash": ""
   },
   "docs/business/decisions/035-accounty-client-portal.md": {
@@ -3735,8 +3735,8 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/FxDifferencesSection.tsx": {
-    "mtime": 1789159282.976025,
-    "ast_hash": "1892549cbc584e22e0ce6835d6bd20e4",
+    "mtime": 1790475814.771375,
+    "ast_hash": "4ac78dc47b8032056c44c48d9465dff2",
     "semantic_hash": ""
   },
   "src/components/general-ledger/AuditImportHistoryModal.tsx": {
@@ -5310,8 +5310,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-024-partner-upsert-strategy.md": {
-    "mtime": 1784561110.3357112,
-    "ast_hash": "6b35d390295f5e0e04ef9a94beac81f0",
+    "mtime": 1790478648.0281992,
+    "ast_hash": "95a6f35c9a491c7b1b5cd0c590f06c0b",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-044-foreign-partner-display.md": {
@@ -5360,8 +5360,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-025-cross-company-routing.md": {
-    "mtime": 1788403096.3901987,
-    "ast_hash": "196dc9e943385c98187b9dea7de086f2",
+    "mtime": 1790478672.7057006,
+    "ast_hash": "b87bb3685f0c5a893422825ecbbc25e8",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-026-support-impersonation-access.md": {
@@ -10655,8 +10655,8 @@
     "semantic_hash": ""
   },
   "src/test/vatSectionColumns.test.tsx": {
-    "mtime": 1790160598.957916,
-    "ast_hash": "46bfaa044fc370fa78695e39ed7ad94f",
+    "mtime": 1790475392.17945,
+    "ast_hash": "36655c6ca9fb1aa795658edf7ca75e7b",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-093-vat-analytics-net-revenue-and-column-layout-ux.md": {
@@ -12292,6 +12292,11 @@
   "supabase/migrations/20260927050000_fix_nav_invoice_submitted_matching.sql": {
     "mtime": 1790474737.0145607,
     "ast_hash": "c9a098e436175851653b4e1c0ffefc2a",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-09-27/summary-042600-kpi-borders-nav-matching-quick-actions-and-badges.md": {
+    "mtime": 1790475986.509363,
+    "ast_hash": "f85994c6480b18accdfa29b2188b42d1",
     "semantic_hash": ""
   }
 }
