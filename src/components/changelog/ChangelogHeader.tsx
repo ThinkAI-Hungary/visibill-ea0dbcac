@@ -14,6 +14,7 @@ interface ChangelogHeaderProps {
   selectedScope: ChangelogAppScope | "all";
   onSelectScope: (scope: ChangelogAppScope | "all") => void;
   totalCount: number;
+  latestVersion?: string;
 }
 
 export const ChangelogHeader: React.FC<ChangelogHeaderProps> = ({
@@ -24,6 +25,7 @@ export const ChangelogHeader: React.FC<ChangelogHeaderProps> = ({
   selectedScope,
   onSelectScope,
   totalCount,
+  latestVersion,
 }) => {
   const categories = [
     { id: "all", label: "Összes", icon: Layers, color: "text-muted-foreground" },
@@ -63,7 +65,7 @@ export const ChangelogHeader: React.FC<ChangelogHeaderProps> = ({
 
         <div className="flex items-center gap-2 self-start sm:self-center">
           <span className="text-xs text-muted-foreground font-mono bg-muted/50 px-2.5 py-1 rounded-md border border-border">
-            {APP_VERSION} • build {APP_BUILD_DATE}
+            {latestVersion || APP_VERSION} • build {APP_BUILD_DATE}
           </span>
         </div>
       </div>

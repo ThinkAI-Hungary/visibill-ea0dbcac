@@ -83,6 +83,7 @@ export default function ChangelogPage() {
           selectedScope={selectedScope}
           onSelectScope={handleSelectScope}
           totalCount={filteredEntries.length}
+          latestVersion={rawEntries[0]?.version}
         />
       </div>
 

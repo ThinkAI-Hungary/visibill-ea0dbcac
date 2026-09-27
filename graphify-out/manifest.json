@@ -30,8 +30,8 @@
     "semantic_hash": "b6fd1b3049065ccb1081335d010ab75f"
   },
   "package.json": {
-    "mtime": 1790351078.3510642,
-    "ast_hash": "af7dc1f734c8c713cd1ea8fa2001a8e2",
+    "mtime": 1790479160.5509217,
+    "ast_hash": "e156a2242ca33d1121dcf0784e1c7842",
     "semantic_hash": ""
   },
   "playwright.config.ts": {
@@ -11670,8 +11670,8 @@
     "semantic_hash": ""
   },
   "src/components/changelog/ChangelogHeader.tsx": {
-    "mtime": 1790290210.1788707,
-    "ast_hash": "a22dbe4598239e9b8dd938c0516c67de",
+    "mtime": 1790479456.3867571,
+    "ast_hash": "8b32b8115331a4a79edb3f2db844d093",
     "semantic_hash": ""
   },
   "src/components/changelog/ChangelogTimeline.tsx": {
@@ -11685,8 +11685,8 @@
     "semantic_hash": ""
   },
   "src/pages/ChangelogPage.tsx": {
-    "mtime": 1790351707.8063323,
-    "ast_hash": "d3e0c1d18f6fa91f9e34e434c0b3a852",
+    "mtime": 1790479466.5789516,
+    "ast_hash": "1431b86c2ec1b99916af8171e27c6f9f",
     "semantic_hash": ""
   },
   "src/test/changelog/changelog.test.tsx": {
@@ -11725,8 +11725,8 @@
     "semantic_hash": ""
   },
   "src/config/version.ts": {
-    "mtime": 1790351078.3510642,
-    "ast_hash": "e4c790e291a0f35c8b5cf8cac957fc07",
+    "mtime": 1790479435.580318,
+    "ast_hash": "a517ddf20219c718a6a0942785b12828",
     "semantic_hash": ""
   },
   ".agents/skills/visibill-patchnote/SKILL.md": {
@@ -12297,6 +12297,11 @@
   "session-summary/Jani/2026-09-27/summary-042600-kpi-borders-nav-matching-quick-actions-and-badges.md": {
     "mtime": 1790475986.509363,
     "ast_hash": "f85994c6480b18accdfa29b2188b42d1",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-09-27/summary-051500-error-hunter-partner-upsert-race-condition-company-router-23505-fix.md": {
+    "mtime": 1790478814.8722231,
+    "ast_hash": "068141b6a39cbae4c330c96e8af125e2",
     "semantic_hash": ""
   }
 }
