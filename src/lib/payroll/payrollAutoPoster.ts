@@ -9,6 +9,7 @@ export interface PayrollPostingSummary {
   totalSzocho: number;
   totalSzja: number;
   totalTb: number;
+  totalMinBaseDiff?: number;
   totalDeductions: number;
   totalNet: number;
   totalCommute: number;
@@ -70,13 +71,14 @@ export async function getPayrollPostingSummary(cycleId: string): Promise<Payroll
   const totalSzocho = calcs.reduce((s, c) => s + (c.szocho_amount || 0), 0);
   const totalSzja = calcs.reduce((s, c) => s + (c.szja_amount || 0), 0);
   const totalTb = calcs.reduce((s, c) => s + (c.tb_amount || 0), 0);
+  const totalMinBaseDiff = calcs.reduce((s, c) => s + (c.min_base_employer_contribution || 0), 0);
   const totalDeductions = calcs.reduce((s, c) => s + (c.total_deductions || 0), 0);
   const totalHomeOffice = calcs.reduce((s, c) => s + getHomeOffice(c.employment_id), 0);
   const totalCommute = calcs.reduce((s, c) => s + getCommute(c), 0);
   const totalNet = calcs.reduce((s, c) => s + (c.net_salary || 0), 0) + totalHomeOffice;
 
-  const totalDebits = totalGross + totalCommute + totalSzocho;
-  const totalCredits = totalSzocho + totalSzja + totalTb + totalDeductions + totalNet + totalCommute;
+  const totalDebits = totalGross + totalCommute + totalSzocho + totalMinBaseDiff;
+  const totalCredits = totalSzocho + totalSzja + (totalTb + totalMinBaseDiff) + totalDeductions + totalNet + totalCommute;
   const isBalanced = Math.abs(totalDebits - totalCredits) < 1;
 
   return {
@@ -87,6 +89,7 @@ export async function getPayrollPostingSummary(cycleId: string): Promise<Payroll
     totalSzocho,
     totalSzja,
     totalTb,
+    totalMinBaseDiff,
     totalDeductions,
     totalNet,
     totalCommute,
@@ -429,6 +432,26 @@ export async function postPayrollCycleToLedger(
         dc_type: 'K',
         amount: summary.totalTb,
         description: 'Levont TB járulék kötelezettség',
+      });
+    }
+
+    // Line 5b: Minimális járulékalap munkáltatói különbözet (Tbj. 27. §)
+    if (summary.totalMinBaseDiff && summary.totalMinBaseDiff > 0) {
+      linesToInsert.push({
+        header_id: newHeader.id,
+        sequence_number: seq++,
+        gl_account_id: gl561,
+        dc_type: 'T',
+        amount: summary.totalMinBaseDiff,
+        description: 'Minimális járulékalap munkáltatói különbözet (Tbj. 27. §)',
+      });
+      linesToInsert.push({
+        header_id: newHeader.id,
+        sequence_number: seq++,
+        gl_account_id: gl464,
+        dc_type: 'K',
+        amount: summary.totalMinBaseDiff,
+        description: 'Minimális járulékalap munkáltatói TB kötelezettség (Tbj. 27. §)',
       });
     }
 

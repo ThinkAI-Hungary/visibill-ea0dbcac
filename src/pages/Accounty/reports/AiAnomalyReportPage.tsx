@@ -47,6 +47,10 @@ function useAllEmployments(companyIds: string[]) {
         isInsured: row.is_insured ?? true,
         startDate: row.start_date,
         endDate: row.end_date,
+        filing08eStatus: row.filing_08e_status,
+        isSzochoDiscount: !!row.is_szocho_discount,
+        szochoDiscountType: row.szocho_discount_type,
+        szochoDiscountStart: row.szocho_discount_start,
       } satisfies EmploymentWithEmployee));
     },
     enabled: companyIds.length > 0,

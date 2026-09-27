@@ -74,6 +74,12 @@
 | remote_work_type | text | ✓ |  |
 | remote_work_days_per_week | integer | ✓ |  |
 | is_insured | boolean | ✓ | `true` |
+| pensioner_type | text | ✓ |  |
+| pension_start_date | date | ✓ |  |
+| is_social_security_pensioner | boolean | ✓ | `false` |
+| tb_min_base_exempt | boolean | ✓ | `false` |
+| tb_min_base_exempt_reason | text | ✓ |  |
+| voluntary_pension_employer_huf | numeric | ✓ | `0.00` |
 | commute_type | text | ✓ | `'none'::text` |
 | commute_distance_km | numeric | ✓ |  |
 | commute_monthly_pass_cost | numeric | ✓ |  |
@@ -85,7 +91,7 @@
 
 **FK:** `company_id` → `companies.id`, `employee_id` → `accounty_employees.id`, `project_id` → `projects.id`
 
-**Indexek:** `idx_accounty_employments_company`, `idx_accounty_employments_employee`, `idx_accounty_employments_job_code`, `idx_accounty_employments_status`
+**Indexek:** `idx_accounty_employments_company`, `idx_accounty_employments_employee`, `idx_accounty_employments_job_code`, `idx_accounty_employments_status`, `idx_accounty_employments_pensioner`, `idx_accounty_employments_tb_exempt`
 
 ---
 
@@ -209,6 +215,9 @@
 | tb_amount | numeric | ✓ |  |
 | szocho_amount | numeric | ✓ |  |
 | net_salary | numeric | ✓ |  |
+| min_base_gross_diff | numeric | ✓ | `0.00` |
+| min_base_employer_contribution | numeric | ✓ | `0.00` |
+| is_pensioner_exempt | boolean | ✓ | `false` |
 | tax_credits | jsonb | ✓ | `'{}'::jsonb` |
 | szocho_credits | jsonb | ✓ | `'{}'::jsonb` |
 | deductions | jsonb | ✓ | `'{}'::jsonb` |

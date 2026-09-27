@@ -38,6 +38,10 @@ export interface EmploymentWithEmployee {
   isInsured: boolean;
   startDate: string;
   endDate: string | null;
+  filing08eStatus?: string | null;
+  isSzochoDiscount?: boolean;
+  szochoDiscountType?: string | null;
+  szochoDiscountStart?: string | null;
 }
 
 export interface CalculationData {
@@ -306,6 +310,84 @@ const ruleMissingCalculation: AnomalyRule = ({ employments, calculations }) => {
   return anomalies;
 };
 
+/**
+ * 8. Hiányzó vagy nem visszaigazolt 08E bejelentés (Art. 50. § / Tbj. 74. §)
+ */
+const ruleMissing08EFiling: AnomalyRule = ({ employments, calculations }) => {
+  const anomalies: Anomaly[] = [];
+  const calculatedEmploymentIds = new Set(calculations.map(c => c.employmentId));
+
+  for (const emp of employments) {
+    if (emp.status !== 'active' || emp.endDate) continue;
+    if (!emp.isInsured) continue;
+    if (!calculatedEmploymentIds.has(emp.employmentId)) continue;
+
+    const status = (emp.filing08eStatus || '').toLowerCase();
+    if (status !== 'sent' && status !== 'beadva') {
+      anomalies.push({
+        id: `missing-08e-${emp.employmentId}`,
+        ruleId: 'missing_08e_filing',
+        title: 'Hiányzó vagy nem visszaigazolt 08E bejelentés',
+        description: `${emp.employeeName} szerepel az aktuális bérszámfejtésben, de a NAV felé a 08E biztosítotti bejelentése még nincs 'beadva' státuszban (jelenlegi: ${status || 'nincs rögzítve'}).`,
+        severity: 'warning',
+        category: 'NAV Bejelentés',
+        affectedEmployees: [emp.employeeName],
+        potentialImpact: 'A be nem jelentett biztosítási jogviszony feketemunkának minősülhet, és mulasztási bírságot von maga után (Art. 50. §).',
+        recommendation: 'A 08E bejelentés ellenőrzése és feladása a NAV ONYA rendszerén keresztül vagy a 08E bejelentő oldalon.',
+        detectedAt: today(),
+        resolved: false,
+      });
+    }
+  }
+  return anomalies;
+};
+
+/**
+ * 9. Munkaerőpiacra lépő SZOCHO-kedvezmény lejárati figyelmeztetés (24 / 36 hónap)
+ */
+const ruleMarketEntryDiscountExpiring: AnomalyRule = ({ employments }) => {
+  const anomalies: Anomaly[] = [];
+  const now = new Date();
+
+  for (const emp of employments) {
+    if (!emp.isSzochoDiscount || emp.szochoDiscountType !== 'market_entry' || !emp.szochoDiscountStart) continue;
+
+    const startDate = new Date(emp.szochoDiscountStart);
+    const monthsElapsed = (now.getFullYear() - startDate.getFullYear()) * 12 + (now.getMonth() - startDate.getMonth());
+
+    if (monthsElapsed >= 22 && monthsElapsed <= 24) {
+      anomalies.push({
+        id: `szocho-24m-${emp.employmentId}`,
+        ruleId: 'market_entry_24m_expiring',
+        title: 'Munkaerőpiacra lépő 100%-os kedvezmény hamarosan lejár',
+        description: `${emp.employeeName} munkaerőpiacra lépő SZOCHO kedvezményének 100%-os szakasza hamarosan lejár (${monthsElapsed}. hónap a 24-ből). A 25. hónaptól 50%-os mérték lép érvénybe.`,
+        severity: 'info',
+        category: 'SZOCHO',
+        affectedEmployees: [emp.employeeName],
+        potentialImpact: 'A 25. hónaptól a munkáltatói bérköltség növekedni fog (a kedvezmény mértéke 50%-ra csökken).',
+        recommendation: 'A következő havi bérköltség-tervezésnél vegye figyelembe a kedvezmény feleződését.',
+        detectedAt: today(),
+        resolved: false,
+      });
+    } else if (monthsElapsed >= 34 && monthsElapsed <= 36) {
+      anomalies.push({
+        id: `szocho-36m-${emp.employmentId}`,
+        ruleId: 'market_entry_36m_expiring',
+        title: 'Munkaerőpiacra lépő SZOCHO kedvezmény maximális ideje lejár',
+        description: `${emp.employeeName} munkaerőpiacra lépő kedvezménye a 36. hónaphoz közeledik (${monthsElapsed}. hónap). A 36 hónap leteltével a kedvezmény végleg megszűnik.`,
+        severity: 'warning',
+        category: 'SZOCHO',
+        affectedEmployees: [emp.employeeName],
+        potentialImpact: 'A 37. hónaptól a teljes 13% SZOCHO fizetendővé válik a munkavállaló után.',
+        recommendation: 'A 36 hónap elérésekor az employment adatlapon kapcsolja ki a SZOCHO kedvezményt.',
+        detectedAt: today(),
+        resolved: false,
+      });
+    }
+  }
+  return anomalies;
+};
+
 // ═══════════════════════════════════════════════════════════════
 // MOTOR
 // ═══════════════════════════════════════════════════════════════
@@ -318,6 +400,8 @@ const ALL_RULES: AnomalyRule[] = [
   ruleSzochoDeviation,
   ruleNegativeNetSalary,
   ruleMissingCalculation,
+  ruleMissing08EFiling,
+  ruleMarketEntryDiscountExpiring,
 ];
 
 /**

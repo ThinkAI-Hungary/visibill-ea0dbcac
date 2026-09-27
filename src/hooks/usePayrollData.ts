@@ -98,6 +98,11 @@ export interface PayrollEmployment {
   commute_distance_km?: number | null;
   commute_monthly_pass_cost?: number | null;
   commute_reimbursement_pct?: number | null;
+  pension_start_date?: string | null;
+  termination_reason_code?: string | null;
+  filing_08e_status?: string | null;
+  filing_08e_receipt_id?: string | null;
+  filing_08e_date?: string | null;
 }
 
 export interface PayrollCycle {
@@ -145,6 +150,16 @@ export interface PayrollCalculation {
   cafeteria_tax: Record<string, unknown>;
   metadata: Record<string, unknown>;
   created_at: string;
+  tb_pension?: number | null;
+  tb_health_nature?: number | null;
+  tb_health_cash?: number | null;
+  tb_labor?: number | null;
+  min_base_diff?: number | null;
+  min_base_employer_contribution?: number | null;
+  insured_days?: number | null;
+  suspension_days?: number | null;
+  sick_leave_days?: number | null;
+  tappenz_days?: number | null;
 }
 
 export interface PayrollDeclaration {
@@ -1291,6 +1306,56 @@ export function useRunBatchPayroll() {
           isHousingAllowance: !!c.is_housing_allowance
         }));
 
+        const daysInMonth = new Date(input.year, input.month, 0).getDate();
+        const cycleStartDate = `${input.year}-${String(input.month).padStart(2, '0')}-01`;
+        const cycleEndDate = `${input.year}-${String(input.month).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+        const cycleStart = new Date(cycleStartDate);
+        const cycleEnd = new Date(cycleEndDate);
+
+        // Fetch leaves for this employment overlapping this payroll cycle
+        const { data: leaveRows } = await supabase
+          .from('accounty_leaves')
+          .select('*')
+          .eq('employment_id', employment.id)
+          .lte('start_date', cycleEndDate)
+          .gte('end_date', cycleStartDate);
+
+        const empStart = employment.start_date ? new Date(employment.start_date) : new Date(cycleStartDate);
+        const empEnd = employment.end_date ? new Date(employment.end_date) : new Date(cycleEndDate);
+
+        const effectiveStart = empStart > cycleStart ? empStart : cycleStart;
+        const effectiveEnd = empEnd < cycleEnd ? empEnd : cycleEnd;
+
+        let activeCalendarDays = 0;
+        if (effectiveStart <= effectiveEnd) {
+          activeCalendarDays = Math.floor((effectiveEnd.getTime() - effectiveStart.getTime()) / (86400000)) + 1;
+        }
+
+        let suspensionDays = 0;
+        let sickLeaveDays = attendance.sickDays || 0;
+        let tappenzDays = 0;
+
+        for (const l of (leaveRows || [])) {
+          const lStart = new Date(l.start_date);
+          const lEnd = new Date(l.end_date);
+          const oStart = lStart > cycleStart ? lStart : cycleStart;
+          const oEnd = lEnd < cycleEnd ? lEnd : cycleEnd;
+          const overlapDays = oStart <= oEnd ? Math.floor((oEnd.getTime() - oStart.getTime()) / 86400000) + 1 : 0;
+          const effectiveDays = Math.min(Number(l.days || overlapDays), overlapDays);
+
+          if (l.is_suspension || l.leave_type === 'unpaid' || l.leave_type === 'fizetés_nélküli') {
+            suspensionDays += effectiveDays;
+          }
+          if (l.leave_type === 'tappenz' || l.leave_type === 'táppénz') {
+            tappenzDays += effectiveDays;
+          }
+          if (l.leave_type === 'sick_leave' || l.leave_type === 'betegszabadság') {
+            sickLeaveDays = Math.max(sickLeaveDays, effectiveDays);
+          }
+        }
+
+        const calculatedInsuredDays = Math.max(0, activeCalendarDays - suspensionDays);
+
         // Calculate
         const birthDate = employee.birth_date ? new Date(employee.birth_date) : null;
         const employeeAge = birthDate
@@ -1317,6 +1382,7 @@ export function useRunBatchPayroll() {
           weeklyHours: employment.weekly_hours || 40,
           params: taxParams,
           isPensioner: !!employment.is_pensioner,
+          pensionStartDate: employment.pension_start_date || undefined,
           ekhoCategory: employment.ekho_category || 'normal',
           ekhoPayer: employment.ekho_payer || 'employee',
           isEkho: !!employment.is_ekho,
@@ -1334,6 +1400,11 @@ export function useRunBatchPayroll() {
           otherCompanyName: employment.other_company_name || undefined,
           otherCompanyTaxNumber: employment.other_company_tax_number || undefined,
           isKiva: isKivaCompany,
+          insuredDays: calculatedInsuredDays,
+          monthDays: daysInMonth,
+          suspensionDays,
+          sickLeaveDays,
+          tappenzDays,
           travelReimbursement: {
             commuteType: (employment.commute_type || 'none') as 'none' | 'car' | 'public_transit',
             commuteKm: Number(employment.commute_distance_km || 0),
@@ -1366,6 +1437,16 @@ export function useRunBatchPayroll() {
           szja_base: result.szjaBase,
           szja_amount: result.szjaAmount,
           tb_amount: result.tbAmount,
+          tb_pension: result.tbPension,
+          tb_health_nature: result.tbHealthNature,
+          tb_health_cash: result.tbHealthCash,
+          tb_labor: result.tbLabor,
+          min_base_diff: result.minBaseDiff,
+          min_base_employer_contribution: result.minBaseEmployerContribution,
+          insured_days: result.insuredDays,
+          suspension_days: result.suspensionDays,
+          sick_leave_days: result.sickLeaveDays,
+          tappenz_days: result.tappenzDays,
           szocho_amount: result.szochoAmount,
           net_salary: finalNet, // net after garnishments
           total_deductions: itemDeductions + garnishResult.total,

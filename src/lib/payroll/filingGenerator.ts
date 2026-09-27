@@ -44,6 +44,7 @@ export interface Filing08EmployeeLine {
 
   // Jogviszony
   jobCode: string;          // pl. '1101'
+  jobSerialNumber?: number; // Jogviszonysorszám (pl. 1, 2)
   insuranceStart: string;   // YYYY-MM-DD
   insuranceEnd?: string;
   weeklyHours: number;
@@ -87,6 +88,7 @@ export function generateFiling08Xml(data: Filing08Data): string {
         <AnyjaNeve>${escapeXml(emp.mothersName)}</AnyjaNeve>
       </Szemelyadatok>
       <Jogviszony>
+        <Jogviszonysorszam>${emp.jobSerialNumber || 1}</Jogviszonysorszam>
         <JogviszonykodT1041>${emp.jobCode}</JogviszonykodT1041>
         <BiztositasKezdete>${emp.insuranceStart}</BiztositasKezdete>
         ${emp.insuranceEnd ? `<BiztositasVege>${emp.insuranceEnd}</BiztositasVege>` : ''}

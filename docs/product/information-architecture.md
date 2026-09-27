@@ -584,6 +584,33 @@ A `useAccountyPermissions` hook ellenőrzi a modul-szintű jogokat. Ha az `accou
 
 ---
 
+### Magyar Társadalombiztosítási (TB) és Bérszámfejtési Modul (`/payroll`, 2026-09-27)
+
+**Layout:** 5 lapfüles bérszámfejtési felület (`Ciklus`, `Foglalkoztatottak`, `NAV bevallások`, `Ügyfélportál`, `Beállítások`) + Kilépő dokumentumok és AI anomália riportok
+
+**Fő Funkciók és Munkafolyamatok:**
+- **Tbj. 27. § (2) szerinti Minimális Járulékalap Számítás:**
+  - Havonta a minimálbér vagy garantált bérminimum 30%-ának elérése munkaviszony esetén.
+  - A tényleges bruttó munkabér és a minimális alap közötti különbözet után keletkező 18,5% TB-járulék és 13% SZOCHO automatikus munkáltatói kötelezettségként kerül elszámolásra.
+  - Mentesülési jogcímek (GYES, GYED, CSED, tanulói jogviszony, igazolt betegség) kezelése a jogviszony adatlapon (`tb_min_base_exempt`, `tb_min_base_exempt_reason`).
+- **Időarányosítás és Távollét Szűrés:**
+  - Ciklus-pontos lekérdezés és pontos nap-átfedés számítás hóközi belépés/kilépés és fizetés nélküli távollétek esetén.
+- **Saját Jogú Nyugdíjasok Kezelése:**
+  - Teljes járulék- és szocho-mentesség; hóközi nyugdíjazás esetén a nyugdíj kezdő napja (`pension_start_date`) alapján időarányos megosztás.
+- **NAV ÁNYK 2608 M-lap Integráció és Többes Jogviszony (`Filing2608Page`):**
+  - Többes jogviszonnyal rendelkező munkavállalóknál önálló sorok megjelenítése `(Jogviszony #X)` megjelöléssel.
+  - XML generálásnál diszkrét `<Jogviszonysorszam>` sorszámozás az ÁNYK specifikáció szerint.
+- **Pre-Flight Ellenőrző Dialógus (`FilingPreFlightDialog`):**
+  - Automatikus előzetes ellenőrzés bevallás letöltése előtt (figyelmeztetés 0 Ft-os bruttó bér melletti minimális alap teherre, TAJ/FEOR adatok ellenőrzése).
+- **Kilépő TB Dokumentáció (`ExitDocumentsPage`):**
+  - Hivatalos formátumú PDF generálás: Egészségbiztosítási Igazolvány kivonat és kilépő TB igazolás biztosítási időről, táppénz napokról és levont járulékokról.
+- **AI Anomália Elemző (`AiAnomalyReportPage`):**
+  - Automatikus ellenőrző szabályok: minimális alap eltérések, nyugdíjkorhatár vs. státusz inkonzisztenciák, többes jogviszony heti munkaidő maximum túllépések felderítése.
+
+> **Kapcsolódó döntések:** [P-125](./decisions/P-125-tb-social-security-payroll-and-filing-ux.md) · [A-166](../architecture/decisions/A-166-tb-social-security-minimum-base-and-pensioner-payroll-engine.md)
+
+---
+
 ## 7. Rendszer Tudásbázis és Funkciókalauz (Knowledge Base)
 
 A rendszer teljes menü- és funkcióstruktúrájának részletes, fájlonkénti leírását az alábbi tudásbázis tartalmazza:

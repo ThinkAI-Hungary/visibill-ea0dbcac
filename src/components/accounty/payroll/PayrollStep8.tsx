@@ -409,10 +409,11 @@ export default function PayrollStep8({
                     const szochoTotal = isKiva ? 0 : calculations.reduce((s, c) => s + getSzocho(c), 0);
                     const szjaTotal = calculations.reduce((s, c) => s + (c.szja_amount || 0), 0);
                     const tbTotal = calculations.reduce((s, c) => s + (c.tb_amount || 0), 0);
+                    const minBaseTotal = calculations.reduce((s, c) => s + (c.min_base_employer_contribution || 0), 0);
                     const deductionsTotal = calculations.reduce((s, c) => s + (c.total_deductions || 0), 0);
                     const netTotal = grossTotal - szjaTotal - tbTotal - deductionsTotal + totalCommute;
-                    const totalDebits = grossTotal + szochoTotal + totalCommute;
-                    const totalCredits = szochoTotal + szjaTotal + tbTotal + deductionsTotal + netTotal;
+                    const totalDebits = grossTotal + szochoTotal + totalCommute + minBaseTotal;
+                    const totalCredits = szochoTotal + szjaTotal + (tbTotal + minBaseTotal) + deductionsTotal + netTotal;
 
                     return (
                       <>
@@ -563,6 +564,38 @@ export default function PayrollStep8({
                           </tr>
                         )}
 
+                        {/* Minimális járulékalap munkáltatói különbözet (Tbj. 27. §) */}
+                        {minBaseTotal > 0 && (
+                          <>
+                            <tr className="hover:bg-muted/30 transition-colors">
+                              <td className="px-3.5 py-2.5 font-medium text-foreground">
+                                Minimális járulékalap munkáltatói különbözet (Tbj. 27. §)
+                              </td>
+                              <td className="px-3.5 py-2.5">
+                                <span className="text-xs text-muted-foreground font-mono">561 — Szociális hozzájárulási adó és egyéb közterhek</span>
+                              </td>
+                              <td className="px-3.5 py-2.5 text-center font-mono font-bold text-blue-600 dark:text-blue-400">T</td>
+                              <td className="px-3.5 py-2.5 text-right font-mono font-bold text-blue-600 dark:text-blue-400">
+                                {minBaseTotal.toLocaleString('hu-HU')} Ft
+                              </td>
+                              <td className="px-3.5 py-2.5 text-right text-muted-foreground font-mono">-</td>
+                            </tr>
+                            <tr className="hover:bg-muted/30 transition-colors">
+                              <td className="px-3.5 py-2.5 font-medium text-foreground">
+                                Minimális járulékalap munkáltatói TB kötelezettség (Tbj. 27. §)
+                              </td>
+                              <td className="px-3.5 py-2.5">
+                                <span className="text-xs text-muted-foreground font-mono">464 — TB kötelezettség</span>
+                              </td>
+                              <td className="px-3.5 py-2.5 text-center font-mono font-bold text-purple-600 dark:text-purple-400">K</td>
+                              <td className="px-3.5 py-2.5 text-right text-muted-foreground font-mono">-</td>
+                              <td className="px-3.5 py-2.5 text-right font-mono font-bold text-purple-600 dark:text-purple-400">
+                                {minBaseTotal.toLocaleString('hu-HU')} Ft
+                              </td>
+                            </tr>
+                          </>
+                        )}
+
                         {/* K 479 Letiltások */}
                         {deductionsTotal > 0 && (
                           <tr className="hover:bg-muted/30 transition-colors">
@@ -620,10 +653,11 @@ export default function PayrollStep8({
                     const szochoTotal = isKiva ? 0 : calculations.reduce((s, c) => s + getSzocho(c), 0);
                     const szjaTotal = calculations.reduce((s, c) => s + (c.szja_amount || 0), 0);
                     const tbTotal = calculations.reduce((s, c) => s + (c.tb_amount || 0), 0);
+                    const minBaseTotal = calculations.reduce((s, c) => s + (c.min_base_employer_contribution || 0), 0);
                     const deductionsTotal = calculations.reduce((s, c) => s + (c.total_deductions || 0), 0);
                     const netTotal = grossTotal - szjaTotal - tbTotal - deductionsTotal + totalCommute;
-                    const totalDebits = grossTotal + szochoTotal + totalCommute;
-                    const totalCredits = szochoTotal + szjaTotal + tbTotal + deductionsTotal + netTotal;
+                    const totalDebits = grossTotal + szochoTotal + totalCommute + minBaseTotal;
+                    const totalCredits = szochoTotal + szjaTotal + (tbTotal + minBaseTotal) + deductionsTotal + netTotal;
 
                     return (
                       <tr className="border-t border-border bg-muted/40 font-bold">
@@ -649,6 +683,99 @@ export default function PayrollStep8({
               * A főkönyvi számlaszámok a fenti választókból szabadon módosíthatók a cikluszárás előtt. A ciklus lezárásakor a tételek a kiválasztott főkönyvi számlákkal automatikusan bekerülnek a könyvelésbe, és közvetlenül megtekinthetők a Napló menüpont alatt.
             </p>
           </div>
+
+          {/* NAV Tax Accounts & Bank Payment Preparation */}
+          {(() => {
+            const szochoTotal = isKiva ? 0 : calculations.reduce((s, c) => s + getSzocho(c), 0);
+            const szjaTotal = calculations.reduce((s, c) => s + (c.szja_amount || 0), 0);
+            const tbTotal = calculations.reduce((s, c) => s + (c.tb_amount || 0), 0);
+            const minBaseTotal = calculations.reduce((s, c) => s + (c.min_base_employer_contribution || 0), 0);
+            const totalNavTaxes = szjaTotal + tbTotal + minBaseTotal + szochoTotal;
+
+            const nextM = cycle?.month === 12 ? 1 : (cycle?.month || 1) + 1;
+            const nextY = cycle?.month === 12 ? (cycle?.year || 2026) + 1 : (cycle?.year || 2026);
+            const dueText = `${nextY}. ${nextM}. hó 12.`;
+            const dueIso = `${nextY}-${String(nextM).padStart(2, '0')}-12`;
+
+            return (
+              <div className="bg-card text-card-foreground rounded-lg p-5 border border-border space-y-4 shadow-sm">
+                <div className="flex items-center justify-between border-b border-border pb-3 flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2.5 py-0.5 rounded-full font-semibold uppercase">
+                      NAV Közteher Utalási Csomag
+                    </span>
+                    <h3 className="text-base font-bold text-foreground">Havi NAV Adófizetési Kötelezettségek</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded border border-amber-500/20">
+                      Esedékesség: {dueText}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs gap-1.5"
+                      onClick={() => {
+                        const rows = [
+                          ['Megbízás azonosító', 'Kedvezményezett neve', 'NAV Számlaszám', 'Összeg (HUF)', 'Közlemény', 'Esedékesség'],
+                          [`NAV-SZJA-${cycle?.year}-${cycle?.month}`, 'NAV Személyi jövedelemadó (290)', '10032000-06055950', szjaTotal, `SZJA ${cycle?.year}.${String(cycle?.month).padStart(2, '0')}`, dueIso],
+                          [`NAV-TB-${cycle?.year}-${cycle?.month}`, 'NAV Társadalombiztosítási járulék (407)', '10032000-06055819', tbTotal + minBaseTotal, `TB ${cycle?.year}.${String(cycle?.month).padStart(2, '0')}`, dueIso],
+                          [`NAV-SZOCHO-${cycle?.year}-${cycle?.month}`, 'NAV Szociális hozzájárulási adó (258)', '10032000-06055912', szochoTotal, `SZOCHO ${cycle?.year}.${String(cycle?.month).padStart(2, '0')}`, dueIso],
+                        ];
+                        const csv = '\uFEFF' + rows.map(r => r.map(c => `"${c}"`).join(';')).join('\n');
+                        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `GIRO_NAV_${cycle?.year}_${String(cycle?.month).padStart(2, '0')}.csv`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      }}
+                    >
+                      GIRO Csomag Letöltése
+                    </Button>
+                  </div>
+                </div>
+                <div className="overflow-x-auto rounded-lg border border-border">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/40 text-muted-foreground font-semibold">
+                        <th className="px-3.5 py-2 text-left">Adónem megnevezése</th>
+                        <th className="px-3 py-2 text-center font-mono">Adónem kód</th>
+                        <th className="px-3 py-2 text-left font-mono">NAV Kincstári Számlaszám</th>
+                        <th className="px-3.5 py-2 text-right">Fizetendő összeg</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/60">
+                      <tr>
+                        <td className="px-3.5 py-2 font-medium">Személyi jövedelemadó (SZJA)</td>
+                        <td className="px-3 py-2 text-center font-mono font-bold">290</td>
+                        <td className="px-3 py-2 font-mono text-muted-foreground">10032000-06055950</td>
+                        <td className="px-3.5 py-2 text-right font-mono font-bold text-red-600">{szjaTotal.toLocaleString('hu-HU')} Ft</td>
+                      </tr>
+                      <tr>
+                        <td className="px-3.5 py-2 font-medium">Társadalombiztosítási járulék (TB 18,5%{minBaseTotal > 0 ? ' + min. alap' : ''})</td>
+                        <td className="px-3 py-2 text-center font-mono font-bold">407</td>
+                        <td className="px-3.5 py-2 font-mono text-muted-foreground">10032000-06055819</td>
+                        <td className="px-3.5 py-2 text-right font-mono font-bold text-blue-600">{(tbTotal + minBaseTotal).toLocaleString('hu-HU')} Ft</td>
+                      </tr>
+                      <tr>
+                        <td className="px-3.5 py-2 font-medium">Szociális hozzájárulási adó (SZOCHO 13%)</td>
+                        <td className="px-3 py-2 text-center font-mono font-bold">258</td>
+                        <td className="px-3.5 py-2 font-mono text-muted-foreground">10032000-06055912</td>
+                        <td className="px-3.5 py-2 text-right font-mono font-bold text-violet-600">{szochoTotal.toLocaleString('hu-HU')} Ft</td>
+                      </tr>
+                      <tr className="bg-muted/40 font-bold border-t border-border">
+                        <td className="px-3.5 py-2">ÖSSZESEN NAV FELÉ FIZETENDŐ KÖZTEHER</td>
+                        <td className="px-3 py-2 text-center font-mono">3 tétel</td>
+                        <td className="px-3.5 py-2 font-mono text-muted-foreground">NAV Elszámolási számlák</td>
+                        <td className="px-3.5 py-2 text-right font-mono font-bold text-foreground">{totalNavTaxes.toLocaleString('hu-HU')} Ft</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })()}
         </>
       ) : (
         <div className="space-y-4">

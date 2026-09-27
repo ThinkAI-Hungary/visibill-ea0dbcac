@@ -103,6 +103,7 @@ export interface PayrollCalculationInput {
 
   // ── Új kiegészítő adatok a brief szerint ──
   isPensioner?: boolean;
+  pensionStartDate?: string; // Hóközi nyugdíjba lépés dátuma (YYYY-MM-DD)
   isEkho?: boolean;
   ekhoPayer?: 'employee' | 'employer';
   ekhoCategory?: 'normal' | 'athlete' | 'egt';
@@ -122,6 +123,13 @@ export interface PayrollCalculationInput {
   otherCompanyTaxNumber?: string;
   eurRate?: number;
   isKiva?: boolean;
+
+  // ── TB időszakok és szünetelések (Tbj.) ──
+  insuredDays?: number;
+  monthDays?: number;
+  suspensionDays?: number;
+  sickLeaveDays?: number;
+  tappenzDays?: number;
 }
 
 export interface TaxCreditDetail {
@@ -140,9 +148,31 @@ export interface PayrollCalculationResult {
   szjaBase: number;           // kedvezmények utáni adóalap
   szjaAmount: number;         // fizetendő SZJA
 
-  // TB
+  // TB (18.5%)
   tbBase: number;
-  tbAmount: number;           // TB járulék (18.5%)
+  tbAmount: number;           // fizetendő TB járulék
+
+  // TB 4-es törvényi bontás (Tbj. és NAV 2608 M-lap)
+  tbPension: number;                 // 10% nyugdíjbiztosítási járulék
+  tbHealthNature: number;            // 4% természetbeni egészségbiztosítási járulék
+  tbHealthCash: number;              // 3% pénzbeli egészségbiztosítási járulék
+  tbLabor: number;                   // 1.5% munkaerőpiaci járulék
+
+  // Családi járulékkedvezmény érvényesítés bontása
+  tbPensionCreditUsed: number;
+  tbHealthNatureCreditUsed: number;
+  tbHealthCashCreditUsed: number;
+  tbLaborCreditUsed: number;
+
+  // Minimum járulékalap (Tbj. 27. § (2) - minimálbér 30%-a = 96.840 Ft időarányosan)
+  minBaseDiff: number;               // Különbözet a minimális alapig
+  minBaseEmployerContribution: number; // Munkáltatót terhelő TB teher a különbözet után (18.5%)
+
+  // Biztosítási és távolléti időszakok
+  insuredDays: number;
+  suspensionDays: number;
+  sickLeaveDays: number;
+  tappenzDays: number;
 
   // Nettó
   netSalary: number;
@@ -150,7 +180,7 @@ export interface PayrollCalculationResult {
   // Munkáltatói
   szochoBase: number;
   szochoAmount: number;       // SZOCHO (13%)
-  totalEmployerCost: number;  // bruttó + SZOCHO
+  totalEmployerCost: number;  // bruttó + SZOCHO + munkáltatói TB különbözet + cafeteria
 
   // Részletezés
   taxCredits: TaxCreditDetail[];
@@ -227,6 +257,24 @@ export function calculatePayroll(input: PayrollCalculationInput): PayrollCalcula
   let ekhoTaxAmount = 0;
   let szochoBase = input.isInsured ? grossSalary : 0;
 
+  // TB 4-es törvényi bontás és minimumalap változók
+  let tbPension = 0;
+  let tbHealthNature = 0;
+  let tbHealthCash = 0;
+  let tbLabor = 0;
+  let tbPensionCreditUsed = 0;
+  let tbHealthNatureCreditUsed = 0;
+  let tbHealthCashCreditUsed = 0;
+  let tbLaborCreditUsed = 0;
+  let minBaseDiff = 0;
+  let minBaseEmployerContribution = 0;
+
+  const monthDays = input.monthDays || 30;
+  const suspensionDays = input.suspensionDays || 0;
+  const insuredDays = input.insuredDays !== undefined ? input.insuredDays : Math.max(0, monthDays - suspensionDays);
+  const sickLeaveDays = input.sickLeaveDays || 0;
+  const tappenzDays = input.tappenzDays || 0;
+
   if (input.isEkho) {
     if (input.isPensioner) {
       // Nyugdíjas (kiegészítő tevékenységet folytató): 9.5% EKHO a teljes összegre
@@ -273,6 +321,14 @@ export function calculatePayroll(input: PayrollCalculationInput): PayrollCalcula
         }
       }
       szochoBase = normalGross;
+
+      // TB 4-es bontás EKHO esetén
+      if (tbAmount > 0) {
+        tbPension = Math.round(tbAmount * (10 / 18.5));
+        tbHealthNature = Math.round(tbAmount * (4 / 18.5));
+        tbHealthCash = Math.round(tbAmount * (3 / 18.5));
+        tbLabor = Math.max(0, tbAmount - tbPension - tbHealthNature - tbHealthCash);
+      }
     }
   } else {
     // ═══════════════════════════════════════════════════════
@@ -449,35 +505,84 @@ export function calculatePayroll(input: PayrollCalculationInput): PayrollCalcula
     szjaAmount = Math.round(szjaBase * params.szja_rate);
 
     // TB járulék (18.5%) — saját jogú nyugdíjas nem biztosított (Tbj. 6. §)
-    tbBase = (input.isInsured && !input.isPensioner) ? grossSalary : 0;
+    // Hóközi nyugdíjba vonulás esetén az ellátás kezdete előtti napokra TB-t és SZOCHO-t kell fizetni
+    let nonPensionerRatio = input.isPensioner ? 0 : 1;
+    if (input.isPensioner && input.pensionStartDate) {
+      const pDate = new Date(input.pensionStartDate);
+      const pDay = pDate.getDate();
+      if (pDay > 1 && pDay <= monthDays) {
+        nonPensionerRatio = (pDay - 1) / monthDays;
+      }
+    }
+
+    tbBase = input.isInsured ? Math.round(grossSalary * nonPensionerRatio) : 0;
     
-    // Minimális járulékalap szabály alkalmazása
+    // Minimális járulékalap szabály alkalmazása (Tbj. 27. § (2) & JS-04)
     const hasMinBaseRule = input.minimumContributionBaseRule === 'minimal_wage' || input.minimumContributionBaseRule === 'guaranteed_minimum';
     const isExempt = 
       !!input.isMinBaseExemptGyesGyed || 
       !!input.isMinBaseExemptStudent || 
       !!input.isMinBasePaidElsewhere || 
-      !!input.isPensioner;
+      (input.isPensioner && nonPensionerRatio === 0);
 
-    if (hasMinBaseRule && !isExempt && input.isInsured && !input.isPensioner) {
-      const minBaseVal = input.minimumContributionBaseRule === 'minimal_wage' 
-        ? params.minimum_wage 
-        : params.guaranteed_minimum;
-      
-      tbBase = Math.max(tbBase, minBaseVal);
-      szochoBase = Math.max(szochoBase, minBaseVal);
+    if (input.isInsured && (!input.isPensioner || nonPensionerRatio > 0) && !isExempt) {
+      if (hasMinBaseRule) {
+        const minBaseVal = input.minimumContributionBaseRule === 'minimal_wage' 
+          ? params.minimum_wage 
+          : params.guaranteed_minimum;
+        
+        tbBase = Math.max(tbBase, Math.round(minBaseVal * nonPensionerRatio));
+        szochoBase = Math.max(szochoBase, Math.round(minBaseVal * nonPensionerRatio));
+      } else if (input.jobCode === '1115' || input.jobCode?.startsWith('1101') || input.jobCode === '20') {
+        // Törvényi alsó határ munkaviszonyban és tartós megbízásban: minimálbér 30%-a időarányosan (2026: 96.840 Ft teljes hónapra)
+        const minFloor = Math.round((params.minimum_wage * 0.3) * (insuredDays / monthDays) * nonPensionerRatio);
+        if (minFloor > 0 && grossSalary < minFloor) {
+          minBaseDiff = Math.max(0, minFloor - grossSalary);
+          minBaseEmployerContribution = Math.round(minBaseDiff * params.tb_rate);
+          szochoBase = Math.max(szochoBase, minFloor);
+        }
+      }
     }
 
-    // Nyugdíjas munkavállaló esetén nincs fizetendő TB járulék
-    const effectiveTbSaving = input.isPensioner ? 0 : totalTbSaving;
+    // TB járulék és levonás
     const tbGross = Math.round(tbBase * params.tb_rate);
-    tbAmount = Math.max(0, tbGross - effectiveTbSaving);
+    const effectiveTbSaving = Math.min(totalTbSaving, tbGross);
+
+    // TB 4-es törvényi bontása (10% nyugdíj, 4% természetbeni eg., 3% pénzbeli eg., 1.5% munkaerőpiaci)
+    const tbPensionGross = Math.round(tbBase * 0.10);
+    const tbHealthNatureGross = Math.round(tbBase * 0.04);
+    const tbHealthCashGross = Math.round(tbBase * 0.03);
+    const tbLaborGross = Math.max(0, tbGross - tbPensionGross - tbHealthNatureGross - tbHealthCashGross);
+
+    // Családi járulékkedvezmény érvényesítése a törvényi sorrendben (KE-01):
+    // 1. Nyugdíj (10%) -> 2. Egészség természetbeni (4%) -> 3. Egészség pénzbeli (3%) -> 4. Munkaerőpiaci (1.5%)
+    let remCredit = effectiveTbSaving;
+    tbPensionCreditUsed = Math.min(remCredit, tbPensionGross);
+    remCredit -= tbPensionCreditUsed;
+
+    tbHealthNatureCreditUsed = Math.min(remCredit, tbHealthNatureGross);
+    remCredit -= tbHealthNatureCreditUsed;
+
+    tbHealthCashCreditUsed = Math.min(remCredit, tbHealthCashGross);
+    remCredit -= tbHealthCashCreditUsed;
+
+    tbLaborCreditUsed = Math.min(remCredit, tbLaborGross);
+    remCredit -= tbLaborCreditUsed;
+
+    tbPension = Math.max(0, tbPensionGross - tbPensionCreditUsed);
+    tbHealthNature = Math.max(0, tbHealthNatureGross - tbHealthNatureCreditUsed);
+    tbHealthCash = Math.max(0, tbHealthCashGross - tbHealthCashCreditUsed);
+    tbLabor = Math.max(0, tbLaborGross - tbLaborCreditUsed);
+    tbAmount = tbPension + tbHealthNature + tbHealthCash + tbLabor;
 
     // SZOCHO (13%) — KIVA adózó esetén a munkáltatói SZOCHO 0 Ft; saját jogú nyugdíjas után 0 Ft (Szocho tv. 5. § (1) f))
-    if (input.isKiva || input.isPensioner) {
+    if (input.isKiva || (input.isPensioner && nonPensionerRatio === 0)) {
       szochoAmount = 0;
       szochoBase = 0;
     } else {
+      if (input.isPensioner && nonPensionerRatio > 0) {
+        szochoBase = Math.round(szochoBase * nonPensionerRatio);
+      }
       // Felszolgálási díj mentes a SZOCHO alól (Szocho tv. 5. § (1) m))
       szochoBase = Math.max(0, szochoBase - serviceCharge);
       let szochoDiscount = 0;
@@ -602,10 +707,24 @@ export function calculatePayroll(input: PayrollCalculationInput): PayrollCalcula
     szjaAmount,
     tbBase,
     tbAmount,
+    tbPension,
+    tbHealthNature,
+    tbHealthCash,
+    tbLabor,
+    tbPensionCreditUsed,
+    tbHealthNatureCreditUsed,
+    tbHealthCashCreditUsed,
+    tbLaborCreditUsed,
+    minBaseDiff,
+    minBaseEmployerContribution,
+    insuredDays,
+    suspensionDays,
+    sickLeaveDays,
+    tappenzDays,
     netSalary,
     szochoBase,
     szochoAmount,
-    totalEmployerCost: grossSalary + szochoAmount + cafeteriaTaxEmployer,
+    totalEmployerCost: grossSalary + szochoAmount + minBaseEmployerContribution + cafeteriaTaxEmployer,
     taxCredits,
     totalTaxSaving: taxCredits.reduce((sum, c) => sum + c.taxSaving, 0),
     totalTbSaving: effectiveTbSavingFinal,

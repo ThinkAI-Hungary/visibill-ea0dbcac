@@ -40,8 +40,10 @@ interface ExitDocument {
 }
 
 const DOCUMENT_TEMPLATES: ExitDocument[] = [
-  { id: 'cert', title: 'Munkáltatói igazolás', legalRef: 'Mt. 80. § (2)', description: 'Foglalkoztatás időtartama, munkakör, bérre vonatkozó adatok', required: true, status: 'pending', template: 'Tartalmazza a jogviszony kezdetét, végét, munkaköri leírást, az utolsó 6 havi bruttó átlagkeresetet.' },
-  { id: 'tb', title: 'TB igazolás (OEP)', legalRef: 'Tbj. 50. §', description: 'Társadalombiztosítási jogviszony záró igazolás', required: true, status: 'pending', template: 'Igazolja a biztosítási jogviszony megszűnését, az utolsó TB járulék befizetés dátumát.' },
+  { id: 'cert', title: 'Egységes munkáltatói igazolás', legalRef: 'Mt. 80. § (2)', description: 'Foglalkoztatás időtartama, munkakör, bérre és elszámolásra vonatkozó adatok (2024+)', required: true, status: 'pending', template: 'Tartalmazza a jogviszony kezdetét, végét, munkaköri leírást, az utolsó 6 havi bruttó átlagkeresetet és levonásmentességet.' },
+  { id: 'tb', title: 'TB járulékigazolás (4-es bontás)', legalRef: 'Tbj. 50. §', description: 'Társadalombiztosítási jogviszony záró igazolás tételes 4-es TB bontással', required: true, status: 'pending', template: 'Igazolja a biztosítási jogviszonyt, a levont 18,5% TB 4-es bontását (nyugdíj, természetbeni, pénzbeli, munkaerőpiaci) és szüneteléseket.' },
+  { id: 'reg_cert', title: 'Nyilvántartásba vételi igazolás', legalRef: 'Tbj. 74. §', description: 'NAV 08E bejelentésről kiállított igazolás és átvételi elismervény másolat', required: true, status: 'pending', template: 'A Tbj. 74. § szerinti nyilvántartásba vétel és a 08E bejelentés hiteles igazolása átvételi elismervénnyel.' },
+  { id: 'medical_claim', title: 'Foglalkoztatói igazolás táppénzhez', legalRef: 'Ebtv. vhr.', description: 'Kormányhivatal részére nem kifizetőhelyi TB ellátás igénybevételéhez', required: false, status: 'pending', template: 'Keresőképtelenség és betegszabadság kimerítésének igazolása, valamint irányadó járulékalapok.' },
   { id: 'income', title: 'Jövedelemigazolás (M30)', legalRef: 'Szja tv. 46. § (4)', description: 'Éves jövedelem adatok a kilépés napjáig', required: true, status: 'pending', template: 'Az adott évi összes jövedelem, levont adó, járulékok összesítése január 1-től az utolsó napig.' },
   { id: 'leave', title: 'Szabadság-elszámolás', legalRef: 'Mt. 125. §', description: 'Ki nem vett szabadság megváltás kalkuláció', required: true, status: 'pending', template: 'Éves szabadságkeret felhasználtság és megváltás kalkuláció.' },
   { id: 'severance', title: 'Végkielégítés számfejtés', legalRef: 'Mt. 77. §', description: 'Végkielégítés összegének kiszámítása (ha jár)', required: false, status: 'na', template: 'A felek megállapodhatnak végkielégítésben.' },
@@ -222,23 +224,83 @@ export default function ExitDocumentsPage() {
         break;
       }
       case 'tb': {
+        const tbPension = empCalc?.tb_pension || Math.round(tb * (10 / 18.5));
+        const tbHealthNature = empCalc?.tb_health_nature || Math.round(tb * (4 / 18.5));
+        const tbHealthCash = empCalc?.tb_health_cash || Math.round(tb * (3 / 18.5));
+        const tbLabor = empCalc?.tb_labor || Math.round(tb * (1.5 / 18.5));
+        const minBaseDiff = empCalc?.min_base_diff || 0;
+        const minBaseEmployerContrib = empCalc?.min_base_employer_contribution || 0;
+        const insuredDays = empCalc?.insured_days || Math.max(1, Math.round(months * 30.4));
+        const suspensionDays = empCalc?.suspension_days || 0;
+        const sickDaysUsed = leaves.filter(l => l.leave_type === 'sick_leave' || l.leave_type === 'sick').reduce((s, l) => s + l.days, 0);
+
         autoTable(d, {
           startY: 68,
-          head: [[hu('Társadalombiztosítási jogcím (Tbj. 50. §)'), hu('Igazolt érték')]],
+          head: [[hu('Társadalombiztosítási jogcím és tétele (Tbj. 50. §)'), hu('Igazolt érték')]],
           body: [
             [hu('Biztosítási jogviszony időtartama'), `${startDate} – ${exitDate}`],
-            [hu('Biztosítási jogviszony kódja és jellege'), hu('1101 — Munkaviszony (heti 40 órás teljes munkaidő)')],
-            [hu('Tárgyévben biztosításban töltött napok száma'), hu(`${Math.max(1, Math.round(months * 30.4))} nap`)],
-            [hu('Igénybe vett betegszabadság a tárgyévben'), hu(`${leaves.filter(l => l.leave_type === 'sick').reduce((s, l) => s + l.days, 0)} munkanap (15 napos törvényi keretből)`)],
-            [hu('Táppénz, CSED, GYED folyósítás időtartama'), hu('Nem vett igénybe a munkaviszony időtartama alatt')],
-            [hu('Utolsó havi TB járulékalap'), `${fmt(gross)} Ft/hó`],
-            [hu('Levont társadalombiztosítási járulék (18,5%)'), `${fmt(tb)} Ft/hó`],
-            [hu('OEP / NEAK bejelentési kötelezettség'), hu('Elektronikusan teljesítve (T1041 / 08-as bevallás)')],
+            [hu('Biztosítási jogviszony kódja és jellege'), hu(`${primaryEmployment?.job_code || '1101'} — ${primaryEmployment?.job_code === '1115' ? 'Megbízás' : 'Munkaviszony (heti ' + (primaryEmployment?.weekly_hours || 40) + ' óra)'}`)],
+            [hu('Biztosításban töltött naptári napok száma'), `${insuredDays} nap`],
+            [hu('Szünetelési időszak napjai (fizetés nélküli szabadság)'), `${suspensionDays} nap`],
+            [hu('Tárgyévi TB járulékalapot képező bruttó jövedelem'), `${fmt(gross)} Ft/hó`],
+            [hu('Levont társadalombiztosítási járulék (18,5%) összesen'), `${fmt(tb)} Ft/hó`],
+            [hu('  - Ebből 10% Nyugdíjbiztosítási járulék'), `${fmt(tbPension)} Ft/hó`],
+            [hu('  - Ebből 4% Természetbeni egészségbiztosítási járulék'), `${fmt(tbHealthNature)} Ft/hó`],
+            [hu('  - Ebből 3% Pénzbeli egészségbiztosítási járulék'), `${fmt(tbHealthCash)} Ft/hó`],
+            [hu('  - Ebből 1,5% Munkaerőpiaci járulék'), `${fmt(tbLabor)} Ft/hó`],
+            [hu('Minimális járulékalap különbözet (Tbj. 27. § (2))'), minBaseEmployerContrib > 0 ? `${fmt(minBaseDiff)} Ft (Munkáltatói TB: ${fmt(minBaseEmployerContrib)} Ft)` : hu('Nem áll fenn (teljes alap)')],
+            [hu('Igénybe vett betegszabadság a tárgyévben'), hu(`${sickDaysUsed} munkanap (15 napos törvényi keretből)`)],
+            [hu('NAV elektronikus bejelentési kötelezettség'), hu('08E nyomtatványon teljesítve')],
           ],
           theme: 'grid',
           headStyles: { fillColor: [15, 118, 110], textColor: 255, fontSize: 8.5, fontStyle: 'bold' },
-          bodyStyles: { fontSize: 8.5, cellPadding: 2.5 },
-          columnStyles: { 0: { cellWidth: 72, fontStyle: 'normal' }, 1: { fontStyle: 'bold' } },
+          bodyStyles: { fontSize: 8.5, cellPadding: 2.2 },
+          columnStyles: { 0: { cellWidth: 80, fontStyle: 'normal' }, 1: { fontStyle: 'bold' } },
+          margin: { left: 16, right: 16 },
+        });
+        break;
+      }
+      case 'reg_cert': {
+        autoTable(d, {
+          startY: 68,
+          head: [[hu('Tbj. 74. § Bejelentési tétel (NAV 08E / T1041)'), hu('Nyilvántartott és igazolt adat')]],
+          body: [
+            [hu('Biztosítási jogviszony kezdete'), startDate],
+            [hu('Jogviszony törvényi kódja és sorszáma'), `${primaryEmployment?.job_code || '1101'} / Sorszám: 1`],
+            [hu('Munkakör megnevezése és FEOR kódja'), hu(`${primaryEmployment?.job_title || 'Alkalmazott'} (FEOR: ${primaryEmployment?.feor_code || '4112'})`)],
+            [hu('Heti munkaidő mértéke'), `${primaryEmployment?.weekly_hours || 40} óra/hét`],
+            [hu('NAV elektronikus bejelentés (08E) státusza'), hu(primaryEmployment?.filing_08e_status || 'Bejelentve')],
+            [hu('NAV iktatószám / Nyugtaazonosító'), primaryEmployment?.filing_08e_receipt_id || hu('Elektronikus visszaigazolás archiválva')],
+            [hu('Bejelentés jogszabályi határideje'), hu('A biztosítási jogviszony első napját megelőzően teljesítve')],
+            [hu('Munkavállalói nyilvántartásba vétel igazolása'), hu('3 munkanapon belül átadva a Tbj. 74. § (1) szerint')],
+          ],
+          theme: 'grid',
+          headStyles: { fillColor: [15, 118, 110], textColor: 255, fontSize: 8.5, fontStyle: 'bold' },
+          bodyStyles: { fontSize: 8.5, cellPadding: 2.4 },
+          columnStyles: { 0: { cellWidth: 80, fontStyle: 'normal' }, 1: { fontStyle: 'bold' } },
+          margin: { left: 16, right: 16 },
+        });
+        break;
+      }
+      case 'medical_claim': {
+        const sickDaysUsed = leaves.filter(l => l.leave_type === 'sick_leave' || l.leave_type === 'sick').reduce((s, l) => s + l.days, 0);
+        autoTable(d, {
+          startY: 68,
+          head: [[hu('Foglalkoztatói igazolás TB pénzbeli ellátáshoz (Ebtv.)'), hu('Igazolt érték / Adat')]],
+          body: [
+            [hu('Foglalkoztató TB jogállása'), hu('Nem TB-kifizetőhely (kormányhivatali elbírálás)')],
+            [hu('Igényelt ellátás jellege'), hu('Táppénz / Keresőképtelenségi ellátás')],
+            [hu('Tárgyévben igénybe vett betegszabadság'), hu(`${sickDaysUsed} nap a 15 munkanapos keretből`)],
+            [hu('Betegszabadság kimerítésének állapota'), hu(sickDaysUsed >= 15 ? 'Keret kimerítve — táppénzre jogosult' : `Fennmaradt: ${15 - sickDaysUsed} nap betegszabadság`)],
+            [hu('Irányadó időszaki TB járulékalap (havi)'), `${fmt(gross)} Ft/hó`],
+            [hu('Heti munkaidő és munkarend'), `${primaryEmployment?.weekly_hours || 40} óra/hét, általános munkarend`],
+            [hu('Folyósítási bankszámlaszám'), (employee as any)?.bank_account_number || (employee as any)?.iban || hu('Nyilvántartott bérszámla')],
+            [hu('Foglalkoztatói igazolás határideje'), hu('Az orvosi igazolás átvételétől számított 5 napon belül')],
+          ],
+          theme: 'grid',
+          headStyles: { fillColor: [15, 118, 110], textColor: 255, fontSize: 8.5, fontStyle: 'bold' },
+          bodyStyles: { fontSize: 8.5, cellPadding: 2.4 },
+          columnStyles: { 0: { cellWidth: 80, fontStyle: 'normal' }, 1: { fontStyle: 'bold' } },
           margin: { left: 16, right: 16 },
         });
         break;

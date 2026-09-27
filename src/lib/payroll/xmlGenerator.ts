@@ -20,6 +20,14 @@ export interface XmlExportEmployeeData {
   grossSalary: number;
   szjaAmount: number;
   tbAmount: number;
+  tbPension?: number;
+  tbHealthNature?: number;
+  tbHealthCash?: number;
+  tbLabor?: number;
+  minBaseDiff?: number;
+  minBaseEmployerContribution?: number;
+  insuredDays?: number;
+  suspensionDays?: number;
   szochoAmount: number;
   netSalary: number;
 }
@@ -28,6 +36,7 @@ export interface XmlExportCompanyData {
   name: string;
   taxNumber: string;
   address: string;
+  kshNumber?: string;
 }
 
 export interface XmlExportFilingData {
@@ -40,7 +49,7 @@ export interface XmlExportFilingData {
 /**
  * Helper to download raw XML string as a file
  */
-function downloadXmlFile(xmlContent: string, fileName: string) {
+export function downloadXmlFile(xmlContent: string, fileName: string) {
   const blob = new Blob([xmlContent], { type: 'application/xml;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -78,6 +87,11 @@ export function generate2608Xml(data: XmlExportFilingData) {
 `;
 
   employees.forEach((emp, idx) => {
+    const tbPension = emp.tbPension ?? Math.round(emp.tbAmount * (10 / 18.5));
+    const tbHealthNature = emp.tbHealthNature ?? Math.round(emp.tbAmount * (4 / 18.5));
+    const tbHealthCash = emp.tbHealthCash ?? Math.round(emp.tbAmount * (3 / 18.5));
+    const tbLabor = emp.tbLabor ?? Math.round(emp.tbAmount * (1.5 / 18.5));
+
     xml += `        <alkalmazott id="${idx + 1}">
           <szemelyes>
             <viselt_nev>${emp.lastName} ${emp.firstName}</viselt_nev>
@@ -92,8 +106,15 @@ export function generate2608Xml(data: XmlExportFilingData) {
             <brutto>${emp.grossSalary}</brutto>
             <szja>${emp.szjaAmount}</szja>
             <tb_jarulek>${emp.tbAmount}</tb_jarulek>
+            <tb_nyugdij>${tbPension}</tb_nyugdij>
+            <tb_termeszetbeni>${tbHealthNature}</tb_termeszetbeni>
+            <tb_penzbeli>${tbHealthCash}</tb_penzbeli>
+            <tb_munkaeropiaci>${tbLabor}</tb_munkaeropiaci>
+            ${emp.minBaseEmployerContribution ? `<min_jarulekalap_kulonbozet>${emp.minBaseDiff || 0}</min_jarulekalap_kulonbozet><min_alap_munkaltatoi_tb>${emp.minBaseEmployerContribution}</min_alap_munkaltatoi_tb>` : ''}
             <szocho>${emp.szochoAmount}</szocho>
             <netto>${emp.netSalary}</netto>
+            <biztositasi_napok>${emp.insuredDays ?? 30}</biztositasi_napok>
+            <szuneteles_napok>${emp.suspensionDays ?? 0}</szuneteles_napok>
           </szamfejtes>
         </alkalmazott>
 `;
@@ -144,40 +165,110 @@ export function generate2658Xml(data: { year: number; month: number; company: Xm
   downloadXmlFile(xml, `NAV_2658_${year}_${monthStr}_${company.name.replace(/\s+/g, '_')}.xml`);
 }
 
+export interface XmlExport08EItem {
+  employee: {
+    lastName: string;
+    firstName: string;
+    birthName?: string;
+    motherName?: string;
+    birthPlace?: string;
+    birthDate?: string;
+    taxId: string;
+    tajNumber: string;
+    citizenship?: string;
+  };
+  changeCode: string; // '01' (kezdet), '02' (megszűnés), '03' - '08'
+  jobCode: string; // '1101', '1115'
+  jobSerialNumber?: number;
+  feorCode: string;
+  weeklyHours: number;
+  effectiveDate: string;
+  endDate?: string;
+  isPensioner?: boolean;
+}
+
 /**
- * T1041-es biztosítotti be/kijelentő lap XML generátor
+ * 08E (korábban T1041) biztosítotti be/kijelentő és változásbejelentő XML generátor
  */
-export function generateT1041Xml(data: { company: XmlExportCompanyData; employee: any; action: 'bejelentes' | 'kijelentes'; date: string }) {
-  const { company, employee, action, date } = data;
-  
-  const xml = `<?xml version="1.0" encoding="utf-8"?>
+export function generate08EXml(data: { company: XmlExportCompanyData; items: XmlExport08EItem[]; year?: number }) {
+  const { company, items, year = new Date().getFullYear() } = data;
+  const year2 = year.toString().slice(2);
+
+  let xml = `<?xml version="1.0" encoding="utf-8"?>
 <nyomtatvanyok xmlns="http://www.nav.gov.hu/anyk/nyomtatvany">
   <nyomtatvany>
     <fejlec>
-      <azonosito>T1041</azonosito>
+      <azonosito>${year2}08E</azonosito>
       <verzio>1.0</verzio>
     </fejlec>
     <adatok>
       <foglalkoztato>
         <adoszam>${company.taxNumber}</adoszam>
         <nev>${company.name}</nev>
+        <cim>${company.address || ''}</cim>
       </foglalkoztato>
-      <bejelentes>
-        <tipus>${action === 'bejelentes' ? 'U' : 'W'}</tipus> <!-- U: Uj biztosított, W: Kijelentés -->
-        <biztosított>
-          <viselt_nev>${employee.last_name} ${employee.first_name}</viselt_nev>
-          <tajszam>${employee.taj_number || ''}</tajszam>
-          <adoazonosito>${employee.tax_id || ''}</adoazonosito>
-          <szuletesi_datum>${employee.birth_date || ''}</szuletesi_datum>
-          <jogviszony_kezdete>${action === 'bejelentes' ? date : ''}</jogviszony_kezdete>
-          <jogviszony_vege>${action === 'kijelentes' ? date : ''}</jogviszony_vege>
-        </biztosított>
-      </bejelentes>
+      <bejelentesek>
+`;
+
+  items.forEach((item, idx) => {
+    xml += `        <bejelentes id="${idx + 1}">
+          <valtozaskod>${item.changeCode}</valtozaskod>
+          <jogviszonysorszam>${item.jobSerialNumber || 1}</jogviszonysorszam>
+          <jogviszony_kod>${item.jobCode || '1101'}</jogviszony_kod>
+          <feor_kod>${item.feorCode || '4112'}</feor_kod>
+          <heti_munkaido>${item.weeklyHours || 40}</heti_munkaido>
+          <hatalyba_lepes>${item.effectiveDate}</hatalyba_lepes>
+          ${item.endDate ? `<jogviszony_vege>${item.endDate}</jogviszony_vege>` : ''}
+          ${item.isPensioner ? `<nyugdijas>1</nyugdijas>` : ''}
+          <biztositott>
+            <viselt_nev>${item.employee.lastName} ${item.employee.firstName}</viselt_nev>
+            <szuletesi_nev>${item.employee.birthName || `${item.employee.lastName} ${item.employee.firstName}`}</szuletesi_nev>
+            <anyja_neve>${item.employee.motherName || ''}</anyja_neve>
+            <szuletesi_hely>${item.employee.birthPlace || ''}</szuletesi_hely>
+            <szuletesi_datum>${item.employee.birthDate || ''}</szuletesi_datum>
+            <tajszam>${item.employee.tajNumber || ''}</tajszam>
+            <adoazonosito>${item.employee.taxId || ''}</adoazonosito>
+            <allampolgarsag>${item.employee.citizenship || 'HUN'}</allampolgarsag>
+          </biztositott>
+        </bejelentes>
+`;
+  });
+
+  xml += `      </bejelentesek>
     </adatok>
   </nyomtatvany>
 </nyomtatvanyok>`;
 
-  downloadXmlFile(xml, `NAV_T1041_${action}_${employee.last_name}_${employee.first_name}.xml`);
+  downloadXmlFile(xml, `NAV_08E_${year}_${company.name.replace(/\s+/g, '_')}.xml`);
+}
+
+/**
+ * T1041-es biztosítotti be/kijelentő lap XML generátor (kompatibilitásként a 08E-re továbbítva)
+ */
+export function generateT1041Xml(data: { company: XmlExportCompanyData; employee: any; action: 'bejelentes' | 'kijelentes'; date: string }) {
+  const { company, employee, action, date } = data;
+  
+  const item: XmlExport08EItem = {
+    employee: {
+      lastName: employee.last_name || '',
+      firstName: employee.first_name || '',
+      birthName: employee.birth_name || `${employee.last_name || ''} ${employee.first_name || ''}`,
+      motherName: employee.mother_name || '',
+      birthPlace: employee.birth_place || '',
+      birthDate: employee.birth_date || '',
+      taxId: employee.tax_id || '',
+      tajNumber: employee.taj_number || '',
+    },
+    changeCode: action === 'bejelentes' ? '01' : '02',
+    jobCode: employee.job_code || '1101',
+    jobSerialNumber: employee.job_serial_number || 1,
+    feorCode: employee.feor_code || '4112',
+    weeklyHours: employee.weekly_hours || 40,
+    effectiveDate: date,
+    endDate: action === 'kijelentes' ? date : undefined,
+  };
+
+  generate08EXml({ company, items: [item] });
 }
 
 /**

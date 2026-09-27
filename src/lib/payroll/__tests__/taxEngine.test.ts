@@ -463,4 +463,105 @@ describe('calculatePayroll — Minimális járulékalap és Új Cafeteria / Lakh
       expect(result.totalEmployerCost).toBe(400_000);
     });
   });
+
+  describe('Tbj. szerinti TB 4-es bontás és 2026-os minimum járulékalap (JS-02, JS-04, KE-01)', () => {
+    it('TB 18,5% pontos 4-es törvényi bontása (10% nyugdíj, 4% term. egészség, 3% pénzbeli, 1.5% munkaerőpiaci)', () => {
+      const result = calculatePayroll(makeInput(400_000, { isInsured: true }));
+
+      expect(result.grossSalary).toBe(400_000);
+      expect(result.tbAmount).toBe(74_000); // 400_000 * 0.185
+
+      // 4-es bontás
+      expect(result.tbPension).toBe(40_000);        // 10%
+      expect(result.tbHealthNature).toBe(16_000);   // 4%
+      expect(result.tbHealthCash).toBe(12_000);     // 3%
+      expect(result.tbLabor).toBe(6_000);           // 1.5%
+      expect(result.tbPension + result.tbHealthNature + result.tbHealthCash + result.tbLabor).toBe(74_000);
+    });
+
+    it('Családi járulékkedvezmény törvényi levonási sorrendje (KE-01: nyugdíj -> term. eg. -> pénzbeli eg. -> munkaerőpiaci)', () => {
+      // 200_000 Ft bruttó, 3 gyermek (családi kedvezmény: 3 * 440_000 = 1_320_000 Ft adóalap kedvezmény)
+      // SZJA alap 0 Ft lesz, a fennmaradó rész a TB-ből vonható le (teljes TB = 200_000 * 0.185 = 37_000 Ft)
+      const input = makeInput(200_000, {
+        isInsured: true,
+        declarations: {
+          family: { eligibleChildrenCount: 3, dependentCount: 3, sharePct: 100 }
+        }
+      });
+      const result = calculatePayroll(input);
+
+      expect(result.szjaAmount).toBe(0);
+      expect(result.totalTbSaving).toBe(37_000); // 200_000 * 0.185
+      expect(result.tbAmount).toBe(0);
+
+      // Kedvezmények bontása
+      expect(result.tbPensionCreditUsed).toBe(20_000);      // 10%
+      expect(result.tbHealthNatureCreditUsed).toBe(8_000);   // 4%
+      expect(result.tbHealthCashCreditUsed).toBe(6_000);     // 3%
+      expect(result.tbLaborCreditUsed).toBe(3_000);          // 1.5%
+      expect(result.tbPension).toBe(0);
+      expect(result.tbHealthNature).toBe(0);
+      expect(result.tbHealthCash).toBe(0);
+      expect(result.tbLabor).toBe(0);
+    });
+
+    it('Tbj. 27. § (2) szerinti 30%-os minimális járulékalap (96.840 Ft) különbözet munkáltatói terhe (JS-04)', () => {
+      // Munkaviszony (1101), 60 000 Ft bruttó bér (pl. 2 órás részmunkaidő, nem mentesített)
+      // Alsó határ: 322 800 * 0.3 = 96 840 Ft
+      // Munkavállaló levonása: 60 000 * 0.185 = 11 100 Ft
+      // Különbözet: 96 840 - 60 000 = 36 840 Ft
+      // Munkáltatói TB teher a különbözet után: 36 840 * 0.185 = 6 815 Ft
+      const input = makeInput(60_000, {
+        jobCode: '1101',
+        isInsured: true,
+      });
+      const result = calculatePayroll(input);
+
+      expect(result.grossSalary).toBe(60_000);
+      expect(result.tbBase).toBe(60_000);
+      expect(result.tbAmount).toBe(11_100);
+      expect(result.minBaseDiff).toBe(36_840);
+      expect(result.minBaseEmployerContribution).toBe(6_815);
+      // Munkáltatói összköltség tartalmazza a különbözeti járulékot is:
+      // 60 000 bruttó + (96 840 * 0.13 szocho = 12 589) + 6 815 = 79 404 Ft
+      expect(result.totalEmployerCost).toBe(60_000 + result.szochoAmount + 6_815);
+    });
+
+    it('Tartós megbízás (1115) alsó határ és szünetelési napok arányosítása (JS-06, TA-06)', () => {
+      // 30 napos hónap, 10 nap szünetelés -> 20 biztosítási nap
+      // Alsó határ: 96 840 * (20 / 30) = 64 560 Ft
+      const input = makeInput(40_000, {
+        jobCode: '1115',
+        isInsured: true,
+        monthDays: 30,
+        suspensionDays: 10,
+        insuredDays: 20,
+      });
+      const result = calculatePayroll(input);
+
+      expect(result.insuredDays).toBe(20);
+      expect(result.suspensionDays).toBe(10);
+      expect(result.minBaseDiff).toBe(64_560 - 40_000); // 24 560 Ft
+      expect(result.minBaseEmployerContribution).toBe(Math.round(24_560 * 0.185));
+    });
+
+    it('Hóközi nyugdíjba lépés esetén az ellátás előtti napokra arányos TB és SZOCHO jár', () => {
+      // 30 napos hónap, a nyugdíj 16-án indul (15 aktív biztosított nap = 50% arány)
+      const input = makeInput(400_000, {
+        isInsured: true,
+        isPensioner: true,
+        pensionStartDate: '2026-03-16',
+        monthDays: 30,
+      });
+      const result = calculatePayroll(input);
+
+      expect(result.tbBase).toBe(200_000); // 400 000 * (15/30)
+      expect(result.tbAmount).toBe(37_000); // 200 000 * 0.185
+      expect(result.tbPension).toBe(20_000); // 10%
+      expect(result.tbHealthNature).toBe(8_000); // 4%
+      expect(result.tbHealthCash).toBe(6_000); // 3%
+      expect(result.tbLabor).toBe(3_000); // 1.5%
+      expect(result.szochoAmount).toBe(26_000); // 200 000 * 0.13
+    });
+  });
 });
