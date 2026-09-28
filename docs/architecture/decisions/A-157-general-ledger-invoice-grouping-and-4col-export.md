@@ -2,6 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-09-25  
+**Utoljára frissítve:** 2026-09-29  
 **Érintett modulok:** `src/lib/glInvoiceGrouping.ts`, `src/lib/glExport.ts`, `src/components/general-ledger/GeneralLedgerTable.tsx`, `src/pages/GeneralLedgerPage.tsx`, `src/components/InvoiceItemsDialog.tsx`, `src/test/glInvoiceGrouping.test.ts`, `src/test/glItemGroupingView.test.ts`, `src/test/glExport4Cols.test.ts`  
 
 ---
@@ -53,7 +54,10 @@ A `get_gl_categorized_items` RPC által visszaadott rekordokhoz in-memory felold
 
 ### 3. Determinisztikus Számla- és Kontírszintű Aggregáció (`groupLedgerItemsByInvoice`)
 A `groupLedgerItemsByInvoice(items)` tiszta függvény végzi a tételek összevonását:
-- **Csoportosítási Kulcs:** `invoiceKey = meta.invoiceId || item.bizonylatszam || item.partner || item.id`
+- **Csoportosítási Kulcs & Folyószámla Konszolidáció (2026-09-29):**
+  - Elsődleges: `item.invoiceNumber && item.partner` $\rightarrow$ `doc_${item.partner}_${item.invoiceNumber}`. Ez garantálja, hogy a folyószámlákon (pl. 311 Vevők, 454 Szállítók) vagy több naplófejbe lekönyvelt analitikus bontásoknál az azonos bizonylatszámú tételek akkor is 1 közös konszolidált sorba olvadjanak össze, ha a tételek nem rendelkeznek azonos belső `invoiceId`-val.
+  - Másodlagos: `item.invoiceId` $\rightarrow$ `inv_${item.invoiceId}`.
+  - Harmadlagos: `single_${item.id}` (egyedi bizonylat nélküli tétel).
 - **Invariáns Szabály:**
   - Kizárólag az **azonos kontíron lévő és azonos számlához tartozó** tételek vonódnak össze.
   - Az azonos partnerhez tartozó, de eltérő bizonylatszámú vagy azonosítójú számlák **külön sorként** maradnak meg.

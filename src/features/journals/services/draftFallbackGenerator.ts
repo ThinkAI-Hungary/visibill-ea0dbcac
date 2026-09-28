@@ -612,7 +612,8 @@ export async function generatePettyCashDrafts(
   const { data: rawPce } = await supabase
     .from('petty_cash_entries')
     .select('id, entry_date, description, amount, currency, source_type, source_table, source_id, partner_id')
-    .eq('company_id', companyId);
+    .eq('company_id', companyId)
+    .order('entry_date', { ascending: true });
 
   const { data: existingPostings } = await supabase
     .from('acc_journal_headers')
@@ -629,7 +630,7 @@ export async function generatePettyCashDrafts(
   if (invoiceSourceIds.length > 0) {
     const { data: invList } = await supabase
       .from('invoices')
-      .select('id, invoice_direction, bizonylatsorszam')
+      .select('id, invoice_direction, bizonylatsorszam, partner_id')
       .in('id', invoiceSourceIds);
     for (const inv of (invList || [])) {
       invoiceMap[inv.id] = inv;
@@ -639,7 +640,7 @@ export async function generatePettyCashDrafts(
   // Fallback lookup: match invoices by document number if manual entry has invoice number in description
   const { data: allCompanyInvoices } = await supabase
     .from('invoices')
-    .select('id, invoice_direction, bizonylatsorszam')
+    .select('id, invoice_direction, bizonylatsorszam, partner_id')
     .eq('company_id', companyId);
 
   const invoiceByDocMap = new Map<string, any>();
@@ -676,7 +677,7 @@ export async function generatePettyCashDrafts(
       }
     }
 
-    const partnerId = pce.partner_id || null;
+    const partnerId = pce.partner_id || linkedInv?.partner_id || null;
     const isExpense = Number(pce.amount) < 0;
 
     let line1: any;

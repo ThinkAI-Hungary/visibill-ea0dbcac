@@ -1,6 +1,6 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-09-28  
+> **Utoljára frissítve:** 2026-09-29  
 > **Összesen:** 192 döntés (177 egyedi döntési fájl) | ✅ Decided: 190 | ⛔ Superseded: 2
 
 ---
@@ -108,7 +108,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-053 | Tárgyi Eszközök Projektekhez Rendelése (Fixed Assets Project Assignment) | ✅ Decided | [A-053](./A-053-fixed-assets-project-assignment.md) |
 | A-055 | Server-Side Invoice Query, KPI Aggregation & GIN Trigram Optimization | ✅ Decided | [A-055](./A-055-server-side-invoice-query-kpi-optimization.md) |
 | A-056 | pg_cron Storage Cleanup Guard & Edge Function Schema Alignment | ✅ Decided | [A-056](./A-056-pgcron-storage-cleanup-and-edge-function-guards.md) |
-| A-057 | Könyvelési Napló Rendszer Architektúra, Robusztus Partner-felismerés és Zárt Tételek UX Védelme | ✅ Decided | [A-057](./A-057-accounting-journals-architecture.md) |
+| A-057 | Könyvelési Napló Architektúra, Időrendi Sorszámvédelem, Partner-felismerés és Zárt Tételek UX | ✅ Decided | [A-057](./A-057-accounting-journals-architecture.md) |
 | A-058 | Banki Utalások és Csomagkészítés Architektúra (Bank Transfers) | ✅ Decided | [A-058](./A-058-bank-transfers-architecture.md) |
 | A-068 | Szerver-oldali Fájl Lapozás és Összesítés (`get_management_files` RPC) | ✅ Decided | [A-068](./A-068-management-files-rpc-pagination.md) |
 | A-071 | Missing EV & Org Database Tables Schema Restoration & Multi-Tenant Parity | ✅ Decided | [A-071](./A-071-ev-and-org-tables-restoration.md) |
@@ -135,7 +135,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-151 | Eredménykimutatás és Mérleg Lekérdezési Vihar Megszüntetése, Trend Chunking és Igény Szerinti (On-Demand) Tételes Fúrás | ✅ Decided | [A-151](./A-151-pnl-and-balance-sheet-query-storm-elimination.md) |
 | A-152 | Analitikai és Jelentéskészítő RPC Stabilitás (STABLE), PostgREST Rate Limiter Mentesség és Realtime Eseményszivárgás Védelem | ✅ Decided | [A-152](./A-152-rate-limiter-rpc-stability-and-realtime-leak-hardening.md) |
 | A-153 | Főkönyvi Kivonat Kötegelt Tételes Adatbetöltés és Fastruktúra Renderelés | ✅ Decided | [A-153](./A-153-general-ledger-batch-itemized-view-architecture.md) |
-| A-173 | Számlalánc Tranzakció-örökítés, Díjbekérő-Végszámla Automatikus Párosítás és PostgreSQL Propagáció | ✅ Decided | [A-173](./A-173-invoice-chain-transaction-propagation.md) |
+| A-173 | Számlalánc Tranzakció-örökítés, Irányfüggő Partnerillesztés és PostgreSQL Propagáció | ✅ Decided | [A-173](./A-173-invoice-chain-transaction-propagation.md) |
 
 ## 🖥️ Frontend
 

@@ -1,6 +1,6 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-09-28  
+> **Utoljára frissítve:** 2026-09-29  
 > **Összesen:** 141 döntés | ✅ Decided: 137 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
@@ -46,7 +46,7 @@
 | P-103 | Számlák Teljesítés Dátuma Szűrés és Dátum Alap Kapcsoló UX | ✅ Decided | [P-103](./P-103-invoices-delivery-date-and-date-basis-filtering-ux.md) |
 | P-109 | Determinisztikus Számlatétel Szabály Motor és Quick Save UX | ✅ Decided | [P-109](./P-109-invoice-item-rules-and-quick-save-ux.md) |
 | P-111 | Számlaláncolatok Megjelenítése, Kapcsolt Bizonylatok és Többdokumentumos Számlakép Lapozó UX | ✅ Decided | [P-111](./P-111-invoice-chain-and-multi-document-preview-ux.md) |
-| P-115 | Házipénztár Bejövő/Szállítói Számlák Kiegyenlítése és Időszaki Zárás Egyenleg UX | ✅ Decided | [P-115](./P-115-petty-cash-inbound-settlement-and-period-closing-ux.md) |
+| P-115 | Házipénztár Szállítói Számlák Kiegyenlítése, Élő Számlakereső és Időszaki Zárás UX | ✅ Decided | [P-115](./P-115-petty-cash-inbound-settlement-and-period-closing-ux.md) |
 | P-127 | Számlák Többfüles Excel Exportja, Skontó- és Fizetési Dátum Feloldás és Banki Fül Routing UX | ✅ Decided | [P-127](./P-127-invoices-multitab-export-payment-dates-and-routing-ux.md) |
 | P-132 | Időszaki Pénztárjelentés, Címletjegyzék, 3-lépéses Zárási Varázsló és Főkönyvi Feladás UX | ✅ Decided | [P-132](./P-132-periodic-cash-reports-and-closing-wizard-ux.md) |
 
@@ -60,7 +60,7 @@
 | P-090 | Banki Tranzakciós Fájlok és Kivonatok Kezelő Dialógus (TransactionFilesDialog) UX | ✅ Decided | [P-090](./P-090-transaction-uploaded-files-management-dialog-ux.md) |
 | P-104 | Tranzakció jutalék és számlaszám exportálása | ✅ Decided | [P-104](./P-104-transaction-fee-and-invoice-number-export-ux.md) |
 | P-129 | Futárriportok és Banki Tranzakciók Teljes Időszaki Exportálása és Szűrt Letöltése UX | ✅ Decided | [P-129](./P-129-courier-and-bank-transactions-full-period-export-ux.md) |
-| P-133 | Számlalánc és Díjbekérő Tranzakció-örökítés és Zöld Státusz UX | ✅ Decided | [P-133](./P-133-invoice-chain-transaction-propagation-ux.md) |
+| P-133 | Számlalánc Tranzakció-örökítés, Irányfüggő Partner-izoláció és Zöld Státusz UX | ✅ Decided | [P-133](./P-133-invoice-chain-transaction-propagation-ux.md) |
 
 ## 📒 Főkönyv & Riportok
 
@@ -218,7 +218,7 @@
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| P-055 | Könyvelési Napló (Accounting Journals) UX, Nyitó Varázsló és Kézi Rögzítés | ✅ Decided | [P-055](./P-055-accounting-journals-ux.md) |
+| P-055 | Könyvelési Napló UX, Időrendi Sorszámvédelem, Nyitó Varázsló és Kézi Rögzítés | ✅ Decided | [P-055](./P-055-accounting-journals-ux.md) |
 | P-056 | Banki Utalások és Csomagkészítés (Bank Transfers) UX | ✅ Decided | [P-056](./P-056-bank-transfers-export-ux.md) |
 | P-065 | NAV Online Számla Ellenőrzés, Vizuális Figyelmeztetések és Könyvelői Jóváhagyási Kapu UX | ✅ Decided | [P-065](./P-065-nav-crosscheck-approval-gate-ux.md) |
 | P-066 | Főkönyvi Dátum Alap Kapcsoló és Beállítások UX | ✅ Decided | [P-066](./P-066-gl-date-basis-toggle-and-settings-ux.md) |
@@ -230,7 +230,7 @@
 | P-106 | Horvát Főkönyvi Kivonat és Nézetek Teljes Lokalizációja, Dinamikus Pénznem és Novo Konto UX | ✅ Decided | [P-106](./P-106-croatian-general-ledger-and-multicurrency-views.md) |
 | P-108 | Devizás Főkönyvi Számlakezelés, Bankszámla Safeguard és Többdevizás Karton/Analitika UX | ✅ Decided | [P-108](./P-108-multicurrency-chart-of-accounts-and-gl-card-ux.md) |
 | P-113 | Főkönyvi Kivonat Kontírok vs. Tételes Nézetváltó UX | ✅ Decided | [P-113](./P-113-general-ledger-granularity-kontirok-teteles-view.md) |
-| P-117 | Főkönyvi Kivonat Számlánkénti Összevonás és 4-Oszlopos Export UX | ✅ Decided | [P-117](./P-117-general-ledger-invoice-grouping-and-4col-export-ux.md) |
+| P-117 | Főkönyvi Kivonat Számlánkénti Összevonás, Folyószámla Konszolidáció és 4-Oszlopos Export UX | ✅ Decided | [P-117](./P-117-general-ledger-invoice-grouping-and-4col-export-ux.md) |
 | P-120 | Főkönyvi Bizonylatmegnyitó és NAV OSA Tételes Nézet UX | ✅ Decided | [P-120](./P-120-general-ledger-invoice-document-preview-and-osa-fallback-ux.md) |
 | P-122 | Főkönyv Felhasználói Élmény (UX), Letisztult Könyvelői Ergonómia és Zsúfoltság-Megszüntetés | ✅ Decided | [P-122](./P-122-general-ledger-ui-ux-restructuring-and-clutter-reduction.md) |
 | P-128 | Könyvelési Naplók Tömeges Kontírozása és Vizuális T/K Kontíroszlop UX | ✅ Decided | [P-128](./P-128-journals-bulk-gl-reassignment-and-tk-column-ux.md) |

@@ -232,6 +232,7 @@
     "filter_all": "Összes ({{count}})",
     "filter_outbound": "Vevői / Bevétel ({{count}})",
     "filter_inbound": "Szállítói / Kiadás ({{count}})",
+    "search_invoices_placeholder": "Keresés partnerre, számlaszámra, összegre...",
     "badge_outbound": "Vevői (+)",
     "badge_inbound": "Szállítói (-)",
     "net_income": "Pénztári bevétel",

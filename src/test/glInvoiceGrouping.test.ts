@@ -137,4 +137,61 @@ describe('groupLedgerItemsByInvoice', () => {
     expect(grouped[1].invoiceNumber).toBe('E-TXLG-2026-72');
     expect(grouped[1].sourceTable).toBe('nav_invoices_partner');
   });
+
+  it('consolidates multiple journal entry items with different headerIds for the same invoice number and partner', () => {
+    const journalItems: GroupableLedgerItem[] = [
+      {
+        id: 'acc_line_1',
+        name: 'GANZ DANUBIUS KERESKEDELMI KFT - VBV-2026-13 - Személygépkocsi bérleti díj (AALK-370) 2026.04. havi',
+        balance: 254000,
+        cid: '311_item_1',
+        isItem: true,
+        sourceTable: 'acc_journal_lines',
+        partner: 'GANZ DANUBIUS KERESKEDELMI KFT',
+        invoiceId: 'header_41',
+        invoiceNumber: 'VBV-2026-13',
+      },
+      {
+        id: 'acc_line_2',
+        name: 'GANZ DANUBIUS KERESKEDELMI KFT - VBV-2026-13 - Személygépkocsi bérleti díj (KIA Sportage) 2026.04. havi',
+        balance: 343535,
+        cid: '311_item_2',
+        isItem: true,
+        sourceTable: 'acc_journal_lines',
+        partner: 'GANZ DANUBIUS KERESKEDELMI KFT',
+        invoiceId: 'header_39',
+        invoiceNumber: 'VBV-2026-13',
+      },
+      {
+        id: 'acc_line_3',
+        name: 'GANZ DANUBIUS KERESKEDELMI KFT - VBV-2026-13 - Személygépkocsi bérleti díj (AUDI A6) 2026.04. havi',
+        balance: 686435,
+        cid: '311_item_3',
+        isItem: true,
+        sourceTable: 'acc_journal_lines',
+        partner: 'GANZ DANUBIUS KERESKEDELMI KFT',
+        invoiceId: 'header_42',
+        invoiceNumber: 'VBV-2026-13',
+      },
+      {
+        id: 'acc_line_4',
+        name: 'GANZ DANUBIUS KERESKEDELMI KFT - VBV-2026-13 - Előleg',
+        balance: -1283970,
+        cid: '311_item_4',
+        isItem: true,
+        sourceTable: 'acc_journal_lines',
+        partner: 'GANZ DANUBIUS KERESKEDELMI KFT',
+        invoiceId: 'header_40',
+        invoiceNumber: 'VBV-2026-13',
+      },
+    ];
+
+    const grouped = groupLedgerItemsByInvoice(journalItems, 'by_invoice');
+    expect(grouped).toHaveLength(1);
+    expect(grouped[0].groupedCount).toBe(4);
+    expect(grouped[0].balance).toBe(0); // 254000 + 343535 + 686435 - 1283970 = 0
+    expect(grouped[0].name).toContain('VBV-2026-13');
+    expect(grouped[0].groupedItemIds).toEqual(['acc_line_1', 'acc_line_2', 'acc_line_3', 'acc_line_4']);
+  });
 });
+

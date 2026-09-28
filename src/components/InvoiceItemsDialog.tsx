@@ -270,6 +270,8 @@ export function InvoiceItemsDialog({
         customer_name?: string | null;
         partner_gl_number?: string | null;
         vat_gl_number?: string | null;
+        bizonylatsorszam?: string | null;
+        invoice_number?: string | null;
       } | null;
     },
     enabled: open && !!invoiceId,

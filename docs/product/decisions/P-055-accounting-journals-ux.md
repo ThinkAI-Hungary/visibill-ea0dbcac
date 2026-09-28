@@ -2,6 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-08-27  
+**Utoljára frissítve:** 2026-09-29  
 **Category:** UI / General Ledger / Workflow  
 
 ---
@@ -83,6 +84,17 @@ Hogyan jelenjen meg a Könyvelési Napló (Accounting Journals) felülete az eai
      - **Popover Dropdown stabilitás:** A számlaválasztó gomb `onFocus` eseménykezelőjének eltávolításával megszűnt a Radix PopoverTrigger egérkattintási versenyhelyzete; a dropdown normál kattintásra azonnal megnyílik és stabilan nyitva marad a keresés és kiválasztás során.
      - **Intelligens Sorhozzáadás:** Új sor beszúrásakor vagy lefelé lépéskor a fókusz a számlaválasztó gombra kerül, de a keresőablak nem ugrik fel tolakodóan a képernyőre, kizárólag szándékos felhasználói interakcióra nyílik meg.
      - **Zavartalan Számbevitel (`showStepper={false}`):** A pénzügyi és árfolyam `NumberInput` mezőkről eltávolításra kerültek a redundáns léptetőnyilak (`ChevronUp`/`ChevronDown`), megszüntetve a vizuális fedést és összecsúszást a beágyazott `Ft` és `Ft/EUR` devizajelzésekkel.
+
+9. **Szigorúan Kronologikus Tömeges Könyvelési Sorrend- és Sorszámvédelem (2026-09-29):**
+   - **Tünet & Hibaok:** Tömeges naplókönyvelésnél (`bulkPostMutation`), ha a felhasználó a felületen fordított dátumsorrendben tekintette vagy szűrte meg a tételeket (pl. március 31-től január 1-ig csökkenő sorrendben), a kijelölt azonosítókat (`ids`) a rendszer a táblázat megjelenítési sorrendjében adta át az `acc_post_journal_entry` eljárásnak. Ennek következtében a szigorú számadású naplósorszámok (pl. `P1/1`, `P1/2`, ...) fordított sorrendben osztódtak ki: a március végi bizonylat kapta az 1-es sorszámot, a januári pedig az utolsót.
+   - **Determinisztikus Kronológiai Rendezési Gát:**
+     - A `JournalsPage.tsx` `bulkPostMutation` eljárása a beküldés előtt a táblázat vizuális sorrendjétől és lapozásától függetlenül szigorúan időrendbe rendezi az azonosítókat:
+       1. Elsődleges kulcs: `posting_date || document_date` növekvő (`ASC`)
+       2. Másodlagos kulcs: `document_date` növekvő (`ASC`)
+       3. Harmadlagos kulcs: `created_at` növekvő (`ASC`)
+     - Ez garantálja, hogy a naplókban a folyósorszámok kiosztása mindig szigorúan időrendi sorrendben történik, maradéktalanul kielégítve a számviteli törvény időrendi folytonossági követelményeit.
+   - **Pénztár Javaslatgeneráló Időrend és Partnerkapcsolat (`draftFallbackGenerator.ts`):**
+     - A pénztárbizonylatokból történő naplótervezet-képzés (`generatePettyCashDrafts`) explicit `.order('entry_date', { ascending: true })` rendezést kapott, továbbá a kapcsolt számlákból (`invoices`) automatikusan feloldja és örökíti a `partner_id`-t a kézi rögzítésű tételeknél is.
 
 ## Current Implementation
 

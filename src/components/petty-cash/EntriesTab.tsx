@@ -1432,6 +1432,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
   // ─── Invoice settlement mode ────────────────────────────────────────────
   const [invoiceMode, setInvoiceMode] = useState(false);
   const [invoiceFilter, setInvoiceFilter] = useState<'all' | 'OUTBOUND' | 'INBOUND'>('all');
+  const [invoiceSearchQuery, setInvoiceSearchQuery] = useState('');
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
 
   // Fetch open unpaid invoices (outbound sales & inbound expenses) for this company
@@ -1458,9 +1459,22 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
   });
 
   const filteredOpenInvoices = useMemo(() => {
-    if (invoiceFilter === 'all') return openInvoices;
-    return openInvoices.filter(inv => inv.invoice_direction?.toUpperCase() === invoiceFilter);
-  }, [openInvoices, invoiceFilter]);
+    let list = openInvoices;
+    if (invoiceFilter !== 'all') {
+      list = list.filter(inv => inv.invoice_direction?.toUpperCase() === invoiceFilter);
+    }
+    if (invoiceSearchQuery.trim()) {
+      const q = invoiceSearchQuery.toLowerCase().trim();
+      list = list.filter(inv =>
+        (inv.bizonylatsorszam && inv.bizonylatsorszam.toLowerCase().includes(q)) ||
+        (inv.partner_name && inv.partner_name.toLowerCase().includes(q)) ||
+        (inv.elado_nev && inv.elado_nev.toLowerCase().includes(q)) ||
+        (inv.vevo_nev && inv.vevo_nev.toLowerCase().includes(q)) ||
+        (inv.brutto_vegosszeg && String(inv.brutto_vegosszeg).includes(q))
+      );
+    }
+    return list;
+  }, [openInvoices, invoiceFilter, invoiceSearchQuery]);
 
   const outboundCount = useMemo(() => openInvoices.filter(i => i.invoice_direction?.toUpperCase() === 'OUTBOUND').length, [openInvoices]);
   const inboundCount = useMemo(() => openInvoices.filter(i => i.invoice_direction?.toUpperCase() === 'INBOUND').length, [openInvoices]);
@@ -1479,6 +1493,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
       // Reset invoice mode on open
       setInvoiceMode(false);
       setSelectedInvoiceIds(new Set());
+      setInvoiceSearchQuery('');
 
       if (editingEntry) {
         setForm({
@@ -1905,6 +1920,28 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
                 >
                   {t('pettyCash:manual_entry_dialog.filter_inbound', { count: inboundCount, defaultValue: `Szállítói (${inboundCount})` })}
                 </button>
+              </div>
+
+              {/* Search filter input */}
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                <Input
+                  type="text"
+                  placeholder={t('pettyCash:manual_entry_dialog.search_invoices_placeholder', 'Keresés partnerre, számlaszámra, összegre...')}
+                  value={invoiceSearchQuery}
+                  onChange={(e) => setInvoiceSearchQuery(e.target.value)}
+                  className="h-8 pl-8 pr-8 text-xs bg-background/80"
+                />
+                {invoiceSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setInvoiceSearchQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-0.5"
+                    title="Keresés törlése"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
 
               <div className="flex items-center justify-between">

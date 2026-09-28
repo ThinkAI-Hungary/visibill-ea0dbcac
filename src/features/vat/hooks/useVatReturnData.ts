@@ -257,14 +257,18 @@ export function useVatReturnData() {
       m[k] = { ...v };
     }
 
+    const createFallbackLine = (row: string): ReturnLine => ({
+      row_number: row,
+      base_amount: 0,
+      tax_amount: 0,
+      base_amount_rounded: 0,
+      tax_amount_rounded: 0,
+      is_calculated: true,
+      source_vat_codes: null,
+    });
+
     const adjust = (row: string, subBaseEft: number, subTaxEft: number) => {
-      const orig = m[row] || {
-        id: `mock_${row}`,
-        vat_return_id: vatReturn?.id || '',
-        row_number: row,
-        base_amount_rounded: 0,
-        tax_amount_rounded: 0,
-      };
+      const orig = m[row] || createFallbackLine(row);
       m[row] = {
         ...orig,
         base_amount_rounded: Math.max(0, (orig.base_amount_rounded || 0) - subBaseEft),
@@ -287,13 +291,7 @@ export function useVatReturnData() {
     }
 
     // Row 76 (Total Deductible Tax)
-    const orig76 = m['76'] || {
-      id: 'mock_76',
-      vat_return_id: vatReturn?.id || '',
-      row_number: '76',
-      base_amount_rounded: 0,
-      tax_amount_rounded: 0,
-    };
+    const orig76 = m['76'] || createFallbackLine('76');
     const new76Tax = Math.max(0, (orig76.tax_amount_rounded || 0) - missingDeductions.missingVatEft);
     m['76'] = {
       ...orig76,
@@ -304,37 +302,19 @@ export function useVatReturnData() {
     const payableTax36 = m['36']?.tax_amount_rounded || 0;
     const new83Tax = payableTax36 - new76Tax;
 
-    const orig83 = m['83'] || {
-      id: 'mock_83',
-      vat_return_id: vatReturn?.id || '',
-      row_number: '83',
-      base_amount_rounded: 0,
-      tax_amount_rounded: 0,
-    };
+    const orig83 = m['83'] || createFallbackLine('83');
     m['83'] = {
       ...orig83,
       tax_amount_rounded: new83Tax,
     };
 
-    const orig84 = m['84'] || {
-      id: 'mock_84',
-      vat_return_id: vatReturn?.id || '',
-      row_number: '84',
-      base_amount_rounded: 0,
-      tax_amount_rounded: 0,
-    };
+    const orig84 = m['84'] || createFallbackLine('84');
     m['84'] = {
       ...orig84,
       tax_amount_rounded: new83Tax > 0 ? new83Tax : 0,
     };
 
-    const orig85 = m['85'] || {
-      id: 'mock_85',
-      vat_return_id: vatReturn?.id || '',
-      row_number: '85',
-      base_amount_rounded: 0,
-      tax_amount_rounded: 0,
-    };
+    const orig85 = m['85'] || createFallbackLine('85');
     m['85'] = {
       ...orig85,
       tax_amount_rounded: new83Tax < 0 ? Math.abs(new83Tax) : 0,
@@ -627,7 +607,7 @@ export function useVatReturnData() {
 
   // Mutations
   const calculate = useMutation({
-    mutationFn: async (overrideScope?: VatScope) => {
+    mutationFn: async (overrideScope?: VatScope | void) => {
       const scopeToUse = overrideScope || vatScope;
 
       // Try with p_scope first (matches post-migration RPC signature)

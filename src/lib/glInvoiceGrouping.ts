@@ -338,10 +338,12 @@ export function groupLedgerItemsByInvoice<T extends GroupableLedgerItem>(
   for (const item of items) {
     let key: string;
 
-    if (item.invoiceId) {
-      key = `inv_${item.invoiceId}`;
-    } else if (item.invoiceNumber && item.partner) {
+    // Prioritize partner + invoiceNumber so multiple journal headers/items
+    // for the same invoice consolidate together reliably
+    if (item.invoiceNumber && item.partner) {
       key = `doc_${item.partner}_${item.invoiceNumber}`;
+    } else if (item.invoiceId) {
+      key = `inv_${item.invoiceId}`;
     } else {
       key = `single_${item.id}`;
     }

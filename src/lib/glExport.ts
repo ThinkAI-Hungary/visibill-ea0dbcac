@@ -477,6 +477,7 @@ export interface VatCollectorGroup {
     vat_gl_number?: string | null;
     direction?: string | null;
     is_customer_from_submitted?: boolean;
+    declaration_row?: string | null;
     net_amount: number;
     vat_amount: number;
     gross_amount: number;

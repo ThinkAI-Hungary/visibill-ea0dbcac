@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-08-27  
-**Utoljára frissítve:** 2026-09-23
+**Utoljára frissítve:** 2026-09-29
 
 ---
 
@@ -92,6 +92,14 @@ A Postgres szintű adatintegritásra épülő, trigger- és RPC-vezérelt modul�
 - **Szerviz Dekompozíció és Típusvédelem (`draftFallbackGenerator.ts`):**
   - A fallback naplójavaslat-generáló szerviz interfészei és adattípusai szinkronizálva lettek a legfrissebb Supabase típusokkal (`Database['public']['Tables']['acc_journal_headers']['Row']` és `Insert`).
   - Izolált unit tesztek garantálják a bizonylatgenerálási tartalékágak megbízhatóságát hálózati kiesés vagy RPC hiba esetén.
+
+### 11. Szigorúan Kronologikus Tömeges Könyvelési Sorrend- és Sorszámozás-védelem (2026-09-29)
+- **Kronológiai Sorrend Gát (`JournalsPage.tsx` — `bulkPostMutation`):**
+  - A tömeges jóváhagyás során az átadott ID-k sorrendje korábban közvetlenül a kliensoldali táblázat vizuális állapotától (pl. fordított dátum szerinti rendezés) függött.
+  - Az `acc_post_journal_entry` eljárás azonban a meghívás sorrendjében lépteti az `acc_journal_counters` számlálót, ami fordított UI rendezés esetén inverz sorszámozást (`P1/1` a legkésőbbi dátumra) eredményezett.
+  - **Architektúrális Védelem:** A `bulkPostMutation` eljárásban kötelező kliensoldali rendezési korlát lépett életbe: a végrehajtás előtt az azonosítók szigorú időrendbe (`posting_date || document_date ASC`, másodlagosan `document_date ASC`, harmadlagosan `created_at ASC`) rendeződnek. Ezzel az RPC hívások determinisztikusan a legkorábbi időponttól a legkésőbbi felé haladnak.
+- **Háttérszolgáltatás Időrend és Partner Örökítés (`draftFallbackGenerator.ts`):**
+  - A pénztárbizonylatok leképezése (`generatePettyCashDrafts`) garantált `.order('entry_date', { ascending: true })` PostgREST lekérdezést kapott, a kézi bizonylatok pedig a kapcsolt számlafejből (`invoices`) öröklik a `partner_id`-t.
 
 ## Consequences
 

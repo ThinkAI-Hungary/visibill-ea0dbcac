@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-09-24  
-**Utoljára frissítve:** 2026-09-25  
+**Utoljára frissítve:** 2026-09-29  
 **Kategória:** UI / Házipénztár & Számlakezelés  
 **Érintett modulok:** `src/components/petty-cash/CashClosingDialog.tsx`, `src/components/petty-cash/EntriesTab.tsx`, `src/pages/PettyCashPage.tsx`  
 **Kapcsolódó ADR:** [A-155](../../architecture/decisions/A-155-petty-cash-inbound-settlement-and-period-closing.md)  
@@ -10,17 +10,22 @@
 ---
 
 ## 1. Kérdés és Felhasználói Igény
-Hogyan tehető átláthatóvá és egyértelművé a könyvelő számára, hogy a házipénztárban vevői (pénztári bevétel, növekmény) vagy szállítói (pénztári kiadás, csökkenés) számlát egyenlít ki készpénzben, és hogyan biztosítható a pontos időszaki záróegyenleg ellenőrzése?
+Hogyan tehető átláthatóvá és egyértelművé a könyvelő számára, hogy a házipénztárban vevői (pénztári bevétel, növekmény) vagy szállítói (pénztári kiadás, csökkenés) számlát egyenlít ki készpénzben, hogyan kereshet gyorsan több tucat nyitott bizonylat között partnerre és sorszámra, és hogyan biztosítható a pontos időszaki záróegyenleg ellenőrzése?
 
 ---
 
 ## 2. Termékdöntés és Megoldás
 
-### 1. Kézi Tétel Rögzítése Dialógus — Háromállású Számlaszűrő
-A bizonylatrögzítő ablakban a számlák kiválasztásához egy új, szegmentált szűrősáv került beépítésre:
+### 1. Kézi Tétel Rögzítése Dialógus — Háromállású Számlaszűrő és Valós Idejű Multi-Mezős Keresés
+A bizonylatrögzítő ablakban a számlák kiválasztásához egy új, szegmentált szűrősáv és keresősáv került beépítésre:
 - **`[ Összes (X) | Vevői (Y) | Szállítói (Z) ]`**
   - **Vevői (+):** Zöld keretes `Vevői (+)` badge, a kiválasztott összeg zöld pozitív előjellel (`+X HUF`) jelenik meg.
   - **Szállítói (-):** Piros keretes `Szállítói (-)` badge, a kiválasztott összeg piros negatív előjellel (`-X HUF`) jelenik meg.
+- **Valós Idejű Multi-Mezős Keresés (2026-09-29):**
+  - A szűrőgombok alatt egy beépített, azonnal reagáló keresőmező (`Search` ikonnal és 1-kattintásos `X` törlőgombbal) segít megtalálni a számlákat.
+  - A szűrő egyszerre és valós időben keres a számlaszámra (`bizonylatsorszam`), partnernévre (`partner_name`, `elado_nev`, `vevo_nev`) és bruttó összegre (`brutto_vegosszeg`), azonnali találatot adva nagy mennyiségű nyitott bizonylat esetén is.
+  - Nyelvi támogatás: magyar (`hu`) és horvát (`hr`) lokalizáció (`Keresés partnerre, számlaszámra, összegre...`).
+  - Újranyitáskor a keresési feltétel automatikusan visszaáll üresre.
 - **Dinamikus Nettó Összesítő Sáv:**
   - Kijelöléskor a rendszer valós időben kalkulálja a nettó pénztári hatást:  
     $$\Sigma \text{ Nettó} = \sum \text{Vevői} - \sum \text{Szállítói}$$

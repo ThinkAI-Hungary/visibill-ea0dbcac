@@ -232,6 +232,7 @@
     "filter_all": "Svi ({{count}})",
     "filter_outbound": "Kupci / Primitak ({{count}})",
     "filter_inbound": "Dobavljači / Izdatak ({{count}})",
+    "search_invoices_placeholder": "Pretraži po partneru, broju računa, iznosu...",
     "badge_outbound": "Kupac (+)",
     "badge_inbound": "Dobavljač (-)",
     "net_income": "Blagajnički primitak",

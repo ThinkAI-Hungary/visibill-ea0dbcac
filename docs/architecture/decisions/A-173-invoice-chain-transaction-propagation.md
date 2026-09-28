@@ -2,6 +2,7 @@
 
 **Státusz:** ✅ Elfogadva  
 **Dátum:** 2026-09-28  
+**Utoljára frissítve:** 2026-09-29  
 **Döntéshozó:** Antigravity Architect & User Approval  
 **Kapcsolódó PRD:** [P-133: Számlalánc és Díjbekérő Tranzakció-örökítés és Zöld Státusz UX](../../product/decisions/P-133-invoice-chain-transaction-propagation-ux.md)  
 **Kapcsolódó ADR-ek:**
@@ -13,12 +14,13 @@
 - [A-147: Kétirányú Számlaláncolat (Invoice Chaining), Dinamikus Kapcsolt Bizonylat Feloldás](./A-147-bidirectional-invoice-chaining-and-preview-tabs.md)
 
 **Érintett Komponensek és Fájlok:**
-- [`supabase/migrations/20260928150000_invoice_chain_transaction_propagation.sql`](file:///d:/ThinkAI/Visibill/eaisybill-prod/supabase/migrations/20260928150000_invoice_chain_transaction_propagation.sql)
-- [`src/features/invoices/utils/invoiceRelations.ts`](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/features/invoices/utils/invoiceRelations.ts)
-- [`src/features/invoices/components/table/NavInvoiceRow.tsx`](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/features/invoices/components/table/NavInvoiceRow.tsx)
-- [`src/features/invoices/components/table/SubmittedInvoiceRow.tsx`](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/features/invoices/components/table/SubmittedInvoiceRow.tsx)
-- [`src/hooks/useTransactionMatcher.ts`](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/hooks/useTransactionMatcher.ts)
-- [`src/features/invoices/__tests__/invoiceChainMatching.test.ts`](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/features/invoices/__tests__/invoiceChainMatching.test.ts)
+- [`supabase/migrations/20260928150000_invoice_chain_transaction_propagation.sql`](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/supabase/migrations/20260928150000_invoice_chain_transaction_propagation.sql)
+- [`supabase/migrations/20260929110000_fix_invoice_chain_propagation_partner_match.sql`](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/supabase/migrations/20260929110000_fix_invoice_chain_propagation_partner_match.sql)
+- [`src/features/invoices/utils/invoiceRelations.ts`](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/features/invoices/utils/invoiceRelations.ts)
+- [`src/features/invoices/components/table/NavInvoiceRow.tsx`](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/features/invoices/components/table/NavInvoiceRow.tsx)
+- [`src/features/invoices/components/table/SubmittedInvoiceRow.tsx`](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/features/invoices/components/table/SubmittedInvoiceRow.tsx)
+- [`src/hooks/useTransactionMatcher.ts`](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/hooks/useTransactionMatcher.ts)
+- [`src/features/invoices/__tests__/invoiceChainMatching.test.ts`](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/features/invoices/__tests__/invoiceChainMatching.test.ts)
 
 ---
 
@@ -107,6 +109,25 @@ A láncolási lekérdezések O(1) és logaritmikus sebessége érdekében a migr
 - **Lenyíló sorkártyák (`NavInvoiceRow.tsx`, `SubmittedInvoiceRow.tsx`):** A kártya lenyitásakor a láncolt bizonylatokhoz tartozó tranzakciók automatikusan bekerülnek a helyi `allTxMap`-be, így az örökölt tranzakció közvetlenül megjelenik a lenyitott sorban.
 - **Kézi tranzakció-kereső (`useTransactionMatcher.ts`):** A szűrő logika felkészült a láncolt számlákra; a számlához vagy annak láncolatához már rendelt tranzakció nem tűnik el a választható tételek közül.
 
+### D-6: Irányfüggő Partnerazonosítás és Véletlen Átkötések Megelőzése (2026-09-29 — Migráció `20260929110000`)
+
+A kezdeti implementációban (`20260928150000`) a LÁNC 1 és LÁNC 2 aggregációk a partner adószámának egyeztetéséhez az alábbi kifejezést alkalmazták:
+`COALESCE(ni.customer_tax_number, ni.supplier_tax_number) = COALESCE(i.vevo_vat_id, i.elado_vat_id)`
+
+**Kritikus hibaok és tünet:**
+- Bejövő (`INBOUND` — szállítói) számláknál a vevő mind a `nav_invoices`, mind az `invoices` táblában maga a felhasználó cége (`company_id`).
+- Ennek következtében a `COALESCE` mindkét oldalon a cég saját adószámát adta vissza!
+- Az azonos összegű, 90 napon belül kibocsátott bejövő számlák (pl. 160 000 Ft) így hibásan összekapcsolódtak más partnerek banki utalásaival (pl. *Szanyi Zoltánné `SZZJ-2026-3`* számlája tévesen megkapta egy másik szállítónak szóló banki átutalást és `paid = true` állapotba került, emiatt eltűnt a készpénzes kiegyenlítés és a nyitott szállítók listájáról).
+- Ezen felül a LÁNC 2 korábban minden számlatípusra lefutott, nem korlátozódott csak a proforma/előleg bizonylatokra.
+
+**Javítás és Architektúrális Szigorítás (`20260929110000_fix_invoice_chain_propagation_partner_match.sql`):**
+1. **Szigorúan irányfüggő adószám- és névegyeztetés:**
+   - **`OUTBOUND` (kimenő / vevői számlák):** kizárólag a vevő adószáma (`i.vevo_vat_id` $\leftrightarrow$ `ni.customer_tax_number`, 8-jegyű törzsszám) vagy a tisztított vevőnév egyezhet.
+   - **`INBOUND` (bejövő / szállítói számlák):** kizárólag a szállító/eladó adószáma (`i.elado_vat_id` $\leftrightarrow$ `ni.supplier_tax_number`, 8-jegyű törzsszám) vagy a tisztított eladónév egyezhet.
+2. **LÁNC 2 Bizonylattípus Korlátozás:** A NAV számláról beküldött számlára történő propagáció kizárólag a proforma/előleg bizonylattípusokra engedélyezett:
+   `i.invoice_type IN ('dijbekero_proforma', 'dijbekero', 'elolegszamla', 'vegszamla')`.
+3. **Trigger Szinkronizáció:** Ugyanez a szigorú irányfüggő feltételrendszer került beépítésre a `match_nav_invoice_on_insert()` trigger eljárásba is, megakadályozva, hogy új NAV számla beérkezésekor egy másik cég előlegét kösse össze.
+
 ---
 
 ## 3. Következmények & Éles Eredmények
@@ -117,5 +138,6 @@ A láncolási lekérdezések O(1) és logaritmikus sebessége érdekében a migr
   - *Financial Genie Kft.*: `D-THINK-127` ↔ `E-THINK-2026-75` (800 100 Ft, `paid = true`)
   - *HRT Spedition Kft.*: `D-THINK-126` ↔ `E-THINK-2026-73` (2 806 700 Ft, `paid = true`)
   - *Victoria Music Kft.*: `D007346` ↔ `047874` (18 002 Ft, `paid = true`)
+- **Hamis Átkötések Megszűnése:** A `20260929110000` migráció leválasztotta a tévesen összekapcsolt bejövő szállítói számlákat (pl. *Szanyi Zoltánné `SZZJ-2026-3`* azonnal visszanyílt kifizetetlenné és készpénzben rendezhetővé vált).
 - **Nulla Manuális Utómunka:** Az újonnan beérkező NAV számlák a díjbekérő megléte esetén automatikusan feloldódnak, nem igényelnek könyvelői beavatkozást.
 - **Transzparens Auditálhatóság:** A `transaction_invoice_matches` tábla `created_by = 'chain_propagated'` értéke egyértelműen megkülönbözteti a közvetlen manuális/AI párosításokat a láncolatból származó örökölt tételektől.

@@ -2,8 +2,9 @@
 
 **Status:** Decided  
 **Dátum:** 2026-09-25  
+**Utoljára frissítve:** 2026-09-29  
 **Kategória:** UI / Főkönyv & Riportok  
-**Érintett modulok:** `GeneralLedgerPage.tsx`, `GeneralLedgerTable.tsx`, `src/lib/glExport.ts`, `src/lib/glInvoiceGrouping.ts`, `src/components/InvoiceItemsDialog.tsx`  
+**Érintett modulok:** `GeneralLedgerPage.tsx`, `GeneralLedgerTable.tsx`, `src/lib/glExport.ts`, `src/lib/glInvoiceGrouping.ts`, `src/components/InvoiceItemsDialog.tsx`, `src/test/glInvoiceGrouping.test.ts`  
 
 ---
 
@@ -71,15 +72,21 @@ A könyvelők és pénzügyi vezetők a főkönyvi kivonat napi auditálása és
 ### 6. Partner Kontírszám Választó Gombok Tördelése (`InvoiceItemsDialog`)
 - A gyorsválasztó gombok elrendezése és stílusa módosult (`grid-cols-1 sm:grid-cols-2`, automatikus magasság és sortörés), így a hosszú partner- és kontírszövegek nem takaródnak ki és nem csonkulnak le.
 
+### 7. Analitikus és Folyószámla Többsoros Számla-konszolidáció (2026-09-29)
+- **Felhasználói visszajelzés:** A 311 (Vevők) analitikus számlán egy adott számla (pl. VBV Vision Kft. `VBV-2026-13`) a számlánkénti nézet bekapcsolása ellenére is több sorban jelent meg, mivel a könyvelt naplófejek és tételsorok eltérő vagy hiányzó belső `invoiceId`-val rendelkeztek.
+- **Megoldás (`groupLedgerItemsByInvoice`):**
+  - A csoportosítási kulcsképzés logikája kiegészült: amennyiben a tétel rendelkezik partnerrel és bizonylatszámmal (`item.invoiceNumber && item.partner`), a rendszer prioritásként a `doc_${item.partner}_${item.invoiceNumber}` kulcsot rendeli hozzá, megelőzve az egyedi `item.invoiceId` ágat.
+  - Ennek köszönhetően a számlához tartozó összes naplótétel (áfás bontások, részösszegek, kiegyenlítési hivatkozások) megbízhatóan 1 konszolidált sorba vonódik össze a 311-es és egyéb folyószámlákon is.
+
 ---
 
 ## 3. Minőségbiztosítás és Verifikáció
 
 - **Unit tesztek:**
-  - `src/test/glInvoiceGrouping.test.ts`: Számlaösszevonás, több számla szétválasztása, összegek helyes kalkulációja.
+  - `src/test/glInvoiceGrouping.test.ts`: Számlaösszevonás, több számla szétválasztása, analitikus többsoros számlakonszolidáció (5/5 teszt sikeres).
   - `src/test/glItemGroupingView.test.ts`: Kliensoldali nézetváltás szimulációja és 0 ms reakcióidő.
   - `src/test/glExport4Cols.test.ts`: 4-oszlopos Excel/CSV export tartalom és struktúra ellenőrzése.
-- **Lefuttatott tesztkészlet:** 9 General Ledger tesztcsomag, 25 teszt maradéktalanul sikeres.
+- **Lefuttatott tesztkészlet:** General Ledger tesztcsomagok maradéktalanul sikeresek.
 - **Típusellenőrzés és Build:** `npx tsc --noEmit` 0 hiba, `npm run build` sikeres lefutás.
 
 ---

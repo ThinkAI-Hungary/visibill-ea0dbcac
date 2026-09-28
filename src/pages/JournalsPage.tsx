@@ -695,10 +695,26 @@ export default function JournalsPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Bejelentkezés szükséges");
 
+      // Sort IDs chronologically (posting_date ASC, document_date ASC, created_at ASC)
+      // to ensure strictly chronological sequential numbering (e.g. P1/1, P1/2, ...)
+      // regardless of current table sorting or display order
+      const sortedIds = [...ids].sort((aId, bId) => {
+        const a = entriesById.get(aId);
+        const b = entriesById.get(bId);
+        if (!a || !b) return 0;
+        const dateA = a.posting_date || a.document_date || '';
+        const dateB = b.posting_date || b.document_date || '';
+        if (dateA !== dateB) return dateA.localeCompare(dateB);
+        const docDateA = a.document_date || '';
+        const docDateB = b.document_date || '';
+        if (docDateA !== docDateB) return docDateA.localeCompare(docDateB);
+        return (a.created_at || '').localeCompare(b.created_at || '');
+      });
+
       const successes: string[] = [];
       const failures: { id: string; error: string }[] = [];
 
-      for (const id of ids) {
+      for (const id of sortedIds) {
         const { error } = await supabase.rpc('acc_post_journal_entry', {
           p_header_id: id,
           p_user_id: user.id
@@ -710,7 +726,7 @@ export default function JournalsPage() {
         }
       }
 
-      return { successes, failures, total: ids.length };
+      return { successes, failures, total: sortedIds.length };
     },
     onSettled: () => {
       // Always invalidate queries so UI immediately updates succeeded items
