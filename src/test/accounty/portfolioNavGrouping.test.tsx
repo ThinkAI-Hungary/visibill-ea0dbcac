@@ -107,7 +107,7 @@ describe('PortfolioNav Navigation Redesign (Teendők, Portfólió, Segítség, B
     );
 
     expect(screen.getByText('Bérszámfejtés Ciklusok')).toBeInTheDocument();
-    expect(screen.getByText('Irodai Riportok')).toBeInTheDocument();
+    expect(screen.getByText('Riportok')).toBeInTheDocument();
     expect(screen.getByText('Onboarding')).toBeInTheDocument();
   });
 

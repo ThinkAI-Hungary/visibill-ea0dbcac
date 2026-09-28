@@ -5,9 +5,28 @@ import {
   Mail, ClipboardList, Clock, Coffee, Calculator,
   Receipt, FileText, Loader2, Users, AlertTriangle,
   CheckCircle2, Printer, ListFilter, UserCheck,
-  Send, ExternalLink
+  Send, ExternalLink, RotateCcw, Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { ExportButton } from '@/components/accounty/ExportButton';
 import { cn } from '@/lib/utils';
 import {
@@ -119,6 +138,8 @@ export default function PayrollCyclePage() {
   const [customGlMapping, setCustomGlMapping] = useState<any>(null);
   const [step5Saving, setStep5Saving] = useState(false);
   const [viewMode, setViewMode] = useState<'stepper' | 'worksheet'>('stepper');
+  const [closingModalOpen, setClosingModalOpen] = useState(false);
+  const [reopenConfirmOpen, setReopenConfirmOpen] = useState(false);
 
   // Fetch all employments for this company
   const [allEmployments, setAllEmployments] = useState<any[]>([]);
@@ -744,6 +765,11 @@ export default function PayrollCyclePage() {
 
   const handleStepChange = async (step: number) => {
     if (!cycle?.id) return;
+    if (cycle.status === 'closed') {
+      // Do not overwrite closed status in DB when browsing steps
+      await updateStep.mutateAsync({ cycleId: cycle.id, step, status: 'closed' });
+      return;
+    }
     if (currentStep === 3) {
       await saveAttendanceData();
     }
@@ -754,21 +780,57 @@ export default function PayrollCyclePage() {
     await updateStep.mutateAsync({ cycleId: cycle.id, step, status: statusMap[step] || 'draft' });
   };
 
-  const handleCloseCycle = async () => {
+  const handleReopenCycle = async () => {
+    if (!cycle?.id) return;
+    try {
+      await updateStep.mutateAsync({ cycleId: cycle.id, step: currentStep, status: 'calculated' });
+      await supabase.from('accounty_payroll_cycles').update({
+        status: 'calculated',
+      }).eq('id', cycle.id);
+      toast({
+        title: 'Ciklus újranyitva',
+        description: 'A bérszámfejtési ciklus sikeresen újranyitva módosításra.',
+      });
+      setReopenConfirmOpen(false);
+      refetchCycle();
+    } catch (err: any) {
+      toast({
+        title: 'Hiba az újranyitás során',
+        description: err?.message || 'Váratlan hiba történt.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleConfirmClose = async (postToLedger: boolean) => {
     if (!cycle?.id || !companyId || !user?.id) return;
     setIsPosting(true);
+    setClosingModalOpen(false);
     try {
-      const postResult = await postPayrollCycleToLedger(cycle.id, companyId, user.id, customGlMapping);
-      if (postResult.success) {
-        toast({
-          title: ' Ciklus lezárva és lekönyvelve!',
-          description: `${cycle.year}. ${MONTHS[cycle.month - 1]} bérszámfejtés lezárva. Főkönyvi bizonylat: ${postResult.journalNumber || 'BER'}`,
-        });
+      if (postToLedger) {
+        const postResult = await postPayrollCycleToLedger(cycle.id, companyId, user.id, customGlMapping);
+        if (postResult.success) {
+          toast({
+            title: postResult.isAlreadyPosted ? 'Bérszámfejtés lezárva (már könyvelve)' : ' Ciklus lezárva és lekönyvelve!',
+            description: postResult.message || `${cycle.year}. ${MONTHS[cycle.month - 1]} bérszámfejtés lezárva. Főkönyvi bizonylat: ${postResult.journalNumber || 'BER'}`,
+          });
+        } else {
+          toast({
+            title: ' Ciklus lezárva (könyvelési figyelmeztetéssel)',
+            description: postResult.message,
+            variant: 'destructive',
+          });
+        }
       } else {
+        await updateStep.mutateAsync({ cycleId: cycle.id, step: 8, status: 'closed' });
+        await supabase.from('accounty_payroll_cycles').update({
+          status: 'closed',
+          notes: 'Bérszámfejtési ciklus lezárva (könyvelés nélkül)',
+        }).eq('id', cycle.id);
+
         toast({
-          title: ' Ciklus lezárva (könyvelési figyelmeztetéssel)',
-          description: postResult.message,
-          variant: 'destructive',
+          title: ' Ciklus sikeresen lezárva',
+          description: `${cycle.year}. ${MONTHS[cycle.month - 1]} bérszámfejtési ciklus lezárva. A bérfeladás később bármikor lekönyvelhető.`,
         });
       }
       navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll`);
@@ -880,6 +942,26 @@ export default function PayrollCyclePage() {
         ]}
         actions={
           <div className="flex items-center gap-3 flex-wrap">
+          {/* Closed status indicator and reopen button */}
+          {cycle.status === 'closed' && (
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 gap-1.5 px-3 py-1 text-xs">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>Lezárt ciklus</span>
+              </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setReopenConfirmOpen(true)}
+                className="text-xs h-8 gap-1.5 border-amber-500/40 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10 font-medium"
+                title="Ciklus újranyitása módosításhoz"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Ciklus újranyitása</span>
+              </Button>
+            </div>
+          )}
+
           {/* Dual View Mode Switcher */}
           <div className="flex items-center bg-muted/60 p-1 rounded-lg border border-border">
             <button
@@ -1170,21 +1252,113 @@ export default function PayrollCyclePage() {
                 </>
               )}
             </Button>
+          ) : cycle?.status === 'closed' ? (
+            <Button
+              className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2 font-semibold shadow-xs"
+              onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll`)}
+            >
+              <Check className="w-4 h-4" />
+              <span>Vissza a bérszámfejtéshez</span>
+            </Button>
           ) : (
             <Button
               className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 font-semibold shadow-xs"
               disabled={updateStep.isPending || isPosting}
-              onClick={handleCloseCycle}
+              onClick={() => setClosingModalOpen(true)}
             >
               {isPosting ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Könyvelés folyamatban...</>
+                <><Loader2 className="w-4 h-4 animate-spin" /> Lezárás folyamatban...</>
               ) : (
-                <><Check className="w-4 h-4" /> Ciklus lezárása & Főkönyvi könyvelés</>
+                <><Check className="w-4 h-4" /> Ciklus lezárása...</>
               )}
             </Button>
           )}
         </div>
       </div>
+
+      {/* Ciklus újranyitása megerősítő párbeszédablak */}
+      <AlertDialog open={reopenConfirmOpen} onOpenChange={setReopenConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+              <RotateCcw className="w-5 h-5" />
+              <span>Bérszámfejtési ciklus újranyitása</span>
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2 pt-2">
+              <p>
+                Biztosan újra szeretnéd nyitni a(z) <strong>{cycle.year}. {MONTHS[cycle.month - 1]}</strong> havi lezárt bérszámfejtési ciklust?
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Az újranyitás után a béradatok, jelenlétek és pótlékok ismét szerkeszthetővé válnak. A korábban lekönyvelt bérfeladás változatlan marad mindaddig, amíg újbóli könyvelést nem kezdeményezel.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Mégse</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleReopenCycle}
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              Újranyitás megerősítése
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bérszámfejtés lezárási & könyvelési választó modál */}
+      <Dialog open={closingModalOpen} onOpenChange={setClosingModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-foreground">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <span>Bérszámfejtési ciklus lezárása</span>
+            </DialogTitle>
+            <DialogDescription className="pt-2 text-sm text-foreground/80">
+              A(z) <strong>{cycle.year}. {MONTHS[cycle.month - 1]}</strong> havi bérszámfejtés (<strong>{activeEmployees.length} fő</strong>) ellenőrzése befejeződött.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-3 space-y-3 text-xs text-muted-foreground bg-muted/40 p-3.5 rounded-lg border border-border">
+            <p>
+              Szeretnéd most automatikusan lekönyvelni a havi bérfeladást a <strong>Vegyes naplóba</strong> (541 bérköltség, 471 nettó bér, járulékok)?
+            </p>
+            <p className="text-[11px] opacity-80">
+              💡 Ha a könyvelést későbbre halasztod, a ciklus lezárul, és a bérfeladás később bármikor lekönyvelhető.
+            </p>
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setClosingModalOpen(false)}
+              disabled={isPosting}
+              className="w-full sm:w-auto"
+            >
+              Mégse
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => handleConfirmClose(false)}
+              disabled={isPosting}
+              className="w-full sm:w-auto"
+              title="A ciklus lezárul, de bérfeladási tétel nem jön létre a főkönyvben"
+            >
+              Csak lezárás (könyvelés nélkül)
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => handleConfirmClose(true)}
+              disabled={isPosting}
+              className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white gap-1.5"
+            >
+              {isPosting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+              <span>Lezárás & Könyvelés</span>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )}
 </div>

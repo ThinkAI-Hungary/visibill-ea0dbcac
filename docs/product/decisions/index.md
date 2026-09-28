@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-28  
-> **Összesen:** 133 döntés | ✅ Decided: 129 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 139 döntés | ✅ Decided: 135 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -234,3 +234,9 @@
 | P-120 | Főkönyvi Bizonylatmegnyitó és NAV OSA Tételes Nézet UX | ✅ Decided | [P-120](./P-120-general-ledger-invoice-document-preview-and-osa-fallback-ux.md) |
 | P-122 | Főkönyv Felhasználói Élmény (UX), Letisztult Könyvelői Ergonómia és Zsúfoltság-Megszüntetés | ✅ Decided | [P-122](./P-122-general-ledger-ui-ux-restructuring-and-clutter-reduction.md) |
 | P-128 | Könyvelési Naplók Tömeges Kontírozása és Vizuális T/K Kontíroszlop UX | ✅ Decided | [P-128](./P-128-journals-bulk-gl-reassignment-and-tk-column-ux.md) |
+| P-129 | Futár és Banki Tranzakciók Teljes Időszaki Export UX | ✅ Decided | [P-129](./P-129-courier-and-bank-transactions-full-period-export-ux.md) |
+| P-130 | Horvát ePorezna ÁFA Bevallás XML Export (PDV-S & ZP) UX | ✅ Decided | [P-130](./P-130-croatian-eporezna-vat-xml-export-pdv-s-and-zp-ux.md) |
+| P-131 | Horvát Minimax Számla-közvetítő Integráció és Szinkronizáció UX | ✅ Decided | [P-131](./P-131-croatian-minimax-api-invoice-intermediary-sync-ux.md) |
+| P-132 | Időszaki Pénztárjelentés és Zárási Varázsló UX | ✅ Decided | [P-132](./P-132-periodic-cash-reports-and-closing-wizard-ux.md) |
+| P-133 | Számlalánc és Díjbekérő Tranzakció-örökítés és Zöld Státusz UX | ✅ Decided | [P-133](./P-133-invoice-chain-transaction-propagation-ux.md) |
+| P-134 | Bérszámfejtési Ciklus Lezárási Választó Modál, Lezárt Ciklus Védelem és Újranyitás UX | ✅ Decided | [P-134](./P-134-payroll-cycle-closing-modal-and-idempotency-protection.md) |

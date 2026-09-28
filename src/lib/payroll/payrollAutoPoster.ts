@@ -281,7 +281,7 @@ export async function postPayrollCycleToLedger(
   companyId: string,
   userId: string,
   customGlMapping?: Partial<PayrollGlMapping>
-): Promise<{ success: boolean; headerId?: string; journalNumber?: string; message: string }> {
+): Promise<{ success: boolean; headerId?: string; journalNumber?: string; message: string; isAlreadyPosted?: boolean }> {
   try {
     const summary = await getPayrollPostingSummary(cycleId);
     if (!summary || summary.totalGross === 0) {
@@ -333,6 +333,31 @@ export async function postPayrollCycleToLedger(
     const lastDayOfMonth = new Date(summary.year, summary.month, 0).toISOString().slice(0, 10);
     const documentId = `BER-${summary.year}-${String(summary.month).padStart(2, '0')}`;
     const description = `Bérfeladás könyvelése — ${summary.year}. ${String(summary.month).padStart(2, '0')}. hó`;
+
+    // 2.5 Idempotency Guard (K40.30): Check if an active (non-sztornozott) journal entry already exists
+    const { data: existingHeaders } = await supabase
+      .from('acc_journal_headers')
+      .select('id, document_id, status, journal_number')
+      .eq('company_id', companyId)
+      .eq('document_id', documentId)
+      .neq('status', 'SZTORNOZOTT');
+
+    if (existingHeaders && existingHeaders.length > 0) {
+      const activeHeader = existingHeaders[0];
+      await supabase.from('accounty_payroll_cycles').update({
+        status: 'closed',
+        current_step: 8,
+        notes: `Bérfeladás lekönyvelve: ${documentId} (Bizonylat: ${activeHeader.journal_number || documentId})`
+      }).eq('id', cycleId);
+
+      return {
+        success: true,
+        headerId: activeHeader.id,
+        journalNumber: activeHeader.journal_number || documentId,
+        message: `A(z) ${summary.year}. ${String(summary.month).padStart(2, '0')}. havi bérfeladás már korábban le lett könyvelve (${documentId}). Új tétel nem került létrehozásra.`,
+        isAlreadyPosted: true,
+      };
+    }
 
     // 3. Create Header in acc_journal_headers
     const headerData = {

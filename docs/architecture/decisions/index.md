@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-28  
-> **Összesen:** 189 döntés (174 egyedi döntési fájl) | ✅ Decided: 187 | ⛔ Superseded: 2
+> **Összesen:** 191 döntés (176 egyedi döntési fájl) | ✅ Decided: 189 | ⛔ Superseded: 2
 
 ---
 
@@ -219,6 +219,8 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-170 | Horvát ePorezna ÁFA Bevallás XML Export (Obrazac PDV-S & Obrazac ZP) | ✅ Decided | [A-170](./A-170-croatian-eporezna-vat-xml-export-pdv-s-and-zp.md) |
 | A-171 | Horvát Minimax REST API Számla-közvetítő Integráció és Szinkronizáció | ✅ Decided | [A-171](./A-171-croatian-minimax-api-invoice-intermediary-sync.md) |
 | A-172 | Időszaki Pénztárjelentés Adatbázis Modell, Szigorú Számadású Sorszámozás és Főkönyvi Életciklus | ✅ Decided | [A-172](./A-172-periodic-cash-reports-schema-and-accounting-lifecycle.md) |
+| A-173 | Számlalánc Tranzakció-örökítés, Díjbekérő-Végszámla Automatikus Párosítás és PostgreSQL Propagáció | ✅ Decided | [A-173](./A-173-invoice-chain-transaction-propagation.md) |
+| A-174 | Bérfeladás Idempotencia-védelem, Duplakönyvelés Megelőzés és Lezárt Ciklus Adatbiztonság | ✅ Decided | [A-174](./A-174-payroll-auto-poster-idempotency-and-closed-cycle-immutability.md) |
 
 ## 💳 Fizetés
 
