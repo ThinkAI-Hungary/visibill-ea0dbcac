@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-28  
-> **Összesen:** 184 döntés (171 egyedi döntési fájl) | ✅ Decided: 182 | ⛔ Superseded: 2
+> **Összesen:** 185 döntés (172 egyedi döntési fájl) | ✅ Decided: 183 | ⛔ Superseded: 2
 
 ---
 
@@ -215,6 +215,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-167 | NAV 2665 Hivatalos Nyomtatvány Digitális Replika Architektúra és Élő Adatkötés | ✅ Decided | [A-167](./A-167-nav-2665-official-tax-form-digital-replica.md) |
 | A-168 | Számla Export Banki Tranzakció Feloldás, Skontó-Dátum Architektúra és Intelligens Fül-Válogatás | ✅ Decided | [A-168](./A-168-invoice-export-transaction-resolution-and-skonto-dates.md) |
 | A-169 | B2C Kimenő Számlák NAV Anonimizáció-Feloldása, Bizonylat Normalizálás és Automatikus Jóváhagyási Trigger Lánc | ✅ Decided | [A-169](./A-169-b2c-nav-anonymization-and-submitted-invoice-sync.md) |
+| A-170 | Horvát ePorezna ÁFA Bevallás XML Export (Obrazac PDV-S & Obrazac ZP) | ✅ Decided | [A-170](./A-170-croatian-eporezna-vat-xml-export-pdv-s-and-zp.md) |
 
 ## 💳 Fizetés
 

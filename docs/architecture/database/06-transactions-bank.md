@@ -1,6 +1,7 @@
 # 💳 Tranzakciók & Bank
 
-> Banki tranzakciók, számla-tranzakció párosítás, bankkivonatok, SZÉP kártya.
+> Banki tranzakciók, számla-tranzakció párosítás, bankkivonatok, SZÉP kártya és Aggreg8 Open Banking.
+> **Kapcsolódó specifikáció:** [Aggreg8 Tranzakciós és Partner Adatstruktúra Specifikáció](../aggreg8-transaction-data-spec.md)
 
 **Táblák ebben a csoportban:** 13
 

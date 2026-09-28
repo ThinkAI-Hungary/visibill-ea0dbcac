@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-09-17  
-**Utoljára frissítve:** 2026-09-24  
+**Utoljára frissítve:** 2026-09-28  
 
 ## Context
 
@@ -95,6 +95,7 @@ Az **Aggreg8 (AISP API v5.3.1)** felhőalapú banki aggregátorát integráltuk 
 ## Kapcsolódó
 - [026-banking-integration.md (BRD)](../../business/decisions/026-banking-integration.md)
 - [P-087: Aggreg8 Bankcsatlakozás és SyncUI UX](../../product/decisions/P-087-aggreg8-bank-connections-and-sync-ui-ux.md)
+- [Aggreg8 Tranzakciós és Partner Adatstruktúra Specifikáció](../aggreg8-transaction-data-spec.md)
 - [A-005: Edge Functions Katalógus](./A-005-edge-functions.md)
 - [06-transactions-bank.md Adatbázis séma](../database/06-transactions-bank.md)
 - [useAggreg8.ts Hook](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/hooks/useAggreg8.ts)

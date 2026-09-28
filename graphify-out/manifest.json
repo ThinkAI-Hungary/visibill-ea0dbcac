@@ -100,8 +100,8 @@
     "semantic_hash": ""
   },
   "src/components/CourierReportTab.tsx": {
-    "mtime": 1789515573.1178067,
-    "ast_hash": "232ae905e87c4eca01c3518182b1a7fd",
+    "mtime": 1790584130.4229352,
+    "ast_hash": "96a28fb5ac498662157b33aa427bbeb9",
     "semantic_hash": ""
   },
   "src/components/EmailAliasManager.tsx": {
@@ -1565,8 +1565,8 @@
     "semantic_hash": ""
   },
   "src/pages/TransactionsPage.tsx": {
-    "mtime": 1790095135.3919668,
-    "ast_hash": "a8d0f435b656fb62794c00974d0ab637",
+    "mtime": 1790584130.4250212,
+    "ast_hash": "87bd76f0a9fe1ed5d510af415bbafd9a",
     "semantic_hash": ""
   },
   "src/pages/VatReturnPage.tsx": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790534876.5902565,
-    "ast_hash": "a605257aea5566bafb2f6147d212c665",
+    "mtime": 1790592071.5990133,
+    "ast_hash": "74959c701e9e0b717b302c0ae88de338",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3120,8 +3120,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/overview.md": {
-    "mtime": 1790514518.2210107,
-    "ast_hash": "90d2d92b85e7ed38affcb715e44b0210",
+    "mtime": 1790586479.2614555,
+    "ast_hash": "86094d535517dcde0fc695ec0eaf104d",
     "semantic_hash": ""
   },
   "docs/business/brd.md": {
@@ -3255,8 +3255,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/026-banking-integration.md": {
-    "mtime": 1789608869.0759635,
-    "ast_hash": "3c4a1774b1c23636b51e91788de037bb",
+    "mtime": 1790586500.1687148,
+    "ast_hash": "2b1ffefbf4ff122176f2d1eb64fa01f9",
     "semantic_hash": ""
   },
   "docs/business/decisions/027-llm-cost-management.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1790534876.5912564,
-    "ast_hash": "139f186dd59925eaf370badf4e5d998d",
+    "mtime": 1790592097.040752,
+    "ast_hash": "98cf434875cc660fa2e59a82589e8945",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -5050,8 +5050,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/06-transactions-bank.md": {
-    "mtime": 1790534876.5882561,
-    "ast_hash": "c664150bdb6f750045570e7b984895b7",
+    "mtime": 1790586546.676306,
+    "ast_hash": "9527bc3e748ea30a2ad86cf0012ecd98",
     "semantic_hash": ""
   },
   "docs/architecture/database/07-general-ledger.md": {
@@ -6005,8 +6005,8 @@
     "semantic_hash": ""
   },
   "src/pages/TransfersPage.tsx": {
-    "mtime": 1790534876.6761928,
-    "ast_hash": "5813fbc0b35c2d1c376437274d0be596",
+    "mtime": 1790584130.4261246,
+    "ast_hash": "edcf1aec851fc5376129e402b2be8ff7",
     "semantic_hash": ""
   },
   "supabase/functions/accounty-ai-categorize/index.ts": {
@@ -6785,8 +6785,8 @@
     "semantic_hash": ""
   },
   "src/pages/JournalsPage.tsx": {
-    "mtime": 1790341701.5492544,
-    "ast_hash": "86123769cd0e9fdc0c39d56d6c49beca",
+    "mtime": 1790584130.4244976,
+    "ast_hash": "fec19266e47e05229e410b575a58b3f1",
     "semantic_hash": ""
   },
   "supabase/migrations/20260824120000_optimize_query_rpcs.sql": {
@@ -6890,8 +6890,8 @@
     "semantic_hash": ""
   },
   "src/lib/invoiceMatchingUtils.ts": {
-    "mtime": 1790100407.4322236,
-    "ast_hash": "b68d4d5bbae43c8f87d81585644740de",
+    "mtime": 1790584130.4239788,
+    "ast_hash": "3c92fcd05fff92f974ff41547b50cff7",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-054-strict-nav-submitted-pairing.md": {
@@ -7975,8 +7975,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/VatReturnViewTab.tsx": {
-    "mtime": 1790534876.6720307,
-    "ast_hash": "01a11befda23fe3a6fb43ff6fb69b2b3",
+    "mtime": 1790590654.1406715,
+    "ast_hash": "231ef6bb88ad2182f19e846f7f22c99f",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatXmlValidationDialog.tsx": {
@@ -7995,8 +7995,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/index.ts": {
-    "mtime": 1790462263.5297596,
-    "ast_hash": "6d6de5faafa7144bf14252f1e49a6de5",
+    "mtime": 1790590616.2581947,
+    "ast_hash": "5e4ec972cadb9f556eddcb4a03f0b03c",
     "semantic_hash": ""
   },
   "src/features/vat/types.ts": {
@@ -8330,8 +8330,8 @@
     "semantic_hash": ""
   },
   "src/features/journals/services/draftFallbackGenerator.ts": {
-    "mtime": 1790202600.9600525,
-    "ast_hash": "3355d9e6f6987154cbcf56d5b514c5fb",
+    "mtime": 1790584130.4234579,
+    "ast_hash": "02dd2954f1695ee711a7fd9bd31d0fab",
     "semantic_hash": ""
   },
   "src/features/journals/__tests__/draftFallbackGenerator.test.ts": {
@@ -10540,13 +10540,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-119-aggreg8-psd2-open-banking-integration.md": {
-    "mtime": 1790257147.6666698,
-    "ast_hash": "ea783547825ff84df6471d24ee843c37",
+    "mtime": 1790586512.2177546,
+    "ast_hash": "fe3ee020fad2b5822c54712f84530ff1",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-087-aggreg8-bank-connections-and-sync-ui-ux.md": {
-    "mtime": 1790257147.6686685,
-    "ast_hash": "1cd2bac3aaf57a80ab2f68acda2d9666",
+    "mtime": 1790586537.0638885,
+    "ast_hash": "299bdb4c87cfbd33557e5e713c78ba98",
     "semantic_hash": ""
   },
   "supabase/migrations/20260917032000_transactions_a8_fields.sql": {
@@ -12654,11 +12654,6 @@
     "ast_hash": "1621f475efe5a311334ea709a71baf54",
     "semantic_hash": ""
   },
-  "scripts/apply_worker_upsert_concurrency_fix.py": {
-    "mtime": 1790533315.003396,
-    "ast_hash": "1b8693a35dd576affb3d4bb52e0a59b0",
-    "semantic_hash": ""
-  },
   "src/lib/nav/__tests__/navValidationInboundProbe.test.ts": {
     "mtime": 1790534264.8026545,
     "ast_hash": "4b5bc73c4211a0d7da951c278f0289e1",
@@ -12697,6 +12692,76 @@
   "docs/product/requirements/check-list.md": {
     "mtime": 1790517761.5599418,
     "ast_hash": "0375918239ccea0819ea6295a4c61a83",
+    "semantic_hash": ""
+  },
+  "src/features/journals/services/__tests__/draftFallbackGeneratorPettyCash.test.ts": {
+    "mtime": 1790584130.4229352,
+    "ast_hash": "3e67dbb041f61af0e94edd7f86d2ecad",
+    "semantic_hash": ""
+  },
+  "docs/architecture/aggreg8-transaction-data-spec.md": {
+    "mtime": 1790585875.6059027,
+    "ast_hash": "39ca2c316ef7dac17d181b88b515f124",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-169-b2c-nav-anonymization-and-submitted-invoice-sync.md": {
+    "mtime": 1790584130.4202898,
+    "ast_hash": "9edf421f610e1d2b0db86f946a15ad89",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-128-journals-bulk-gl-reassignment-and-tk-column-ux.md": {
+    "mtime": 1790584130.420811,
+    "ast_hash": "8bf02c2c6a84712b63cad6c1db21bd8f",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-129-courier-and-bank-transactions-full-period-export-ux.md": {
+    "mtime": 1790584130.4213388,
+    "ast_hash": "df5e70fb049e21c1f9d9b507b20ead89",
+    "semantic_hash": ""
+  },
+  "session-summary/\u00c1ron/2026-09-28/summary-004500-ticket-support-fakov-vat-dedup-and-vbv-petty-cash-gl-fixes.md": {
+    "mtime": 1790584130.4224143,
+    "ast_hash": "f2aa1247858528c58b00f212932c2eb4",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260928120000_auto_assign_croatian_vat_codes.sql": {
+    "mtime": 1790590434.9300334,
+    "ast_hash": "1284eb6221b1e4dc4626a404ead55b78",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-09-28/summary-111200-aggreg8-prod-cutover-live-sync-and-partner-data-spec.md": {
+    "mtime": 1790586694.7754097,
+    "ast_hash": "12d43424a1023e8909cb70076c9bffa3",
+    "semantic_hash": ""
+  },
+  "src/features/vat/components/VatPoreznaExportDialog.tsx": {
+    "mtime": 1790590607.7602556,
+    "ast_hash": "ada58acda79be0f06fd3ed1bde5cec24",
+    "semantic_hash": ""
+  },
+  "src/lib/__tests__/croatianPoreznaXml.test.ts": {
+    "mtime": 1790590524.585857,
+    "ast_hash": "ce2f47b66c27765ada2c7668f23f1c4b",
+    "semantic_hash": ""
+  },
+  "src/lib/croatianPoreznaXml.ts": {
+    "mtime": 1790590513.6479669,
+    "ast_hash": "d9da8b1320c0056290ba7413deabc386",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260928130000_croatian_eu_vat_statements_rpc.sql": {
+    "mtime": 1790590354.8735693,
+    "ast_hash": "f60213bf2e8794510648696e517508c1",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-170-croatian-eporezna-vat-xml-export-pdv-s-and-zp.md": {
+    "mtime": 1790592062.5300713,
+    "ast_hash": "189ecf166acdb1aaae82a7e3d4bb59e2",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-130-croatian-eporezna-vat-xml-export-pdv-s-and-zp-ux.md": {
+    "mtime": 1790592051.6929646,
+    "ast_hash": "41a92013f48dfa02d59fe231ea546475",
     "semantic_hash": ""
   }
 }
