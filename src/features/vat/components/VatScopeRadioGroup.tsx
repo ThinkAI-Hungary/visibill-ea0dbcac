@@ -237,7 +237,7 @@ export function VatScopeRadioGroup({
           <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>
-              <strong>{missingCount} db</strong> bejövő számlához még nem érkezett feltöltött számlakép az Online Számlából.
+              <strong>{missingCount} db</strong> bejövő számlához, mely látszik az Online Számlából még nem érkezett feltöltött számlakép!
               {isWithImage && ' Ezek a tételek a szigorú beállítás miatt jelenleg nem szerepelnek a levonható adóban.'}
             </span>
           </div>

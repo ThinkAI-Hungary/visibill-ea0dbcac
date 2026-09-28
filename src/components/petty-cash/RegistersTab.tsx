@@ -8,14 +8,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Save, Banknote, Plus, Trash2, Edit2, Star, MapPin, Loader2, Settings2, CheckCircle2 } from 'lucide-react';
+import { Save, Banknote, Plus, Trash2, Edit2, Star, MapPin, Loader2, Settings2, CheckCircle2, ShieldAlert, FileText, CalendarClock } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import type { PettyCashRegister, OpeningBalance } from './types';
-import { COMMON_CURRENCIES, roundHuf } from './types';
+import { COMMON_CURRENCIES, roundHuf, fmtBalance } from './types';
 import { useTranslation } from 'react-i18next';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -52,9 +54,23 @@ export default function RegistersTab() {
 
   const saveRegister = useMutation({
     mutationFn: async (reg: Partial<PettyCashRegister>) => {
+      const payload: any = {
+        name: reg.name,
+        location: reg.location,
+        currencies: reg.currencies || ['HUF'],
+        closing_mode: reg.closing_mode || 'monthly',
+        custom_days: reg.custom_days || 30,
+        cash_limit: reg.cash_limit ?? 1500000,
+        limit_action: reg.limit_action || 'warn',
+        receipt_policy: reg.receipt_policy || 'when_no_document',
+        approval_threshold: reg.approval_threshold ?? 200000,
+        gl_account: reg.gl_account || '381',
+        is_single_person_mode: reg.is_single_person_mode ?? false,
+      };
+
       if (reg.id) {
         const { error } = await supabase.from('petty_cash_registers')
-          .update({ name: reg.name, location: reg.location, currencies: reg.currencies })
+          .update(payload)
           .eq('id', reg.id);
         if (error) throw error;
       } else {
@@ -67,10 +83,8 @@ export default function RegistersTab() {
 
         const { error } = await supabase.from('petty_cash_registers')
           .insert({
+            ...payload,
             company_id: companyId,
-            name: reg.name,
-            location: reg.location,
-            currencies: reg.currencies || ['HUF'],
             is_default: !hasDefault,
             created_by: user?.id,
           });
@@ -206,10 +220,24 @@ export default function RegistersTab() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1.5 items-center">
                   {reg.currencies.map(c => (
-                    <Badge key={c} variant="outline" className="text-xs">{c}</Badge>
+                    <Badge key={c} variant="outline" className="text-xs font-semibold">{c}</Badge>
                   ))}
+                  <Badge variant="secondary" className="text-[10px] bg-muted/60 text-muted-foreground">
+                    {reg.closing_mode === 'daily' ? 'Napi zárás' :
+                     reg.closing_mode === 'weekly' ? 'Heti zárás' :
+                     reg.closing_mode === 'decade' ? 'Dekád zárás' :
+                     reg.closing_mode === 'custom' ? `${reg.custom_days || 30} napos zárás` : 'Havi zárás'}
+                  </Badge>
+                  <Badge variant="outline" className="text-[10px] border-border/70 text-muted-foreground font-mono">
+                    Keret: {fmtBalance(reg.cash_limit ?? 1500000, 'HUF')}
+                  </Badge>
+                  {reg.gl_account && (
+                    <Badge variant="outline" className="text-[10px] border-border/70 text-muted-foreground font-mono">
+                      Főkönyv: {reg.gl_account}
+                    </Badge>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   {!reg.is_default && (
@@ -256,16 +284,40 @@ function RegisterDialog({ open, onOpenChange, register, onSave, saving }: {
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
   const [currencies, setCurrencies] = useState<string[]>(['HUF']);
+  const [closingMode, setClosingMode] = useState<'daily' | 'weekly' | 'decade' | 'monthly' | 'custom'>('monthly');
+  const [customDays, setCustomDays] = useState<number>(30);
+  const [cashLimit, setCashLimit] = useState<number>(1500000);
+  const [limitAction, setLimitAction] = useState<'warn' | 'block'>('warn');
+  const [receiptPolicy, setReceiptPolicy] = useState<'always' | 'when_no_document'>('when_no_document');
+  const [approvalThreshold, setApprovalThreshold] = useState<number>(200000);
+  const [glAccount, setGlAccount] = useState<string>('381');
+  const [isSinglePersonMode, setIsSinglePersonMode] = useState<boolean>(false);
 
   React.useEffect(() => {
     if (register) {
       setName(register.name);
       setLocation(register.location || '');
       setCurrencies(register.currencies);
+      setClosingMode(register.closing_mode || 'monthly');
+      setCustomDays(register.custom_days || 30);
+      setCashLimit(register.cash_limit ?? 1500000);
+      setLimitAction(register.limit_action || 'warn');
+      setReceiptPolicy(register.receipt_policy || 'when_no_document');
+      setApprovalThreshold(register.approval_threshold ?? 200000);
+      setGlAccount(register.gl_account || '381');
+      setIsSinglePersonMode(register.is_single_person_mode ?? false);
     } else {
       setName('');
       setLocation('');
       setCurrencies(['HUF']);
+      setClosingMode('monthly');
+      setCustomDays(30);
+      setCashLimit(1500000);
+      setLimitAction('warn');
+      setReceiptPolicy('when_no_document');
+      setApprovalThreshold(200000);
+      setGlAccount('381');
+      setIsSinglePersonMode(false);
     }
   }, [register, open]);
 
@@ -273,48 +325,204 @@ function RegisterDialog({ open, onOpenChange, register, onSave, saving }: {
     setCurrencies(prev => prev.includes(cur) ? prev.filter(c => c !== cur) : [...prev, cur]);
   };
 
+  const handleSave = () => {
+    onSave({
+      ...(register ? { id: register.id } : {}),
+      name,
+      location: location || null,
+      currencies,
+      closing_mode: closingMode,
+      custom_days: customDays,
+      cash_limit: cashLimit,
+      limit_action: limitAction,
+      receipt_policy: receiptPolicy,
+      approval_threshold: approvalThreshold,
+      gl_account: glAccount,
+      is_single_person_mode: isSinglePersonMode,
+    });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{register ? 'Pénztár szerkesztése' : 'Új pénztár'}</DialogTitle>
-          <DialogDescription>Add meg a pénztár nevét, helyszínét és az elfogadott valutákat.</DialogDescription>
+          <DialogTitle className="flex items-center gap-2">
+            <Settings2 className="w-5 h-5 text-primary" />
+            {register ? 'Pénztár és szabályzat szerkesztése' : 'Új pénztár létrehozása'}
+          </DialogTitle>
+          <DialogDescription>
+            Törzsadatok, zárási gyakoriság és pénzkezelési szabályzati paraméterek (Sztv. 14. § (8)).
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-2">
-          <div>
-            <Label>Név</Label>
-            <Input value={name} onChange={e => setName(e.target.value)} placeholder="Központi pénztár" />
+
+        <div className="space-y-5 py-2 text-xs">
+          {/* Section 1: Alapadatok */}
+          <div className="space-y-3 p-3.5 bg-muted/30 rounded-xl border border-border/60">
+            <h4 className="font-semibold text-foreground text-sm flex items-center gap-1.5">
+              <Banknote className="w-4 h-4 text-primary" />
+              Alapadatok
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Pénztár megnevezése *</Label>
+                <Input value={name} onChange={e => setName(e.target.value)} placeholder="Központi forint pénztár" className="h-9 mt-1 text-xs" />
+              </div>
+              <div>
+                <Label className="text-xs">Helyszín / Telephely (opcionális)</Label>
+                <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Budapest, Fő u. 1." className="h-9 mt-1 text-xs" />
+              </div>
+            </div>
+
+            <div>
+              <Label className="mb-1.5 block text-xs">Kezelt valuták</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {COMMON_CURRENCIES.map(cur => (
+                  <button
+                    key={cur}
+                    type="button"
+                    className={cn(
+                      'px-2.5 py-1 text-xs font-medium rounded-lg border transition-all',
+                      currencies.includes(cur)
+                        ? 'bg-primary text-primary-foreground border-primary shadow-sm font-semibold'
+                        : 'bg-background text-muted-foreground border-border hover:bg-muted/50'
+                    )}
+                    onClick={() => toggleCurrency(cur)}
+                  >
+                    {cur}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-          <div>
-            <Label>Helyszín (opcionális)</Label>
-            <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Budapest, Fő u. 1." />
+
+          {/* Section 2: Zárás és Keretösszeg Szabályzat */}
+          <div className="space-y-3 p-3.5 bg-muted/30 rounded-xl border border-border/60">
+            <h4 className="font-semibold text-foreground text-sm flex items-center gap-1.5">
+              <CalendarClock className="w-4 h-4 text-primary" />
+              Pénztárjelentés és Zárási Szabályzat
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Zárási gyakoriság</Label>
+                <Select value={closingMode} onValueChange={(v) => setClosingMode(v as any)}>
+                  <SelectTrigger className="h-9 mt-1 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily">Napi zárás (minden forgalmas nap)</SelectItem>
+                    <SelectItem value="weekly">Heti zárás (hétfő - vasárnap)</SelectItem>
+                    <SelectItem value="decade">Dekád zárás (10 napos)</SelectItem>
+                    <SelectItem value="monthly">Havi zárás (hónap utolsó napja)</SelectItem>
+                    <SelectItem value="custom">Egyedi ciklus</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {closingMode === 'custom' && (
+                <div>
+                  <Label className="text-xs">Egyedi ciklus hossza (nap)</Label>
+                  <Input 
+                    type="number" 
+                    value={customDays} 
+                    onChange={e => setCustomDays(Number(e.target.value) || 30)} 
+                    className="h-9 mt-1 text-xs" 
+                  />
+                </div>
+              )}
+
+              <div>
+                <Label className="text-xs">Készpénz keretösszeg (Ft)</Label>
+                <Input 
+                  type="number" 
+                  value={cashLimit} 
+                  onChange={e => setCashLimit(Number(e.target.value) || 0)} 
+                  className="h-9 mt-1 text-xs font-mono" 
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs">Kerettúllépési intézkedés</Label>
+                <Select value={limitAction} onValueChange={(v) => setLimitAction(v as any)}>
+                  <SelectTrigger className="h-9 mt-1 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="warn">Figyelmeztetés a jegyzőkönyvben</SelectItem>
+                    <SelectItem value="block">Zárás tiltása (befizetés szükséges)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
-          <div>
-            <Label className="mb-2 block">Valuták</Label>
-            <div className="flex flex-wrap gap-2">
-              {COMMON_CURRENCIES.map(cur => (
-                <button
-                  key={cur}
-                  className={cn(
-                    'px-3 py-1.5 text-xs font-medium rounded-lg border transition-all',
-                    currencies.includes(cur)
-                      ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                      : 'bg-muted/30 text-muted-foreground border-border hover:bg-muted/50'
-                  )}
-                  onClick={() => toggleCurrency(cur)}
-                >
-                  {cur}
-                </button>
-              ))}
+
+          {/* Section 3: Bizonylati és Könyvelési Rend */}
+          <div className="space-y-3 p-3.5 bg-muted/30 rounded-xl border border-border/60">
+            <h4 className="font-semibold text-foreground text-sm flex items-center gap-1.5">
+              <FileText className="w-4 h-4 text-primary" />
+              Bizonylati és Könyvelési Beállítások
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Pénztárbizonylat (BPB/KPB) szabályzat</Label>
+                <Select value={receiptPolicy} onValueChange={(v) => setReceiptPolicy(v as any)}>
+                  <SelectTrigger className="h-9 mt-1 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="when_no_document">Csak ha nincs alapbizonylat</SelectItem>
+                    <SelectItem value="always">Minden tételhez kötelező BPB/KPB</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className="text-xs">Utalványozási összeghatár (Ft)</Label>
+                <Input 
+                  type="number" 
+                  value={approvalThreshold} 
+                  onChange={e => setApprovalThreshold(Number(e.target.value) || 0)} 
+                  className="h-9 mt-1 text-xs font-mono" 
+                />
+                <p className="text-[10px] text-muted-foreground mt-0.5">Efölötti kiadáshoz külön jóváhagyás kell.</p>
+              </div>
+
+              <div>
+                <Label className="text-xs">Főkönyvi számlaszám</Label>
+                <Input 
+                  value={glAccount} 
+                  onChange={e => setGlAccount(e.target.value)} 
+                  placeholder="381" 
+                  className="h-9 mt-1 text-xs font-mono" 
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-2.5 bg-background rounded-lg border border-border/50">
+                <div className="space-y-0.5 pr-2">
+                  <Label className="text-xs font-medium cursor-pointer" htmlFor="single-person-mode">
+                    Egyszemélyes mód
+                  </Label>
+                  <p className="text-[10px] text-muted-foreground">Pénztáros és ellenőr azonos személy lehet.</p>
+                </div>
+                <Switch 
+                  id="single-person-mode"
+                  checked={isSinglePersonMode} 
+                  onCheckedChange={setIsSinglePersonMode} 
+                />
+              </div>
             </div>
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Mégse</Button>
-          <Button onClick={() => onSave({ ...(register ? { id: register.id } : {}), name, location: location || null, currencies })}
-            disabled={saving || !name || currencies.length === 0}>
-            {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-            Mentés
+
+        <DialogFooter className="pt-2 border-t border-border/50">
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Mégse</Button>
+          <Button 
+            size="sm"
+            onClick={handleSave}
+            disabled={saving || !name || currencies.length === 0}
+            className="gap-1.5"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Beállítások mentése
           </Button>
         </DialogFooter>
       </DialogContent>

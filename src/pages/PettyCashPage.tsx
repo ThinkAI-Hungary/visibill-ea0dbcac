@@ -9,13 +9,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { AlertTriangle, Banknote, Settings2, Star, Zap, ClipboardCheck, Calculator } from 'lucide-react';
+import { AlertTriangle, Banknote, Settings2, Star, Zap, ClipboardCheck, Calculator, FileText } from 'lucide-react';
 import { fmtBalance } from '@/components/petty-cash/types';
-import type { SummaryRow } from '@/components/petty-cash/types';
+import type { SummaryRow, PettyCashRegister } from '@/components/petty-cash/types';
 import RegistersTab from '@/components/petty-cash/RegistersTab';
 import EntriesTab from '@/components/petty-cash/EntriesTab';
 import RoutingRulesTab from '@/components/petty-cash/RoutingRulesTab';
 import ApprovalTab from '@/components/petty-cash/ApprovalTab';
+import CashReportsTab from '@/components/petty-cash/CashReportsTab';
 import DenominationCalculatorDialog from '@/components/petty-cash/DenominationCalculatorDialog';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -68,6 +69,22 @@ const PettyCashPage = () => {
         .in('invoice_type', ['penztarbizonylat', 'egyszerusitett_szla', 'penztargep_zaras']);
       if (error) return 0;
       return count || 0;
+    },
+    enabled: !!companyId,
+  });
+
+  // Registers list for passing to tabs
+  const { data: registers = [] } = useQuery({
+    queryKey: queryKeys.pettyCashRegisters(companyId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('petty_cash_registers')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('is_default', { ascending: false })
+        .order('name');
+      if (error) throw error;
+      return (data || []) as unknown as PettyCashRegister[];
     },
     enabled: !!companyId,
   });
@@ -296,6 +313,9 @@ const PettyCashPage = () => {
                 </Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="reports" className="gap-1.5">
+              <FileText className="w-4 h-4" /> {t('pettyCash:tabs.reports', 'Pénztárjelentések')}
+            </TabsTrigger>
             <TabsTrigger value="registers" className="gap-1.5">
               <Settings2 className="w-4 h-4" /> {t('pettyCash:tabs.registers', 'Pénztárak')}
             </TabsTrigger>
@@ -306,6 +326,9 @@ const PettyCashPage = () => {
 
           <TabsContent value="entries" className="mt-4">
             <EntriesTab />
+          </TabsContent>
+          <TabsContent value="reports" className="mt-4">
+            <CashReportsTab registers={registers} companyId={companyId} />
           </TabsContent>
           <TabsContent value="approvals" className="mt-4">
             <ApprovalTab />

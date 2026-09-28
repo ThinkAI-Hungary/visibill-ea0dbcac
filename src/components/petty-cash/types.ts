@@ -7,6 +7,16 @@ export interface PettyCashRegister {
   location: string | null;
   currencies: string[];
   is_default: boolean;
+  closing_mode?: 'daily' | 'weekly' | 'decade' | 'monthly' | 'custom';
+  custom_days?: number;
+  cash_limit?: number;
+  limit_action?: 'warn' | 'block';
+  receipt_policy?: 'always' | 'when_no_document';
+  approval_threshold?: number;
+  gl_account?: string;
+  is_single_person_mode?: boolean;
+  cashier_user_id?: string | null;
+  controller_user_id?: string | null;
   created_at: string;
 }
 
@@ -32,6 +42,109 @@ export interface PettyCashEntry {
   routed_by: string;
   created_at: string;
   partner_id: string | null;
+  cash_report_id?: string | null;
+  line_no?: number | null;
+  status?: 'draft' | 'pending_approval' | 'posted' | 'cancelled';
+  direction?: 'in' | 'out' | null;
+  legal_title?: string | null;
+  gl_contra_account?: string | null;
+  cancelled_reason?: string | null;
+  cancelled_at?: string | null;
+  cancelled_by?: string | null;
+  receipt_id?: string | null;
+}
+
+export type CashReportStatus = 'open' | 'closing' | 'closed' | 'posted' | 'reopened';
+
+export interface CashReport {
+  id: string;
+  company_id: string;
+  cash_register_id: string;
+  seq_no: number | null;
+  report_number: string | null;
+  period_start: string;
+  period_end: string;
+  status: CashReportStatus;
+  opening_balance: number;
+  total_in: number;
+  total_out: number;
+  closing_balance_book: number;
+  closing_balance_actual: number | null;
+  difference: number | null;
+  currency: string;
+  closed_by: string | null;
+  closed_at: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  content_hash: string | null;
+  version: number;
+  pdf_document_id: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CashReceipt {
+  id: string;
+  company_id: string;
+  cash_register_id: string;
+  cash_entry_id: string | null;
+  receipt_type: 'in' | 'out';
+  seq_no: number;
+  receipt_number: string;
+  issued_at: string;
+  partner_id: string | null;
+  payer_or_payee_name: string | null;
+  payer_or_payee_address: string | null;
+  amount: number;
+  currency: string;
+  amount_in_words: string;
+  legal_title: string | null;
+  description: string | null;
+  attachments?: any[];
+  is_cancelled: boolean;
+  cancellation_reason: string | null;
+  cancelled_at: string | null;
+  cancelled_by: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface DenominationRow {
+  denomination: number;
+  count: number;
+  subtotal: number;
+}
+
+export interface DenominationSheet {
+  id: string;
+  company_id: string;
+  cash_report_id: string;
+  currency: string;
+  rows: DenominationRow[];
+  total_amount: number;
+  version: number;
+  created_at: string;
+}
+
+export interface CashClosingProtocol {
+  id: string;
+  company_id: string;
+  cash_report_id: string;
+  version: number;
+  book_balance: number;
+  actual_balance: number;
+  difference: number;
+  difference_reason: string | null;
+  action: 'cashier_repays' | 'booked_as_shortage' | 'booked_as_surplus' | 'pending_investigation' | null;
+  balancing_entry_id: string | null;
+  cashier_user_id: string | null;
+  cashier_signed_at: string | null;
+  controller_user_id: string | null;
+  controller_signed_at: string | null;
+  is_single_person: boolean;
+  notes: string | null;
+  created_at: string;
 }
 
 /** Open (unpaid) invoice available for cash settlement (inbound or outbound) */

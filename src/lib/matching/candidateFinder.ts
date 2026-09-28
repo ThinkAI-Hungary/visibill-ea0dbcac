@@ -21,6 +21,35 @@ export function toHuf(amount: number, currency?: string | null): number {
   return amount;
 }
 
+export const BRAND_SYNONYMS: [string[], string[]][] = [
+  [['celonis', 'celonis inc'], ['make', 'make.com', 'integromat', 'www.make.com']],
+  [['openai', 'chatgpt'], ['openai', 'chatgpt', 'openai.com']],
+  [['lunaweb', 'cloudconvert'], ['lunaweb', 'cloudconvert']],
+  [['anthropic'], ['anthropic', 'claude', 'anthropic.com']],
+  [['kboss', 'szamlazz'], ['kboss', 'szamlazz', 'simplep*szamlazz']],
+  [['websupport', 'webonic'], ['websupport', 'webonic', 'admin.webonic']],
+  [['intuit', 'mailchimp'], ['intuit', 'mailchimp']],
+  [['google', 'gsuite', 'workspace'], ['google', 'gsuite', 'workspace']],
+  [['microsoft', 'office365', 'msft'], ['microsoft', 'office365', 'msft']],
+  [['gls'], ['gls', 'gls hungary', 'gls csomagszállítás', 'gls futár']],
+];
+
+export function isBrandSynonymMatch(vendorName?: string | null, query?: string): boolean {
+  if (!vendorName || !query) return false;
+  const v = vendorName.toLowerCase();
+  const q = query.toLowerCase();
+  for (const [groupA, groupB] of BRAND_SYNONYMS) {
+    const qInA = groupA.some(term => q.includes(term) || term.includes(q));
+    const vInB = groupB.some(term => v.includes(term));
+    if (qInA && vInB) return true;
+
+    const qInB = groupB.some(term => q.includes(term) || term.includes(q));
+    const vInA = groupA.some(term => v.includes(term));
+    if (qInB && vInA) return true;
+  }
+  return false;
+}
+
 export function isSameCurrency(ccyA?: string | null, ccyB?: string | null): boolean {
   return (ccyA || 'HUF').toUpperCase() === (ccyB || 'HUF').toUpperCase();
 }
@@ -113,6 +142,7 @@ export function filterAndSortInvoiceCandidates({
   const localMatches = availableInvoices.filter(inv => {
     if (inv.bizonylatsorszam?.toLowerCase().includes(searchLower)) return true;
     if (inv.elado_nev?.toLowerCase().includes(searchLower)) return true;
+    if (isBrandSynonymMatch(inv.elado_nev, searchLower)) return true;
 
     if (inv.brutto_vegosszeg != null) {
       const amt = inv.brutto_vegosszeg;

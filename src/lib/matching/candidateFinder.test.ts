@@ -23,6 +23,14 @@ describe('candidateFinder', () => {
       expect(isSameCurrency('HUF', null)).toBe(true);
       expect(isSameCurrency('HUF', 'EUR')).toBe(false);
     });
+
+    it('matches brand synonyms bidirectionally', async () => {
+      const { isBrandSynonymMatch } = await import('./candidateFinder');
+      expect(isBrandSynonymMatch('Celonis Inc.', 'make')).toBe(true);
+      expect(isBrandSynonymMatch('Celonis', 'make.com')).toBe(true);
+      expect(isBrandSynonymMatch('Make.com', 'celonis')).toBe(true);
+      expect(isBrandSynonymMatch('Unrelated Company', 'make')).toBe(false);
+    });
   });
 
   describe('filterAndSortInvoiceCandidates', () => {

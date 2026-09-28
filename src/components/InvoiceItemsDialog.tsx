@@ -2264,7 +2264,7 @@ export function InvoiceItemsDialog({
           } 
         }}
       >
-        <DialogContent className="w-[95vw] sm:w-[92vw] md:w-full max-w-5xl max-h-[90vh] flex flex-col overflow-y-auto overflow-x-hidden p-6">
+        <DialogContent className="w-[95vw] sm:w-[90vw] md:w-[860px] lg:w-[920px] max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-4xl xl:max-w-5xl max-h-[90vh] flex flex-col overflow-hidden p-0 gap-0">
           {(() => {
             const isNegative = glEditItem 
               ? ((glEditItem.net_amount ?? 0) < 0 || (glEditItem.gross_amount ?? 0) < 0)
@@ -2306,7 +2306,7 @@ export function InvoiceItemsDialog({
 
             return (
               <>
-                <DialogHeader>
+                <DialogHeader className="p-5 pb-3 shrink-0 border-b border-border/40">
                   <DialogTitle className="flex items-center gap-2">
                     <ArrowLeftRight className="h-5 w-5 text-primary" />
                     <span>
@@ -2341,7 +2341,7 @@ export function InvoiceItemsDialog({
                   </DialogDescription>
                 </DialogHeader>
 
-                <div className="py-2 flex flex-col gap-4 w-full">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden p-5 flex flex-col gap-4 w-full min-h-0">
                   {/* Two Cards: Tartozik (T) and Követel (K) with Swap Button */}
                   <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 p-3.5 bg-muted/40 rounded-xl border border-border/60">
                     {/* Tartozik (T) Card */}
@@ -2354,10 +2354,10 @@ export function InvoiceItemsDialog({
                           : "bg-background border-border hover:border-primary/50 hover:bg-background/80"
                       )}
                     >
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-xs font-bold text-primary flex items-center gap-1.5 shrink-0">
-                          <span className="px-1.5 py-0.5 rounded bg-primary text-primary-foreground font-mono text-[10px] font-black">T</span>
-                          Tartozik oldal
+                      <div className="flex items-center justify-between gap-1 min-w-0">
+                        <span className="text-xs font-bold text-primary flex items-center gap-1.5 min-w-0">
+                          <span className="px-1.5 py-0.5 rounded bg-primary text-primary-foreground font-mono text-[10px] font-black shrink-0">T</span>
+                          <span className="truncate">Tartozik oldal</span>
                         </span>
                         {activeEditSide === 'T' ? (
                           <Badge variant="outline" className="text-[10px] bg-primary/20 border-primary/30 text-primary py-0 px-1.5 shrink-0">
@@ -2412,10 +2412,10 @@ export function InvoiceItemsDialog({
                           : "bg-background border-border hover:border-primary/50 hover:bg-background/80"
                       )}
                     >
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-xs font-bold text-primary flex items-center gap-1.5 shrink-0">
-                          <span className="px-1.5 py-0.5 rounded bg-primary text-primary-foreground font-mono text-[10px] font-black">K</span>
-                          Követel oldal
+                      <div className="flex items-center justify-between gap-1 min-w-0">
+                        <span className="text-xs font-bold text-primary flex items-center gap-1.5 min-w-0">
+                          <span className="px-1.5 py-0.5 rounded bg-primary text-primary-foreground font-mono text-[10px] font-black shrink-0">K</span>
+                          <span className="truncate">Követel oldal</span>
                         </span>
                         {activeEditSide === 'K' ? (
                           <Badge variant="outline" className="text-[10px] bg-primary/20 border-primary/30 text-primary py-0 px-1.5 shrink-0">
@@ -2440,7 +2440,7 @@ export function InvoiceItemsDialog({
                   </div>
 
                   {/* Section Label for Selected Side */}
-                  <div className="flex items-center justify-between gap-2 px-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 px-1">
                     <span className="text-xs font-semibold text-foreground flex items-center gap-2 min-w-0">
                       <span className="px-1.5 py-0.5 rounded bg-muted text-foreground font-mono font-bold shrink-0">
                         {activeEditSide === 'T' ? 'T' : 'K'}
@@ -2452,7 +2452,7 @@ export function InvoiceItemsDialog({
                         }
                       </span>
                     </span>
-                    <span className="text-xs text-muted-foreground italic shrink-0">
+                    <span className="text-xs text-muted-foreground italic truncate">
                       {activeSideIsItem ? 'Költség / ráfordítás / árbevétel' : 'Partner számla (szállító / vevő)'}
                     </span>
                   </div>
@@ -2597,7 +2597,7 @@ export function InvoiceItemsDialog({
                   )}
                 </div>
 
-                <DialogFooter className="pt-3 border-t border-border/40 gap-2 sm:gap-2 sm:space-x-0 flex flex-row justify-end shrink-0">
+                <DialogFooter className="p-4 pt-3 border-t border-border/40 gap-2 sm:gap-2 sm:space-x-0 flex flex-row justify-end shrink-0 bg-background">
                   <Button variant="outline" onClick={() => setGlEditOpen(false)} disabled={isGlSubmitting}>
                     {t('common:actions.cancel')}
                   </Button>

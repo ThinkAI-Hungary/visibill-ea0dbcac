@@ -330,7 +330,7 @@ export function VatOsaCheckDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[92vh] flex flex-col p-6 gap-4">
+      <DialogContent className="w-[96vw] max-w-[96vw] sm:max-w-[96vw] xl:max-w-[1600px] 2xl:max-w-[1800px] h-[92vh] max-h-[92vh] flex flex-col p-4 sm:p-6 gap-4">
         {/* Header */}
         <DialogHeader className="pb-2 border-b border-border/60">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -429,7 +429,7 @@ export function VatOsaCheckDialog({
         </div>
 
         {/* Diff Table */}
-        <div className="flex-1 overflow-auto rounded-xl border border-border/80 min-h-[320px] max-h-[55vh] bg-card">
+        <div className="flex-1 overflow-auto rounded-xl border border-border/80 min-h-[320px] bg-card">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center h-48 gap-2 text-muted-foreground text-xs">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -502,7 +502,7 @@ export function VatOsaCheckDialog({
                       </TableCell>
 
                       {/* Partner Name */}
-                      <TableCell className="font-medium truncate max-w-[200px]" title={item.partnerName}>
+                      <TableCell className="font-medium truncate max-w-[240px] xl:max-w-[380px] 2xl:max-w-[480px]" title={item.partnerName}>
                         {item.partnerName}
                       </TableCell>
 
@@ -573,7 +573,7 @@ export function VatOsaCheckDialog({
                       </TableCell>
 
                       {/* Notes / Details */}
-                      <TableCell className="text-[11px] text-muted-foreground truncate max-w-[140px]" title={item.notes}>
+                      <TableCell className="text-[11px] text-muted-foreground truncate max-w-[160px] xl:max-w-[320px]" title={item.notes}>
                         {item.notes}
                       </TableCell>
                     </TableRow>
