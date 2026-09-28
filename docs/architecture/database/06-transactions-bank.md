@@ -85,15 +85,16 @@
 | invoice_id | uuid | — |  |
 | invoice_source | text | — | `'submitted'::text` |
 | created_at | timestamp with time zone | — | `now()` |
-| created_by | text | — | `'manual'::text` |
+| created_by | text | — | `'manual'::text` (CHECK: `'manual'`, `'ai'`, `'courier_auto'`, `'chain_propagated'`) |
 
 **FK:** `transaction_id` → `transactions.id`
 
 **Indexek:** `idx_tim_invoice_id`, `idx_tim_transaction_id`, `transaction_invoice_matches_transaction_id_invoice_id_key`
 
-**Triggerek:**
+**Triggerek & Propagációs Eljárások (A-173):**
 - `trg_mark_invoice_paid_on_multi_match` (`AFTER INSERT`): Multi-match létrejöttekor beállítja a `paid = true` állapotot a számlán.
 - `trg_reset_paid_on_multi_match_delete` (`BEFORE DELETE`): Multi-match törlésekor/lekapcsolásakor visszaállítja a számla állapotát (`paid = false, transaction_id = NULL`), amennyiben más tranzakció nem kapcsolódik hozzá (A-128).
+- `propagate_transaction_to_invoice_chain(p_transaction_id uuid)`: Adatbázis-szintű tárolt eljárás (`SECURITY DEFINER`), amely a számlaláncokat (díjbekérő ↔ végszámla, előleg ↔ végszámla, sztornó ↔ eredeti) tranzitívan feloldja és a tranzakciót átörökíti az összes kapcsolódó elemre `'chain_propagated'` jelöléssel.
 
 ---
 

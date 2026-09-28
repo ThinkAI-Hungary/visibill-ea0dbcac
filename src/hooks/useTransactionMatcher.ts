@@ -77,8 +77,8 @@ export function useTransactionMatcher({
 
       if (error) throw error;
 
-      // Only show unmatched transactions (no matched_invoice_id)
-      setAvailableTransactions((data || []).filter(tx => !tx.matched_invoice_id));
+      // Only show unmatched transactions or transaction already matched to this invoice
+      setAvailableTransactions((data || []).filter(tx => !tx.matched_invoice_id || tx.matched_invoice_id === invoiceId));
     } catch (error) {
       reportError({
         type: 'db_query',

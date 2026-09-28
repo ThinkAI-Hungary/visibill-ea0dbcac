@@ -40,6 +40,37 @@ export function buildNavToSubmittedMap(
     const verified = candidates.filter(sub => isNavAndSubmittedInvoiceMatch(nav, sub));
     if (verified.length > 0) {
       map.set(key, verified);
+    } else {
+      // Számlalánc-örökítés (díjbekérő / előlegszámla / közös tranzakció híd)
+      const isOutbound = nav.invoice_direction === 'OUTBOUND';
+      const navTax = extractBaseTax(isOutbound ? nav.customer_tax_number : nav.supplier_tax_number);
+      const navGross = Math.abs(Number(nav.invoice_gross_amount || 0));
+
+      const chainMatches = submittedInvoices.filter(sub => {
+        // 1. Azonos tranzakció ID
+        if (nav.transaction_id && sub.transaction_id && nav.transaction_id === sub.transaction_id) {
+          return true;
+        }
+        // 2. Díjbekérő / Előleg lánc azonos partnerrel és összeggel
+        if (
+          sub.invoice_direction === nav.invoice_direction &&
+          ['dijbekero_proforma', 'dijbekero', 'elolegszamla'].includes(sub.invoice_type || '')
+        ) {
+          const subTax = extractBaseTax(isOutbound ? sub.vevo_vat_id : sub.elado_vat_id);
+          const taxMatch = navTax && subTax ? navTax === subTax : false;
+          const subGross = Math.abs(Number(sub.brutto_vegosszeg || 0));
+          const amountMatch = Math.abs(subGross - navGross) < 1.0;
+
+          if (taxMatch && amountMatch) {
+            return true;
+          }
+        }
+        return false;
+      });
+
+      if (chainMatches.length > 0) {
+        map.set(key, chainMatches);
+      }
     }
   });
 
@@ -67,6 +98,32 @@ export function buildSubmittedToNavMap(
       const verified = candidates.filter(nav => isNavAndSubmittedInvoiceMatch(nav, sub));
       if (verified.length > 0) {
         map.set(key, verified);
+      } else {
+        // Számlalánc feloldás fordított irányban
+        const isOutbound = sub.invoice_direction === 'OUTBOUND';
+        const subTax = extractBaseTax(isOutbound ? sub.vevo_vat_id : sub.elado_vat_id);
+        const subGross = Math.abs(Number(sub.brutto_vegosszeg || 0));
+
+        const chainMatches = paginatedNavInvoices.filter(nav => {
+          if (sub.transaction_id && nav.transaction_id && sub.transaction_id === nav.transaction_id) {
+            return true;
+          }
+          if (
+            nav.invoice_direction === sub.invoice_direction &&
+            ['dijbekero_proforma', 'dijbekero', 'elolegszamla'].includes(sub.invoice_type || '')
+          ) {
+            const navTax = extractBaseTax(isOutbound ? nav.customer_tax_number : nav.supplier_tax_number);
+            const taxMatch = subTax && navTax ? subTax === navTax : false;
+            const navGross = Math.abs(Number(nav.invoice_gross_amount || 0));
+            const amountMatch = Math.abs(navGross - subGross) < 1.0;
+            return taxMatch && amountMatch;
+          }
+          return false;
+        });
+
+        if (chainMatches.length > 0) {
+          map.set(key, chainMatches);
+        }
       }
     }
   });

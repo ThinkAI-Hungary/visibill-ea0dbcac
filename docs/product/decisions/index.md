@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-28  
-> **Összesen:** 132 döntés | ✅ Decided: 128 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 133 döntés | ✅ Decided: 129 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -60,6 +60,7 @@
 | P-090 | Banki Tranzakciós Fájlok és Kivonatok Kezelő Dialógus (TransactionFilesDialog) UX | ✅ Decided | [P-090](./P-090-transaction-uploaded-files-management-dialog-ux.md) |
 | P-104 | Tranzakció jutalék és számlaszám exportálása | ✅ Decided | [P-104](./P-104-transaction-fee-and-invoice-number-export-ux.md) |
 | P-129 | Futárriportok és Banki Tranzakciók Teljes Időszaki Exportálása és Szűrt Letöltése UX | ✅ Decided | [P-129](./P-129-courier-and-bank-transactions-full-period-export-ux.md) |
+| P-133 | Számlalánc és Díjbekérő Tranzakció-örökítés és Zöld Státusz UX | ✅ Decided | [P-133](./P-133-invoice-chain-transaction-propagation-ux.md) |
 
 ## 📒 Főkönyv & Riportok
 

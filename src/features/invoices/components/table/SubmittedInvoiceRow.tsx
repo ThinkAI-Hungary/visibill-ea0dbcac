@@ -108,11 +108,16 @@ export function SubmittedInvoiceRow({
       (pageInvoiceIdToTransactionsMap.get(nav.id) || []).forEach(tx => allTxMap.set(tx.id, tx));
     });
 
+    const linkedInvoices = resolveLinkedInvoices(subInvoice, linkedInvoicesMap);
+    linkedInvoices.forEach(link => {
+      (pageInvoiceIdToTransactionsMap.get(link.id) || []).forEach(tx => allTxMap.set(tx.id, tx));
+    });
+
     return {
       matchedSubmitted: [] as SubmittedInvoice[],
       matchedTransactions: Array.from(allTxMap.values()),
       matchedNav,
-      linkedInvoices: resolveLinkedInvoices(subInvoice, linkedInvoicesMap),
+      linkedInvoices,
     };
   };
 

@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-28  
-> **Összesen:** 188 döntés (173 egyedi döntési fájl) | ✅ Decided: 186 | ⛔ Superseded: 2
+> **Összesen:** 189 döntés (174 egyedi döntési fájl) | ✅ Decided: 187 | ⛔ Superseded: 2
 
 ---
 
@@ -135,6 +135,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-151 | Eredménykimutatás és Mérleg Lekérdezési Vihar Megszüntetése, Trend Chunking és Igény Szerinti (On-Demand) Tételes Fúrás | ✅ Decided | [A-151](./A-151-pnl-and-balance-sheet-query-storm-elimination.md) |
 | A-152 | Analitikai és Jelentéskészítő RPC Stabilitás (STABLE), PostgREST Rate Limiter Mentesség és Realtime Eseményszivárgás Védelem | ✅ Decided | [A-152](./A-152-rate-limiter-rpc-stability-and-realtime-leak-hardening.md) |
 | A-153 | Főkönyvi Kivonat Kötegelt Tételes Adatbetöltés és Fastruktúra Renderelés | ✅ Decided | [A-153](./A-153-general-ledger-batch-itemized-view-architecture.md) |
+| A-173 | Számlalánc Tranzakció-örökítés, Díjbekérő-Végszámla Automatikus Párosítás és PostgreSQL Propagáció | ✅ Decided | [A-173](./A-173-invoice-chain-transaction-propagation.md) |
 
 ## 🖥️ Frontend
 

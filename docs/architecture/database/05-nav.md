@@ -64,7 +64,11 @@
 
 **FK:** `category_id` → `categories.id`, `company_id` → `companies.id`, `gl_account_id` → `gl_accounts.id`, `project_id` → `projects.id`, `supplier_partner_id` → `partners.id`, `transaction_id` → `transactions.id`, `user_id` → `auth.users.id`
 
-**Indexek:** `idx_nav_invoices_cash_payment`, `idx_nav_invoices_category_id`, `idx_nav_invoices_company_date`, `idx_nav_invoices_company_direction_date`, `idx_nav_invoices_company_dir_date_desc`, `idx_nav_invoices_company_payment`, `idx_nav_invoices_exclude`, `idx_nav_invoices_gl_account_id`, `idx_nav_invoices_outbound_unpaid`, `idx_nav_invoices_project_id`, `idx_nav_invoices_reverse_charge`, `idx_nav_invoices_search_trgm` (GIN trigram), `idx_nav_invoices_supplier_partner`, `idx_nav_invoices_transaction_id`, `idx_nav_invoices_user_id`, `idx_nav_invoices_vat_summary` (GIN), `nav_invoices_company_id_invoice_number_key`
+**Indexek:** `idx_nav_invoices_cash_payment`, `idx_nav_invoices_category_id`, `idx_nav_invoices_chain_lookup`, `idx_nav_invoices_company_date`, `idx_nav_invoices_company_direction_date`, `idx_nav_invoices_company_dir_date_desc`, `idx_nav_invoices_company_payment`, `idx_nav_invoices_exclude`, `idx_nav_invoices_gl_account_id`, `idx_nav_invoices_original_invoice_number`, `idx_nav_invoices_outbound_unpaid`, `idx_nav_invoices_project_id`, `idx_nav_invoices_reverse_charge`, `idx_nav_invoices_search_trgm` (GIN trigram), `idx_nav_invoices_supplier_partner`, `idx_nav_invoices_transaction_id`, `idx_nav_invoices_user_id`, `idx_nav_invoices_vat_summary` (GIN), `nav_invoices_company_id_invoice_number_key`
+
+**Számlalánc-öröklési és Tranzakció-propagációs Triggerek (A-173):**
+- `mark_nav_invoice_paid_on_transaction_match` (`BEFORE UPDATE`): Ha a NAV számlán beállítódik a `transaction_id`, automatikusan meghívja a `propagate_transaction_to_invoice_chain` eljárást a lánc további tagjainak kiegyenlítésére.
+- `sync_nav_invoice_chain_after_insert` (`AFTER INSERT`): Új NAV számla beérkezésekor azonnal ellenőrzi, hogy létezik-e hozzá tartozó díjbekérő vagy előzmény kapcsolt tranzakcióval, és azonnal örökíti a tranzakciót és a `paid = true` állapotot.
 
 **Kézi fizetés logika (`is_manual_payment`):**  
 - Ha `manual_payment_type = 'storno_settled'` → a sztornó láncolatot a user manuálisan zárta le (`mark_storno_group_settled` RPC). A sor zöldre vált a frontenden, visszavonható (`unmark_storno_group_settled`). Lásd: [A-042: Sztornó Settle Architektúra](../decisions/A-042-storno-settle-architecture.md)

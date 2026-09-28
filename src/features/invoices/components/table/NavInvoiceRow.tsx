@@ -191,6 +191,11 @@ function NavInvoiceRowComponent({
       linkedInvoices = resolveLinkedInvoices(pseudoSub, linkedInvoicesMap);
     }
 
+    // Láncolt számlákhoz tartozó tranzakciók beemelése
+    linkedInvoices.forEach(link => {
+      (pageInvoiceIdToTransactionsMap.get(link.id) || []).forEach(tx => allTxMap.set(tx.id, tx));
+    });
+
     return {
       matchedSubmitted,
       matchedTransactions: Array.from(allTxMap.values()),

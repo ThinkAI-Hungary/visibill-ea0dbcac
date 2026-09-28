@@ -170,8 +170,8 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceItemsDialog.tsx": {
-    "mtime": 1790534876.667032,
-    "ast_hash": "9a4ceab3bbdd0f13e784c118e1f08412",
+    "mtime": 1790601306.8109992,
+    "ast_hash": "963e8ce552799c0c5c1bf95fe20e7093",
     "semantic_hash": ""
   },
   "src/components/LiveNotificationProvider.tsx": {
@@ -1530,8 +1530,8 @@
     "semantic_hash": ""
   },
   "src/pages/PettyCashPage.tsx": {
-    "mtime": 1789561118.9689026,
-    "ast_hash": "cddfb9a810362a04417e764b5327d740",
+    "mtime": 1790601306.8195097,
+    "ast_hash": "4d489f3eeaf236c6f534850219ec2a3a",
     "semantic_hash": ""
   },
   "src/pages/ProfitAndLoss.tsx": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790596834.1299493,
-    "ast_hash": "ac0378b39070d84e203abd91ed2f5c06",
+    "mtime": 1790601384.3130572,
+    "ast_hash": "1f4fe39cc0a2618dc0585a5006894423",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3570,8 +3570,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1790594790.5171974,
-    "ast_hash": "260b2d7732795b052abad167e5b1f02f",
+    "mtime": 1790601403.884181,
+    "ast_hash": "1ef2747870909b85143819f52b25ab85",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -3585,8 +3585,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useTransactionMatcher.ts": {
-    "mtime": 1788132362.121907,
-    "ast_hash": "4e6f2835873e66ca17a6ea48057f1f9c",
+    "mtime": 1790601328.0134022,
+    "ast_hash": "011983e156b913dbf6c918357c082567",
     "semantic_hash": ""
   },
   "src/lib/errorReporter.ts": {
@@ -3765,13 +3765,13 @@
     "semantic_hash": ""
   },
   "src/components/petty-cash/EntriesTab.tsx": {
-    "mtime": 1790534876.669031,
-    "ast_hash": "e4cf8469f303ac6e8186e40a98737948",
+    "mtime": 1790601306.8129969,
+    "ast_hash": "ed3132f17072456dbcac98541375c9bd",
     "semantic_hash": ""
   },
   "src/components/petty-cash/RegistersTab.tsx": {
-    "mtime": 1789159282.9895697,
-    "ast_hash": "9f6ddd532f0ec27acf47babc4477041f",
+    "mtime": 1790601306.8129969,
+    "ast_hash": "74c88ec2ab83afaffb65d2667f9e1a9f",
     "semantic_hash": ""
   },
   "src/components/petty-cash/RoutingRulesTab.tsx": {
@@ -3780,8 +3780,8 @@
     "semantic_hash": ""
   },
   "src/components/petty-cash/types.ts": {
-    "mtime": 1790534876.669031,
-    "ast_hash": "ab01d6d1ff383b5e70624aefaef1e3c3",
+    "mtime": 1790601306.8159976,
+    "ast_hash": "a1609d0822cd32f98066eda0507e6d93",
     "semantic_hash": ""
   },
   "src/components/pnl/PnlChart.tsx": {
@@ -5040,18 +5040,18 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/04-invoices.md": {
-    "mtime": 1790534876.5882561,
-    "ast_hash": "2ff3642c651924cd2cf62b923f866a8b",
+    "mtime": 1790601327.952359,
+    "ast_hash": "85f6f1a1b210c697fe6d92f2c4ca6130",
     "semantic_hash": ""
   },
   "docs/architecture/database/05-nav.md": {
-    "mtime": 1790332717.8806176,
-    "ast_hash": "06127180084ec54a26590a3557a4d49e",
+    "mtime": 1790601413.5313907,
+    "ast_hash": "938c093a5b3010064142ff33eb59e8fa",
     "semantic_hash": ""
   },
   "docs/architecture/database/06-transactions-bank.md": {
-    "mtime": 1790586546.676306,
-    "ast_hash": "9527bc3e748ea30a2ad86cf0012ecd98",
+    "mtime": 1790601422.2116282,
+    "ast_hash": "142888df6201d0b7de9c84b91851606b",
     "semantic_hash": ""
   },
   "docs/architecture/database/07-general-ledger.md": {
@@ -5665,8 +5665,8 @@
     "semantic_hash": ""
   },
   "src/components/petty-cash/ApprovalTab.tsx": {
-    "mtime": 1789561118.962902,
-    "ast_hash": "c947f3ad9be3370c2e773f770d961a0b",
+    "mtime": 1790601306.8109992,
+    "ast_hash": "c81ae571f3e6d688fc345fc92d6c0d47",
     "semantic_hash": ""
   },
   "src/components/transactions/TransactionFilesDialog.tsx": {
@@ -7025,13 +7025,13 @@
     "semantic_hash": ""
   },
   "src/lib/matching/candidateFinder.test.ts": {
-    "mtime": 1789515572.6774013,
-    "ast_hash": "4c6866930ed17902a9758a01bbf93fd8",
+    "mtime": 1790601306.8169973,
+    "ast_hash": "c93315ac5e1c5ea39cf428b59aa578b0",
     "semantic_hash": ""
   },
   "src/lib/matching/candidateFinder.ts": {
-    "mtime": 1789515572.6774013,
-    "ast_hash": "62fea078d33dbd25553f09025e5cb9e3",
+    "mtime": 1790601306.8169973,
+    "ast_hash": "49e5e7956604eef1254d385a0e083151",
     "semantic_hash": ""
   },
   "src/lib/matching/matchingKeys.ts": {
@@ -7340,8 +7340,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/NavInvoiceRow.tsx": {
-    "mtime": 1790466379.0352573,
-    "ast_hash": "8cb1404c49ed79bbacbf708c4b7a18cd",
+    "mtime": 1790601328.0114033,
+    "ast_hash": "9451264e0bd6c38efb64213868425e6d",
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/NavInvoiceTable.tsx": {
@@ -7350,8 +7350,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/SubmittedInvoiceRow.tsx": {
-    "mtime": 1790466397.6184752,
-    "ast_hash": "99b7cc645b76bea27e1f7b73ff46f10d",
+    "mtime": 1790601328.0124013,
+    "ast_hash": "b6cdf9e4c60b859e6f10366160c9373e",
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/SubmittedInvoiceTable.tsx": {
@@ -7380,8 +7380,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/utils/invoiceRelations.ts": {
-    "mtime": 1790215554.1330926,
-    "ast_hash": "f39bae30d5e761785e9847be57fad184",
+    "mtime": 1790601328.0124013,
+    "ast_hash": "8c850fe40d1e61360b6ffca03a8fb377",
     "semantic_hash": ""
   },
   "src/lib/documents/__tests__/documentEngine.test.ts": {
@@ -10080,8 +10080,8 @@
     "semantic_hash": ""
   },
   "src/lib/pettyCashUtils.ts": {
-    "mtime": 1789169422.5777867,
-    "ast_hash": "57745e24b68ee39b80216fdd7bf2fedd",
+    "mtime": 1790601306.8185036,
+    "ast_hash": "54a70ad81e72b0a96f9e4c5ede1fd99d",
     "semantic_hash": ""
   },
   "src/lib/transactionUtils.ts": {
@@ -11995,8 +11995,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/VatOsaCheckDialog.tsx": {
-    "mtime": 1790456443.922639,
-    "ast_hash": "20c39192d53f3122b412253db5535f93",
+    "mtime": 1790601306.8159976,
+    "ast_hash": "5f6d43ee65d57376805666150bf3dd5a",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatRateSummaryCards.tsx": {
@@ -12005,8 +12005,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/VatScopeRadioGroup.tsx": {
-    "mtime": 1790534876.6720307,
-    "ast_hash": "f8309708b66ba8fdd6d682371612d683",
+    "mtime": 1790601306.8169973,
+    "ast_hash": "1759785ed1c78a60fffe52ad46f6e3d1",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatTourismTaxSection.tsx": {
@@ -12792,6 +12792,121 @@
   "session-summary/Jani/2026-09-28/summary-130000-croatian-eporezna-vat-xml-export-pdv-s-and-zp.md": {
     "mtime": 1790593375.1657958,
     "ast_hash": "31e0cfd2d83b0a6e31342aa0500bf180",
+    "semantic_hash": ""
+  },
+  "src/features/invoices/__tests__/invoiceChainMatching.test.ts": {
+    "mtime": 1790601328.0114033,
+    "ast_hash": "d93b3653b8852b3a472542fac8af1cc2",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260928150000_invoice_chain_transaction_propagation.sql": {
+    "mtime": 1790601328.0144012,
+    "ast_hash": "12831a27db917fbeb64b8c9a668e6a54",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-09-28/summary-140700-croatian-minimax-api-invoice-intermediary-sync.md": {
+    "mtime": 1790597246.3822987,
+    "ast_hash": "32737b3372a262439529204815307828",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-09-28/summary-150200-invoice-chain-transaction-propagation.md": {
+    "mtime": 1790601328.0104034,
+    "ast_hash": "7ee9a1a23b6187d5cf131d5eb1727ac8",
+    "semantic_hash": ""
+  },
+  "src/components/petty-cash/CashReportDetailDialog.tsx": {
+    "mtime": 1790601306.8119974,
+    "ast_hash": "b3ede55a51668aee3e30a63ed8945b93",
+    "semantic_hash": ""
+  },
+  "src/components/petty-cash/CashReportsTab.tsx": {
+    "mtime": 1790601306.8119974,
+    "ast_hash": "affff4d32f334c46d9f6e51f575ad89a",
+    "semantic_hash": ""
+  },
+  "src/components/petty-cash/closing-wizard/CashClosingWizardDialog.tsx": {
+    "mtime": 1790601306.8139987,
+    "ast_hash": "8f2a0a886157f3e5e7ef8b4a9a396e08",
+    "semantic_hash": ""
+  },
+  "src/components/petty-cash/closing-wizard/WizardStep1Check.tsx": {
+    "mtime": 1790601306.8139987,
+    "ast_hash": "107f4a0420fe4e7add3d95c73efa4b24",
+    "semantic_hash": ""
+  },
+  "src/components/petty-cash/closing-wizard/WizardStep2Denominations.tsx": {
+    "mtime": 1790601306.8139987,
+    "ast_hash": "72069e2147de3de35cb289f54321e9c0",
+    "semantic_hash": ""
+  },
+  "src/components/petty-cash/closing-wizard/WizardStep3Protocol.tsx": {
+    "mtime": 1790601306.8149972,
+    "ast_hash": "5a4a2dd3de0536fdfec828dc3b48a34a",
+    "semantic_hash": ""
+  },
+  "src/components/petty-cash/print/printCashReceipt.ts": {
+    "mtime": 1790601306.8149972,
+    "ast_hash": "a3829d8c9751ebf4679c2a93fb2eb4e5",
+    "semantic_hash": ""
+  },
+  "src/components/petty-cash/print/printCashReport.ts": {
+    "mtime": 1790601306.8149972,
+    "ast_hash": "c07b7dfd83a75fa0424ca9499651a4be",
+    "semantic_hash": ""
+  },
+  "src/hooks/useCashReports.ts": {
+    "mtime": 1790601306.8169973,
+    "ast_hash": "55b4c01a506436b9c771928092acaf14",
+    "semantic_hash": ""
+  },
+  "src/test/cashReports.test.ts": {
+    "mtime": 1790601306.8195097,
+    "ast_hash": "f3cf8d4c3f6f6e28b0aac9b1e7069278",
+    "semantic_hash": ""
+  },
+  "src/test/pettyCashPendingInvoicesFiltering.test.ts": {
+    "mtime": 1790601306.8205092,
+    "ast_hash": "141900d784f14898598e3334992a9023",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260928120000_periodic_cash_reports_schema.sql": {
+    "mtime": 1790601306.82251,
+    "ast_hash": "5158517fa3a1b47fc935f7328a6ac909",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260928121000_cash_report_workflow_rpcs.sql": {
+    "mtime": 1790601306.8235085,
+    "ast_hash": "605a3b9fc4e1a0d92b1c7b357f8edeec",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260928122000_post_cash_report_to_gl.sql": {
+    "mtime": 1790601306.8245106,
+    "ast_hash": "b1f4349a2733e9dc45a6c8c228bcd19f",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-172-periodic-cash-reports-schema-and-accounting-lifecycle.md": {
+    "mtime": 1790601306.8074403,
+    "ast_hash": "8676159eb4cdb74f8713de55c994a744",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-173-invoice-chain-transaction-propagation.md": {
+    "mtime": 1790601348.9662948,
+    "ast_hash": "358673cd2864d8df42f923492a71c831",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-132-periodic-cash-reports-and-closing-wizard-ux.md": {
+    "mtime": 1790601306.808992,
+    "ast_hash": "33fbae8c7c75c8fb28e774712c2396de",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-133-invoice-chain-transaction-propagation-ux.md": {
+    "mtime": 1790601361.656365,
+    "ast_hash": "e6d4292e80669a4646c28633044306be",
+    "semantic_hash": ""
+  },
+  "session-summary/\u00c1ron/2026-09-28/summary-130700-periodic-cash-reports-schema-wizard-rpcs-and-gl-posting.md": {
+    "mtime": 1790601306.809997,
+    "ast_hash": "de6d21664a6563fc60c5cc5feee6f2a8",
     "semantic_hash": ""
   }
 }
