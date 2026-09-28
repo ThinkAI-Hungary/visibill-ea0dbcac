@@ -22,6 +22,7 @@ import { toast } from '@/hooks/use-toast';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
+import { isPendingPettyCashInvoice } from '@/lib/pettyCashUtils';
 
 export default function ApprovalTab() {
   const { t } = useTranslation(['pettyCash', 'common']);
@@ -67,7 +68,7 @@ export default function ApprovalTab() {
         .order('letrehozva', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      return (data || []).filter(isPendingPettyCashInvoice);
     },
     enabled: !!companyId,
   });

@@ -46,3 +46,30 @@ export function getLocalizedEntryDescription(
 
   return desc;
 }
+
+const CASH_PAYMENT_KEYWORDS = ['készpénz', 'keszpenz', 'cash', 'penztar', 'pénztár', 'kp'];
+
+/**
+ * Returns true if the payment method string indicates cash payment.
+ */
+export function isCashPaymentMethod(method: string | null | undefined): boolean {
+  if (!method) return false;
+  const m = method.toLowerCase().trim();
+  return CASH_PAYMENT_KEYWORDS.some(kw => m.includes(kw));
+}
+
+/**
+ * Checks if an invoice qualifies as a pending petty cash entry.
+ * - penztarbizonylat: Always cash voucher
+ * - penztargep_zaras: Always cash register closure
+ * - any other invoice (e.g. egyszerusitett_szla): Only if payment method is explicitly cash
+ */
+export function isPendingPettyCashInvoice(inv: {
+  invoice_type?: string | null;
+  fizetesi_mod?: string | null;
+}): boolean {
+  if (inv.invoice_type === 'penztarbizonylat' || inv.invoice_type === 'penztargep_zaras') {
+    return true;
+  }
+  return isCashPaymentMethod(inv.fizetesi_mod);
+}

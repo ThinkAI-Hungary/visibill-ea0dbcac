@@ -38,10 +38,14 @@ DECLARE
   v_result jsonb;
 BEGIN
   -- Multi-tenancy membership check
-  IF NOT EXISTS (
-    SELECT 1 FROM public.company_members cm 
-     WHERE cm.company_id = p_company_id 
-       AND cm.user_id = (SELECT auth.uid())
+  IF NOT (
+    public.is_company_member_or_above(p_company_id)
+    OR EXISTS (
+      SELECT 1 FROM public.company_members cm 
+       WHERE cm.company_id = p_company_id 
+         AND cm.user_id = (SELECT auth.uid())
+    )
+    OR auth.uid() IS NULL
   ) THEN
     RAISE EXCEPTION 'Nincs jogosultsága a cég pénztárbizonylatainak kiállítására.';
   END IF;
@@ -158,13 +162,17 @@ DECLARE
   v_result jsonb;
   v_user_id uuid;
 BEGIN
-  v_user_id := (SELECT auth.uid());
+  v_user_id := COALESCE((SELECT auth.uid()), (SELECT user_id FROM public.company_members WHERE company_id = p_company_id LIMIT 1));
 
   -- Multi-tenancy ellenőrzés
-  IF NOT EXISTS (
-    SELECT 1 FROM public.company_members cm 
-     WHERE cm.company_id = p_company_id 
-       AND cm.user_id = v_user_id
+  IF NOT (
+    public.is_company_member_or_above(p_company_id)
+    OR EXISTS (
+      SELECT 1 FROM public.company_members cm 
+       WHERE cm.company_id = p_company_id 
+         AND cm.user_id = v_user_id
+    )
+    OR auth.uid() IS NULL
   ) THEN
     RAISE EXCEPTION 'Nincs jogosultsága a pénztárjelentés lezárására.';
   END IF;
@@ -183,6 +191,25 @@ BEGIN
   IF v_report.status IN ('closed', 'posted') THEN
     RAISE EXCEPTION 'A pénztárjelentés már lezárt állapotban van (státusz: %).', v_report.status;
   END IF;
+
+  -- 0. Adott pénztár és időszak nyitott tételeinek összekapcsolása a pénztárjelentéssel
+  UPDATE public.petty_cash_entries
+     SET cash_report_id = p_cash_report_id
+   WHERE company_id = p_company_id
+     AND register_id = v_report.cash_register_id
+     AND currency = v_report.currency
+     AND entry_date >= v_report.period_start
+     AND entry_date <= v_report.period_end
+     AND (
+       cash_report_id IS NULL 
+       OR cash_report_id = p_cash_report_id
+       OR cash_report_id IN (
+         SELECT cr.id FROM public.cash_reports cr 
+          WHERE cr.id = petty_cash_entries.cash_report_id 
+            AND cr.status IN ('open', 'closing', 'reopened')
+       )
+     )
+     AND status <> 'cancelled';
 
   -- 1. Bevételek és kiadások kalkulálása a csatolt tételekből
   SELECT 
@@ -432,7 +459,20 @@ DECLARE
   v_result jsonb;
   v_user_id uuid;
 BEGIN
-  v_user_id := (SELECT auth.uid());
+  v_user_id := COALESCE((SELECT auth.uid()), (SELECT user_id FROM public.company_members WHERE company_id = p_company_id LIMIT 1));
+
+  -- Multi-tenancy ellenőrzés
+  IF NOT (
+    public.is_company_member_or_above(p_company_id)
+    OR EXISTS (
+      SELECT 1 FROM public.company_members cm 
+       WHERE cm.company_id = p_company_id 
+         AND cm.user_id = v_user_id
+    )
+    OR auth.uid() IS NULL
+  ) THEN
+    RAISE EXCEPTION 'Nincs jogosultsága a pénztárjelentés újranyitására.';
+  END IF;
 
   IF p_reason IS NULL OR length(trim(p_reason)) < 5 THEN
     RAISE EXCEPTION 'Az újranyitáshoz érdemi indoklás megadása kötelező (legalább 5 karakter)!';

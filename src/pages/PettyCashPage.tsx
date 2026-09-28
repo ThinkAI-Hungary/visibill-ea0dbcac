@@ -24,7 +24,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getLocalizedRegisterName } from '@/lib/pettyCashUtils';
+import { getLocalizedRegisterName, isPendingPettyCashInvoice } from '@/lib/pettyCashUtils';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  MAIN PAGE
@@ -61,14 +61,14 @@ const PettyCashPage = () => {
   const { data: pendingCount = 0 } = useQuery({
     queryKey: ['pettyCashPendingCount', companyId],
     queryFn: async () => {
-      const { count, error } = await supabase
+      const { data, error } = await supabase
         .from('invoices')
-        .select('*', { count: 'exact', head: true })
+        .select('id, invoice_type, fizetesi_mod')
         .eq('company_id', companyId)
         .eq('statusz', 'jovahagyasra_var')
         .in('invoice_type', ['penztarbizonylat', 'egyszerusitett_szla', 'penztargep_zaras']);
-      if (error) return 0;
-      return count || 0;
+      if (error || !data) return 0;
+      return data.filter(isPendingPettyCashInvoice).length;
     },
     enabled: !!companyId,
   });

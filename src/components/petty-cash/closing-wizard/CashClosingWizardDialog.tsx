@@ -23,6 +23,7 @@ import { WizardStep1Check } from './WizardStep1Check';
 import { WizardStep2Denominations } from './WizardStep2Denominations';
 import { WizardStep3Protocol } from './WizardStep3Protocol';
 import { useFinalizeCashReport, useActiveCashReport, useEnsureOpenCashReport } from '@/hooks/useCashReports';
+import { isPendingPettyCashInvoice } from '@/lib/pettyCashUtils';
 
 interface CashClosingWizardDialogProps {
   open: boolean;
@@ -156,13 +157,14 @@ export function CashClosingWizardDialog({
   const { data: pendingApprovalsCount = 0 } = useQuery({
     queryKey: ['cash-closing-pending-approvals', companyId, selectedRegisterId],
     queryFn: async () => {
-      const { count } = await supabase
+      const { data, error } = await supabase
         .from('invoices')
-        .select('*', { count: 'exact', head: true })
+        .select('id, invoice_type, fizetesi_mod')
         .eq('company_id', companyId)
         .eq('statusz', 'jovahagyasra_var')
         .in('invoice_type', ['penztarbizonylat', 'egyszerusitett_szla', 'penztargep_zaras']);
-      return count || 0;
+      if (error || !data) return 0;
+      return data.filter(isPendingPettyCashInvoice).length;
     },
     enabled: open && !!companyId,
   });
@@ -206,7 +208,7 @@ export function CashClosingWizardDialog({
   // Handle finalize submit
   const handleFinalize = async () => {
     try {
-      // 1. If no active report exists yet, create one
+      // 1. If no active report exists yet, create one; otherwise ensure period & opening balance match
       let reportId = activeReport?.id;
       if (!reportId) {
         const ensured = await ensureOpenReport.mutateAsync({
@@ -218,6 +220,16 @@ export function CashClosingWizardDialog({
           currency,
         });
         reportId = ensured.id;
+      } else {
+        await supabase
+          .from('cash_reports' as any)
+          .update({
+            period_start: dateFromFormatted || activeReport.period_start,
+            period_end: dateToFormatted || activeReport.period_end,
+            opening_balance: openingBalance,
+            currency,
+          })
+          .eq('id', reportId);
       }
 
       // 2. Finalize closing via PostgreSQL RPC

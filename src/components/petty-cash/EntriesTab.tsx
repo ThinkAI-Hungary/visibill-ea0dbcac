@@ -29,7 +29,7 @@ import type { PettyCashRegister, PettyCashEntry, OpenOutboundInvoice, SummaryRow
 import { SOURCE_LABELS, SOURCE_COLORS, fmtAmount, fmtBalance, roundHuf, sanitizePartnerId, validatePettyCashEntryPayload, parseCleanAmount } from './types';
 import CashClosingDialog from './CashClosingDialog';
 import TransferDialog from './TransferDialog';
-import { getLocalizedRegisterName, getLocalizedEntryDescription } from '@/lib/pettyCashUtils';
+import { getLocalizedRegisterName, getLocalizedEntryDescription, isPendingPettyCashInvoice } from '@/lib/pettyCashUtils';
 import { formatNumberLocale, formatDateLocale } from '@/lib/locale/formatters';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import SignatureDialog from './SignatureDialog';
@@ -226,7 +226,7 @@ export default function EntriesTab() {
         throw error;
       }
       console.log("[EntriesTab] Pending invoices successfully fetched:", data);
-      return data || [];
+      return (data || []).filter(isPendingPettyCashInvoice);
     },
     enabled: !!companyId,
   });

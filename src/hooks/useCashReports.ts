@@ -312,6 +312,19 @@ export function useEnsureOpenCashReport() {
         .single();
 
       if (error) throw error;
+
+      // Link any existing unassigned entries in this period to the new report
+      await supabase
+        .from('petty_cash_entries')
+        .update({ cash_report_id: newReport.id })
+        .eq('company_id', params.companyId)
+        .eq('register_id', params.cashRegisterId)
+        .eq('currency', params.currency || 'HUF')
+        .gte('entry_date', params.periodStart)
+        .lte('entry_date', params.periodEnd)
+        .is('cash_report_id', null)
+        .neq('status', 'cancelled');
+
       return newReport as unknown as CashReport;
     },
     onSuccess: (_, vars) => {
