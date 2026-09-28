@@ -142,6 +142,7 @@ export const URL_TO_MODULE: Record<string, EaisybillModule> = {
   '/transfers': 'transactions',
   '/petty-cash': 'petty_cash',
   '/general-ledger': 'general_ledger',
+  '/subledger': 'general_ledger',
   '/profit-and-loss': 'profit_loss',
   '/balance-sheet': 'balance_sheet',
   '/annual-report': 'annual_report',

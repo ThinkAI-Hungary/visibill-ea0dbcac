@@ -1,7 +1,7 @@
 # Visibill — Business Requirement Decisions
 
-> **Utoljára frissítve:** 2026-09-23  
-> **Összesen:** 61 döntés | ✅ Decided: 48 | 🟡 Partially Decided: 7 | ⛔ Superseded: 1 | 🔴 Open: 5
+> **Utoljára frissítve:** 2026-09-28  
+> **Összesen:** 63 döntés | ✅ Decided: 50 | 🟡 Partially Decided: 7 | ⛔ Superseded: 1 | 🔴 Open: 5
 
 ---
 
@@ -147,3 +147,4 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 | 060 | NAV 2665 ÁFA Bevallási Szabályok, Gyűjtőkódok és 6/B Acélipari Kötelezettség | ✅ Decided | [060-nav-2665-vat-rules-and-steel-reporting.md](./060-nav-2665-vat-rules-and-steel-reporting.md) |
 | 061 | Számlatétel Áfakód Felülbírálat és Gépi Tanulási (ML) Szabályrendszer | ✅ Decided | [061-invoice-vat-code-overrides-and-machine-learning.md](./061-invoice-vat-code-overrides-and-machine-learning.md) |
 | 062 | DRS Kötelező Visszaváltási Díj (Kupakdíj / Betétdíj) Kizárása az ÁFA Bevallásból | ✅ Decided | [062-drs-mandatory-deposit-fee-vat-exclusion.md](./062-drs-mandatory-deposit-fee-vat-exclusion.md) |
+| 063 | Folyószámla és Analitika Számviteli Szabályzat és Integritás | ✅ Decided | [063-subledger-and-open-items-accounting-policy.md](./063-subledger-and-open-items-accounting-policy.md) |

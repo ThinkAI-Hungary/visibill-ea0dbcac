@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-28  
-> **Összesen:** 191 döntés (176 egyedi döntési fájl) | ✅ Decided: 189 | ⛔ Superseded: 2
+> **Összesen:** 192 döntés (177 egyedi döntési fájl) | ✅ Decided: 190 | ⛔ Superseded: 2
 
 ---
 
@@ -221,6 +221,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-172 | Időszaki Pénztárjelentés Adatbázis Modell, Szigorú Számadású Sorszámozás és Főkönyvi Életciklus | ✅ Decided | [A-172](./A-172-periodic-cash-reports-schema-and-accounting-lifecycle.md) |
 | A-173 | Számlalánc Tranzakció-örökítés, Díjbekérő-Végszámla Automatikus Párosítás és PostgreSQL Propagáció | ✅ Decided | [A-173](./A-173-invoice-chain-transaction-propagation.md) |
 | A-174 | Bérfeladás Idempotencia-védelem, Duplakönyvelés Megelőzés és Lezárt Ciklus Adatbiztonság | ✅ Decided | [A-174](./A-174-payroll-auto-poster-idempotency-and-closed-cycle-immutability.md) |
+| A-175 | Folyószámla és Analitika Architektúra, Nyitott Tételek Rendezése és Főkönyvi Integritás-Védelem | ✅ Decided | [A-175](./A-175-subledger-and-open-items-architecture.md) |
 
 ## 💳 Fizetés
 

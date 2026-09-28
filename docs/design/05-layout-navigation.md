@@ -148,6 +148,7 @@ Az `eaisyBill` és `eaisyBooks` közötti zökkenőmentes és azonnali átjárá
 │                      │
 │  ▾ KÖNYVELÉS         │
 │    ▸ Főkönyv         │  ← active state kiemelés
+│    ▸ Folyószámla     │
 │    ▸ Eredménykimutatás│
 │    ▸ Mérleg          │
 │    ▸ Beszámoló       │
@@ -170,7 +171,7 @@ Az `eaisyBill` és `eaisyBooks` közötti zökkenőmentes és azonnali átjárá
 |-------|------------|------|------------|
 | `overview` | Áttekintés | `LayoutDashboard` | Irányítópult, Kategóriák, Projektek, Partnertörzs |
 | `finance` | Pénzügyek | `Landmark` | Számlák, Kintlévőség, Tranzakciók, Házipénztár, Utalások |
-| `accounting` | Könyvelés | `BookOpen` | Főkönyv, Eredménykimutatás, Mérleg, Beszámoló, ÁFA Bevallás, Napló |
+| `accounting` | Könyvelés | `BookOpen` | Főkönyv, Folyószámla, Eredménykimutatás, Mérleg, Beszámoló, ÁFA Bevallás, Napló |
 | `hr` | HR & Eszközök | `Users` | Bérek/járulékok, Munkaidő, TENY |
 | `shipment` | Szállítmányozás | `Truck` | Fuvarok, Excel Import, Eszkaláció |
 | `system` | Rendszer | `Wrench` | Integrációk, Árfolyamok, Jegyzetek |

@@ -1,7 +1,7 @@
 # PostgreSQL RPC és Függvény Katalógus
 
-> **Utoljára frissítve:** 2026-09-21  
-> **Összesen:** 134 hívható RPC függvény | 74 PostgreSQL trigger függvény | `public` séma | **Supabase PostgreSQL**
+> **Utoljára frissítve:** 2026-09-28  
+> **Összesen:** 141 hívható RPC függvény | 74 PostgreSQL trigger függvény | `public` séma | **Supabase PostgreSQL**
 
 Ez a dokumentáció az eaisybill-prod és eaisyBooks rendszerekben használt összes PostgreSQL tárolt eljárást és RPC (Remote Procedure Call) függvényt tartalmazza. Részletezi a függvény szignatúráját, biztonsági környezetét (`SECURITY DEFINER` vs `INVOKER`), hívó komponensét és funkcionális szerepét.
 A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-schema.md), a szervermentes funkciókat az [Edge Functions Katalógus](./edge-functions.md), a lekérdezési stratégiát pedig az [A-016: PostgreSQL Query Stratégia](./decisions/A-016-postgresql-query-strategy.md) mutatja be.
@@ -12,7 +12,7 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 
 1. [📊 Frontend Lekérdező és Aggregációs RPC-k (29 db)](#1--frontend-lekérdező-és-aggregációs-rpc-k)
 2. [✏️ Frontend Állapotmódosító és Üzleti RPC-k (32 db)](#2-️-frontend-állapotmódosító-és-üzleti-rpc-k)
-3. [📄 Kettős Könyvviteli Naplók (acc_*) RPC-k (8 db)](#3--kettős-könyvviteli-naplók-acc_-rpc-k)
+3. [📄 Kettős Könyvviteli Naplók (acc_*) és Folyószámla RPC-k (15 db)](#3--kettős-könyvviteli-naplók-acc_-rpc-k)
 4. [📘 eaisyBooks és EV Modul RPC-k (8 db)](#4--eaisybooks-és-ev-modul-rpc-k)
 5. [🔐 Jogosultságkezelés és RLS Segédfüggvények (15 db)](#5--jogosultságkezelés-és-rls-segédfüggvények)
 6. [⚡ Queue, Worker és Job Management (PGMQ) RPC-k (14 db)](#6-️-queue-worker-és-job-management-pgmq-rpc-k)
@@ -109,6 +109,13 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 | `acc_seed_default_journals(p_company_id uuid)` | `DEFINER` | `boolean` | Cég Inicializálás / Beállítások | Alapértelmezett 8 könyvelési napló (Vevő, Szállító, Bank, Pénztár, Vegyes, Bér, Nyitó, Záró) inicializálása. |
 | `acc_storno_journal_entry(p_header_id uuid, p_user_id uuid, p_reason text, p_create_correction boolean)` | `DEFINER` | `uuid` | JournalEntryDetail / Sztornó | Könyvelt bizonylat szigorú sztornózása ellentétes előjelű korrekciós tétel automatikus generálásával. |
 | `acc_validate_and_post_opening_entry(p_header_id uuid, p_user_id uuid)` | `DEFINER` | `jsonb` | Nyitó Napló Véglegesítés | Nyitó naplóbizonylat mérlegegyezőségének validálása és végleges könyvelése. |
+| `auto_settle_subledger_items(p_company_id uuid, p_gl_account_id uuid)` | `DEFINER` | `jsonb` | SubledgerPage.tsx | 1-kattintásos kötegelt nyitott tétel párosítás azonos bizonylatszám vagy hivatkozás alapján. |
+| `batch_post_subledger_items(p_company_id uuid, p_header_ids uuid[])` | `DEFINER` | `jsonb` | SubledgerPage.tsx | Kijelölt javaslat státuszú bizonylatok kötegelt végleges könyvelése `acc_post_journal_entry` meghívásával. |
+| `get_subledger_item_matches(p_line_id uuid)` | `DEFINER` | `jsonb` | SubledgerItemMatchesModal.tsx | Adott naplósorhoz tartozó valamennyi kiegyenlítés lekérdezése (kapcsolt sor adatai, kiegyenlített összeg, dátum). |
+| `get_subledger_items(p_company_id uuid, p_gl_account_id uuid, p_partner_id uuid, p_mode text, p_date_from date, p_date_to date, p_status_filter text)` | `DEFINER` | `TABLE(line_id uuid, header_id uuid, posting_date date, document_date date, due_date date, document_id varchar, partner_id uuid, partner_name text, gl_account_id uuid, gl_number varchar, gl_name text, side varchar, amount numeric, foreign_amount numeric, currency char, settled_amount numeric, remaining_amount numeric, is_settled boolean, match_count integer, description varchar, settlement_number text, import_key varchar, status varchar)` | SubledgerPage.tsx | Folyószámla és analitikus számlák nyitott, zárt vagy összes tételének aggregált lekérdezése esedékességgel és kiegyenlítettségi státusszal. |
+| `settle_open_items(p_company_id uuid, p_invoice_line_id uuid, p_settling_line_id uuid, p_amount_huf numeric, p_amount_foreign numeric, p_match_type text, p_notes text, p_user_id uuid)` | `DEFINER` | `uuid` | SubledgerPage.tsx / Match Modal | Két naplósor összerendezése és kiegyenlítés rögzítése az `acc_open_item_matches` táblában. |
+| `unsettle_open_items(p_company_id uuid, p_match_id uuid, p_user_id uuid)` | `DEFINER` | `boolean` | SubledgerItemMatchesModal.tsx | Folyószámla tétel korábbi párosításának felbontása és az eredeti nyitott összeg visszaállítása. |
+| `write_off_subledger_difference(p_company_id uuid, p_line_id uuid, p_diff_amount_huf numeric, p_reason text, p_user_id uuid)` | `DEFINER` | `jsonb` | BulkRoundingWriteOffModal.tsx / WriteOffSettlementModal.tsx | Kerekítési ($\le 10$ Ft, 8755/9779) vagy árfolyamkülönbözet (8762/9762) leírása automatikus vegyes naplós ellentételezéssel. |
 
 ---
 

@@ -2,7 +2,7 @@
 
 > Kettős könyvviteli naplók, tétel fejek és sorok, ugrásmentes folyósorszámozás, zárt időszakok és esemény audit naplózás.
 
-**Táblák ebben a csoportban:** 6
+**Táblák ebben a csoportban:** 7
 
 ---
 
@@ -143,6 +143,32 @@
 
 ---
 
+### `acc_open_item_matches`
+
+**RLS:** ✅ | **Sorok:** Folyószámla és kettős könyvviteli nyitott/zárt tételek párosításai
+
+| Oszlop | Típus | Null | Default | Leírás |
+|--------|-------|------|---------|--------|
+| `id` | uuid | — | `gen_random_uuid()` | Elsődleges kulcs |
+| `company_id` | uuid | — | — | FK → `companies.id` (CASCADE) |
+| `invoice_line_id` | uuid | — | — | FK → `acc_journal_lines.id` (Nyitott követelés / kötelezettség sor) |
+| `settling_line_id` | uuid | — | — | FK → `acc_journal_lines.id` (Kiegyenlítő banki/pénztári/vegyes sor) |
+| `settled_amount_huf` | numeric(18,2) | — | — | Rendezett forintösszeg |
+| `settled_amount_foreign` | numeric(18,2) | ✓ | NULL | Rendezett devizaösszeg |
+| `currency` | char(3) | — | `'HUF'` | Bizonylat devizaneme |
+| `settled_at` | timestamptz | — | `now()` | Rendezés időpontja |
+| `settled_by` | uuid | ✓ | NULL | FK → `auth.users.id` |
+| `match_type` | varchar(32) | — | `'MANUAL'` | Típus: `'AUTO_REF'`, `'MANUAL'`, `'COMPENSATION'`, `'WRITE_OFF'`, `'ROUNDING'`, `'FX_DIFFERENCE'` |
+| `notes` | text | ✓ | NULL | Szöveges megjegyzés |
+| `created_at` | timestamptz | — | `now()` | Létrehozás időpontja |
+
+**Indexek:**
+- `idx_acc_open_item_matches_company`: `(company_id)`
+- `idx_acc_open_item_matches_inv`: `(company_id, invoice_line_id)`
+- `idx_acc_open_item_matches_set`: `(company_id, settling_line_id)`
+
+---
+
 ## ⚙️ Kapcsolódó RPC Függvények és Folyamatok
 
 ### 1. Javaslatok generálása (`acc_generate_drafts_from_ledger`)
@@ -200,5 +226,21 @@
 - `idx_acc_journal_headers_import_key_konyvelt`: `(company_id, import_key) WHERE status = 'KONYVELT'`
 - `idx_acc_journal_lines_header_gl`: `(header_id, gl_account_id)`
 - `idx_acc_journal_lines_gl_account`: `(gl_account_id)`
+
+### 6. Folyószámla és Nyitott Tételek Kezelése (Subledger RPC-k, A-175)
+- `get_subledger_items(p_company_id uuid, p_gl_account_id uuid, p_partner_id uuid, p_mode text, p_date_from date, p_date_to date, p_status_filter text)`:
+  - Analitikus és nyitott folyószámla tételek lekérdezése (HUF/deviza, esedékesség, rendezett és hátralévő összeg). Támogatja a `'ALL_ACTIVE'`, `'POSTED_ONLY'`, `'DRAFT_ONLY'` szűrést.
+- `get_subledger_item_matches(p_line_id uuid)`:
+  - Adott naplósorhoz tartozó valamennyi kiegyenlítés részletezése (bizonylatszám, dátum, kiegyenlített összeg, kezelő).
+- `settle_open_items(p_company_id uuid, p_invoice_line_id uuid, p_settling_line_id uuid, p_amount_huf numeric, p_amount_foreign numeric, p_match_type text, p_notes text, p_user_id uuid)`:
+  - Két naplósor (követelés/kötelezettség vs. kiegyenlítés) összevezetése és részösszeg levonása az `acc_open_item_matches` táblában.
+- `unsettle_open_items(p_company_id uuid, p_match_id uuid, p_user_id uuid)`:
+  - Korábban rögzített párosítás azonnali, auditált felbontása és az eredeti nyitott egyenleg visszaállítása.
+- `auto_settle_subledger_items(p_company_id uuid, p_gl_account_id uuid)`:
+  - 1-kattintásos kötegelt egyeztetés azonos bizonylatszám vagy banki közlemény alapján.
+- `batch_post_subledger_items(p_company_id uuid, p_header_ids uuid[])`:
+  - Kijelölt javaslat státuszú bizonylatok tömeges végleges könyvelése `acc_post_journal_entry` hívással.
+- `write_off_subledger_difference(p_company_id uuid, p_line_id uuid, p_diff_amount_huf numeric, p_reason text, p_user_id uuid)`:
+  - 1-kattintásos kerekítési (8755/9779, $\le 10$ Ft) vagy árfolyamkülönbözet (8762/9762) leírás automatikus Vegyes (`VE`) napló bizonylat generálásával és azonnali összevezetésével.
 
 

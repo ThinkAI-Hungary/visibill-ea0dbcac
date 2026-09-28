@@ -1,7 +1,7 @@
 # eaisybill-prod — Adatbázis Séma Áttekintés
 
-> **Utoljára frissítve:** 2026-09-27  
-> **Összesen:** 188 aktív alkalmazás-tábla (189 sémában) | **RLS:** mind engedélyezve (100% InitPlan & Single-Permissive optimalizált) | **FK Indexek:** 100% lefedettség | **Supabase PostgreSQL**
+> **Utoljára frissítve:** 2026-09-28  
+> **Összesen:** 189 aktív alkalmazás-tábla (190 sémában) | **RLS:** mind engedélyezve (100% InitPlan & Single-Permissive optimalizált) | **FK Indexek:** 100% lefedettség | **Supabase PostgreSQL**
 
 Ez a dokumentáció az eaisybill-prod Supabase projekt teljes adatbázis sémáját tartalmazza. Célja, hogy bármely fejlesztő és AI agent azonnal megértse a táblastruktúrát, kapcsolatokat és felhasználási kontextust.
 A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [PostgreSQL RPC Katalógus](./rpc-catalog.md), a serverless függvényeket az [Edge Functions Katalógus](./edge-functions.md), a biztonsági és indexelési irányelveket pedig az [A-092: Teljes Adatbázis Biztonsági és Teljesítménybeli Audit & Optimalizáció](./decisions/A-092-database-security-and-performance-optimization.md) dokumentálja.
@@ -32,7 +32,7 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 - [🛠️ Platform & Üzemeltetés](./database/19-platform-ops.md) — 13 tábla, ~36622 sor
 - [🎫 Hibajegy Rendszer](./database/20-tickets.md) — 3 tábla, ~633 sor
 - [🏷️ Törzsadatok](./database/21-master-data.md) — 8 tábla, ~5483 sor
-- [📄 Könyvelési Naplók](./database/22-accounting-journals.md) — 6 tábla, ~58702 sor
+- [📄 Könyvelési Naplók](./database/22-accounting-journals.md) — 7 tábla, ~58704 sor
 
 **Kiegészítő katalógusok:**
 - [⚡ PostgreSQL RPC Katalógus (134 RPC + 74 Trigger)](./rpc-catalog.md) — Teljes tárolt eljárás és aggregációs motor katalógus
@@ -50,6 +50,7 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 | `acc_journal_headers` | 📄 Könyvelési Naplók | 5508 | Könyvelési bizonylat fejadatok, dátumok, bizonylatszám, státusz |
 | `acc_journal_lines` | 📄 Könyvelési Naplók | 12082 | Kettős könyvviteli tételsorok (T/K, összegek, ÁFA, projekt) |
 | `acc_journals` | 📄 Könyvelési Naplók | 157 | Céghez tartozó naplótörzs (Vevő, Szállító, Bank, Pénztár, Vegyes, Bér, Nyitó, Záró) |
+| `acc_open_item_matches` | 📄 Könyvelési Naplók | 2 | Folyószámla és kettős könyvviteli nyitott/zárt tételek párosításai |
 | `accounty_ai_chat_messages` | 📘 eaisyBooks — AI Chat | 116 | Individual messages within an AI chat session. Ordered by created_at. |
 | `accounty_ai_chat_sessions` | 📘 eaisyBooks — AI Chat | 8 | AI Assistant chat sessions per user. |
 | `accounty_assignments` | 📘 eaisyBooks — Alap | 93 | Könyvelő-felhasználó ↔ ügyfélcég hozzárendelés. |

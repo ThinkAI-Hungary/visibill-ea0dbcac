@@ -14,6 +14,7 @@ const Projects = lazy(() => import("@/pages/Projects"));
 const PartnersPage = lazy(() => import("@/pages/PartnersPage"));
 const TransactionsPage = lazy(() => import("@/pages/TransactionsPage"));
 const GeneralLedgerPage = lazy(() => import("@/pages/GeneralLedgerPage"));
+const SubledgerPage = lazy(() => import("@/pages/SubledgerPage"));
 const ProfitAndLoss = lazy(() => import("@/pages/ProfitAndLoss"));
 const BalanceSheet = lazy(() => import("@/pages/BalanceSheet"));
 const AnnualReportPage = lazy(() => import("@/pages/AnnualReportPage"));
@@ -53,6 +54,7 @@ export function renderEaisybillScopedRoutes() {
       <Route path="partners" element={<ProtectedPage><PartnersPage /></ProtectedPage>} />
       <Route path="transactions/:tab?" element={<ProtectedPage><TransactionsPage /></ProtectedPage>} />
       <Route path="general-ledger/:tab?" element={<ProtectedPage><GeneralLedgerPage /></ProtectedPage>} />
+      <Route path="subledger/:tab?" element={<ProtectedPage><SubledgerPage /></ProtectedPage>} />
       <Route path="profit-and-loss/:tab?" element={<ProtectedPage><ProfitAndLoss /></ProtectedPage>} />
       <Route path="balance-sheet/:tab?" element={<ProtectedPage><BalanceSheet /></ProtectedPage>} />
       <Route path="annual-report" element={<ProtectedPage><AnnualReportPage /></ProtectedPage>} />
@@ -116,6 +118,7 @@ export function renderEaisybillLegacyAndFallbackRoutes() {
       <Route path="/partners" element={<LegacyRedirect page="partners" />} />
       <Route path="/transactions" element={<LegacyRedirect page="transactions" />} />
       <Route path="/general-ledger" element={<LegacyRedirect page="general-ledger" />} />
+      <Route path="/subledger" element={<LegacyRedirect page="subledger" />} />
       <Route path="/profit-and-loss" element={<LegacyRedirect page="profit-and-loss" />} />
       <Route path="/balance-sheet" element={<LegacyRedirect page="balance-sheet" />} />
       <Route path="/annual-report" element={<LegacyRedirect page="annual-report" />} />
