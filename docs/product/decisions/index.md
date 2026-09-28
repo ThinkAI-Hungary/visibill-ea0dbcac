@@ -200,6 +200,7 @@
 | P-098 | NAV Adózói Adatlekérdezés és Automatikus Cégkitöltés UX | ✅ Decided | [P-098](./P-098-company-taxpayer-lookup-ux.md) |
 | P-099 | Hivatalos NAV ÁFA Összesítő és Adókulcs-Megbontás Felületi Élmény (UX) | ✅ Decided | [P-099](./P-099-official-vat-summary-ui.md) |
 | P-114 | NAV ÜPO M2M Integráció, Felhasználói Hitelesítés és Napi Szinkronizáció UX | ✅ Decided | [P-114](./P-114-nav-upo-m2m-integration-ui-ux.md) |
+| P-131 | Horvát Minimax Számla-közvetítő Integráció és Szinkronizáció UX | ✅ Decided | [P-131](./P-131-croatian-minimax-api-invoice-intermediary-sync-ux.md) |
 
 ## 💼 Projektek & Tárgyi Eszközök
 

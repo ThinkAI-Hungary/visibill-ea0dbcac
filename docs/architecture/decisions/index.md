@@ -216,6 +216,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-168 | Számla Export Banki Tranzakció Feloldás, Skontó-Dátum Architektúra és Intelligens Fül-Válogatás | ✅ Decided | [A-168](./A-168-invoice-export-transaction-resolution-and-skonto-dates.md) |
 | A-169 | B2C Kimenő Számlák NAV Anonimizáció-Feloldása, Bizonylat Normalizálás és Automatikus Jóváhagyási Trigger Lánc | ✅ Decided | [A-169](./A-169-b2c-nav-anonymization-and-submitted-invoice-sync.md) |
 | A-170 | Horvát ePorezna ÁFA Bevallás XML Export (Obrazac PDV-S & Obrazac ZP) | ✅ Decided | [A-170](./A-170-croatian-eporezna-vat-xml-export-pdv-s-and-zp.md) |
+| A-171 | Horvát Minimax REST API Számla-közvetítő Integráció és Szinkronizáció | ✅ Decided | [A-171](./A-171-croatian-minimax-api-invoice-intermediary-sync.md) |
 
 ## 💳 Fizetés
 
@@ -251,6 +252,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-117 | Hivatalos Ügyfél REST API v2.2.2 (Customer API), OpenAPI 3, Hibajegyek és M2M Átjáró | ✅ Decided | [A-117](./A-117-customer-rest-api-and-multi-company-keys.md) |
 | A-126 | Műveleti Napló E-mail Metaadatok Megőrzése és Retrospektív Számla-Összekapcsolás | ✅ Decided | [A-126](./A-126-audit-trail-email-ingestion-and-invoice-linking.md) |
 | A-149 | In-App Fejlesztői Napló (Patchnotes) Rendszer és Publikációs Pipeline | ✅ Decided | [A-149](./A-149-in-app-changelog-and-patchnotes-system.md) |
+| A-171 | Horvát Minimax REST API Számla-közvetítő Integráció és Szinkronizáció | ✅ Decided | [A-171](./A-171-croatian-minimax-api-invoice-intermediary-sync.md) |
 
 
 
