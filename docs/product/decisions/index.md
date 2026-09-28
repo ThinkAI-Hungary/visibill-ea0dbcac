@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-28  
-> **Összesen:** 139 döntés | ✅ Decided: 135 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 140 döntés | ✅ Decided: 136 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -240,3 +240,4 @@
 | P-132 | Időszaki Pénztárjelentés és Zárási Varázsló UX | ✅ Decided | [P-132](./P-132-periodic-cash-reports-and-closing-wizard-ux.md) |
 | P-133 | Számlalánc és Díjbekérő Tranzakció-örökítés és Zöld Státusz UX | ✅ Decided | [P-133](./P-133-invoice-chain-transaction-propagation-ux.md) |
 | P-134 | Bérszámfejtési Ciklus Lezárási Választó Modál, Lezárt Ciklus Védelem és Újranyitás UX | ✅ Decided | [P-134](./P-134-payroll-cycle-closing-modal-and-idempotency-protection.md) |
+| P-135 | Főkönyvi Kivonat Klasszikus Nézet Oszlopszélességek és Összesítő Sáv UX | ✅ Decided | [P-135](./P-135-general-ledger-classic-view-column-widths-and-totals-ux.md) |

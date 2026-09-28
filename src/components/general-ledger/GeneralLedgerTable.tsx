@@ -1837,7 +1837,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   }, [tableData, selectedItemIds]);
 
   const gridColsClass = viewLayout === 'classic'
-    ? "grid-cols-[100px_minmax(200px,1fr)_120px_120px_120px_120px]"
+    ? "grid-cols-[90px_minmax(220px,1fr)_165px_165px_165px_190px]"
     : "grid-cols-12";
 
   if (isDataLoading) {
@@ -1847,12 +1847,12 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         <div className="bg-muted/80 border-b border-border text-sm font-semibold sticky top-0 z-20 hidden md:block select-none">
           {viewLayout === 'classic' ? (
             <div className={cn("grid divide-x divide-border/50", gridColsClass)}>
-              <div className="p-3 text-center text-xs text-foreground uppercase tracking-wider">{t('accounting:general_ledger.table.gl_account', 'Fők. szám')}</div>
-              <div className="p-3 text-xs text-foreground uppercase tracking-wider">{t('accounting:general_ledger.table.name', 'Megnevezés')}</div>
-              <div className="p-3 text-right text-xs uppercase tracking-wider">{t('accounting:general_ledger.table.turnover_debit', 'Forgalom T')}</div>
-              <div className="p-3 text-right text-xs uppercase tracking-wider">{t('accounting:general_ledger.table.turnover_credit', 'Forgalom K')}</div>
-              <div className="p-3 text-right text-xs bg-indigo-500/5 uppercase tracking-wider">{t('accounting:general_ledger.table.balance_debit', 'Egyenleg T')}</div>
-              <div className="p-3 text-right text-xs bg-indigo-500/5 uppercase tracking-wider">{t('accounting:general_ledger.table.balance_credit', 'Egyenleg K')}</div>
+              <div className="py-3 px-2 text-center text-xs text-foreground uppercase tracking-wider">{t('accounting:general_ledger.table.gl_account', 'Fők. szám')}</div>
+              <div className="py-3 px-3 text-xs text-foreground uppercase tracking-wider">{t('accounting:general_ledger.table.name', 'Megnevezés')}</div>
+              <div className="py-3 px-2.5 text-right text-xs uppercase tracking-wider whitespace-nowrap">{t('accounting:general_ledger.table.turnover_debit', 'Forgalom T')}</div>
+              <div className="py-3 px-2.5 text-right text-xs uppercase tracking-wider whitespace-nowrap">{t('accounting:general_ledger.table.turnover_credit', 'Forgalom K')}</div>
+              <div className="py-3 px-2.5 text-right text-xs bg-indigo-500/5 uppercase tracking-wider whitespace-nowrap">{t('accounting:general_ledger.table.balance_debit', 'Egyenleg T')}</div>
+              <div className="py-3 px-2.5 text-right text-xs bg-indigo-500/5 uppercase tracking-wider whitespace-nowrap">{t('accounting:general_ledger.table.balance_credit', 'Egyenleg K')}</div>
             </div>
           ) : (
             <div className="grid grid-cols-12 divide-x divide-border/50">
@@ -1968,18 +1968,18 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
             </div>
           )}
           <div className="flex-1 overflow-auto print:overflow-visible w-full relative">
-            <div className={cn("w-full flex flex-col min-h-full pb-2 print:pb-0", viewLayout === 'classic' && "min-w-[840px]")}>
+            <div className={cn("w-full flex flex-col min-h-full pb-2 print:pb-0", viewLayout === 'classic' && "min-w-[1020px]")}>
               
               {/* Header */}
               <div className="bg-muted/80 backdrop-blur-md border-b border-border text-sm font-semibold sticky top-0 z-20 hidden md:block select-none shadow-sm">
                 {viewLayout === 'classic' ? (
                   <div className={cn("grid divide-x divide-border/50", gridColsClass)}>
-                    <div className="p-3 text-center text-xs text-foreground uppercase tracking-wider">{t('accounting:general_ledger.table.gl_account', 'Fők. szám')}</div>
-                    <div className="p-3 text-xs text-foreground uppercase tracking-wider">{t('accounting:general_ledger.table.name', 'Megnevezés')}</div>
-                    <div className="p-3 text-right text-xs uppercase tracking-wider">{t('accounting:general_ledger.table.turnover_debit', 'Forgalom T')}</div>
-                    <div className="p-3 text-right text-xs uppercase tracking-wider">{t('accounting:general_ledger.table.turnover_credit', 'Forgalom K')}</div>
-                    <div className="p-3 text-right text-xs bg-indigo-500/5 uppercase tracking-wider">{t('accounting:general_ledger.table.balance_debit', 'Egyenleg T')}</div>
-                    <div className="p-3 text-right text-xs bg-indigo-500/5 uppercase tracking-wider">{t('accounting:general_ledger.table.balance_credit', 'Egyenleg K')}</div>
+                    <div className="py-3 px-2 text-center text-xs text-foreground uppercase tracking-wider">{t('accounting:general_ledger.table.gl_account', 'Fők. szám')}</div>
+                    <div className="py-3 px-3 text-xs text-foreground uppercase tracking-wider">{t('accounting:general_ledger.table.name', 'Megnevezés')}</div>
+                    <div className="py-3 px-2.5 text-right text-xs uppercase tracking-wider whitespace-nowrap">{t('accounting:general_ledger.table.turnover_debit', 'Forgalom T')}</div>
+                    <div className="py-3 px-2.5 text-right text-xs uppercase tracking-wider whitespace-nowrap">{t('accounting:general_ledger.table.turnover_credit', 'Forgalom K')}</div>
+                    <div className="py-3 px-2.5 text-right text-xs bg-indigo-500/5 uppercase tracking-wider whitespace-nowrap">{t('accounting:general_ledger.table.balance_debit', 'Egyenleg T')}</div>
+                    <div className="py-3 px-2.5 text-right text-xs bg-indigo-500/5 uppercase tracking-wider whitespace-nowrap">{t('accounting:general_ledger.table.balance_credit', 'Egyenleg K')}</div>
                   </div>
                 ) : (
                   <div className="grid grid-cols-12 divide-x divide-border/50">
@@ -2234,10 +2234,10 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                       {viewLayout === 'classic' ? (
                         <>
                           {/* Forgalom Tartozik */}
-                          <div className="p-3 text-right text-xs sm:text-sm tabular-nums font-mono flex items-center justify-end">
+                          <div className="py-3 px-2.5 text-right text-xs sm:text-sm tabular-nums font-mono flex items-center justify-end overflow-hidden">
                             {row.isItem ? (
                               row.balance > 0 ? (
-                                <span className={row.isTemporary ? "text-orange-500 dark:text-orange-400 font-medium" : "text-emerald-600 dark:text-emerald-400 font-medium"}>
+                                <span className={cn("whitespace-nowrap", row.isTemporary ? "text-orange-500 dark:text-orange-400 font-medium" : "text-emerald-600 dark:text-emerald-400 font-medium")}>
                                   {formatCurrency(row.balance)}
                                 </span>
                               ) : (
@@ -2245,7 +2245,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                               )
                             ) : (
                               (row.debitTurnover || 0) > 0 ? (
-                                <span className="font-semibold text-foreground">
+                                <span className="font-semibold text-foreground whitespace-nowrap">
                                   {formatCurrency(row.debitTurnover || 0)}
                                 </span>
                               ) : (
@@ -2255,10 +2255,10 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                           </div>
 
                           {/* Forgalom Követel */}
-                          <div className="p-3 text-right text-xs sm:text-sm tabular-nums font-mono flex items-center justify-end">
+                          <div className="py-3 px-2.5 text-right text-xs sm:text-sm tabular-nums font-mono flex items-center justify-end overflow-hidden">
                             {row.isItem ? (
                               row.balance < 0 ? (
-                                <span className={row.isTemporary ? "text-orange-500 dark:text-orange-400 font-medium" : "text-rose-600 dark:text-rose-400 font-medium"}>
+                                <span className={cn("whitespace-nowrap", row.isTemporary ? "text-orange-500 dark:text-orange-400 font-medium" : "text-rose-600 dark:text-rose-400 font-medium")}>
                                   {formatCurrency(Math.abs(row.balance))}
                                 </span>
                               ) : (
@@ -2266,7 +2266,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                               )
                             ) : (
                               (row.creditTurnover || 0) > 0 ? (
-                                <span className="font-semibold text-foreground">
+                                <span className="font-semibold text-foreground whitespace-nowrap">
                                   {formatCurrency(row.creditTurnover || 0)}
                                 </span>
                               ) : (
@@ -2276,10 +2276,10 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                           </div>
 
                           {/* Egyenleg Tartozik */}
-                          <div className="p-3 text-right text-xs sm:text-sm tabular-nums font-mono bg-indigo-500/5 flex items-center justify-end">
+                          <div className="py-3 px-2.5 text-right text-xs sm:text-sm tabular-nums font-mono bg-indigo-500/5 flex items-center justify-end overflow-hidden">
                             {row.balance > 0 ? (
                               <span className={cn(
-                                "font-semibold",
+                                "font-semibold whitespace-nowrap",
                                 row.isItem && row.isTemporary ? "text-orange-500 dark:text-orange-400" : "text-emerald-600 dark:text-emerald-400"
                               )}>
                                 {formatCurrency(row.balance)}
@@ -2290,10 +2290,10 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                           </div>
 
                           {/* Egyenleg Követel + Edit button */}
-                          <div className="p-3 text-right text-xs sm:text-sm tabular-nums font-mono bg-indigo-500/5 flex items-center justify-end gap-2 pr-2">
+                          <div className="py-3 px-2.5 text-right text-xs sm:text-sm tabular-nums font-mono bg-indigo-500/5 flex items-center justify-end gap-1.5 pr-2 overflow-hidden">
                             {row.balance < 0 ? (
                               <span className={cn(
-                                "font-semibold",
+                                "font-semibold whitespace-nowrap",
                                 row.isItem && row.isTemporary ? "text-orange-500 dark:text-orange-400" : "text-rose-600 dark:text-rose-400"
                               )}>
                                 {formatCurrency(Math.abs(row.balance))}
@@ -2451,20 +2451,20 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
               {/* Sticky Footer at the bottom of the table card */}
               {viewLayout === 'classic' ? (
-                <div className={cn("sticky bottom-0 shrink-0 grid border-t border-border/60 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] bg-muted/95 backdrop-blur font-bold text-xs sm:text-sm divide-x divide-border/40 z-20 print:border-t-2 mt-auto", gridColsClass)}>
-                  <div className="p-3 text-center uppercase tracking-wider text-muted-foreground font-mono">Σ</div>
-                  <div className="p-3 text-right uppercase tracking-wider text-muted-foreground">{t('accounting:general_ledger.table.total', 'Összesen:')}</div>
-                  <div className="p-3 text-right tabular-nums font-mono">
+                <div className={cn("sticky bottom-0 shrink-0 grid border-t border-border/60 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] bg-muted/95 backdrop-blur font-bold text-xs sm:text-sm divide-x divide-border/40 z-20 print:border-t-2 mt-auto select-none", gridColsClass)}>
+                  <div className="py-3 px-2 text-center uppercase tracking-wider text-muted-foreground font-mono">Σ</div>
+                  <div className="py-3 px-3 text-right uppercase tracking-wider text-muted-foreground whitespace-nowrap">{t('accounting:general_ledger.table.total', 'Összesen:')}</div>
+                  <div className="py-3 px-2.5 text-right tabular-nums font-mono whitespace-nowrap overflow-hidden">
                     {formatCurrency(classicTotals.turnoverDebit)}
                   </div>
-                  <div className="p-3 text-right tabular-nums font-mono">
+                  <div className="py-3 px-2.5 text-right tabular-nums font-mono whitespace-nowrap overflow-hidden">
                     {formatCurrency(classicTotals.turnoverCredit)}
                   </div>
-                  <div className="p-3 text-right tabular-nums font-mono bg-indigo-500/5">
+                  <div className="py-3 px-2.5 text-right tabular-nums font-mono bg-indigo-500/5 whitespace-nowrap overflow-hidden">
                     {formatCurrency(classicTotals.balanceDebit)}
                   </div>
-                  <div className="p-3 text-right tabular-nums font-mono bg-indigo-500/5 flex items-center justify-end gap-2 pr-2">
-                    <span>{formatCurrency(classicTotals.balanceCredit)}</span>
+                  <div className="py-3 px-2.5 text-right tabular-nums font-mono bg-indigo-500/5 flex items-center justify-end gap-1.5 pr-2 overflow-hidden">
+                    <span className="whitespace-nowrap">{formatCurrency(classicTotals.balanceCredit)}</span>
                     <CustomTooltip content={t('accounting:general_ledger.tooltips.refresh', 'Adatok frissítése')} side="top">
                       <Button 
                         variant="ghost" 
