@@ -52,6 +52,7 @@ import { VatNav65Replica } from './VatNav65Replica';
 import { VatObrazacPdvReplica } from './VatObrazacPdvReplica';
 import { VatSteelProductsSection } from './VatSteelProductsSection';
 import { VatProRataCalculatorModal } from './VatProRataCalculatorModal';
+import { VatPoreznaExportDialog } from './VatPoreznaExportDialog';
 
 export function VatReturnViewTab() {
   const { t, i18n } = useTranslation(['accounting', 'common']);
@@ -86,6 +87,7 @@ export function VatReturnViewTab() {
 
   const [showSteelWarningModal, setShowSteelWarningModal] = React.useState(false);
   const [proRataCalculatorOpen, setProRataCalculatorOpen] = React.useState(false);
+  const [poreznaExportOpen, setPoreznaExportOpen] = React.useState(false);
 
   const { incompleteSteelItems, hasIncompleteSteelItems } = useSteelProductsData(
     selectedCompany,
@@ -97,10 +99,7 @@ export function VatReturnViewTab() {
   const executeXmlDownload = () => {
     if (!vatReturn || !selectedCompany) return;
     if (isCroatia) {
-      toast({
-        title: 'ePorezna / Obrazac PDV',
-        description: 'A horvát adóhatóság (Porezna uprava) felé a bevallás PDF nyomtatással vagy az ePorezna rendszeren keresztül nyújtható be.',
-      });
+      setPoreznaExportOpen(true);
       return;
     }
     const taxNum = (selectedCompany as any).tax_number || '';
@@ -463,9 +462,17 @@ export function VatReturnViewTab() {
                 >
                   <FileSpreadsheet className="w-4 h-4 mr-2" /> {t('accounting:vat_return.period.pdf_print', 'PDF nyomtatás')}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleXmlDownloadClick}>
-                  <Download className="w-4 h-4 mr-2" /> {t('accounting:vat_return.period.xml_download', 'ÁNYK XML letöltés')}
-                </DropdownMenuItem>
+                {isCroatia ? (
+                  <DropdownMenuItem onClick={() => setPoreznaExportOpen(true)}>
+                    <Download className="w-4 h-4 mr-2 text-blue-500" />
+                    <span>ePorezna XML export (PDV-S / ZP)</span>
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem onClick={handleXmlDownloadClick}>
+                    <Download className="w-4 h-4 mr-2" />
+                    {t('accounting:vat_return.period.xml_download', 'ÁNYK XML letöltés')}
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -721,6 +728,18 @@ export function VatReturnViewTab() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Croatian ePorezna XML Export Dialog (PDV-S & ZP) */}
+      {isCroatia && (
+        <VatPoreznaExportDialog
+          open={poreznaExportOpen}
+          onOpenChange={setPoreznaExportOpen}
+          selectedCompany={selectedCompany}
+          year={year}
+          month={month}
+          frequency={frequency}
+        />
+      )}
     </div>
   );
 }

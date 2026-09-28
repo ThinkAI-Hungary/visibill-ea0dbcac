@@ -58,9 +58,10 @@ A Visibill egy három rétegű rendszer:
 ```
 Számla beérkezés                    Tranzakció beérkezés
   │                                   │
-  ├── Email (Mailgun webhook)         ├── CSV upload (frontend)
-  ├── NAV sync (edge function)        ├── Futár riport CSV
-  └── Kézi feltöltés (frontend)       └── PDF tranzakciós bizonylat
+  ├── Email (Mailgun webhook)         ├── Aggreg8 PSD2 Open Banking (aggreg8-api / callback)
+  ├── NAV sync (edge function)        ├── CSV upload (frontend)
+  └── Kézi feltöltés (frontend)       ├── Futár riport CSV
+                                      └── PDF tranzakciós bizonylat
   │                                   │
   ▼                                   ▼
 Supabase Storage + DB INSERT          DB INSERT / Storage

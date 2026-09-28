@@ -9,6 +9,9 @@ export interface JurisdictionRules {
   isHungary: boolean;
   isCroatia: boolean;
   hasNavIntegration: boolean;
+  hasMinimaxIntegration: boolean;
+  intermediaryName: string;
+  syncLabel: string;
   taxNumberLabel: string;
   taxNumberPlaceholder: string;
   defaultCurrency: 'HUF' | 'EUR';
@@ -34,6 +37,9 @@ export function getJurisdictionRules(countryCode?: string | null): JurisdictionR
     isHungary,
     isCroatia,
     hasNavIntegration: isHungary,
+    hasMinimaxIntegration: isCroatia,
+    intermediaryName: isCroatia ? 'Minimax' : 'NAV',
+    syncLabel: isCroatia ? 'Minimax szinkronizálás' : 'NAV szinkronizálás',
     taxNumberLabel: isHungary ? 'Adószám' : 'OIB / Porezni broj',
     taxNumberPlaceholder: isHungary ? '12345678-1-23 vagy 12345678' : '11 számjegyű OIB (pl. 95114485977)',
     defaultCurrency,

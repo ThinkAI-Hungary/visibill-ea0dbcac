@@ -276,12 +276,26 @@ export function useInvoiceData(
   const { data: credentialsExist = false } = useQuery({
     queryKey: queryKeys.navCredentials(selectedCompanyId || ''),
     queryFn: async () => {
-      const { data, error } = await supabase
+      // 1. Check NAV credentials
+      const { data: navData, error: navError } = await supabase
         .from('user_nav_credentials')
         .select('id, validation_status')
         .eq('company_id', selectedCompanyId!)
         .maybeSingle();
-      return !error && !!data && data.validation_status === 'valid';
+      if (!navError && navData && navData.validation_status === 'valid') {
+        return true;
+      }
+
+      // 2. Check Minimax credentials (for Croatian companies)
+      const { data: mmData, error: mmError } = await (supabase.from as any)('company_minimax_credentials')
+        .select('id, validation_status')
+        .eq('company_id', selectedCompanyId!)
+        .maybeSingle();
+      if (!mmError && mmData) {
+        return true;
+      }
+
+      return false;
     },
     enabled: !!selectedCompanyId,
   });

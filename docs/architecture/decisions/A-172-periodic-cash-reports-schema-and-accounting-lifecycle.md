@@ -1,10 +1,10 @@
-# A-170: Időszaki Pénztárjelentés Adatbázis Modell, Szigorú Számadású Sorszámozás és Főkönyvi Életciklus
+# A-172: Időszaki Pénztárjelentés Adatbázis Modell, Szigorú Számadású Sorszámozás és Főkönyvi Életciklus
 
 > **Státusz:** ✅ Decided  
 > **Dátum:** 2026-09-28  
 > **Szerző:** Antigravity  
 > **Kapcsolódó specifikáció:** `Idoszaki_penztarjelentes_funkcionalis_specifikacio.docx`  
-> **Kapcsolódó PRD:** [P-130](../../product/decisions/P-130-periodic-cash-reports-and-closing-wizard-ux.md)  
+> **Kapcsolódó PRD:** [P-132](../../product/decisions/P-132-periodic-cash-reports-and-closing-wizard-ux.md)  
 > **Kapcsolódó korábbi ADR-ek:** [A-155](./A-155-petty-cash-inbound-settlement-and-period-closing.md), [A-142](./A-142-customer-and-vat-gl-rules-enforcement.md)
 
 ---

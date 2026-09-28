@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-28  
-> **Összesen:** 130 döntés | ✅ Decided: 126 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 132 döntés | ✅ Decided: 128 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -48,7 +48,7 @@
 | P-111 | Számlaláncolatok Megjelenítése, Kapcsolt Bizonylatok és Többdokumentumos Számlakép Lapozó UX | ✅ Decided | [P-111](./P-111-invoice-chain-and-multi-document-preview-ux.md) |
 | P-115 | Házipénztár Bejövő/Szállítói Számlák Kiegyenlítése és Időszaki Zárás Egyenleg UX | ✅ Decided | [P-115](./P-115-petty-cash-inbound-settlement-and-period-closing-ux.md) |
 | P-127 | Számlák Többfüles Excel Exportja, Skontó- és Fizetési Dátum Feloldás és Banki Fül Routing UX | ✅ Decided | [P-127](./P-127-invoices-multitab-export-payment-dates-and-routing-ux.md) |
-| P-130 | Időszaki Pénztárjelentés, Címletjegyzék és 3-lépéses Zárás Varázsló UX | ✅ Decided | [P-130](./P-130-periodic-cash-reports-and-closing-wizard-ux.md) |
+| P-132 | Időszaki Pénztárjelentés, Címletjegyzék, 3-lépéses Zárási Varázsló és Főkönyvi Feladás UX | ✅ Decided | [P-132](./P-132-periodic-cash-reports-and-closing-wizard-ux.md) |
 
 ## 🔄 Tranzakció & Párosítás
 
@@ -132,6 +132,7 @@
 | P-121 | ÁFA Bevallás és Analitika Számlakép Hatókör (Scope) Rádiógomb Választó UX | ✅ Decided | [P-121](./P-121-vat-image-scope-selector.md) |
 | P-125 | Társadalombiztosítási (TB) Bérszámfejtési Modul, Pre-Flight Ellenőrzés és Kilépő Igazolványok UX | ✅ Decided | [P-125](./P-125-tb-social-security-payroll-and-filing-ux.md) |
 | P-126 | NAV 2665 Hivatalos Nyomtatvány Digitális Replika UX („Semmit a kéznek, mindent a szemnek”) | ✅ Decided | [P-126](./P-126-nav-2665-official-tax-form-digital-replica-ux.md) |
+| P-130 | Horvát ePorezna ÁFA Bevallás XML Export (Obrazac PDV-S & Obrazac ZP) UX | ✅ Decided | [P-130](./P-130-croatian-eporezna-vat-xml-export-pdv-s-and-zp-ux.md) |
 
 
 ## 🔍 Keresés
@@ -200,6 +201,7 @@
 | P-098 | NAV Adózói Adatlekérdezés és Automatikus Cégkitöltés UX | ✅ Decided | [P-098](./P-098-company-taxpayer-lookup-ux.md) |
 | P-099 | Hivatalos NAV ÁFA Összesítő és Adókulcs-Megbontás Felületi Élmény (UX) | ✅ Decided | [P-099](./P-099-official-vat-summary-ui.md) |
 | P-114 | NAV ÜPO M2M Integráció, Felhasználói Hitelesítés és Napi Szinkronizáció UX | ✅ Decided | [P-114](./P-114-nav-upo-m2m-integration-ui-ux.md) |
+| P-131 | Horvát Minimax Számla-közvetítő Integráció és Szinkronizáció UX | ✅ Decided | [P-131](./P-131-croatian-minimax-api-invoice-intermediary-sync-ux.md) |
 
 ## 💼 Projektek & Tárgyi Eszközök
 

@@ -1,10 +1,10 @@
-# P-130: Időszaki Pénztárjelentés, Címletjegyzék, 3-lépéses Zárási Varázsló és Főkönyvi Feladás UX
+# P-132: Időszaki Pénztárjelentés, Címletjegyzék, 3-lépéses Zárási Varázsló és Főkönyvi Feladás UX
 
 > **Státusz:** ✅ Decided  
 > **Dátum:** 2026-09-28  
 > **Szerző:** Antigravity  
 > **Kapcsolódó specifikáció:** `Idoszaki_penztarjelentes_funkcionalis_specifikacio.docx`  
-> **Kapcsolódó ADR:** [A-170](../architecture/decisions/A-170-periodic-cash-reports-schema-and-accounting-lifecycle.md)  
+> **Kapcsolódó ADR:** [A-172](../architecture/decisions/A-172-periodic-cash-reports-schema-and-accounting-lifecycle.md)  
 > **Kapcsolódó korábbi döntések:** [P-092](./P-092-petty-cash-manual-entry-validation-and-settlement-ux.md), [P-115](./P-115-petty-cash-inbound-settlement-and-period-closing-ux.md)
 
 ---

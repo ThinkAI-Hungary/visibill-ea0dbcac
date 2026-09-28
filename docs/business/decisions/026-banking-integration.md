@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-09-17  
-**Utoljára frissítve:** 2026-09-17  
+**Utoljára frissítve:** 2026-09-28  
 
 **Category:** Integrációk & Jövő  
 
@@ -20,6 +20,7 @@ A Visibill / eaisybill-prod az **Aggreg8 (PSD2 AISP v5.3.1)** felhőalapú Open 
 - Új adatbázis táblák: `aggreg8_consents`, `aggreg8_accounts`, `aggreg8_settings`.
 - `bank_transactions.bank_statement_id` oszlop nullable lett, így az Open Banking tranzakciók közvetlenül és azonnal bekerülnek a könyvelési párosító motorba.
 - UI: Beállítások $\rightarrow$ Bankszámlák fülön dedikált `Aggreg8BankConnections` komponens 4 állapottal és élő Realtime szinkronizációval.
+- Éles élesítés (Production cutover 2026-09-28): Sikeres éles hitelesítés, DigitalOcean fix IP Caddy proxy relay és 200 éles banki tétel szinkronizációja ellenőrizve.
 
 **Rationale:**
 A manuális CSV/XLS kivonatok letöltése és feltöltése a könyvelők és vállalkozók legnagyobb időrabló folyamata volt. Az MNB által jóváhagyott PSD2 aggregáció 99%-kal csökkenti a manuális adminisztrációt, azonnali tranzakció-számla párosítást tesz lehetővé, és teljes jogi/adatvédelmi védelmet garantál.
@@ -27,4 +28,5 @@ A manuális CSV/XLS kivonatok letöltése és feltöltése a könyvelők és vá
 ## Kapcsolódó
 - [A-119: Aggreg8 PSD2 Open Banking Integráció](../../architecture/decisions/A-119-aggreg8-psd2-open-banking-integration.md)
 - [P-087: Aggreg8 Bankcsatlakozás és SyncUI UX](../../product/decisions/P-087-aggreg8-bank-connections-and-sync-ui-ux.md)
+- [Aggreg8 Tranzakciós és Partner Adatstruktúra Specifikáció](../../architecture/aggreg8-transaction-data-spec.md)
 - [06-transactions-bank.md Adatbázis](../../architecture/database/06-transactions-bank.md)

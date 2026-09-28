@@ -8,10 +8,11 @@ import { extractNavSyncError, isNavTransientError } from '@/lib/nav/navErrorUtil
 import type { SyncProgress } from '@/components/nav/NavSyncDialog';
 import { useQueryClient } from '@tanstack/react-query';
 import { extractStoragePath } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface UseInvoiceMutationsParams {
   companyId: string;
-  selectedCompany: { id: string; name: string; tax_number?: string | null } | null;
+  selectedCompany: { id: string; name: string; tax_number?: string | null; country_code?: string | null } | null;
   invalidateInvoiceData: () => void;
   selectedInvoiceIds: Set<string>;
   setSelectedInvoiceIds: React.Dispatch<React.SetStateAction<Set<string>>>;
@@ -38,6 +39,7 @@ export function useInvoiceMutations({
   getProjectName,
   isSubmittedTab,
 }: UseInvoiceMutationsParams) {
+  const { t } = useTranslation(['invoices', 'common']);
   const queryClient = useQueryClient();
   const [syncing, setSyncing] = useState(false);
   const SYNC_COOLDOWN_SECONDS = 60;
@@ -55,19 +57,36 @@ export function useInvoiceMutations({
     }
 
     try {
-      const { data, error } = await supabase
-        .from('nav_sync_logs')
-        .select('started_at')
-        .eq('company_id', selectedCompany.id)
-        .in('status', ['completed', 'running'])
-        .order('started_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const isHr = selectedCompany?.country_code === 'HR';
+      if (isHr) {
+        const { data, error } = await (supabase.from as any)('minimax_sync_logs')
+          .select('created_at')
+          .eq('company_id', selectedCompany.id)
+          .in('status', ['completed', 'running'])
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-      if (!error && data?.started_at) {
-        setServerLastSyncTime(new Date(data.started_at));
+        if (!error && (data as any)?.created_at) {
+          setServerLastSyncTime(new Date((data as any).created_at));
+        } else {
+          setServerLastSyncTime(null);
+        }
       } else {
-        setServerLastSyncTime(null);
+        const { data, error } = await supabase
+          .from('nav_sync_logs')
+          .select('started_at')
+          .eq('company_id', selectedCompany.id)
+          .in('status', ['completed', 'running'])
+          .order('started_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (!error && data?.started_at) {
+          setServerLastSyncTime(new Date(data.started_at));
+        } else {
+          setServerLastSyncTime(null);
+        }
       }
     } catch (err) {
       reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Failed to check cooldown:', error: err });
@@ -124,6 +143,38 @@ export function useInvoiceMutations({
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
         toast({ title: 'Nincs érvényes munkamenet', variant: 'destructive' });
+        return;
+      }
+
+      // Croatian company: Minimax API sync
+      if (selectedCompany.country_code === 'HR') {
+        onProgress?.({ currentChunk: 1, totalChunks: 1, totalInvoices: 0 });
+        const { data, error } = await supabase.functions.invoke('minimax-sync', {
+          body: {
+            action: 'sync',
+            companyId: selectedCompany.id,
+            dateFrom: syncDateFrom,
+            dateTo: syncDateTo,
+            direction: 'BOTH',
+          },
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+
+        if (error || data?.error) {
+          throw new Error(error?.message || data?.error || t('invoices:minimax_sync.toast_error_title', 'Minimax szinkronizálási hiba történt'));
+        }
+
+        const totalSaved = data?.totalSaved ?? data?.totalFetched ?? 0;
+        toast({
+          title: t('invoices:minimax_sync.toast_success_title', 'Minimax szinkronizálás kész'),
+          description: t('invoices:minimax_sync.toast_success_desc', {
+            count: totalSaved,
+            defaultValue: `${totalSaved} horvát számla sikeresen letöltve és mentve.`,
+          }),
+        });
+
+        setServerLastSyncTime(new Date());
+        invalidateInvoiceData();
         return;
       }
 

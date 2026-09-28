@@ -3,11 +3,11 @@
 ```text
 feat(petty-cash, db, vat): Időszaki pénztárjelentés modul teljes implementációja (Sztv. 165–168. §), 3-lépéses zárási varázsló, címletjegyzék, jegyzőkönyv, szigorú számadású bizonylatok (BPB/KPB), főkönyvi feladás és éles Supabase migrációk
 
-- Időszaki Pénztárjelentés Modul Tervezés & Specifikáció (P-130, A-170, Sztv. 165–168. §)
+- Időszaki Pénztárjelentés Modul Tervezés & Specifikáció (P-132, A-172, Sztv. 165–168. §)
   - Felhasználói követelményspecifikáció (`tests/docs/eb0148/Idoszaki_penztarjelentes_funkcionalis_specifikacio.docx`) teljes körű feldolgozása.
   - Zero Silent Decisions Feature Planner eljárás lefolytatása: 8 kulcsfontosságú termék- és architektúradöntés véglegesítése (állapotgép, devizanem-kezelés, címletjegyzék, felelősök, főkönyvi feladás).
-  - Új termékdöntési dokumentáció: `docs/product/decisions/P-130-periodic-cash-reports-and-closing-wizard-ux.md`.
-  - Új architektúra döntési nyilvántartás: `docs/architecture/decisions/A-170-periodic-cash-reports-schema-and-accounting-lifecycle.md`.
+  - Új termékdöntési dokumentáció: `docs/product/decisions/P-132-periodic-cash-reports-and-closing-wizard-ux.md`.
+  - Új architektúra döntési nyilvántartás: `docs/architecture/decisions/A-172-periodic-cash-reports-schema-and-accounting-lifecycle.md`.
   - Döntési nyilvántartások indexeinek szinkronizálása (`docs/product/decisions/index.md`, `docs/architecture/decisions/index.md`).
 
 - Adatbázis Séma & Munkafolyamat RPC-k (Supabase Migrációk)

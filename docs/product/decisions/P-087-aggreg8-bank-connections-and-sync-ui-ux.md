@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-09-17  
-**Utoljára frissítve:** 2026-09-24  
+**Utoljára frissítve:** 2026-09-28  
 
 **Category:** Beállítások & Bankkapcsolatok UX  
 
@@ -57,6 +57,7 @@ A bankkapcsolat beállítása bizalmi funkció. A felhasználónak minden pillan
 
 ## Kapcsolódó
 - [A-119: Aggreg8 PSD2 Open Banking Integráció](../../architecture/decisions/A-119-aggreg8-psd2-open-banking-integration.md)
+- [Aggreg8 Tranzakciós és Partner Adatstruktúra Specifikáció](../../architecture/aggreg8-transaction-data-spec.md)
 - [026-banking-integration.md (BRD)](../../business/decisions/026-banking-integration.md)
 - [Integrations.tsx Oldal](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/pages/Integrations.tsx)
 - [BankAccountsTab.tsx Komponens](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/components/settings/BankAccountsTab.tsx)

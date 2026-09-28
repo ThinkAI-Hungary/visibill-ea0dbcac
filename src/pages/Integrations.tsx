@@ -22,12 +22,14 @@ import {
   FileText,
   Landmark,
   Receipt,
+  Building2,
   ChevronRight,
 } from 'lucide-react';
 import EmailAliasManager from '@/components/EmailAliasManager';
 import EmailSettingsForm from '@/components/integrations/EmailSettingsForm';
 import NavCredentialsForm from '@/components/nav/NavCredentialsForm';
 import NavUpoM2mCard from '@/components/integrations/NavUpoM2mCard';
+import { MinimaxSettingsCard } from '@/components/minimax/MinimaxSettingsCard';
 import SzamlazzAgentForm from '@/components/integrations/SzamlazzAgentForm';
 import { Aggreg8BankConnections } from '@/components/banking/Aggreg8BankConnections';
 import { ApiKeysCard } from '@/components/settings/ApiKeysCard';
@@ -66,19 +68,20 @@ const Integrations = () => {
   const { selectedCompany, loading: companyLoading } = useCompany();
   const { role } = useUserRole();
   const isOwner = selectedCompany?.owner_id === user?.id || role === 'owner';
-  const { hasNavIntegration } = useCompanyJurisdiction();
+  const { hasNavIntegration, hasMinimaxIntegration, isCroatia } = useCompanyJurisdiction();
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'banking';
+  const defaultTab = hasMinimaxIntegration ? 'minimax' : 'banking';
+  const activeTab = searchParams.get('tab') || defaultTab;
   const setActiveTab = (tabId: string) => {
     setSearchParams({ tab: tabId }, { replace: true });
   };
 
   useEffect(() => {
     if (!hasNavIntegration && activeTab === 'nav') {
-      setActiveTab('banking');
+      setActiveTab(hasMinimaxIntegration ? 'minimax' : 'banking');
     }
-  }, [hasNavIntegration, activeTab]);
+  }, [hasNavIntegration, hasMinimaxIntegration, activeTab]);
 
   const { consents = [] } = useAggreg8(selectedCompany?.id || '');
 
@@ -276,6 +279,19 @@ const Integrations = () => {
     staleTime: 2 * 60 * 1000,
   });
 
+  const { data: minimaxCreds } = useQuery({
+    queryKey: ['minimax_credentials', selectedCompany?.id],
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)('get_minimax_credentials', {
+        p_company_id: selectedCompany!.id,
+      });
+      if (error) return null;
+      return (data as any)?.exists ? data : null;
+    },
+    enabled: !!selectedCompany?.id && hasMinimaxIntegration,
+    staleTime: 2 * 60 * 1000,
+  });
+
   if (companyLoading) {
     return <ContentSkeleton />;
   }
@@ -334,6 +350,23 @@ const Integrations = () => {
               ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
               : 'bg-muted text-muted-foreground',
           },
+          ...(hasMinimaxIntegration
+            ? [
+                {
+                  id: 'minimax',
+                  title: t('settings:integrations.minimax.nav_title', 'Minimax API Számlaszinkron'),
+                  subtitle: t('settings:integrations.minimax.nav_subtitle', 'Horvát közvetítői REST kapcsolat'),
+                  icon: Building2,
+                  color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800',
+                  badgeText: minimaxCreds
+                    ? t('settings:integrations.status_active', 'Aktív')
+                    : t('settings:integrations.status_setup', 'Beállítás'),
+                  badgeClass: minimaxCreds
+                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+                    : 'bg-muted text-muted-foreground',
+                },
+              ]
+            : []),
           ...(hasNavIntegration
             ? [
                 {
@@ -408,7 +441,7 @@ const Integrations = () => {
       },
     ];
     return rawNav.filter(group => group.items.length > 0);
-  }, [hasNavIntegration, consents.length, syncLogs.length]);
+  }, [hasNavIntegration, hasMinimaxIntegration, consents.length, syncLogs.length, minimaxCreds, t]);
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -645,6 +678,22 @@ const Integrations = () => {
             {hasNavIntegration && (
               <div className={activeTab === 'nav_upo' ? 'block' : 'hidden'}>
                 <NavUpoM2mCard companyId={selectedCompany?.id} isOwner={isOwner} />
+              </div>
+            )}
+
+            {/* ── PANEL 2/C: Minimax API Számlaszinkron (Horvátország) ── */}
+            {hasMinimaxIntegration && (
+              <div className={activeTab === 'minimax' ? 'block' : 'hidden'}>
+                <MinimaxSettingsCard
+                  companyId={selectedCompany?.id}
+                  isOwner={isOwner}
+                  onCredentialsSaved={() => {
+                    toast({
+                      title: t('settings:integrations.minimax.toast_save_success_title', 'Minimax beállítások elmentve'),
+                      description: t('settings:integrations.minimax.toast_save_success_desc', 'A Minimax API közvetítői kapcsolat beállításai sikeresen elmentve.'),
+                    });
+                  }}
+                />
               </div>
             )}
 
