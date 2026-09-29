@@ -144,11 +144,16 @@ export function useScopedBasePath(): string {
  * @param defaultTab  Default tab if none is in the URL
  * @param validTabs  Array of valid tab slugs — invalid values fall back to default
  */
+export interface UseUrlTabOptions {
+  stripSearchParams?: string[];
+}
+
 export function useUrlTab<T extends string>(
   pagePath: string,
   defaultTab: T,
   validTabs: readonly T[],
-): [T, (tab: T) => void] {
+  options?: UseUrlTabOptions,
+): [T, (tab: T, navOptions?: { preserveParams?: boolean }) => void] {
   const { tab } = useParams<{ tab?: string }>();
   const navigate = useNavigate();
   const basePath = useScopedBasePath();
@@ -166,18 +171,35 @@ export function useUrlTab<T extends string>(
   }, [urlTab]);
 
   const setTab = useCallback(
-    (newTab: T) => {
+    (newTab: T, navOptions?: { preserveParams?: boolean }) => {
       if (newTab === optimisticTab) return;
       setOptimisticTab(newTab);
+
+      let nextSearch = location.search;
+      if (!navOptions?.preserveParams && options?.stripSearchParams && options.stripSearchParams.length > 0 && location.search) {
+        const params = new URLSearchParams(location.search);
+        let changed = false;
+        for (const key of options.stripSearchParams) {
+          if (params.has(key)) {
+            params.delete(key);
+            changed = true;
+          }
+        }
+        if (changed) {
+          const str = params.toString();
+          nextSearch = str ? `?${str}` : '';
+        }
+      }
+
       navigate(
         {
           pathname: `${basePath}/${pagePath}/${newTab}`,
-          search: location.search, // preserve ?invoice= etc.
+          search: nextSearch,
         },
         { replace: true },
       );
     },
-    [navigate, basePath, pagePath, location.search, optimisticTab],
+    [navigate, basePath, pagePath, location.search, optimisticTab, options?.stripSearchParams],
   );
 
   return [optimisticTab, setTab];

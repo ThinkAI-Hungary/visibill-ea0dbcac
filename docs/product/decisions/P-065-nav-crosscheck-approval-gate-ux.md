@@ -2,6 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-09-03  
+**Utoljára frissítve:** 2026-09-29  
 **Category:** UI / Workflow / Accounting  
 
 ---
@@ -13,23 +14,25 @@ Hogyan jelenjen meg a felhasználók (ügyfelek és könyvelők) számára a sz�
 A belföldi számlák könyvelési zárlata (BRD 048 és ADR A-084) megköveteli, hogy a felhasználók egyértelműen lássák, ha egy feltöltött számlához nem tartozik online NAV adatszolgáltatás.
 A korábbi tervezési körben felmerült a `NAV ok` zöld badge használata a rendben lévő számláknál, azonban a felhasználói visszajelzés alapján a számlák 95%-a rendben van, így a zöld badge-ek tömege szükségtelenül túlterhelte a listát ("karácsonyfa-effektus").
 Elvárás volt a tiszta felület: a rendben lévő számlák ne kapjanak feltűnő címkét, a hiányos tételeknél pedig a bizonylatszám mellett egy diszkrét, de informatív felkiáltójel nyújtson közvetlen beavatkozási lehetőséget.
+Emellett a külföldi partnerektől érkező bizonylatok (pl. Google, Meta, Adobe, nemzetközi szolgáltatók) természetükből adódóan soha nem kerülnek be a magyar NAV OSA rendszerbe, így ezeknél a hiányjelzés álpozitív zavart okozott volna.
 
 ## Decision
 
 ### 1. Vizuális Tisztaság és Felkiáltójel Elhelyezés (`SubmittedInvoiceRow`)
 - A zöld `NAV ok` badge-eket teljesen eltávolítottuk a listából.
-- Ha a számlához **nem tartozik NAV adatszolgáltatás** (`nav_status === 'missing_nav'` vagy `statusz === 'jovahagyasra_var'`):
+- **Külföldi számlák mentessége:** A NAV figyelmeztető badge **KIZÁRÓLAG belföldi számlákra** (`!isForeign`) jelenhet meg. A külföldi adószámmal rendelkező partnerek soha nem kapnak hiányzó NAV figyelmeztetést.
+- Ha egy belföldi számlához **nem tartozik NAV adatszolgáltatás** (`nav_status === 'missing_nav'` vagy `statusz === 'jovahagyasra_var'`):
   - A `BIZ.SZÁM` oszlopban, közvetlenül a számlaszám után egy borostyán színű figyelmeztető gomb (`AlertTriangle`) jelenik meg kerek, enyhén színezett háttérrel (`bg-amber-500/15`).
-  - **Hover interakció:** Custom Radix tooltip jelenik meg:  
-    *„NAV adatszolgáltatás hiányzik! – A számlához nem tartozik online számla adatszolgáltatás. Kattintson ide a könyvelői jóváhagyáshoz!”*
+  - **Hover interakció:** Custom Radix tooltip jelenik meg a pontosított szöveggel:  
+    *„NAV Számlakép hiányzik! – A számlaképhez nem sikerült NAV számlát párosítani. Kattintson ide a könyvelői jóváhagyáshoz!”*
   - **Kattintás:** Közvetlenül megnyitja a `InvoiceApprovalDialog` jóváhagyási modált.
 - Ha a számlát a könyvelő **már jóváhagyta**:
   - A felkiáltójel helyén egy diszkrét kék pipa (`Check`) ikon jelenik meg, amelynek tooltipje részletezi az auditált indoklást és a jóváhagyás tényét.
 
-### 2. Lenyitható Számlasor Banner (`ExpandedInvoiceRow`)
-- A számla kibontásakor, a kapcsolódó entitások (NAV pár, banki tranzakciók, futárjelentések) felett egy teljes szélességű borostyán figyelmeztető sáv jelenik meg.
-- A sáv tartalmaz egy közvetlen *„Jóváhagyás könyvelésre”* akciógombot.
-- Ha a számla már jóváhagyott, egy kék információs kártya mutatja a könyvelői jóváhagyás jogcímét és dátumát.
+### 2. Lenyitható Számlasor Letisztítása (`ExpandedInvoiceRow`)
+- A számla kibontásakor, a kapcsolódó entitások felett a belföldi hiányos számlák esetén borostyán figyelmeztető sáv jelenik meg közvetlen *„Jóváhagyás könyvelésre”* gombbal.
+- Ha a számla már jóváhagyott, egy kék információs kártya mutatja a jóváhagyás jogcímét és dátumát.
+- **Zsúfoltság-megszüntetés:** A lenyitható sorból eltávolítottuk a korábbi `NavInvoiceVatSummaryCard` komponenst; a hivatalos NAV ÁFA összesítő és adókulcs-megbontás a tétellista modálban (`InvoiceItemsDialog`) érhető el, így a sor letisztult maradt.
 
 ### 3. Jóváhagyási Dialógus UX (`InvoiceApprovalDialog`)
 - **Fejléc:** Figyelmeztető pajzs ikonnal ellátott cím: *„NAV Jóváhagyási Kapu”*.
@@ -44,7 +47,9 @@ Elvárás volt a tiszta felület: a rendben lévő számlák ne kapjanak feltűn
 
 ### 4. Accounty (eaisyBooks) Ügyfélszámlák Integráció (`ClientInvoicesPage`)
 - **Eszköztár Gyorsszűrő:** A `FAD` és `Hiányzó kép` gombok mellé bekerült a **`⚠️ NAV hiányzik ({count})`** gomb számlálóval, amellyel a könyvelő egy kattintással leszűri az elintézésre váró tételeket.
-- **Táblázat Sorok:** Azonos inline felkiáltójel és tooltip a bizonylatszám mellett.
+- **Külföldi számlák szűrése:** A gyorsszűrő számlálója és a szűrt lista szigorúan kizárja a külföldi számlákat (`isForeignSubmittedInvoice`), így csak a tényleges hazai elmaradások jelennek meg.
+- **Általános KPI kártyák és analitikák:** A felület 4 összesítő KPI kártyája (Számlák száma, Bruttó összesen devizánként, ÁFA összesen, FAD), valamint az összes pénzügyi és ÁFA analitika a külföldi számlákat **maradéktalanul és 100%-ban tartalmazza és számolja**.
+- **Táblázat Sorok:** Azonos inline felkiáltójel és tooltip a bizonylatszám mellett (kizárólag belföldi számlák esetén).
 - **Sorvégi Műveleti Menü:** A három pontos menüben új opcióként szerepel a *„Jóváhagyás könyvelésre (NAV kapu)”*.
 
 ### 5. Szűrősáv Bővítés (`InvoiceFilterBar`)
@@ -94,6 +99,7 @@ A koncepció tökéletes egyensúlyt teremt a zavaró vizuális elemek minimaliz
 
 ## Kapcsolódó
 - ADR: [A-084: NAV Online Számla Cross-Check & Könyvelői Jóváhagyási Kapu](../../architecture/decisions/A-084-nav-crosscheck-approval-gate.md)
+- ADR: [A-176: Számla Mélyhivatkozás Tab-Izoláció és Külföldi Számla NAV Mentesség](../../architecture/decisions/A-176-invoice-deep-linking-tab-isolation-and-nav-foreign-guard.md)
 - BRD: [048: NAV Online Számla Megfelelőség és Könyvelői Zárlat](../../business/decisions/048-nav-crosscheck-approval-gate.md)
 - PRD: [P-010: Számla lista nézet & szűrők](./P-010-invoice-list.md)
 - PRD: [P-057: Számla Kezelő Moduláris Felület (Invoices Feature Slice) UX](./P-057-invoices-feature-slice-ux.md)

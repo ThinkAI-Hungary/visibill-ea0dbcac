@@ -26,6 +26,7 @@ import { TAccountLedger } from '@/components/accounty/invoices/TAccountLedger';
 import { FloatingBulkBar } from '@/components/ui/floating-bulk-bar';
 import { PageHeader } from '@/components/ui/page-header';
 import { extractNavSyncError } from '@/lib/nav/navErrorUtils';
+import { isForeignSubmittedInvoice } from '@/lib/invoiceMatchingUtils';
 
 const BULK_STATUS_OPTIONS = [
   { value: 'Új', label: 'Új' },
@@ -198,9 +199,19 @@ export default function ClientInvoicesPage() {
 
   const { data: invoicesData, isLoading: invoicesLoading } = useCompanyInvoices(id || '');
 
+  const isForeignClientInvoice = (inv: CompanyInvoice) => {
+    return isForeignSubmittedInvoice({
+      nav_status: inv.navStatus,
+      invoice_direction: inv.type === 'kimeno' ? 'OUTBOUND' : 'INBOUND',
+      elado_vat_id: inv.type === 'bejovo' ? inv.partnerTaxNumber : undefined,
+      vevo_vat_id: inv.type === 'kimeno' ? inv.partnerTaxNumber : undefined,
+      penznem: inv.currency,
+    });
+  };
+
   const missingNavCount = useMemo(() => {
     if (!invoicesData || !hasNavIntegration) return 0;
-    return invoicesData.filter(inv => !inv.isNav && (inv.navStatus === 'missing_nav' || inv.statusz === 'jovahagyasra_var') && !inv.approvedAt).length;
+    return invoicesData.filter(inv => !inv.isNav && !isForeignClientInvoice(inv) && (inv.navStatus === 'missing_nav' || inv.statusz === 'jovahagyasra_var') && !inv.approvedAt).length;
   }, [invoicesData, hasNavIntegration]);
 
   const filteredInvoices = useMemo(() => {
@@ -212,7 +223,7 @@ export default function ClientInvoicesPage() {
       const matchType = typeFilter === 'all' || inv.type === typeFilter;
       const matchFad = !fadFilter || inv.isReverseCharge === true;
       const matchMissingImage = !missingImageFilter || (inv.isNav && inv.submitted !== true);
-      const matchMissingNav = !missingNavFilter || (!hasNavIntegration ? true : (!inv.isNav && (inv.navStatus === 'missing_nav' || inv.statusz === 'jovahagyasra_var') && !inv.approvedAt));
+      const matchMissingNav = !missingNavFilter || (!hasNavIntegration ? true : (!inv.isNav && !isForeignClientInvoice(inv) && (inv.navStatus === 'missing_nav' || inv.statusz === 'jovahagyasra_var') && !inv.approvedAt));
       return matchSearch && matchStatus && matchType && matchFad && matchMissingImage && matchMissingNav;
     });
   }, [invoicesData, searchQuery, statusFilter, typeFilter, fadFilter, missingImageFilter, missingNavFilter, hasNavIntegration]);
@@ -871,7 +882,7 @@ export default function ClientInvoicesPage() {
                     <td className="px-6 py-4 font-medium font-mono text-foreground">
                       <div className="flex items-center gap-1.5 whitespace-nowrap">
                         <span>{inv.invoiceNumber}</span>
-                        {hasNavIntegration && !inv.isNav && (inv.navStatus === 'missing_nav' || inv.statusz === 'jovahagyasra_var') && (
+                        {hasNavIntegration && !inv.isNav && !isForeignClientInvoice(inv) && (inv.navStatus === 'missing_nav' || inv.statusz === 'jovahagyasra_var') && (
                           inv.approvedAt ? (
                             <TooltipProvider>
                               <Tooltip>
@@ -908,17 +919,17 @@ export default function ClientInvoicesPage() {
                                       });
                                       setApprovalDialogOpen(true);
                                     }}
-                                    aria-label="Nincs NAV online számla adatszolgáltatás! Kattintson a jóváhagyáshoz."
+                                    aria-label="A számlaképhez nem sikerült NAV számlát párosítani! Kattintson a jóváhagyáshoz."
                                   >
                                     <AlertTriangle className="h-3 w-3" />
                                   </button>
                                 </TooltipTrigger>
                                 <TooltipContent side="top" className="max-w-xs text-xs font-sans">
                                   <p className="font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                                    <AlertTriangle className="h-3.5 w-3.5" /> NAV adatszolgáltatás hiányzik!
+                                    <AlertTriangle className="h-3.5 w-3.5" /> NAV Számlakép hiányzik!
                                   </p>
                                   <p className="text-muted-foreground mt-0.5">
-                                    A számlához nem tartozik online számla adatszolgáltatás. Kattintson ide a könyvelői jóváhagyáshoz!
+                                    A számlaképhez nem sikerült NAV számlát párosítani. Kattintson ide a könyvelői jóváhagyáshoz!
                                   </p>
                                 </TooltipContent>
                               </Tooltip>
@@ -944,7 +955,7 @@ export default function ClientInvoicesPage() {
                             ⚠️ Hiányzó kép
                           </span>
                         )}
-                        {hasNavIntegration && !inv.isNav && (inv.navStatus === 'missing_nav' || inv.statusz === 'jovahagyasra_var') && !inv.approvedAt && (
+                        {hasNavIntegration && !inv.isNav && !isForeignClientInvoice(inv) && (inv.navStatus === 'missing_nav' || inv.statusz === 'jovahagyasra_var') && !inv.approvedAt && (
                           <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 text-[10px] font-bold border border-amber-300 dark:border-amber-700 whitespace-nowrap flex items-center gap-1" title="Nincs NAV Online Számla adatszolgáltatás!">
                             <AlertTriangle className="w-2.5 h-2.5" /> NAV hiányzik
                           </span>
@@ -990,7 +1001,7 @@ export default function ClientInvoicesPage() {
                             <ArrowLeftRight className="w-3.5 h-3.5 text-muted-foreground" />
                             {t('invoices_page.action_ledger', 'Főkönyvi napló (T-számlák)')}
                           </DropdownMenuItem>
-                          {hasNavIntegration && !inv.isNav && (inv.navStatus === 'missing_nav' || inv.statusz === 'jovahagyasra_var') && !inv.approvedAt && (
+                          {hasNavIntegration && !inv.isNav && !isForeignClientInvoice(inv) && (inv.navStatus === 'missing_nav' || inv.statusz === 'jovahagyasra_var') && !inv.approvedAt && (
                             <DropdownMenuItem 
                               className="cursor-pointer gap-2 text-amber-700 dark:text-amber-400 focus:text-amber-800"
                               onClick={() => {

@@ -134,8 +134,7 @@ describe('glData pagination utilities', () => {
 
   describe('fetchAllGlCategorizedItems', () => {
     it('passes dateBasis to RPC when provided', async () => {
-      const mockRange = vi.fn().mockResolvedValue({ data: [], error: null });
-      (supabase.rpc as any).mockReturnValue({ range: mockRange });
+      (supabase.rpc as any).mockResolvedValue({ data: [], error: null });
 
       await fetchAllGlCategorizedItems({
         companyId: 'company-1',
@@ -151,12 +150,13 @@ describe('glData pagination utilities', () => {
         p_exchange_rates: {},
         p_date_basis: 'teljesites',
         p_posting_status: 'ALL',
+        p_limit: 1000,
+        p_offset: 0,
       });
     });
 
     it('passes postingStatus POSTED_ONLY to RPC when requested', async () => {
-      const mockRange = vi.fn().mockResolvedValue({ data: [], error: null });
-      (supabase.rpc as any).mockReturnValue({ range: mockRange });
+      (supabase.rpc as any).mockResolvedValue({ data: [], error: null });
 
       await fetchAllGlCategorizedItems({
         companyId: 'company-1',
@@ -172,6 +172,32 @@ describe('glData pagination utilities', () => {
         p_exchange_rates: {},
         p_date_basis: 'kibocsatas',
         p_posting_status: 'POSTED_ONLY',
+        p_limit: 1000,
+        p_offset: 0,
+      });
+    });
+
+    it('passes explicit p_limit and p_offset directly to RPC when provided', async () => {
+      (supabase.rpc as any).mockResolvedValue({ data: [{ item_id: 'i1' }], error: null });
+
+      const res = await fetchAllGlCategorizedItems({
+        companyId: 'company-1',
+        presetId: 'preset-1',
+        limit: 50,
+        offset: 100,
+      });
+
+      expect(res).toHaveLength(1);
+      expect(supabase.rpc).toHaveBeenCalledWith('get_gl_categorized_items', {
+        p_company_id: 'company-1',
+        p_preset_id: 'preset-1',
+        p_date_from: null,
+        p_date_to: null,
+        p_exchange_rates: {},
+        p_date_basis: 'kibocsatas',
+        p_posting_status: 'ALL',
+        p_limit: 50,
+        p_offset: 100,
       });
     });
   });
@@ -211,8 +237,7 @@ describe('glData pagination utilities', () => {
 
   describe('fetchGlItemsForAccount', () => {
     it('passes p_gl_account_id to get_gl_categorized_items RPC', async () => {
-      const mockRange = vi.fn().mockResolvedValue({ data: [{ item_id: 'item-1', amount: 500 }], error: null });
-      (supabase.rpc as any).mockReturnValue({ range: mockRange });
+      (supabase.rpc as any).mockResolvedValue({ data: [{ item_id: 'item-1', amount: 500 }], error: null });
 
       const result = await fetchGlItemsForAccount({
         companyId: 'company-1',
@@ -230,13 +255,13 @@ describe('glData pagination utilities', () => {
         p_date_basis: 'kibocsatas',
         p_posting_status: 'ALL',
         p_gl_account_id: 'gl-acc-123',
+        p_limit: 1000,
+        p_offset: 0,
       });
-      expect(mockRange).toHaveBeenCalledWith(0, 999);
     });
 
     it('defaults to 00000000-0000-0000-0000-000000000000 when glAccountId is null', async () => {
-      const mockRange = vi.fn().mockResolvedValue({ data: [], error: null });
-      (supabase.rpc as any).mockReturnValue({ range: mockRange });
+      (supabase.rpc as any).mockResolvedValue({ data: [], error: null });
 
       await fetchGlItemsForAccount({
         companyId: 'company-1',
@@ -246,6 +271,8 @@ describe('glData pagination utilities', () => {
 
       expect(supabase.rpc).toHaveBeenCalledWith('get_gl_categorized_items', expect.objectContaining({
         p_gl_account_id: '00000000-0000-0000-0000-000000000000',
+        p_limit: 1000,
+        p_offset: 0,
       }));
     });
 

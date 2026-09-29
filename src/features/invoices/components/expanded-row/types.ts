@@ -131,6 +131,7 @@ export interface ExpandedInvoiceRowProps {
   /** invoice_number (sztornó dialog szövegéhez) */
   invoiceNumber?: string;
   // ── NAV Online Számla Cross-Check & Approval Gate ──
+  isForeign?: boolean;
   navStatus?: string;
   statusz?: string;
   approvedAt?: string | null;

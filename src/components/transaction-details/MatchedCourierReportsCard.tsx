@@ -26,14 +26,6 @@ export const MatchedCourierReportsCard: React.FC<MatchedCourierReportsCardProps>
 }) => {
   const { t } = useTranslation(['transactions']);
 
-  if (!courierReports || courierReports.length === 0) return null;
-
-  // Separate summary row (if present) from individual parcel reports
-  const summaryReport = courierReports.find(
-    r => r.row_type === 'total' || !r.package_number || r.recipient_name?.toLowerCase().includes('összesítés')
-  );
-  const parcelReports = courierReports.filter(r => r !== summaryReport);
-
   // Set of already matched invoice IDs on this transaction
   const alreadyMatchedInvoiceIds = useMemo(() => {
     const ids = new Set<string>();
@@ -43,6 +35,19 @@ export const MatchedCourierReportsCard: React.FC<MatchedCourierReportsCardProps>
     });
     return ids;
   }, [matchedInvoiceId, extraMatches]);
+
+  // Separate summary row (if present) from individual parcel reports
+  const summaryReport = useMemo(() => {
+    if (!courierReports || courierReports.length === 0) return undefined;
+    return courierReports.find(
+      r => r.row_type === 'total' || !r.package_number || r.recipient_name?.toLowerCase().includes('összesítés')
+    );
+  }, [courierReports]);
+
+  const parcelReports = useMemo(() => {
+    if (!courierReports || courierReports.length === 0) return [];
+    return courierReports.filter(r => r !== summaryReport);
+  }, [courierReports, summaryReport]);
 
   // Unlinked invoices that can be linked via 1-click batch button
   const unlinkedInvoiceIds = useMemo(() => {
@@ -54,6 +59,8 @@ export const MatchedCourierReportsCard: React.FC<MatchedCourierReportsCardProps>
       )
     );
   }, [parcelReports, alreadyMatchedInvoiceIds]);
+
+  if (!courierReports || courierReports.length === 0) return null;
 
   return (
     <>

@@ -153,9 +153,9 @@ export function InvoiceDialogManager() {
           onOpenChange={(open) => {
             setItemsDialogOpen(open);
             if (!open) {
+              setInvoiceParam(null);
               dialogClosingRef.current = true;
               setTimeout(() => {
-                setInvoiceParam(null);
                 setSelectedNavInvoice(null);
                 dialogClosingRef.current = false;
               }, 500);
@@ -179,9 +179,9 @@ export function InvoiceDialogManager() {
           onOpenChange={(open) => {
             setSubmittedItemsDialogOpen(open);
             if (!open) {
+              setInvoiceParam(null);
               dialogClosingRef.current = true;
               setTimeout(() => {
-                setInvoiceParam(null);
                 setSelectedSubmittedForItems(null);
                 dialogClosingRef.current = false;
               }, 500);

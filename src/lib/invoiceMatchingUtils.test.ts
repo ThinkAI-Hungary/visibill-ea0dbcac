@@ -424,6 +424,9 @@ describe('invoiceMatchingUtils', () => {
     it('returns true for foreign seller VAT prefix', () => {
       expect(isForeignSubmittedInvoice({ elado_vat_id: 'US-8492049' })).toBe(true);
       expect(isForeignSubmittedInvoice({ elado_vat_id: 'DE123456789' })).toBe(true);
+      expect(isForeignSubmittedInvoice({ elado_vat_id: 'DE12345678' })).toBe(true);
+      expect(isForeignSubmittedInvoice({ elado_vat_id: 'FOREIGN:google' })).toBe(true);
+      expect(isForeignSubmittedInvoice({ elado_vat_id: 'AT U12345678' })).toBe(true);
       expect(isForeignSubmittedInvoice({ elado_vat_id: 'FR987654321' })).toBe(true);
     });
 

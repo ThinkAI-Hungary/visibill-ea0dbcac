@@ -454,8 +454,10 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   // On-demand loaded transaction items per account CID: Map<accountCid, LedgerItem[]>
   const [loadedRawAccountItems, setLoadedRawAccountItems] = useState<Map<string, LedgerItem[]>>(new Map());
   const [loadingAccountCids, setLoadingAccountCids] = useState<Set<string>>(new Set());
+  const loadingAccountCidsRef = useRef<Set<string>>(new Set());
   const [hasMoreAccountCids, setHasMoreAccountCids] = useState<Set<string>>(new Set());
   const [loadingMoreAccountCids, setLoadingMoreAccountCids] = useState<Set<string>>(new Set());
+  const loadingMoreAccountCidsRef = useRef<Set<string>>(new Set());
 
   // Consolidated items according to itemGrouping mode ('by_invoice' vs 'detailed')
   const loadedAccountItems = useMemo(() => {
@@ -468,6 +470,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
   // Reset loaded account items when filters change
   useEffect(() => {
+    loadingAccountCidsRef.current.clear();
+    loadingMoreAccountCidsRef.current.clear();
     setLoadedRawAccountItems(new Map());
     setLoadingAccountCids(new Set());
     setHasMoreAccountCids(new Set());
@@ -476,6 +480,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
   // Filter change detection: whenever filters change, show skeleton until query finishes
   const currentFilterKey = `${presetId}_${selectedCompany?.id}_${dateFrom}_${dateTo}_${dateBasis}_${postingStatus}_${viewGranularity}`;
+  const activeFilterKeyRef = useRef(currentFilterKey);
+  activeFilterKeyRef.current = currentFilterKey;
   const [renderedFilterKey, setRenderedFilterKey] = useState(currentFilterKey);
 
   const isFilterChanging = currentFilterKey !== renderedFilterKey;
@@ -528,6 +534,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   });
 
   const handleRefetchAll = () => {
+    loadingAccountCidsRef.current.clear();
+    loadingMoreAccountCidsRef.current.clear();
     refetchBalances();
     setLoadedRawAccountItems(new Map());
   };
@@ -1428,8 +1436,10 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
   const fetchAccountItemsOnDemand = useCallback(async (targetCid: string) => {
     if (!dbData || !selectedCompany?.id || !presetId) return;
-    if (loadedRawAccountItems.has(targetCid) || loadingAccountCids.has(targetCid)) return;
+    if (loadedRawAccountItems.has(targetCid) || loadingAccountCidsRef.current.has(targetCid)) return;
 
+    const requestFilterKey = activeFilterKeyRef.current;
+    loadingAccountCidsRef.current.add(targetCid);
     setLoadingAccountCids(prev => new Set(prev).add(targetCid));
     try {
       const cleanId = cleanIdVal;
@@ -1448,11 +1458,20 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         dateBasis,
         postingStatus,
         exchangeRates: exchangeRates || {},
-        limit: isPagedAccount ? 100 : null,
+        limit: 100,
         offset: 0,
       });
 
+      // Discard stale in-flight response if company, preset, or date filters changed
+      if (activeFilterKeyRef.current !== requestFilterKey) {
+        return;
+      }
+
       const enriched = await enrichGlItemsWithInvoiceMeta(items);
+
+      if (activeFilterKeyRef.current !== requestFilterKey) {
+        return;
+      }
 
       const occurrenceMap = new Map<string, number>();
       const mappedItems: LedgerItem[] = enriched.map(item => {
@@ -1495,7 +1514,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         return next;
       });
 
-      if (isPagedAccount && items.length === 100) {
+      if (items.length === 100) {
         setHasMoreAccountCids(prev => new Set(prev).add(targetCid));
       } else {
         setHasMoreAccountCids(prev => {
@@ -1507,19 +1526,22 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     } catch (error) {
       reportError({ type: 'db_query', component: 'GeneralLedgerTable', action: 'error', message: 'Error fetching account items:', error });
     } finally {
+      loadingAccountCidsRef.current.delete(targetCid);
       setLoadingAccountCids(prev => {
         const next = new Set(prev);
         next.delete(targetCid);
         return next;
       });
     }
-  }, [dbData, selectedCompany?.id, presetId, dateFrom, dateTo, dateBasis, postingStatus, exchangeRates, loadedRawAccountItems, loadingAccountCids]);
+  }, [dbData, selectedCompany?.id, presetId, dateFrom, dateTo, dateBasis, postingStatus, exchangeRates, loadedRawAccountItems]);
 
   const fetchMoreAccountItems = useCallback(async (targetCid: string) => {
     if (!dbData || !selectedCompany?.id || !presetId) return;
-    if (loadingMoreAccountCids.has(targetCid)) return;
+    if (loadingMoreAccountCidsRef.current.has(targetCid)) return;
 
+    const requestFilterKey = activeFilterKeyRef.current;
     const currentItems = loadedRawAccountItems.get(targetCid) || [];
+    loadingMoreAccountCidsRef.current.add(targetCid);
     setLoadingMoreAccountCids(prev => new Set(prev).add(targetCid));
 
     try {
@@ -1541,7 +1563,16 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         offset: currentItems.length,
       });
 
+      // Discard stale in-flight response if company, preset, or date filters changed
+      if (activeFilterKeyRef.current !== requestFilterKey) {
+        return;
+      }
+
       const enriched = await enrichGlItemsWithInvoiceMeta(items);
+
+      if (activeFilterKeyRef.current !== requestFilterKey) {
+        return;
+      }
 
       const occurrenceMap = new Map<string, number>();
       currentItems.forEach(it => {
@@ -1601,13 +1632,14 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     } catch (error) {
       reportError({ type: 'db_query', component: 'GeneralLedgerTable', action: 'error', message: 'Error fetching more account items:', error });
     } finally {
+      loadingMoreAccountCidsRef.current.delete(targetCid);
       setLoadingMoreAccountCids(prev => {
         const next = new Set(prev);
         next.delete(targetCid);
         return next;
       });
     }
-  }, [dbData, selectedCompany?.id, presetId, dateFrom, dateTo, dateBasis, postingStatus, exchangeRates, loadedRawAccountItems, loadingMoreAccountCids]);
+  }, [dbData, selectedCompany?.id, presetId, dateFrom, dateTo, dateBasis, postingStatus, exchangeRates, loadedRawAccountItems]);
 
   const handleNavigateToEntity = useCallback(async (result: GlSearchResult) => {
     const targetGl = result.target_gl_number || result.gl_number;
@@ -1738,18 +1770,49 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     }
   };
 
-  // Load items for any expanded leaf accounts on mount / expand restore
+  // Load items for any expanded leaf accounts on mount / expand restore with concurrency throttling
   useEffect(() => {
     if (viewGranularity === 'teteles') return; // In teteles mode, batch query handles all items! Avoid N+1 requests!
     if (!dbData || !selectedCompany?.id || !presetId) return;
+
+    let cancelled = false;
+    const targetCidsToFetch: string[] = [];
+    const seenCids = new Set<string>();
+
     expandedRowIds.forEach(id => {
       const cleanTargetId = cleanIdVal(id);
       const row = tableData.find(d => d.id === id || cleanIdVal(d.id) === cleanTargetId);
       if (row && row.hasItemChildren) {
-        fetchAccountItemsOnDemand(row.cid);
+        const cid = row.cid;
+        if (!seenCids.has(cid) && !loadedRawAccountItems.has(cid) && !loadingAccountCidsRef.current.has(cid)) {
+          seenCids.add(cid);
+          targetCidsToFetch.push(cid);
+        }
       }
     });
-  }, [viewGranularity, expandedRowIds, tableData, dbData, selectedCompany?.id, presetId, fetchAccountItemsOnDemand]);
+
+    if (targetCidsToFetch.length === 0) return;
+
+    // Concurrency throttle: maximum 2 parallel queries to prevent DB statement timeouts and pool exhaustion
+    const queue = [...targetCidsToFetch];
+    const MAX_CONCURRENT = 2;
+
+    async function worker() {
+      while (queue.length > 0 && !cancelled) {
+        const nextCid = queue.shift();
+        if (nextCid) {
+          await fetchAccountItemsOnDemand(nextCid);
+        }
+      }
+    }
+
+    const workers = Array.from({ length: Math.min(MAX_CONCURRENT, queue.length) }, () => worker());
+    Promise.all(workers);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [viewGranularity, expandedRowIds, tableData, dbData, selectedCompany?.id, presetId, loadedRawAccountItems, fetchAccountItemsOnDemand]);
 
   // When searchResults contains item matches for accounts that haven't loaded items yet, fetch them
   useEffect(() => {
@@ -1760,12 +1823,12 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       if (res.entity_type === 'item') {
         const targetGl = res.target_gl_number || res.gl_number;
         const targetCid = targetGl === 'UNCLASSIFIED' ? 'UNCLASSIFIED' : cleanIdVal(targetGl);
-        if (targetCid && !loadedAccountItems.has(targetCid) && !loadingAccountCids.has(targetCid)) {
+        if (targetCid && !loadedAccountItems.has(targetCid) && !loadingAccountCidsRef.current.has(targetCid)) {
           fetchAccountItemsOnDemand(targetCid);
         }
       }
     });
-  }, [searchQuery, searchResults, dbData, selectedCompany?.id, presetId, loadedAccountItems, loadingAccountCids, fetchAccountItemsOnDemand]);
+  }, [searchQuery, searchResults, dbData, selectedCompany?.id, presetId, loadedAccountItems, fetchAccountItemsOnDemand]);
 
 
 

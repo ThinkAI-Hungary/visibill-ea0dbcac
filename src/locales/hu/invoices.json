@@ -733,9 +733,9 @@
     "unknown_buyer": "Ismeretlen vevő",
     "active_company": "Aktív cég:",
     "buyer_mismatch_notice": "A vevő nem egyezik az aktív céggel ({{company}}, {{taxNumber}})!",
-    "missing_nav_aria": "Nincs NAV online számla adatszolgáltatás! Kattintson a könyvelői jóváhagyáshoz.",
-    "missing_nav_title": "NAV adatszolgáltatás hiányzik!",
-    "missing_nav_desc": "A számlához nem tartozik online számla adatszolgáltatás. Kattintson ide a könyvelői jóváhagyáshoz!",
+    "missing_nav_aria": "A számlaképhez nem sikerült NAV számlát párosítani! Kattintson a könyvelői jóváhagyáshoz.",
+    "missing_nav_title": "NAV Számlakép hiányzik!",
+    "missing_nav_desc": "A számlaképhez nem sikerült NAV számlát párosítani. Kattintson ide a könyvelői jóváhagyáshoz!",
     "accountant_approved_title": "Könyvelő által jóváhagyva",
     "accountant_approved_default_note": "NAV adatszolgáltatás nélkül engedélyezve"
   },

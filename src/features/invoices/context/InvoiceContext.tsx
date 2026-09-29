@@ -62,7 +62,7 @@ export interface InvoiceContextValue
   tabSlug: TabSlug;
   setTabSlug: (slug: TabSlug) => void;
   activeTab: InvoiceTab;
-  setActiveTab: (tab: InvoiceTab) => void;
+  setActiveTab: (tab: InvoiceTab, options?: { preserveInvoiceParam?: boolean }) => void;
   isSubmittedTab: boolean;
 
   // Data & loading
@@ -130,7 +130,11 @@ export interface InvoiceContextValue
     navInvoice: NavInvoice;
     suggestedInvoice: SuggestedSubmittedInvoiceWithScore;
   } | null) => void;
-  setInvoiceParam: (invoiceId: string | null, action?: InvoiceAction) => void;
+  setInvoiceParam: (
+    invoiceId: string | null,
+    action?: InvoiceAction,
+    options?: { removeInvoice?: boolean }
+  ) => void;
   lastViewedInvoiceId: string | null;
   setLastViewedInvoiceId: (id: string | null) => void;
 
@@ -179,9 +183,74 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set());
 
   // Tab state synced to URL
-  const [tabSlug, setTabSlug] = useUrlTab('invoices', 'outbound_nav' as TabSlug, TAB_SLUGS);
+  const [tabSlug, setTabSlug] = useUrlTab('invoices', 'outbound_nav' as TabSlug, TAB_SLUGS, {
+    stripSearchParams: ['invoice', 'action'],
+  });
   const activeTab: InvoiceTab = SLUG_TO_TAB[tabSlug as TabSlug] || 'OUTBOUND';
-  const setActiveTab = useCallback((tab: InvoiceTab) => setTabSlug(TAB_TO_SLUG[tab]), [setTabSlug]);
+  const activeTabRef = useRef(activeTab);
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
+
+  const expandUrlTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isHandlingDeepLinkRef = useRef(false);
+  const handledDeepLinkInvoiceRef = useRef<string | null>(null);
+
+  // Clean up expand debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (expandUrlTimeoutRef.current) {
+        clearTimeout(expandUrlTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const setActiveTab = useCallback(
+    (tab: InvoiceTab, options?: { preserveInvoiceParam?: boolean }) => {
+      if (!options?.preserveInvoiceParam) {
+        if (expandUrlTimeoutRef.current) {
+          clearTimeout(expandUrlTimeoutRef.current);
+          expandUrlTimeoutRef.current = null;
+        }
+        setExpandedRowIds(new Set());
+        handledDeepLinkInvoiceRef.current = null;
+        autoOpenedDialogInvoiceIdRef.current = null;
+        setSearchParams(prev => {
+          if (!prev.has('invoice') && !prev.has('action')) return prev;
+          const next = new URLSearchParams(prev);
+          next.delete('invoice');
+          next.delete('action');
+          return next.toString() === prev.toString() ? prev : next;
+        }, { replace: true });
+      }
+      setTabSlug(TAB_TO_SLUG[tab], options?.preserveInvoiceParam ? { preserveParams: true } : undefined);
+    },
+    [setTabSlug, setSearchParams]
+  );
+
+  // Sync external tab changes (e.g. browser back/forward)
+  const prevActiveTabRef = useRef(activeTab);
+  useEffect(() => {
+    if (prevActiveTabRef.current !== activeTab) {
+      prevActiveTabRef.current = activeTab;
+      if (!isHandlingDeepLinkRef.current) {
+        if (expandUrlTimeoutRef.current) {
+          clearTimeout(expandUrlTimeoutRef.current);
+          expandUrlTimeoutRef.current = null;
+        }
+        setExpandedRowIds(new Set());
+        handledDeepLinkInvoiceRef.current = null;
+        autoOpenedDialogInvoiceIdRef.current = null;
+        setSearchParams(prev => {
+          if (!prev.has('invoice') && !prev.has('action')) return prev;
+          const next = new URLSearchParams(prev);
+          next.delete('invoice');
+          next.delete('action');
+          return next.toString() === prev.toString() ? prev : next;
+        }, { replace: true });
+      }
+    }
+  }, [activeTab, setSearchParams]);
 
   // Dialog states
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
@@ -212,28 +281,39 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
   const isSubmittedTab = activeTab === 'SUBMITTED_INBOUND' || activeTab === 'SUBMITTED_OUTBOUND';
 
   // ── URL-based invoice deep-linking ──
-  const setInvoiceParam = useCallback((invoiceId: string | null, action: InvoiceAction = 'items') => {
-    setSearchParams(prev => {
-      const next = new URLSearchParams(prev);
-      if (invoiceId) {
-        if (next.get('invoice') === invoiceId && next.get('action') === action) {
-          return prev;
-        }
-        next.set('invoice', invoiceId);
-        next.set('action', action);
-      } else {
-        const currentInvoiceId = next.get('invoice');
-        const rowIsExpanded = currentInvoiceId ? expandedRowIds.has(currentInvoiceId) : false;
-        const hadAction = next.has('action');
-        next.delete('action');
-        if (!rowIsExpanded) next.delete('invoice');
-        if (!hadAction && (!currentInvoiceId || rowIsExpanded)) {
-          return prev;
-        }
-      }
-      return next.toString() === prev.toString() ? prev : next;
-    }, { replace: true });
-  }, [setSearchParams, expandedRowIds]);
+  const setInvoiceParam = useCallback(
+    (
+      invoiceId: string | null,
+      action: InvoiceAction = 'items',
+      options?: { removeInvoice?: boolean }
+    ) => {
+      setSearchParams(
+        prev => {
+          const next = new URLSearchParams(prev);
+          if (invoiceId) {
+            if (next.get('invoice') === invoiceId && next.get('action') === action) {
+              return prev;
+            }
+            next.set('invoice', invoiceId);
+            next.set('action', action);
+          } else {
+            const hadAction = next.has('action');
+            const hadInvoice = next.has('invoice');
+            if (!hadAction && (!hadInvoice || !options?.removeInvoice)) {
+              return prev;
+            }
+            next.delete('action');
+            if (options?.removeInvoice) {
+              next.delete('invoice');
+            }
+          }
+          return next.toString() === prev.toString() ? prev : next;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
 
   // ── Data hook ──
   const {
@@ -353,7 +433,22 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!invoiceIdFromUrl || !selectedCompany?.id) {
+      handledDeepLinkInvoiceRef.current = null;
       autoOpenedDialogInvoiceIdRef.current = null;
+      return;
+    }
+
+    // Already handled or currently active
+    if (
+      handledDeepLinkInvoiceRef.current === invoiceIdFromUrl &&
+      (!actionFromUrl || autoOpenedDialogInvoiceIdRef.current === invoiceIdFromUrl)
+    ) {
+      return;
+    }
+
+    // Already expanded in UI with no dialog action
+    if (expandedRowIds.has(invoiceIdFromUrl) && !actionFromUrl) {
+      handledDeepLinkInvoiceRef.current = invoiceIdFromUrl;
       return;
     }
 
@@ -362,11 +457,18 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
     const handleNavInvoiceMatch = (navInv: NavInvoice) => {
       if (cancelled) return;
 
+      handledDeepLinkInvoiceRef.current = navInv.id;
+
       // Switch tab if direction doesn't match current tab
-      if (navInv.invoice_direction === 'INBOUND' && activeTab !== 'INBOUND') {
-        setActiveTab('INBOUND');
-      } else if (navInv.invoice_direction === 'OUTBOUND' && activeTab !== 'OUTBOUND') {
-        setActiveTab('OUTBOUND');
+      const currentTab = activeTabRef.current;
+      if (navInv.invoice_direction === 'INBOUND' && currentTab !== 'INBOUND') {
+        isHandlingDeepLinkRef.current = true;
+        setActiveTab('INBOUND', { preserveInvoiceParam: true });
+        isHandlingDeepLinkRef.current = false;
+      } else if (navInv.invoice_direction === 'OUTBOUND' && currentTab !== 'OUTBOUND') {
+        isHandlingDeepLinkRef.current = true;
+        setActiveTab('OUTBOUND', { preserveInvoiceParam: true });
+        isHandlingDeepLinkRef.current = false;
       }
 
       setSelectedNavInvoice(navInv);
@@ -419,16 +521,23 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
 
       if (subData) {
         const sub = subData as unknown as SubmittedInvoice;
+        handledDeepLinkInvoiceRef.current = sub.id;
+
+        const currentTab = activeTabRef.current;
+        if (sub.invoice_type === 'outbound' && currentTab !== 'SUBMITTED_OUTBOUND') {
+          isHandlingDeepLinkRef.current = true;
+          setActiveTab('SUBMITTED_OUTBOUND', { preserveInvoiceParam: true });
+          isHandlingDeepLinkRef.current = false;
+        } else if (sub.invoice_type !== 'outbound' && currentTab !== 'SUBMITTED_INBOUND') {
+          isHandlingDeepLinkRef.current = true;
+          setActiveTab('SUBMITTED_INBOUND', { preserveInvoiceParam: true });
+          isHandlingDeepLinkRef.current = false;
+        }
+
         setSelectedInvoice(sub);
         setSelectedSubmittedForItems(sub);
         setLastViewedInvoiceId(sub.id);
         setExpandedRowIds(prev => new Set(prev).add(sub.id));
-
-        if (sub.invoice_type === 'outbound' && activeTab !== 'SUBMITTED_OUTBOUND') {
-          setActiveTab('SUBMITTED_OUTBOUND');
-        } else if (sub.invoice_type !== 'outbound' && activeTab !== 'SUBMITTED_INBOUND') {
-          setActiveTab('SUBMITTED_INBOUND');
-        }
 
         if (autoOpenedDialogInvoiceIdRef.current !== sub.id) {
           autoOpenedDialogInvoiceIdRef.current = sub.id;
@@ -451,7 +560,6 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
     actionFromUrl,
     selectedCompany?.id,
     filteredAndSortedNavInvoices,
-    activeTab,
     setActiveTab,
     setSelectedNavInvoice,
     setLastViewedInvoiceId,
@@ -465,6 +573,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
     navPageSize,
     navCurrentPage,
     setNavCurrentPage,
+    expandedRowIds,
   ]);
 
   // ── Sync ALL view state → URL query params ──
@@ -591,23 +700,71 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
     lastSelectedIdRef.current = null;
   }, []);
 
-  // ── Row expansion helpers ──
+  // ── Row expansion helpers with URL sync (ADR A-127 compliant) ──
   const toggleRowExpanded = useCallback((id: string) => {
+    if (expandUrlTimeoutRef.current) {
+      clearTimeout(expandUrlTimeoutRef.current);
+      expandUrlTimeoutRef.current = null;
+    }
+
     setExpandedRowIds(prev => {
+      const isCurrentlyExpanded = prev.has(id);
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (isCurrentlyExpanded) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+
+      if (isCurrentlyExpanded) {
+        // Collapsing: immediately clean from URL if this invoice was in URL
+        handledDeepLinkInvoiceRef.current = null;
+        autoOpenedDialogInvoiceIdRef.current = null;
+        setSearchParams(urlPrev => {
+          if (urlPrev.get('invoice') !== id) return urlPrev;
+          const urlNext = new URLSearchParams(urlPrev);
+          urlNext.delete('invoice');
+          urlNext.delete('action');
+          return urlNext.toString() === urlPrev.toString() ? urlPrev : urlNext;
+        }, { replace: true });
+      } else {
+        // Expanding: schedule URL update after 180ms CSS grid accordion animation
+        handledDeepLinkInvoiceRef.current = id;
+        expandUrlTimeoutRef.current = setTimeout(() => {
+          setSearchParams(urlPrev => {
+            if (urlPrev.get('invoice') === id && !urlPrev.has('action')) return urlPrev;
+            const urlNext = new URLSearchParams(urlPrev);
+            urlNext.set('invoice', id);
+            urlNext.delete('action');
+            return urlNext.toString() === urlPrev.toString() ? urlPrev : urlNext;
+          }, { replace: true });
+        }, 180);
+      }
+
       return next;
     });
-  }, []);
+  }, [setSearchParams]);
 
   const expandAllRows = useCallback((ids: string[]) => {
     setExpandedRowIds(new Set(ids));
   }, []);
 
   const collapseAllRows = useCallback(() => {
+    if (expandUrlTimeoutRef.current) {
+      clearTimeout(expandUrlTimeoutRef.current);
+      expandUrlTimeoutRef.current = null;
+    }
+    handledDeepLinkInvoiceRef.current = null;
+    autoOpenedDialogInvoiceIdRef.current = null;
     setExpandedRowIds(new Set());
-  }, []);
+    setSearchParams(urlPrev => {
+      if (!urlPrev.has('invoice') && !urlPrev.has('action')) return urlPrev;
+      const urlNext = new URLSearchParams(urlPrev);
+      urlNext.delete('invoice');
+      urlNext.delete('action');
+      return urlNext.toString() === urlPrev.toString() ? urlPrev : urlNext;
+    }, { replace: true });
+  }, [setSearchParams]);
 
   const isAllExpanded = useMemo(() => {
     const activeList = isSubmittedTab ? paginatedSubmittedInvoices : paginatedNavInvoices;

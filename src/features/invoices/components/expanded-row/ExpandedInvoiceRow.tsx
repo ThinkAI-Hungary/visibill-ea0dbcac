@@ -19,7 +19,6 @@ import { StornoSettleDialog } from '@/components/invoices/StornoSettleDialog';
 import { GeneralLedgerBadgeSection } from './GeneralLedgerBadgeSection';
 import { InvoiceVatCodeSelector } from '@/components/vat/InvoiceVatCodeSelector';
 import { InvoiceGlAccountSelector } from '@/components/invoices/InvoiceGlAccountSelector';
-import { NavInvoiceVatSummaryCard } from '@/components/nav/NavInvoiceVatSummaryCard';
 import { NettingCardSection } from './NettingCardSection';
 import { ContinuousServiceCardSection } from './ContinuousServiceCardSection';
 import { LinkedInvoicesSection } from './LinkedInvoicesSection';
@@ -69,6 +68,7 @@ export function ExpandedInvoiceRow({
   invoiceOperation,
   isManualPayment,
   invoiceNumber,
+  isForeign,
   navStatus,
   statusz,
   approvedAt,
@@ -77,33 +77,13 @@ export function ExpandedInvoiceRow({
   vatCodeId,
   vatRowOverride,
   invoiceType,
-  vatSummary: propVatSummary,
-  isReverseCharge: propIsReverseCharge,
+  vatSummary: _propVatSummary,
+  isReverseCharge: _propIsReverseCharge,
   nonDeductibleInfo: propNonDeductibleInfo,
 }: ExpandedInvoiceRowProps) {
   const { t } = useTranslation(['invoices', 'common']);
   const queryClient = useQueryClient();
   const { hasNavIntegration, defaultCurrency } = useCompanyJurisdiction();
-
-  // Fetch official NAV VAT summary if not provided and source is NAV
-  const { data: navVatData } = useQuery({
-    queryKey: ['nav-invoice-vat-summary', invoiceId],
-    queryFn: async () => {
-      if (!invoiceId || invoiceSource !== 'nav') return null;
-      const { data, error } = await supabase
-        .from('nav_invoices')
-        .select('vat_summary, is_reverse_charge, currency')
-        .eq('id', invoiceId)
-        .single();
-      if (error || !data) return null;
-      return data;
-    },
-    enabled: !propVatSummary && !!invoiceId && invoiceSource === 'nav',
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const effectiveVatSummary = propVatSummary || navVatData?.vat_summary;
-  const effectiveIsReverseCharge = propIsReverseCharge ?? navVatData?.is_reverse_charge;
 
   // Deductibility query if not provided via props and invoice is INBOUND
   const isInbound = (invoiceType?.toUpperCase() || 'INBOUND') === 'INBOUND';
@@ -473,7 +453,7 @@ export function ExpandedInvoiceRow({
                 />
 
                 {/* NAV Online Számla Cross-Check Banner */}
-                {hasNavIntegration && (navStatus === 'missing_nav' || statusz === 'jovahagyasra_var') && (
+                {hasNavIntegration && !(isForeign ?? (navStatus === 'not_applicable')) && (navStatus === 'missing_nav' || statusz === 'jovahagyasra_var') && (
                   approvedAt ? (
                     <div className="flex items-center justify-between p-3 rounded-lg border border-blue-200/70 bg-blue-50/50 dark:bg-blue-950/20 text-xs text-blue-800 dark:text-blue-300">
                       <div className="flex items-center gap-2">
@@ -489,10 +469,10 @@ export function ExpandedInvoiceRow({
                         <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
                         <div>
                           <span className="font-semibold text-amber-800 dark:text-amber-300">
-                            NAV Online Számla adatszolgáltatás hiányzik!
+                            NAV Számlakép hiányzik!
                           </span>
                           <p className="text-muted-foreground mt-0.5">
-                            Ehhez a bizonylathoz nem található online számla adatszolgáltatás. A rendszer zárolta az automatikus könyvelést.
+                            A számlaképhez nem sikerült NAV számlát párosítani. A rendszer zárolta az automatikus könyvelést.
                           </p>
                         </div>
                       </div>
@@ -514,18 +494,6 @@ export function ExpandedInvoiceRow({
                   )
                 )}
 
-                {/* Official NAV VAT Summary Block */}
-                {effectiveVatSummary && (
-                  <div className="pt-2">
-                    <NavInvoiceVatSummaryCard
-                      vatSummary={effectiveVatSummary}
-                      currency={invoiceCurrency || navVatData?.currency || defaultCurrency}
-                      isReverseCharge={effectiveIsReverseCharge}
-                      defaultExpanded={false}
-                      className="mb-2"
-                    />
-                  </div>
-                )}
 
                 <div className="space-y-6 pt-2">
                   {/* Section: Related Items */}

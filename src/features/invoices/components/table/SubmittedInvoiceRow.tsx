@@ -11,7 +11,7 @@ import ExpandedInvoiceRow from '@/components/ExpandedInvoiceRow';
 import { ChevronDown, FileText, Package, Pencil, AlertTriangle, AlertOctagon, Check, Sparkles } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 import { getInitials, getAvatarColor } from '@/lib/helpers';
-import { normalizeInvoiceNumber, checkBuyerTaxMismatch } from '@/lib/invoiceMatchingUtils';
+import { normalizeInvoiceNumber, checkBuyerTaxMismatch, isForeignSubmittedInvoice } from '@/lib/invoiceMatchingUtils';
 import { InvoiceVatCodeSelector } from '@/components/vat/InvoiceVatCodeSelector';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
@@ -66,7 +66,7 @@ export function SubmittedInvoiceRow({
     getPaymentMethodLabel,
     lastViewedInvoiceId,
     setLastViewedInvoiceId,
-    setExpandedRowIds,
+    toggleRowExpanded,
   } = useInvoiceContext();
   const { t } = useTranslation(['invoices', 'common']);
   const { hasNavIntegration, defaultCurrency } = useCompanyJurisdiction(selectedCompany);
@@ -95,6 +95,15 @@ export function SubmittedInvoiceRow({
   const buyerMismatch = React.useMemo(
     () => checkBuyerTaxMismatch(invoice, selectedCompany),
     [invoice, selectedCompany]
+  );
+
+  const isForeign = useMemo(
+    () =>
+      isForeignSubmittedInvoice({
+        ...invoice,
+        invoice_direction: invoice.invoice_direction || (activeTab === 'SUBMITTED_OUTBOUND' ? 'OUTBOUND' : 'INBOUND'),
+      }),
+    [invoice, activeTab]
   );
 
   const getSubmittedInvoiceMatches = (subInvoice: SubmittedInvoice) => {
@@ -160,12 +169,7 @@ export function SubmittedInvoiceRow({
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                setExpandedRowIds(prev => {
-                  const next = new Set(prev);
-                  if (next.has(invoice.id)) next.delete(invoice.id);
-                  else next.add(invoice.id);
-                  return next;
-                });
+                toggleRowExpanded(invoice.id);
               }}
               className="p-0.5 -m-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               aria-label={isExpanded ? 'Sor összecsukása' : 'Sor kibontása'}
@@ -261,8 +265,8 @@ export function SubmittedInvoiceRow({
               </TooltipProvider>
             )}
 
-            {/* NAV missing warning icon right after bizonylatsorszám */}
-            {hasNavIntegration && (invoice.nav_status === 'missing_nav' || invoice.statusz === 'jovahagyasra_var') && (
+            {/* NAV missing warning icon right after bizonylatszám */}
+            {hasNavIntegration && !isForeign && (invoice.nav_status === 'missing_nav' || invoice.statusz === 'jovahagyasra_var') && (
               invoice.approved_at ? (
                 <TooltipProvider>
                   <Tooltip>
@@ -289,17 +293,17 @@ export function SubmittedInvoiceRow({
                           setSelectedInvoiceForApproval(invoice);
                           setApprovalDialogOpen(true);
                         }}
-                        aria-label={t('invoices:warnings.missing_nav_aria', 'Nincs NAV online számla adatszolgáltatás! Kattintson a könyvelői jóváhagyáshoz.')}
+                        aria-label={t('invoices:warnings.missing_nav_aria', 'A számlaképhez nem sikerült NAV számlát párosítani! Kattintson a könyvelői jóváhagyáshoz.')}
                       >
                         <AlertTriangle className="h-3 w-3" />
                       </button>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="max-w-xs text-xs font-sans">
                       <p className="font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                        <AlertTriangle className="h-3.5 w-3.5" /> {t('invoices:warnings.missing_nav_title', 'NAV adatszolgáltatás hiányzik!')}
+                        <AlertTriangle className="h-3.5 w-3.5" /> {t('invoices:warnings.missing_nav_title', 'NAV Számlakép hiányzik!')}
                       </p>
                       <p className="text-muted-foreground mt-0.5">
-                        {t('invoices:warnings.missing_nav_desc', 'A számlához nem tartozik online számla adatszolgáltatás. Kattintson ide a könyvelői jóváhagyáshoz!')}
+                        {t('invoices:warnings.missing_nav_desc', 'A számlaképhez nem sikerült NAV számlát párosítani. Kattintson ide a könyvelői jóváhagyáshoz!')}
                       </p>
                     </TooltipContent>
                   </Tooltip>
@@ -585,6 +589,7 @@ export function SubmittedInvoiceRow({
           vatCodeId={invoice.vat_code_id}
           vatRowOverride={invoice.vat_row_override}
           invoiceType={activeTab === 'SUBMITTED_OUTBOUND' ? 'outbound' : 'inbound'}
+          isForeign={isForeign}
           nonDeductibleInfo={nonDeductibleInfo}
         />
       )}

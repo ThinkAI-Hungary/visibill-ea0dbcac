@@ -21,7 +21,7 @@ export function InvoiceTableContainer() {
     submittedInvoices,
     paginatedNavInvoices,
     paginatedSubmittedInvoices,
-    setExpandedRowIds,
+    toggleRowExpanded,
     invalidateInvoiceData,
     setLastViewedInvoiceId,
   } = useInvoiceContext();
@@ -202,22 +202,17 @@ export function InvoiceTableContainer() {
     enabled: !!companyId,
   });
 
-  // 4. Handle row click (instant focus + selection + expansion without URL router delay)
+  // 4. Handle row click (instant focus + selection + expansion with URL sync)
   const handleRowClick = useCallback(
     (invoiceId: string, e: React.MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (target.closest('button, input, select, [role="checkbox"], [role="combobox"], [data-radix-collection-item]')) {
+      if (target.closest('button, input, select, [role="checkbox"], [role="combobox"], [data-radix-collection-item], a')) {
         return;
       }
       setLastViewedInvoiceId(invoiceId);
-      setExpandedRowIds(prev => {
-        const next = new Set(prev);
-        if (next.has(invoiceId)) next.delete(invoiceId);
-        else next.add(invoiceId);
-        return next;
-      });
+      toggleRowExpanded(invoiceId);
     },
-    [setLastViewedInvoiceId, setExpandedRowIds]
+    [setLastViewedInvoiceId, toggleRowExpanded]
   );
 
   // 5. Handle Toggle Exclude from accounting

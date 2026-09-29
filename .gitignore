@@ -52,3 +52,7 @@ graphify-out/[0-9]*/
 # Client sample files
 docs/*.xml
 
+# Python cache
+__pycache__/
+*.py[cod]
+

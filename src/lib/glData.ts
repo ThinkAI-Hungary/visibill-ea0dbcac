@@ -82,10 +82,7 @@ export async function fetchAllGlBalances(params: {
   return allBalances;
 }
 
-/**
- * Fetch all categorized GL items by preset and company with pagination.
- */
-export async function fetchAllGlCategorizedItems(params: {
+export interface FetchAllGlCategorizedItemsParams {
   companyId: string;
   presetId: string;
   dateFrom?: string | null;
@@ -93,26 +90,52 @@ export async function fetchAllGlCategorizedItems(params: {
   dateBasis?: GlDateBasis;
   postingStatus?: GlPostingStatus;
   exchangeRates?: Record<string, any> | Json;
-}): Promise<GlCategorizedItem[]> {
+  limit?: number | null;
+  offset?: number;
+}
+
+/**
+ * Fetch all categorized GL items by preset and company with pagination.
+ * Directly pushes p_limit and p_offset down to PostgreSQL to prevent
+ * PostgREST range overhead, high memory usage, and statement timeouts.
+ */
+export async function fetchAllGlCategorizedItems(params: FetchAllGlCategorizedItemsParams): Promise<GlCategorizedItem[]> {
+  // If an explicit limit is provided, perform a single direct call with p_limit and p_offset
+  if (params.limit !== undefined && params.limit !== null) {
+    const { data, error } = await (supabase.rpc as any)('get_gl_categorized_items', {
+      p_company_id: params.companyId,
+      p_preset_id: params.presetId,
+      p_date_from: params.dateFrom || null,
+      p_date_to: params.dateTo || null,
+      p_exchange_rates: (params.exchangeRates as Json) || {},
+      p_date_basis: params.dateBasis || 'kibocsatas',
+      p_posting_status: params.postingStatus === 'posted_only' ? 'POSTED_ONLY' : 'ALL',
+      p_limit: params.limit,
+      p_offset: params.offset ?? 0,
+    });
+
+    if (error) throw error;
+    return (data || []) as unknown as GlCategorizedItem[];
+  }
+
   let allItems: GlCategorizedItem[] = [];
   let page = 0;
   let hasMore = true;
 
   while (hasMore) {
-    const from = page * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
+    const offset = page * PAGE_SIZE;
 
-    const { data, error } = await supabase
-      .rpc('get_gl_categorized_items', {
-        p_company_id: params.companyId,
-        p_preset_id: params.presetId,
-        p_date_from: params.dateFrom || null,
-        p_date_to: params.dateTo || null,
-        p_exchange_rates: (params.exchangeRates as Json) || {},
-        p_date_basis: params.dateBasis || 'kibocsatas',
-        p_posting_status: params.postingStatus === 'posted_only' ? 'POSTED_ONLY' : 'ALL',
-      })
-      .range(from, to);
+    const { data, error } = await (supabase.rpc as any)('get_gl_categorized_items', {
+      p_company_id: params.companyId,
+      p_preset_id: params.presetId,
+      p_date_from: params.dateFrom || null,
+      p_date_to: params.dateTo || null,
+      p_exchange_rates: (params.exchangeRates as Json) || {},
+      p_date_basis: params.dateBasis || 'kibocsatas',
+      p_posting_status: params.postingStatus === 'posted_only' ? 'POSTED_ONLY' : 'ALL',
+      p_limit: PAGE_SIZE,
+      p_offset: offset,
+    });
 
     if (error) throw error;
 
@@ -199,27 +222,26 @@ export async function fetchGlItemsForAccount(params: FetchGlItemsForAccountParam
     return (data || []) as unknown as GlCategorizedItem[];
   }
 
-  // Otherwise, fetch all pages
+  // Otherwise, fetch all pages with p_limit and p_offset pushed down to Postgres
   let allItems: GlCategorizedItem[] = [];
   let page = 0;
   let hasMore = true;
 
   while (hasMore) {
-    const from = page * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
+    const offset = page * PAGE_SIZE;
 
-    const { data, error } = await supabase
-      .rpc('get_gl_categorized_items', {
-        p_company_id: params.companyId,
-        p_preset_id: params.presetId,
-        p_date_from: params.dateFrom || null,
-        p_date_to: params.dateTo || null,
-        p_exchange_rates: (params.exchangeRates as Json) || {},
-        p_date_basis: params.dateBasis || 'kibocsatas',
-        p_posting_status: params.postingStatus === 'posted_only' ? 'POSTED_ONLY' : 'ALL',
-        p_gl_account_id: params.glAccountId || '00000000-0000-0000-0000-000000000000',
-      })
-      .range(from, to);
+    const { data, error } = await (supabase.rpc as any)('get_gl_categorized_items', {
+      p_company_id: params.companyId,
+      p_preset_id: params.presetId,
+      p_date_from: params.dateFrom || null,
+      p_date_to: params.dateTo || null,
+      p_exchange_rates: (params.exchangeRates as Json) || {},
+      p_date_basis: params.dateBasis || 'kibocsatas',
+      p_posting_status: params.postingStatus === 'posted_only' ? 'POSTED_ONLY' : 'ALL',
+      p_gl_account_id: params.glAccountId || '00000000-0000-0000-0000-000000000000',
+      p_limit: PAGE_SIZE,
+      p_offset: offset,
+    });
 
     if (error) throw error;
 

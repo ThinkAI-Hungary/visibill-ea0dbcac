@@ -215,13 +215,14 @@ export function isForeignSubmittedInvoice(
   if (sub.invoice_direction === 'OUTBOUND') return false;
 
   // 3. Eladó adószáma (INBOUND számlánál a partner az eladó)
-  const eladoVat = (sub.elado_vat_id || '').trim().toUpperCase();
+  const eladoVat = (sub.elado_vat_id || '').trim().toUpperCase().replace(/\s+/g, '');
   if (eladoVat) {
+    if (eladoVat.startsWith('FOREIGN:') || eladoVat.startsWith('TEST-')) return true;
     if (eladoVat.startsWith('HU')) return false;
-    const cleanDigits = eladoVat.replace(/\D/g, '');
-    if (cleanDigits.length === 8 || cleanDigits.length === 11) return false;
     // Ha kétbetűs nem-HU országgal kezdődik (pl. US, DE, AT, NL, GB, FR, IE) -> Külföldi!
     if (/^[A-Z]{2}/.test(eladoVat)) return true;
+    const cleanDigits = eladoVat.replace(/\D/g, '');
+    if (cleanDigits.length === 8 || cleanDigits.length === 11) return false;
   }
 
   // 4. Pénznem: ha nem HUF és nincs magyar adószáma az eladónak -> Külföldi bizonylat!

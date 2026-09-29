@@ -131,7 +131,7 @@ function NavInvoiceRowComponent({
     setSelectedSuggestedLinkPair,
     lastViewedInvoiceId,
     setLastViewedInvoiceId,
-    setExpandedRowIds,
+    toggleRowExpanded,
   } = useInvoiceContext();
 
   const navKey = useMemo(() => normalizeInvoiceNumber(invoice.invoice_number), [invoice.invoice_number]);
@@ -245,12 +245,7 @@ function NavInvoiceRowComponent({
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                setExpandedRowIds(prev => {
-                  const next = new Set(prev);
-                  if (next.has(invoice.id)) next.delete(invoice.id);
-                  else next.add(invoice.id);
-                  return next;
-                });
+                toggleRowExpanded(invoice.id);
               }}
               className="p-0.5 -m-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               aria-label={isExpanded ? 'Sor összecsukása' : 'Sor kibontása'}
