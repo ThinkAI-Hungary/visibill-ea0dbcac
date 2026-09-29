@@ -7,6 +7,7 @@
 import { escapeXml } from './documents/encoding/xmlSanitizer';
 import { downloadString } from './documents/core/downloadHelper';
 import { parseTaxNumber } from './validationUtils';
+import { shouldExcludeFromMLine } from '@/features/vat/types';
 
 export interface VatInvoiceDetail {
   invoice_number?: string;
@@ -187,7 +188,9 @@ export function buildVatReturnXml(data: XmlExportData): string {
   const year2Digit = String(data.periodYear % 100).padStart(2, '0');
   const formId = `${year2Digit}65`;
   const formVersion = data.periodYear >= 2026 ? '2.0' : data.periodYear === 2025 ? '2.0' : '4.0';
-  const mPartnerCount = data.mLines ? data.mLines.length : 0;
+  // Exclude AAM, proforma, and insurance partners from 65M sheets
+  const eligibleMLines = (data.mLines || []).filter((m) => !shouldExcludeFromMLine(m));
+  const mPartnerCount = eligibleMLines.length;
 
   let xml = `<?xml version="1.0" encoding="utf-8"?>\n`;
   xml += `<nyomtatvanyok xmlns="http://www.apeh.hu/abev/nyomtatvanyok/2005/01">\n`;
@@ -303,8 +306,8 @@ export function buildVatReturnXml(data: XmlExportData): string {
   let mTotalInvoices = 0;
   let mTotalBase = 0;
   let mTotalTax = 0;
-  if (data.mLines && data.mLines.length > 0) {
-    data.mLines.forEach((m) => {
+  if (eligibleMLines && eligibleMLines.length > 0) {
+    eligibleMLines.forEach((m) => {
       const summary = getPartnerComputedTotals(m, periodTo);
       mTotalInvoices += summary.invCount;
       mTotalBase += summary.totalBase;
@@ -337,8 +340,8 @@ export function buildVatReturnXml(data: XmlExportData): string {
   // =========================================================================
   // 65M ALNYOMTATVÁNYOK (Belföldi Összesítő Jelentés partnerenként)
   // =========================================================================
-  if (data.mLines && data.mLines.length > 0) {
-    data.mLines.forEach((m) => {
+  if (eligibleMLines && eligibleMLines.length > 0) {
+    eligibleMLines.forEach((m) => {
       const partnerParsed = parseTaxNumber(m.partner_tax_number);
       const partnerTaxBase = partnerParsed.base || m.partner_tax_number.replace(/\D/g, '').slice(0, 8);
       const summary = getPartnerComputedTotals(m, periodTo);

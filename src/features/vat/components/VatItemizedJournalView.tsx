@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { cn, formatCurrency, isReverseChargeVatRate } from '@/lib/utils';
-import { VatFrequency, VatScope } from '../types';
+import { VatFrequency, VatScope, isProformaInvoice } from '../types';
 
 interface VatItemizedJournalViewProps {
   companyId: string;
@@ -116,8 +116,9 @@ export function VatItemizedJournalView({
           .limit(5000),
         supabase
           .from('invoices')
-          .select('id, bizonylatsorszam, elado_nev, vevo_nev, elado_vat_id, vevo_vat_id, teljesites_datuma, kibocsatas_datuma, fizetesi_hatarido, fizetesi_mod, adoalap_osszesen, afa_osszeg_osszesen, brutto_vegosszeg, invoice_direction, partner_gl_number, vat_gl_number, vat_row_override, forditott_adozas, image_url, melleklet_url, invoice_uploads_id, attachments')
+          .select('id, bizonylatsorszam, elado_nev, vevo_nev, elado_vat_id, vevo_vat_id, teljesites_datuma, kibocsatas_datuma, fizetesi_hatarido, fizetesi_mod, adoalap_osszesen, afa_osszeg_osszesen, brutto_vegosszeg, invoice_direction, partner_gl_number, vat_gl_number, vat_row_override, forditott_adozas, image_url, melleklet_url, invoice_uploads_id, attachments, invoice_type')
           .eq('company_id', companyId)
+          .not('invoice_type', 'in', '("dijbekero_proforma","dijbekero","proforma","garanciajegy")')
           .or(`teljesites_datuma.gte.${dateFrom},and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${dateFrom})`)
           .or(`teljesites_datuma.lte.${dateTo},and(teljesites_datuma.is.null,kibocsatas_datuma.lte.${dateTo})`)
           .limit(5000),
@@ -127,7 +128,7 @@ export function VatItemizedJournalView({
       if (subRes.error) console.warn('Error fetching invoices for VAT journal:', subRes.error);
 
       const navInvs = navRes.data || [];
-      const subInvs = subRes.data || [];
+      const subInvs = (subRes.data || []).filter((s) => !isProformaInvoice(s));
 
       // Check whether submitted invoice has an uploaded image/document
       const hasImg = (s: any) => Boolean(
@@ -148,7 +149,7 @@ export function VatItemizedJournalView({
       });
 
       const existingNavNumbers = new Set(navInvs.map((i) => normalizeInvNum(i.invoice_number)).filter(Boolean));
-      const standaloneSubInvs = subInvs.filter((i) => !existingNavNumbers.has(normalizeInvNum(i.bizonylatsorszam)));
+      const standaloneSubInvs = subInvs.filter((i) => !isProformaInvoice(i) && !existingNavNumbers.has(normalizeInvNum(i.bizonylatsorszam)));
 
       let seqSzallito = 1;
       let seqVevo = 1;

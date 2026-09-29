@@ -35,6 +35,7 @@ A Visibill ÁFA moduljának felülvizsgálata és a bemutatott képernyők alapj
 
 1. **`VatOsaCheckDialog.tsx`:**
    - Párhuzamosan lekéri az `invoices` és `nav_invoices` táblák adatait az adott időszakra.
+   - Szigorúan kizárja a díjbekérőket (`isProformaInvoice`: `dijbekero_proforma`, `dijbekero`, `proforma`, `garanciajegy`), megelőzve a hamis "Csak könyvelt" eltéréseket.
    - Normalizált számlaszám és partner adószám (első 8 jegy) alapján párosítja a számlákat.
    - Szigorúan ellenőrzi: `deliveryDate`, `netAmount`, `vatAmount` eltéréseket.
    - Kategóriák: `Egyezik` (zöld), `Nem egyeznek az adatok!` (piros/narancs), `Hiányzik a könyvelésből` (sárga), `Csak könyvelt`.
@@ -95,15 +96,35 @@ Korábban emiatt a rendszer a bejövő FAD tételeket automatikusan adómentes n
 
 ---
 
-## 4. Verifikáció és Minőségbiztosítás
+## 4. M-lap Szigorú Kizárási Szabályok (AAM, Díjbekérő, Biztosítás)
+
+Az Áfa tv. 10. számú melléklete (Belföldi Összesítő Jelentés - 65M) a belföldi adóalanyoktól történő termékbeszerzés, szolgáltatás igénybevételének **áthárított levonható adójáról** nyújt adatszolgáltatást.
+Annak érdekében, hogy a NAV ÁNYK ellenőrzője ne jelezzen hibát és a könyvelő ne küldjön be jogtalanul tételeket a 65M lapon, az alábbi három tételcsoport szigorúan kizárásra került mind a backend adatbázis kalkuláció, mind a frontend komponensek és az XML generátor szintjén:
+
+1. **Díjbekérők és Proforma bizonylatok:**
+   - Kizárás alapja: `invoice_type IN ('dijbekero_proforma', 'dijbekero', 'proforma', 'garanciajegy')` és számlaszám prefixes szűrés (`DÍJ%`, `DIJ%`, `PROFORMA%`, `PRO-%`, `PRO_%`, `PREDRACUN%`).
+   - Kliens guard: `isProformaInvoice()`.
+2. **Alanyi Adómentes (AAM) partnerek és számlák:**
+   - Kizárás alapja: A magyar adószámok 9. számjegye az áfa-kód. Ha az áfa-kód `'1'` (pl. `XXXXXXXX-1-YY`), a partner alanyi adómentes, nem hárít át adót, a számláján nincs levonható áfa.
+   - Kliens guard: `isAamPartnerOrTaxNumber()`.
+3. **Biztosítótársaságok és Biztosítási díjak:**
+   - Kizárás alapja: Áfa tv. 86. § (1) bekezdés a) pontja szerint a biztosítás tárgyi adómentes tevékenység, a díjak biztosítási adó hatálya alá tartoznak, áfalevonás nem gyakorolható utánuk. Kizárva minden biztosító társaság (`Generali`, `Allianz`, `Groupama`, `UNIQA`, `Aegon`, `K&H Biztosító`, `Posta Biztosító`, stb.) és biztosítási megnevezés (`készülékbiztosítás`, `vagyonbiztosítás`, `felelősségbiztosítás`, `kgfb`, `casco`, `biztosítási díj`).
+   - Kliens guard: `isInsurancePartnerOrInvoice()`.
+4. **Adatbázis migráció és RPC:**
+   - `supabase/migrations/20260929200000_exclude_aam_proforma_insurance_from_m_lines.sql`
+   - Frissítve a `calculate_hungarian_vat_return` és a `calculate_vat_return` eljárás: az `all_inbounds` CTE-ből kiszűrve a fenti 3 kategória, és az INSERT-nél `HAVING SUM(vat_amount) > 0 OR SUM(tax_27) > 0 OR SUM(tax_18) > 0 OR SUM(tax_5) > 0`.
+
+---
+
+## 5. Verifikáció és Minőségbiztosítás
 
 - **Egységtesztek:**
-  - `src/test/vatUpgradeViews.test.tsx`: OSA egyeztetés, TFEJLH 4%, Rate summary számítások.
+  - `src/features/vat/__tests__/vatProformaFilter.test.ts` (8 teszt): Proforma, AAM adószám 9. jegy ellenőrzés, biztosító név és leírás szűrés, `shouldExcludeFromMLine` guard tesztek.
   - `src/features/vat/__tests__/vatCodeOverride.test.ts` (7 teszt): FAD és felülbírálási tesztek.
   - `src/features/vat/__tests__/vatEngine.test.ts` (13 teszt): ÁFA kalkuláció és sorkódok.
-  - Összesen: 20/20 teszt sikeresen lefutott.
-- **Típusellenőrzés:**
-  - `npx tsc --noEmit` 0 hibával lefutott (code 0).
+  - Összesen: 28/28 teszt sikeresen lefutott.
+- **Típusellenőrzés és Build:**
+  - `npm run build` hiba nélkül, sikeresen lefordult (0 hiba).
 - **Kapcsolódó döntések:**
   - [A-158: Mezőgazdasági Felvásárlási Jegyek Modul](./A-158-agricultural-purchase-vouchers-module.md)
   - [P-119: Törvényi ÁFA Nézetek és Fordított Adózás (FAD) UX](../../product/decisions/P-119-statutory-vat-views-upgrade-and-reverse-charge-ux.md)

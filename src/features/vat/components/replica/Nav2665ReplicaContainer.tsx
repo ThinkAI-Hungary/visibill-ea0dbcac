@@ -24,7 +24,7 @@ import { Nav2665Sheet0105 } from './Nav2665Sheet0105';
 import { Nav2665Sheet07, type ReverseChargeSteelItem } from './Nav2665Sheet07';
 import { Nav2665Sheet08 } from './Nav2665Sheet08';
 import { useSteelProductsData } from '../../hooks/useSteelProductsData';
-import type { VatFrequency } from '../../types';
+import { type VatFrequency, shouldExcludeFromMLine } from '../../types';
 
 export interface Nav2665ReplicaContainerProps {
   selectedCompany: any;
@@ -35,6 +35,7 @@ export interface Nav2665ReplicaContainerProps {
   onRecalculate?: () => Promise<void> | void;
   isRecalculating?: boolean;
   mLines?: any[];
+  defaultSheet?: SheetType;
 }
 
 export type SheetType =
@@ -56,9 +57,10 @@ export function Nav2665ReplicaContainer({
   onRecalculate,
   isRecalculating = false,
   mLines = [],
+  defaultSheet = 'all',
 }: Nav2665ReplicaContainerProps) {
   const { toast } = useToast();
-  const [activeSheet, setActiveSheet] = useState<SheetType>('folap');
+  const [activeSheet, setActiveSheet] = useState<SheetType>(defaultSheet);
   const [zoomLevel, setZoomLevel] = useState<number>(100);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -102,11 +104,15 @@ export function Nav2665ReplicaContainer({
   const hasInboundSteel = inboundSteelItems.length > 0 || getVal('101', 'base') > 0 || getVal('29', 'tax') > 0;
   const hasAnySteel = hasOutboundSteel || hasInboundSteel;
 
-  const partnerCount = mLines.length > 0 ? mLines.length : 5;
-  const invoiceCount = mLines.reduce((acc, m) => acc + (m.invoice_count || 1), 0) || 5;
+  const eligibleMLines = useMemo(() => {
+    return (mLines || []).filter((m) => !shouldExcludeFromMLine(m));
+  }, [mLines]);
 
-  const mLineTotalBase = mLines.reduce((acc, m) => acc + (m.base_amount_rounded || 0), 0);
-  const mLineTotalTax = mLines.reduce((acc, m) => acc + (m.tax_amount_rounded || 0), 0);
+  const partnerCount = eligibleMLines.length;
+  const invoiceCount = eligibleMLines.reduce((acc, m) => acc + (m.invoice_count || 1), 0);
+
+  const mLineTotalBase = eligibleMLines.reduce((acc, m) => acc + (m.base_amount_rounded || 0), 0);
+  const mLineTotalTax = eligibleMLines.reduce((acc, m) => acc + (m.tax_amount_rounded || 0), 0);
 
   // Quick KPI numbers for toolbar
   const payableTax = getVal('36', 'tax');
@@ -470,7 +476,7 @@ export function Nav2665ReplicaContainer({
                 month={month}
                 frequency={frequency}
                 hasSteelItems={hasAnySteel}
-                mLineCount={mLines.length || 5}
+                mLineCount={partnerCount}
                 partnerCount={partnerCount}
               />
             </Nav2665PageFrame>

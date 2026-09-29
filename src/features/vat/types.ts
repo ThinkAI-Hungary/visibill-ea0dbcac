@@ -183,5 +183,204 @@ export interface VatSteelItemSummary {
 
 export type VatScope = 'all' | 'with_image';
 
+/**
+ * Proforma / díjbekérő típusok halmaza, amelyek nem minősülnek adóügyi számlának,
+ * nincs adófizetési vagy levonási kötelezettségük, és nem szerepelhetnek az ÁFA bevallásban,
+ * illetve a NAV Online Számla (OSA) keresztellenőrzésben.
+ */
+export const PROFORMA_INVOICE_TYPES = new Set([
+  'dijbekero_proforma',
+  'dijbekero',
+  'proforma',
+  'garanciajegy',
+]);
+
+/**
+ * Megállapítja, hogy egy bizonylat díjbekérő (proforma) vagy nem-számla jellegű dokumentum-e.
+ */
+export function isProformaInvoice(inv: {
+  invoice_type?: string | null;
+  bizonylatsorszam?: string | null;
+  invoice_number?: string | null;
+} | null | undefined): boolean {
+  if (!inv) return false;
+  const type = (inv.invoice_type || '').toLowerCase().trim();
+  if (PROFORMA_INVOICE_TYPES.has(type)) {
+    return true;
+  }
+  const sorszam = (inv.bizonylatsorszam || inv.invoice_number || '').trim().toLowerCase();
+  if (
+    sorszam.includes('proforma') ||
+    sorszam.includes('dijbekero') ||
+    sorszam.includes('díjbekérő') ||
+    sorszam.startsWith('díj') ||
+    sorszam.startsWith('dij') ||
+    sorszam.startsWith('pro-') ||
+    sorszam.startsWith('pro_') ||
+    sorszam.startsWith('pro/') ||
+    sorszam.includes('/pred/') ||
+    sorszam.startsWith('pred/') ||
+    sorszam.includes('predracun') ||
+    sorszam.includes('predračun')
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Megállapítja, hogy egy partner vagy adószám alanyi adómentes (AAM) státuszú-e.
+ * A magyar adószámok 9. karaktere az áfa-kód:
+ * '1' = Alanyi adómentes vagy kizárólag tárgyi adómentes / mentes tevékenység.
+ * Az alanyi adómentes partnerek után nem gyakorolható adólevonási jog, számláik
+ * nem képezik a belföldi 65M összesítő jelentés részét.
+ */
+export function isAamPartnerOrTaxNumber(
+  taxNumber?: string | null,
+  partnerName?: string | null
+): boolean {
+  if (taxNumber) {
+    const raw = taxNumber.replace(/\D/g, '');
+    // Magyar 11 jegyű adószám: XXXXXXXX-Y-ZZ, ahol Y a 9. jegy (index 8)
+    if (raw.length >= 9 && raw[8] === '1') {
+      return true;
+    }
+    // Kötőjeles formátum ellenőrzése: pl. 12345678-1-42
+    const parts = taxNumber.split('-');
+    if (parts.length >= 2 && parts[1].trim() === '1') {
+      return true;
+    }
+  }
+
+  if (partnerName) {
+    const name = partnerName.toLowerCase();
+    if (name.includes('alanyi adómentes') || name.includes('alanyi mentes') || name.includes('(aam)')) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Megállapítja, hogy a partner vagy számla biztosító intézet, illetve biztosítási szolgáltatás-e.
+ * Az Áfa tv. 86. § (1) bekezdés a) pontja szerint a biztosítási tevékenység tárgyi adómentes,
+ * a biztosítási díjak a biztosítási adó hatálya alá tartoznak, nem levonható áfás ügyletek,
+ * így a 65M lapon nem szerepelhetnek.
+ */
+export function isInsurancePartnerOrInvoice(
+  partnerName?: string | null,
+  itemOrInvoiceDesc?: string | null,
+  invoiceNumber?: string | null
+): boolean {
+  if (partnerName) {
+    const name = partnerName.toLowerCase();
+    if (
+      name.includes('biztosító') ||
+      name.includes('biztositó') ||
+      name.includes('biztosítás') ||
+      name.includes('biztositas') ||
+      name.includes('insurance') ||
+      name.includes('allianz') ||
+      name.includes('generali') ||
+      name.includes('groupama') ||
+      name.includes('uniqa') ||
+      name.includes('aegon') ||
+      name.includes('k&h biztosító') ||
+      name.includes('posta biztosító') ||
+      name.includes('signal iduna') ||
+      name.includes('colonnade') ||
+      name.includes('cig pannónia') ||
+      name.includes('cig pannonia') ||
+      name.includes('grawe')
+    ) {
+      return true;
+    }
+  }
+
+  if (itemOrInvoiceDesc) {
+    const desc = itemOrInvoiceDesc.toLowerCase();
+    if (
+      desc.includes('készülékbiztosítás') ||
+      desc.includes('keszulekbiztositas') ||
+      desc.includes('felelősségbiztosítás') ||
+      desc.includes('felelossegbiztositas') ||
+      desc.includes('vagyonbiztosítás') ||
+      desc.includes('vagyonbiztositas') ||
+      desc.includes('gépjármű-felelősségbiztosítás') ||
+      desc.includes('kgfb') ||
+      desc.includes('casco') ||
+      desc.includes('életbiztosítás') ||
+      desc.includes('eletbiztositas') ||
+      desc.includes('balesetbiztosítás') ||
+      desc.includes('utasbiztosítás') ||
+      desc.includes('biztosítási díj') ||
+      desc.includes('biztositasi dij')
+    ) {
+      return true;
+    }
+  }
+
+  if (invoiceNumber) {
+    const invNum = invoiceNumber.toLowerCase();
+    if (invNum.startsWith('kötvény') || invNum.startsWith('kotveny') || invNum.includes('policy')) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Univerzális védelmi őr (Guard): megállapítja, hogy az adott partnernek vagy számlának
+ * tiltott-e bekerülnie az ÁFA 65M belföldi összesítő jelentésbe.
+ * Kizárt tételek:
+ * 1. Díjbekérők, proforma és garanciajegyek (nem minősülnek adóügyi számlának).
+ * 2. Alanyi adómentes partnerek / számlák (9. jegy = '1', nincs levonható áfa).
+ * 3. Biztosítók, biztosítási kötvények és díjak (biztosítási adó, mentes).
+ * 4. Olyan 0 Ft-os belföldi számlák, amelyek nem fordított adózásúak.
+ */
+export function shouldExcludeFromMLine(item: {
+  partner_tax_number?: string | null;
+  partner_name?: string | null;
+  invoice_number?: string | null;
+  bizonylatsorszam?: string | null;
+  invoice_type?: string | null;
+  tax_amount?: number | null;
+  vat_amount?: number | null;
+  tax_amount_rounded?: number | null;
+  is_reverse_charge?: boolean | null;
+  description?: string | null;
+  item_description?: string | null;
+} | null | undefined): boolean {
+  if (!item) return false;
+
+  // 1. Díjbekérő vizsgálat
+  if (isProformaInvoice(item)) {
+    return true;
+  }
+
+  // 2. Alanyi adómentes (AAM) partner / számla vizsgálat
+  if (isAamPartnerOrTaxNumber(item.partner_tax_number, item.partner_name)) {
+    return true;
+  }
+
+  // 3. Biztosítás / biztosító vizsgálat
+  if (isInsurancePartnerOrInvoice(item.partner_name, item.description || item.item_description, item.invoice_number || item.bizonylatsorszam)) {
+    return true;
+  }
+
+  // 4. Nulla forintos adótartalom (ha nem belföldi fordított adózású tétel)
+  const tax = Number(item.tax_amount ?? item.vat_amount ?? item.tax_amount_rounded ?? 0);
+  if (tax <= 0 && !item.is_reverse_charge) {
+    // Ha az adószám nem éri el a 8 számjegyet vagy ismeretlen és 0 az áfa, szintén kizárandó
+    return true;
+  }
+
+  return false;
+}
+
+
+
 
 

@@ -32,7 +32,7 @@ import {
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { cn, formatCurrency, isReverseChargeVatRate } from '@/lib/utils';
-import { MONTHS, formatThousands, VatScope } from '../types';
+import { MONTHS, formatThousands, VatScope, isProformaInvoice } from '../types';
 
 import { useToast } from '@/hooks/use-toast';
 
@@ -101,8 +101,9 @@ export function VatAnnualMatrixView({
           .limit(10000),
         supabase
           .from('invoices')
-          .select('id, bizonylatsorszam, teljesites_datuma, kibocsatas_datuma, adoalap_osszesen, afa_osszeg_osszesen, invoice_direction, forditott_adozas, vat_row_override, image_url, melleklet_url, invoice_uploads_id, attachments')
+          .select('id, bizonylatsorszam, teljesites_datuma, kibocsatas_datuma, adoalap_osszesen, afa_osszeg_osszesen, invoice_direction, forditott_adozas, vat_row_override, image_url, melleklet_url, invoice_uploads_id, attachments, invoice_type')
           .eq('company_id', companyId)
+          .not('invoice_type', 'in', '("dijbekero_proforma","dijbekero","proforma","garanciajegy")')
           .or(`teljesites_datuma.gte.${dateFrom},and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${dateFrom})`)
           .or(`teljesites_datuma.lte.${dateTo},and(teljesites_datuma.is.null,kibocsatas_datuma.lte.${dateTo})`)
           .limit(10000),
@@ -116,7 +117,7 @@ export function VatAnnualMatrixView({
       }
 
       const navInvs = navInvsRes.data || [];
-      const subInvs = subInvsRes.data || [];
+      const subInvs = (subInvsRes.data || []).filter((s) => !isProformaInvoice(s));
 
       // Check whether submitted invoice has an uploaded image/document
       const hasImg = (s: any) => Boolean(
@@ -137,7 +138,7 @@ export function VatAnnualMatrixView({
       // Deduplicate manual invoices already present in nav_invoices
       const normalizeInvNum = (s?: string | null) => (s || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
       const existingNavNumbers = new Set(navInvs.map((i) => normalizeInvNum(i.invoice_number)).filter(Boolean));
-      const standaloneSubInvs = subInvs.filter((i) => !existingNavNumbers.has(normalizeInvNum(i.bizonylatsorszam)));
+      const standaloneSubInvs = subInvs.filter((i) => !isProformaInvoice(i) && !existingNavNumbers.has(normalizeInvNum(i.bizonylatsorszam)));
 
       // 12 months array
       const months: MonthData[] = Array.from({ length: 12 }, () => ({

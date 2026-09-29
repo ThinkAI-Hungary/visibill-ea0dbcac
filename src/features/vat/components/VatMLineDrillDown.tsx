@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ChevronDown, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 import { InvoiceItemsDrillDown } from '@/components/vat/VatRowDrillDown';
-import { fmtEft } from '../types';
+import { fmtEft, isProformaInvoice, shouldExcludeFromMLine } from '../types';
 import type { MLine, VatFrequency } from '../types';
 
 interface VatMLineDrillDownProps {
@@ -63,11 +63,12 @@ export function VatMLineDrillDown({
 
       if (navErr) console.warn('Error fetching nav_invoices for M-lap drilldown:', navErr.message);
 
-      // 2. Query invoices table
+      // 2. Query invoices table (strictly excluding proforma / díjbekérő)
       const { data: appInvs, error: appErr } = await supabase
         .from('invoices')
-        .select('id, bizonylatsorszam, teljesites_datuma, kibocsatas_datuma, adoalap_osszesen, afa_osszeg_osszesen, vat_row_override, penznem')
+        .select('id, bizonylatsorszam, teljesites_datuma, kibocsatas_datuma, adoalap_osszesen, afa_osszeg_osszesen, vat_row_override, penznem, invoice_type')
         .eq('company_id', companyId)
+        .not('invoice_type', 'in', '("dijbekero_proforma","dijbekero","proforma","garanciajegy")')
         .ilike('elado_vat_id', `${tax8}%`);
 
       if (appErr) console.warn('Error fetching invoices for M-lap drilldown:', appErr.message);
@@ -77,6 +78,13 @@ export function VatMLineDrillDown({
       (navInvs || []).forEach((inv: any) => {
         const num = inv.invoice_number;
         if (!num) return;
+        if (shouldExcludeFromMLine({
+          partner_tax_number: mLine.partner_tax_number,
+          partner_name: mLine.partner_name,
+          invoice_number: num,
+          vat_amount: inv.invoice_vat_amount,
+        })) return;
+
         const date = inv.ti_override || inv.calculated_ti || inv.invoice_delivery_date || inv.invoice_issue_date;
         const dateStr = date ? String(date).substring(0, 10) : '';
         if (dateStr && (dateStr < dateFrom || dateStr > dateTo)) return;
@@ -102,6 +110,14 @@ export function VatMLineDrillDown({
       (appInvs || []).forEach((inv: any) => {
         const num = inv.bizonylatsorszam;
         if (!num) return;
+        if (shouldExcludeFromMLine({
+          partner_tax_number: mLine.partner_tax_number,
+          partner_name: mLine.partner_name,
+          invoice_number: num,
+          invoice_type: inv.invoice_type,
+          vat_amount: inv.afa_osszeg_osszesen,
+        })) return;
+
         const date = inv.teljesites_datuma || inv.kibocsatas_datuma;
         const dateStr = date ? String(date).substring(0, 10) : '';
         if (dateStr && (dateStr < dateFrom || dateStr > dateTo)) return;

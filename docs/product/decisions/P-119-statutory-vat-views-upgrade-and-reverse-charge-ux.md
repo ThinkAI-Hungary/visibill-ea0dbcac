@@ -33,7 +33,12 @@ A korábbi fragmentált nézetváltók helyett egy átlátható, közvetlenül e
   - `Egyezik` (zöld pipa): Teljesítés dátuma, nettó és ÁFA pontosan egyezik.
   - `Eltérés` (narancs/piros): Dátumcsúszás vagy összegeltérés (filléres különbség).
   - `Hiányzik a könyvelésből` (sárga): NAV-ban létező, de könyvelésben nem rögzített számla.
-  - `Csak könyvelt` (kék): Könyvelésben lévő, de NAV rendszerben nem található tétel.
+- **M-lap és Rekonsziliáció Szigorú Kizárási Szabályai (AAM, Díjbekérő, Biztosítás):**
+  Az Áfa tv. 10. számú melléklete (Belföldi Összesítő Jelentés - 65M) kizárólag olyan belföldi adóalanyoktól történő beszerzéseket tartalmazhat, amelyek után a beszerző adólevonási jogot gyakorol. Ennek megfelelően mind az adatbázis RPC (`calculate_hungarian_vat_return`), mind a kliensoldali nézetek (`VatMLineMasterDetail`, `useVatReturnData`, `vatReturnXml` ÁNYK generátor) garantálják a következő tételek szigorú kizárását:
+  1. **Díjbekérők / Proforma bizonylatok:** Nem minősülnek számviteli számlának, nincs adólevonási jogosultság (`isProformaInvoice`).
+  2. **Alanyi Adómentes (AAM) partnerek és számlák:** A magyar adószám 9. karaktere `'1'` (pl. `XXXXXXXX-1-YY`), a partner nem hárít át adót, a számlán nincs levonható áfa (`isAamPartnerOrTaxNumber`).
+  3. **Biztosítók és Biztosítási tételek:** Az Áfa tv. 86. § (1) bek. a) pontja alapján tárgyi adómentesek, biztosítási adó hatálya alá esnek, áfalevonásra nem jogosítanak (`isInsurancePartnerOrInvoice`).
+  4. **Nulla forintos nem-fordított belföldi tételek:** Semmilyen 0 Ft adótartalmú belföldi tétel nem kerülhet az M-lapba, kivéve a fordított adózást (FAD).
 
 ### C. 12 Hónapos Éves ÁFA Mátrix (`VatAnnualMatrixView.tsx`)
 - A teljes adóév hónapjait (Januártól Decemberig) összefoglaló gördülő táblázat.

@@ -29,8 +29,16 @@ import {
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { cn, formatCurrency } from '@/lib/utils';
-import { VatOsaCheckDialog } from './VatOsaCheckDialog';
-import { MLine, VatFrequency, formatThousands, VatScope } from '../types';
+import {
+  MLine,
+  VatFrequency,
+  formatThousands,
+  VatScope,
+  isProformaInvoice,
+  shouldExcludeFromMLine,
+  isAamPartnerOrTaxNumber,
+  isInsurancePartnerOrInvoice,
+} from '../types';
 
 interface VatMLineMasterDetailProps {
   mLines: MLine[];
@@ -94,8 +102,9 @@ export function VatMLineMasterDetail({
         effectiveScope === 'with_image'
           ? supabase
               .from('invoices')
-              .select('bizonylatsorszam, image_url, melleklet_url, invoice_uploads_id, attachments')
+              .select('bizonylatsorszam, image_url, melleklet_url, invoice_uploads_id, attachments, invoice_type')
               .eq('company_id', companyId)
+              .not('invoice_type', 'in', '("dijbekero_proforma","dijbekero","proforma","garanciajegy")')
               .or('invoice_direction.eq.INBOUND,invoice_direction.is.null')
               .or(`teljesites_datuma.gte.${dateFrom},and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${dateFrom})`)
               .or(`teljesites_datuma.lte.${dateTo},and(teljesites_datuma.is.null,kibocsatas_datuma.lte.${dateTo})`)
@@ -114,7 +123,7 @@ export function VatMLineMasterDetail({
       );
       const norm = (s?: string | null) => (s || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
       const allowedInvoiceNumbers = new Set(
-        subInvs.filter(hasImg).map((s: any) => norm(s.bizonylatsorszam)).filter(Boolean)
+        subInvs.filter((s: any) => !isProformaInvoice(s) && hasImg(s)).map((s: any) => norm(s.bizonylatsorszam)).filter(Boolean)
       );
 
       const partnerMap = new Map<string, {
@@ -138,6 +147,16 @@ export function VatMLineMasterDetail({
         if (effectiveScope === 'with_image' && !allowedInvoiceNumbers.has(norm(inv.invoice_number))) {
           return;
         }
+        // Exclude AAM, proforma, insurance, or 0-VAT non-FAD in 65M sheets
+        if (shouldExcludeFromMLine({
+          partner_tax_number: inv.supplier_tax_number,
+          partner_name: inv.supplier_name,
+          invoice_number: inv.invoice_number,
+          vat_amount: inv.invoice_vat_amount,
+        })) {
+          return;
+        }
+
         const tax = inv.supplier_tax_number || '';
         const tax8 = tax.replace(/\D/g, '').substring(0, 8);
         if (!tax8) return;
@@ -185,19 +204,21 @@ export function VatMLineMasterDetail({
         }
       });
 
-      return Array.from(partnerMap.entries()).map(([tax8, val]) => ({
-        id: tax8,
-        vat_return_id: '',
-        group_tax_number: null,
-        ...val,
-      })) as unknown as MLine[];
+      return Array.from(partnerMap.entries())
+        .map(([tax8, val]) => ({
+          id: tax8,
+          vat_return_id: '',
+          group_tax_number: null,
+          ...val,
+        }))
+        .filter((val) => !shouldExcludeFromMLine(val as any)) as unknown as MLine[];
     },
     enabled: (!mLines || mLines.length === 0) && !!companyId,
   });
 
   const effectiveMLines = useMemo(() => {
-    if (mLines && mLines.length > 0) return mLines;
-    return fallbackMLines;
+    const list = (mLines && mLines.length > 0) ? mLines : fallbackMLines;
+    return list.filter((m) => !shouldExcludeFromMLine(m));
   }, [mLines, fallbackMLines]);
 
   // Filtered partners
@@ -269,8 +290,9 @@ export function VatMLineMasterDetail({
           .or(`invoice_delivery_date.lte.${dateTo},and(invoice_delivery_date.is.null,invoice_issue_date.lte.${dateTo})`),
         supabase
           .from('invoices')
-          .select('id, bizonylatsorszam, teljesites_datuma, kibocsatas_datuma, adoalap_osszesen, afa_osszeg_osszesen, elolegszamla_hivatkozas')
+          .select('id, bizonylatsorszam, teljesites_datuma, kibocsatas_datuma, adoalap_osszesen, afa_osszeg_osszesen, elolegszamla_hivatkozas, invoice_type')
           .eq('company_id', companyId)
+          .not('invoice_type', 'in', '("dijbekero_proforma","dijbekero","proforma","garanciajegy")')
           .ilike('elado_vat_id', `${tax8}%`)
           .or(`teljesites_datuma.gte.${dateFrom},and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${dateFrom})`)
           .or(`teljesites_datuma.lte.${dateTo},and(teljesites_datuma.is.null,kibocsatas_datuma.lte.${dateTo})`),
@@ -281,11 +303,20 @@ export function VatMLineMasterDetail({
 
       const normalizeInvNum = (s?: string | null) => (s || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
       const existingNavNumbers = new Set(navInvs.map((i) => normalizeInvNum(i.invoice_number)).filter(Boolean));
-      const standaloneSubInvs = subInvs.filter((i) => !existingNavNumbers.has(normalizeInvNum(i.bizonylatsorszam)));
+      const standaloneSubInvs = subInvs.filter((i) => !isProformaInvoice(i) && !existingNavNumbers.has(normalizeInvNum(i.bizonylatsorszam)));
 
       const combined: any[] = [];
 
       navInvs.forEach((inv) => {
+        if (shouldExcludeFromMLine({
+          partner_tax_number: activePartner.partner_tax_number,
+          partner_name: activePartner.partner_name,
+          invoice_number: inv.invoice_number,
+          vat_amount: inv.invoice_vat_amount,
+        })) {
+          return;
+        }
+
         const net = Math.round(Number(inv.invoice_net_amount) || 0);
         const vat = Math.round(Number(inv.invoice_vat_amount) || 0);
         const rate = net > 0 && vat > 0 ? Math.round((vat / net) * 100) : 27;
@@ -311,6 +342,16 @@ export function VatMLineMasterDetail({
       });
 
       standaloneSubInvs.forEach((inv) => {
+        if (shouldExcludeFromMLine({
+          partner_tax_number: activePartner.partner_tax_number,
+          partner_name: activePartner.partner_name,
+          invoice_number: inv.bizonylatsorszam,
+          invoice_type: inv.invoice_type,
+          vat_amount: inv.afa_osszeg_osszesen,
+        })) {
+          return;
+        }
+
         const net = Math.round(Number(inv.adoalap_osszesen) || 0);
         const vat = Math.round(Number(inv.afa_osszeg_osszesen) || 0);
         const rate = net > 0 && vat > 0 ? Math.round((vat / net) * 100) : 27;

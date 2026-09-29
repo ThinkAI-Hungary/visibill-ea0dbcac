@@ -40,7 +40,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
-import { VatFrequency } from '../types';
+import { VatFrequency, isProformaInvoice } from '../types';
 
 interface VatOsaCheckDialogProps {
   open: boolean;
@@ -107,12 +107,13 @@ export function VatOsaCheckDialog({
     queryFn: async () => {
       if (!companyId) return [];
 
-      // 1. Fetch locally recorded incoming invoices
+      // 1. Fetch locally recorded incoming invoices (strictly excluding proforma / díjbekérő)
       const { data: localInvoices = [], error: localErr } = await supabase
         .from('invoices')
-        .select('id, bizonylatsorszam, elado_nev, elado_vat_id, teljesites_datuma, kibocsatas_datuma, adoalap_osszesen, afa_osszeg_osszesen, brutto_vegosszeg')
+        .select('id, bizonylatsorszam, elado_nev, elado_vat_id, teljesites_datuma, kibocsatas_datuma, adoalap_osszesen, afa_osszeg_osszesen, brutto_vegosszeg, invoice_type')
         .eq('company_id', companyId)
         .or('invoice_direction.eq.INBOUND,invoice_direction.is.null')
+        .not('invoice_type', 'in', '("dijbekero_proforma","dijbekero","proforma","garanciajegy")')
         .or(`teljesites_datuma.gte.${dateFrom},and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${dateFrom})`)
         .or(`teljesites_datuma.lte.${dateTo},and(teljesites_datuma.is.null,kibocsatas_datuma.lte.${dateTo})`);
 
@@ -142,8 +143,10 @@ export function VatOsaCheckDialog({
       const matchedNavKeys = new Set<string>();
       const result: ReconciliationItem[] = [];
 
-      // Process local invoices
+      // Process local invoices (ignoring any proforma / díjbekérő)
       (localInvoices || []).forEach((localInv) => {
+        if (isProformaInvoice(localInv)) return;
+
         const key = `${tax8(localInv.elado_vat_id)}_${norm(localInv.bizonylatsorszam)}`;
         const navInv = navMap.get(key);
 

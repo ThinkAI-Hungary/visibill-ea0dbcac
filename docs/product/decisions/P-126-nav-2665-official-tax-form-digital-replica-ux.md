@@ -35,8 +35,8 @@ A felület az állami ÁNYK 2665A nyomtatványt modellezi pixelpontosan:
 ### 3. Eszköztár és Ergonómiai Vezérlők
 A nyomtatvány felső fejlécében egy lebegő, mégis integrált eszközsáv segíti az áttekintést:
 - **Lapválasztó gombok (Pills):** Azonnali váltás a nyomtatvány különálló lapjai között.
-- **„📑 Összes lap egyben” nézet:** Egyetlen kattintással összefüggő, lapozás nélküli többoldalas dokumentummá alakítja a nézetet, lehetővé téve a teljes bevallás egyidejű átgörgetését.
-- **Nagyítás / Kicsinyítés (Zoom Controls):** 80%, 90%, 100%, 110% és 125% nézetek a monitor méretéhez és a könyvelő kényelméhez igazítva.
+- **„📑 Összes lap egyben” (Alapértelmezett nézet):** A felület alapértelmezetten ezt a nézetet nyitja meg, amely lapozás nélküli többoldalas folyamatos dokumentummá fűzi a nézetet, lehetővé téve a teljes 5–7 lapos bevalláscsomag azonnali átgörgetését és egyidejű áttekintését.
+- **Nagyítás / Kicsinyítés (Zoom Controls):** 65%-tól 130%-ig terjedő dinamikus nézetek a monitor méretéhez és a könyvelő kényelméhez igazítva.
 - **Élő KPI mutatók:** A fejrészben azonnal látható a fizetendő adó, a levonható adó és a nettó egyenleg (fizetendő / visszaigényelhető).
 - **„Adatok frissítése DB-ből” gomb:** Folyamatjelző animációval hívja meg a szerveroldali kalkulációs motort, biztosítva a legfrissebb könyvelési tételek megjelenítését.
 - **Hivatalos Nyomtatás:** Közvetlen nyomtatási lehetőség (`@media print`), amely laponkénti tördeléssel (`break-after: page`) A4 formátumban állítja elő a nyomtatványt papírra vagy PDF-be.

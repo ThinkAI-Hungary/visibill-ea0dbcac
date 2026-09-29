@@ -1,5 +1,5 @@
 import React from 'react';
-import { Nav2665ReplicaContainer } from './replica/Nav2665ReplicaContainer';
+import { Nav2665ReplicaContainer, SheetType } from './replica/Nav2665ReplicaContainer';
 
 export interface VatNav65ReplicaProps {
   selectedCompany: any;
@@ -10,6 +10,7 @@ export interface VatNav65ReplicaProps {
   onRecalculate?: () => Promise<void> | void;
   isRecalculating?: boolean;
   mLines?: any[];
+  defaultSheet?: SheetType;
 }
 
 /**
@@ -19,3 +20,4 @@ export interface VatNav65ReplicaProps {
 export function VatNav65Replica(props: VatNav65ReplicaProps) {
   return <Nav2665ReplicaContainer {...props} />;
 }
+

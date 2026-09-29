@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { VatScope, VatFrequency } from '../types';
+import { VatScope, VatFrequency, isProformaInvoice } from '../types';
 
 export interface UseVatScopeParams {
   companyId?: string | null;
@@ -138,8 +138,9 @@ export function useVatScope({
           .limit(5000),
         supabase
           .from('invoices')
-          .select('id, bizonylatsorszam, adoalap_osszesen, afa_osszeg_osszesen, vat_row_override, forditott_adozas, image_url, melleklet_url, invoice_uploads_id, attachments')
+          .select('id, bizonylatsorszam, adoalap_osszesen, afa_osszeg_osszesen, vat_row_override, forditott_adozas, image_url, melleklet_url, invoice_uploads_id, attachments, invoice_type')
           .eq('company_id', companyId)
+          .not('invoice_type', 'in', '("dijbekero_proforma","dijbekero","proforma","garanciajegy")')
           .or('invoice_direction.eq.INBOUND,invoice_direction.is.null')
           .or(`teljesites_datuma.gte.${dateFrom},and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${dateFrom})`)
           .or(`teljesites_datuma.lte.${dateTo},and(teljesites_datuma.is.null,kibocsatas_datuma.lte.${dateTo})`)
@@ -147,7 +148,7 @@ export function useVatScope({
       ]);
 
       const navInvs = navRes.data || [];
-      const subInvs = subRes.data || [];
+      const subInvs = (subRes.data || []).filter((s) => !isProformaInvoice(s));
 
       const norm = (s?: string | null) => (s || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
 

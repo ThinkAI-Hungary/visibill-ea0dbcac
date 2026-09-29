@@ -16,6 +16,7 @@ import type {
   XmlValidationCheck,
   VatScope,
 } from '../types';
+import { shouldExcludeFromMLine } from '../types';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import {
   validateHungarianTaxNumber,
@@ -180,7 +181,26 @@ export function useVatReturnData() {
         });
         return [];
       }
-      return (data || []) as unknown as MLine[];
+      const rawMLines = (data || []) as unknown as MLine[];
+      return rawMLines
+        .filter((ml) => !shouldExcludeFromMLine(ml))
+        .map((ml) => {
+          if (Array.isArray(ml.invoice_details)) {
+            const cleanInvoices = ml.invoice_details.filter(
+              (inv) => !shouldExcludeFromMLine({
+                ...inv,
+                partner_tax_number: ml.partner_tax_number,
+                partner_name: ml.partner_name,
+              })
+            );
+            return {
+              ...ml,
+              invoice_details: cleanInvoices,
+              invoice_count: cleanInvoices.length,
+            };
+          }
+          return ml;
+        });
     },
     enabled: !!vatReturn?.id,
   });

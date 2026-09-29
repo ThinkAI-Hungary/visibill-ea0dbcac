@@ -52,9 +52,9 @@ A komponensek semmilyen belső származtatott számítási logikát nem rejtenek
 1. **Lapválasztó fülek (Sheet Switcher Pills):**
    - Főlap, 01-01, 01-02, 01-03, 01-05.
    - Feltételes lapfülek: a 07-es lap és 08-as lap fülek automatikusan aktiválódnak, ha az időszakban szerepelnek Áfa tv. 6/B szerinti acéltermék adatok (`useSteelProductsData`).
-   - „📑 Összes lap egyben” nézet: folyamatos görgethető áttekintést nyújt a teljes 5–7 lapos nyomtatványcsomagról.
+   - „📑 Összes lap egyben” (Alapértelmezett / default): a felület alapból ezzel a nézettel nyílik meg (`defaultSheet = 'all'`), folyamatos görgethető áttekintést nyújtva a teljes 5–7 lapos nyomtatványcsomagról anélkül, hogy a könyvelőnek kézzel kellene váltogatnia.
 2. **Skálázás & Zoom:**
-   - 80%, 90%, 100%, 110%, 125% skálázó gombok CSS `scale()` és `transform-origin: top center` segítségével.
+   - 65%-tól 130%-ig skálázó gombok CSS `scale()` és `transform-origin: top center` segítségével.
 3. **Élő Adatbázis Újraszámítás (`calculate_vat_return` RPC):**
    - Az eszköztár tartalmaz egy közvetlen "Adatok frissítése DB-ből" gombot, amely meghívja a Supabase tárolt eljárást, és az onSuccess eseményével azonnal újratölti a nézetet anélkül, hogy a böngészőablak újratöltődne.
 4. **Nyomtatási Stíluslapok (`@media print`):**

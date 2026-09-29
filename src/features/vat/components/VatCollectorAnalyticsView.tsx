@@ -35,7 +35,7 @@ import { useTranslation } from 'react-i18next';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { fetchAllGlAccountsByPreset } from '@/lib/glData';
-import { VatScope } from '../types';
+import { VatScope, isProformaInvoice } from '../types';
 
 interface VatCollectorAnalyticsViewProps {
   year?: number;
@@ -294,13 +294,14 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
           .from('invoices')
           .select('id, bizonylatsorszam, elado_nev, vevo_nev, teljesites_datuma, kibocsatas_datuma, adoalap_osszesen, afa_osszeg_osszesen, partner_gl_number, vat_gl_number, invoice_direction, image_url, melleklet_url, invoice_uploads_id, attachments, vat_row_override, vat_code_id, invoice_type, adomentesseg_hivatkozas')
           .eq('company_id', selectedCompany.id)
+          .not('invoice_type', 'in', '("dijbekero_proforma","dijbekero","proforma","garanciajegy")')
           .or(`teljesites_datuma.gte.${effectiveDateFrom},and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${effectiveDateFrom})`)
           .or(`teljesites_datuma.lte.${effectiveDateTo},and(teljesites_datuma.is.null,kibocsatas_datuma.lte.${effectiveDateTo})`)
           .limit(10000),
       ]);
 
       const navInvs = navInvsRes.data || [];
-      const subInvs = subInvsRes.data || [];
+      const subInvs = (subInvsRes.data || []).filter((s) => !isProformaInvoice(s));
 
       // Check whether submitted invoice has an uploaded image/document
       const hasImg = (s: any) => Boolean(
@@ -322,7 +323,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
 
       const existingNavNumbers = new Set(navInvs.map((i) => normalizeInvNum(i.invoice_number)).filter(Boolean));
       // Only keep standalone manual invoices to avoid double-counting invoices already present in NAV
-      const standaloneSubInvs = subInvs.filter((i) => !existingNavNumbers.has(normalizeInvNum(i.bizonylatsorszam)));
+      const standaloneSubInvs = subInvs.filter((i) => !isProformaInvoice(i) && !existingNavNumbers.has(normalizeInvNum(i.bizonylatsorszam)));
 
       const navMap = new Map(navInvs.map((i) => [i.id, i]));
       const subMap = new Map(standaloneSubInvs.map((i) => [i.id, i]));
