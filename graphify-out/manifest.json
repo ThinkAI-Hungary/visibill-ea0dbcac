@@ -445,8 +445,8 @@
     "semantic_hash": "690594953770aff80b0787de83a31fc2"
   },
   "src/components/settings/BusinessSection.tsx": {
-    "mtime": 1790456443.917523,
-    "ast_hash": "511bd5bc3d6b7e1ab628610c7d73e3ad",
+    "mtime": 1790707618.5343292,
+    "ast_hash": "cd1673412140ace410394db42b4ee1e7",
     "semantic_hash": ""
   },
   "src/components/settings/InviteUserDialog.tsx": {
@@ -1555,8 +1555,8 @@
     "semantic_hash": ""
   },
   "src/pages/Settings.tsx": {
-    "mtime": 1790156277.1429162,
-    "ast_hash": "d446e7ea386c9db0a796a23830e1937e",
+    "mtime": 1790707641.4343572,
+    "ast_hash": "fe2b8032ffcfa82e20b12cc53086c200",
     "semantic_hash": ""
   },
   "src/pages/TicketsPage.tsx": {
@@ -4040,8 +4040,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/ProfileSettingsPage.tsx": {
-    "mtime": 1790287848.4588454,
-    "ast_hash": "697138bcc6a5a6063a54378ea08f9fa6",
+    "mtime": 1790707670.727194,
+    "ast_hash": "a1db39b95d3f088e4dbd292fc45f3d96",
     "semantic_hash": ""
   },
   "src/pages/Accounty/ProtectedAccountyRoute.tsx": {
@@ -9680,8 +9680,8 @@
     "semantic_hash": ""
   },
   "src/locales/hr/settings.json": {
-    "mtime": 1790595704.5874443,
-    "ast_hash": "a7ea7e160370d9015ca03ffae8642c99",
+    "mtime": 1790707584.3167183,
+    "ast_hash": "80b34f6cb46087d8ea918b9554206a76",
     "semantic_hash": ""
   },
   "src/locales/hr/transactions.json": {
@@ -9720,8 +9720,8 @@
     "semantic_hash": ""
   },
   "src/locales/hu/settings.json": {
-    "mtime": 1790595681.7486565,
-    "ast_hash": "5a97173074ecf6b819bbe93c07934802",
+    "mtime": 1790707573.8671072,
+    "ast_hash": "3b092c0d45792994367ed98fa4433f21",
     "semantic_hash": ""
   },
   "src/locales/hu/transactions.json": {
@@ -13272,6 +13272,11 @@
   "session-summary/\u00c1ron/2026-09-29/summary-180400-transaction-multi-invoice-matching-and-ticket-support.md": {
     "mtime": 1790701660.3659651,
     "ast_hash": "4a7171b246428b0a40edafea141ddef3",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260929210000_allow_accountants_update_companies_and_representative.sql": {
+    "mtime": 1790707553.4123526,
+    "ast_hash": "78f7bab9b2d5878c4526b61d3b19990e",
     "semantic_hash": ""
   }
 }
