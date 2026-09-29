@@ -5970,7 +5970,9 @@ export type Database = {
           id: string
           name: string
           owner_id: string
+          phone: string | null
           primary_teaor: string | null
+          representative_name: string | null
           share_token: string | null
           share_token_created_at: string | null
           szamlazz_agent_key: string | null
@@ -5986,7 +5988,9 @@ export type Database = {
           id?: string
           name: string
           owner_id: string
+          phone?: string | null
           primary_teaor?: string | null
+          representative_name?: string | null
           share_token?: string | null
           share_token_created_at?: string | null
           szamlazz_agent_key?: string | null
@@ -6002,7 +6006,9 @@ export type Database = {
           id?: string
           name?: string
           owner_id?: string
+          phone?: string | null
           primary_teaor?: string | null
+          representative_name?: string | null
           share_token?: string | null
           share_token_created_at?: string | null
           szamlazz_agent_key?: string | null

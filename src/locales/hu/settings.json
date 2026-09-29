@@ -46,7 +46,15 @@
     "manage_bank_accounts": "Bankszámlák kezelése",
     "no_bank_accounts_warning": "Még nincs céges bankszámla rögzítve",
     "no_bank_accounts_hint": "Rögzítsd a cég GIRO vagy IBAN számlaszámát a kimenő utalási csomagok (SEPA XML, OTP, MBH, CIB) készítéséhez.",
-    "add_first_bank_account": "Számla hozzáadása"
+    "add_first_bank_account": "Számla hozzáadása",
+    "representative_section_title": "Hivatalos ügyintéző és elérhetőség (ÁNYK / NAV)",
+    "representative_section_desc": "A NAV ÁNYK ÁFA és egyéb adóbevallások főlapján kötelezően előírt ügyintézői adatok. Az ÁNYK export automatikusan beemeli ezeket a mezőket.",
+    "representative_name": "Ügyintéző neve",
+    "representative_placeholder": "Pl. Kovács János",
+    "representative_hint": "A NAV ÁNYK ÁFA és egyéb bevallások főlapján kötelezően megjelenő ügyintéző.",
+    "phone": "Ügyintéző telefonszáma",
+    "phone_placeholder": "Pl. +36 30 123 4567 vagy 06301234567",
+    "phone_hint": "Az ÁNYK export automatikusan formázza a kötelező (36...) formátumra."
   },
   "system": {
     "title": "Rendszer beállítások",

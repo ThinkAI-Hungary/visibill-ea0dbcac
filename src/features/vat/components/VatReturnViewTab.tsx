@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   Scale,
   CheckCircle2,
+  User,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,7 +31,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { generateVatReturnPdf } from '@/lib/vatReturnPdf';
-import { generateVatReturnXml } from '@/lib/vatReturnXml';
+import { generateVatReturnXml, formatAnykPhoneNumber } from '@/lib/vatReturnXml';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,6 +54,7 @@ import { VatObrazacPdvReplica } from './VatObrazacPdvReplica';
 import { VatSteelProductsSection } from './VatSteelProductsSection';
 import { VatProRataCalculatorModal } from './VatProRataCalculatorModal';
 import { VatPoreznaExportDialog } from './VatPoreznaExportDialog';
+import { VatXmlExportModal } from './VatXmlExportModal';
 
 export function VatReturnViewTab() {
   const { t, i18n } = useTranslation(['accounting', 'common']);
@@ -96,6 +98,8 @@ export function VatReturnViewTab() {
     frequency
   );
 
+  const [isXmlExportModalOpen, setIsXmlExportModalOpen] = React.useState(false);
+
   const executeXmlDownload = () => {
     if (!vatReturn || !selectedCompany) return;
     if (isCroatia) {
@@ -109,7 +113,12 @@ export function VatReturnViewTab() {
         description: t('accounting:vat_return.toasts.missing_tax_num_desc', 'A cég adószáma hiányzik a beállításokból, kérlek ellenőrizd!'),
         variant: 'destructive',
       });
+      return;
     }
+
+    const repName = (selectedCompany as any).representative_name?.trim();
+    const phone = formatAnykPhoneNumber((selectedCompany as any).phone);
+
     generateVatReturnXml({
       companyName: selectedCompany.name || '',
       companyTaxNumber: taxNum,
@@ -117,8 +126,8 @@ export function VatReturnViewTab() {
       periodYear: year,
       periodMonth: month,
       frequency,
-      representativeName: (selectedCompany as any).representative_name || (selectedCompany as any).contact_name || undefined,
-      phone: (selectedCompany as any).phone || undefined,
+      representativeName: repName,
+      phone: phone,
       lines: lines as any[],
       mLines: mLines as any[],
     });
@@ -137,7 +146,9 @@ export function VatReturnViewTab() {
       setShowSteelWarningModal(true);
       return;
     }
-    executeXmlDownload();
+
+    // Mindig nyissa meg az export modált az ügyintéző kiválasztásához/ellenőrzéséhez
+    setIsXmlExportModalOpen(true);
   };
 
   useKeyboardShortcuts([
@@ -468,10 +479,16 @@ export function VatReturnViewTab() {
                     <span>ePorezna XML export (PDV-S / ZP)</span>
                   </DropdownMenuItem>
                 ) : (
-                  <DropdownMenuItem onClick={handleXmlDownloadClick}>
-                    <Download className="w-4 h-4 mr-2" />
-                    {t('accounting:vat_return.period.xml_download', 'ÁNYK XML letöltés')}
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem onClick={handleXmlDownloadClick}>
+                      <Download className="w-4 h-4 mr-2" />
+                      {t('accounting:vat_return.period.xml_download', 'ÁNYK XML letöltés')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setIsXmlExportModalOpen(true)}>
+                      <User className="w-4 h-4 mr-2 text-muted-foreground" />
+                      <span>{t('accounting:vat_return.period.edit_representative', 'Ügyintéző adatai (ÁNYK)')}</span>
+                    </DropdownMenuItem>
+                  </>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
@@ -738,6 +755,20 @@ export function VatReturnViewTab() {
           year={year}
           month={month}
           frequency={frequency}
+        />
+      )}
+
+      {/* NAV ÁNYK XML Export & Representative Modal */}
+      {!isCroatia && (
+        <VatXmlExportModal
+          open={isXmlExportModalOpen}
+          onOpenChange={setIsXmlExportModalOpen}
+          selectedCompany={selectedCompany}
+          year={year}
+          month={month}
+          frequency={frequency}
+          lines={lines as any[]}
+          mLines={mLines as any[]}
         />
       )}
     </div>

@@ -50,11 +50,14 @@ describe('vatReturnXml (NAV ÁNYK 2665A / 2665M Generator)', () => {
     expect(xml).toContain('<tol>20260701</tol>');
     expect(xml).toContain('<ig>20260731</ig>');
 
-    // 0A Főlap fields
+    // 0A Főlap fields:
+    // E001A: adószám, E007A: adózó neve, E008A: ügyintéző neve, E009A: ügyintéző telefonszáma
+    // E006A (adózói státusz) sosem tartalmazhat cégnevet!
     expect(xml).toContain('<mezo eazon="0A0001E001A">13086905208</mezo>');
-    expect(xml).toContain('<mezo eazon="0A0001E006A">TS Consult Kft. &amp; Társa</mezo>');
-    expect(xml).toContain('<mezo eazon="0A0001E007A">Surányi Pál</mezo>');
-    expect(xml).toContain('<mezo eazon="0A0001E008A">36301234567</mezo>');
+    expect(xml).not.toContain('0A0001E006A');
+    expect(xml).toContain('<mezo eazon="0A0001E007A">TS Consult Kft. &amp; Társa</mezo>');
+    expect(xml).toContain('<mezo eazon="0A0001E008A">Surányi Pál</mezo>');
+    expect(xml).toContain('<mezo eazon="0A0001E009A">36301234567</mezo>');
     expect(xml).toContain('<mezo eazon="0A0001F001A">20260701</mezo>');
     expect(xml).toContain('<mezo eazon="0A0001F002A">20260731</mezo>');
     expect(xml).toContain('<mezo eazon="0A0001F006A">H</mezo>');
@@ -128,7 +131,7 @@ describe('vatReturnXml (NAV ÁNYK 2665A / 2665M Generator)', () => {
       mLines: [
         {
           partner_name: 'Partner Bt.',
-          partner_tax_number: '98765432142',
+          partner_tax_number: '98765432242',
           invoice_count: 1,
           base_amount_rounded: 100,
           tax_amount_rounded: 27,
@@ -157,7 +160,7 @@ describe('vatReturnXml (NAV ÁNYK 2665A / 2665M Generator)', () => {
       mLines: [
         {
           partner_name: 'Márvány & Öntvény Építőipari Kkt. <Bp>',
-          partner_tax_number: '88776655-1-41',
+          partner_tax_number: '88776655-2-41',
           invoice_count: 1,
           base_amount_rounded: 500,
           tax_amount_rounded: 135,
@@ -401,6 +404,59 @@ describe('vatReturnXml (NAV ÁNYK 2665A / 2665M Generator)', () => {
       expect(xml).toContain('<mezo eazon="0B0001C0036CA">1933</mezo>');
       expect(xml).toContain('<mezo eazon="0C0001C0064CA">1</mezo>');
       expect(xml).toContain('<mezo eazon="0C0001C0066CA">58</mezo>');
+    });
+
+    it('formats phone numbers properly with formatAnykPhoneNumber', async () => {
+      const { formatAnykPhoneNumber } = await import('../vatReturnXml');
+      expect(formatAnykPhoneNumber('+36 30 123 4567')).toBe('36301234567');
+      expect(formatAnykPhoneNumber('06 70 424 0024')).toBe('36704240024');
+      expect(formatAnykPhoneNumber('06301234567')).toBe('36301234567');
+      expect(formatAnykPhoneNumber('36704240024')).toBe('36704240024');
+      expect(formatAnykPhoneNumber(undefined)).toBe('');
+    });
+
+    it('strictly conforms to think_ai_2465_11.xml reference structure with representative and overrides', () => {
+      const xml = buildVatReturnXml({
+        companyName: '  THINK AI Kft.  ',
+        companyTaxNumber: '32478620-2-43',
+        companyAddress: '1052 Budapest, Petőfi Sándor u. 11.',
+        periodYear: 2024,
+        periodMonth: 11,
+        frequency: 'H',
+        representativeName: 'Jámbor Viktor',
+        phone: '06 70 424 0024',
+        formIdOverride: '2465',
+        formVersionOverride: '4.0',
+        lines: [
+          { row_number: '07', base_amount_rounded: 1325, tax_amount_rounded: 358 },
+          { row_number: '27', base_amount_rounded: 142, tax_amount_rounded: 38 },
+          { row_number: '36', base_amount_rounded: 1467, tax_amount_rounded: 396 },
+          { row_number: '45', base_amount_rounded: 1225, tax_amount_rounded: 331 },
+          { row_number: '63', base_amount_rounded: 94, tax_amount_rounded: 0 },
+          { row_number: '64', base_amount_rounded: 9, tax_amount_rounded: 0 },
+          { row_number: '66', base_amount_rounded: 638, tax_amount_rounded: 172 },
+          { row_number: '67', base_amount_rounded: 142, tax_amount_rounded: 38 },
+          { row_number: '76', base_amount_rounded: 883, tax_amount_rounded: 210 },
+          { row_number: '82', base_amount_rounded: 0, tax_amount_rounded: 0 },
+          { row_number: '83', base_amount_rounded: 0, tax_amount_rounded: 186 },
+          { row_number: '84', base_amount_rounded: 0, tax_amount_rounded: 186 },
+        ],
+        mLines: [],
+      });
+
+      // Form ID & Version overrides
+      expect(xml).toContain('<nyomtatvanyazonosito>2465A</nyomtatvanyazonosito>');
+      expect(xml).toContain('<nyomtatvanyverzio>4.0</nyomtatvanyverzio>');
+
+      // Consistency between header and 0A sheet: trimmed company name on E007A (not E006A)
+      expect(xml).toContain('<nev>THINK AI Kft.</nev>');
+      expect(xml).toContain('<megjegyzes>THINK AI Kft. - Áfa bevallás</megjegyzes>');
+      expect(xml).not.toContain('0A0001E006A');
+      expect(xml).toContain('<mezo eazon="0A0001E007A">THINK AI Kft.</mezo>');
+
+      // Mandatory representative fields on E008A and E009A
+      expect(xml).toContain('<mezo eazon="0A0001E008A">Jámbor Viktor</mezo>');
+      expect(xml).toContain('<mezo eazon="0A0001E009A">36704240024</mezo>');
     });
   });
 });

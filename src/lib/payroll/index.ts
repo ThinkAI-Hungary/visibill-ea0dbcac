@@ -10,6 +10,7 @@ export {
   calculatePayroll,
   calculateGross,
   calculateGarnishments,
+  isEligibleForYoung25,
   DEFAULT_2026_PARAMS,
   type TaxParameters,
   type EmployeeDeclarations,

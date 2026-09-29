@@ -349,9 +349,11 @@ export function shouldExcludeFromMLine(item: {
   tax_amount?: number | null;
   vat_amount?: number | null;
   tax_amount_rounded?: number | null;
+  vat?: number | null;
   is_reverse_charge?: boolean | null;
   description?: string | null;
   item_description?: string | null;
+  invoice_details?: any[];
 } | null | undefined): boolean {
   if (!item) return false;
 
@@ -371,7 +373,13 @@ export function shouldExcludeFromMLine(item: {
   }
 
   // 4. Nulla forintos adótartalom (ha nem belföldi fordított adózású tétel)
-  const tax = Number(item.tax_amount ?? item.vat_amount ?? item.tax_amount_rounded ?? 0);
+  let invoiceDetailsTax = 0;
+  if ('invoice_details' in (item as any) && Array.isArray((item as any).invoice_details)) {
+    for (const d of (item as any).invoice_details) {
+      invoiceDetailsTax += Math.abs(Number(d.vat ?? d.tax ?? 0));
+    }
+  }
+  const tax = Number(item.tax_amount ?? item.vat_amount ?? (item as any).vat ?? item.tax_amount_rounded ?? 0) + invoiceDetailsTax;
   if (tax <= 0 && !item.is_reverse_charge) {
     // Ha az adószám nem éri el a 8 számjegyet vagy ismeretlen és 0 az áfa, szintén kizárandó
     return true;

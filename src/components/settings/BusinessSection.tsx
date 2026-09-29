@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Building2, AlertCircle, Info, MapPin, Plus, X, Sparkles, BookOpen, Calendar, CalendarCheck, Landmark, ExternalLink, Wheat } from 'lucide-react';
+import { Building2, AlertCircle, Info, MapPin, Plus, X, Sparkles, BookOpen, Calendar, CalendarCheck, Landmark, ExternalLink, Wheat, UserCheck } from 'lucide-react';
 import { useCompanyLocations } from '@/hooks/useCompanyLocations';
 import { useToast } from '@/hooks/use-toast';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
@@ -26,6 +26,8 @@ interface Company {
   owner_id: string;
   tax_number: string | null;
   address: string | null;
+  representative_name?: string | null;
+  phone?: string | null;
   description?: string | null;
   primary_teaor?: string | null;
   country_code?: 'HU' | 'HR' | string | null;
@@ -41,12 +43,17 @@ interface Props {
   setCompanyTaxNumber: (v: string) => void;
   companyAddress: string;
   setCompanyAddress: (v: string) => void;
+  companyRepresentativeName?: string;
+  setCompanyRepresentativeName?: (v: string) => void;
+  companyPhone?: string;
+  setCompanyPhone?: (v: string) => void;
   companyDescription: string;
   setCompanyDescription: (v: string) => void;
   companyPrimaryTeaor: string;
   setCompanyPrimaryTeaor: (v: string) => void;
   companyCountryCode?: 'HU' | 'HR';
   setCompanyCountryCode?: (v: 'HU' | 'HR') => void;
+  canEdit?: boolean;
   isGeneratingDescription: boolean;
   onGenerateDescription: () => void;
   savingCompany: boolean;
@@ -60,8 +67,11 @@ interface Props {
 export function BusinessSection({
   selectedCompany, userId, companyName, setCompanyName,
   companyTaxNumber, setCompanyTaxNumber, companyAddress, setCompanyAddress,
+  companyRepresentativeName, setCompanyRepresentativeName,
+  companyPhone, setCompanyPhone,
   companyDescription, setCompanyDescription, companyPrimaryTeaor, setCompanyPrimaryTeaor,
   companyCountryCode, setCompanyCountryCode,
+  canEdit: canEditProp,
   isGeneratingDescription, onGenerateDescription,
   savingCompany, onSave, companies, setSelectedCompany,
   onNavigateToBankAccounts, children,
@@ -70,6 +80,7 @@ export function BusinessSection({
   const activeCountry = companyCountryCode || (selectedCompany?.country_code as 'HU' | 'HR') || 'HU';
   const jurisdiction = getJurisdictionRules(activeCountry);
   const isOwner = selectedCompany?.owner_id === userId;
+  const canEdit = canEditProp !== undefined ? canEditProp : isOwner;
   const { toast } = useToast();
   const { locations, isLoading: locationsLoading, addLocation, deleteLocation } = useCompanyLocations(selectedCompany?.id);
   const { effectiveSettings: compEffectiveSettings, saveMutation: compSaveMutation } = useCompanySettings();
@@ -189,10 +200,10 @@ export function BusinessSection({
             </Alert>
           ) : (
             <>
-              {!isOwner && (
+              {!canEdit && (
                 <Alert className="mb-4">
                   <Info className="h-4 w-4" />
-                  <AlertDescription>{t('business.owner_only_edit', 'Csak a tulajdonos szerkesztheti a cég adatait.')}</AlertDescription>
+                  <AlertDescription>{t('business.owner_only_edit', 'Csak a tulajdonos vagy jogosultsággal rendelkező könyvelő szerkesztheti a cég adatait.')}</AlertDescription>
                 </Alert>
               )}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -202,7 +213,7 @@ export function BusinessSection({
                     <Select
                       value={activeCountry}
                       onValueChange={(val) => setCompanyCountryCode(val as 'HU' | 'HR')}
-                      disabled={!isOwner}
+                      disabled={!canEdit}
                     >
                       <SelectTrigger id="company_country" className="bg-card">
                         <SelectValue />
@@ -220,7 +231,7 @@ export function BusinessSection({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="company_name">{t('business.company_name', 'Cég neve')} *</Label>
-                  <Input id="company_name" value={companyName || ''} onChange={e => setCompanyName(e.target.value)} placeholder="Pl. Példa Kft." disabled={!isOwner} />
+                  <Input id="company_name" value={companyName || ''} onChange={e => setCompanyName(e.target.value)} placeholder="Pl. Példa Kft." disabled={!canEdit} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="tax_number">{jurisdiction.taxNumberLabel}</Label>
@@ -229,24 +240,70 @@ export function BusinessSection({
                     value={companyTaxNumber || ''} 
                     onChange={e => setCompanyTaxNumber(e.target.value)} 
                     placeholder={jurisdiction.taxNumberPlaceholder} 
-                    disabled={!isOwner} 
+                    disabled={!canEdit} 
                   />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="company_address">{t('business.address', 'Székhely')}</Label>
-                <Textarea id="company_address" value={companyAddress || ''} onChange={e => setCompanyAddress(e.target.value)} placeholder="Pl. 1234 Budapest, Példa utca 1." rows={3} disabled={!isOwner} />
+                <Textarea id="company_address" value={companyAddress || ''} onChange={e => setCompanyAddress(e.target.value)} placeholder="Pl. 1234 Budapest, Példa utca 1." rows={3} disabled={!canEdit} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="company_teaor">{t('business.primary_teaor', 'Elsődleges TEÁOR kód')}</Label>
-                  <Input id="company_teaor" value={companyPrimaryTeaor} onChange={e => setCompanyPrimaryTeaor(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="Pl. 6201" maxLength={4} disabled={!isOwner} />
+                  <Input id="company_teaor" value={companyPrimaryTeaor} onChange={e => setCompanyPrimaryTeaor(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="Pl. 6201" maxLength={4} disabled={!canEdit} />
                 </div>
               </div>
+
+              {/* Hivatalos ügyintéző és elérhetőség (ÁNYK / NAV bevallásokhoz) */}
+              <div className="rounded-lg border border-border/70 bg-muted/20 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <UserCheck className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold text-foreground">
+                    {t('business.representative_section_title', 'Hivatalos ügyintéző és elérhetőség (ÁNYK / NAV)')}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {t('business.representative_section_desc', 'A NAV ÁNYK ÁFA és egyéb adóbevallások főlapján kötelezően előírt ügyintézői adatok. Az ÁNYK export automatikusan beemeli ezeket a mezőket.')}
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                  <div className="space-y-2">
+                    <Label htmlFor="company_representative">
+                      {t('business.representative_name', 'Ügyintéző neve')}
+                    </Label>
+                    <Input
+                      id="company_representative"
+                      value={companyRepresentativeName || ''}
+                      onChange={e => setCompanyRepresentativeName?.(e.target.value)}
+                      placeholder={t('business.representative_placeholder', 'Pl. Kovács János')}
+                      disabled={!canEdit}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {t('business.representative_hint', 'A NAV ÁNYK ÁFA és egyéb bevallások főlapján kötelezően megjelenő ügyintéző.')}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="company_phone">
+                      {t('business.phone', 'Ügyintéző telefonszáma')}
+                    </Label>
+                    <Input
+                      id="company_phone"
+                      value={companyPhone || ''}
+                      onChange={e => setCompanyPhone?.(e.target.value)}
+                      placeholder={t('business.phone_placeholder', 'Pl. +36 30 123 4567 vagy 06301234567')}
+                      disabled={!canEdit}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {t('business.phone_hint', 'Az ÁNYK export automatikusan formázza a kötelező (36...) formátumra.')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="company_description">{t('business.description', 'Cég tevékenységének bemutatása')}</Label>
-                  {isOwner && (
+                  {canEdit && (
                     <Button
                       type="button"
                       variant="ghost"
@@ -260,17 +317,17 @@ export function BusinessSection({
                     </Button>
                   )}
                 </div>
-                <Textarea id="company_description" value={companyDescription} onChange={e => setCompanyDescription(e.target.value)} placeholder="Mutasd be röviden a cég tevékenységét és üzletmenetét a pontosabb automatikus könyvelés érdekében..." rows={3} disabled={!isOwner} />
+                <Textarea id="company_description" value={companyDescription} onChange={e => setCompanyDescription(e.target.value)} placeholder="Mutasd be röviden a cég tevékenységét és üzletmenetét a pontosabb automatikus könyvelés érdekében..." rows={3} disabled={!canEdit} />
               </div>
 
               {/* Számviteli politika feltöltési és szabálykezelési blokk */}
               <AccountingPolicySection 
                 companyId={selectedCompany?.id} 
-                isOwner={isOwner} 
+                isOwner={canEdit} 
               />
 
               <div className="flex items-center gap-4 pt-2">
-                {isOwner && (
+                {canEdit && (
                   <Button onClick={onSave} disabled={!companyName?.trim() || savingCompany}>
                     {savingCompany ? 'Mentés...' : t('business.save_button', 'Cég adatainak mentése')}
                   </Button>
