@@ -22,24 +22,25 @@ export interface AssetActivationPostingResult {
  * Lekéri a cég számlatükréből a 161 (Befejezetlen beruházások) számlát.
  */
 async function resolveCipGlAccount(companyId: string): Promise<string | null> {
-  const { data: comp } = await supabase
-    .from('companies')
-    .select('active_coa_preset_id')
-    .eq('id', companyId)
-    .maybeSingle();
+  const { data: presets } = await supabase
+    .from('chart_of_accounts_presets')
+    .select('id, company_id, is_active, type');
 
-  const activePresetId = comp?.active_coa_preset_id;
+  const activeCustom = presets?.find(p => p.company_id === companyId && p.is_active);
+  const activePresetId = activeCustom?.id ||
+    presets?.find(p => p.company_id === companyId)?.id ||
+    presets?.find(p => p.type === 'generic')?.id || null;
 
   let query = supabase.from('gl_accounts').select('id, gl_number, short_name, description');
   if (activePresetId && companyId) {
     query = query.or(`preset_id.eq.${activePresetId},company_id.eq.${companyId}`);
-  } else if (companyId) {
-    query = query.eq('company_id', companyId);
   } else if (activePresetId) {
     query = query.eq('preset_id', activePresetId);
+  } else if (companyId) {
+    query = query.eq('company_id', companyId);
   }
 
-  const { data: glAccounts = [] } = await query;
+  const { data: glAccounts = [] } = await query.limit(3000);
   const accounts = glAccounts || [];
 
   // 1. Strict prefix matching for 161

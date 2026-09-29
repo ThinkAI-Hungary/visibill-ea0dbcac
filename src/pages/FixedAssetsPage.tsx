@@ -9,12 +9,15 @@ import { DevelopmentReservesTab } from '@/components/fixed-assets/DevelopmentRes
 import { ContentSkeleton } from '@/components/ui/content-skeleton';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
-import { Package2, ShieldCheck, PiggyBank } from 'lucide-react';
+import { Package2, ShieldCheck, PiggyBank, Calculator } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-// Lazy-load heavy dialog to keep initial chunk small
+// Lazy-load heavy dialogs to keep initial chunk small
 const InventoryCheckDialog = lazy(() =>
   import('@/components/fixed-assets/InventoryCheckDialog').then(m => ({ default: m.InventoryCheckDialog }))
+);
+const DepreciationRunDialog = lazy(() =>
+  import('@/components/fixed-assets/DepreciationRunDialog').then(m => ({ default: m.DepreciationRunDialog }))
 );
 
 export default function FixedAssetsPage() {
@@ -22,6 +25,7 @@ export default function FixedAssetsPage() {
   const { selectedCompany } = useCompany();
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [inventoryCheckOpen, setInventoryCheckOpen] = useState(false);
+  const [depreciationDialogOpen, setDepreciationDialogOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const { canWrite: canWriteModule } = useEaisybillPermissions();
   const writable = canWriteModule('fixed_assets');
@@ -133,16 +137,29 @@ export default function FixedAssetsPage() {
             </div>
 
             {currentTab === 'assets' && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                onClick={handleOpenInventory}
-                disabled={activeCount === 0 || !writable}
-              >
-                <ShieldCheck className="h-4 w-4" />
-                {t('hr:fixed_assets.inventory_check', 'Leltár ellenőrzés')}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 text-primary hover:text-primary font-medium"
+                  onClick={() => setDepreciationDialogOpen(true)}
+                  disabled={activeCount === 0 || !writable}
+                >
+                  <Calculator className="h-4 w-4" />
+                  {t('hr:fixed_assets.depreciation_run', 'ÉCS elszámolás')}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={handleOpenInventory}
+                  disabled={activeCount === 0 || !writable}
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  {t('hr:fixed_assets.inventory_check', 'Leltár ellenőrzés')}
+                </Button>
+              </div>
             )}
           </div>
         </div>
@@ -194,6 +211,16 @@ export default function FixedAssetsPage() {
         </div>
       </div>
     )}
+
+      {/* Depreciation Run Dialog — lazy loaded */}
+      <Suspense fallback={null}>
+        {depreciationDialogOpen && (
+          <DepreciationRunDialog
+            open={depreciationDialogOpen}
+            onOpenChange={setDepreciationDialogOpen}
+          />
+        )}
+      </Suspense>
 
       {/* Inventory Check Dialog — lazy loaded */}
       <Suspense fallback={null}>
