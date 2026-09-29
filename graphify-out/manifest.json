@@ -12465,8 +12465,8 @@
     "semantic_hash": ""
   },
   "src/lib/fixed-assets/developmentReserveAutoPoster.ts": {
-    "mtime": 1790692096.033383,
-    "ast_hash": "c3d3d502d555ce4e37c7c0546c336913",
+    "mtime": 1790694927.4975994,
+    "ast_hash": "72e32948306ebecca87f518de59d84b7",
     "semantic_hash": ""
   },
   "src/lib/payroll/__tests__/anomalyEngine.test.ts": {
@@ -13180,13 +13180,13 @@
     "semantic_hash": ""
   },
   "src/lib/fixed-assets/assetActivationAutoPoster.ts": {
-    "mtime": 1790692096.033383,
-    "ast_hash": "69eeef638e3346afdc4576f77b25aef2",
+    "mtime": 1790694200.972822,
+    "ast_hash": "4ba6fc3ede01c79f3ce644204e0c8e6c",
     "semantic_hash": ""
   },
   "src/test/accounty/assetActivationAutoPoster.test.ts": {
-    "mtime": 1790692096.0368865,
-    "ast_hash": "f3b82c7854f65243d1dc7b36ed4f68d8",
+    "mtime": 1790694309.24642,
+    "ast_hash": "b8f88ff04c1191f3814fa59af8b857bf",
     "semantic_hash": ""
   },
   "supabase/functions/sync-szamlazz-outbound-invoices/index.ts": {
@@ -13202,6 +13202,11 @@
   "docs/product/decisions/P-140-szamlazz-hu-outbound-invoice-image-sync-and-pairing.md": {
     "mtime": 1790692095.9615872,
     "ast_hash": "e87f95a9d5be66599ea1f028ff153a1d",
+    "semantic_hash": ""
+  },
+  "src/test/accounty/developmentReserveAutoPoster.test.ts": {
+    "mtime": 1790694938.5778432,
+    "ast_hash": "1e0444d252330a329a48880e35bb0b9f",
     "semantic_hash": ""
   }
 }

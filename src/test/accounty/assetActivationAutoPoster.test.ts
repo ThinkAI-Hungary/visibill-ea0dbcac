@@ -69,30 +69,29 @@ describe('Asset Activation Auto Poster', () => {
       if (table === 'chart_of_accounts_presets') {
         return {
           select: vi.fn().mockResolvedValue({
-            data: [{ id: 'preset-1', company_id: 'comp-1', is_active: true }],
+            data: [{ id: 'preset-1', company_id: 'comp-1', is_active: true, type: 'custom' }],
           }),
         };
       }
       if (table === 'companies') {
         return {
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockReturnThis(),
-          maybeSingle: vi.fn().mockResolvedValue({ data: { active_coa_preset_id: 'preset-1' } }),
+          select: vi.fn().mockResolvedValue({
+            data: [{ id: 'preset-1', company_id: 'comp-1', is_active: true, type: 'custom' }],
+          }),
         };
       }
       if (table === 'gl_accounts') {
         const glData = [{ id: 'gl-161', gl_number: '161', short_name: 'Befejezetlen beruházások' }];
-        return {
-          select: vi.fn().mockReturnValue({
-            or: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue({ data: glData }),
-            }),
-            eq: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue({ data: glData }),
-            }),
-            limit: vi.fn().mockResolvedValue({ data: glData }),
-          }),
+        const builder: any = {
+          select: vi.fn().mockReturnThis(),
+          or: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockResolvedValue({ data: glData }),
         };
+        builder.select.mockReturnValue(builder);
+        builder.or.mockReturnValue(builder);
+        builder.eq.mockReturnValue(builder);
+        return builder;
       }
       if (table === 'acc_journal_headers') {
         return {
