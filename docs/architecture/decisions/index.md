@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-29  
-> **Összesen:** 193 döntés (178 egyedi döntési fájl) | ✅ Decided: 191 | ⛔ Superseded: 2
+> **Összesen:** 194 döntés (179 egyedi döntési fájl) | ✅ Decided: 192 | ⛔ Superseded: 2
 
 ---
 
@@ -224,6 +224,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-174 | Bérfeladás Idempotencia-védelem, Duplakönyvelés Megelőzés és Lezárt Ciklus Adatbiztonság | ✅ Decided | [A-174](./A-174-payroll-auto-poster-idempotency-and-closed-cycle-immutability.md) |
 | A-175 | Folyószámla és Analitika Architektúra, Nyitott Tételek Rendezése és Főkönyvi Integritás-Védelem | ✅ Decided | [A-175](./A-175-subledger-and-open-items-architecture.md) |
 | A-176 | Számla Mélyhivatkozás (Deep-Linking) Tab-Izoláció, Fókusz-Visszarántás Védelem és Külföldi Számla NAV Mentesség | ✅ Decided | [A-176](./A-176-invoice-deep-linking-tab-isolation-and-nav-foreign-guard.md) |
+| A-177 | Egységes Számlaszabály Kezelő Komponens és eaisyBooks Integráció | ✅ Decided | [A-177](./A-177-unified-invoice-rules-component-and-eaisybooks-integration.md) |
 
 ## 💳 Fizetés
 
