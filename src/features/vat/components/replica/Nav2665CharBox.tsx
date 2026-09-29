@@ -1,12 +1,13 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-interface Nav2665CharBoxProps {
+export interface Nav2665CharBoxProps {
   value?: string | number | null;
   length?: number;
   className?: string;
   boxClassName?: string;
   subLabels?: string[];
+  compact?: boolean;
 }
 
 /**
@@ -19,6 +20,7 @@ export function Nav2665CharBox({
   className,
   boxClassName,
   subLabels,
+  compact = false,
 }: Nav2665CharBoxProps) {
   const strVal = value != null ? String(value) : '';
   const totalLength = length || Math.max(strVal.length, 1);
@@ -31,7 +33,9 @@ export function Nav2665CharBox({
           <div
             key={idx}
             className={cn(
-              'w-[18px] h-[22px] sm:w-[20px] sm:h-[24px] border-r border-neutral-900 flex items-center justify-center font-mono text-[12px] sm:text-[13px] font-bold text-neutral-900 leading-none bg-white',
+              compact
+                ? 'w-[11.5px] h-[17px] border-r border-neutral-900 flex items-center justify-center font-mono text-[9.5px] font-bold text-neutral-900 leading-none bg-white'
+                : 'w-[18px] h-[22px] sm:w-[20px] sm:h-[24px] border-r border-neutral-900 flex items-center justify-center font-mono text-[12px] sm:text-[13px] font-bold text-neutral-900 leading-none bg-white',
               boxClassName
             )}
           >
@@ -40,7 +44,12 @@ export function Nav2665CharBox({
         ))}
       </div>
       {subLabels && subLabels.length > 0 && (
-        <div className="flex text-[9px] text-neutral-600 font-sans mt-0.5 justify-around">
+        <div
+          className={cn(
+            'flex text-neutral-600 font-sans mt-0.5 justify-around leading-none',
+            compact ? 'text-[7px]' : 'text-[9px]'
+          )}
+        >
           {subLabels.map((lbl, idx) => (
             <span key={idx}>{lbl}</span>
           ))}
@@ -50,35 +59,49 @@ export function Nav2665CharBox({
   );
 }
 
-interface Nav2665TaxNumberBoxesProps {
+export interface Nav2665TaxNumberBoxesProps {
   taxNumber?: string | null;
   className?: string;
+  compact?: boolean;
+  boxClassName?: string;
 }
 
 /**
  * Standard Hungarian 8-1-2 tax number split into segmented character boxes:
  * [1][2][3][4][5][6][7][8] - [1] - [1][2]
  */
-export function Nav2665TaxNumberBoxes({ taxNumber, className }: Nav2665TaxNumberBoxesProps) {
+export function Nav2665TaxNumberBoxes({
+  taxNumber,
+  className,
+  compact = false,
+  boxClassName,
+}: Nav2665TaxNumberBoxesProps) {
   const clean = (taxNumber || '').replace(/[^0-9]/g, '');
   const part1 = clean.slice(0, 8);
   const part2 = clean.slice(8, 9);
   const part3 = clean.slice(9, 11);
 
   return (
-    <div className={cn('inline-flex items-center gap-1 select-none', className)}>
-      <Nav2665CharBox value={part1} length={8} />
-      <span className="font-bold text-neutral-900 text-sm leading-none">-</span>
-      <Nav2665CharBox value={part2} length={1} />
-      <span className="font-bold text-neutral-900 text-sm leading-none">-</span>
-      <Nav2665CharBox value={part3} length={2} />
+    <div
+      className={cn(
+        'inline-flex items-center select-none',
+        compact ? 'gap-0.5' : 'gap-1',
+        className
+      )}
+    >
+      <Nav2665CharBox value={part1} length={8} compact={compact} boxClassName={boxClassName} />
+      <span className={cn('font-bold text-neutral-900 leading-none', compact ? 'text-[11px]' : 'text-sm')}>-</span>
+      <Nav2665CharBox value={part2} length={1} compact={compact} boxClassName={boxClassName} />
+      <span className={cn('font-bold text-neutral-900 leading-none', compact ? 'text-[11px]' : 'text-sm')}>-</span>
+      <Nav2665CharBox value={part3} length={2} compact={compact} boxClassName={boxClassName} />
     </div>
   );
 }
 
-interface Nav2665BankAccountBoxesProps {
+export interface Nav2665BankAccountBoxesProps {
   accountNumber?: string | null;
   className?: string;
+  compact?: boolean;
 }
 
 /**
@@ -105,10 +128,12 @@ export function Nav2665BankAccountBoxes({ accountNumber, className }: Nav2665Ban
   );
 }
 
-interface Nav2665DateBoxesProps {
+export interface Nav2665DateBoxesProps {
   dateStr?: string | null;
   className?: string;
   labels?: [string, string, string];
+  compact?: boolean;
+  boxClassName?: string;
 }
 
 /**
@@ -118,30 +143,33 @@ export function Nav2665DateBoxes({
   dateStr,
   className,
   labels = ['év', 'hó', 'nap'],
+  compact = false,
+  boxClassName,
 }: Nav2665DateBoxesProps) {
   const clean = (dateStr || '').replace(/[^0-9]/g, '');
   const yyyy = clean.slice(0, 4);
   const mm = clean.slice(4, 6);
   const dd = clean.slice(6, 8);
 
+  const boxCls = cn(
+    compact
+      ? 'w-[10.5px] h-[17px] border-r border-neutral-900 flex items-center justify-center font-mono text-[9.5px] font-bold text-neutral-900 leading-none'
+      : 'w-[18px] h-[22px] sm:w-[20px] sm:h-[24px] border-r border-neutral-900 flex items-center justify-center font-mono text-[12px] sm:text-[13px] font-bold text-neutral-900',
+    boxClassName
+  );
+
   return (
     <div className={cn('inline-flex flex-col select-none', className)}>
       <div className="inline-flex border border-neutral-900 bg-white">
         {/* Year: 4 boxes */}
         {[0, 1, 2, 3].map((i) => (
-          <div
-            key={`y-${i}`}
-            className="w-[18px] h-[22px] sm:w-[20px] sm:h-[24px] border-r border-neutral-900 flex items-center justify-center font-mono text-[12px] sm:text-[13px] font-bold text-neutral-900"
-          >
+          <div key={`y-${i}`} className={boxCls}>
             {yyyy[i] || ''}
           </div>
         ))}
         {/* Month: 2 boxes */}
         {[0, 1].map((i) => (
-          <div
-            key={`m-${i}`}
-            className="w-[18px] h-[22px] sm:w-[20px] sm:h-[24px] border-r border-neutral-900 flex items-center justify-center font-mono text-[12px] sm:text-[13px] font-bold text-neutral-900"
-          >
+          <div key={`m-${i}`} className={boxCls}>
             {mm[i] || ''}
           </div>
         ))}
@@ -150,15 +178,23 @@ export function Nav2665DateBoxes({
           <div
             key={`d-${i}`}
             className={cn(
-              'w-[18px] h-[22px] sm:w-[20px] sm:h-[24px] flex items-center justify-center font-mono text-[12px] sm:text-[13px] font-bold text-neutral-900',
-              i === 0 ? 'border-r border-neutral-900' : ''
+              compact
+                ? 'w-[10.5px] h-[17px] flex items-center justify-center font-mono text-[9.5px] font-bold text-neutral-900 leading-none'
+                : 'w-[18px] h-[22px] sm:w-[20px] sm:h-[24px] flex items-center justify-center font-mono text-[12px] sm:text-[13px] font-bold text-neutral-900',
+              i === 0 ? 'border-r border-neutral-900' : '',
+              boxClassName
             )}
           >
             {dd[i] || ''}
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-3 text-[9px] text-neutral-600 font-sans mt-0.5 text-center leading-none">
+      <div
+        className={cn(
+          'grid grid-cols-3 text-neutral-600 font-sans mt-0.5 text-center leading-none',
+          compact ? 'text-[7px]' : 'text-[9px]'
+        )}
+      >
         <span>{labels[0]}</span>
         <span>{labels[1]}</span>
         <span>{labels[2]}</span>

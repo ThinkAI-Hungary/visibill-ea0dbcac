@@ -722,7 +722,11 @@
   },
   "prompts_page": {
     "title": "Računovodstvena pravila (Biblioteka uputa)",
+    "title_unified": "Računovodstvena pravila",
     "subtitle": "Definirajte prilagođena pravila za AI upite za svoju tvrtku. Upute aktivirane ovdje izvršavaju se s najvišim prioritetom prilikom AI klasifikacije glavne knjige.",
+    "subtitle_unified": "Upravljajte automatskim pravilima stavki računa i prilagođenim AI uputama.",
+    "tab_item_rules": "Pravila stavki računa",
+    "tab_ai_prompts": "Biblioteka AI uputa",
     "btn_add_rule": "Dodaj novo pravilo",
     "dialog_title": "Dodavanje prilagođenog računovodstvenog pravila",
     "dialog_desc": "Opišite logiku prema kojoj bi AI trebao knjižiti određene stavke.",

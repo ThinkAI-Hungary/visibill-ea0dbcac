@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-29  
-> **Összesen:** 142 döntés | ✅ Decided: 138 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 143 döntés | ✅ Decided: 139 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -243,3 +243,5 @@
 | P-134 | Bérszámfejtési Ciklus Lezárási Választó Modál, Lezárt Ciklus Védelem és Újranyitás UX | ✅ Decided | [P-134](./P-134-payroll-cycle-closing-modal-and-idempotency-protection.md) |
 | P-135 | Főkönyvi Kivonat Klasszikus Nézet Oszlopszélességek és Összesítő Sáv UX | ✅ Decided | [P-135](./P-135-general-ledger-classic-view-column-widths-and-totals-ux.md) |
 | P-136 | Folyószámla és Analitika Kezelőfelület, Különbözet-Rendezés és Nyomtatási Kimutatások UX | ✅ Decided | [P-136](./P-136-subledger-and-open-items-ux.md) |
+| P-138 | Egységes Könyvelési Szabályok Kezelőfelület (Számlatétel Szabályok & AI Prompt Könyvtár) UX | ✅ Decided | [P-138](./P-138-unified-accounting-rules-and-prompt-library-ux.md) |
+| P-139 | Egyéni Számlatükör Főkönyvi Szám Törlése és Ergonómiai UX | ✅ Decided | [P-139](./P-139-custom-chart-of-accounts-unused-account-deletion-ux.md) |

@@ -1,12 +1,12 @@
 import React, { useState, useMemo, forwardRef, useImperativeHandle, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { cn, fixCharacterEncoding } from '@/lib/utils';
 import { getLocalizedGlAccountName, getLocalizedGlItemType, getLocalizedGlItemDescription } from '@/lib/glUtils';
 import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
-import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw, Edit2, X, Check, ChevronsUpDown, FileText, FileSearch, Search, ArrowRightLeft } from 'lucide-react';
+import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw, Edit2, X, Check, ChevronsUpDown, FileText, FileSearch, Search, ArrowRightLeft, Trash2, AlertTriangle } from 'lucide-react';
 import { exportGlExcel, exportGlAnalyticalExcel } from '@/lib/glExport';
 import { fetchAllGlBalances, fetchAllGlCategorizedItems, fetchGlItemsForAccount, GlDateBasis, GlPostingStatus, GlSearchResult } from '@/lib/glData';
 import { GlItemGroupingMode, enrichGlItemsWithInvoiceMeta, groupLedgerItemsByInvoice } from '@/lib/glInvoiceGrouping';
@@ -31,6 +31,17 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { invalidateGlQueries } from '@/lib/cache';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from '@/components/ui/skeleton';
 import { CustomTooltip } from '@/components/ui/custom-tooltip';
@@ -227,6 +238,27 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   const currencyLabel = defaultCurrency === 'HUF' ? 'Ft' : defaultCurrency;
   const { session } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
+  // Check if current preset belongs to this company (custom preset)
+  const { data: currentPreset } = useQuery({
+    queryKey: ['presetDetails', presetId],
+    queryFn: async () => {
+      if (!presetId) return null;
+      const { data } = await supabase
+        .from('chart_of_accounts_presets')
+        .select('id, name, type, company_id')
+        .eq('id', presetId)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!presetId,
+    staleTime: 60_000,
+  });
+  const isCustomPreset = currentPreset?.type === 'custom' && currentPreset?.company_id === selectedCompany?.id;
 
   // Document resolver for invoice image vs OSA itemized view
   const {
@@ -498,7 +530,133 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   }, [isDataLoading, onLoadingChange]);
 
 
-  const [selectedLeafAccount, setSelectedLeafAccount] = useState<{ code: string; name: string } | null>(null);
+  const [selectedLeafAccount, setSelectedLeafAccount] = useState<{ code: string; name: string; glAccountId?: string } | null>(null);
+
+  const handleDeleteAccount = async () => {
+    if (!selectedLeafAccount || !presetId || !selectedCompany?.id) return;
+    setIsDeletingAccount(true);
+
+    try {
+      // 1. Resolve account id if not in selectedLeafAccount
+      let accountId = selectedLeafAccount.glAccountId;
+      if (!accountId) {
+        const { data: accData, error: accErr } = await supabase
+          .from('gl_accounts')
+          .select('id')
+          .eq('preset_id', presetId)
+          .eq('gl_number', selectedLeafAccount.code)
+          .maybeSingle();
+
+        if (accErr) throw accErr;
+        accountId = accData?.id;
+      }
+
+      if (!accountId) {
+        throw new Error(t('accounting:general_ledger.entries_sheet.account_not_found', 'A főkönyvi szám nem található.'));
+      }
+
+      // 2. Check for child accounts in gl_accounts
+      const { data: children, error: childErr } = await supabase
+        .from('gl_accounts')
+        .select('id, gl_number')
+        .eq('preset_id', presetId)
+        .eq('parent_id', accountId)
+        .limit(5);
+
+      if (childErr) throw childErr;
+      if (children && children.length > 0) {
+        toast({
+          title: t('accounting:general_ledger.entries_sheet.cannot_delete', 'Nem törölhető'),
+          description: t('accounting:general_ledger.entries_sheet.has_children_desc', 'A főkönyvi számnak alszámlái vannak, előbb azokat kell törölni.'),
+          variant: 'destructive',
+        });
+        setIsDeletingAccount(false);
+        setConfirmDeleteOpen(false);
+        return;
+      }
+
+      // 3. Check for journal lines or entries
+      const { count: journalCount, error: jErr } = await supabase
+        .from('acc_journal_lines')
+        .select('id', { count: 'exact', head: true })
+        .eq('company_id', selectedCompany.id)
+        .eq('account_code', selectedLeafAccount.code);
+
+      if (!jErr && (journalCount || 0) > 0) {
+        toast({
+          title: t('accounting:general_ledger.entries_sheet.cannot_delete', 'Nem törölhető'),
+          description: t('accounting:general_ledger.entries_sheet.has_journal_entries', 'A főkönyvi számhoz könyvelési tételek kapcsolódnak, ezért nem törölhető.'),
+          variant: 'destructive',
+        });
+        setIsDeletingAccount(false);
+        setConfirmDeleteOpen(false);
+        return;
+      }
+
+      const { count: glEntryCount, error: glErr } = await supabase
+        .from('gl_journal_entries')
+        .select('id', { count: 'exact', head: true })
+        .or(`debit_account.eq.${selectedLeafAccount.code},credit_account.eq.${selectedLeafAccount.code}`);
+
+      if (!glErr && (glEntryCount || 0) > 0) {
+        toast({
+          title: t('accounting:general_ledger.entries_sheet.cannot_delete', 'Nem törölhető'),
+          description: t('accounting:general_ledger.entries_sheet.has_journal_entries', 'A főkönyvi számhoz könyvelési tételek kapcsolódnak, ezért nem törölhető.'),
+          variant: 'destructive',
+        });
+        setIsDeletingAccount(false);
+        setConfirmDeleteOpen(false);
+        return;
+      }
+
+      // 4. Remove foreign key dependent mappings: bs_mapping, pnl_mapping
+      await supabase
+        .from('bs_mapping')
+        .delete()
+        .eq('gl_account_id', accountId);
+
+      await supabase
+        .from('pnl_mapping')
+        .delete()
+        .eq('gl_account_id', accountId);
+
+      // 5. Delete gl_accounts row
+      const { error: delErr } = await supabase
+        .from('gl_accounts')
+        .delete()
+        .eq('id', accountId)
+        .eq('preset_id', presetId);
+
+      if (delErr) throw delErr;
+
+      // 6. Invalidate queries & cache
+      await invalidateGlQueries(queryClient, selectedCompany.id, presetId);
+      await queryClient.invalidateQueries({ queryKey: ['glBalances'] });
+      await queryClient.invalidateQueries({ queryKey: ['glItems'] });
+      await queryClient.invalidateQueries({ queryKey: ['glJournalEntries'] });
+      await queryClient.invalidateQueries({ queryKey: ['general-ledger-tree'] });
+
+      toast({
+        title: t('accounting:general_ledger.entries_sheet.delete_success_title', 'Főkönyvi szám törölve'),
+        description: t('accounting:general_ledger.entries_sheet.delete_success_desc', {
+          code: selectedLeafAccount.code,
+          defaultValue: `A(z) ${selectedLeafAccount.code} főkönyvi szám sikeresen törölve a számlatükörből.`,
+        }),
+        className: 'bg-green-50 dark:bg-green-950/50 border-green-200 dark:border-green-800 text-green-900 dark:text-green-100',
+      });
+
+      setConfirmDeleteOpen(false);
+      setSelectedLeafAccount(null);
+    } catch (err: any) {
+      toast({
+        title: t('accounting:general_ledger.entries_sheet.delete_error_title', 'Hiba történt a törlés során'),
+        description: err.message || t('common:error_occurred', 'Váratlan hiba történt.'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
 
   const { data: journalEntries, isLoading: isLoadingEntries } = useQuery({
     queryKey: ['glJournalEntries', selectedCompany?.id, presetId, selectedLeafAccount?.code],
@@ -2195,7 +2353,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                                )}
                                onClick={(e) => {
                                  e.stopPropagation();
-                                 setSelectedLeafAccount({ code: row.id, name: row.name });
+                                  setSelectedLeafAccount({ code: row.id, name: row.name, glAccountId: row.glAccountId || undefined });
                                }}
                              >
                                {row.id}
@@ -2268,7 +2426,18 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                           } 
                           side="top"
                         >
-                          <span className={cn("break-words min-w-0 font-medium leading-normal", isRoot ? "uppercase font-semibold text-foreground" : "", row.isItem ? "text-muted-foreground italic" : "")}>
+                          <span 
+                            onClick={!row.isItem && !row.hasAccountChildren ? (e) => {
+                              e.stopPropagation();
+                              setSelectedLeafAccount({ code: row.id, name: row.name, glAccountId: row.glAccountId || undefined });
+                            } : undefined}
+                            className={cn(
+                              "break-words min-w-0 font-medium leading-normal",
+                              isRoot ? "uppercase font-semibold text-foreground" : "",
+                              row.isItem ? "text-muted-foreground italic" : "",
+                              !row.isItem && !row.hasAccountChildren ? "cursor-pointer hover:underline" : ""
+                            )}
+                          >
                             {row.isItem ? getLocalizedGlItemDescription(row.name, t) : row.name}
                           </span>
                         </CustomTooltip>
@@ -2695,13 +2864,28 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       <Sheet open={!!selectedLeafAccount} onOpenChange={(open) => { if (!open) setSelectedLeafAccount(null); }}>
         <SheetContent className="sm:max-w-[720px] w-[90vw] overflow-y-auto flex flex-col h-full bg-background border-l">
           <SheetHeader className="pb-4 border-b">
-            <SheetTitle className="text-lg font-bold flex items-center gap-2">
-              <FileText className="w-5 h-5 text-primary" />
-              {t('accounting:general_ledger.entries_sheet.title', { code: selectedLeafAccount?.code })}
-            </SheetTitle>
-            <SheetDescription className="text-xs">
-              {t('accounting:general_ledger.entries_sheet.desc', { name: selectedLeafAccount?.name })}
-            </SheetDescription>
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1">
+                <SheetTitle className="text-lg font-bold flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" />
+                  {t('accounting:general_ledger.entries_sheet.title', { code: selectedLeafAccount?.code })}
+                </SheetTitle>
+                <SheetDescription className="text-xs">
+                  {t('accounting:general_ledger.entries_sheet.desc', { name: selectedLeafAccount?.name })}
+                </SheetDescription>
+              </div>
+              {isCustomPreset && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20 gap-1.5 h-8 text-xs shrink-0 mr-6"
+                  onClick={() => setConfirmDeleteOpen(true)}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  {t('accounting:general_ledger.entries_sheet.delete_account', 'Számla törlése')}
+                </Button>
+              )}
+            </div>
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto py-4">
@@ -2711,8 +2895,21 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                 <span className="ml-2 text-sm">{t('accounting:general_ledger.entries_sheet.loading')}</span>
               </div>
             ) : !journalEntries?.length ? (
-              <div className="text-center py-12 text-muted-foreground text-xs">
-                {t('accounting:general_ledger.entries_sheet.no_entries')}
+              <div className="text-center py-12 text-muted-foreground text-xs space-y-3">
+                <p>{t('accounting:general_ledger.entries_sheet.no_entries')}</p>
+                {isCustomPreset && (
+                  <div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20 gap-1.5 text-xs"
+                      onClick={() => setConfirmDeleteOpen(true)}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      {t('accounting:general_ledger.entries_sheet.delete_account_from_preset', 'Számla törlése a számlatükörből')}
+                    </Button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-3">
@@ -2780,6 +2977,51 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
           </div>
         </SheetContent>
       </Sheet>
+
+      <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-5 h-5" />
+              {t('accounting:general_ledger.entries_sheet.confirm_delete_title', 'Főkönyvi szám törlése')}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2 text-left">
+              <span>
+                {t('accounting:general_ledger.entries_sheet.confirm_delete_desc', {
+                  code: selectedLeafAccount?.code,
+                  name: selectedLeafAccount?.name,
+                  defaultValue: `Biztosan törölni szeretnéd a(z) ${selectedLeafAccount?.code} (${selectedLeafAccount?.name}) főkönyvi számot a számlatükörből?`,
+                })}
+              </span>
+              <span className="block text-xs text-muted-foreground mt-2">
+                {t('accounting:general_ledger.entries_sheet.confirm_delete_warning', 'A törlés végleges, és csak akkor hajtható végre, ha a főkönyvi számhoz nem kapcsolódnak könyvelt tételek vagy alszámlák.')}
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeletingAccount}>
+              {t('common:cancel', 'Mégse')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isDeletingAccount}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => {
+                e.preventDefault();
+                handleDeleteAccount();
+              }}
+            >
+              {isDeletingAccount ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  {t('common:deleting', 'Törlés folyamatban...')}
+                </>
+              ) : (
+                t('common:delete', 'Törlés')
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <InvoiceImageDialog
         invoice={imageDialogProps.invoice}
