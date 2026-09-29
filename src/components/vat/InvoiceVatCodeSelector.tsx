@@ -124,6 +124,7 @@ export function InvoiceVatCodeSelector({
         { codeName: 'KIM_18', label: '18% Értékesítés (05. sor)', targetRow: '05', vatPercent: 18, direction: 'OUTBOUND', group: 'standard' },
         { codeName: 'KIM_5', label: '5% Értékesítés (03. sor)', targetRow: '03', vatPercent: 5, direction: 'OUTBOUND', group: 'standard' },
         { codeName: 'ELOLEG', label: 'Kapott előleg (07 + 45. sor)', targetRow: '45', vatPercent: 27, direction: 'OUTBOUND', group: 'special' },
+        { codeName: 'KIM_TE_ERT', label: 'Tárgyi eszköz értékesítés (07 + 43. sor)', targetRow: '43', vatPercent: 27, direction: 'OUTBOUND', group: 'special' },
         { codeName: 'KIM_EU_SZOLG', label: 'EU szolgáltatásnyújtás (92. sor)', targetRow: '92', vatPercent: 0, direction: 'OUTBOUND', group: 'special' },
         { codeName: 'KIM_ATHK', label: 'Közösségen kívüli / ATHK (91. sor)', targetRow: '91', vatPercent: 0, direction: 'OUTBOUND', group: 'special' },
         { codeName: 'AAM', label: 'Adómentes értékesítés (01. sor)', targetRow: '01', vatPercent: 0, direction: 'OUTBOUND', group: 'exemption' },

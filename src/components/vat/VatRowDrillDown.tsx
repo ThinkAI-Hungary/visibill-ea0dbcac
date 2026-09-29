@@ -252,6 +252,7 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
       else if (rowNumber === '07') { directions = ['OUTBOUND']; vatPercents = [27]; }
       else if (rowNumber === '08') { directions = ['OUTBOUND']; vatPercents = [0]; }
       else if (rowNumber === '29') { directions = ['INBOUND']; vatPercents = [27, 0]; }
+      else if (rowNumber === '43') { directions = ['OUTBOUND']; vatPercents = [27, 18, 5]; }
       else if (rowNumber === '45') { directions = ['OUTBOUND']; vatPercents = [27, 18, 5]; }
       else if (rowNumber === '18' || rowNumber === '27') { directions = ['INBOUND']; vatPercents = [27]; }
       else if (rowNumber === '63') { directions = ['INBOUND']; vatPercents = [0]; }
@@ -295,23 +296,26 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
         else if (Number(pct) === 0) rateFilters.push('0', '0.0', '0.00', '0%', 'TAM', 'AAM', 'DOMESTIC_REVERSE_CHARGE', 'FAD');
       }
 
-      // Fetch advance and tangible asset references from invoices table if row 45 or 77
+      // Fetch advance and tangible asset references from invoices table if row 43, 45 or 77
       const advanceNumbers = new Set<string>();
       const tangibleNumbers = new Set<string>();
-      if (rowNumber === '45' || rowNumber === '77') {
+      if (rowNumber === '43' || rowNumber === '45' || rowNumber === '77') {
         const { data: appInvs } = await supabase
           .from('invoices')
-          .select('bizonylatsorszam, invoice_type, invoice_items(line_description, gl_classifications)')
+          .select('bizonylatsorszam, invoice_type, vat_row_override, invoice_items(line_description, gl_classifications)')
           .eq('company_id', companyId);
         (appInvs || []).forEach((inv: any) => {
           const isAdv = inv.invoice_type === 'elolegszamla' || 
+            inv.vat_row_override === '45' ||
             (inv.invoice_items || []).some((ii: any) => 
               (ii.line_description && ii.line_description.toLowerCase().includes('előleg')) ||
               (ii.gl_classifications && JSON.stringify(ii.gl_classifications).includes('"gl_number": "453'))
             );
-          const isTan = (inv.invoice_items || []).some((ii: any) =>
-            ii.gl_classifications && /"gl_number":\s*"1[0-9]{2}/.test(JSON.stringify(ii.gl_classifications))
-          );
+          const isTan = inv.vat_row_override === '43' ||
+            inv.vat_row_override === '77' ||
+            (inv.invoice_items || []).some((ii: any) =>
+              ii.gl_classifications && /"gl_number":\s*"(1[0-9]{2}|9611|8611)/.test(JSON.stringify(ii.gl_classifications))
+            );
           if (isAdv && inv.bizonylatsorszam) advanceNumbers.add(inv.bizonylatsorszam);
           if (isTan && inv.bizonylatsorszam) tangibleNumbers.add(inv.bizonylatsorszam);
         });
@@ -393,12 +397,16 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
 
         if (rowNumber === '66' && isForeign) return null;
         if (rowNumber === '67' && !isForeign) return null;
+        if (rowNumber === '43') {
+          const hasOverride = inv.vat_row_override === '43';
+          if (!hasOverride && !tangibleNumbers.has(inv.invoice_number)) return null;
+        }
         if (rowNumber === '45') {
           const hasAdvItem = (inv.nav_invoice_items || []).some((it: any) => (it.line_description || '').toLowerCase().includes('előleg'));
-          if (!hasAdvItem && !advanceNumbers.has(inv.invoice_number)) return null;
+          if (!hasAdvItem && !advanceNumbers.has(inv.invoice_number) && inv.vat_row_override !== '45') return null;
         }
         if (rowNumber === '77') {
-          if (!tangibleNumbers.has(inv.invoice_number)) return null;
+          if (!tangibleNumbers.has(inv.invoice_number) && inv.vat_row_override !== '77') return null;
         }
 
         const isItemForThisRow = (it: any) => {
@@ -470,6 +478,9 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
             }
             if (rowNumber === '08') {
               return itVat === 0 || ['0', '0.0', '0.00', '0%', 'TAM', 'AAM', 'MENTES'].includes(rateStr);
+            }
+            if (rowNumber === '43') {
+              return true;
             }
           }
 
@@ -833,7 +844,7 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
                         <div>{fmtHuf(itemVatHuf)}</div>
                         {isForeign && (
                           <div className="text-[8px] text-muted-foreground/50">
-                            {formatThousands(itemVat, { decimals: 2 })} {currency}
+                            {formatThousands(calculatedVat, { decimals: 2 })} {currency}
                           </div>
                         )}
                       </div>

@@ -81,9 +81,12 @@ export function LiveNotificationProvider() {
     try {
       const { data } = await (supabase as any)
         .from(parentTable)
-        .select('file_name')
+        .select('file_name, metadata')
         .eq('id', uploadId)
         .single();
+      if ((data?.metadata as any)?.source === 'szamlazz_agent_api') {
+        return;
+      }
       if (data?.file_name) fileName = data.file_name;
     } catch (err) {
       reportError({ type: 'db_query', component: 'LiveNotificationProvider', action: 'error', message: '[RealtimeSync] File lookup failed:', error: err });
@@ -115,6 +118,12 @@ export function LiveNotificationProvider() {
     const qc = queryClientRef.current;
     const cid = companyIdRef.current;
     if (!cid) return;
+
+    if ((row.metadata as any)?.source === 'szamlazz_agent_api') {
+      qc.invalidateQueries({ queryKey: ['submittedInvoices', cid] });
+      qc.invalidateQueries({ queryKey: ['recentInvoices', cid] });
+      return;
+    }
 
     if (row.processing_status === 'processed' || row.processing_status === 'completed') {
       toast({
@@ -280,6 +289,7 @@ export function LiveNotificationProvider() {
             queryClientRef.current.invalidateQueries({ queryKey: ['subledger-reconciliation'] });
             if (payload.eventType === 'INSERT') {
               const row = payload.new as any;
+              if (row.is_self_issued || row.metadata?.source === 'szamlazz_agent_api') return;
               if (row.invoice_uploads_id) {
                 showNotification(row.invoice_uploads_id, 'invoice_uploads');
               }
@@ -301,6 +311,7 @@ export function LiveNotificationProvider() {
               // Invoice pipeline: 'completed' / 'processed'
               const doneStatuses = ['completed', 'processed'];
               if (row.id && doneStatuses.includes(row.processing_status) && !doneStatuses.includes(oldRow?.processing_status)) {
+                if (row.metadata?.source === 'szamlazz_agent_api') return;
                 showNotification(row.id, 'invoice_uploads');
               }
 

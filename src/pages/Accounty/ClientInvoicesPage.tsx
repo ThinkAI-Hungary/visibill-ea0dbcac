@@ -27,6 +27,8 @@ import { FloatingBulkBar } from '@/components/ui/floating-bulk-bar';
 import { PageHeader } from '@/components/ui/page-header';
 import { extractNavSyncError } from '@/lib/nav/navErrorUtils';
 import { isForeignSubmittedInvoice } from '@/lib/invoiceMatchingUtils';
+import { useSzamlazzStatus, useSyncSzamlazzOutbound } from '@/hooks/useSzamlazzSync';
+import { SzamlazzSyncModal } from '@/components/invoices/SzamlazzSyncModal';
 
 const BULK_STATUS_OPTIONS = [
   { value: 'Új', label: 'Új' },
@@ -94,6 +96,45 @@ export default function ClientInvoicesPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [syncing, setSyncing] = useState(false);
+
+  // Számlázz.hu Outbound sync states
+  const [isSzamlazzSyncOpen, setIsSzamlazzSyncOpen] = useState(false);
+  const { data: szamlazzStatus } = useSzamlazzStatus(id);
+  const syncSzamlazzMutation = useSyncSzamlazzOutbound(id);
+  const [syncingSingleInvoiceNum, setSyncingSingleInvoiceNum] = useState<string | null>(null);
+
+  const handleDownloadSingleSzamlazz = async (invNum: string) => {
+    setSyncingSingleInvoiceNum(invNum);
+    toast({
+      title: 'Számlakép letöltése folyamatban',
+      description: `${invNum} számlaképének lekérése a Számlázz.hu-ból...`,
+    });
+    try {
+      const result = await syncSzamlazzMutation.mutateAsync({ invoiceNumbers: [invNum] });
+      if (result.downloaded > 0 && result.results[0]?.url) {
+        setPreviewInvoice({
+          id: invNum,
+          bizonylatsorszam: invNum,
+          image_url: result.results[0].url,
+          melleklet_url: result.results[0].url,
+        });
+      } else {
+        toast({
+          title: 'Nem található számlakép',
+          description: result.results[0]?.error || 'A számla nem található a Számlázz.hu rendszerében.',
+          variant: 'destructive',
+        });
+      }
+    } catch (err: any) {
+      toast({
+        title: 'Hiba a letöltéskor',
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setSyncingSingleInvoiceNum(null);
+    }
+  };
 
   const handleManualSync = async () => {
     setSyncing(true);
@@ -547,6 +588,22 @@ export default function ClientInvoicesPage() {
           </Dialog>
           )}
 
+          {hasNavIntegration && (
+            <Button
+              variant="outline"
+              className="gap-2 bg-card border-border text-foreground hover:bg-accent relative"
+              onClick={() => setIsSzamlazzSyncOpen(true)}
+            >
+              <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <span>Számlázz.hu szinkron</span>
+              {szamlazzStatus.pendingCount > 0 && (
+                <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300">
+                  {szamlazzStatus.pendingCount}
+                </span>
+              )}
+            </Button>
+          )}
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="gap-2 bg-card border-border text-foreground hover:bg-accent">
@@ -881,7 +938,57 @@ export default function ClientInvoicesPage() {
                     </td>
                     <td className="px-6 py-4 font-medium font-mono text-foreground">
                       <div className="flex items-center gap-1.5 whitespace-nowrap">
-                        <span>{inv.invoiceNumber}</span>
+                        {inv.imageUrl || inv.mellekletUrl ? (
+                          <button
+                            type="button"
+                            className="hover:underline text-blue-600 dark:text-blue-400 font-mono text-left cursor-pointer flex items-center gap-1.5"
+                            onClick={() => {
+                              setPreviewInvoice({
+                                id: inv.id,
+                                elado_nev: inv.type === 'bejovo' ? inv.partnerName : '',
+                                vevo_nev: inv.type === 'kimeno' ? inv.partnerName : '',
+                                bizonylatsorszam: inv.invoiceNumber,
+                                image_url: inv.imageUrl || undefined,
+                                melleklet_url: inv.mellekletUrl || undefined,
+                              });
+                            }}
+                            title="Számlakép megtekintése"
+                          >
+                            <FileText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                            <span>{inv.invoiceNumber}</span>
+                          </button>
+                        ) : (
+                          <span>{inv.invoiceNumber}</span>
+                        )}
+
+                        {/* Quick download button for outbound invoice if missing image */}
+                        {inv.type === 'kimeno' && !inv.imageUrl && !inv.mellekletUrl && (
+                          <TooltipProvider delayDuration={150}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type="button"
+                                  disabled={syncingSingleInvoiceNum === inv.invoiceNumber}
+                                  className="inline-flex items-center justify-center p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-950/50 text-blue-600 dark:text-blue-400 transition-colors cursor-pointer"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDownloadSingleSzamlazz(inv.invoiceNumber);
+                                  }}
+                                  aria-label="Számlakép letöltése Számlázz.hu-ról"
+                                >
+                                  {syncingSingleInvoiceNum === inv.invoiceNumber ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <Download className="w-3.5 h-3.5" />
+                                  )}
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                <p className="text-xs">Számlakép letöltése Számlázz.hu-ról</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
                         {hasNavIntegration && !inv.isNav && !isForeignClientInvoice(inv) && (inv.navStatus === 'missing_nav' || inv.statusz === 'jovahagyasra_var') && (
                           inv.approvedAt ? (
                             <TooltipProvider>
@@ -994,6 +1101,15 @@ export default function ClientInvoicesPage() {
                           >
                             {t('invoices_page.action_view', 'Megtekintés')}
                           </DropdownMenuItem>
+                          {inv.type === 'kimeno' && !inv.imageUrl && !inv.mellekletUrl && (
+                            <DropdownMenuItem 
+                              className="cursor-pointer gap-2 text-blue-600 dark:text-blue-400 font-medium"
+                              onClick={() => handleDownloadSingleSzamlazz(inv.invoiceNumber)}
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              Számlakép letöltése (Számlázz.hu)
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem 
                             className="cursor-pointer gap-2"
                             onClick={() => setSelectedLedgerInvoice(inv)}
@@ -1268,6 +1384,14 @@ export default function ClientInvoicesPage() {
           }}
         />
       )}
+
+      {/* Számlázz.hu Outbound Invoices Sync Modal */}
+      <SzamlazzSyncModal
+        open={isSzamlazzSyncOpen}
+        onOpenChange={setIsSzamlazzSyncOpen}
+        companyId={id || ''}
+        companyName={client.name}
+      />
     </div>
   );
 }

@@ -111,6 +111,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
       case '18': return '18. sor — Közösségi szolgáltatás igénybevétel fizetendő adója';
       case '27': return '27. sor — 3. országbeli szolgáltatás fizetendő adója';
       case '29': return '29. sor — Belföldi fordított adózás fizetendő adója (FAD)';
+      case '43': return '43. sor — Tájékoztató adat: Tárgyi eszköz értékesítés adóalapja';
       case '45': return '45. sor — Tájékoztató adat: Értékesítéshez kapott előleg adóalapja';
       case '63': return '63. sor — Adólevonásra nem jogosító belföldi beszerzés (mentes)';
       case '64': return '64. sor — Belföldi 5%-os beszerzés levonható adója';
@@ -133,12 +134,17 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
     const code = item.code || '';
     const override = item.vat_row_override || null;
     const isAdvance = item.is_advance || code === 'ELOLEG' || override === '45';
-    const isTangibleAsset = item.is_tangible_asset || code === 'TARGYESZKOZ' || override === '77';
+    const isTangibleAsset = item.is_tangible_asset || code === 'TARGYESZKOZ' || code === 'KIM_TE_ERT' || override === '77' || override === '43';
     const isFad = code === 'FAD' || override === '29' || override === '04';
 
     const rows: Array<{ row: string; base: number; vat: number; gross: number }> = [];
 
     if (override) {
+      if (override === '43') {
+        rows.push({ row: '07', base: net, vat: vat, gross: gross });
+        rows.push({ row: '43', base: net, vat: 0, gross: net });
+        return rows;
+      }
       if (override === '45') {
         rows.push({ row: '07', base: net, vat: vat, gross: gross });
         rows.push({ row: '45', base: net, vat: 0, gross: net });
@@ -190,6 +196,9 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
         if (isAdvance) {
           rows.push({ row: '45', base: net, vat: 0, gross: net });
         }
+        if (isTangibleAsset) {
+          rows.push({ row: '43', base: net, vat: 0, gross: net });
+        }
       } else if (code === '18') {
         rows.push({ row: '05', base: net, vat: vat, gross: gross });
       } else if (code === '05') {
@@ -203,6 +212,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
       } else {
         rows.push({ row: '07', base: net, vat: vat, gross: gross });
         if (isAdvance) rows.push({ row: '45', base: net, vat: 0, gross: net });
+        if (isTangibleAsset) rows.push({ row: '43', base: net, vat: 0, gross: net });
       }
     } else {
       // Inbound

@@ -9,18 +9,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Info, FileText, Download, ChevronDown, FileSpreadsheet, FileDown, Sliders } from 'lucide-react';
+import { Info, FileText, Download, ChevronDown, FileSpreadsheet, FileDown, Sliders, DownloadCloud } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { NavSyncButton } from './NavSyncButton';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 import { useTranslation } from 'react-i18next';
 import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
 import { InvoiceRulesDialog } from '@/components/invoices/InvoiceRulesDialog';
+import { useSzamlazzStatus } from '@/hooks/useSzamlazzSync';
+import { SzamlazzSyncModal } from '@/components/invoices/SzamlazzSyncModal';
 
 export function InvoiceHeader() {
-  const { setFilesDialogOpen, setInvoiceParam, openDataExportDialog } = useInvoiceContext();
+  const { companyId, selectedCompany, setFilesDialogOpen, setInvoiceParam, openDataExportDialog } = useInvoiceContext();
   const { t } = useTranslation(['invoices', 'common']);
   const { hasNavIntegration } = useCompanyJurisdiction();
   const [rulesDialogOpen, setRulesDialogOpen] = useState(false);
+  const [szamlazzModalOpen, setSzamlazzModalOpen] = useState(false);
+  const { data: szamlazzStatus } = useSzamlazzStatus(companyId);
 
   const handleOpenFiles = () => {
     setFilesDialogOpen(true);
@@ -51,6 +56,25 @@ export function InvoiceHeader() {
         <div className="relative">
           <div className="flex gap-2 justify-end">
             {hasNavIntegration && <NavSyncButton />}
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSzamlazzModalOpen(true)}
+              className="relative"
+              title="Kimenő számlák számlaképének letöltése és párosítása Számlázz.hu-ból"
+            >
+              <DownloadCloud className="h-4 w-4 mr-2 text-blue-500" />
+              Számlázz.hu szinkron
+              {szamlazzStatus && szamlazzStatus.pendingCount > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="ml-2 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-none px-1.5 py-0 text-[10px]"
+                >
+                  {szamlazzStatus.pendingCount}
+                </Badge>
+              )}
+            </Button>
 
             <Button variant="outline" size="sm" onClick={() => setRulesDialogOpen(true)}>
               <Sliders className="h-4 w-4 mr-2" />
@@ -93,6 +117,12 @@ export function InvoiceHeader() {
           </div>
         </div>
       </div>
+      <SzamlazzSyncModal
+        open={szamlazzModalOpen}
+        onOpenChange={setSzamlazzModalOpen}
+        companyId={companyId}
+        companyName={selectedCompany?.name}
+      />
     </CardHeader>
   );
 }

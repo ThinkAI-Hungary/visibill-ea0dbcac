@@ -4,6 +4,7 @@ import type { FixedAsset, AssetEvent, TaoTemplate } from '@/types/fixed-assets';
 import { reportError } from '@/lib/errorReporter';
 import { generateAssetActivationProtocolBlob, AssetProtocolData } from '@/lib/assetActivationProtocolPdf';
 import { postDevelopmentReserveReleaseToLedger } from '@/lib/fixed-assets/developmentReserveAutoPoster';
+import { postAssetActivationToLedger } from '@/lib/fixed-assets/assetActivationAutoPoster';
 
 export const DEPRECIATION_METHOD_LABELS: Record<string, string> = {
   linear: 'Lineáris (Egyenletes)',
@@ -378,7 +379,32 @@ export function useCreateFixedAsset() {
         });
       }
 
-      // 4. Automatikusan lekönyveli a fejlesztési tartalék feloldását (T 414 - K 413) a Vegyes naplóba
+      // 4. Automatikusan lekönyveli az aktiválást (T [Eszköz számla] - K 161 Befejezetlen beruházás) a Vegyes naplóba
+      if (params.glAccountId && params.acquisitionValue > 0) {
+        try {
+          await postAssetActivationToLedger({
+            companyId: params.companyId,
+            userId: params.userId,
+            assetId: asset.id,
+            assetName: params.name,
+            inventoryNumber: params.inventoryNumber,
+            acquisitionValue: params.acquisitionValue,
+            activationDate: params.activationDate,
+            currency: params.currency,
+            glAccountId: params.glAccountId,
+          });
+        } catch (postActErr) {
+          reportError({
+            type: 'db_query',
+            component: 'useFixedAssets',
+            action: 'useCreateFixedAsset:activationPosting',
+            message: 'Auto asset activation posting failed',
+            error: postActErr,
+          });
+        }
+      }
+
+      // 5. Automatikusan lekönyveli a fejlesztési tartalék feloldását (T 414 - K 413) a Vegyes naplóba
       if (params.developmentReserveAmount && params.developmentReserveAmount > 0) {
         try {
           await postDevelopmentReserveReleaseToLedger({
@@ -408,6 +434,7 @@ export function useCreateFixedAsset() {
       queryClient.invalidateQueries({ queryKey: ['project-fixed-assets'] });
       queryClient.invalidateQueries({ queryKey: ['developmentReserves', variables.companyId] });
       queryClient.invalidateQueries({ queryKey: ['acc_journal_headers', variables.companyId] });
+      queryClient.invalidateQueries({ queryKey: ['journals', variables.companyId] });
       queryClient.invalidateQueries({ queryKey: ['journal-entries', variables.companyId] });
     },
   });

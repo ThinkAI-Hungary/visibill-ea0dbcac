@@ -9,8 +9,9 @@ import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/h
 import { CopyableCell } from '@/components/ui/copyable-cell';
 import { InvoiceImagePreview } from '@/components/InvoiceImagePreview';
 import ExpandedInvoiceRow from '@/components/ExpandedInvoiceRow';
-import { ChevronDown, Scale, FileText, Package, Sparkles } from 'lucide-react';
+import { ChevronDown, Scale, FileText, Package, Sparkles, DownloadCloud, Loader2 } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
+import { useSyncSzamlazzOutbound } from '@/hooks/useSzamlazzSync';
 import { getInitials, getAvatarColor } from '@/lib/helpers';
 import { normalizeInvoiceNumber } from '@/lib/invoiceMatchingUtils';
 import { InvoiceVatCodeSelector } from '@/components/vat/InvoiceVatCodeSelector';
@@ -154,8 +155,21 @@ function NavInvoiceRowComponent({
   const isNettingCandidate = nettingInvoiceIds.has(invoice.id);
   const isExpanded = expandedRowIds.has(invoice.id);
   const isSelected = selectedInvoiceIds.has(invoice.id);
-
   const [isOptimisticReviewed, setIsOptimisticReviewed] = useState<boolean | null>(null);
+  const syncSzamlazz = useSyncSzamlazzOutbound(companyId);
+  const [isDownloadingSingle, setIsDownloadingSingle] = useState(false);
+
+  const handleDownloadSingleSzamlazz = async (invoiceNumber: string) => {
+    try {
+      setIsDownloadingSingle(true);
+      await syncSzamlazz.mutateAsync({ invoiceNumbers: [invoiceNumber], limit: 1 });
+      invalidateInvoiceData();
+    } catch (e) {
+      console.error('Számlázz.hu single sync error:', e);
+    } finally {
+      setIsDownloadingSingle(false);
+    }
+  };
 
   useEffect(() => {
     setIsOptimisticReviewed(null);
@@ -695,6 +709,37 @@ function NavInvoiceRowComponent({
                     </Tooltip>
                   </TooltipProvider>
                 </>
+              );
+            }
+
+            if (activeTab === 'OUTBOUND') {
+              return (
+                <TooltipProvider delayDuration={150}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-500/10 opacity-70 hover:opacity-100 transition-all"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownloadSingleSzamlazz(invoice.invoice_number);
+                        }}
+                        disabled={isDownloadingSingle}
+                        aria-label="Számlakép letöltése Számlázz.hu-ból"
+                      >
+                        {isDownloadingSingle ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                        ) : (
+                          <DownloadCloud className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left">
+                      <p className="text-xs">Számlakép letöltése (Számlázz.hu)</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               );
             }
 

@@ -204,6 +204,7 @@
 | P-099 | Hivatalos NAV ÁFA Összesítő és Adókulcs-Megbontás Felületi Élmény (UX) | ✅ Decided | [P-099](./P-099-official-vat-summary-ui.md) |
 | P-114 | NAV ÜPO M2M Integráció, Felhasználói Hitelesítés és Napi Szinkronizáció UX | ✅ Decided | [P-114](./P-114-nav-upo-m2m-integration-ui-ux.md) |
 | P-131 | Horvát Minimax Számla-közvetítő Integráció és Szinkronizáció UX | ✅ Decided | [P-131](./P-131-croatian-minimax-api-invoice-intermediary-sync-ux.md) |
+| P-140 | Számlázz.hu Saját Kimenő Számlaképek Lehívása és NAV Párosítás | ✅ Decided | [P-140](./P-140-szamlazz-hu-outbound-invoice-image-sync-and-pairing.md) |
 
 ## 💼 Projektek & Tárgyi Eszközök
 

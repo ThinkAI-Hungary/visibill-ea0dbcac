@@ -2043,6 +2043,7 @@
       "col_partner": "Partner / Megjegyzés",
       "col_description": "Tranzakció leírás",
       "col_amount": "Összeg",
+      "col_gl_accounts": "Kontír (T / K)",
       "col_type": "Típus",
       "col_status": "Státusz",
       "col_actions": "Műveletek",

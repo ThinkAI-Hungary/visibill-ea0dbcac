@@ -2043,6 +2043,7 @@
       "col_partner": "Partner / Napomena",
       "col_description": "Opis transakcije",
       "col_amount": "Iznos",
+      "col_gl_accounts": "Kontiranje (D / P)",
       "col_type": "Tip",
       "col_status": "Status",
       "col_actions": "Radnje",
