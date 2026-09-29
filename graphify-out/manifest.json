@@ -30,8 +30,8 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1790661900.8323827,
-    "ast_hash": "b8d2de1e19adccfa0ff233b8750d376c",
+    "mtime": 1790709126.934306,
+    "ast_hash": "b9686e6b26dc14f9ee471639a46701b1",
     "semantic_hash": ""
   },
   "playwright.config.ts": {
@@ -1290,8 +1290,8 @@
     "semantic_hash": ""
   },
   "src/lib/vatReturnXml.ts": {
-    "mtime": 1790706720.4413867,
-    "ast_hash": "8997f129a1b03fd4a4bd860d199d0630",
+    "mtime": 1790708482.9225242,
+    "ast_hash": "012cfb68a4121539ee34b5198dc6e191",
     "semantic_hash": ""
   },
   "src/main.tsx": {
@@ -8190,8 +8190,8 @@
     "semantic_hash": ""
   },
   "src/lib/__tests__/vatReturnXml.test.ts": {
-    "mtime": 1790706758.560182,
-    "ast_hash": "bcda86cdbea92833a0987e651471501f",
+    "mtime": 1790708503.5024304,
+    "ast_hash": "111ebe2dc59d4a0ce3c0c6232fb0d4cc",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-080-nav-anyk-vat-return-xml-standardization.md": {
@@ -11725,8 +11725,8 @@
     "semantic_hash": ""
   },
   "src/config/version.ts": {
-    "mtime": 1790661882.8060346,
-    "ast_hash": "614844240f004162bf53bfcea4131b29",
+    "mtime": 1790709115.7461133,
+    "ast_hash": "d939684d3e08c8dd0ce37a7ba0d7d851",
     "semantic_hash": ""
   },
   ".agents/skills/visibill-patchnote/SKILL.md": {
@@ -12530,8 +12530,8 @@
     "semantic_hash": ""
   },
   ".agents/rules/browser-testing.md": {
-    "mtime": 1790680401.9291327,
-    "ast_hash": "9203f8ce81f6dbb715faec465de24f3d",
+    "mtime": 1790712523.5487492,
+    "ast_hash": "58f2f44a4bf96ffddfd416cbbf924b74",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-164-development-reserve-fixed-assets-db-and-depreciation.md": {
@@ -13277,6 +13277,16 @@
   "supabase/migrations/20260929210000_allow_accountants_update_companies_and_representative.sql": {
     "mtime": 1790707553.4123526,
     "ast_hash": "78f7bab9b2d5878c4526b61d3b19990e",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260929230000_add_performance_indexes_nav_invoices_and_items.sql": {
+    "mtime": 1790715620.7751029,
+    "ast_hash": "eb5a427bccf4fc3f0c1cf9b9ca543f55",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-09-29/summary-210500-anyk-vat-export-representative-persistence-and-position-fix.md": {
+    "mtime": 1790708770.374501,
+    "ast_hash": "39d15e9b828be7e05b692b7a23823106",
     "semantic_hash": ""
   }
 }

@@ -19,13 +19,13 @@ description: Browser testing, subagent authentication, and test credentials rule
 * **Ticket válaszok & Support kommentek:** Alapértelmezetten **MINDIG** ezzel a fiókkal küldünk ki support választ, ticket kommentet és végzünk adminisztratív műveleteket!
 
 ### 🧪 Másodlagos Teszt Felhasználó (Áron):
-* **Email:** `aron@thinkai.hu`
-* **Jelszó:** `A237kkil815!`
+* **Email:** `notbyalongway@gmail.com`
+* **Jelszó:** `Morfiapro1.`
 
 ## 🌐 3. Bejelentkezési Protokoll Böngészős Teszteléskor
 Ha a `browser_subagent` vagy böngészős teszt futtatásakor az alkalmazás átirányít az `/auth` oldalra:
 1. Töltsd ki a bejelentkezési űrlapot a fenti hitelesítő adatokkal:
-   - Email mező (`#signin-email` vagy `input[type="email"]`): `aron@thinkai.hu`
-   - Jelszó mező (`#signin-password` vagy `input[type="password"]`): `A237kkil815!`
+   - Email mező (`#signin-email` vagy `input[type="email"]`): `notbyalongway@gmail.com`
+   - Jelszó mező (`#signin-password` vagy `input[type="password"]`): `Morfiapro1.`
 2. Kattints a "Bejelentkezés" gombra.
 3. Várd meg, amíg a munkamenet létrejön és az alkalmazás átirányít a kért belső felületre.
