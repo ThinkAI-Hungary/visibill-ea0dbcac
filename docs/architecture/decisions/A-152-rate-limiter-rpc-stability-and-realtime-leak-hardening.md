@@ -49,9 +49,14 @@ This ensures PostgREST executes them in read-only transactions (`transaction_rea
 - Replaced `fetchAllGlBalances` with `fetchAllGlAccountsByPreset(presetId)`.
 - Replaced 1.8-second aggregation with a 2ms static account query cached for 5 minutes.
 
+### 4. Cockpit Query Pagination & Progressive Loading (`UnifiedFinancialCockpit.tsx`)
+- Megszüntettük a nyitólapi Cockpit korlátlan kezdeti `while (true)` letöltési ciklusait (amelyek 500+ banki tranzakciót és több száz számlát egyszerre töltöttek le a hálózaton).
+- Első betöltéskor kategóriánként legfeljebb `PAGE_SIZE = 50` tétel töltődik le (`range(0, 49)` és `p_page_size: 50`), miközben a felső KPI kártyák és badge-ek a `{ count: 'exact' }` és a `total_count` window function révén a teljes, valós darabszámot (pl. 531 db) és aggregált bruttó összegeket mutatják.
+- Fokozatos, optimisztikus görgetés (`IntersectionObserver` sentinel) és `CockpitRowSkeleton` shimmer placeholder sorok vezetik be a további 50-es csomagokat.
+
 ---
 
 ## 3. Verification & Results
 - **Rate Limit Exemption**: Verified `provolatile = 's'` in `pg_proc` for all four functions.
-- **Unit & Integration Tests**: `src/components/general-ledger/__tests__/JournalView.test.tsx` (4 tests) and all 7 general ledger test suites (21 tests) passed.
-- **Production Build**: Verified via `npm run build` (exit code 0, 17.39s).
+- **Unit & Integration Tests**: `src/components/general-ledger/__tests__/JournalView.test.tsx` (4 tests), all 7 general ledger test suites (21 tests), valamint a `src/test/unifiedFinancialCockpit.test.tsx` (8 tests) sikeresen lefutottak.
+- **Production Build**: Verified via `npm run build` (exit code 0).

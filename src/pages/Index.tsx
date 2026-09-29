@@ -23,8 +23,7 @@ import { CategoryBreakdown } from '@/components/dashboard/CategoryBreakdown';
 
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import { InvoiceItemsDialog } from '@/components/InvoiceItemsDialog';
-import InvoiceStatusTables from '@/components/dashboard/InvoiceStatusTables';
-import UnmatchedSection from '@/components/dashboard/UnmatchedItemsModal';
+import UnifiedFinancialCockpit from '@/components/dashboard/UnifiedFinancialCockpit';
 import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { getDateFnsLocale, getActiveLocale } from '@/lib/locale/formatters';
@@ -227,6 +226,9 @@ const Index = () => {
           vatRegime={selectedCompany?.vat_regime}
         />
 
+        {/* Unified Financial Cockpit: Operational Action Center directly under VAT */}
+        <UnifiedFinancialCockpit />
+
         {/* Main Dashboard Grid: 3-column layout (Invoices | Projects | Categories) */}
         <div className="grid gap-6 grid-cols-1 xl:grid-cols-3 items-start">
           <RecentInvoicesWithDialog invoices={invoices} />
@@ -241,11 +243,15 @@ const Index = () => {
           />
         </div>
 
-        {/* Operational Status Grid: 2-column layout (Unmatched Items | Inbound Status) */}
-        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 items-start">
-          <UnmatchedSection />
-          <InvoiceStatusTables />
-        </div>
+        <FxDifferencesSection
+          fxDifferences={fxDifferences}
+          fxMonthlySummary={fxMonthlySummary}
+          isOpen={prefs.fxSectionOpen}
+          onOpenChange={prefs.setFxSectionOpen}
+          fxGlSettings={fxGlSettings}
+          glAccounts={glAccounts}
+          onSaveFxGl={handleSaveFxGl}
+        />
 
         <RevenueExpensesChart
           monthlyData={monthlyData}
@@ -257,16 +263,6 @@ const Index = () => {
           onRevenueSectionOpenChange={prefs.setRevenueSectionOpen}
           onSetChartLine={prefs.setChartLine}
           onSetShowBrutto={prefs.setShowBrutto}
-        />
-
-        <FxDifferencesSection
-          fxDifferences={fxDifferences}
-          fxMonthlySummary={fxMonthlySummary}
-          isOpen={prefs.fxSectionOpen}
-          onOpenChange={prefs.setFxSectionOpen}
-          fxGlSettings={fxGlSettings}
-          glAccounts={glAccounts}
-          onSaveFxGl={handleSaveFxGl}
         />
       </main>
 

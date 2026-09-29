@@ -1020,8 +1020,8 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
         const tabLabelMap: Record<InvoiceTab, string> = {
           INBOUND: 'NAV OSA Bejövő',
           OUTBOUND: 'NAV OSA Kimenő',
-          SUBMITTED_INBOUND: 'Beküldött bejövő számlák',
-          SUBMITTED_OUTBOUND: 'Beküldött kimenő számlák',
+          SUBMITTED_INBOUND: 'Számlakép (Bejövő)',
+          SUBMITTED_OUTBOUND: 'Számlakép (Kimenő)',
         };
 
         const headers = [
@@ -1177,8 +1177,8 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       const tabLabelMap: Record<InvoiceTab, string> = {
         INBOUND: 'NAV OSA Bejövő',
         OUTBOUND: 'NAV OSA Kimenő',
-        SUBMITTED_INBOUND: 'Beküldött bejövő számlák',
-        SUBMITTED_OUTBOUND: 'Beküldött kimenő számlák',
+        SUBMITTED_INBOUND: 'Számlakép (Bejövő)',
+        SUBMITTED_OUTBOUND: 'Számlakép (Kimenő)',
       };
 
       const headers = [

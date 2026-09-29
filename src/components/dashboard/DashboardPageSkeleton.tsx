@@ -1,6 +1,6 @@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { MetricsGridSkeleton, VatChartSkeleton, RevenueChartSkeleton, InvoiceStatusTablesSkeleton } from './DashboardSkeleton';
+import { MetricsGridSkeleton, VatChartSkeleton, RevenueChartSkeleton, UnifiedFinancialCockpitSkeleton } from './DashboardSkeleton';
 
 export default function DashboardPageSkeleton() {
   return (
@@ -20,10 +20,9 @@ export default function DashboardPageSkeleton() {
 
         <MetricsGridSkeleton />
         <VatChartSkeleton />
-        <InvoiceStatusTablesSkeleton />
-        <RevenueChartSkeleton />
+        <UnifiedFinancialCockpitSkeleton />
 
-        {/* Bottom grid skeleton */}
+        {/* 3-column grid skeleton */}
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <Card>
@@ -56,6 +55,8 @@ export default function DashboardPageSkeleton() {
             </Card>
           </div>
         </div>
+
+        <RevenueChartSkeleton />
       </main>
     </div>
   );

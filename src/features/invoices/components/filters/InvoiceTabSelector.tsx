@@ -9,8 +9,8 @@ export function InvoiceTabSelector() {
     <TabsList className="grid w-full max-w-2xl grid-cols-4">
       <TabsTrigger value="OUTBOUND">{t('invoices:tabs.outgoing', { defaultValue: 'NAV OSA Kimenő' })}</TabsTrigger>
       <TabsTrigger value="INBOUND">{t('invoices:tabs.incoming', { defaultValue: 'NAV OSA Bejövő' })}</TabsTrigger>
-      <TabsTrigger value="SUBMITTED_OUTBOUND">{t('invoices:tabs.submitted_outgoing', { defaultValue: 'Beküldött (Kimenő)' })}</TabsTrigger>
-      <TabsTrigger value="SUBMITTED_INBOUND">{t('invoices:tabs.submitted_incoming', { defaultValue: 'Beküldött (Bejövő)' })}</TabsTrigger>
+      <TabsTrigger value="SUBMITTED_OUTBOUND">{t('invoices:tabs.submitted_outgoing', { defaultValue: 'Számlakép (Kimenő)' })}</TabsTrigger>
+      <TabsTrigger value="SUBMITTED_INBOUND">{t('invoices:tabs.submitted_incoming', { defaultValue: 'Számlakép (Bejövő)' })}</TabsTrigger>
     </TabsList>
   );
 }

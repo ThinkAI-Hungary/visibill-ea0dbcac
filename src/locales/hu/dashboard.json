@@ -4,6 +4,10 @@
     "income": "Összes bevétel",
     "expenses": "Összes kiadás",
     "profit": "Eredmény",
+    "booked": "Könyvelt",
+    "realized": "Realizált (befolyt)",
+    "pending_receivables_short": "Kintlévőség (nyitott)",
+    "realized_desc": "Könyvelt - Kintlévőség",
     "unpaid_incoming": "Kifizetetlen bejövő számlák",
     "unpaid_outgoing": "Kifizetetlen kimenő számlák",
     "cash_balance": "Pénztár egyenleg",
@@ -227,6 +231,38 @@
       "total": "Összesen",
       "edit_gl_tooltip": "Főkönyvi szám szerkesztése ({{glNum}})"
     }
+  },
+  "cockpit": {
+    "title": "Pénzügyi Teendőközpont",
+    "subtitle": "Számlák, bizonylatok és banki mozgások operatív egyeztetése",
+    "missing_vouchers": "Hiányzó bizonylatok",
+    "missing_vouchers_title": "Hiányzó bizonylatok (NAV számlák csatolmány nélkül)",
+    "urgent_action": "Sürgős teendő",
+    "missing_sub": "NAV-ban van, de nem található számlakép",
+    "unpaid_suppliers": "Kifizetetlen szállítók",
+    "unpaid_suppliers_title": "Kifizetetlen szállítói számlák (Banki kifizetésre vár)",
+    "liquidity": "Likviditás",
+    "inbound_unpaid_sub": "db bejövő számla párosított banki tranzakció nélkül",
+    "unmatched_bank": "Párosítatlan bank",
+    "unmatched_bank_title": "Párosítatlan banki mozgások (Számlapár nélkül)",
+    "reconciliation": "Egyeztetés",
+    "bank_sub": "Kivonaton szerepel, nincs számlapár",
+    "receivables": "Kintlévőség (Vevők)",
+    "receivables_title": "Kintlévőségek (Vevői számlák kifizetésre várva)",
+    "claim": "Követelés",
+    "receivables_sub": "db kimenő számla vár kifizetésre",
+    "search_placeholder": "Gyorskeresés partnerre vagy bizonylatszámra...",
+    "batch_upload": "Bizonylatfeltöltés",
+    "upload_voucher": "Bizonylat feltöltése",
+    "pay_or_match": "Párosítás",
+    "match": "Párosítás",
+    "view_all": "Részletes táblázat megnyitása",
+    "no_missing": "Minden NAV számlához fel van töltve bizonylat!",
+    "no_payable": "Nincsenek kifizetetlen szállítói számlák.",
+    "no_bank_unmatched": "Minden banki tranzakció párosítva van!",
+    "no_receivables": "Nincsenek kifizetetlen vevői számlák.",
+    "tip": "A feltöltött PDF-ekből és képekből az AI automatikusan kinyeri a tételeket és összepárosítja a NAV adatokkal."
   }
 }
+
 

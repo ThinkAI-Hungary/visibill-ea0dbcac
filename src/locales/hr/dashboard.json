@@ -4,6 +4,10 @@
     "income": "Ukupni prihodi",
     "expenses": "Ukupni rashodi",
     "profit": "Neto rezultat",
+    "booked": "Knjigovodstveno",
+    "realized": "Realizirano (naplaćeno)",
+    "pending_receivables_short": "Potraživanja (otvoreno)",
+    "realized_desc": "Knjigovodstveno - Potraživanja",
     "unpaid_incoming": "Otvorene obveze prema dobavljačima",
     "unpaid_outgoing": "Otvorena potraživanja od kupaca",
     "cash_balance": "Stanje na računima",
@@ -227,6 +231,37 @@
       "total": "Ukupno",
       "edit_gl_tooltip": "Uređivanje broja konta ({{glNum}})"
     }
+  },
+  "cockpit": {
+    "title": "Financijsko kontrolno središte",
+    "subtitle": "Operativno usklađivanje računa, isprava i bankovnih transakcija",
+    "missing_vouchers": "Nedostajući prilozi",
+    "missing_vouchers_title": "Nedostajući prilozi (Porezni računi bez privitka)",
+    "urgent_action": "Hitna radnja",
+    "missing_sub": "Postoji u sustavu, ali slika računa nije pronađena",
+    "unpaid_suppliers": "Neplaćeni dobavljači",
+    "unpaid_suppliers_title": "Neplaćeni ulazni računi (Čeka plaćanje putem banke)",
+    "liquidity": "Likvidnost",
+    "inbound_unpaid_sub": "ulaznih računa bez povezane bankovne transakcije",
+    "unmatched_bank": "Nepovezana banka",
+    "unmatched_bank_title": "Nepovezane bankovne transakcije (Bez računa)",
+    "reconciliation": "Usklađivanje",
+    "bank_sub": "Na izvodu, nema računa",
+    "receivables": "Potraživanja (Kupci)",
+    "receivables_title": "Potraživanja (Izlazni računi koji čekaju naplatu)",
+    "claim": "Potraživanje",
+    "receivables_sub": "izlaznih računa čeka naplatu",
+    "search_placeholder": "Brzo pretraživanje partnera ili broja računa...",
+    "batch_upload": "Prijenos isprava",
+    "upload_voucher": "Prenesi prilog",
+    "pay_or_match": "Povezivanje",
+    "match": "Povezivanje",
+    "view_all": "Otvori detaljnu tablicu",
+    "no_missing": "Svi računi imaju priložene isprave!",
+    "no_payable": "Nema neplaćenih ulaznih računa.",
+    "no_bank_unmatched": "Sve bankovne transakcije su povezane!",
+    "no_receivables": "Nema otvorenih potraživanja od kupaca.",
+    "tip": "Iz prenesenih PDF-ova i slika AI automatski izdvaja stavke i povezuje ih s podacima."
   }
 }
 

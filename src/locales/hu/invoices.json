@@ -4,8 +4,8 @@
   "tabs": {
     "incoming": "NAV OSA Bejövő",
     "outgoing": "NAV OSA Kimenő",
-    "submitted_incoming": "Beküldött (Bejövő)",
-    "submitted_outgoing": "Beküldött (Kimenő)",
+    "submitted_incoming": "Számlakép (Bejövő)",
+    "submitted_outgoing": "Számlakép (Kimenő)",
     "proforma": "Díjbekérők",
     "receipts": "Nyugták"
   },

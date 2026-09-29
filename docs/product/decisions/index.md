@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-29  
-> **Összesen:** 141 döntés | ✅ Decided: 137 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 142 döntés | ✅ Decided: 138 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -25,6 +25,7 @@
 | P-083 | eaisyBooks ↔ eaisyBill Alkalmazásváltó (AppModeSwitcher) és Hideg/Meleg (Cold/Warm) Átmenet UX | ✅ Decided | [P-083](./P-083-eaisybooks-eaisybill-app-mode-switcher-and-cold-warm-transition-ux.md) |
 | P-093 | ÁFA Analitika Oszlopelrendezés és Valós Nettó Megjelenítés UX | ✅ Decided | [P-093](./P-093-vat-analytics-net-revenue-and-column-layout-ux.md) |
 | P-107 | Globális Nyelvválasztó Elhelyezés és Lucide Globe Ikon Felületi Élmény (Books és Bill nézet) | ✅ Decided | [P-107](./P-107-global-header-inline-language-switcher-ux.md) |
+| P-137 | Unified Financial Cockpit, Realizált Eredmény (Profit vs Kintlévőség) és Számlakép Lapfül UX | ✅ Decided | [P-137](./P-137-unified-financial-cockpit-and-realized-profit-ux.md) |
 
 ## 📄 Számla Kezelés
 

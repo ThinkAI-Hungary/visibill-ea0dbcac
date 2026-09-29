@@ -15,6 +15,7 @@ export interface MetricCardProps {
   title: string;
   value?: string | number;
   currencyRows?: CurrencyRowItem[];
+  children?: React.ReactNode;
   description?: string;
   footerBadge?: string;
   icon: LucideIcon;
@@ -30,6 +31,7 @@ const MetricCard = ({
   title, 
   value, 
   currencyRows, 
+  children,
   description, 
   footerBadge, 
   icon: Icon, 
@@ -86,9 +88,11 @@ const MetricCard = ({
         </div>
       </div>
 
-      {/* 2. Middle Content Area (Structured Rows OR Single Value) */}
+      {/* 2. Middle Content Area (Structured Rows OR Single Value OR Custom Children) */}
       <div className="px-4 py-2 flex-1 flex flex-col justify-center">
-        {hasMultipleCurrencies ? (
+        {children ? (
+          children
+        ) : hasMultipleCurrencies ? (
           <div className="flex flex-col justify-center gap-1.5 w-full">
             {currencyRows.map((row) => (
               <div 

@@ -7,7 +7,7 @@
 
 1. **Hivatalos Fül-elnevezések (NAV OSA Kimenő / NAV OSA Bejövő):**
    - A korábbi köznapi elnevezések helyett a rendszerben egységesen és hivatalosan a **NAV OSA Kimenő** és **NAV OSA Bejövő** megnevezéseket alkalmazzuk a navigációs fejlécben, az `InvoiceTabSelector`-ban, valamint a magyar és horvát lokalizációs fájlokban (`src/locales/hu/invoices.json`, `src/locales/hr/invoices.json`).
-   - A beküldött számlák fülei megmaradnak a tiszta beküldött kategóriában (*Beküldött kimenő*, *Beküldött bejövő*), így a felhasználó számára azonnal egyértelmű a számla eredete.
+   - A feltöltött bizonylatok füleit a korábbi megtévesztő megnevezés helyett egységesen **Számlakép (Kimenő)** és **Számlakép (Bejövő)** névre kereszteltük (lásd [P-137](./P-137-unified-financial-cockpit-and-realized-profit-ux.md)), így a felhasználó számára azonnal egyértelmű, hogy ezek a manuálisan vagy automatikusan felcsatolt bizonylatképek felületei a tiszta NAV OSA adatok mellett.
 
 2. **Lusta Táblázatsor-Vezérlők (`LazyRowSelect` DOM Pruning):**
    - A lapozott táblázat soraiban megjelenő Kategória és Projekt választóknál megszüntettük a teljes Radix `<Select>` / `<SelectItem>` fák előzetes DOM-ba renderelését. 50 számlasornál ez soronként 55 opcióval számolva 2 750 felesleges DOM csomópontot generált minden renderelési ciklusban, ami fagyást és kattintási késleltetést okozott a fülváltáskor.
@@ -32,5 +32,6 @@
 
 ## Kapcsolódó
 - [A-127: Számlatáblázat Tab-Váltási Render-Skálázás és Accordion Re-Render Retesz](../../architecture/decisions/A-127-invoice-table-tab-switch-scaling-and-accordion-re-render-latch.md)
+- [P-137: Unified Financial Cockpit és Realizált Eredmény UX](./P-137-unified-financial-cockpit-and-realized-profit-ux.md)
 - [P-057: Invoices Feature Slice UX](./P-057-invoices-feature-slice-ux.md)
 - [P-010: Invoice List View & Filters](./P-010-invoice-list.md)

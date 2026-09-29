@@ -178,11 +178,11 @@ export function PdfExportDialog({ open, onClose, onExport, isExporting, isStarti
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="OUTBOUND" className="gap-1.5 text-xs">
                 <ArrowUpRight className="h-3.5 w-3.5" />
-                Beküldött (Kimenő)
+                Számlakép (Kimenő)
               </TabsTrigger>
               <TabsTrigger value="INBOUND" className="gap-1.5 text-xs">
                 <ArrowDownLeft className="h-3.5 w-3.5" />
-                Beküldött (Bejövő)
+                Számlakép (Bejövő)
               </TabsTrigger>
             </TabsList>
           </Tabs>

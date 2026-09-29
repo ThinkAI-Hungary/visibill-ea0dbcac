@@ -1,7 +1,7 @@
 import React from 'react';
 import MetricCard, { type CurrencyRowItem } from './MetricCard';
 import { Upload, ArrowUpRight, ArrowDownLeft, TrendingUp, Banknote, Wallet, Euro, Scale } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { getActiveLocale } from '@/lib/locale/formatters';
 import type { DashboardMetrics as Metrics, NavVatData } from '@/hooks/useDashboardData';
@@ -93,19 +93,31 @@ const DashboardMetrics = React.memo(function DashboardMetrics({
   });
 
   // Calculate consolidated net operating balance (Revenue - Expenses) in selected currency
-  const totalRevenueConverted = Object.entries(revenueData || {}).reduce((total, [currency, amount]) => {
+  // Note: Operating profit / result ("Eredmény") is invariant to gross view: VAT belongs to the tax authority,
+  // so the financial result must strictly remain NET even when switching the view to gross.
+  const totalNetRevenueConverted = Object.entries(navVatData?.revenueNet || {}).reduce((total, [currency, amount]) => {
     return total + convertToSelectedCurrency(amount, currency, selectedCurrency);
   }, 0);
 
-  const totalExpensesConverted = Object.entries(expensesData || {}).reduce((total, [currency, amount]) => {
+  const totalNetExpensesConverted = Object.entries(navVatData?.expensesNet || {}).reduce((total, [currency, amount]) => {
     return total + convertToSelectedCurrency(amount, currency, selectedCurrency);
   }, 0);
 
-  const netOperatingBalance = totalRevenueConverted - totalExpensesConverted;
+  const netOperatingBalance = totalNetRevenueConverted - totalNetExpensesConverted;
 
+  // Unpaid outbound receivables in net amount (strictly net for true CEO cash realization)
+  const totalUnpaidReceivablesNetConverted = Object.entries(navVatData?.unpaidOutboundNet || {}).reduce(
+    (total, [currency, amount]) => total + convertToSelectedCurrency(amount, currency, selectedCurrency),
+    0
+  );
+
+  // Realized profit: Booked Net Operating Profit - Unpaid Net Receivables
+  const realizedOperatingBalance = netOperatingBalance - totalUnpaidReceivablesNetConverted;
+
+  const netLabel = t('dashboard:welcome.net', { defaultValue: isHr ? 'neto' : 'nettó' });
   const grossNetLabel = showBrutto
     ? t('dashboard:welcome.gross', { defaultValue: isHr ? 'bruto' : 'bruttó' })
-    : t('dashboard:welcome.net', { defaultValue: isHr ? 'neto' : 'nettó' });
+    : netLabel;
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 items-stretch">
@@ -127,15 +139,55 @@ const DashboardMetrics = React.memo(function DashboardMetrics({
         variant="slate"
       />
 
-      {/* 3. Operatív egyenleg / Cash-Flow balance */}
+      {/* 3. Operatív egyenleg / Cash-Flow balance (Mindig nettó + Realizált eredmény bontás) */}
       <MetricCard
-        title={`${t('dashboard:kpis.profit', { defaultValue: 'Operatív eredmény' })} (${grossNetLabel})`}
-        value={formatCurrency(netOperatingBalance, selectedCurrency)}
-        description={t('dashboard:kpis.revenue_minus_expenses', { defaultValue: isHr ? 'Prihodi - Rashodi' : 'Bevétel - Kiadás' })}
+        title={`${t('dashboard:kpis.profit', { defaultValue: 'Operatív eredmény' })} (${netLabel})`}
+        description={t('dashboard:kpis.realized_desc', { defaultValue: 'Könyvelt - Kintlévőség' })}
         footerBadge={t('dashboard:kpis.consolidated', { defaultValue: isHr ? 'Konsolidirano' : 'Konszolidált' })}
         icon={Scale}
         variant={netOperatingBalance >= 0 ? 'primary' : 'destructive'}
-      />
+      >
+        <div className="flex flex-col justify-between h-full py-0.5">
+          {/* Fő könyvelt eredmény */}
+          <div className="flex items-baseline justify-between">
+            <span className={cn(
+              "text-xl font-bold tabular-nums tracking-tight",
+              netOperatingBalance >= 0 ? "text-foreground" : "text-destructive"
+            )}>
+              {formatCurrency(netOperatingBalance, selectedCurrency)}
+            </span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-1.5 py-0.5 rounded bg-muted/70 border border-border/40">
+              {t('dashboard:kpis.booked', { defaultValue: 'Könyvelt' })}
+            </span>
+          </div>
+
+          {/* Realizált és Kintlévőség bontás */}
+          <div className="space-y-1 pt-1.5 border-t border-border/40">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                {t('dashboard:kpis.realized', { defaultValue: 'Realizált (befolyt)' })}:
+              </span>
+              <span className={cn(
+                "font-bold tabular-nums text-xs",
+                realizedOperatingBalance >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"
+              )}>
+                {formatCurrency(realizedOperatingBalance, selectedCurrency)}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                {t('dashboard:kpis.pending_receivables_short', { defaultValue: 'Kintlévőség (nyitott)' })}:
+              </span>
+              <span className="font-semibold tabular-nums text-xs text-muted-foreground">
+                {formatCurrency(totalUnpaidReceivablesNetConverted, selectedCurrency)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </MetricCard>
 
       {/* 4. Feltöltött számlák */}
       <MetricCard

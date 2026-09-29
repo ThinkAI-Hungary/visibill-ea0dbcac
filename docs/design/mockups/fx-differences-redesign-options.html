@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="hu" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Eaisybill — Árfolyam-különbözetek Szekció Újratervezés Mockup</title>
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ==========================================================================
+       EAISYBILL DESIGN TOKENS (HSL Alapú, 100% szinkronban az index.css-szel)
+       ========================================================================== */
+    :root {
+      --background: 220 7% 97%;          /* #f5f6f7 */
+      --foreground: 210 14% 4%;          /* #090b0e */
+      --card: 0 0% 100%;                 /* #ffffff */
+      --card-foreground: 210 14% 4%;
+      
+      --primary: 174 83% 32%;             /* #0D9488 Teal */
+      --primary-foreground: 0 0% 100%;
+      --primary-subtle: 174 83% 96%;      /* #F0FDFA */
+      --primary-glow: rgba(13, 148, 136, 0.15);
+
+      --secondary: 220 14% 96%;
+      --secondary-foreground: 210 14% 4%;
+      --muted: 220 7% 94%;               /* #eceef1 */
+      --muted-foreground: 220 5% 42%;    /* #676c74 */
+      
+      --border: 222 10% 89%;             /* #e2e4e8 */
+      --input: 220 10% 89%;
+      --ring: 174 83% 32%;
+
+      --success: 142 71% 45%;            /* #22c55e */
+      --success-subtle: 142 71% 96%;
+      --warning: 38 92% 50%;             /* #f59e0b */
+      --warning-subtle: 48 96% 96%;
+      --destructive: 0 84% 60%;          /* #ef4444 */
+      --destructive-subtle: 0 86% 97%;
+      --info: 217 91% 60%;               /* #3b82f6 */
+      --info-subtle: 214 95% 97%;
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-xl: 18px;
+
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+      --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+      --shadow-card-hover: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    }
+
+    html.dark {
+      --background: 222 25% 10%;         /* #121824 */
+      --foreground: 210 20% 98%;
+      --card: 223 23% 13%;              /* #182030 */
+      --card-foreground: 210 20% 98%;
+      
+      --primary: 174 83% 36%;
+      --primary-foreground: 0 0% 100%;
+      --primary-subtle: 174 83% 16%;
+      --primary-glow: rgba(13, 148, 136, 0.25);
+
+      --secondary: 222 20% 18%;
+      --secondary-foreground: 210 20% 98%;
+      --muted: 222 18% 18%;
+      --muted-foreground: 218 11% 65%;
+      
+      --border: 222 18% 22%;
+      --input: 222 18% 22%;
+      --ring: 174 83% 40%;
+
+      --success: 142 71% 45%;
+      --success-subtle: 142 71% 14%;
+      --warning: 38 92% 50%;
+      --warning-subtle: 38 92% 16%;
+      --destructive: 0 84% 60%;
+      --destructive-subtle: 0 84% 16%;
+      --info: 217 91% 60%;
+      --info-subtle: 217 91% 16%;
+
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.25);
+      --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px -1px rgba(0, 0, 0, 0.2);
+      --shadow-card-hover: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: hsl(var(--background));
+      color: hsl(var(--foreground));
+      line-height: 1.5;
+      padding: 2rem 1.5rem 5rem;
+      min-height: 100vh;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: 'Outfit', 'Inter', sans-serif;
+      letter-spacing: -0.02em;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* TOP BAR */
+    .top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid hsl(var(--border));
+    }
+
+    .title-group h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .badge-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.2rem 0.65rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      border-radius: 9999px;
+      background: hsl(var(--primary-subtle));
+      color: hsl(var(--primary));
+      border: 1px solid hsl(var(--primary) / 0.2);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-live::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: hsl(var(--primary));
+      box-shadow: 0 0 6px hsl(var(--primary));
+    }
+
+    .top-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.5rem 0.9rem;
+      font-size: 0.82rem;
+      font-weight: 500;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: 1px solid hsl(var(--border));
+      background: hsl(var(--card));
+      color: hsl(var(--foreground));
+      user-select: none;
+    }
+
+    .btn:hover {
+      background: hsl(var(--muted));
+      border-color: hsl(var(--primary) / 0.4);
+    }
+
+    .btn-primary {
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      border-color: hsl(var(--primary));
+    }
+
+    .btn-primary:hover {
+      background: hsl(var(--primary) / 0.9);
+      border-color: hsl(var(--primary) / 0.9);
+    }
+
+    .btn-sm {
+      padding: 0.3rem 0.65rem;
+      font-size: 0.75rem;
+      border-radius: var(--radius-sm);
+    }
+
+    /* OPTION SELECTOR TABS */
+    .option-tabs {
+      display: flex;
+      gap: 0.5rem;
+      background: hsl(var(--muted) / 0.6);
+      padding: 0.35rem;
+      border-radius: var(--radius-lg);
+      border: 1px solid hsl(var(--border));
+      margin-bottom: 2rem;
+      overflow-x: auto;
+    }
+
+    .opt-tab {
+      flex: 1;
+      min-width: 260px;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      text-align: left;
+      background: transparent;
+      border: 1px solid transparent;
+      color: hsl(var(--muted-foreground));
+      transition: all 0.2s ease;
+    }
+
+    .opt-tab:hover {
+      color: hsl(var(--foreground));
+      background: hsl(var(--card) / 0.5);
+    }
+
+    .opt-tab.active {
+      background: hsl(var(--card));
+      color: hsl(var(--foreground));
+      border-color: hsl(var(--primary) / 0.35);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .opt-tab-title {
+      font-weight: 700;
+      font-size: 0.92rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: hsl(var(--foreground));
+      margin-bottom: 0.2rem;
+    }
+
+    .opt-tab-desc {
+      font-size: 0.76rem;
+      line-height: 1.35;
+      color: hsl(var(--muted-foreground));
+    }
+
+    .badge-recommended {
+      background: hsl(var(--primary));
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* CARD STRUCTURE */
+    .fx-card {
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border) / 0.8);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      margin-bottom: 2rem;
+      transition: all 0.2s ease;
+    }
+
+    .fx-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid hsl(var(--border) / 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s ease;
+    }
+
+    .fx-header:hover {
+      background: hsl(var(--muted) / 0.3);
+    }
+
+    .fx-header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .icon-box-amber {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(245, 158, 11, 0.12);
+      color: #f59e0b;
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .fx-title-wrap h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    .fx-title-wrap p {
+      font-size: 0.76rem;
+      color: hsl(var(--muted-foreground));
+      margin-top: 0.15rem;
+    }
+
+    .fx-header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .pill-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.25rem 0.6rem;
+      border-radius: var(--radius-sm);
+      background: hsl(var(--muted));
+      color: hsl(var(--foreground));
+      border: 1px solid hsl(var(--border) / 0.6);
+      font-family: monospace;
+    }
+
+    .net-total-display {
+      font-size: 1.2rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+    }
+
+    .chevron-icon {
+      width: 18px;
+      height: 18px;
+      color: hsl(var(--muted-foreground));
+      transition: transform 0.2s ease;
+    }
+
+    .chevron-icon.rotated {
+      transform: rotate(180deg);
+    }
+
+    /* OPTION 1: FINTECH DENSE SPLIT (520px) */
+    .split-layout {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 1.25rem;
+      padding: 1.25rem;
+      align-items: stretch;
+    }
+
+    @media (max-width: 1024px) {
+      .split-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .split-left-panel {
+      display: flex;
+      flex-col: column;
+      flex-direction: column;
+      gap: 1rem;
+      justify-content: space-between;
+    }
+
+    .kpi-mini-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.65rem;
+    }
+
+    .kpi-tile {
+      background: hsl(var(--muted) / 0.25);
+      border: 1px solid hsl(var(--border) / 0.6);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 0.85rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: border-color 0.15s ease;
+    }
+
+    .kpi-tile:hover {
+      border-color: hsl(var(--primary) / 0.4);
+    }
+
+    .kpi-tile-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: hsl(var(--muted-foreground));
+      margin-bottom: 0.35rem;
+    }
+
+    .kpi-tile-val {
+      font-size: 1.15rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.15;
+    }
+
+    .text-profit { color: #10b981; }
+    .text-loss { color: #ef4444; }
+
+    /* MINI CHART */
+    .mini-chart-card {
+      background: hsl(var(--muted) / 0.2);
+      border: 1px solid hsl(var(--border) / 0.5);
+      border-radius: var(--radius-md);
+      padding: 0.85rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .chart-container {
+      height: 120px;
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      padding-top: 10px;
+      position: relative;
+    }
+
+    .chart-zero-line {
+      position: absolute;
+      top: 55%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: hsl(var(--border));
+      z-index: 1;
+    }
+
+    .chart-bar-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      justify-content: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .chart-bar {
+      width: 100%;
+      max-width: 18px;
+      border-radius: 3px;
+      transition: opacity 0.15s ease;
+      cursor: pointer;
+    }
+
+    .chart-bar:hover {
+      opacity: 0.8;
+    }
+
+    .chart-bar.up {
+      background: #10b981;
+      margin-bottom: auto;
+      align-self: flex-start;
+      margin-top: 10px;
+    }
+
+    .chart-bar.down {
+      background: #ef4444;
+      margin-top: auto;
+      align-self: flex-end;
+      margin-bottom: 10px;
+    }
+
+    .chart-month-label {
+      font-size: 0.65rem;
+      color: hsl(var(--muted-foreground));
+      margin-top: 4px;
+    }
+
+    /* GL BLOCK */
+    .mini-gl-block {
+      background: hsl(var(--muted) / 0.3);
+      border: 1px solid hsl(var(--border) / 0.6);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .gl-info-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.78rem;
+    }
+
+    .gl-pill {
+      font-family: monospace;
+      font-size: 0.72rem;
+      font-weight: 600;
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      color: hsl(var(--foreground));
+    }
+
+    /* RIGHT PANEL (SCROLLAREA 520px) */
+    .split-right-panel {
+      height: 520px;
+      border: 1px solid hsl(var(--border) / 0.7);
+      border-radius: var(--radius-md);
+      background: hsl(var(--card));
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .panel-toolbar {
+      padding: 0.65rem 0.9rem;
+      border-bottom: 1px solid hsl(var(--border) / 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: hsl(var(--muted) / 0.15);
+      gap: 0.5rem;
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .filter-tab {
+      padding: 0.25rem 0.55rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      border-radius: 5px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: hsl(var(--muted-foreground));
+      cursor: pointer;
+    }
+
+    .filter-tab.active {
+      background: hsl(var(--card));
+      border-color: hsl(var(--border));
+      color: hsl(var(--foreground));
+      box-shadow: var(--shadow-sm);
+    }
+
+    .search-input {
+      padding: 0.3rem 0.65rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid hsl(var(--border));
+      background: hsl(var(--card));
+      color: hsl(var(--foreground));
+      font-size: 0.75rem;
+      width: 140px;
+      outline: none;
+    }
+
+    .search-input:focus {
+      border-color: hsl(var(--primary));
+    }
+
+    .scroll-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0;
+    }
+
+    /* MONTH ACCORDION ROW */
+    .month-row {
+      border-bottom: 1px solid hsl(var(--border) / 0.4);
+    }
+
+    .month-row-header {
+      padding: 0.65rem 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      background: hsl(var(--card));
+      transition: background 0.12s ease;
+      user-select: none;
+    }
+
+    .month-row-header:hover {
+      background: hsl(var(--muted) / 0.35);
+    }
+
+    .month-row-left {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .month-row-right {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      font-size: 0.8rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .sub-item-list {
+      background: hsl(var(--muted) / 0.15);
+      border-top: 1px solid hsl(var(--border) / 0.3);
+      padding: 0;
+    }
+
+    .sub-item-row {
+      padding: 0.55rem 0.9rem 0.55rem 2.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid hsl(var(--border) / 0.2);
+      font-size: 0.76rem;
+      transition: background 0.1s ease;
+    }
+
+    .sub-item-row:hover {
+      background: hsl(var(--muted) / 0.4);
+    }
+
+    .sub-item-left {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .sub-item-rates {
+      font-size: 0.7rem;
+      color: hsl(var(--muted-foreground));
+    }
+
+    .sub-item-right {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+    }
+
+    /* OPTION 2: TABBED COCKPIT */
+    .tabbed-container {
+      padding: 1.25rem;
+    }
+
+    .cockpit-tabs-header {
+      display: flex;
+      border-bottom: 1px solid hsl(var(--border));
+      gap: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .cockpit-tab-btn {
+      padding: 0.6rem 0.2rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: hsl(var(--muted-foreground));
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      background: transparent;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      transition: all 0.15s ease;
+    }
+
+    .cockpit-tab-btn.active {
+      color: hsl(var(--foreground));
+      border-bottom-color: hsl(var(--primary));
+    }
+
+    .table-clean {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+
+    .table-clean th {
+      text-align: left;
+      padding: 0.6rem 0.75rem;
+      color: hsl(var(--muted-foreground));
+      font-weight: 600;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid hsl(var(--border));
+    }
+
+    .table-clean td {
+      padding: 0.75rem;
+      border-bottom: 1px solid hsl(var(--border) / 0.3);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .table-clean tr:hover td {
+      background: hsl(var(--muted) / 0.25);
+    }
+
+    /* OPTION 3: LEDGER IMPACT */
+    .ledger-banner {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(13, 148, 136, 0.08));
+      border: 1px solid hsl(var(--border) / 0.8);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .ledger-3col {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    @media (max-width: 900px) {
+      .ledger-3col {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .ledger-card {
+      background: hsl(var(--muted) / 0.2);
+      border: 1px solid hsl(var(--border) / 0.6);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+    }
+
+    /* MODAL MOCK */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-box {
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius-lg);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      width: 440px;
+      max-width: 90%;
+      padding: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- TOP BAR -->
+    <div class="top-bar">
+      <div class="title-group">
+        <h1>
+          <span>Árfolyam-különbözetek Újratervezés</span>
+          <span class="badge-live">Interaktív Mockup</span>
+        </h1>
+        <p style="font-size: 0.85rem; color: hsl(var(--muted-foreground)); margin-top: 0.2rem;">
+          Eaisybill Production Dashboard — HSL Design Tokens & Micro-Interactions
+        </p>
+      </div>
+      <div class="top-controls">
+        <button class="btn btn-sm" id="themeToggle" onclick="toggleTheme()">
+          <span id="themeIcon">☀️</span> <span id="themeLabel">Világos mód</span>
+        </button>
+        <button class="btn btn-sm btn-primary" onclick="alert('Opció kiválasztva! Implementálható a kódbázisban.')">
+          Opció Elfogadása
+        </button>
+      </div>
+    </div>
+
+    <!-- OPTION SELECTOR TABS -->
+    <div class="option-tabs">
+      <div class="opt-tab active" onclick="switchOption(1)" id="tab-opt-1">
+        <div class="opt-tab-title">
+          <span>1. Opció: Fintech Dense Split</span>
+          <span class="badge-recommended">Ajánlott</span>
+        </div>
+        <div class="opt-tab-desc">
+          2-oszlopos 520px szinkronizált elrendezés (VatSection & RecentInvoices analógia), bal oldalon mini chart & GL sáv, jobb oldalon belső görgetésű havi accordion.
+        </div>
+      </div>
+
+      <div class="opt-tab" onclick="switchOption(2)" id="tab-opt-2">
+        <div class="opt-tab-title">
+          <span>2. Opció: Executive Tabbed Cockpit</span>
+        </div>
+        <div class="opt-tab-desc">
+          Füles vezérlőpult (Trendek | Havi összesítő | Tételes bizonylatlista | GL beállítások). Zéró görgetési teher.
+        </div>
+      </div>
+
+      <div class="opt-tab" onclick="switchOption(3)" id="tab-opt-3">
+        <div class="opt-tab-title">
+          <span>3. Opció: Financial Ledger & Cash Flow</span>
+        </div>
+        <div class="opt-tab-desc">
+          Pénzügyi kitettség és likviditási fókusz. Devizapárok szerint lebontott operatív cash-flow hatás és közvetlen audit export.
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================================================
+         OPTION 1: FINTECH DENSE SPLIT (RECOMMENDED)
+         ========================================================================== -->
+    <div id="option-view-1" class="option-view">
+      <div class="fx-card">
+        <!-- HEADER -->
+        <div class="fx-header" onclick="toggleCollapse(1)">
+          <div class="fx-header-left">
+            <div class="icon-box-amber">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 5v4m0 6v4M15 3v2m0 8v8M6 9h6M12 5h6"/>
+              </svg>
+            </div>
+            <div class="fx-title-wrap">
+              <h3>Árfolyam-különbözetek</h3>
+              <p>Devizás számlák teljesítés vs. pénzügyi rendezés közötti árfolyamváltozása</p>
+            </div>
+          </div>
+          <div class="fx-header-right">
+            <span class="pill-badge">EUR: 14</span>
+            <span class="pill-badge">USD: 5</span>
+            <div class="net-total-display text-profit" id="netDisplay1">+1 248 500 Ft</div>
+            <svg class="chevron-icon" id="chev1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- CONTENT BODY -->
+        <div class="split-layout" id="content1">
+          <!-- LEFT PANEL: KPI + MINI CHART + GL STATUS -->
+          <div class="split-left-panel">
+            <!-- 2x2 KPI GRID -->
+            <div class="kpi-mini-grid">
+              <div class="kpi-tile">
+                <span class="kpi-tile-label">Nettó különbözet</span>
+                <span class="kpi-tile-val text-profit">+1 248 500 Ft</span>
+              </div>
+              <div class="kpi-tile">
+                <span class="kpi-tile-label">Realizált nyereség</span>
+                <span class="kpi-tile-val text-profit">+2 890 100 Ft</span>
+              </div>
+              <div class="kpi-tile">
+                <span class="kpi-tile-label">Realizált veszteség</span>
+                <span class="kpi-tile-val text-loss">-1 641 600 Ft</span>
+              </div>
+              <div class="kpi-tile">
+                <span class="kpi-tile-label">TAO Hatás (9%)</span>
+                <span class="kpi-tile-val text-profit">+112 365 Ft</span>
+              </div>
+            </div>
+
+            <!-- MINI BAR CHART -->
+            <div class="mini-chart-card">
+              <div class="chart-header">
+                <span>Havi nettó árfolyam-eredmény</span>
+                <span style="font-size: 0.7rem; color: hsl(var(--muted-foreground));">2026. Év</span>
+              </div>
+              <div class="chart-container">
+                <div class="chart-zero-line"></div>
+                <!-- JAN -->
+                <div class="chart-bar-group" title="Január: +140 000 Ft">
+                  <div class="chart-bar up" style="height: 38px;"></div>
+                  <span class="chart-month-label">Jan</span>
+                </div>
+                <!-- FEB -->
+                <div class="chart-bar-group" title="Február: -85 000 Ft">
+                  <div class="chart-bar down" style="height: 25px;"></div>
+                  <span class="chart-month-label">Feb</span>
+                </div>
+                <!-- MAR -->
+                <div class="chart-bar-group" title="Március: +410 000 Ft">
+                  <div class="chart-bar up" style="height: 65px;"></div>
+                  <span class="chart-month-label">Már</span>
+                </div>
+                <!-- APR -->
+                <div class="chart-bar-group" title="Április: +95 000 Ft">
+                  <div class="chart-bar up" style="height: 28px;"></div>
+                  <span class="chart-month-label">Ápr</span>
+                </div>
+                <!-- MAJ -->
+                <div class="chart-bar-group" title="Május: -190 000 Ft">
+                  <div class="chart-bar down" style="height: 44px;"></div>
+                  <span class="chart-month-label">Máj</span>
+                </div>
+                <!-- JUN -->
+                <div class="chart-bar-group" title="Június: +320 000 Ft">
+                  <div class="chart-bar up" style="height: 52px;"></div>
+                  <span class="chart-month-label">Jún</span>
+                </div>
+                <!-- JUL -->
+                <div class="chart-bar-group" title="Július: +180 000 Ft">
+                  <div class="chart-bar up" style="height: 35px;"></div>
+                  <span class="chart-month-label">Júl</span>
+                </div>
+                <!-- AUG -->
+                <div class="chart-bar-group" title="Augusztus: -60 000 Ft">
+                  <div class="chart-bar down" style="height: 18px;"></div>
+                  <span class="chart-month-label">Aug</span>
+                </div>
+                <!-- SZEP -->
+                <div class="chart-bar-group" title="Szeptember: +438 500 Ft">
+                  <div class="chart-bar up" style="height: 70px;"></div>
+                  <span class="chart-month-label">Szep</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- COMPACT GL BLOCK -->
+            <div class="mini-gl-block">
+              <div class="gl-info-group">
+                <span style="font-weight: 600;">Főkönyvi számok:</span>
+                <span class="gl-pill" title="Árfolyamnyereség">976 (Nyereség)</span>
+                <span class="gl-pill" title="Árfolyamveszteség">876 (Veszteség)</span>
+              </div>
+              <button class="btn btn-sm" onclick="openGlModal(event)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Módosítás
+              </button>
+            </div>
+          </div>
+
+          <!-- RIGHT PANEL: 520px SCROLLAREA ACCORDION -->
+          <div class="split-right-panel">
+            <div class="panel-toolbar">
+              <div class="filter-tabs">
+                <button class="filter-tab active" onclick="setCurrencyFilter('all', this)">Mind (19)</button>
+                <button class="filter-tab" onclick="setCurrencyFilter('EUR', this)">EUR (14)</button>
+                <button class="filter-tab" onclick="setCurrencyFilter('USD', this)">USD (5)</button>
+              </div>
+              <input type="text" class="search-input" placeholder="Keresés partner / számla..." onkeyup="filterRows(this.value)" />
+            </div>
+
+            <div class="scroll-list" id="invoiceList1">
+              <!-- MÁRCIUS -->
+              <div class="month-row">
+                <div class="month-row-header" onclick="toggleMonth('m-mar')">
+                  <div class="month-row-left">
+                    <svg class="chevron-icon" id="chev-m-mar" style="width: 14px; height: 14px; transform: rotate(90deg);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="m9 18 6-6-6-6"/>
+                    </svg>
+                    <span>2026. Március</span>
+                    <span style="font-size: 0.7rem; color: hsl(var(--muted-foreground)); font-weight: 500;">(5 tétel)</span>
+                  </div>
+                  <div class="month-row-right">
+                    <span class="text-profit">+580 000 Ft</span>
+                    <span class="text-loss">-170 000 Ft</span>
+                    <span class="text-profit" style="font-weight: 700;">+410 000 Ft</span>
+                  </div>
+                </div>
+
+                <div class="sub-item-list" id="m-mar">
+                  <div class="sub-item-row" data-currency="EUR" data-search="DHL Express">
+                    <div class="sub-item-left">
+                      <span class="pill-badge" style="padding: 0.1rem 0.4rem; font-size: 0.68rem;">EUR</span>
+                      <div>
+                        <div style="font-weight: 600;">INV-2026-0891 · DHL Express GmbH</div>
+                        <div class="sub-item-rates">Telj: 2026.03.04 (394,20) → Kifiz: 2026.03.18 (402,50)</div>
+                      </div>
+                    </div>
+                    <div class="sub-item-right">
+                      <span style="color: hsl(var(--muted-foreground)); font-size: 0.72rem;">2 400,00 EUR</span>
+                      <span class="text-profit">+19 920 Ft</span>
+                      <span class="gl-pill" style="font-size: 0.65rem;">976</span>
+                    </div>
+                  </div>
+
+                  <div class="sub-item-row" data-currency="EUR" data-search="TechData Logistics">
+                    <div class="sub-item-left">
+                      <span class="pill-badge" style="padding: 0.1rem 0.4rem; font-size: 0.68rem;">EUR</span>
+                      <div>
+                        <div style="font-weight: 600;">TD-88412 · TechData Logistics Europe</div>
+                        <div class="sub-item-rates">Telj: 2026.03.08 (396,10) → Kifiz: 2026.03.22 (403,80)</div>
+                      </div>
+                    </div>
+                    <div class="sub-item-right">
+                      <span style="color: hsl(var(--muted-foreground)); font-size: 0.72rem;">14 500,00 EUR</span>
+                      <span class="text-profit">+111 650 Ft</span>
+                      <span class="gl-pill" style="font-size: 0.65rem;">976</span>
+                    </div>
+                  </div>
+
+                  <div class="sub-item-row" data-currency="USD" data-search="Amazon Web Services">
+                    <div class="sub-item-left">
+                      <span class="pill-badge" style="padding: 0.1rem 0.4rem; font-size: 0.68rem;">USD</span>
+                      <div>
+                        <div style="font-weight: 600;">AWS-2026-03 · Amazon Web Services Inc.</div>
+                        <div class="sub-item-rates">Telj: 2026.03.01 (368,40) → Kifiz: 2026.03.15 (362,10)</div>
+                      </div>
+                    </div>
+                    <div class="sub-item-right">
+                      <span style="color: hsl(var(--muted-foreground)); font-size: 0.72rem;">1 850,00 USD</span>
+                      <span class="text-loss">-11 655 Ft</span>
+                      <span class="gl-pill" style="font-size: 0.65rem;">876</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- FEBRUÁR -->
+              <div class="month-row">
+                <div class="month-row-header" onclick="toggleMonth('m-feb')">
+                  <div class="month-row-left">
+                    <svg class="chevron-icon" id="chev-m-feb" style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="m9 18 6-6-6-6"/>
+                    </svg>
+                    <span>2026. Február</span>
+                    <span style="font-size: 0.7rem; color: hsl(var(--muted-foreground)); font-weight: 500;">(4 tétel)</span>
+                  </div>
+                  <div class="month-row-right">
+                    <span class="text-profit">+120 000 Ft</span>
+                    <span class="text-loss">-205 000 Ft</span>
+                    <span class="text-loss" style="font-weight: 700;">-85 000 Ft</span>
+                  </div>
+                </div>
+
+                <div class="sub-item-list" id="m-feb" style="display: none;">
+                  <div class="sub-item-row" data-currency="EUR" data-search="Cloudflare Europe">
+                    <div class="sub-item-left">
+                      <span class="pill-badge" style="padding: 0.1rem 0.4rem; font-size: 0.68rem;">EUR</span>
+                      <div>
+                        <div style="font-weight: 600;">CF-2026-02 · Cloudflare Europe Ltd.</div>
+                        <div class="sub-item-rates">Telj: 2026.02.05 (392,50) → Kifiz: 2026.02.20 (388,10)</div>
+                      </div>
+                    </div>
+                    <div class="sub-item-right">
+                      <span style="color: hsl(var(--muted-foreground)); font-size: 0.72rem;">950,00 EUR</span>
+                      <span class="text-loss">-4 180 Ft</span>
+                      <span class="gl-pill" style="font-size: 0.65rem;">876</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- JANUÁR -->
+              <div class="month-row">
+                <div class="month-row-header" onclick="toggleMonth('m-jan')">
+                  <div class="month-row-left">
+                    <svg class="chevron-icon" id="chev-m-jan" style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="m9 18 6-6-6-6"/>
+                    </svg>
+                    <span>2026. Január</span>
+                    <span style="font-size: 0.7rem; color: hsl(var(--muted-foreground)); font-weight: 500;">(6 tétel)</span>
+                  </div>
+                  <div class="month-row-right">
+                    <span class="text-profit">+240 000 Ft</span>
+                    <span class="text-loss">-100 000 Ft</span>
+                    <span class="text-profit" style="font-weight: 700;">+140 000 Ft</span>
+                  </div>
+                </div>
+
+                <div class="sub-item-list" id="m-jan" style="display: none;">
+                  <div class="sub-item-row" data-currency="USD" data-search="OpenAI LLC">
+                    <div class="sub-item-left">
+                      <span class="pill-badge" style="padding: 0.1rem 0.4rem; font-size: 0.68rem;">USD</span>
+                      <div>
+                        <div style="font-weight: 600;">OAI-88319 · OpenAI LLC API</div>
+                        <div class="sub-item-rates">Telj: 2026.01.10 (355,00) → Kifiz: 2026.01.25 (362,40)</div>
+                      </div>
+                    </div>
+                    <div class="sub-item-right">
+                      <span style="color: hsl(var(--muted-foreground)); font-size: 0.72rem;">3 200,00 USD</span>
+                      <span class="text-profit">+23 680 Ft</span>
+                      <span class="gl-pill" style="font-size: 0.65rem;">976</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================================================
+         OPTION 2: EXECUTIVE TABBED COCKPIT
+         ========================================================================== -->
+    <div id="option-view-2" class="option-view" style="display: none;">
+      <div class="fx-card">
+        <!-- HEADER -->
+        <div class="fx-header">
+          <div class="fx-header-left">
+            <div class="icon-box-amber">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect width="18" height="18" x="3" y="3" rx="2"/>
+                <path d="M3 9h18M9 21V9"/>
+              </svg>
+            </div>
+            <div class="fx-title-wrap">
+              <h3>Árfolyam-különbözet Cockpit</h3>
+              <p>Szegmentált havi analitika, bizonylat audit és GL szabályok</p>
+            </div>
+          </div>
+          <div class="fx-header-right">
+            <span class="pill-badge">Éves Realizált: +1 248 500 Ft</span>
+          </div>
+        </div>
+
+        <div class="tabbed-container">
+          <div class="cockpit-tabs-header">
+            <button class="cockpit-tab-btn active" onclick="switchCockpitTab('c-trend', this)">📊 Havi Trend & Grafikon</button>
+            <button class="cockpit-tab-btn" onclick="switchCockpitTab('c-table', this)">📅 Havi Összesítő Tábla</button>
+            <button class="cockpit-tab-btn" onclick="switchCockpitTab('c-items', this)">📑 Tételes Bizonylatlista (19)</button>
+            <button class="cockpit-tab-btn" onclick="switchCockpitTab('c-gl', this)">⚙️ Főkönyvi Szabályok (GL)</button>
+          </div>
+
+          <!-- COCKPIT TAB 1: TREND -->
+          <div id="c-trend" class="cockpit-content">
+            <div style="height: 240px; background: hsl(var(--muted)/0.2); border-radius: var(--radius-md); padding: 1.5rem; display: flex; align-items: center; justify-content: center; color: hsl(var(--muted-foreground));">
+              [ Nagyfelbontású Kombinált Havi Árfolyam-grafikon: Nyereség (zöld oszlopok) + Veszteség (piros oszlopok) + Nettó Eredmény görbe ]
+            </div>
+          </div>
+
+          <!-- COCKPIT TAB 2: TABLE -->
+          <div id="c-table" class="cockpit-content" style="display: none;">
+            <table class="table-clean">
+              <thead>
+                <tr>
+                  <th>Időszak</th>
+                  <th style="text-align: right;">Nyereség</th>
+                  <th style="text-align: right;">Veszteség</th>
+                  <th style="text-align: right;">Nettó Eredmény</th>
+                  <th style="text-align: right;">TAO Hatás</th>
+                  <th style="text-align: right;">Tételek</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>2026. Március</td>
+                  <td style="text-align: right;" class="text-profit">+580 000 Ft</td>
+                  <td style="text-align: right;" class="text-loss">-170 000 Ft</td>
+                  <td style="text-align: right; font-weight: 700;" class="text-profit">+410 000 Ft</td>
+                  <td style="text-align: right;">+36 900 Ft</td>
+                  <td style="text-align: right;">5 db</td>
+                </tr>
+                <tr>
+                  <td>2026. Február</td>
+                  <td style="text-align: right;" class="text-profit">+120 000 Ft</td>
+                  <td style="text-align: right;" class="text-loss">-205 000 Ft</td>
+                  <td style="text-align: right; font-weight: 700;" class="text-loss">-85 000 Ft</td>
+                  <td style="text-align: right;">-7 650 Ft</td>
+                  <td style="text-align: right;">4 db</td>
+                </tr>
+                <tr style="font-weight: 700; background: hsl(var(--muted)/0.3);">
+                  <td>Összesen</td>
+                  <td style="text-align: right;" class="text-profit">+2 890 100 Ft</td>
+                  <td style="text-align: right;" class="text-loss">-1 641 600 Ft</td>
+                  <td style="text-align: right;" class="text-profit">+1 248 500 Ft</td>
+                  <td style="text-align: right;">+112 365 Ft</td>
+                  <td style="text-align: right;">19 db</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- COCKPIT TAB 3: ITEMS -->
+          <div id="c-items" class="cockpit-content" style="display: none;">
+            <p style="font-size: 0.8rem; color: hsl(var(--muted-foreground)); margin-bottom: 0.75rem;">
+              Minden érintett devizás számla közvetlen számlakép és banki párosítás előnézettel:
+            </p>
+            <table class="table-clean">
+              <thead>
+                <tr>
+                  <th>Számlaszám</th>
+                  <th>Partner</th>
+                  <th>Deviza</th>
+                  <th style="text-align: right;">Teljesítés Árf.</th>
+                  <th style="text-align: right;">Kifizetés Árf.</th>
+                  <th style="text-align: right;">Különbözet</th>
+                  <th style="text-align: center;">FK</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>INV-2026-0891</td>
+                  <td>DHL Express GmbH</td>
+                  <td>2 400 EUR</td>
+                  <td style="text-align: right;">394,20</td>
+                  <td style="text-align: right;">402,50</td>
+                  <td style="text-align: right; font-weight: 700;" class="text-profit">+19 920 Ft</td>
+                  <td style="text-align: center;"><span class="gl-pill">976</span></td>
+                </tr>
+                <tr>
+                  <td>TD-88412</td>
+                  <td>TechData Logistics</td>
+                  <td>14 500 EUR</td>
+                  <td style="text-align: right;">396,10</td>
+                  <td style="text-align: right;">403,80</td>
+                  <td style="text-align: right; font-weight: 700;" class="text-profit">+111 650 Ft</td>
+                  <td style="text-align: center;"><span class="gl-pill">976</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- COCKPIT TAB 4: GL -->
+          <div id="c-gl" class="cockpit-content" style="display: none;">
+            <div style="max-width: 600px; padding: 1rem; background: hsl(var(--muted)/0.2); border-radius: var(--radius-md);">
+              <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem;">Főkönyvi Számlaszámok Beállítása</h4>
+              <p style="font-size: 0.78rem; color: hsl(var(--muted-foreground)); margin-bottom: 1rem;">
+                A devizás tételek kiegyenlítésekor keletkező automatikus vegyes könyvelési naplósorok ezen főkönyvi számokra kerülnek feladásra:
+              </p>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div>
+                  <label style="font-size: 0.72rem; font-weight: 600; text-transform: uppercase; color: hsl(var(--muted-foreground));">Árfolyamnyereség GL</label>
+                  <input type="text" class="search-input" value="976 - Pénzügyi műveletek egyéb bevételei" style="width: 100%; margin-top: 0.3rem;" />
+                </div>
+                <div>
+                  <label style="font-size: 0.72rem; font-weight: 600; text-transform: uppercase; color: hsl(var(--muted-foreground));">Árfolyamveszteség GL</label>
+                  <input type="text" class="search-input" value="876 - Pénzügyi műveletek egyéb ráfordításai" style="width: 100%; margin-top: 0.3rem;" />
+                </div>
+              </div>
+              <button class="btn btn-sm btn-primary">Szabályok Mentése</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================================================
+         OPTION 3: FINANCIAL LEDGER & CASH-FLOW IMPACT
+         ========================================================================== -->
+    <div id="option-view-3" class="option-view" style="display: none;">
+      <div class="fx-card">
+        <div class="fx-header">
+          <div class="fx-header-left">
+            <div class="icon-box-amber">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 6v12M8 10h8"/>
+              </svg>
+            </div>
+            <div class="fx-title-wrap">
+              <h3>Pénzügyi Deviza Kitettség & Eredmény</h3>
+              <p>Operatív likviditási hatás és főkönyvi audit napló</p>
+            </div>
+          </div>
+          <div class="fx-header-right">
+            <button class="btn btn-sm">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+              </svg>
+              Excel Export
+            </button>
+          </div>
+        </div>
+
+        <div style="padding: 1.25rem;">
+          <div class="ledger-banner">
+            <div>
+              <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: hsl(var(--muted-foreground));">
+                Összesített Devizás Forgalom
+              </div>
+              <div style="font-size: 1.4rem; font-weight: 700;">118 450 EUR + 24 600 USD</div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: hsl(var(--muted-foreground));">
+                Árfolyamhatás aránya a forgalomhoz
+              </div>
+              <div style="font-size: 1.4rem; font-weight: 700; color: #10b981;">+2,14% (Pozitív Alpha)</div>
+            </div>
+          </div>
+
+          <div class="ledger-3col">
+            <div class="ledger-card">
+              <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 0.5rem;">💶 EUR / HUF Kitettség</div>
+              <div style="font-size: 1.15rem; font-weight: 700; color: #10b981;">+1 154 200 Ft</div>
+              <div style="font-size: 0.72rem; color: hsl(var(--muted-foreground)); mt: 0.2rem;">14 kiegyenlített számla (átl. spread: +3,2 Ft)</div>
+            </div>
+
+            <div class="ledger-card">
+              <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 0.5rem;">💵 USD / HUF Kitettség</div>
+              <div style="font-size: 1.15rem; font-weight: 700; color: #10b981;">+94 300 Ft</div>
+              <div style="font-size: 0.72rem; color: hsl(var(--muted-foreground)); mt: 0.2rem;">5 kiegyenlített számla (átl. spread: +1,1 Ft)</div>
+            </div>
+
+            <div class="ledger-card">
+              <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 0.5rem;">🏛️ Főkönyvi Feladás</div>
+              <div style="font-size: 1.15rem; font-weight: 700; color: hsl(var(--primary));">100% Lekönyvelve</div>
+              <div style="font-size: 0.72rem; color: hsl(var(--muted-foreground)); mt: 0.2rem;">976 / 876 számlákon automatikusan kontírozva</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GL EDIT MODAL MOCK -->
+  <div class="modal-backdrop" id="glModal">
+    <div class="modal-box">
+      <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem;">Főkönyvi Számlák Módosítása</h3>
+      <p style="font-size: 0.78rem; color: hsl(var(--muted-foreground)); margin-bottom: 1rem;">
+        Add meg az árfolyamnyereség és -veszteség könyvelésére használt főkönyvi számokat:
+      </p>
+      <div style="margin-bottom: 0.75rem;">
+        <label style="font-size: 0.72rem; font-weight: 600; text-transform: uppercase; color: hsl(var(--muted-foreground)); display: block; margin-bottom: 0.25rem;">
+          Árfolyamnyereség (GL Szám)
+        </label>
+        <input type="text" value="976" class="search-input" style="width: 100%; height: 34px;" />
+      </div>
+      <div style="margin-bottom: 1.25rem;">
+        <label style="font-size: 0.72rem; font-weight: 600; text-transform: uppercase; color: hsl(var(--muted-foreground)); display: block; margin-bottom: 0.25rem;">
+          Árfolyamveszteség (GL Szám)
+        </label>
+        <input type="text" value="876" class="search-input" style="width: 100%; height: 34px;" />
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button class="btn btn-sm" onclick="closeGlModal()">Mégse</button>
+        <button class="btn btn-sm btn-primary" onclick="closeGlModal()">Mentés</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const isDark = html.classList.toggle('dark');
+      document.getElementById('themeIcon').textContent = isDark ? '☀️' : '🌙';
+      document.getElementById('themeLabel').textContent = isDark ? 'Világos mód' : 'Sötét mód';
+    }
+
+    function switchOption(num) {
+      document.querySelectorAll('.opt-tab').forEach((t, i) => {
+        t.classList.toggle('active', i === num - 1);
+      });
+      document.querySelectorAll('.option-view').forEach((v, i) => {
+        v.style.display = (i === num - 1) ? 'block' : 'none';
+      });
+    }
+
+    function toggleCollapse(num) {
+      const content = document.getElementById('content' + num);
+      const chev = document.getElementById('chev' + num);
+      if (content.style.display === 'none') {
+        content.style.display = 'grid';
+        chev.classList.remove('rotated');
+      } else {
+        content.style.display = 'none';
+        chev.classList.add('rotated');
+      }
+    }
+
+    function toggleMonth(id) {
+      const el = document.getElementById(id);
+      const chev = document.getElementById('chev-' + id);
+      const isClosed = el.style.display === 'none';
+      el.style.display = isClosed ? 'block' : 'none';
+      chev.style.transform = isClosed ? 'rotate(90deg)' : 'rotate(0deg)';
+    }
+
+    function setCurrencyFilter(curr, btn) {
+      document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const rows = document.querySelectorAll('.sub-item-row');
+      rows.forEach(r => {
+        if (curr === 'all' || r.getAttribute('data-currency') === curr) {
+          r.style.display = 'flex';
+        } else {
+          r.style.display = 'none';
+        }
+      });
+    }
+
+    function filterRows(q) {
+      const term = q.toLowerCase().trim();
+      const rows = document.querySelectorAll('.sub-item-row');
+      rows.forEach(r => {
+        const text = r.getAttribute('data-search').toLowerCase();
+        r.style.display = text.includes(term) ? 'flex' : 'none';
+      });
+    }
+
+    function switchCockpitTab(tabId, btn) {
+      document.querySelectorAll('.cockpit-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.cockpit-content').forEach(c => c.style.display = 'none');
+      document.getElementById(tabId).style.display = 'block';
+    }
+
+    function openGlModal(e) {
+      e.stopPropagation();
+      document.getElementById('glModal').classList.add('open');
+    }
+
+    function closeGlModal() {
+      document.getElementById('glModal').classList.remove('open');
+    }
+  </script>
+</body>
+</html>
