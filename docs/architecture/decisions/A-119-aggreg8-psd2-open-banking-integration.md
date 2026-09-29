@@ -80,6 +80,10 @@ Az **Aggreg8 (AISP API v5.3.1)** felhőalapú banki aggregátorát integráltuk 
   - **Mobil reszponzivitás:** Kis képernyőn elegáns, vízszintesen görgethető gombfolyammá alakul át a bal oldalsáv.
 - **Állapotjelző & Átirányító Kártya a Beállítások $\rightarrow$ Bankszámlák lapon:** A `BankAccountsTab` megtartja a cég manuális kimenő bankszámláinak nyilvántartását, tetején egy státuszkártyával, amely mutatja az aktív banki kapcsolatok számát, és a `navigate('/integrations?tab=banking')` hívással közvetlenül a megfelelő nézetbe vezeti a felhasználót.
 
+### 7. Aggreg8 PSD2 és Fájlimport Cross-Deduplikáció (2026-09 Frissítés)
+- **Probléma:** Amikor egy cég már hónapok óta manuálisan importált bankszámlakivonatokkal rendelkezik, és utólag csatlakoztatja az Aggreg8 PSD2-t, a banki API a történeti ablakban (90–180 nap) lekéri a korábbi tranzakciókat. A leírási mezők eltérése miatt a korábbi `UNIQUE(company_id, transaction_date, description, amount)` nem védte ki a duplikációt, ami egyenlegtorzulást és kettős számlapárosítást okozott (EB-0211).
+- **Megoldás:** Bevezetésre került a `deduplicate_aggreg8_candidates()` (Phase 2b) réteg a Python Workerben (`aggreg8_processor.py`) és kibővítettük a banki referencia felismerést (`db.py:extract_bank_reference`). Ha egy tétel már létezik fájlimportból, a rendszer nem szúr be új rekordot és nem futtat rá AI kategorizálást/párosítást, hanem a meglévő rekordot dúsítja fel (`UPDATE transactions SET a8_transaction_id = a8_id WHERE id = matched_file_tx_id`). Részletek: [A-179](./A-179-aggreg8-psd2-cross-import-deduplication.md).
+
 ## Consequences
 
 **Pozitív:**
@@ -87,12 +91,14 @@ Az **Aggreg8 (AISP API v5.3.1)** felhőalapú banki aggregátorát integráltuk 
 - Zero Liability: nincs biztonsági kockázat a banki jelszavakkal kapcsolatban.
 - 180 napos PSD2 engedélyezési ciklus, egyértelmű lejárati figyelmeztetéssel.
 - Azonnali számla-tranzakció párosítás manuális kivonatfeltöltés nélkül.
+- Zéró duplikáció meglévő fájlimportos cégeknél (A-179).
 
 **Negatív / Kötöttségek:**
 - Függőség az Aggreg8 rendelkezésre állásától és az `A8_AIS_API_KEY` titkos környezeti változótól.
 - 180 naponta a PSD2 törvény miatt a felhasználónak meg kell újítania a felhatalmazást.
 
 ## Kapcsolódó
+- [A-179: Aggreg8 PSD2 és Fájlimport Cross-Deduplikációs Architektúra](./A-179-aggreg8-psd2-cross-import-deduplication.md)
 - [026-banking-integration.md (BRD)](../../business/decisions/026-banking-integration.md)
 - [P-087: Aggreg8 Bankcsatlakozás és SyncUI UX](../../product/decisions/P-087-aggreg8-bank-connections-and-sync-ui-ux.md)
 - [Aggreg8 Tranzakciós és Partner Adatstruktúra Specifikáció](../aggreg8-transaction-data-spec.md)
