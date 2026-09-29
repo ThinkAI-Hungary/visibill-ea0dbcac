@@ -29,7 +29,7 @@
     },
     "transactions": {
       "card_title": "Tranzakciós fájlok feltöltése",
-      "card_description": "Válassz PDF, CSV vagy Excel fájlokat, amelyek banki vagy egyéb pénzügyi tranzakciókat tartalmaznak. A rendszer automatikusan kinyeri az adatokat és rögzíti a tranzakciókat.",
+      "card_description": "Válassz PDF, CSV, Excel fájlokat vagy banki bizonylatképeket, amelyek banki vagy egyéb pénzügyi tranzakciókat tartalmaznak. Támogatott formátumok: PDF, CSV, XLS, XLSX, JPG, JPEG, PNG, WebP",
       "action_button": "{{count}} tranzakciós fájl feltöltése"
     },
     "salaries": {

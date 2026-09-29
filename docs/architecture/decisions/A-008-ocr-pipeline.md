@@ -1,7 +1,8 @@
 # A-008: OCR Pipeline (Vision + MarkItDown)
 
 **Status:** Decided  
-**Date:** 2025-10
+**Date:** 2025-10  
+**Utoljára frissítve:** 2026-09-29
 
 ## Context
 
@@ -35,6 +36,7 @@ Markdown szöveg → LLM extraction (adatkinyerés)
 - **High-Quality PDF Rendering:** Kép-alapú / szkennelt PDF-ek esetén a beágyazott képek hibás kicsomagolása helyett a PyMuPDF (`fitz`) segítségével nagy felbontású (200 DPI) PNG képként rendereljük le a PDF első oldalát a Direct Vision OCR számára.
 - **Flaky Vision Refusal Retry:** Ha a Vision API ideiglenesen/flaky módon elutasítja a kép beolvasását (pl. *"I'm sorry, I can't read this..."* sablonválaszok), a rendszer automatikusan észleli a nem-hasznos választ (`_is_vision_response_useful`), és újrapróbálkozik (`max_attempts=2`) a direct vision OCR-rel.
 - **Sparse OCR & Phantom Scanner Layer Detection (2026-09 frissítés, EB-0208):** Szkennelt számláknál (pl. irodai szkennerek beépített mini-OCR rétege) gyakori, hogy a PDF tartalmaz ugyan egy minimális láthatatlan szövegréteget, de az csak néhány izolált töredékből áll (pl. 100-250 karakter értelmetlen sorszám vagy fejléc), miközben a számla érdemi adattartalma csak képen látható. A korábbi egyszerű hossz-alapú ellenőrzés (`len(text) < 100`) az ilyen szövegeket natívnak minősítette, ami miatt az LLM classifier "nem számla" hibára futott (`nem_szamla`). Az `is_sparse_ocr_text()` függvény (`worker/ocr_markitdown.py`) számla-kulcsszó és token-sűrűség elemzéssel észleli a ritkás szövegréteget, és automatikusan átirányítja a feldolgozást a Direct Vision OCR útvonalra.
+- **Manuális Tranzakciós Képbizonylat Konverzió (2026-09-29 frissítés, EB-0219):** A banki tranzakció pipeline-ban engedélyezett képi bizonylatokat (JPG/PNG átutalási igazolások és képernyőképek) a worker memóriában, lokális Pillow (`PIL`) konverzióval azonnal PDF-fé alakítja át (`convert_image_to_pdf`). Ezáltal a bizonylatképek felesleges külső API költségek nélkül közvetlenül a meglévő, kiforrott PDF OCR és szövegfeldolgozó pipeline-ba (`_extract_from_pdf`) futnak be, megőrizve a Fix C pénzügyi tartalmi védelmi kaput.
 
 ## Consequences
 

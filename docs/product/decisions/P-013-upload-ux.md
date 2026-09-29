@@ -12,7 +12,7 @@
 - `src/features/upload` (ManualUploadFeature) — drag & drop + fájlválasztó, 5 tab: Számlák (`invoices`), Pénztárbizonylat (`vouchers`), Tranzakciók (`transactions`), Bérek & Járulékok (`salaries`), Riportok (`reports`)
 - `document_category` perzisztencia az `invoice_uploads` táblában: `'invoice'` (számlák), `'penztarbizonylat'` (pénztárbizonylatok), `'payroll'` (bérek és járulékok)
 - Specifikus szelektorok: `bank_hint` (11 banki formátum a tranzakciókhoz) és `courier` (GLS, MPL, Mixpack a riportokhoz)
-- Támogatott formátumok: PDF, JPG, PNG, WebP (számlák, pénztárbizonylatok); PDF, CSV, XLS/XLSX (tranzakciók, bérek); XLS, XLSX, CSV, PDF, DOC, DOCX (riportok)
+- Támogatott formátumok: PDF, JPG, PNG, WebP (számlák, pénztárbizonylatok, valamint tranzakciók esetén manuális bizonylat-feltöltéskor — EB-0219); PDF, CSV, XLS/XLSX (tranzakciók, bérek); XLS, XLSX, CSV, PDF, DOC, DOCX (riportok)
 - `UploadHistory` komponens: korábbi feltöltések státusza, dátumszűrés, előnézet és újrafuttatás
 - `UploadedFilesModal` — feltöltött fájlok kezelése a tab-ra szűrve, dinamikus tábla-illeszkedéssel (`selectFields`) és batch törléssel (A/B)
 

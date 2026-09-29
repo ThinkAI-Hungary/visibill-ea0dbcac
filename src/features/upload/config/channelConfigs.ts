@@ -65,20 +65,24 @@ export const CHANNEL_CONFIGS: Record<UploadChannelId, ChannelConfig> = {
     id: 'transactions',
     title: 'Tranzakciók',
     cardTitle: 'Tranzakciós fájlok feltöltése',
-    cardDescription: 'Válassz PDF, CSV vagy Excel fájlokat, amelyek banki vagy egyéb pénzügyi tranzakciókat tartalmaznak. A rendszer automatikusan kinyeri az adatokat és rögzíti a tranzakciókat.',
+    cardDescription: 'Válassz PDF, CSV, Excel fájlokat vagy banki bizonylatképeket, amelyek banki vagy egyéb pénzügyi tranzakciókat tartalmaznak. Támogatott formátumok: PDF, CSV, XLS, XLSX, JPG, JPEG, PNG, WebP',
     icon: CreditCard,
     targetTable: 'transaction_uploads',
     storageBucket: 'transactions',
     storageFolder: '',
     notificationType: 'transaction',
-    allowedExtensions: ['.pdf', '.csv', '.xls', '.xlsx'],
+    allowedExtensions: ['.pdf', '.csv', '.xls', '.xlsx', '.jpg', '.jpeg', '.png', '.webp'],
     allowedMimeTypes: [
       'application/pdf',
       'text/csv',
       'application/vnd.ms-excel',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/webp',
     ],
-    fileTypeDescription: 'PDF, CSV vagy Excel (XLS, XLSX) fájlokat',
+    fileTypeDescription: 'PDF, CSV, Excel (XLS, XLSX) vagy bizonylatkép (JPG, PNG, WebP) fájlokat',
     dragPrompt: 'Húzd ide a tranzakciós fájlokat, vagy kattints a tallózáshoz',
     actionButtonLabel: (count: number) =>
       i18n.t('upload:channels_config.transactions.action_button', {
@@ -86,6 +90,9 @@ export const CHANNEL_CONFIGS: Record<UploadChannelId, ChannelConfig> = {
         defaultValue: `${count} tranzakciós fájl feltöltése`,
       }),
     hasBankHintSelector: true,
+    defaultMetadata: {
+      source: 'manual_transaction_upload',
+    },
   },
   salaries: {
     id: 'salaries',
