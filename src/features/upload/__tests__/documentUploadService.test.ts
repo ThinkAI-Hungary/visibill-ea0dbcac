@@ -27,16 +27,22 @@ describe('DocumentUploadService & ChannelConfigs', () => {
       expect(validateFileType(zipFile, CHANNEL_CONFIGS.invoices)).toBe(false);
     });
 
-    it('validates transaction files (PDF, CSV, XLS, XLSX)', () => {
+    it('validates transaction files (PDF, CSV, XLS, XLSX, JPG, PNG, WEBP)', () => {
       const pdfFile = new File(['dummy'], 'kivonat.pdf', { type: 'application/pdf' });
       const csvFile = new File(['dummy'], 'kivonat.csv', { type: 'text/csv' });
       const xlsxFile = new File(['dummy'], 'kivonat.xlsx', {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
+      const jpgFile = new File(['dummy'], 'otp_bizonylat.jpg', { type: 'image/jpeg' });
+      const pngFile = new File(['dummy'], 'bank_slip.png', { type: 'image/png' });
+      const webpFile = new File(['dummy'], 'receipt.webp', { type: 'image/webp' });
 
       expect(validateFileType(pdfFile, CHANNEL_CONFIGS.transactions)).toBe(true);
       expect(validateFileType(csvFile, CHANNEL_CONFIGS.transactions)).toBe(true);
       expect(validateFileType(xlsxFile, CHANNEL_CONFIGS.transactions)).toBe(true);
+      expect(validateFileType(jpgFile, CHANNEL_CONFIGS.transactions)).toBe(true);
+      expect(validateFileType(pngFile, CHANNEL_CONFIGS.transactions)).toBe(true);
+      expect(validateFileType(webpFile, CHANNEL_CONFIGS.transactions)).toBe(true);
     });
 
     it('validates courier reports (XLS, XLSX, CSV, PDF, DOC, DOCX)', () => {

@@ -29,7 +29,7 @@
     },
     "transactions": {
       "card_title": "Učitavanje datoteka transakcija",
-      "card_description": "Odaberite PDF, CSV ili Excel datoteke koje sadrže bankovne ili druge financijske transakcije. Sustav automatski izdvaja podatke i evidentira transakcije.",
+      "card_description": "Odaberite PDF, CSV, Excel datoteke ili slike bankovnih potvrda koje sadrže bankovne ili druge financijske transakcije. Podržani formati: PDF, CSV, XLS, XLSX, JPG, JPEG, PNG, WebP",
       "action_button": "Učitaj transakcije ({{count}})"
     },
     "salaries": {

@@ -65,7 +65,7 @@ export const CHANNEL_CONFIGS: Record<UploadChannelId, ChannelConfig> = {
     id: 'transactions',
     title: 'Tranzakciók',
     cardTitle: 'Tranzakciós fájlok feltöltése',
-    cardDescription: 'Válassz PDF, CSV vagy Excel fájlokat, vagy banki igazolás képeket, amelyek banki vagy egyéb pénzügyi tranzakciókat tartalmaznak. A rendszer automatikusan kinyeri az adatokat és rögzíti a tranzakciókat.',
+    cardDescription: 'Válassz PDF, CSV, Excel fájlokat vagy banki bizonylatképeket, amelyek banki vagy egyéb pénzügyi tranzakciókat tartalmaznak. Támogatott formátumok: PDF, CSV, XLS, XLSX, JPG, JPEG, PNG, WebP',
     icon: CreditCard,
     targetTable: 'transaction_uploads',
     storageBucket: 'transactions',
