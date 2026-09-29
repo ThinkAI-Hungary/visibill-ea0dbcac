@@ -93,3 +93,6 @@ verify_jwt = true
 [functions."aggreg8-callback"]
 verify_jwt = false
 
+[functions.customer-api]
+verify_jwt = false
+
