@@ -29,9 +29,10 @@ Az Aggreg8 folyamatban a normalizálás után, de az AI kategóriabesorolás (Ph
 3. **Kétszintű párosítási prioritás:**
    - **Prioritás 1 (Banki referencia):** Ha mind a beérkező Aggreg8 tétel, mind a meglévő fájl tétel tartalmaz azonos banki hivatkozást (pl. K&H `MSV...`, `MSK...`, `MS0...`, `AAACT...`, `BNK...`, `/REF/...`, vagy napi POS kártyafedezeti ID-t), és az összeg azonos, akkor 100%-os biztonsággal azonosítja a duplikátumot.
    - **Prioritás 2 (Egzakt dátum + összeg):** Ha nincs banki referencia, de a `transaction_date` és az `amount` forintra pontosan megegyezik, 1-to-1 leköti a rekordot a meglévő fájlimportos tételhez.
-4. **Meglévő Rekord Gazdagítása (Enrichment over Duplication):**
-   - Ahelyett, hogy új sort szúrna be, a meglévő fájlimportos tranzakciót gazdagítja az Aggreg8 azonosítóval: `UPDATE transactions SET a8_transaction_id = a8_id WHERE id = matched_file_tx_id`.
-   - A tétel kikerül a feldolgozási listából: nem fut rá AI kategorizálás (tokenköltség megtakarítás) és nem fut rá számlapárosítás (a meglévő párosítások és egyenlegek sértetlenek maradnak).
+4. **Meglévő Rekord Gazdagítása (Enrichment over Duplication) & Atomi Konkurenciavédelem:**
+   - Ahelyett, hogy új sort szúrna be, a meglévő fájlimportos tranzakciót gazdagítja az Aggreg8 azonosítóval: `UPDATE transactions SET a8_transaction_id = a8_id WHERE id = matched_file_tx_id AND a8_transaction_id IS NULL`.
+   - **Atomi versenyhelyzet-védelem:** A frissítés `.is_("a8_transaction_id", "null")` feltétellel fut le. Amennyiben egy párhuzamos worker vagy folyamat már összekötötte a tételt (0 sor frissült), a rendszer nem tekinti lefoglaltnak a rekordot, hanem új tranzakcióként továbbengedi, kivédve a race condition miatti adatvesztést vagy 23505-ös ütközést.
+   - Sikeres összekötés esetén a tétel kikerül a feldolgozási listából: nem fut rá AI kategorizálás (tokenköltség megtakarítás) és nem fut rá számlapárosítás (a meglévő párosítások és egyenlegek sértetlenek maradnak).
 
 ### 2. Kibővített Banki Referencia-Felismerés (`db.py:extract_bank_reference`)
 A magyar banki formátumok sajátosságait lefedve a reguláris kifejezést kiterjesztettük:
