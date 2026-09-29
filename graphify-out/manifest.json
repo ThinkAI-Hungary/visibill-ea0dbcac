@@ -3030,8 +3030,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-008-ocr-pipeline.md": {
-    "mtime": 1790683106.7208157,
-    "ast_hash": "b44fad4f326c826ba32b7d3a9f57e37e",
+    "mtime": 1790691723.9916291,
+    "ast_hash": "f9264a6fb4760cd7a99898d77a00d24f",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-009-auth-rbac.md": {
@@ -3450,8 +3450,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-013-upload-ux.md": {
-    "mtime": 1788270733.6850133,
-    "ast_hash": "f7407285a23f008cc65cf855a8469f57",
+    "mtime": 1790689965.316715,
+    "ast_hash": "91bd7925ee9eab13e547af31dfaf8b13",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-015-bulk-actions.md": {
@@ -3810,8 +3810,8 @@
     "semantic_hash": ""
   },
   "src/components/vat/VatRowDrillDown.tsx": {
-    "mtime": 1790687768.911874,
-    "ast_hash": "ef2ee54a654dee494a49691c21814ca6",
+    "mtime": 1790688087.150312,
+    "ast_hash": "4118e9ee11fe127a6ff0d12af64b64aa",
     "semantic_hash": ""
   },
   "src/components/vat/VatTrendChart.tsx": {
@@ -7580,8 +7580,8 @@
     "semantic_hash": ""
   },
   "src/features/upload/config/channelConfigs.ts": {
-    "mtime": 1790153981.994591,
-    "ast_hash": "b267e5473f1f8c4ba5f1019d53efc6ad",
+    "mtime": 1790689435.4827695,
+    "ast_hash": "24e33a00fc006486d9e132548313364c",
     "semantic_hash": ""
   },
   "src/features/upload/core/documentUploadService.ts": {
@@ -7610,8 +7610,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-064-multi-channel-upload-engine-modularization.md": {
-    "mtime": 1788270733.6850133,
-    "ast_hash": "629d3748305f563849d2f599e1b54e2d",
+    "mtime": 1790691706.843143,
+    "ast_hash": "b1ad3124b256bbb68d9af10c3f8657ca",
     "semantic_hash": ""
   },
   "src/features/invoices/__tests__/expandedRowSections.test.tsx": {

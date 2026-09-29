@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-08-31  
-**Utoljára frissítve:** 2026-09-01  
+**Utoljára frissítve:** 2026-09-29  
 
 ## Context
 A korábbi `src/pages/ManualUpload.tsx` fájl 2155 soros monolitikummá nőtt. 6 független fájlfeltöltési csatorna (számlák, pénztárbizonylatok, bankkivonatok, béradatok, tranzakciók, futár riportok) másolta le szinte 100%-ban ugyanazt a fájlvalidációs, drag-and-drop, duplikátum-keresési, multi-click mutex szinkronizációs, Supabase Storage feltöltési, PGMQ sorbaállítási és React Query cache frissítési logikát.
@@ -31,21 +31,27 @@ A kódduplikáció miatt az [A-023](./A-023-upload-dedup-protection.md) és [A-0
    - **P1 DB Duplikátum Lekérdezés:** Minden releváns státusz (`processed`, `pending`, `processing`, `ignored`, `completed`, `webhook_sent`) ellenőrzése fut le indítás előtt.
    - **P2 Trigger Bypass:** Duplikáció megerősítésekor `metadata: { source: 'manual_reupload' }` kerül beírásra, így a DB trigger dedup guard szándékos újrafeltöltésként kezeli.
 
-4. **Többtáblás Fájlkezelő Modal Sémailleszkedés (`src/components/UploadedFilesModal.tsx`):**
-   - Az `UploadedFilesModal` komponens dinamikus mezőkiválasztással (`selectFields`) alkalmazkodik a lekérdezett táblához: a `document_category` oszlopot kizárólag az `invoice_uploads` tábla lekérdezésekor kéri le, míg a dedikált táblák (`transaction_uploads`, `bank_statement_uploads`, `report_uploads`) esetén nem hivatkozik nem létező oszlopra, megelőzve a Postgres `42703` hibákat.
-
-## Consequences
-**Pozitív:**
-- A `ManualUpload.tsx` mérete 2155 sorról ~15 sorra csökkent, a bundle méret 76 kB-ról 50 kB-ra csökkent.
-- A 6 feltöltési csatorna közötti ~1500 sor duplikáció megszűnt.
-- A feltöltési logika 100%-ban unit-tesztelhetővé vált React DOM mountolás nélkül.
-- Új feltöltési csatorna hozzáadása 1 konfigurációs objektum deklarálásával megvalósítható.
-
-**Negatív / Trade-off:**
-- A csatornák állapota (kiválasztott fájlok) független hook instance-okban él a tab-váltások közötti fájlmegőrzéshez.
-
-## Kapcsolódó
-- [A-023: Upload Dedup Védelem (DB Trigger + Frontend Mutex)](./A-023-upload-dedup-protection.md)
-- [A-041: Mailgun Webhook Concurrent Dedup — Háromrétegű Idempotency](./A-041-mailgun-concurrent-dedup.md)
-- [A-060: Moduláris App Router & Platform Bootstrap Architektúra](./A-060-modular-app-router-and-bootstrap-shell.md)
-- [A-062: Számla Feature Szelet Modularizáció és Dekompozíció](./A-062-invoices-feature-slice-modularization.md)
+34: 4. **Többtáblás Fájlkezelő Modal Sémailleszkedés (`src/components/UploadedFilesModal.tsx`):**
+35:    - Az `UploadedFilesModal` komponens dinamikus mezőkiválasztással (`selectFields`) alkalmazkodik a lekérdezett táblához: a `document_category` oszlopot kizárólag az `invoice_uploads` tábla lekérdezésekor kéri le, míg a dedikált táblák (`transaction_uploads`, `bank_statement_uploads`, `report_uploads`) esetén nem hivatkozik nem létező oszlopra, megelőzve a Postgres `42703` hibákat.
+36: 
+37: 5. **Manuális Tranzakció Képfeltöltés és Forrás Metaadat Címkézés (2026-09-29, EB-0219):**
+38:    - A tranzakciós csatorna (`CHANNEL_CONFIGS.transactions`) támogatja a `.jpg, .jpeg, .png, .webp` kiterjesztéseket és képi MIME típusokat, lehetővé téve a banki átutalási bizonylatfotók és képernyőképek feltöltését.
+39:    - A csatorna konfigurációja explicit `defaultMetadata: { source: 'manual_transaction_upload' }` beállítást kapott, amely bekerül a `transaction_uploads.metadata` JSONB oszlopba. Ez lehetővé teszi a háttér-worker számára, hogy szigorúan elhatárolja az igazolt manuális felhasználói feltöltéseket az automatikus email aliasoktól (`process-mailgun-webhook`), fenntartva a Fix B védelmet a képi fantomtranzakciók ellen.
+40: 
+41: ## Consequences
+42: **Pozitív:**
+43: - A `ManualUpload.tsx` mérete 2155 sorról ~15 sorra csökkent, a bundle méret 76 kB-ról 50 kB-ra csökkent.
+44: - A 6 feltöltési csatorna közötti ~1500 sor duplikáció megszűnt.
+45: - A feltöltési logika 100%-ban unit-tesztelhetővé vált React DOM mountolás nélkül.
+46: - Új feltöltési csatorna hozzáadása vagy meglévő csatorna kiterjesztése (pl. tranzakció képek EB-0219) deklaratívan, 1 konfigurációs objektum módosításával megvalósítható.
+47: 
+48: **Negatív / Trade-off:**
+49: - A csatornák állapota (kiválasztott fájlok) független hook instance-okban él a tab-váltások közötti fájlmegőrzéshez.
+50: 
+51: ## Kapcsolódó
+52: - [A-008: OCR Pipeline (Vision + MarkItDown)](./A-008-ocr-pipeline.md)
+53: - [A-023: Upload Dedup Védelem (DB Trigger + Frontend Mutex)](./A-023-upload-dedup-protection.md)
+54: - [A-041: Mailgun Webhook Concurrent Dedup — Háromrétegű Idempotency](./A-041-mailgun-concurrent-dedup.md)
+55: - [A-060: Moduláris App Router & Platform Bootstrap Architektúra](./A-060-modular-app-router-and-bootstrap-shell.md)
+56: - [A-062: Számla Feature Szelet Modularizáció és Dekompozíció](./A-062-invoices-feature-slice-modularization.md)
+57: - [P-013: Feltöltés UX (multi-file batch upload)](../product/decisions/P-013-upload-ux.md)
