@@ -170,8 +170,8 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceItemsDialog.tsx": {
-    "mtime": 1790647210.4446676,
-    "ast_hash": "ccfe9298fc32e10a37bae42b3171a3c2",
+    "mtime": 1790687722.9982758,
+    "ast_hash": "8c5fc1ec39272f23121670ddfae3816a",
     "semantic_hash": ""
   },
   "src/components/LiveNotificationProvider.tsx": {
@@ -1275,13 +1275,13 @@
     "semantic_hash": ""
   },
   "src/lib/validationUtils.test.ts": {
-    "mtime": 1789597341.7873573,
-    "ast_hash": "a08aa99501c12004fae15dc2fc91561e",
+    "mtime": 1790687610.8347213,
+    "ast_hash": "8361df4ea201656acdad731fb96b45ea",
     "semantic_hash": ""
   },
   "src/lib/validationUtils.ts": {
-    "mtime": 1789597341.7873573,
-    "ast_hash": "a3a494a2c43f0d9b5d9fee39e9423245",
+    "mtime": 1790687594.2882192,
+    "ast_hash": "122687592b503d41d0ecbb4754dc4a5f",
     "semantic_hash": ""
   },
   "src/lib/vatReturnPdf.ts": {
@@ -3805,13 +3805,13 @@
     "semantic_hash": ""
   },
   "src/components/vat/VatCodeConfigTab.tsx": {
-    "mtime": 1790341701.7745588,
-    "ast_hash": "181009865b127eb93c352753e785c4eb",
+    "mtime": 1790687736.5002794,
+    "ast_hash": "84b0fb54bf1a1ad22afd1efdfe83ad3a",
     "semantic_hash": ""
   },
   "src/components/vat/VatRowDrillDown.tsx": {
-    "mtime": 1790274576.7827966,
-    "ast_hash": "65565af876796c74e53852f2e2e0dab4",
+    "mtime": 1790687768.911874,
+    "ast_hash": "ef2ee54a654dee494a49691c21814ca6",
     "semantic_hash": ""
   },
   "src/components/vat/VatTrendChart.tsx": {
@@ -8330,8 +8330,8 @@
     "semantic_hash": ""
   },
   "src/features/journals/services/draftFallbackGenerator.ts": {
-    "mtime": 1790647210.4511907,
-    "ast_hash": "b8f4a640d7a743f4bb4e54d5f9e4d46b",
+    "mtime": 1790683922.5131063,
+    "ast_hash": "cf43e6f3d269e68764b31fde6691942b",
     "semantic_hash": ""
   },
   "src/features/journals/__tests__/draftFallbackGenerator.test.ts": {
@@ -10730,8 +10730,8 @@
     "semantic_hash": ""
   },
   "src/components/vat/InvoiceVatCodeSelector.tsx": {
-    "mtime": 1790534876.669031,
-    "ast_hash": "d6c667634ef95e18c09b92f22395c9ca",
+    "mtime": 1790687690.8515558,
+    "ast_hash": "0e406c6995d93fc878535f43035e770a",
     "semantic_hash": ""
   },
   "src/features/upload/components/channel/BankBadge.tsx": {
@@ -10935,8 +10935,8 @@
     "semantic_hash": ""
   },
   "src/features/journals/services/__tests__/openingImportParser.test.ts": {
-    "mtime": 1790031217.1081815,
-    "ast_hash": "ca1633a203916dcb42bdf4d3920d01dd",
+    "mtime": 1790683953.9670897,
+    "ast_hash": "3d6c39bde88cc919f944ebe9f1588cf5",
     "semantic_hash": ""
   },
   "src/features/journals/services/openingImportParser.ts": {
@@ -13125,8 +13125,8 @@
     "semantic_hash": ""
   },
   "src/components/invoices/InvoiceItemRulesManager.tsx": {
-    "mtime": 1790680553.243794,
-    "ast_hash": "2a8223044e0188631a8d8f4d486969a4",
+    "mtime": 1790687783.96933,
+    "ast_hash": "fb820471de985093a6e3eddb47124488",
     "semantic_hash": ""
   },
   "src/pages/Accounty/__tests__/PromptsPage.test.tsx": {
@@ -13145,8 +13145,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-179-aggreg8-psd2-cross-import-deduplication.md": {
-    "mtime": 1790683054.5190673,
-    "ast_hash": "1dd373b00f203ed8e8579e622295bfff",
+    "mtime": 1790684412.2553213,
+    "ast_hash": "91e39dc50305dd0503f2dee4a942758e",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-138-unified-accounting-rules-and-prompt-library-ux.md": {

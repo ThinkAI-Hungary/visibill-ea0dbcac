@@ -28,6 +28,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { fetchAllGlAccountsByPreset } from '@/lib/glData';
+import { isValidUUID } from '@/lib/validationUtils';
 import { cn } from '@/lib/utils';
 
 export interface InvoiceItemRule {
@@ -121,7 +122,7 @@ export function InvoiceItemRulesManager({
   const { data: vatCodes = [] } = useQuery<any[]>({
     queryKey: ['vat_codes_rules_dialog', companyId],
     queryFn: async (): Promise<any[]> => {
-      if (!companyId) return [];
+      if (!isValidUUID(companyId)) return [];
       const { data, error } = await supabase
         .from('vat_codes' as any)
         .select('*')
@@ -130,7 +131,7 @@ export function InvoiceItemRulesManager({
       if (error) throw error;
       return (data || []) as any[];
     },
-    enabled: !!companyId && isOpen,
+    enabled: isValidUUID(companyId) && isOpen,
   });
 
   const handleOpenCreate = () => {

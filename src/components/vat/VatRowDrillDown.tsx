@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, ChevronDown, ChevronRight, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { isValidUUID } from '@/lib/validationUtils';
 import { reportError } from '@/lib/errorReporter';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { formatThousands } from '@/features/vat/types';
@@ -229,9 +230,11 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
   const { data: vatCodes = [] } = useQuery({
     queryKey: ['vat_codes', companyId],
     queryFn: async () => {
+      if (!isValidUUID(companyId)) return [];
       const { data } = await supabase.from('vat_codes').select('*').eq('company_id', companyId);
       return (data || []) as unknown as VatCode[];
     },
+    enabled: isValidUUID(companyId),
     staleTime: 60_000,
   });
 
@@ -240,6 +243,7 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
   const { data: invoices = [], isLoading } = useQuery({
     queryKey: ['vat_row_drill', queryKeyStr],
     queryFn: async () => {
+      if (!isValidUUID(companyId)) return [];
       let directions: string[] = [];
       let vatPercents: number[] = [];
 
@@ -513,7 +517,7 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
         };
       }).filter(Boolean);
     },
-    enabled: !!companyId,
+    enabled: isValidUUID(companyId),
     staleTime: 30_000,
   });
 
@@ -779,8 +783,9 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
                   if ((rowNumber === '29' || rowNumber === '66') && isItemFad && rawItemVat === 0) {
                     calculatedVat = Math.round(itemNet * 0.27);
                   }
+                  const itemVat = calculatedVat;
                   const itemNetHuf = Math.round(itemNet * rate * (rowNumber === '29' ? 1.0 : (deductible / 100.0)));
-                  const itemVatHuf = Math.round(calculatedVat * rate * (rowNumber === '29' ? 1.0 : (deductible / 100.0)));
+                  const itemVatHuf = Math.round(itemVat * rate * (rowNumber === '29' ? 1.0 : (deductible / 100.0)));
                   
                   let glNum: string | null = null;
                   if (item.gl_classifications) {

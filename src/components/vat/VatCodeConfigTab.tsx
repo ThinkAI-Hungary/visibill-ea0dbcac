@@ -15,6 +15,7 @@ import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Loader2, Settings2, Plus, Trash2, Edit2, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { isValidUUID } from '@/lib/validationUtils';
 
 /* ────────────────────────────────────────── */
 /*  Types                                     */
@@ -231,16 +232,16 @@ export function VatCodeConfigTab() {
   const { data: vatCodes = [], isLoading } = useQuery({
     queryKey: ['vat_codes', selectedCompany?.id],
     queryFn: async () => {
-      if (!selectedCompany?.id) return [];
+      if (!isValidUUID(selectedCompany?.id)) return [];
       const { data, error } = await supabase
         .from('vat_codes')
         .select('*')
-        .eq('company_id', selectedCompany.id)
+        .eq('company_id', selectedCompany!.id)
         .order('sort_order');
       if (error) throw error;
       return (data || []) as unknown as VatCode[];
     },
-    enabled: !!selectedCompany?.id,
+    enabled: isValidUUID(selectedCompany?.id),
   });
 
   const companyCountry = selectedCompany?.country_code || 'HU';

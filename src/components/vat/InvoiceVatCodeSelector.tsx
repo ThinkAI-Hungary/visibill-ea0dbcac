@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Loader2, ChevronDown, Check, Tag, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { isValidUUID } from '@/lib/validationUtils';
 
 export interface VatCodeOption {
   codeId?: string | null;
@@ -75,7 +76,7 @@ export function InvoiceVatCodeSelector({
   const { data: dbVatCodes = [] } = useQuery({
     queryKey: ['vat_codes', effectiveCompanyId],
     queryFn: async () => {
-      if (!effectiveCompanyId) return [];
+      if (!isValidUUID(effectiveCompanyId)) return [];
       const { data, error } = await supabase
         .from('vat_codes')
         .select('*')
@@ -84,7 +85,7 @@ export function InvoiceVatCodeSelector({
       if (error) return [];
       return data || [];
     },
-    enabled: !!effectiveCompanyId,
+    enabled: isValidUUID(effectiveCompanyId),
     staleTime: 60_000,
   });
 

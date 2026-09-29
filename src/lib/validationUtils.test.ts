@@ -7,6 +7,7 @@ import {
   parseTaxNumber,
   isGroupVatMember,
   isGroupVatEntity,
+  isValidUUID,
 } from "./validationUtils";
 
 // ─── EMAIL ─────────────────────────────────────────────
@@ -196,6 +197,33 @@ describe("isGroupVatEntity", () => {
   it("elutasítja a tagi (4-es) és egyéb kódokat", () => {
     expect(isGroupVatEntity("23108594-4-15")).toBe(false);
     expect(isGroupVatEntity("13086905-2-08")).toBe(false);
+  });
+});
+
+describe("isValidUUID", () => {
+  it("elfogad érvényes kisbetűs UUID-t", () => {
+    expect(isValidUUID("5364d0be-e92a-4b94-9704-f457cf71f140")).toBe(true);
+  });
+
+  it("elfogad érvényes nagybetűs UUID-t", () => {
+    expect(isValidUUID("5364D0BE-E92A-4B94-9704-F457CF71F140")).toBe(true);
+  });
+
+  it("elutasítja a mock azonosítókat (pl. 'comp-1', 'comp-123')", () => {
+    expect(isValidUUID("comp-1")).toBe(false);
+    expect(isValidUUID("comp-123")).toBe(false);
+    expect(isValidUUID("company-id")).toBe(false);
+  });
+
+  it("elutasítja az érvénytelen formátumokat és hiányzó értékeket", () => {
+    expect(isValidUUID("")).toBe(false);
+    expect(isValidUUID("   ")).toBe(false);
+    expect(isValidUUID(null)).toBe(false);
+    expect(isValidUUID(undefined)).toBe(false);
+    expect(isValidUUID("12345")).toBe(false);
+    expect(isValidUUID("5364d0be-e92a-4b94-9704-f457cf71f14")).toBe(false); // short
+    expect(isValidUUID("5364d0be-e92a-4b94-9704-f457cf71f1400")).toBe(false); // long
+    expect(isValidUUID("zzzzzzzz-e92a-4b94-9704-f457cf71f140")).toBe(false); // non-hex
   });
 });
 
