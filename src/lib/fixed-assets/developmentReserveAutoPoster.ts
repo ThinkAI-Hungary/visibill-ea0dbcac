@@ -124,14 +124,17 @@ export async function postDevelopmentReserveReleaseToLedger(
     let headerId = existingHeader?.id;
 
     if (!headerId) {
-      // Új fejléc létrehozása
+      // Új fejléc létrehozása PISZKOZAT státusszal
       const { data: newHeader, error: headerErr } = await supabase
         .from('acc_journal_headers')
         .insert({
           company_id: companyId,
           journal_id: veJournal.id,
           accounting_year: year,
-          status: 'KONYVELT',
+          status: 'PISZKOZAT',
+          entry_type: 'NORMAL',
+          source: 'AUTOMATIKUS',
+          currency: 'HUF',
           posting_date: activationDate,
           document_date: activationDate,
           document_id: documentId,
@@ -139,7 +142,6 @@ export async function postDevelopmentReserveReleaseToLedger(
           justification: `Tárgyi eszköz aktiválás (Tao. tv. 7. § (15)): ${assetName}, összeg: ${reserveAmount.toLocaleString('hu-HU')} Ft`,
           created_by: userId || null,
           posted_by: userId || null,
-          posted_at: new Date().toISOString(),
         })
         .select('id')
         .single();
@@ -149,7 +151,11 @@ export async function postDevelopmentReserveReleaseToLedger(
       }
       headerId = newHeader.id;
     } else {
-      // Ha már volt korábbi tétel, a sorokat újraírjuk
+      // Ha már volt korábbi tétel, a sorokat újraírjuk és visszaállítjuk PISZKOZAT-ra a re-postinghoz
+      await supabase
+        .from('acc_journal_headers')
+        .update({ status: 'PISZKOZAT' })
+        .eq('id', headerId);
       await supabase.from('acc_journal_lines').delete().eq('header_id', headerId);
     }
 
@@ -178,6 +184,35 @@ export async function postDevelopmentReserveReleaseToLedger(
     const { error: linesErr } = await supabase.from('acc_journal_lines').insert(lines);
     if (linesErr) {
       return { success: false, message: `Napló sorok hiba: ${linesErr?.message}` };
+    }
+
+    // Véglegesítés az acc_post_journal_entry RPC-n keresztül (naplósorszám generálás)
+    try {
+      const { error: rpcErr } = await supabase.rpc('acc_post_journal_entry', {
+        p_header_id: headerId,
+        p_user_id: userId || null,
+      });
+
+      if (rpcErr) {
+        console.warn('acc_post_journal_entry RPC warning in reserve posting, falling back to direct update:', rpcErr);
+        await supabase
+          .from('acc_journal_headers')
+          .update({
+            status: 'KONYVELT',
+            posted_at: new Date().toISOString(),
+            posted_by: userId || null,
+          })
+          .eq('id', headerId);
+      }
+    } catch {
+      await supabase
+        .from('acc_journal_headers')
+        .update({
+          status: 'KONYVELT',
+          posted_at: new Date().toISOString(),
+          posted_by: userId || null,
+        })
+        .eq('id', headerId);
     }
 
     return { success: true, headerId };
