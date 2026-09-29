@@ -330,7 +330,18 @@
       "credit": "Potražuje (Kredit)",
       "partner": "Partner",
       "contra_gl": "Protukonto",
-      "date_fulfillment": "Izdano / Izvršeno"
+      "date_fulfillment": "Izdano / Izvršeno",
+      "delete_account": "Obriši konto",
+      "delete_account_from_preset": "Obriši konto iz kontnog plana",
+      "confirm_delete_title": "Brisanje konta",
+      "confirm_delete_desc": "Jeste li sigurni da želite obrisati konto {{code}} ({{name}}) iz kontnog plana?",
+      "confirm_delete_warning": "Brisanje je trajno i moguće samo ako uz konto nisu vezane proknjižene stavke ili podkonta.",
+      "delete_success_title": "Konto obrisan",
+      "delete_success_desc": "Konto {{code}} uspješno je obrisan iz kontnog plana.",
+      "cannot_delete": "Nije moguće obrisati",
+      "has_children_desc": "Konto ima podkonta, prvo morate obrisati njih.",
+      "has_journal_entries": "Konto ima proknjižene stavke i ne može se obrisati.",
+      "account_not_found": "Konto nije pronađen."
     },
     "accounts": {
       "acc_0": "RAZRED KONTA: IZVANBILANČNA KONTA",

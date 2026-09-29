@@ -244,3 +244,4 @@
 | P-135 | Főkönyvi Kivonat Klasszikus Nézet Oszlopszélességek és Összesítő Sáv UX | ✅ Decided | [P-135](./P-135-general-ledger-classic-view-column-widths-and-totals-ux.md) |
 | P-136 | Folyószámla és Analitika Kezelőfelület, Különbözet-Rendezés és Nyomtatási Kimutatások UX | ✅ Decided | [P-136](./P-136-subledger-and-open-items-ux.md) |
 | P-138 | Egységes Könyvelési Szabályok Kezelőfelület (Számlatétel Szabályok & AI Prompt Könyvtár) UX | ✅ Decided | [P-138](./P-138-unified-accounting-rules-and-prompt-library-ux.md) |
+| P-139 | Egyéni Számlatükör Főkönyvi Szám Törlése és Ergonómiai UX | ✅ Decided | [P-139](./P-139-custom-chart-of-accounts-unused-account-deletion-ux.md) |

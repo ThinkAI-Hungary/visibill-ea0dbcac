@@ -225,6 +225,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-175 | Folyószámla és Analitika Architektúra, Nyitott Tételek Rendezése és Főkönyvi Integritás-Védelem | ✅ Decided | [A-175](./A-175-subledger-and-open-items-architecture.md) |
 | A-176 | Számla Mélyhivatkozás (Deep-Linking) Tab-Izoláció, Fókusz-Visszarántás Védelem és Külföldi Számla NAV Mentesség | ✅ Decided | [A-176](./A-176-invoice-deep-linking-tab-isolation-and-nav-foreign-guard.md) |
 | A-177 | Egységes Számlaszabály Kezelő Komponens és eaisyBooks Integráció | ✅ Decided | [A-177](./A-177-unified-invoice-rules-component-and-eaisybooks-integration.md) |
+| A-178 | Egyéni Számlatükör Főkönyvi Szám Törlése és Relációs Integritás Védelem | ✅ Decided | [A-178](./A-178-custom-chart-of-accounts-unused-account-deletion.md) |
 
 ## 💳 Fizetés
 

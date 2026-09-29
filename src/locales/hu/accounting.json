@@ -330,7 +330,18 @@
       "credit": "Követel (Kredit)",
       "partner": "Partner",
       "contra_gl": "Ellenszámla",
-      "date_fulfillment": "Kelt / Teljesítés"
+      "date_fulfillment": "Kelt / Teljesítés",
+      "delete_account": "Számla törlése",
+      "delete_account_from_preset": "Számla törlése a számlatükörből",
+      "confirm_delete_title": "Főkönyvi szám törlése",
+      "confirm_delete_desc": "Biztosan törölni szeretnéd a(z) {{code}} ({{name}}) főkönyvi számot a számlatükörből?",
+      "confirm_delete_warning": "A törlés végleges, és csak akkor hajtható végre, ha a főkönyvi számhoz nem kapcsolódnak könyvelt tételek vagy alszámlák.",
+      "delete_success_title": "Főkönyvi szám törölve",
+      "delete_success_desc": "A(z) {{code}} főkönyvi szám sikeresen törölve a számlatükörből.",
+      "cannot_delete": "Nem törölhető",
+      "has_children_desc": "A főkönyvi számnak alszámlái vannak, előbb azokat kell törölni.",
+      "has_journal_entries": "A főkönyvi számhoz könyvelési tételek kapcsolódnak, ezért nem törölhető.",
+      "account_not_found": "A főkönyvi szám nem található."
     },
     "accounts": {
       "acc_0": "SZÁMLAOSZTÁLY: NYILVÁNTARTÁSI SZÁMLÁK",
