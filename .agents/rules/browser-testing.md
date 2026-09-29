@@ -9,9 +9,16 @@ description: Browser testing, subagent authentication, and test credentials rule
 * **Soha semmilyen körülmények között nem módosítható vagy resetelhető a felhasználó jelszava** a Supabase Admin API-n, SQL-en, vagy bármilyen egyéb módon!
 * Tilos ideiglenes jelszó generálása vagy az `auth.users` rekordok jelszóhasheinek felülírása tesztelés céljából.
 
-## 🔑 2. Hivatalos Teszt és Fejlesztői Hitelesítő Adatok
-Böngészős teszteléshez (`browser_subagent`) vagy bejelentkezést igénylő feladatokhoz **kizárólag** a következő hivatalos teszt-felhasználót kell használni:
+## 🔑 2. Hivatalos Hitelesítő Adatok & Admin Felhasználók
 
+### 👑 Elsődleges Rendszergazda / Fejlesztő (Morfi / Jani):
+* **Név:** Schwarczinger János (Jani, Morfi)
+* **Email:** `notbyalongway@thinkai.hu`
+* **Jelszó:** `Morfiapro1.`
+* **Supabase User ID:** `415bf1b6-8ce5-4425-915c-e656a2972ab7`
+* **Ticket válaszok & Support kommentek:** Alapértelmezetten **MINDIG** ezzel a fiókkal küldünk ki support választ, ticket kommentet és végzünk adminisztratív műveleteket!
+
+### 🧪 Másodlagos Teszt Felhasználó (Áron):
 * **Email:** `aron@thinkai.hu`
 * **Jelszó:** `A237kkil815!`
 

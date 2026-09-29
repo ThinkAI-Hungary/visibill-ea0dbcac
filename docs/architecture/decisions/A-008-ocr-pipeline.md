@@ -30,10 +30,11 @@ Markdown szöveg → LLM extraction (adatkinyerés)
 
 **pdf_splitter:** Többoldalas PDF-ek oldalankénti képekre bontása — a Vision OCR oldalanként dolgozik.
 
-**Robustness & Fallbacks (2026-07 frissítés):**
+**Robustness & Fallbacks (2026-07 és 2026-09 frissítés):**
 - **Gibberish & CIDFont Detection:** A rendszer észleli a vezérlőkarakterekből vagy `(cid:X)` tokenekből álló értelmezhetetlen szövegeket (gibberish), és automatikusan OCR fallback-et indít.
 - **High-Quality PDF Rendering:** Kép-alapú / szkennelt PDF-ek esetén a beágyazott képek hibás kicsomagolása helyett a PyMuPDF (`fitz`) segítségével nagy felbontású (200 DPI) PNG képként rendereljük le a PDF első oldalát a Direct Vision OCR számára.
 - **Flaky Vision Refusal Retry:** Ha a Vision API ideiglenesen/flaky módon elutasítja a kép beolvasását (pl. *"I'm sorry, I can't read this..."* sablonválaszok), a rendszer automatikusan észleli a nem-hasznos választ (`_is_vision_response_useful`), és újrapróbálkozik (`max_attempts=2`) a direct vision OCR-rel.
+- **Sparse OCR & Phantom Scanner Layer Detection (2026-09 frissítés, EB-0208):** Szkennelt számláknál (pl. irodai szkennerek beépített mini-OCR rétege) gyakori, hogy a PDF tartalmaz ugyan egy minimális láthatatlan szövegréteget, de az csak néhány izolált töredékből áll (pl. 100-250 karakter értelmetlen sorszám vagy fejléc), miközben a számla érdemi adattartalma csak képen látható. A korábbi egyszerű hossz-alapú ellenőrzés (`len(text) < 100`) az ilyen szövegeket natívnak minősítette, ami miatt az LLM classifier "nem számla" hibára futott (`nem_szamla`). Az `is_sparse_ocr_text()` függvény (`worker/ocr_markitdown.py`) számla-kulcsszó és token-sűrűség elemzéssel észleli a ritkás szövegréteget, és automatikusan átirányítja a feldolgozást a Direct Vision OCR útvonalra.
 
 ## Consequences
 
@@ -41,8 +42,10 @@ Markdown szöveg → LLM extraction (adatkinyerés)
 - MarkItDown gyors és olcsó (nincs API hívás, lokális feldolgozás)
 - Vision OCR magas pontosságú kézzel írt/rossz minőségű dokumentumoknál
 - A két útvonal kombinációja és a hibatűrő automatikus retry logikák minimalizálják a feldolgozási hibákat flaky API válaszok esetén is
+- Zéró téves "nem számla" elutasítás szkenner által beágyazott hibás/töredékes szövegrétegek miatt (EB-0208)
 
 **Negatív:**
 - Vision OCR költséges (GPT-4o Vision per-image pricing)
 - Többoldalas PDF-ek szétbontása memória-intenzív
 - A MarkItDown nem kezeli jól a táblázatokat komplex layout-ban
+

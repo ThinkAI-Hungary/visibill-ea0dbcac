@@ -37,6 +37,7 @@ test_*.js
 test_*.sh
 *.secret
 scripts/backfill_report.json
+scripts/backfill_state.json
 
 # Personal learning roadmap & study materials
 docs/architecture/ARCHITECT_LEARNING_ROADMAP.md

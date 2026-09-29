@@ -719,11 +719,45 @@ serve(async (req: Request) => {
                 } else {
                   const publicUrl = `${supabaseUrl}/storage/v1/object/public/invoice-uploads/${storagePath}`;
 
+                  // Create invoice_uploads record so worker automatically processes OCR & data extraction via trigger
+                  let createdUploadId: string | null = null;
+                  try {
+                    const { data: uploadRec } = await admin
+                      .from("invoice_uploads")
+                      .insert({
+                        company_id: targetCompanyId,
+                        user_id: auth.user_id,
+                        file_name: fileName,
+                        file_size: bytes.length,
+                        file_type: "application/pdf",
+                        file_url: publicUrl,
+                        upload_status: "uploaded",
+                        processing_status: "pending",
+                        metadata: {
+                          source: "customer_api",
+                          nav_invoice_number: navInvoiceNumber || null,
+                          direction: direction,
+                        },
+                      })
+                      .select("id")
+                      .maybeSingle();
+
+                    if (uploadRec?.id) {
+                      createdUploadId = uploadRec.id;
+                    }
+                  } catch (uErr) {
+                    console.error("[customer-api] Failed to insert into invoice_uploads:", uErr);
+                  }
+
                   // Scenario 1: Target invoice ID explicitly given
                   if (targetInvoiceId) {
                     const { data: updatedById, error: updateByIdErr } = await admin
                       .from("invoices")
-                      .update({ melleklet_url: publicUrl, frissitve: new Date().toISOString() })
+                      .update({
+                        melleklet_url: publicUrl,
+                        frissitve: new Date().toISOString(),
+                        ...(createdUploadId ? { invoice_uploads_id: createdUploadId } : {}),
+                      })
                       .eq("id", targetInvoiceId)
                       .eq("company_id", targetCompanyId)
                       .select("id, bizonylatsorszam, statusz, nav_status, invoice_direction, melleklet_url, letrehozva")
@@ -759,7 +793,11 @@ serve(async (req: Request) => {
                     if (existingInv) {
                       const { data: updatedInv } = await admin
                         .from("invoices")
-                        .update({ melleklet_url: publicUrl, frissitve: new Date().toISOString() })
+                        .update({
+                          melleklet_url: publicUrl,
+                          frissitve: new Date().toISOString(),
+                          ...(createdUploadId ? { invoice_uploads_id: createdUploadId } : {}),
+                        })
                         .eq("id", existingInv.id)
                         .select("id, bizonylatsorszam, statusz, nav_status, invoice_direction, melleklet_url, letrehozva")
                         .single();
@@ -789,11 +827,14 @@ serve(async (req: Request) => {
                           nav_status: "pending_match",
                           melleklet_url: publicUrl,
                           bizonylatsorszam: navInvoiceNumber,
+                          elado_nev: "Ismeretlen eladó",
+                          vevo_nev: "Feldolgozás alatt",
                           kibocsatas_datuma: new Date().toISOString().slice(0, 10),
                           teljesites_datuma: new Date().toISOString().slice(0, 10),
                           adoalap_osszesen: 0,
                           afa_osszeg_osszesen: 0,
                           brutto_vegosszeg: 0,
+                          ...(createdUploadId ? { invoice_uploads_id: createdUploadId } : {}),
                         })
                         .select("id, bizonylatsorszam, statusz, nav_status, invoice_direction, melleklet_url, letrehozva")
                         .single();
@@ -828,11 +869,14 @@ serve(async (req: Request) => {
                         statusz: "feldolgozas_alatt",
                         melleklet_url: publicUrl,
                         bizonylatsorszam: `UPLOAD-${Date.now().toString().slice(-6)}`,
+                        elado_nev: "Feldolgozás alatt",
+                        vevo_nev: "Feldolgozás alatt",
                         kibocsatas_datuma: new Date().toISOString().slice(0, 10),
                         teljesites_datuma: new Date().toISOString().slice(0, 10),
                         adoalap_osszesen: 0,
                         afa_osszeg_osszesen: 0,
                         brutto_vegosszeg: 0,
+                        ...(createdUploadId ? { invoice_uploads_id: createdUploadId } : {}),
                       })
                       .select("id, bizonylatsorszam, statusz, nav_status, invoice_direction, melleklet_url, letrehozva")
                       .single();

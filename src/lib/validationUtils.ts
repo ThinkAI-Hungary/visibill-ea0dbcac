@@ -123,3 +123,12 @@ export function isGroupVatEntity(taxNum: string | null | undefined): boolean {
   return parsed.vat === '5';
 }
 
+/**
+ * Ellenőrzi, hogy a megadott azonosító érvényes UUID formátumú-e (RFC 4122).
+ * Megelőzi a PostgreSQL 22P02 "invalid input syntax for type uuid" hibákat.
+ */
+export function isValidUUID(id: string | null | undefined): boolean {
+  if (!id || typeof id !== 'string') return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id.trim());
+}
+

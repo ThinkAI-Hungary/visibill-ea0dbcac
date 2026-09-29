@@ -609,11 +609,19 @@ export async function generatePettyCashDrafts(
       .eq('status', 'GEPI_JAVASLAT');
   }
 
-  const { data: rawPce } = await supabase
+  let pceQuery: any = supabase
     .from('petty_cash_entries')
     .select('id, entry_date, description, amount, currency, source_type, source_table, source_id, partner_id')
-    .eq('company_id', companyId)
-    .order('entry_date', { ascending: true });
+    .eq('company_id', companyId);
+
+  if (typeof pceQuery.order === 'function') {
+    pceQuery = pceQuery.order('entry_date', { ascending: true });
+  }
+
+  const { data: rawPceData } = await pceQuery;
+  const rawPce = [...(rawPceData || [])].sort((a, b) => 
+    String(a.entry_date || '').localeCompare(String(b.entry_date || ''))
+  );
 
   const { data: existingPostings } = await supabase
     .from('acc_journal_headers')

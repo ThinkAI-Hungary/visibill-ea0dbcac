@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatCurrency, cn, formatVatRate, is27PercentVatRate, normalizeVatRatePercent } from '@/lib/utils';
+import { isValidUUID } from '@/lib/validationUtils';
 import { Package, Package2, CheckCircle2, Info, Loader2, Check, Pencil, FileSpreadsheet, X, ArrowUpDown, ArrowLeftRight, ChevronUp, ChevronDown, MessageSquare, Sparkles, Wallet, Lock, Landmark } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -121,27 +122,27 @@ export function InvoiceItemsDialog({
   const { data: vatCodes = [] } = useQuery({
     queryKey: ['vat_codes', selectedCompany?.id],
     queryFn: async () => {
-      if (!selectedCompany?.id) return [];
+      if (!isValidUUID(selectedCompany?.id)) return [];
       const { data, error } = await supabase
         .from('vat_codes')
         .select('*')
-        .eq('company_id', selectedCompany.id)
+        .eq('company_id', selectedCompany!.id)
         .order('sort_order');
       if (error) throw error;
       return (data || []) as unknown as VatCodeItem[];
     },
-    enabled: open && !!selectedCompany?.id,
+    enabled: open && isValidUUID(selectedCompany?.id),
   });
 
   // Fetch learned VAT code rules for this company (few-shot ML learning)
   const { data: learnedVatRules = [] } = useQuery({
     queryKey: ['vat_code_overrides_log', selectedCompany?.id],
     queryFn: async () => {
-      if (!selectedCompany?.id) return [];
+      if (!isValidUUID(selectedCompany?.id)) return [];
       const { data, error } = await (supabase
         .from('vat_code_overrides_log' as any)
         .select('*') as any)
-        .eq('company_id', selectedCompany.id)
+        .eq('company_id', selectedCompany!.id)
         .order('created_at', { ascending: false });
       if (error) {
         console.warn('Failed to load learned vat code overrides:', error);
@@ -149,7 +150,7 @@ export function InvoiceItemsDialog({
       }
       return (data || []) as unknown as VatCodeOverrideLogEntry[];
     },
-    enabled: open && !!selectedCompany?.id,
+    enabled: open && isValidUUID(selectedCompany?.id),
   });
 
   // Selection state for activation

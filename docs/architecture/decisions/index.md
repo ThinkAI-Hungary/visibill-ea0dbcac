@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-29  
-> **Összesen:** 194 döntés (179 egyedi döntési fájl) | ✅ Decided: 192 | ⛔ Superseded: 2
+> **Összesen:** 195 döntés (180 egyedi döntési fájl) | ✅ Decided: 193 | ⛔ Superseded: 2
 
 ---
 
@@ -62,6 +62,8 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-145 | Tömeges PDF Szeletelés (Physical Chunk Slicing), NAV Determinisztikus Fallback és Többszörös Mellékletkezelés | ✅ Decided | [A-145](./A-145-bulk-invoice-slicing-and-multi-attachment-architecture.md) |
 | A-146 | Magánszemély Vevőnevek Gazdagítása és ÁFA Analitikai Deduplikáció | ✅ Decided | [A-146](./A-146-private-customer-name-enrichment-and-vat-analytics.md) |
 | A-147 | Kétirányú Számlaláncolat (Invoice Chaining), Dinamikus Kapcsolt Bizonylat Feloldás és Előnézeti Dokumentum-lapozás | ✅ Decided | [A-147](./A-147-bidirectional-invoice-chaining-and-preview-tabs.md) |
+| A-179 | Aggreg8 PSD2 és Fájlimport Cross-Deduplikációs Architektúra | ✅ Decided | [A-179](./A-179-aggreg8-psd2-cross-import-deduplication.md) |
+
 
 ## 🔒 Biztonság & Auth
 

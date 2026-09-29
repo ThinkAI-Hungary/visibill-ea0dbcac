@@ -167,6 +167,36 @@ UPDATE ... / DELETE ...;
 
 ---
 
+## 💬 Ticket Válasz Küldése (`ticket_comments`) & Lezárás
+
+Ha a felhasználó jóváhagyja az ügyfélválasz kiküldését és a ticket lezárását:
+A választ **MINDIG** a rendszergazda / fejlesztő (Morfi / Jani) fiókjával rögzítjük:
+* **user_id:** `'415bf1b6-8ce5-4425-915c-e656a2972ab7'`
+* **user_name:** `'Schwarczinger János'`
+* **user_email:** `'notbyalongway@thinkai.hu'`
+* **is_admin:** `true`
+
+```sql
+INSERT INTO ticket_comments (
+  feedback_id, user_id, user_name, user_email, is_admin, message
+) VALUES (
+  '<feedback_id>',
+  '415bf1b6-8ce5-4425-915c-e656a2972ab7',
+  'Schwarczinger János',
+  'notbyalongway@thinkai.hu',
+  true,
+  '<jóváhagyott_válasz_szövege>'
+);
+
+UPDATE feedback
+SET status = 'resolved',
+    needs_staff_response = false,
+    updated_at = now()
+WHERE id = '<feedback_id>';
+```
+
+---
+
 ## 🎨 Ügyfél-Kommunikációs Hangnem Szabályai
 
 1. **Empatikus & Segítőkész:** Kezdd mindig barátságos megszólítással és közvetlen hangnemben.
