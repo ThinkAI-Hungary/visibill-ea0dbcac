@@ -191,9 +191,17 @@ describe('NAV 2665A Official Tax Return Replica Test Suite', () => {
       expect(screen.getByText(/értékesítésre vonatkozó nyilatkozat/i)).toBeDefined();
       expect(text).toContain('9761');
       expect(text).toContain('2 753 708');
+
+      // Table layout and anti-overflow assertions
+      const table = container.querySelector('table');
+      expect(table).not.toBeNull();
+      expect(table?.className).toContain('table-fixed');
+      expect(container.firstChild).toHaveClass('overflow-hidden');
+      const cols = container.querySelectorAll('colgroup col');
+      expect(cols.length).toBe(8);
     });
 
-    it('08 sheet renders inbound reverse charge steel items', () => {
+    it('08 sheet renders inbound reverse charge steel items without width overflow', () => {
       const mockInbound = [
         {
           id: '2',
@@ -210,6 +218,14 @@ describe('NAV 2665A Official Tax Return Replica Test Suite', () => {
       expect(screen.getByText(/beszerzésre vonatkozó nyilatkozat/i)).toBeDefined();
       expect(text).toContain('4708');
       expect(text).toContain('1 214 775');
+
+      // Table layout and anti-overflow assertions
+      const table = container.querySelector('table');
+      expect(table).not.toBeNull();
+      expect(table?.className).toContain('table-fixed');
+      expect(container.firstChild).toHaveClass('overflow-hidden');
+      const cols = container.querySelectorAll('colgroup col');
+      expect(cols.length).toBe(8);
     });
   });
 });

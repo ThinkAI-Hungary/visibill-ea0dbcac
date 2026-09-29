@@ -60,6 +60,9 @@ A komponensek semmilyen belső származtatott számítási logikát nem rejtenek
 4. **Nyomtatási Stíluslapok (`@media print`):**
    - Az eszközsáv és a navigációs elemek nyomtatáskor eltűnnek (`print:hidden`).
    - Minden egyes `Nav2665PageFrame` lap `page-break-after: always; break-after: page;` direktívát kap, így közvetlenül a böngésző Nyomtatás dialógusából szabványos A4-es papírlapokra nyomtatható.
+5. **Táblázat Méretezés és Anti-Overflow Védelem (07 és 08 lapok):**
+   - A 2665A-07 és 2665A-08 lapok 8 oszlopos táblázata `table-fixed w-full` elrendezést kapott explicit `<colgroup>` oszlopszélességekkel és `overflow-hidden` konténerrel.
+   - A szegmentált karakterdobozok (`Nav2665TaxNumberBoxes`, `Nav2665DateBoxes`) táblázatba illeszkedő kompakt méretezést (`compact={true}`) kaptak (`w-[11.5px]`, illetve `w-[10.5px]`), elkerülve a transzformáció miatti DOM-layout buborékolást és a jobb oldali sorszámoszlop túllógását.
 
 ---
 
