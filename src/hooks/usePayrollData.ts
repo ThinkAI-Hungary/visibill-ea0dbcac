@@ -1094,7 +1094,7 @@ export function usePayrollGarnishments(employeeId: string) {
 // TÖMEGES SZÁMFEJTÉS (Batch Payroll)
 // ═══════════════════════════════════════════════════════════════
 
-import { calculatePayroll, calculateGarnishments, type PayrollCalculationInput, type EmployeeDeclarations } from '@/lib/payroll/taxEngine';
+import { calculatePayroll, calculateGarnishments, isEligibleForYoung25, type PayrollCalculationInput, type EmployeeDeclarations } from '@/lib/payroll/taxEngine';
 
 export interface BatchPayrollInput {
   cycleId: string;
@@ -1271,8 +1271,8 @@ export function useRunBatchPayroll() {
           if (decl.declaration_type === 'netak') {
             declarations.netak = { eligible: true };
           }
-          if (decl.declaration_type === 'under_25') {
-            declarations.young25 = { eligible: true };
+          if (decl.declaration_type === 'under_25' || decl.declaration_type === 'young_25' || decl.declaration_type === 'young') {
+            declarations.young25 = { eligible: !decl.parameters?.waived };
           }
           if (decl.declaration_type === 'new_mother') {
             declarations.youngMother30 = { maxDeduction: 0 };
@@ -1284,6 +1284,30 @@ export function useRunBatchPayroll() {
           if (decl.declaration_type === 'personal_disability') {
             declarations.personal = { eligible: true };
           }
+        }
+
+        // Számfejtési ciklus szerinti életkor megállapítása
+        const birthDate = employee.birth_date ? new Date(employee.birth_date) : null;
+        let employeeAge = 30;
+        if (birthDate) {
+          let age = input.year - birthDate.getFullYear();
+          const m = (input.month - 1) - birthDate.getMonth();
+          if (m < 0) {
+            age--;
+          }
+          employeeAge = Math.max(0, age);
+        }
+
+        // 25 év alattiak kedvezménye: Szja tv. 29/F. § (2) szerint a kedvezmény arra a hónapra
+        // érvényesíthető utoljára, amelyben a fiatal a 25. életévét betölti.
+        const isYoung25ByStatute = isEligibleForYoung25(employee.birth_date, input.year, input.month);
+        if (isYoung25ByStatute && employeeAge >= 25) {
+          // A 25. születésnap hónapjában a bérszámfejtéshez még alanyi jogon jár a mentesség
+          employeeAge = 24;
+        }
+
+        if (declarations.young25 === undefined && (isYoung25ByStatute || employee.has_age_concession)) {
+          declarations.young25 = { eligible: true };
         }
 
         // Fetch active garnishments for this employee
@@ -1335,7 +1359,7 @@ export function useRunBatchPayroll() {
         let sickLeaveDays = attendance.sickDays || 0;
         let tappenzDays = 0;
 
-        for (const l of (leaveRows || [])) {
+        for (const l of ((leaveRows || []) as any[])) {
           const lStart = new Date(l.start_date);
           const lEnd = new Date(l.end_date);
           const oStart = lStart > cycleStart ? lStart : cycleStart;
@@ -1357,11 +1381,6 @@ export function useRunBatchPayroll() {
         const calculatedInsuredDays = Math.max(0, activeCalendarDays - suspensionDays);
 
         // Calculate
-        const birthDate = employee.birth_date ? new Date(employee.birth_date) : null;
-        const employeeAge = birthDate
-          ? Math.floor((Date.now() - birthDate.getTime()) / (365.25 * 86400000))
-          : 30; // fallback
-
         const calcInput: PayrollCalculationInput = {
           grossComponents: {
             baseSalary: finalBase,

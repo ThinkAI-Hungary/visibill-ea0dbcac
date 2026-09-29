@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  calculatePayroll, calculateGross, calculateGarnishments,
+  calculatePayroll, calculateGross, calculateGarnishments, isEligibleForYoung25,
   DEFAULT_2026_PARAMS,
   type PayrollCalculationInput, type GrossSalaryInput, type Garnishment,
 } from '../taxEngine';
@@ -137,6 +137,61 @@ describe('calculatePayroll — SZJA kedvezmények', () => {
     expect(result.szjaBase).toBe(500_000);
     expect(result.szjaAmount).toBe(75_000);
   });
+
+  it('25 év alattiak — automatikus törvényi kedvezmény nyilatkozat nélkül ha életkor < 25', () => {
+    const result = calculatePayroll(makeInput(373_200, {
+      employeeAge: 21,
+      declarations: {},
+    }));
+
+    // Bozóki Klaudia Kitti és Nagy Gréta esete: 373.200 Ft bruttó -> 0 Ft SZJA, nettó 304.158 Ft
+    expect(result.szjaBase).toBe(0);
+    expect(result.szjaAmount).toBe(0);
+    expect(result.tbAmount).toBe(69_042);
+    expect(result.netSalary).toBe(304_158);
+    expect(result.taxCredits.some(c => c.type === 'young_25')).toBe(true);
+  });
+
+  it('25 év alattiak — lemondó nyilatkozat esetén nem érvényesül a kedvezmény', () => {
+    const result = calculatePayroll(makeInput(373_200, {
+      employeeAge: 21,
+      declarations: { young25: { eligible: false } },
+    }));
+
+    // Explicit lemondás miatt teljes SZJA terheli
+    expect(result.szjaBase).toBe(373_200);
+    expect(result.szjaAmount).toBe(55_980);
+    expect(result.netSalary).toBe(248_178);
+  });
+
+  describe('isEligibleForYoung25 — Szja tv. 29/F. § (2) bekezdés szerinti születési hónap szabály', () => {
+    const birthDate = '2001-04-20'; // 25. születésnap: 2026. április 20.
+
+    it('25. születésnap előtti hónapokban jogosult', () => {
+      expect(isEligibleForYoung25(birthDate, 2026, 1)).toBe(true);
+      expect(isEligibleForYoung25(birthDate, 2026, 2)).toBe(true);
+      expect(isEligibleForYoung25(birthDate, 2026, 3)).toBe(true);
+    });
+
+    it('A 25. életév betöltésének hónapjában még teljes havi kedvezmény jár', () => {
+      // 2026. áprilisban tölti be a 25-öt, a teljes áprilisi hónapra még jár a mentesség!
+      expect(isEligibleForYoung25(birthDate, 2026, 4)).toBe(true);
+    });
+
+    it('A 25. életév betöltését követő hónaptól már nem jogosult', () => {
+      // 2026. májustól (5. hónap) már nem jár
+      expect(isEligibleForYoung25(birthDate, 2026, 5)).toBe(false);
+      expect(isEligibleForYoung25(birthDate, 2026, 6)).toBe(false);
+      expect(isEligibleForYoung25(birthDate, 2027, 1)).toBe(false);
+    });
+
+    it('Hiányzó vagy érvénytelen születési dátum esetén false', () => {
+      expect(isEligibleForYoung25(null, 2026, 4)).toBe(false);
+      expect(isEligibleForYoung25(undefined, 2026, 4)).toBe(false);
+      expect(isEligibleForYoung25('invalid-date', 2026, 4)).toBe(false);
+    });
+  });
+
 
   it('Személyi kedvezmény (fogyatékosság)', () => {
     const result = calculatePayroll(makeInput(500_000, {

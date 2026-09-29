@@ -398,8 +398,12 @@ export function calculatePayroll(input: PayrollCalculationInput): PayrollCalcula
       }
     }
 
-    // 4b. 25 év alattiak
-    if (declarations.young25?.eligible && input.employeeAge < 25) {
+    // 4b. 25 év alattiak (Alanyi jogon jár a 25 év alattiaknak a Szja tv. 29/F. § alapján, kivéve ha lemondtak róla)
+    const isYoung25Eligible = declarations.young25 !== undefined
+      ? declarations.young25.eligible
+      : (input.employeeAge < 25);
+
+    if (isYoung25Eligible && input.employeeAge < 25) {
       const remaining = grossSalary - totalBaseReduction;
       const reduction = Math.min(remaining, params.young_25_cap);
       if (reduction > 0) {
@@ -846,3 +850,21 @@ export const DEFAULT_2026_PARAMS: TaxParameters = {
   first_marriage: 33335,
   health_service_monthly: 12300,
 };
+
+/**
+ * Megállapítja, hogy a munkavállaló a megadott bérszámfejtési ciklusban jogosult-e a 25 év alattiak kedvezményére.
+ * Szja tv. 29/F. § (2) bek.: A kedvezmény arra a hónapra érvényesíthető utoljára, amelyben a fiatal a 25. életévét betölti.
+ */
+export function isEligibleForYoung25(birthDate: Date | string | null | undefined, cycleYear: number, cycleMonth: number): boolean {
+  if (!birthDate) return false;
+  const d = typeof birthDate === 'string' ? new Date(birthDate) : birthDate;
+  if (isNaN(d.getTime())) return false;
+
+  const birthYear = d.getFullYear();
+  const birthMonth = d.getMonth() + 1; // 1-12
+  const turn25Year = birthYear + 25;
+  const turn25Month = birthMonth;
+
+  // A 25. születésnap évének és hónapjának végéig törvény szerint jár a teljes havi kedvezmény
+  return cycleYear < turn25Year || (cycleYear === turn25Year && cycleMonth <= turn25Month);
+}

@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { payrollQueryKeys, paramsToTaxParams } from '@/hooks/usePayrollData';
-import type { TaxParameters, EmployeeDeclarations } from '@/lib/payroll/taxEngine';
+import { isEligibleForYoung25, type TaxParameters, type EmployeeDeclarations } from '@/lib/payroll/taxEngine';
 import WorksheetSidebar from './worksheet/WorksheetSidebar';
 import WorksheetEmployeeForm from './worksheet/WorksheetEmployeeForm';
 import WorksheetLivePayslip from './worksheet/WorksheetLivePayslip';
@@ -148,16 +148,32 @@ export default function EmployeeWorksheetView({
             };
           }
           if (decl.declaration_type === 'netak') newMap[empId].netak = { eligible: true };
-          if (decl.declaration_type === 'under_25') newMap[empId].young25 = { eligible: true };
+          if (decl.declaration_type === 'under_25' || decl.declaration_type === 'young_25' || decl.declaration_type === 'young') {
+            newMap[empId].young25 = { eligible: !decl.parameters?.waived };
+          }
           if (decl.declaration_type === 'new_mother') newMap[empId].youngMother30 = { maxDeduction: 0 };
           if (decl.declaration_type === 'first_marriage') {
             newMap[empId].firstMarriage = { eligible: true, monthsRemaining: decl.parameters?.months_remaining || 24 };
           }
           if (decl.declaration_type === 'personal_disability') newMap[empId].personal = { eligible: true };
         }
+
+        // Törvény szerinti 25 év alatti kedvezmény fallback (Szja tv. 29/F. § (2) szerint a betöltés hónapjára is)
+        for (const emp of activeEmployees) {
+          if (!newMap[emp.id]) newMap[emp.id] = {};
+          if (newMap[emp.id].young25 === undefined) {
+            const refYear = cycle?.year || new Date().getFullYear();
+            const refMonth = cycle?.month || (new Date().getMonth() + 1);
+            const isYoung25 = emp.birth_date ? isEligibleForYoung25(emp.birth_date, refYear, refMonth) : false;
+            if (isYoung25 || emp.has_age_concession) {
+              newMap[emp.id].young25 = { eligible: true };
+            }
+          }
+        }
+
         setDeclarationsMap(newMap);
       });
-  }, [activeEmployees]);
+  }, [activeEmployees, cycle?.year, cycle?.month]);
 
   // Fetch timesheet verification states
   useEffect(() => {

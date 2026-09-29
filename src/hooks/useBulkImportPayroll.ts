@@ -106,11 +106,39 @@ export function useBulkImportPayroll() {
             return matchTaj || matchTax;
           });
 
+          const bDate = emp.birthDate ? new Date(emp.birthDate) : null;
+          const isUnder25ByAge = bDate ? (new Date().getFullYear() - bDate.getFullYear() < 25) : false;
+          const hasYoung25Discount = Boolean((emp.under25CreditUsed && emp.under25CreditUsed > 0) || isUnder25ByAge);
+
           let employeeId: string;
 
           if (matchedEmp) {
             employeeId = matchedEmp.id;
             employeesUpdated++;
+            if (hasYoung25Discount && !matchedEmp.has_age_concession) {
+              await supabase
+                .from('accounty_employees')
+                .update({ has_age_concession: true, updated_at: new Date().toISOString() })
+                .eq('id', employeeId);
+              matchedEmp.has_age_concession = true;
+
+              const { data: existingDecl } = await supabase
+                .from('accounty_declarations')
+                .select('id')
+                .eq('employee_id', employeeId)
+                .in('declaration_type', ['under_25', 'young_25', 'young'])
+                .maybeSingle();
+
+              if (!existingDecl) {
+                await supabase.from('accounty_declarations').insert({
+                  employee_id: employeeId,
+                  declaration_type: 'young_25',
+                  valid_from: `${new Date().getFullYear()}-01-01`,
+                  status: 'active',
+                  parameters: {},
+                });
+              }
+            }
           } else {
             // Új dolgozó létrehozása
             const { data: newEmp, error: insertEmpErr } = await supabase
@@ -128,6 +156,7 @@ export function useBulkImportPayroll() {
                 gender: emp.gender || null,
                 nationality: emp.nationality || 'HU',
                 status: 'active',
+                has_age_concession: hasYoung25Discount,
               })
               .select()
               .single();
@@ -136,6 +165,16 @@ export function useBulkImportPayroll() {
             employeeId = newEmp.id;
             localEmps.push(newEmp as any);
             employeesCreated++;
+
+            if (hasYoung25Discount) {
+              await supabase.from('accounty_declarations').insert({
+                employee_id: employeeId,
+                declaration_type: 'young_25',
+                valid_from: `${new Date().getFullYear()}-01-01`,
+                status: 'active',
+                parameters: {},
+              });
+            }
           }
 
           // Jogviszony ellenőrzése és létrehozása

@@ -31,7 +31,7 @@ import { SickLeaveFormDialog } from '@/components/accounty/payroll/SickLeaveForm
 import { generate2608Xml, generate2658Xml, generateT1041Xml, generateT1042EXml } from '@/lib/payroll/xmlGenerator';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { calculatePayroll, calculateGarnishments, DEFAULT_2026_PARAMS } from '@/lib/payroll/taxEngine';
+import { calculatePayroll, calculateGarnishments, isEligibleForYoung25, DEFAULT_2026_PARAMS } from '@/lib/payroll/taxEngine';
 
 // ── Tab definíciók ──
 const TABS = [
@@ -351,8 +351,8 @@ export default function EmployeeDetailsPage() {
                             if (decl.declaration_type === 'netak') {
                               parsedDecs.netak = { eligible: true };
                             }
-                            if (decl.declaration_type === 'under_25') {
-                              parsedDecs.young25 = { eligible: true };
+                            if (decl.declaration_type === 'under_25' || decl.declaration_type === 'young_25' || decl.declaration_type === 'young') {
+                              parsedDecs.young25 = { eligible: !decl.parameters?.waived };
                             }
                             if (decl.declaration_type === 'new_mother') {
                               parsedDecs.youngMother30 = { maxDeduction: 0 };
@@ -370,6 +370,16 @@ export default function EmployeeDetailsPage() {
                           const employeeAge = birthDate
                             ? Math.floor((Date.now() - birthDate.getTime()) / (365.25 * 86400000))
                             : 30;
+
+                          const now = new Date();
+                          const isYoung25ByStatute = employee.birth_date
+                            ? isEligibleForYoung25(employee.birth_date, now.getFullYear(), now.getMonth() + 1)
+                            : false;
+
+                          // 25 év alattiak törvény szerinti kedvezménye (Szja tv. 29/F. § (2) szerint a betöltés hónapjára is)
+                          if (parsedDecs.young25 === undefined && (isYoung25ByStatute || employeeAge < 25 || employee.has_age_concession)) {
+                            parsedDecs.young25 = { eligible: true };
+                          }
 
                           const baseSalary = Number(primaryEmployment.base_salary) || 0;
 

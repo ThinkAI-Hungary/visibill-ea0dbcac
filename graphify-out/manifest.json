@@ -1005,8 +1005,8 @@
     "semantic_hash": "ec57152c309e9d33b65709bb6ed22a2a"
   },
   "src/hooks/usePayrollData.ts": {
-    "mtime": 1790514518.229066,
-    "ast_hash": "76ee7c92ef5e4bf711b3e5a5341fbb6c",
+    "mtime": 1790700900.5155184,
+    "ast_hash": "0495cf1619124a3d02802b41c94d2bb7",
     "semantic_hash": ""
   },
   "src/hooks/useProjectLaborCosts.ts": {
@@ -1175,8 +1175,8 @@
     "semantic_hash": "cab77d88517f50392720ac6c0eb2a3fb"
   },
   "src/lib/payroll/__tests__/taxEngine.test.ts": {
-    "mtime": 1790514518.2320645,
-    "ast_hash": "4394a4ae334f110b626b105c108269f3",
+    "mtime": 1790701111.9966836,
+    "ast_hash": "6bd1dc076fbe6202a74b9e7dfa66720c",
     "semantic_hash": ""
   },
   "src/lib/payroll/__tests__/validators.test.ts": {
@@ -1200,9 +1200,9 @@
     "semantic_hash": ""
   },
   "src/lib/payroll/index.ts": {
-    "mtime": 1780695588.2924094,
-    "ast_hash": "43c2af409e6f2ea19952582471dcbe5c",
-    "semantic_hash": "43c2af409e6f2ea19952582471dcbe5c"
+    "mtime": 1790700874.6498148,
+    "ast_hash": "6e87235a95c58cb1aa659d5627cc60d4",
+    "semantic_hash": ""
   },
   "src/lib/payroll/leaveCalculator.ts": {
     "mtime": 1784897827.2460656,
@@ -1220,8 +1220,8 @@
     "semantic_hash": "44e2c5b556df1a4e7fcc7d46531a2c46"
   },
   "src/lib/payroll/taxEngine.ts": {
-    "mtime": 1790514518.2330644,
-    "ast_hash": "5396d507f28cc9d2505401abe9118ef8",
+    "mtime": 1790700847.5302541,
+    "ast_hash": "415b7b83b428931af2e83042dd736f46",
     "semantic_hash": ""
   },
   "src/lib/payroll/validators.ts": {
@@ -1350,8 +1350,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/EmployeeDetailsPage.tsx": {
-    "mtime": 1790168409.1970427,
-    "ast_hash": "336d37d8565c9d4cb457aa8800e3c45a",
+    "mtime": 1790701087.059481,
+    "ast_hash": "cb96890f3fe7a08735db38d5552ba253",
     "semantic_hash": ""
   },
   "src/pages/Accounty/EmployeeWizardPage.tsx": {
@@ -1475,8 +1475,8 @@
     "semantic_hash": ""
   },
   "src/pages/FixedAssetsPage.tsx": {
-    "mtime": 1790514518.2360642,
-    "ast_hash": "eca1f8cc0e60e53c6a7c108e9097df07",
+    "mtime": 1790695761.473536,
+    "ast_hash": "01b2b043797e1d3df8fba0818cb2c6b3",
     "semantic_hash": ""
   },
   "src/pages/GeneralLedgerPage.tsx": {
@@ -8205,8 +8205,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useBulkImportPayroll.ts": {
-    "mtime": 1789104580.0791364,
-    "ast_hash": "a26274484e279b857e395298c8011034",
+    "mtime": 1790698738.814839,
+    "ast_hash": "8d96e4f00f7c080ea3f9fa4f082d30b9",
     "semantic_hash": ""
   },
   "src/lib/payroll/nav08XmlParser.ts": {
@@ -9510,8 +9510,8 @@
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/EmployeeWorksheetView.tsx": {
-    "mtime": 1790168426.7970233,
-    "ast_hash": "dd11b991b5a75e29ae6b7e545757c40c",
+    "mtime": 1790701218.195029,
+    "ast_hash": "5b0dfa743d2f30036214fffd8d2a20fe",
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/worksheet/WorksheetEmployeeForm.tsx": {
@@ -12465,8 +12465,8 @@
     "semantic_hash": ""
   },
   "src/lib/fixed-assets/developmentReserveAutoPoster.ts": {
-    "mtime": 1790694927.4975994,
-    "ast_hash": "72e32948306ebecca87f518de59d84b7",
+    "mtime": 1790695804.1815069,
+    "ast_hash": "bbbb49c8e3c67281ade01f4e4978bfed",
     "semantic_hash": ""
   },
   "src/lib/payroll/__tests__/anomalyEngine.test.ts": {
@@ -13180,13 +13180,13 @@
     "semantic_hash": ""
   },
   "src/lib/fixed-assets/assetActivationAutoPoster.ts": {
-    "mtime": 1790694200.972822,
-    "ast_hash": "4ba6fc3ede01c79f3ce644204e0c8e6c",
+    "mtime": 1790695784.807627,
+    "ast_hash": "fd941a80783a24144de3f8ee0190cf54",
     "semantic_hash": ""
   },
   "src/test/accounty/assetActivationAutoPoster.test.ts": {
-    "mtime": 1790694309.24642,
-    "ast_hash": "b8f88ff04c1191f3814fa59af8b857bf",
+    "mtime": 1790695901.4964838,
+    "ast_hash": "5c2830247bac28541b40e97b5da721e4",
     "semantic_hash": ""
   },
   "supabase/functions/sync-szamlazz-outbound-invoices/index.ts": {
@@ -13205,8 +13205,28 @@
     "semantic_hash": ""
   },
   "src/test/accounty/developmentReserveAutoPoster.test.ts": {
-    "mtime": 1790694938.5778432,
-    "ast_hash": "1e0444d252330a329a48880e35bb0b9f",
+    "mtime": 1790695907.5899093,
+    "ast_hash": "67e93b9596a1bb29cd23ba7337dd3267",
+    "semantic_hash": ""
+  },
+  "src/components/fixed-assets/DepreciationRunDialog.tsx": {
+    "mtime": 1790695761.470032,
+    "ast_hash": "304becb42a64a27499b63178ea01a74c",
+    "semantic_hash": ""
+  },
+  "src/lib/fixed-assets/depreciationPostingService.ts": {
+    "mtime": 1790695761.4710324,
+    "ast_hash": "75aff695b91fe6992ac22ebe5dd0ded0",
+    "semantic_hash": ""
+  },
+  "src/test/accounty/depreciationPostingService.test.ts": {
+    "mtime": 1790695761.4745407,
+    "ast_hash": "980f552fe3daa7a36b0ee213591a83e3",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-09-29/summary-174500-eb0219-receipt-upload-fixed-assets-coa-resolve-and-reserve-journal-rpc.md": {
+    "mtime": 1790696628.452875,
+    "ast_hash": "f6c5a02f69eb706da3fa2914eedfef83",
     "semantic_hash": ""
   }
 }
