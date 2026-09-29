@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-09-01  
-**Utoljára frissítve:** 2026-09-25 (EB-0044: Adómentes 0B Sorok CA Mező Kizárása és 2665 Nyomtatványverzió 2.0 Igazítás)
+**Utoljára frissítve:** 2026-09-29 (Ügyintéző és Telefonszám Perzisztencia a companies táblában, 0A0001E007A/0A0001E008A kikényszerítés, VatXmlExportModal Async UX és ÁNYK sablon felülbírálás)
 
 ## Context
 A Visibill / eaisyBooks rendszer ÁFA moduljában a 65-ös ÁFA-bevallás XML letöltése korábban fiktív szöveges mezőneveket használt (`sor_01_alap`, `01_0001_adoszam_torzs`), és az azonosítója `2665` volt az ÁNYK által megkövetelt `2665A` (Főlap) és `2665M` (Alnyomtatványok) helyett. Továbbá az M-lapok belföldi összesítő adatai nem önálló `<nyomtatvany>` blokkokként, hanem a főnyomtatvány mezői közé ágyazva jelentek meg.
@@ -49,6 +49,13 @@ A hiteles NAV ÁNYK XML referenciaminta (`docs/think_ai_2465_11.xml`) és a hat�
 4. **DocumentEngine & Felületi Integráció:**
    - A `vatReturnTemplate.ts` DocumentEngine sablon közvetlenül a szabványos `buildVatReturnXml` motort futtatja, garantálva a 100%-os séma-egyezséget mind a közvetlen letöltésnél, mind a DocumentEngine exportnál.
    - A letöltési fájlnév szabványosított: `NAV_${formId}_${year}_${monthStr}_${safeName}.xml` (pl. `NAV_2665_2026_07_TS_Consult_Kft.xml`).
+
+5. **Ügyintéző és Telefonszám Perzisztencia (`companies.representative_name`, `companies.phone`):**
+   - Az ÁNYK 65A főlapján kötelező az ügyintéző neve (`0A0001E007A`) és telefonszáma (`0A0001E008A`). Enélkül az ÁNYK nem hajlandó elmenteni a bevallást, és a belső konzisztencia-ellenőrzés elbukik ([2010] hiba).
+   - A `public.companies` tábla bővítésre került `representative_name TEXT` és `phone TEXT` oszlopokkal.
+   - A `formatAnykPhoneNumber` segédfüggvény garantálja az ÁNYK elvárt számjegyes formátumát (pl. a `06...` prefix átkonvertálását `36...`-ra).
+   - **VatXmlExportModal (Async Modal UX):** Ha a cégben még nincs elmentve az ügyintéző vagy telefonszám, a rendszer automatikusan felugró ablakban kéri be, és menti el a céghez. Ha mindkettő ki van töltve, a letöltés azonnal végbemegy (Opció B UX), de az Export menüből bármikor elérhető az "Ügyintéző adatai (ÁNYK)" menüpont a szerkesztéshez.
+   - **ÁNYK Sablon Felülbírálás (`formIdOverride`):** A könyvelő a modálban szükség esetén expliciten választhat régebbi sablont is (pl. 2565A vagy a 2465A v4.0 referenciát).
 
 ## Consequences
 **Pozitív:**

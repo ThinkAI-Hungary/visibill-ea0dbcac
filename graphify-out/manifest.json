@@ -225,8 +225,8 @@
     "semantic_hash": ""
   },
   "src/components/TransactionDetailsDialog.tsx": {
-    "mtime": 1789410160.170285,
-    "ast_hash": "208ce7c4130fc591ce19f2210c193874",
+    "mtime": 1790701660.3669684,
+    "ast_hash": "27765aa6d049e5222e65748170f2ee4e",
     "semantic_hash": ""
   },
   "src/components/TransactionReasonCell.tsx": {
@@ -870,8 +870,8 @@
     "semantic_hash": ""
   },
   "src/contexts/CompanyContext.tsx": {
-    "mtime": 1790156705.5661132,
-    "ast_hash": "dbf7386503e526d5cf3d36033ec5a3c8",
+    "mtime": 1790706391.8182933,
+    "ast_hash": "9ab34431dc6acc939c73220c24a0dd75",
     "semantic_hash": ""
   },
   "src/contexts/DateRangeContext.tsx": {
@@ -1005,8 +1005,8 @@
     "semantic_hash": "ec57152c309e9d33b65709bb6ed22a2a"
   },
   "src/hooks/usePayrollData.ts": {
-    "mtime": 1790700900.5155184,
-    "ast_hash": "0495cf1619124a3d02802b41c94d2bb7",
+    "mtime": 1790701660.6450102,
+    "ast_hash": "a8edcd649b131bab56e1e52f067607ae",
     "semantic_hash": ""
   },
   "src/hooks/useProjectLaborCosts.ts": {
@@ -1060,8 +1060,8 @@
     "semantic_hash": ""
   },
   "src/integrations/supabase/types.ts": {
-    "mtime": 1790514518.2310646,
-    "ast_hash": "daa3e0d3469fb89411483aa4ba7b4486",
+    "mtime": 1790706920.49692,
+    "ast_hash": "eef5ccaf71da5b214df5b0a8fbc0cbee",
     "semantic_hash": ""
   },
   "src/lib/annualReportPdf.ts": {
@@ -1175,7 +1175,7 @@
     "semantic_hash": "cab77d88517f50392720ac6c0eb2a3fb"
   },
   "src/lib/payroll/__tests__/taxEngine.test.ts": {
-    "mtime": 1790701111.9966836,
+    "mtime": 1790701660.6450102,
     "ast_hash": "6bd1dc076fbe6202a74b9e7dfa66720c",
     "semantic_hash": ""
   },
@@ -1200,7 +1200,7 @@
     "semantic_hash": ""
   },
   "src/lib/payroll/index.ts": {
-    "mtime": 1790700874.6498148,
+    "mtime": 1790701660.6460187,
     "ast_hash": "6e87235a95c58cb1aa659d5627cc60d4",
     "semantic_hash": ""
   },
@@ -1220,7 +1220,7 @@
     "semantic_hash": "44e2c5b556df1a4e7fcc7d46531a2c46"
   },
   "src/lib/payroll/taxEngine.ts": {
-    "mtime": 1790700847.5302541,
+    "mtime": 1790701660.6470182,
     "ast_hash": "415b7b83b428931af2e83042dd736f46",
     "semantic_hash": ""
   },
@@ -1290,8 +1290,8 @@
     "semantic_hash": ""
   },
   "src/lib/vatReturnXml.ts": {
-    "mtime": 1790301678.6338823,
-    "ast_hash": "2d0ec439febcc43d6fcebdade6cad608",
+    "mtime": 1790706720.4413867,
+    "ast_hash": "8997f129a1b03fd4a4bd860d199d0630",
     "semantic_hash": ""
   },
   "src/main.tsx": {
@@ -1350,8 +1350,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/EmployeeDetailsPage.tsx": {
-    "mtime": 1790701087.059481,
-    "ast_hash": "cb96890f3fe7a08735db38d5552ba253",
+    "mtime": 1790701660.6480193,
+    "ast_hash": "ab3467ba0bc2b42675d675fd3976cec8",
     "semantic_hash": ""
   },
   "src/pages/Accounty/EmployeeWizardPage.tsx": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790683147.9820702,
-    "ast_hash": "4485454a794a0c7538f30d274c73d178",
+    "mtime": 1790701660.3014374,
+    "ast_hash": "966f80cffca61e2024b15f95644e2721",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3570,13 +3570,13 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1790692095.9625874,
-    "ast_hash": "0206bc6900bd7cd86b96afc836ab2362",
+    "mtime": 1790701660.3034403,
+    "ast_hash": "0446368345289cc23411bca24f1fe1a5",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
-    "mtime": 1790635570.4290884,
-    "ast_hash": "f907408a10fd3fbbf6823e55399a0eb5",
+    "mtime": 1790701660.3034403,
+    "ast_hash": "5533fe362f8085ec666f162c4a541e19",
     "semantic_hash": ""
   },
   "docs/product/prd.md": {
@@ -5070,8 +5070,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/10-assets.md": {
-    "mtime": 1790514518.2190113,
-    "ast_hash": "f86571f376d5971023c431b9448cf261",
+    "mtime": 1790701660.299316,
+    "ast_hash": "a253b035197d880f7a3a48096afdf951",
     "semantic_hash": ""
   },
   "docs/architecture/database/11-shipping.md": {
@@ -6975,8 +6975,8 @@
     "semantic_hash": ""
   },
   "src/components/transaction-details/ManualMatchSearchSection.tsx": {
-    "mtime": 1789159282.991569,
-    "ast_hash": "66a62b8ff65b6eda45541d383c249538",
+    "mtime": 1790701660.3679645,
+    "ast_hash": "be5d208a430e2e5ef67d0703d51ba4cf",
     "semantic_hash": ""
   },
   "src/components/transaction-details/MatchedCourierReportsCard.tsx": {
@@ -7015,13 +7015,13 @@
     "semantic_hash": ""
   },
   "src/hooks/useTransactionMatching.test.ts": {
-    "mtime": 1788132266.6009686,
-    "ast_hash": "028df64cc60716abaf7e6f452356a6ab",
+    "mtime": 1790701660.3701627,
+    "ast_hash": "159aadc4f2eb476fadc817789d0f4926",
     "semantic_hash": ""
   },
   "src/hooks/useTransactionMatching.ts": {
-    "mtime": 1789410160.1718347,
-    "ast_hash": "d03752c4366d243cf606ece00c3a29c3",
+    "mtime": 1790701660.3711603,
+    "ast_hash": "cbc0c1de5d8c246fc5eaa7727604886f",
     "semantic_hash": ""
   },
   "src/lib/matching/candidateFinder.test.ts": {
@@ -7040,13 +7040,13 @@
     "semantic_hash": ""
   },
   "src/lib/matching/matchingService.test.ts": {
-    "mtime": 1788132213.149867,
-    "ast_hash": "d05e6970a4602d01dfa159a61bbeacc5",
+    "mtime": 1790701660.3721604,
+    "ast_hash": "103ab6e2913f8cecf675501abc8ad251",
     "semantic_hash": ""
   },
   "src/lib/matching/matchingService.ts": {
-    "mtime": 1789515572.6789055,
-    "ast_hash": "0730425f7cf57532780bdfa9c361b27c",
+    "mtime": 1790701660.37316,
+    "ast_hash": "c7ec134ce533489f0dd3709df4b1bcdb",
     "semantic_hash": ""
   },
   "src/lib/matching/types.ts": {
@@ -7975,8 +7975,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/VatReturnViewTab.tsx": {
-    "mtime": 1790590654.1406715,
-    "ast_hash": "231ef6bb88ad2182f19e846f7f22c99f",
+    "mtime": 1790707054.6708872,
+    "ast_hash": "bd19c9cff17c419771302c1de4105c26",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatXmlValidationDialog.tsx": {
@@ -8190,13 +8190,13 @@
     "semantic_hash": ""
   },
   "src/lib/__tests__/vatReturnXml.test.ts": {
-    "mtime": 1790301748.1408718,
-    "ast_hash": "acde17c9b96d1352d23883325e01ff09",
+    "mtime": 1790706758.560182,
+    "ast_hash": "bcda86cdbea92833a0987e651471501f",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-080-nav-anyk-vat-return-xml-standardization.md": {
-    "mtime": 1790302073.8615003,
-    "ast_hash": "dd030a9108cd52304e1e8c69e25e91bd",
+    "mtime": 1790706841.6467364,
+    "ast_hash": "fc798a4d3d51494c1d025840d00262fe",
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/PayrollReconstructionDialog.tsx": {
@@ -8205,8 +8205,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useBulkImportPayroll.ts": {
-    "mtime": 1790698738.814839,
-    "ast_hash": "8d96e4f00f7c080ea3f9fa4f082d30b9",
+    "mtime": 1790701660.6435058,
+    "ast_hash": "9d89f13be09b114013c3b251a481f2cc",
     "semantic_hash": ""
   },
   "src/lib/payroll/nav08XmlParser.ts": {
@@ -9510,8 +9510,8 @@
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/EmployeeWorksheetView.tsx": {
-    "mtime": 1790701218.195029,
-    "ast_hash": "5b0dfa743d2f30036214fffd8d2a20fe",
+    "mtime": 1790701660.6425047,
+    "ast_hash": "3fe89c043667c3e82d704b50f5874bc0",
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/worksheet/WorksheetEmployeeForm.tsx": {
@@ -9685,8 +9685,8 @@
     "semantic_hash": ""
   },
   "src/locales/hr/transactions.json": {
-    "mtime": 1789515573.1416585,
-    "ast_hash": "6f6a46980433bd1472bd8b60dfa9bd8a",
+    "mtime": 1790701660.3746636,
+    "ast_hash": "1d71ec89a6e58860de33e771f88afb10",
     "semantic_hash": ""
   },
   "src/locales/hr/upload.json": {
@@ -9725,8 +9725,8 @@
     "semantic_hash": ""
   },
   "src/locales/hu/transactions.json": {
-    "mtime": 1789515573.1457932,
-    "ast_hash": "40b02dd0d026e217fd03090a9424dd86",
+    "mtime": 1790701660.3756673,
+    "ast_hash": "cc735f183244a98dcffcfaa21b7a4e36",
     "semantic_hash": ""
   },
   "src/locales/hu/upload.json": {
@@ -13180,13 +13180,13 @@
     "semantic_hash": ""
   },
   "src/lib/fixed-assets/assetActivationAutoPoster.ts": {
-    "mtime": 1790695784.807627,
-    "ast_hash": "fd941a80783a24144de3f8ee0190cf54",
+    "mtime": 1790701660.3711603,
+    "ast_hash": "6f7523ee1a903819930ea12685104731",
     "semantic_hash": ""
   },
   "src/test/accounty/assetActivationAutoPoster.test.ts": {
-    "mtime": 1790695901.4964838,
-    "ast_hash": "5c2830247bac28541b40e97b5da721e4",
+    "mtime": 1790701660.3776796,
+    "ast_hash": "78937fd8363c35bede51fae09f8edd0c",
     "semantic_hash": ""
   },
   "supabase/functions/sync-szamlazz-outbound-invoices/index.ts": {
@@ -13227,6 +13227,51 @@
   "session-summary/Jani/2026-09-29/summary-174500-eb0219-receipt-upload-fixed-assets-coa-resolve-and-reserve-journal-rpc.md": {
     "mtime": 1790696628.452875,
     "ast_hash": "f6c5a02f69eb706da3fa2914eedfef83",
+    "semantic_hash": ""
+  },
+  "src/components/transaction-details/__tests__/ManualMatchSearchSection.test.tsx": {
+    "mtime": 1790701660.3689656,
+    "ast_hash": "d8c45bc786556c0d0f62861e44533728",
+    "semantic_hash": ""
+  },
+  "src/features/vat/components/VatXmlExportModal.tsx": {
+    "mtime": 1790707081.3837757,
+    "ast_hash": "bbadef9a16277870f6f82f54f7276772",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-180-fixed-assets-periodic-depreciation-posting-service.md": {
+    "mtime": 1790701660.3009164,
+    "ast_hash": "29ea1d74772e3ffe4e82577c5d7c8f85",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-141-fixed-assets-periodic-depreciation-posting-wizard-ux.md": {
+    "mtime": 1790701660.3024411,
+    "ast_hash": "582d95d430dc9d48c2ea78ca97fc1e22",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-142-transaction-multi-invoice-matching-ux.md": {
+    "mtime": 1790701660.3034403,
+    "ast_hash": "a3cf269d636c097b8fd57788b091980e",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-09-29/summary-190500-payroll-young25-statutory-tax-engine-and-eb0222-resolution.md": {
+    "mtime": 1790701660.641506,
+    "ast_hash": "6646e37163c55ca41b11e2598330f980",
+    "semantic_hash": ""
+  },
+  "session-summary/\u00c1ron/2026-09-29/summary-171500-fixed-assets-periodic-depreciation-posting-and-ticket-support.md": {
+    "mtime": 1790701660.3649657,
+    "ast_hash": "2411c870917ed590dbdec19aa08a7a60",
+    "semantic_hash": ""
+  },
+  "session-summary/\u00c1ron/2026-09-29/summary-174500-transaction-multi-invoice-matching-and-ticket-support.md": {
+    "mtime": 1790701660.3659651,
+    "ast_hash": "3c6fa0aa6d513f384150d4a0e93dc6af",
+    "semantic_hash": ""
+  },
+  "session-summary/\u00c1ron/2026-09-29/summary-180400-transaction-multi-invoice-matching-and-ticket-support.md": {
+    "mtime": 1790701660.3659651,
+    "ast_hash": "4a7171b246428b0a40edafea141ddef3",
     "semantic_hash": ""
   }
 }

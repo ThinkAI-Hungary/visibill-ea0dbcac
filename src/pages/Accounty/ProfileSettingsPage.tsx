@@ -373,11 +373,22 @@ export default function ProfileSettingsPage() {
   const [companyAddress, setCompanyAddress] = useState('');
   const [companyDescription, setCompanyDescription] = useState('');
   const [companyPrimaryTeaor, setCompanyPrimaryTeaor] = useState('');
+  const [companyRepresentativeName, setCompanyRepresentativeName] = useState('');
+  const [companyPhone, setCompanyPhone] = useState('');
   const [companyCountryCode, setCompanyCountryCode] = useState<'HU' | 'HR'>('HU');
   const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
   const [savingCompany, setSavingCompany] = useState(false);
   const [initialProfile, setInitialProfile] = useState<Profile | null>(null);
-  const [initialCompanyData, setInitialCompanyData] = useState<{ name: string; taxNumber: string; address: string; description: string; primaryTeaor: string; countryCode: 'HU' | 'HR' } | null>(null);
+  const [initialCompanyData, setInitialCompanyData] = useState<{ 
+    name: string; 
+    taxNumber: string; 
+    address: string; 
+    description: string; 
+    primaryTeaor: string; 
+    countryCode: 'HU' | 'HR';
+    representativeName: string;
+    phone: string;
+  } | null>(null);
 
   const [systemSettings, setSystemSettings] = useState<SystemSettings>({
     theme, language: 'hu', date_format: 'DD/MM/YYYY', number_format: '1 234 567,89', timezone: 'Europe/Budapest',
@@ -390,6 +401,8 @@ export default function ProfileSettingsPage() {
       setCompanyAddress(selectedCompany.address || '');
       setCompanyDescription(selectedCompany.description || '');
       setCompanyPrimaryTeaor(selectedCompany.primary_teaor || '');
+      setCompanyRepresentativeName(selectedCompany.representative_name || '');
+      setCompanyPhone(selectedCompany.phone || '');
       const code = (selectedCompany.country_code as 'HU' | 'HR') || 'HU';
       setCompanyCountryCode(code);
       setInitialCompanyData({ 
@@ -399,6 +412,8 @@ export default function ProfileSettingsPage() {
         description: selectedCompany.description || '',
         primaryTeaor: selectedCompany.primary_teaor || '',
         countryCode: code,
+        representativeName: selectedCompany.representative_name || '',
+        phone: selectedCompany.phone || '',
       });
     }
   }, [selectedCompany]);
@@ -413,10 +428,12 @@ export default function ProfileSettingsPage() {
                        companyAddress !== initialCompanyData.address ||
                        companyDescription !== initialCompanyData.description ||
                        companyPrimaryTeaor !== initialCompanyData.primaryTeaor ||
-                       companyCountryCode !== initialCompanyData.countryCode;
+                       companyCountryCode !== initialCompanyData.countryCode ||
+                       companyRepresentativeName !== initialCompanyData.representativeName ||
+                       companyPhone !== initialCompanyData.phone;
     }
     return profileChanged || companyChanged;
-  }, [profile, initialProfile, companyName, companyTaxNumber, companyAddress, companyDescription, companyPrimaryTeaor, companyCountryCode, initialCompanyData, selectedCompany, initialDataLoaded]);
+  }, [profile, initialProfile, companyName, companyTaxNumber, companyAddress, companyDescription, companyPrimaryTeaor, companyCountryCode, companyRepresentativeName, companyPhone, initialCompanyData, selectedCompany, initialDataLoaded]);
 
   const { showDialog, confirmNavigation, cancelNavigation } = useUnsavedChanges(hasUnsavedChanges);
 
@@ -519,6 +536,8 @@ export default function ProfileSettingsPage() {
         description: companyDescription.trim() || null,
         primary_teaor: companyPrimaryTeaor.trim() || null,
         country_code: companyCountryCode,
+        representative_name: companyRepresentativeName.trim() || null,
+        phone: companyPhone.trim() || null,
       }).eq('id', selectedCompany.id);
       if (error) throw error;
       await refreshCompanies();
@@ -530,6 +549,8 @@ export default function ProfileSettingsPage() {
         description: companyDescription.trim() || null,
         primary_teaor: companyPrimaryTeaor.trim() || null,
         country_code: companyCountryCode,
+        representative_name: companyRepresentativeName.trim() || null,
+        phone: companyPhone.trim() || null,
       });
       setInitialCompanyData({ 
         name: companyName.trim(), 
@@ -538,6 +559,8 @@ export default function ProfileSettingsPage() {
         description: companyDescription.trim(),
         primaryTeaor: companyPrimaryTeaor.trim(),
         countryCode: companyCountryCode,
+        representativeName: companyRepresentativeName.trim(),
+        phone: companyPhone.trim(),
       });
       toast({ title: 'Siker', description: 'Cég adatai sikeresen mentve.' });
     } catch { toast({ title: 'Hiba történt', description: 'A cég adatainak mentése sikertelen.', variant: 'destructive' }); }
@@ -614,12 +637,17 @@ export default function ProfileSettingsPage() {
             setCompanyTaxNumber={setCompanyTaxNumber}
             companyAddress={companyAddress}
             setCompanyAddress={setCompanyAddress}
+            companyRepresentativeName={companyRepresentativeName}
+            setCompanyRepresentativeName={setCompanyRepresentativeName}
+            companyPhone={companyPhone}
+            setCompanyPhone={setCompanyPhone}
             companyDescription={companyDescription}
             setCompanyDescription={setCompanyDescription}
             companyPrimaryTeaor={companyPrimaryTeaor}
             setCompanyPrimaryTeaor={setCompanyPrimaryTeaor}
             companyCountryCode={companyCountryCode}
             setCompanyCountryCode={setCompanyCountryCode}
+            canEdit={true}
             isGeneratingDescription={isGeneratingDescription}
             onGenerateDescription={handleGenerateDescription}
             savingCompany={savingCompany}

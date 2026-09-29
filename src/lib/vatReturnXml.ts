@@ -28,6 +28,8 @@ export interface XmlExportData {
   frequency: string;
   representativeName?: string;
   phone?: string;
+  formIdOverride?: string;
+  formVersionOverride?: string;
   lines: { row_number: string; base_amount_rounded: number | null; tax_amount_rounded: number | null }[];
   mLines: {
     partner_name: string;
@@ -148,6 +150,19 @@ function getPartnerComputedTotals(m: XmlExportData['mLines'][0], periodTo: strin
 }
 
 /**
+ * Formats phone numbers for NAV ÁNYK XML specifications (e.g. 36704240024).
+ * Strips all non-digit characters, converts leading 06 to 36.
+ */
+export function formatAnykPhoneNumber(rawPhone?: string): string {
+  if (!rawPhone) return '';
+  const digits = rawPhone.replace(/\D/g, '');
+  if (digits.startsWith('06') && digits.length >= 10) {
+    return '36' + digits.slice(2);
+  }
+  return digits;
+}
+
+/**
  * Builds the full NAV ÁNYK-compatible XML document for the 65 VAT return.
  * Conforms to AbevJava specifications:
  * - Namespace: http://www.apeh.hu/abev/nyomtatvanyok/2005/01
@@ -185,9 +200,12 @@ export function buildVatReturnXml(data: XmlExportData): string {
 
   const currentDate = new Date().toISOString().substring(0, 10).replace(/-/g, '');
   const year2Digit = String(data.periodYear % 100).padStart(2, '0');
-  const formId = `${year2Digit}65`;
-  const formVersion = data.periodYear >= 2026 ? '2.0' : data.periodYear === 2025 ? '2.0' : '4.0';
+  const formId = data.formIdOverride || `${year2Digit}65`;
+  const formVersion = data.formVersionOverride || (data.periodYear >= 2026 ? '2.0' : data.periodYear === 2025 ? '2.0' : '4.0');
   const mPartnerCount = data.mLines ? data.mLines.length : 0;
+  const cleanCompanyName = data.companyName.trim();
+  const repName = data.representativeName?.trim() || '';
+  const repPhone = formatAnykPhoneNumber(data.phone);
 
   let xml = `<?xml version="1.0" encoding="utf-8"?>\n`;
   xml += `<nyomtatvanyok xmlns="http://www.apeh.hu/abev/nyomtatvanyok/2005/01">\n`;
@@ -205,25 +223,25 @@ export function buildVatReturnXml(data: XmlExportData): string {
   xml += `      <nyomtatvanyazonosito>${formId}A</nyomtatvanyazonosito>\n`;
   xml += `      <nyomtatvanyverzio>${formVersion}</nyomtatvanyverzio>\n`;
   xml += `      <adozo>\n`;
-  xml += `        <nev>${escapeXml(data.companyName)}</nev>\n`;
+  xml += `        <nev>${escapeXml(cleanCompanyName)}</nev>\n`;
   xml += `        <adoszam>${taxNum11}</adoszam>\n`;
   xml += `      </adozo>\n`;
   xml += `      <idoszak>\n`;
   xml += `        <tol>${periodFrom}</tol>\n`;
   xml += `        <ig>${periodTo}</ig>\n`;
   xml += `      </idoszak>\n`;
-  xml += `      <megjegyzes>${escapeXml(data.companyName)} - Áfa bevallás</megjegyzes>\n`;
+  xml += `      <megjegyzes>${escapeXml(cleanCompanyName)} - Áfa bevallás</megjegyzes>\n`;
   xml += `    </nyomtatvanyinformacio>\n`;
   xml += `    <mezok>\n`;
 
   // 0A lap: Fejléc, azonosítás és keltezés
   xml += `      <mezo eazon="0A0001E001A">${taxNum11}</mezo>\n`;
-  xml += `      <mezo eazon="0A0001E006A">${escapeXml(data.companyName)}</mezo>\n`;
-  if (data.representativeName) {
-    xml += `      <mezo eazon="0A0001E007A">${escapeXml(data.representativeName)}</mezo>\n`;
+  xml += `      <mezo eazon="0A0001E006A">${escapeXml(cleanCompanyName)}</mezo>\n`;
+  if (repName) {
+    xml += `      <mezo eazon="0A0001E007A">${escapeXml(repName)}</mezo>\n`;
   }
-  if (data.phone) {
-    xml += `      <mezo eazon="0A0001E008A">${escapeXml(data.phone.replace(/\D/g, ''))}</mezo>\n`;
+  if (repPhone) {
+    xml += `      <mezo eazon="0A0001E008A">${escapeXml(repPhone)}</mezo>\n`;
   }
   xml += `      <mezo eazon="0A0001F001A">${periodFrom}</mezo>\n`;
   xml += `      <mezo eazon="0A0001F002A">${periodTo}</mezo>\n`;
@@ -348,7 +366,7 @@ export function buildVatReturnXml(data: XmlExportData): string {
       xml += `      <nyomtatvanyazonosito>${formId}M</nyomtatvanyazonosito>\n`;
       xml += `      <nyomtatvanyverzio>${formVersion}</nyomtatvanyverzio>\n`;
       xml += `      <adozo>\n`;
-      xml += `        <nev>${escapeXml(data.companyName)}</nev>\n`;
+      xml += `        <nev>${escapeXml(cleanCompanyName)}</nev>\n`;
       xml += `        <adoszam>${taxNum11}</adoszam>\n`;
       xml += `      </adozo>\n`;
       xml += `      <albizonylatazonositas>\n`;
@@ -359,13 +377,13 @@ export function buildVatReturnXml(data: XmlExportData): string {
       xml += `        <tol>${periodFrom}</tol>\n`;
       xml += `        <ig>${periodTo}</ig>\n`;
       xml += `      </idoszak>\n`;
-      xml += `      <megjegyzes>${escapeXml(data.companyName)} - ${formId}M</megjegyzes>\n`;
+      xml += `      <megjegyzes>${escapeXml(cleanCompanyName)} - ${formId}M</megjegyzes>\n`;
       xml += `    </nyomtatvanyinformacio>\n`;
       xml += `    <mezok>\n`;
 
       // 0A lap (M-01: partner összesítő)
       xml += `      <mezo eazon="0A0001C001A">${taxNum11}</mezo>\n`;
-      xml += `      <mezo eazon="0A0001C004A">${escapeXml(data.companyName)}</mezo>\n`;
+      xml += `      <mezo eazon="0A0001C004A">${escapeXml(cleanCompanyName)}</mezo>\n`;
       xml += `      <mezo eazon="0A0001C005A">${escapeXml(partnerTaxBase)}</mezo>\n`;
       xml += `      <mezo eazon="0A0001C006A">${escapeXml(m.partner_name)}</mezo>\n`;
       xml += `      <mezo eazon="0A0001D001A">${periodFrom}</mezo>\n`;
@@ -427,8 +445,8 @@ export function buildVatReturnXml(data: XmlExportData): string {
   return xml;
 }
 
-export function getVatReturnFilename(data: { periodYear: number; periodMonth: number; companyName?: string }): string {
-  const formId = `${data.periodYear % 100}65`;
+export function getVatReturnFilename(data: { periodYear: number; periodMonth: number; companyName?: string; formIdOverride?: string }): string {
+  const formId = data.formIdOverride || `${data.periodYear % 100}65`;
   const monthStr = String(data.periodMonth).padStart(2, '0');
   const safeName = (data.companyName || 'Ceg')
     .replace(/\s+/g, '_')

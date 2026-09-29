@@ -46,7 +46,15 @@
     "manage_bank_accounts": "Upravljanje bankovnim računima",
     "no_bank_accounts_warning": "Još nema dodanih bankovnih računa",
     "no_bank_accounts_hint": "Dodajte IBAN ili žiro račun tvrtke za pripremu datoteka za plaćanje (SEPA XML).",
-    "add_first_bank_account": "Dodaj račun"
+    "add_first_bank_account": "Dodaj račun",
+    "representative_section_title": "Službena ovlaštena osoba i kontakt (ÁNYK / Porezna)",
+    "representative_section_desc": "Podaci o ovlaštenoj osobi potrebni za porezne prijave i ÁNYK obrasce.",
+    "representative_name": "Ime ovlaštene osobe",
+    "representative_placeholder": "Npr. Ivan Horvat",
+    "representative_hint": "Ime referenta koje se prikazuje na naslovnici porezne prijave.",
+    "phone": "Telefonski broj ovlaštene osobe",
+    "phone_placeholder": "Npr. +385 91 123 4567",
+    "phone_hint": "Službeni telefonski broj za kontakt pri izvozu obrazaca."
   },
   "system": {
     "title": "Postavke sustava",
