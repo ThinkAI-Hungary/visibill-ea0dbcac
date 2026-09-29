@@ -235,13 +235,18 @@ export function buildVatReturnXml(data: XmlExportData): string {
   xml += `    <mezok>\n`;
 
   // 0A lap: Fejléc, azonosítás és keltezés
+  // 0A0001E001A: Adózó adószáma
   xml += `      <mezo eazon="0A0001E001A">${taxNum11}</mezo>\n`;
-  xml += `      <mezo eazon="0A0001E006A">${escapeXml(cleanCompanyName)}</mezo>\n`;
+  // 0A0001E006A: Adózói státusz (üresen hagyandó normál működő cégnél, nem ide való a cégnév!)
+  // 0A0001E007A: Adózó neve (hivatalos cégnév, ami a fejléc <nev> mezővel egyezik)
+  xml += `      <mezo eazon="0A0001E007A">${escapeXml(cleanCompanyName)}</mezo>\n`;
   if (repName) {
-    xml += `      <mezo eazon="0A0001E007A">${escapeXml(repName)}</mezo>\n`;
+    // 0A0001E008A: Ügyintéző neve
+    xml += `      <mezo eazon="0A0001E008A">${escapeXml(repName)}</mezo>\n`;
   }
   if (repPhone) {
-    xml += `      <mezo eazon="0A0001E008A">${escapeXml(repPhone)}</mezo>\n`;
+    // 0A0001E009A: Ügyintéző telefonszáma
+    xml += `      <mezo eazon="0A0001E009A">${escapeXml(repPhone)}</mezo>\n`;
   }
   xml += `      <mezo eazon="0A0001F001A">${periodFrom}</mezo>\n`;
   xml += `      <mezo eazon="0A0001F002A">${periodTo}</mezo>\n`;

@@ -50,11 +50,14 @@ describe('vatReturnXml (NAV ÁNYK 2665A / 2665M Generator)', () => {
     expect(xml).toContain('<tol>20260701</tol>');
     expect(xml).toContain('<ig>20260731</ig>');
 
-    // 0A Főlap fields
+    // 0A Főlap fields:
+    // E001A: adószám, E007A: adózó neve, E008A: ügyintéző neve, E009A: ügyintéző telefonszáma
+    // E006A (adózói státusz) sosem tartalmazhat cégnevet!
     expect(xml).toContain('<mezo eazon="0A0001E001A">13086905208</mezo>');
-    expect(xml).toContain('<mezo eazon="0A0001E006A">TS Consult Kft. &amp; Társa</mezo>');
-    expect(xml).toContain('<mezo eazon="0A0001E007A">Surányi Pál</mezo>');
-    expect(xml).toContain('<mezo eazon="0A0001E008A">36301234567</mezo>');
+    expect(xml).not.toContain('0A0001E006A');
+    expect(xml).toContain('<mezo eazon="0A0001E007A">TS Consult Kft. &amp; Társa</mezo>');
+    expect(xml).toContain('<mezo eazon="0A0001E008A">Surányi Pál</mezo>');
+    expect(xml).toContain('<mezo eazon="0A0001E009A">36301234567</mezo>');
     expect(xml).toContain('<mezo eazon="0A0001F001A">20260701</mezo>');
     expect(xml).toContain('<mezo eazon="0A0001F002A">20260731</mezo>');
     expect(xml).toContain('<mezo eazon="0A0001F006A">H</mezo>');
@@ -445,14 +448,15 @@ describe('vatReturnXml (NAV ÁNYK 2665A / 2665M Generator)', () => {
       expect(xml).toContain('<nyomtatvanyazonosito>2465A</nyomtatvanyazonosito>');
       expect(xml).toContain('<nyomtatvanyverzio>4.0</nyomtatvanyverzio>');
 
-      // Consistency between header and 0A sheet: trimmed company name
+      // Consistency between header and 0A sheet: trimmed company name on E007A (not E006A)
       expect(xml).toContain('<nev>THINK AI Kft.</nev>');
       expect(xml).toContain('<megjegyzes>THINK AI Kft. - Áfa bevallás</megjegyzes>');
-      expect(xml).toContain('<mezo eazon="0A0001E006A">THINK AI Kft.</mezo>');
+      expect(xml).not.toContain('0A0001E006A');
+      expect(xml).toContain('<mezo eazon="0A0001E007A">THINK AI Kft.</mezo>');
 
-      // Mandatory representative fields
-      expect(xml).toContain('<mezo eazon="0A0001E007A">Jámbor Viktor</mezo>');
-      expect(xml).toContain('<mezo eazon="0A0001E008A">36704240024</mezo>');
+      // Mandatory representative fields on E008A and E009A
+      expect(xml).toContain('<mezo eazon="0A0001E008A">Jámbor Viktor</mezo>');
+      expect(xml).toContain('<mezo eazon="0A0001E009A">36704240024</mezo>');
     });
   });
 });
