@@ -14,6 +14,7 @@ import {
   X,
   CheckCircle2,
   AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 
 import { useCompany } from '@/contexts/CompanyContext';
@@ -120,6 +121,19 @@ export function CockpitRowSkeleton() {
 }
 
 // ── Data Fetching Helpers ──
+
+// Deduplicate array of objects by their `id` property
+function dedupeById<T extends { id: string }>(items: T[]): T[] {
+  const seen = new Set<string>();
+  const result: T[] = [];
+  for (const item of items) {
+    if (item && item.id && !seen.has(item.id)) {
+      seen.add(item.id);
+      result.push(item);
+    }
+  }
+  return result;
+}
 
 // Fetch a single page of unmatched NAV invoices (p_page_size: 50)
 const fetchNavInvoicesPage = async (
@@ -316,6 +330,20 @@ export default function UnifiedFinancialCockpit() {
   const [extraReceivablesItems, setExtraReceivablesItems] = useState<NavInvoiceItem[]>([]);
   const [isLoadingMoreReceivables, setIsLoadingMoreReceivables] = useState(false);
 
+  const [hasMoreMap, setHasMoreMap] = useState<Record<CockpitTab, boolean>>({
+    missing: true,
+    payable: true,
+    bank: true,
+    receivables: true,
+  });
+
+  // Mutex and page tracking refs to avoid race conditions, duplicate fetches, and loops
+  const inFlightRef = useRef<{ [key in CockpitTab]?: boolean }>({});
+  const payablePageRef = useRef<number>(1);
+  const receivablesPageRef = useRef<number>(1);
+  const bankOffsetRef = useRef<number>(PAGE_SIZE);
+  const missingOffsetRef = useRef<number>(PAGE_SIZE);
+
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const isHr = getActiveLocale() === 'hr';
@@ -327,6 +355,17 @@ export default function UnifiedFinancialCockpit() {
     setExtraPayableItems([]);
     setExtraBankItems([]);
     setExtraReceivablesItems([]);
+    setHasMoreMap({
+      missing: true,
+      payable: true,
+      bank: true,
+      receivables: true,
+    });
+    payablePageRef.current = 1;
+    receivablesPageRef.current = 1;
+    bankOffsetRef.current = PAGE_SIZE;
+    missingOffsetRef.current = PAGE_SIZE;
+    inFlightRef.current = {};
   }, [companyId, dateFromFormatted, dateToFormatted]);
 
   // 1. Initial Missing Vouchers query (page 1: 50 items)
@@ -401,34 +440,32 @@ export default function UnifiedFinancialCockpit() {
 
   // ── Combined lists and totals ──
   const allMissingItems = useMemo(
-    () => [...(initialMissingData?.items || []), ...extraMissingItems],
+    () => dedupeById([...(initialMissingData?.items || []), ...extraMissingItems]),
     [initialMissingData?.items, extraMissingItems]
   );
   const missingTotalCount = initialMissingData?.totalCount ?? allMissingItems.length;
-  const hasMoreMissing = allMissingItems.length < missingTotalCount;
+  const hasMoreMissing = hasMoreMap.missing && allMissingItems.length < missingTotalCount;
 
   const allPayableItems = useMemo(
-    () => [...(initialPayableData?.items || []), ...extraPayableItems],
+    () => dedupeById([...(initialPayableData?.items || []), ...extraPayableItems]),
     [initialPayableData?.items, extraPayableItems]
   );
   const payableTotalCount = initialPayableData?.totalCount ?? allPayableItems.length;
-  const hasMorePayable = allPayableItems.length < payableTotalCount;
-  const payablePage = 1 + Math.floor(extraPayableItems.length / PAGE_SIZE);
+  const hasMorePayable = hasMoreMap.payable && allPayableItems.length < payableTotalCount;
 
   const allBankItems = useMemo(
-    () => [...(initialBankData?.items || []), ...extraBankItems],
+    () => dedupeById([...(initialBankData?.items || []), ...extraBankItems]),
     [initialBankData?.items, extraBankItems]
   );
   const bankTotalCount = initialBankData?.totalCount ?? allBankItems.length;
-  const hasMoreBank = allBankItems.length < bankTotalCount;
+  const hasMoreBank = hasMoreMap.bank && allBankItems.length < bankTotalCount;
 
   const allReceivablesItems = useMemo(
-    () => [...(initialReceivablesData?.items || []), ...extraReceivablesItems],
+    () => dedupeById([...(initialReceivablesData?.items || []), ...extraReceivablesItems]),
     [initialReceivablesData?.items, extraReceivablesItems]
   );
   const receivablesTotalCount = initialReceivablesData?.totalCount ?? allReceivablesItems.length;
-  const hasMoreReceivables = allReceivablesItems.length < receivablesTotalCount;
-  const receivablesPage = 1 + Math.floor(extraReceivablesItems.length / PAGE_SIZE);
+  const hasMoreReceivables = hasMoreMap.receivables && allReceivablesItems.length < receivablesTotalCount;
 
   // Exact gross totals: use aggregates if available, otherwise compute from loaded items
   const payableGrossTotal = useMemo(() => {
@@ -610,13 +647,15 @@ export default function UnifiedFinancialCockpit() {
 
   // Optimistic Infinite Scroll trigger
   const handleLoadMore = useCallback(async () => {
-    if (currentTabIsLoadingMore || !currentTabHasMore || searchQuery.trim() !== '') return;
+    if (inFlightRef.current[activeTab] || searchQuery.trim() !== '') return;
 
     switch (activeTab) {
       case 'bank': {
+        if (!hasMoreBank) return;
+        inFlightRef.current['bank'] = true;
         setIsLoadingMoreBank(true);
         try {
-          const from = allBankItems.length;
+          const from = bankOffsetRef.current;
           const to = from + PAGE_SIZE - 1;
           const res = await fetchUnmatchedTransactionsBatch(
             companyId,
@@ -625,20 +664,38 @@ export default function UnifiedFinancialCockpit() {
             from,
             to
           );
-          if (res.items.length > 0) {
-            setExtraBankItems((prev) => [...prev, ...res.items]);
+          bankOffsetRef.current = to + 1;
+          if (!res.items || res.items.length === 0 || res.items.length < PAGE_SIZE) {
+            setHasMoreMap((prev) => ({ ...prev, bank: false }));
+          }
+          if (res.items && res.items.length > 0) {
+            setExtraBankItems((prev) => {
+              const existingIds = new Set([
+                ...(initialBankData?.items || []).map((i) => i.id),
+                ...prev.map((i) => i.id),
+              ]);
+              const newItems = res.items.filter((i) => !existingIds.has(i.id));
+              if (newItems.length === 0) {
+                setHasMoreMap((p) => ({ ...p, bank: false }));
+                return prev;
+              }
+              return [...prev, ...newItems];
+            });
           }
         } catch (err) {
           console.error('Failed to load more bank transactions:', err);
         } finally {
+          inFlightRef.current['bank'] = false;
           setIsLoadingMoreBank(false);
         }
         break;
       }
       case 'payable': {
+        if (!hasMorePayable) return;
+        inFlightRef.current['payable'] = true;
         setIsLoadingMorePayable(true);
         try {
-          const nextPage = payablePage + 1;
+          const nextPage = payablePageRef.current + 1;
           const res = await fetchNavInvoicesPage(
             companyId,
             dateFromFormatted,
@@ -646,20 +703,38 @@ export default function UnifiedFinancialCockpit() {
             'INBOUND',
             nextPage
           );
-          if (res.items.length > 0) {
-            setExtraPayableItems((prev) => [...prev, ...res.items]);
+          payablePageRef.current = nextPage;
+          if (!res.items || res.items.length === 0 || res.items.length < PAGE_SIZE) {
+            setHasMoreMap((prev) => ({ ...prev, payable: false }));
+          }
+          if (res.items && res.items.length > 0) {
+            setExtraPayableItems((prev) => {
+              const existingIds = new Set([
+                ...(initialPayableData?.items || []).map((i) => i.id),
+                ...prev.map((i) => i.id),
+              ]);
+              const newItems = res.items.filter((i) => !existingIds.has(i.id));
+              if (newItems.length === 0) {
+                setHasMoreMap((p) => ({ ...p, payable: false }));
+                return prev;
+              }
+              return [...prev, ...newItems];
+            });
           }
         } catch (err) {
           console.error('Failed to load more payable invoices:', err);
         } finally {
+          inFlightRef.current['payable'] = false;
           setIsLoadingMorePayable(false);
         }
         break;
       }
       case 'receivables': {
+        if (!hasMoreReceivables) return;
+        inFlightRef.current['receivables'] = true;
         setIsLoadingMoreReceivables(true);
         try {
-          const nextPage = receivablesPage + 1;
+          const nextPage = receivablesPageRef.current + 1;
           const res = await fetchNavInvoicesPage(
             companyId,
             dateFromFormatted,
@@ -667,74 +742,109 @@ export default function UnifiedFinancialCockpit() {
             'OUTBOUND',
             nextPage
           );
-          if (res.items.length > 0) {
-            setExtraReceivablesItems((prev) => [...prev, ...res.items]);
+          receivablesPageRef.current = nextPage;
+          if (!res.items || res.items.length === 0 || res.items.length < PAGE_SIZE) {
+            setHasMoreMap((prev) => ({ ...prev, receivables: false }));
+          }
+          if (res.items && res.items.length > 0) {
+            setExtraReceivablesItems((prev) => {
+              const existingIds = new Set([
+                ...(initialReceivablesData?.items || []).map((i) => i.id),
+                ...prev.map((i) => i.id),
+              ]);
+              const newItems = res.items.filter((i) => !existingIds.has(i.id));
+              if (newItems.length === 0) {
+                setHasMoreMap((p) => ({ ...p, receivables: false }));
+                return prev;
+              }
+              return [...prev, ...newItems];
+            });
           }
         } catch (err) {
           console.error('Failed to load more receivables invoices:', err);
         } finally {
+          inFlightRef.current['receivables'] = false;
           setIsLoadingMoreReceivables(false);
         }
         break;
       }
       case 'missing': {
+        if (!hasMoreMissing) return;
+        inFlightRef.current['missing'] = true;
         setIsLoadingMoreMissing(true);
         try {
-          const from = allMissingItems.length;
+          const from = missingOffsetRef.current;
           const to = from + PAGE_SIZE - 1;
           const res = await fetchMissingVouchersBatch(companyId, from, to);
-          if (res.items.length > 0) {
-            setExtraMissingItems((prev) => [...prev, ...res.items]);
+          missingOffsetRef.current = to + 1;
+          if (!res.items || res.items.length === 0 || res.items.length < PAGE_SIZE) {
+            setHasMoreMap((prev) => ({ ...prev, missing: false }));
+          }
+          if (res.items && res.items.length > 0) {
+            setExtraMissingItems((prev) => {
+              const existingIds = new Set([
+                ...(initialMissingData?.items || []).map((i) => i.id),
+                ...prev.map((i) => i.id),
+              ]);
+              const newItems = res.items.filter((i) => !existingIds.has(i.id));
+              if (newItems.length === 0) {
+                setHasMoreMap((p) => ({ ...p, missing: false }));
+                return prev;
+              }
+              return [...prev, ...newItems];
+            });
           }
         } catch (err) {
           console.error('Failed to load more missing vouchers:', err);
         } finally {
+          inFlightRef.current['missing'] = false;
           setIsLoadingMoreMissing(false);
         }
         break;
       }
     }
   }, [
-    currentTabIsLoadingMore,
-    currentTabHasMore,
-    searchQuery,
     activeTab,
-    allBankItems.length,
+    hasMoreBank,
+    hasMorePayable,
+    hasMoreReceivables,
+    hasMoreMissing,
+    searchQuery,
     companyId,
     dateFromFormatted,
     dateToFormatted,
-    payablePage,
-    receivablesPage,
-    allMissingItems.length,
+    initialBankData?.items,
+    initialPayableData?.items,
+    initialReceivablesData?.items,
+    initialMissingData?.items,
   ]);
+
+  const handleLoadMoreRef = useRef(handleLoadMore);
+  useEffect(() => {
+    handleLoadMoreRef.current = handleLoadMore;
+  }, [handleLoadMore]);
 
   // Infinite Scroll Observer on bottom sentinel
   useEffect(() => {
     if (typeof IntersectionObserver === 'undefined') return;
     const target = sentinelRef.current;
-    if (!target) return;
+    if (!target || !currentTabHasMore || searchQuery.trim() !== '') return;
 
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
-        if (
-          entry &&
-          entry.isIntersecting &&
-          currentTabHasMore &&
-          !currentTabIsLoadingMore &&
-          !searchQuery.trim()
-        ) {
-          handleLoadMore();
+        if (entry && entry.isIntersecting) {
+          handleLoadMoreRef.current();
         }
       },
-      { rootMargin: '250px' }
+      { rootMargin: '60px' }
     );
 
     observer.observe(target);
     return () => {
       observer.disconnect();
     };
-  }, [currentTabHasMore, currentTabIsLoadingMore, searchQuery, handleLoadMore]);
+  }, [currentTabHasMore, searchQuery, activeTab]);
 
   // Contextual primary header action
   const handlePrimaryAction = () => {
@@ -1079,7 +1189,7 @@ export default function UnifiedFinancialCockpit() {
                     const partnerName = getPartnerName(inv.supplier_tax_number, inv.supplier_name);
                     return (
                       <div
-                        key={inv.id}
+                        key={`missing-${inv.id}`}
                         data-testid="cockpit-row"
                         onClick={() => handleRowAction('invoice', inv)}
                         className="flex items-center justify-between py-2 px-2 hover:bg-muted/40 rounded-md transition-colors cursor-pointer group gap-2"
@@ -1121,7 +1231,7 @@ export default function UnifiedFinancialCockpit() {
                     const partnerName = inv.supplier_name || '-';
                     return (
                       <div
-                        key={inv.id}
+                        key={`payable-${inv.id}`}
                         data-testid="cockpit-row"
                         onClick={() => handleRowAction('invoice', inv)}
                         className="flex items-center justify-between py-2 px-2 hover:bg-muted/40 rounded-md transition-colors cursor-pointer group gap-2"
@@ -1161,7 +1271,7 @@ export default function UnifiedFinancialCockpit() {
                     const isExpense = (tx.amount || 0) < 0;
                     return (
                       <div
-                        key={tx.id}
+                        key={`bank-${tx.id}`}
                         data-testid="cockpit-row"
                         onClick={() => handleRowAction('tx', tx)}
                         className="flex items-center justify-between py-2 px-2 hover:bg-muted/40 rounded-md transition-colors cursor-pointer group gap-2"
@@ -1206,7 +1316,7 @@ export default function UnifiedFinancialCockpit() {
                     const partnerName = inv.customer_name || '-';
                     return (
                       <div
-                        key={inv.id}
+                        key={`rec-${inv.id}`}
                         data-testid="cockpit-row"
                         onClick={() => handleRowAction('invoice', inv)}
                         className="flex items-center justify-between py-2 px-2 hover:bg-muted/40 rounded-md transition-colors cursor-pointer group gap-2"
@@ -1248,8 +1358,34 @@ export default function UnifiedFinancialCockpit() {
                   </div>
                 )}
 
-                {/* Bottom Sentinel for Progressive Infinite Scroll */}
-                <div ref={sentinelRef} className="h-4 w-full pointer-events-none" />
+                {/* Interactive Sentinel / Load More Trigger */}
+                {currentTabHasMore && !searchQuery.trim() && (
+                  <div
+                    ref={sentinelRef}
+                    onClick={() => handleLoadMore()}
+                    className="py-2.5 px-3 flex items-center justify-center text-xs text-muted-foreground hover:text-foreground cursor-pointer transition-colors border-t border-dashed border-border/40 mt-1 select-none"
+                  >
+                    {currentTabIsLoadingMore ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                        <span className="text-[11px]">{t('common:loading', 'Betöltés...')}</span>
+                      </div>
+                    ) : (
+                      <span className="text-[11px] hover:underline flex items-center gap-1 text-muted-foreground/80">
+                        <span>{t('dashboard:cockpit.load_more', 'Továbbiak betöltése...')}</span>
+                        <span className="text-[10px] text-muted-foreground/50">
+                          ({Math.max(0, activeBadgeCount - activeListLength)} maradt)
+                        </span>
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {!currentTabHasMore && activeListLength > 0 && !searchQuery.trim() && (
+                  <div className="py-2 text-center text-[10px] text-muted-foreground/50 select-none">
+                    {t('dashboard:cockpit.all_loaded', 'Mind a(z) {{count}} tétel betöltve', { count: activeListLength })}
+                  </div>
+                )}
               </div>
             </ScrollArea>
           )}

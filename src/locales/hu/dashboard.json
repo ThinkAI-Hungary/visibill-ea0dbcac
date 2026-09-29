@@ -261,7 +261,9 @@
     "no_payable": "Nincsenek kifizetetlen szállítói számlák.",
     "no_bank_unmatched": "Minden banki tranzakció párosítva van!",
     "no_receivables": "Nincsenek kifizetetlen vevői számlák.",
-    "tip": "A feltöltött PDF-ekből és képekből az AI automatikusan kinyeri a tételeket és összepárosítja a NAV adatokkal."
+    "tip": "A feltöltött PDF-ekből és képekből az AI automatikusan kinyeri a tételeket és összepárosítja a NAV adatokkal.",
+    "load_more": "Továbbiak betöltése...",
+    "all_loaded": "Mind a(z) {{count}} tétel betöltve"
   }
 }
 

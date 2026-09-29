@@ -45,7 +45,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { toast } from "@/hooks/use-toast";
-import { Search, Plus, Pencil, Trash2, Info, RotateCcw, ChevronDown, BarChart3, Calendar, Banknote, Percent, Clock, Truck, Building2 } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Info, RotateCcw, ChevronDown, BarChart3, Calendar, Banknote, Percent, Clock, Truck, Building2, Loader2, RefreshCw, Sparkles } from "lucide-react";
+import { queryTaxpayerFromNav } from "@/lib/nav/navTaxpayerService";
 import { format } from "date-fns";
 import { hu } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
@@ -87,6 +88,37 @@ const isForeignPartner = (taxNumber: string | null | undefined): boolean =>
 /** Display-safe tax_number: returns empty string for synthetic FOREIGN: IDs */
 const displayTaxNumber = (taxNumber: string | null | undefined): string =>
   !taxNumber || isForeignPartner(taxNumber) ? '' : taxNumber;
+
+/**
+ * Normalizálja és 8-1-2 (XXXXXXXX-X-XX) formátumra hozza a belföldi adószámokat megjelenítéshez.
+ * Eltávolítja a véletlen 'HU' előtagot, kötőjelezi a 11-jegyű egybefüggő adószámokat,
+ * és érintetlenül hagyja a külföldi vagy szintetikus azonosítókat.
+ */
+export const formatPartnerTaxNumber = (taxNumber: string | null | undefined): string => {
+  if (!taxNumber || isForeignPartner(taxNumber)) return '';
+  const trimmed = taxNumber.trim();
+  const withoutHu = trimmed.replace(/^HU/i, '');
+  const digits = withoutHu.replace(/\D/g, '');
+
+  if (digits.length === 11) {
+    return `${digits.slice(0, 8)}-${digits.slice(8, 9)}-${digits.slice(9, 11)}`;
+  }
+  if (digits.length === 8 && withoutHu.length <= 10) {
+    return digits;
+  }
+  const parsed = parseTaxNumber(withoutHu);
+  return parsed.fullFormatted || trimmed;
+};
+
+/**
+ * Igaz, ha a partner belföldi, és csak 8 számjegyű törzsszámmal rendelkezik (hiányzik az áfa- és megyekód).
+ */
+export const isDomestic8DigitTaxNumber = (taxNumber: string | null | undefined): boolean => {
+  if (!taxNumber || isForeignPartner(taxNumber)) return false;
+  const trimmed = taxNumber.trim().replace(/^HU/i, '');
+  const digits = trimmed.replace(/\D/g, '');
+  return digits.length === 8 && !taxNumber.includes('-');
+};
 
 interface Partner {
   id: string;
@@ -166,6 +198,8 @@ export default function PartnersPage() {
     skonto_excludes_shipping: true,
   });
   const [emailError, setEmailError] = useState("");
+  const [isNavLookupLoading, setIsNavLookupLoading] = useState(false);
+  const [isEnrichingPartner, setIsEnrichingPartner] = useState(false);
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   // Tab state: 'partners' | 'related_turnover'
@@ -474,7 +508,7 @@ export default function PartnersPage() {
           .eq('company_id', selectedCompany.id)
           .or(isForeign
             ? `supplier_name.ilike."%${escapedName}%",customer_name.ilike."%${escapedName}%"`
-            : `supplier_tax_number.eq.${selectedPartner.tax_number},customer_tax_number.eq.${selectedPartner.tax_number},supplier_name.ilike."%${escapedName}%",customer_name.ilike."%${escapedName}%"`
+            : `supplier_tax_number.ilike.${cleanTax}%,customer_tax_number.ilike.${cleanTax}%,supplier_tax_number.eq.${selectedPartner.tax_number},customer_tax_number.eq.${selectedPartner.tax_number},supplier_name.ilike."%${escapedName}%",customer_name.ilike."%${escapedName}%"`
           )
           .order('invoice_issue_date', { ascending: false })
           .limit(1000),
@@ -590,7 +624,7 @@ export default function PartnersPage() {
           p_excludes_shipping: !!data.skonto_excludes_shipping,
         });
         if (rpcError) {
-          console.error("Failed to recalculate partner skonto via RPC:", rpcError);
+          // Skonto újraszámítási figyelmeztetés - csendes hibakezelés (konzol naplózás nélkül)
         }
       }
     },
@@ -810,7 +844,129 @@ export default function PartnersPage() {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleNavLookup = async (inputTaxNumber: string) => {
+    const cleanTax = inputTaxNumber.replace(/^HU/i, '').replace(/\D/g, '').slice(0, 8);
+    if (!cleanTax || cleanTax.length !== 8) {
+      toast({
+        title: t('partners:toasts.invalid_tax_title', "Érvénytelen adószám"),
+        description: t('partners:toasts.invalid_tax_desc', "Kérjük, adj meg legalább 8 számjegyet a NAV lekérdezéshez."),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsNavLookupLoading(true);
+    try {
+      const res = await queryTaxpayerFromNav(cleanTax, selectedCompany?.id);
+      if (!res.success || !res.taxpayer) {
+        toast({
+          title: t('partners:toasts.nav_lookup_failed', "NAV lekérdezés sikertelen"),
+          description: res.error || t('partners:toasts.nav_not_found', "Az adószám nem található a NAV nyilvántartásában."),
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const tp = res.taxpayer;
+      const officialName = tp.taxpayerShortName || tp.taxpayerName || '';
+      const formattedAddress = tp.address?.formattedAddress || '';
+      const fullTax = tp.taxNumber || cleanTax;
+
+      setFormData(prev => ({
+        ...prev,
+        tax_number: fullTax,
+        name: prev.name.trim() ? prev.name : officialName,
+        address: prev.address.trim() ? prev.address : formattedAddress,
+      }));
+
+      toast({
+        title: t('partners:toasts.nav_success', "NAV adatok betöltve"),
+        description: `${officialName} (${fullTax})`,
+      });
+    } catch (err: any) {
+      toast({
+        title: t('partners:toasts.nav_lookup_failed', "NAV lekérdezési hiba"),
+        description: err?.message || t('common:status.error', "Váratlan hiba történt."),
+        variant: "destructive",
+      });
+    } finally {
+      setIsNavLookupLoading(false);
+    }
+  };
+
+  const handleEnrichPartnerFromNav = async (partner: Partner) => {
+    if (!partner || !isDomestic8DigitTaxNumber(partner.tax_number)) return;
+    const cleanTax = partner.tax_number.replace(/^HU/i, '').replace(/\D/g, '').slice(0, 8);
+    if (!cleanTax || cleanTax.length !== 8) return;
+
+    setIsEnrichingPartner(true);
+    try {
+      const res = await queryTaxpayerFromNav(cleanTax, selectedCompany?.id);
+      if (!res.success || !res.taxpayer || !res.taxpayer.taxNumber) {
+        toast({
+          title: t('partners:toasts.nav_enrich_failed', "Kiegészítés sikertelen"),
+          description: res.error || t('partners:toasts.nav_not_found', "Az adószám nem található a NAV nyilvántartásában."),
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const enrichedTaxNumber = res.taxpayer.taxNumber;
+
+      if (partners) {
+        const duplicate = partners.find(p => p.id !== partner.id && p.tax_number === enrichedTaxNumber);
+        if (duplicate) {
+          toast({
+            title: t('partners:toasts.partner_exists', "Már létező partner"),
+            description: `Ezzel a teljes adószámmal (${enrichedTaxNumber}) már létezik másik partner (${decodeHtmlEntities(duplicate.name)}).`,
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      const updatePayload: Record<string, any> = {
+        tax_number: enrichedTaxNumber,
+      };
+
+      if (!partner.address && res.taxpayer.address?.formattedAddress) {
+        updatePayload.address = res.taxpayer.address.formattedAddress;
+      }
+
+      const { error } = await supabase
+        .from('partners')
+        .update(updatePayload)
+        .eq('id', partner.id);
+
+      if (error) {
+        toast({
+          title: t('common:status.error', "Hiba a mentéskor"),
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (selectedCompany?.id) {
+        invalidatePartnerQueries(queryClient, selectedCompany.id);
+      }
+
+      toast({
+        title: t('partners:toasts.nav_enriched_success', "Adószám sikeresen kiegészítve"),
+        description: `${decodeHtmlEntities(partner.name)}: ${enrichedTaxNumber}`,
+      });
+    } catch (err: any) {
+      toast({
+        title: t('common:status.error', "Hiba"),
+        description: err?.message || "Váratlan hiba történt a kiegészítés során.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsEnrichingPartner(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const isEditingForeign = editingPartner && isForeignPartner(editingPartner.tax_number);
     if (!formData.name.trim() || (!isEditingForeign && !formData.tax_number.trim())) {
@@ -826,10 +982,35 @@ export default function PartnersPage() {
       return;
     }
     setEmailError("");
-    // If editing a foreign partner and tax_number left empty, keep the original FOREIGN: value
-    const finalTaxNumber = isEditingForeign && !formData.tax_number.trim()
+
+    let finalTaxNumber = isEditingForeign && !formData.tax_number.trim()
       ? editingPartner.tax_number
       : formData.tax_number.trim();
+
+    let targetAddress = formData.address;
+
+    // Ha belföldi partner: normalizáljuk és ha csak 8 jegyű, lekérdezzük a NAV-tól 8-1-2-re mentés előtt
+    if (!isEditingForeign && finalTaxNumber) {
+      const cleanDigits = finalTaxNumber.replace(/^HU/i, '').replace(/\D/g, '');
+      if (cleanDigits.length === 11) {
+        finalTaxNumber = `${cleanDigits.slice(0, 8)}-${cleanDigits.slice(8, 9)}-${cleanDigits.slice(9, 11)}`;
+      } else if (cleanDigits.length === 8 && !finalTaxNumber.includes('-')) {
+        try {
+          setIsNavLookupLoading(true);
+          const navRes = await queryTaxpayerFromNav(cleanDigits, selectedCompany?.id);
+          if (navRes.success && navRes.taxpayer?.taxNumber) {
+            finalTaxNumber = navRes.taxpayer.taxNumber;
+            if (!targetAddress && navRes.taxpayer.address?.formattedAddress) {
+              targetAddress = navRes.taxpayer.address.formattedAddress;
+            }
+          }
+        } catch {
+          // NAV nem elérhető esetén csendes fallback a megadott 8 jegyű adószámmal
+        } finally {
+          setIsNavLookupLoading(false);
+        }
+      }
+    }
 
     // Check duplicate tax_number locally before sending request to DB (avoiding unnecessary 23505 DB error logs)
     if (partners && finalTaxNumber) {
@@ -859,6 +1040,7 @@ export default function PartnersPage() {
 
     saveMutation.mutate({
       ...formData,
+      address: targetAddress,
       tax_number: finalTaxNumber,
       id: editingPartner?.id,
     });
@@ -1020,10 +1202,10 @@ export default function PartnersPage() {
       </Collapsible>
 
       {/* Main Splitscreen Container */}
-      <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0">
+      <div className="flex flex-col lg:flex-row gap-4">
         {/* Left Pane: Master List & Toolbar */}
         <Card className="flex-1 rounded-xl border-border/50 bg-card/50 backdrop-blur-sm flex flex-col lg:w-3/5">
-          <CardContent className="p-4 flex flex-col flex-1 space-y-3">
+          <CardContent className="p-5 flex flex-col flex-1 space-y-3">
             {/* Unified Toolbar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
               <div className="flex items-center gap-3">
@@ -1137,7 +1319,7 @@ export default function PartnersPage() {
                                   {t('partners:badges.foreign', 'Külföldi')}
                                 </span>
                               ) : (
-                                partner.tax_number
+                                formatPartnerTaxNumber(partner.tax_number)
                               )}
                             </TableCell>
                             <TableCell className="py-2">
@@ -1189,7 +1371,7 @@ export default function PartnersPage() {
         {/* Right Pane: Detail Panel */}
         <Card className="lg:w-2/5 rounded-xl border-border/50 bg-card/50 backdrop-blur-sm flex flex-col">
           {selectedPartner ? (
-            <div className="p-6 flex flex-col flex-1 space-y-6">
+            <div className="p-5 flex flex-col flex-1 space-y-5">
               {/* Header section */}
               <div className="flex items-start justify-between border-b border-border/40 pb-4">
                 <div className="flex items-center gap-3">
@@ -1270,10 +1452,30 @@ export default function PartnersPage() {
                 <h4 className="font-bold text-xs text-muted-foreground uppercase tracking-wider">{t('partners:details.company_details', 'Cégadatok')}</h4>
                 <div className="grid grid-cols-2 gap-y-3 border border-border/30 rounded-xl p-4 bg-muted/10">
                   <div>
-                    <p className="text-[10px] text-muted-foreground font-semibold">{t('partners:fields.tax_number', 'Adószám')}</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] text-muted-foreground font-semibold">{t('partners:fields.tax_number', 'Adószám')}</p>
+                      {selectedPartner && isDomestic8DigitTaxNumber(selectedPartner.tax_number) && writable && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 text-[10px] px-1.5 gap-1 text-primary hover:text-primary hover:bg-primary/10 font-normal"
+                          disabled={isEnrichingPartner}
+                          onClick={() => handleEnrichPartnerFromNav(selectedPartner)}
+                          title="Teljes 8-1-2 adószám és székhely lekérdezése a NAV-ból"
+                        >
+                          {isEnrichingPartner ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-3 w-3 text-amber-500" />
+                          )}
+                          NAV 8-1-2
+                        </Button>
+                      )}
+                    </div>
                     {selectedPartner.tax_number && !isForeignPartner(selectedPartner.tax_number) ? (
                       <CopyableCell
-                        value={selectedPartner.tax_number}
+                        value={formatPartnerTaxNumber(selectedPartner.tax_number)}
                         className="font-mono text-xs font-semibold mt-0.5"
                         ariaLabel={t('partners:details.copy_tax_number', 'Adószám másolása')}
                       />
@@ -1609,7 +1811,7 @@ export default function PartnersPage() {
               </div>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-muted-foreground min-h-[350px]">
+            <div className="flex-1 flex flex-col items-center justify-center p-5 text-center text-muted-foreground min-h-[350px]">
               <Avatar className="h-16 w-16 bg-muted border border-border/50 flex items-center justify-center text-muted-foreground mb-4">
                 <Info className="h-6 w-6" />
               </Avatar>
@@ -1654,7 +1856,30 @@ export default function PartnersPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="tax_number">{editingPartner && isForeignPartner(editingPartner.tax_number) ? t('partners:fields.tax_number', 'Adószám') : `${t('partners:fields.tax_number', 'Adószám')} *`}</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="tax_number">
+                  {editingPartner && isForeignPartner(editingPartner.tax_number)
+                    ? t('partners:fields.tax_number', 'Adószám')
+                    : `${t('partners:fields.tax_number', 'Adószám')} *`}
+                </Label>
+                {(!editingPartner || !isForeignPartner(editingPartner.tax_number)) && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-6 text-[11px] px-2 gap-1 text-primary hover:text-primary hover:bg-primary/10"
+                    disabled={isNavLookupLoading || !formData.tax_number.trim()}
+                    onClick={() => handleNavLookup(formData.tax_number)}
+                  >
+                    {isNavLookupLoading ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3 w-3" />
+                    )}
+                    NAV lekérdezés
+                  </Button>
+                )}
+              </div>
               <Input
                 id="tax_number"
                 value={formData.tax_number}

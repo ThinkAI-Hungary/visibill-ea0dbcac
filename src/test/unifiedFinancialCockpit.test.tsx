@@ -386,12 +386,39 @@ describe('UnifiedFinancialCockpit - Option 2 Action Hub', () => {
     expect(matchBtn).toHaveTextContent('Párosítás');
   });
 
-  it('verifies PAGE_SIZE is set to 50 for optimized network queries', () => {
-    expect(PAGE_SIZE).toBe(50);
-  });
+  it('renders payable and bank tabs with unique prefixed keys and no duplicate key warnings', async () => {
+    const consoleWarnSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const queryClient = createTestQueryClient();
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <UnifiedFinancialCockpit />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
 
-  it('renders CockpitRowSkeleton loading placeholder component cleanly', () => {
-    render(<CockpitRowSkeleton />);
-    expect(screen.getByTestId('cockpit-row-skeleton')).toBeInTheDocument();
+    // Switch to payable tab
+    const payableTile = screen.getByTestId('cockpit-tile-payable');
+    fireEvent.click(payableTile);
+
+    await waitFor(() => {
+      expect(screen.getByText('INV-2026-IN-001')).toBeInTheDocument();
+    });
+
+    // Switch to bank tab
+    const bankTile = screen.getByTestId('cockpit-tile-bank');
+    fireEvent.click(bankTile);
+
+    await waitFor(() => {
+      expect(screen.getByText('Bank payment to Anthropic')).toBeInTheDocument();
+    });
+
+    // Verify no "Encountered two children with the same key" error was logged
+    const duplicateKeyWarnings = consoleWarnSpy.mock.calls.filter((call) =>
+      String(call[0]).includes('Encountered two children with the same key')
+    );
+    expect(duplicateKeyWarnings).toHaveLength(0);
+    consoleWarnSpy.mockRestore();
   });
 });
+

@@ -81,7 +81,7 @@ export class NavIngestionService {
 
         // 5. Partnerek automatikus szinkronizálása / frissítése (ADR A-024)
         if (effectiveCompanyId) {
-          await this.syncPartnersFromInvoices(invoices, options.direction, effectiveCompanyId, options.userId);
+          await this.syncPartnersFromInvoices(invoices, options.direction, effectiveCompanyId, options.userId, navClient);
         }
 
         // 6. Opcionális tételszintű részletek letöltése (ha kérték)
@@ -232,7 +232,8 @@ export class NavIngestionService {
     invoices: NavInvoiceDigest[],
     direction: 'INBOUND' | 'OUTBOUND',
     companyId: string,
-    userId?: string | null
+    userId?: string | null,
+    navClient?: NavClient
   ): Promise<void> {
     try {
       const requiredType = direction === 'OUTBOUND' ? 'customer' : 'supplier';
@@ -284,8 +285,29 @@ export class NavIngestionService {
         }
       }
 
-      // 3. Batch INSERT új partnereknek
+      // 3. Batch INSERT új partnereknek - NAV adóalanyi lekérdezéssel gazdagítva 8-1-2-re
       if (toInsert.length > 0) {
+        if (navClient) {
+          for (const item of toInsert) {
+            const clean8 = sanitizeTaxNumber(item.tax_number);
+            if (clean8 && clean8.length === 8) {
+              try {
+                const taxpayerDetails = await navClient.queryTaxpayer(clean8);
+                if (taxpayerDetails?.taxpayerValidity && taxpayerDetails.taxNumber) {
+                  item.tax_number = taxpayerDetails.taxNumber;
+                  if (taxpayerDetails.taxpayerShortName || taxpayerDetails.taxpayerName) {
+                    item.name = taxpayerDetails.taxpayerShortName || taxpayerDetails.taxpayerName;
+                  }
+                  if (taxpayerDetails.address?.formattedAddress) {
+                    item.address = taxpayerDetails.address.formattedAddress;
+                  }
+                }
+              } catch {
+                // Nem blokkoló: ha a NAV queryTaxpayer sikertelen, marad a számla fejlécéből vett adat
+              }
+            }
+          }
+        }
         await this.supabase.from('partners').insert(toInsert);
       }
 
@@ -297,8 +319,8 @@ export class NavIngestionService {
           .eq('id', update.id);
       }
 
-    } catch (partnerErr) {
-      console.warn('[NavIngestionService] Partner sync warning:', partnerErr);
+    } catch {
+      // Csendes hibakezelés konzol naplózás nélkül
     }
   }
 

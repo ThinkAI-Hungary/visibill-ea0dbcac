@@ -3,8 +3,8 @@
 > **Státusz:** Decided  
 > **Dátum:** 2026-09-20  
 > **Szerző:** ThinkAI / Morfi  
-> **Érintett komponensek:** `_shared/nav` (NavClient, xml-builder, xml-parser), `nav-query-taxpayer` (Edge Function), `navTaxpayerService` (Frontend), `CompanySelector`, `EmptyStateDashboard`, `ClientDetailsStep`  
-> **Kapcsolódó:** [PRD P-098](../../product/decisions/P-098-company-taxpayer-lookup-ux.md), [ADR A-130](./A-130-nav-auto-sync-dawn-load-staggering.md), [ADR A-054](./A-054-strict-nav-submitted-pairing.md)  
+> **Érintett komponensek:** `_shared/nav` (NavClient, xml-builder, xml-parser), `nav-query-taxpayer` (Edge Function), `navTaxpayerService` (Frontend), `CompanySelector`, `EmptyStateDashboard`, `ClientDetailsStep`, `PartnersPage`, `nav-ingestion-service.ts`  
+> **Kapcsolódó:** [PRD P-098](../../product/decisions/P-098-company-taxpayer-lookup-ux.md), [PRD P-040](../../product/decisions/P-040-partners-invoice-panel.md), [ADR A-130](./A-130-nav-auto-sync-dawn-load-staggering.md), [ADR A-024](./A-024-partner-upsert-strategy.md), [ADR A-054](./A-054-strict-nav-submitted-pairing.md)  
 
 ---
 
@@ -36,8 +36,9 @@ A NAV Online Számla v3.0 `/queryTaxpayer` szolgáltatásának teljes körű int
   - Standardizált metódus a `NavClient` osztályon.
 
 ### 2. Edge Function és Platform Fallback Hitelesítés (`nav-query-taxpayer`)
-- **JWT Védett Végpont:** Csak bejelentkezett felhasználók hívhatják.
+- **JWT és Service Role Hitelesítés:** Védett végpont, amely bejelentkezett felhasználói session tokennel és belső `service_role` fejléccel (cron/worker/ingestion hívások) egyaránt meghívható.
 - **Automation Shield:** Védelem a túlzott lekérdezési terhelés ellen (`checkAutomationShield`).
+- **Zero Console Logging:** Szigorú naplózási fegyelem a szerveroldalon (nincs felesleges `console.log`).
 - **Think AI Kft. Platform Fallback:**
   - Ha a hívó még nem rendelkezik érvényes NAV technikai felhasználóval (új regisztráció / cég létrehozás), a backend a **Think AI Kft.** (`company_id: 'ecf31039-b539-4e04-bbea-70ea48c701bb'`) biztonságosan Vaultban tárolt technikai kulcsaival írja alá a NAV felé irányuló adózói lekérdezést.
   - Mivel a NAV `/queryTaxpayer` végpontja kizárólag nyilvános cég- és adószámadatokat szolgáltat bármely érvényes adószámra, ez biztonságos és azonnali hozzáférést biztosít az adatokhoz az onboarding első pillanatától.
@@ -54,6 +55,14 @@ A NAV Online Számla v3.0 `/queryTaxpayer` szolgáltatásának teljes körű int
   - "NAV lekérdezés" gombbal kitölti a cégnevet és székhelyet, megkönnyítve a regisztrációt.
 - **`ClientDetailsStep.tsx` (Accounty / eaisyBooks új ügyfél):**
   - Könyvelők számára ügyfél manuális felvételekor az adószám mellől indítható lekérdezés azonnal beemeli a hivatalos cégnevet.
+- **`PartnersPage.tsx` (Partnertörzs - Létrehozás & Szerkesztés dialógus):**
+  - Adószám bevitele után a "NAV lekérdezés" gombra kattintva automatikusan kitölti a partner nevét, címét, és az adószámot standard 8-1-2 formátumra (`XXXXXXXX-Y-ZZ`) konvertálja.
+- **`PartnersPage.tsx` (Partnertörzs - Jobb oldali részletező panel):**
+  - "✨ NAV 8-1-2" gyorsdúsító gomb a meglévő 8 számjegyű belföldi partnerekhez (`isDomestic8DigitTaxNumber`). Egyetlen kattintással lekérdezi a NAV-ot, dúsítja a partner rekordot a hivatalos 8-1-2 formátumú adószámmal, cégformával (`incorporation`), és címadatokkal (ha hiányoznak), miközben védi az egyediséget és megelőzi a duplikációkat.
+
+### 5. Automatikus Dúsítás NAV Szinkronizáció Közben (`nav-ingestion-service.ts`)
+- Amikor a `nav-sync` új partnert fedez fel (pl. digest számlák feldolgozásakor), meghívja a `nav-query-taxpayer` szolgáltatást a háttérben.
+- A partnertáblába így már eleve a teljes hivatalos név, a szabványos 8-1-2 adószám és a strukturált címadat kerül mentésre, minimálisra csökkentve az utólagos tisztítási igényt.
 
 ---
 

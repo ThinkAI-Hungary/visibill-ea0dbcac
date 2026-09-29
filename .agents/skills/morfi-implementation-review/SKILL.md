@@ -66,6 +66,25 @@ This skill operates in **Autonomous Deep-Audit Mode (`/goal`)**: it runs exhaust
       3. Are new RPC functions deployed with correct parameters and search paths?
       4. Are new RLS policies active and verified in the live catalog?
     - **🔴 Critical Merge Blocker**: Never approve frontend, API, or worker code that queries database columns or tables that have not been physically applied and verified live in the target database!
+15. **Infrastructure & Query Factory Integrity (Zero Partial Core Sync)**:
+    - Shared core infrastructure, cache keys, query factories, and contract definitions (e.g. `src/lib/queryKeys.ts`, `src/lib/cache/*`, `src/lib/validationUtils.ts`, `src/integrations/supabase/types.ts`) must maintain absolute integrity.
+    - When synchronizing or porting components between instances or modules, cherry-picking UI components while omitting newly introduced query keys or utility helpers from shared files is a critical failure pattern.
+    - Reviewers MUST verify that any method, query key, or cache invalidator invoked by UI components physically exists in the referenced core modules.
+16. **Scope Boundary, Excluded Feature & Dummy Stub Masking Guard (Anti-Residual Hygiene)**:
+    - Whenever a task brief, prompt, or migration plan explicitly marks a feature, integration, or module as **excluded or out of scope** (e.g. *"fejlesztői napló nem kell"*, *"payments excluded"*):
+      - **Explicit Residual Grep:** The reviewer MUST grep across all modified files (`git diff --name-only`) for domain keywords of the excluded feature (e.g. `changelog`, `skonto`).
+      - **Zero Dummy Stub Tolerance:** Reviewers must reject creating artificial shim or dummy stub files (empty hooks, dummy constants, no-op functions) solely to satisfy broken imports in surviving components. If an imported symbol belongs to an excluded feature, the importing component must be inspected: is the import dead code? If dead code, remove it from the consumer! If actually needed, clarify the scope conflict with the user.
+      - **Dead Local & Import Check (Bypassing `noUnusedLocals: false`):** Many projects disable `noUnusedLocals` in `tsconfig.json`. The reviewer MUST verify that newly modified or introduced imports and destructured variables (e.g. `const { hasUnread: hasUnreadChangelog } = ...`) are actually referenced in the rendering or business logic of the component.
+17. **IDE Diagnostics & Editor Problems Gate (`@[current_problems]` Cross-Check)**:
+    - Modern IDEs maintain an in-memory language server cache (TSServer daemon) for open editor buffers.
+    - When files are created, renamed, or modified by background tools or subagents, TSServer can retain stale errors or fail to resolve newly created files until open buffers are touched or the server is reloaded.
+    - Reviewers MUST inspect `@[current_problems]` and IDE problem diagnostics: if any problem is listed in `current_problems` for workspace files, the reviewer cannot declare the review clean without verifying and reconciling the diagnostic.
+18. **Universal Scroll, Pagination & Async Invariant Audit (Anti-Loop & Anti-Duplicate-Key Matrix)**:
+    - Infinite scroll, lazy loading, and paged data streams (e.g. `IntersectionObserver`, `onScroll`, cursor/offset pagination) are prime hotspots for infinite network loops and duplicate key crashes (`Encountered two children with the same key`).
+    - **Synchronous In-Flight Mutex (`inFlightRef`)**: Never rely on asynchronous UI state (e.g. `isLoadingMore`, `isFetching`) to prevent duplicate requests. Fast scrolling or multiple observer callbacks fire concurrently before React re-renders. Reviewers MUST ensure an immediate, synchronous guard (e.g. `inFlightRef.current = true`) locks execution synchronously before any async call.
+    - **Explicit Page/Cursor Tracking vs. Filtered Length**: Page indices (`page`, `offset`) must NEVER be calculated from filtered client-side array lengths (`Math.floor(list.length / PAGE_SIZE)`). If incoming items are filtered out on the client (e.g. 0-amount items, inactive rows), the list length falls behind the backend page size, permanently freezing page calculations in an infinite loop! Always maintain an independent, monotonic page or cursor counter ref/state.
+    - **Deduplication on Append (`dedupeById`)**: In append operations (`setItems(prev => [...prev, ...newItems])`), reviewers MUST enforce idempotent deduplication by unique identifier (e.g. `id`). Network retries, concurrent bursts, or overlapping offsets must never introduce duplicate IDs into component state or DOM keys.
+    - **Observer & Callback Dependency Decoupling**: Observer hooks (`IntersectionObserver`) must NOT re-arm/re-trigger infinitely when data arrives. Reviewers MUST ensure scroll callbacks are decoupled from rapidly mutating state (using refs for handlers or stable fetch functions) so that receiving new items does not tear down and re-register observers on the sentinel element.
 
 ---
 
@@ -87,6 +106,14 @@ Reviewers must actively reject these common traps and rationalizations:
 | *"The diff looks complete and the calculation engine works."* | **Universal Diff Myopia Trap:** Computing a value in a core engine or backend service is only half the feature. If downstream UI steps, aggregate summaries, printable documents/PDFs, or integration feeds don't consume or display it, the feature is broken for users. Always trace the full pipeline end-to-end. |
 | *"The variable has a value or falls back to default."* | **The Falsy Zero Trap:** `val || fallback` or `if (val && val > 0)` treats `0` or `false` as non-existent. In any software system, 0 is often a completely legitimate business state that gets silently destroyed or overwritten by naive falsy checks. |
 | *"The migration file is committed in `migrations/`, so the DB is updated."* | **Migration Illusion Trap:** A SQL file in Git is just text on disk. The live database knows nothing about it until it is executed (`supabase db push`, `apply_migration`, migration runner). Always inspect the live database catalog (`information_schema.columns`, `pg_tables`) to prove it is live and active. |
+| *"The types.ts file was updated and tsc passes, so RPC calls are guaranteed to work."* | **The Compile-Time RPC Illusion Trap:** TypeScript only verifies calls against `src/integrations/supabase/types.ts`. If `types.ts` was copied or generated ahead of the target database, `tsc -b` passes 100% even when the live DB has an obsolete SQL function signature missing parameters. At runtime, PostgREST throws `PGRST202` (404 Schema Cache error). The reviewer MUST query `pg_proc` in the live DB to prove that function signatures accept all passed arguments. |
+| *"Vite build passed, so the codebase is type-safe."* | **Vite SWC/esbuild Type-Stripping Trap:** Modern bundlers using `@vitejs/plugin-react-swc` or esbuild strip TypeScript types without performing semantic type-checking. A missing export, non-existent function call, or invalid prop type will pass `npm run build` without error. The reviewer MUST mandate strict typechecking (`tsc -b` or `tsc -p tsconfig.app.json --noEmit`). |
+| *"All unit tests passed, so all UI views and tabs work."* | **Unmounted UI & Lazy-Tab Blind Spot:** Test suites can have 900+ passing tests while leaving critical tabs or sub-pages unmounted. When a component is not mounted in tests, runtime hook failures (e.g. `TypeError: queryKeys.emailAccounts is not a function`) remain completely invisible until clicked in a browser. The reviewer MUST require mounted smoke tests or browser dev server audit. |
+| *"The build passed because the stub file satisfies the import."* | **The Dummy Stub & Scope Leak Trap:** An empty shim or dummy stub created to silence a compiler error often hides dead code or an excluded feature. If a feature was opted out by user requirements, residual imports and dummy stubs are technical debt and must be deleted from consumers, not patched over with dummy files. |
+| *"The CLI compiler passed, so the editor has no problems."* | **The TSServer In-Memory Cache Trap:** Background commands run in fresh processes, but the IDE editor holds open file buffers in memory. If an error is reported in `@[current_problems]`, the reviewer must reconcile whether it's a real dead import or a cached diagnostic, and touch/clean open files accordingly. |
+| *"I set `isLoading(true)` at the start of `loadMore`, so it won't fire twice."* | **The Async State Trap:** React `useState` updates asynchronously on the next render. Rapid scroll events or IntersectionObserver triggers execute in the same event loop tick before React re-renders, firing duplicate requests and corrupting state. Always use a synchronous ref (`inFlightRef.current = true`). |
+| *"I just append the new items to the existing array: `setItems(prev => [...prev, ...newItems])`."* | **The Appending Duplication Trap:** Any network retry, offset jitter, or concurrent burst will append duplicate records into the array, resulting in React key collision warnings (`Encountered two children with the same key`) and DOM corruption. Always wrap incoming appends in a Set/Map-based `dedupeById`. |
+| *"I calculate the next page from `list.length / PAGE_SIZE`."* | **The Filtered Length Trap:** If the client filters out any records (e.g. 0-value items, inactive status), `list.length` will be smaller than `page * PAGE_SIZE`. `Math.floor(length / PAGE_SIZE)` then rounds down and requests the same page forever, trapping the app in an infinite fetch loop. Always use an explicit monotonic page counter. |
 
 ---
 
@@ -243,6 +270,8 @@ The reviewer must step out of the author's mindset and actively interrogate the 
 - **Rapid repeat actions:** What happens on double-click or rapid duplicate triggers (missing debounce/throttle/button disabling)?
 - **Idempotency & Duplicate Delivery:** If the same request, message, or webhook is delivered twice (at-least-once guarantee), does it corrupt state or produce duplicate records?
 - **In-flight cancellation:** What happens if the user navigates away, closes a view, or aborts an action while a network or worker task is still pending (unmounted updates, memory leaks, zombie tasks)?
+- **Infinite Scroll & Pagination Concurrency:** Are scroll/intersection triggers guarded by a synchronous mutex (`inFlightRef.current`), or does fast scrolling fire simultaneous queries that append duplicate records?
+- **Observer Re-arm Loops:** Does receiving a new page of items cause the scroll observer to re-mount and re-trigger against an active sentinel in an infinite loop?
 
 #### 2. 🧱 Boundary Conditions, Data Extremes & Nullability
 *Issues occurring at the lower, upper, and empty limits of acceptable data.*
@@ -264,6 +293,8 @@ The reviewer must step out of the author's mindset and actively interrogate the 
 - **Invalid state transitions:** Can an entity be modified when it is in an inactive, locked, or terminal state?
 - **Stale cache & Invalidation:** After an insert/update/delete, are related caches, query results, or aggregates invalidated, or does the system show stale data?
 - **Navigation & Pagination Reset:** Does changing filters, search terms, or context properly reset page indices and selection states (preventing empty page anomalies)?
+- **Append-only List Deduplication:** When appending paginated items (`[...prev, ...newItems]`), are IDs deduplicated, or does network jitter/overlap trigger React key collisions?
+- **Page Index Drift / Filtered Length:** Is the next page index computed from client-filtered array lengths rather than an explicit counter or backend cursor?
 - **Unsaved Changes:** Can the user accidentally lose dirty form state or work-in-progress on navigation/backdrop click without a warning?
 
 #### 5. 🔗 Data Integrity, Referential Consistency & Side Effects
@@ -286,7 +317,33 @@ The reviewer must step out of the author's mindset and actively interrogate the 
 A review is invalid without direct verification. The reviewer MUST execute the appropriate test suites and live database checks:
 
 - **Backend / Python / Go / Node**: `python run_tests.py`, `pytest`, `npm test`, `go test`
-- **Frontend / Web**: `npm test -- --run` or `npm run build`
+- **Frontend / Web (Compilation, Deep Typecheck & Smoke Verification Gate)**:
+  - **Step 1 - Deep Semantic Typecheck**: Modern bundlers using `@vitejs/plugin-react-swc` or esbuild strip types without checking them. Running `npm run build` alone is NOT a typecheck! Furthermore, if `tsconfig.json` uses Project References (`"files": []`), a bare `tsc --noEmit` checks nothing. The reviewer MUST run:
+    ```bash
+    npx tsc -b
+    # or if project references require specific app target:
+    npx tsc -p tsconfig.app.json --noEmit
+    ```
+  - **Step 1b - Scope Boundary & Excluded Feature Keyword Sweep**:
+    - Cross-reference user scope constraints (e.g. "feature X excluded") against `git diff --name-only`.
+    - Run ripgrep for excluded feature keywords on all touched files. Verify zero residual imports, unused hooks, or dummy shims remain.
+  - **Step 1c - Active IDE Diagnostics Cross-Check (`@[current_problems]`)**:
+    - Check `@[current_problems]` and open buffer diagnostics.
+    - If any diagnostic exists in modified files, determine if it is a dead import or a TSServer in-memory desync. If dead code, surgically remove it; if a desync, re-save/touch the file so IDE diagnostics are 100% clean.
+  - **Step 2 - Unit & Component Mount Smoke Tests**: `npm test -- --run`
+    - For any modified UI components, tabs, or settings views that lack unit test coverage, ensure a mounting smoke test (`render(<Component />)`) executes so that hook initialization, queryKeys invocations, and store subscriptions actually run in the testing engine.
+  - **Step 3 - Production Bundle**: `npm run build`
+  - **Step 4 - Browser Dev Server Smoke Audit & Universal Console Inspection (Interactive Tab-Clicking)**:
+    - Whenever UI/frontend routes, tabs, or menus are touched, verify on the active dev server (`http://localhost:8080`).
+    - Use `browser_subagent` or Playwright to navigate to modified views, change tabs, and trigger primary actions.
+    - Confirm:
+      1. **Zero ErrorBoundary screens:** ("Valami hiba történt" or white screen) never appear.
+      2. **Mandatory Console Inspection:** The reviewer MUST retrieve and inspect browser console logs (`console.error`, `console.warn`, unhandled promise rejections). Zero unhandled runtime exceptions (`TypeError`, `ReferenceError`) are permitted.
+      3. **Zero 4xx/5xx Network & RPC Errors:** Detektálni kell az összes 4xx és 5xx hibát a hálózaton és a konzolon, különösen a PostgREST RPC hibákat (`PGRST202`, 404 Not Found, 400 Bad Request, schema cache eltérések).
+      4. **Anti-Graceful-Failure (False Empty State) Guard:** Tilos sikeresnek minősíteni a tesztet, ha a KPI vagy fejléc találatokat jelez (pl. "221 számla", "40 tétel"), de alatta a táblázat üres állapotot mutat (*"Nincs megjeleníthető adat / számla"*). Az üres állapot mögött meghúzódó rejtett API hibát azonnal fel kell tárni!
+      5. **DOM Row Assertion:** Táblázatoknál és listáknál kötelező igazolni a tényleges adatsorok (`<tr>`, kártya elemek) fizikai renderelődését.
+      6. **Zero Duplicate Key Warnings:** The reviewer MUST inspect console logs for `Warning: Encountered two children with the same key`. Any key collision in list/table rendering indicates missing deduplication or key collision in append operations.
+      7. **Anti-Infinite-Loop Scroll Audit:** When testing infinite scroll or paginated lists, verify that scrolling to the bottom loads exactly one page per trigger and ceases network activity when reaching the end of the dataset.
 - **Database / Schema (Live Migration & Schema Verification Gate)**:
   - If any migration was part of the implementation plan or codebase changes:
     - **Step 1:** Run typecheck generation (`supabase gen types`, `prisma generate`, etc.) to confirm TypeScript/model alignment.
@@ -299,7 +356,22 @@ A review is invalid without direct verification. The reviewer MUST execute the a
         AND table_name = '<target_table>' 
         AND column_name IN ('<new_column_1>', '<new_column_2>');
       ```
-    - **Step 3:** Record exact evidence: whether the planned migration has been executed and whether the live schema matches. If not executed, declare a **🔴 Critical Blocker**!
+    - **Step 3 - Live RPC Signature & Parameter Verification**:
+      - For every modified or newly invoked `supabase.rpc('<rpc_name>', { ... })` call in frontend hooks/components:
+      - Query `pg_proc` in the live database:
+      ```sql
+      -- PostgreSQL Live RPC signature and argument audit:
+      SELECT 
+          p.proname AS function_name,
+          pg_get_function_arguments(p.oid) AS arguments,
+          pg_get_function_result(p.oid) AS return_type
+      FROM pg_proc p
+      JOIN pg_namespace n ON p.pronamespace = n.oid
+      WHERE n.nspname = 'public'
+        AND p.proname IN ('<rpc_name_1>', '<rpc_name_2>');
+      ```
+      - Cross-reference every parameter sent by the client against `arguments`. If a parameter sent by the frontend is missing from the live function signature (or lacks an appropriate default value in Postgres), declare an immediate **🔴 Critical Blocker**! (Prevents PostgREST `PGRST202` schema cache failures).
+    - **Step 4:** Record exact evidence: whether the planned migration has been executed, whether the live schema matches, and whether all RPC signatures are verified. If any mismatch exists, declare a **🔴 Critical Blocker**!
 
 #### 🛠️ Surgical Auto-Fix Protocol (Mechanical Fix-on-Sight)
 
@@ -520,6 +592,8 @@ Categorize all findings using clear severity indicators:
 - ❌ **NEVER** claim *"Everything looks good"* without actually opening the affected files and reviewing line-by-line using `view_file` or `git diff`.
 - ❌ **NEVER** skip running tests under the excuse that *"they already passed in the previous session"*.
 - ❌ **NEVER** accept handoff document claims as established facts: verify every single assertion in the actual code.
+- ❌ **NEVER** accept `npm run build` as proof of TypeScript correctness when using Vite SWC/esbuild: semantic typechecking (`tsc -b` / `tsc -p tsconfig.app.json --noEmit`) is strictly mandatory!
+- ❌ **NEVER** sign off on UI changes or project sync without verifying that newly modified tabs or sub-views actually mount without runtime hook/query key exceptions (either via mounted smoke tests or interactive `browser_subagent` navigation)!
 - ❌ **NEVER** approve or mark a review complete if a database migration was part of the task or implementation plan but has NOT been verified as executed and live in the actual target database engine!
 - ❌ **NEVER** silently implement business logic or unrequested edge-case handling autonomously! Discovered blind spots must ONLY be presented with trade-offs and options for user decision.
 - ❌ **NEVER** perform an auto-fix on business logic, database schemas, or API contracts! Auto-fixing is strictly limited to trivial mechanical syntax/import errors (1-5 lines).
@@ -527,4 +601,7 @@ Categorize all findings using clear severity indicators:
 - ❌ **NEVER** raise vague complaints ("this code is ugly") — always propose a named **Structural Remedy** ("The Move").
 - ❌ **NEVER** allow files bloated beyond ~1000 lines without prior decomposition (Decompose-before-Add).
 - ❌ **NEVER** deliver the final review report in English when communicating with the user: the report MUST be in Hungarian per the Mandatory Output Language Constraint.
+- ❌ **NEVER** allow dummy stubs or no-op shims to mask dead imports from excluded features: always remove the dead import and unused hook calls from the consumer instead of stubbing the module.
+- ❌ **NEVER** ignore `@[current_problems]` or active editor diagnostics just because CLI `tsc` passed in a subshell: always verify and reconcile IDE diagnostics.
+- ❌ **NEVER** approve infinite scroll or pagination code that calculates page indices from client-side filtered array lengths (`list.length / PAGE_SIZE`) or relies solely on React async state (`isLoading`) without a synchronous in-flight ref guard (`inFlightRef.current = true`).
 - ❌ **NEVER** conclude a review superficially; only append the `<!-- GOAL_COMPLETE -->` tag once all verification points and checks have been 100% physically proven and executed.

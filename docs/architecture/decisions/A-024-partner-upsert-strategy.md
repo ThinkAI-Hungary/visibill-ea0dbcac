@@ -158,12 +158,36 @@ Párhuzamos kötegelt számlafeltöltések (PDF/ZIP, IMAP sync) során több wor
 3. Ha szükséges, automatikusan felminősíti a meglévő partner típusát (`partner_type -> 'both'`), ha az újonnan érkezett számla eltérő irányú volt, és pótolja az esetlegesen hiányzó címet.
 4. Lásd részletesen: Worker `docs/DECISIONS.md` **ADR-074**.
 
+## 2026-09-29 bővítések
+
+### D9: Belföldi Magyar Partner Adószám Normalizálás (8-1-2 Szabvány), Valós Idejű NAV Gazdagítás és Worker Auto-Upgrade
+
+Korábban a belföldi partnerek adószámai vegyes formátumban kerültek rögzítésre (8 számjegyű törzsszámként, unformatted 11 számjegyként pl. `12345678142`, vagy `HU` előtaggal). A Python worker korábbi OIB-ellenőrzése a kötőjel nélküli 11 jegyű magyar számokat tévesen horvát OIB-nek minősítette, így azok unformatted maradtak és nem egyeztek a meglévő 8 jegyű partnerekkel.
+
+**Megoldás:**
+1. **Frontend (`PartnersPage.tsx`):**
+   - `formatPartnerTaxNumber`: Megjelenítéskor minden 11 jegyű belföldi adószámot szabványos `XXXXXXXX-Y-ZZ` (8-1-2) formátumban jelenít meg, a `HU` előtagot levágja, a szintetikus `FOREIGN:` azonosítókat elrejti.
+   - `handleNavLookup` & `handleSubmit`: Kézi felvitelkor a 8 jegyű adószámot mentés előtt a NAV Online Számla v3 `queryTaxpayer` API-n keresztül lekérdezi, kitölti a 8-1-2 formátumot és a székhelycímet.
+   - "✨ NAV 8-1-2" gomb a részletpanelen: Meglévő 8 jegyű partnereknél egyetlen kattintással elérhető a felminősítés.
+   - Számla összekapcsolási védelem: `supplier_tax_number.ilike.${cleanTax}%` és `customer_tax_number.ilike.${cleanTax}%` prefix szűrés, megakadályozva, hogy a számlák lekapcsolódjanak a partnerről az adószám felminősítésekor.
+2. **Edge Functions (`nav-ingestion-service.ts`, `nav-query-taxpayer`):**
+   - Új partnerek szinkronizálásakor a NAV digest-ből felfedezett 8 jegyű adószámokat automatikusan kiegészíti a `queryTaxpayer` segítségével 8-1-2-re, hivatalos cégnevet és székhelycímet mentve.
+   - Zero console logging a felhőfüggvényekben.
+3. **Python Worker (`partner_upsert.py`):**
+   - `is_hungarian_tax_number` & `normalize_hungarian_tax_number`: Felismeri és 8-1-2 formátumra rendezi a 11 jegyű belföldi számokat (validálva az áfakódot [1..5] és a megyekódot [02..20, 41..44, 51]).
+   - Az `is_croatian_tax_number()` javítása: nem minősíti horvátnak a magyar 11 jegyű számokat.
+   - Step 4 Auto-Upgrade: Meglévő 8 jegyű partnereknél az új számla érkezésekor automatikusan felminősíti a partnert a teljes 8-1-2 adószámra az adatbázisban, és védi az egyidejű 23505 duplikált kulcs ütközéseket.
+4. **Backfill Script (`scripts/backfill_partner_tax_numbers.mjs`):**
+   - Rate-limittelt, duplikátum-védett Node.js script a meglévő 8 jegyű partnerek kötegelt NAV kiegészítésére.
+
 ## Kapcsolódó
 - [A-012: NAV Online Számla API v3 integráció](./A-012-nav-integration.md) — NAV sync partner caching logika
 - [A-025: Cross-company Invoice Routing](./A-025-cross-company-routing.md) — Duplikátum és cégátirányítási védelem
 - [A-027: Partner Ranking & Treemap](./A-027-partner-ranking-treemap.md) — Rangsor logika, NULL-vat LATERAL JOIN
-- [P-040: Partnertörzs dual-table számlák](../product/decisions/P-040-partners-invoice-panel.md) — Partner UI
+- [A-132: NAV Online Számla v3.0 queryTaxpayer Integráció](./A-132-nav-query-taxpayer-auto-fill.md) — Automatikus adóalanyi adatlekérdezés
+- [P-040: Partnertörzs dual-table számlák](../product/decisions/P-040-partners-invoice-panel.md) — Partner UI és 8-1-2 gazdagítás
 - [P-044: Külföldi partner megjelenítés](../product/decisions/P-044-foreign-partner-display.md) — Frontend FOREIGN: kezelés
 - Worker ADR: `docs/DECISIONS.md` ADR-074 (Idempotens Partner Upsert & Company Router Pre-check)
+
 
 

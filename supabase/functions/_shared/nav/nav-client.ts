@@ -307,7 +307,6 @@ export class NavClient {
     });
 
     const xmlResponse = await response.text();
-    console.log('[NAV-QUERY-TAXPAYER-RAW-XML]:', xmlResponse);
     return parseTaxpayerXml(xmlResponse);
   }
 }

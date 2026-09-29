@@ -31,17 +31,24 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await userClient.auth.getUser(token);
+    const token = authHeader.replace(/^Bearer\s+/i, '');
+    let userId: string | null = null;
 
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Érvénytelen munkamenet vagy jogosulatlan hozzáférés', code: 'UNAUTHORIZED' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (token === supabaseServiceKey) {
+      // Backend / service-role meghívás
+      userId = null;
+    } else {
+      const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } }
+      });
+      const { data: { user }, error: authError } = await userClient.auth.getUser(token);
+      if (authError || !user) {
+        return new Response(
+          JSON.stringify({ error: 'Érvénytelen munkamenet vagy jogosulatlan hozzáférés', code: 'UNAUTHORIZED' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      userId = user.id;
     }
 
     // 4. Bemeneti paraméterek beolvasása és adószám normalizálása
@@ -67,7 +74,7 @@ Deno.serve(async (req: Request) => {
     let credsResult: any = null;
     if (requestedCompanyId) {
       const { data } = await serviceClient.rpc('get_nav_credentials', {
-        p_user_id: user.id,
+        p_user_id: userId,
         p_company_id: requestedCompanyId
       });
       if (data && !data.error) {
@@ -76,9 +83,9 @@ Deno.serve(async (req: Request) => {
     }
 
     // Másodlagos: a felhasználóhoz rendelt közvetlen vagy cégtagsági hitelesítő keresése
-    if (!credsResult) {
+    if (!credsResult && userId) {
       const { data } = await serviceClient.rpc('get_nav_credentials', {
-        p_user_id: user.id,
+        p_user_id: userId,
         p_company_id: null
       });
       if (data && !data.error) {
@@ -120,7 +127,6 @@ Deno.serve(async (req: Request) => {
     );
 
   } catch (err: any) {
-    console.error('[NAV-QUERY-TAXPAYER] Hiba történt:', err);
     return new Response(
       JSON.stringify({
         error: err.message || 'Hiba történt a NAV adóalanyi lekérdezés során',

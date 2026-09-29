@@ -1525,8 +1525,8 @@
     "semantic_hash": ""
   },
   "src/pages/PartnersPage.tsx": {
-    "mtime": 1790514518.2360642,
-    "ast_hash": "9d84cfd7d9c58354ea530b2a4a30e0b0",
+    "mtime": 1790657326.6143515,
+    "ast_hash": "826cfae61dabefac03a4b743147340ba",
     "semantic_hash": ""
   },
   "src/pages/PettyCashPage.tsx": {
@@ -3095,8 +3095,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790647234.25323,
-    "ast_hash": "d57b2ecb2d85913c9a66795a09110a76",
+    "mtime": 1790660245.698196,
+    "ast_hash": "381bd147505c937fbed0af5167bc60f8",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -5145,8 +5145,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-040-partners-invoice-panel.md": {
-    "mtime": 1783204477.4202552,
-    "ast_hash": "7a5b887161f7515ca1a687acc1a41df5",
+    "mtime": 1790660272.476173,
+    "ast_hash": "7ffeceb9743ef4a9fad613c065cea3e4",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-041-categories-multicurrency-search.md": {
@@ -5310,8 +5310,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-024-partner-upsert-strategy.md": {
-    "mtime": 1790478648.0281992,
-    "ast_hash": "95a6f35c9a491c7b1b5cd0c590f06c0b",
+    "mtime": 1790660160.188932,
+    "ast_hash": "1929ff9515e867da9a6498cea53aa7a5",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-044-foreign-partner-display.md": {
@@ -7855,13 +7855,13 @@
     "semantic_hash": ""
   },
   "supabase/functions/_shared/nav/nav-client.ts": {
-    "mtime": 1790534286.9458497,
-    "ast_hash": "ad98994f10ca84a888746aee072a5b2e",
+    "mtime": 1790657381.7620177,
+    "ast_hash": "c385c2924825c17d10a38f0251f9e142",
     "semantic_hash": ""
   },
   "supabase/functions/_shared/nav/nav-ingestion-service.ts": {
-    "mtime": 1790534307.9872518,
-    "ast_hash": "e0700357856a2b28d1a8c5b862c5f227",
+    "mtime": 1790657422.2106495,
+    "ast_hash": "b37776d3e002c856cfd49366fe97ab6a",
     "semantic_hash": ""
   },
   "supabase/functions/_shared/nav/types.ts": {
@@ -9610,8 +9610,8 @@
     "semantic_hash": ""
   },
   ".agents/skills/morfi-implementation-review/SKILL.md": {
-    "mtime": 1788973757.7189689,
-    "ast_hash": "314c9791d16aa7067f11ee9f48e19d71",
+    "mtime": 1790661341.1301665,
+    "ast_hash": "71ad35ca190fcf474a5cce9bf8c843c8",
     "semantic_hash": ""
   },
   ".agents/skills/visibill-create-management-user/SKILL.md": {
@@ -9660,8 +9660,8 @@
     "semantic_hash": ""
   },
   "src/locales/hr/dashboard.json": {
-    "mtime": 1790651979.787568,
-    "ast_hash": "3821e93a6b6fdc412730394a20c29dbb",
+    "mtime": 1790660781.1819322,
+    "ast_hash": "be3fa9333c717691fb02cd3bc8e29fff",
     "semantic_hash": ""
   },
   "src/locales/hr/invoices.json": {
@@ -9700,8 +9700,8 @@
     "semantic_hash": ""
   },
   "src/locales/hu/dashboard.json": {
-    "mtime": 1790651973.3399508,
-    "ast_hash": "8a7262d2b6fd6ba55203e2e9354ed4fd",
+    "mtime": 1790660764.934805,
+    "ast_hash": "c952796b63cccca675cb95a59432079f",
     "semantic_hash": ""
   },
   "src/locales/hu/invoices.json": {
@@ -10970,8 +10970,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/nav-query-taxpayer/index.ts": {
-    "mtime": 1789911521.6640818,
-    "ast_hash": "06498d97c4e95389a4b009e0e00c2a06",
+    "mtime": 1790657458.9535427,
+    "ast_hash": "e5b96e993bd89c70793fc7df7191926c",
     "semantic_hash": ""
   },
   "supabase/migrations/20260920160000_acc_opening_croatian_and_multicurrency_support.sql": {
@@ -11060,8 +11060,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-132-nav-query-taxpayer-auto-fill.md": {
-    "mtime": 1789920178.7855797,
-    "ast_hash": "e0ceb8831024d8c7934d76398472d5d3",
+    "mtime": 1790660233.8653712,
+    "ast_hash": "44f9d052140716f68a9fc7371a153223",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-133-nav-official-invoice-summary-vat-breakdown.md": {
@@ -13075,13 +13075,13 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/UnifiedFinancialCockpit.tsx": {
-    "mtime": 1790652646.3990254,
-    "ast_hash": "7021128bb345c699d02820a8ad5fb131",
+    "mtime": 1790660812.4521115,
+    "ast_hash": "eeb21a04823236c44b2631887939dc82",
     "semantic_hash": ""
   },
   "src/test/unifiedFinancialCockpit.test.tsx": {
-    "mtime": 1790652706.9281423,
-    "ast_hash": "02333cbcd48df333e2cbd6beaa2268f1",
+    "mtime": 1790660863.411281,
+    "ast_hash": "61f40d23febfcc708f354372dc020017",
     "semantic_hash": ""
   },
   "src/test/dashboardMetricsProfit.test.tsx": {
@@ -13097,6 +13097,26 @@
   "docs/product/decisions/P-137-unified-financial-cockpit-and-realized-profit-ux.md": {
     "mtime": 1790653545.1843433,
     "ast_hash": "94aa0c76e5c9b5d764b3e0a5a0b6a725",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-09-29/summary-055200-unified-financial-cockpit-realized-profit-and-szamlakep-tabs.md": {
+    "mtime": 1790653871.5137055,
+    "ast_hash": "6459501df6fd8cf39be644e3554db7c2",
+    "semantic_hash": ""
+  },
+  "scripts/backfill_partner_tax_numbers.mjs": {
+    "mtime": 1790660048.887358,
+    "ast_hash": "f6c3912b569fb1e15aa0dafdc7e54084",
+    "semantic_hash": ""
+  },
+  "scripts/backfill_report.json": {
+    "mtime": 1790657782.9169295,
+    "ast_hash": "27a6e6f29fc57d70cec7213870ffd804",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-09-29/summary-074000-partners-layout-nav-query-and-hungarian-tax-standardization.md": {
+    "mtime": 1790660376.4054124,
+    "ast_hash": "1ae1a779840d51a7ffb8387be09241da",
     "semantic_hash": ""
   }
 }

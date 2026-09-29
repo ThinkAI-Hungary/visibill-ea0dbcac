@@ -261,7 +261,9 @@
     "no_payable": "Nema neplaćenih ulaznih računa.",
     "no_bank_unmatched": "Sve bankovne transakcije su povezane!",
     "no_receivables": "Nema otvorenih potraživanja od kupaca.",
-    "tip": "Iz prenesenih PDF-ova i slika AI automatski izdvaja stavke i povezuje ih s podacima."
+    "tip": "Iz prenesenih PDF-ova i slika AI automatski izdvaja stavke i povezuje ih s podacima.",
+    "load_more": "Učitaj više...",
+    "all_loaded": "Učitane su sve stavke ({{count}})"
   }
 }
 
