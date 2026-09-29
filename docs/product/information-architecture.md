@@ -109,7 +109,7 @@ Visibill
 │   ├── /salaries/:tab?            Bérek / Járulékok (tabok: /salaries [Alkalmazottak & NAV], /purchase_vouchers [Mezőgazdasági felvásárlási jegyek])
 │   ├── /working-time/:tab?        Munkaidő
 │   ├── /petty-cash/:tab?          Házipénztár
-│   ├── /teny/:tab?                Tárgyi eszközök (TENY felső tabok: /teny [Eszközök], /teny?tab=development_reserves [Fejlesztési tartalékok nyilvántartása, Tao. 7. § (1) f) & Tao ÉCS tiltás])
+│   ├── /teny/:tab?                Tárgyi eszközök (TENY felső tabok: /teny [Eszközök], /teny?tab=development_reserves [Fejlesztési tartalékok nyilvántartása]; [ 🧮 ÉCS elszámolás ] Vegyes napló feladási varázsló: havi/negyedéves/éves zárás, P-141, A-180)
 │   ├── /shipments/:tab?           Fuvarok és Szállítmányozás (CMR, import, eszkaláció)
 │   ├── /integrations              Integrációk (NAV, bank)
 │   ├── /exchange-rates            Árfolyamok (MNB)

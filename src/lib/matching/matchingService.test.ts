@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   buildAvailableInvoicesList,
   applyMatch,
+  batchApplyMatches,
+  batchAddExtraMatches,
   unmatchTransaction,
   verifyMatch,
   markNoInvoice,
@@ -102,6 +104,46 @@ describe('matchingService', () => {
         confidence_score: 1.0,
       });
       expect(qb.eq).toHaveBeenCalledWith('id', 'tx-100');
+    });
+  });
+
+  describe('batchApplyMatches', () => {
+    it('sets primary match on transactions and extra match on transaction_invoice_matches', async () => {
+      const qb: any = {
+        update: vi.fn().mockReturnThis(),
+        insert: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+      };
+      (supabase.from as any).mockReturnValue(qb);
+
+      await batchApplyMatches({
+        transactionId: 'tx-100',
+        invoiceIds: ['inv-primary', 'inv-extra'],
+      });
+
+      expect(supabase.from).toHaveBeenCalledWith('transactions');
+      expect(supabase.from).toHaveBeenCalledWith('transaction_invoice_matches');
+    });
+  });
+
+  describe('batchAddExtraMatches', () => {
+    it('inserts all given invoice IDs into transaction_invoice_matches', async () => {
+      const qb: any = {
+        insert: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+      };
+      (supabase.from as any).mockReturnValue(qb);
+
+      await batchAddExtraMatches({
+        transactionId: 'tx-100',
+        invoiceIds: ['inv-e1', 'inv-e2'],
+      });
+
+      expect(supabase.from).toHaveBeenCalledWith('transaction_invoice_matches');
     });
   });
 

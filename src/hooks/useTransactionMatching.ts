@@ -8,12 +8,14 @@ import {
   fetchAvailableInvoices,
   searchServerInvoices,
   applyMatch,
+  batchApplyMatches,
   unmatchTransaction,
   verifyMatch,
   markNoInvoice,
   markInvoiceMissing,
   revertStatus,
   addExtraMatch,
+  batchAddExtraMatches,
   removeExtraMatch,
   bookTransactionDirect,
   unbookTransactionDirect,
@@ -47,7 +49,20 @@ export function useTransactionMatching({
 
   // ── UI Search & Selection State ──
   const [search, setSearch] = useState('');
-  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
+  const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
+  const selectedInvoiceId = selectedInvoiceIds[0] || null;
+  const setSelectedInvoiceId = useCallback((id: string | null) => {
+    setSelectedInvoiceIds(id ? [id] : []);
+  }, []);
+  const toggleSelectInvoice = useCallback((id: string) => {
+    setSelectedInvoiceIds(prev =>
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  }, []);
+  const clearSelection = useCallback(() => {
+    setSelectedInvoiceIds([]);
+  }, []);
+
   const [showManualMatch, setShowManualMatch] = useState(false);
   const [showAddExtraMatch, setShowAddExtraMatch] = useState(false);
   const [serverSearchResults, setServerSearchResults] = useState<AvailableInvoice[]>([]);
@@ -139,7 +154,7 @@ export function useTransactionMatching({
       setShowManualMatch(false);
       setShowAddExtraMatch(false);
       setSearch('');
-      setSelectedInvoiceId(null);
+      setSelectedInvoiceIds([]);
     }
   }, [isOpen, transactionId]);
 
@@ -180,20 +195,31 @@ export function useTransactionMatching({
 
   // Match Mutation
   const matchMutation = useMutation({
-    mutationFn: async (invoiceIdToMatch?: string) => {
-      const invId = invoiceIdToMatch || selectedInvoiceId;
-      if (!transaction || !invId) throw new Error('Hiányzó tranzakció vagy számla azonosító');
-      const overridePayload = createOverridePayload(invId, 'manual');
-      await applyMatch({
+    mutationFn: async (invoiceIdsToMatch?: string | string[]) => {
+      const ids = invoiceIdsToMatch
+        ? (Array.isArray(invoiceIdsToMatch) ? invoiceIdsToMatch : [invoiceIdsToMatch])
+        : selectedInvoiceIds;
+      if (!transaction || ids.length === 0) throw new Error('Hiányzó tranzakció vagy számla azonosító');
+
+      const [primaryId, ...extraIds] = ids;
+      const overridePayload = createOverridePayload(primaryId, extraIds.length > 0 ? 'multi_manual' : 'manual');
+
+      await batchApplyMatches({
         transactionId: transaction.id,
-        invoiceId: invId,
-        matchType: 'manual',
+        invoiceIds: ids,
+        matchType: extraIds.length > 0 ? 'multi_manual' : 'manual',
         confidenceScore: 1.0,
         overridePayload,
       });
+
+      return ids.length;
     },
-    onSuccess: async () => {
-      toast({ title: 'Tranzakció sikeresen párosítva!' });
+    onSuccess: async (count) => {
+      toast({
+        title: count > 1
+          ? `${count} db számla sikeresen párosítva a tranzakcióhoz!`
+          : 'Tranzakció sikeresen párosítva!',
+      });
       await invalidateMatchingQueries(queryClient, companyId);
       onUpdate?.();
       onClose?.();
@@ -290,21 +316,32 @@ export function useTransactionMatching({
 
   // Add Extra Match Mutation
   const addExtraMatchMutation = useMutation({
-    mutationFn: async (invoiceIdToAdd?: string) => {
-      const invId = invoiceIdToAdd || selectedInvoiceId;
-      if (!transaction || !invId) throw new Error('Hiányzó számla azonosító');
-      const overridePayload = createOverridePayload(invId, 'manual_extra');
-      await addExtraMatch({
-        transactionId: transaction.id,
-        invoiceId: invId,
-        overridePayload,
-      });
+    mutationFn: async (invoiceIdsToAdd?: string | string[]) => {
+      const ids = invoiceIdsToAdd
+        ? (Array.isArray(invoiceIdsToAdd) ? invoiceIdsToAdd : [invoiceIdsToAdd])
+        : selectedInvoiceIds;
+      if (!transaction || ids.length === 0) throw new Error('Hiányzó számla azonosító');
+
+      for (const invId of ids) {
+        const overridePayload = createOverridePayload(invId, 'manual_extra');
+        await addExtraMatch({
+          transactionId: transaction.id,
+          invoiceId: invId,
+          overridePayload,
+        });
+      }
+
+      return ids.length;
     },
-    onSuccess: async () => {
-      toast({ title: 'További számla sikeresen hozzáadva!' });
+    onSuccess: async (count) => {
+      toast({
+        title: count > 1
+          ? `${count} db további számla sikeresen hozzáadva!`
+          : 'További számla sikeresen hozzáadva!',
+      });
       await invalidateMatchingQueries(queryClient, companyId);
       setShowAddExtraMatch(false);
-      setSelectedInvoiceId(null);
+      setSelectedInvoiceIds([]);
       setSearch('');
       queryClient.invalidateQueries({ queryKey: ['transaction-extra-matches', transactionId] });
       onUpdate?.();
@@ -427,19 +464,23 @@ export function useTransactionMatching({
     setSearch,
     selectedInvoiceId,
     setSelectedInvoiceId,
+    selectedInvoiceIds,
+    setSelectedInvoiceIds,
+    toggleSelectInvoice,
+    clearSelection,
     showManualMatch,
     setShowManualMatch,
     showAddExtraMatch,
     setShowAddExtraMatch,
 
     // Handlers
-    handleMatch: (invId?: string) => matchMutation.mutate(invId),
+    handleMatch: (invId?: string | string[]) => matchMutation.mutate(invId),
     handleUnmatch: () => unmatchMutation.mutate(),
     handleVerify: () => verifyMutation.mutate(),
     handleMarkNoInvoice: () => markNoInvoiceMutation.mutate(),
     handleMarkInvoiceMissing: () => markInvoiceMissingMutation.mutate(),
     handleRevertStatus: () => revertStatusMutation.mutate(),
-    handleAddExtraMatch: (invId?: string) => addExtraMatchMutation.mutate(invId),
+    handleAddExtraMatch: (invId?: string | string[]) => addExtraMatchMutation.mutate(invId),
     handleRemoveExtraMatch: (matchId: string) => removeExtraMatchMutation.mutate(matchId),
     handleBookGl: (payload: BookTransactionGlPayload) => bookGlMutation.mutate(payload),
     handleUnbookGl: (payload: {

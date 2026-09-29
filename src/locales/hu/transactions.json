@@ -272,7 +272,17 @@
         "btn_invoice_missing": "Számla nincs feltöltve",
         "btn_save_match": "Párosítás mentése",
         "btn_add_extra": "Hozzáadás",
-        "saving": "Mentés..."
+        "saving": "Mentés...",
+        "multi_selected_count": "{{count}} db számla kijelölve",
+        "clear_selection": "Kijelölés törlése",
+        "tx_amount_label": "Tranzakció összege",
+        "fee_difference_label": "Levont jutalék / díj",
+        "difference_label": "Különbözet",
+        "exact_match_label": "✓ Pontos összeg egyezés",
+        "btn_save_multi_match": "{{count}} db számla párosítása",
+        "btn_add_multi_extra": "{{count}} db számla hozzáadása",
+        "toast_multi_match_success": "{{count}} db számla sikeresen párosítva a tranzakcióhoz!",
+        "toast_multi_extra_success": "{{count}} db további számla sikeresen hozzáadva!"
       },
       "notes": {
         "title": "Kapcsolódó feljegyzések",

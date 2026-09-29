@@ -87,6 +87,26 @@ export async function postAssetActivationToLedger(
     }
 
     // 1. Keresünk Vegyes naplót a cégnél
+    const cleanInv = inventoryNumber.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const documentId = `JK-${cleanInv}`;
+
+    // Megnézzük, van-e már ilyen bizonylatszám a duplikáció elkerülésére
+    const { data: existingHeader } = await supabase
+      .from('acc_journal_headers')
+      .select('id, status')
+      .eq('company_id', companyId)
+      .eq('document_id', documentId)
+      .neq('status', 'SZTORNOZOTT')
+      .maybeSingle();
+
+    if (existingHeader?.id) {
+      return {
+        success: true,
+        headerId: existingHeader.id,
+        message: `Az eszköz aktiválása már korábban le lett könyvelve (${documentId}).`,
+      };
+    }
+
     const { data: journals = [] } = await supabase
       .from('acc_journals')
       .select('id, code, name')
@@ -112,26 +132,7 @@ export async function postAssetActivationToLedger(
     }
 
     const year = parseInt(activationDate.slice(0, 4), 10) || new Date().getFullYear();
-    const cleanInv = inventoryNumber.replace(/[^a-zA-Z0-9_-]/g, '_');
-    const documentId = `JK-${cleanInv}`;
     const description = `Tárgyi eszköz aktiválás: ${assetName} (${inventoryNumber})`;
-
-    // Megnézzük, van-e már ilyen bizonylatszám a duplikáció elkerülésére
-    const { data: existingHeader } = await supabase
-      .from('acc_journal_headers')
-      .select('id, status')
-      .eq('company_id', companyId)
-      .eq('document_id', documentId)
-      .neq('status', 'SZTORNOZOTT')
-      .maybeSingle();
-
-    if (existingHeader?.id) {
-      return {
-        success: true,
-        headerId: existingHeader.id,
-        message: `Az eszköz aktiválása már korábban le lett könyvelve (${documentId}).`,
-      };
-    }
 
     // 3. Új fejléc létrehozása
     const { data: newHeader, error: headerErr } = await supabase

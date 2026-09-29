@@ -173,6 +173,10 @@ export const TransactionDetailsDialog = ({
                 setSearch={matching.setSearch}
                 selectedInvoiceId={matching.selectedInvoiceId}
                 setSelectedInvoiceId={matching.setSelectedInvoiceId}
+                selectedInvoiceIds={matching.selectedInvoiceIds}
+                setSelectedInvoiceIds={matching.setSelectedInvoiceIds}
+                toggleSelectInvoice={matching.toggleSelectInvoice}
+                clearSelection={matching.clearSelection}
                 loading={matching.loadingAvailableInvoices}
                 isSearchingServer={matching.isSearchingServer}
                 isSaving={matching.isSaving}
@@ -202,13 +206,17 @@ export const TransactionDetailsDialog = ({
                 setSearch={matching.setSearch}
                 selectedInvoiceId={matching.selectedInvoiceId}
                 setSelectedInvoiceId={matching.setSelectedInvoiceId}
+                selectedInvoiceIds={matching.selectedInvoiceIds}
+                setSelectedInvoiceIds={matching.setSelectedInvoiceIds}
+                toggleSelectInvoice={matching.toggleSelectInvoice}
+                clearSelection={matching.clearSelection}
                 loading={matching.loadingAvailableInvoices}
                 isSearchingServer={matching.isSearchingServer}
                 isSaving={matching.isSaving}
                 matchStatus={matchStatus}
                 onBack={() => {
                   matching.setShowAddExtraMatch(false);
-                  matching.setSelectedInvoiceId(null);
+                  matching.setSelectedInvoiceIds([]);
                   matching.setSearch('');
                 }}
                 onMatch={() => matching.handleAddExtraMatch()}

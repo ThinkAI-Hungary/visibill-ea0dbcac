@@ -444,9 +444,74 @@ export async function applyMatch(params: {
 
   if (error) throw error;
 
+  // Synchronously update invoice records for instant UI consistency
+  await Promise.all([
+    supabase
+      .from('invoices')
+      .update({ transaction_id: params.transactionId, fizetve: true })
+      .eq('id', params.invoiceId),
+    supabase
+      .from('nav_invoices')
+      .update({ transaction_id: params.transactionId, paid: true })
+      .eq('id', params.invoiceId),
+  ]);
+
   if (params.overridePayload) {
     // Fire-and-forget
     logMatchOverride(params.overridePayload);
+  }
+}
+
+/**
+ * Applies multiple invoice matches to a transaction:
+ * - First invoice becomes the primary match (`matched_invoice_id` on transactions).
+ * - Subsequent invoices are added to `transaction_invoice_matches`.
+ */
+export async function batchApplyMatches(params: {
+  transactionId: string;
+  invoiceIds: string[];
+  matchType?: string;
+  confidenceScore?: number;
+  overridePayload?: MatchOverridePayload;
+}): Promise<void> {
+  const { transactionId, invoiceIds } = params;
+  if (!transactionId || !invoiceIds || invoiceIds.length === 0) return;
+
+  const [primaryInvoiceId, ...extraInvoiceIds] = invoiceIds;
+
+  // 1. Primary match
+  await applyMatch({
+    transactionId,
+    invoiceId: primaryInvoiceId,
+    matchType: extraInvoiceIds.length > 0 ? 'multi_manual' : (params.matchType || 'manual'),
+    confidenceScore: params.confidenceScore ?? 1.0,
+    overridePayload: params.overridePayload,
+  });
+
+  // 2. Extra matches
+  for (const extraId of extraInvoiceIds) {
+    await addExtraMatch({
+      transactionId,
+      invoiceId: extraId,
+    });
+  }
+}
+
+/**
+ * Adds multiple extra matches to transaction_invoice_matches.
+ */
+export async function batchAddExtraMatches(params: {
+  transactionId: string;
+  invoiceIds: string[];
+}): Promise<void> {
+  const { transactionId, invoiceIds } = params;
+  if (!transactionId || !invoiceIds || invoiceIds.length === 0) return;
+
+  for (const invId of invoiceIds) {
+    await addExtraMatch({
+      transactionId,
+      invoiceId: invId,
+    });
   }
 }
 

@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-29  
-> **Összesen:** 143 döntés | ✅ Decided: 139 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 144 döntés | ✅ Decided: 140 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -62,6 +62,7 @@
 | P-104 | Tranzakció jutalék és számlaszám exportálása | ✅ Decided | [P-104](./P-104-transaction-fee-and-invoice-number-export-ux.md) |
 | P-129 | Futárriportok és Banki Tranzakciók Teljes Időszaki Exportálása és Szűrt Letöltése UX | ✅ Decided | [P-129](./P-129-courier-and-bank-transactions-full-period-export-ux.md) |
 | P-133 | Számlalánc Tranzakció-örökítés, Irányfüggő Partner-izoláció és Zöld Státusz UX | ✅ Decided | [P-133](./P-133-invoice-chain-transaction-propagation-ux.md) |
+| P-142 | Tranzakció Többes Számlapárosítás és Jutalék-levonás UX | ✅ Decided | [P-142](./P-142-transaction-multi-invoice-matching-ux.md) |
 
 ## 📒 Főkönyv & Riportok
 
@@ -214,6 +215,7 @@
 | P-052 | Tárgyi Eszközök Projektekhez Rendelése (TENY Project Assignment) UX | ✅ Decided | [P-052](./P-052-fixed-assets-project-assignment-ux.md) |
 | P-123 | Fejlesztési Tartalék és Tárgyi Eszköz Nyilvántartás (TENY) Összekapcsolása UX | ✅ Decided | [P-123](./P-123-development-reserve-teny-ux.md) |
 | P-124 | Kapcsolt Vállalkozások Kezelése és Forgalmi Kimutatása a Partnertörzsben | ✅ Decided | [P-124](./P-124-related-parties-management-and-turnover-ux.md) |
+| P-141 | Tárgyi Eszközök Időszaki Értékcsökkenés (ÉCS) Elszámolás és Vegyes Napló Feladási Varázsló UX | ✅ Decided | [P-141](./P-141-fixed-assets-periodic-depreciation-posting-wizard-ux.md) |
 
 
 ## 📖 Könyvelés & Banki Utalások

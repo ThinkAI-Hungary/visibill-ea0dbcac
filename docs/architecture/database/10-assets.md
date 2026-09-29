@@ -95,6 +95,12 @@
 
 **Indexek:** `idx_asset_events_asset`, `idx_asset_events_company_id`, `idx_asset_events_user_id`
 
+**Könyvelési integráció (A-180 / P-141):**
+Az időszaki értékcsökkenés Vegyes naplóba történő feladásakor (`depreciationPostingService.ts`) minden érintett eszközhöz automatikusan létrejön egy `event_type = 'value_change'` esemény:
+- `description`: `ÉCS elszámolás (${documentId}): ${amount} Ft (maradvány: ${remainingBookValue} Ft)`
+- `old_values`: `{ accumulated_before, book_value_before }`
+- `new_values`: `{ period_amount, accumulated_after, book_value_after, document_id }`
+
 ---
 
 ### `tao_depreciation_templates`

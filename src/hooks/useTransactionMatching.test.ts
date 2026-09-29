@@ -12,12 +12,14 @@ vi.mock('@/lib/matching/matchingService', () => ({
   fetchAvailableInvoices: vi.fn().mockResolvedValue([]),
   searchServerInvoices: vi.fn().mockResolvedValue([]),
   applyMatch: vi.fn().mockResolvedValue(undefined),
+  batchApplyMatches: vi.fn().mockResolvedValue(undefined),
   unmatchTransaction: vi.fn().mockResolvedValue(undefined),
   verifyMatch: vi.fn().mockResolvedValue(undefined),
   markNoInvoice: vi.fn().mockResolvedValue(undefined),
   markInvoiceMissing: vi.fn().mockResolvedValue(undefined),
   revertStatus: vi.fn().mockResolvedValue(undefined),
   addExtraMatch: vi.fn().mockResolvedValue(undefined),
+  batchAddExtraMatches: vi.fn().mockResolvedValue(undefined),
   removeExtraMatch: vi.fn().mockResolvedValue(undefined),
   bookTransactionDirect: vi.fn().mockResolvedValue(undefined),
   unbookTransactionDirect: vi.fn().mockResolvedValue(undefined),
@@ -68,10 +70,45 @@ describe('useTransactionMatching', () => {
 
     expect(result.current.search).toBe('');
     expect(result.current.selectedInvoiceId).toBeNull();
+    expect(result.current.selectedInvoiceIds).toEqual([]);
     expect(result.current.showManualMatch).toBe(false);
   });
 
-  it('calls applyMatch when handleMatch is invoked', async () => {
+  it('supports toggleSelectInvoice and clearSelection', () => {
+    const { result } = renderHook(
+      () =>
+        useTransactionMatching({
+          transaction: mockTransaction,
+          companyId: 'comp-1',
+          isOpen: true,
+        }),
+      { wrapper: createWrapper() }
+    );
+
+    act(() => {
+      result.current.toggleSelectInvoice('inv-1');
+    });
+    expect(result.current.selectedInvoiceIds).toEqual(['inv-1']);
+    expect(result.current.selectedInvoiceId).toBe('inv-1');
+
+    act(() => {
+      result.current.toggleSelectInvoice('inv-2');
+    });
+    expect(result.current.selectedInvoiceIds).toEqual(['inv-1', 'inv-2']);
+
+    act(() => {
+      result.current.toggleSelectInvoice('inv-1');
+    });
+    expect(result.current.selectedInvoiceIds).toEqual(['inv-2']);
+
+    act(() => {
+      result.current.clearSelection();
+    });
+    expect(result.current.selectedInvoiceIds).toEqual([]);
+    expect(result.current.selectedInvoiceId).toBeNull();
+  });
+
+  it('calls batchApplyMatches when handleMatch is invoked with single or multiple invoices', async () => {
     const onUpdate = vi.fn();
     const onClose = vi.fn();
 
@@ -88,14 +125,14 @@ describe('useTransactionMatching', () => {
     );
 
     await act(async () => {
-      result.current.handleMatch('inv-999');
+      result.current.handleMatch(['inv-1', 'inv-2']);
     });
 
-    expect(matchingService.applyMatch).toHaveBeenCalledWith(
+    expect(matchingService.batchApplyMatches).toHaveBeenCalledWith(
       expect.objectContaining({
         transactionId: 'tx-123',
-        invoiceId: 'inv-999',
-        matchType: 'manual',
+        invoiceIds: ['inv-1', 'inv-2'],
+        matchType: 'multi_manual',
       })
     );
   });

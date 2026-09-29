@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Search,
   Link2,
@@ -11,6 +12,7 @@ import {
   Ban,
   UploadCloud,
   Check,
+  Layers,
 } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
 import { formatDate } from '@/lib/locale/formatters';
@@ -24,8 +26,12 @@ export interface ManualMatchSearchSectionProps {
   candidateInvoices: AvailableInvoice[];
   search: string;
   setSearch: (query: string) => void;
-  selectedInvoiceId: string | null;
-  setSelectedInvoiceId: (id: string | null) => void;
+  selectedInvoiceId?: string | null;
+  setSelectedInvoiceId?: (id: string | null) => void;
+  selectedInvoiceIds?: string[];
+  setSelectedInvoiceIds?: (ids: string[]) => void;
+  toggleSelectInvoice?: (id: string) => void;
+  clearSelection?: () => void;
   loading: boolean;
   isSearchingServer: boolean;
   isSaving: boolean;
@@ -44,6 +50,10 @@ export const ManualMatchSearchSection: React.FC<ManualMatchSearchSectionProps> =
   setSearch,
   selectedInvoiceId,
   setSelectedInvoiceId,
+  selectedInvoiceIds,
+  setSelectedInvoiceIds,
+  toggleSelectInvoice,
+  clearSelection,
   loading,
   isSearchingServer,
   isSaving,
@@ -56,6 +66,73 @@ export const ManualMatchSearchSection: React.FC<ManualMatchSearchSectionProps> =
   const { t } = useTranslation(['transactions']);
   const transactionAmount = transaction.amount || 0;
   const isExtra = mode === 'extra';
+
+  const selectedIds = useMemo(() => {
+    if (selectedInvoiceIds) return selectedInvoiceIds;
+    return selectedInvoiceId ? [selectedInvoiceId] : [];
+  }, [selectedInvoiceIds, selectedInvoiceId]);
+
+  const handleToggle = useCallback(
+    (id: string) => {
+      if (toggleSelectInvoice) {
+        toggleSelectInvoice(id);
+      } else if (setSelectedInvoiceIds) {
+        setSelectedInvoiceIds(
+          selectedIds.includes(id)
+            ? selectedIds.filter(i => i !== id)
+            : [...selectedIds, id]
+        );
+      } else if (setSelectedInvoiceId) {
+        setSelectedInvoiceId(selectedIds.includes(id) ? null : id);
+      }
+    },
+    [toggleSelectInvoice, setSelectedInvoiceIds, setSelectedInvoiceId, selectedIds]
+  );
+
+  const handleClear = useCallback(() => {
+    if (clearSelection) {
+      clearSelection();
+    } else if (setSelectedInvoiceIds) {
+      setSelectedInvoiceIds([]);
+    } else if (setSelectedInvoiceId) {
+      setSelectedInvoiceId(null);
+    }
+  }, [clearSelection, setSelectedInvoiceIds, setSelectedInvoiceId]);
+
+  const selectedInvoices = useMemo(() => {
+    return candidateInvoices.filter(inv => selectedIds.includes(inv.id));
+  }, [candidateInvoices, selectedIds]);
+
+  const selectedCount = selectedIds.length;
+
+  const { totalSelectedGross, txAbs, diff, displayCurrency, isExactMatch } = useMemo(() => {
+    const txCurrency = (transaction.currency || 'HUF').toUpperCase();
+    const allSameCurrency = selectedInvoices.every(
+      inv => (inv.penznem || 'HUF').toUpperCase() === txCurrency
+    );
+
+    const sumGross = selectedInvoices.reduce((sum, inv) => {
+      const amt = Math.abs(inv.brutto_vegosszeg || 0);
+      if (allSameCurrency) return sum + amt;
+      return sum + toHuf(amt, inv.penznem);
+    }, 0);
+
+    const txAbsolute = Math.abs(transactionAmount);
+    const txCompare = allSameCurrency ? txAbsolute : toHuf(txAbsolute, transaction.currency);
+    const cur = allSameCurrency ? txCurrency : 'HUF';
+
+    const difference = sumGross - txCompare;
+    const absDifference = Math.abs(difference);
+    const exact = absDifference < (allSameCurrency ? 0.01 : 1);
+
+    return {
+      totalSelectedGross: sumGross,
+      txAbs: txAbsolute,
+      diff: difference,
+      displayCurrency: cur,
+      isExactMatch: exact,
+    };
+  }, [selectedInvoices, transaction.currency, transactionAmount]);
 
   return (
     <>
@@ -149,29 +226,29 @@ export const ManualMatchSearchSection: React.FC<ManualMatchSearchSectionProps> =
           ) : (
             <div className="p-1.5 space-y-1">
               {candidateInvoices.map(invoice => {
-                const isSelected = selectedInvoiceId === invoice.id;
+                const isSelected = selectedIds.includes(invoice.id);
                 const invoiceAmt = invoice.brutto_vegosszeg || 0;
                 const txCurrency = (transaction.currency || 'HUF').toUpperCase();
                 const invCurrency = (invoice.penznem || 'HUF').toUpperCase();
                 const isSame = isSameCurrency(txCurrency, invCurrency);
 
-                const txAbs = Math.abs(transactionAmount);
+                const txAbsolute = Math.abs(transactionAmount);
                 let compareInvAmt: number;
                 let compareTxAmt: number;
                 let diffCurrency: string;
 
                 if (isSame) {
                   compareInvAmt = Math.abs(invoiceAmt);
-                  compareTxAmt = txAbs;
+                  compareTxAmt = txAbsolute;
                   diffCurrency = invCurrency;
                 } else {
                   compareInvAmt = toHuf(Math.abs(invoiceAmt), invoice.penznem);
-                  compareTxAmt = toHuf(txAbs, transaction.currency);
+                  compareTxAmt = toHuf(txAbsolute, transaction.currency);
                   diffCurrency = 'HUF';
                 }
 
-                const diff = compareInvAmt - compareTxAmt;
-                const absDiff = Math.abs(diff);
+                const singleDiff = compareInvAmt - compareTxAmt;
+                const absDiff = Math.abs(singleDiff);
                 const isExact = absDiff < (isSame ? 0.01 : 1);
                 const isNear = !isExact && compareTxAmt > 0 && absDiff < compareTxAmt * 0.05;
                 const pctDiff = compareTxAmt > 0 ? (absDiff / compareTxAmt) * 100 : 0;
@@ -192,21 +269,27 @@ export const ManualMatchSearchSection: React.FC<ManualMatchSearchSectionProps> =
                   <div
                     key={invoice.id}
                     className={cn(
-                      'rounded-md border p-2.5 cursor-pointer transition-all',
+                      'rounded-md border p-2.5 cursor-pointer transition-all flex items-start gap-2.5',
                       isSelected
                         ? 'border-primary bg-primary/10 ring-1 ring-primary/30'
                         : 'hover:bg-muted/40 hover:border-border',
                       isExact && !isSelected && 'border-emerald-500/40 bg-emerald-500/5',
                       isNear && !isSelected && 'border-amber-500/30 bg-amber-500/5'
                     )}
-                    onClick={() => setSelectedInvoiceId(invoice.id)}
+                    onClick={() => handleToggle(invoice.id)}
                   >
-                    <div className="flex justify-between items-start gap-2">
+                    <div className="pt-0.5" onClick={e => e.stopPropagation()}>
+                      <Checkbox
+                        id={`select-inv-${invoice.id}`}
+                        checked={isSelected}
+                        onCheckedChange={() => handleToggle(invoice.id)}
+                        aria-label={`Select ${invoice.bizonylatsorszam}`}
+                      />
+                    </div>
+
+                    <div className="flex-1 min-w-0 flex justify-between items-start gap-2">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
-                          {isSelected && (
-                            <CheckCircle2 className="h-3 w-3 text-primary shrink-0" />
-                          )}
                           <p className="font-medium font-mono text-xs truncate">
                             {invoice.bizonylatsorszam}
                           </p>
@@ -256,8 +339,8 @@ export const ManualMatchSearchSection: React.FC<ManualMatchSearchSectionProps> =
                           </Badge>
                         ) : (
                           <span className="text-[10px] text-muted-foreground/60 mt-0.5 block">
-                            {diff > 0 ? '+' : ''}
-                            {formatCurrency(diff, diffCurrency)}
+                            {singleDiff > 0 ? '+' : ''}
+                            {formatCurrency(singleDiff, diffCurrency)}
                           </span>
                         )}
                       </div>
@@ -270,7 +353,56 @@ export const ManualMatchSearchSection: React.FC<ManualMatchSearchSectionProps> =
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 pt-4 w-full mt-4 border-t border-border/40 bg-background sticky bottom-0">
+      {selectedCount > 1 && (
+        <div className="p-3 rounded-lg border border-primary/25 bg-primary/5 space-y-1.5 text-xs animate-in fade-in-50 duration-200">
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-foreground flex items-center gap-1.5">
+              <Layers className="h-3.5 w-3.5 text-primary" />
+              {t('transactions:dialogs.details.search.multi_selected_count', { count: selectedCount })}
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="font-mono font-bold text-foreground">
+                {formatCurrency(totalSelectedGross, displayCurrency)}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClear}
+                className="h-5 text-[10px] px-1.5 text-muted-foreground hover:text-foreground"
+              >
+                {t('transactions:dialogs.details.search.clear_selection', 'Kijelölés törlése')}
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1.5 border-t border-border/40">
+            <span>{t('transactions:dialogs.details.search.tx_amount_label', 'Tranzakció összege')}:</span>
+            <span className="font-mono font-medium">{formatCurrency(txAbs, transaction.currency || 'HUF')}</span>
+          </div>
+
+          <div className="flex items-center justify-between text-[11px]">
+            <span className="text-muted-foreground">
+              {diff > 0
+                ? t('transactions:dialogs.details.search.fee_difference_label', 'Levont jutalék / díj')
+                : t('transactions:dialogs.details.search.difference_label', 'Különbözet')}:
+            </span>
+            <span
+              className={cn(
+                'font-mono font-medium',
+                isExactMatch ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
+              )}
+            >
+              {isExactMatch ? (
+                t('transactions:dialogs.details.search.exact_match_label', '✓ Pontos összeg egyezés')
+              ) : (
+                `${diff > 0 ? '-' : '+'}${formatCurrency(Math.abs(diff), displayCurrency)}`
+              )}
+            </span>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-2 pt-3 w-full mt-2 border-t border-border/40 bg-background sticky bottom-0">
         {!isExtra && onMarkNoInvoice && onMarkInvoiceMissing && (
           <div className="flex items-center gap-2 w-full">
             <Button
@@ -305,7 +437,7 @@ export const ManualMatchSearchSection: React.FC<ManualMatchSearchSectionProps> =
         <div className="flex justify-end w-full">
           <Button
             size="sm"
-            disabled={!selectedInvoiceId || isSaving}
+            disabled={selectedCount === 0 || isSaving}
             onClick={onMatch}
             className="text-xs h-10 w-full"
           >
@@ -313,7 +445,11 @@ export const ManualMatchSearchSection: React.FC<ManualMatchSearchSectionProps> =
             {isSaving
               ? t('transactions:dialogs.details.search.saving')
               : isExtra
-              ? t('transactions:dialogs.details.search.btn_add_extra')
+              ? selectedCount > 1
+                ? t('transactions:dialogs.details.search.btn_add_multi_extra', { count: selectedCount })
+                : t('transactions:dialogs.details.search.btn_add_extra')
+              : selectedCount > 1
+              ? t('transactions:dialogs.details.search.btn_save_multi_match', { count: selectedCount })
               : t('transactions:dialogs.details.search.btn_save_match')}
           </Button>
         </div>

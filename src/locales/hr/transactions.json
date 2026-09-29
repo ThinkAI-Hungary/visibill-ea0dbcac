@@ -272,7 +272,17 @@
         "btn_invoice_missing": "Račun nije učitan",
         "btn_save_match": "Spremi povezivanje",
         "btn_add_extra": "Dodaj",
-        "saving": "Spremanje..."
+        "saving": "Spremanje...",
+        "multi_selected_count": "{{count}} računa odabrano",
+        "clear_selection": "Poništi odabir",
+        "tx_amount_label": "Iznos transakcije",
+        "fee_difference_label": "Odbijena provizija / naknada",
+        "difference_label": "Razlika",
+        "exact_match_label": "✓ Točno podudaranje iznosa",
+        "btn_save_multi_match": "Poveži {{count}} računa",
+        "btn_add_multi_extra": "Dodaj {{count}} računa",
+        "toast_multi_match_success": "{{count}} računa uspješno povezano s transakcijom!",
+        "toast_multi_extra_success": "{{count}} dodatnih računa uspješno dodano!"
       },
       "notes": {
         "title": "Povezane bilješke",
