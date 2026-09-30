@@ -494,7 +494,9 @@ export default function EmployeesPage() {
                 onPageSizeChange={setPageSize}
                 pageSizeOptions={[10, 20, 50]}
               />
-      </div>
+            </div>
+          )}
+        </div>
     </div>
   );
 }
