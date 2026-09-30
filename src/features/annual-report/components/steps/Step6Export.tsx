@@ -17,7 +17,6 @@ import {
   Unlock,
   RefreshCw,
   Info,
-  Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -539,7 +538,7 @@ export function Step6Export({
               events.push({
                 date: report.validated_at,
                 label: t('annual_report.step6.audit_trail.validated'),
-                icon: Shield,
+                icon: Shield as any,
                 color: 'text-amber-500 bg-amber-500/10',
               });
             if (report.status === 'finalized')

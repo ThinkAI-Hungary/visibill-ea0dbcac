@@ -3,7 +3,7 @@ export interface KnowledgeCategory {
   title: string;
   description: string | null;
   icon: string;
-  order_num: number;
+  order_num?: number;
   order_index?: number;
   created_at?: string;
   updated_at?: string;
@@ -20,7 +20,7 @@ export interface KnowledgeArticle {
   tags: string[];
   icon: string;
   estimated_read_time: string;
-  order_num: number;
+  order_num?: number;
   order_index?: number;
   is_published: boolean;
   created_at?: string;

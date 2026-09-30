@@ -143,7 +143,7 @@ function VatCodeDialog({ open, onOpenChange, code, formRows, onSave, saving }: {
             <div><Label>ÁFA %</Label><Input type="number" value={form.vat_percent} onChange={e => setForm(f => ({ ...f, vat_percent: +e.target.value }))} /></div>
             <div>
               <Label>Irány</Label>
-              <Select value={form.direction} onValueChange={v => setForm(f => ({ ...f, direction: v }))}>
+              <Select value={form.direction} onValueChange={v => setForm(f => ({ ...f, direction: v as any }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="OUTBOUND">Kimenő</SelectItem>

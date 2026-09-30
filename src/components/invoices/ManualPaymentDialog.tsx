@@ -55,7 +55,7 @@ export function ManualPaymentDialog({
       toast({
         title: t('invoices:dialogs.manual_payment.toast_success'),
         description: t('invoices:dialogs.manual_payment.toast_success_desc'),
-        variant: 'success',
+        variant: 'success' as any,
       });
 
       if (onSuccess) onSuccess();
