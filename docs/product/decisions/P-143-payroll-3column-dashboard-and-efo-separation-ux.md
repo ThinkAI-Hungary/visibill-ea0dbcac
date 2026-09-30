@@ -50,7 +50,7 @@ A bérszámfejtés főoldalát egy letisztult, 3 oszlopos responzív gridre szer
    - Kifejezett link a dolgozók listájára a `?type=efo` szűrővel.
 
 ### 2.2 120-napos Éves Keretfigyelő és Küszöbérték-Jelvények
-Az EFO munkavállalóknál a rendszer dinamikusan számolja az adott naptári évben regisztrált napok számát (a lokális jelenléti adatok és a NAV ÜPO M2M szinkronizált napok egyesítésével):
+Az EFO munkavállalóknál a rendszer dinamikusan számolja az adott naptári évben regisztrált napok számát (a lokális jelenléti adatok, a havi NAV 08 ÁNYK 0L import és a NAV ÜPO M2M szinkronizált napok egyesítésével):
 - **Normál tartomány (0 – 90 nap):** Letisztult szürke/zöld számláló badge (`bg-emerald-500/10 text-emerald-600`), biztonságos keret.
 - **Figyelmeztető sáv (91 – 119 nap):** Sárga/borostyán kiemelés (`bg-amber-500/15 text-amber-700 border-amber-300`) figyelmeztető háromszög ikonnal: *"Figyelem: A dolgozó megközelítette a 120 napos éves EFO korlátot!"*
 - **Kritikus túllépés (120+ nap):** Piros vészjelzés (`bg-rose-500/15 text-rose-700 border-rose-300 font-semibold`) tiltó ikonnal: *"Kritikus: A törvényi 120 napos EFO limit kimerült!"*
@@ -77,6 +77,8 @@ A funkcióhoz dedikált automatizált egységteszt csomag készült (`src/test/a
 
 ## 4. Kapcsolódó
 - [BDR 032: Bérszámfejtési Modul és eaisyBooks Integráció](../../business/decisions/032-payroll-module.md)
+- [PRD P-063: Bérszámfejtés Gyors Rekonstrukció és Dolgozói Tömeges Import UX](./P-063-payroll-bulk-import-and-reconstruction-ux.md)
+- [ADR A-081: NAV 08 XML Feldolgozás és Tömeges Bérszámfejtés Rekonstrukciós Motor](../../architecture/decisions/A-081-nav-08-payroll-reconstruction-and-bulk-import.md)
 - [ADR A-094: Bérszámfejtési Ciklus Végtelen Re-render Védelem és Kézi Jelenlét Perzisztencia](../../architecture/decisions/A-094-payroll-cycle-render-stability-and-attendance-persistence.md)
 - [ADR A-166: Magyar Társadalombiztosítási (TB) Adómotor és 2608 M-lap](../../architecture/decisions/A-166-tb-social-security-minimum-base-and-pensioner-payroll-engine.md)
 - [ADR A-174: Bérfeladás Idempotencia-védelem és Lezárt Ciklus Adatbiztonság](../../architecture/decisions/A-174-payroll-auto-poster-idempotency-and-closed-cycle-immutability.md)

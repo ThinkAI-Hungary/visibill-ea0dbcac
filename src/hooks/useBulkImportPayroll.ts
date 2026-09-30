@@ -185,22 +185,23 @@ export function useBulkImportPayroll() {
           );
 
           if (!matchingEmployment) {
-            const isEfo = emp.employmentType === 'efo_alkalmi';
+            const isEfo = Boolean(emp.isEfo || emp.employmentType === 'efo_alkalmi');
             const { data: newEmpl, error: insertEmplErr } = await supabase
               .from('accounty_employments')
               .insert({
                 employee_id: employeeId,
                 company_id: companyId,
-                job_code: emp.jobCode || '1101',
+                job_code: emp.jobCode || (isEfo ? '1138' : '1101'),
                 job_serial_number: localEmployments.filter(e => e.employee_id === employeeId).length + 1,
-                employment_type: emp.employmentType || 'munkaviszony',
+                employment_type: emp.employmentType || (isEfo ? 'efo_alkalmi' : 'munkaviszony'),
                 start_date: emp.startDate || new Date().toISOString().slice(0, 10),
                 end_date: isEfo ? (emp.endDate || null) : null,
                 weekly_hours: emp.weeklyHours || 40,
-                feor_code: emp.feorCode || null,
-                job_title: emp.jobTitle || null,
+                feor_code: emp.feorCode || (isEfo ? '9329' : null),
+                job_title: emp.jobTitle || (isEfo ? 'Egyszerűsített foglalkoztatott (EFO)' : null),
                 base_salary: emp.baseSalary || emp.grossSalary || null,
                 salary_type: 'monthly',
+                has_minimum_base: !isEfo,
                 is_insured: !isEfo,
                 status: 'active',
               })
@@ -210,6 +211,27 @@ export function useBulkImportPayroll() {
             if (insertEmplErr) throw insertEmplErr;
             if (newEmpl) localEmployments.push(newEmpl as any);
             employmentsCreated++;
+
+            // EFO dolgozók esetén az éves EFO keretnyilvántartásba (accounty_efo_entries) is beírjuk a napokat
+            if (isEfo && emp.taxId) {
+              const days = emp.efoDays || 0;
+              const targetYear = new Date(emp.startDate || Date.now()).getFullYear() || 2026;
+              await supabase.from('accounty_efo_entries').upsert({
+                company_id: companyId,
+                tax_id: emp.taxId,
+                name: `${emp.lastName} ${emp.firstName}`.trim(),
+                taj_number: emp.tajNumber || null,
+                target_year: targetYear,
+                days_alkalmi: emp.efoType === 'alkalmi' || !emp.efoType ? days : 0,
+                days_mezogazdasag: emp.efoType === 'mezogazdasag' ? days : 0,
+                days_turisztika: emp.efoType === 'turisztika' ? days : 0,
+                days_filmipar: emp.efoType === 'filmipar' ? days : 0,
+                days_total_used: days,
+                days_total_available: Math.max(0, 120 - days),
+                days_agri_available: 0,
+                last_sync_at: new Date().toISOString(),
+              }, { onConflict: 'company_id,tax_id,target_year' });
+            }
           }
         } catch (err: any) {
           errors.push(`${emp.lastName} ${emp.firstName}: ${err.message}`);
@@ -379,9 +401,11 @@ export function useBulkImportPayroll() {
 
             if (!matchedEmp) continue;
 
+            const isEfo = Boolean(emp.isEfo || emp.employmentType === 'efo_alkalmi');
+            const targetJobCode = emp.jobCode || (isEfo ? '1138' : '1101');
             const matchedEmployment = (allEmployments || []).find(
               empl => empl.employee_id === matchedEmp.id &&
-                      empl.job_code === (emp.jobCode || '1101') &&
+                      (empl.job_code === targetJobCode || (isEfo && empl.employment_type === 'efo_alkalmi')) &&
                       (empl.status === 'active' || !empl.status)
             ) || (allEmployments || []).find(
               empl => empl.employee_id === matchedEmp.id && (empl.status === 'active' || !empl.status)
@@ -423,6 +447,7 @@ export function useBulkImportPayroll() {
       queryClient.invalidateQueries({ queryKey: payrollQueryKeys.cycles(variables.companyId) });
       queryClient.invalidateQueries({ queryKey: payrollQueryKeys.employees(variables.companyId) });
       queryClient.invalidateQueries({ queryKey: payrollQueryKeys.companyEmployments(variables.companyId) });
+      queryClient.invalidateQueries({ queryKey: ['accounty-efo-entries', variables.companyId] });
       toast({
         title: 'Bérszámfejtés sikeresen rekonstruálva!',
         description: `${result.cyclesProcessed} havi ciklus és ${result.totalCalculationsCreated} dolgozói bérszámfejtési kalkuláció mentve.`,

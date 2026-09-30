@@ -167,7 +167,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-076 | Statutory Reporting & VAT Return Monolith Deepening, Pure Computation Engines & Feature Slices | ✅ Decided | [A-076](./A-076-statutory-reporting-and-vat-return-monolith-modularization.md) |
 | A-079 | Accounty ErrorBoundary Route-Scoped Reset és Client-Scoped Prompt Szabályok | ✅ Decided | [A-079](./A-079-accounty-errorboundary-route-reset-and-prompt-rules-scoping.md) |
 | A-080 | NAV ÁNYK 2665 ÁFA-Bevallás és 65M Összesítő Jelentés Szabványos XML Export | ✅ Decided | [A-080](./A-080-nav-anyk-vat-return-xml-standardization.md) |
-| A-081 | NAV 08 (2608/2508/2408) XML Feldolgozás és Tömeges Bérszámfejtés Rekonstrukciós Motor | ✅ Decided | [A-081](./A-081-nav-08-payroll-reconstruction-and-bulk-import.md) |
+| A-081 | NAV 08 (2608/2508/2408) XML Feldolgozás és Tömeges Bérszámfejtés Rekonstrukciós Motor (EFO & KIVA támogatással) | ✅ Decided | [A-081](./A-081-nav-08-payroll-reconstruction-and-bulk-import.md) |
 | A-082 | Részben Fizetett Számlák Státusz és Maradék Összeg Kezelése | ✅ Decided | [A-082](./A-082-partially-paid-invoices-status.md) |
 | A-083 | Rules of Hooks Invariáns Garantálása és Teszt-Telemetria Kiszivárgás Megelőzése | ✅ Decided | [A-083](./A-083-rules-of-hooks-invariance-and-test-telemetry-guard.md) |
 | A-084 | NAV Online Számla Cross-Check & Könyvelői Jóváhagyási Kapu (Approval Gate) | ✅ Decided | [A-084](./A-084-nav-crosscheck-approval-gate.md) |

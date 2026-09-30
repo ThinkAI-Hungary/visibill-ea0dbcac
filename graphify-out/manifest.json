@@ -3090,8 +3090,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790777735.0379922,
-    "ast_hash": "aa83bb6a58d317bbd6b6109ea989b7cd",
+    "mtime": 1790803378.9893544,
+    "ast_hash": "f45221ca98b231097c1320af5eb3c718",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3565,8 +3565,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1790777965.6747828,
-    "ast_hash": "728dde187d28a3e330cd1a48f00f15aa",
+    "mtime": 1790803397.7300782,
+    "ast_hash": "a3885395b1f3e775da78720d54e128cf",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -8200,18 +8200,18 @@
     "semantic_hash": ""
   },
   "src/hooks/useBulkImportPayroll.ts": {
-    "mtime": 1790701660.6435058,
-    "ast_hash": "9d89f13be09b114013c3b251a481f2cc",
+    "mtime": 1790802573.3106544,
+    "ast_hash": "e914611e1e340e48d4ba8b05363582f6",
     "semantic_hash": ""
   },
   "src/lib/payroll/nav08XmlParser.ts": {
-    "mtime": 1789104152.0356364,
-    "ast_hash": "3f004cfa6c5f574a8784b8325b8ba6ef",
+    "mtime": 1790802543.866111,
+    "ast_hash": "92607e9c16a1cccb71dffc2d9d4b4ee3",
     "semantic_hash": ""
   },
   "src/lib/payroll/payrollReconstructionEngine.ts": {
-    "mtime": 1789104166.306242,
-    "ast_hash": "ca302f13e1bc19ae1748011e086060c5",
+    "mtime": 1790802554.5682857,
+    "ast_hash": "4089968540307c71f85ce7e342239ace",
     "semantic_hash": ""
   },
   "src/test/payroll/nav08XmlParser.test.ts": {
@@ -8225,13 +8225,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-081-nav-08-payroll-reconstruction-and-bulk-import.md": {
-    "mtime": 1788476746.5165613,
-    "ast_hash": "280c6bb26a9e63d026362b3fc729716d",
+    "mtime": 1790803322.842114,
+    "ast_hash": "1fb79cd56920e403cdd03134470282c2",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-063-payroll-bulk-import-and-reconstruction-ux.md": {
-    "mtime": 1788476754.3167102,
-    "ast_hash": "6ac3f835e155bc042418c6135695fea2",
+    "mtime": 1790803346.480314,
+    "ast_hash": "996396b522c4e35531499a0769d156a6",
     "semantic_hash": ""
   },
   "src/test/computedStatus.test.ts": {
@@ -9955,8 +9955,8 @@
     "semantic_hash": ""
   },
   "src/lib/payroll/__tests__/nav08KivaAndEfoImport.test.ts": {
-    "mtime": 1789104068.729088,
-    "ast_hash": "250a2d90fcc4790d6a006880509c541e",
+    "mtime": 1790803104.168694,
+    "ast_hash": "7a5c87feb08863ca7de5fdc46b04af45",
     "semantic_hash": ""
   },
   "src/test/tickets/useMarkTicketRead.test.tsx": {
@@ -13515,8 +13515,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-143-payroll-3column-dashboard-and-efo-separation-ux.md": {
-    "mtime": 1790775646.1774895,
-    "ast_hash": "2e4f22f6c96afaf50d8bd36bc44719b8",
+    "mtime": 1790803371.1694047,
+    "ast_hash": "dc8d13d298464eadb97db8899afa2ee8",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-144-vat-a60-community-summary-and-vies-crosscheck-ux.md": {
@@ -13557,6 +13557,11 @@
   "session-summary/Jani/2026-09-30/summary-162800-gl-realtime-progress-and-error-fixes.md": {
     "mtime": 1790778521.6714413,
     "ast_hash": "149550d00fdda4fc056d47d36a972ffc",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-09-30/summary-224800-eb-0232-payroll-payslip-abc-sorting-and-employee-filter.md": {
+    "mtime": 1790801332.5989244,
+    "ast_hash": "ed2a90e32e90420f2738cd3c544744b3",
     "semantic_hash": ""
   }
 }

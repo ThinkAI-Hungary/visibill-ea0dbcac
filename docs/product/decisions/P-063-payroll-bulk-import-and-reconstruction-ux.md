@@ -29,6 +29,7 @@ Két kiegészítő felhasználói felületet alakítottunk ki:
      - Dinamikus oszlopillesztés: ékezet- és kis/nagybetű-függetlenül felismeri a magyar és angol oszlopneveket (Vezetéknév, Keresztnév, Születési dátum, TAJ-szám, Adóazonosító, Jogviszonykód, Belépés, FEOR, Heti óraszám, Alapbér).
   2. *NAV 08 (2608 / 2508 / 2408) ÁNYK XML:*
      - Kinyeri az M-lapokból (08M) a dolgozók személyi adatait, jogviszonyait és a számfejtési alapokat (valós ÁNYK `eazon` kódok támogatásával).
+     - **Egyszerűsített Foglalkoztatottak (EFO) és 0L lap támogatása:** Kifejezetten felismeri a 08M `0L` lapján (`0L0001D0700AA..0716FA`) szereplő alkalmi és idénymunkásokat. Automatikusan `efo_alkalmi` jogviszonyt képez le, kinyeri a ledolgozott napokat és a tételes EFO közterhet, és azonnal feltölti az `accounty_efo_entries` 120-napos keretnyilvántartást.
      - **Többhavi XML kötegelt támogatás:** A fájlválasztó (`input type="file" multiple`) és a dropzone egyszerre több havi fájlt is fogad. Ha a felhasználó 2 vagy több XML fájlt húz be egyszerre, a rendszer az `initialFiles` állapoton keresztül automatikusan megnyitja a `PayrollReconstructionDialog` kötegelt modált a kiválasztott fájlokkal azonnal feltöltve, elkerülve az ismételt fájlbehúzást.
      - **Közvetlen Rekonstrukciós Átjáró:** A NAV 08 fül fejlécében dedikált gomb ("Többhavi Rekonstrukció (Kötegelt)") biztosít azonnali átváltást a kötegelt időszaki feldolgozásra.
 - **Előnézeti Fázis (Preview):**
@@ -60,5 +61,6 @@ Két kiegészítő felhasználói felületet alakítottunk ki:
 ## 5. Kapcsolódó
 - [BRD 032: Payroll Modul](../../business/decisions/032-payroll-module.md)
 - [P-033: Bérszámfejtési Ciklus Workflow](./P-033-payroll-cycle.md)
+- [P-143: eaisyBooks Bérszámfejtés 3-oszlopos Elrendezés, EFO Szétválasztás és 120-napos Keretfigyelő UX](./P-143-payroll-3column-dashboard-and-efo-separation-ux.md)
 - [A-081: NAV 08 XML Feldolgozás és Tömeges Rekonstrukciós Motor](../../architecture/decisions/A-081-nav-08-payroll-reconstruction-and-bulk-import.md)
 

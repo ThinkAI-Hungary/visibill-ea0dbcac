@@ -52,6 +52,13 @@ export interface Parsed08Employee {
   valid: boolean;
   errors: string[];
   warnings: string[];
+
+  // EFO (Egyszerűsített foglalkoztatás)
+  isEfo?: boolean;
+  efoDays?: number;
+  efoWage?: number;
+  efoTax?: number;
+  efoType?: 'alkalmi' | 'mezogazdasag' | 'turisztika' | 'filmipar';
 }
 
 export interface Parsed08Document {
@@ -65,6 +72,8 @@ export interface Parsed08Document {
   totalTb: number;
   totalSzocho: number;
   totalNetSalary: number;
+  totalEfoTax?: number;
+  totalEfoDays?: number;
   employeeCount: number;
   employees: Parsed08Employee[];
   rawXml?: string;
@@ -79,11 +88,12 @@ export interface Parse08Options {
  * Egyszerűsített foglalkoztatás (EFO) jogviszony kódok ellenőrzése
  * ÁNYK 08 kódok: 81 (mezőgazdasági idénymunka), 82 (turisztikai idénymunka), 83 (alkalmi munka)
  * T1041 / eaisyBooks kódok: 1181, 1138, 1139, EFO
+ * ÁNYK 0L lap kódok: 05, 06, 07, 08
  */
 export function isEfoJobCode(code: string | null | undefined): boolean {
   if (!code) return false;
   const clean = code.trim().toUpperCase();
-  return ['81', '82', '83', '1181', '1138', '1139', 'EFO'].includes(clean);
+  return ['81', '82', '83', '1181', '1138', '1139', 'EFO', '05', '06', '07', '08'].includes(clean);
 }
 
 export function determineEmploymentType(jobCode: string): string {
@@ -91,6 +101,115 @@ export function determineEmploymentType(jobCode: string): string {
     return 'efo_alkalmi';
   }
   return 'munkaviszony';
+}
+
+export interface Parsed08EfoData {
+  isEfo: boolean;
+  jobCode: string;
+  employmentType: string;
+  efoDays: number;
+  efoWage: number;
+  efoTax: number;
+  efoType: 'alkalmi' | 'mezogazdasag' | 'turisztika' | 'filmipar';
+  startDate?: string;
+  endDate?: string;
+}
+
+/**
+ * Kinyeri a 08M 0L lapjáról az Egyszerűsített foglalkoztatás (EFO) adatait.
+ * Mezők:
+ * - 0L0001D0700AA..0715AA: alkalmazás minősége (06 = alkalmi, 05 = mezőgazdasági, 08 = turisztikai, 07 = filmipar)
+ * - 0L0001D0700BA..CA: időszak kezdete és vége (MMDD)
+ * - 0L0001D0700DA: ledolgozott napok száma
+ * - 0L0001D0700EA: kifizetett jövedelem / bér
+ * - 0L0001D0700FA: munkáltatói EFO közteher
+ * - 0L0001D0716EA, 0L0001D0716FA: havi összesítő sor
+ */
+export function extractEfoDataFrom08M(
+  fields: Map<string, string>,
+  year: number,
+  fallbackMonth: number
+): Parsed08EfoData | null {
+  let totalDays = 0;
+  let totalWage = 0;
+  let totalTax = 0;
+  let minStart = '';
+  let maxEnd = '';
+  let efoCode = '';
+  let foundEfo = false;
+
+  const totalWageField = parseNumber(fields.get('0L0001D0716EA'));
+  const totalTaxField = parseNumber(fields.get('0L0001D0716FA'));
+
+  for (let i = 0; i <= 15; i++) {
+    const rowSuffix = String(700 + i).padStart(4, '0');
+    const code = fields.get(`0L0001D${rowSuffix}AA`);
+    const startStr = fields.get(`0L0001D${rowSuffix}BA`);
+    const endStr = fields.get(`0L0001D${rowSuffix}CA`);
+    const days = parseNumber(fields.get(`0L0001D${rowSuffix}DA`));
+    const wage = parseNumber(fields.get(`0L0001D${rowSuffix}EA`));
+    const tax = parseNumber(fields.get(`0L0001D${rowSuffix}FA`));
+
+    if (code || startStr || endStr || days > 0 || wage > 0 || tax > 0) {
+      foundEfo = true;
+      if (code && !efoCode) efoCode = code;
+      totalDays += days;
+      totalWage += wage;
+      totalTax += tax;
+
+      if (startStr && (!minStart || startStr < minStart)) minStart = startStr;
+      if (endStr && (!maxEnd || endStr > maxEnd)) maxEnd = endStr;
+    }
+  }
+
+  if (!foundEfo && (totalWageField > 0 || totalTaxField > 0)) {
+    foundEfo = true;
+    totalWage = totalWageField;
+    totalTax = totalTaxField;
+  } else {
+    if (totalWageField > 0 && totalWage === 0) totalWage = totalWageField;
+    if (totalTaxField > 0 && totalTax === 0) totalTax = totalTaxField;
+  }
+
+  if (!foundEfo) return null;
+
+  const formatMmDd = (mmdd: string) => {
+    if (!mmdd || mmdd.length < 4) return undefined;
+    const m = mmdd.slice(0, 2);
+    const d = mmdd.slice(2, 4);
+    return `${year}-${m}-${d}`;
+  };
+
+  const startDate = minStart
+    ? formatMmDd(minStart)
+    : `${year}-${String(fallbackMonth).padStart(2, '0')}-01`;
+  const endDate = maxEnd ? formatMmDd(maxEnd) : undefined;
+
+  let efoType: 'alkalmi' | 'mezogazdasag' | 'turisztika' | 'filmipar' = 'alkalmi';
+  let jobCode = '1138';
+
+  if (efoCode === '05' || efoCode === '81') {
+    efoType = 'mezogazdasag';
+    jobCode = '81';
+  } else if (efoCode === '08' || efoCode === '82') {
+    efoType = 'turisztika';
+    jobCode = '82';
+  } else if (efoCode === '07') {
+    efoType = 'filmipar';
+    jobCode = '1139';
+  }
+
+  return {
+    isEfo: true,
+    jobCode,
+    employmentType: 'efo_alkalmi',
+    efoDays: totalDays,
+    efoWage: totalWage,
+    efoTax: totalTax,
+    efoType,
+    startDate,
+    endDate,
+  };
 }
 
 /**
@@ -574,20 +693,29 @@ function parseAnykXml(doc: Document, options?: Parse08Options): Parsed08Document
         if (!isNaN(m) && m >= 1 && m <= 12) month = m;
       }
 
-      // 3. Jogviszony adatok (08M 0F lap az ÁNYK-ban)
-      const rawJobCode = fields.get('0F0001C004A') ||
-                         fields.get('M0401') ||
-                         fields.get('JOGVISZONYKOD') ||
-                         fields.get('ALK_MIN') ||
-                         '1101';
+      const effectiveMonth = month > 0 ? month : (new Date().getMonth() + 1);
+
+      // 2.5 EFO (0L lap) adatok detektálása
+      const efoData = extractEfoDataFrom08M(fields, year, effectiveMonth);
+
+      // 3. Jogviszony adatok (08M 0F lap az ÁNYK-ban, vagy 0L lap EFO esetén)
+      let rawJobCode = fields.get('0F0001C004A') ||
+                       fields.get('M0401') ||
+                       fields.get('JOGVISZONYKOD') ||
+                       fields.get('ALK_MIN');
+      if (!rawJobCode && efoData) {
+        rawJobCode = efoData.jobCode;
+      } else if (!rawJobCode) {
+        rawJobCode = '1101';
+      }
+
       // ÁNYK 08 kód '20' = heti 36 órát elérő munkaviszony (T1041-ben 1101)
       const jobCode = rawJobCode === '20' ? '1101' : rawJobCode;
-      const employmentType = determineEmploymentType(jobCode);
+      const employmentType = efoData ? 'efo_alkalmi' : determineEmploymentType(jobCode);
 
-      const feorCode = fields.get('0F0001D0520AA') || fields.get('M0402') || fields.get('FEOR') || '';
+      const feorCode = fields.get('0F0001D0520AA') || fields.get('M0402') || fields.get('FEOR') || (efoData ? '9329' : '');
       const weeklyHours = parseNumber(fields.get('0F0001D0524AA') || fields.get('M0403') || fields.get('HETI_ORA') || 40);
-      const effectiveMonth = month > 0 ? month : (new Date().getMonth() + 1);
-      const startDate = normalizeDate(
+      const startDate = efoData?.startDate || normalizeDate(
         fields.get('0F0001C005A') ||
         fields.get('0F0001C001A') ||
         fields.get('0A0001E001A') ||
@@ -595,7 +723,7 @@ function parseAnykXml(doc: Document, options?: Parse08Options): Parsed08Document
         fields.get('BIZT_KEZDET') ||
         `${year}-${String(effectiveMonth).padStart(2, '0')}-01`
       );
-      const endDate = normalizeDate(
+      const endDate = efoData?.endDate || normalizeDate(
         fields.get('0F0001C002A') ||
         fields.get('0A0001E002A') ||
         fields.get('M0405') ||
@@ -603,7 +731,7 @@ function parseAnykXml(doc: Document, options?: Parse08Options): Parsed08Document
       ) || undefined;
 
       // 4. Jövedelmek és közterhek
-      const grossSalary = parseNumber(
+      let grossSalary = parseNumber(
         fields.get('0B0001D0270DA') ||
         fields.get('0B0001D0288DA') ||
         fields.get('0I0001D0626CA') ||
@@ -613,7 +741,13 @@ function parseAnykXml(doc: Document, options?: Parse08Options): Parsed08Document
         fields.get('M04_BER')
       );
 
-      const taxBase = parseNumber(
+      if (!grossSalary && efoData) {
+        grossSalary = efoData.efoWage;
+      }
+
+      const isEfoWorker = Boolean(efoData || isEfoJobCode(jobCode));
+
+      const taxBase = isEfoWorker ? 0 : parseNumber(
         fields.get('0C0001C0324BA') ||
         fields.get('0C0001C0325BA') ||
         fields.get('M0501') ||
@@ -621,7 +755,7 @@ function parseAnykXml(doc: Document, options?: Parse08Options): Parsed08Document
         grossSalary
       );
 
-      const szjaAmount = parseNumber(
+      const szjaAmount = isEfoWorker ? 0 : parseNumber(
         fields.get('0C0001D0330BA') ||
         fields.get('0C0001D0331BA') ||
         fields.get('M0502') ||
@@ -629,7 +763,7 @@ function parseAnykXml(doc: Document, options?: Parse08Options): Parsed08Document
         fields.get('SZJA')
       );
 
-      const tbBase = parseNumber(
+      const tbBase = isEfoWorker ? 0 : parseNumber(
         fields.get('0I0001D0626CA') ||
         fields.get('0I0001D0634CA') ||
         fields.get('M0601') ||
@@ -637,31 +771,31 @@ function parseAnykXml(doc: Document, options?: Parse08Options): Parsed08Document
         grossSalary
       );
 
-      let tbAmount = parseNumber(
+      let tbAmount = isEfoWorker ? 0 : parseNumber(
         fields.get('0I0001D0629CA') ||
         fields.get('0I0001D0633CA') ||
         fields.get('M0602') ||
         fields.get('LEVONT_TB') ||
         fields.get('TB')
       );
-      if (!tbAmount && grossSalary > 0) {
+      if (!tbAmount && grossSalary > 0 && !isEfoWorker) {
         // Törvényes 18,5% TB járulék kalkuláció ha nincs külön kitöltve
         tbAmount = Math.round(tbBase * 0.185);
       }
 
-      const szochoBase = options?.isKiva ? 0 : (parseNumber(
+      const szochoBase = (options?.isKiva || isEfoWorker) ? 0 : (parseNumber(
         fields.get('0I0001D0634CA') ||
         fields.get('M0701') ||
         fields.get('SZOCHO_ALAP') ||
         grossSalary
       ));
 
-      let szochoAmount = options?.isKiva ? 0 : parseNumber(
+      let szochoAmount = (options?.isKiva || isEfoWorker) ? 0 : parseNumber(
         fields.get('M0702') ||
         fields.get('SZOCHO_OSSZEG') ||
         fields.get('SZOCHO')
       );
-      if (options?.isKiva) {
+      if (options?.isKiva || isEfoWorker) {
         szochoAmount = 0;
       } else if (!szochoAmount && szochoBase > 0) {
         // 13% SZOCHO kalkuláció kizárólag normál (nem KIVA) adózóknál
@@ -676,7 +810,7 @@ function parseAnykXml(doc: Document, options?: Parse08Options): Parsed08Document
       );
 
       const totalDeductions = szjaAmount + tbAmount;
-      const netSalary = Math.max(0, grossSalary - totalDeductions);
+      const netSalary = isEfoWorker ? grossSalary : Math.max(0, grossSalary - totalDeductions);
 
       const errors: string[] = [];
       const warnings: string[] = [];
@@ -710,6 +844,11 @@ function parseAnykXml(doc: Document, options?: Parse08Options): Parsed08Document
         totalDeductions,
         familyCreditUsed: familyCredit,
         under25CreditUsed: under25Credit,
+        isEfo: isEfoWorker,
+        efoDays: efoData?.efoDays,
+        efoWage: efoData?.efoWage,
+        efoTax: efoData?.efoTax,
+        efoType: efoData?.efoType,
         valid: errors.length === 0,
         errors,
         warnings,
@@ -725,6 +864,8 @@ function parseAnykXml(doc: Document, options?: Parse08Options): Parsed08Document
   const totalTb = employees.reduce((s, e) => s + e.tbAmount, 0);
   const totalSzocho = employees.reduce((s, e) => s + e.szochoAmount, 0);
   const totalNet = employees.reduce((s, e) => s + e.netSalary, 0);
+  const totalEfoTax = employees.reduce((s, e) => s + (e.efoTax || 0), 0);
+  const totalEfoDays = employees.reduce((s, e) => s + (e.efoDays || 0), 0);
 
   return {
     companyName,
@@ -737,6 +878,8 @@ function parseAnykXml(doc: Document, options?: Parse08Options): Parsed08Document
     totalTb,
     totalSzocho,
     totalNetSalary: totalNet,
+    totalEfoTax,
+    totalEfoDays,
     employeeCount: employees.length,
     employees,
     parseErrors,

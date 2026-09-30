@@ -119,7 +119,7 @@
 | P-059 | eaisyBooks Kliens Regisztráció és Iroda Hozzárendelés UX | ✅ Decided | [P-059](./P-059-accounty-manual-client-onboarding-ux.md) |
 | P-060 | Modular UX for Statutory Reporting, VAT 2665 Calculator/Replica and Reusable Popover DatePicker | ✅ Decided | [P-060](./P-060-statutory-reporting-and-vat-return-modular-ux.md) |
 | P-062 | Könyvelési Szabályok (Prompt Library) Felület és Hibahatár UX | ✅ Decided | [P-062](./P-062-company-prompt-rules-library-and-error-boundary-ux.md) |
-| P-063 | Bérszámfejtés Gyors Rekonstrukció és Dolgozói Tömeges Import (Excel & NAV 08) UX | ✅ Decided | [P-063](./P-063-payroll-bulk-import-and-reconstruction-ux.md) |
+| P-063 | Bérszámfejtés Gyors Rekonstrukció és Dolgozói Tömeges Import (Excel & NAV 08 / EFO) UX | ✅ Decided | [P-063](./P-063-payroll-bulk-import-and-reconstruction-ux.md) |
 | P-072 | Bérszámfejtési Ciklus Jelenlét Kézi Rögzítés és Cafeteria UX Stabilitás | ✅ Decided | [P-072](./P-072-payroll-cycle-attendance-manual-entry-and-cafeteria-ux.md) |
 | P-073 | Egyéni Vállalkozói (EV) Könyvvitel & Pénztárkönyv Zárási Varázsló UX | ✅ Decided | [P-073](./P-073-ev-bookkeeping-and-cashbook-ux.md) |
 | P-074 | TAO és KIVA Tervező, Zárási Ellenőrzőlista és Adókalkulátor UX | ✅ Decided | [P-074](./P-074-tao-kiva-module-ux.md) |

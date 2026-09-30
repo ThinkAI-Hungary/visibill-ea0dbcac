@@ -116,15 +116,16 @@ export function preparePayrollCalculationRecord(
   parsed: Parsed08Employee,
   options?: { isKiva?: boolean }
 ) {
+  const isEfo = Boolean(parsed.isEfo || parsed.employmentType === 'efo_alkalmi');
   return {
     cycle_id: cycleId,
     employment_id: employmentId,
     gross_salary: parsed.grossSalary,
-    szja_base: parsed.taxBase,
-    szja_amount: parsed.szjaAmount,
-    tb_amount: parsed.tbAmount,
-    szocho_amount: options?.isKiva ? 0 : parsed.szochoAmount,
-    net_salary: parsed.netSalary,
+    szja_base: isEfo ? 0 : parsed.taxBase,
+    szja_amount: isEfo ? 0 : parsed.szjaAmount,
+    tb_amount: isEfo ? 0 : parsed.tbAmount,
+    szocho_amount: (options?.isKiva || isEfo) ? 0 : parsed.szochoAmount,
+    net_salary: isEfo ? parsed.grossSalary : parsed.netSalary,
     tax_credits: {
       family_credit: parsed.familyCreditUsed || 0,
       under25_credit: parsed.under25CreditUsed || 0,
@@ -132,17 +133,25 @@ export function preparePayrollCalculationRecord(
     },
     szocho_credits: {},
     deductions: {
-      szja: parsed.szjaAmount,
-      tb: parsed.tbAmount,
-      total: parsed.totalDeductions,
+      szja: isEfo ? 0 : parsed.szjaAmount,
+      tb: isEfo ? 0 : parsed.tbAmount,
+      total: isEfo ? 0 : parsed.totalDeductions,
     },
     cafeteria_tax: {},
+    min_base_diff: isEfo ? 0 : undefined,
+    min_base_employer_contribution: isEfo ? 0 : undefined,
+    insured_days: isEfo ? 0 : undefined,
     metadata: {
       employee_name: `${parsed.lastName} ${parsed.firstName}`.trim(),
       taj_number: parsed.tajNumber,
       tax_id: parsed.taxId,
       job_code: parsed.jobCode,
       feor_code: parsed.feorCode,
+      is_efo: isEfo,
+      efo_days: parsed.efoDays,
+      efo_wage: parsed.grossSalary,
+      efo_tax: parsed.efoTax,
+      efo_type: parsed.efoType,
       source: 'nav_08_import',
     },
   };
