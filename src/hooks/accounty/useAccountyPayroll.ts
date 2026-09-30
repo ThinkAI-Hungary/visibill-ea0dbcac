@@ -250,7 +250,7 @@ export function useAccountyDocuments(companyId: string, docType?: string) {
     queryFn: async (): Promise<AccountyDocument[]> => {
       let q = supabase.from('accounty_documents').select('*').eq('company_id', companyId);
       if (docType && docType !== 'all') q = q.eq('doc_type', docType);
-      const { data, error } = await q.order('created_at', { ascending: false });
+      const { data, error } = await q.order('title', { ascending: true });
       if (error) throw error;
       return (data || []).map(r => ({
         id: r.id, companyId: r.company_id, employeeId: r.employee_id,
@@ -274,6 +274,13 @@ export function useGenerateDocuments() {
       const { data: calculations } = await supabase.from('accounty_payroll_calculations').select('*, accounty_employments(employee_id)').eq('cycle_id', currentCycle.id);
       if (!calculations || calculations.length === 0) throw new Error('Nincsenek számfejtési adatok a legutóbbi ciklushoz.');
 
+      // Sort calculations alphabetically by employee name
+      const sortedCalculations = [...calculations].sort((a, b) => {
+        const nameA = ((a.metadata as any)?.employee_name as string) || '';
+        const nameB = ((b.metadata as any)?.employee_name as string) || '';
+        return nameA.localeCompare(nameB, 'hu', { sensitivity: 'base' });
+      });
+
       const typesToGenerate = docType === 'all' ? ['payslip', 'transfer', 'e-payslip', 'cash', 'garnishment', 'cafeteria', 'summary', 'certificate'] : [docType];
 
       const docs = [];
@@ -287,7 +294,7 @@ export function useGenerateDocuments() {
           if (t === 'certificate') title = 'Igazolások';
           docs.push({ company_id: companyId, employee_id: null, title: `${title} - ${period}`, doc_type: t, status: 'generated', period, generated_at: new Date().toISOString() });
         } else {
-          for (const calc of calculations) {
+          for (const calc of sortedCalculations) {
             const meta = calc.metadata as Record<string, unknown>;
             const empName = (meta?.employee_name as string) || 'Ismeretlen';
             const empId = (calc.accounty_employments as Record<string, unknown>)?.employee_id || meta?.employee_id;
@@ -308,7 +315,7 @@ export function useGenerateDocuments() {
 
       if (typesToGenerate.includes('transfer')) {
         await supabase.from('accounty_transfers').delete().eq('company_id', companyId).eq('period', period);
-        const transferRecords = calculations.map(calc => {
+        const transferRecords = sortedCalculations.map(calc => {
           const meta = calc.metadata as Record<string, unknown>;
           return { company_id: companyId, employee_id: (calc.accounty_employments as Record<string, unknown>)?.employee_id || meta?.employee_id || null, employee_name: (meta?.employee_name as string) || 'Ismeretlen', bank_account: (meta?.bank_account as string) || '', net_salary: calc.net_salary || 0, period, status: 'approved' };
         }).filter(t => t.net_salary > 0);

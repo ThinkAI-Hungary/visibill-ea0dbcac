@@ -1390,8 +1390,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/PayrollCyclePage.tsx": {
-    "mtime": 1790775646.2002904,
-    "ast_hash": "1306708b7b2da1bafaa43c01f448cee3",
+    "mtime": 1790800897.5137482,
+    "ast_hash": "b8372bc5262d3a342c984c9d09d0ab1e",
     "semantic_hash": ""
   },
   "src/pages/Accounty/PayrollDashboardPage.tsx": {
@@ -4160,8 +4160,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/documents/EPayslipPortalPage.tsx": {
-    "mtime": 1790168409.1912293,
-    "ast_hash": "e7fdd57b000095c80b75484b3cc4e443",
+    "mtime": 1790801036.5829427,
+    "ast_hash": "06218bd01b4118c9160874aaf088ef0b",
     "semantic_hash": ""
   },
   "src/pages/Accounty/documents/OutputDocumentsPage.tsx": {
@@ -4170,13 +4170,13 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/documents/PayslipGeneratorPage.tsx": {
-    "mtime": 1790168409.1918268,
-    "ast_hash": "c3e7c1ed71dc8f75e41f59672066c680",
+    "mtime": 1790800851.047462,
+    "ast_hash": "08deb3617aa481954582d575cdbc84b0",
     "semantic_hash": ""
   },
   "src/pages/Accounty/documents/TransferListPage.tsx": {
-    "mtime": 1790168409.1923494,
-    "ast_hash": "e02f72c09d9d71dc5899de427a652c10",
+    "mtime": 1790800981.8229973,
+    "ast_hash": "00333f432ae40970591e146557725e99",
     "semantic_hash": ""
   },
   "src/pages/Accounty/filings/Filing08EPage.tsx": {
@@ -4620,8 +4620,8 @@
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/PayrollStep8.tsx": {
-    "mtime": 1790514518.2250104,
-    "ast_hash": "68f5e5bec67c1b67486ea50850db144d",
+    "mtime": 1790800958.8580298,
+    "ast_hash": "3b1256311034ae0902bb45f7e5c172df",
     "semantic_hash": ""
   },
   "src/components/partners/PartnerInvoiceDetailDialog.tsx": {
@@ -4665,8 +4665,8 @@
     "semantic_hash": ""
   },
   "src/hooks/accounty/useAccountyPayroll.ts": {
-    "mtime": 1788212014.2230842,
-    "ast_hash": "26c36a25f10e1b43d8f88278b77829a5",
+    "mtime": 1790800973.2518792,
+    "ast_hash": "11e5a7f7acbd25559e413a68af60c730",
     "semantic_hash": ""
   },
   "src/hooks/accounty/useAccountyReports.ts": {
@@ -13552,6 +13552,11 @@
   "docs/product/decisions/P-147-gl-ai-categorization-realtime-progress-banner-ux.md": {
     "mtime": 1790777710.402321,
     "ast_hash": "e28005b2ba0243d1846946559ed32b23",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-09-30/summary-162800-gl-realtime-progress-and-error-fixes.md": {
+    "mtime": 1790778521.6714413,
+    "ast_hash": "149550d00fdda4fc056d47d36a972ffc",
     "semantic_hash": ""
   }
 }

@@ -31,7 +31,9 @@ export default function TransferListPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
 
-  const transferList = transfers || [];
+  const transferList = React.useMemo(() => {
+    return [...(transfers || [])].sort((a, b) => (a.employeeName || '').localeCompare(b.employeeName || '', 'hu', { sensitivity: 'base' }));
+  }, [transfers]);
   const totalItems = transferList.length;
   const totalPages = Math.ceil(totalItems / pageSize);
 

@@ -719,7 +719,9 @@ export default function PayrollCyclePage() {
   };
 
   const handlePrintAllPayslips = () => {
-    const dataList = calculations.map(calc => buildPayslipData(calc));
+    const dataList = calculations
+      .map(calc => buildPayslipData(calc))
+      .sort((a, b) => (a.employeeName || '').localeCompare(b.employeeName || '', 'hu', { sensitivity: 'base' }));
     printAllPayslips(dataList);
   };
 

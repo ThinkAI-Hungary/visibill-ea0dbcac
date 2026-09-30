@@ -2,9 +2,10 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   ArrowLeft, FileText, Send, Clock, CheckCircle, Eye, 
-  Mail, RefreshCw, Loader2, Database, Shield
+  Mail, RefreshCw, Loader2, Database, Shield, Search, X, ArrowUpDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { useAccountyDocuments, useAccountyClients, type AccountyDocument } from '@/hooks/accounty';
@@ -25,6 +26,8 @@ export default function EPayslipPortalPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewTitle, setPreviewTitle] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const { toast } = useToast();
@@ -42,13 +45,33 @@ export default function EPayslipPortalPage() {
   const { data: calculations = [] } = usePayrollCalculations(currentCycle?.id || '');
 
   const slips = docs || [];
-  const totalItems = slips.length;
+
+  const sortedAndFilteredSlips = useMemo(() => {
+    let result = [...slips];
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter(s => s.title.toLowerCase().includes(q));
+    }
+    result.sort((a, b) => {
+      const cleanA = a.title.replace(' - Bérjegyzék', '').replace(' - E-bérjegyzék', '').trim();
+      const cleanB = b.title.replace(' - Bérjegyzék', '').replace(' - E-bérjegyzék', '').trim();
+      const cmp = cleanA.localeCompare(cleanB, 'hu', { sensitivity: 'base' });
+      return sortOrder === 'asc' ? cmp : -cmp;
+    });
+    return result;
+  }, [slips, searchQuery, sortOrder]);
+
+  const totalItems = sortedAndFilteredSlips.length;
   const totalPages = Math.ceil(totalItems / pageSize);
 
   const paginatedSlips = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
-    return slips.slice(start, start + pageSize);
-  }, [slips, currentPage, pageSize]);
+    return sortedAndFilteredSlips.slice(start, start + pageSize);
+  }, [sortedAndFilteredSlips, currentPage, pageSize]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   const queryClient = useQueryClient();
 
@@ -61,8 +84,11 @@ export default function EPayslipPortalPage() {
   };
 
   const toggleAll = () => {
-    if (selectedIds.size === slips.length) setSelectedIds(new Set());
-    else setSelectedIds(new Set(slips.map(e => e.id)));
+    if (selectedIds.size === sortedAndFilteredSlips.length && sortedAndFilteredSlips.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(sortedAndFilteredSlips.map(e => e.id)));
+    }
   };
 
   const sentCount = slips.filter(e => e.status === 'sent').length;
@@ -163,13 +189,47 @@ export default function EPayslipPortalPage() {
           </div>
 
           <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
-            <div className="px-5 py-3 border-b border-border dark:bg-card/30">
-              <h2 className="text-sm font-bold text-foreground/90">Bérjegyzék hozzáférés státusz</h2>
+            <div className="px-5 py-3 border-b border-border dark:bg-card/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-foreground/90">
+                  Bérjegyzék hozzáférés státusz ({sortedAndFilteredSlips.length}{searchQuery ? ` / ${slips.length}` : ''} db)
+                </h2>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="relative w-full sm:w-64">
+                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Keresés dolgozó nevére..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="h-8 pl-8 pr-7 text-xs bg-background"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5"
+                      title="Keresés törlése"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                  className="h-8 text-xs gap-1 shrink-0"
+                  title={sortOrder === 'asc' ? 'Rendezés: A → Z (kattintásra Z → A)' : 'Rendezés: Z → A (kattintásra A → Z)'}
+                >
+                  <ArrowUpDown className="w-3 h-3 text-muted-foreground" />
+                  <span>{sortOrder === 'asc' ? 'A → Z' : 'Z → A'}</span>
+                </Button>
+              </div>
             </div>
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="px-5 py-2"><Checkbox checked={selectedIds.size === slips.length && slips.length > 0} onCheckedChange={toggleAll} /></th>
+                  <th className="px-5 py-2"><Checkbox checked={selectedIds.size === sortedAndFilteredSlips.length && sortedAndFilteredSlips.length > 0} onCheckedChange={toggleAll} /></th>
                   <th className="text-left px-3 py-2 text-xs font-bold text-muted-foreground">Dokumentum</th>
                   <th className="text-left px-3 py-2 text-xs font-bold text-muted-foreground">Időszak</th>
                   <th className="text-center px-3 py-2 text-xs font-bold text-muted-foreground">Státusz</th>
@@ -177,7 +237,14 @@ export default function EPayslipPortalPage() {
                 </tr>
               </thead>
               <tbody>
-                {paginatedSlips.map(slip => {
+                {paginatedSlips.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="p-8 text-center text-xs text-muted-foreground">
+                      Nincs a keresési feltételnek megfelelő bérjegyzék.
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedSlips.map(slip => {
                   const payslipData = getPayslipData(slip);
                   return (
                     <tr key={slip.id} className="border-b border-border/50 hover:bg-muted/50">
@@ -199,7 +266,8 @@ export default function EPayslipPortalPage() {
                       </td>
                     </tr>
                   );
-                })}
+                })
+              )}
               </tbody>
             </table>
             {totalPages > 1 && (

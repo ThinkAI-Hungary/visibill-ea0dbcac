@@ -1,6 +1,7 @@
 import React from 'react';
-import { Play, Printer, Loader2, CheckCircle2, RotateCcw, Clock } from 'lucide-react';
+import { Play, Printer, Loader2, CheckCircle2, RotateCcw, Clock, Search, X, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { resolveCompanyGlAccounts, saveCompanyPayrollGlMapping, type PayrollGlMapping } from '@/lib/payroll/payrollAutoPoster';
@@ -41,7 +42,24 @@ export default function PayrollStep8({
   const [glMapping, setGlMapping] = React.useState<PayrollGlMapping | null>(null);
   const [allGlAccounts, setAllGlAccounts] = React.useState<GlAccountRow[]>([]);
   const [isLoadingGl, setIsLoadingGl] = React.useState(true);
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
   const cafeteriaItems = propCafeteriaItems ?? localCafeteriaItems;
+
+  const sortedAndFilteredCalculations = React.useMemo(() => {
+    let list = [...calculations];
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter(c => getCalcName(c).toLowerCase().includes(q));
+    }
+    list.sort((a, b) => {
+      const nameA = getCalcName(a);
+      const nameB = getCalcName(b);
+      const cmp = nameA.localeCompare(nameB, 'hu', { sensitivity: 'base' });
+      return sortOrder === 'asc' ? cmp : -cmp;
+    });
+    return list;
+  }, [calculations, getCalcName, searchQuery, sortOrder]);
 
   React.useEffect(() => {
     if (!companyId) return;
@@ -228,6 +246,45 @@ export default function PayrollStep8({
             ))}
           </div>
 
+          {/* Detail table toolbar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase text-muted-foreground tracking-wider">
+                Munkavállalói bérbontás ({sortedAndFilteredCalculations.length}{searchQuery ? ` / ${calculations.length}` : ''} fő)
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="relative w-full sm:w-60">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Keresés dolgozó nevére..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="h-8 pl-8 pr-7 text-xs bg-background"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5"
+                    title="Keresés törlése"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                className="h-8 text-xs gap-1 shrink-0"
+                title={sortOrder === 'asc' ? 'Rendezés: A → Z (kattintásra Z → A)' : 'Rendezés: Z → A (kattintásra A → Z)'}
+              >
+                <ArrowUpDown className="w-3 h-3 text-muted-foreground" />
+                <span>{sortOrder === 'asc' ? 'A → Z' : 'Z → A'}</span>
+              </Button>
+            </div>
+          </div>
+
           {/* Detail table */}
           <div className="overflow-x-auto rounded-lg border border-border">
             <table className="w-full text-xs">
@@ -249,7 +306,14 @@ export default function PayrollStep8({
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
-                {calculations.map((calc) => {
+                {sortedAndFilteredCalculations.length === 0 ? (
+                  <tr>
+                    <td colSpan={totalServiceCharge > 0 ? 11 : 10} className="p-8 text-center text-xs text-muted-foreground">
+                      Nincs a keresési feltételnek megfelelő munkavállaló.
+                    </td>
+                  </tr>
+                ) : (
+                  sortedAndFilteredCalculations.map((calc) => {
                   const hoAmount = getHomeOffice(calc.employment_id);
                   const commuteAmount = getCommute(calc);
                   const bonusAmount = getBonus(calc.employment_id);
@@ -295,7 +359,8 @@ export default function PayrollStep8({
                       </td>
                     </tr>
                   );
-                })}
+                })
+              )}
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-border bg-muted/40/80 dark:bg-card/50 font-bold">
@@ -352,7 +417,7 @@ export default function PayrollStep8({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handlePrintAllPayslips ? handlePrintAllPayslips() : calculations.forEach(c => handlePrintPayslip(c))}
+                onClick={() => handlePrintAllPayslips ? handlePrintAllPayslips() : sortedAndFilteredCalculations.forEach(c => handlePrintPayslip(c))}
                 className="flex items-center gap-1.5"
               >
                 <Printer className="w-3.5 h-3.5" /> Összes bérjegyzék

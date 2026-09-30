@@ -2,9 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   ArrowLeft, FileText, Download, Printer, CheckCircle, Clock, Eye,
-  Languages, Stamp, RefreshCw, Loader2, Database
+  Languages, Stamp, RefreshCw, Loader2, Database, Search, X, ArrowUpDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useAccountyDocuments, useGenerateDocuments, useAccountyClients, type AccountyDocument } from '@/hooks/accounty';
 import { usePayrollCalculations, usePayrollCycles } from '@/hooks/usePayrollData';
@@ -21,6 +22,8 @@ export default function PayslipGeneratorPage() {
   const [avdh, setAvdh] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewTitle, setPreviewTitle] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const { toast } = useToast();
   const generateDocs = useGenerateDocuments();
 
@@ -41,6 +44,21 @@ export default function PayslipGeneratorPage() {
   const generatedCount = slips.filter(s => s.status === 'generated').length;
   const deadline = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 10);
   const daysUntil = Math.ceil((deadline.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+
+  const sortedAndFilteredSlips = useMemo(() => {
+    let result = [...slips];
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter(s => s.title.toLowerCase().includes(q));
+    }
+    result.sort((a, b) => {
+      const cleanA = a.title.replace(' - Bérjegyzék', '').replace(' - E-bérjegyzék', '').trim();
+      const cleanB = b.title.replace(' - Bérjegyzék', '').replace(' - E-bérjegyzék', '').trim();
+      const cmp = cleanA.localeCompare(cleanB, 'hu', { sensitivity: 'base' });
+      return sortOrder === 'asc' ? cmp : -cmp;
+    });
+    return result;
+  }, [slips, searchQuery, sortOrder]);
 
   // Build payslip data from calculation for a given document
   const getPayslipData = (slip: AccountyDocument): PayslipPdfData | null => {
@@ -152,12 +170,12 @@ export default function PayslipGeneratorPage() {
               {generateDocs.isPending ? 'Generálás...' : 'Mind generálása'}
             </Button>
             <Button variant="outline" className="w-full gap-1.5 text-sm" onClick={() => {
-              if (slips.length === 0) return;
+              if (sortedAndFilteredSlips.length === 0) return;
               exportPdf('berjegyzekek', {
                 title: 'Bérjegyzékek',
-                subtitle: 'Havi bérjegyzék lista',
+                subtitle: `Havi bérjegyzék lista${searchQuery.trim() ? ` (Szűrés: "${searchQuery}")` : ''}`,
                 headers: ['Dokumentum', 'Időszak', 'Státusz'],
-                rows: slips.map(s => [s.title, s.period, s.status === 'generated' ? 'Generálva' : s.status]),
+                rows: sortedAndFilteredSlips.map(s => [s.title, s.period, s.status === 'generated' ? 'Generálva' : s.status]),
               });
             }}><Download className="w-3.5 h-3.5" /> PDF letöltés</Button>
             <Button variant="outline" className="w-full gap-1.5 text-sm" onClick={() => window.print()}><Printer className="w-3.5 h-3.5" /> Nyomtatás</Button>
@@ -179,41 +197,81 @@ export default function PayslipGeneratorPage() {
         </div>
       ) : (
         <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
-          <div className="px-5 py-3 border-b border-border dark:bg-card/30 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-foreground/90">Bérjegyzékek ({slips.length} db)</h2>
-            <span className="text-xs text-emerald-600 font-bold">{generatedCount}/{slips.length} generálva</span>
+          <div className="px-5 py-3 border-b border-border dark:bg-card/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-bold text-foreground/90">
+                Bérjegyzékek ({sortedAndFilteredSlips.length}{searchQuery ? ` / ${slips.length}` : ''} db)
+              </h2>
+              <span className="text-xs text-emerald-600 font-bold">{generatedCount}/{slips.length} generálva</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="relative w-full sm:w-64">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Keresés dolgozó nevére..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="h-8 pl-8 pr-7 text-xs bg-background"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5"
+                    title="Keresés törlése"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                className="h-8 text-xs gap-1 shrink-0"
+                title={sortOrder === 'asc' ? 'Rendezés: A → Z (kattintásra Z → A)' : 'Rendezés: Z → A (kattintásra A → Z)'}
+              >
+                <ArrowUpDown className="w-3 h-3 text-muted-foreground" />
+                <span>{sortOrder === 'asc' ? 'A → Z' : 'Z → A'}</span>
+              </Button>
+            </div>
           </div>
           <div className="divide-y divide-border/50">
-            {slips.map(slip => {
-              const payslipData = getPayslipData(slip);
-              return (
-                <div key={slip.id} className="flex items-center gap-4 px-5 py-3 hover:bg-muted/50 transition-colors">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold">{slip.title}</p>
-                    <p className="text-xs text-muted-foreground">{slip.period}</p>
+            {sortedAndFilteredSlips.length === 0 ? (
+              <div className="p-8 text-center text-xs text-muted-foreground">
+                Nincs a keresési feltételnek megfelelő bérjegyzék.
+              </div>
+            ) : (
+              sortedAndFilteredSlips.map(slip => {
+                const payslipData = getPayslipData(slip);
+                return (
+                  <div key={slip.id} className="flex items-center gap-4 px-5 py-3 hover:bg-muted/50 transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold">{slip.title}</p>
+                      <p className="text-xs text-muted-foreground">{slip.period}</p>
+                    </div>
+                    <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold',
+                      slip.status === 'generated' ? 'bg-emerald-100 text-emerald-700' :
+                      slip.status === 'pending' ? 'bg-muted text-muted-foreground' :
+                      'bg-blue-100 text-blue-700'
+                    )}>
+                      {slip.status === 'generated' ? 'Generálva' : slip.status === 'pending' ? 'Várakozik' : slip.status}
+                    </span>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Megtekintés" onClick={async () => {
+                        if (!payslipData) return;
+                        setPreviewTitle(slip.title);
+                        const url = await getPayslipPreviewUrl(payslipData);
+                        setPreviewUrl(url);
+                      }}><Eye className="w-3 h-3" /></Button>
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Letöltés" onClick={async () => {
+                        if (!payslipData) return;
+                        await downloadPayslipPdf(`berjegyzek_${slip.id}`, payslipData);
+                      }}><Download className="w-3 h-3" /></Button>
+                    </div>
                   </div>
-                  <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold',
-                    slip.status === 'generated' ? 'bg-emerald-100 text-emerald-700' :
-                    slip.status === 'pending' ? 'bg-muted text-muted-foreground' :
-                    'bg-blue-100 text-blue-700'
-                  )}>
-                    {slip.status === 'generated' ? 'Generálva' : slip.status === 'pending' ? 'Várakozik' : slip.status}
-                  </span>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Megtekintés" onClick={async () => {
-                      if (!payslipData) return;
-                      setPreviewTitle(slip.title);
-                      const url = await getPayslipPreviewUrl(payslipData);
-                      setPreviewUrl(url);
-                    }}><Eye className="w-3 h-3" /></Button>
-                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Letöltés" onClick={async () => {
-                      if (!payslipData) return;
-                      await downloadPayslipPdf(`berjegyzek_${slip.id}`, payslipData);
-                    }}><Download className="w-3 h-3" /></Button>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
       )}
