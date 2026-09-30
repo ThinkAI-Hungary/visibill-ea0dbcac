@@ -127,6 +127,171 @@ describe('VatEngine', () => {
       expect(result.taxErrors).toHaveLength(0);
       expect(result.isValid).toBe(true);
     });
+
+    it('accurately calculates 4 statutory categories: goodsOut (02), goodsIn (11-16), servicesOut (91-92), servicesIn (18)', () => {
+      const euInvoices = [
+        // 1. Termékértékesítés -> 02. sor
+        {
+          id: 'inv-out-goods',
+          invoice_number: 'EXP-001',
+          invoice_direction: 'OUTBOUND',
+          partner_name: 'German Client GmbH',
+          partner_tax_number: 'DE123456789',
+          invoice_net_amount: 2500,
+          currency: 'EUR',
+          defaultIsService: false,
+        },
+        // 2. Szolgáltatásnyújtás -> 91-92. sor
+        {
+          id: 'inv-out-svc',
+          invoice_number: 'SVC-001',
+          invoice_direction: 'OUTBOUND',
+          partner_name: 'Austrian Partner AG',
+          partner_tax_number: 'ATU99999999',
+          invoice_net_amount: 1000,
+          currency: 'EUR',
+          defaultIsService: true,
+        },
+        // 3. Termékbeszerzés -> 11-16. sor
+        {
+          id: 'inv-in-goods',
+          invoice_number: 'IMP-001',
+          invoice_direction: 'INBOUND',
+          partner_name: 'Polish Supplier Sp.',
+          partner_tax_number: 'PL1234567890',
+          invoice_net_amount: 500,
+          currency: 'EUR',
+          defaultIsService: false,
+        },
+        // 4. Szolgáltatás igénybevétele (Google Ireland) -> 18. sor
+        {
+          id: 'inv-in-google',
+          invoice_number: 'GCP-001',
+          invoice_direction: 'INBOUND',
+          partner_name: 'Google Ireland Limited',
+          partner_tax_number: 'IE6388047V',
+          invoice_net_amount: 300,
+          currency: 'EUR',
+          defaultIsService: true,
+        },
+      ];
+
+      const rates = { EUR: 400 };
+      // 2500 EUR * 400 = 1 000 000 HUF = 1000 eFt goodsOut (02. sor)
+      // 1000 EUR * 400 = 400 000 HUF = 400 eFt servicesOut (91-92. sor)
+      // 500 EUR * 400 = 200 000 HUF = 200 eFt goodsIn (11-16. sor)
+      // 300 EUR * 400 = 120 000 HUF = 120 eFt servicesIn (18. sor)
+
+      const result = calculateA60Aggregations(
+        euInvoices,
+        {},
+        {
+          goodsOut: 1000,
+          goodsIn: 200,
+          servicesOut: 400,
+          servicesIn: 120,
+        },
+        0,
+        rates
+      );
+
+      expect(result.goodsOutSum).toBe(1000);
+      expect(result.expectedGoodsOut).toBe(1000);
+      expect(result.goodsOutMismatch).toBe(false);
+
+      expect(result.goodsInSum).toBe(200);
+      expect(result.expectedGoodsIn).toBe(200);
+      expect(result.goodsInMismatch).toBe(false);
+
+      expect(result.servicesOutSum).toBe(400);
+      expect(result.expectedServicesOut).toBe(400);
+      expect(result.servicesOutMismatch).toBe(false);
+
+      expect(result.servicesInSum).toBe(120);
+      expect(result.expectedServicesIn).toBe(120);
+      expect(result.servicesInMismatch).toBe(false);
+
+      expect(result.taxErrors).toHaveLength(0);
+      expect(result.isValid).toBe(true);
+      expect(result.itemsList).toHaveLength(4);
+
+      // Verify categories
+      expect(result.itemsList.find((i) => i.id === 'inv-out-goods')?.category).toBe('goods_out');
+      expect(result.itemsList.find((i) => i.id === 'inv-out-svc')?.category).toBe('services_out');
+      expect(result.itemsList.find((i) => i.id === 'inv-in-goods')?.category).toBe('goods_in');
+      expect(result.itemsList.find((i) => i.id === 'inv-in-google')?.category).toBe('services_in');
+    });
+
+    it('handles full-year multi-vendor community service aggregation with rounded matching', () => {
+      const annualEuInvoices = [
+        {
+          id: 'inv-1',
+          invoice_number: '5474596523',
+          invoice_direction: 'INBOUND' as const,
+          partner_name: 'Google Cloud EMEA Limited',
+          partner_tax_number: 'IE3668997OH',
+          country_code: 'IE',
+          invoice_delivery_date: '2026-01-31',
+          invoice_net_amount: 48.6,
+          currency: 'EUR',
+          defaultIsService: true,
+          source_table: 'invoices' as const,
+        },
+        {
+          id: 'inv-2',
+          invoice_number: '3FTSDM4M0003',
+          invoice_direction: 'INBOUND' as const,
+          partner_name: 'Anthropic, PBC',
+          partner_tax_number: 'IE4276970QH',
+          country_code: 'IE',
+          invoice_delivery_date: '2026-05-24',
+          invoice_net_amount: 18,
+          currency: 'EUR',
+          defaultIsService: true,
+          source_table: 'invoices' as const,
+        },
+        {
+          id: 'inv-3',
+          invoice_number: '93093189',
+          invoice_direction: 'INBOUND' as const,
+          partner_name: 'Zoho Corporation B.V.',
+          partner_tax_number: 'NL855264263B01',
+          country_code: 'NL',
+          invoice_delivery_date: '2026-09-01',
+          invoice_net_amount: 45,
+          currency: 'EUR',
+          defaultIsService: true,
+          source_table: 'invoices' as const,
+        },
+      ];
+
+      const rates = { EUR: 400 };
+      // Per-invoice eFt rounding:
+      // inv-1: 48.6 * 400 = 19,440 HUF -> 19 eFt
+      // inv-2: 18 * 400 = 7,200 HUF -> 7 eFt
+      // inv-3: 45 * 400 = 18,000 HUF -> 18 eFt
+      // Total = 19 + 7 + 18 = 44 eFt
+      const expectedServicesInEft = 44;
+
+      const result = calculateA60Aggregations(
+        annualEuInvoices,
+        {},
+        {
+          goodsOut: 0,
+          goodsIn: 0,
+          servicesOut: 0,
+          servicesIn: expectedServicesInEft,
+        },
+        0,
+        rates
+      );
+
+      expect(result.servicesInSum).toBe(expectedServicesInEft);
+      expect(result.expectedServicesIn).toBe(expectedServicesInEft);
+      expect(result.servicesInMismatch).toBe(false);
+      expect(result.isValid).toBe(true);
+      expect(result.itemsList).toHaveLength(3);
+    });
   });
 
   describe('calculateDeadlineCountdown', () => {

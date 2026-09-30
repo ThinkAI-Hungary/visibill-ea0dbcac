@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
   Users, UserPlus, Search, Filter, ChevronRight, ArrowLeft,
   Download, Upload, MoreVertical, Mail, Phone, Building2, Shield,
@@ -9,7 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { usePayrollEmployees } from '@/hooks/usePayrollData';
+import {
+  usePayrollEmployees,
+  useCompanyEmployments,
+  useCompanyEfoEntries,
+  type PayrollEmployee
+} from '@/hooks/usePayrollData';
 import { formatTajNumber } from '@/lib/payroll/validators';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -29,20 +34,34 @@ import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { SzochoAdvisor } from '@/components/accounty/payroll/SzochoAdvisor';
 
 export default function EmployeesPage() {
-  const { companyId } = useParams<{ companyId: string }>();
+  const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
+  const effectiveDateRange = dateRange || 'this-year';
   const navigate = useNavigate();
+
+  const typeParam = searchParams.get('type');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'regular' | 'efo'>(
+    typeParam === 'regular' || typeParam === 'efo' ? typeParam : 'all'
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // Sync type filter when URL param changes
+  useEffect(() => {
+    if (typeParam === 'regular' || typeParam === 'efo') {
+      setTypeFilter(typeParam);
+    }
+  }, [typeParam]);
+
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, statusFilter]);
-
-
+  }, [searchQuery, statusFilter, typeFilter]);
 
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -62,12 +81,42 @@ export default function EmployeesPage() {
     }
   };
 
-  const { data: employees = [], isLoading, isError, refetch } = usePayrollEmployees(companyId || '');
+  const { data: employees = [], isLoading: empLoading, isError: empError, refetch } = usePayrollEmployees(companyId || '');
+  const { data: employments = [] } = useCompanyEmployments(companyId || '');
+  const { data: efoEntries = [] } = useCompanyEfoEntries(companyId || '');
   const { data: clients } = useAccountyClients();
   const company = useMemo(() => clients?.find(c => c.id === companyId), [clients, companyId]);
 
+  // ── EFO Identification Helper ──
+  const efoCodes = useMemo(() => ['81', '82', '83', '1181', '1138', '1139', 'efo', 'efo_alkalmi'], []);
+
+  const isEmployeeEfo = useCallback((emp: PayrollEmployee): boolean => {
+    const empJobs = employments.filter(e => e.employee_id === emp.id);
+    const hasEfoJob = empJobs.some(j => {
+      const t = (j.employment_type || '').toLowerCase();
+      const c = (j.job_code || '').trim().toLowerCase();
+      return efoCodes.includes(t) || efoCodes.includes(c) || t.includes('efo');
+    });
+    if (hasEfoJob) return true;
+
+    return efoEntries.some(efo =>
+      (emp.tax_id && efo.tax_id === emp.tax_id) ||
+      (emp.taj_number && efo.taj_number && efo.taj_number === emp.taj_number)
+    );
+  }, [employments, efoEntries, efoCodes]);
+
+  const regularEmployeesCount = useMemo(() => employees.filter(e => !isEmployeeEfo(e)).length, [employees, isEmployeeEfo]);
+  const efoEmployeesCount = useMemo(() => employees.filter(e => isEmployeeEfo(e)).length, [employees, isEmployeeEfo]);
+
   const filtered = useMemo(() => {
     let result = employees;
+
+    // Filter by type: regular vs EFO
+    if (typeFilter === 'regular') {
+      result = result.filter(e => !isEmployeeEfo(e));
+    } else if (typeFilter === 'efo') {
+      result = result.filter(e => isEmployeeEfo(e));
+    }
 
     if (statusFilter !== 'all') {
       result = result.filter(e => e.status === statusFilter);
@@ -84,7 +133,7 @@ export default function EmployeesPage() {
     }
 
     return result;
-  }, [employees, searchQuery, statusFilter]);
+  }, [employees, searchQuery, statusFilter, typeFilter, isEmployeeEfo]);
 
   const totalItems = filtered.length;
   const totalPages = Math.ceil(totalItems / pageSize);
@@ -94,13 +143,22 @@ export default function EmployeesPage() {
     return filtered.slice(start, start + pageSize);
   }, [filtered, currentPage, pageSize]);
 
-  const statusCounts = useMemo(() => ({
-    all: employees.length,
-    active: employees.filter(e => e.status === 'active').length,
-    pending: employees.filter(e => e.status === 'pending').length,
-    terminated: employees.filter(e => e.status === 'terminated').length,
-    suspended: employees.filter(e => e.status === 'suspended').length,
-  }), [employees]);
+  const statusCounts = useMemo(() => {
+    // Counts within current type filter
+    const base = typeFilter === 'regular'
+      ? employees.filter(e => !isEmployeeEfo(e))
+      : typeFilter === 'efo'
+      ? employees.filter(e => isEmployeeEfo(e))
+      : employees;
+
+    return {
+      all: base.length,
+      active: base.filter(e => e.status === 'active').length,
+      pending: base.filter(e => e.status === 'pending').length,
+      terminated: base.filter(e => e.status === 'terminated').length,
+      suspended: base.filter(e => e.status === 'suspended').length,
+    };
+  }, [employees, typeFilter, isEmployeeEfo]);
 
   const statusLabels: Record<string, string> = {
     active: 'Aktív',
@@ -116,11 +174,11 @@ export default function EmployeesPage() {
     suspended: 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400',
   };
 
-  if (isError) {
+  if (empError) {
     return <AccountyErrorState message="Nem sikerült betölteni a foglalkoztatottak listáját." onRetry={() => refetch()} />;
   }
 
-  if (isLoading) {
+  if (empLoading) {
     return (
       <div className="w-full space-y-6 page-animate">
         <div className="flex items-center gap-3">
@@ -167,18 +225,16 @@ export default function EmployeesPage() {
               }}
             >
               <Download className="w-4 h-4" />
-              Export CSV
-            </Button>
-            <Button
+              Expor            <Button
               variant="outline"
               className="flex items-center gap-2 text-sm"
-              onClick={() => navigate(`/eaisybooks/payroll/${companyId}/employees/import`)}
+              onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/import`)}
             >
               <Upload className="w-4 h-4" />
               Excel importálás
             </Button>
             <Button
-              onClick={() => navigate(`/eaisybooks/payroll/${companyId}/employees/new`)}
+              onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/new`)}
               className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2"
             >
               <UserPlus className="w-4 h-4" />
@@ -190,22 +246,85 @@ export default function EmployeesPage() {
 
       <SzochoAdvisor companyId={companyId || ''} />
 
-      {/* Status tabs */}
-      <div className="flex items-center gap-1 bg-muted/80 dark:bg-card/80 p-1 rounded-lg border border-border/60">
-        {(['all', 'active', 'pending', 'terminated', 'suspended'] as const).map((s) => (
+      {/* Type & Status filter bar */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+        {/* Type tabs (Mind / Állandó / EFO) */}
+        <div className="flex items-center gap-1 bg-muted/60 dark:bg-card/60 p-1 rounded-lg border border-border/60">
           <button
-            key={s}
-            onClick={() => setStatusFilter(s)}
+            onClick={() => {
+              setTypeFilter('all');
+              setSearchParams(prev => {
+                const next = new URLSearchParams(prev);
+                next.delete('type');
+                return next;
+              });
+            }}
             className={cn(
-              'flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-200',
-              statusFilter === s
-                ? 'bg-card text-foreground shadow-soft'
-                : 'text-muted-foreground hover:text-foreground/90'
+              'px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-200 flex items-center gap-1.5',
+              typeFilter === 'all'
+                ? 'bg-card text-foreground shadow-xs'
+                : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            {s === 'all' ? 'Mind' : statusLabels[s]} ({statusCounts[s]})
+            <Users className="w-3.5 h-3.5" />
+            Mind ({employees.length})
           </button>
-        ))}
+          <button
+            onClick={() => {
+              setTypeFilter('regular');
+              setSearchParams(prev => {
+                const next = new URLSearchParams(prev);
+                next.set('type', 'regular');
+                return next;
+              });
+            }}
+            className={cn(
+              'px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-200 flex items-center gap-1.5',
+              typeFilter === 'regular'
+                ? 'bg-card text-teal-600 dark:text-teal-400 shadow-xs font-bold'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            Állandó ({regularEmployeesCount})
+          </button>
+          <button
+            onClick={() => {
+              setTypeFilter('efo');
+              setSearchParams(prev => {
+                const next = new URLSearchParams(prev);
+                next.set('type', 'efo');
+                return next;
+              });
+            }}
+            className={cn(
+              'px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-200 flex items-center gap-1.5',
+              typeFilter === 'efo'
+                ? 'bg-card text-amber-600 dark:text-amber-400 shadow-xs font-bold'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <Briefcase className="w-3.5 h-3.5" />
+            EFO ({efoEmployeesCount})
+          </button>
+        </div>
+
+        {/* Status tabs */}
+        <div className="flex items-center gap-1 bg-muted/80 dark:bg-card/80 p-1 rounded-lg border border-border/60 overflow-x-auto">
+          {(['all', 'active', 'pending', 'terminated', 'suspended'] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
+              className={cn(
+                'px-2.5 py-1.5 rounded-md text-xs font-medium transition-all duration-200 whitespace-nowrap',
+                statusFilter === s
+                  ? 'bg-card text-foreground shadow-soft font-semibold'
+                  : 'text-muted-foreground hover:text-foreground/90'
+              )}
+            >
+              {s === 'all' ? 'Összes státusz' : statusLabels[s]} ({statusCounts[s]})
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Search */}
@@ -231,7 +350,7 @@ export default function EmployeesPage() {
             </p>
             {employees.length === 0 && (
               <Button
-                onClick={() => navigate(`/eaisybooks/payroll/${companyId}/employees/new`)}
+                onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/new`)}
                 className="mt-4 bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 <UserPlus className="w-4 h-4 mr-2" />
@@ -246,6 +365,7 @@ export default function EmployeesPage() {
               <TableHeader>
                 <TableRow className="border-b border-border bg-muted/40 hover:bg-muted/40">
                   <TableHead className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Név</TableHead>
+                  <TableHead className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Típus</TableHead>
                   <TableHead className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">TAJ-szám</TableHead>
                   <TableHead className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Adóazonosító</TableHead>
                   <TableHead className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Elérhetőség</TableHead>
@@ -254,90 +374,109 @@ export default function EmployeesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody className="divide-y divide-border/50">
-                {paginatedEmployees.map((emp) => (
-                  <TableRow
-                    key={emp.id}
-                    onClick={() => navigate(`/eaisybooks/payroll/${companyId}/employees/${emp.id}`)}
-                    className="hover:bg-muted/40 cursor-pointer transition-colors group border-l-2 border-l-transparent hover:border-l-primary"
-                  >
-                    <TableCell className="px-5 py-3.5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary shrink-0">
-                          {emp.last_name[0]}{emp.first_name[0]}
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-foreground">
-                            {emp.last_name} {emp.first_name}
-                          </p>
-                          {emp.birth_name && emp.birth_name !== `${emp.last_name} ${emp.first_name}` && (
-                            <p className="text-[11px] text-muted-foreground">
-                              Szül.: {emp.birth_name}
+                {paginatedEmployees.map((emp) => {
+                  const empIsEfo = isEmployeeEfo(emp);
+                  return (
+                    <TableRow
+                      key={emp.id}
+                      onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/${emp.id}`)}
+                      className="hover:bg-muted/40 cursor-pointer transition-colors group border-l-2 border-l-transparent hover:border-l-primary"
+                    >
+                      <TableCell className="px-5 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            "w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
+                            empIsEfo
+                              ? "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-500/20"
+                              : "bg-primary/10 text-primary"
+                          )}>
+                            {emp.last_name[0]}{emp.first_name[0]}
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">
+                              {emp.last_name} {emp.first_name}
                             </p>
-                          )}
+                            {emp.birth_name && emp.birth_name !== `${emp.last_name} ${emp.first_name}` && (
+                              <p className="text-[11px] text-muted-foreground">
+                                Szül.: {emp.birth_name}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="px-5 py-3.5 text-sm text-foreground/90 font-mono tabular-nums">
-                      {emp.taj_number ? formatTajNumber(emp.taj_number) : <span className="text-muted-foreground">–</span>}
-                    </TableCell>
-                    <TableCell className="px-5 py-3.5 text-sm text-foreground/90 font-mono tabular-nums">
-                      {emp.tax_id || <span className="text-muted-foreground">–</span>}
-                    </TableCell>
-                    <TableCell className="px-5 py-3.5">
-                      <div className="flex items-center gap-3">
-                        {emp.email && (
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Mail className="w-3 h-3" /> {emp.email}
+                      </TableCell>
+                      <TableCell className="px-5 py-3.5">
+                        {empIsEfo ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                            EFO alkalmi
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300">
+                            Állandó
                           </span>
                         )}
-                        {emp.phone && (
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Phone className="w-3 h-3" /> {emp.phone}
-                          </span>
-                        )}
-                        {!emp.email && !emp.phone && <span className="text-xs text-muted-foreground">–</span>}
-                      </div>
-                    </TableCell>
-                    <TableCell className="px-5 py-3.5">
-                      <span className={cn(
-                        'px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider',
-                        statusColors[emp.status] || statusColors.active
-                      )}>
-                        {statusLabels[emp.status] || emp.status}
-                      </span>
-                    </TableCell>
-                    <TableCell className="px-5 py-3.5">
-                      <div className="flex items-center gap-1.5 justify-end">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          title="Kilépő dokumentumok"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/eaisybooks/payroll/${companyId}/employees/${emp.id}/exit-docs`);
-                          }}
-                          className={cn(
-                            "text-xs h-7 px-2 transition-all",
-                            emp.status === 'terminated'
-                              ? "text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 opacity-100 font-semibold"
-                              : "text-muted-foreground hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 opacity-0 group-hover:opacity-100"
+                      </TableCell>
+                      <TableCell className="px-5 py-3.5 text-sm text-foreground/90 font-mono tabular-nums">
+                        {emp.taj_number ? formatTajNumber(emp.taj_number) : <span className="text-muted-foreground">–</span>}
+                      </TableCell>
+                      <TableCell className="px-5 py-3.5 text-sm text-foreground/90 font-mono tabular-nums">
+                        {emp.tax_id || <span className="text-muted-foreground">–</span>}
+                      </TableCell>
+                      <TableCell className="px-5 py-3.5">
+                        <div className="flex items-center gap-3">
+                          {emp.email && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Mail className="w-3 h-3" /> {emp.email}
+                            </span>
                           )}
-                        >
-                          <LogOut className="w-3.5 h-3.5 mr-1" />
-                          Kilépő iratok
-                        </Button>
-                        <button
-                          onClick={(e) => handleDelete(emp.id, `${emp.last_name} ${emp.first_name}`, e)}
-                          className="p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100"
-                          title="Törlés"
-                        >
-                          {deletingId === emp.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                        </button>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-primary transition-colors" />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          {emp.phone && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Phone className="w-3 h-3" /> {emp.phone}
+                            </span>
+                          )}
+                          {!emp.email && !emp.phone && <span className="text-xs text-muted-foreground">–</span>}
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-5 py-3.5">
+                        <span className={cn(
+                          'px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider',
+                          statusColors[emp.status] || statusColors.active
+                        )}>
+                          {statusLabels[emp.status] || emp.status}
+                        </span>
+                      </TableCell>
+                      <TableCell className="px-5 py-3.5">
+                        <div className="flex items-center gap-1.5 justify-end">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Kilépő dokumentumok"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/${emp.id}/exit-docs`);
+                            }}
+                            className={cn(
+                              "text-xs h-7 px-2 transition-all",
+                              emp.status === 'terminated'
+                                ? "text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 opacity-100 font-semibold"
+                                : "text-muted-foreground hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 opacity-0 group-hover:opacity-100"
+                            )}
+                          >
+                            <LogOut className="w-3.5 h-3.5 mr-1" />
+                            Kilépő iratok
+                          </Button>
+                          <button
+                            onClick={(e) => handleDelete(emp.id, `${emp.last_name} ${emp.first_name}`, e)}
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100"
+                            title="Törlés"
+                          >
+                            {deletingId === emp.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                          </button>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-primary transition-colors" />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
@@ -353,10 +492,6 @@ export default function EmployeesPage() {
                 onPageSizeChange={setPageSize}
                 pageSizeOptions={[10, 20, 50]}
               />
-            </div>
-          )}
-          </>
-        )}
       </div>
     </div>
   );

@@ -41,16 +41,9 @@ export function useAccountyClients(dateFrom?: string, dateTo?: string) {
     queryFn: async (): Promise<AccountyClient[]> => {
       if (companyIds.length === 0) return [];
 
-      // Fetch assignments (all firm assignments for admin, otherwise only own/assigned)
+      // Fetch assignments for all accessible companyIds
       let assignments: AssignmentRow[] = [];
-      if (isAdmin && firmId) {
-        const { data, error } = await supabase
-          .from('accounty_assignments')
-          .select('*')
-          .eq('accounting_firm_id', firmId);
-        if (error) throw error;
-        assignments = data || [];
-      } else {
+      if (companyIds.length > 0) {
         const { data, error } = await supabase
           .from('accounty_assignments')
           .select('*')
@@ -59,8 +52,6 @@ export function useAccountyClients(dateFrom?: string, dateTo?: string) {
         assignments = data || [];
       }
 
-      if (assignments.length === 0) return [];
-
       // Group assignments by company
       const companyAssignments: Record<string, AssignmentRow[]> = {};
       assignments.forEach(a => {
@@ -68,7 +59,9 @@ export function useAccountyClients(dateFrom?: string, dateTo?: string) {
         companyAssignments[a.company_id].push(a);
       });
 
-      const uniqueCompanyIds = Object.keys(companyAssignments);
+      // Include all accessible company IDs even if they don't have assignment records yet
+      const uniqueCompanyIds = [...new Set([...companyIds, ...Object.keys(companyAssignments)])];
+      if (uniqueCompanyIds.length === 0) return [];
 
       // Get company details
       const { data: companies, error: compErr } = await supabase
@@ -128,9 +121,8 @@ export function useAccountyClients(dateFrom?: string, dateTo?: string) {
           || assignsForComp[0];
         const isMainAccountantForMe = assignsForComp.some(a => a.accountant_user_id === userId && a.is_main_accountant);
 
-        const assignedToMe = isAdmin 
-          ? assignsForComp.some(a => a.accountant_user_id === userId)
-          : isMainAccountantForMe;
+        const isAssignedDirectly = assignsForComp.some(a => a.accountant_user_id === userId);
+        const assignedToMe = isAssignedDirectly || companyIds.includes(company.id);
         const missingCount = missingCountMap[company.id] || 0;
         const unprocessedCount = 0;
         const progress = computeProgress(missingCount, 0);

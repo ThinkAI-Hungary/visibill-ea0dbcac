@@ -401,6 +401,43 @@ export function useCompanyEmployments(companyId: string) {
   });
 }
 
+export interface EfoEntry {
+  id: string;
+  company_id: string;
+  tax_id: string;
+  name: string;
+  taj_number: string | null;
+  target_year: number;
+  days_alkalmi: number;
+  days_mezogazdasag: number;
+  days_turisztika: number;
+  days_filmipar: number;
+  days_total_used: number;
+  days_total_available: number;
+  days_agri_available: number;
+  last_sync_at: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export function useCompanyEfoEntries(companyId: string) {
+  return useQuery({
+    queryKey: ['accounty-efo-entries', companyId],
+    queryFn: async (): Promise<EfoEntry[]> => {
+      const { data, error } = await supabase
+        .from('accounty_efo_entries')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      return (data || []) as EfoEntry[];
+    },
+    enabled: !!companyId && companyId !== 'undefined' && companyId !== 'null',
+    staleTime: 30_000,
+  });
+}
+
 export function useCreateEmployment() {
   const queryClient = useQueryClient();
 

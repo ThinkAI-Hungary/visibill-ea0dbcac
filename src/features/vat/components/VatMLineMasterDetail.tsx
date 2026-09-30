@@ -39,6 +39,7 @@ import {
   isAamPartnerOrTaxNumber,
   isInsurancePartnerOrInvoice,
 } from '../types';
+import { VatOsaCheckDialog } from './VatOsaCheckDialog';
 
 interface VatMLineMasterDetailProps {
   mLines: MLine[];

@@ -267,34 +267,60 @@ export function useMyAssignedCompanyIds() {
   return useQuery({
     queryKey: queryKeys.accountyMyAssignments(userId),
     queryFn: async (): Promise<{ companyIds: string[]; isAdmin: boolean; firmId: string | null }> => {
-      // 1. Get current user's assignments to determine firm and role
-      const { data: myAssignments } = await supabase
+      // 0. Check profile & active support impersonations
+      const [{ data: profile }, { data: impersonationRows }] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('role, is_support_admin')
+          .eq('user_id', userId)
+          .maybeSingle(),
+        supabase
+          .from('company_members')
+          .select('company_id')
+          .eq('user_id', userId)
+          .eq('role', 'support_admin' as any),
+      ]);
+
+      const isPlatformAdmin = profile?.is_support_admin || profile?.role === 'thinkai' || profile?.role === 'management';
+      const impersonatedCompanyIds = (impersonationRows || []).map(r => r.company_id);
+
+      // 1. Get current user's assignments
+      const { data: myAssignments, error: assignErr } = await supabase
         .from('accounty_assignments')
         .select('accounting_firm_id, role, company_id, is_main_accountant')
         .eq('accountant_user_id', userId);
 
-      if (!myAssignments || myAssignments.length === 0) {
-        return { companyIds: [], isAdmin: false, firmId: null };
-      }
+      if (assignErr) throw assignErr;
 
-      const firmId = myAssignments[0]?.accounting_firm_id || null;
-      const isAdmin = myAssignments.some(a => a.role === 'iroda_admin');
+      const safeAssignments = myAssignments || [];
+      const adminFirmIds = [...new Set(
+        safeAssignments
+          .filter(a => a.role === 'iroda_admin')
+          .map(a => a.accounting_firm_id)
+          .filter((id): id is string => Boolean(id))
+      )];
+      const isAdmin = isPlatformAdmin || adminFirmIds.length > 0;
 
-      let companyIds: string[];
-      if (isAdmin && firmId) {
-        // Admin sees all firm companies
-        const { data, error } = await supabase
+      // 2. Direct assignments (all companies assigned to user, whether main accountant or secondary)
+      const directCompanyIds = safeAssignments.map(a => a.company_id);
+
+      // 3. Firm companies for all firms where user is iroda_admin
+      let firmCompanyIds: string[] = [];
+      if (adminFirmIds.length > 0) {
+        const { data: firmAssigns, error: firmErr } = await supabase
           .from('accounty_assignments')
           .select('company_id')
-          .eq('accounting_firm_id', firmId);
-        if (error) throw error;
-        companyIds = [...new Set((data || []).map(a => a.company_id))];
-      } else {
-        // Non-admin: only main accountant companies
-        companyIds = myAssignments
-          .filter(a => a.is_main_accountant)
-          .map(a => a.company_id);
+          .in('accounting_firm_id', adminFirmIds);
+        if (firmErr) throw firmErr;
+        firmCompanyIds = (firmAssigns || []).map(a => a.company_id);
       }
+
+      // Combine direct assignments, admin firm companies, and active support impersonations
+      let companyIds = [...new Set([
+        ...directCompanyIds,
+        ...firmCompanyIds,
+        ...impersonatedCompanyIds,
+      ])];
 
       // Filter out SANDBOX
       if (companyIds.length > 0) {
@@ -307,7 +333,8 @@ export function useMyAssignedCompanyIds() {
           .map(c => c.id);
       }
 
-      return { companyIds, isAdmin, firmId };
+      const primaryFirmId = adminFirmIds[0] || safeAssignments[0]?.accounting_firm_id || null;
+      return { companyIds, isAdmin, firmId: primaryFirmId };
     },
     enabled: !!userId,
     staleTime: 30_000,

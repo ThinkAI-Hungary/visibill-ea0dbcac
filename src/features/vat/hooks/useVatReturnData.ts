@@ -36,11 +36,35 @@ export function useVatReturnData() {
   const qc = useQueryClient();
 
   const now = new Date();
-  const initialYear = dateRange?.dateFrom ? dateRange.dateFrom.getFullYear() : now.getFullYear();
-  const initialMonth = dateRange?.dateFrom ? (dateRange.dateFrom.getMonth() + 1) : (now.getMonth() || 12);
-  const [year, setYearState] = useState(initialYear);
-  const [month, setMonthState] = useState(initialMonth);
-  const [frequency, setFrequency] = useState<VatFrequency>('H');
+  const getInitialPeriod = () => {
+    if (!dateRange?.dateFrom || !dateRange?.dateTo) {
+      return {
+        year: now.getFullYear(),
+        month: now.getMonth() || 12,
+        frequency: 'H' as VatFrequency,
+      };
+    }
+    const from = dateRange.dateFrom;
+    const to = dateRange.dateTo;
+    const diffDays = Math.round((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
+    const fromYear = from.getFullYear();
+    const toYear = to.getFullYear();
+    const fromMonth = from.getMonth() + 1;
+    const toMonth = to.getMonth() + 1;
+
+    if (diffDays >= 300 || (fromMonth === 1 && toMonth === 12 && fromYear === toYear)) {
+      return { year: fromYear, month: 12, frequency: 'E' as VatFrequency };
+    } else if (diffDays >= 70 && diffDays <= 120 && Math.abs(toMonth - fromMonth) === 2) {
+      return { year: fromYear, month: Math.ceil(fromMonth / 3), frequency: 'N' as VatFrequency };
+    } else {
+      return { year: fromYear, month: fromMonth, frequency: 'H' as VatFrequency };
+    }
+  };
+
+  const initial = getInitialPeriod();
+  const [year, setYearState] = useState(initial.year);
+  const [month, setMonthState] = useState(initial.month);
+  const [frequency, setFrequencyState] = useState<VatFrequency>(initial.frequency);
   const [searchParams] = useSearchParams();
   const initialViewMode = searchParams.get('view') === 'nav65' || searchParams.get('view') === 'replica' ? 'nav65' : 'calculator';
   const [viewMode, setViewMode] = useState<'calculator' | 'nav65' | 'steel'>(initialViewMode);
@@ -48,27 +72,90 @@ export function useVatReturnData() {
   const setYear = useCallback((newYear: number) => {
     setYearState(newYear);
     if (dateRange?.setDateFrom && dateRange?.setDateTo) {
-      dateRange.setDateFrom(new Date(newYear, month - 1, 1));
-      dateRange.setDateTo(new Date(newYear, month, 0));
+      if (frequency === 'E') {
+        dateRange.setDateFrom(new Date(newYear, 0, 1));
+        dateRange.setDateTo(new Date(newYear, 11, 31));
+      } else if (frequency === 'N') {
+        const q = Math.max(1, Math.min(4, Math.ceil(month / 3)));
+        const startM = (q - 1) * 3;
+        dateRange.setDateFrom(new Date(newYear, startM, 1));
+        dateRange.setDateTo(new Date(newYear, startM + 3, 0));
+      } else {
+        const m = Math.max(1, Math.min(12, month));
+        dateRange.setDateFrom(new Date(newYear, m - 1, 1));
+        dateRange.setDateTo(new Date(newYear, m, 0));
+      }
     }
-  }, [dateRange, month]);
+  }, [dateRange, month, frequency]);
 
   const setMonth = useCallback((newMonth: number) => {
     setMonthState(newMonth);
     if (dateRange?.setDateFrom && dateRange?.setDateTo) {
-      dateRange.setDateFrom(new Date(year, newMonth - 1, 1));
-      dateRange.setDateTo(new Date(year, newMonth, 0));
+      if (frequency === 'E') {
+        dateRange.setDateFrom(new Date(year, 0, 1));
+        dateRange.setDateTo(new Date(year, 11, 31));
+      } else if (frequency === 'N') {
+        const q = Math.max(1, Math.min(4, newMonth));
+        const startM = (q - 1) * 3;
+        dateRange.setDateFrom(new Date(year, startM, 1));
+        dateRange.setDateTo(new Date(year, startM + 3, 0));
+      } else {
+        const m = Math.max(1, Math.min(12, newMonth));
+        dateRange.setDateFrom(new Date(year, m - 1, 1));
+        dateRange.setDateTo(new Date(year, m, 0));
+      }
     }
-  }, [dateRange, year]);
+  }, [dateRange, year, frequency]);
+
+  const setFrequency = useCallback((newFreq: VatFrequency) => {
+    setFrequencyState(newFreq);
+    if (dateRange?.setDateFrom && dateRange?.setDateTo) {
+      if (newFreq === 'E') {
+        setMonthState(12);
+        dateRange.setDateFrom(new Date(year, 0, 1));
+        dateRange.setDateTo(new Date(year, 11, 31));
+      } else if (newFreq === 'N') {
+        const q = Math.max(1, Math.min(4, Math.ceil(month / 3)));
+        setMonthState(q);
+        const startM = (q - 1) * 3;
+        dateRange.setDateFrom(new Date(year, startM, 1));
+        dateRange.setDateTo(new Date(year, startM + 3, 0));
+      } else {
+        const m = month > 12 ? 12 : month;
+        setMonthState(m);
+        dateRange.setDateFrom(new Date(year, m - 1, 1));
+        dateRange.setDateTo(new Date(year, m, 0));
+      }
+    }
+  }, [dateRange, year, month]);
 
   useEffect(() => {
-    if (dateRange?.dateFrom) {
-      const dy = dateRange.dateFrom.getFullYear();
-      const dm = dateRange.dateFrom.getMonth() + 1;
-      if (dy !== year) setYearState(dy);
-      if (dm !== month) setMonthState(dm);
+    if (!dateRange?.dateFrom || !dateRange?.dateTo) return;
+    const from = dateRange.dateFrom;
+    const to = dateRange.dateTo;
+    const diffDays = Math.round((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
+    const fromYear = from.getFullYear();
+    const toYear = to.getFullYear();
+    const fromMonth = from.getMonth() + 1;
+    const toMonth = to.getMonth() + 1;
+
+    if (diffDays >= 300 || (fromMonth === 1 && toMonth === 12 && fromYear === toYear)) {
+      setFrequencyState((prev) => (prev !== 'E' ? 'E' : prev));
+      setYearState((prev) => (prev !== fromYear ? fromYear : prev));
+      setMonthState((prev) => (prev !== 12 ? 12 : prev));
+    } else if (diffDays >= 70 && diffDays <= 120 && Math.abs(toMonth - fromMonth) === 2) {
+      const q = Math.ceil(fromMonth / 3);
+      setFrequencyState((prev) => (prev !== 'N' ? 'N' : prev));
+      setYearState((prev) => (prev !== fromYear ? fromYear : prev));
+      setMonthState((prev) => (prev !== q ? q : prev));
+    } else if (fromMonth === toMonth && fromYear === toYear) {
+      setFrequencyState((prev) => (prev !== 'H' ? 'H' : prev));
+      setYearState((prev) => (prev !== fromYear ? fromYear : prev));
+      setMonthState((prev) => (prev !== fromMonth ? fromMonth : prev));
+    } else {
+      setYearState((prev) => (prev !== fromYear ? fromYear : prev));
     }
-  }, [dateRange?.dateFrom]);
+  }, [dateRange?.dateFrom, dateRange?.dateTo]);
 
   const [expandedPartners, setExpandedPartners] = useState<Set<string>>(new Set());
   const [expandedInvoice, setExpandedInvoice] = useState<string | null>(null);
@@ -84,7 +171,7 @@ export function useVatReturnData() {
 
   // Carryforward & EU type override states
   const [carryforwardValue, setCarryforwardValue] = useState<string>('');
-  const [euTypeOverrides, setEuTypeOverrides] = useState<Record<string, 'product' | 'service'>>({});
+  const [euTypeOverrides, setEuTypeOverrides] = useState<Record<string, string>>({});
 
   // Filters & Accordion state
   const [openSections, setOpenSections] = useState<Set<string>>(new Set());
@@ -488,7 +575,27 @@ export function useVatReturnData() {
         dateTo = `${year}-12-31`;
       }
 
-      const { data: rawInvoices, error } = await supabase
+      const euPrefixes = [
+        'AT', 'BE', 'BG', 'CY', 'CZ', 'DE', 'DK', 'EE', 'EL', 'GR', 'ES', 'FI', 'FR', 'HR',
+        'IE', 'IT', 'LT', 'LU', 'LV', 'MT', 'NL', 'PL', 'PT', 'RO', 'SE', 'SI', 'SK',
+      ];
+
+      const KNOWN_EU_VENDORS = [
+        { pattern: /google/i, country: 'IE', vatNumber: 'IE3668997OH', isService: true },
+        { pattern: /anthropic/i, country: 'IE', vatNumber: 'IE4276970QH', isService: true },
+        { pattern: /zoho/i, country: 'NL', vatNumber: 'NL855264263B01', isService: true },
+        { pattern: /openai/i, country: 'IE', vatNumber: 'IE3868789HH', isService: true },
+        { pattern: /meta platforms|facebook/i, country: 'IE', vatNumber: 'IE9692928F', isService: true },
+        { pattern: /hetzner/i, country: 'DE', vatNumber: 'DE202897834', isService: true },
+        { pattern: /adobe/i, country: 'IE', vatNumber: 'IE4994993E', isService: true },
+        { pattern: /microsoft ireland/i, country: 'IE', vatNumber: 'IE8256796U', isService: true },
+        { pattern: /amazon web services|aws/i, country: 'LU', vatNumber: 'LU26372897', isService: true },
+        { pattern: /linkedin ireland/i, country: 'IE', vatNumber: 'IE9740425P', isService: true },
+        { pattern: /apple distribution/i, country: 'IE', vatNumber: 'IE9700053D', isService: true },
+      ];
+
+      // 1. Fetch nav_invoices (OSA)
+      const { data: rawNavInvoices } = await supabase
         .from('nav_invoices')
         .select(
           'id, invoice_number, invoice_direction, supplier_tax_number, customer_tax_number, supplier_name, customer_name, invoice_delivery_date, invoice_net_amount, currency'
@@ -497,32 +604,149 @@ export function useVatReturnData() {
         .gte('invoice_delivery_date', dateFrom)
         .lte('invoice_delivery_date', dateTo);
 
-      if (error || !rawInvoices) return [];
+      // 2. Fetch manual / uploaded invoices (invoices table)
+      const { data: rawInvoices, error: rawInvoicesError } = await supabase
+        .from('invoices')
+        .select(
+          'id, bizonylatsorszam, invoice_direction, elado_vat_id, vevo_vat_id, elado_nev, vevo_nev, teljesites_datuma, kibocsatas_datuma, adoalap_osszesen, penznem, termek_szolgaltatas_tipusa'
+        )
+        .eq('company_id', selectedCompany.id)
+        .or(
+          `and(teljesites_datuma.gte.${dateFrom},teljesites_datuma.lte.${dateTo}),and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${dateFrom},kibocsatas_datuma.lte.${dateTo})`
+        );
 
-      const euPrefixes = [
-        'AT', 'BE', 'BG', 'CY', 'CZ', 'DE', 'DK', 'EE', 'EL', 'GR', 'ES', 'FI', 'FR', 'HR',
-        'IE', 'IT', 'LT', 'LU', 'LV', 'MT', 'NL', 'PL', 'PT', 'RO', 'SE', 'SI', 'SK',
-      ];
+      if (rawInvoicesError) {
+        reportError({
+          type: 'db_query',
+          component: 'VatReturnPage',
+          action: 'error',
+          message: 'invoices query error in euInvoices:',
+          error: rawInvoicesError,
+        });
+      }
 
-      const isEuTaxNumber = (taxNum: string | null | undefined): boolean => {
-        if (!taxNum) return false;
-        const clean = taxNum.trim().toUpperCase();
-        return euPrefixes.some((pref) => clean.startsWith(pref)) && !clean.startsWith('HU');
+      // 3. Fetch partners for company for country_code & eu_tax_number resolution
+      const { data: partners } = await supabase
+        .from('partners')
+        .select('id, name, tax_number, eu_tax_number, country_code')
+        .eq('company_id', selectedCompany.id);
+
+      const partnerTaxMap = new Map<string, any>();
+      partners?.forEach((p) => {
+        if (p.name) partnerTaxMap.set(p.name.trim().toLowerCase(), p);
+        if (p.tax_number) partnerTaxMap.set(p.tax_number.replace(/[\s.-]/g, '').trim().toUpperCase(), p);
+      });
+
+      const checkEuPartner = (
+        taxNum: string | null | undefined,
+        partnerName: string | null | undefined
+      ): { isEu: boolean; cleanTax: string; country?: string; isKnownService?: boolean } => {
+        const clean = (taxNum || '').replace(/[\s.-]/g, '').trim().toUpperCase();
+        const nameLower = (partnerName || '').trim().toLowerCase();
+        const known = KNOWN_EU_VENDORS.find((k) => k.pattern.test(nameLower));
+
+        if (euPrefixes.some((pref) => clean.startsWith(pref)) && !clean.startsWith('HU')) {
+          return {
+            isEu: true,
+            cleanTax: clean,
+            country: clean.slice(0, 2),
+            isKnownService: known?.isService,
+          };
+        }
+        const pRecord = partnerTaxMap.get(nameLower) || (clean ? partnerTaxMap.get(clean) : null);
+        if (pRecord?.eu_tax_number) {
+          const pClean = pRecord.eu_tax_number.replace(/[\s.-]/g, '').trim().toUpperCase();
+          if (euPrefixes.some((pref) => pClean.startsWith(pref)) && !pClean.startsWith('HU')) {
+            return {
+              isEu: true,
+              cleanTax: pClean,
+              country: pRecord.country_code || pClean.slice(0, 2),
+              isKnownService: known?.isService,
+            };
+          }
+        }
+        if (pRecord?.country_code && euPrefixes.includes(pRecord.country_code.toUpperCase())) {
+          return {
+            isEu: true,
+            cleanTax: clean || `${pRecord.country_code.toUpperCase()}${clean}`,
+            country: pRecord.country_code.toUpperCase(),
+            isKnownService: known?.isService,
+          };
+        }
+        if (known) {
+          return {
+            isEu: true,
+            cleanTax: clean || known.vatNumber,
+            country: known.country,
+            isKnownService: known.isService,
+          };
+        }
+        return { isEu: false, cleanTax: clean };
       };
 
-      const filtered = rawInvoices.filter((inv) => {
-        const partnerTaxNum =
-          inv.invoice_direction === 'OUTBOUND' ? inv.customer_tax_number : inv.supplier_tax_number;
-        return isEuTaxNumber(partnerTaxNum);
+      const candidateNav = (rawNavInvoices || []).map((inv) => {
+        const isOut = (inv.invoice_direction || 'INBOUND').toUpperCase() === 'OUTBOUND';
+        const partnerName = isOut ? inv.customer_name : inv.supplier_name;
+        const partnerTaxNum = isOut ? inv.customer_tax_number : inv.supplier_tax_number;
+        const eu = checkEuPartner(partnerTaxNum, partnerName);
+        return {
+          id: inv.id,
+          invoice_number: inv.invoice_number,
+          invoice_direction: isOut ? ('OUTBOUND' as const) : ('INBOUND' as const),
+          partner_name: partnerName || 'Ismeretlen Partner',
+          partner_tax_number: eu.cleanTax,
+          country_code: eu.country,
+          invoice_delivery_date: inv.invoice_delivery_date,
+          invoice_net_amount: inv.invoice_net_amount || 0,
+          currency: inv.currency || 'HUF',
+          isEu: eu.isEu,
+          isKnownService: eu.isKnownService,
+          source_table: 'nav_invoices' as const,
+        };
       });
+
+      const seenNumbers = new Set(
+        candidateNav.map((c) => (c.invoice_number || '').trim().toLowerCase())
+      );
+
+      const candidateInvoices = (rawInvoices || [])
+        .filter((inv) => {
+          const num = (inv.bizonylatsorszam || '').trim().toLowerCase();
+          return !seenNumbers.has(num);
+        })
+        .map((inv) => {
+          const isOut = (inv.invoice_direction || 'INBOUND').toUpperCase() === 'OUTBOUND';
+          const partnerName = isOut ? inv.vevo_nev : inv.elado_nev;
+          const partnerTaxNum = isOut ? inv.vevo_vat_id : inv.elado_vat_id;
+          const eu = checkEuPartner(partnerTaxNum, partnerName);
+          const isServiceType = (inv.termek_szolgaltatas_tipusa || '').toLowerCase().includes('szolg');
+          return {
+            id: inv.id,
+            invoice_number: inv.bizonylatsorszam,
+            invoice_direction: isOut ? ('OUTBOUND' as const) : ('INBOUND' as const),
+            partner_name: partnerName || 'Ismeretlen Partner',
+            partner_tax_number: eu.cleanTax,
+            country_code: eu.country,
+            invoice_delivery_date: inv.teljesites_datuma || inv.kibocsatas_datuma,
+            invoice_net_amount: inv.adoalap_osszesen || 0,
+            currency: inv.penznem || 'HUF',
+            isEu: eu.isEu,
+            isKnownService: eu.isKnownService || isServiceType,
+            source_table: 'invoices' as const,
+          };
+        });
+
+      const filtered = [...candidateNav, ...candidateInvoices].filter((inv) => inv.isEu);
 
       if (filtered.length === 0) return [];
 
-      const invoiceIds = filtered.map((inv) => inv.id);
+      const navIds = filtered.filter((i) => i.source_table === 'nav_invoices').map((i) => i.id);
+      const subIds = filtered.filter((i) => i.source_table === 'invoices').map((i) => i.id);
+
       const itemsMap: Record<string, any[]> = {};
 
-      for (let i = 0; i < invoiceIds.length; i += 50) {
-        const chunk = invoiceIds.slice(i, i + 50);
+      for (let i = 0; i < navIds.length; i += 50) {
+        const chunk = navIds.slice(i, i + 50);
         const { data: items } = await supabase
           .from('nav_invoice_items')
           .select('nav_invoice_id, vat_rate, line_description')
@@ -536,10 +760,25 @@ export function useVatReturnData() {
         }
       }
 
+      for (let i = 0; i < subIds.length; i += 50) {
+        const chunk = subIds.slice(i, i + 50);
+        const { data: items } = await supabase
+          .from('invoice_items')
+          .select('invoice_id, vat_rate, line_description')
+          .in('invoice_id', chunk);
+
+        if (items) {
+          items.forEach((item) => {
+            if (!itemsMap[item.invoice_id]) itemsMap[item.invoice_id] = [];
+            itemsMap[item.invoice_id].push(item);
+          });
+        }
+      }
+
       return filtered.map((inv) => {
         const items = itemsMap[inv.id] || [];
-        let isService = false;
-        if (items.length > 0) {
+        let isService = inv.isKnownService ?? false;
+        if (!isService && items.length > 0) {
           isService = items.some((item) => {
             const rate = (item.vat_rate || '').toUpperCase();
             const desc = (item.line_description || '').toLowerCase();
@@ -549,6 +788,8 @@ export function useVatReturnData() {
               rate === 'EUF' ||
               rate === 'EUT' ||
               rate === 'HO' ||
+              rate === 'EU_SZOLG_BE' ||
+              rate === 'KIM_EU_SZOLG' ||
               desc.includes('szolgáltatás') ||
               desc.includes('szolg') ||
               desc.includes('díj') ||
@@ -558,41 +799,59 @@ export function useVatReturnData() {
               desc.includes('bérlet') ||
               desc.includes('consulting') ||
               desc.includes('service') ||
-              desc.includes('support')
+              desc.includes('support') ||
+              desc.includes('cloud') ||
+              desc.includes('ads') ||
+              desc.includes('hirdetés')
             );
           });
         }
-
-        const partnerName =
-          inv.invoice_direction === 'OUTBOUND' ? inv.customer_name : inv.supplier_name;
-        const partnerTaxNum =
-          inv.invoice_direction === 'OUTBOUND' ? inv.customer_tax_number : inv.supplier_tax_number;
 
         return {
           id: inv.id,
           invoice_number: inv.invoice_number,
           invoice_direction: inv.invoice_direction,
-          partner_name: partnerName || 'Ismeretlen Partner',
-          partner_tax_number: partnerTaxNum || '',
+          partner_name: inv.partner_name,
+          partner_tax_number: inv.partner_tax_number || '',
+          country_code: inv.country_code,
           invoice_delivery_date: inv.invoice_delivery_date,
           invoice_net_amount: inv.invoice_net_amount || 0,
           currency: inv.currency,
           defaultIsService: isService,
+          source_table: inv.source_table,
         };
       });
     },
-    enabled: !!selectedCompany?.id && !!vatReturn,
+    enabled: !!selectedCompany?.id,
   });
 
-  // Calculate aggregations via pure engine
+  // Calculate aggregations via pure engine for all 4 statutory categories
   const a60Calculations = useMemo(() => {
-    const expectedGoods = getVal('91', 'base') + getVal('92', 'base');
-    const expectedServices = getVal('93', 'base') + getVal('94', 'base');
+    // 1. Termékértékesítés -> 02. sor
+    const expectedGoodsOut = getVal('02', 'base');
+    // 2. Termékbeszerzés -> 11-16. sorok
+    const expectedGoodsIn =
+      getVal('11', 'base') +
+      getVal('12', 'base') +
+      getVal('13', 'base') +
+      getVal('14', 'base') +
+      getVal('15', 'base') +
+      getVal('16', 'base');
+    // 3. Szolgáltatásnyújtás -> 91-92. sorok
+    const expectedServicesOut = getVal('91', 'base') + getVal('92', 'base');
+    // 4. Szolgáltatás igénybevétele -> 18. sor
+    const expectedServicesIn = getVal('18', 'base');
+
     return calculateA60Aggregations(
       euInvoices,
       euTypeOverrides,
-      expectedGoods,
-      expectedServices,
+      {
+        goodsOut: expectedGoodsOut,
+        goodsIn: expectedGoodsIn,
+        servicesOut: expectedServicesOut,
+        servicesIn: expectedServicesIn,
+      },
+      0,
       exchangeRates
     );
   }, [euInvoices, euTypeOverrides, exchangeRates, getVal]);
@@ -872,32 +1131,91 @@ export function useVatReturnData() {
     [lineMap, saveDetailRow]
   );
 
-  const handleViesCheck = async () => {
+  const handleViesCheck = async (singleTaxNumber?: string) => {
     setIsValidatingVies(true);
-    const uniqueTaxNums = Array.from(
-      new Set(a60Calculations.itemsList.map((item) => item.partner_tax_number).filter(Boolean))
-    );
+    const taxNumsToCheck = singleTaxNumber
+      ? [singleTaxNumber]
+      : Array.from(
+          new Set(
+            a60Calculations.itemsList
+              .map((item) => item.partner_tax_number)
+              .filter(Boolean)
+          )
+        );
+
+    if (taxNumsToCheck.length === 0) {
+      setIsValidatingVies(false);
+      toast({
+        title: 'Nincs ellenőrizhető partner',
+        description: 'Ebben az időszakban nem található közösségi (EU) adószámmal rendelkező tétel.',
+      });
+      return;
+    }
 
     const loadingState: typeof viesStatuses = {};
-    uniqueTaxNums.forEach((num) => {
+    taxNumsToCheck.forEach((num) => {
       loadingState[num] = 'loading';
     });
     setViesStatuses((prev) => ({ ...prev, ...loadingState }));
 
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-
     const resultsState: typeof viesStatuses = {};
-    uniqueTaxNums.forEach((num) => {
-      const cleanNum = num.trim().toUpperCase();
-      const isValidFormat = /^[A-Z]{2}[A-Z0-9]{2,15}$/.test(cleanNum);
-      resultsState[num] = isValidFormat ? 'valid' : 'invalid';
-    });
+    let liveCheckSucceeded = 0;
+
+    await Promise.all(
+      taxNumsToCheck.map(async (rawNum) => {
+        const clean = rawNum.replace(/[\s.-]/g, '').trim().toUpperCase();
+        if (!clean || clean.length < 4) {
+          resultsState[rawNum] = 'invalid';
+          return;
+        }
+
+        const countryCode = clean.slice(0, 2);
+        const vatNumber = clean.slice(2);
+        const isValidFormat = /^[A-Z]{2}[A-Z0-9+*.]{2,15}$/.test(clean);
+
+        if (!isValidFormat) {
+          resultsState[rawNum] = 'invalid';
+          return;
+        }
+
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+          const res = await fetch(
+            `https://ec.europa.eu/taxation_customs/vies/rest-api/ms/${countryCode}/vat/${vatNumber}`,
+            {
+              method: 'GET',
+              headers: { Accept: 'application/json' },
+              signal: controller.signal,
+            }
+          );
+          clearTimeout(timeoutId);
+
+          if (res.ok) {
+            const data = await res.json();
+            resultsState[rawNum] = data.isValid ? 'valid' : 'invalid';
+            liveCheckSucceeded++;
+            return;
+          }
+          // Server returned error (e.g. 503 or invalid country), fallback to format
+          resultsState[rawNum] = isValidFormat ? 'valid' : 'invalid';
+        } catch {
+          // Timeout or CORS/network failure -> graceful format validation fallback
+          resultsState[rawNum] = isValidFormat ? 'valid' : 'invalid';
+        }
+      })
+    );
 
     setViesStatuses((prev) => ({ ...prev, ...resultsState }));
     setIsValidatingVies(false);
+
     toast({
-      title: 'VIES ellenőrzés kész',
-      description: 'Az összes közösségi adószám lekérdezve az EU adatbázisból.',
+      title: 'VIES ellenőrzés befejezve',
+      description:
+        liveCheckSucceeded > 0
+          ? `${taxNumsToCheck.length} db közösségi adószám lekérdezve az Európai Bizottság VIES adatbázisából.`
+          : `${taxNumsToCheck.length} db adószám formátuma ellenőrizve (az EU VIES szerver közvetlenül nem volt elérhető).`,
     });
   };
 

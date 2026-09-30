@@ -28,8 +28,14 @@
   - Könyvelési feladás: Tartozik 551 (Egyéb személyi jellegű kifizetések) — Követel 471 (Jövedelemelszámolás) automatikus vegyes könyvelési tétel.
 - **Dolgozó-Központú Munkalap (Employee Worksheet View):**
   - A hagyományos 8-lépéses folyamat mellett közvetlenül elérhető all-in-one havi adatrögzítő felület, amely a dolgozó jelenlétét, óráit, pótlékait, utazási térítését és levonásait egy lapon kezeli, valós idejű élő bérszalvétával (Live Payslip) és azonnali törzsadat-szinkronizációval.
+- **3-Oszlopos Bérszámfejtési Dashboard & EFO Különválasztás:**
+  - A fő bérszámfejtési áttekintő felület (`PayrollDashboardPage`) 3 külön oszlopra tagolódik a könnyebb átláthatóság érdekében:
+    1. **Havi ciklusok:** Havi bérszámfejtési ciklusok, 8-lépéses progress bar, státuszok, új ciklus indítása.
+    2. **Foglalkoztatottak:** Kizárólag az állandó jogviszonyú munkavállalók (munkaviszony, társas vállalkozó, megbízás stb.), független keresőmezővel és kilépő dokumentumok gyorseléréssel.
+    3. **EFO:** Kifejezetten az egyszerűsített foglalkoztatott (alkalmi / mezőgazdasági / turisztikai) dolgozók listája, éves 120 napos keretfelhasználás kijelzéssel (`nap / 120 nap`), küszöbérték-figyelmeztetéssel (>90 nap esetén kiemelt figyelmeztetés) és dedikált keresővel.
+  - A foglalkoztatotti részletes listán (`EmployeesPage`) szintén elérhető típus szerinti szűrő (Mind / Állandó / EFO), amely megőrzi az URL paraméteres állapotot (`?type=regular` / `?type=efo`).
 
-**Rationale:** A bérszámfejtés a könyvelőirodák egyik fő szolgáltatása. A ciklus-alapú workflow biztosítja, hogy a bérszámfejtés audiálható és jóváhagyásos legyen. Az adóparaméterek cég-szinten konfigurálhatók, mert különböző ügyfeleknek eltérő kedvezmények lehetnek. A NAV 08 rekonstrukciós motor lehetővé teszi új ügyfelek vagy meglévő könyvelések gyors, múltbéli béradatokkal való feltöltését kézi adatrögzítés nélkül. A munkába járási térítés és a dolgozói munkalap pedig elengedhetetlen a vidéki telephelyes és vendéglátóipari (pl. éttermi, műszakos) vállalkozások gyors és jogszabálykövető havi zárásához.
+**Rationale:** A bérszámfejtés a könyvelőirodák egyik fő szolgáltatása. A ciklus-alapú workflow biztosítja, hogy a bérszámfejtés audiálható és jóváhagyásos legyen. Az állandó dolgozók és az EFO alkalmi munkavállalók szétválasztása elengedhetetlen, mivel az EFO jogviszonyok más adminisztrációs és adózási szabályok (pl. 120 napos éves korlát, egyszerűsített bejelentés) alá esnek, így nem keveredhetnek az állandó állománnyal.
 
 ## Kapcsolódó
 - ADR: [A-081: NAV 08 Payroll Reconstruction and Bulk Import](../../architecture/decisions/A-081-nav-08-payroll-reconstruction-and-bulk-import.md)

@@ -629,27 +629,40 @@ Deno.serve(async (req: Request) => {
         .update({ last_sync_at: new Date().toISOString() })
         .eq('id', cred.id);
 
-      const workers = navJson.foglalkoztatottak || [];
+      const rawWorkers = navJson.foglalkoztatottak || navJson.foglalkoztatott || [];
+      const workers = Array.isArray(rawWorkers) ? rawWorkers : [rawWorkers];
 
       // Automatikus szinkronizálás az accounty_employees és accounty_employments táblákba
       let syncedCount = 0;
       for (const item of workers) {
-        const rawName = (item.munkavallaloNeve || '').trim();
-        const taxId = (item.munkavallaloAdoazonositoJele || '').trim();
-        const taj = item.bejelentes?.tajSzam || null;
-        const mothersName = item.bejelentes?.anyjaNeve || null;
-        const birthName = item.bejelentes?.szuletesiNev || null;
-        const rawAddress = item.bejelentes?.cim || null;
+        if (!item) continue;
+        const rawName = String(item.munkavallaloNeve || '').trim();
+
+        // Extract 10-digit tax ID (can be string, number, or { adoalanyAzonosito: '...' })
+        let taxId = '';
+        if (typeof item.munkavallaloAdoazonositoJele === 'string') {
+          taxId = item.munkavallaloAdoazonositoJele.trim();
+        } else if (item.munkavallaloAdoazonositoJele?.adoalanyAzonosito) {
+          taxId = String(item.munkavallaloAdoazonositoJele.adoalanyAzonosito).trim();
+        } else if (typeof item.munkavallaloAdoazonositoJele === 'number') {
+          taxId = String(item.munkavallaloAdoazonositoJele).trim();
+        }
+
+        const bejelentesObj = Array.isArray(item.bejelentes) ? item.bejelentes[0] : item.bejelentes;
+        const taj = bejelentesObj?.tajSzam ? String(bejelentesObj.tajSzam).trim() : null;
+        const mothersName = bejelentesObj?.anyjaNeve ? String(bejelentesObj.anyjaNeve).trim() : null;
+        const birthName = bejelentesObj?.szuletesiNev ? String(bejelentesObj.szuletesiNev).trim() : null;
+        const rawAddress = bejelentesObj?.cim ? String(bejelentesObj.cim).trim() : null;
 
         // Parse birth date and birth place
         let birthDate: string | null = null;
         let birthPlace: string | null = null;
-        const rawBirth = item.bejelentes?.szuletesiDatumHely || '';
+        const rawBirth = bejelentesObj?.szuletesiDatumHely ? String(bejelentesObj.szuletesiDatumHely).trim() : '';
         if (rawBirth) {
           const matchDate = rawBirth.match(/(\d{4}[.-]\d{2}[.-]\d{2})/);
           if (matchDate) {
             birthDate = matchDate[1].replace(/\./g, '-');
-            birthPlace = rawBirth.replace(matchDate[0], '').replace(/[,\s]+/g, ' ').trim() || null;
+            birthPlace = rawBirth.replace(matchDate[0], '').replace(/^[.\s,]+|[.\s,]+$/g, '').trim() || null;
           } else {
             birthPlace = rawBirth.trim();
           }
@@ -657,7 +670,7 @@ Deno.serve(async (req: Request) => {
 
         if (!taxId) continue;
 
-        const nameParts = rawName.split(/\s+/);
+        const nameParts = rawName.split(/\s+/).filter(Boolean);
         const lastName = nameParts[0] || 'Munkavállaló';
         const firstName = nameParts.slice(1).join(' ') || lastName;
 
@@ -671,7 +684,7 @@ Deno.serve(async (req: Request) => {
 
         let employeeId = existingEmp?.id;
         if (!employeeId) {
-          const { data: newEmp } = await adminClient
+          const { data: newEmp, error: newEmpErr } = await adminClient
             .from('accounty_employees')
             .insert({
               company_id,
@@ -688,6 +701,11 @@ Deno.serve(async (req: Request) => {
             })
             .select('id')
             .single();
+
+          if (newEmpErr) {
+            console.error('Error inserting employee from T1041:', newEmpErr);
+            continue;
+          }
           employeeId = newEmp?.id;
         } else {
           await adminClient
@@ -706,12 +724,60 @@ Deno.serve(async (req: Request) => {
         }
 
         if (employeeId) {
-          const feorCode = item.feor?.feorKod || null;
-          const feorDesc = item.feor?.feorMegnevezes || null;
-          const weeklyHours = parseFloat(item.hetiOra?.hetiMunkaorakSzama) || 40;
-          const startDate = item.jogviszonyAlapadatok?.biztositasiJogviszonyKezdete || null;
-          const endDate = item.jogviszonyAlapadatok?.biztositasiJogviszonyVege || null;
-          const relCode = item.jogviszonyAlapadatok?.biztositasiJogviszonyKodNev || null;
+          const feorObj = Array.isArray(item.feor) ? item.feor[0] : item.feor;
+          const feorCode = feorObj?.feorKod ? String(feorObj.feorKod).trim() : null;
+          const feorDesc = feorObj?.feorMegnevezes ? String(feorObj.feorMegnevezes).trim() : null;
+
+          const hetiOraObj = Array.isArray(item.hetiOra) ? item.hetiOra[0] : item.hetiOra;
+          const rawHours = hetiOraObj?.hetiMunkaora ?? hetiOraObj?.hetiMunkaorakSzama;
+          const weeklyHours = rawHours != null ? parseFloat(String(rawHours)) || 40 : 40;
+
+          const jogviszonyObj = Array.isArray(item.jogviszonyAlapadatok) ? item.jogviszonyAlapadatok[0] : item.jogviszonyAlapadatok;
+          let startDate = jogviszonyObj?.jogviszonyKezdete || jogviszonyObj?.biztositasiJogviszonyKezdete || null;
+          let endDate = jogviszonyObj?.jogviszonyVege || jogviszonyObj?.biztositasiJogviszonyVege || null;
+          const relCode = jogviszonyObj?.jogviszonyKodMegnevezes || jogviszonyObj?.biztositasiJogviszonyKodNev || null;
+
+          // Normalize dates to YYYY-MM-DD
+          if (startDate && typeof startDate === 'string') {
+            const m = startDate.match(/(\d{4})[.-](\d{2})[.-](\d{2})/);
+            if (m) startDate = `${m[1]}-${m[2]}-${m[3]}`;
+          }
+          if (endDate && typeof endDate === 'string') {
+            const m = endDate.match(/(\d{4})[.-](\d{2})[.-](\d{2})/);
+            if (m) endDate = `${m[1]}-${m[2]}-${m[3]}`;
+          }
+
+          if (!startDate) {
+            startDate = `${new Date().getFullYear()}-01-01`;
+          }
+
+          // Job code and employment type determination:
+          let jobCode = '1101';
+          let employmentType = 'munkaviszony';
+          if (relCode) {
+            const codeMatch = String(relCode).match(/\b(1\d{3})\b/);
+            if (codeMatch) {
+              jobCode = codeMatch[1];
+            } else if (String(relCode).toLowerCase().includes('megbízás') || String(relCode).toLowerCase().includes('megbizas')) {
+              jobCode = '1300';
+              employmentType = 'megbizas';
+            } else if (String(relCode).toLowerCase().includes('egyszerűsített') || String(relCode).toLowerCase().includes('alkalmi')) {
+              jobCode = '1138';
+              employmentType = 'efo_alkalmi';
+            } else if (String(relCode).toLowerCase().includes('társas') || String(relCode).toLowerCase().includes('tag')) {
+              jobCode = '1452';
+              employmentType = 'tarsas_vallalkozo';
+            }
+          }
+
+          if (jobCode === '1101') employmentType = 'munkaviszony';
+          else if (jobCode === '1115') employmentType = 'tartos_megbizas';
+          else if (jobCode === '1138') employmentType = 'efo_alkalmi';
+          else if (jobCode === '1131') employmentType = 'szakkep';
+          else if (jobCode === '1300') employmentType = 'megbizas';
+          else if (jobCode.startsWith('14')) employmentType = 'tarsas_vallalkozo';
+          else if (jobCode === '1141') employmentType = 'kozfogl';
+          else if (jobCode === '1180') employmentType = 'kulfoldi';
 
           const { data: existingJob } = await adminClient
             .from('accounty_employments')
@@ -721,27 +787,34 @@ Deno.serve(async (req: Request) => {
             .maybeSingle();
 
           if (!existingJob) {
-            await adminClient.from('accounty_employments').insert({
+            const { error: insJobErr } = await adminClient.from('accounty_employments').insert({
               company_id,
               employee_id: employeeId,
+              job_code: jobCode,
+              employment_type: employmentType,
               feor_code: feorCode,
               job_title: feorDesc || 'Munkavállaló',
               weekly_hours: weeklyHours,
               start_date: startDate,
               end_date: endDate,
-              insurance_relationship_code: relCode,
+              insurance_relationship_code: relCode ? String(relCode).slice(0, 100) : jobCode,
               status: 'active',
             });
+            if (insJobErr) {
+              console.error('Error inserting employment from T1041:', insJobErr);
+            }
           } else {
             await adminClient
               .from('accounty_employments')
               .update({
+                job_code: jobCode,
+                employment_type: employmentType,
                 feor_code: feorCode || undefined,
                 job_title: feorDesc || undefined,
                 weekly_hours: weeklyHours,
                 start_date: startDate || undefined,
                 end_date: endDate,
-                insurance_relationship_code: relCode || undefined,
+                insurance_relationship_code: relCode ? String(relCode).slice(0, 100) : undefined,
               })
               .eq('id', existingJob.id);
           }
@@ -783,27 +856,115 @@ Deno.serve(async (req: Request) => {
 
       const navJson = await navResp.json();
 
-      // Upsert into accounty_efo_entries if employees found
-      const workers = navJson.foglalkoztatott || [];
+      // Upsert into accounty_efo_entries and accounty_employees
+      const rawWorkers = navJson.foglalkoztatott || navJson.foglalkoztatottak || [];
+      const workers = Array.isArray(rawWorkers) ? rawWorkers : [rawWorkers];
+
+      let efoSyncedCount = 0;
       for (const w of workers) {
+        if (!w) continue;
+        let taxId = '';
+        if (typeof w.adoazonositoJel === 'string') {
+          taxId = w.adoazonositoJel.trim();
+        } else if (w.adoazonositoJel?.adoalanyAzonosito) {
+          taxId = String(w.adoazonositoJel.adoalanyAzonosito).trim();
+        } else if (typeof w.adoazonositoJel === 'number') {
+          taxId = String(w.adoazonositoJel).trim();
+        }
+
+        const rawName = String(w.nev || '').trim();
+        const taj = w.tajSzam ? String(w.tajSzam).trim() : null;
+
+        if (!taxId) continue;
+
         await adminClient.from('accounty_efo_entries').upsert(
           {
             company_id,
-            tax_id: w.adoazonositoJel,
-            name: w.nev,
-            taj_number: w.tajSzam || null,
+            tax_id: taxId,
+            name: rawName,
+            taj_number: taj,
             target_year: targetYear,
-            days_alkalmi: w.felhasznaltNapok?.alkalmi || 0,
-            days_mezogazdasag: w.felhasznaltNapok?.mezogazdasag || 0,
-            days_turisztika: w.felhasznaltNapok?.turisztika || 0,
-            days_filmipar: w.felhasznaltNapok?.filmipar || 0,
-            days_total_used: w.felhasznaltNapok?.osszes || 0,
-            days_total_available: w.felhasznalhatoNapok?.osszes ?? 120,
-            days_agri_available: w.felhasznalhatoNapok?.mezogazdasag ?? 90,
+            days_alkalmi: Number(w.felhasznaltNapok?.alkalmi) || 0,
+            days_mezogazdasag: Number(w.felhasznaltNapok?.mezogazdasag) || 0,
+            days_turisztika: Number(w.felhasznaltNapok?.turisztika) || 0,
+            days_filmipar: Number(w.felhasznaltNapok?.filmipar) || 0,
+            days_total_used: Number(w.felhasznaltNapok?.osszes) || 0,
+            days_total_available: Number(w.felhasznalhatoNapok?.osszes) ?? 120,
+            days_agri_available: Number(w.felhasznalhatoNapok?.mezogazdasag) ?? 90,
             last_sync_at: new Date().toISOString(),
           },
           { onConflict: 'company_id,tax_id,target_year' }
         );
+
+        // Also upsert into accounty_employees and accounty_employments
+        const nameParts = rawName.split(/\s+/).filter(Boolean);
+        const lastName = nameParts[0] || 'Munkavállaló';
+        const firstName = nameParts.slice(1).join(' ') || lastName;
+
+        const { data: existingEmp } = await adminClient
+          .from('accounty_employees')
+          .select('id')
+          .eq('company_id', company_id)
+          .eq('tax_id', taxId)
+          .maybeSingle();
+
+        let employeeId = existingEmp?.id;
+        if (!employeeId) {
+          const { data: newEmp, error: newEmpErr } = await adminClient
+            .from('accounty_employees')
+            .insert({
+              company_id,
+              first_name: firstName,
+              last_name: lastName,
+              tax_id: taxId,
+              taj_number: taj,
+              status: 'active',
+            })
+            .select('id')
+            .single();
+
+          if (newEmpErr) {
+            console.error('Error inserting EFO employee:', newEmpErr);
+            continue;
+          }
+          employeeId = newEmp?.id;
+        } else {
+          await adminClient
+            .from('accounty_employees')
+            .update({
+              first_name: firstName,
+              last_name: lastName,
+              taj_number: taj || undefined,
+            })
+            .eq('id', employeeId);
+        }
+
+        if (employeeId) {
+          const { data: existingJob } = await adminClient
+            .from('accounty_employments')
+            .select('id')
+            .eq('company_id', company_id)
+            .eq('employee_id', employeeId)
+            .maybeSingle();
+
+          if (!existingJob) {
+            const { error: newJobErr } = await adminClient.from('accounty_employments').insert({
+              company_id,
+              employee_id: employeeId,
+              job_code: '1138', // EFO alkalmi munkavállaló
+              employment_type: 'efo_alkalmi',
+              job_title: 'Egyszerűsített foglalkoztatott (EFO)',
+              weekly_hours: 40,
+              start_date: `${targetYear}-01-01`,
+              insurance_relationship_code: '1138',
+              status: 'active',
+            });
+            if (newJobErr) {
+              console.error('Error inserting EFO employment:', newJobErr);
+            }
+          }
+        }
+        efoSyncedCount++;
       }
 
       await adminClient.from('nav_m2m_audit_logs').insert({
@@ -825,6 +986,7 @@ Deno.serve(async (req: Request) => {
           success: true,
           resultCode: navJson.resultCode,
           count: workers.length,
+          synced_count: efoSyncedCount,
           workers,
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

@@ -148,3 +148,4 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 | 061 | Számlatétel Áfakód Felülbírálat és Gépi Tanulási (ML) Szabályrendszer | ✅ Decided | [061-invoice-vat-code-overrides-and-machine-learning.md](./061-invoice-vat-code-overrides-and-machine-learning.md) |
 | 062 | DRS Kötelező Visszaváltási Díj (Kupakdíj / Betétdíj) Kizárása az ÁFA Bevallásból | ✅ Decided | [062-drs-mandatory-deposit-fee-vat-exclusion.md](./062-drs-mandatory-deposit-fee-vat-exclusion.md) |
 | 063 | Folyószámla és Analitika Számviteli Szabályzat és Integritás | ✅ Decided | [063-subledger-and-open-items-accounting-policy.md](./063-subledger-and-open-items-accounting-policy.md) |
+| 064 | A60 Közösségi ÁFA Összesítő és 65-ös Bevallás Összefüggés-vizsgálat (VIES Integrációval) | ✅ Decided | [064-a60-community-vat-and-vies-crosscheck.md](./064-a60-community-vat-and-vies-crosscheck.md) |

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -6,12 +6,22 @@ import {
   Users, Calculator, FileText, Calendar, Clock, TrendingUp,
   Plus, Search, ArrowUpRight, Banknote, UserPlus, ChevronRight,
   AlertTriangle, CheckCircle2, Loader2, Building2, Settings, ChevronLeft,
-  Upload, Sparkles, Coins, LogOut, FolderOpen
+  Upload, Sparkles, Coins, LogOut, FolderOpen, Briefcase
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { usePayrollEmployees, usePayrollCycles, usePayrollFilings, useTaxParameters } from '@/hooks/usePayrollData';
+import {
+  usePayrollEmployees,
+  usePayrollCycles,
+  usePayrollFilings,
+  useTaxParameters,
+  useCompanyEmployments,
+  useCompanyEfoEntries,
+  type PayrollEmployee,
+  type PayrollEmployment,
+  type EfoEntry
+} from '@/hooks/usePayrollData';
 import { formatAmount } from '@/lib/payroll/validators';
 import { Breadcrumb } from '@/components/accounty/SharedComponents';
 import { useAccountyClients } from '@/hooks/accounty';
@@ -137,12 +147,15 @@ export default function PayrollDashboardPage() {
   const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const isHr = prefix === '/hr' || i18n.language === 'hr';
   const MONTHS = isHr ? MONTHS_HR : MONTHS_HU;
-  const [searchQuery, setSearchQuery] = useState('');
+  const [regularSearchQuery, setRegularSearchQuery] = useState('');
+  const [efoSearchQuery, setEfoSearchQuery] = useState('');
   const [reconstructionOpen, setReconstructionOpen] = useState(false);
   const [exitModalOpen, setExitModalOpen] = useState(false);
   const [exitSearchQuery, setExitSearchQuery] = useState('');
 
   const { data: employees = [], isLoading: empLoading, isError: empError } = usePayrollEmployees(companyId || '');
+  const { data: employments = [] } = useCompanyEmployments(companyId || '');
+  const { data: efoEntries = [] } = useCompanyEfoEntries(companyId || '');
   const { data: cycles = [], isLoading: cyclesLoading, isError: cyclesError } = usePayrollCycles(companyId || '');
   const { data: filings = [], isLoading: filingsLoading, isError: filingsError } = usePayrollFilings(companyId || '');
   const { dateFrom, dateFromFormatted, dateToFormatted } = useDateRange();
@@ -154,6 +167,102 @@ export default function PayrollDashboardPage() {
 
   const isLoading = empLoading || cyclesLoading || filingsLoading;
   const isError = empError || cyclesError || filingsError;
+
+  // ── EFO Identification Helper ──
+  const efoCodes = useMemo(() => ['81', '82', '83', '1181', '1138', '1139', 'efo', 'efo_alkalmi'], []);
+
+  const isEmployeeEfo = useCallback((emp: PayrollEmployee): boolean => {
+    const empJobs = employments.filter(e => e.employee_id === emp.id);
+    const hasEfoJob = empJobs.some(j => {
+      const t = (j.employment_type || '').toLowerCase();
+      const c = (j.job_code || '').trim().toLowerCase();
+      return efoCodes.includes(t) || efoCodes.includes(c) || t.includes('efo');
+    });
+    if (hasEfoJob) return true;
+
+    return efoEntries.some(efo =>
+      (emp.tax_id && efo.tax_id === emp.tax_id) ||
+      (emp.taj_number && efo.taj_number && efo.taj_number === emp.taj_number)
+    );
+  }, [employments, efoEntries, efoCodes]);
+
+  // ── Separation: Regular Employees vs EFO Employees ──
+  const regularEmployees = useMemo(() => {
+    return employees.filter(e => !isEmployeeEfo(e));
+  }, [employees, isEmployeeEfo]);
+
+  const efoEmployees = useMemo(() => {
+    return employees.filter(e => isEmployeeEfo(e));
+  }, [employees, isEmployeeEfo]);
+
+  // ── Combined EFO list with days calculation ──
+  const combinedEfoList = useMemo(() => {
+    const list: Array<{
+      id: string;
+      employeeId?: string;
+      name: string;
+      lastName: string;
+      firstName: string;
+      tajNumber: string | null;
+      taxId: string | null;
+      status: string;
+      daysTotalUsed: number;
+      daysTotalAvailable: number;
+      daysAlkalmi: number;
+      jobTitle?: string;
+    }> = [];
+
+    const matchedTaxIds = new Set<string>();
+
+    for (const emp of efoEmployees) {
+      const efoData = efoEntries.find(efo =>
+        (emp.tax_id && efo.tax_id === emp.tax_id) ||
+        (emp.taj_number && efo.taj_number && efo.taj_number === emp.taj_number)
+      );
+      if (emp.tax_id) matchedTaxIds.add(emp.tax_id);
+
+      const job = employments.find(e => e.employee_id === emp.id);
+
+      list.push({
+        id: emp.id,
+        employeeId: emp.id,
+        name: `${emp.last_name} ${emp.first_name}`,
+        lastName: emp.last_name,
+        firstName: emp.first_name,
+        tajNumber: emp.taj_number,
+        taxId: emp.tax_id,
+        status: emp.status,
+        daysTotalUsed: efoData?.days_total_used ?? 0,
+        daysTotalAvailable: efoData?.days_total_available ?? 120,
+        daysAlkalmi: efoData?.days_alkalmi ?? 0,
+        jobTitle: job?.job_title || 'Egyszerűsített foglalkoztatott',
+      });
+    }
+
+    // Include any efoEntry from NAV ÜPO that has not been converted to an accounty_employees record yet
+    for (const efo of efoEntries) {
+      if (!matchedTaxIds.has(efo.tax_id)) {
+        const parts = efo.name.trim().split(' ');
+        const lastName = parts[0] || efo.name;
+        const firstName = parts.slice(1).join(' ') || '';
+        list.push({
+          id: efo.id,
+          name: efo.name,
+          lastName,
+          firstName,
+          tajNumber: efo.taj_number,
+          taxId: efo.tax_id,
+          status: 'active',
+          daysTotalUsed: efo.days_total_used,
+          daysTotalAvailable: efo.days_total_available,
+          daysAlkalmi: efo.days_alkalmi,
+          jobTitle: 'EFO alkalmi munkavállaló',
+        });
+      }
+    }
+
+    return list;
+  }, [efoEmployees, efoEntries, employments]);
 
   // ── KPIs ──
   const kpis = useMemo(() => {
@@ -170,16 +279,27 @@ export default function PayrollDashboardPage() {
   // ── Recent cycles (last 6) ──
   const recentCycles = useMemo(() => cycles.slice(0, 6), [cycles]);
 
-  // ── Filtered employees ──
-  const filteredEmployees = useMemo(() => {
-    if (!searchQuery) return employees.slice(0, 10);
-    const q = searchQuery.toLowerCase();
-    return employees.filter(e =>
+  // ── Filtered regular employees ──
+  const filteredRegularEmployees = useMemo(() => {
+    if (!regularSearchQuery) return regularEmployees.slice(0, 10);
+    const q = regularSearchQuery.toLowerCase();
+    return regularEmployees.filter(e =>
       `${e.last_name} ${e.first_name}`.toLowerCase().includes(q) ||
       (e.taj_number && e.taj_number.includes(q)) ||
       (e.tax_id && e.tax_id.includes(q))
     ).slice(0, 10);
-  }, [employees, searchQuery]);
+  }, [regularEmployees, regularSearchQuery]);
+
+  // ── Filtered EFO employees ──
+  const filteredEfoList = useMemo(() => {
+    if (!efoSearchQuery) return combinedEfoList.slice(0, 10);
+    const q = efoSearchQuery.toLowerCase();
+    return combinedEfoList.filter(e =>
+      e.name.toLowerCase().includes(q) ||
+      (e.tajNumber && e.tajNumber.includes(q)) ||
+      (e.taxId && e.taxId.includes(q))
+    ).slice(0, 10);
+  }, [combinedEfoList, efoSearchQuery]);
 
   // ── Exit document candidate employees ──
   const exitCandidateEmployees = useMemo(() => {
@@ -358,6 +478,7 @@ export default function PayrollDashboardPage() {
         <KpiCard
           title={t('payroll_dashboard.kpi_active_employees')}
           value={kpis.activeEmployees}
+          subtitle={`${regularEmployees.length} állandó • ${combinedEfoList.length} EFO`}
           icon={Users}
           accentColor="teal"
         />
@@ -383,108 +504,32 @@ export default function PayrollDashboardPage() {
         />
       </div>
 
-      {/* Main grid: Employees + Cycles */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Main grid: 3 Columns (Havi ciklusok, Foglalkoztatottak, EFO) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        {/* ── Foglalkoztatottak panel ── */}
-        <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
-          <div className="p-5 border-b border-border flex items-center justify-between">
-            <h2 className="text-lg font-bold text-foreground">{t('payroll_dashboard.panel_employees_title')}</h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees`)}
-              className="text-xs text-primary font-semibold flex items-center gap-1"
-            >
-              {t('payroll_dashboard.panel_employees_all')} <ArrowUpRight className="w-3.5 h-3.5" />
-            </Button>
-          </div>
-
-          <div className="px-5 py-3 border-b border-border/50">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder={t('payroll_dashboard.panel_employees_search')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 bg-muted/40 dark:bg-background border-transparent text-sm h-9"
-              />
+        {/* ── 1. Havi ciklusok panel ── */}
+        <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden flex flex-col min-h-[460px]">
+          <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-blue-500" />
+              <h2 className="text-lg font-bold text-foreground">{t('payroll_dashboard.panel_cycles_title')}</h2>
+              {cycles.length > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground">
+                  {cycles.length}
+                </span>
+              )}
             </div>
-          </div>
-
-          <div className="divide-y divide-border/50">
-            {filteredEmployees.length === 0 ? (
-              <div className="py-12 text-center text-sm text-muted-foreground">
-                <Users className="w-8 h-8 mx-auto mb-2 text-muted-foreground/60" />
-                {employees.length === 0 ? t('payroll_dashboard.panel_employees_empty') : t('payroll_dashboard.panel_employees_no_match')}
-              </div>
-            ) : (
-              filteredEmployees.map((emp) => (
-                <div
-                  key={emp.id}
-                  onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/${emp.id}`)}
-                  className="px-5 py-3.5 flex items-center gap-3 hover:bg-muted/50 cursor-pointer transition-colors group"
-                >
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-sm font-bold text-primary">
-                    {emp.last_name[0]}{emp.first_name[0]}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">
-                      {emp.last_name} {emp.first_name}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {emp.taj_number || 'TAJ: –'}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    title="Kilépő dokumentumok megtekintése"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/${emp.id}/exit-docs`);
-                    }}
-                    className={cn(
-                      "text-xs h-7 px-2.5 transition-all shrink-0",
-                      emp.status === 'terminated'
-                        ? "text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 opacity-100 font-semibold"
-                        : "text-muted-foreground hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 opacity-0 group-hover:opacity-100"
-                    )}
-                  >
-                    <LogOut className="w-3 h-3 mr-1" />
-                    {t('payroll_dashboard.panel_employees_exit_docs')}
-                  </Button>
-                  <span className={cn(
-                    'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase shrink-0',
-                    emp.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' :
-                    emp.status === 'pending' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' :
-                    emp.status === 'terminated' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300' :
-                    'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground'
-                  )}>
-                    {emp.status === 'active' ? t('payroll_dashboard.status_active') : emp.status === 'pending' ? t('payroll_dashboard.status_pending') : emp.status === 'terminated' ? t('payroll_dashboard.status_terminated') : emp.status}
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-primary transition-colors shrink-0" />
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* ── Havi ciklusok panel ── */}
-        <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
-          <div className="p-5 border-b border-border flex items-center justify-between">
-            <h2 className="text-lg font-bold text-foreground">{t('payroll_dashboard.panel_cycles_title')}</h2>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/cycle/new`)}
-              className="text-xs text-primary font-semibold flex items-center gap-1"
+              className="text-xs text-primary font-semibold flex items-center gap-1 h-8 px-2.5"
             >
               <Plus className="w-3.5 h-3.5" /> {t('payroll_dashboard.panel_cycles_new')}
             </Button>
           </div>
 
-          <div className="divide-y divide-border/50">
+          <div className="divide-y divide-border/50 max-h-[520px] overflow-y-auto flex-1">
             {recentCycles.length === 0 ? (
               <div className="py-12 text-center text-sm text-muted-foreground">
                 <Calendar className="w-8 h-8 mx-auto mb-2 text-muted-foreground/60" />
@@ -495,18 +540,18 @@ export default function PayrollDashboardPage() {
                 <div
                   key={cycle.id}
                   onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/cycle/${cycle.id}`)}
-                  className="px-5 py-4 flex items-center gap-4 hover:bg-muted/50 cursor-pointer transition-colors group"
+                  className="px-4 py-3.5 sm:px-5 sm:py-4 flex items-center gap-3.5 hover:bg-muted/50 cursor-pointer transition-colors group"
                 >
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/20 flex flex-col items-center justify-center">
+                  <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/20 flex flex-col items-center justify-center shrink-0">
                     <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase leading-none">
                       {MONTHS[cycle.month - 1]?.slice(0, 3)}
                     </span>
-                    <span className="text-lg font-black text-blue-700 dark:text-blue-300 leading-none mt-0.5">
+                    <span className="text-base font-black text-blue-700 dark:text-blue-300 leading-none mt-0.5">
                       {cycle.year}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground">
+                    <p className="text-sm font-semibold text-foreground truncate">
                       {cycle.year}. {MONTHS[cycle.month - 1]}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
@@ -516,24 +561,200 @@ export default function PayrollDashboardPage() {
                           <div
                             key={i}
                             className={cn(
-                              'w-3 h-1 rounded-full transition-colors',
+                              'w-2.5 h-1 rounded-full transition-colors',
                               i < cycle.current_step ? 'bg-primary' : 'bg-muted'
                             )}
                           />
                         ))}
                       </div>
-                      <span className="text-[11px] text-muted-foreground">
+                      <span className="text-[11px] text-muted-foreground whitespace-nowrap">
                         {t('payroll_dashboard.panel_cycles_step_count', { current: cycle.current_step, total: 8 })}
                       </span>
                     </div>
                   </div>
                   <CycleStatusBadge status={cycle.status} isHr={isHr} />
-                  <ChevronRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-primary transition-colors" />
+                  <ChevronRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-primary transition-colors shrink-0" />
                 </div>
               ))
             )}
           </div>
         </div>
+
+        {/* ── 2. Foglalkoztatottak (Sima) panel ── */}
+        <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden flex flex-col min-h-[460px]">
+          <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-teal-500" />
+              <h2 className="text-lg font-bold text-foreground">{t('payroll_dashboard.panel_employees_title')}</h2>
+              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground">
+                {regularEmployees.length}
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees?type=regular`)}
+              className="text-xs text-primary font-semibold flex items-center gap-1 h-8 px-2.5"
+            >
+              {t('payroll_dashboard.panel_employees_all')} <ArrowUpRight className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+
+          <div className="px-4 py-2.5 sm:px-5 sm:py-3 border-b border-border/50">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder={t('payroll_dashboard.panel_employees_search')}
+                value={regularSearchQuery}
+                onChange={(e) => setRegularSearchQuery(e.target.value)}
+                className="pl-9 bg-muted/40 dark:bg-background border-transparent text-sm h-9"
+              />
+            </div>
+          </div>
+
+          <div className="divide-y divide-border/50 max-h-[500px] overflow-y-auto flex-1">
+            {filteredRegularEmployees.length === 0 ? (
+              <div className="py-12 text-center text-sm text-muted-foreground">
+                <Users className="w-8 h-8 mx-auto mb-2 text-muted-foreground/60" />
+                {regularEmployees.length === 0 ? 'Még nincsenek állandó foglalkoztatottak' : t('payroll_dashboard.panel_employees_no_match')}
+              </div>
+            ) : (
+              filteredRegularEmployees.map((emp) => {
+                const empJob = employments.find(e => e.employee_id === emp.id);
+                return (
+                  <div
+                    key={emp.id}
+                    onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/${emp.id}`)}
+                    className="px-4 py-3.5 sm:px-5 sm:py-3.5 flex items-center gap-3 hover:bg-muted/50 cursor-pointer transition-colors group"
+                  >
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-sm font-bold text-primary shrink-0">
+                      {emp.last_name[0]}{emp.first_name[0]}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {emp.last_name} {emp.first_name}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {empJob?.job_title ? `${empJob.job_title} • ` : ''}{emp.taj_number ? `TAJ: ${emp.taj_number}` : 'TAJ: –'}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      title="Kilépő dokumentumok megtekintése"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/${emp.id}/exit-docs`);
+                      }}
+                      className={cn(
+                        "text-xs h-7 px-2 transition-all shrink-0",
+                        emp.status === 'terminated'
+                          ? "text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 opacity-100 font-semibold"
+                          : "text-muted-foreground hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 opacity-0 group-hover:opacity-100"
+                      )}
+                    >
+                      <LogOut className="w-3 h-3 mr-1" />
+                      {t('payroll_dashboard.panel_employees_exit_docs')}
+                    </Button>
+                    <span className={cn(
+                      'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase shrink-0',
+                      emp.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' :
+                      emp.status === 'pending' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' :
+                      emp.status === 'terminated' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300' :
+                      'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground'
+                    )}>
+                      {emp.status === 'active' ? t('payroll_dashboard.status_active') : emp.status === 'pending' ? t('payroll_dashboard.status_pending') : emp.status === 'terminated' ? t('payroll_dashboard.status_terminated') : emp.status}
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-primary transition-colors shrink-0" />
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        {/* ── 3. EFO panel ── */}
+        <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden flex flex-col min-h-[460px]">
+          <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Briefcase className="w-5 h-5 text-amber-500" />
+              <h2 className="text-lg font-bold text-foreground">EFO</h2>
+              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                {combinedEfoList.length}
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees?type=efo`)}
+              className="text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1 h-8 px-2.5"
+            >
+              Összes <ArrowUpRight className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+
+          <div className="px-4 py-2.5 sm:px-5 sm:py-3 border-b border-border/50">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Keresés EFO dolgozó, TAJ..."
+                value={efoSearchQuery}
+                onChange={(e) => setEfoSearchQuery(e.target.value)}
+                className="pl-9 bg-muted/40 dark:bg-background border-transparent text-sm h-9"
+              />
+            </div>
+          </div>
+
+          <div className="divide-y divide-border/50 max-h-[500px] overflow-y-auto flex-1">
+            {filteredEfoList.length === 0 ? (
+              <div className="py-12 text-center text-sm text-muted-foreground">
+                <Briefcase className="w-8 h-8 mx-auto mb-2 text-muted-foreground/60" />
+                {combinedEfoList.length === 0 ? 'Még nincsenek egyszerűsített foglalkoztatottak' : 'Nincs találat az EFO dolgozók között'}
+              </div>
+            ) : (
+              filteredEfoList.map((efoItem) => (
+                <div
+                  key={efoItem.id}
+                  onClick={() => {
+                    if (efoItem.employeeId) {
+                      navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/${efoItem.employeeId}`);
+                    }
+                  }}
+                  className={cn(
+                    "px-4 py-3.5 sm:px-5 sm:py-3.5 flex items-center gap-3 transition-colors group",
+                    efoItem.employeeId ? "hover:bg-muted/50 cursor-pointer" : "cursor-default"
+                  )}
+                >
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/30 flex items-center justify-center text-sm font-bold text-amber-600 dark:text-amber-400 shrink-0">
+                    {efoItem.lastName[0] || 'E'}{efoItem.firstName[0] || 'F'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">
+                      {efoItem.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {efoItem.tajNumber ? `TAJ: ${efoItem.tajNumber} • ` : ''}Alkalmi munka
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={cn(
+                      'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider',
+                      efoItem.daysTotalUsed > 90
+                        ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
+                        : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                    )}>
+                      {efoItem.daysTotalUsed > 0 ? `${efoItem.daysTotalUsed} / 120 nap` : 'EFO'}
+                    </span>
+                    {efoItem.employeeId && (
+                      <ChevronRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-primary transition-colors" />
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
       </div>
 
       {/* ── Bevallások ── */}

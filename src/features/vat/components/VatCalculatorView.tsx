@@ -160,6 +160,7 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
         { key: 'detail', title: 'Részletező sorok (37–62)', page: 'A-02', icon: '📋' },
         { key: 'deductible', title: 'Levonható ÁFA (63–79)', page: 'A-02/03', icon: '📥' },
         { key: 'settlement', title: 'Elszámolás (82–86)', page: 'A-03', icon: '⚖️' },
+        { key: 'info', title: 'Tájékoztató adatok (91–104)', page: 'A-03/04', icon: 'ℹ️' },
         { key: 'm_sheet', title: 'M-lap összesítő (105–109)', page: 'A-05', icon: '📊' },
       ];
 
@@ -725,7 +726,7 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                         !!line &&
                         !isSummary &&
                         ((line.source_vat_codes && line.source_vat_codes.length > 0) ||
-                          ['01', '02', '03', '04', '05', '06', '07', '08', '18', '27', '29', '45', '63', '64', '65', '66', '67', '77', '91', '92'].includes(row.row_number));
+                          ['01', '02', '03', '04', '05', '06', '07', '08', '11', '12', '13', '14', '15', '16', '18', '27', '29', '43', '45', '63', '64', '65', '66', '67', '69', '77', '91', '92'].includes(row.row_number));
                       const isDrillExpanded = expandedFormRow === row.row_number;
 
                       return (

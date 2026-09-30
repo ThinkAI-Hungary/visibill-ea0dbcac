@@ -18,7 +18,7 @@ Továbbá az időszaki pénztárzárás (`CashClosingDialog`) kizárólag az id�
 ## 2. Decision
 
 ### 1. Kétirányú Számlakiegyenlítő RPC (`settle_invoices_via_petty_cash`)
-A `20260924200000_petty_cash_inbound_settlement.sql` migrációval az eljárás előjel-érzékennyé és kétirányúvá vált:
+A `20260924200000_petty_cash_inbound_settlement.sql` migrációval az eljárás előjel-érzékennyé és kétirányúvá vált, a `20260930140000_fix_settle_invoices_via_petty_cash_partner_id.sql` javítással pedig megerősítésre került a partner feloldás:
 ```sql
 SELECT 
   COUNT(*),
@@ -29,15 +29,14 @@ SELECT
     END
   ), 0),
   string_agg(bizonylatsorszam, ', ' ORDER BY kibocsatas_datuma, bizonylatsorszam),
-  MIN(id::text)::uuid,
-  MIN(partner_id::text)::uuid
-INTO v_inv_count, v_total_amount, v_biz_sorszamok, v_first_inv_id, v_first_partner_id
+  MIN(id::text)::uuid
+INTO v_inv_count, v_total_amount, v_biz_sorszamok, v_first_inv_id
 FROM invoices
 WHERE id = ANY(p_invoice_ids) AND company_id = p_company_id;
 ```
 - **Kimenő (vevői) számla:** `+brutto_vegosszeg` → pénztári növekmény (bevétel).
 - **Bejövő (szállítói) számla:** `-brutto_vegosszeg` → pénztári csökkenés (kiadás).
-- **Partner reláció:** Egyedi számla esetén a `partner_id` automatikusan átkerül a `petty_cash_entries` tételbe, biztosítva a partnerkarton analitika integritását.
+- **Partner reláció:** Mivel az `invoices` tábla nem tárol közvetlen `partner_id`-t, egyedi számla esetén a tárolt eljárás a `public.partners` táblából oldja fel a partnert adószám (törzsszám) vagy név alapján, és ezt rögzíti a `petty_cash_entries.partner_id` mezőbe.
 - **Atomi tranzakció:** A pénztári tétel rögzítésével egyidejűleg a számlák `fizetve = true` és `fizetes_napja = p_entry_date` értékei lefrissülnek.
 
 ### 2. Időszaki Pénztárzárás és Egyenlegmodell (`CashClosingDialog`)

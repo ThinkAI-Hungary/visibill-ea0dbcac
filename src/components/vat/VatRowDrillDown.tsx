@@ -255,15 +255,20 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
       else if (rowNumber === '06') { directions = ['OUTBOUND']; vatPercents = [18]; }
       else if (rowNumber === '07') { directions = ['OUTBOUND']; vatPercents = [27]; }
       else if (rowNumber === '08') { directions = ['OUTBOUND']; vatPercents = [0]; }
+      else if (rowNumber === '11') { directions = ['INBOUND']; vatPercents = [0]; }
+      else if (rowNumber === '12') { directions = ['INBOUND']; vatPercents = [5]; }
+      else if (rowNumber === '13') { directions = ['INBOUND']; vatPercents = [18]; }
+      else if (rowNumber === '14' || rowNumber === '15' || rowNumber === '16') { directions = ['INBOUND']; vatPercents = [27]; }
+      else if (rowNumber === '18' || rowNumber === '27') { directions = ['INBOUND']; vatPercents = [27]; }
       else if (rowNumber === '29') { directions = ['INBOUND']; vatPercents = [27, 0]; }
       else if (rowNumber === '43') { directions = ['OUTBOUND']; vatPercents = [27, 18, 5]; }
       else if (rowNumber === '45') { directions = ['OUTBOUND']; vatPercents = [27, 18, 5]; }
-      else if (rowNumber === '18' || rowNumber === '27') { directions = ['INBOUND']; vatPercents = [27]; }
       else if (rowNumber === '63') { directions = ['INBOUND']; vatPercents = [0]; }
       else if (rowNumber === '64') { directions = ['INBOUND']; vatPercents = [5]; }
       else if (rowNumber === '65') { directions = ['INBOUND']; vatPercents = [18]; }
       else if (rowNumber === '66') { directions = ['INBOUND']; vatPercents = [27]; }
       else if (rowNumber === '67') { directions = ['INBOUND']; vatPercents = [27]; }
+      else if (rowNumber === '69') { directions = ['INBOUND']; vatPercents = [27, 18, 5, 0]; }
       else if (rowNumber === '77') { directions = ['INBOUND']; vatPercents = [27, 18, 5]; }
       else if (rowNumber === '91' || rowNumber === '92') { directions = ['OUTBOUND']; vatPercents = [0]; }
 
@@ -342,12 +347,51 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
       const { data, error } = await query;
       if (error) { reportError({ type: 'db_query', component: 'VatRowDrillDown', action: 'error', message: 'drill error:', error: error }); return []; }
 
-      // Fetch items and customer names from invoices table for any invoices
+      let candidateInvoices = (data || []);
+      const norm = (s: string) => (s || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+
+      // Also fetch uploaded foreign / OCR invoices from invoices table if not present in nav_invoices
+      const { data: uploadedInvs } = await supabase
+        .from('invoices')
+        .select(`
+          id, bizonylatsorszam, elado_nev, vevo_nev, elado_vat_id, vevo_vat_id, invoice_direction,
+          teljesites_datuma, kibocsatas_datuma, penznem, adoalap_osszesen, afa_osszeg_osszesen, forditott_adozas, vat_row_override,
+          invoice_items(id, line_number, line_description, net_amount, vat_amount, vat_rate, quantity, unit_price, deductible_percentage, product_code, net_weight_kg)
+        `)
+        .eq('company_id', companyId)
+        .or(
+          `and(teljesites_datuma.gte.${dateFrom},teljesites_datuma.lte.${dateTo}),and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${dateFrom},kibocsatas_datuma.lte.${dateTo})`
+        )
+        .in('invoice_direction', directions);
+
+      if (uploadedInvs && uploadedInvs.length > 0) {
+        const navInvNumbers = new Set(candidateInvoices.map((d: any) => norm(d.invoice_number)));
+        const missingUploaded = uploadedInvs.filter((u: any) => !navInvNumbers.has(norm(u.bizonylatsorszam)));
+        const mappedUploaded = missingUploaded.map((u: any) => ({
+          id: u.id,
+          invoice_number: u.bizonylatsorszam,
+          supplier_name: u.elado_nev,
+          customer_name: u.vevo_nev,
+          supplier_tax_number: u.elado_vat_id,
+          customer_tax_number: u.vevo_vat_id,
+          invoice_direction: u.invoice_direction || 'INBOUND',
+          invoice_delivery_date: u.teljesites_datuma || u.kibocsatas_datuma,
+          invoice_issue_date: u.kibocsatas_datuma,
+          currency: u.penznem || 'HUF',
+          invoice_net_amount: u.adoalap_osszesen || 0,
+          invoice_vat_amount: u.afa_osszeg_osszesen || 0,
+          is_reverse_charge: u.forditott_adozas || false,
+          vat_row_override: u.vat_row_override,
+          nav_invoice_items: u.invoice_items || [],
+        }));
+        candidateInvoices = [...candidateInvoices, ...mappedUploaded];
+      }
+
+      // Fetch items and customer names from invoices table for any nav_invoices
       const invNumbers = (data || []).map((d: any) => d.invoice_number).filter(Boolean);
       const appItemsMap: Record<string, any[]> = {};
       const appVevoMap: Record<string, string> = {};
       const appOverrideMap: Record<string, string> = {};
-      const norm = (s: string) => (s || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
 
       if (invNumbers.length > 0) {
         const { data: appInvs } = await supabase
@@ -371,7 +415,7 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
         });
       }
 
-      const enrichedInvoices = (data || []).map((inv: any) => {
+      const enrichedInvoices = candidateInvoices.map((inv: any) => {
         const navItems = inv.nav_invoice_items || [];
         const appItems = appItemsMap[inv.invoice_number] || [];
         const submittedVevo = appVevoMap[norm(inv.invoice_number)] || null;
@@ -435,6 +479,12 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
           const itNet = Number(it.net_amount || 0);
           const itVat = Number(it.vat_amount || 0);
 
+          const isServiceItem = Boolean(
+            (it?.product_code && /^(SZJ|TESZOR|62|63|69|70|71|72|73|74)/i.test(it.product_code)) ||
+            (inv.supplier_name && /(google|meta|hetzner|adobe|microsoft|openai|anthropic|stripe|apple|digitalocean|cloudflare|github|aws|amazon)/i.test(inv.supplier_name)) ||
+            (it?.line_description && /(szolgáltat|szolgaltat|fejleszt|tanácsad|tanacsad|díj|dij|bérlet|berlet|licenc|előfizet|elofizet|audit|marketing|hirdet|hosting|domain|support|consulting|üzemeltet|oktatás|ügyintéz|service|subscription|advertising|cloud|api|software)/i.test(it.line_description))
+          );
+
           if (isInbound) {
             if (rowNumber === '63') {
               if (!isDomestic || inv.is_reverse_charge) return false;
@@ -455,8 +505,21 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
               if (isFadItem(it, inv, isDomestic)) return true;
               return ['27%', '0.27', '27', '27.0', '27.00'].includes(rateStr) || (itNet !== 0 && Math.round((itVat / itNet) * 100) === 27);
             }
+            if (rowNumber === '18') {
+              return (isEuSupplier || isForeign) && isServiceItem;
+            }
+            if (['11', '12', '13', '14', '15', '16'].includes(rowNumber || '')) {
+              if (!isEuSupplier || isServiceItem) return false;
+              if (rowNumber === '11') return ['0', '0.0', '0.00', '0%', 'TAM', 'AAM', 'MENTES'].includes(rateStr) || itVat === 0;
+              if (rowNumber === '12') return ['5%', '0.05', '5'].includes(rateStr);
+              if (rowNumber === '13') return ['18%', '0.18', '18'].includes(rateStr);
+              return true;
+            }
             if (rowNumber === '67') {
-              return isForeign;
+              return isForeign && isServiceItem;
+            }
+            if (rowNumber === '69') {
+              return isEuSupplier && !isServiceItem;
             }
             if (rowNumber === '29') {
               return isFadItem(it, inv, isDomestic);
@@ -466,7 +529,10 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
               return rateFilters.includes(rateStr);
             }
             if (rowNumber === '02') {
-              return isEuCustomer;
+              return isEuCustomer && !isServiceItem;
+            }
+            if (rowNumber === '91' || rowNumber === '92') {
+              return isEuCustomer && isServiceItem;
             }
             if (rowNumber === '04') {
               return inv.is_reverse_charge;
@@ -512,6 +578,16 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
             matchesInvoice = isDomestic && inv.is_reverse_charge;
           } else if (rowNumber === '66') {
             matchesInvoice = isDomestic && (inv.is_reverse_charge || (vat > 0 && Math.round((vat / net) * 100) === 27));
+          } else if (rowNumber === '18') {
+            matchesInvoice = (isEuSupplier || isForeign);
+          } else if (['11', '12', '13', '14', '15', '16', '69'].includes(rowNumber || '')) {
+            matchesInvoice = isEuSupplier;
+          } else if (rowNumber === '67') {
+            matchesInvoice = isForeign;
+          } else if (rowNumber === '02') {
+            matchesInvoice = isEuCustomer;
+          } else if (rowNumber === '91' || rowNumber === '92') {
+            matchesInvoice = isEuCustomer;
           } else if (net > 0 && vat > 0) {
             const calcRate = Math.round((vat / net) * 100);
             matchesInvoice = vatPercents.some((p: any) => Math.abs(Number(p) - calcRate) <= 1);
@@ -612,14 +688,22 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
             itVat = Math.round((Number(i.net_amount) || 0) * 0.27);
           } else if (rowNumber === '66' && isFadItem(i, inv, isDomestic) && itVat === 0) {
             itVat = Math.round((Number(i.net_amount) || 0) * 0.27);
+          } else if ((rowNumber === '18' || rowNumber === '67' || rowNumber === '14' || rowNumber === '69') && itVat === 0) {
+            itVat = Math.round((Number(i.net_amount) || 0) * 0.27);
+          } else if (rowNumber === '13' && itVat === 0) {
+            itVat = Math.round((Number(i.net_amount) || 0) * 0.18);
+          } else if (rowNumber === '12' && itVat === 0) {
+            itVat = Math.round((Number(i.net_amount) || 0) * 0.05);
           }
           return is + (itVat * ratio);
         }, 0)
       : (rowNumber === '29' && Number(inv.invoice_vat_amount || 0) === 0
           ? Math.round(Number(inv.invoice_net_amount || 0) * 0.27)
-          : (rowNumber === '66' && inv.is_reverse_charge && Number(inv.invoice_vat_amount || 0) === 0
+          : (['18', '67', '14', '69'].includes(rowNumber || '') && Number(inv.invoice_vat_amount || 0) === 0
               ? Math.round(Number(inv.invoice_net_amount || 0) * 0.27)
-              : Number(inv.invoice_vat_amount || 0)));
+              : (rowNumber === '66' && inv.is_reverse_charge && Number(inv.invoice_vat_amount || 0) === 0
+                  ? Math.round(Number(inv.invoice_net_amount || 0) * 0.27)
+                  : Number(inv.invoice_vat_amount || 0))));
     return s + (vatSum * rate);
   }, 0);
 

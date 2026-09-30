@@ -63,14 +63,57 @@ export interface XmlValidationCheck {
   message: string;
 }
 
+export type A60ItemCategory = 'goods_out' | 'goods_in' | 'services_out' | 'services_in';
+
+export interface A60InvoiceItem {
+  id: string;
+  invoice_number: string;
+  invoice_direction: 'OUTBOUND' | 'INBOUND';
+  partner_name: string;
+  partner_tax_number: string;
+  country_code?: string;
+  invoice_delivery_date: string;
+  invoice_net_amount: number;
+  currency: string;
+  amountEft: number;
+  category: A60ItemCategory;
+  isService: boolean;
+  defaultIsService?: boolean;
+  hasTaxNumber: boolean;
+  isValidFormat: boolean;
+  source_table?: 'nav_invoices' | 'invoices';
+}
+
 export interface A60CalculationsResult {
+  // 1. Közösségi Termékértékesítés (Kimenő) -> 02. sor
+  goodsOutSum: number;
+  expectedGoodsOut: number;
+  goodsOutMismatch: boolean;
+
+  // 2. Közösségi Termékbeszerzés (Bejövő) -> 11-16. sorok
+  goodsInSum: number;
+  expectedGoodsIn: number;
+  goodsInMismatch: boolean;
+
+  // 3. Közösségi Szolgáltatásnyújtás (Kimenő) -> 91-92. sorok
+  servicesOutSum: number;
+  expectedServicesOut: number;
+  servicesOutMismatch: boolean;
+
+  // 4. Közösségi Szolgáltatás igénybevétele (Bejövő) -> 18. sor
+  servicesInSum: number;
+  expectedServicesIn: number;
+  servicesInMismatch: boolean;
+
+  // Backward-compatible aliases
   goodsSum: number;
   servicesSum: number;
   expectedGoods: number;
   expectedServices: number;
   goodsMismatch: boolean;
   servicesMismatch: boolean;
-  itemsList: any[];
+
+  itemsList: A60InvoiceItem[];
   taxErrors: string[];
   isValid: boolean;
 }

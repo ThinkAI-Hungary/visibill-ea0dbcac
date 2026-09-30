@@ -47,6 +47,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -81,14 +82,32 @@ interface AuditLogEntry {
   request_id: string;
 }
 
+export interface EfoEntry {
+  id: string;
+  company_id: string;
+  tax_id: string;
+  name: string;
+  taj_number: string | null;
+  target_year: number;
+  days_alkalmi: number;
+  days_mezogazdasag: number;
+  days_turisztika: number;
+  days_filmipar: number;
+  days_total_used: number;
+  days_total_available: number;
+  days_agri_available: number;
+  last_sync_at: string;
+}
+
 const PROD_CLIENT_ID = 'kD67QsLcF8';
 const DEV_CLIENT_ID = '8WRh8DdR8p';
 
 export const NavUpoM2mCard: React.FC<NavUpoM2mCardProps> = ({ companyId, isOwner = true }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<'main' | 'audit'>('main');
+  const [activeTab, setActiveTab] = useState<'main' | 'efo' | 'audit'>('main');
   const [environment, setEnvironment] = useState<'production' | 'development'>('production');
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [showAdvancedFields, setShowAdvancedFields] = useState(false);
@@ -140,6 +159,46 @@ export const NavUpoM2mCard: React.FC<NavUpoM2mCardProps> = ({ companyId, isOwner
       return (data || []) as AuditLogEntry[];
     },
     enabled: !!companyId && activeTab === 'audit',
+    staleTime: 10000,
+  });
+
+  // 3. EFO bejegyzések lekérdezése
+  const {
+    data: efoEntries = [],
+    isLoading: isEfoLoading,
+    refetch: refetchEfoEntries,
+  } = useQuery<EfoEntry[]>({
+    queryKey: ['accounty-efo-entries', companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data, error } = await supabase
+        .from('accounty_efo_entries')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('name', { ascending: true });
+      if (error) throw error;
+      return (data || []) as EfoEntry[];
+    },
+    enabled: !!companyId,
+    staleTime: 10000,
+  });
+
+  // 4. Dolgozók létszáma
+  const {
+    data: employees = [],
+    isLoading: isEmployeesLoading,
+  } = useQuery({
+    queryKey: ['accounty-employees', companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data, error } = await supabase
+        .from('accounty_employees')
+        .select('id, first_name, last_name, tax_id, taj_number, status')
+        .eq('company_id', companyId);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!companyId,
     staleTime: 10000,
   });
 
@@ -250,6 +309,7 @@ export const NavUpoM2mCard: React.FC<NavUpoM2mCardProps> = ({ companyId, isOwner
       refetchStatus();
       queryClient.invalidateQueries({ queryKey: ['nav-upo-audit-logs', companyId] });
       queryClient.invalidateQueries({ queryKey: ['accounty-employees', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['payroll'] });
     },
     onError: (err: any) => {
       toast({
@@ -280,7 +340,12 @@ export const NavUpoM2mCard: React.FC<NavUpoM2mCardProps> = ({ companyId, isOwner
         title: 'EFO alkalmi munka napok lekérdezve!',
         description: `${data.count ?? 0} fő egyszerűsített foglalkoztatási adatai és felhasznált napjai frissítve.`,
       });
+      refetchStatus();
+      refetchEfoEntries();
+      queryClient.invalidateQueries({ queryKey: ['accounty-efo-entries', companyId] });
       queryClient.invalidateQueries({ queryKey: ['nav-upo-audit-logs', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['accounty-employees', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['payroll'] });
     },
     onError: (err: any) => {
       toast({
@@ -459,6 +524,18 @@ export const NavUpoM2mCard: React.FC<NavUpoM2mCardProps> = ({ companyId, isOwner
               className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-11 px-1 font-medium text-xs"
             >
               Kapcsolat & Műveletek
+            </TabsTrigger>
+            <TabsTrigger
+              value="efo"
+              className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-11 px-1 font-medium text-xs flex items-center gap-1.5"
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              EFO Napkeretek
+              {efoEntries.length > 0 && (
+                <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0 h-4 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold border-0">
+                  {efoEntries.length}
+                </Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger
               value="audit"
@@ -793,6 +870,115 @@ export const NavUpoM2mCard: React.FC<NavUpoM2mCardProps> = ({ companyId, isOwner
                 </div>
               </div>
 
+              {/* EFO Dolgozók és Napkeret összefoglaló kártya */}
+              {efoEntries.length > 0 && (
+                <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                        <Calendar className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="text-xs font-semibold text-foreground flex items-center gap-2">
+                          Szinkronizált EFO Alkalmi Munkavállalók
+                          <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 font-medium">
+                            {efoEntries.length} fő nyilvántartva
+                          </Badge>
+                        </span>
+                        <p className="text-[11px] text-muted-foreground">
+                          {new Date().getFullYear()}. évi alkalmi munka napkeretek a NAV Ügyfélportálról
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setActiveTab('efo')}
+                      className="text-xs text-amber-700 dark:text-amber-400 hover:bg-amber-500/10 self-start sm:self-auto font-medium"
+                    >
+                      Részletes EFO táblázat &rarr;
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+                    {efoEntries.map((efo) => {
+                      const totalUsed = efo.days_total_used || 0;
+                      const maxDays = totalUsed + (efo.days_total_available || 120);
+                      const usedPct = Math.min(100, Math.round((totalUsed / (maxDays || 120)) * 100));
+
+                      return (
+                        <div key={efo.id} className="p-3 rounded-lg border border-border/70 bg-card space-y-2">
+                          <div className="flex items-start justify-between gap-1">
+                            <div className="min-w-0">
+                              <div className="text-xs font-bold text-foreground truncate" title={efo.name}>
+                                {efo.name}
+                              </div>
+                              <div className="text-[10px] font-mono text-muted-foreground">Adóaz: {efo.tax_id}</div>
+                              {efo.taj_number && (
+                                <div className="text-[10px] font-mono text-muted-foreground">TAJ: {efo.taj_number}</div>
+                              )}
+                            </div>
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] font-mono bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 shrink-0"
+                            >
+                              {totalUsed} / 120 nap
+                            </Badge>
+                          </div>
+
+                          {/* Progress bar */}
+                          <div className="space-y-1">
+                            <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all ${
+                                  usedPct > 80 ? 'bg-destructive' : usedPct > 50 ? 'bg-amber-500' : 'bg-emerald-500'
+                                }`}
+                                style={{ width: `${Math.max(usedPct, 4)}%` }}
+                              />
+                            </div>
+                            <div className="flex justify-between text-[10px] text-muted-foreground">
+                              <span>Felhasznált: <strong className="text-foreground">{efo.days_alkalmi} nap</strong></span>
+                              <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                                {efo.days_total_available} nap keret
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Ha vannak szinkronizált dolgozók */}
+              {employees.length > 0 && (
+                <div className="p-3.5 rounded-xl border border-blue-500/20 bg-blue-500/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0">
+                      <Users className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="font-semibold text-foreground">
+                        {employees.length} munkavállaló nyilvántartása aktív
+                      </span>
+                      <p className="text-[11px] text-muted-foreground">
+                        A NAV T1041-ből és egyszerűsített foglalkoztatásból szinkronizált adatok automatikusan bekerültek a bérszámfejtésbe.
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/accounty/employees')}
+                    className="text-xs border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 shrink-0"
+                  >
+                    Munkavállalók megnyitása &rarr;
+                  </Button>
+                </div>
+              )}
+
               {/* Automatikus Háttérfolyamatok Kapcsolói */}
               <div className="p-4 rounded-xl border border-border bg-muted/20 space-y-3">
                 <span className="text-xs font-semibold text-foreground">Automatizációs Szabályok</span>
@@ -866,6 +1052,130 @@ export const NavUpoM2mCard: React.FC<NavUpoM2mCardProps> = ({ companyId, isOwner
               </div>
             </div>
           )}
+        </TabsContent>
+
+        {/* ── 2. FÜL: EFO ALKALMI MUNKAVÁLLALÓK RÉSZLETES TÁBLÁZATA ── */}
+        <TabsContent value="efo" className="m-0 p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <Calendar className="w-4 h-4 text-amber-500" />
+                Egyszerűsített Foglalkoztatottak (EFO) Napkeret Nyilvántartása ({new Date().getFullYear()})
+              </span>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                A NAV adatbázisa alapján a munkavállalók tárgyévben felhasznált alkalmi munka, mezőgazdasági és turisztikai napjai, valamint a még rendelkezésre álló törvényi napkeret (max. 120 nap/év).
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => syncEfoMutation.mutate()}
+                disabled={syncEfoMutation.isPending}
+                className="text-xs"
+              >
+                {syncEfoMutation.isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                )}
+                Szinkronizálás a NAV-val
+              </Button>
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                onClick={() => navigate('/accounty/employees')}
+                className="text-xs"
+              >
+                <Users className="w-3.5 h-3.5 mr-1.5" />
+                Alkalmazottak Listája
+              </Button>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-border overflow-hidden bg-card">
+            <Table>
+              <TableHeader className="bg-muted/40 text-[11px]">
+                <TableRow>
+                  <TableHead>Munkavállaló Neve</TableHead>
+                  <TableHead>Adóazonosító</TableHead>
+                  <TableHead>TAJ szám</TableHead>
+                  <TableHead className="text-center">Alkalmi Munka</TableHead>
+                  <TableHead className="text-center">Mezőgazd. / Turisztika</TableHead>
+                  <TableHead className="text-center">Összes Felhasznált</TableHead>
+                  <TableHead className="text-center">Hátralévő Keret</TableHead>
+                  <TableHead className="text-right">Utolsó Szinkron</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="text-xs font-mono">
+                {isEfoLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground font-sans">
+                      <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
+                      EFO adatok betöltése...
+                    </TableCell>
+                  </TableRow>
+                ) : efoEntries.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground font-sans">
+                      Még nem futott EFO szinkronizáció. Kattints az „EFO Napok Lekérdezése” gombra!
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  efoEntries.map((efo) => {
+                    const totalUsed = efo.days_total_used || 0;
+                    const available = efo.days_total_available || 0;
+                    const maxDays = totalUsed + available || 120;
+                    const isLimitWarning = available <= 20;
+
+                    return (
+                      <TableRow key={efo.id} className="hover:bg-muted/30">
+                        <TableCell className="font-sans font-semibold text-foreground">
+                          {efo.name}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {efo.tax_id}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {efo.taj_number || '-'}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="outline" className="font-mono text-xs">
+                            {efo.days_alkalmi} nap
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center text-muted-foreground">
+                          {efo.days_mezogazdasag + efo.days_turisztika > 0
+                            ? `${efo.days_mezogazdasag + efo.days_turisztika} nap`
+                            : '-'}
+                        </TableCell>
+                        <TableCell className="text-center font-bold text-foreground">
+                          {totalUsed} nap
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge
+                            variant="outline"
+                            className={`text-xs font-mono font-bold ${
+                              isLimitWarning
+                                ? 'bg-destructive/10 text-destructive border-destructive/30'
+                                : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30'
+                            }`}
+                          >
+                            {available} / {maxDays} nap
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-sans text-[11px] text-muted-foreground whitespace-nowrap">
+                          {efo.last_sync_at ? new Date(efo.last_sync_at).toLocaleString('hu-HU') : '-'}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </TabsContent>
 
         {/* ── 2. FÜL: 90 NAPOS M2M AUDIT NAPLÓ (NAV ÁSZF 6.2 ELŐÍRÁS) ── */}

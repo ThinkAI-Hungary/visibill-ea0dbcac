@@ -212,24 +212,54 @@ export function calculateVatBalances(
 }
 
 /**
- * Calculates A60 EU community transaction aggregations and validation checks.
+ * Calculates A60 EU community transaction aggregations and validation checks for 4 statutory categories:
+ * 1. Termékértékesítés (Kimenő) -> 02. sor
+ * 2. Termékbeszerzés (Bejövő) -> 11-16. sorok
+ * 3. Szolgáltatásnyújtás (Kimenő) -> 91-92. sorok
+ * 4. Szolgáltatás igénybevétele (Bejövő, pl. Google Ireland) -> 18. sor
  */
 export function calculateA60Aggregations(
   euInvoices: any[],
-  euTypeOverrides: Record<string, 'product' | 'service'>,
-  expectedGoods: number,
-  expectedServices: number,
-  exchangeRates?: Record<string, number> | null
+  euTypeOverrides: Record<string, 'product' | 'service' | string> = {},
+  expectedRowsOrGoods:
+    | number
+    | { goodsOut?: number; goodsIn?: number; servicesOut?: number; servicesIn?: number },
+  legacyExpectedServices: number = 0,
+  exchangeRates?: Record<string, number> | null,
+  legacyExpectedGoodsIn: number = 0,
+  legacyExpectedServicesIn: number = 0
 ): A60CalculationsResult {
-  let goodsSum = 0;
-  let servicesSum = 0;
+  let expectedGoodsOut = 0;
+  let expectedGoodsIn = 0;
+  let expectedServicesOut = 0;
+  let expectedServicesIn = 0;
+  let rates: Record<string, number> | null | undefined = exchangeRates;
+
+  if (typeof expectedRowsOrGoods === 'object' && expectedRowsOrGoods !== null) {
+    expectedGoodsOut = expectedRowsOrGoods.goodsOut || 0;
+    expectedGoodsIn = expectedRowsOrGoods.goodsIn || 0;
+    expectedServicesOut = expectedRowsOrGoods.servicesOut || 0;
+    expectedServicesIn = expectedRowsOrGoods.servicesIn || 0;
+    rates = legacyExpectedServices as unknown as Record<string, number> | null;
+  } else {
+    expectedGoodsOut = expectedRowsOrGoods || 0;
+    expectedServicesOut = legacyExpectedServices || 0;
+    expectedGoodsIn = legacyExpectedGoodsIn || 0;
+    expectedServicesIn = legacyExpectedServicesIn || 0;
+  }
+
+  let goodsOutSum = 0;
+  let goodsInSum = 0;
+  let servicesOutSum = 0;
+  let servicesInSum = 0;
+
   const itemsList: any[] = [];
   const taxErrors: string[] = [];
 
   const getRate = (currency: string | null | undefined): number => {
     const cur = (currency || 'HUF').toUpperCase();
     if (cur === 'HUF') return 1;
-    if (exchangeRates && exchangeRates[cur]) return exchangeRates[cur];
+    if (rates && rates[cur]) return rates[cur];
     const fallbacks: Record<string, number> = {
       EUR: 400,
       USD: 370,
@@ -241,25 +271,49 @@ export function calculateA60Aggregations(
   };
 
   euInvoices.forEach((inv) => {
-    const isService =
-      euTypeOverrides[inv.id] !== undefined
-        ? euTypeOverrides[inv.id] === 'service'
-        : inv.defaultIsService;
+    const direction: 'OUTBOUND' | 'INBOUND' =
+      (inv.invoice_direction || 'INBOUND').toUpperCase() === 'OUTBOUND' ? 'OUTBOUND' : 'INBOUND';
+
+    const override = euTypeOverrides[inv.id];
+    let isService: boolean;
+
+    if (override === 'service' || override === 'services_out' || override === 'services_in') {
+      isService = true;
+    } else if (override === 'product' || override === 'goods_out' || override === 'goods_in') {
+      isService = false;
+    } else {
+      isService = !!inv.defaultIsService;
+    }
+
+    let category: 'goods_out' | 'goods_in' | 'services_out' | 'services_in';
+    if (override === 'goods_out' || override === 'goods_in' || override === 'services_out' || override === 'services_in') {
+      category = override;
+    } else {
+      if (direction === 'OUTBOUND') {
+        category = isService ? 'services_out' : 'goods_out';
+      } else {
+        category = isService ? 'services_in' : 'goods_in';
+      }
+    }
+
     const currency = inv.currency || 'HUF';
     const rate = getRate(currency);
     const netAmountHuf = (inv.invoice_net_amount || 0) * rate;
     const amountEft = Math.round(netAmountHuf / 1000);
 
-    if (inv.invoice_direction === 'OUTBOUND') {
-      if (isService) {
-        servicesSum += amountEft;
-      } else {
-        goodsSum += amountEft;
-      }
+    if (category === 'goods_out') {
+      goodsOutSum += amountEft;
+    } else if (category === 'goods_in') {
+      goodsInSum += amountEft;
+    } else if (category === 'services_out') {
+      servicesOutSum += amountEft;
+    } else if (category === 'services_in') {
+      servicesInSum += amountEft;
     }
 
-    const hasTaxNumber = !!inv.partner_tax_number;
-    const cleanTaxNumber = (inv.partner_tax_number || '').trim().toUpperCase();
+    const rawTaxNumber = inv.partner_tax_number || '';
+    const cleanTaxNumber = rawTaxNumber.replace(/[\s.-]/g, '').trim().toUpperCase();
+    const hasTaxNumber = !!cleanTaxNumber;
     const isValidFormat = /^[A-Z]{2}[A-Z0-9]{2,15}$/.test(cleanTaxNumber);
 
     if (!hasTaxNumber) {
@@ -272,6 +326,9 @@ export function calculateA60Aggregations(
 
     itemsList.push({
       ...inv,
+      invoice_direction: direction,
+      partner_tax_number: cleanTaxNumber || rawTaxNumber,
+      category,
       isService,
       amountEft,
       hasTaxNumber,
@@ -279,19 +336,53 @@ export function calculateA60Aggregations(
     });
   });
 
-  const goodsMismatch = goodsSum !== expectedGoods;
-  const servicesMismatch = servicesSum !== expectedServices;
+  const goodsOutMismatch = goodsOutSum !== expectedGoodsOut;
+  const goodsInMismatch = goodsInSum !== expectedGoodsIn;
+  const servicesOutMismatch = servicesOutSum !== expectedServicesOut;
+  const servicesInMismatch = servicesInSum !== expectedServicesIn;
+
+  // Backward-compatible totals
+  const goodsSum = goodsOutSum;
+  const servicesSum = servicesOutSum;
+  const expectedGoods = expectedGoodsOut;
+  const expectedServices = expectedServicesOut;
+  const goodsMismatch = goodsOutMismatch;
+  const servicesMismatch = servicesOutMismatch;
+
+  const isValid =
+    !goodsOutMismatch &&
+    !goodsInMismatch &&
+    !servicesOutMismatch &&
+    !servicesInMismatch &&
+    taxErrors.length === 0;
 
   return {
+    goodsOutSum,
+    expectedGoodsOut,
+    goodsOutMismatch,
+
+    goodsInSum,
+    expectedGoodsIn,
+    goodsInMismatch,
+
+    servicesOutSum,
+    expectedServicesOut,
+    servicesOutMismatch,
+
+    servicesInSum,
+    expectedServicesIn,
+    servicesInMismatch,
+
     goodsSum,
     servicesSum,
     expectedGoods,
     expectedServices,
     goodsMismatch,
     servicesMismatch,
+
     itemsList,
     taxErrors,
-    isValid: !goodsMismatch && !servicesMismatch && taxErrors.length === 0,
+    isValid,
   };
 }
 

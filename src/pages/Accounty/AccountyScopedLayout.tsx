@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Outlet, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { useAccountyClients } from '@/hooks/accounty';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { parseDateRange, generateAccountyScopedPath, extractAccountyPageSegment } from '@/lib/navigation';
@@ -19,6 +21,7 @@ export default function AccountyScopedLayout() {
   const location = useLocation();
   const prefix = location.pathname.startsWith('/hr') ? '/hr' : '';
 
+  const { user } = useAuth();
   const { data: clients, isLoading: clientsLoading } = useAccountyClients();
   const { dateFromFormatted, dateToFormatted, setDateFrom, setDateTo } = useDateRange();
   const { setSelectedClientId } = useAccountyShell();
@@ -80,30 +83,52 @@ export default function AccountyScopedLayout() {
 
     syncingFromUrl.current = true;
 
+    const syncDateAndFinish = () => {
+      const parsed = parseDateRange(urlDateRange);
+      if (parsed) {
+        const urlFrom = formatCompact(parsed.from);
+        const urlTo = formatCompact(parsed.to);
+        if (urlFrom !== dateFromFormatted) setDateFrom(parsed.from);
+        if (urlTo !== dateToFormatted) setDateTo(parsed.to);
+      }
+
+      requestAnimationFrame(() => {
+        syncingFromUrl.current = false;
+      });
+    };
+
     // Check client permission
     const hasClient = clients.some(c => c.id === urlCompanyId || c.companyId === urlCompanyId);
-    if (!hasClient && clients.length > 0) {
+    if (hasClient) {
+      setAccessDenied(false);
+      syncDateAndFinish();
+    } else if (clients.length > 0) {
+      if (user?.id && urlCompanyId) {
+        supabase
+          .from('company_members')
+          .select('role')
+          .eq('company_id', urlCompanyId)
+          .eq('user_id', user.id)
+          .maybeSingle()
+          .then(({ data: member }) => {
+            if (member) {
+              setAccessDenied(false);
+              syncDateAndFinish();
+            } else {
+              setAccessDenied(true);
+              syncingFromUrl.current = false;
+            }
+          });
+        return;
+      }
       setAccessDenied(true);
       syncingFromUrl.current = false;
       return;
+    } else {
+      setAccessDenied(false);
+      syncDateAndFinish();
     }
-
-    setAccessDenied(false);
-
-    // Sync date range
-    const parsed = parseDateRange(urlDateRange);
-    if (parsed) {
-      const urlFrom = formatCompact(parsed.from);
-      const urlTo = formatCompact(parsed.to);
-      if (urlFrom !== dateFromFormatted) setDateFrom(parsed.from);
-      if (urlTo !== dateToFormatted) setDateTo(parsed.to);
-    }
-
-    // Release synchronization lock after a frame
-    requestAnimationFrame(() => {
-      syncingFromUrl.current = false;
-    });
-  }, [urlCompanyId, urlDateRange, clients, clientsLoading, isLegacyKeyword, dateFromFormatted, dateToFormatted, location.pathname, navigate]);
+  }, [urlCompanyId, urlDateRange, clients, clientsLoading, isLegacyKeyword, dateFromFormatted, dateToFormatted, location.pathname, navigate, user?.id]);
 
   // 1b. Store selected Accounty company in localStorage to remember it when switching to eaisybill
   useEffect(() => {
