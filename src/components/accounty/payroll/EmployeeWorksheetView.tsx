@@ -276,6 +276,44 @@ export default function EmployeeWorksheetView({
     }
   };
 
+  // Cost Center per employee
+  const [costCenterInput, setCostCenterInput] = useState<string>('');
+  const [isSavingCostCenter, setIsSavingCostCenter] = useState(false);
+
+  useEffect(() => {
+    setCostCenterInput(currentEmployment?.cost_center || '');
+  }, [currentEmployment?.id, currentEmployment?.cost_center]);
+
+  const handleSaveCostCenter = async () => {
+    if (!currentEmployment) return;
+    setIsSavingCostCenter(true);
+    try {
+      const { error } = await supabase
+        .from('accounty_employments')
+        .update({
+          cost_center: costCenterInput.trim() || null,
+        })
+        .eq('id', currentEmployment.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Költséghely elmentve!',
+        description: `${currentEmployee?.last_name} ${currentEmployee?.first_name} költséghelye mentve a törzsadatba (${costCenterInput.trim() || 'Nincs'}).`,
+      });
+
+      queryClient.invalidateQueries({ queryKey: payrollQueryKeys.companyEmployments(companyId) });
+    } catch (err: any) {
+      toast({
+        title: 'Hiba a mentés során',
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingCostCenter(false);
+    }
+  };
+
   // Items per employee
   const currentItems = useMemo(() => {
     if (!currentEmployment) return [];
@@ -606,6 +644,10 @@ export default function EmployeeWorksheetView({
             hasPrev={hasPrev}
             hasNext={hasNext}
             onPrintPayslip={handlePrintCurrentPayslip}
+            costCenter={costCenterInput}
+            onCostCenterChange={setCostCenterInput}
+            onSaveCostCenter={handleSaveCostCenter}
+            isSavingCostCenter={isSavingCostCenter}
           />
         </div>
 

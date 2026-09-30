@@ -37,6 +37,7 @@ import {
 import { useAccountyClients } from '@/hooks/accounty';
 import { generatePayrollRequestEmail } from '@/lib/payroll/emailTemplates';
 import { printPayslip, printAllPayslips, type PayslipData } from '@/lib/payroll/payslipGenerator';
+import { formatJobTitleWithFeor } from '@/lib/payroll/feorCodes';
 import { convertToIban } from '@/lib/payroll/validators';
 import { postPayrollCycleToLedger } from '@/lib/payroll/payrollAutoPoster';
 
@@ -658,10 +659,11 @@ export default function PayrollCyclePage() {
       taxId: emp?.tax_id || '–',
       bankAccount: emp?.bank_account || '–',
       iban: iban,
-      paymentMethod: 'Átutalás',
-      jobTitle: employment?.job_title || '–',
-      jobCode: employment?.job_code || '–',
+      paymentMethod: (employment as any)?.payment_method || (emp as any)?.payment_method || 'Átutalás',
+      jobTitle: formatJobTitleWithFeor(employment?.job_title, employment?.feor_code || employment?.job_code),
+      jobCode: employment?.feor_code || employment?.job_code || '–',
       weeklyHours: weeklyHours,
+      costCenter: employment?.cost_center || undefined,
       year: cycle?.year || new Date().getFullYear(),
       month: cycle?.month || new Date().getMonth() + 1,
       workDays: att.workDays ?? 22,

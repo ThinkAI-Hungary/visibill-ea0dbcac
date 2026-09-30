@@ -55,6 +55,8 @@ Kliens-oldali, aszinkron és nagy sebességű parser és rekonstrukciós motort 
    - **Robusztus időszak-detektálás**: A főlap (`08A`) és az egyéni lapok (`08M`) mezőiből (`0A0001C027A`, `0101D`, `idoszak > tol`, `IDOSZAK_TOL`, `BEVALLASI_IDOSZAK_METTOL`) prioritási sorrendben nyeri ki az évet és a hónapot. Megakadályozza az aktuális hónapra való hibás fallback-et, így a több havi XML egyidejű feltöltésekor a hónapok nem írják felül egymást.
    - **`normalizeDate(str)`**: ISO `YYYY-MM-DD` formátumra alakítja a `DD.MM.YYYY`, `YYYY.MM.DD`, `YYYYMMDD`, `YYMMDD` (pl. `240715` -> `2024-07-15`), `DD/MM/YYYY` dátumokat.
 
+    - **FEOR-08 Szótár és Automatikus Munkakör Feloldás (`feorCodes.ts`)**: A NAV 08M `0F` lapján található 4-jegyű FEOR szám (`0520AA`) alapján a parser a beépített KSH FEOR-08 szótár segítségével automatikusan kitölti a szöveges munkakör megnevezést (`getFeorTitle`), megelőzve az üres (`–`) munkakörök létrejöttét. (Lásd: [A-185](./A-185-payslip-redesign-feor-dictionary-and-cost-center.md)).
+
 2. **`payrollReconstructionEngine.ts` (Rekonstrukciós és Kalkulációs Tervező):**
    - **`buildReconstructionPlan`**: Összeveti a beolvasott 08-as XML fájl adatait a meglévő céges dolgozókkal (`existingEmployees`), jogviszonyokkal (`existingEmployments`) és ciklusokkal (`existingCycles`).
    - Előkészíti a hiányzó dolgozók, jogviszonyok és zárt (`status: 'closed'`, `current_step: 8`) ciklusok rekonstrukciós tervét.
@@ -98,6 +100,8 @@ Kliens-oldali, aszinkron és nagy sebességű parser és rekonstrukciós motort 
 - [P-063: Bérszámfejtés Gyors Rekonstrukció és Dolgozói Tömeges Import UX](../../product/decisions/P-063-payroll-bulk-import-and-reconstruction-ux.md)
 - [P-143: eaisyBooks Bérszámfejtés 3-oszlopos Elrendezés, EFO Szétválasztás és 120-napos Keretfigyelő UX](../../product/decisions/P-143-payroll-3column-dashboard-and-efo-separation-ux.md)
 - [A-166: Magyar Társadalombiztosítási (TB) Adómotor, Minimális Járulékalap](./A-166-tb-social-security-minimum-base-and-pensioner-payroll-engine.md)
+- [A-185: Bérjegyzék Megjelenítés, FEOR-08 Munkakör Szótár és Költséghely Architektúra](./A-185-payslip-redesign-feor-dictionary-and-cost-center.md)
+- [P-148: Bérjegyzék Redesign, Költséghely Kezelés és FEOR Munkakör UX](../../product/decisions/P-148-payslip-redesign-cost-center-and-feor-job-title-ux.md)
 - [A-016: PostgreSQL Query Stratégia](./A-016-postgresql-query-strategy.md)
 
 

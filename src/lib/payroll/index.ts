@@ -100,3 +100,10 @@ export {
   type CafeteriaWarning,
   type YtdUsage,
 } from './cafeteriaCalculator';
+
+// FEOR-08 szótár és segédek
+export {
+  FEOR_DICTIONARY,
+  getFeorTitle,
+  formatJobTitleWithFeor,
+} from './feorCodes';

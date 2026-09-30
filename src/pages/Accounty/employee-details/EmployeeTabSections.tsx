@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { type PayrollEmployee, type PayrollEmployment, useUpdateEmployment } from '@/hooks/usePayrollData';
 import { formatTajNumber, formatBankAccount, formatAmount, formatTajNumberOnType, formatBankAccountOnType } from '@/lib/payroll/validators';
+import { formatJobTitleWithFeor } from '@/lib/payroll/feorCodes';
 import type { LeaveBalance } from '@/lib/payroll/leaveCalculator';
 import { InfoSection, InfoRow, EditField, MiniStat } from './EmployeeHelpers';
 
@@ -197,6 +198,8 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
       other_company_tax_number: emp.other_company_tax_number || '',
       is_min_base_exempt_gyes_gyed: !!emp.is_min_base_exempt_gyes_gyed,
       is_min_base_exempt_student: !!emp.is_min_base_exempt_student,
+      cost_center: emp.cost_center || '',
+      job_title: emp.job_title || '',
       commute_type: (emp.commute_type || 'none') as any,
       commute_distance_km: emp.commute_distance_km || 0,
       commute_monthly_pass_cost: emp.commute_monthly_pass_cost || 0,
@@ -217,6 +220,8 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
     try {
       await updateEmployment.mutateAsync({
         id: editingId,
+        job_title: form.job_title?.trim() || null,
+        cost_center: form.cost_center?.trim() || null,
         is_pensioner: form.is_pensioner,
         pension_type: form.is_pensioner ? form.pension_type : 'none',
         is_ekho: form.is_ekho,
@@ -272,10 +277,11 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
                 </span>
               </div>
               <div className="flex items-center justify-between mt-3 pt-2 border-t border-border/50">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-muted-foreground flex-1">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs text-muted-foreground flex-1">
                   <span>Kezdés: {emp.start_date}</span>
-                  <span>Munkakör: {emp.job_title || '–'}</span>
+                  <span>Munkakör: {formatJobTitleWithFeor(emp.job_title, emp.feor_code || emp.job_code)}</span>
                   <span>FEOR: {emp.feor_code || '–'}</span>
+                  <span>Költséghely: {emp.cost_center || '–'}</span>
                   <span>
                     Alapbér: {emp.base_salary ? `${formatAmount(emp.base_salary)} ${
                       emp.salary_type === 'hourly' ? '/ óra' : 
@@ -344,8 +350,35 @@ export function EmployeeEmploymentsTab({ employments, companyId, empId }: Employ
               {editingId === emp.id && (
                 <div className="mt-4 pt-4 border-t border-border/80 space-y-4 bg-muted/40/70 dark:bg-card/20 p-4 rounded-lg border border-border animate-in slide-in-from-top-1 duration-200">
                   <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                    <Settings className="w-3.5 h-3.5 text-primary" /> Adózási és Járulékfizetési Beállítások Szerkesztése
+                    <Settings className="w-3.5 h-3.5 text-primary" /> Jogviszony, Munkakör és Adózási Beállítások Szerkesztése
                   </h4>
+
+                  {/* Munkakör és Költséghely törzsadat */}
+                  <div className="p-3 border border-border bg-card rounded-lg space-y-2">
+                    <div className="text-xs font-bold text-foreground/90">Szervezeti adatok & Munkakör</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-medium text-muted-foreground mb-1">Munkakör megnevezése</label>
+                        <input
+                          type="text"
+                          value={form.job_title || ''}
+                          onChange={e => setForm(f => ({ ...f, job_title: e.target.value }))}
+                          className="w-full px-2 py-1 h-8 rounded border border-border bg-background text-xs"
+                          placeholder="pl. Általános irodai adminisztrátor"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-medium text-muted-foreground mb-1">Költséghely (Cost Center)</label>
+                        <input
+                          type="text"
+                          value={form.cost_center || ''}
+                          onChange={e => setForm(f => ({ ...f, cost_center: e.target.value }))}
+                          className="w-full px-2 py-1 h-8 rounded border border-border bg-background text-xs"
+                          placeholder="pl. Iroda, Vezetés, Értékesítés"
+                        />
+                      </div>
+                    </div>
+                  </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Minimális Járulékalap Szabály */}

@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { formatJobTitleWithFeor } from '@/lib/payroll/feorCodes';
 
 export interface WorksheetEmployeeFormProps {
   employee: any;
@@ -61,6 +62,10 @@ export interface WorksheetEmployeeFormProps {
   hasNext: boolean;
   onPrintPayslip: () => void;
   isSavingCommute?: boolean;
+  costCenter?: string;
+  onCostCenterChange?: (value: string) => void;
+  onSaveCostCenter?: () => Promise<void>;
+  isSavingCostCenter?: boolean;
 }
 
 export default function WorksheetEmployeeForm({
@@ -88,6 +93,10 @@ export default function WorksheetEmployeeForm({
   hasNext,
   onPrintPayslip,
   isSavingCommute = false,
+  costCenter,
+  onCostCenterChange,
+  onSaveCostCenter,
+  isSavingCostCenter = false,
 }: WorksheetEmployeeFormProps) {
   if (!employee || !employment) {
     return (
@@ -146,9 +155,9 @@ export default function WorksheetEmployeeForm({
               )}
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5 flex-wrap">
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1 font-medium text-foreground">
                 <Briefcase className="w-3 h-3 text-primary" />
-                {employment.job_title || 'Nincs megadva'} {employment.job_code ? `(FEOR: ${employment.job_code})` : ''}
+                {formatJobTitleWithFeor(employment.job_title, employment.feor_code || employment.job_code)}
               </span>
               <span>•</span>
               <span>Heti {employment.weekly_hours || 40} óra</span>
@@ -168,8 +177,31 @@ export default function WorksheetEmployeeForm({
           </div>
         </div>
 
-        {/* Gyors gombok a fejlécben */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Költséghely és Gyors gombok a fejlécben */}
+        <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+          <div className="flex items-center gap-1.5 bg-muted/60 px-2 py-1 rounded-md border border-border">
+            <span className="text-[11px] font-semibold text-muted-foreground whitespace-nowrap">Költséghely:</span>
+            <Input
+              value={costCenter !== undefined ? costCenter : (employment.cost_center || '')}
+              onChange={(e) => onCostCenterChange?.(e.target.value)}
+              placeholder="pl. Iroda"
+              className="h-6 w-24 text-xs bg-background px-2"
+            />
+            {onSaveCostCenter && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-1.5 text-[10px] text-primary hover:text-primary/80"
+                onClick={onSaveCostCenter}
+                disabled={isSavingCostCenter}
+                title="Költséghely azonnali mentése a törzsadatba"
+              >
+                <Save className="w-3 h-3 mr-0.5" />
+                {isSavingCostCenter ? '...' : 'Mentés'}
+              </Button>
+            )}
+          </div>
+
           <Button
             variant="outline"
             size="sm"

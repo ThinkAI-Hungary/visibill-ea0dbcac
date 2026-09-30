@@ -21,6 +21,7 @@ export interface PayslipData {
   jobTitle: string;
   jobCode: string;
   weeklyHours?: number;
+  costCenter?: string;
 
   // Időszak
   year: number;
@@ -146,15 +147,17 @@ export function generatePayslipBlockHtml(data: PayslipData, isMultiPage = false)
 
   <div class="section">
     <div class="section-title">Foglalkoztatott adatai</div>
+    <div class="employee-name-hero">${escHtml(data.employeeName)}</div>
     <div class="info-grid">
-      <div class="info-row"><span class="label">Név</span><span class="value">${escHtml(data.employeeName)}</span></div>
-      <div class="info-row"><span class="label">Munkakör</span><span class="value">${escHtml(data.jobTitle)}</span></div>
+      <div class="info-row"><span class="label">Munkakör</span><span class="value">${escHtml(data.jobTitle || '–')}</span></div>
       <div class="info-row"><span class="label">TAJ-szám</span><span class="value">${data.tajNumber}</span></div>
       <div class="info-row"><span class="label">Jogviszonykód</span><span class="value">${data.jobCode}</span></div>
       <div class="info-row"><span class="label">Adóazonosító</span><span class="value">${data.taxId}</span></div>
       <div class="info-row"><span class="label">Heti munkaidő</span><span class="value">${data.weeklyHours || 40} óra</span></div>
-      <div class="info-row"><span class="label">Bankszámla</span><span class="value">${data.bankAccount}</span></div>
-      ${data.iban ? `<div class="info-row"><span class="label">Nemzetközi IBAN</span><span class="value font-mono">${data.iban}</span></div>` : `<div class="info-row"><span class="label">Kifizetés módja</span><span class="value">${data.paymentMethod || 'Átutalás'}</span></div>`}
+      ${data.costCenter ? `<div class="info-row"><span class="label">Költséghely</span><span class="value">${escHtml(data.costCenter)}</span></div>` : ''}
+      <div class="info-row"><span class="label">Kifizetés módja</span><span class="value">${escHtml(data.paymentMethod || 'Átutalás')}</span></div>
+      ${(data.paymentMethod !== 'Készpénz' && data.bankAccount && data.bankAccount !== '–') ? `<div class="info-row"><span class="label">Bankszámla</span><span class="value">${data.bankAccount}</span></div>` : ''}
+      ${data.iban ? `<div class="info-row"><span class="label">Nemzetközi IBAN</span><span class="value font-mono">${data.iban}</span></div>` : ''}
     </div>
   </div>
 
@@ -218,8 +221,8 @@ export function generatePayslipBlockHtml(data: PayslipData, isMultiPage = false)
         ${data.otherIncome > 0 ? `<tr><td>Egyéb jövedelem</td><td class="right">${fmt(data.otherIncome)}</td></tr>` : ''}
         <tr class="total"><td>Bruttó bér</td><td class="right">${fmt(data.grossTotal)}</td></tr>
         <tr><td></td><td></td></tr>
-        <tr><td>SZJA (15%)</td><td class="right negative">-${fmt(data.szjaAmount)}</td></tr>
-        <tr><td>TB járulék (18.5%)</td><td class="right negative">-${fmt(data.tbAmount)}</td></tr>
+        <tr><td>SZJA (15%)</td><td class="right negative">${fmt(data.szjaAmount)}</td></tr>
+        <tr><td>TB járulék (18.5%)</td><td class="right negative">${fmt(data.tbAmount)}</td></tr>
         ${totalCredits > 0 ? `
         <tr><td></td><td></td></tr>
         ${data.familyCredit > 0 ? `<tr><td>Családi kedvezmény</td><td class="right positive">+${fmt(data.familyCredit)}</td></tr>` : ''}
@@ -238,11 +241,11 @@ export function generatePayslipBlockHtml(data: PayslipData, isMultiPage = false)
         ` : ''}
         ${totalDeductions > 0 ? `
         <tr><td></td><td></td></tr>
-        ${data.garnishments > 0 ? `<tr><td>Letiltás${data.garnishmentCaseNumber ? ` (${escHtml(data.garnishmentCaseNumber)})` : ''}</td><td class="right negative">-${fmt(data.garnishments)}</td></tr>` : ''}
-        ${data.advances > 0 ? `<tr><td>Munkabérelőleg törlesztés</td><td class="right negative">-${fmt(data.advances)}</td></tr>` : ''}
-        ${data.pensionFund && data.pensionFund > 0 ? `<tr><td>Önkéntes nyugdíjpénztári tagdíj</td><td class="right negative">-${fmt(data.pensionFund)}</td></tr>` : ''}
-        ${data.healthFund && data.healthFund > 0 ? `<tr><td>Egészségpénztári tagdíj</td><td class="right negative">-${fmt(data.healthFund)}</td></tr>` : ''}
-        ${data.otherDeductions > 0 ? `<tr><td>Egyéb levonás</td><td class="right negative">-${fmt(data.otherDeductions)}</td></tr>` : ''}
+        ${data.garnishments > 0 ? `<tr><td>Letiltás${data.garnishmentCaseNumber ? ` (${escHtml(data.garnishmentCaseNumber)})` : ''}</td><td class="right negative">${fmt(data.garnishments)}</td></tr>` : ''}
+        ${data.advances > 0 ? `<tr><td>Munkabérelőleg törlesztés</td><td class="right negative">${fmt(data.advances)}</td></tr>` : ''}
+        ${data.pensionFund && data.pensionFund > 0 ? `<tr><td>Önkéntes nyugdíjpénztári tagdíj</td><td class="right negative">${fmt(data.pensionFund)}</td></tr>` : ''}
+        ${data.healthFund && data.healthFund > 0 ? `<tr><td>Egészségpénztári tagdíj</td><td class="right negative">${fmt(data.healthFund)}</td></tr>` : ''}
+        ${data.otherDeductions > 0 ? `<tr><td>Egyéb levonás</td><td class="right negative">${fmt(data.otherDeductions)}</td></tr>` : ''}
         ` : ''}
       </tbody>
     </table>
@@ -252,7 +255,9 @@ export function generatePayslipBlockHtml(data: PayslipData, isMultiPage = false)
     <div>
       <span class="label">NETTÓ KIFIZETÉS</span>
       <div style="font-size: 10px; opacity: 0.9; margin-top: 2px;">
-        ${data.iban ? `IBAN: ${escHtml(data.iban)}` : `Számlaszám: ${escHtml(data.bankAccount)}`}
+        ${data.paymentMethod === 'Készpénz' 
+          ? 'Kifizetés módja: Készpénz' 
+          : (data.iban ? `IBAN: ${escHtml(data.iban)}` : (data.bankAccount && data.bankAccount !== '–' ? `Számlaszám: ${escHtml(data.bankAccount)}` : 'Kifizetés módja: Átutalás'))}
       </div>
     </div>
     <span class="amount">${fmt(data.netSalary)} Ft</span>
@@ -275,10 +280,8 @@ export function generatePayslipBlockHtml(data: PayslipData, isMultiPage = false)
     <div class="info-grid">
       ${isKiva ? `
         <div class="info-row"><span class="label">KIVA kötelezettség (10%)</span><span class="value">${fmt(employerTax)} Ft</span></div>
-        <div class="info-row"><span class="label">Teljes bérköltség (KIVA-val)</span><span class="value">${fmt(totalCost)} Ft</span></div>
       ` : `
         <div class="info-row"><span class="label">SZOCHO (13%)</span><span class="value">${fmt(data.szochoAmount)} Ft</span></div>
-        <div class="info-row"><span class="label">Teljes bérköltség</span><span class="value">${fmt(totalCost)} Ft</span></div>
       `}
     </div>
     ${isKiva ? `
@@ -364,6 +367,16 @@ const PAYSLIP_BASE_CSS = `
     margin-bottom: 6px;
     border-left: 3px solid #0f7467;
     padding-left: 6px;
+  }
+  .employee-name-hero {
+    font-family: 'Outfit', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.2px;
+    margin-bottom: 8px;
+    padding-left: 9px;
+    text-transform: uppercase;
   }
   .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 24px; padding-left: 9px; }
   .info-row { display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 2px; }

@@ -1165,8 +1165,8 @@
     "semantic_hash": "bd84fcb1ad48ad820ec770d5f0e8e2e2"
   },
   "src/lib/payroll/__tests__/payslipGenerator.test.ts": {
-    "mtime": 1789881969.3771496,
-    "ast_hash": "26c7342185a147e6ef02586bf7ecbd0d",
+    "mtime": 1790804600.5268161,
+    "ast_hash": "934d0ad1b76fdbb861fd133a6d5be4a6",
     "semantic_hash": ""
   },
   "src/lib/payroll/__tests__/premiumCalculator.test.ts": {
@@ -1200,8 +1200,8 @@
     "semantic_hash": ""
   },
   "src/lib/payroll/index.ts": {
-    "mtime": 1790701660.6460187,
-    "ast_hash": "6e87235a95c58cb1aa659d5627cc60d4",
+    "mtime": 1790804115.7496183,
+    "ast_hash": "898595c3781ed8c1cc118f4dcc67992f",
     "semantic_hash": ""
   },
   "src/lib/payroll/leaveCalculator.ts": {
@@ -1210,8 +1210,8 @@
     "semantic_hash": ""
   },
   "src/lib/payroll/payslipGenerator.ts": {
-    "mtime": 1789881969.37815,
-    "ast_hash": "a939e1ba9e084256c2372a601536dddc",
+    "mtime": 1790804233.0265262,
+    "ast_hash": "a073f2f169f177467e001bae2661bc9c",
     "semantic_hash": ""
   },
   "src/lib/payroll/premiumCalculator.ts": {
@@ -1390,8 +1390,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/PayrollCyclePage.tsx": {
-    "mtime": 1790800897.5137482,
-    "ast_hash": "b8372bc5262d3a342c984c9d09d0ab1e",
+    "mtime": 1790804254.3586357,
+    "ast_hash": "ea8672a2282b5e8108521e72e7b74186",
     "semantic_hash": ""
   },
   "src/pages/Accounty/PayrollDashboardPage.tsx": {
@@ -3090,8 +3090,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790803378.9893544,
-    "ast_hash": "f45221ca98b231097c1320af5eb3c718",
+    "mtime": 1790805467.010951,
+    "ast_hash": "1bb0e9906bc58954352e18d8677eade5",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3565,8 +3565,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1790803397.7300782,
-    "ast_hash": "a3885395b1f3e775da78720d54e128cf",
+    "mtime": 1790805491.0234165,
+    "ast_hash": "c8a59551fe72390a0289fa744e81618f",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -5205,8 +5205,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/employee-details/EmployeeTabSections.tsx": {
-    "mtime": 1790168409.196005,
-    "ast_hash": "9dde73b505042b4fa36980500a70a5b4",
+    "mtime": 1790804359.3002968,
+    "ast_hash": "c33a744137f65c202cae7b1ffbcaa20a",
     "semantic_hash": ""
   },
   "src/pages/Accounty/help/HelpTabSections.tsx": {
@@ -8200,13 +8200,13 @@
     "semantic_hash": ""
   },
   "src/hooks/useBulkImportPayroll.ts": {
-    "mtime": 1790802573.3106544,
-    "ast_hash": "e914611e1e340e48d4ba8b05363582f6",
+    "mtime": 1790804175.3143785,
+    "ast_hash": "d41d3d4e555f86c63c445aa0f9230358",
     "semantic_hash": ""
   },
   "src/lib/payroll/nav08XmlParser.ts": {
-    "mtime": 1790802543.866111,
-    "ast_hash": "92607e9c16a1cccb71dffc2d9d4b4ee3",
+    "mtime": 1790804156.6267502,
+    "ast_hash": "cfe5d4c96d078840ea1ad5976b9b3e8b",
     "semantic_hash": ""
   },
   "src/lib/payroll/payrollReconstructionEngine.ts": {
@@ -8225,8 +8225,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-081-nav-08-payroll-reconstruction-and-bulk-import.md": {
-    "mtime": 1790803322.842114,
-    "ast_hash": "1fb79cd56920e403cdd03134470282c2",
+    "mtime": 1790805412.123814,
+    "ast_hash": "f9fd3a66ee5c470b43bde56ea2309f61",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-063-payroll-bulk-import-and-reconstruction-ux.md": {
@@ -9505,18 +9505,18 @@
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/EmployeeWorksheetView.tsx": {
-    "mtime": 1790701660.6425047,
-    "ast_hash": "3fe89c043667c3e82d704b50f5874bc0",
+    "mtime": 1790804474.7353601,
+    "ast_hash": "ed22b9a5b922cbfd76bb1abbf709564d",
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/worksheet/WorksheetEmployeeForm.tsx": {
-    "mtime": 1790168426.802217,
-    "ast_hash": "4434b61a0192d604bcbef7179bb1551f",
+    "mtime": 1790804437.108621,
+    "ast_hash": "4abe034eb0192daba887bbe3975ebf20",
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/worksheet/WorksheetLivePayslip.tsx": {
-    "mtime": 1790168426.802217,
-    "ast_hash": "b437a90eb306cb9a709d1d219f7b3e73",
+    "mtime": 1790804519.528008,
+    "ast_hash": "82e439a9f6b2c14bf40056eeed48499d",
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/worksheet/WorksheetSidebar.tsx": {
@@ -13562,6 +13562,36 @@
   "session-summary/Jani/2026-09-30/summary-224800-eb-0232-payroll-payslip-abc-sorting-and-employee-filter.md": {
     "mtime": 1790801332.5989244,
     "ast_hash": "ed2a90e32e90420f2738cd3c544744b3",
+    "semantic_hash": ""
+  },
+  "src/lib/payroll/__tests__/feorCodes.test.ts": {
+    "mtime": 1790804606.6020424,
+    "ast_hash": "5f492f6a482f388b9738b6327adb65a9",
+    "semantic_hash": ""
+  },
+  "src/lib/payroll/feorCodes.ts": {
+    "mtime": 1790804104.4475107,
+    "ast_hash": "9c9230f50d7906458129402586936e48",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-09-30/summary-232500-eb-0231-nav-08-efo-and-kiva-reconstruction-support.md": {
+    "mtime": 1790803485.35553,
+    "ast_hash": "1dffbeecd226434e9334dc3024280183",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-185-payslip-redesign-feor-dictionary-and-cost-center.md": {
+    "mtime": 1790805358.8186488,
+    "ast_hash": "81d1e343043f89c80a411bf72930b0eb",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-148-payslip-redesign-cost-center-and-feor-job-title-ux.md": {
+    "mtime": 1790805367.892954,
+    "ast_hash": "087761337bcfd163f1de1a5444b302ad",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-09-30/summary-235300-eb-0230-payslip-redesign-feor-dictionary-and-cost-center.md": {
+    "mtime": 1790805202.97092,
+    "ast_hash": "e22ec6322e8b676abfb0a7b6e2a80c98",
     "semantic_hash": ""
   }
 }

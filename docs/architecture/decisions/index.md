@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-30  
-> **Összesen:** 202 döntés (187 egyedi döntési fájl) | ✅ Decided: 200 | ⛔ Superseded: 2
+> **Összesen:** 203 döntés (188 egyedi döntési fájl) | ✅ Decided: 201 | ⛔ Superseded: 2
 
 
 ---
@@ -236,6 +236,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-182 | Részfizetett és Jutalékkal Csökkentett Számlapárosítás és Tranzakció Deduplikáció | ✅ Decided | [A-182](./A-182-partial-payment-matching-and-transaction-deduplication.md) |
 | A-183 | Supabase Query Teljesítmény és Pénzügyi RPC Optimalizáció (Statement Timeout Megszüntetés) | ✅ Decided | [A-183](./A-183-supabase-query-performance-and-financial-rpc-optimization.md) |
 | A-184 | Real-time AI Tételbesorolási Telemetria, Query Invalidáció és Idempotens Párosítás | ✅ Decided | [A-184](./A-184-realtime-ai-progress-streaming-and-matching-idempotency.md) |
+| A-185 | Bérjegyzék Megjelenítés, FEOR-08 Munkakör Szótár és Költséghely Architektúra | ✅ Decided | [A-185](./A-185-payslip-redesign-feor-dictionary-and-cost-center.md) |
 
 
 ## 💳 Fizetés

@@ -12,6 +12,7 @@ import { payrollQueryKeys, type PayrollEmployee, type PayrollEmployment } from '
 import { useToast } from '@/hooks/use-toast';
 import type { Parsed08Document, Parsed08Employee } from '@/lib/payroll/nav08XmlParser';
 import { preparePayrollCalculationRecord } from '@/lib/payroll/payrollReconstructionEngine';
+import { getFeorTitle } from '@/lib/payroll/feorCodes';
 
 export interface BulkImportResult {
   totalProcessed: number;
@@ -198,7 +199,7 @@ export function useBulkImportPayroll() {
                 end_date: isEfo ? (emp.endDate || null) : null,
                 weekly_hours: emp.weeklyHours || 40,
                 feor_code: emp.feorCode || (isEfo ? '9329' : null),
-                job_title: emp.jobTitle || (isEfo ? 'Egyszerűsített foglalkoztatott (EFO)' : null),
+                job_title: emp.jobTitle || (emp.feorCode ? getFeorTitle(emp.feorCode) : null) || (isEfo ? 'Egyszerűsített foglalkoztatott (EFO)' : null),
                 base_salary: emp.baseSalary || emp.grossSalary || null,
                 salary_type: 'monthly',
                 has_minimum_base: !isEfo,

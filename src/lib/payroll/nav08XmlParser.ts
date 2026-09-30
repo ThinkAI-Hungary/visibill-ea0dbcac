@@ -8,6 +8,8 @@
  * 2. Szemantikus / Export XML formátumot (<Filing08>, <Tetelsor>, <Bevallas>)
  */
 
+import { getFeorTitle } from './feorCodes';
+
 export interface Parsed08Employee {
   // Személyes adatok
   lastName: string;
@@ -471,6 +473,7 @@ function parseSemanticXml(doc: Document, options?: Parse08Options): Parsed08Docu
       endDate,
       weeklyHours,
       feorCode,
+      jobTitle: getFeorTitle(feorCode) || undefined,
       baseSalary: grossSalary,
       grossSalary,
       taxBase,
@@ -832,6 +835,7 @@ function parseAnykXml(doc: Document, options?: Parse08Options): Parsed08Document
         endDate,
         weeklyHours: weeklyHours || 40,
         feorCode,
+        jobTitle: getFeorTitle(feorCode) || (isEfoWorker ? 'Egyszerűsített foglalkoztatott (EFO)' : undefined),
         baseSalary: grossSalary,
         grossSalary,
         taxBase,

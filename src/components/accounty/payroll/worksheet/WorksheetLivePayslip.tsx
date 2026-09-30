@@ -9,7 +9,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { Sparkles, ArrowRight, ShieldCheck, Car, Bus, Home, AlertCircle } from 'lucide-react';
+import { Sparkles, ArrowRight, ShieldCheck, Car, Bus, Home, AlertCircle, Briefcase } from 'lucide-react';
+import { formatJobTitleWithFeor } from '@/lib/payroll/feorCodes';
 
 export interface WorksheetLivePayslipProps {
   employee: any;
@@ -229,6 +230,23 @@ export default function WorksheetLivePayslip({
       </CardHeader>
 
       <CardContent className="p-4 space-y-4 text-xs">
+        {/* Dolgozó és Munkakör fejléc */}
+        <div className="pb-1 text-left border-b border-border/40">
+          <div className="font-extrabold text-sm text-foreground uppercase tracking-tight">
+            {employee.last_name} {employee.first_name}
+          </div>
+          <div className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
+            <Briefcase className="w-3 h-3 text-primary shrink-0" />
+            <span>{formatJobTitleWithFeor(employment?.job_title, employment?.feor_code || employment?.job_code)}</span>
+            {employment?.cost_center && (
+              <>
+                <span>•</span>
+                <span className="text-primary font-medium">Költséghely: {employment.cost_center}</span>
+              </>
+            )}
+          </div>
+        </div>
+
         {/* Kiemelt Nettó Kifizetendő doboz */}
         <div className="p-3.5 rounded-lg bg-gradient-to-br from-green-500/10 via-emerald-500/10 to-teal-500/10 border border-green-500/30 dark:border-green-500/20 text-center space-y-1">
           <span className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
@@ -285,7 +303,7 @@ export default function WorksheetLivePayslip({
           <div className="flex items-center justify-between font-semibold text-foreground pb-1 border-b border-border/50">
             <span>Munkavállalói Levonások</span>
             <span className="font-mono text-red-600 dark:text-red-400">
-              -{(taxResult.szjaAmount + taxResult.tbAmount + garnishResult.total + itemDeductions).toLocaleString('hu-HU')} Ft
+              {(taxResult.szjaAmount + taxResult.tbAmount + garnishResult.total + itemDeductions).toLocaleString('hu-HU')} Ft
             </span>
           </div>
           <div className="space-y-1 pt-1 text-[11px] text-muted-foreground">
@@ -299,7 +317,7 @@ export default function WorksheetLivePayslip({
                 )}
               </span>
               <span className="font-mono text-red-600 dark:text-red-400">
-                -{taxResult.szjaAmount.toLocaleString('hu-HU')} Ft
+                {taxResult.szjaAmount.toLocaleString('hu-HU')} Ft
               </span>
             </div>
 
@@ -313,21 +331,21 @@ export default function WorksheetLivePayslip({
                 )}
               </span>
               <span className="font-mono text-blue-600 dark:text-blue-400">
-                -{taxResult.tbAmount.toLocaleString('hu-HU')} Ft
+                {taxResult.tbAmount.toLocaleString('hu-HU')} Ft
               </span>
             </div>
 
             {garnishResult.total > 0 && (
               <div className="flex justify-between text-orange-600 dark:text-orange-400">
                 <span>Végrehajtói letiltás</span>
-                <span className="font-mono">-{garnishResult.total.toLocaleString('hu-HU')} Ft</span>
+                <span className="font-mono">{garnishResult.total.toLocaleString('hu-HU')} Ft</span>
               </div>
             )}
 
             {itemDeductions > 0 && (
               <div className="flex justify-between text-orange-600 dark:text-orange-400">
                 <span>Egyéb bérlevonás</span>
-                <span className="font-mono">-{itemDeductions.toLocaleString('hu-HU')} Ft</span>
+                <span className="font-mono">{itemDeductions.toLocaleString('hu-HU')} Ft</span>
               </div>
             )}
           </div>

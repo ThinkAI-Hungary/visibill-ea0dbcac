@@ -175,4 +175,51 @@ describe('generatePayslipHtml', () => {
     expect(html).toContain('Önkéntes nyugdíjpénztári tagdíj');
     expect(html).toContain('0123.V.456/2026');
   });
+
+  // EB-0230 specifikus ellenőrzések
+  it('should format employee name in hero header (EB-0230)', () => {
+    const html = generatePayslipHtml(basePayslip);
+    expect(html).toContain('class="employee-name-hero"');
+    expect(html).toContain('>Kiss János</div>');
+  });
+
+  it('should render deductions WITHOUT leading minus sign (EB-0230)', () => {
+    const html = generatePayslipHtml({
+      ...basePayslip,
+      szjaAmount: 75000,
+      tbAmount: 92500,
+      garnishments: 30000,
+    });
+    // Has class negative, but value must not have '-' sign
+    expect(html).toContain('<td class="right negative">75');
+    expect(html).toContain('<td class="right negative">92');
+    expect(html).toContain('<td class="right negative">30');
+    expect(html).not.toContain('<td class="right negative">-75');
+    expect(html).not.toContain('<td class="right negative">-92');
+    expect(html).not.toContain('<td class="right negative">-30');
+  });
+
+  it('should display costCenter when provided (EB-0230)', () => {
+    const withCostCenter = {
+      ...basePayslip,
+      costCenter: 'Kiskunhalas Iroda',
+    };
+    const html = generatePayslipHtml(withCostCenter);
+    expect(html).toContain('Költséghely');
+    expect(html).toContain('Kiskunhalas Iroda');
+  });
+
+  it('should NOT include "Teljes bérköltség" on payslip (EB-0230)', () => {
+    const html = generatePayslipHtml(basePayslip);
+    expect(html).not.toContain('Teljes bérköltség');
+  });
+
+  it('should NOT include "Teljes bérköltség (KIVA-val)" when KIVA is active (EB-0230)', () => {
+    const withKiva = {
+      ...basePayslip,
+      taxRegime: 'KIVA' as const,
+    };
+    const html = generatePayslipHtml(withKiva);
+    expect(html).not.toContain('Teljes bérköltség');
+  });
 });

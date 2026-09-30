@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-30  
-> **Összesen:** 159 döntés | ✅ Decided: 155 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 160 döntés | ✅ Decided: 156 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 
 ---
@@ -261,4 +261,5 @@
 | P-145 | Ügyféllista és Cégválasztók ABC Sorrendezése UX | ✅ Decided | [P-145](./P-145-company-selector-alphabetical-sorting-ux.md) |
 | P-146 | Részfizetett és Jutalékkal Csökkentett Számlák Státuszkijelzése és Felismerése UX | ✅ Decided | [P-146](./P-146-partial-payment-and-fee-deduction-match-ux.md) |
 | P-147 | Főkönyvi AI Tételbesorolás Valós Idejű Folyamatjelző és Státusz-sáv UX | ✅ Decided | [P-147](./P-147-gl-ai-categorization-realtime-progress-banner-ux.md) |
+| P-148 | Bérjegyzék Redesign, Költséghely Kezelés és FEOR Munkakör UX | ✅ Decided | [P-148](./P-148-payslip-redesign-cost-center-and-feor-job-title-ux.md) |
 
