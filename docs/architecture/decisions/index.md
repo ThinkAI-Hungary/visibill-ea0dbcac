@@ -1,7 +1,8 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-09-30  
-> **Összesen:** 199 döntés (184 egyedi döntési fájl) | ✅ Decided: 197 | ⛔ Superseded: 2
+> **Összesen:** 202 döntés (187 egyedi döntési fájl) | ✅ Decided: 200 | ⛔ Superseded: 2
+
 
 ---
 
@@ -232,6 +233,10 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-178 | Egyéni Számlatükör Főkönyvi Szám Törlése és Relációs Integritás Védelem | ✅ Decided | [A-178](./A-178-custom-chart-of-accounts-unused-account-deletion.md) |
 | A-180 | Tárgyi Eszköz Időszaki Értékcsökkenés (ÉCS) Elszámolás és Vegyes Napló Feladási Architektúra | ✅ Decided | [A-180](./A-180-fixed-assets-periodic-depreciation-posting-service.md) |
 | A-181 | A60 Közösségi ÁFA Összesítő, VIES Integráció és 65-ös Bevallás Összefüggés-Architektúra | ✅ Decided | [A-181](./A-181-a60-community-vat-and-vies-crosscheck.md) |
+| A-182 | Részfizetett és Jutalékkal Csökkentett Számlapárosítás és Tranzakció Deduplikáció | ✅ Decided | [A-182](./A-182-partial-payment-matching-and-transaction-deduplication.md) |
+| A-183 | Supabase Query Teljesítmény és Pénzügyi RPC Optimalizáció (Statement Timeout Megszüntetés) | ✅ Decided | [A-183](./A-183-supabase-query-performance-and-financial-rpc-optimization.md) |
+| A-184 | Real-time AI Tételbesorolási Telemetria, Query Invalidáció és Idempotens Párosítás | ✅ Decided | [A-184](./A-184-realtime-ai-progress-streaming-and-matching-idempotency.md) |
+
 
 ## 💳 Fizetés
 

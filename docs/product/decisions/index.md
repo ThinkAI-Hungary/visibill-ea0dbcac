@@ -1,7 +1,8 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-09-30  
-> **Összesen:** 151 döntés | ✅ Decided: 147 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 159 döntés | ✅ Decided: 155 | 🔴 Open: 1 | ⛔ Superseded: 3
+
 
 ---
 
@@ -252,3 +253,12 @@
 | P-136 | Folyószámla és Analitika Kezelőfelület, Különbözet-Rendezés és Nyomtatási Kimutatások UX | ✅ Decided | [P-136](./P-136-subledger-and-open-items-ux.md) |
 | P-138 | Egységes Könyvelési Szabályok Kezelőfelület (Számlatétel Szabályok & AI Prompt Könyvtár) UX | ✅ Decided | [P-138](./P-138-unified-accounting-rules-and-prompt-library-ux.md) |
 | P-139 | Egyéni Számlatükör Főkönyvi Szám Törlése és Ergonómiai UX | ✅ Decided | [P-139](./P-139-custom-chart-of-accounts-unused-account-deletion-ux.md) |
+| P-140 | Számlázz.hu Saját Kimenő Számlaképek Lehívása és NAV Párosítás UX | ✅ Decided | [P-140](./P-140-szamlazz-hu-outbound-invoice-image-sync-and-pairing.md) |
+| P-141 | Tárgyi Eszközök Időszaki Értékcsökkenés (ÉCS) Elszámolás és Vegyes Napló Feladási Varázsló UX | ✅ Decided | [P-141](./P-141-fixed-assets-periodic-depreciation-posting-wizard-ux.md) |
+| P-142 | Tranzakció Többes Számlapárosítás és Jutalék-levonás UX | ✅ Decided | [P-142](./P-142-transaction-multi-invoice-matching-ux.md) |
+| P-143 | Bérszámfejtés 3-Oszlopos Dashboard és EFO Elkülönítés UX | ✅ Decided | [P-143](./P-143-payroll-3column-dashboard-and-efo-separation-ux.md) |
+| P-144 | A60 Közösségi ÁFA Összesítő és VIES Keresztellenőrzés UX | ✅ Decided | [P-144](./P-144-vat-a60-community-summary-and-vies-crosscheck-ux.md) |
+| P-145 | Ügyféllista és Cégválasztók ABC Sorrendezése UX | ✅ Decided | [P-145](./P-145-company-selector-alphabetical-sorting-ux.md) |
+| P-146 | Részfizetett és Jutalékkal Csökkentett Számlák Státuszkijelzése és Felismerése UX | ✅ Decided | [P-146](./P-146-partial-payment-and-fee-deduction-match-ux.md) |
+| P-147 | Főkönyvi AI Tételbesorolás Valós Idejű Folyamatjelző és Státusz-sáv UX | ✅ Decided | [P-147](./P-147-gl-ai-categorization-realtime-progress-banner-ux.md) |
+

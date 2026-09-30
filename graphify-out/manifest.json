@@ -3090,8 +3090,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790775646.1764548,
-    "ast_hash": "5d24ae40a679ad13f0b3fa9412509eab",
+    "mtime": 1790777735.0379922,
+    "ast_hash": "aa83bb6a58d317bbd6b6109ea989b7cd",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3565,8 +3565,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1790775646.1780047,
-    "ast_hash": "af0b72263343758a5c97f17cc796139f",
+    "mtime": 1790777965.6747828,
+    "ast_hash": "728dde187d28a3e330cd1a48f00f15aa",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -13542,6 +13542,16 @@
   "session-summary/\u00c1ron/2026-09-30/summary-151500-company-alphabetical-sorting-and-partial-payment-ticket-support.md": {
     "mtime": 1790775646.179525,
     "ast_hash": "0903aa67a8535ae30e5aa6185bd5fc2b",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-184-realtime-ai-progress-streaming-and-matching-idempotency.md": {
+    "mtime": 1790777698.7874148,
+    "ast_hash": "d49588563d4c27e86661a998c6d53412",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-147-gl-ai-categorization-realtime-progress-banner-ux.md": {
+    "mtime": 1790777710.402321,
+    "ast_hash": "e28005b2ba0243d1846946559ed32b23",
     "semantic_hash": ""
   }
 }
