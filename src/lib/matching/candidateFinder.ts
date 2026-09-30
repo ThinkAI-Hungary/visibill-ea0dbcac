@@ -54,12 +54,24 @@ export function isSameCurrency(ccyA?: string | null, ccyB?: string | null): bool
   return (ccyA || 'HUF').toUpperCase() === (ccyB || 'HUF').toUpperCase();
 }
 
+export function isInvoiceNumberInDescription(invNumber?: string | null, description?: string | null): boolean {
+  if (!invNumber || !description) return false;
+  const cleanInv = invNumber.trim().toLowerCase();
+  const cleanDesc = description.toLowerCase();
+  if (cleanInv.length >= 4 && cleanDesc.includes(cleanInv)) return true;
+  // Alphanumeric normalization check for formatted numbers like 2026/SI/UK5508655/00008 or Jutalék2026/SI/UK5508655/00008
+  const normInv = cleanInv.replace(/[^a-z0-9]/g, '');
+  const normDesc = cleanDesc.replace(/[^a-z0-9]/g, '');
+  return normInv.length >= 6 && normDesc.includes(normInv);
+}
+
 export interface FilterInvoiceCandidatesParams {
   availableInvoices: AvailableInvoice[];
   serverSearchResults?: AvailableInvoice[];
   search?: string;
   transactionAmount?: number;
   transactionCurrency?: string | null;
+  transactionDescription?: string | null;
   minShowCount?: number;
 }
 
@@ -67,7 +79,8 @@ export interface FilterInvoiceCandidatesParams {
  * Filters and sorts invoice candidates for a transaction.
  * Follows P-018:
  * - When searching: text/amount search with priority on same currency & amount proximity.
- * - When not searching: tolerance filter (±30% same currency, ±50% cross-currency).
+ * - When not searching: tolerance filter (±30% same currency, ±50% cross-currency),
+ *   plus invoices directly referenced in the transaction description (partial payments / fees).
  * - Minimum 10 invoices guarantee (sorted by proximity) to avoid confusing empty states.
  */
 export function filterAndSortInvoiceCandidates({
@@ -76,17 +89,22 @@ export function filterAndSortInvoiceCandidates({
   search = '',
   transactionAmount = 0,
   transactionCurrency = 'HUF',
+  transactionDescription = '',
   minShowCount = 10,
 }: FilterInvoiceCandidatesParams): AvailableInvoice[] {
   const txAmt = Math.abs(transactionAmount || 0);
   const query = search.trim();
   const txCcy = (transactionCurrency || 'HUF').toUpperCase();
 
-  // ── No search: filter by amount tolerance ──
+  // ── No search: filter by amount tolerance & description reference ──
   if (!query) {
     let list = [...availableInvoices];
     if (txAmt > 0) {
       const filtered = list.filter(inv => {
+        if (transactionDescription && isInvoiceNumberInDescription(inv.bizonylatsorszam, transactionDescription)) {
+          return true;
+        }
+
         const invCcy = (inv.penznem || 'HUF').toUpperCase();
         const isSameCcy = isSameCurrency(txCcy, invCcy);
 
@@ -108,29 +126,30 @@ export function filterAndSortInvoiceCandidates({
         return diff / txComp <= tolerance;
       });
 
-      if (filtered.length >= minShowCount) {
-        list = filtered;
-      } else {
-        // Sort full list by amount proximity, prioritize same currency
-        const sorted = [...list].sort((a, b) => {
-          const aSame = isSameCurrency(a.penznem, txCcy);
-          const bSame = isSameCurrency(b.penznem, txCcy);
-          if (aSame !== bSame) return aSame ? -1 : 1;
+      const baseList = filtered.length >= minShowCount ? filtered : list;
+      const sorted = [...baseList].sort((a, b) => {
+        const aDescMatch = transactionDescription ? isInvoiceNumberInDescription(a.bizonylatsorszam, transactionDescription) : false;
+        const bDescMatch = transactionDescription ? isInvoiceNumberInDescription(b.bizonylatsorszam, transactionDescription) : false;
+        if (aDescMatch !== bDescMatch) return aDescMatch ? -1 : 1;
 
-          const aAmt = aSame ? Math.abs(a.brutto_vegosszeg || 0) : toHuf(Math.abs(a.brutto_vegosszeg || 0), a.penznem);
-          const bAmt = bSame ? Math.abs(b.brutto_vegosszeg || 0) : toHuf(Math.abs(b.brutto_vegosszeg || 0), b.penznem);
-          const txComp = aSame ? txAmt : toHuf(txAmt, txCcy);
+        const aSame = isSameCurrency(a.penznem, txCcy);
+        const bSame = isSameCurrency(b.penznem, txCcy);
+        if (aSame !== bSame) return aSame ? -1 : 1;
 
-          const aSkonto = (a.has_skonto && a.skonto_amount) ? (aSame ? Math.abs(a.skonto_amount) : toHuf(Math.abs(a.skonto_amount), a.penznem)) : null;
-          const bSkonto = (b.has_skonto && b.skonto_amount) ? (bSame ? Math.abs(b.skonto_amount) : toHuf(Math.abs(b.skonto_amount), b.penznem)) : null;
+        const aAmt = aSame ? Math.abs(a.brutto_vegosszeg || 0) : toHuf(Math.abs(a.brutto_vegosszeg || 0), a.penznem);
+        const bAmt = bSame ? Math.abs(b.brutto_vegosszeg || 0) : toHuf(Math.abs(b.brutto_vegosszeg || 0), b.penznem);
+        const txComp = aSame ? txAmt : toHuf(txAmt, txCcy);
 
-          const aDiff = Math.min(Math.abs(aAmt - txComp), aSkonto !== null ? Math.abs(aSkonto - txComp) : Infinity);
-          const bDiff = Math.min(Math.abs(bAmt - txComp), bSkonto !== null ? Math.abs(bSkonto - txComp) : Infinity);
+        const aSkonto = (a.has_skonto && a.skonto_amount) ? (aSame ? Math.abs(a.skonto_amount) : toHuf(Math.abs(a.skonto_amount), a.penznem)) : null;
+        const bSkonto = (b.has_skonto && b.skonto_amount) ? (bSame ? Math.abs(b.skonto_amount) : toHuf(Math.abs(b.skonto_amount), b.penznem)) : null;
 
-          return aDiff - bDiff;
-        });
-        list = sorted.slice(0, Math.max(minShowCount, filtered.length));
-      }
+        const aDiff = Math.min(Math.abs(aAmt - txComp), aSkonto !== null ? Math.abs(aSkonto - txComp) : Infinity);
+        const bDiff = Math.min(Math.abs(bAmt - txComp), bSkonto !== null ? Math.abs(bSkonto - txComp) : Infinity);
+
+        return aDiff - bDiff;
+      });
+
+      list = filtered.length >= minShowCount ? sorted : sorted.slice(0, Math.max(minShowCount, filtered.length));
     }
     return list;
   }

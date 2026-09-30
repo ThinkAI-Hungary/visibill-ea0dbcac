@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-09-29  
-> **Összesen:** 144 döntés | ✅ Decided: 140 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Utoljára frissítve:** 2026-09-30  
+> **Összesen:** 151 döntés | ✅ Decided: 147 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 ---
 
@@ -26,6 +26,7 @@
 | P-093 | ÁFA Analitika Oszlopelrendezés és Valós Nettó Megjelenítés UX | ✅ Decided | [P-093](./P-093-vat-analytics-net-revenue-and-column-layout-ux.md) |
 | P-107 | Globális Nyelvválasztó Elhelyezés és Lucide Globe Ikon Felületi Élmény (Books és Bill nézet) | ✅ Decided | [P-107](./P-107-global-header-inline-language-switcher-ux.md) |
 | P-137 | Unified Financial Cockpit, Realizált Eredmény (Profit vs Kintlévőség) és Számlakép Lapfül UX | ✅ Decided | [P-137](./P-137-unified-financial-cockpit-and-realized-profit-ux.md) |
+| P-145 | Ügyféllista és Cégválasztók ABC Sorrendezése UX | ✅ Decided | [P-145](./P-145-company-selector-alphabetical-sorting-ux.md) |
 
 ## 📄 Számla Kezelés
 
@@ -63,6 +64,7 @@
 | P-129 | Futárriportok és Banki Tranzakciók Teljes Időszaki Exportálása és Szűrt Letöltése UX | ✅ Decided | [P-129](./P-129-courier-and-bank-transactions-full-period-export-ux.md) |
 | P-133 | Számlalánc Tranzakció-örökítés, Irányfüggő Partner-izoláció és Zöld Státusz UX | ✅ Decided | [P-133](./P-133-invoice-chain-transaction-propagation-ux.md) |
 | P-142 | Tranzakció Többes Számlapárosítás és Jutalék-levonás UX | ✅ Decided | [P-142](./P-142-transaction-multi-invoice-matching-ux.md) |
+| P-146 | Részfizetett és Jutalékkal Csökkentett Számlák Státuszkijelzése és Felismerése UX | ✅ Decided | [P-146](./P-146-partial-payment-and-fee-deduction-match-ux.md) |
 
 ## 📒 Főkönyv & Riportok
 
@@ -136,6 +138,8 @@
 | P-125 | Társadalombiztosítási (TB) Bérszámfejtési Modul, Pre-Flight Ellenőrzés és Kilépő Igazolványok UX | ✅ Decided | [P-125](./P-125-tb-social-security-payroll-and-filing-ux.md) |
 | P-126 | NAV 2665 Hivatalos Nyomtatvány Digitális Replika UX („Semmit a kéznek, mindent a szemnek”) | ✅ Decided | [P-126](./P-126-nav-2665-official-tax-form-digital-replica-ux.md) |
 | P-130 | Horvát ePorezna ÁFA Bevallás XML Export (Obrazac PDV-S & Obrazac ZP) UX | ✅ Decided | [P-130](./P-130-croatian-eporezna-vat-xml-export-pdv-s-and-zp-ux.md) |
+| P-143 | eaisyBooks Bérszámfejtés 3-oszlopos Elrendezés, EFO Szétválasztás és 120-napos Keretfigyelő UX | ✅ Decided | [P-143](./P-143-payroll-3column-dashboard-and-efo-separation-ux.md) |
+| P-144 | ÁFA A60 Közösségi Összesítő és VIES Keresztellenőrzés UX | ✅ Decided | [P-144](./P-144-vat-a60-community-summary-and-vies-crosscheck-ux.md) |
 
 
 ## 🔍 Keresés

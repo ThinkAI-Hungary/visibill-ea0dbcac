@@ -116,6 +116,32 @@ describe('candidateFinder', () => {
       // The skonto invoice matches exactly 230786 and should be first
       expect(result[0].id).toBe('inv-skonto-1');
     });
+
+    it('prioritizes invoice referenced in transaction description even outside amount tolerance', () => {
+      const partialFeeInvoice: AvailableInvoice = {
+        id: 'inv-fee-1',
+        bizonylatsorszam: '2026/SI/UK5508655/00008',
+        brutto_vegosszeg: 16315,
+        elado_nev: 'Fundamenta-Lakáskassza Kft.',
+        penznem: 'HUF',
+        kibocsatas_datuma: '2026-08-28',
+        already_paid: 0,
+        remaining: 16315,
+      };
+
+      const result = filterAndSortInvoiceCandidates({
+        availableInvoices: [...mockInvoices, partialFeeInvoice],
+        transactionAmount: 10575, // 54% difference, normally outside 30% tolerance
+        transactionCurrency: 'HUF',
+        transactionDescription: 'AZONNALI FIZETÉS, (5.) Jutalék2026/SI/UK5508655/00008, N',
+        minShowCount: 10,
+      });
+
+      // Must be included and sorted as top candidate (#1)
+      expect(result.some(inv => inv.id === 'inv-fee-1')).toBe(true);
+      expect(result[0].id).toBe('inv-fee-1');
+      expect(result[0].bizonylatsorszam).toBe('2026/SI/UK5508655/00008');
+    });
   });
 
   describe('filterAndSortTransactionCandidates', () => {

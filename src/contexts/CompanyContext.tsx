@@ -112,7 +112,7 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
         .from('companies')
         .select('id, name, tax_number, address, representative_name, phone, description, primary_teaor, owner_id, share_token, vat_regime, vat_regime_effective_from, country_code, created_at, updated_at')
         .in('id', allCompanyIds)
-        .order('created_at', { ascending: true });
+        .order('name', { ascending: true });
 
       data = result.data;
       error = result.error;
@@ -123,7 +123,7 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
           .from('companies')
           .select('id, name, tax_number, address, owner_id, share_token, created_at, updated_at')
           .in('id', allCompanyIds)
-          .order('created_at', { ascending: true });
+          .order('name', { ascending: true });
         data = fallback.data;
         error = fallback.error;
       }
@@ -133,6 +133,9 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
         ...c,
         country_code: c.country_code || 'HU',
       })) as Company[];
+
+      // Sort alphabetically using Hungarian locale collation (base sensitivity)
+      mappedCompanies.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'hu', { sensitivity: 'base' }));
 
       return {
         companies: mappedCompanies,

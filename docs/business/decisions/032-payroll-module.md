@@ -42,4 +42,5 @@
 - ADR: [A-108: Bérszámfejtési Munkába Járás Költségtérítés és Dolgozó-Központú Munkalap](../../architecture/decisions/A-108-payroll-commute-reimbursement-and-employee-worksheet.md)
 - PRD: [P-063: Payroll Bulk Import and Reconstruction UX](../../product/decisions/P-063-payroll-bulk-import-and-reconstruction-ux.md)
 - PRD: [P-080: Dolgozó-Központú Munkalap és Munkába Járási Költségtérítés UX](../../product/decisions/P-080-employee-worksheet-and-commute-reimbursement-ux.md)
+- PRD: [P-143: eaisyBooks Bérszámfejtés 3-oszlopos Elrendezés, EFO Szétválasztás és 120-napos Keretfigyelő UX](../../product/decisions/P-143-payroll-3column-dashboard-and-efo-separation-ux.md)
 

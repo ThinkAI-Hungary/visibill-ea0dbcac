@@ -1,8 +1,8 @@
 # Visibill — Information Architecture & Navigation
 
-> **Verzió:** 1.9 | **Dátum:** 2026-09-27  
+> **Verzió:** 2.0 | **Dátum:** 2026-09-30  
 > **Forrás:** [AppSidebar.tsx](../../src/components/AppSidebar.tsx) · [App.tsx](../../src/App.tsx) · [AppModeSwitcher.tsx](../../src/components/AppModeSwitcher.tsx)  
-> **Kapcsolódó döntés:** [P-006 Sidebar Structure](./decisions/P-006-sidebar-structure.md) · [A-109 Horvát Lokalizáció & Route Architektúra](../architecture/decisions/A-109-eaisybill-i18n-croatia-localization-and-route-architecture.md) · [P-081 Horvát Demó UX](./decisions/P-081-eaisybill-croatia-localization-and-demo-ux.md) · [A-114 eaisyBooks Shell Collapse](../architecture/decisions/A-114-collapse-dual-mode-navigation-shell.md) · [A-115 Cold/Warm Hibrid Navigáció](../architecture/decisions/A-115-eaisybooks-eaisybill-cold-warm-hybrid-transition-and-route-resolution.md) · [P-083 AppModeSwitcher UX](./decisions/P-083-eaisybooks-eaisybill-app-mode-switcher-and-cold-warm-transition-ux.md) · [P-095 NAV OSA Tabok & Render UX](./decisions/P-095-nav-osa-tabs-performance-and-immediate-row-expansion-ux.md) · [A-158 Mezőgazdasági Felvásárlási Jegyek](../architecture/decisions/A-158-agricultural-purchase-vouchers-module.md) · [A-159 Hivatalos ÁFA Analitika Upgrade](../architecture/decisions/A-159-statutory-vat-views-upgrade-and-osa-reconciliation.md) · [P-118 Felvásárlási Jegyek UX](./decisions/P-118-agricultural-purchase-vouchers-ux.md) · [P-119 Törvényi ÁFA Nézetek & FAD UX](./decisions/P-119-statutory-vat-views-upgrade-and-reverse-charge-ux.md) · [A-163 Főkönyv UI/UX Modularizáció](../architecture/decisions/A-163-general-ledger-ui-ux-restructuring-and-clutter-reduction.md) · [P-122 Főkönyv Ergonómia UX](./decisions/P-122-general-ledger-ui-ux-restructuring-and-clutter-reduction.md) · [A-164 Fejlesztési Tartalék Tárgyi Eszköz Kapcsolat](../architecture/decisions/A-164-development-reserve-fixed-assets-db-and-depreciation.md) · [P-123 Fejlesztési Tartalék & TÉNY UX](./decisions/P-123-development-reserve-teny-ux.md) · [A-165 Kapcsolt Vállalkozások Adatmodell & Könyvelés](../architecture/decisions/A-165-related-parties-schema-and-accounting-integration.md) · [P-124 Kapcsolt Vállalkozások & Forgalom UX](./decisions/P-124-related-parties-management-and-turnover-ux.md) · [A-167 NAV 2665 Digitális Replika](../architecture/decisions/A-167-nav-2665-official-tax-form-digital-replica.md) · [P-126 NAV 2665 Replika UX](./decisions/P-126-nav-2665-official-tax-form-digital-replica-ux.md) · [A-168 Számla Export Fizetési Dátumok](../architecture/decisions/A-168-invoice-export-transaction-resolution-and-skonto-dates.md) · [P-127 Számla Export Fizetési Dátumok UX](./decisions/P-127-invoices-multitab-export-payment-dates-and-routing-ux.md) · [A-175 Folyószámla és Analitika Architektúra](../architecture/decisions/A-175-subledger-and-open-items-architecture.md) · [P-136 Folyószámla és Analitika Kezelőfelület](./decisions/P-136-subledger-and-open-items-ux.md)
+> **Kapcsolódó döntés:** [P-006 Sidebar Structure](./decisions/P-006-sidebar-structure.md) · [A-109 Horvát Lokalizáció & Route Architektúra](../architecture/decisions/A-109-eaisybill-i18n-croatia-localization-and-route-architecture.md) · [P-081 Horvát Demó UX](./decisions/P-081-eaisybill-croatia-localization-and-demo-ux.md) · [A-114 eaisyBooks Shell Collapse](../architecture/decisions/A-114-collapse-dual-mode-navigation-shell.md) · [A-115 Cold/Warm Hibrid Navigáció](../architecture/decisions/A-115-eaisybooks-eaisybill-cold-warm-hybrid-transition-and-route-resolution.md) · [P-083 AppModeSwitcher UX](./decisions/P-083-eaisybooks-eaisybill-app-mode-switcher-and-cold-warm-transition-ux.md) · [P-095 NAV OSA Tabok & Render UX](./decisions/P-095-nav-osa-tabs-performance-and-immediate-row-expansion-ux.md) · [A-158 Mezőgazdasági Felvásárlási Jegyek](../architecture/decisions/A-158-agricultural-purchase-vouchers-module.md) · [A-159 Hivatalos ÁFA Analitika Upgrade](../architecture/decisions/A-159-statutory-vat-views-upgrade-and-osa-reconciliation.md) · [P-118 Felvásárlási Jegyek UX](./decisions/P-118-agricultural-purchase-vouchers-ux.md) · [P-119 Törvényi ÁFA Nézetek & FAD UX](./decisions/P-119-statutory-vat-views-upgrade-and-reverse-charge-ux.md) · [A-163 Főkönyv UI/UX Modularizáció](../architecture/decisions/A-163-general-ledger-ui-ux-restructuring-and-clutter-reduction.md) · [P-122 Főkönyv Ergonómia UX](./decisions/P-122-general-ledger-ui-ux-restructuring-and-clutter-reduction.md) · [A-164 Fejlesztési Tartalék Tárgyi Eszköz Kapcsolat](../architecture/decisions/A-164-development-reserve-fixed-assets-db-and-depreciation.md) · [P-123 Fejlesztési Tartalék & TÉNY UX](./decisions/P-123-development-reserve-teny-ux.md) · [A-165 Kapcsolt Vállalkozások Adatmodell & Könyvelés](../architecture/decisions/A-165-related-parties-schema-and-accounting-integration.md) · [P-124 Kapcsolt Vállalkozások & Forgalom UX](./decisions/P-124-related-parties-management-and-turnover-ux.md) · [A-167 NAV 2665 Digitális Replika](../architecture/decisions/A-167-nav-2665-official-tax-form-digital-replica.md) · [P-126 NAV 2665 Replika UX](./decisions/P-126-nav-2665-official-tax-form-digital-replica-ux.md) · [A-168 Számla Export Fizetési Dátumok](../architecture/decisions/A-168-invoice-export-transaction-resolution-and-skonto-dates.md) · [P-127 Számla Export Fizetési Dátumok UX](./decisions/P-127-invoices-multitab-export-payment-dates-and-routing-ux.md) · [A-175 Folyószámla és Analitika Architektúra](../architecture/decisions/A-175-subledger-and-open-items-architecture.md) · [P-136 Folyószámla és Analitika Kezelőfelület](./decisions/P-136-subledger-and-open-items-ux.md) · [A-181 A60 Közösségi ÁFA Architektúra](../architecture/decisions/A-181-a60-community-vat-and-vies-crosscheck.md) · [P-143 3-Oszlopos Bérszámfejtés és EFO UX](./decisions/P-143-payroll-3column-dashboard-and-efo-separation-ux.md) · [P-144 A60 Közösségi Összesítő UX](./decisions/P-144-vat-a60-community-summary-and-vies-crosscheck-ux.md) · [P-145 Cégválasztó ABC Rendezés UX](./decisions/P-145-company-selector-alphabetical-sorting-ux.md) · [A-182 Részfizetés és Deduplikáció](../architecture/decisions/A-182-partial-payment-matching-and-transaction-deduplication.md) · [P-146 Részfizetés és Jutaléklevonás UX](./decisions/P-146-partial-payment-and-fee-deduction-match-ux.md)
 
 ---
 
@@ -608,8 +608,69 @@ A `useAccountyPermissions` hook ellenőrzi a modul-szintű jogokat. Ha az `accou
   - Hivatalos formátumú PDF generálás: Egészségbiztosítási Igazolvány kivonat és kilépő TB igazolás biztosítási időről, táppénz napokról és levont járulékokról.
 - **AI Anomália Elemző (`AiAnomalyReportPage`):**
   - Automatikus ellenőrző szabályok: minimális alap eltérések, nyugdíjkorhatár vs. státusz inkonzisztenciák, többes jogviszony heti munkaidő maximum túllépések felderítése.
+- **3-Oszlopos Bérszámfejtési Dashboard & EFO Különválasztás (`PayrollDashboardPage`):**
+  - 3-oszlopos strukturált grid: 1. Havi ciklusok (lezárt/nyitott státuszok, progress), 2. Foglalkoztatottak (állandó munkaviszonyos és megbízásos törzsállomány), 3. EFO alkalmi munka (éves 120 napos keretszámláló, színkódolt státuszjelvények: zöld 0-90 nap, sárga 91-119 nap, piros 120+ nap).
+- **Foglalkoztatotti Típus-szűrés és Kétirányú URL Szinkronizáció (`EmployeesPage`):**
+  - Mind / Állandó / EFO lapfülek közvetlen URL állapottal (`?type=regular`, `?type=efo`) és kontextusfüggő új dolgozó rögzítő gombokkal.
 
-> **Kapcsolódó döntések:** [P-125](./decisions/P-125-tb-social-security-payroll-and-filing-ux.md) · [A-166](../architecture/decisions/A-166-tb-social-security-minimum-base-and-pensioner-payroll-engine.md)
+> **Kapcsolódó döntések:** [P-125](./decisions/P-125-tb-social-security-payroll-and-filing-ux.md) · [A-166](../architecture/decisions/A-166-tb-social-security-minimum-base-and-pensioner-payroll-engine.md) · [P-143](./decisions/P-143-payroll-3column-dashboard-and-efo-separation-ux.md)
+
+---
+
+### ÁFA Bevallás és A60 Közösségi Összesítő (`/vat-return`, 2026-09-30)
+
+**Layout:** 9 lapfüles ÁFA bevallási és analitikai modul (`65-ös bevallás`, `Éves mátrix`, `Tételes M-lap`, `Fordított ÁFA`, `A60 Közösségi`, `ÁFA tétellista`, `Gyűjtőkódok`, `26TFEJLH`, `Beállítások`)
+
+**Fő Funkciók és Munkafolyamatok:**
+- **A60 Közösségi Összesítő és 65-ös Bevallás Törvényi Összefüggés-vizsgálata:**
+  - 4-kártyás felső összefoglaló sáv: 02. sor (Közösségi termékértékesítés), 11–16. sor (Közösségi termékbeszerzés), 91–92. sor (Közösségi szolgáltatásnyújtás), 18. sor (Közösségi szolgáltatás igénybevétele).
+  - Vizuális rekonsziliáció: Zöld pipa („Teljes egyezés”) vagy sárga figyelmeztető badge eltérés esetén numerikus különbséggel és tooltippel.
+- **4-Lapfüles Belső Szerkezet (`VatA60Table`):**
+  - 01-es lap: Közösségi termékértékesítés (`goods_out`)
+  - 02-es lap: Közösségi termékbeszerzés (`goods_in`)
+  - 03-as lap: Közösségi szolgáltatásnyújtás (`services_out`)
+  - 04-es lap: Közösségi szolgáltatás igénybevétele (`services_in`)
+- **Élő Európai Bizottsági VIES REST API Ellenőrzés:**
+  - A táblázat eszköztárában elhelyezett „VIES ellenőrzés” gomb közvetlenül az Európai Bizottság szerverét kérdezi le böngészőből.
+  - Valós idejű státusz badge-ek: `Érvényes VIES` (zöld), `Érvénytelen` (piros), `Nincs ellenőrizve` (szürke), `VIES hiba` (sárga).
+- **Tételes Számlafúrás (Drill-Down) és Előnézet:**
+  - Lenyitható partnersorok az érintett számlák felsorolásával, bizonylatszámra kattintva azonnali számlakép előnézet.
+
+> **Kapcsolódó döntések:** [BDR 064](../business/decisions/064-a60-community-vat-and-vies-crosscheck.md) · [A-181](../architecture/decisions/A-181-a60-community-vat-and-vies-crosscheck.md) · [P-144](./decisions/P-144-vat-a60-community-summary-and-vies-crosscheck-ux.md) · [A-159](../architecture/decisions/A-159-statutory-vat-views-upgrade-and-osa-reconciliation.md)
+
+---
+
+### Globális Cégválasztó és Ügyféllista Rendezés (2026-09-30)
+
+**Érintett Komponensek:** `CompanySelector.tsx`, `CompanySwitcher.tsx`, `AccountyCompanySelector.tsx`, `CompanyContext.tsx`
+
+**Fő Funkciók és Felületi Élmény:**
+- **Magyar Ábécé Szerinti Determinisztikus Rendezés:**
+  - A cégek és könyvelt ügyfelek listája minden cégválasztó felületen (fejléc, Accounty váltó, navigációs menük) szigorúan magyar ábécé szerint (`localeCompare('hu', { sensitivity: 'base' })`) jelenik meg.
+  - A magyar ékezetes karakterek (Á, É, Í, Ó, Ö, Ő, Ú, Ü, Ű) pontos nyelvi besorolást kapnak.
+  - A pinelt és aktív ügyfél kiemelése változatlanul prioritást élvez a lenyíló listák tetején.
+
+> **Kapcsolódó döntések:** [P-145](./decisions/P-145-company-selector-alphabetical-sorting-ux.md) · [P-076](./decisions/P-076-eaisybooks-dual-mode-navigation-and-company-switcher-ux.md) · [P-085](./decisions/P-085-eaisybooks-portfolio-navigation-grouping-ux.md)
+
+---
+
+### Részfizetés, Jutaléklevonás és Tranzakció Deduplikáció (`/invoices`, `/transactions`, 2026-09-30)
+
+**Érintett Komponensek & RPC-k:** `NavInvoiceRow.tsx`, `SubmittedInvoiceRow.tsx`, `ManualMatchSearchSection.tsx`, `candidateFinder.ts`, `matchingService.ts`, `get_filtered_nav_invoices`, `get_filtered_submitted_invoices`, `get_invoice_kpis`
+
+**Fő Funkciók és Felületi Élmény:**
+- **Deduplikált Tranzakciós Egyenleg-számítás:**
+  - Az adatbázis RPC-k SQL `UNION` alapú `all_tx_distinct` CTE-vel akadályozzák meg, hogy a számlaláncolat miatt párhuzamosan tárolt tranzakciós rekordok kétszeresen adódjanak hozzá a kifizetett összeghez.
+- **Részfizetési Státusz és Részletes Tooltip:**
+  - Ha a számla csak részben lett kifizetve (`paid_amount < gross_amount - 0.5`), a számla státusza kötelezően `Részben fizetve` (`partially_paid`).
+  - A státusz badge tooltipje pontosan feltünteti a kifizetett összeget (`paid_amount`) és a nyitott hátralékot (`remaining_amount`).
+- **Jutalékkal Csökkentett Utalások és Sorszám-prioritás:**
+  - Ha a banki tranzakció leírása/közleménye tartalmazza a számla sorszámát (pl. jutaléklevonásos utalás esetén), a számla automatikusan a legelső (#1) helyen kerül felajánlásra a manuális párosítási fiókban még ±30%-ot meghaladó összegeltérés esetén is.
+  - A tranzakciónál rögzített jutalékösszeg (`fee_amount`) beszámít a számla fedezetébe.
+
+> **Kapcsolódó döntések:** [A-182](../architecture/decisions/A-182-partial-payment-matching-and-transaction-deduplication.md) · [P-146](./decisions/P-146-partial-payment-and-fee-deduction-match-ux.md) · [A-082](../architecture/decisions/A-082-partially-paid-invoices-status.md) · [P-064](./decisions/P-064-partially-paid-invoice-status-ux.md) · [A-139](../architecture/decisions/A-139-transaction-fee-amount-and-batch-invoice-resolution.md)
+
+---
 
 ---
 

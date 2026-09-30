@@ -75,7 +75,7 @@
 A `settle_invoices_via_petty_cash(p_company_id, p_register_id, p_entry_date, p_invoice_ids, p_description)` eljárás kétirányú:
 - **Kimenő (vevői) számlák:** `+brutto_vegosszeg` (pénztári bevétel).
 - **Bejövő (szállítói) számlák:** `-brutto_vegosszeg` (pénztári kiadás).
-- Egyedi számla esetén automatikusan feltölti a `partner_id`-t, beállítja a `source_type = 'invoice_settlement'` értéket, és atomi tranzakcióban a számlákat `fizetve = true` állapotra állítja. Lásd [A-155](../decisions/A-155-petty-cash-inbound-settlement-and-period-closing.md).
+- Egyedi számla esetén a `partner_id`-t intelligensen feloldja a `public.partners` táblából az adószám (`adoszam`) vagy partnernév (`partner_nev`) alapján (mivel a manuális `invoices` táblában nincs fizikai `partner_id` oszlop), beállítja a `source_type = 'invoice_settlement'` értéket, és atomi tranzakcióban a számlákat `fizetve = true` állapotra állítja. Lásd [A-155](../decisions/A-155-petty-cash-inbound-settlement-and-period-closing.md).
 
 ---
 

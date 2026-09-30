@@ -49,6 +49,11 @@ const CompanySelector = () => {
     }
     return selectedCompany;
   }, [urlCompanyId, selectedCompany, companies]);
+
+  // Sort companies in Hungarian alphabetical order (ABC)
+  const sortedCompanies = useMemo(() => {
+    return [...companies].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'hu', { sensitivity: 'base' }));
+  }, [companies]);
   
   // Create dialog state
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -391,7 +396,7 @@ const CompanySelector = () => {
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            {companies.map((company) => (
+            {sortedCompanies.map((company) => (
               <SelectItem key={company.id} value={company.id}>
                 <span className="flex items-center gap-1.5">
                   <span className="text-sm shrink-0">{company.country_code === 'HR' ? '🇭🇷' : '🇭🇺'}</span>

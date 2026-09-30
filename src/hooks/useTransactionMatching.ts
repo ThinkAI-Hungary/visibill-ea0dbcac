@@ -145,8 +145,9 @@ export function useTransactionMatching({
       search,
       transactionAmount: transaction?.amount || 0,
       transactionCurrency: transaction?.currency || 'HUF',
+      transactionDescription: transaction?.description || '',
     });
-  }, [availableInvoices, serverSearchResults, search, transaction?.amount, transaction?.currency]);
+  }, [availableInvoices, serverSearchResults, search, transaction?.amount, transaction?.currency, transaction?.description]);
 
   // Reset local ephemeral states on open/close or transaction change
   useEffect(() => {

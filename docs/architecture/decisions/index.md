@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-09-29  
-> **Összesen:** 197 döntés (182 egyedi döntési fájl) | ✅ Decided: 195 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-09-30  
+> **Összesen:** 199 döntés (184 egyedi döntési fájl) | ✅ Decided: 197 | ⛔ Superseded: 2
 
 ---
 
@@ -140,6 +140,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-153 | Főkönyvi Kivonat Kötegelt Tételes Adatbetöltés és Fastruktúra Renderelés | ✅ Decided | [A-153](./A-153-general-ledger-batch-itemized-view-architecture.md) |
 | A-173 | Számlalánc Tranzakció-örökítés, Irányfüggő Partnerillesztés és PostgreSQL Propagáció | ✅ Decided | [A-173](./A-173-invoice-chain-transaction-propagation.md) |
 | A-179 | Aggreg8 PSD2 és Fájlimport Cross-Deduplikációs Architektúra | ✅ Decided | [A-179](./A-179-aggreg8-psd2-cross-import-deduplication.md) |
+| A-182 | Részfizetés és Jutaléklevonás Számlapárosítás és Deduplikációs Architektúra | ✅ Decided | [A-182](./A-182-partial-payment-matching-and-transaction-deduplication.md) |
 
 ## 🖥️ Frontend
 
@@ -230,6 +231,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-177 | Egységes Számlaszabály Kezelő Komponens és eaisyBooks Integráció | ✅ Decided | [A-177](./A-177-unified-invoice-rules-component-and-eaisybooks-integration.md) |
 | A-178 | Egyéni Számlatükör Főkönyvi Szám Törlése és Relációs Integritás Védelem | ✅ Decided | [A-178](./A-178-custom-chart-of-accounts-unused-account-deletion.md) |
 | A-180 | Tárgyi Eszköz Időszaki Értékcsökkenés (ÉCS) Elszámolás és Vegyes Napló Feladási Architektúra | ✅ Decided | [A-180](./A-180-fixed-assets-periodic-depreciation-posting-service.md) |
+| A-181 | A60 Közösségi ÁFA Összesítő, VIES Integráció és 65-ös Bevallás Összefüggés-Architektúra | ✅ Decided | [A-181](./A-181-a60-community-vat-and-vies-crosscheck.md) |
 
 ## 💳 Fizetés
 

@@ -73,12 +73,13 @@ export function CompanySwitcher() {
     return null;
   }, [currentCompanyId, clients, fallbackCompany]);
 
-  // Filter companies by search
+  // Filter companies by search and sort in Hungarian ABC order
   const filteredClients = useMemo(() => {
     if (!clients) return [];
-    if (!searchQuery) return clients;
+    const sorted = [...clients].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'hu', { sensitivity: 'base' }));
+    if (!searchQuery) return sorted;
     const q = searchQuery.toLowerCase();
-    return clients.filter(c =>
+    return sorted.filter(c =>
       c.name.toLowerCase().includes(q) ||
       (c.taxNumber && c.taxNumber.toLowerCase().includes(q))
     );

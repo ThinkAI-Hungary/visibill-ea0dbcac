@@ -444,15 +444,15 @@ export async function applyMatch(params: {
 
   if (error) throw error;
 
-  // Synchronously update invoice records for instant UI consistency
+  // Synchronously update invoice records for instant UI consistency (let DB trigger manage full vs partial paid status)
   await Promise.all([
     supabase
       .from('invoices')
-      .update({ transaction_id: params.transactionId, fizetve: true })
+      .update({ transaction_id: params.transactionId })
       .eq('id', params.invoiceId),
     supabase
       .from('nav_invoices')
-      .update({ transaction_id: params.transactionId, paid: true })
+      .update({ transaction_id: params.transactionId })
       .eq('id', params.invoiceId),
   ]);
 

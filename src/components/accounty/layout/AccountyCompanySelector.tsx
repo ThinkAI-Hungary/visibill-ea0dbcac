@@ -53,12 +53,13 @@ export default function AccountyCompanySelector({
     );
   }, [propIsEv, selectedClient]);
 
-  // Filter clients by search term (name or tax number)
+  // Filter clients by search term (name or tax number) and sort in Hungarian ABC order
   const filteredClients = useMemo(() => {
     if (!allClients || allClients.length === 0) return [];
-    if (!searchQuery.trim()) return allClients;
+    const sorted = [...allClients].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'hu', { sensitivity: 'base' }));
+    if (!searchQuery.trim()) return sorted;
     const q = searchQuery.toLowerCase().trim();
-    return allClients.filter(c => {
+    return sorted.filter(c => {
       const nameMatch = c.name?.toLowerCase().includes(q);
       const taxMatch = c.taxNumber?.toLowerCase().includes(q);
       return nameMatch || taxMatch;
