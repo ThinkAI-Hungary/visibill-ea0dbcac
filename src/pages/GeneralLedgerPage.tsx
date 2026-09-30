@@ -14,7 +14,9 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Download, UploadCloud, Database, Bot, Loader2, Search, FileText, ChevronDown, Eye, Printer, Maximize2, Minimize2, FileUp, Trash2, BookOpen, Table2, Calendar, CalendarCheck, Layers, ShieldCheck, Plus, LayoutGrid, Columns, Filter, FolderTree, ListTree, FileSpreadsheet, Receipt, ListFilter } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Download, UploadCloud, Database, Bot, Loader2, Search, FileText, ChevronDown, Eye, Printer, Maximize2, Minimize2, FileUp, Trash2, BookOpen, Table2, Calendar, CalendarCheck, Layers, ShieldCheck, Plus, LayoutGrid, Columns, Filter, FolderTree, ListTree, FileSpreadsheet, Receipt, ListFilter, Sparkles } from 'lucide-react';
 import { UploadAuditXmlModal } from '@/components/general-ledger/UploadAuditXmlModal';
 import { AuditImportHistoryModal } from '@/components/general-ledger/AuditImportHistoryModal';
 import GeneralLedgerTable, { GeneralLedgerTableRef, GlViewGranularity, GlItemGroupingMode } from '@/components/general-ledger/GeneralLedgerTable';
@@ -62,6 +64,7 @@ export default function GeneralLedgerPage() {
   const [auditXmlModalOpen, setAuditXmlModalOpen] = useState(false);
   const [auditHistoryOpen, setAuditHistoryOpen] = useState(false);
   const [isAIRunning, setIsAIRunning] = useState(false);
+  const [aiProgress, setAiProgress] = useState<{ processed: number; total: number } | null>(null);
   const [activeViewTab, setActiveViewTab] = useState<'extract' | 'cards' | 'journal' | 'comparison'>('extract');
   const [cardSubTab, setCardSubTab] = useState<'account' | 'partner' | 'reconciliation'>('account');
   const [manualEntryOpen, setManualEntryOpen] = useState(false);
@@ -385,6 +388,30 @@ export default function GeneralLedgerPage() {
   useEffect(() => {
     if (!selectedCompany?.id) return;
 
+    let cancelled = false;
+
+    // Check if there is an active job already running on mount / company switch (within last 15 mins)
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    supabase
+      .from('gl_upload_notifications')
+      .select('processing_status, items_processed, items_total, created_at')
+      .eq('company_id', selectedCompany.id)
+      .in('processing_status', ['pending', 'processing'])
+      .gte('created_at', fifteenMinutesAgo)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled || !data) return;
+        setIsAIRunning(true);
+        if (data.items_total) {
+          setAiProgress({
+            processed: data.items_processed || 0,
+            total: data.items_total,
+          });
+        }
+      });
+
     const channel = supabase.channel('ai_notifications')
       .on('postgres_changes', { 
         event: 'UPDATE', 
@@ -392,13 +419,30 @@ export default function GeneralLedgerPage() {
         table: 'gl_upload_notifications',
         filter: `company_id=eq.${selectedCompany.id}`
       }, (payload) => {
-        const row = payload.new as { processing_status: string; message: string };
+        const row = payload.new as { 
+          processing_status: string; 
+          message: string;
+          items_processed?: number | null;
+          items_total?: number | null;
+        };
+
+        if (row.processing_status === 'processing') {
+          setIsAIRunning(true);
+          setAiProgress({
+            processed: row.items_processed || 0,
+            total: row.items_total || 0,
+          });
+          return;
+        }
+
         if (row.processing_status !== 'completed' && row.processing_status !== 'error') return;
         
         setIsAIRunning(false);
+        setAiProgress(null);
         queryClient.invalidateQueries({ queryKey: ['glBalances'] });
         queryClient.invalidateQueries({ queryKey: ['glItems'] });
         queryClient.invalidateQueries({ queryKey: ['glJournalItems'] });
+        queryClient.invalidateQueries({ queryKey: ['glCategorizedItems'] });
         
         if (row.processing_status === 'error') {
           toast({ title: t('common:status.error', 'Hiba történt'), description: row.message || t('accounting:general_ledger.toasts.ai_error', 'Az AI feldolgozás sikertelen.'), variant: 'destructive' });
@@ -413,9 +457,10 @@ export default function GeneralLedgerPage() {
       .subscribe();
 
     return () => {
+      cancelled = true;
       supabase.removeChannel(channel);
     };
-  }, [selectedCompany?.id, toast, t]);
+  }, [selectedCompany?.id, toast, t, queryClient]);
 
   const toggleActivePresetMutation = useMutation({
     mutationFn: async (presetId: string) => {
@@ -477,6 +522,7 @@ export default function GeneralLedgerPage() {
   const handleRunAI = async () => {
     if (!selectedCompany?.id) return;
     setIsAIRunning(true);
+    setAiProgress({ processed: 0, total: 0 });
     try {
       // PGMQ: INSERT into gl_upload_notifications triggers the DB trigger
       // which enqueues the job to the gl_classification_jobs PGMQ queue.
@@ -497,6 +543,7 @@ export default function GeneralLedgerPage() {
     } catch (error: any) {
       toast({ title: t('common:status.error', 'Hiba történt'), description: error.message, variant: 'destructive' });
       setIsAIRunning(false);
+      setAiProgress(null);
     }
   };
 
@@ -587,6 +634,7 @@ export default function GeneralLedgerPage() {
             isCroatia={isCroatia}
             selectedCompanyName={selectedCompany?.name}
             isAIRunning={isAIRunning}
+            aiProgress={aiProgress}
             onSelectPreset={handleSelectPreset}
             onOpenManagePresets={handleOpenManage}
             onOpenUploadPreset={handleOpenUpload}
@@ -600,6 +648,50 @@ export default function GeneralLedgerPage() {
             onExportExcel={(opts) => tableRef.current?.exportExcel(selectedCompany?.name, opts)}
             onExportAnalyticalExcel={(opts) => tableRef.current?.exportAnalyticalExcel(selectedCompany?.name, opts)}
           />
+
+          {isAIRunning && (
+            <div className="rounded-xl border border-primary/30 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 p-4 shadow-xs animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2.5">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-lg bg-primary/15 flex items-center justify-center text-primary relative shrink-0">
+                    <Sparkles className="w-4 h-4 animate-pulse" />
+                    <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <span>{t('accounting:general_ledger.ai_progress.title', 'AI Tételbesorolás folyamatban')}</span>
+                      {aiProgress && aiProgress.total > 0 && (
+                        <Badge variant="secondary" className="font-mono text-xs font-normal">
+                          {Math.min(100, Math.round((aiProgress.processed / aiProgress.total) * 100))}%
+                        </Badge>
+                      )}
+                    </h4>
+                    <p className="text-xs text-muted-foreground">
+                      {aiProgress && aiProgress.total > 0
+                        ? t('accounting:general_ledger.ai_progress.status_with_count', {
+                            processed: aiProgress.processed,
+                            total: aiProgress.total,
+                            defaultValue: `${aiProgress.processed} / ${aiProgress.total} tétel besorolva a számlatükör alapján...`
+                          })
+                        : t('accounting:general_ledger.ai_progress.status_starting', 'Kontextus gyűjtése és tételek előkészítése a mesterséges intelligenciának...')}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right sm:self-center">
+                  <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-full">
+                    {aiProgress && aiProgress.total > 0 ? `${aiProgress.processed} / ${aiProgress.total}` : t('common:status.starting', 'Indítás...')}
+                  </span>
+                </div>
+              </div>
+              <Progress 
+                value={aiProgress && aiProgress.total > 0 ? Math.min(100, (aiProgress.processed / aiProgress.total) * 100) : undefined} 
+                className="h-2 bg-primary/10"
+              />
+            </div>
+          )}
 
           <GlKpiBar
             glStats={glStats}

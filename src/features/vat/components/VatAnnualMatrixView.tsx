@@ -119,6 +119,9 @@ export function VatAnnualMatrixView({
       const navInvs = navInvsRes.data || [];
       const subInvs = (subInvsRes.data || []).filter((s) => !isProformaInvoice(s));
 
+      // Helper to normalize invoice numbers
+      const normalizeInvNum = (s?: string | null) => (s || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+
       // Check whether submitted invoice has an uploaded image/document
       const hasImg = (s: any) => Boolean(
         s.image_url ||
@@ -136,7 +139,6 @@ export function VatAnnualMatrixView({
       });
 
       // Deduplicate manual invoices already present in nav_invoices
-      const normalizeInvNum = (s?: string | null) => (s || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
       const existingNavNumbers = new Set(navInvs.map((i) => normalizeInvNum(i.invoice_number)).filter(Boolean));
       const standaloneSubInvs = subInvs.filter((i) => !isProformaInvoice(i) && !existingNavNumbers.has(normalizeInvNum(i.bizonylatsorszam)));
 

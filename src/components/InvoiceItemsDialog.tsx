@@ -200,8 +200,8 @@ export function InvoiceItemsDialog({
     queryFn: async () => {
       const table = source === 'submitted' ? 'invoices' : 'nav_invoices';
       const selectFields = source === 'submitted'
-        ? 'project_id, invoice_direction, kibocsatas_datuma, penznem, bizonylatsorszam, elado_vat_id, elado_nev, vevo_vat_id, vevo_nev, forditott_adozas, partner_gl_number, vat_gl_number'
-        : 'project_id, invoice_direction, invoice_issue_date, currency, vat_summary, is_reverse_charge, supplier_tax_number, supplier_name, customer_tax_number, customer_name, partner_gl_number, vat_gl_number';
+        ? 'company_id, project_id, invoice_direction, kibocsatas_datuma, penznem, bizonylatsorszam, elado_vat_id, elado_nev, vevo_vat_id, vevo_nev, forditott_adozas, partner_gl_number, vat_gl_number'
+        : 'company_id, project_id, invoice_direction, invoice_issue_date, currency, vat_summary, is_reverse_charge, supplier_tax_number, supplier_name, customer_tax_number, customer_name, partner_gl_number, vat_gl_number';
 
       const { data, error } = await supabase
         .from(table as any)
@@ -219,9 +219,12 @@ export function InvoiceItemsDialog({
         }
         if ((data as any)?.bizonylatsorszam) {
           const num = ((data as any).bizonylatsorszam as string).replace(/\s+/g, '');
-          const { data: twinNav } = await (supabase
-            .from('nav_invoices') as any)
-            .select('vat_summary, is_reverse_charge')
+          let twinQuery = (supabase.from('nav_invoices') as any)
+            .select('vat_summary, is_reverse_charge');
+          if ((data as any)?.company_id) {
+            twinQuery = twinQuery.eq('company_id', (data as any).company_id);
+          }
+          const { data: twinNav } = await twinQuery
             .ilike('invoice_number', `%${num}%`)
             .limit(1)
             .maybeSingle();

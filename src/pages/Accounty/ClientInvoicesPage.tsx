@@ -596,9 +596,9 @@ export default function ClientInvoicesPage() {
             >
               <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               <span>Számlázz.hu szinkron</span>
-              {szamlazzStatus.pendingCount > 0 && (
+              {(szamlazzStatus?.pendingCount ?? 0) > 0 && (
                 <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300">
-                  {szamlazzStatus.pendingCount}
+                  {szamlazzStatus?.pendingCount}
                 </span>
               )}
             </Button>

@@ -23,6 +23,7 @@ interface GlToolbarProps {
   isCroatia: boolean;
   selectedCompanyName?: string;
   isAIRunning: boolean;
+  aiProgress?: { processed: number; total: number } | null;
   onSelectPreset: (presetId: string) => void;
   onOpenManagePresets: () => void;
   onOpenUploadPreset: () => void;
@@ -45,6 +46,7 @@ export function GlToolbar({
   isCroatia,
   selectedCompanyName,
   isAIRunning,
+  aiProgress,
   onSelectPreset,
   onOpenManagePresets,
   onOpenUploadPreset,
@@ -206,7 +208,11 @@ export function GlToolbar({
             className="h-9 gap-1.5 text-xs font-medium"
           >
             {isAIRunning ? <Loader2 className="w-4 h-4 animate-spin text-primary" /> : <Bot className="w-4 h-4 text-primary" />}
-            <span className="hidden md:inline">{t('accounting:general_ledger.toolbar.ai_classification', 'AI Besorolás')}</span>
+            <span className="hidden md:inline">
+              {isAIRunning && aiProgress && aiProgress.total > 0
+                ? `${t('accounting:general_ledger.toolbar.ai_running', 'AI Fut...')} (${aiProgress.processed}/${aiProgress.total})`
+                : t('accounting:general_ledger.toolbar.ai_classification', 'AI Besorolás')}
+            </span>
           </Button>
         </CustomTooltip>
 

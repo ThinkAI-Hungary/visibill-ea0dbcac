@@ -14,7 +14,8 @@
     "test": "vitest",
     "test:e2e": "playwright test",
     "gen-db-docs": "node scripts/gen-db-docs.js",
-    "kb:sync": "node scripts/syncKnowledgeBase.cjs"
+    "kb:sync": "node scripts/syncKnowledgeBase.cjs",
+    "verify:migrations": "node scripts/verify-migrations.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

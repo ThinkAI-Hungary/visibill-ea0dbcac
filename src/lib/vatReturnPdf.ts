@@ -3,7 +3,7 @@
  * Generates a print-ready HTML document mimicking the official NAV 2665 form.
  */
 
-interface VatReturnPdfData {
+export interface VatReturnPdfData {
   companyName: string;
   companyTaxNumber: string;
   companyAddress: string;
@@ -41,7 +41,7 @@ const SECTIONS = [
   { key: 'm_sheet', title: 'V. M-LAP ÖSSZESÍTŐ' },
 ];
 
-function buildVatReturnHtml(data: VatReturnPdfData): string {
+export function buildVatReturnHtml(data: VatReturnPdfData): string {
   const lineMap = new Map(data.lines.map(l => [l.row_number, l]));
   const periodLabel = data.frequency === 'H'
     ? `${data.periodYear}. ${MONTHS[data.periodMonth - 1]} hó`

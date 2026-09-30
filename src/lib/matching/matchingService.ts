@@ -629,12 +629,14 @@ export async function addExtraMatch(params: {
 
   const source = submittedCheck ? 'submitted' : 'nav';
 
-  const { error } = await supabase.from('transaction_invoice_matches').insert({
-    transaction_id: params.transactionId,
-    invoice_id: params.invoiceId,
-    invoice_source: source,
-    created_by: 'manual',
-  });
+  const { error } = await supabase
+    .from('transaction_invoice_matches')
+    .upsert({
+      transaction_id: params.transactionId,
+      invoice_id: params.invoiceId,
+      invoice_source: source,
+      created_by: 'manual',
+    }, { onConflict: 'transaction_id,invoice_id', ignoreDuplicates: true });
 
   if (error) throw error;
 

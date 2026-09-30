@@ -366,8 +366,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       }
     },
     enabled: !!presetId && !!selectedCompany?.id && !!exchangeRates,
-    refetchInterval: isPolling ? 3000 : false, // P4: conditional polling
-    placeholderData: isPolling ? (prev: any) => prev : undefined,
+    staleTime: 30_000,
+    placeholderData: (prev: any) => prev,
   });
 
   // Batch categorized items query for 'teteles' mode (prevents N+1 on-demand fetches)
