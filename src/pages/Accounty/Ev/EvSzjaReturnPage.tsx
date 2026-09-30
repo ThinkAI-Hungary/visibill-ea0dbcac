@@ -151,7 +151,7 @@ function generateDraftReturnXml(code: string, period: string, client: any) {
   xml += `<nav_bevallassablon xmlns="http://www.nav.gov.hu/bevallas" verzio="1.0">\n`;
   xml += `  <fejlec>\n`;
   xml += `    <nyomtatvany>${code}</nyomtatvany>\n`;
-  xml += `    <adoszam>${client?.taxNumber || client?.tax_number || ''}</adoszam>\n`;
+  xml += `    <adoszam>${client?.taxNumber || client?.taxNumber || ''}</adoszam>\n`;
   xml += `    <nev>${client?.name || 'Egyéni Vállalkozó'}</nev>\n`;
   xml += `    <idoszak>${period}</idoszak>\n`;
   xml += `  </fejlec>\n`;
@@ -206,7 +206,7 @@ export default function EvSzjaReturnPage() {
         
         xml = buildContrib2658Xml({
           companyName: client?.name || 'Egyéni Vállalkozó',
-          companyTaxNumber: client?.taxNumber || client?.tax_number || '',
+          companyTaxNumber: client?.taxNumber || client?.taxNumber || '',
           periodYear: taxYear,
           periodQuarter: quarterNum,
           tbBase: currentCalc?.current_quarter_base || 0,
@@ -220,7 +220,7 @@ export default function EvSzjaReturnPage() {
         xml += `<nav_bevallassablon xmlns="http://www.nav.gov.hu/bevallas" verzio="1.0">\n`;
         xml += `  <fejlec>\n`;
         xml += `    <nyomtatvany>${ret.code}</nyomtatvany>\n`;
-        xml += `    <adoszam>${client?.taxNumber || client?.tax_number || ''}</adoszam>\n`;
+        xml += `    <adoszam>${client?.taxNumber || client?.taxNumber || ''}</adoszam>\n`;
         xml += `    <nev>${client?.name || 'Egyéni Vállalkozó'}</nev>\n`;
         xml += `    <idoszak>${ret.period}</idoszak>\n`;
         xml += `  </fejlec>\n`;
@@ -459,7 +459,7 @@ export default function EvSzjaReturnPage() {
                     )}
                     <button
                       onClick={() => {
-                        let xmlContent = ret.xmlData;
+                        let xmlContent = (ret as any).xmlData;
                         let isOfficial = true;
                         if (!xmlContent) {
                           xmlContent = generateDraftReturnXml(ret.code, ret.period, client);

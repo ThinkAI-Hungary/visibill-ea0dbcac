@@ -249,13 +249,13 @@ export default function Filing08EPage() {
       company: {
         name: company?.name || 'Munkáltató Kft.',
         taxNumber: company?.taxNumber || '12345678-2-42',
-        address: company?.address || '',
+        address: (company as any)?.address || '',
         kshNumber: (company as any)?.ksh_number || '',
       },
       employee: {
         name: row.name,
         birthName: emp?.birth_name || row.name,
-        motherName: emp?.mother_name || '',
+        motherName: emp?.mothers_name || '',
         birthPlace: emp?.birth_place || '',
         birthDate: emp?.birth_date || '',
         taxId: emp?.tax_id || '',
@@ -288,7 +288,7 @@ export default function Filing08EPage() {
         lastName: emp?.last_name || row.name.split(' ')[0] || '',
         firstName: emp?.first_name || row.name.split(' ').slice(1).join(' ') || '',
         birthName: emp?.birth_name || row.name,
-        motherName: emp?.mother_name || '',
+        motherName: emp?.mothers_name || '',
         birthPlace: emp?.birth_place || '',
         birthDate: emp?.birth_date || '',
         taxId: emp?.tax_id || '',
@@ -307,7 +307,7 @@ export default function Filing08EPage() {
       company: {
         name: company?.name || 'ceg',
         taxNumber: company?.taxNumber || '12345678-2-42',
-        address: company?.address || '',
+        address: (company as any)?.address || '',
       },
       items: [item],
     });
@@ -331,7 +331,7 @@ export default function Filing08EPage() {
           lastName: emp?.last_name || r.name.split(' ')[0] || '',
           firstName: emp?.first_name || r.name.split(' ').slice(1).join(' ') || '',
           birthName: emp?.birth_name || r.name,
-          motherName: emp?.mother_name || '',
+          motherName: emp?.mothers_name || '',
           birthPlace: emp?.birth_place || '',
           birthDate: emp?.birth_date || '',
           taxId: emp?.tax_id || '',
@@ -351,7 +351,7 @@ export default function Filing08EPage() {
       company: {
         name: company?.name || 'ceg',
         taxNumber: company?.taxNumber || '12345678-2-42',
-        address: company?.address || '',
+        address: (company as any)?.address || '',
       },
       items,
     });

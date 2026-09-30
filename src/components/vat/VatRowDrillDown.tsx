@@ -384,7 +384,7 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
           vat_row_override: u.vat_row_override,
           nav_invoice_items: u.invoice_items || [],
         }));
-        candidateInvoices = [...candidateInvoices, ...mappedUploaded];
+        candidateInvoices = [...candidateInvoices, ...mappedUploaded] as any;
       }
 
       // Fetch items and customer names from invoices table for any nav_invoices

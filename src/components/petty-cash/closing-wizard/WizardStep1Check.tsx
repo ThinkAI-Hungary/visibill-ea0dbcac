@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from "@/components/ui/button";
 import { AlertTriangle, CheckCircle2, TrendingUp, TrendingDown, Wallet, ShieldAlert, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PettyCashRegister, PettyCashEntry } from '../types';

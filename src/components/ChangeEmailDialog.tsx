@@ -94,7 +94,7 @@ export const ChangeEmailDialog = ({ open, onOpenChange }: ChangeEmailDialogProps
     // IIFE captures the type=email_change hash/params before Supabase clears them.
     const { error } = await supabase.auth.updateUser({
       email: data.newEmail,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` } as any,
     });
     setLoading(false);
 

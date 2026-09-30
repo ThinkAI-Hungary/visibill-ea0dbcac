@@ -40,10 +40,10 @@ export default function ClientMissingInvoicesReportPage() {
   // Build KPIs from real missing items
   const kpis = useMemo(() => {
     if (!missingItems) return { requested: 0, resolved: 0, successRate: 0, pending: 0 };
-    const requested = missingItems.length;
-    const resolved = missingItems.filter(mi => mi.status === 'resolved').length;
-    const ignored = missingItems.filter(mi => mi.status === 'ignored').length;
-    const pending = missingItems.filter(mi => mi.status === 'pending').length;
+    const requested = missingItems?.items?.length;
+    const resolved = missingItems?.items?.filter(mi => mi.status === 'resolved').length;
+    const ignored = missingItems?.items?.filter(mi => mi.status === 'ignored').length;
+    const pending = missingItems?.items?.filter(mi => mi.status === 'open' || (mi as any).status === 'pending').length;
     const successRate = requested > 0 ? Math.round(((resolved + ignored) / requested) * 100) : 0;
     return { requested, resolved, successRate, pending };
   }, [missingItems]);
@@ -52,10 +52,10 @@ export default function ClientMissingInvoicesReportPage() {
 
   // Dynamic pie: category breakdown
   const dynamicPieData = useMemo(() => {
-    if (!missingItems || missingItems.length === 0) return defaultPieData;
+    if (!missingItems || missingItems?.items?.length === 0) return defaultPieData;
     const cats: Record<string, number> = {};
     const catLabels: Record<string, string> = { bejovo: 'Bejövő', kimeno: 'Kimenő', bank: 'Bank', ber: 'Bér' };
-    missingItems.forEach(mi => {
+    missingItems?.items?.forEach(mi => {
       const label = catLabels[mi.category] || mi.category;
       cats[label] = (cats[label] || 0) + 1;
     });
@@ -64,10 +64,10 @@ export default function ClientMissingInvoicesReportPage() {
 
   // Dynamic bar: status breakdown as simple chart
   const dynamicBarData = useMemo(() => {
-    if (!missingItems || missingItems.length === 0) return defaultBarData;
-    const pending = missingItems.filter(mi => mi.status === 'pending').length;
-    const resolved = missingItems.filter(mi => mi.status === 'resolved').length;
-    const ignored = missingItems.filter(mi => mi.status === 'ignored').length;
+    if (!missingItems || missingItems?.items?.length === 0) return defaultBarData;
+    const pending = missingItems?.items?.filter(mi => mi.status === 'open' || (mi as any).status === 'pending').length;
+    const resolved = missingItems?.items?.filter(mi => mi.status === 'resolved').length;
+    const ignored = missingItems?.items?.filter(mi => mi.status === 'ignored').length;
     return [
       { name: 'Függőben', requested: pending, resolved: 0 },
       { name: 'Megoldott', requested: 0, resolved },
@@ -122,7 +122,7 @@ export default function ClientMissingInvoicesReportPage() {
             filename={`ugyfel_hianyzok_${id}_${new Date().toISOString().split('T')[0]}`}
             headers={['Dokumentum', 'Kategória', 'Állapot', 'Létrehozva']}
             label="Riport Exportálása"
-            getRows={() => (missingItems || []).map(r => {
+            getRows={() => ((missingItems as any)?.items || []).map(r => {
               const typeMap: Record<string, string> = { bejovo: 'Bejövő', kimeno: 'Kimenő', bank: 'Bank', ber: 'Bér' };
               const statusMap: Record<string, string> = { pending: 'Feldolgozandó', notified: 'Felszólítva', resolved: 'Rendben', ignored: 'Mellőzve' };
               return [
@@ -285,7 +285,7 @@ export default function ClientMissingInvoicesReportPage() {
           </thead>
           <tbody className="divide-y divide-slate-50">
             {(() => {
-              if (!missingItems || missingItems.length === 0) {
+              if (!missingItems || missingItems?.items?.length === 0) {
                 return (
                   <tr>
                     <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
@@ -297,11 +297,11 @@ export default function ClientMissingInvoicesReportPage() {
               const catLabels: Record<string, string> = { bejovo: ' Bejövő', kimeno: ' Kimenő', bank: ' Bank', ber: ' Bér' };
               const cats = ['bejovo', 'kimeno', 'bank', 'ber'];
               return cats.map(cat => {
-                const items = missingItems.filter(mi => mi.category === cat);
+                const items = missingItems?.items?.filter(mi => mi.category === cat);
                 const total = items.length;
                 if (total === 0) return null;
                 const resolved = items.filter(mi => mi.status === 'resolved' || mi.status === 'ignored').length;
-                const pending = items.filter(mi => mi.status === 'pending').length;
+                const pending = items.filter(mi => mi.status === 'open' || (mi as any).status === 'pending').length;
                 const pct = total > 0 ? Math.round((resolved / total) * 100) : 0;
                 return (
                   <tr key={cat} className="hover:bg-muted/50 transition-colors">

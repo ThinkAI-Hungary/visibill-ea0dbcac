@@ -167,7 +167,7 @@ function VatCodeDialog({ open, onOpenChange, code, formRows, onSave, saving }: {
             <div className="space-y-2 max-h-48 overflow-y-auto overflow-x-hidden pr-1">
               {form.target_rows.map((tr, i) => (
                 <div key={i} className="flex gap-2 items-center min-w-0 bg-muted/20 p-1.5 rounded-md border border-border/40">
-                  <Select value={tr.row} onValueChange={v => setForm(f => ({ ...f, target_rows: f.target_rows.map((r, idx) => idx === i ? { ...r, row: v } : r) }))}>
+                  <Select value={tr.row} onValueChange={v => setForm((f: any) => ({ ...f, target_rows: f.target_rows.map((r, idx) => idx === i ? { ...r, row: v } : r) }))}>
                     <SelectTrigger className="w-24 shrink-0 h-8 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent className="max-h-56">
                       {formRows.map(fr => (
@@ -177,7 +177,7 @@ function VatCodeDialog({ open, onOpenChange, code, formRows, onSave, saving }: {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Select value={tr.col} onValueChange={v => setForm(f => ({ ...f, target_rows: f.target_rows.map((r, idx) => idx === i ? { ...r, col: v as 'base' | 'tax' } : r) }))}>
+                  <Select value={tr.col} onValueChange={v => setForm((f: any) => ({ ...f, target_rows: f.target_rows.map((r, idx) => idx === i ? { ...r, col: v as 'base' | 'tax' } : r) }))}>
                     <SelectTrigger className="w-20 shrink-0 h-8 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="base">Adóalap</SelectItem>

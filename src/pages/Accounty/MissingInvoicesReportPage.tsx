@@ -38,11 +38,11 @@ export default function MissingInvoicesReportPage() {
       const resolved = items.filter(mi => mi.status === 'resolved').length;
       const ignored = items.filter(mi => mi.status === 'ignored').length;
       const reliability = requested > 0 ? Math.round(((resolved + ignored) / requested) * 100) : 100;
-      const resolvedItems = items.filter(mi => mi.status === 'resolved' && mi.resolved_at);
+      const resolvedItems = items.filter(mi => mi.status === 'resolved' && mi.resolvedAt);
       let avgTime = '–';
       if (resolvedItems.length > 0) {
         const totalMs = resolvedItems.reduce((sum, mi) => {
-          return sum + (new Date(mi.resolved_at!).getTime() - new Date(mi.created_at).getTime());
+          return sum + (new Date(mi.resolvedAt!).getTime() - new Date(mi.createdAt).getTime());
         }, 0);
         const avgDays = Math.round(totalMs / resolvedItems.length / (1000 * 60 * 60 * 24));
         avgTime = `${Math.max(1, avgDays)} nap`;
@@ -107,7 +107,7 @@ export default function MissingInvoicesReportPage() {
     document.body.removeChild(link);
   };
 
-  // Bar chart: monthly breakdown from real created_at dates
+  // Bar chart: monthly breakdown from real createdAt dates
   const barData = useMemo(() => {
     const now = new Date();
     const months: { name: string; requested: number; resolved: number }[] = [];
@@ -134,7 +134,7 @@ export default function MissingInvoicesReportPage() {
         channels[via]++;
       } else if (mi.status === 'notified' || mi.status === 'resolved') {
         // Distribute based on priority when channel not tracked
-        if (mi.priority === 'high') channels['AI Hívás']++;
+        if (mi.priority === 'urgent') channels['AI Hívás']++;
         else if (mi.priority === 'medium') channels['Email']++;
         else channels['Viber']++;
       } else {
@@ -150,8 +150,8 @@ export default function MissingInvoicesReportPage() {
   const channelStats = useMemo(() => {
     const total = filteredItems.length || 1;
     const notified = filteredItems.filter(mi => mi.status === 'notified' || mi.status === 'resolved');
-    const emailCount = notified.filter(mi => mi.priority !== 'high').length;
-    const aiCount = notified.filter(mi => mi.priority === 'high').length;
+    const emailCount = notified.filter(mi => mi.priority !==  'urgent').length;
+    const aiCount = notified.filter(mi => mi.priority === 'urgent').length;
     return {
       emailRate: Math.round((emailCount / total) * 100),
       resolveRate: kpis.successRate,

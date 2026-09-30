@@ -256,6 +256,7 @@ export default function SubledgerPage() {
     });
 
     return {
+      draftHeaders,
       openCount,
       openSumHuf,
       settledSumHuf,
@@ -284,6 +285,7 @@ export default function SubledgerPage() {
     let foreignSum = 0;
     let currencies = new Set<string>();
     let draftInvoices: GroupedSubledgerInvoice[] = [];
+    let draftHeaders: any[] = [];
 
     selectedInvoices.forEach((inv) => {
       inv.items.forEach((i) => {
@@ -309,6 +311,7 @@ export default function SubledgerPage() {
     const isSmallDiff = diff > 0.01 && diff <= 10;
 
     return {
+      draftHeaders,
       count: selectedInvoices.length,
       itemCount: selectedItems.length,
       sumT,
@@ -469,7 +472,7 @@ export default function SubledgerPage() {
         }
       }
 
-      setSelectedLineIds(new Set());
+      setSelectedGroupKeys(new Set());
       refetchItems();
     } catch (err: any) {
       console.error('Error during pairwise settlement:', err);
@@ -497,8 +500,7 @@ export default function SubledgerPage() {
       <PageHeader
         title="Folyószámla és Analitika"
         description="Vevő, szállító és egyéb analitikus számlák nyitott tételeinek kezelése, automatikus és kézi párosítása és leírása."
-      >
-        <div className="flex flex-wrap items-center gap-2">
+        actions={<div className="flex flex-wrap items-center gap-2">
           {/* 1-Click Auto Settle Button */}
           <Button
             onClick={handleRunAutoSettle}
@@ -554,7 +556,8 @@ export default function SubledgerPage() {
             <RotateCcw className="w-4 h-4" />
           </Button>
         </div>
-      </PageHeader>
+      }
+      />
 
       {/* Guide Banner */}
       {showHelpGuide && (

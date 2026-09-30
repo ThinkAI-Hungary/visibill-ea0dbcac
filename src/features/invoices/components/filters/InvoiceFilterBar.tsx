@@ -8,7 +8,7 @@ import { Search, CalendarIcon, CalendarCheck, Calendar as CalendarGlyph, X } fro
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
-import { getActiveLocale } from '@/lib/locale/formatters';
+import { getDateFnsLocale, getActiveLocale } from '@/lib/locale/formatters';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
 

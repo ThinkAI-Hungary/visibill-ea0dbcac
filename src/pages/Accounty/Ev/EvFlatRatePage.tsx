@@ -52,7 +52,7 @@ export default function EvFlatRatePage() {
       xml += `<nav_bevallassablon xmlns="http://www.nav.gov.hu/bevallas" verzio="1.0">\n`;
       xml += `  <fejlec>\n`;
       xml += `    <nyomtatvany>2553</nyomtatvany>\n`;
-      xml += `    <adoszam>${client?.taxNumber || client?.tax_number || ''}</adoszam>\n`;
+      xml += `    <adoszam>${client?.taxNumber || client?.taxNumber || ''}</adoszam>\n`;
       xml += `    <nev>${client?.name || 'Egyéni Vállalkozó'}</nev>\n`;
       xml += `    <idoszak>${taxYear} Éves</idoszak>\n`;
       xml += `  </fejlec>\n`;

@@ -462,7 +462,7 @@ export default function CompanyPayrollSettingsPage() {
             <div className="grid grid-cols-3 gap-4">
               <div className="p-4 rounded-lg border border-border text-center">
                 <p className="text-xs text-muted-foreground">ÁFA gyakoriság</p>
-                <p className="text-sm font-bold mt-1">{taxProfile?.vatFrequency === 'monthly' ? 'Havi' : taxProfile?.vatFrequency === 'quarterly' ? 'Negyedéves' : taxProfile?.vatFrequency === 'annual' ? 'Éves' : '—'}</p>
+                <p className="text-sm font-bold mt-1">{taxProfile?.vatFrequency === 'monthly' ? 'Havi' : taxProfile?.vatFrequency === 'quarterly' ? 'Negyedéves' : taxProfile?.vatFrequency === 'yearly' ? 'Éves' : '—'}</p>
               </div>
               <div className="p-4 rounded-lg border border-border text-center">
                 <p className="text-xs text-muted-foreground">KATA</p>

@@ -643,7 +643,7 @@ export default function EscalationListPage() {
         .in('status', ['pending', 'pending_shipment'])
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data || []) as EscalatedMatch[];
+      return (data || []) as unknown as EscalatedMatch[];
     },
     enabled: !!selectedCompany?.id,
     staleTime: 0,
@@ -1182,20 +1182,20 @@ export default function EscalationListPage() {
                       <div className="space-y-3 text-xs">
                         <div>
                           <span className="text-muted-foreground font-semibold">Számlaszám</span>
-                          {(selectedMatch.invoice?.melleklet_url || selectedMatch.invoice?.image_url) ? (
+                          {((selectedMatch.invoice as any)?.melleklet_url || (selectedMatch.invoice as any)?.image_url) ? (
                             <p
                               className="font-bold text-primary mt-0.5 cursor-pointer hover:underline flex items-center gap-1 w-fit"
                               onClick={() => openDocViewer(
-                                selectedMatch.invoice?.melleklet_url || selectedMatch.invoice?.image_url,
-                                selectedMatch.invoice?.bizonylatsorszam ?? 'Számla'
+                                (selectedMatch.invoice as any)?.melleklet_url || (selectedMatch.invoice as any)?.image_url,
+                                (selectedMatch.invoice as any)?.bizonylatsorszam ?? 'Számla'
                               )}
                               title="Számla megnyitása"
                             >
-                              {selectedMatch.invoice?.bizonylatsorszam}
+                              {(selectedMatch.invoice as any)?.bizonylatsorszam}
                               <ExternalLink className="h-3 w-3 opacity-60" />
                             </p>
                           ) : (
-                            <p className="font-bold text-foreground mt-0.5">{selectedMatch.invoice?.bizonylatsorszam}</p>
+                            <p className="font-bold text-foreground mt-0.5">{(selectedMatch.invoice as any)?.bizonylatsorszam}</p>
                           )}
                         </div>
                         <div><span className="text-muted-foreground font-semibold">Partner</span><p className="font-bold text-foreground mt-0.5">{selectedMatch.invoice?.elado_nev}</p></div>
@@ -1261,7 +1261,7 @@ export default function EscalationListPage() {
                             onKeyDown={(e) => e.key === 'Enter' && handleCmrSearch()}
                             className="bg-card font-mono text-xs h-8"
                           />
-                          <Button size="sm" variant="outline" className="h-8 px-3" onClick={handleCmrSearch} disabled={cmrIsSearching || cmrAutoSearchActive || !cmrSearchQuery.trim()}>
+                          <Button size="sm" variant="outline" className="h-8 px-3" onClick={() => handleCmrSearch()} disabled={cmrIsSearching || cmrAutoSearchActive || !cmrSearchQuery.trim()}>
                             {(cmrIsSearching || cmrAutoSearchActive) ? <span className="h-3 w-3 rounded-full border-2 border-primary border-t-transparent animate-spin" /> : <Search className="h-3 w-3" />}
                           </Button>
                         </div>
@@ -1334,7 +1334,7 @@ export default function EscalationListPage() {
                           variant="outline"
                           size="sm"
                           className="h-9 shrink-0"
-                          onClick={handlePendingManualSearch}
+                          onClick={() => handlePendingManualSearch()}
                           disabled={pendingIsSearching || !pendingAssignPos.trim()}
                         >
                           {pendingIsSearching ? (
@@ -1497,7 +1497,7 @@ export default function EscalationListPage() {
                           onKeyDown={(e) => e.key === 'Enter' && handleCmrSearch()}
                           className="bg-card font-mono text-xs h-8"
                         />
-                        <Button size="sm" variant="outline" className="h-8 px-3" onClick={handleCmrSearch} disabled={cmrIsSearching || cmrAutoSearchActive || !cmrSearchQuery.trim()}>
+                        <Button size="sm" variant="outline" className="h-8 px-3" onClick={() => handleCmrSearch()} disabled={cmrIsSearching || cmrAutoSearchActive || !cmrSearchQuery.trim()}>
                           {(cmrIsSearching || cmrAutoSearchActive) ? <span className="h-3 w-3 rounded-full border-2 border-primary border-t-transparent animate-spin" /> : <Search className="h-3 w-3" />}
                         </Button>
                       </div>

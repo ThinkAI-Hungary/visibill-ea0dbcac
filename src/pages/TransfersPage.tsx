@@ -632,11 +632,11 @@ export default function TransfersPage() {
         );
 
         const effectivePartnerName = isSelfAsSeller
-          ? (matchedNav?.supplier_name || (inv.vevo_nev && inv.vevo_nev !== selectedCompany.name ? inv.vevo_nev : inv.elado_nev) || 'Ismeretlen partner')
+          ? (matchedNav?.supplier_name || ((inv as any).vevo_nev && (inv as any).vevo_nev !== selectedCompany.name ? (inv as any).vevo_nev : inv.elado_nev) || 'Ismeretlen partner')
           : (inv.elado_nev || 'Ismeretlen partner');
 
         const effectiveTaxNumber = isSelfAsSeller
-          ? (matchedNav?.supplier_tax_number || inv.vevo_vat_id || inv.elado_vat_id)
+          ? (matchedNav?.supplier_tax_number || (inv as any).vevo_vat_id || inv.elado_vat_id)
           : (inv.elado_vat_id || undefined);
 
         const resolvedAccount = inv.bankszamlaszam_iban || 
