@@ -10,13 +10,13 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
   usePayrollEmployee, usePayrollEmployments, usePayrollDeclarations,
-  usePayrollLeaves, usePayrollGarnishments,
+  usePayrollLeaves, usePayrollGarnishments, usePayrollDependents,
   useRevokeDeclaration,
   useUpdateEmployee,
   type PayrollDeclaration, type PayrollEmployee
 } from '@/hooks/usePayrollData';
 import { formatTajNumber, formatBankAccount, formatAmount } from '@/lib/payroll/validators';
-import { calculateLeaveBalance, type EmployeeLeaveInput } from '@/lib/payroll/leaveCalculator';
+import { calculateLeaveBalance, resolveEmployeeLeaveInput, type EmployeeLeaveInput } from '@/lib/payroll/leaveCalculator';
 import { useToast } from '@/hooks/use-toast';
 import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 import { InfoSection, InfoRow, EditField, MiniStat } from './employee-details/EmployeeHelpers';
@@ -62,6 +62,7 @@ export default function EmployeeDetailsPage() {
   const { data: employments = [] } = usePayrollEmployments(empId || '');
   const { data: declarations = [] } = usePayrollDeclarations(empId || '');
   const { data: garnishments = [] } = usePayrollGarnishments(empId || '');
+  const { data: dependents = [] } = usePayrollDependents(empId || '');
 
   const { data: companyData } = useQuery({
     queryKey: ['company', companyId],
@@ -109,21 +110,16 @@ export default function EmployeeDetailsPage() {
     suspended: 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400',
   };
 
-  // Leave balance (simplified)
+  // Leave balance (Mt. 116-122. §)
   const leaveBalance = (() => {
-    if (!employee.birth_date) return null;
-    const birthYear = new Date(employee.birth_date).getFullYear();
-    const age = new Date().getFullYear() - birthYear;
-    const input: EmployeeLeaveInput = {
-      ageAtYearStart: age,
-      childrenUnder16: 0,
-      disabledChildren: 0,
-      carriedOverDays: 0,
-      extraLeaveDays: 0,
-      year: new Date().getFullYear(),
-      usedDays: leaves.filter(l => l.leave_type === 'annual' && l.status === 'approved').reduce((s, l) => s + l.days, 0),
-    };
-    return calculateLeaveBalance(input);
+    const input = resolveEmployeeLeaveInput({
+      employee,
+      dependents,
+      declarations,
+      leaves,
+      primaryEmployment,
+    });
+    return input ? calculateLeaveBalance(input) : null;
   })();
 
   const startEditing = () => {

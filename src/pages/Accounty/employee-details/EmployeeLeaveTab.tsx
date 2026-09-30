@@ -1,4 +1,5 @@
 import React from 'react';
+import { Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MiniStat } from './EmployeeHelpers';
 import type { calculateLeaveBalance } from '@/lib/payroll/leaveCalculator';
@@ -70,6 +71,23 @@ export function EmployeeLeaveTab({ leaves, leaveBalance }: EmployeeLeaveTabProps
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          {/* Tájékoztató útmutató a pótszabadságok számításáról */}
+          <div className="p-3.5 rounded-lg border border-border bg-muted/30 text-xs text-muted-foreground space-y-1.5">
+            <div className="flex items-center gap-1.5 font-semibold text-foreground">
+              <Info className="w-4 h-4 text-primary shrink-0" />
+              <span>Pótszabadságok jogszabályi nyilvántartása (Mt.):</span>
+            </div>
+            <p>
+              • <strong>Életkori pótszabadság (Mt. 117. §):</strong> Nem kell kézzel megadni; a rendszer a dolgozó születési dátuma alapján automatikusan állapítja meg (25 éves kortól 1 nap… 45 éves kortól 10 nap).
+            </p>
+            <p>
+              • <strong>Gyermekek utáni pótszabadság (Mt. 118. §):</strong> A <em>Nyilatkozatok</em> fülön rögzített családi adókedvezmény és eltartott gyermekek adatai alapján kalkulálódik (1 gyermek: 2 nap, 2 gyermek: 4 nap, 3+ gyermek: 7 nap, tartósan beteg/fogyatékos gyermekenként további 2 nap).
+            </p>
+            <p>
+              • <strong>Tárgyhavi elszámolás:</strong> A havi bérszámfejtési ciklus <em>Jelenléti ív</em> lépésében csak a tárgyhónapban ténylegesen kivett napokat kell rögzíteni; a rendszer ezt automatikusan levonja az éves egyenlegből.
+            </p>
           </div>
         </>
       )}

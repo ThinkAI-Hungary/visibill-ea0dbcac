@@ -238,3 +238,92 @@ export function calculateLeavePayout(
     payoutAmount: daysToPayOut * dailyAbsencePay,
   };
 }
+
+// ── Törzsadatokból és nyilatkozatokból szabadság bemenet feloldása ──
+
+export interface ResolveLeaveInputParams {
+  employee: { birth_date?: string | null } | null;
+  dependents?: Array<{ birth_date?: string | null; is_fetus?: boolean | null; is_disabled?: boolean | null; disabled?: boolean | null }>;
+  declarations?: Array<{ declaration_type: string; status: string; parameters?: any }>;
+  leaves?: Array<{ leave_type: string; status: string; days: number | string }>;
+  primaryEmployment?: { start_date?: string | null; end_date?: string | null; weekly_hours?: number | string | null } | null;
+  targetYear?: number;
+}
+
+export function resolveEmployeeLeaveInput(params: ResolveLeaveInputParams): EmployeeLeaveInput | null {
+  const {
+    employee,
+    dependents = [],
+    declarations = [],
+    leaves = [],
+    primaryEmployment,
+    targetYear = new Date().getFullYear(),
+  } = params;
+
+  if (!employee?.birth_date) return null;
+
+  const birthYear = new Date(employee.birth_date).getFullYear();
+  const age = targetYear - birthYear;
+
+  // Eltartott gyermekek száma (Mt. 118. §: 16. életévüket a tárgyévben vagy később betöltő gyermekek)
+  const activeChildrenFromDeps = dependents.filter(d => {
+    if (d.is_fetus) return false;
+    if (d.birth_date) {
+      const bYear = new Date(d.birth_date).getFullYear();
+      return (targetYear - bYear) <= 16;
+    }
+    return true;
+  });
+
+  // Ha még nincsenek eltartottak az accounty_dependents-ben, ellenőrizzük az aktív családi nyilatkozatot
+  const familyDec = declarations.find(d => d.declaration_type === 'family' && d.status === 'active');
+  const decChildren = Array.isArray((familyDec?.parameters as any)?.children)
+    ? (familyDec?.parameters as any).children
+    : null;
+  const decChildrenCount = (familyDec?.parameters as any)?.children_count;
+
+  let childrenUnder16 = activeChildrenFromDeps.length;
+  if (childrenUnder16 === 0) {
+    if (decChildren && decChildren.length > 0) {
+      childrenUnder16 = decChildren.filter((c: any) => {
+        if (c.is_fetus) return false;
+        if (c.birth_date) {
+          const bYear = new Date(c.birth_date).getFullYear();
+          return (targetYear - bYear) <= 16;
+        }
+        return true;
+      }).length;
+    } else if (typeof decChildrenCount === 'number' && decChildrenCount > 0) {
+      childrenUnder16 = decChildrenCount;
+    }
+  }
+
+  // Fogyatékos gyermek pótszabadság (Mt. 118. § (2))
+  const disabledChildren = dependents.filter(d => Boolean(d.is_disabled || d.disabled)).length;
+
+  // Megváltozott munkaképességű / fogyatékossági pótszabadság (Mt. 120. §: évi 5 munkanap)
+  const hasPersonalDisability = declarations.some(d => d.declaration_type === 'personal' && d.status === 'active');
+  const extraLeaveDays = hasPersonalDisability ? 5 : 0;
+
+  // Napi munkaóra az időarányos/óraalapú nyilvántartáshoz
+  const weeklyHours = primaryEmployment?.weekly_hours ? Number(primaryEmployment.weekly_hours) : 40;
+  const dailyHours = weeklyHours > 0 ? weeklyHours / 5 : 8;
+
+  const usedDays = leaves
+    .filter(l => (l.leave_type === 'annual' || l.leave_type?.startsWith('additional_')) && l.status === 'approved')
+    .reduce((s, l) => s + (Number(l.days) || 0), 0);
+
+  return {
+    ageAtYearStart: age,
+    childrenUnder16,
+    disabledChildren,
+    carriedOverDays: 0,
+    extraLeaveDays,
+    employmentStartDate: primaryEmployment?.start_date ? new Date(primaryEmployment.start_date) : undefined,
+    employmentEndDate: primaryEmployment?.end_date ? new Date(primaryEmployment.end_date) : undefined,
+    dailyHours,
+    year: targetYear,
+    usedDays,
+  };
+}
+

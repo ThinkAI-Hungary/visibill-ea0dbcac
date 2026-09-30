@@ -6,6 +6,7 @@ import {
   calculateLeaveBalance,
   calculateSickLeave,
   calculateLeavePayout,
+  resolveEmployeeLeaveInput,
   type EmployeeLeaveInput,
 } from '../leaveCalculator';
 
@@ -149,3 +150,154 @@ describe('calculateLeavePayout', () => {
     expect(result.payoutAmount).toBe(0);
   });
 });
+
+describe('resolveEmployeeLeaveInput (Mt. 116-122. § entitlements)', () => {
+  const defaultEmployee = {
+    birth_date: '1988-05-15', // 38 years old in 2026 => 6 days age supplement
+  };
+
+  it('should return null if employee or birth_date is missing', () => {
+    expect(resolveEmployeeLeaveInput({ employee: null })).toBeNull();
+    expect(resolveEmployeeLeaveInput({ employee: { birth_date: null } })).toBeNull();
+  });
+
+  it('should resolve age and age-based supplement automatically (Mt. 117. §)', () => {
+    const input = resolveEmployeeLeaveInput({
+      employee: { birth_date: '1990-01-01' }, // 36 years old in 2026
+      targetYear: 2026,
+    });
+    expect(input).not.toBeNull();
+    expect(input?.ageAtYearStart).toBe(36);
+    expect(input?.childrenUnder16).toBe(0);
+    expect(input?.extraLeaveDays).toBe(0);
+
+    const balance = calculateLeaveBalance(input!);
+    expect(balance.baseLeave).toBe(20);
+    expect(balance.ageSupplement).toBe(5);
+    expect(balance.childSupplement).toBe(0);
+    expect(balance.totalAnnual).toBe(25);
+  });
+
+  it('should count children under 16 from dependents table (Mt. 118. §)', () => {
+    const input = resolveEmployeeLeaveInput({
+      employee: defaultEmployee,
+      targetYear: 2026,
+      dependents: [
+        { birth_date: '2015-04-10', is_fetus: false }, // 11 years old -> valid
+        { birth_date: '2018-09-20', is_fetus: false }, // 8 years old -> valid
+        { birth_date: '2005-01-01', is_fetus: false }, // 21 years old -> over 16, excluded
+        { birth_date: null, is_fetus: true },          // fetus -> excluded
+      ],
+    });
+
+    expect(input?.childrenUnder16).toBe(2);
+
+    const balance = calculateLeaveBalance(input!);
+    expect(balance.childSupplement).toBe(4); // 2 children => 4 days
+    expect(balance.totalAnnual).toBe(20 + 6 + 4); // 30 days
+  });
+
+  it('should fallback to active family declaration children array when dependents table is empty', () => {
+    const input = resolveEmployeeLeaveInput({
+      employee: defaultEmployee,
+      targetYear: 2026,
+      dependents: [],
+      declarations: [
+        {
+          declaration_type: 'family',
+          status: 'active',
+          parameters: {
+            children: [
+              { birth_name: 'Gyermek 1', birth_date: '2016-01-01', is_fetus: false },
+              { birth_name: 'Gyermek 2', birth_date: '2019-05-10', is_fetus: false },
+              { birth_name: 'Gyermek 3', birth_date: '2022-11-25', is_fetus: false },
+            ],
+          },
+        },
+      ],
+    });
+
+    expect(input?.childrenUnder16).toBe(3);
+
+    const balance = calculateLeaveBalance(input!);
+    expect(balance.childSupplement).toBe(7); // 3 children => 7 days
+    expect(balance.totalAnnual).toBe(20 + 6 + 7); // 33 days
+  });
+
+  it('should fallback to active family declaration children_count when children list is not provided', () => {
+    const input = resolveEmployeeLeaveInput({
+      employee: defaultEmployee,
+      targetYear: 2026,
+      dependents: [],
+      declarations: [
+        {
+          declaration_type: 'family',
+          status: 'active',
+          parameters: {
+            children_count: 1,
+          },
+        },
+      ],
+    });
+
+    expect(input?.childrenUnder16).toBe(1);
+
+    const balance = calculateLeaveBalance(input!);
+    expect(balance.childSupplement).toBe(2); // 1 child => 2 days
+  });
+
+  it('should handle disabled children supplement (Mt. 118. § (2))', () => {
+    const input = resolveEmployeeLeaveInput({
+      employee: defaultEmployee,
+      targetYear: 2026,
+      dependents: [
+        { birth_date: '2015-01-01', is_fetus: false, is_disabled: true },
+        { birth_date: '2018-01-01', is_fetus: false, disabled: false },
+      ],
+    });
+
+    expect(input?.childrenUnder16).toBe(2);
+    expect(input?.disabledChildren).toBe(1);
+
+    const balance = calculateLeaveBalance(input!);
+    expect(balance.childSupplement).toBe(4);
+    expect(balance.disabledChildSupplement).toBe(2); // +2 days per disabled child
+    expect(balance.totalAnnual).toBe(20 + 6 + 4 + 2); // 32 days
+  });
+
+  it('should grant 5 extra leave days for personal disability declaration (Mt. 120. §)', () => {
+    const input = resolveEmployeeLeaveInput({
+      employee: defaultEmployee,
+      targetYear: 2026,
+      declarations: [
+        { declaration_type: 'personal', status: 'active' },
+      ],
+    });
+
+    expect(input?.extraLeaveDays).toBe(5);
+
+    const balance = calculateLeaveBalance(input!);
+    expect(balance.extraLeave).toBe(5);
+    expect(balance.totalAnnual).toBe(20 + 6 + 5); // 31 days
+  });
+
+  it('should sum used leave days for annual and additional_* leave types', () => {
+    const input = resolveEmployeeLeaveInput({
+      employee: defaultEmployee,
+      targetYear: 2026,
+      leaves: [
+        { leave_type: 'annual', status: 'approved', days: 5 },
+        { leave_type: 'additional_child', status: 'approved', days: 2 },
+        { leave_type: 'annual', status: 'pending', days: 3 }, // not approved -> excluded
+        { leave_type: 'sick', status: 'approved', days: 4 },   // sick leave -> excluded from annual
+      ],
+    });
+
+    expect(input?.usedDays).toBe(7); // 5 + 2
+
+    const balance = calculateLeaveBalance(input!);
+    expect(balance.used).toBe(7);
+    expect(balance.remaining).toBe(26 - 7); // 20 + 6 = 26; 26 - 7 = 19
+  });
+});
+

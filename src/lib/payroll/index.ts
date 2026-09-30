@@ -45,10 +45,12 @@ export {
   calculateDisabledChildSupplement,
   calculateSickLeave,
   calculateLeavePayout,
+  resolveEmployeeLeaveInput,
   type LeaveBalance,
   type EmployeeLeaveInput,
   type SickLeaveResult,
   type LeavePayoutResult,
+  type ResolveLeaveInputParams,
 } from './leaveCalculator';
 
 // Bérpótlék kalkulátor

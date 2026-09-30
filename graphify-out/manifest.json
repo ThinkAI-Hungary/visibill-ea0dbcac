@@ -1160,9 +1160,9 @@
     "semantic_hash": "aff12473ab48bdbfa0df1670a35622f1"
   },
   "src/lib/payroll/__tests__/leaveCalculator.test.ts": {
-    "mtime": 1780695588.2903113,
-    "ast_hash": "bd84fcb1ad48ad820ec770d5f0e8e2e2",
-    "semantic_hash": "bd84fcb1ad48ad820ec770d5f0e8e2e2"
+    "mtime": 1790806186.3969908,
+    "ast_hash": "5bb2916277ded29e2e2e98f584d4d459",
+    "semantic_hash": ""
   },
   "src/lib/payroll/__tests__/payslipGenerator.test.ts": {
     "mtime": 1790804600.5268161,
@@ -1200,13 +1200,13 @@
     "semantic_hash": ""
   },
   "src/lib/payroll/index.ts": {
-    "mtime": 1790804115.7496183,
-    "ast_hash": "898595c3781ed8c1cc118f4dcc67992f",
+    "mtime": 1790806135.232017,
+    "ast_hash": "52e05d5aa3484d63358d4a069ba1e074",
     "semantic_hash": ""
   },
   "src/lib/payroll/leaveCalculator.ts": {
-    "mtime": 1784897827.2460656,
-    "ast_hash": "f00c2da0a187c831d099df017b0f9f84",
+    "mtime": 1790806122.5236344,
+    "ast_hash": "fd3401a0ecf8c171420f3d20f2a066d7",
     "semantic_hash": ""
   },
   "src/lib/payroll/payslipGenerator.ts": {
@@ -1350,8 +1350,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/EmployeeDetailsPage.tsx": {
-    "mtime": 1790701660.6480193,
-    "ast_hash": "ab3467ba0bc2b42675d675fd3976cec8",
+    "mtime": 1790806154.47807,
+    "ast_hash": "7bfa85d33094e103cbfad2d8064c0c6a",
     "semantic_hash": ""
   },
   "src/pages/Accounty/EmployeeWizardPage.tsx": {
@@ -3090,8 +3090,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790805467.010951,
-    "ast_hash": "1bb0e9906bc58954352e18d8677eade5",
+    "mtime": 1790806521.4569192,
+    "ast_hash": "d7c1a636c13df98b4486459404f264ea",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3565,8 +3565,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1790805491.0234165,
-    "ast_hash": "c8a59551fe72390a0289fa744e81618f",
+    "mtime": 1790806491.4495685,
+    "ast_hash": "6eb1de260f856fdc3719e2c4377348b8",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -5270,8 +5270,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/employee-details/EmployeeLeaveTab.tsx": {
-    "mtime": 1790168409.1954865,
-    "ast_hash": "e05248cc632d4d9616cfafd15b21b35f",
+    "mtime": 1790806014.758804,
+    "ast_hash": "938175c1610b5ca4cf411b4bde81749a",
     "semantic_hash": ""
   },
   "src/pages/Accounty/missing-invoices/MissingInvoicesFilterBar.tsx": {
@@ -13592,6 +13592,21 @@
   "session-summary/Jani/2026-09-30/summary-235300-eb-0230-payslip-redesign-feor-dictionary-and-cost-center.md": {
     "mtime": 1790805202.97092,
     "ast_hash": "e22ec6322e8b676abfb0a7b6e2a80c98",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-186-payroll-leave-entitlements-resolution-engine.md": {
+    "mtime": 1790806510.5444279,
+    "ast_hash": "819fd9105797d79975455c0bbf7aa9bf",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-149-payroll-leave-entitlements-and-guidance-card-ux.md": {
+    "mtime": 1790806462.1242661,
+    "ast_hash": "47075f5afe966424adcb499a384be107",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-10-01/summary-001211-eb-0223-payroll-extra-leave-entitlements-and-tests.md": {
+    "mtime": 1790806346.428789,
+    "ast_hash": "7b4d69522821e17ea2f8be39c5fe2d84",
     "semantic_hash": ""
   }
 }
