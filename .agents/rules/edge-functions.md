@@ -67,3 +67,17 @@ A rendszer védve van a jogosulatlan szkript-alapú automatizációk és a kontr
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
     ```
+
+---
+
+## ⚙️ 5. Regisztráció és Konfiguráció (`config.toml` & Deployment)
+* **Kötelező regisztráció a `supabase/config.toml` fájlban:**
+  * Bármilyen új Edge Function létrehozásakor kötelező azonnal bejegyezni a `supabase/config.toml` fájlba:
+    ```toml
+    [functions.<function-name>]
+    verify_jwt = true # vagy false, ha külső nyilvános webhook / callback (pl. Mailgun, Stripe HMAC védelemmel)
+    ```
+  * Enélkül a Supabase automatikus Git deploymentje kihagyja a JWT ellenőrzési szintet, vagy hibás konfigurációval deployolja a funkciót!
+* **Környezeti titkok (Secrets) kezelése:**
+  * Ha egy Edge Function új API kulcsot vagy secret-et igényel (`Deno.env.get("...")`), azt **mind a Staging, mind a Production Supabase projektben** be kell állítani (Settings $\rightarrow$ Secrets).
+  * Kódban API kulcsot hardkódolni szigorúan tilos!
