@@ -92,9 +92,9 @@ export const ChangeEmailDialog = ({ open, onOpenChange }: ChangeEmailDialogProps
     // 2. Password verified — now request email change.
     // emailRedirectTo ensures the confirmation link goes to /auth/callback so the
     // IIFE captures the type=email_change hash/params before Supabase clears them.
-    const { error } = await supabase.auth.updateUser({
+    const { error } = await supabase.auth.updateUser(({
       email: data.newEmail,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` } as any,
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
     });
     setLoading(false);
 
