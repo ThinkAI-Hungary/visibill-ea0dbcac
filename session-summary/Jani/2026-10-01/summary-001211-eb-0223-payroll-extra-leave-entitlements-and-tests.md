@@ -1,7 +1,7 @@
-# Session Summary — 2026-10-01 00:12
+# Session Summary — 2026-10-01 00:25
 
 ```text
-feat(payroll, support): EB-0223 pótszabadság-jogcímek dinamikus törzsadat-feloldása (Mt. 116-122. §), UI jogszabályi útmutató kártya és átfogó Vitest tesztcsomag
+feat(payroll, support, docs): EB-0223 pótszabadság-jogcímek dinamikus törzsadat-feloldása (Mt. 116-122. §), UI tájékoztató kártya, Vitest tesztek és P-149 / A-186 doc-sync
 
 - Ügyfélszolgálati Jegy Kivizsgálás & Elemzés (EB-0223, VBV Vision Kft.)
   - Beérkező könyvelői kérdés: hol és miként szükséges felvinni a munkavállalók pótszabadságait a törzsbe a havi bérszámfejtéshez
@@ -22,9 +22,19 @@ feat(payroll, support): EB-0223 pótszabadság-jogcímek dinamikus törzsadat-fe
   - `usePayrollDependents` hook bekötése a dolgozó adatlapjára és a `leaveBalance` dinamikus összekapcsolása a `resolveEmployeeLeaveInput` segítségével
   - Jogszabályi útmutató kártya beépítése az `EmployeeLeaveTab.tsx`-ben a "Részletes Szabadság Nyilvántartás (Mt.)" táblázat alá (világos magyarázat a könyvelőknek az életkori, gyermek utáni és havi számfejtési elszámolásról)
 
-- Minőségbiztosítás, Vitest Tesztek és Verifikáció
+- Minőségbiztosítás & Vitest Tesztek
   - Átfogó Vitest tesztcsomag létrehozása a `leaveCalculator.test.ts`-ben (8 új teszteset, Mt. 117-122. § összes életszerű esete és határértéke)
   - Vitest teszteredmény: 30/30 teszt zöld (`src/lib/payroll/__tests__/leaveCalculator.test.ts`)
   - Szigorú TypeScript típusellenőrzés: `npx tsc --noEmit` hiba nélkül lefutott (code 0)
-  - Tudásgráf szinkronizáció: `graphify update .` lefutott (23 389 node, 39 124 edge frissítve)
+
+- Dokumentáció Szinkronizáció (Doc-Sync: PRD & ADR)
+  - Új PRD létrehozása: `docs/product/decisions/P-149-payroll-leave-entitlements-and-guidance-card-ux.md`
+  - Új ADR létrehozása: `docs/architecture/decisions/A-186-payroll-leave-entitlements-resolution-engine.md`
+  - PRD nyilvántartás frissítése: `docs/product/decisions/index.md` (161 döntés)
+  - ADR nyilvántartás frissítése: `docs/architecture/decisions/index.md` (204 döntés)
+  - Tudásgráf szinkronizáció: `graphify update .` sikeresen lefutott (23 412 node, 39 144 edge frissítve)
+
+- Git Commit és Push
+  - Commit hash: `65c94b8a`
+  - Branch: `main` -> `origin/main` (GitHub távoli repó naprakész)
 ```
