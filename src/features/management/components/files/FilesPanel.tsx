@@ -1023,7 +1023,7 @@ export function FilesPanel({ allUsers }: FilesPanelProps) {
                     Cég <SortIcon col="company_name" />
                   </th>
                   <th className="text-left py-2.5 px-3 font-medium cursor-pointer hover:text-foreground" onClick={() => toggleSort('user_name')}>
-                    User <SortIcon col="user_name" as any />
+                    User <SortIcon col="user_name" />
                   </th>
                   <th className="text-left py-2.5 px-3 font-medium cursor-pointer hover:text-foreground" onClick={() => toggleSort('created_at')}>
                     Feltöltve <SortIcon col="created_at" />
@@ -1032,7 +1032,7 @@ export function FilesPanel({ allUsers }: FilesPanelProps) {
                     Méret <SortIcon col="file_size" />
                   </th>
                   <th className="text-left py-2.5 px-3 font-medium cursor-pointer hover:text-foreground" onClick={() => toggleSort('processing_status')}>
-                    Állapot <SortIcon col="processing_status" as any />
+                    Állapot <SortIcon col="processing_status" />
                   </th>
                   <th className="text-right py-2.5 px-4 font-medium">Műveletek</th>
                 </tr>

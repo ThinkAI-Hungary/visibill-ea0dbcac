@@ -311,7 +311,6 @@ export default function SubledgerPage() {
     const isSmallDiff = diff > 0.01 && diff <= 10;
 
     return {
-      draftHeaders: draftCount,
       count: selectedInvoices.length,
       itemCount: selectedItems.length,
       sumT,
