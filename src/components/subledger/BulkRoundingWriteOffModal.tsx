@@ -130,7 +130,7 @@ export const BulkRoundingWriteOffModal: React.FC<BulkRoundingWriteOffModalProps>
               </div>
 
               <div>
-                Kijelölt összeg: <strong className="text-foreground">{formatCurrency(totalAmount)} Ft</strong>
+                Kijelölt összeg: <strong className="text-foreground">{formatCurrency(totalAmount)}</strong>
               </div>
             </div>
 
@@ -160,10 +160,10 @@ export const BulkRoundingWriteOffModal: React.FC<BulkRoundingWriteOffModalProps>
 
                   <div className="text-right font-mono">
                     <div className="font-bold text-amber-600 dark:text-amber-400">
-                      {formatCurrency(item.remaining_amount)} Ft
+                      {formatCurrency(item.remaining_amount)}
                     </div>
                     <div className="text-[10px] text-muted-foreground">
-                      Eredeti: {formatCurrency(item.amount)} Ft
+                      Eredeti: {formatCurrency(item.amount)}
                     </div>
                   </div>
                 </div>

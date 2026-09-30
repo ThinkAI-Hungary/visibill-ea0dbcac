@@ -81,12 +81,16 @@ export function useSubledgerItems(
       return (data || []).map((row: any) => ({
         ...row,
         amount: Number(row.amount || 0),
+        gross_amount: Number(row.amount || 0),
+        net_amount: Number(row.net_amount ?? row.amount ?? 0),
+        vat_amount: Number(row.vat_amount ?? 0),
         foreign_amount: row.foreign_amount ? Number(row.foreign_amount) : null,
         settled_amount: Number(row.settled_amount || 0),
         remaining_amount: Number(row.remaining_amount || 0),
         journal_number: Number(row.journal_number || 0),
         match_count: Number(row.match_count || 0),
         settlement_number: row.settlement_number || row.document_id || '',
+        all_lines: Array.isArray(row.all_lines) ? row.all_lines : [],
       }));
     },
     enabled: !!companyId,
@@ -340,3 +344,43 @@ export function useWriteOffSubledgerDifference() {
     },
   });
 }
+
+/**
+ * Mutation to unpost an already posted subledger journal entry (re-opens into KEZI_PISZKOZAT for modification)
+ */
+export function useUnpostSubledgerEntry() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ headerId, reason }: { headerId: string; reason?: string }) => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error('Bejelentkezés szükséges a módosításhoz.');
+
+      const { error } = await supabase.rpc('acc_unpost_journal_entry', {
+        p_header_id: headerId,
+        p_user_id: user.id,
+        p_reason: reason || 'Folyószámláról visszanyitva közvetlen módosításra',
+      });
+      if (error) throw error;
+      return headerId;
+    },
+    onSuccess: (headerId) => {
+      toast({
+        title: 'Bizonylat visszanyitva piszkozattá',
+        description: 'A tétel sikeresen visszanyitva szerkesztésre.',
+      });
+      queryClient.invalidateQueries({ queryKey: subledgerQueryKeys.all });
+    },
+    onError: (err: any) => {
+      toast({
+        title: 'Hiba a bizonylat visszanyitásakor',
+        description: err.message || 'Nem sikerült a tétel visszanyitása.',
+        variant: 'destructive',
+      });
+    },
+  });
+}
+

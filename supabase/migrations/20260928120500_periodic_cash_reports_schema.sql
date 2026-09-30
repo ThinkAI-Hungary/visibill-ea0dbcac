@@ -75,24 +75,28 @@ CREATE INDEX IF NOT EXISTS idx_cash_reports_dates ON public.cash_reports(company
 -- RLS cash_reports
 ALTER TABLE public.cash_reports ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Members can view cash_reports" ON public.cash_reports;
 CREATE POLICY "Members can view cash_reports"
   ON public.cash_reports FOR SELECT TO authenticated
   USING (company_id IN (
     SELECT cm.company_id FROM public.company_members cm WHERE cm.user_id = (SELECT auth.uid())
   ));
 
+DROP POLICY IF EXISTS "Members can insert cash_reports" ON public.cash_reports;
 CREATE POLICY "Members can insert cash_reports"
   ON public.cash_reports FOR INSERT TO authenticated
   WITH CHECK (company_id IN (
     SELECT cm.company_id FROM public.company_members cm WHERE cm.user_id = (SELECT auth.uid())
   ));
 
+DROP POLICY IF EXISTS "Members can update cash_reports" ON public.cash_reports;
 CREATE POLICY "Members can update cash_reports"
   ON public.cash_reports FOR UPDATE TO authenticated
   USING (company_id IN (
     SELECT cm.company_id FROM public.company_members cm WHERE cm.user_id = (SELECT auth.uid())
   ));
 
+DROP POLICY IF EXISTS "Members can delete cash_reports" ON public.cash_reports;
 CREATE POLICY "Members can delete cash_reports"
   ON public.cash_reports FOR DELETE TO authenticated
   USING (company_id IN (
@@ -138,24 +142,28 @@ CREATE INDEX IF NOT EXISTS idx_cash_receipts_entry ON public.cash_receipts(cash_
 -- RLS cash_receipts
 ALTER TABLE public.cash_receipts ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Members can view cash_receipts" ON public.cash_receipts;
 CREATE POLICY "Members can view cash_receipts"
   ON public.cash_receipts FOR SELECT TO authenticated
   USING (company_id IN (
     SELECT cm.company_id FROM public.company_members cm WHERE cm.user_id = (SELECT auth.uid())
   ));
 
+DROP POLICY IF EXISTS "Members can insert cash_receipts" ON public.cash_receipts;
 CREATE POLICY "Members can insert cash_receipts"
   ON public.cash_receipts FOR INSERT TO authenticated
   WITH CHECK (company_id IN (
     SELECT cm.company_id FROM public.company_members cm WHERE cm.user_id = (SELECT auth.uid())
   ));
 
+DROP POLICY IF EXISTS "Members can update cash_receipts" ON public.cash_receipts;
 CREATE POLICY "Members can update cash_receipts"
   ON public.cash_receipts FOR UPDATE TO authenticated
   USING (company_id IN (
     SELECT cm.company_id FROM public.company_members cm WHERE cm.user_id = (SELECT auth.uid())
   ));
 
+DROP POLICY IF EXISTS "Members can delete cash_receipts" ON public.cash_receipts;
 CREATE POLICY "Members can delete cash_receipts"
   ON public.cash_receipts FOR DELETE TO authenticated
   USING (company_id IN (
@@ -184,24 +192,28 @@ CREATE INDEX IF NOT EXISTS idx_denomination_sheets_company ON public.denominatio
 -- RLS denomination_sheets
 ALTER TABLE public.denomination_sheets ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Members can view denomination_sheets" ON public.denomination_sheets;
 CREATE POLICY "Members can view denomination_sheets"
   ON public.denomination_sheets FOR SELECT TO authenticated
   USING (company_id IN (
     SELECT cm.company_id FROM public.company_members cm WHERE cm.user_id = (SELECT auth.uid())
   ));
 
+DROP POLICY IF EXISTS "Members can insert denomination_sheets" ON public.denomination_sheets;
 CREATE POLICY "Members can insert denomination_sheets"
   ON public.denomination_sheets FOR INSERT TO authenticated
   WITH CHECK (company_id IN (
     SELECT cm.company_id FROM public.company_members cm WHERE cm.user_id = (SELECT auth.uid())
   ));
 
+DROP POLICY IF EXISTS "Members can update denomination_sheets" ON public.denomination_sheets;
 CREATE POLICY "Members can update denomination_sheets"
   ON public.denomination_sheets FOR UPDATE TO authenticated
   USING (company_id IN (
     SELECT cm.company_id FROM public.company_members cm WHERE cm.user_id = (SELECT auth.uid())
   ));
 
+DROP POLICY IF EXISTS "Members can delete denomination_sheets" ON public.denomination_sheets;
 CREATE POLICY "Members can delete denomination_sheets"
   ON public.denomination_sheets FOR DELETE TO authenticated
   USING (company_id IN (
@@ -239,24 +251,28 @@ CREATE INDEX IF NOT EXISTS idx_closing_protocols_company ON public.cash_closing_
 -- RLS cash_closing_protocols
 ALTER TABLE public.cash_closing_protocols ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Members can view cash_closing_protocols" ON public.cash_closing_protocols;
 CREATE POLICY "Members can view cash_closing_protocols"
   ON public.cash_closing_protocols FOR SELECT TO authenticated
   USING (company_id IN (
     SELECT cm.company_id FROM public.company_members cm WHERE cm.user_id = (SELECT auth.uid())
   ));
 
+DROP POLICY IF EXISTS "Members can insert cash_closing_protocols" ON public.cash_closing_protocols;
 CREATE POLICY "Members can insert cash_closing_protocols"
   ON public.cash_closing_protocols FOR INSERT TO authenticated
   WITH CHECK (company_id IN (
     SELECT cm.company_id FROM public.company_members cm WHERE cm.user_id = (SELECT auth.uid())
   ));
 
+DROP POLICY IF EXISTS "Members can update cash_closing_protocols" ON public.cash_closing_protocols;
 CREATE POLICY "Members can update cash_closing_protocols"
   ON public.cash_closing_protocols FOR UPDATE TO authenticated
   USING (company_id IN (
     SELECT cm.company_id FROM public.company_members cm WHERE cm.user_id = (SELECT auth.uid())
   ));
 
+DROP POLICY IF EXISTS "Members can delete cash_closing_protocols" ON public.cash_closing_protocols;
 CREATE POLICY "Members can delete cash_closing_protocols"
   ON public.cash_closing_protocols FOR DELETE TO authenticated
   USING (company_id IN (

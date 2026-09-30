@@ -284,4 +284,318 @@ describe('Subledger & Open Items Management Unit Tests', () => {
       expect(largeDiff <= 10).toBe(false);
     });
   });
+
+  describe('Two-Sided Posting and Net/VAT Breakdown', () => {
+    it('validates two-sided balance (∑T = ∑K)', () => {
+      const lines = [
+        { dc_type: 'T', amount: 100000 },
+        { dc_type: 'T', amount: 27000 },
+        { dc_type: 'K', amount: 127000 },
+      ];
+
+      const sumT = lines.filter((l) => l.dc_type === 'T').reduce((acc, l) => acc + l.amount, 0);
+      const sumK = lines.filter((l) => l.dc_type === 'K').reduce((acc, l) => acc + l.amount, 0);
+      const diff = Math.abs(sumT - sumK);
+
+      expect(sumT).toBe(127000);
+      expect(sumK).toBe(127000);
+      expect(diff).toBe(0);
+      expect(diff < 0.01 && lines.length >= 2).toBe(true);
+    });
+
+    it('correctly calculates Net, VAT, and Gross breakdown', () => {
+      const lines = [
+        { dc_type: 'T', amount: 100000, vat_role: 'ALAP' },
+        { dc_type: 'T', amount: 27000, vat_role: 'AFA' },
+        { dc_type: 'K', amount: 127000, vat_role: null }, // Partner line
+      ];
+
+      const netSum = lines.filter((l) => l.vat_role === 'ALAP').reduce((acc, l) => acc + l.amount, 0);
+      const vatSum = lines.filter((l) => l.vat_role === 'AFA').reduce((acc, l) => acc + l.amount, 0);
+      const grossSum = lines.find((l) => !l.vat_role)?.amount || 0;
+
+      expect(netSum).toBe(100000);
+      expect(vatSum).toBe(27000);
+      expect(grossSum).toBe(127000);
+      expect(netSum + vatSum).toBe(grossSum);
+    });
+
+    it('blocks posting when entry is not balanced', () => {
+      const lines = [
+        { dc_type: 'T', amount: 100000 },
+        { dc_type: 'K', amount: 95000 },
+      ];
+
+      const sumT = lines.filter((l) => l.dc_type === 'T').reduce((acc, l) => acc + l.amount, 0);
+      const sumK = lines.filter((l) => l.dc_type === 'K').reduce((acc, l) => acc + l.amount, 0);
+      const diff = Math.abs(sumT - sumK);
+
+      const canPost = diff < 0.01 && lines.length >= 2;
+      expect(canPost).toBe(false);
+      expect(diff).toBe(5000);
+    });
+  });
+
+  describe('Invoice Grouping & Multi-item Aggregation', () => {
+    function groupSubledgerItems(items: SubledgerItem[]) {
+      const map = new Map<string, any>();
+
+      items.forEach((item) => {
+        const docId =
+          (item.document_id && item.document_id.trim()) ||
+          (item.settlement_number && item.settlement_number.trim()) ||
+          item.header_id;
+        const partnerKey = item.partner_id || item.partner_name || 'no-partner';
+        const key = `${partnerKey}___${docId}`;
+
+        const existing = map.get(key);
+        if (!existing) {
+          map.set(key, {
+            group_key: key,
+            document_id: docId,
+            partner_id: item.partner_id,
+            partner_name: item.partner_name,
+            posting_date: item.posting_date,
+            document_date: item.document_date || item.posting_date,
+            due_date: item.due_date,
+            journal_code: item.journal_code,
+            journal_number: item.journal_number,
+            currency: item.currency || 'HUF',
+            description: item.description,
+            status: item.status,
+            is_settled: item.is_settled,
+            net_amount: Number(item.net_amount || 0),
+            vat_amount: Number(item.vat_amount || 0),
+            amount: Number(item.amount || 0),
+            settled_amount: Number(item.settled_amount || 0),
+            remaining_amount: Number(item.remaining_amount || 0),
+            match_count: item.match_count || 0,
+            items: [item],
+            header_ids: [item.header_id],
+            line_ids: [item.line_id],
+            all_lines: item.all_lines ? [...item.all_lines] : [],
+          });
+        } else {
+          existing.items.push(item);
+          if (!existing.header_ids.includes(item.header_id)) {
+            existing.header_ids.push(item.header_id);
+          }
+          existing.line_ids.push(item.line_id);
+          if (item.all_lines) {
+            existing.all_lines.push(...item.all_lines);
+          }
+          existing.net_amount += Number(item.net_amount || 0);
+          existing.vat_amount += Number(item.vat_amount || 0);
+          existing.amount += Number(item.amount || 0);
+          existing.settled_amount += Number(item.settled_amount || 0);
+          existing.remaining_amount += Number(item.remaining_amount || 0);
+          existing.match_count += item.match_count || 0;
+
+          if (item.status === 'GEPI_JAVASLAT') {
+            existing.status = 'GEPI_JAVASLAT';
+          } else if (item.status === 'KEZI_PISZKOZAT' && existing.status !== 'GEPI_JAVASLAT') {
+            existing.status = 'KEZI_PISZKOZAT';
+          }
+
+          existing.is_settled = existing.remaining_amount <= 0.01;
+
+          if (item.due_date && (!existing.due_date || item.due_date > existing.due_date)) {
+            existing.due_date = item.due_date;
+          }
+        }
+      });
+
+      return Array.from(map.values());
+    }
+
+    it('correctly collapses 4 line items of FCM/00185370 into 1 single invoice row', () => {
+      const mockItems: SubledgerItem[] = [
+        {
+          line_id: 'l1',
+          header_id: 'h1',
+          document_id: 'FCM/00185370',
+          partner_id: 'p-fcm',
+          partner_name: 'Fővárosi Csatornázási Művek Zrt.',
+          posting_date: '2026-09-04',
+          document_date: '2026-09-04',
+          due_date: '2026-09-12',
+          journal_code: 'SZ-B',
+          journal_number: 0,
+          currency: 'HUF',
+          description: 'Áthárított vízterhelési díj',
+          status: 'GEPI_JAVASLAT',
+          is_settled: false,
+          net_amount: 25,
+          vat_amount: 7,
+          amount: 32,
+          settled_amount: 0,
+          remaining_amount: 32,
+          match_count: 0,
+          gl_account_id: 'gl-4541',
+          gl_number: '4541',
+          gl_short_name: 'Szállítók',
+          dc_type: 'K',
+        },
+        {
+          line_id: 'l2',
+          header_id: 'h2',
+          document_id: 'FCM/00185370',
+          partner_id: 'p-fcm',
+          partner_name: 'Fővárosi Csatornázási Művek Zrt.',
+          posting_date: '2026-09-04',
+          document_date: '2026-09-04',
+          due_date: '2026-09-12',
+          journal_code: 'SZ-B',
+          journal_number: 0,
+          currency: 'HUF',
+          description: 'Mellékvízmérő ügyviteli díj',
+          status: 'GEPI_JAVASLAT',
+          is_settled: false,
+          net_amount: 76,
+          vat_amount: 21,
+          amount: 97,
+          settled_amount: 0,
+          remaining_amount: 97,
+          match_count: 0,
+          gl_account_id: 'gl-4541',
+          gl_number: '4541',
+          gl_short_name: 'Szállítók',
+          dc_type: 'K',
+        },
+        {
+          line_id: 'l3',
+          header_id: 'h3',
+          document_id: 'FCM/00185370',
+          partner_id: 'p-fcm',
+          partner_name: 'Fővárosi Csatornázási Művek Zrt.',
+          posting_date: '2026-09-04',
+          document_date: '2026-09-04',
+          due_date: '2026-09-12',
+          journal_code: 'SZ-B',
+          journal_number: 0,
+          currency: 'HUF',
+          description: 'Szennyvízelvezetés és -tisztítás alapdíj',
+          status: 'GEPI_JAVASLAT',
+          is_settled: false,
+          net_amount: 1798,
+          vat_amount: 485,
+          amount: 2283,
+          settled_amount: 0,
+          remaining_amount: 2283,
+          match_count: 0,
+          gl_account_id: 'gl-4541',
+          gl_number: '4541',
+          gl_short_name: 'Szállítók',
+          dc_type: 'K',
+        },
+        {
+          line_id: 'l4',
+          header_id: 'h4',
+          document_id: 'FCM/00185370',
+          partner_id: 'p-fcm',
+          partner_name: 'Fővárosi Csatornázási Művek Zrt.',
+          posting_date: '2026-09-04',
+          document_date: '2026-09-04',
+          due_date: '2026-09-12',
+          journal_code: 'SZ-B',
+          journal_number: 0,
+          currency: 'HUF',
+          description: 'Elvezetett mennyiséggel arányos szennyvízdíj',
+          status: 'GEPI_JAVASLAT',
+          is_settled: false,
+          net_amount: 4770,
+          vat_amount: 1288,
+          amount: 6058,
+          settled_amount: 0,
+          remaining_amount: 6058,
+          match_count: 0,
+          gl_account_id: 'gl-4541',
+          gl_number: '4541',
+          gl_short_name: 'Szállítók',
+          dc_type: 'K',
+        },
+      ];
+
+      const grouped = groupSubledgerItems(mockItems);
+
+      expect(grouped).toHaveLength(1);
+      const inv = grouped[0];
+      expect(inv.document_id).toBe('FCM/00185370');
+      expect(inv.items).toHaveLength(4);
+      expect(inv.header_ids).toEqual(['h1', 'h2', 'h3', 'h4']);
+      expect(inv.line_ids).toEqual(['l1', 'l2', 'l3', 'l4']);
+
+      // Aggregated amounts
+      expect(inv.net_amount).toBe(25 + 76 + 1798 + 4770); // 6669
+      expect(inv.vat_amount).toBe(7 + 21 + 485 + 1288);   // 1801
+      expect(inv.amount).toBe(32 + 97 + 2283 + 6058);     // 8470
+      expect(inv.remaining_amount).toBe(8470);
+      expect(inv.net_amount + inv.vat_amount).toBe(inv.amount);
+      expect(inv.status).toBe('GEPI_JAVASLAT');
+      expect(inv.is_settled).toBe(false);
+    });
+
+    it('keeps invoices from different suppliers separate even if they share document_id', () => {
+      const mockItems: SubledgerItem[] = [
+        {
+          line_id: 'l1',
+          header_id: 'h1',
+          document_id: 'SZLA-001',
+          partner_id: 'p1',
+          partner_name: 'Supplier Alpha',
+          posting_date: '2026-09-01',
+          document_date: '2026-09-01',
+          due_date: '2026-09-15',
+          journal_code: 'SZ-B',
+          journal_number: 1,
+          currency: 'HUF',
+          description: 'Áru A',
+          status: 'KONYVELT',
+          is_settled: false,
+          net_amount: 10000,
+          vat_amount: 2700,
+          amount: 12700,
+          settled_amount: 0,
+          remaining_amount: 12700,
+          match_count: 0,
+          gl_account_id: 'gl-4541',
+          gl_number: '4541',
+          gl_short_name: 'Szállítók',
+          dc_type: 'K',
+        },
+        {
+          line_id: 'l2',
+          header_id: 'h2',
+          document_id: 'SZLA-001',
+          partner_id: 'p2',
+          partner_name: 'Supplier Beta',
+          posting_date: '2026-09-01',
+          document_date: '2026-09-01',
+          due_date: '2026-09-15',
+          journal_code: 'SZ-B',
+          journal_number: 2,
+          currency: 'HUF',
+          description: 'Szolgáltatás B',
+          status: 'KONYVELT',
+          is_settled: false,
+          net_amount: 20000,
+          vat_amount: 5400,
+          amount: 25400,
+          settled_amount: 0,
+          remaining_amount: 25400,
+          match_count: 0,
+          gl_account_id: 'gl-4541',
+          gl_number: '4541',
+          gl_short_name: 'Szállítók',
+          dc_type: 'K',
+        },
+      ];
+
+      const grouped = groupSubledgerItems(mockItems);
+      expect(grouped).toHaveLength(2);
+      expect(grouped[0].partner_name).toBe('Supplier Alpha');
+      expect(grouped[1].partner_name).toBe('Supplier Beta');
+    });
+  });
 });
+

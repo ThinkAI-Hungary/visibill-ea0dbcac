@@ -29,7 +29,9 @@ import {
   FileCheck,
   RotateCcw,
   Check,
-  ChevronDown
+  ChevronDown,
+  ChevronRight,
+  Edit3,
 } from 'lucide-react';
 import {
   useSubledgerItems,
@@ -37,13 +39,26 @@ import {
   useSettleOpenItems,
   useAutoSettleSubledgerItems,
   useBatchPostSubledgerItems,
+  useUnpostSubledgerEntry,
 } from '@/hooks/useSubledger';
-import type { SubledgerItem, SubledgerMode, SubledgerStatusFilter } from '@/types/subledger';
+import type { SubledgerItem, SubledgerMode, SubledgerStatusFilter, GroupedSubledgerInvoice } from '@/types/subledger';
 import { formatCurrency } from '@/lib/utils';
 import { SubledgerItemMatchesModal } from '@/components/subledger/SubledgerItemMatchesModal';
 import { WriteOffSettlementModal } from '@/components/subledger/WriteOffSettlementModal';
 import { BulkRoundingWriteOffModal } from '@/components/subledger/BulkRoundingWriteOffModal';
 import { SubledgerExportDialog } from '@/components/subledger/SubledgerExportDialog';
+import { SubledgerPostingModal } from '@/components/subledger/SubledgerPostingModal';
+import AddManualJournalEntryModal from '@/components/journals/AddManualJournalEntryModal';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function SubledgerPage() {
   const { selectedCompany } = useCompany();
@@ -60,14 +75,27 @@ export default function SubledgerPage() {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [showHelpGuide, setShowHelpGuide] = useState<boolean>(false);
 
-  // Selected Row IDs for Multi-pairing / Batch Actions
-  const [selectedLineIds, setSelectedLineIds] = useState<Set<string>>(new Set());
+  // Selected Group Keys for Multi-pairing / Batch Actions (group keys of invoices)
+  const [selectedGroupKeys, setSelectedGroupKeys] = useState<Set<string>>(new Set());
+
+  // Accordion expanded rows state (set of group_keys)
+  const [expandedGroupKeys, setExpandedGroupKeys] = useState<Set<string>>(new Set());
 
   // Modals state
   const [activeItemForMatches, setActiveItemForMatches] = useState<SubledgerItem | null>(null);
   const [activeItemForWriteOff, setActiveItemForWriteOff] = useState<SubledgerItem | null>(null);
   const [bulkRoundingOpen, setBulkRoundingOpen] = useState<boolean>(false);
   const [exportDialogOpen, setExportDialogOpen] = useState<boolean>(false);
+
+  // Posting & Editing Modals
+  const [postingModalOpen, setPostingModalOpen] = useState<boolean>(false);
+  const [invoicesToPost, setInvoicesToPost] = useState<GroupedSubledgerInvoice[]>([]);
+  const [isEditModeForModal, setIsEditModeForModal] = useState<boolean>(false);
+  const [unpostConfirmInvoice, setUnpostConfirmInvoice] = useState<GroupedSubledgerInvoice | null>(null);
+  const [manualEntryOpen, setManualEntryOpen] = useState<boolean>(false);
+  const [editingHeaderId, setEditingHeaderId] = useState<string | null>(null);
+
+  const unpostMutation = useUnpostSubledgerEntry();
 
   // Queries
   const { data: accounts = [], isLoading: isLoadingAccounts } = useSubledgerAccounts(companyId);
@@ -119,7 +147,79 @@ export default function SubledgerPage() {
     );
   }, [items, searchTerm]);
 
-  // Overall stats
+  // Group filtered items into single rows per invoice
+  const groupedInvoices = useMemo<GroupedSubledgerInvoice[]>(() => {
+    const map = new Map<string, GroupedSubledgerInvoice>();
+
+    filteredItems.forEach((item) => {
+      const docId =
+        (item.document_id && item.document_id.trim()) ||
+        (item.settlement_number && item.settlement_number.trim()) ||
+        item.header_id;
+      const partnerKey = item.partner_id || item.partner_name || 'no-partner';
+      const key = `${partnerKey}___${docId}`;
+
+      const existing = map.get(key);
+      if (!existing) {
+        map.set(key, {
+          group_key: key,
+          document_id: docId,
+          partner_id: item.partner_id,
+          partner_name: item.partner_name,
+          posting_date: item.posting_date,
+          document_date: item.document_date || item.posting_date,
+          due_date: item.due_date,
+          journal_code: item.journal_code,
+          journal_number: item.journal_number,
+          currency: item.currency || 'HUF',
+          description: item.description,
+          status: item.status,
+          is_settled: item.is_settled,
+          net_amount: Number(item.net_amount || 0),
+          vat_amount: Number(item.vat_amount || 0),
+          amount: Number(item.amount || 0),
+          settled_amount: Number(item.settled_amount || 0),
+          remaining_amount: Number(item.remaining_amount || 0),
+          match_count: item.match_count || 0,
+          items: [item],
+          header_ids: [item.header_id],
+          line_ids: [item.line_id],
+          all_lines: item.all_lines ? [...item.all_lines] : [],
+        });
+      } else {
+        existing.items.push(item);
+        if (!existing.header_ids.includes(item.header_id)) {
+          existing.header_ids.push(item.header_id);
+        }
+        existing.line_ids.push(item.line_id);
+        if (item.all_lines) {
+          existing.all_lines.push(...item.all_lines);
+        }
+        existing.net_amount += Number(item.net_amount || 0);
+        existing.vat_amount += Number(item.vat_amount || 0);
+        existing.amount += Number(item.amount || 0);
+        existing.settled_amount += Number(item.settled_amount || 0);
+        existing.remaining_amount += Number(item.remaining_amount || 0);
+        existing.match_count += item.match_count || 0;
+
+        if (item.status === 'GEPI_JAVASLAT') {
+          existing.status = 'GEPI_JAVASLAT';
+        } else if (item.status === 'KEZI_PISZKOZAT' && existing.status !== 'GEPI_JAVASLAT') {
+          existing.status = 'KEZI_PISZKOZAT';
+        }
+
+        existing.is_settled = existing.remaining_amount <= 0.01;
+
+        if (item.due_date && (!existing.due_date || item.due_date > existing.due_date)) {
+          existing.due_date = item.due_date;
+        }
+      }
+    });
+
+    return Array.from(map.values());
+  }, [filteredItems]);
+
+  // Overall stats based on grouped invoices
   const stats = useMemo(() => {
     let openCount = 0;
     let openSumHuf = 0;
@@ -128,64 +228,89 @@ export default function SubledgerPage() {
     let overdueSumHuf = 0;
     let smallRoundingCount = 0;
     let draftCount = 0;
+    let totalNetHuf = 0;
+    let totalVatHuf = 0;
+    let totalGrossHuf = 0;
     const now = new Date();
 
-    items.forEach((item) => {
-      if (!item.is_settled && item.remaining_amount > 0) {
+    groupedInvoices.forEach((inv) => {
+      totalNetHuf += inv.net_amount || 0;
+      totalVatHuf += inv.vat_amount || 0;
+      totalGrossHuf += inv.amount || 0;
+
+      if (!inv.is_settled && inv.remaining_amount > 0) {
         openCount++;
-        openSumHuf += item.remaining_amount;
-        if (item.due_date && new Date(item.due_date) < now) {
+        openSumHuf += inv.remaining_amount;
+        if (inv.due_date && new Date(inv.due_date) < now) {
           overdueCount++;
-          overdueSumHuf += item.remaining_amount;
+          overdueSumHuf += inv.remaining_amount;
         }
-        if (item.remaining_amount <= 10) {
+        if (inv.remaining_amount <= 10) {
           smallRoundingCount++;
         }
       }
-      if (item.status === 'GEPI_JAVASLAT') {
+      if (inv.status === 'GEPI_JAVASLAT') {
         draftCount++;
       }
-      settledSumHuf += item.settled_amount;
+      settledSumHuf += inv.settled_amount;
     });
 
-    return { openCount, openSumHuf, settledSumHuf, overdueCount, overdueSumHuf, smallRoundingCount, draftCount };
-  }, [items]);
+    return {
+      openCount,
+      openSumHuf,
+      settledSumHuf,
+      overdueCount,
+      overdueSumHuf,
+      smallRoundingCount,
+      draftCount,
+      totalNetHuf,
+      totalVatHuf,
+      totalGrossHuf,
+    };
+  }, [groupedInvoices]);
 
-  // Selected items calculations
+  // Selected invoices and items calculations
+  const selectedInvoices = useMemo(() => {
+    return groupedInvoices.filter((inv) => selectedGroupKeys.has(inv.group_key));
+  }, [groupedInvoices, selectedGroupKeys]);
+
   const selectedItems = useMemo(() => {
-    return items.filter((i) => selectedLineIds.has(i.line_id));
-  }, [items, selectedLineIds]);
+    return selectedInvoices.flatMap((inv) => inv.items);
+  }, [selectedInvoices]);
 
   const selectionTotals = useMemo(() => {
     let sumT = 0;
     let sumK = 0;
     let foreignSum = 0;
     let currencies = new Set<string>();
-    let draftHeaders: string[] = [];
+    let draftInvoices: GroupedSubledgerInvoice[] = [];
 
-    selectedItems.forEach((i) => {
-      const val = !i.is_settled && i.remaining_amount > 0 ? i.remaining_amount : i.amount;
-      if (i.dc_type === 'T') {
-        sumT += val;
-      } else {
-        sumK += val;
-      }
-      if (i.currency !== 'HUF' && i.foreign_amount) {
-        foreignSum += i.foreign_amount;
-        currencies.add(i.currency);
-      }
-      if (i.status === 'GEPI_JAVASLAT') {
-        draftHeaders.push(i.header_id);
+    selectedInvoices.forEach((inv) => {
+      inv.items.forEach((i) => {
+        const val = !i.is_settled && i.remaining_amount > 0 ? i.remaining_amount : i.amount;
+        if (i.dc_type === 'T') {
+          sumT += val;
+        } else {
+          sumK += val;
+        }
+        if (i.currency !== 'HUF' && i.foreign_amount) {
+          foreignSum += i.foreign_amount;
+          currencies.add(i.currency);
+        }
+      });
+      if (inv.status === 'GEPI_JAVASLAT') {
+        draftInvoices.push(inv);
       }
     });
 
     const diff = Math.abs(sumT - sumK);
     const balance = sumT - sumK;
-    const isBalanced = diff < 0.01 && selectedItems.length >= 2;
+    const isBalanced = diff < 0.01 && selectedInvoices.length >= 2;
     const isSmallDiff = diff > 0.01 && diff <= 10;
 
     return {
-      count: selectedItems.length,
+      count: selectedInvoices.length,
+      itemCount: selectedItems.length,
       sumT,
       sumK,
       balance,
@@ -194,18 +319,94 @@ export default function SubledgerPage() {
       isSmallDiff,
       foreignSum,
       currencies: Array.from(currencies).join(', '),
-      draftHeaders: Array.from(new Set(draftHeaders)),
+      draftInvoices,
     };
-  }, [selectedItems]);
+  }, [selectedInvoices, selectedItems]);
+
+  // Toggle accordion expand for an invoice
+  const handleToggleExpand = (groupKey: string) => {
+    setExpandedGroupKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(groupKey)) {
+        next.delete(groupKey);
+      } else {
+        next.add(groupKey);
+      }
+      return next;
+    });
+  };
+
+  const handleToggleAllExpand = () => {
+    if (expandedGroupKeys.size === groupedInvoices.length && groupedInvoices.length > 0) {
+      setExpandedGroupKeys(new Set());
+    } else {
+      setExpandedGroupKeys(new Set(groupedInvoices.map((i) => i.group_key)));
+    }
+  };
+
+  // Open posting modal for single invoice
+  const handleOpenPostSingle = (invoice: GroupedSubledgerInvoice) => {
+    setInvoicesToPost([invoice]);
+    setIsEditModeForModal(false);
+    setPostingModalOpen(true);
+  };
+
+  // Open batch posting modal from selection bar
+  const handleOpenBatchPost = () => {
+    const drafts = selectionTotals.draftInvoices;
+    setInvoicesToPost(drafts.length > 0 ? drafts : selectedInvoices);
+    setIsEditModeForModal(false);
+    setPostingModalOpen(true);
+  };
+
+  // Open edit modal (draft edits immediately, posted prompts for unpost)
+  const handleOpenEdit = (invoice: GroupedSubledgerInvoice) => {
+    if (invoice.status === 'GEPI_JAVASLAT') {
+      setInvoicesToPost([invoice]);
+      setIsEditModeForModal(true);
+      setPostingModalOpen(true);
+    } else {
+      setUnpostConfirmInvoice(invoice);
+    }
+  };
+
+  // Confirm unpost of already posted invoice
+  const handleConfirmUnpost = async () => {
+    if (!unpostConfirmInvoice) return;
+    try {
+      await Promise.all(
+        unpostConfirmInvoice.header_ids.map((headerId) =>
+          unpostMutation.mutateAsync({
+            headerId,
+            reason: 'Folyószámláról módosításra visszanyitva',
+          })
+        )
+      );
+      const unpostedInvoice: GroupedSubledgerInvoice = {
+        ...unpostConfirmInvoice,
+        status: 'KEZI_PISZKOZAT',
+        items: unpostConfirmInvoice.items.map((it) => ({
+          ...it,
+          status: 'KEZI_PISZKOZAT',
+        })),
+      };
+      setInvoicesToPost([unpostedInvoice]);
+      setIsEditModeForModal(true);
+      setPostingModalOpen(true);
+      setUnpostConfirmInvoice(null);
+    } catch {
+      // Handled in onError
+    }
+  };
 
   // Toggle selection
-  const handleToggleRow = (lineId: string) => {
-    setSelectedLineIds((prev) => {
+  const handleToggleRow = (groupKey: string) => {
+    setSelectedGroupKeys((prev) => {
       const next = new Set(prev);
-      if (next.has(lineId)) {
-        next.delete(lineId);
+      if (next.has(groupKey)) {
+        next.delete(groupKey);
       } else {
-        next.add(lineId);
+        next.add(groupKey);
       }
       return next;
     });
@@ -213,9 +414,9 @@ export default function SubledgerPage() {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedLineIds(new Set(filteredItems.map((i) => i.line_id)));
+      setSelectedGroupKeys(new Set(groupedInvoices.map((i) => i.group_key)));
     } else {
-      setSelectedLineIds(new Set());
+      setSelectedGroupKeys(new Set());
     }
   };
 
@@ -287,10 +488,7 @@ export default function SubledgerPage() {
   // Batch post selected drafts
   const handleBatchPostDrafts = () => {
     if (!companyId || selectionTotals.draftHeaders.length === 0) return;
-    batchPostMutation.mutate({
-      companyId,
-      headerIds: selectionTotals.draftHeaders,
-    });
+    handleOpenBatchPost();
   };
 
   return (
@@ -420,10 +618,10 @@ export default function SubledgerPage() {
                 Nyitott Egyenleg
               </div>
               <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-                {formatCurrency(stats.openSumHuf)} <span className="text-xs font-normal text-muted-foreground">Ft</span>
+                {formatCurrency(stats.openSumHuf)}
               </div>
               <div className="text-[11px] text-muted-foreground">
-                Fennmaradó tartozások / követelések
+                Nettó: {formatCurrency(stats.totalNetHuf)} | ÁFA: {formatCurrency(stats.totalVatHuf)}
               </div>
             </div>
             <div className="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-xl text-amber-600">
@@ -439,7 +637,7 @@ export default function SubledgerPage() {
                 Lejárt Követelések
               </div>
               <div className={`text-2xl font-bold ${stats.overdueCount > 0 ? 'text-rose-600' : 'text-foreground'}`}>
-                {formatCurrency(stats.overdueSumHuf)} <span className="text-xs font-normal text-muted-foreground">Ft</span>
+                {formatCurrency(stats.overdueSumHuf)}
               </div>
               {stats.overdueCount > 0 ? (
                 <div className="text-[11px] text-rose-500 font-medium">
@@ -464,7 +662,7 @@ export default function SubledgerPage() {
                 Rendezett Forgalom
               </div>
               <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                {formatCurrency(stats.settledSumHuf)} <span className="text-xs font-normal text-muted-foreground">Ft</span>
+                {formatCurrency(stats.settledSumHuf)}
               </div>
               <div className="text-[11px] text-muted-foreground">
                 Kiegyenlített párosítások összege
@@ -565,24 +763,24 @@ export default function SubledgerPage() {
       </Card>
 
       {/* Sticky Selection & Action Bar */}
-      {selectedLineIds.size > 0 && (
+      {selectedGroupKeys.size > 0 && (
         <div className="sticky top-4 z-20 bg-indigo-950 text-white rounded-xl p-4 shadow-xl border border-indigo-700/60 flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2">
           <div className="flex flex-wrap items-center gap-6 text-sm">
             <div className="flex items-center gap-2">
               <Badge className="bg-indigo-500/30 text-white border border-indigo-400/40 font-semibold px-2.5 py-1">
-                {selectionTotals.count} tétel kijelölve
+                {selectionTotals.count} számla ({selectionTotals.itemCount} tétel) kijelölve
               </Badge>
             </div>
 
             <div className="flex items-center gap-4 text-xs font-mono">
               <div>
                 <span className="text-indigo-300">∑ Tartozik (T): </span>
-                <span className="font-bold text-white">{formatCurrency(selectionTotals.sumT)} Ft</span>
+                <span className="font-bold text-white">{formatCurrency(selectionTotals.sumT)}</span>
               </div>
               <div className="text-indigo-500">|</div>
               <div>
                 <span className="text-indigo-300">∑ Követel (K): </span>
-                <span className="font-bold text-white">{formatCurrency(selectionTotals.sumK)} Ft</span>
+                <span className="font-bold text-white">{formatCurrency(selectionTotals.sumK)}</span>
               </div>
               <div className="text-indigo-500">|</div>
               <div>
@@ -596,7 +794,7 @@ export default function SubledgerPage() {
                       : 'text-rose-400'
                   }`}
                 >
-                  {formatCurrency(selectionTotals.balance)} Ft
+                  {formatCurrency(selectionTotals.balance)}
                 </span>
               </div>
             </div>
@@ -604,20 +802,15 @@ export default function SubledgerPage() {
 
           <div className="flex flex-wrap items-center gap-2">
             {/* Batch post drafts button if drafts are selected */}
-            {selectionTotals.draftHeaders.length > 0 && (
+            {selectionTotals.draftInvoices.length > 0 && (
               <Button
                 size="sm"
                 variant="outline"
-                onClick={handleBatchPostDrafts}
-                disabled={batchPostMutation.isPending}
+                onClick={handleOpenBatchPost}
                 className="bg-white/10 hover:bg-white/20 text-white border-white/20 text-xs flex items-center gap-1.5"
               >
-                {batchPostMutation.isPending ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <FileCheck className="w-3.5 h-3.5 text-emerald-400" />
-                )}
-                <span>Könyvelés ({selectionTotals.draftHeaders.length} db)</span>
+                <FileCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Könyvelés ({selectionTotals.draftInvoices.length} számla)</span>
               </Button>
             )}
 
@@ -653,7 +846,7 @@ export default function SubledgerPage() {
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => setSelectedLineIds(new Set())}
+              onClick={() => setSelectedGroupKeys(new Set())}
               className="text-indigo-300 hover:text-white hover:bg-white/10 text-xs"
             >
               Mégse
@@ -668,24 +861,43 @@ export default function SubledgerPage() {
           <table className="w-full text-xs text-left border-collapse">
             <thead>
               <tr className="bg-muted/50 border-b text-muted-foreground font-semibold">
-                <th className="p-3 w-10 text-center">
-                  <Checkbox
-                    checked={
-                      filteredItems.length > 0 &&
-                      filteredItems.every((i) => selectedLineIds.has(i.line_id))
-                    }
-                    onCheckedChange={(checked) => handleSelectAll(!!checked)}
-                  />
+                <th className="p-3 w-16 text-center">
+                  <div className="flex items-center justify-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleToggleAllExpand}
+                      className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                      title={
+                        expandedGroupKeys.size === groupedInvoices.length && groupedInvoices.length > 0
+                          ? 'Összes becsukása'
+                          : 'Összes lenyitása'
+                      }
+                    >
+                      {expandedGroupKeys.size === groupedInvoices.length && groupedInvoices.length > 0 ? (
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      ) : (
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      )}
+                    </Button>
+                    <Checkbox
+                      checked={
+                        groupedInvoices.length > 0 &&
+                        groupedInvoices.every((i) => selectedGroupKeys.has(i.group_key))
+                      }
+                      onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                    />
+                  </div>
                 </th>
                 <th className="p-3">Státusz</th>
-                <th className="p-3">Bizonylatszám</th>
+                <th className="p-3">Számlasorszám</th>
                 <th className="p-3">Napló</th>
                 <th className="p-3">Könyvelés</th>
                 <th className="p-3">Esedékesség</th>
                 <th className="p-3">Partner</th>
-                <th className="p-3">Főkönyvi szám</th>
-                <th className="p-3 text-center">T/K</th>
-                <th className="p-3 text-right">Eredeti összeg</th>
+                <th className="p-3 text-right">Nettó</th>
+                <th className="p-3 text-right">ÁFA</th>
+                <th className="p-3 text-right">Bruttó összeg</th>
                 <th className="p-3 text-right">Rendezve</th>
                 <th className="p-3 text-right">Nyitott összeg</th>
                 <th className="p-3 text-center">Műveletek</th>
@@ -699,190 +911,398 @@ export default function SubledgerPage() {
                     Folyószámla adatok betöltése...
                   </td>
                 </tr>
-              ) : filteredItems.length === 0 ? (
+              ) : groupedInvoices.length === 0 ? (
                 <tr>
                   <td colSpan={13} className="py-12 text-center text-muted-foreground space-y-2">
-                    <div className="text-sm font-medium">Nincs a megadott szűrési feltételeknek megfelelő folyószámla tétel.</div>
+                    <div className="text-sm font-medium">Nincs a megadott szűrési feltételeknek megfelelő folyószámla számla.</div>
                     <div className="text-xs text-muted-foreground max-w-md mx-auto">
                       Próbáld meg módosítani a dátumtartományt, a partner szűrőt, vagy váltsd át a könyvelési státuszt az <strong>„Összes (Könyvelt + Javaslat)”</strong> opcióra.
                     </div>
                   </td>
                 </tr>
               ) : (
-                filteredItems.map((item) => {
-                  const isSelected = selectedLineIds.has(item.line_id);
+                groupedInvoices.map((inv) => {
+                  const isSelected = selectedGroupKeys.has(inv.group_key);
+                  const isExpanded = expandedGroupKeys.has(inv.group_key);
                   const isOverdue =
-                    !item.is_settled &&
-                    item.due_date &&
-                    new Date(item.due_date) < new Date();
+                    !inv.is_settled &&
+                    inv.due_date &&
+                    new Date(inv.due_date) < new Date();
 
                   return (
-                    <tr
-                      key={item.line_id}
-                      className={`hover:bg-muted/30 transition-colors ${
-                        isSelected ? 'bg-indigo-50/50 dark:bg-indigo-950/20' : ''
-                      }`}
-                    >
-                      {/* Checkbox */}
-                      <td className="p-3 text-center">
-                        <Checkbox
-                          checked={isSelected}
-                          onCheckedChange={() => handleToggleRow(item.line_id)}
-                        />
-                      </td>
-
-                      {/* Státusz Badge */}
-                      <td className="p-3 whitespace-nowrap">
-                        <div className="flex items-center gap-1.5">
-                          {item.is_settled ? (
-                            <Badge variant="outline" className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 text-[10px]">
-                              Zárt
-                            </Badge>
-                          ) : item.settled_amount > 0 ? (
-                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 text-[10px]">
-                              Részben
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 text-[10px]">
-                              Nyitott
-                            </Badge>
-                          )}
-
-                          {item.status === 'GEPI_JAVASLAT' && (
-                            <Badge variant="secondary" className="text-[9px] px-1 py-0 bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
-                              Javaslat
-                            </Badge>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Bizonylatszám & Rendezési szám */}
-                      <td className="p-3 font-semibold text-foreground whitespace-nowrap">
-                        <div className="flex items-center gap-1.5">
-                          <span>{item.document_id}</span>
-                        </div>
-                        {item.description && (
-                          <div className="text-[10px] text-muted-foreground truncate max-w-[180px] font-normal">
-                            {item.description}
+                    <React.Fragment key={inv.group_key}>
+                      <tr
+                        className={`hover:bg-muted/30 transition-colors ${
+                          isSelected ? 'bg-indigo-50/50 dark:bg-indigo-950/20' : ''
+                        } ${isExpanded ? 'bg-muted/20 border-b-0' : ''}`}
+                      >
+                        {/* Expand button & Checkbox */}
+                        <td className="p-3 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleToggleExpand(inv.group_key)}
+                              className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                              title={isExpanded ? 'Tételek becsukása' : 'Tételek lenyitása'}
+                            >
+                              {isExpanded ? (
+                                <ChevronDown className="w-3.5 h-3.5 text-indigo-600" />
+                              ) : (
+                                <ChevronRight className="w-3.5 h-3.5" />
+                              )}
+                            </Button>
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => handleToggleRow(inv.group_key)}
+                            />
                           </div>
-                        )}
-                      </td>
+                        </td>
 
-                      {/* Napló */}
-                      <td className="p-3 text-muted-foreground whitespace-nowrap">
-                        <span className="font-mono bg-muted/60 px-1.5 py-0.5 rounded text-[11px]">
-                          {item.journal_code}-{item.journal_number || 0}
-                        </span>
-                      </td>
+                        {/* Státusz Badge */}
+                        <td className="p-3 whitespace-nowrap">
+                          <div className="flex items-center gap-1.5">
+                            {inv.is_settled ? (
+                              <Badge variant="outline" className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 text-[10px]">
+                                Zárt
+                              </Badge>
+                            ) : inv.settled_amount > 0 ? (
+                              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 text-[10px]">
+                                Részben
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 text-[10px]">
+                                Nyitott
+                              </Badge>
+                            )}
 
-                      {/* Könyvelés dátuma */}
-                      <td className="p-3 whitespace-nowrap">{item.posting_date}</td>
-
-                      {/* Esedékesség */}
-                      <td className="p-3 whitespace-nowrap">
-                        {item.due_date ? (
-                          <div className="flex items-center gap-1">
-                            <span>{item.due_date}</span>
-                            {isOverdue && (
-                              <Badge variant="destructive" className="text-[9px] px-1 py-0">
-                                Lejárt
+                            {inv.status === 'GEPI_JAVASLAT' && (
+                              <Badge variant="secondary" className="text-[9px] px-1 py-0 bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
+                                Javaslat
                               </Badge>
                             )}
                           </div>
-                        ) : (
-                          '-'
-                        )}
-                      </td>
+                        </td>
 
-                      {/* Partner */}
-                      <td className="p-3 whitespace-nowrap font-medium text-foreground max-w-[200px] truncate">
-                        {item.partner_name || '-'}
-                      </td>
-
-                      {/* Főkönyvi szám */}
-                      <td className="p-3 whitespace-nowrap">
-                        <span className="font-mono font-medium">{item.gl_number}</span>
-                        <div className="text-[10px] text-muted-foreground truncate max-w-[140px]">
-                          {item.gl_short_name}
-                        </div>
-                      </td>
-
-                      {/* T/K */}
-                      <td className="p-3 text-center">
-                        <Badge
-                          variant="secondary"
-                          className={
-                            item.dc_type === 'T'
-                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 font-mono font-bold'
-                              : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-mono font-bold'
-                          }
-                        >
-                          {item.dc_type}
-                        </Badge>
-                      </td>
-
-                      {/* Eredeti összeg */}
-                      <td className="p-3 text-right font-mono whitespace-nowrap">
-                        <div>{formatCurrency(item.amount)} Ft</div>
-                        {item.currency !== 'HUF' && item.foreign_amount && (
-                          <div className="text-[10px] text-muted-foreground">
-                            {formatCurrency(item.foreign_amount)} {item.currency}
+                        {/* Számlasorszám (Bizonylatszám) */}
+                        <td className="p-3 font-semibold text-foreground whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleExpand(inv.group_key)}
+                              className="hover:text-indigo-600 transition-colors text-left font-mono font-bold"
+                            >
+                              {inv.document_id}
+                            </button>
+                            {inv.items.length > 1 && (
+                              <Badge
+                                variant="secondary"
+                                className="bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 text-[10px] font-semibold px-1.5 py-0"
+                              >
+                                {inv.items.length} tétel
+                              </Badge>
+                            )}
                           </div>
-                        )}
-                      </td>
+                          {inv.items.length === 1 && inv.description ? (
+                            <div className="text-[10px] text-muted-foreground truncate max-w-[200px] font-normal font-sans">
+                              {inv.description}
+                            </div>
+                          ) : inv.items.length > 1 ? (
+                            <div className="text-[10px] text-muted-foreground truncate max-w-[200px] font-normal font-sans">
+                              {inv.items.map((it) => it.description).filter(Boolean).slice(0, 2).join(', ')}
+                              {inv.items.length > 2 ? '...' : ''}
+                            </div>
+                          ) : null}
+                        </td>
 
-                      {/* Rendezett összeg */}
-                      <td className="p-3 text-right font-mono text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                        {item.settled_amount > 0 ? `${formatCurrency(item.settled_amount)} Ft` : '-'}
-                      </td>
+                        {/* Napló */}
+                        <td className="p-3 text-muted-foreground whitespace-nowrap">
+                          <span className="font-mono bg-muted/60 px-1.5 py-0.5 rounded text-[11px]">
+                            {inv.journal_code}-{inv.journal_number || 0}
+                          </span>
+                        </td>
 
-                      {/* Nyitott összeg */}
-                      <td className="p-3 text-right font-mono font-bold whitespace-nowrap">
-                        <span
-                          className={
-                            item.remaining_amount > 0
-                              ? isOverdue
-                                ? 'text-rose-600 dark:text-rose-400'
-                                : 'text-amber-600 dark:text-amber-400'
-                              : 'text-muted-foreground font-normal'
-                          }
-                        >
-                          {formatCurrency(item.remaining_amount)} Ft
-                        </span>
-                      </td>
+                        {/* Könyvelés dátuma */}
+                        <td className="p-3 whitespace-nowrap font-mono text-[11px]">{inv.posting_date}</td>
 
-                      {/* Műveletek */}
-                      <td className="p-3 text-center whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-1">
-                          {/* Matches inspection */}
-                          {item.match_count > 0 && (
+                        {/* Esedékesség */}
+                        <td className="p-3 whitespace-nowrap">
+                          {inv.due_date ? (
+                            <div className="flex items-center gap-1 font-mono text-[11px]">
+                              <span>{inv.due_date}</span>
+                              {isOverdue && (
+                                <Badge variant="destructive" className="text-[9px] px-1 py-0 font-sans">
+                                  Lejárt
+                                </Badge>
+                              )}
+                            </div>
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+
+                        {/* Partner */}
+                        <td className="p-3 whitespace-nowrap font-medium text-foreground max-w-[180px] truncate">
+                          {inv.partner_name || '-'}
+                        </td>
+
+                        {/* Nettó összeg */}
+                        <td className="p-3 text-right font-mono whitespace-nowrap text-muted-foreground">
+                          {formatCurrency(inv.net_amount, inv.currency)}
+                        </td>
+
+                        {/* ÁFA összeg */}
+                        <td className="p-3 text-right font-mono whitespace-nowrap text-indigo-600 dark:text-indigo-400">
+                          {formatCurrency(inv.vat_amount, inv.currency)}
+                        </td>
+
+                        {/* Bruttó összeg */}
+                        <td className="p-3 text-right font-mono font-bold whitespace-nowrap text-foreground">
+                          <div>{formatCurrency(inv.amount, inv.currency)}</div>
+                        </td>
+
+                        {/* Rendezett összeg */}
+                        <td className="p-3 text-right font-mono text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                          {inv.settled_amount > 0 ? formatCurrency(inv.settled_amount, inv.currency) : '-'}
+                        </td>
+
+                        {/* Nyitott összeg */}
+                        <td className="p-3 text-right font-mono font-bold whitespace-nowrap">
+                          <span
+                            className={
+                              inv.remaining_amount > 0
+                                ? isOverdue
+                                  ? 'text-rose-600 dark:text-rose-400'
+                                  : 'text-amber-600 dark:text-amber-400'
+                                : 'text-muted-foreground font-normal'
+                            }
+                          >
+                            {formatCurrency(inv.remaining_amount, inv.currency)}
+                          </span>
+                        </td>
+
+                        {/* Műveletek */}
+                        <td className="p-3 text-center whitespace-nowrap">
+                          <div className="flex items-center justify-center gap-1">
+                            {/* Könyvelés gomb (ha javaslat) */}
+                            {inv.status === 'GEPI_JAVASLAT' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleOpenPostSingle(inv)}
+                                title="Kontírozás ellenőrzése és könyvelése"
+                                className="h-7 px-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800 text-[11px] font-medium flex items-center gap-1"
+                              >
+                                <FileCheck className="w-3.5 h-3.5 text-indigo-600" />
+                                <span>Könyvelés</span>
+                              </Button>
+                            )}
+
+                            {/* Módosítás gomb (minden számlánál: piszkozat azonnal, könyvelt unpost után) */}
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => setActiveItemForMatches(item)}
-                              title={`Párosítások megtekintése (${item.match_count})`}
-                              className="h-7 px-2 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
+                              onClick={() => handleOpenEdit(inv)}
+                              title={
+                                inv.status === 'GEPI_JAVASLAT'
+                                  ? 'Számla tételeinek és kontírjainak szerkesztése'
+                                  : 'Lekönyvelt számla visszanyitása és módosítása'
+                              }
+                              className="h-7 px-2 text-slate-700 hover:text-slate-900 dark:text-slate-300 hover:bg-muted"
                             >
-                              <ArrowRightLeft className="w-3.5 h-3.5 mr-1" />
-                              <span className="text-[11px]">{item.match_count}</span>
+                              <Edit3 className="w-3.5 h-3.5 mr-1 text-slate-500" />
+                              <span className="text-[11px]">Módosítás</span>
                             </Button>
-                          )}
 
-                          {/* Write-off modal */}
-                          {!item.is_settled && item.remaining_amount > 0 && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setActiveItemForWriteOff(item)}
-                              title="Különbözet leírása (Kerekítés vagy Árfolyam)"
-                              className="h-7 px-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40"
-                            >
-                              <Sparkles className="w-3.5 h-3.5" />
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
+                            {/* Matches inspection */}
+                            {inv.match_count > 0 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setActiveItemForMatches(inv.items[0])}
+                                title={`Párosítások megtekintése (${inv.match_count})`}
+                                className="h-7 px-2 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
+                              >
+                                <ArrowRightLeft className="w-3.5 h-3.5 mr-1" />
+                                <span className="text-[11px]">{inv.match_count}</span>
+                              </Button>
+                            )}
+
+                            {/* Write-off modal */}
+                            {!inv.is_settled && inv.remaining_amount > 0 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setActiveItemForWriteOff(inv.items[0])}
+                                title="Különbözet leírása (Kerekítés vagy Árfolyam)"
+                                className="h-7 px-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40"
+                              >
+                                <Sparkles className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+
+                      {/* Accordion Expanded Sub-Row with Detailed Invoice Items & Kontírok */}
+                      {isExpanded && (
+                        <tr className="bg-muted/20 border-b">
+                          <td colSpan={13} className="p-4 pl-12 pr-6">
+                            <div className="rounded-xl border bg-card p-4 space-y-4 shadow-sm">
+                              {/* Header bar of expanded row */}
+                              <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+                                    <Layers className="w-4 h-4" />
+                                  </div>
+                                  <div>
+                                    <div className="font-bold text-foreground text-sm flex items-center gap-2">
+                                      <span>Számla tételei ({inv.items.length} tétel)</span>
+                                      <span className="font-mono text-xs text-muted-foreground font-normal">
+                                        — {inv.document_id}
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                      A teljes számlához tartozó számlatételek és azok főkönyvi kontírozása
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-4 text-xs font-mono bg-muted/50 px-3 py-1.5 rounded-lg border">
+                                  <span>
+                                    Nettó: <strong className="text-foreground">{formatCurrency(inv.net_amount, inv.currency)}</strong>
+                                  </span>
+                                  <span className="text-muted-foreground">|</span>
+                                  <span>
+                                    ÁFA: <strong className="text-indigo-600 dark:text-indigo-400">{formatCurrency(inv.vat_amount, inv.currency)}</strong>
+                                  </span>
+                                  <span className="text-muted-foreground">|</span>
+                                  <span>
+                                    Bruttó: <strong className="text-foreground">{formatCurrency(inv.amount, inv.currency)}</strong>
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Detailed Item List: Számlatételek felsorolása */}
+                              <div className="space-y-3">
+                                {inv.items.map((item, itemIdx) => {
+                                  const itemLines = item.all_lines && item.all_lines.length > 0 ? item.all_lines : [
+                                    {
+                                      id: item.line_id,
+                                      sequence_number: 1,
+                                      gl_number: item.gl_number,
+                                      gl_short_name: item.gl_short_name,
+                                      dc_type: item.dc_type,
+                                      amount: item.amount,
+                                      vat_role: null,
+                                      vat_code: null,
+                                      description: item.description,
+                                    },
+                                  ];
+
+                                  return (
+                                    <div
+                                      key={item.line_id || item.header_id || itemIdx}
+                                      className="rounded-lg border bg-background overflow-hidden"
+                                    >
+                                      {/* Item header line */}
+                                      <div className="bg-muted/40 px-3 py-2 border-b flex flex-wrap items-center justify-between gap-2 text-xs">
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-mono font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded text-[11px]">
+                                            #{itemIdx + 1}
+                                          </span>
+                                          <span className="font-semibold text-foreground">
+                                            {item.description || `Tétel #${itemIdx + 1}`}
+                                          </span>
+                                        </div>
+
+                                        <div className="flex items-center gap-3 font-mono text-[11px]">
+                                          <span className="text-muted-foreground">
+                                            Nettó: <strong className="text-foreground">{formatCurrency(item.net_amount, item.currency)}</strong>
+                                          </span>
+                                          <span className="text-muted-foreground">|</span>
+                                          <span className="text-muted-foreground">
+                                            ÁFA: <strong className="text-indigo-600 dark:text-indigo-400">{formatCurrency(item.vat_amount, item.currency)}</strong>
+                                          </span>
+                                          <span className="text-muted-foreground">|</span>
+                                          <span className="text-muted-foreground">
+                                            Bruttó: <strong className="text-foreground">{formatCurrency(item.amount, item.currency)}</strong>
+                                          </span>
+                                        </div>
+                                      </div>
+
+                                      {/* Kontírozási sorok az adott tételhez */}
+                                      <div className="p-2.5">
+                                        <div className="text-[11px] text-muted-foreground mb-1.5 font-medium px-1 flex items-center justify-between">
+                                          <span>Kontírozás (Főkönyvi könyvelési sorok: T / K):</span>
+                                          <span className="font-mono text-[10px]">{itemLines.length} sor</span>
+                                        </div>
+                                        <table className="w-full text-xs text-left border-collapse">
+                                          <thead>
+                                            <tr className="bg-muted/30 border-b text-muted-foreground font-semibold text-[10px]">
+                                              <th className="p-1.5 w-8 text-center">#</th>
+                                              <th className="p-1.5 w-12 text-center">T/K</th>
+                                              <th className="p-1.5 min-w-[200px]">Főkönyvi számla</th>
+                                              <th className="p-1.5 w-24">ÁFA szerep</th>
+                                              <th className="p-1.5 text-right w-28">Összeg</th>
+                                              <th className="p-1.5">Sor leírása</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody className="divide-y divide-border/40 text-[11px]">
+                                            {itemLines.map((l: any, lIdx: number) => (
+                                              <tr key={l.id || lIdx} className="hover:bg-muted/10 transition-colors">
+                                                <td className="p-1.5 text-center text-muted-foreground font-mono">
+                                                  {l.sequence_number || lIdx + 1}
+                                                </td>
+                                                <td className="p-1.5 text-center">
+                                                  <Badge
+                                                    variant="secondary"
+                                                    className={`text-[9px] font-bold px-1 py-0 font-mono ${
+                                                      l.dc_type === 'T'
+                                                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
+                                                        : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                                                    }`}
+                                                  >
+                                                    {l.dc_type}
+                                                  </Badge>
+                                                </td>
+                                                <td className="p-1.5">
+                                                  <span className="font-mono font-bold text-foreground">
+                                                    {l.gl_number}
+                                                  </span>
+                                                  <span className="text-muted-foreground ml-1.5 font-sans text-[11px]">
+                                                    {l.gl_short_name}
+                                                  </span>
+                                                </td>
+                                                <td className="p-1.5 text-[10px]">
+                                                  {l.vat_role ? (
+                                                    <Badge variant="outline" className="text-[9px] font-mono uppercase">
+                                                      {l.vat_role} {l.vat_code ? `(${l.vat_code})` : ''}
+                                                    </Badge>
+                                                  ) : (
+                                                    <span className="text-muted-foreground">-</span>
+                                                  )}
+                                                </td>
+                                                <td className="p-1.5 text-right font-mono font-bold text-foreground">
+                                                  {formatCurrency(l.amount, item.currency)}
+                                                </td>
+                                                <td className="p-1.5 text-muted-foreground truncate max-w-[260px] text-[11px]">
+                                                  {l.description || '-'}
+                                                </td>
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   );
                 })
               )}
@@ -891,7 +1311,77 @@ export default function SubledgerPage() {
         </div>
       </Card>
 
-      {/* Modals */}
+      {/* Two-Sided Posting & Editing Modal */}
+      <SubledgerPostingModal
+        isOpen={postingModalOpen}
+        onClose={() => {
+          setPostingModalOpen(false);
+          setInvoicesToPost([]);
+        }}
+        invoices={invoicesToPost}
+        companyId={companyId || ''}
+        isEditMode={isEditModeForModal}
+        onOpenFullManualEditor={(headerId) => {
+          setEditingHeaderId(headerId);
+          setManualEntryOpen(true);
+        }}
+      />
+
+      {/* Full Manual Journal Entry Modal (for advanced edits) */}
+      <AddManualJournalEntryModal
+        open={manualEntryOpen}
+        onOpenChange={(isOpen) => {
+          setManualEntryOpen(isOpen);
+          if (!isOpen) {
+            setEditingHeaderId(null);
+            refetchItems();
+          }
+        }}
+        entryId={editingHeaderId}
+      />
+
+      {/* Confirmation Dialog before Unposting a posted invoice */}
+      <AlertDialog
+        open={!!unpostConfirmInvoice}
+        onOpenChange={(open) => !open && setUnpostConfirmInvoice(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-amber-500" />
+              <span>Számla visszanyitása módosításra</span>
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2 text-xs text-muted-foreground pt-1">
+              <div>
+                A(z) <strong className="text-foreground">{unpostConfirmInvoice?.document_id}</strong> számlasorszámú bizonylat ({unpostConfirmInvoice?.items.length || 1} tétel) már le van könyvelve ({unpostConfirmInvoice?.journal_code}-{unpostConfirmInvoice?.journal_number}).
+              </div>
+              <div>
+                A módosításhoz a rendszer visszanyitja a számla tételeit szerkeszthető piszkozat státuszba (nyitott pénzügyi időszakban). A bizonylat naplósorszáma megmarad, a javítások után a számla újból lekönyvelhető.
+              </div>
+              <div className="font-semibold text-foreground pt-1">
+                Biztosan vissza szeretnéd nyitni a számlát módosításra?
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={unpostMutation.isPending}>Mégse</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmUnpost}
+              disabled={unpostMutation.isPending}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              {unpostMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
+              ) : (
+                <Edit3 className="w-4 h-4 mr-1.5" />
+              )}
+              <span>Visszanyitás és Módosítás</span>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Existing Modals */}
       <SubledgerItemMatchesModal
         isOpen={!!activeItemForMatches}
         onClose={() => setActiveItemForMatches(null)}

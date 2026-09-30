@@ -110,12 +110,12 @@ export const WriteOffSettlementModal: React.FC<WriteOffSettlementModalProps> = (
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Eredeti könyvelt összeg:</span>
-              <span>{formatCurrency(item.amount)} {item.currency}</span>
+              <span>{formatCurrency(item.amount, item.currency)}</span>
             </div>
             <div className="flex justify-between pt-1 border-t">
               <span className="text-muted-foreground font-medium">Jelenlegi nyitott különbözet:</span>
               <span className="font-bold text-amber-600 dark:text-amber-400">
-                {formatCurrency(item.remaining_amount)} Ft
+                {formatCurrency(item.remaining_amount)}
               </span>
             </div>
           </div>

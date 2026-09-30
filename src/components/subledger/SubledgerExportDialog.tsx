@@ -155,11 +155,11 @@ export const SubledgerExportDialog: React.FC<SubledgerExportDialogProps> = ({
                 </tr>
               </thead>
               <tbody>
-                <tr><td>Még nem járt le</td><td class="num">${aging.notDue.count}</td><td class="num">${formatCurrency(aging.notDue.amount)} Ft</td></tr>
-                <tr><td>1 - 30 napja lejárt</td><td class="num">${aging.d1_30.count}</td><td class="num">${formatCurrency(aging.d1_30.amount)} Ft</td></tr>
-                <tr><td>31 - 60 napja lejárt</td><td class="num">${aging.d31_60.count}</td><td class="num">${formatCurrency(aging.d31_60.amount)} Ft</td></tr>
-                <tr><td>61 - 90 napja lejárt</td><td class="num">${aging.d61_90.count}</td><td class="num">${formatCurrency(aging.d61_90.amount)} Ft</td></tr>
-                <tr><td>90 napon túl lejárt</td><td class="num">${aging.d90plus.count}</td><td class="num">${formatCurrency(aging.d90plus.amount)} Ft</td></tr>
+                <tr><td>Még nem járt le</td><td class="num">${aging.notDue.count}</td><td class="num">${formatCurrency(aging.notDue.amount)}</td></tr>
+                <tr><td>1 - 30 napja lejárt</td><td class="num">${aging.d1_30.count}</td><td class="num">${formatCurrency(aging.d1_30.amount)}</td></tr>
+                <tr><td>31 - 60 napja lejárt</td><td class="num">${aging.d31_60.count}</td><td class="num">${formatCurrency(aging.d31_60.amount)}</td></tr>
+                <tr><td>61 - 90 napja lejárt</td><td class="num">${aging.d61_90.count}</td><td class="num">${formatCurrency(aging.d61_90.amount)}</td></tr>
+                <tr><td>90 napon túl lejárt</td><td class="num">${aging.d90plus.count}</td><td class="num">${formatCurrency(aging.d90plus.amount)}</td></tr>
               </tbody>
             </table>
           `
@@ -191,9 +191,9 @@ export const SubledgerExportDialog: React.FC<SubledgerExportDialogProps> = ({
                     <td>${i.partner_name || '-'}</td>
                     <td>${i.gl_number}</td>
                     <td>${i.dc_type}</td>
-                    <td class="num">${formatCurrency(i.amount)} ${i.currency}</td>
-                    <td class="num">${formatCurrency(i.settled_amount)}</td>
-                    <td class="num" style="font-weight: bold;">${formatCurrency(i.remaining_amount)}</td>
+                    <td class="num">${formatCurrency(i.amount, i.currency)}</td>
+                    <td class="num">${formatCurrency(i.settled_amount, i.currency)}</td>
+                    <td class="num" style="font-weight: bold;">${formatCurrency(i.remaining_amount, i.currency)}</td>
                   </tr>
                 `
                   )

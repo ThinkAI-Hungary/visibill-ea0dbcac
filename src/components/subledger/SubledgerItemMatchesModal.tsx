@@ -55,19 +55,19 @@ export const SubledgerItemMatchesModal: React.FC<SubledgerItemMatchesModalProps>
           <div>
             <div className="text-muted-foreground text-xs">Eredeti könyvelt összeg</div>
             <div className="font-semibold text-base">
-              {formatCurrency(item.amount)} {item.currency} ({item.dc_type})
+              {formatCurrency(item.amount, item.currency)} ({item.dc_type})
             </div>
           </div>
           <div>
             <div className="text-muted-foreground text-xs">Eddig rendezve</div>
             <div className="font-semibold text-emerald-600">
-              {formatCurrency(item.settled_amount)} {item.currency}
+              {formatCurrency(item.settled_amount, item.currency)}
             </div>
           </div>
           <div>
             <div className="text-muted-foreground text-xs">Fennmaradó nyitott</div>
             <div className={`font-semibold ${item.remaining_amount > 0 ? 'text-amber-600' : 'text-muted-foreground'}`}>
-              {formatCurrency(item.remaining_amount)} {item.currency}
+              {formatCurrency(item.remaining_amount, item.currency)}
             </div>
           </div>
         </div>
@@ -138,7 +138,7 @@ export const SubledgerItemMatchesModal: React.FC<SubledgerItemMatchesModalProps>
                   <div className="flex items-center gap-3">
                     <div className="text-right">
                       <div className="font-semibold text-sm text-foreground">
-                        {formatCurrency(m.settled_amount_huf)} Ft
+                        {formatCurrency(m.settled_amount_huf)}
                       </div>
                       <div className="text-xs text-muted-foreground">
                         Rendezve: {new Date(m.settled_at).toLocaleDateString('hu-HU')}
