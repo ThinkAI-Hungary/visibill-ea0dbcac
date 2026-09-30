@@ -489,7 +489,7 @@ export default function SubledgerPage() {
 
   // Batch post selected drafts
   const handleBatchPostDrafts = () => {
-    if (!companyId || selectionTotals.draftInvoices.length.length === 0) return;
+    if (!companyId || selectionTotals.draftInvoices.length === 0) return;
     handleOpenBatchPost();
   };
 
