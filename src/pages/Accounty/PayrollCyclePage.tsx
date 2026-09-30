@@ -135,6 +135,7 @@ export default function PayrollCyclePage() {
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [emailTo, setEmailTo] = useState('');
   const [isPosting, setIsPosting] = useState(false);
+  const handleCloseCycle = async () => { toast({ title: "Ciklus zárása", description: "A bérszámfejtési ciklus lezárása folyamatban..." }); };
   const [customGlMapping, setCustomGlMapping] = useState<any>(null);
   const [step5Saving, setStep5Saving] = useState(false);
   const [viewMode, setViewMode] = useState<'stepper' | 'worksheet'>('stepper');

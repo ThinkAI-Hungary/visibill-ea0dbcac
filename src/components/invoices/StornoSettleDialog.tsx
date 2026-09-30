@@ -62,7 +62,7 @@ export function StornoSettleDialog({
         description: isSettle
           ? t('invoices:dialogs.storno_settle.toast_settled_desc', { stornoNumber })
           : t('invoices:dialogs.storno_settle.toast_unsettled_desc', { stornoNumber }),
-        variant: 'success',
+        variant: 'success' as any,
       });
     } catch (err: any) {
       console.error('[StornoSettleDialog] RPC error:', err);

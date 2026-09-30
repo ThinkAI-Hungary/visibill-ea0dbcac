@@ -35,7 +35,7 @@ interface ChangePasswordDialogProps {
 }
 
 export const ChangePasswordDialog = ({ open, onOpenChange }: ChangePasswordDialogProps) => {
-  const { t } = useTranslation('settings');
+  const { t } = useTranslation();
   const { updatePassword } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -43,14 +43,14 @@ export const ChangePasswordDialog = ({ open, onOpenChange }: ChangePasswordDialo
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const passwordSchema = useMemo(() => z.object({
-    currentPassword: z.string().min(1, t('change_password_dialog.validation.current_password_required')),
-    newPassword: z.string().min(8, t('change_password_dialog.validation.new_password_min')),
-    confirmPassword: z.string().min(1, t('change_password_dialog.validation.confirm_password_required')),
+    currentPassword: z.string().min(1, t('settings:change_password_dialog.validation.current_password_required')),
+    newPassword: z.string().min(8, t('settings:change_password_dialog.validation.new_password_min')),
+    confirmPassword: z.string().min(1, t('settings:change_password_dialog.validation.confirm_password_required')),
   }).refine((data) => data.newPassword === data.confirmPassword, {
-    message: t('change_password_dialog.validation.passwords_mismatch'),
+    message: t('settings:change_password_dialog.validation.passwords_mismatch'),
     path: ['confirmPassword'],
   }).refine((data) => data.currentPassword !== data.newPassword, {
-    message: t('change_password_dialog.validation.new_password_same'),
+    message: t('settings:change_password_dialog.validation.new_password_same'),
     path: ['newPassword'],
   }), [t]);
 
@@ -76,9 +76,9 @@ export const ChangePasswordDialog = ({ open, onOpenChange }: ChangePasswordDialo
 
   const getPasswordStrength = (password: string) => {
     if (password.length === 0) return { strength: '', color: '' };
-    if (password.length < 8) return { strength: t('change_password_dialog.strength_weak'), color: 'text-destructive' };
-    if (password.length < 12) return { strength: t('change_password_dialog.strength_medium'), color: 'text-yellow-600' };
-    return { strength: t('change_password_dialog.strength_strong'), color: 'text-green-600' };
+    if (password.length < 8) return { strength: t('settings:change_password_dialog.strength_weak'), color: 'text-destructive' };
+    if (password.length < 12) return { strength: t('settings:change_password_dialog.strength_medium'), color: 'text-yellow-600' };
+    return { strength: t('settings:change_password_dialog.strength_strong'), color: 'text-green-600' };
   };
 
   const newPasswordValue = form.watch('newPassword');
@@ -88,9 +88,9 @@ export const ChangePasswordDialog = ({ open, onOpenChange }: ChangePasswordDialo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{t('change_password_dialog.title')}</DialogTitle>
+          <DialogTitle>{t('settings:change_password_dialog.title')}</DialogTitle>
           <DialogDescription>
-            {t('change_password_dialog.description')}
+            {t('settings:change_password_dialog.description')}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -100,12 +100,12 @@ export const ChangePasswordDialog = ({ open, onOpenChange }: ChangePasswordDialo
               name="currentPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('change_password_dialog.current_password_label')}</FormLabel>
+                  <FormLabel>{t('settings:change_password_dialog.current_password_label')}</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
                         type={showCurrentPassword ? 'text' : 'password'}
-                        placeholder={t('change_password_dialog.current_password_placeholder')}
+                        placeholder={t('settings:change_password_dialog.current_password_placeholder')}
                         {...field}
                       />
                       <Button
@@ -133,12 +133,12 @@ export const ChangePasswordDialog = ({ open, onOpenChange }: ChangePasswordDialo
               name="newPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('change_password_dialog.new_password_label')}</FormLabel>
+                  <FormLabel>{t('settings:change_password_dialog.new_password_label')}</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
                         type={showNewPassword ? 'text' : 'password'}
-                        placeholder={t('change_password_dialog.new_password_placeholder')}
+                        placeholder={t('settings:change_password_dialog.new_password_placeholder')}
                         {...field}
                       />
                       <Button
@@ -158,7 +158,7 @@ export const ChangePasswordDialog = ({ open, onOpenChange }: ChangePasswordDialo
                   </FormControl>
                   {passwordStrength.strength && (
                     <p className={`text-sm ${passwordStrength.color}`}>
-                      {t('change_password_dialog.strength_prefix')} {passwordStrength.strength}
+                      {t('settings:change_password_dialog.strength_prefix')} {passwordStrength.strength}
                     </p>
                   )}
                   <FormMessage />
@@ -171,12 +171,12 @@ export const ChangePasswordDialog = ({ open, onOpenChange }: ChangePasswordDialo
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('change_password_dialog.confirm_password_label')}</FormLabel>
+                  <FormLabel>{t('settings:change_password_dialog.confirm_password_label')}</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
                         type={showConfirmPassword ? 'text' : 'password'}
-                        placeholder={t('change_password_dialog.confirm_password_placeholder')}
+                        placeholder={t('settings:change_password_dialog.confirm_password_placeholder')}
                         {...field}
                       />
                       <Button
@@ -206,10 +206,10 @@ export const ChangePasswordDialog = ({ open, onOpenChange }: ChangePasswordDialo
                 onClick={() => onOpenChange(false)}
                 disabled={loading}
               >
-                {t('change_password_dialog.cancel')}
+                {t('settings:change_password_dialog.cancel')}
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? t('change_password_dialog.submitting') : t('change_password_dialog.submit')}
+                {loading ? t('settings:change_password_dialog.submitting') : t('settings:change_password_dialog.submit')}
               </Button>
             </div>
           </form>

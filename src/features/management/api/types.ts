@@ -204,7 +204,7 @@ export interface FilesData {
   files: FileRow[];
 }
 
-export type FileSortCol = 'created_at' | 'file_name' | 'file_size' | 'company_name' | 'status' | 'updated_at';
+export type FileSortCol = 'created_at' | 'file_name' | 'file_size' | 'company_name' | 'status' | 'updated_at' | 'user_name' | 'processing_status';
 
 export type StatusCategory = 'success' | 'pending' | 'error' | 'redirected' | 'dismissed' | 'unknown';
 

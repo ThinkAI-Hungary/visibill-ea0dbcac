@@ -206,7 +206,7 @@ export function Step5Osztalek({
                     <Button
                       type="button"
                       variant="outline"
-                      size="xs"
+                      size="sm"
                       onClick={() =>
                         setAppliedLossOffset(Math.min(accumulatedPriorLosses, maxLossOffset))
                       }
@@ -219,7 +219,7 @@ export function Step5Osztalek({
                       <Button
                         type="button"
                         variant="ghost"
-                        size="xs"
+                        size="sm"
                         onClick={() => setAppliedLossOffset(0)}
                         className="text-[10px] h-8 text-muted-foreground"
                       >

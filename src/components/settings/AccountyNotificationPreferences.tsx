@@ -392,7 +392,7 @@ export function AccountyNotificationPreferences() {
   const pushNotifCount = pushPrefs.enabled ? Object.entries(pushPrefs).filter(([k, v]) => k !== 'enabled' && v).length : 0;
 
   if (loading) {
-    return <ContentSkeleton lines={8} />;
+    return <ContentSkeleton  />;
   }
 
   return (

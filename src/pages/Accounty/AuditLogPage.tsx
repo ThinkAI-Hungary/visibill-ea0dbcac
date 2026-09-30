@@ -110,7 +110,7 @@ export default function AuditLogPage() {
           <Filter className="w-4 h-4 text-muted-foreground" />
           <select
             value={eventFilter}
-            onChange={e => { setEventFilter(e.target.value); setPage(0); }}
+            onChange={e => { setEventFilter(e.target.value); setCurrentPage(1); }}
             className="rounded-lg border border-border bg-card px-3 py-2 text-sm"
           >
             {EVENT_TYPES.map(t => (

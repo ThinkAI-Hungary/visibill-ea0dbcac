@@ -242,8 +242,8 @@ export function calculateA60Aggregations(
     expectedServicesIn = expectedRowsOrGoods.servicesIn || 0;
     rates = legacyExpectedServices as unknown as Record<string, number> | null;
   } else {
-    expectedGoodsOut = expectedRowsOrGoods || 0;
-    expectedServicesOut = legacyExpectedServices || 0;
+    expectedGoodsOut = (expectedRowsOrGoods as number) || 0;
+    expectedServicesOut = (legacyExpectedServices as number) || 0;
     expectedGoodsIn = legacyExpectedGoodsIn || 0;
     expectedServicesIn = legacyExpectedServicesIn || 0;
   }

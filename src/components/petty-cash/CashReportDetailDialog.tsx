@@ -55,8 +55,8 @@ export function CashReportDetailDialog({
       report,
       registerName,
       companyName: selectedCompany?.name || 'Vállalkozás',
-      companyTaxNumber: selectedCompany?.adoszam,
-      companyAddress: selectedCompany?.szekhely,
+      companyTaxNumber: (selectedCompany as any)?.adoszam,
+      companyAddress: (selectedCompany as any)?.szekhely,
       entries,
       denominationSheet: sheet,
       protocol,
@@ -92,8 +92,8 @@ export function CashReportDetailDialog({
         created_at: entry.created_at,
       },
       companyName: selectedCompany?.name || 'Vállalkozás',
-      companyTaxNumber: selectedCompany?.adoszam,
-      companyAddress: selectedCompany?.szekhely,
+      companyTaxNumber: (selectedCompany as any)?.adoszam,
+      companyAddress: (selectedCompany as any)?.szekhely,
       registerName,
     });
   };

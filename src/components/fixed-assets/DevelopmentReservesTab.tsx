@@ -120,7 +120,7 @@ export function DevelopmentReservesTab() {
   if (isLoading) {
     return (
       <div className="p-6">
-        <ContentSkeleton rows={6} />
+        <ContentSkeleton  />
       </div>
     );
   }

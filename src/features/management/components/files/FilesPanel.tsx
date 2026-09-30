@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { FilePreviewModal, useFilePreview } from '@/components/ui/FilePreviewModal';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -213,7 +213,7 @@ export function FilesPanel({ allUsers }: FilesPanelProps) {
   const fileRows = data?.files || [];
   const totalRows = data?.totalRows || 0;
   const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
-  const stats = data?.stats;
+  const stats = (data as any)?.stats;
 
   // Local state for the input field
   const [search, setSearch] = useState(debouncedSearch);

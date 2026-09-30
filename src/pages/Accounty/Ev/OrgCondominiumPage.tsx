@@ -155,7 +155,7 @@ export default function OrgCondominiumPage() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">{condoName}</h1>
             <p className="text-sm text-muted-foreground">
-              {ORG_TYPE_LABELS[orgType] || 'Társasház'} · {activeUnitsCount} albetét · {client?.tax_number || '-'}
+              {ORG_TYPE_LABELS[orgType] || 'Társasház'} · {activeUnitsCount} albetét · {client?.taxNumber || '-'}
             </p>
           </div>
         </div>

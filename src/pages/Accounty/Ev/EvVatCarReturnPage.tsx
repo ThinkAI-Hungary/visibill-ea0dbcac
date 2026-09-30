@@ -111,7 +111,7 @@ export default function EvVatCarReturnPage() {
       xml += `<nav_bevallassablon xmlns="http://www.nav.gov.hu/bevallas" verzio="1.0">\n`;
       xml += `  <fejlec>\n`;
       xml += `    <nyomtatvany>${fCode}</nyomtatvany>\n`;
-      xml += `    <adoszam>${client?.taxNumber || client?.tax_number || ''}</adoszam>\n`;
+      xml += `    <adoszam>${client?.taxNumber || client?.taxNumber || ''}</adoszam>\n`;
       xml += `    <nev>${client?.name || 'Egyéni Vállalkozó'}</nev>\n`;
       xml += `    <idoszak>${ret.period}</idoszak>\n`;
       xml += `  </fejlec>\n`;
@@ -282,7 +282,7 @@ export default function EvVatCarReturnPage() {
           {renderSection(
             'ÁFA bevallások (65A)',
             <Receipt className="w-4 h-4 text-cyan-600" />,
-            vatReturns,
+            vatReturns as any[] as any,
             '65A',
             'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600',
             <span>65A</span>,
@@ -292,7 +292,7 @@ export default function EvVatCarReturnPage() {
           {renderSection(
             'Cégautóadó bevallások',
             <Car className="w-4 h-4 text-rose-600" />,
-            carReturns,
+            carReturns as any[] as any,
             'CAR',
             'bg-rose-100 dark:bg-rose-900/30',
             <Car className="w-4 h-4 text-rose-600" />,

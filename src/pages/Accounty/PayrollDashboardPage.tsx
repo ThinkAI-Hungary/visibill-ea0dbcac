@@ -984,7 +984,7 @@ export default function PayrollDashboardPage() {
                         {emp.last_name} {emp.first_name}
                       </p>
                       <p className="text-xs text-muted-foreground truncate">
-                        {emp.job_title || 'Munkakör nincs megadva'} • TAJ: {emp.taj_number || '–'}
+                        {(emp as any).job_title || 'Munkakör nincs megadva'} • TAJ: {emp.taj_number || '–'}
                       </p>
                     </div>
                   </div>

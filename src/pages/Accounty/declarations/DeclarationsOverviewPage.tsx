@@ -34,8 +34,8 @@ export default function DeclarationsOverviewPage() {
 
   const declList = declarations || [];
   const activeDecls = declList.filter(d => d.status === 'active');
-  const expiredDecls = declList.filter(d => d.status === 'expired' || d.status === 'archived');
-  const totalMonthlySaving = activeDecls.reduce((s, d) => s + (d.data?.monthlySaving || 0), 0);
+  const expiredDecls = declList.filter(d => d.status === 'expired' || (d.status as any) === 'revoked' || (d.status as any) === 'archived');
+  const totalMonthlySaving = activeDecls.reduce((s, d) => s + ( (d.data as any)?.monthlySaving || 0), 0);
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 page-animate">
@@ -129,12 +129,12 @@ export default function DeclarationsOverviewPage() {
                     {dt && <dt.icon className="w-5 h-5" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold">{dt?.label}</p>
-                    <p className="text-xs text-muted-foreground">{decl.data?.employeeName || ''} — {decl.data?.details || ''}</p>
+                    <p className="text-sm font-bold">{(dt?.label as any)}</p>
+                    <p className="text-xs text-muted-foreground">{(decl.data as any)?.employeeName || ''} — {(decl.data as any)?.details || ''}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-bold font-mono text-emerald-600">-{(decl.data?.monthlySaving || 0).toLocaleString('hu-HU')} Ft/hó</p>
-                    <p className="text-[10px] text-muted-foreground">{decl.data?.startDate || ''} → {decl.data?.endDate || 'visszavonásig'}</p>
+                    <p className="text-sm font-bold font-mono text-emerald-600">-{Number((decl.data as any)?.monthlySaving || 0).toLocaleString('hu-HU')} Ft/hó</p>
+                    <p className="text-[10px] text-muted-foreground">{(decl.data as any)?.startDate || ''} → {(decl.data as any)?.endDate || 'visszavonásig'}</p>
                   </div>
                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0" asChild>
                     <Link to={`/eaisybooks/payroll/${id}/declarations/${dt?.route || decl.type}${decl.employeeId ? `?empId=${decl.employeeId}` : ''}`}><Eye className="w-3.5 h-3.5" /></Link>
@@ -155,7 +155,7 @@ export default function DeclarationsOverviewPage() {
               return (
                 <div key={decl.id} className="flex items-center gap-4 px-5 py-3">
                   <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">{dt && <dt.icon className="w-4 h-4 text-muted-foreground" />}</div>
-                  <div className="flex-1"><p className="text-sm text-muted-foreground">{dt?.label} — {decl.data?.employeeName || ''}</p></div>
+                  <div className="flex-1"><p className="text-sm text-muted-foreground">{(dt?.label as any)} — {(decl.data as any)?.employeeName || ''}</p></div>
                   <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">Lejárt</span>
                 </div>
               );

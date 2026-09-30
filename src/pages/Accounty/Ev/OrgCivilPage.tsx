@@ -160,7 +160,7 @@ export default function OrgCivilPage() {
             <p className="text-sm text-muted-foreground">
               {ORG_TYPE_LABELS[orgType] || orgType} ·
               {isPublicBenefit && <span className="text-green-600 font-medium"> Közhasznú</span>} ·
-              {' '}{client?.tax_number || '-'}
+              {' '}{client?.taxNumber || '-'}
             </p>
           </div>
         </div>
@@ -226,7 +226,7 @@ export default function OrgCivilPage() {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-y-3 gap-x-6 text-xs">
               {[
                 { label: 'Nyilvántartási szám', value: settings?.registration_number || '-' },
-                { label: 'Adószám', value: client?.tax_number || '-' },
+                { label: 'Adószám', value: client?.taxNumber || '-' },
                 { label: 'Fő tevékenység', value: settings?.main_activity_code || '-' },
                 { label: 'Szervezeti forma', value: ORG_TYPE_LABELS[orgType] || orgType },
                 { label: 'Közhasznúság', value: isPublicBenefit ? 'Közhasznú' : 'Nem közhasznú' },

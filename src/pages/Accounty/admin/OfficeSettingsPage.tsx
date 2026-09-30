@@ -65,7 +65,7 @@ export default function OfficeSettingsPage() {
 
   const handleSave = async () => {
     try {
-      await saveMut.mutateAsync(settings);
+      await saveMut.mutateAsync(settings as any);
       toast({ title: 'Beállítások mentve ' });
     } catch (err: any) {
       toast({ variant: 'destructive', title: 'Hiba', description: err.message });

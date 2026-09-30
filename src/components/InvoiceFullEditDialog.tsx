@@ -51,6 +51,7 @@ interface SubmittedInvoice {
   project_id: string | null;
   image_url: string | null;
   melleklet_url: string | null;
+  fizetesi_mod?: string | null;
   invoice_uploads_id?: string | null;
 }
 
