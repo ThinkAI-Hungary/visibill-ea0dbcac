@@ -573,7 +573,7 @@ export default function ClientDetailsPage() {
                 case 'kimeno': return t('client_overview.cat_outbound');
                 case 'bank': return t('client_overview.cat_bank');
                 case 'ber': return t('client_overview.cat_payroll');
-                default: return blockingCategoryMeta[cat]?.label;
+                default: return (blockingCategoryMeta as any)[cat]?.label;
               }
             };
             const grouped = categories.map((cat) => ({

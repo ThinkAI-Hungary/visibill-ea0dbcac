@@ -48,7 +48,7 @@ export function buildNavToSubmittedMap(
 
       const chainMatches = submittedInvoices.filter(sub => {
         // 1. Azonos tranzakció ID
-        if (nav.transaction_id && sub.transaction_id && nav.transaction_id === sub.transaction_id) {
+        if ((nav as any).transaction_id && (sub as any).transaction_id && (nav as any).transaction_id === (sub as any).transaction_id) {
           return true;
         }
         // 2. Díjbekérő / Előleg lánc azonos partnerrel és összeggel
@@ -105,7 +105,7 @@ export function buildSubmittedToNavMap(
         const subGross = Math.abs(Number(sub.brutto_vegosszeg || 0));
 
         const chainMatches = paginatedNavInvoices.filter(nav => {
-          if (sub.transaction_id && nav.transaction_id && sub.transaction_id === nav.transaction_id) {
+          if ((sub as any).transaction_id && (nav as any).transaction_id && (sub as any).transaction_id === (nav as any).transaction_id) {
             return true;
           }
           if (

@@ -406,6 +406,7 @@ export function RelatedPartyTurnoverTab({
                 <TableRow>
                   <TableCell colSpan={9} className="py-12">
                     <TableEmptyState
+                      colSpan={9}
                       title="Nincs kapcsolt vállalkozási forgalom"
                       description="Jelölj meg partnereket kapcsolt vállalkozásként a partnertörzsben, vagy módosítsd a szűrőket."
                     />

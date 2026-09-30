@@ -25,7 +25,7 @@ import { toast } from '@/hooks/use-toast';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
-import type { PettyCashRegister, PettyCashEntry, OpenOutboundInvoice, SummaryRow } from './types';
+import type { PettyCashRegister, PettyCashEntry, OpenOutboundInvoice, SummaryRow, OpenSettlementInvoice } from './types';
 import { SOURCE_LABELS, SOURCE_COLORS, fmtAmount, fmtBalance, roundHuf, sanitizePartnerId, validatePettyCashEntryPayload, parseCleanAmount } from './types';
 import CashClosingDialog from './CashClosingDialog';
 import TransferDialog from './TransferDialog';

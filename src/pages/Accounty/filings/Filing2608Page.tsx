@@ -155,7 +155,7 @@ export default function Filing2608Page() {
     return generateFiling08Xml({
       companyName: company?.name || '–',
       companyTaxNumber: company?.taxNumber || '00000000-0-00',
-      companyAddress: company?.address || '',
+      companyAddress: (company as any)?.address || '',
       year: selectedYear,
       month: selectedMonth,
       totalGrossSalary: totalGross,
@@ -171,7 +171,7 @@ export default function Filing2608Page() {
           lastName: m.name.split(' ')[0] || '',
           firstName: m.name.split(' ').slice(1).join(' ') || '',
           birthDate: emp?.birth_date || '',
-          mothersName: emp?.mother_name || '',
+          mothersName: emp?.mothers_name || '',
           jobCode: m.jobCode,
           jobSerialNumber: m.jobSerialNumber,
           insuranceStart: m.insuranceStart,

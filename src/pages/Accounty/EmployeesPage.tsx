@@ -225,7 +225,9 @@ export default function EmployeesPage() {
               }}
             >
               <Download className="w-4 h-4" />
-              Expor            <Button
+              Export
+            </Button>
+            <Button
               variant="outline"
               className="flex items-center gap-2 text-sm"
               onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/import`)}
@@ -492,6 +494,10 @@ export default function EmployeesPage() {
                 onPageSizeChange={setPageSize}
                 pageSizeOptions={[10, 20, 50]}
               />
+            </div>
+          )}
+          </>
+        )}
       </div>
     </div>
   );

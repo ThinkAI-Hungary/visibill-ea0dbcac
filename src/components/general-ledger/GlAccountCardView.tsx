@@ -257,8 +257,8 @@ export function GlAccountCardView({
 
       // Find currency if not explicitly set
       if (!detectedCurrency) {
-        const fxRow = filteredLines.find((l: any) => l.header?.currency && l.header.currency !== 'HUF');
-        if (fxRow) detectedCurrency = fxRow.header.currency;
+        const fxRow = filteredLines.find((l: any) => (l.header as any)?.currency && (l.header as any).currency !== 'HUF');
+        if (fxRow) detectedCurrency = (fxRow.header as any).currency;
       }
 
       // Sort period items chronologically

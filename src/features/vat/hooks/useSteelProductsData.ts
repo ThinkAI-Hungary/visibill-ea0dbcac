@@ -20,6 +20,8 @@ export interface SteelItemRecord {
   netAmount: number;
   vatRate: string | null;
   netWeightKg: number | null;
+  productName?: string;
+  vtsz?: string;
 }
 
 export function isSteelCandidate(item: {

@@ -73,7 +73,7 @@ export default function EvMasterDataPage() {
     const c = client;
     return {
       registrationNumber: s?.registration_number || '',
-      taxNumber: c?.tax_number || '',
+      taxNumber: c?.taxNumber || '',
       taxId: '',
       navTechUser: '',
       name: c?.name || '',

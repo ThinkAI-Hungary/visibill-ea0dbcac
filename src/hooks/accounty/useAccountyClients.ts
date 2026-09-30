@@ -13,7 +13,7 @@ import { reportError } from '@/lib/errorReporter';
 type AssignmentRow = Tables<'accounty_assignments'>;
 type MissingItemRow = Pick<Tables<'accounty_missing_items'>, 'company_id'>;
 type DeadlineRow = Pick<Tables<'accounty_deadlines'>, 'company_id' | 'due_date'>;
-type CompanyRow = Pick<Tables<'companies'>, 'id' | 'name' | 'tax_number' | 'country_code'>;
+type CompanyRow = Pick<Tables<'companies'>, 'id' | 'name' | 'tax_number'> & { country_code?: string };
 import {
   AccountyClient,
   AccountyKpis,
@@ -140,7 +140,7 @@ export function useAccountyClients(dateFrom?: string, dateTo?: string) {
           progress,
           assignedToMe,
           isPrimary: mainAccountantAssign?.is_primary || false,
-          accountantRole: mainAccountantAssign?.role || 'junior',
+          accountantRole: (mainAccountantAssign?.role || 'junior') as 'junior' | 'senior',
           ownerId: mainAccountantAssign?.accountant_user_id || '1',
           isMainAccountant: isMainAccountantForMe,
         };

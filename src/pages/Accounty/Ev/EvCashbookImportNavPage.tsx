@@ -144,7 +144,7 @@ export default function EvCashbookImportNavPage() {
         date: inv.rawDate || new Date().toISOString().slice(0, 10),
         grossAmount: inv.grossAmount,
         vatAmount: inv.vatAmount,
-        direction: isSales ? 'kimeno' : 'bejovo',
+        direction: (isSales ? 'kimeno' : 'bejovo') as 'bejovo' | 'kimeno',
         category: defaultCat,
         description: ruleApplied 
           ? `${inv.partnerName} - Szabály alapján besorolva` 

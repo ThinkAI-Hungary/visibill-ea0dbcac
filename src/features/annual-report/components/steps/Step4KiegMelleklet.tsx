@@ -137,7 +137,7 @@ export function Step4KiegMelleklet({
                   />
                   <Button
                     variant="outline"
-                    size="xs"
+                    size="sm"
                     className="w-full text-[10px] gap-1 h-6"
                     disabled={!newSectionTitle.trim()}
                     onClick={() => {
@@ -186,7 +186,7 @@ export function Step4KiegMelleklet({
                           {saved && (
                             <Button
                               variant="ghost"
-                              size="xs"
+                              size="sm"
                               className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground gap-1"
                               onClick={() => {
                                 const sections = (
@@ -207,7 +207,7 @@ export function Step4KiegMelleklet({
                           {activeTab.isCustom && (
                             <Button
                               variant="ghost"
-                              size="xs"
+                              size="sm"
                               className="h-6 px-2 text-[10px] text-red-500 hover:text-red-700 gap-1 hover:bg-red-500/5"
                               onClick={() => {
                                 const sections = (

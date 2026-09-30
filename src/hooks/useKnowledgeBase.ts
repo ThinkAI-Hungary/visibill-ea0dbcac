@@ -35,7 +35,7 @@ export function useDebounce<T>(value: T, delayMs: number = 250): T {
  */
 export function useCanAccessKnowledgeMenuPath(menuPath?: string | null): boolean {
   const { canAccess } = useEaisybillPermissions();
-  const { data: hasAccountyAccess } = useHasAccountyAccess();
+  const { hasAccess: hasAccountyAccess } = useHasAccountyAccess();
 
   return useMemo(() => {
     if (!menuPath) return false;
