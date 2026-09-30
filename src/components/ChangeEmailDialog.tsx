@@ -95,7 +95,7 @@ export const ChangeEmailDialog = ({ open, onOpenChange }: ChangeEmailDialogProps
     const { error } = await supabase.auth.updateUser(({
       email: data.newEmail,
       options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
-    });
+    } as any));
     setLoading(false);
 
     if (error) {
