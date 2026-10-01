@@ -46,6 +46,8 @@ Az AI **KÖTELES** első lépésként megnyitni és elolvasni:
 | DB-12 | **🔴 Trigger SECURITY DEFINER (A-020)** | Minden trigger function ami más táblába ír → SECURITY DEFINER KÖTELEZŐ (auth.uid() NULL trigger kontextusban) | ✅/❌ |
 | DB-13 | **🔴 Trigger search_path extensions (A-020)** | Ha extension function-t hív (gen_random_bytes, net.http_post) → `SET search_path TO 'public', 'extensions'` | ✅/❌ |
 | DB-14 | **🔴 CREATE OR REPLACE attribútum-megőrzés (A-020)** | `CREATE OR REPLACE` NEM örökli SECURITY DEFINER-t — explicit újra kell adni! | ✅/❌ |
+| DB-15 | **🔴 Monolitikus RPC & Unified Ledger ellenőrzés** | Ha az RPC > 150 sor vagy 3+ forrást kapcsol össze: indokolt-e az on-the-fly unió, vagy egységes tételtáblából (`acc_journal_lines`) kell olvasni? | ✅/❌ |
+| DB-16 | **🔴 pgTAP Adatbázis Tesztelés (Pénzügyi RPC-k)** | Számítási/főkönyvi RPC-khez (`calculate_*`, `get_gl_*`, `get_pnl_*`) kötelező pgTAP tesztfájl (`supabase/tests/database/`) | ✅/❌ |
 ```
 
 ---
@@ -86,6 +88,8 @@ Az AI **KÖTELES** első lépésként megnyitni és elolvasni:
 | F-7 | Error handling: `RAISE EXCEPTION` | Hibakezelés a function-ben |
 | F-8 | **Pre-request hook kivétele** | Ha PostgREST pre-request hook → `anon` és `authenticated` KÖTELEZŐ EXECUTE jog |
 | F-9 | **🔴 Trigger: SECURITY DEFINER + extensions (A-020)** | Trigger function → SECURITY DEFINER + `SET search_path TO 'public', 'extensions'` ha extension-t használ. Részletek: [A-020](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-020-auth-trigger-chain-incident.md) |
+| F-10 | **🔴 pgTAP Egységteszt** | `supabase/tests/database/{function_name}.test.sql` tesztfájl létrehozása |
+| F-11 | **🔴 Buffer & Timeout Budget** | EXPLAIN (ANALYZE, BUFFERS) futtatás nagy adathalmazon: futásidő < 500ms, nincs felesleges N-szeres CTE kiértékelés (`MATERIALIZED` használata indokolt esetben) |
 ```
 
 ---
@@ -191,7 +195,62 @@ Példák (helytelen):
 
 > **⚠️ Ha egyazon napon több migráció kell:** Adj HHMMSS-t is a dátum után a sorrend biztosítására (pl. `20260515100000_`, `20260515100100_`, `20260515100200_`). A Supabase a fájlnév szerinti ABC-sorrend alapján futtatja a migrációkat.
 
-> **Referencia:** Részletes magyarázatokhoz: `supabase-postgres-best-practices` skill `references/` mappája (pl. `security-rls-performance.md`, `schema-foreign-key-indexes.md`, `data-pagination.md`).
+---
+
+## 7. pgTAP Adatbázis Teszt-suite (Automated DB Testing)
+
+A Supabase CLI és PostgreSQL beépített pgTAP tesztkeretrendszere biztosítja a tárolt eljárások (RPC-k), triggerek és RLS szabályzatok regressziómentes, automatizált tesztelését.
+
+### 📁 Hol helyezkednek el a tesztek?
+`supabase/tests/database/{rpc_vagy_modul_neve}.test.sql`
+
+### 🛠️ Hogyan futtatható?
+- **Helyi Supabase CLI-vel:**
+  ```powershell
+  npx supabase test db
+  ```
+- **Vagy MCP-n / távoli SQL konzolon (`execute_sql`):**
+  Futtatható közvetlenül a teszt SQL szkriptje; mivel a végén `ROLLBACK;` van, nem módosítja és nem szemeteli össze a termelési adatbázist.
+
+### 📐 Standard pgTAP Teszt Sablon
+```sql
+BEGIN;
+-- 1. Adjuk meg a futtatandó tesztesetek számát
+SELECT plan(4);
+
+-- 2. Létezés és függvény-szignatúra ellenőrzése
+SELECT has_function('public', 'get_gl_balances', 'get_gl_balances RPC-nek léteznie kell a public sémában');
+
+-- 3. Üres cég / NULL-safety teszt (nem dobhat hibát nem létező azonosítókra)
+SELECT is_empty(
+  'SELECT * FROM public.get_gl_balances(''00000000-0000-0000-0000-000000000000''::uuid, ''00000000-0000-0000-0000-000000000000''::uuid)',
+  'Üres vagy nem létező cégnél üres eredményt kell adnia exception nélkül'
+);
+
+-- 4. Egzakt matematikai és könyvelési egyenleg teszt fixture adatokkal
+SELECT results_eq(
+  'SELECT total_balance FROM public.get_gl_balances(''test-company-uuid''::uuid, ''test-preset-uuid''::uuid) WHERE gl_number = ''311''',
+  'VALUES (150000.00::numeric)',
+  'A 311-es vevői számla egyenlegének pontosan 150 000 Ft-nak kell lennie'
+);
+
+-- 5. Jogosultsági kapu: anon role nem futtathatja
+SELECT throws_ok(
+  'SET ROLE anon; SELECT * FROM public.get_gl_balances(''test-company-uuid''::uuid, ''test-preset-uuid''::uuid)',
+  '42501',
+  NULL,
+  'Anonim felhasználó nem futtathatja a főkönyvi RPC-t'
+);
+
+SELECT * FROM finish();
+ROLLBACK; -- ⚠️ KÖTELEZŐ: visszaállítja a tesztkörnyezetet, nem szemetel a DB-be!
+```
+
+### 🎯 Kötelező pgTAP Ellenőrzési Pontok Pénzügyi RPC-knél:
+1. **Zero-state (Üres cég):** Hibamentes lefutás 0 soros vagy nem létező cégazonosítókra.
+2. **Dátumszűrés és Dátumalap (`kibocsatas` vs `teljesites`):** Adott időszakon kívül eső tételek nem kerülhetnek be az eredménybe.
+3. **Pénzügyi Integritás (T/K Előjelek):** Kötelező ellenőrizni, hogy a Tartozik (+) és Követel (-) előjelek matematikailag pontosak.
+4. **Jogosultsági Védelem:** Ellenőrizni, hogy `anon` role esetén `permission denied (42501)` exception keletkezik.
 
 ---
 
