@@ -1,6 +1,6 @@
 ---
 name: morfi-implementation-review
-description: Comprehensive implementation and deep code review for cross-session handoffs, new features, and bugfixes with mandatory autonomous thoroughness (/goal mode). Combines the critical skepticism of receiving-code-review (anti-performative, zero blind agreement, YAGNI, technical pushback) with the structured Senior Reviewer protocol of requesting-code-review, Addy Osmani's 5-axis code quality framework, Surgical Auto-Fix for mechanical errors, the 8-Stage Downstream Data-Flow Pipeline Trace (Anti-Diff Myopia), Falsy Zero / Zero-as-Value guards, Mandatory Live DB Migration & Schema Verification, Mandatory pgTAP Database RPC & Regression Test Gate, and the 6-Axis Universal Software Reliability & Blind-Spot Matrix (with mandatory user inquiry before implementing new logic). Enhanced with project spec lookup, DB checklist guards, and modern engineering standards. The review report, code audits, blind spots, and test evidence are delivered entirely in English, with ONLY Section 1 (Executive Summary / Vezetői Összefoglaló) written in Hungarian. Use whenever the user types /morfi-implementation-review, /goal with a review task, provides a handoff document, asks to "ellenőrizd az előző session munkáját", "nézd át a handoff dokumentumot", "implementáció review handoff alapján", "code review a handoff alapján", "verifikáld az előző sessiont", or wants to deeply audit completed feature/fix work before proceeding.
+description: Comprehensive implementation and deep code review for cross-session handoffs, new features, and bugfixes with mandatory autonomous thoroughness (/goal mode). Combines the critical skepticism of receiving-code-review (anti-performative, zero blind agreement, YAGNI, technical pushback) with the structured Senior Reviewer protocol of requesting-code-review, Addy Osmani's 5-axis code quality framework, Surgical Auto-Fix for mechanical errors, the 8-Stage Downstream Data-Flow Pipeline Trace (Anti-Diff Myopia), Falsy Zero / Zero-as-Value guards, Mandatory Live DB Migration & Schema Verification, Mandatory pgTAP Database RPC & Regression Test Gate, and the Unbounded 6-Axis Universal Software Reliability & Blind-Spot Matrix (exhaustive dynamic discovery with zero drip-feeding, and mandatory user inquiry before implementing new logic). Enhanced with project spec lookup, DB checklist guards, and modern engineering standards. The review report, code audits, blind spots, and test evidence are delivered entirely in English, with ONLY Section 1 (Executive Summary / Vezetői Összefoglaló) written in Hungarian. Use whenever the user types /morfi-implementation-review, /goal with a review task, provides a handoff document, asks to "ellenőrizd az előző session munkáját", "nézd át a handoff dokumentumot", "implementáció review handoff alapján", "code review a handoff alapján", "verifikáld az előző sessiont", or wants to deeply audit completed feature/fix work before proceeding.
 ---
 
 # 🛡️ Morfi Implementation Review (Autonomous Goal Mode)
@@ -32,9 +32,10 @@ This skill operates in **Autonomous Deep-Audit Mode (`/goal`)**: it runs exhaust
 6. **Surgical Auto-Fix for Mechanical Nits (Fix-on-Sight Protocol)**:
    - If trivial, purely mechanical blockers are found during review (typos, missing imports, syntax errors, mismatched prop names failing a build), the reviewer **MAY fix them immediately** on sight.
    - **Strict Guardrail**: Fixing is ONLY permitted for non-business, mechanical bugs. Never alter business logic, database schemas, or API contracts autonomously. Every auto-fix must be re-verified by running tests and explicitly reported in the final review.
-7. **6-Axis Universal Blind-Spot Discovery (Zero Silent Implementation)**:
+7. **6-Axis Universal Blind-Spot Discovery (Unbounded, Exhaustive & Anti-Drip-Feeding)**:
    - The reviewer MUST stress-test the implementation against first-principles software reliability gaps across 6 universal dimensions (Concurrency, Boundaries, Failures, Lifecycle, Data Integrity, Security).
-   - **CRITICAL RESTRICTION**: The reviewer **MUST NOT silently implement** newly discovered edge cases or business logic! All discovered blind spots must be clearly presented with their associated risks and concrete implementation options, **asking the user** for their explicit decision (Implement now vs. Defer to follow-up vs. Accept trade-off).
+   - **Exhaustive Discovery & Anti-Drip-Feeding Invariant**: The reviewer must NEVER artificially cap, truncate, or sample blind spots (e.g. "pick 1 per dimension", "pick top 3", or "keep it short"). Blind-spot analysis is dynamic, unbounded, and exhaustive: the agent must continuously sweep all touched files, contracts, and downstream consumers until it is confident that *every* noteworthy edge case, unhandled boundary, race condition, data omission, or failure mode is completely surfaced. Drip-feeding issues across multiple review iterations (reporting 3, waiting for them to be fixed, then revealing 3 more) is strictly forbidden!
+   - **CRITICAL RESTRICTION (Zero Silent Implementation)**: The reviewer **MUST NOT silently implement** newly discovered edge cases or business logic! All discovered blind spots must be clearly presented with their associated risks and concrete implementation options, **asking the user** for their explicit decision (Implement now vs. Defer to follow-up vs. Accept trade-off).
 8. **Structural Remedies Over Vague Complaints ("Propose the Move")**:
    - Never stop at saying *"this is complex"* or *"this looks messy"*. Always propose the concrete structural pattern (e.g. replace conditional chain with typed dispatcher, split orchestration from business logic, decouple state provider).
 9. **Lead with Leverage**:
@@ -114,6 +115,7 @@ Reviewers must actively reject these common traps and rationalizations:
 | *"I set `isLoading(true)` at the start of `loadMore`, so it won't fire twice."* | **The Async State Trap:** React `useState` updates asynchronously on the next render. Rapid scroll events or IntersectionObserver triggers execute in the same event loop tick before React re-renders, firing duplicate requests and corrupting state. Always use a synchronous ref (`inFlightRef.current = true`). |
 | *"I just append the new items to the existing array: `setItems(prev => [...prev, ...newItems])`."* | **The Appending Duplication Trap:** Any network retry, offset jitter, or concurrent burst will append duplicate records into the array, resulting in React key collision warnings (`Encountered two children with the same key`) and DOM corruption. Always wrap incoming appends in a Set/Map-based `dedupeById`. |
 | *"I calculate the next page from `list.length / PAGE_SIZE`."* | **The Filtered Length Trap:** If the client filters out any records (e.g. 0-value items, inactive status), `list.length` will be smaller than `page * PAGE_SIZE`. `Math.floor(length / PAGE_SIZE)` then rounds down and requests the same page forever, trapping the app in an infinite fetch loop. Always use an explicit monotonic page counter. |
+| *"I should only mention 2-3 blind spots or 1 per axis so I don't overwhelm the user."* | **The Drip-Feeding Trap:** Truncating or sampling blind spots forces the user through frustrating review loops where fixing 3 issues only surfaces 3 more previously withheld issues. Exhaustively surface ALL noteworthy gaps in a single pass. |
 
 ---
 
@@ -255,14 +257,19 @@ Reviewers MUST NOT suffer from "Diff Myopia" (only inspecting lines modified in 
 
 ---
 
-### Phase 3.5: 🔍 6-Axis Universal Software Reliability & Blind-Spot Matrix
+### Phase 3.5: 🔍 6-Axis Universal Software Reliability & Blind-Spot Matrix (Unbounded Dynamic Discovery)
 
 The reviewer must step out of the author's mindset and actively interrogate the implementation against first-principles software failure modes across 6 universal dimensions.
 
 > [!CAUTION]
-> **ZERO SILENT IMPLEMENTATION RULE:**
-> Do NOT implement solutions for discovered blind spots on your own!
-> You must document the gap, explain the business/technical risk, formulate concrete options, and ask the user for direction.
+> **ZERO SILENT IMPLEMENTATION & ZERO DRIP-FEEDING INVARIANTS:**
+> 1. **ZERO SILENT IMPLEMENTATION:** Do NOT implement solutions for discovered blind spots on your own! You must document the gap, explain the business/technical risk, formulate concrete options, and ask the user for direction.
+> 2. **ZERO ARTIFICIAL CAPS / ZERO DRIP-FEEDING:** Do NOT limit blind spots to a fixed count (e.g. 1 per axis or a total of 3). The review agent must dynamically sweep until ALL noteworthy edge cases, boundary conditions, and risks have been cataloged in this single review pass.
+
+#### 🔄 Dynamic Discovery Loop Protocol:
+- **Exhaustive Sweep:** The agent sweeps each of the 6 dimensions across all changed files, interfaces, and downstream consumers.
+- **Dynamic Iteration until Exhaustion:** If 1 issue exists, report 1. If 8 exist, report 8. If 15 exist, report 15. The discovery process continues generating blind-spot items until the agent is completely satisfied that all noteworthy architectural, lifecycle, boundary, and data integrity gaps have been surfaced.
+- **No Hidden Debt:** Never withhold or postpone discovering real issues for a "future review round". Surface everything now so the user can make informed prioritization decisions in a single pass.
 
 #### 1. ⏱️ Concurrency, Race Conditions & Temporal Order
 *Issues arising because operations do not occur in an isolated, linear sequence.*
@@ -563,9 +570,10 @@ Categorize all findings using clear severity indicators:
 ---
 
 ## 7. 🔍 6-Axis Universal Blind-Spot & Reliability Analysis
-*(Note: These are not silently implemented. Please select your preferred approach for each item!)*
+*(Exhaustive & Unbounded: All discovered gaps across all 6 dimensions are surfaced in this single pass. These are NOT silently implemented. Please select your preferred approach for each item!)*
 
-1. **[Blind-Spot / Edge Case Title]**
+<!-- Dynamically iterate 1..N: list ALL discovered blind spots until exhaustive coverage is achieved. NEVER cap or truncate! -->
+1. **[Blind-Spot / Edge Case Title 1]**
    - **Dimension:** [1. Concurrency & Temporal | 2. Boundaries & Extremes | 3. Failure & Resilience | 4. State & Lifecycle | 5. Data Integrity & Atomicity | 6. Security & Inputs]
    - **Location / Affected Module:** `[file_path:line]`
    - **Description:** [Scenario not accounted for in initial design]
@@ -574,6 +582,10 @@ Categorize all findings using clear severity indicators:
      - **Option A (Implement Now):** [Brief description of immediate fix]
      - **Option B (Track in Backlog):** [Acceptable to defer to a follow-up task]
      - **Option C (Conscious Trade-off):** [Risk is acceptable, no action needed]
+
+2. **[Blind-Spot / Edge Case Title 2]**
+   ...
+N. **[Blind-Spot / Edge Case Title N]**
 
 ---
 
@@ -625,4 +637,5 @@ Categorize all findings using clear severity indicators:
 - ❌ **NEVER** ignore `@[current_problems]` or active editor diagnostics just because CLI `tsc` passed in a subshell: always verify and reconcile IDE diagnostics.
 - ❌ **NEVER** approve infinite scroll or pagination code that calculates page indices from client-side filtered array lengths (`list.length / PAGE_SIZE`) or relies solely on React async state (`isLoading`) without a synchronous in-flight ref guard (`inFlightRef.current = true`).
 - ❌ **NEVER** conclude a review superficially; only append the `<!-- GOAL_COMPLETE -->` tag once all verification points and checks have been 100% physically proven and executed.
+- ❌ **NEVER** artificially cap, limit, sample, or drip-feed blind spots across multiple review cycles (e.g. limiting to 1 per axis or only reporting 3 issues total)! The reviewer MUST dynamically sweep until all noteworthy edge cases, boundary failures, and integration risks are completely surfaced in a single review iteration.
 
