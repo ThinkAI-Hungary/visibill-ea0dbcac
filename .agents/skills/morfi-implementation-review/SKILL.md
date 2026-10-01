@@ -1,6 +1,6 @@
 ---
 name: morfi-implementation-review
-description: Comprehensive implementation and deep code review for cross-session handoffs, new features, and bugfixes with mandatory autonomous thoroughness (/goal mode). Combines the critical skepticism of receiving-code-review (anti-performative, zero blind agreement, YAGNI, technical pushback) with the structured Senior Reviewer protocol of requesting-code-review, Addy Osmani's 5-axis code quality framework, Surgical Auto-Fix for mechanical errors, the 8-Stage Downstream Data-Flow Pipeline Trace (Anti-Diff Myopia), Falsy Zero / Zero-as-Value guards, Mandatory Live DB Migration & Schema Verification, and the 6-Axis Universal Software Reliability & Blind-Spot Matrix (with mandatory user inquiry before implementing new logic). Enhanced with project spec lookup, DB checklist guards, and modern engineering standards. Enforces that while internal review logic and guidelines are in English, the final review report delivered to the user must be in Hungarian. Use whenever the user types /morfi-implementation-review, /goal with a review task, provides a handoff document, asks to "ellenőrizd az előző session munkáját", "nézd át a handoff dokumentumot", "implementáció review handoff alapján", "code review a handoff alapján", "verifikáld az előző sessiont", or wants to deeply audit completed feature/fix work before proceeding.
+description: Comprehensive implementation and deep code review for cross-session handoffs, new features, and bugfixes with mandatory autonomous thoroughness (/goal mode). Combines the critical skepticism of receiving-code-review (anti-performative, zero blind agreement, YAGNI, technical pushback) with the structured Senior Reviewer protocol of requesting-code-review, Addy Osmani's 5-axis code quality framework, Surgical Auto-Fix for mechanical errors, the 8-Stage Downstream Data-Flow Pipeline Trace (Anti-Diff Myopia), Falsy Zero / Zero-as-Value guards, Mandatory Live DB Migration & Schema Verification, Mandatory pgTAP Database RPC & Regression Test Gate, and the 6-Axis Universal Software Reliability & Blind-Spot Matrix (with mandatory user inquiry before implementing new logic). Enhanced with project spec lookup, DB checklist guards, and modern engineering standards. Enforces that while internal review logic and guidelines are in English, the final review report delivered to the user must be in Hungarian. Use whenever the user types /morfi-implementation-review, /goal with a review task, provides a handoff document, asks to "ellenőrizd az előző session munkáját", "nézd át a handoff dokumentumot", "implementáció review handoff alapján", "code review a handoff alapján", "verifikáld az előző sessiont", or wants to deeply audit completed feature/fix work before proceeding.
 ---
 
 # 🛡️ Morfi Implementation Review (Autonomous Goal Mode)
@@ -24,7 +24,7 @@ This skill operates in **Autonomous Deep-Audit Mode (`/goal`)**: it runs exhaust
    - Never claim a file or feature was checked without actually reading the complete code using `view_file` or inspecting full context with `git diff`.
    - Forbidden: Saying *"Looks good"* and later reacting with *"Oh, you're right, I missed that!"*. If there is any doubt or unverified execution branch, investigate it immediately.
 3. **Evidence Before Assertions**:
-   - Never assert that something works without executing the automated test suites (`pytest`, `npm test`, `npm run build`, etc.) and inspecting the exact command outputs.
+   - Never assert that something works without executing the automated test suites (`pytest`, `npm test`, pgTAP database test suites, `npm run build`, etc.) and inspecting the exact command outputs.
 4. **Zero Performative Agreement (Anti-Sycophancy)**:
    - Never say *"Everything looks great!"* or blindly trust handoff notes. AI-generated and human-written code both contain blind spots.
 5. **Technical Correctness Over Social Comfort**:
@@ -371,7 +371,16 @@ A review is invalid without direct verification. The reviewer MUST execute the a
         AND p.proname IN ('<rpc_name_1>', '<rpc_name_2>');
       ```
       - Cross-reference every parameter sent by the client against `arguments`. If a parameter sent by the frontend is missing from the live function signature (or lacks an appropriate default value in Postgres), declare an immediate **🔴 Critical Blocker**! (Prevents PostgREST `PGRST202` schema cache failures).
-    - **Step 4:** Record exact evidence: whether the planned migration has been executed, whether the live schema matches, and whether all RPC signatures are verified. If any mismatch exists, declare a **🔴 Critical Blocker**!
+    - **Step 4 - Mandatory pgTAP Database RPC & Regression Test Gate**:
+      - For every modified or newly introduced database migration, RPC function, trigger, or accounting/financial logic (`acc_*`, VAT/2665, general ledger, balance sheet, subledgers):
+      - **Frontend/Vite tests alone are strictly insufficient**: Client-side mock tests cannot prove that PostgreSQL code won't crash on NULL values, violation of double-entry rules ($T \neq K$), or timeout (57014) on real data.
+      - The reviewer MUST locate or execute the corresponding pgTAP test suites in `supabase/tests/database/*.test.sql` (either via `npx supabase test db` or executed directly in a rollback transaction `BEGIN ... ROLLBACK;` via database MCP `execute_sql`):
+        1. **Null-Safety & Zero-State**: Test that queries against empty companies or null parameters return valid structure without crashing.
+        2. **Financial Invariants**: Test that accounting constraints ($T = K$ balance balance enforcement, partner-linking on subledger accounts, non-skippable sorszám counters) strictly fail when violated (`throws_ok` / `throws_matching`).
+        3. **Security / RLS Isolation**: Test that unauthenticated/anonymous access (`role = anon`) is strictly rejected with SQLSTATE `42501`.
+      - **P1 Test Debt Flag**: If a modified Tier 1 or Tier 2 RPC (per [RPC Testing Blueprint](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/rpc-testing-blueprint.md)) lacks an automated pgTAP test file, flag it as a **🟡 Important / Missing Regression Suite** blocker!
+    - **Step 5 - Schema & Test Evidence Recording**:
+      - Record exact evidence: whether the planned migration has been executed, whether the live schema matches, whether all RPC signatures are verified, and whether all pgTAP database tests have passed. If any mismatch exists, declare a **🔴 Critical Blocker**!
 
 #### 🛠️ Surgical Auto-Fix Protocol (Mechanical Fix-on-Sight)
 
@@ -565,6 +574,7 @@ Categorize all findings using clear severity indicators:
 |---|---|---|---|
 | Backend / Worker Tesztek | `python run_tests.py` / `pytest` | [pl. 59 passed] | ✅ SIKERES |
 | Frontend Tesztek | `npm test -- --run` | [pl. 896 passed] | ✅ SIKERES |
+| Adatbázis RPC / pgTAP Tesztek | `supabase/tests/database/*.test.sql` via `execute_sql` | [pl. 33 passed (5/5 suite)] | ✅ SIKERES |
 | Build Ellenőrzés | `npm run build` | [pl. 16.07s] | ✅ SIKERES |
 | Éles DB Séma & Migráció | `execute_sql` / `information_schema` lekérdezés | [pl. Oszlopok fizikai létezése igazolva] | ✅ ÉLES ÉS IGAZOLT |
 
