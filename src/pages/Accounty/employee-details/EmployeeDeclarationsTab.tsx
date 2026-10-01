@@ -80,7 +80,7 @@ export function EmployeeDeclarationsTab({
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Érvényes: {d.valid_from}{d.valid_until ? ` – ${d.valid_until}` : ' –'}
-                  {['family', 'anyak_3', 'anyak_2', 'netak'].includes(d.declaration_type) && (() => {
+                  {['family', 'child_leave', 'anyak_3', 'anyak_2', 'netak'].includes(d.declaration_type) && (() => {
                     const cnt = (d.parameters as any)?.children_count ?? (Array.isArray((d.parameters as any)?.children) ? (d.parameters as any).children.length : undefined);
                     return cnt ? <span className="ml-2">· {cnt} eltartott</span> : null;
                   })()}

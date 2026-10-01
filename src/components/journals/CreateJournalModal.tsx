@@ -26,7 +26,7 @@ interface CreateJournalModalProps {
   initialName?: string;
   initialCurrency?: string;
   initialGlAccount?: string;
-  existingJournals?: Array<{ id: string; code: string; type: string; name: string }>;
+  existingJournals?: Array<{ id: string; code: string; type?: string; name: string }>;
   glAccounts?: Array<{ id: string; gl_number: string; short_name: string; currency?: string | null }>;
   onJournalCreated?: (journal: CreatedJournalPayload) => void;
 }

@@ -77,6 +77,7 @@ type DependentData = {
   birth_date: string;
   mothers_birth_name: string;
   is_fetus: boolean;
+  is_disabled: boolean;
 };
 
 type FormData = {
@@ -314,6 +315,7 @@ export default function EmployeeWizardPage() {
             birth_date: d.birth_date || null,
             mothers_birth_name: d.mothers_birth_name || null,
             is_fetus: d.is_fetus,
+            is_disabled: d.is_disabled,
           })));
         if (depErr) throw depErr;
       }
@@ -606,7 +608,8 @@ export default function EmployeeWizardPage() {
                     taj_number: '',
                     birth_date: '',
                     mothers_birth_name: '',
-                    is_fetus: false
+                    is_fetus: false,
+                    is_disabled: false,
                   };
                   update('dependents', [...form.dependents, newDep]);
                 }}
@@ -626,6 +629,7 @@ export default function EmployeeWizardPage() {
                       <th className="px-3 py-2 text-left">TAJ szám</th>
                       <th className="px-3 py-2 text-left">Szül. dátum</th>
                       <th className="px-3 py-2 text-left">Anyja szül. neve</th>
+                      <th className="px-3 py-2 text-center" title="Tartósan beteg vagy fogyatékos gyermek (Mt. 118. § (2) szerint +2 nap pótszabadság)">Tartós beteg (+2 nap)</th>
                       <th className="px-3 py-2 text-center">Magzat? (91. nap+)</th>
                       <th className="px-3 py-2 text-center w-12"></th>
                     </tr>
@@ -692,6 +696,18 @@ export default function EmployeeWizardPage() {
                             placeholder="születési név"
                             className="h-8 text-xs"
                           />
+                        </td>
+                        <td className="p-2 text-center">
+                          <div className="flex justify-center">
+                            <Checkbox
+                              checked={dep.is_disabled}
+                              onCheckedChange={(c) => {
+                                const list = [...form.dependents];
+                                list[idx].is_disabled = Boolean(c);
+                                update('dependents', list);
+                              }}
+                            />
+                          </div>
                         </td>
                         <td className="p-2 text-center">
                           <div className="flex justify-center">

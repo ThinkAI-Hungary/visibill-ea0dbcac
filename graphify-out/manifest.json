@@ -1060,8 +1060,8 @@
     "semantic_hash": ""
   },
   "src/integrations/supabase/types.ts": {
-    "mtime": 1790706920.49692,
-    "ast_hash": "eef5ccaf71da5b214df5b0a8fbc0cbee",
+    "mtime": 1790889526.7428093,
+    "ast_hash": "95d9de455790424c7e8fd66802616948",
     "semantic_hash": ""
   },
   "src/lib/annualReportPdf.ts": {
@@ -1160,8 +1160,8 @@
     "semantic_hash": "aff12473ab48bdbfa0df1670a35622f1"
   },
   "src/lib/payroll/__tests__/leaveCalculator.test.ts": {
-    "mtime": 1790806186.3969908,
-    "ast_hash": "5bb2916277ded29e2e2e98f584d4d459",
+    "mtime": 1790890539.8649476,
+    "ast_hash": "4e8a48f34b869b5415697499faed49a3",
     "semantic_hash": ""
   },
   "src/lib/payroll/__tests__/payslipGenerator.test.ts": {
@@ -1205,8 +1205,8 @@
     "semantic_hash": ""
   },
   "src/lib/payroll/leaveCalculator.ts": {
-    "mtime": 1790806122.5236344,
-    "ast_hash": "fd3401a0ecf8c171420f3d20f2a066d7",
+    "mtime": 1790890529.1003416,
+    "ast_hash": "f4d111b049ea8d039886edfa70f40857",
     "semantic_hash": ""
   },
   "src/lib/payroll/payslipGenerator.ts": {
@@ -1355,8 +1355,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/EmployeeWizardPage.tsx": {
-    "mtime": 1790168409.1980789,
-    "ast_hash": "a35d818a785cd2166673825a2a88a15f",
+    "mtime": 1790889772.0369256,
+    "ast_hash": "e77df010be8e4caea95265fb931c813a",
     "semantic_hash": ""
   },
   "src/pages/Accounty/EmployeesPage.tsx": {
@@ -3090,8 +3090,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790858448.1943855,
-    "ast_hash": "d6353dca13eb9f13d9f7634c0b41f9df",
+    "mtime": 1790880287.7924368,
+    "ast_hash": "f7c617464f551126f4a652aab29f464c",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -4880,8 +4880,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/employee-details/DeclarationDialogs.tsx": {
-    "mtime": 1790168409.1928685,
-    "ast_hash": "ea4a2361d3de62bfd3ea33eae90b9944",
+    "mtime": 1790890566.7200985,
+    "ast_hash": "01953f50b5af9d6b4e3fef0fc3e97863",
     "semantic_hash": ""
   },
   "src/pages/Accounty/employee-details/EmployeeHelpers.tsx": {
@@ -5260,8 +5260,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/employee-details/EmployeeDeclarationsTab.tsx": {
-    "mtime": 1790168409.1939101,
-    "ast_hash": "42b50f2e859c109d3adf0343b04bb00a",
+    "mtime": 1790889721.9734356,
+    "ast_hash": "6336670fbb901e0728a28828fec2b890",
     "semantic_hash": ""
   },
   "src/pages/Accounty/employee-details/EmployeeGarnishmentsTab.tsx": {
@@ -8220,8 +8220,8 @@
     "semantic_hash": ""
   },
   ".agents/skills/visibill-ticket-support/SKILL.md": {
-    "mtime": 1790819638.8742566,
-    "ast_hash": "578e6dbdaabbf2e1c49c7bbc4149e1f9",
+    "mtime": 1790881166.352236,
+    "ast_hash": "f62cda85df0d4b7d16826a78240b2a3a",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-081-nav-08-payroll-reconstruction-and-bulk-import.md": {
@@ -9605,8 +9605,8 @@
     "semantic_hash": ""
   },
   ".agents/skills/morfi-implementation-review/SKILL.md": {
-    "mtime": 1790661341.1301665,
-    "ast_hash": "71ad35ca190fcf474a5cce9bf8c843c8",
+    "mtime": 1790880683.4634557,
+    "ast_hash": "ab813e7c25987f9f0e96d42b6aa9af70",
     "semantic_hash": ""
   },
   ".agents/skills/visibill-create-management-user/SKILL.md": {
@@ -13665,8 +13665,8 @@
     "semantic_hash": ""
   },
   "src/components/journals/CreateJournalModal.tsx": {
-    "mtime": 1790820400.1990888,
-    "ast_hash": "baf87869482f616e884c8032194103bf",
+    "mtime": 1790890218.6867807,
+    "ast_hash": "b6eb088027c410a94dc06f6aeebbe853",
     "semantic_hash": ""
   },
   "src/components/journals/ManageJournalsModal.tsx": {
@@ -13710,8 +13710,8 @@
     "semantic_hash": ""
   },
   "src/components/fixed-assets/CreateFixedAssetDialog.tsx": {
-    "mtime": 1790854006.8939552,
-    "ast_hash": "03e2b248cc80ace67f30acca2f2e3508",
+    "mtime": 1790890213.7663713,
+    "ast_hash": "df3cb4e5cbd6cafe3f7426006a9d8379",
     "semantic_hash": ""
   },
   "src/components/general-ledger/__tests__/UploadChartOfAccountsModal.test.tsx": {
@@ -13807,6 +13807,46 @@
   "docs/architecture/rpc-testing-blueprint.md": {
     "mtime": 1790859195.750689,
     "ast_hash": "f3b3350769345547807b29a1cf076ebb",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261001183500_create_imap_processed_messages.sql": {
+    "mtime": 1790874478.0719264,
+    "ast_hash": "9f5ca52cea7c04daa58f5ef34987e1ea",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261001192500_create_worker_distributed_locks.sql": {
+    "mtime": 1790875451.8502152,
+    "ast_hash": "c3f6037f6d9cd8f40761fc941157a3cf",
+    "semantic_hash": ""
+  },
+  ".agents/workflows/morfi-implementation-review.md": {
+    "mtime": 1790881458.5272017,
+    "ast_hash": "d0b193a053161e212f331d211c9c24bc",
+    "semantic_hash": ""
+  },
+  ".agents/workflows/ticket-support.md": {
+    "mtime": 1790881453.3294165,
+    "ast_hash": "9b8598ade1f9e169ba864b50ee2fc848",
+    "semantic_hash": ""
+  },
+  ".agents/workflows/visibill-ticket-support.md": {
+    "mtime": 1790881444.2924223,
+    "ast_hash": "65470e8581dfdf6519f40c7ce78379d6",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-190-non-destructive-imap-tracking-and-distributed-locks.md": {
+    "mtime": 1790880287.7914352,
+    "ast_hash": "1c3936b6b38c979018ff78c6729d7518",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261001233000_add_is_disabled_to_accounty_dependents.sql": {
+    "mtime": 1790890193.061037,
+    "ast_hash": "f21bc492cb12110e61f9b9c3d4a5893b",
+    "semantic_hash": ""
+  },
+  "src/pages/Accounty/employee-details/__tests__/ChildLeaveIntegration.test.tsx": {
+    "mtime": 1790890946.5732148,
+    "ast_hash": "ef74bff0123e7cbe6ccf1834e52e33cb",
     "semantic_hash": ""
   }
 }

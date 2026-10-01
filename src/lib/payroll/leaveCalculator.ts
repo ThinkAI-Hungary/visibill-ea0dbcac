@@ -244,7 +244,7 @@ export function calculateLeavePayout(
 export interface ResolveLeaveInputParams {
   employee: { birth_date?: string | null } | null;
   dependents?: Array<{ birth_date?: string | null; is_fetus?: boolean | null; is_disabled?: boolean | null; disabled?: boolean | null }>;
-  declarations?: Array<{ declaration_type: string; status: string; parameters?: any }>;
+  declarations?: Array<{ declaration_type: string; status: string; valid_from?: string | null; created_at?: string | null; parameters?: any }>;
   leaves?: Array<{ leave_type: string; status: string; days: number | string }>;
   primaryEmployment?: { start_date?: string | null; end_date?: string | null; weekly_hours?: number | string | null } | null;
   targetYear?: number;
@@ -275,8 +275,20 @@ export function resolveEmployeeLeaveInput(params: ResolveLeaveInputParams): Empl
     return true;
   });
 
-  // Ha még nincsenek eltartottak az accounty_dependents-ben, ellenőrizzük az aktív családi nyilatkozatot
-  const familyDec = declarations.find(d => d.declaration_type === 'family' && d.status === 'active');
+  // Ha még nincsenek eltartottak az accounty_dependents-ben, ellenőrizzük az aktív családi vagy pótszabadság nyilatkozatot
+  // Ha több aktív releváns nyilatkozat van, rendezzük őket valid_from DESC vagy created_at DESC szerint (legfrissebb az első)
+  const relevantDeclarations = declarations
+    .filter(d => 
+      (d.declaration_type === 'family' || d.declaration_type === 'child_leave' || d.declaration_type === 'family_credit') && 
+      d.status === 'active'
+    )
+    .sort((a, b) => {
+      const aDate = a.valid_from || a.created_at || '';
+      const bDate = b.valid_from || b.created_at || '';
+      return bDate.localeCompare(aDate);
+    });
+
+  const familyDec = relevantDeclarations[0];
   const decChildren = Array.isArray((familyDec?.parameters as any)?.children)
     ? (familyDec?.parameters as any).children
     : null;
@@ -298,8 +310,28 @@ export function resolveEmployeeLeaveInput(params: ResolveLeaveInputParams): Empl
     }
   }
 
-  // Fogyatékos gyermek pótszabadság (Mt. 118. § (2))
-  const disabledChildren = dependents.filter(d => Boolean(d.is_disabled || d.disabled)).length;
+  // Fogyatékos gyermek pótszabadság (Mt. 118. § (2): gyermekenként +2 munkanap, a 16. életév betöltésének évéig az Mt. 118. § (3) szerint)
+  const depsDisabledCount = dependents.filter(d => {
+    if (!Boolean(d.is_disabled || d.disabled)) return false;
+    if (d.birth_date) {
+      const bYear = new Date(d.birth_date).getFullYear();
+      return (targetYear - bYear) <= 16;
+    }
+    return true;
+  }).length;
+
+  const decDisabledCount = (decChildren && decChildren.length > 0)
+    ? decChildren.filter((c: any) => {
+        if (!Boolean(c.is_disabled || c.disabled)) return false;
+        if (c.birth_date) {
+          const bYear = new Date(c.birth_date).getFullYear();
+          return (targetYear - bYear) <= 16;
+        }
+        return true;
+      }).length
+    : 0;
+
+  const disabledChildren = Math.max(depsDisabledCount, decDisabledCount);
 
   // Megváltozott munkaképességű / fogyatékossági pótszabadság (Mt. 120. §: évi 5 munkanap)
   const hasPersonalDisability = declarations.some(d => d.declaration_type === 'personal' && d.status === 'active');

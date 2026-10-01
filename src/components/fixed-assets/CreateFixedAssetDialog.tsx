@@ -221,7 +221,7 @@ export function CreateFixedAssetDialog({
         currency,
         purchaseDate,
         activationDate,
-        usefulLifeMonths,
+        usefulLifeMonths: parseInt(usefulLifeMonths, 10) || 0,
         depreciationMethod,
         performanceUnit: depreciationMethod === 'performance' ? performanceUnit || null : null,
         totalPlannedPerformance: depreciationMethod === 'performance' ? parseFloat(totalPlannedPerformance) || null : null,
@@ -315,7 +315,7 @@ export function CreateFixedAssetDialog({
                     <Button
                       type="button"
                       variant="ghost"
-                      size="xs"
+                      size="sm"
                       onClick={handleGenerateInventoryNumber}
                       disabled={generatingInvNumber}
                       className="h-6 text-xs gap-1 text-primary hover:text-primary px-2"

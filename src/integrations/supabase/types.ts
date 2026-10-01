@@ -1201,6 +1201,7 @@ export type Database = {
           created_at: string | null
           employee_id: string
           id: string
+          is_disabled: boolean | null
           is_fetus: boolean | null
           mothers_birth_name: string | null
           taj_number: string | null
@@ -1214,6 +1215,7 @@ export type Database = {
           created_at?: string | null
           employee_id: string
           id?: string
+          is_disabled?: boolean | null
           is_fetus?: boolean | null
           mothers_birth_name?: string | null
           taj_number?: string | null
@@ -1227,6 +1229,7 @@ export type Database = {
           created_at?: string | null
           employee_id?: string
           id?: string
+          is_disabled?: boolean | null
           is_fetus?: boolean | null
           mothers_birth_name?: string | null
           taj_number?: string | null

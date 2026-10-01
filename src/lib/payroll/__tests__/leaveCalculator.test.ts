@@ -265,6 +265,89 @@ describe('resolveEmployeeLeaveInput (Mt. 116-122. § entitlements)', () => {
     expect(balance.totalAnnual).toBe(20 + 6 + 4 + 2); // 32 days
   });
 
+  it('should handle disabled children from active family/child_leave declaration when dependents table is empty', () => {
+    const input = resolveEmployeeLeaveInput({
+      employee: defaultEmployee,
+      targetYear: 2026,
+      dependents: [],
+      declarations: [
+        {
+          declaration_type: 'child_leave',
+          status: 'active',
+          parameters: {
+            children: [
+              { birth_name: 'Gyermek 1', birth_date: '2016-01-01', is_fetus: false, is_disabled: true },
+              { birth_name: 'Gyermek 2', birth_date: '2019-05-10', is_fetus: false, is_disabled: false },
+            ],
+          },
+        },
+      ],
+    });
+
+    expect(input?.childrenUnder16).toBe(2);
+    expect(input?.disabledChildren).toBe(1);
+
+    const balance = calculateLeaveBalance(input!);
+    expect(balance.childSupplement).toBe(4); // 2 children => 4 days
+    expect(balance.disabledChildSupplement).toBe(2); // 1 disabled child => +2 days
+    expect(balance.totalAnnual).toBe(20 + 6 + 4 + 2); // 32 days
+  });
+
+  it('should not count disabled children over 16 years old (Mt. 118. § (3))', () => {
+    const input = resolveEmployeeLeaveInput({
+      employee: defaultEmployee,
+      targetYear: 2026,
+      dependents: [
+        // Born in 2008: 2026 - 2008 = 18 > 16 -> NOT eligible
+        { birth_date: '2008-05-10', is_disabled: true, is_fetus: false },
+        // Born in 2010: 2026 - 2010 = 16 <= 16 -> eligible
+        { birth_date: '2010-03-15', is_disabled: true, is_fetus: false },
+      ],
+      declarations: [],
+    });
+
+    expect(input?.childrenUnder16).toBe(1);
+    expect(input?.disabledChildren).toBe(1);
+
+    const balance = calculateLeaveBalance(input!);
+    expect(balance.childSupplement).toBe(2); // 1 eligible child => 2 days
+    expect(balance.disabledChildSupplement).toBe(2); // 1 eligible disabled child => +2 days
+  });
+
+  it('should prioritize the newest declaration by valid_from when multiple active declarations exist', () => {
+    const input = resolveEmployeeLeaveInput({
+      employee: defaultEmployee,
+      targetYear: 2026,
+      dependents: [],
+      declarations: [
+        {
+          declaration_type: 'family',
+          status: 'active',
+          valid_from: '2025-01-01',
+          parameters: {
+            children: [
+              { birth_name: 'Gyermek Régi', birth_date: '2020-01-01', is_fetus: false, is_disabled: false },
+            ],
+          },
+        },
+        {
+          declaration_type: 'child_leave',
+          status: 'active',
+          valid_from: '2026-01-01',
+          parameters: {
+            children: [
+              { birth_name: 'Gyermek Új 1', birth_date: '2020-01-01', is_fetus: false, is_disabled: true },
+              { birth_name: 'Gyermek Új 2', birth_date: '2022-01-01', is_fetus: false, is_disabled: false },
+            ],
+          },
+        },
+      ],
+    });
+
+    expect(input?.childrenUnder16).toBe(2);
+    expect(input?.disabledChildren).toBe(1);
+  });
+
   it('should grant 5 extra leave days for personal disability declaration (Mt. 120. §)', () => {
     const input = resolveEmployeeLeaveInput({
       employee: defaultEmployee,

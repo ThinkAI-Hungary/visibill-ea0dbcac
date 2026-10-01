@@ -1,11 +1,19 @@
 ---
 name: visibill-ticket-support
-description: Use when handling user support tickets, customer inquiries, support questions, or troubleshooting client issues in Visibill/eaisybill. Triggers on "ticket", "support", "ügyfél kérdés", "ügyfélszolgálat", "hibajegy", "ügyfél probléma", "válaszolj az ügyfélnek", "válaszlevél", "miért történt nála", "visibill-ticket-support". Enforces strict hierarchy: (1) read-only diagnosis, (2) root cause & technical fix proposal, (3) implementation & verification, and ONLY THEN (4) formulating the customer-ready response without accounting lecturing.
+description: Use when handling user support tickets, customer inquiries, support questions, or troubleshooting client issues in Visibill/eaisybill. Triggers on "/visibill-ticket-support", "/ticket-support", "/vsiibill-ticket-support", "ticket", "support", "ügyfél kérdés", "ügyfélszolgálat", "hibajegy", "ügyfél probléma", "válaszolj az ügyfélnek", "válaszlevél", "miért történt nála", "ticket áttekintés", "hibajegy összefoglaló". Supports two invocation modes: (1) Overview Mode: when invoked without arguments (e.g. "/visibill-ticket-support"), it automatically queries live DB for ticket metrics and renders a structured dashboard showing resolved, open, and tickets assigned to Schwarczinger János waiting for staff response. (2) Targeted Triage Mode: when invoked with a ticket number or ID (e.g. "/visibill-ticket-support <ticketszám>", "/visibill-ticket-support #1024", or "/ticket-support 1024"), it directly fetches the ticket record and its comment thread from the live DB, then follows the established 7-step read-only diagnosis, fix proposal, and customer response workflow without accounting lecturing.
 ---
 
 # Visibill Ticket Support — Ügyfélkérések & Hibafeltárás Workflow
 
 Ez a skill a **Visibill / eaisybill / eaisyBooks** ügyféltámogatási (support) jegyek, ügyfélkérdések és hibabejelentések professzionális, adatalapú kivizsgálását és válaszadását strukturálja.
+
+Két működési móddal rendelkezik a meghívás módjától függően:
+1. **📊 0. LÉPÉS: Áttekintő Dashboard Üzemmód (Overview Mode — paraméter nélkül):**
+   - Ha a parancs konkrét jegy nélkül fut (pl. `/visibill-ticket-support`, `/ticket-support`, `/vsiibill-ticket-support`):
+   - Azonnal lekérdezi az adatbázisból a megoldott, nyitott és a **Schwarczinger Jánosra váró (needs_staff_response = true)** jegyeket, és egy strukturált vezetői dashboardot jelenít meg teendőlistával.
+2. **🔬 1–7. LÉPÉS: Célzott Jegy Kivizsgálás & Hibaelhárítás (Targeted Triage Mode — jegyszámmal):**
+   - Ha a parancs konkrét jegyszámmal hívódik meg (pl. `/visibill-ticket-support <ticketszám>`, `/ticket-support #1024`, vagy egy cég/ügyfél megnevezésével):
+   - **Közvetlenül az 1. LÉPÉS-be lép:** azonnal lekéri a megadott hibajegyet és a hozzá tartozó teljes beszélgetésfolyamot (`ticket_comments`) az adatbázisból, majd szigorúan végigviszi a 7 lépéses protokollt (read-only diagnózis $\rightarrow$ technikai javaslat $\rightarrow$ jóváhagyás $\rightarrow$ kód/DB javítás $\rightarrow$ ügyfélválasz tervezet $\rightarrow$ lezárás).
 
 ---
 
@@ -28,8 +36,14 @@ Ez a skill a **Visibill / eaisybill / eaisyBooks** ügyféltámogatási (support
 
 ---
 
-## 🔄 A Kivizsgálási & Support Munkamenet (7 Lépés)
+## 🔄 A Két Munkafolyamat
 
+### A) Ha a parancs konkrét jegy nélkül hívódik meg:
+```
+[/visibill-ticket-support] ──► 0. LÉPÉS: Élő DB lekérdezés ──► Strukturált Dashboard & Teendők ──► Jegy kiválasztása
+```
+
+### B) Ha konkrét hibajegyet / ügyfelet vizsgálunk:
 ```
 1. FOGADÁS & HIPOTÉZIS 
    │
@@ -54,16 +68,167 @@ Ez a skill a **Visibill / eaisybill / eaisyBooks** ügyféltámogatási (support
 
 ---
 
-## 1. LÉPÉS: Kérés fogadása & Hipotézis
+## 0. LÉPÉS: Strukturált Hibajegy Áttekintés & Dashboard (Overview Mode)
 
-Rögzítsd a beérkező support jegy vagy ügyfélkérdés lényegét:
+Ha a felhasználó nem adott meg konkrét jegy azonosítót vagy ügyféladatot (pl. beírja, hogy `/visibill-ticket-support`, `/ticket-support`, vagy *"mi a helyzet a hibajegyekkel"*):
+
+### 0.1 Kötelező Élő Adatbázis Lekérdezések (`supabase-visibill`)
+
+Futtasd le azonnal az alábbi lekérdezéseket az `execute_sql` eszközzel:
+
+1. **Összesített KPI Mutatók:**
+```sql
+SELECT 
+  COUNT(*) as total_tickets,
+  COUNT(*) FILTER (WHERE status = 'resolved') as resolved_tickets,
+  COUNT(*) FILTER (WHERE status != 'resolved') as open_tickets,
+  COUNT(*) FILTER (WHERE status != 'resolved' AND assigned_to = '415bf1b6-8ce5-4425-915c-e656a2972ab7' AND needs_staff_response = true) as jani_pending_response,
+  COUNT(*) FILTER (WHERE status != 'resolved' AND assigned_to = '415bf1b6-8ce5-4425-915c-e656a2972ab7' AND (needs_staff_response = false OR needs_staff_response IS NULL)) as jani_waiting_on_user,
+  COUNT(*) FILTER (WHERE status != 'resolved' AND assigned_to IS NULL) as unassigned_open
+FROM feedback;
+```
+
+2. **Schwarczinger Jánosra Váró Jegyek (Azonnali Teendők):**
+```sql
+SELECT 
+  f.id,
+  f.ticket_number,
+  f.status,
+  f.priority,
+  f.type,
+  f.company_name,
+  f.user_name,
+  f.user_email,
+  LEFT(f.message, 120) as summary,
+  f.created_at,
+  f.updated_at
+FROM feedback f
+WHERE f.status != 'resolved' 
+  AND f.assigned_to = '415bf1b6-8ce5-4425-915c-e656a2972ab7'
+  AND f.needs_staff_response = true
+ORDER BY 
+  CASE f.priority 
+    WHEN 'critical' THEN 1 
+    WHEN 'high' THEN 2 
+    WHEN 'medium' THEN 3 
+    ELSE 4 
+  END,
+  f.updated_at DESC;
+```
+
+3. **Gazdátlan / Kiosztatlan nyitott jegyek (ha van):**
+```sql
+SELECT 
+  f.id,
+  f.ticket_number,
+  f.priority,
+  f.company_name,
+  f.user_name,
+  LEFT(f.message, 100) as summary,
+  f.created_at
+FROM feedback f
+WHERE f.status != 'resolved' AND f.assigned_to IS NULL
+ORDER BY f.created_at DESC;
+```
+
+### 0.2 Megjelenítendő Dashboard Formátum
+
+Jelenítsd meg az áttekintést az alábbi struktúrában:
+
+```markdown
+# 🎫 VisiBill Support Dashboard & Hibajegy Áttekintés
+
+### 📊 Főbb Mutatók (KPI)
+| Kategória | Darabszám | Státusz |
+| :--- | :--- | :--- |
+| **✅ Megoldott jegyek:** | `... db` | Lezárt hibajegyek |
+| **📂 Összes nyitott jegy:** | `... db` | Folyamatban lévő / új ügyek |
+| **🚨 Azonnali teendő (Schwarczinger János):** | `... db` | **A felhasználó a mi válaszunkra vár!** |
+| **⏳ Janinál folyamatban (userre vár):** | `... db` | Ügyfél válaszára vagy tesztelésre vár |
+| **⚠️ Kiosztatlan (gazdátlan) nyitott jegy:** | `... db` | Még nincs felelőse |
+
+---
+
+### 🚨 Azonnali Teendők — Schwarczinger János (Válaszra váró jegyek)
+| # / Jegy | Prioritás | Típus | Cég / Felhasználó | Probléma kivonat | Utolsó aktivitás |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **#1024** | 🔴 Critical | Bug | Példa Kft. (info@...) | Nem tölt be a NAV számlaszinkron... | 2 órája |
+
+---
+
+*(Ha van gazdátlan jegy:)*
+### ⚠️ Kiosztatlan Jegyek (Gazdátlan)
+| # / Jegy | Prioritás | Cég / Felhasználó | Probléma kivonat | Beérkezett |
+| :--- | :--- | :--- | :--- | :--- |
+
+---
+
+### 💡 Következő Lépés:
+*Melyik jegy kivizsgálásával kezdjünk? Írd be a jegyszámot (pl. `#1024`) vagy a cégnevet, és azonnal elindítom a részletes, read-only kivizsgálást (1–7. lépés)!*
+```
+
+---
+
+## 1. LÉPÉS: Kérés fogadása & Hipotézis (Konkrét Jegy Esetén)
+
+### 1.1 Automatikus Jegy & Beszélgetésfolyam Betöltése (ha jegyszámot kaptál)
+Ha a parancs konkrét jegyszámmal vagy azonosítóval hívódott meg (pl. `/visibill-ticket-support #1024` vagy `fb-xxx`):
+Azonnal futtasd le az alábbi lekérdezést az `execute_sql` eszközzel (`supabase-visibill`):
+
+```sql
+-- 1. Hibajegy fő adatainak lekérése:
+SELECT 
+  f.id,
+  f.ticket_number,
+  f.type,
+  f.category,
+  f.status,
+  f.priority,
+  f.company_name,
+  f.company_id,
+  f.user_name,
+  f.user_email,
+  f.user_id,
+  f.message,
+  f.needs_staff_response,
+  f.page_url,
+  f.attachments,
+  f.created_at,
+  f.updated_at,
+  p_assigned.name as assigned_name,
+  p_creator.name as creator_name
+FROM feedback f
+LEFT JOIN profiles p_assigned ON p_assigned.user_id = f.assigned_to
+LEFT JOIN profiles p_creator ON p_creator.user_id = f.created_by
+WHERE f.ticket_number = '<ticketszám>' 
+   OR f.ticket_number = REPLACE('<ticketszám>', '#', '')
+   OR f.id::text ILIKE '<ticketszám>%'
+LIMIT 1;
+
+-- 2. Kapcsolódó üzenetváltások és válaszok lekérése:
+SELECT 
+  id,
+  user_name,
+  user_email,
+  is_admin,
+  message,
+  attachments,
+  created_at
+FROM ticket_comments
+WHERE feedback_id = '<fenti_feedback_id>'
+ORDER BY created_at ASC;
+```
+
+Ezután rögzítsd a beérkező support jegy vagy ügyfélkérdés lényegét:
 
 ```markdown
 ## 📥 Support Jegy Adatok
-* **Ügyfél / Felhasználó:** [Név / Email ha megadott]
-* **Cég / Adószám:** [Cégnév / Adószám ha megadott]
-* **Kérdés / Probléma:** [Ügyfél által leírt jelenség 1-2 mondatban]
-* **Kezdeti hipotézis:** [Mi lehet a hiba oka?]
+* **Hibajegy szám / ID:** [#1024 / UUID]
+* **Ügyfél / Felhasználó:** [Név / Email]
+* **Cég / Adószám:** [Cégnév / Adószám]
+* **Státusz / Prioritás:** [pl. in_progress / high]
+* **Kérdés / Probléma összefoglalása:** [Ügyfél által leírt jelenség és a kommentváltások lényege 1-2 mondatban]
+* **Kezdeti hipotézis:** [Mi lehet a hiba technikai oka az előzmények alapján?]
 ```
 
 ---

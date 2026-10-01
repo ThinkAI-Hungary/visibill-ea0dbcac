@@ -1,6 +1,6 @@
 ---
 name: morfi-implementation-review
-description: Comprehensive implementation and deep code review for cross-session handoffs, new features, and bugfixes with mandatory autonomous thoroughness (/goal mode). Combines the critical skepticism of receiving-code-review (anti-performative, zero blind agreement, YAGNI, technical pushback) with the structured Senior Reviewer protocol of requesting-code-review, Addy Osmani's 5-axis code quality framework, Surgical Auto-Fix for mechanical errors, the 8-Stage Downstream Data-Flow Pipeline Trace (Anti-Diff Myopia), Falsy Zero / Zero-as-Value guards, Mandatory Live DB Migration & Schema Verification, Mandatory pgTAP Database RPC & Regression Test Gate, and the Unbounded 6-Axis Universal Software Reliability & Blind-Spot Matrix (exhaustive dynamic discovery with zero drip-feeding, and mandatory user inquiry before implementing new logic). Enhanced with project spec lookup, DB checklist guards, and modern engineering standards. The review report, code audits, blind spots, and test evidence are delivered entirely in English, with ONLY Section 1 (Executive Summary / Vezetői Összefoglaló) written in Hungarian. Use whenever the user types /morfi-implementation-review, /goal with a review task, provides a handoff document, asks to "ellenőrizd az előző session munkáját", "nézd át a handoff dokumentumot", "implementáció review handoff alapján", "code review a handoff alapján", "verifikáld az előző sessiont", or wants to deeply audit completed feature/fix work before proceeding.
+description: Comprehensive implementation and deep code review for cross-session handoffs, new features, and bugfixes with mandatory autonomous thoroughness (/goal mode). Combines the critical skepticism of receiving-code-review (anti-performative, zero blind agreement, YAGNI, technical pushback) with the structured Senior Reviewer protocol of requesting-code-review, Addy Osmani's 5-axis code quality framework, Surgical Auto-Fix for mechanical errors, the 8-Stage Downstream Data-Flow Pipeline Trace (Anti-Diff Myopia), Falsy Zero / Zero-as-Value guards, Mandatory Live DB Migration & Schema Verification, Mandatory pgTAP Database RPC & Regression Test Gate, and the Unbounded 6-Axis Universal Software Reliability & Blind-Spot Matrix (exhaustive dynamic discovery with zero drip-feeding, and mandatory user inquiry before implementing new logic). Enhanced with project spec lookup, DB checklist guards, and modern engineering standards. The review report, code audits, blind spots, test evidence, and user interactions are delivered in Hungarian (preserving natural technical terminology and code symbols). Use whenever the user types /morfi-implementation-review, /goal with a review task, provides a handoff document, asks to "ellenőrizd az előző session munkáját", "nézd át a handoff dokumentumot", "implementáció review handoff alapján", "code review a handoff alapján", "verifikáld az előző sessiont", or wants to deeply audit completed feature/fix work before proceeding.
 ---
 
 # 🛡️ Morfi Implementation Review (Autonomous Goal Mode)
@@ -11,7 +11,7 @@ This skill operates in **Autonomous Deep-Audit Mode (`/goal`)**: it runs exhaust
 
 > [!IMPORTANT]
 > **🌐 LANGUAGE CONSTRAINT**:
-> The review report, deep code analysis, findings, data-flow trace, blind-spot analysis, and test verification MUST BE DELIVERED IN **ENGLISH**, EXCEPT for **Section 1: Executive Summary (Vezetői Összefoglaló)**, which MUST ALWAYS BE DELIVERED IN **HUNGARIAN (Magyar nyelven)**.
+> The final review report, code audits, findings, data-flow trace, blind-spot analysis, test verification, and all user responses MUST BE DELIVERED IN **HUNGARIAN (Magyar nyelven)**. Standard technical terms (e.g. race condition, RPC, RLS, pipeline, mock, cache invalidation) and code symbols should remain in their natural technical form.
 
 ---
 
@@ -484,17 +484,16 @@ Categorize all findings using clear severity indicators:
 
 ---
 
-## 📄 Phase 5: Structured Review Report Template (English with Hungarian Summary)
+## 📄 Phase 5: Structured Review Report Template (Delivered in Hungarian)
 
 > [!IMPORTANT]
 > **LANGUAGE REQUIREMENT**:
-> The review report, code findings, data-flow trace, and technical verdicts MUST be written in **ENGLISH**, EXCEPT for **Section 1: Vezetői Összefoglaló (Executive Summary)**, which MUST ALWAYS BE DELIVERED IN **HUNGARIAN (Magyar nyelven)**.
+> The entire review report, code findings, data-flow trace, blind-spot analysis, test evidence, user options, and technical verdicts MUST be delivered in **HUNGARIAN (Magyar nyelven)**. Standard technical terms (e.g. race condition, RPC, RLS, pipeline, mock, cache invalidation, dead code) and code symbols should remain in their natural technical form.
 
 ```markdown
-# 🛡️ Morfi Implementation Review: [Task / Handoff Title]
+# 🛡️ Morfi Implementation Review: [Feladat / Handoff Címe]
 
-## 1. 🇭🇺 Vezetői Összefoglaló (Executive Summary in Hungarian)
-*(Ez a fejezet KÖTELEZŐEN magyar nyelven írandó, tömör, lényegretörő vezetői összefoglalóként!)*
+## 1. 🇭🇺 Vezetői Összefoglaló (Executive Summary)
 - **Eredeti hiba / Feladat célja (RCA):** [Rövid összefoglaló a feladatról és a megoldott problémáról]
 - **Főbb elért eredmények & Megvalósítások:** [A megvalósított kulcsfunkciók, optimalizációk és hibajavítások]
 - **Kockázatok & Nyitott kérdések:** [Kritikus megállapítások, figyelmeztetések vagy felhasználói döntést igénylő pontok]
@@ -502,117 +501,116 @@ Categorize all findings using clear severity indicators:
 
 ---
 
-## 2. 📌 Scope, Context & Alignment
-- **Evaluated Files & Git Range:** [Comprehensive list of all examined files and commit range]
-- **Specification & ADR Alignment:** [Compliant with specs / Documented intentional deviations]
-- **Architectural Footprint:** [~X lines modified, file size health / decomposition needed]
+## 2. 📌 Hatókör, Kontextus & Igazodás (Scope & Alignment)
+- **Vizsgált fájlok & Git tartomány:** [A vizsgált fájlok és commit tartomány teljes listája]
+- **Specifikáció & ADR illeszkedés:** [Illeszkedik a specifikációhoz / Dokumentált szándékos eltérések]
+- **Architektúrális lábnyom:** [~X sor módosult, fájlméret egészsége / szükséges dekompozíció]
 
 ---
 
-## 3. 🔄 Universal Downstream Consumer & Data-Flow Pipeline Trace
-*(Mandatory for any new or modified business rule, calculation engine, form field, or data model)*
-| Lifecycle Stage | Evaluated Component / Module | Status | Findings / Representation / Coverage |
+## 3. 🔄 Univerzális Adatfolyam és Downstream Pipeline Nyomkövetés (Anti-Diff Myopia)
+*(Kötelező minden új vagy módosított üzleti szabálynál, számítási motornál, űrlapmezőnél vagy adatmodellnél)*
+| Életciklus Fázis | Vizsgált Komponens / Modul | Státusz | Megállapítások / Megjelenítés / Lefedettség |
 |---|---|---|---|
-| **1. Ingestion & Boundary Validation** | [e.g. Form component, API endpoint, CLI parser] | ✅ / ⚠️ | [Input validation, type safety, boundary values] |
-| **2. Processing & Calculation Engine** | [e.g. Domain service, calculation engine] | ✅ / ⚠️ | [Accurate business calculation, edge cases, exemptions] |
-| **3. Persistence & Schemas** | [e.g. DB tables, schemas, JSONB, Redis cache] | ✅ / ⚠️ | [Lossless storage, migration integrity] |
-| **4. Intermediate Workflows & Views** | [e.g. Wizard steps, edit modals, tab views] | ✅ / ⚠️ | [Data passed forward without dropping or overriding] |
-| **5. Aggregates, Summaries & Dashboards** | [e.g. Summary tables, overview cards, KPI totals] | ✅ / ⚠️ | [Item explicitly factored into totals and summaries] |
-| **6. Document, Report & Artifact Generators** | [e.g. Generated receipts, PDFs, export files] | ✅ / ⚠️ | [Item explicitly rendered on final documents] |
-| **7. System Integrations & Side Effects** | [e.g. GL journal posting, event queue, webhook] | ✅ / ⚠️ | [Side effects, double-entry balance (D=C), audit logs] |
-| **8. External & Regulatory Exports** | [e.g. Standard XML, REST API, bank batches] | ✅ / ⚠️ | [Compliance with external schemas and contracts] |
+| **1. Adatbeviteli & Határfelületi Validáció** | [pl. Form komponens, API végpont, CLI parser] | ✅ / ⚠️ | [Input validáció, típusbiztonság, szélsőértékek] |
+| **2. Üzleti Logika & Számítási Motor** | [pl. Domain szerviz, számítási logika] | ✅ / ⚠️ | [Pontos üzleti számítás, éles határesetek, mentességek] |
+| **3. Perzisztencia & Adatbázis Séma** | [pl. DB táblák, oszlopok, JSONB, Redis cache] | ✅ / ⚠️ | [Veszteségmentes tárolás, migrációs integritás] |
+| **4. Köztes Munkafolyamatok & Nézetek** | [pl. Varázsló lépések, szerkesztő modálok, fülek] | ✅ / ⚠️ | [Adatok továbbadása adatvesztés vagy felülírás nélkül] |
+| **5. Összesítők, Kimutatások & Dashboardok** | [pl. Összesítő táblázatok, áttekintő kártyák, KPI totalok] | ✅ / ⚠️ | [A tétel explicite szerepel a végösszegekben/kártyákon] |
+| **6. Dokumentum, Riport & Export Generátorok** | [pl. Generált számlák, PDF-ek, export fájlok] | ✅ / ⚠️ | [A tétel megjelenik a végleges dokumentumokon] |
+| **7. Rendszerintegrációk & Mellékhatások** | [pl. Főkönyvi feladás, eseménysor, webhook] | ✅ / ⚠️ | [Mellékhatások, kettős könyvelés egyensúlya (T=K), audit naplók] |
+| **8. Külső & Hatósági Exportok** | [pl. Szabványos XML, NAV, partner API-k, banki csomagok] | ✅ / ⚠️ | [Megfelelőség a külső sémáknak és szerződéseknek] |
 
 ---
 
-## 4. 🗄️ Database Migration & Live Schema Verification
-*(Mandatory whenever the task plan, handoff, or changeset involves database modifications)*
+## 4. 🗄️ Adatbázis Migráció & Élő Séma Verifikáció
+*(Kötelező, ha a feladatterv, a handoff vagy a módosítás adatbázist érint)*
 
-- **Planned Migrations:** [e.g. `20261001_add_xyz.sql` / No DB changes involved]
-- **Migration Ledger Status:** [Executed and recorded in remote DB / MISSING / N/A]
-- **Physical Live Schema Inspection (via SQL/MCP):**
-  - **Tables & Columns:** [e.g. `table.column` verified with expected type, nullability, defaults]
-  - **Constraints & Indexes:** [Foreign key constraints, unique indexes verified]
-  - **RPC & RLS Status:** [RPC functions deployed with correct signatures and search_path, RLS policies active]
-- **Live Verification Verdict:** [✅ LIVE AND PROVEN / 🔴 BLOCKER: Migration not applied to live DB!]
-
----
-
-## 5. 🛠️ Surgically Auto-Fixed Mechanical Blockers
-*(If no fixes needed: "✅ No mechanical blockers encountered.")*
-1. **[file_path:line]**: [Description of typo / missing import / syntax fix]. Re-tested: ✅ PASSED.
+- **Tervezett migrációk:** [pl. `20261001_add_xyz.sql` / Nem érint adatbázist]
+- **Migrációs napló státusz:** [Lefutott és rögzítve a cél DB-ben / HIÁNYZIK / N/A]
+- **Fizikai élő séma ellenőrzés (SQL/MCP):**
+  - **Táblák és oszlopok:** [pl. `table.column` fizikailag ellenőrizve: típus, nullability, defaultok]
+  - **Kényszerek & Indexek:** [Idegen kulcsok, egyedi indexek ellenőrizve]
+  - **RPC & RLS státusz:** [RPC függvények élesítve megfelelő szignatúrával és search_path-szal, RLS szabályok aktívak]
+- **Élő verifikációs ítélet:** [✅ ÉLŐBEN IGAZOLVA / 🔴 BLOKKOLÓ: A migráció nem futott le az élő DB-n!]
 
 ---
 
-## 6. 🔬 Detailed Code Audit & Findings
-
-### 🔴 Critical & Presumptive Blockers (Must Fix)
-*(If none: "✅ No critical blockers or architecture violations identified.")*
-1. **[Blocker Title]**
-   - **Location:** `[file_path:line]`
-   - **Problem:** [Precise technical explanation]
-   - **Risk:** [Why this causes a failure, data corruption, or architectural debt]
-   - **Structural Remedy (The Move):** [Concrete named pattern and proposed solution]
-
-### 🟡 Important (Should Fix / Required)
-*(If none: "✅ No important issues identified.")*
-1. **[Issue Title]**
-   - **Location:** `[file_path:line]`
-   - **Problem:** [Edge case, unhandled status, performance regression, or test debt]
-   - **Proposed Fix:** [Solution]
-
-### 🧹 Dead Code & Dependency Hygiene
-- **Orphaned Symbols / Deprecated Code:** [Listed or "✅ Zero dead code."]
-- **Dependency Audit:** [New packages / updates / lockfile integrity]
-
-### 🟢 Minor / Nit (Optional Polish)
-1. **[Note]** - `[file_path:line]`: [Style, naming, minor comment clarification]
+## 5. 🛠️ Autonóm módon javított mechanikai hibák (Surgical Auto-Fix)
+*(Ha nem volt javítás: "✅ Nem volt szükség mechanikai javításra.")*
+1. **[file_path:line]**: [Elütés / hiányzó import / szintaktikai javítás leírása]. Újratesztelve: ✅ SIKERES.
 
 ---
 
-## 7. 🔍 6-Axis Universal Blind-Spot & Reliability Analysis
-*(Exhaustive & Unbounded: All discovered gaps across all 6 dimensions are surfaced in this single pass. These are NOT silently implemented. Please select your preferred approach for each item!)*
+## 6. 🔬 Részletes Kódaudit & Megállapítások
 
-<!-- Dynamically iterate 1..N: list ALL discovered blind spots until exhaustive coverage is achieved. NEVER cap or truncate! -->
-1. **[Blind-Spot / Edge Case Title 1]**
-   - **Dimension:** [1. Concurrency & Temporal | 2. Boundaries & Extremes | 3. Failure & Resilience | 4. State & Lifecycle | 5. Data Integrity & Atomicity | 6. Security & Inputs]
-   - **Location / Affected Module:** `[file_path:line]`
-   - **Description:** [Scenario not accounted for in initial design]
-   - **Business & Technical Risk:** [What happens in production if this triggers?]
-   - **Proposed Options for User Decision:**
-     - **Option A (Implement Now):** [Brief description of immediate fix]
-     - **Option B (Track in Backlog):** [Acceptable to defer to a follow-up task]
-     - **Option C (Conscious Trade-off):** [Risk is acceptable, no action needed]
+### 🔴 Kritikus & Presumptív Blokkolók (Azonnal Javítandó)
+*(Ha nincs ilyen: "✅ Nem találtunk kritikus blokkolót vagy architektúrális sértést.")*
+1. **[Blokkoló Címe]**
+   - **Helyszín:** `[file_path:line]`
+   - **Probléma:** [Pontos technikai magyarázat]
+   - **Kockázat:** [Miért okoz hibát, adatvesztést vagy adósságot]
+   - **Strukturális Megoldás (The Move):** [Konkrét nevesített mintázat és javasolt javítás]
 
-2. **[Blind-Spot / Edge Case Title 2]**
+### 🟡 Fontos Eltérések (Szükséges Javítani)
+*(Ha nincs ilyen: "✅ Nem találtunk fontos prioritású problémát.")*
+1. **[Eltérés Címe]**
+   - **Helyszín:** `[file_path:line]`
+   - **Probléma:** [Szélsőérték, kezeletlen státusz, teljesítményromlás vagy teszthiány]
+   - **Javasolt Javítás:** [Megoldás]
+
+### 🧹 Halott Kód & Függőség Higiénia
+- **Elárvult szimbólumok / Deprecated kód:** [Listázva vagy "✅ Nincs halott kód."]
+- **Függőség Audit:** [Új csomagok / frissítések / lockfile integritás]
+
+### 🟢 Apró Észrevételek / Nit (Opcionális Csiszolás)
+1. **[Megjegyzés]** - `[file_path:line]`: [Stílus, elnevezés, apró komment pontosítás]
+
+---
+
+## 7. 🔍 6-Tengelyes Univerzális Megbízhatósági & Blind-Spot Elemzés
+*(Kimerítő és korlátlan: Minden feltárt hiányosság szerepel egy menetben. Ezeket NEM implementáljuk automatikusan! Kérjük, válaszd ki a preferált opciót az egyes tételeknél!)*
+
+1. **[Blind-Spot / Határeset Címe 1]**
+   - **Dimenzió:** [1. Párhuzamosság & Időbeliség | 2. Határértékek & Szélsőségek | 3. Hibamódok & Helyreállítás | 4. Állapot & Életciklus | 5. Adatintegritás & Atomicitás | 6. Biztonság & Bemenetek]
+   - **Helyszín / Érintett Modul:** `[file_path:line]`
+   - **Leírás:** [Forgatókönyv, amit az eredeti terv nem vett figyelembe]
+   - **Üzleti & Technikai Kockázat:** [Mi történik élesben, ha ez bekövetkezik?]
+   - **Döntési Opciók a Felhasználónak:**
+     - **Opció A (Azonnali Implementálás):** [Azonnali javítás rövid leírása]
+     - **Opció B (Backlogba helyezés):** [Elfogadható későbbi feladatként elhalasztani]
+     - **Opció C (Tudatos Kompromisszum):** [A kockázat elfogadható, nem igényel lépést]
+
+2. **[Blind-Spot / Határeset Címe 2]**
    ...
-N. **[Blind-Spot / Edge Case Title N]**
+N. **[Blind-Spot / Határeset Címe N]**
 
 ---
 
-## 8. 🧪 Verification & Test Evidence
-| Test Suite / Environment | Command / Verification Method | Results | Status |
+## 8. 🧪 Verifikáció & Teszt Bizonyítékok
+| Tesztkörnyezet / Futtatás | Parancs / Verifikációs Módszer | Eredmények | Státusz |
 |---|---|---|---|
-| Backend / Worker Tests | `python run_tests.py` / `pytest` | [e.g. 59 passed] | ✅ PASSED |
-| Deep Semantic Typecheck | `npx tsc -b` / `tsc -p tsconfig.app.json --noEmit` | [e.g. 0 errors] | ✅ PASSED |
-| Frontend Tests & Mount Smoke | `npm test -- --run` | [e.g. 896 passed, mount ok] | ✅ PASSED |
-| Database RPC / pgTAP Tests | `supabase/tests/database/*.test.sql` via `execute_sql` | [e.g. 33 passed (5/5 suites)] | ✅ PASSED |
-| Production Bundle Build | `npm run build` | [e.g. 16.07s] | ✅ PASSED |
-| Browser Smoke Audit (Dev Server) | `browser_subagent` / tab click audit `localhost:8080` | [0 ErrorBoundary, 0 console error] | ✅ PROVEN |
-| Live DB Schema & Migrations | `execute_sql` / `information_schema` query | [Columns, indexes, RPCs physically verified] | ✅ PROVEN LIVE |
+| Backend / Worker Tesztek | `python run_tests.py` / `pytest` | [pl. 59 passed] | ✅ SIKERES |
+| Mély Szemantikus Típusellenőrzés | `npx tsc -b` / `tsc -p tsconfig.app.json --noEmit` | [pl. 0 errors] | ✅ SIKERES |
+| Frontend Tesztek & Mount Smoke | `npm test -- --run` | [pl. 896 passed, mount ok] | ✅ SIKERES |
+| Adatbázis RPC / pgTAP Tesztek | `supabase/tests/database/*.test.sql` via `execute_sql` | [pl. 33 passed (5/5 suites)] | ✅ SIKERES |
+| Production Bundle Build | `npm run build` | [pl. 16.07s] | ✅ SIKERES |
+| Böngészős Smoke Audit (Dev Server) | `browser_subagent` / tab kattintási audit `localhost:8080` | [0 ErrorBoundary, 0 console error] | ✅ BIZONYÍTVA |
+| Élő DB Séma & Migrációk | `execute_sql` / `information_schema` lekérdezés | [Oszlopok, indexek, RPC-k fizikailag igazolva] | ✅ ÉLŐBEN IGAZOLVA |
 
-**Test Quality Evaluation:** [Tests evaluate real behavior and invariant constraints rather than superficial mocks.]
+**Tesztek minőségi értékelése:** [A tesztek valós viselkedést és invariáns kényszereket vizsgálnak a felületes mockok helyett.]
 
 ---
 
-## 9. ⚖️ Final Verdict
+## 9. ⚖️ Végső Értékelés & Döntés
 
-**Ready to proceed / merge:** **[YES | NO | WITH REVISIONS | AWAITING BLIND-SPOT DECISION]**
+**Készen áll a mergelésre / élesítésre:** **[IGEN | NEM | MÓDOSÍTÁSOKKAL | BLIND-SPOT DÖNTÉSRE VÁR]**
 
-**Rationale:** [Concise senior engineering summary of code quality, correctness, and release readiness]
+**Indoklás:** [Tömör vezetői mérnöki összefoglaló a kódminőségről, helyességről és kiadási érettségről]
 
-**Recommended Next Steps & Interactive Inquiries:**
-1. [Decision prompt regarding discovered blind spots]
-2. [Concrete action items for merge or remediation]
+**Javasolt következő lépések & Kérdések:**
+1. [Döntési pontok a feltárt blind spotokkal kapcsolatban]
+2. [Konkrét teendők a mergeléshez vagy javításhoz]
 
 <!-- GOAL_COMPLETE -->
 ```
@@ -632,7 +630,7 @@ N. **[Blind-Spot / Edge Case Title N]**
 - ❌ **NEVER** fail a review over a 1-line trivial mechanical typo (e.g. missing import) if it can be safely and surgically fixed and proven on the spot via the Surgical Auto-Fix protocol.
 - ❌ **NEVER** raise vague complaints ("this code is ugly") — always propose a named **Structural Remedy** ("The Move").
 - ❌ **NEVER** allow files bloated beyond ~1000 lines without prior decomposition (Decompose-before-Add).
-- ❌ **NEVER** deliver Section 1 (Executive Summary) in English (Section 1 MUST be in Hungarian), and NEVER deliver Sections 2-9 in Hungarian (Sections 2-9 MUST be in English).
+- ❌ **NEVER** deliver the review report, findings, blind spots, or user inquiries in English: the entire review output MUST be delivered in **Hungarian** (preserving standard technical terms and code symbols).
 - ❌ **NEVER** allow dummy stubs or no-op shims to mask dead imports from excluded features: always remove the dead import and unused hook calls from the consumer instead of stubbing the module.
 - ❌ **NEVER** ignore `@[current_problems]` or active editor diagnostics just because CLI `tsc` passed in a subshell: always verify and reconcile IDE diagnostics.
 - ❌ **NEVER** approve infinite scroll or pagination code that calculates page indices from client-side filtered array lengths (`list.length / PAGE_SIZE`) or relies solely on React async state (`isLoading`) without a synchronous in-flight ref guard (`inFlightRef.current = true`).

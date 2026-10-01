@@ -12,7 +12,8 @@ import {
 } from '@/hooks/usePayrollData';
 
 export const DECLARATION_TYPES = [
-  { value: 'family', label: 'Családi kedvezmény' },
+  { value: 'family', label: 'Családi kedvezmény (és pótszabadság)' },
+  { value: 'child_leave', label: 'Gyermekek utáni pótszabadság (Mt. 118. § — adókedvezmény nélkül)' },
   { value: 'first_marriage', label: 'Első házasok kedvezménye' },
   { value: 'young_25', label: '25 év alattiak SZJA mentessége' },
   { value: 'young_mother_30', label: '30 év alatti anyák kedvezménye' },
@@ -33,6 +34,7 @@ export interface ChildItem {
   tax_id: string;
   birth_date: string;
   is_fetus?: boolean;
+  is_disabled?: boolean;
 }
 
 export function normalizeChildItem(c: any): ChildItem {
@@ -42,6 +44,7 @@ export function normalizeChildItem(c: any): ChildItem {
     tax_id: (c?.tax_id || c?.taxId || '').toString(),
     birth_date: (c?.birth_date || c?.birthDate || '').toString(),
     is_fetus: Boolean(c?.is_fetus ?? c?.isFetus ?? c?.fetus ?? false),
+    is_disabled: Boolean(c?.is_disabled ?? c?.disabled ?? false),
   };
 }
 
@@ -56,7 +59,7 @@ export function NewDeclarationDialog({ employeeId, onClose }: { employeeId: stri
   
   // Children list with tax ID and birth date
   const [children, setChildren] = useState<ChildItem[]>([
-    { birth_name: '', tax_id: '', birth_date: '', is_fetus: false }
+    { birth_name: '', tax_id: '', birth_date: '', is_fetus: false, is_disabled: false }
   ]);
   const hasUserEdited = useRef(false);
 
@@ -81,6 +84,7 @@ export function NewDeclarationDialog({ employeeId, onClose }: { employeeId: stri
           tax_id: d.tax_id || '',
           birth_date: d.birth_date || '',
           is_fetus: !!d.is_fetus,
+          is_disabled: !!d.is_disabled,
         })));
       } catch (err) {
         console.error('Error fetching dependents for new declaration:', err);
@@ -91,11 +95,23 @@ export function NewDeclarationDialog({ employeeId, onClose }: { employeeId: stri
 
   const handleAddChild = () => {
     hasUserEdited.current = true;
-    setChildren(prev => [...prev, { birth_name: '', tax_id: '', birth_date: '', is_fetus: false }]);
+    setChildren(prev => [...prev, { birth_name: '', tax_id: '', birth_date: '', is_fetus: false, is_disabled: false }]);
   };
 
-  const handleRemoveChild = (index: number) => {
+  const handleRemoveChild = async (index: number) => {
     hasUserEdited.current = true;
+    const target = children[index];
+    if (target?.id) {
+      const confirmDelete = window.confirm('Szeretnéd az eltartottak törzséből is törölni ezt a gyermeket?');
+      if (confirmDelete) {
+        try {
+          await supabase.from('accounty_dependents').delete().eq('id', target.id);
+          queryClient.invalidateQueries({ queryKey: ['payroll', 'dependents', employeeId] });
+        } catch (err) {
+          console.error('Error deleting dependent from DB:', err);
+        }
+      }
+    }
     setChildren(prev => prev.filter((_, i) => i !== index));
   };
 
@@ -110,7 +126,7 @@ export function NewDeclarationDialog({ employeeId, onClose }: { employeeId: stri
 
   const handleSubmit = async () => {
     const params: Record<string, unknown> = {};
-    if (type === 'family' || type === 'anyak_3' || type === 'anyak_2' || type === 'netak') {
+    if (type === 'family' || type === 'child_leave' || type === 'anyak_3' || type === 'anyak_2' || type === 'netak') {
       const validChildren = children.filter(c => c.birth_name.trim() || c.tax_id.trim() || c.birth_date.trim());
       params.children_count = validChildren.length > 0 ? validChildren.length : children.length;
       params.children = children.map(c => ({
@@ -119,6 +135,7 @@ export function NewDeclarationDialog({ employeeId, onClose }: { employeeId: stri
         tax_id: c.tax_id.trim(),
         birth_date: c.birth_date || '',
         is_fetus: Boolean(c.is_fetus),
+        is_disabled: Boolean(c.is_disabled),
       }));
 
       // Also persist / upsert to accounty_dependents if valid details provided
@@ -131,6 +148,7 @@ export function NewDeclarationDialog({ employeeId, onClose }: { employeeId: stri
                 tax_id: ch.tax_id.trim() || null,
                 birth_date: ch.birth_date || null,
                 is_fetus: Boolean(ch.is_fetus),
+                is_disabled: Boolean(ch.is_disabled),
               }).eq('id', ch.id);
             } else {
               let existingId: string | null = null;
@@ -152,6 +170,7 @@ export function NewDeclarationDialog({ employeeId, onClose }: { employeeId: stri
                   tax_id: ch.tax_id.trim() || null,
                   birth_date: ch.birth_date || null,
                   is_fetus: Boolean(ch.is_fetus),
+                  is_disabled: Boolean(ch.is_disabled),
                 }).eq('id', existingId);
                 ch.id = existingId;
               } else {
@@ -161,6 +180,7 @@ export function NewDeclarationDialog({ employeeId, onClose }: { employeeId: stri
                   tax_id: ch.tax_id.trim() || null,
                   birth_date: ch.birth_date || null,
                   is_fetus: Boolean(ch.is_fetus),
+                  is_disabled: Boolean(ch.is_disabled),
                 }).select('id').single();
                 if (newDep?.id) {
                   ch.id = newDep.id;
@@ -233,13 +253,13 @@ export function NewDeclarationDialog({ employeeId, onClose }: { employeeId: stri
           />
         </div>
 
-        {/* Children details for family tax credit */}
-        {(type === 'family' || type === 'anyak_3' || type === 'anyak_2' || type === 'netak') && (
+        {/* Children details for family tax credit & child leave */}
+        {(type === 'family' || type === 'child_leave' || type === 'anyak_3' || type === 'anyak_2' || type === 'netak') && (
           <div className="md:col-span-2 space-y-3 pt-2 border-t border-border/60">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5 text-primary" />
-                Gyermekek / Eltartottak adatai (Családi kedvezményhez és NAV 08-hoz kötelező):
+                Gyermekek / Eltartottak adatai (Pótszabadsághoz és Családi kedvezményhez):
               </label>
               <Button
                 type="button"
@@ -252,10 +272,20 @@ export function NewDeclarationDialog({ employeeId, onClose }: { employeeId: stri
               </Button>
             </div>
 
+            <div className="p-2.5 rounded-lg border border-primary/20 bg-primary/5 text-xs text-foreground/90 space-y-1">
+              <p className="font-semibold text-primary flex items-center gap-1.5">
+                <span>💡 Automatikus pótszabadság kalkuláció (Mt. 118. §):</span>
+              </p>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                A rögzített gyermekek után a rendszer automatikusan kalkulálja az alanyi jogon járó pótszabadságot (1 gyermek: 2 nap, 2 gyermek: 4 nap, 3+ gyermek: 7 nap). 
+                Tartósan beteg vagy fogyatékos gyermek esetén a <strong>„Tartós beteg (+2 nap)”</strong> jelöléssel gyermekenként további 2 munkanap pótszabadság adódik hozzá az éves kerethez a <em>Szabadság</em> fülön.
+              </p>
+            </div>
+
             <div className="space-y-2">
               {children.map((child, idx) => (
                 <div key={idx} className="p-3 bg-background rounded-lg border border-border grid grid-cols-1 sm:grid-cols-12 gap-2 items-center text-xs">
-                  <div className="sm:col-span-4">
+                  <div className="sm:col-span-3">
                     <label className="block text-[10px] text-muted-foreground mb-0.5">Gyermek neve *</label>
                     <Input
                       value={child.birth_name}
@@ -266,7 +296,7 @@ export function NewDeclarationDialog({ employeeId, onClose }: { employeeId: stri
                   </div>
 
                   <div className="sm:col-span-3">
-                    <label className="block text-[10px] text-muted-foreground mb-0.5">Adóazonosító jel *</label>
+                    <label className="block text-[10px] text-muted-foreground mb-0.5">Adóazonosító jel</label>
                     <Input
                       value={child.tax_id}
                       onChange={(e) => handleUpdateChild(idx, 'tax_id', e.target.value.replace(/\D/g, '').slice(0, 10))}
@@ -275,7 +305,7 @@ export function NewDeclarationDialog({ employeeId, onClose }: { employeeId: stri
                     />
                   </div>
 
-                  <div className="sm:col-span-3">
+                  <div className="sm:col-span-2">
                     <label className="block text-[10px] text-muted-foreground mb-0.5">Születési dátum *</label>
                     <Input
                       type="date"
@@ -285,7 +315,17 @@ export function NewDeclarationDialog({ employeeId, onClose }: { employeeId: stri
                     />
                   </div>
 
-                  <div className="sm:col-span-1 flex flex-col items-center justify-center">
+                  <div className="sm:col-span-2 flex flex-col items-center justify-center text-center">
+                    <label className="text-[10px] text-muted-foreground mb-0.5 whitespace-nowrap" title="Tartósan beteg vagy súlyosan fogyatékos gyermek (Mt. 118. § (2) szerint +2 nap pótszabadság)">
+                      Tartós beteg (+2 nap)
+                    </label>
+                    <Checkbox
+                      checked={child.is_disabled}
+                      onCheckedChange={(c) => handleUpdateChild(idx, 'is_disabled', Boolean(c))}
+                    />
+                  </div>
+
+                  <div className="sm:col-span-1 flex flex-col items-center justify-center text-center">
                     <label className="text-[10px] text-muted-foreground mb-0.5">Magzat</label>
                     <Checkbox
                       checked={child.is_fetus}
@@ -310,7 +350,7 @@ export function NewDeclarationDialog({ employeeId, onClose }: { employeeId: stri
               ))}
             </div>
             <p className="text-[11px] text-muted-foreground">
-              A NAV 08 bevallás M-lapjain kötelező a gyermek adóazonosító jele és születési dátuma a családi adó- és járulékkedvezmény jogszerű érvényesítéséhez.
+              A családi kedvezmény NAV 08 bevallásához kötelező a gyermek adóazonosító jele és születési dátuma.
             </p>
           </div>
         )}
@@ -371,7 +411,7 @@ export function EditDeclarationDialog({
   const getInitialChildren = (): ChildItem[] => {
     const list = [...initialParsed];
     while (list.length < initialTargetCount) {
-      list.push({ birth_name: '', tax_id: '', birth_date: '', is_fetus: false });
+      list.push({ birth_name: '', tax_id: '', birth_date: '', is_fetus: false, is_disabled: false });
     }
     return list;
   };
@@ -401,6 +441,7 @@ export function EditDeclarationDialog({
           tax_id: d.tax_id || '',
           birth_date: d.birth_date || '',
           is_fetus: Boolean(d.is_fetus),
+          is_disabled: Boolean(d.is_disabled),
         }));
 
         setChildren(current => {
@@ -431,6 +472,7 @@ export function EditDeclarationDialog({
                   tax_id: ch.tax_id || matched.tax_id,
                   birth_date: ch.birth_date || matched.birth_date,
                   birth_name: ch.birth_name || matched.birth_name,
+                  is_disabled: ch.is_disabled ?? matched.is_disabled,
                 };
               }
               return ch;
@@ -448,7 +490,7 @@ export function EditDeclarationDialog({
           }
 
           while (merged.length < targetCount) {
-            merged.push({ birth_name: '', tax_id: '', birth_date: '', is_fetus: false });
+            merged.push({ birth_name: '', tax_id: '', birth_date: '', is_fetus: false, is_disabled: false });
           }
 
           return merged.length > 0 ? merged : current;
@@ -465,11 +507,23 @@ export function EditDeclarationDialog({
 
   const handleAddChild = () => {
     hasUserEdited.current = true;
-    setChildren(prev => [...prev, { birth_name: '', tax_id: '', birth_date: '', is_fetus: false }]);
+    setChildren(prev => [...prev, { birth_name: '', tax_id: '', birth_date: '', is_fetus: false, is_disabled: false }]);
   };
 
-  const handleRemoveChild = (index: number) => {
+  const handleRemoveChild = async (index: number) => {
     hasUserEdited.current = true;
+    const target = children[index];
+    if (target?.id) {
+      const confirmDelete = window.confirm('Szeretnéd az eltartottak törzséből is törölni ezt a gyermeket?');
+      if (confirmDelete) {
+        try {
+          await supabase.from('accounty_dependents').delete().eq('id', target.id);
+          queryClient.invalidateQueries({ queryKey: ['payroll', 'dependents', employeeId] });
+        } catch (err) {
+          console.error('Error deleting dependent from DB in edit dialog:', err);
+        }
+      }
+    }
     setChildren(prev => prev.filter((_, i) => i !== index));
   };
 
@@ -484,7 +538,7 @@ export function EditDeclarationDialog({
 
   const handleSubmit = async () => {
     const params: Record<string, unknown> = { ...(declaration.parameters as Record<string, unknown>) };
-    if (type === 'family' || type === 'anyak_3' || type === 'anyak_2' || type === 'netak') {
+    if (type === 'family' || type === 'child_leave' || type === 'anyak_3' || type === 'anyak_2' || type === 'netak') {
       const validChildren = children.filter(c => c.birth_name.trim() || c.tax_id.trim() || c.birth_date.trim());
       params.children_count = validChildren.length > 0 ? validChildren.length : children.length;
       params.children = children.map(c => ({
@@ -493,6 +547,7 @@ export function EditDeclarationDialog({
         tax_id: c.tax_id.trim(),
         birth_date: c.birth_date || '',
         is_fetus: Boolean(c.is_fetus),
+        is_disabled: Boolean(c.is_disabled),
       }));
 
       // Upsert into accounty_dependents
@@ -505,6 +560,7 @@ export function EditDeclarationDialog({
                 tax_id: ch.tax_id.trim() || null,
                 birth_date: ch.birth_date || null,
                 is_fetus: Boolean(ch.is_fetus),
+                is_disabled: Boolean(ch.is_disabled),
               }).eq('id', ch.id);
             } else {
               let existingId: string | null = null;
@@ -526,6 +582,7 @@ export function EditDeclarationDialog({
                   tax_id: ch.tax_id.trim() || null,
                   birth_date: ch.birth_date || null,
                   is_fetus: Boolean(ch.is_fetus),
+                  is_disabled: Boolean(ch.is_disabled),
                 }).eq('id', existingId);
                 ch.id = existingId;
               } else {
@@ -535,6 +592,7 @@ export function EditDeclarationDialog({
                   tax_id: ch.tax_id.trim() || null,
                   birth_date: ch.birth_date || null,
                   is_fetus: Boolean(ch.is_fetus),
+                  is_disabled: Boolean(ch.is_disabled),
                 }).select('id').single();
                 if (newDep?.id) {
                   ch.id = newDep.id;
@@ -542,7 +600,7 @@ export function EditDeclarationDialog({
               }
             }
           } catch (err) {
-            console.error('Error updating dependent:', err);
+            console.error('Error saving dependent in edit declaration:', err);
           }
         }
       }
@@ -604,12 +662,13 @@ export function EditDeclarationDialog({
           />
         </div>
 
-        {(type === 'family' || type === 'anyak_3' || type === 'anyak_2' || type === 'netak') && (
+        {/* Children details for family tax credit & child leave */}
+        {(type === 'family' || type === 'child_leave' || type === 'anyak_3' || type === 'anyak_2' || type === 'netak') && (
           <div className="md:col-span-2 space-y-3 pt-2 border-t border-border/60">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5 text-amber-600" />
-                Gyermekek adatai (Adóazonosító és Születési dátum):
+                Gyermekek / Eltartottak adatai (Pótszabadsághoz és Családi kedvezményhez):
               </label>
               <Button
                 type="button"
@@ -622,10 +681,20 @@ export function EditDeclarationDialog({
               </Button>
             </div>
 
+            <div className="p-2.5 rounded-lg border border-amber-500/20 bg-amber-500/5 text-xs text-foreground/90 space-y-1">
+              <p className="font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                <span>💡 Automatikus pótszabadság kalkuláció (Mt. 118. §):</span>
+              </p>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                A felvitt gyermekek után a rendszer automatikusan kalkulálja az alanyi jogon járó pótszabadságot (1 gyermek: 2 nap, 2 gyermek: 4 nap, 3+ gyermek: 7 nap). 
+                Tartósan beteg vagy fogyatékos gyermek esetén a <strong>„Tartós beteg (+2 nap)”</strong> jelöléssel gyermekenként további 2 munkanap pótszabadság adódik hozzá az éves kerethez a <em>Szabadság</em> fülön.
+              </p>
+            </div>
+
             <div className="space-y-2">
               {children.map((child, idx) => (
                 <div key={idx} className="p-3 bg-background rounded-lg border border-border grid grid-cols-1 sm:grid-cols-12 gap-2 items-center text-xs">
-                  <div className="sm:col-span-4">
+                  <div className="sm:col-span-3">
                     <label className="block text-[10px] text-muted-foreground mb-0.5">Gyermek neve *</label>
                     <Input
                       value={child.birth_name}
@@ -636,7 +705,7 @@ export function EditDeclarationDialog({
                   </div>
 
                   <div className="sm:col-span-3">
-                    <label className="block text-[10px] text-muted-foreground mb-0.5">Adóazonosító jel *</label>
+                    <label className="block text-[10px] text-muted-foreground mb-0.5">Adóazonosító jel</label>
                     <Input
                       value={child.tax_id}
                       onChange={(e) => handleUpdateChild(idx, 'tax_id', e.target.value.replace(/\D/g, '').slice(0, 10))}
@@ -645,7 +714,7 @@ export function EditDeclarationDialog({
                     />
                   </div>
 
-                  <div className="sm:col-span-3">
+                  <div className="sm:col-span-2">
                     <label className="block text-[10px] text-muted-foreground mb-0.5">Születési dátum *</label>
                     <Input
                       type="date"
@@ -655,7 +724,17 @@ export function EditDeclarationDialog({
                     />
                   </div>
 
-                  <div className="sm:col-span-1 flex flex-col items-center justify-center">
+                  <div className="sm:col-span-2 flex flex-col items-center justify-center text-center">
+                    <label className="text-[10px] text-muted-foreground mb-0.5 whitespace-nowrap" title="Tartósan beteg vagy súlyosan fogyatékos gyermek (Mt. 118. § (2) szerint +2 nap pótszabadság)">
+                      Tartós beteg (+2 nap)
+                    </label>
+                    <Checkbox
+                      checked={child.is_disabled}
+                      onCheckedChange={(c) => handleUpdateChild(idx, 'is_disabled', Boolean(c))}
+                    />
+                  </div>
+
+                  <div className="sm:col-span-1 flex flex-col items-center justify-center text-center">
                     <label className="text-[10px] text-muted-foreground mb-0.5">Magzat</label>
                     <Checkbox
                       checked={child.is_fetus}
@@ -680,7 +759,7 @@ export function EditDeclarationDialog({
               ))}
             </div>
             <p className="text-[11px] text-muted-foreground">
-              A NAV 08 bevallás M-lapjain kötelező a gyermek adóazonosító jele és születési dátuma a családi adó- és járulékkedvezmény jogszerű érvényesítéséhez.
+              A családi kedvezmény NAV 08 bevallásához kötelező a gyermek adóazonosító jele és születési dátuma.
             </p>
           </div>
         )}
