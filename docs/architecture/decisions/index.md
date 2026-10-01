@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-10-01  
-> **Összesen:** 206 döntés (191 egyedi döntési fájl) | ✅ Decided: 204 | ⛔ Superseded: 2
+> **Összesen:** 207 döntés (192 egyedi döntési fájl) | ✅ Decided: 205 | ⛔ Superseded: 2
 
 
 ---
@@ -99,6 +99,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-130 | NAV Automatikus Szinkronizáció Hajnali Idő-ablakos Terheléselosztása (Load Staggering) | ✅ Decided | [A-130](./A-130-nav-auto-sync-dawn-load-staggering.md) |
 | A-132 | NAV Online Számla v3.0 queryTaxpayer Integráció és Think AI Kft. Kulcs Fallback | ✅ Decided | [A-132](./A-132-nav-query-taxpayer-auto-fill.md) |
 | A-162 | Mailgun & IMAP Csatolmány Szűrési Szinkronizáció, Storage Fájlnév-Szanálás és Body-MIME Hardening | ✅ Decided | [A-162](./A-162-mailgun-and-imap-attachment-filtering-and-mime-hardening.md) |
+| A-190 | Non-Destructive IMAP UID Követés (Zero-\Seen), Elosztott Zárolás és Batch Capping | ✅ Decided | [A-190](./A-190-non-destructive-imap-tracking-and-distributed-locks.md) |
 
 ## 🗄️ Adatbázis & Pénzügy
 
