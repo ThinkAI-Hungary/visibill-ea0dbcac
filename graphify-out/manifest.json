@@ -2965,8 +2965,8 @@
     "semantic_hash": ""
   },
   ".agents/skills/visibill-db-checklist/SKILL.md": {
-    "mtime": 1783210835.1553354,
-    "ast_hash": "b68700167d0d4621de79fb6ed807f0bf",
+    "mtime": 1790858747.8908734,
+    "ast_hash": "061f366bfa8b359ada74bd59424a0791",
     "semantic_hash": ""
   },
   ".agents/skills/visibill-doc-audit/SKILL.md": {
@@ -3090,7 +3090,7 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790857493.4764853,
+    "mtime": 1790858448.1943855,
     "ast_hash": "d6353dca13eb9f13d9f7634c0b41f9df",
     "semantic_hash": ""
   },
@@ -3760,8 +3760,8 @@
     "semantic_hash": ""
   },
   "src/components/petty-cash/EntriesTab.tsx": {
-    "mtime": 1790775646.1850367,
-    "ast_hash": "08372219c55b54a0b1da7c365cff5c8b",
+    "mtime": 1790858448.0578463,
+    "ast_hash": "f1957acb5a3a6ac6411a4cc5167798e4",
     "semantic_hash": ""
   },
   "src/components/petty-cash/RegistersTab.tsx": {
@@ -8845,8 +8845,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/rpc-catalog.md": {
-    "mtime": 1790857505.7742088,
-    "ast_hash": "1a3fbf21e60545d64af72c4f73571088",
+    "mtime": 1790859426.7255116,
+    "ast_hash": "72a917d1e90fc387c897136da4a6a63d",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-073-ev-bookkeeping-and-cashbook-ux.md": {
@@ -13490,8 +13490,8 @@
     "semantic_hash": ""
   },
   "supabase/migrations/20260930160000_fix_partial_payment_match_status.sql": {
-    "mtime": 1790825709.8298461,
-    "ast_hash": "863d2e09053b53775a3a13576b6ae547",
+    "mtime": 1790858125.8541317,
+    "ast_hash": "ea91996d69ceb7911e651797cfdc6499",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-181-a60-community-vat-and-vies-crosscheck.md": {
@@ -13709,11 +13709,6 @@
     "ast_hash": "c02e2bef262f8a2dbf1260102fd35bbd",
     "semantic_hash": ""
   },
-  "supabase/migrations/20261001053500_fix_system_error_hunter_audit_issues.sql": {
-    "mtime": 1790825696.0080624,
-    "ast_hash": "265c37aea4dca727974fb50654fd0e0c",
-    "semantic_hash": ""
-  },
   "src/components/fixed-assets/CreateFixedAssetDialog.tsx": {
     "mtime": 1790854006.8939552,
     "ast_hash": "03e2b248cc80ace67f30acca2f2e3508",
@@ -13760,8 +13755,8 @@
     "semantic_hash": ""
   },
   "supabase/migrations/20261001143000_optimize_gl_balances_and_categorized_items_timeout.sql": {
-    "mtime": 1790856364.5250432,
-    "ast_hash": "ba97947cdd444317a6d41d0c6cf673a2",
+    "mtime": 1790858448.2570264,
+    "ast_hash": "26de50fddbe3bfc92ed05140086fa4c5",
     "semantic_hash": ""
   },
   "session-summary/\u00c1ron/2026-10-01/summary-102500-eb-0228-petty-cash-settlement-payment-date-fix.md": {
@@ -13775,8 +13770,43 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-189-gl-rpc-performance-optimization-and-timeout-elimination.md": {
-    "mtime": 1790857461.46507,
-    "ast_hash": "7115cd9157b4fa11da0465228d546c95",
+    "mtime": 1790858448.1933835,
+    "ast_hash": "239861987c55b368f3357f5c7df20959",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261001142500_fix_system_error_hunter_audit_issues.sql": {
+    "mtime": 1790858448.2570264,
+    "ast_hash": "ce62f5e07fb61e6c578b9b9e38b5b307",
+    "semantic_hash": ""
+  },
+  "supabase/tests/database/acc_journal_lifecycle.test.sql": {
+    "mtime": 1790859409.178952,
+    "ast_hash": "c1e97f4486712e98ba194fdcdef288a2",
+    "semantic_hash": ""
+  },
+  "supabase/tests/database/calculate_vat_return.test.sql": {
+    "mtime": 1790859321.3178153,
+    "ast_hash": "a89ea9fa876404398b3295b9061b1f8b",
+    "semantic_hash": ""
+  },
+  "supabase/tests/database/get_bs_report.test.sql": {
+    "mtime": 1790859393.2323613,
+    "ast_hash": "5870f0f3055094d8c05fbdd1db16b2fc",
+    "semantic_hash": ""
+  },
+  "supabase/tests/database/get_gl_balances.test.sql": {
+    "mtime": 1790858859.1955626,
+    "ast_hash": "b44d62e5721cd209305c2e94db9898c0",
+    "semantic_hash": ""
+  },
+  "supabase/tests/database/get_pnl_report.test.sql": {
+    "mtime": 1790859369.8273206,
+    "ast_hash": "c1a5f46bb47a014d180cd7a15b4c8b97",
+    "semantic_hash": ""
+  },
+  "docs/architecture/rpc-testing-blueprint.md": {
+    "mtime": 1790859195.750689,
+    "ast_hash": "f3b3350769345547807b29a1cf076ebb",
     "semantic_hash": ""
   }
 }
