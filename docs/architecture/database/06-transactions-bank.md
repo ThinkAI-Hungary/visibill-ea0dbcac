@@ -302,7 +302,7 @@
 
 ### `aggreg8_consents`
 
-> Aggreg8 PSD2 Open Banking felhasználói hozzájárulások (180 napos érvényesség, banki kapcsolat).
+> Aggreg8 PSD2 Open Banking felhasználói hozzájárulások (180 napos érvényesség, banki kapcsolat, többcéges megosztási architektúra).
 
 **RLS:** ✅ | **Sorok:** Dinamikus
 
@@ -310,7 +310,7 @@
 |--------|-------|------|---------|--------|
 | `id` | uuid | — | `gen_random_uuid()` | Elsődleges kulcs |
 | `company_id` | uuid | — | — | FK → `companies.id` (CASCADE) |
-| `info_sharing_consent_id` | text | — | — | Aggreg8 egyedi hozzájárulás azonosító (UNIQUE) |
+| `info_sharing_consent_id` | text | — | — | Aggreg8 hozzájárulás azonosító (Összetett UNIQUE: `company_id, info_sharing_consent_id`) |
 | `a8_user_id` | text | ✓ | NULL | Aggreg8 felhasználó azonosító |
 | `bank_id` | text | ✓ | NULL | Bank kódja / neve (pl. OTP, Erste) |
 | `status` | text | — | `'active'` | Státusz: `'active'`, `'expired'`, `'deleted'` |
@@ -324,13 +324,15 @@
 
 **FK:** `company_id` → `companies.id`
 
-**Indexek:** `idx_aggreg8_consents_company`, `idx_aggreg8_consents_consent_id`
+**Megkötések:** `aggreg8_consents_company_consent_key` (UNIQUE: `company_id, info_sharing_consent_id` — A-119 / 20261001010000: engedélyezi, hogy egyetlen banki consent több felhatalmazott céghez is létrejöhessen).
+
+**Indexek:** `idx_aggreg8_consents_company`, `idx_aggreg8_consents_consent_id`, `idx_aggreg8_consents_user_status` (`(a8_user_id, status)`).
 
 ---
 
 ### `aggreg8_accounts`
 
-> Az Aggreg8-on keresztül csatlakoztatott bankszámlák és egyenlegek.
+> Az Aggreg8-on keresztül csatlakoztatott bankszámlák és egyenlegek. Többcéges környezetben dinamikus `FLOW_INITIATED` szétválasztással kizárólag az aktív céghez rendelve.
 
 **RLS:** ✅ | **Sorok:** Dinamikus
 
@@ -352,7 +354,7 @@
 
 **FK:** `company_id` → `companies.id`, `consent_id` → `aggreg8_consents.id`
 
-**Indexek:** `idx_aggreg8_accounts_company`, `idx_aggreg8_accounts_consent`, `unique_aggreg8_account_per_consent`
+**Indexek:** `idx_aggreg8_accounts_company`, `idx_aggreg8_accounts_consent`, `idx_aggreg8_accounts_company_acc_id` (`(company_id, account_id)`), `unique_aggreg8_account_per_consent` (`UNIQUE(consent_id, account_id)`).
 
 ---
 

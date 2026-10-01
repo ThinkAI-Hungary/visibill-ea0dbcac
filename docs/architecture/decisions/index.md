@@ -56,7 +56,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-096 | Hivatalos NAV Tételsor Védőháló, Sorszám Szinkronizáció és 23505 Ütközésvédelem | ✅ Decided | [A-096](./A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md) |
 | A-116 | K&H Bankkivonatok (.xls / .csv) Robusztus Feldolgozása, Tabulátor Detektálás és Tranzakció Pipeline Intercept Védelem | ✅ Decided | [A-116](./A-116-kh-bank-statement-parsing-and-pipeline-routing-safeguards.md) |
 | A-118 | Skontó és Partner Fizetési Határidő Atomi Újraszámítás | ✅ Decided | [A-118](./A-118-atomic-partner-skonto-recalculation.md) |
-| A-119 | Aggreg8 PSD2 Open Banking AISP Integráció, Hosted SyncUI és Valós Idejű Tranzakció Szinkronizáció | ✅ Decided | [A-119](./A-119-aggreg8-psd2-open-banking-integration.md) |
+| A-119 | Aggreg8 PSD2 Open Banking AISP Integráció, Hosted SyncUI, Többcéges Hozzájárulás-megosztás és Dinamikus Számlaszétválasztás | ✅ Decided | [A-119](./A-119-aggreg8-psd2-open-banking-integration.md) |
 | A-120 | Csoportos ÁFA-alanyok Észlelése, Technikai Felhasználó Útmutatás és Szinkronizációs Védőháló | ✅ Decided | [A-120](./A-120-group-vat-entity-detection-and-technical-user-guidance.md) |
 | A-128 | Szigorított Számlaszám Határ-illesztés (Boundary Matching), Részhalmaz Kiszűrés (Subsumption Filter) és Többszörös Párosítási Jóváhagyási Kapu | ✅ Decided | [A-128](./A-128-strict-invoice-number-boundary-matching-and-subsumption-guard.md) |
 | A-129 | Partner-történeti Többségi Szabályú Számlakategorizálás & DB Triggerek | ✅ Decided | [A-129](./A-129-partner-history-majority-categorization.md) |
@@ -95,7 +95,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-041 | Mailgun Webhook Concurrent Dedup — Háromrétegű Idempotency | ✅ Decided | [A-041](./A-041-mailgun-concurrent-dedup.md) |
 | A-052 | Multi-Profile IMAP/SMTP Levelező Fiókok és Vault Integráció | ✅ Decided | [A-052](./A-052-multi-profile-email-accounts-vault-integration.md) |
 | A-113 | NAV Számlatételek ÁFA és Bruttó Összeg Automatikus Kalkulációja (Közműszámlák) | ✅ Decided | [A-113](./A-113-nav-invoice-items-vat-gross-auto-calculation.md) |
-| A-119 | Aggreg8 PSD2 Open Banking AISP Integráció, Dedikált Proxy Relay és Valós Idejű Szinkronizáció | ✅ Decided | [A-119](./A-119-aggreg8-psd2-open-banking-integration.md) |
+| A-119 | Aggreg8 PSD2 Open Banking AISP Integráció, Dedikált Proxy Relay, Többcéges Hozzájárulás-megosztás és Dinamikus Számlaszétválasztás | ✅ Decided | [A-119](./A-119-aggreg8-psd2-open-banking-integration.md) |
 | A-130 | NAV Automatikus Szinkronizáció Hajnali Idő-ablakos Terheléselosztása (Load Staggering) | ✅ Decided | [A-130](./A-130-nav-auto-sync-dawn-load-staggering.md) |
 | A-132 | NAV Online Számla v3.0 queryTaxpayer Integráció és Think AI Kft. Kulcs Fallback | ✅ Decided | [A-132](./A-132-nav-query-taxpayer-auto-fill.md) |
 | A-162 | Mailgun & IMAP Csatolmány Szűrési Szinkronizáció, Storage Fájlnév-Szanálás és Body-MIME Hardening | ✅ Decided | [A-162](./A-162-mailgun-and-imap-attachment-filtering-and-mime-hardening.md) |

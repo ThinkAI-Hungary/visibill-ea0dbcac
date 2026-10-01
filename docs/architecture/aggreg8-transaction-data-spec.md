@@ -1,8 +1,8 @@
 # Aggreg8 PSD2 Open Banking Tranzakciós és Partner Adatstruktúra Specifikáció
 
 **Státusz:** Éles (Production)  
-**Verzió:** 1.0.0  
-**Dátum:** 2026-09-28  
+**Verzió:** 1.1.0  
+**Dátum:** 2026-10-01  
 **Kapcsolódó döntések:** [A-119 (ADR)](./decisions/A-119-aggreg8-psd2-open-banking-integration.md), [P-087 (PRD)](../product/decisions/P-087-aggreg8-bank-connections-and-sync-ui-ux.md), [026 (BRD)](../business/decisions/026-banking-integration.md)  
 **Modul:** `eaisybill-prod` & `worker/aggreg8_processor.py`  
 
@@ -13,6 +13,11 @@
 A Visibill / eaisybill-prod rendszer az **Aggreg8 (AISP API v5.3.1)** felhőalapú banki aggregátorán keresztül közvetlen, európai PSD2 szabványnak megfelelő Account Information Service Provider (AISP) kapcsolatot tart fenn a partnerbankokkal.
 
 A kapcsolat célja a manuális bankkivonat-feltöltések (CSV, XLS) teljes kiváltása, a partnertörzs automatikus adatgazdagítása és az élő, másodpercek alatti számlapárosítás (Two-Pass Matching).
+
+### 🏢 1.1 Többvállalkozásos Hozzájárulás-megosztás & Számlaszétválasztás (v1.1.0)
+Ha egy cégvezető vagy könyvelő ugyanazzal a netbanki fiókkal több Visibillben kezelt cég bankszámláihoz is hozzáfér:
+1. **Consent megosztás:** Az Aggreg8 consent rekord automatikusan létrejön az összes olyan céghez, amelyben a felhasználónak joga van (`UNIQUE(company_id, info_sharing_consent_id)`). Így a felhasználónak elegendő egyszer jóváhagynia a banki kapcsolatot.
+2. **Dinamikus számlaszétválasztás:** Az Aggreg8 a teljes netbanki számlacsomagot egyetlen webhookban küldi be, de az `aggreg8-callback` kizárólag az éppen aktív, a szinkronizálást kezdeményező céghez (`FLOW_INITIATED`) rendeli hozzá a számlákat és tranzakciókat, elkerülve a cégközi adatszivárgást.
 
 ```
   [ Partnerbankok (OTP, Erste, CIB, stb.) ]

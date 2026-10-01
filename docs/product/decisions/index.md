@@ -98,7 +98,7 @@
 | P-048 | IMAP/SMTP Levelező Beállítások és Tabs UX | ⛔ Superseded | [P-048](./P-048-imap-smtp-settings-tabs-ux.md) |
 | P-051 | Többprofilos Levelező Fiókok (Multi-Profile IMAP/SMTP) Kezelése UX | ✅ Decided | [P-051](./P-051-multi-profile-email-accounts-management-ux.md) |
 | P-086 | Programozói Hozzáférés & API Kulcsok Kezelése (ApiKeysCard) UX | ✅ Decided | [P-086](./P-086-customer-api-keys-management-ux.md) |
-| P-087 | Aggreg8 Bankcsatlakozás, SyncUI Felugró Ablak és Élő Szinkronizáció UX | ✅ Decided | [P-087](./P-087-aggreg8-bank-connections-and-sync-ui-ux.md) |
+| P-087 | Aggreg8 Bankcsatlakozás, SyncUI Felugró Ablak, Élő Szinkronizáció és Többcéges Hozzájárulás-megosztás UX | ✅ Decided | [P-087](./P-087-aggreg8-bank-connections-and-sync-ui-ux.md) |
 
 ## 💳 Előfizetés & Pricing
 

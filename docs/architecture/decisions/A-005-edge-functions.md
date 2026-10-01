@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2025-09  
-**Utoljára frissítve:** 2026-09-27
+**Utoljára frissítve:** 2026-10-01
 
 ## Context
 
@@ -150,8 +150,8 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 | Function | JWT | Leírás |
 |----------|-----|--------|
-| `aggreg8-api` | ✅ | Aggreg8 PSD2 AISP API átjáró — Megosztott motor (`_shared/aggreg8-sync.ts`), fix IP proxy relay (`64.226.83.137`), Token cache (`aggreg8_settings`), 401 auto-retry, felhasználó regisztráció, SyncUI session indítás (`ADD_BANK`, `ON_DEMAND`, `EXTEND_CONSENT`, `DELETE_INFO_SHARING_CONSENT`), banklista lekérdezés (`GET /banks`). |
-| `aggreg8-callback` | ❌ | Nyilvános webhook végpont az Aggreg8 szerverek felé — Megosztott motor (`_shared/aggreg8-sync.ts`), hozzájárulások perzisztálása (`aggreg8_consents`, `aggreg8_accounts`), 10 000+ tranzakciós pagináció PGMQ háttér-folytatással (`aggreg8_continuation`), `last_synced_count` mentése, upsert a `bank_transactions` és `transactions` táblákba. |
+| `aggreg8-api` | ✅ | Aggreg8 PSD2 AISP API átjáró — Megosztott motor (`_shared/aggreg8-sync.ts`), fix IP proxy relay (`64.226.83.137`), Token cache (`aggreg8_settings`), 401 auto-retry, felhasználó regisztráció, SyncUI session indítás (`ADD_BANK`, `ON_DEMAND`, `EXTEND_CONSENT`, `DELETE_INFO_SHARING_CONSENT`), banklista lekérdezés (`GET /banks`), többcéges megosztott hozzájárulások szinkronizálása és aktív session cég kontextus követés (`FLOW_INITIATED`). |
+| `aggreg8-callback` | ❌ | Nyilvános webhook végpont az Aggreg8 szerverek felé — Megosztott motor (`_shared/aggreg8-sync.ts`), többcéges hozzájárulások perzisztálása (`aggreg8_consents` az összes azonos felhasználóhoz tartozó céghez), bankszámlák dinamikus hozzárendelése az indító céghez (`FLOW_INITIATED`), 10 000+ tranzakciós pagináció PGMQ háttér-folytatással (`aggreg8_continuation`), `last_synced_count` mentése, upsert a `bank_transactions` és `transactions` táblákba. |
 
 ---
 

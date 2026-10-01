@@ -1,6 +1,6 @@
 # Supabase Edge Functions Katalógus
 
-> **Utoljára frissítve:** 2026-09-27  
+> **Utoljára frissítve:** 2026-10-01  
 > **Összesen:** 66 Deno Edge Function + `_shared/` közös modulok | **Runtime:** Deno (TypeScript) | **Platform:** Supabase Cloud
 
 Ez a dokumentáció az eaisybill-prod rendszer összes Supabase Edge Function-jének hivatalos, autoritatív katalógusa. Részletezi az egyes funkciók célját, jogosultsági modelljét (`verify_jwt`), meghívási kontextusát (Frontend, pg_cron, Webhook, Postgres Trigger) és környezeti változóit.
@@ -215,8 +215,8 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 
 | Edge Function | JWT Auth | Meghívó Réteg | Szükséges Környezeti Változók | Leírás és Üzleti Szerepkör |
 |---|:---:|---|---|---|
-| [`aggreg8-api`](../../supabase/functions/aggreg8-api/index.ts) | ✅ Kötelező | Frontend (`useAggreg8.ts`, Integrations/Banking) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, A8_AIS_API_KEY, A8_ENVIRONMENT, A8_PROD_PROXY_URL, A8_PROXY_SECRET` | Aggreg8 PSD2 AISP API átjáró — Megosztott szinkronizációs motor (`_shared/aggreg8-sync.ts`), fix IP proxy relay (`64.226.83.137`), Token cache (`aggreg8_settings` 175p), Bearer sanitization, 401 retry, felhasználó regisztráció, SyncUI session indítás (`ADD_BANK`, `ON_DEMAND`, `EXTEND_CONSENT`, `DELETE_INFO_SHARING_CONSENT`), banklista lekérdezés (`GET /banks`). |
-| [`aggreg8-callback`](../../supabase/functions/aggreg8-callback/index.ts) | ❌ Nyilvános / Webhook | Aggreg8 Webhook szerverek | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, A8_AIS_API_KEY, A8_ENVIRONMENT, A8_PROD_PROXY_URL, A8_PROXY_SECRET` | Nyilvános webhook végpont az Aggreg8 felé — Megosztott motor (`_shared/aggreg8-sync.ts`), hozzájárulások perzisztálása (`aggreg8_consents`, `aggreg8_accounts`), Bearer sanitization, 10 000+ tételes pagináció PGMQ háttér-folytatással (`aggreg8_continuation`), `last_synced_count` mentése, upsert a `bank_transactions` és `transactions` táblákba. |
+| [`aggreg8-api`](../../supabase/functions/aggreg8-api/index.ts) | ✅ Kötelező | Frontend (`useAggreg8.ts`, Integrations/Banking) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, A8_AIS_API_KEY, A8_ENVIRONMENT, A8_PROD_PROXY_URL, A8_PROXY_SECRET` | Aggreg8 PSD2 AISP API átjáró — Megosztott szinkronizációs motor (`_shared/aggreg8-sync.ts`), fix IP proxy relay (`64.226.83.137`), Token cache (`aggreg8_settings` 175p), Bearer sanitization, 401 retry, felhasználó regisztráció, SyncUI session indítás (`ADD_BANK`, `ON_DEMAND`, `EXTEND_CONSENT`, `DELETE_INFO_SHARING_CONSENT`), banklista lekérdezés (`GET /banks`), többcéges megosztott hozzájárulások automatikus szinkronizálása és aktív cég kontextus tárolása (`FLOW_INITIATED`). |
+| [`aggreg8-callback`](../../supabase/functions/aggreg8-callback/index.ts) | ❌ Nyilvános / Webhook | Aggreg8 Webhook szerverek | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, A8_AIS_API_KEY, A8_ENVIRONMENT, A8_PROD_PROXY_URL, A8_PROXY_SECRET` | Nyilvános webhook végpont az Aggreg8 felé — Megosztott motor (`_shared/aggreg8-sync.ts`), többcéges hozzájárulások perzisztálása (`aggreg8_consents` az összes kapcsolódó céghez), bankszámlák dinamikus hozzárendelése a folyamatot indító céghez (`FLOW_INITIATED`), Bearer sanitization, 10 000+ tételes pagináció PGMQ háttér-folytatással (`aggreg8_continuation`), `last_synced_count` mentése, upsert a `bank_transactions` és `transactions` táblákba. |
 
 ---
 

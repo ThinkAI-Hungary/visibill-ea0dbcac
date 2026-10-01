@@ -235,6 +235,7 @@ serve(async (req: Request) => {
         const { data: consentRecord } = await adminClient
           .from("aggreg8_consents")
           .select("user_id, bank_name")
+          .eq("company_id", companyId)
           .eq("info_sharing_consent_id", infoSharingConsentId)
           .maybeSingle();
 
@@ -386,46 +387,103 @@ serve(async (req: Request) => {
           .select("*")
           .eq("consent_id", consent.id);
 
-        // Ha a webhook még nem töltötte be a számlákat (friss bankcsatlakozási versenyhelyzet):
-        if (!accounts || accounts.length === 0) {
-          try {
-            const accRes = await fetch(`${config.apiUrl}/accounts?userId=${consent.a8_user_id}`, {
-              headers: getAggreg8Headers({
-                Accept: "application/json",
-                Authorization: `Bearer ${customerToken}`,
-              }),
-            });
+        // Számlák egyeztetése az Aggreg8 AIS API-val (Mindig lekérjük a legfrissebb számlákat)
+        try {
+          const accRes = await fetch(`${config.apiUrl}/accounts?userId=${consent.a8_user_id}`, {
+            headers: getAggreg8Headers({
+              Accept: "application/json",
+              Authorization: `Bearer ${customerToken}`,
+            }),
+          });
 
-            if (accRes.ok) {
-              const accList = await accRes.json();
-              const rawAccounts = Array.isArray(accList) ? accList : (accList.accounts || []);
-              for (const rawAcc of rawAccounts) {
-                const { data: insAcc } = await adminClient
-                  .from("aggreg8_accounts")
-                  .upsert(
-                    {
-                      consent_id: consent.id,
-                      company_id: consent.company_id,
-                      a8_account_id: rawAcc.id || rawAcc._id,
+          if (accRes.ok) {
+            const accList = await accRes.json();
+            const rawAccounts = Array.isArray(accList) ? accList : (accList.accounts || []);
+            for (const rawAcc of rawAccounts) {
+              const rawAccId = rawAcc.id || rawAcc._id;
+              
+              // Megvizsgáljuk, hogy ez a számla már be van-e jegyezve valamelyik céghez
+              const { data: existingAcc } = await adminClient
+                .from("aggreg8_accounts")
+                .select("id, company_id, consent_id")
+                .eq("a8_account_id", rawAccId)
+                .maybeSingle();
+
+              if (existingAcc) {
+                // Ha ehhez a céghez tartozik, frissítsük az adatokat
+                if (existingAcc.company_id === consent.company_id) {
+                  await adminClient
+                    .from("aggreg8_accounts")
+                    .update({
                       account_name: rawAcc.name || "Bankszámla",
                       account_number: rawAcc.accountNumber || "N/A",
                       currency: rawAcc.currency || "HUF",
                       balance: rawAcc.balance ?? null,
                       updated_at: new Date().toISOString(),
-                    },
-                    { onConflict: "a8_account_id" }
-                  )
+                    })
+                    .eq("id", existingAcc.id);
+                }
+              } else {
+                // Ha még NEM létezik:
+                // Meghatározzuk, hogy melyik céghez tartozik a számla a FLOW_INITIATED naplók alapján
+                let targetCompanyId = consent.company_id;
+                let targetConsentId = consent.id;
+
+                const { data: logWithAcc } = await adminClient
+                  .from("aggreg8_webhook_logs")
+                  .select("payload, notification_type")
+                  .filter("payload::text", "ilike", `%${rawAccId}%`)
+                  .order("created_at", { ascending: false })
+                  .limit(1)
+                  .maybeSingle();
+
+                if (logWithAcc?.payload?.userFlowInfo?.userFlowId) {
+                  const { data: flowInit } = await adminClient
+                    .from("aggreg8_webhook_logs")
+                    .select("payload")
+                    .eq("notification_type", "FLOW_INITIATED")
+                    .eq("user_flow_id", logWithAcc.payload.userFlowInfo.userFlowId)
+                    .maybeSingle();
+
+                  if (flowInit?.payload?.company_id) {
+                    targetCompanyId = flowInit.payload.company_id;
+                    const { data: tConsent } = await adminClient
+                      .from("aggreg8_consents")
+                      .select("id")
+                      .eq("company_id", targetCompanyId)
+                      .eq("info_sharing_consent_id", consent.info_sharing_consent_id)
+                      .maybeSingle();
+                    if (tConsent) {
+                      targetConsentId = tConsent.id;
+                    }
+                  }
+                }
+
+                const { data: insAcc, error: insErr } = await adminClient
+                  .from("aggreg8_accounts")
+                  .insert({
+                    consent_id: targetConsentId,
+                    company_id: targetCompanyId,
+                    a8_account_id: rawAccId,
+                    account_name: rawAcc.name || "Bankszámla",
+                    account_number: rawAcc.accountNumber || "N/A",
+                    currency: rawAcc.currency || "HUF",
+                    balance: rawAcc.balance ?? null,
+                    updated_at: new Date().toISOString(),
+                  })
                   .select()
                   .single();
 
-                if (insAcc) {
-                  accounts = [...(accounts || []), insAcc];
+                if (insErr) {
+                  console.warn("[aggreg8-api] Error inserting new account:", insErr);
+                } else if (insAcc && targetCompanyId === consent.company_id) {
+                  accounts = [...(accounts || []).filter((a: any) => a.id !== insAcc.id), insAcc];
                 }
               }
             }
-          } catch (accFetchErr) {
-            console.warn("[aggreg8-api] Could not fetch accounts from API:", accFetchErr);
           }
+        } catch (accFetchErr) {
+          console.warn("[aggreg8-api] Could not fetch accounts from API:", accFetchErr);
         }
 
         if (accounts && accounts.length > 0) {

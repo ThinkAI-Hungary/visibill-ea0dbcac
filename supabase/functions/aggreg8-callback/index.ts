@@ -286,7 +286,8 @@ serve(async (req) => {
       }
 
       case "INFO_SHARING_CONSENT_UPDATED": {
-        const { data: updatedConsent } = await supabaseAdmin
+        // 1. Frissítsük a lejárati dátumokat minden kapcsolódó hozzájáruláson
+        await supabaseAdmin
           .from("aggreg8_consents")
           .update({
             active_sync_enabled: activeSyncEnabled,
@@ -296,13 +297,172 @@ serve(async (req) => {
             status: "active",
             updated_at: new Date().toISOString(),
           })
-          .eq("info_sharing_consent_id", infoSharingConsentId)
-          .select("id")
-          .maybeSingle();
+          .eq("info_sharing_consent_id", infoSharingConsentId);
 
-        if (!updatedConsent) {
+        // 2. Multi-company & Session mapping: keressük meg a folyamatot indító céget
+        let flowCompanyId: string | null = null;
+        let flowUserId: string | null = null;
+        const userFlowId = userFlowInfo?.userFlowId;
+        if (userFlowId) {
+          const { data: flowInitLog } = await supabaseAdmin
+            .from("aggreg8_webhook_logs")
+            .select("payload")
+            .eq("notification_type", "FLOW_INITIATED")
+            .eq("user_flow_id", userFlowId)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (flowInitLog?.payload?.company_id && flowInitLog?.payload?.user_id) {
+            flowCompanyId = flowInitLog.payload.company_id;
+            flowUserId = flowInitLog.payload.user_id;
+            console.log(
+              `[aggreg8-callback] INFO_SHARING_CONSENT_UPDATED: Resolved company ${flowCompanyId} via userFlowId: ${userFlowId}`
+            );
+          }
+        }
+
+        // 3. Ha az indító cég még nem rendelkezik ehhez a felhatalmazáshoz tartozó rekorddal, hozzuk létre:
+        let targetConsent: any = null;
+        if (flowCompanyId) {
+          const { data: cRecord } = await supabaseAdmin
+            .from("aggreg8_consents")
+            .select("*")
+            .eq("company_id", flowCompanyId)
+            .eq("info_sharing_consent_id", infoSharingConsentId)
+            .maybeSingle();
+
+          if (!cRecord) {
+            const { data: newCRecord, error: newCErr } = await supabaseAdmin
+              .from("aggreg8_consents")
+              .insert({
+                company_id: flowCompanyId,
+                user_id: flowUserId,
+                info_sharing_consent_id: infoSharingConsentId,
+                a8_user_id: a8UserId,
+                bank_id: "000000000000000000000007",
+                bank_name: "Aggreg8.io integráció",
+                active_sync_enabled: activeSyncEnabled ?? true,
+                passive_sync_enabled: passiveSyncEnabled ?? true,
+                active_sync_expiration_date: activeSyncExpirationDate || null,
+                passive_sync_expiration_date: passiveSyncExpirationDate || null,
+                status: "active",
+              })
+              .select()
+              .single();
+            if (newCErr) {
+              console.error("[aggreg8-callback] Failed to insert consent for flowCompanyId:", newCErr);
+            } else {
+              targetConsent = newCRecord;
+            }
+          } else {
+            targetConsent = cRecord;
+          }
+        }
+
+        if (!targetConsent) {
+          const { data: existingConsent } = await supabaseAdmin
+            .from("aggreg8_consents")
+            .select("*")
+            .eq("info_sharing_consent_id", infoSharingConsentId)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          targetConsent = existingConsent;
+        }
+
+        if (!targetConsent) {
           console.log(`[aggreg8-callback] Consent ${infoSharingConsentId} not found in eaisybill-prod, forwarding downstream...`);
           await forwardToDownstreamInstances(supabaseAdmin, payload, "INFO_SHARING_CONSENT_UPDATED");
+        } else if (customerToken && a8UserId) {
+          // 4. Számlák lekérdezése az Aggreg8 AIS API-ból és mentése
+          const accRes = await fetch(`${API_BASE_URL}/accounts?userId=${a8UserId}`, {
+            headers: getAggreg8Headers({
+              Accept: "application/json",
+              Authorization: `Bearer ${customerToken}`,
+            }),
+          });
+
+          if (accRes.ok) {
+            const accList = await accRes.json();
+            const rawAccounts = Array.isArray(accList) ? accList : (accList.accounts || []);
+
+            const consentedAccountIds: string[] | null =
+              Array.isArray(consentedAccounts) && consentedAccounts.length > 0
+                ? consentedAccounts.map((a: any) =>
+                    typeof a === "string" ? a : (a.id || a._id || a.accountId)
+                  )
+                : null;
+
+            const newlyConsentedIds: string[] = Array.isArray(payload.consentedAccountsWithPsd2Consent)
+              ? payload.consentedAccountsWithPsd2Consent.map((a: any) =>
+                  typeof a === "string" ? a : (a.id || a._id || a.accountId)
+                )
+              : [];
+
+            const targetAccounts = consentedAccountIds
+              ? rawAccounts.filter((acc: any) =>
+                  consentedAccountIds.includes(acc.id || acc._id)
+                )
+              : rawAccounts;
+
+            for (const acc of targetAccounts) {
+              const accA8Id = acc.id || acc._id;
+
+              const { data: existingAcc } = await supabaseAdmin
+                .from("aggreg8_accounts")
+                .select("id, company_id, consent_id")
+                .eq("a8_account_id", accA8Id)
+                .maybeSingle();
+
+              let assignCompanyId = existingAcc?.company_id;
+              let assignConsentId = existingAcc?.consent_id;
+
+              if (!assignCompanyId || !assignConsentId) {
+                if (newlyConsentedIds.includes(accA8Id) && flowCompanyId) {
+                  assignCompanyId = flowCompanyId;
+                  assignConsentId = targetConsent.id;
+                } else {
+                  // Nem az aktuális folyamatban újonnan engedélyezett számla:
+                  // Rendeljük az eredeti (korábbi) hozzájáruláshoz és céghez
+                  const { data: origConsent } = await supabaseAdmin
+                    .from("aggreg8_consents")
+                    .select("id, company_id")
+                    .eq("info_sharing_consent_id", infoSharingConsentId)
+                    .order("created_at", { ascending: true })
+                    .limit(1)
+                    .maybeSingle();
+
+                  assignCompanyId = origConsent?.company_id || targetConsent.company_id;
+                  assignConsentId = origConsent?.id || targetConsent.id;
+                }
+              }
+
+              const { data: savedAcc, error: accErr } = await supabaseAdmin
+                .from("aggreg8_accounts")
+                .upsert(
+                  {
+                    consent_id: assignConsentId,
+                    company_id: assignCompanyId,
+                    a8_account_id: accA8Id,
+                    account_name: acc.name || "Bankszámla",
+                    account_number: acc.accountNumber || "N/A",
+                    currency: acc.currency || "HUF",
+                    balance: acc.balance ?? null,
+                    updated_at: new Date().toISOString(),
+                  },
+                  { onConflict: "a8_account_id" }
+                )
+                .select()
+                .single();
+
+              if (accErr) {
+                console.error("[aggreg8-callback] Error saving aggreg8_account in UPDATED:", accErr);
+              } else if (savedAcc) {
+                await syncAccountTransactions(supabaseAdmin, customerToken, savedAcc, a8UserId);
+              }
+            }
+          }
         }
         break;
       }
@@ -335,30 +495,32 @@ serve(async (req) => {
           userFlowInfo?.step === "INFO_SHARING_CONSENT_GIVEN";
 
         if (isCompleted && customerToken) {
-          const consentQuery = supabaseAdmin
-            .from("aggreg8_consents")
-            .select("id, a8_user_id, company_id");
-
+          let targetConsents: any[] = [];
           if (infoSharingConsentId) {
-            consentQuery.eq("info_sharing_consent_id", infoSharingConsentId);
+            const { data: consents } = await supabaseAdmin
+              .from("aggreg8_consents")
+              .select("id, a8_user_id, company_id")
+              .eq("info_sharing_consent_id", infoSharingConsentId);
+            targetConsents = consents || [];
           } else if (a8UserId) {
-            consentQuery.eq("a8_user_id", a8UserId);
+            const { data: consents } = await supabaseAdmin
+              .from("aggreg8_consents")
+              .select("id, a8_user_id, company_id")
+              .eq("a8_user_id", a8UserId);
+            targetConsents = consents || [];
           }
 
-          const { data: consent } = await consentQuery
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
+          if (targetConsents.length > 0) {
+            for (const consent of targetConsents) {
+              const { data: accounts } = await supabaseAdmin
+                .from("aggreg8_accounts")
+                .select("*")
+                .eq("consent_id", consent.id);
 
-          if (consent) {
-            const { data: accounts } = await supabaseAdmin
-              .from("aggreg8_accounts")
-              .select("*")
-              .eq("consent_id", consent.id);
-
-            if (accounts && accounts.length > 0) {
-              for (const acc of accounts) {
-                await syncAccountTransactions(supabaseAdmin, customerToken, acc, consent.a8_user_id);
+              if (accounts && accounts.length > 0) {
+                for (const acc of accounts) {
+                  await syncAccountTransactions(supabaseAdmin, customerToken, acc, consent.a8_user_id);
+                }
               }
             }
           } else {
@@ -371,23 +533,42 @@ serve(async (req) => {
 
       case "TRANSACTIONS_CREATED":
       case "TRANSACTIONS_UPDATED": {
-        // Az érintett consenthez tartozó számlák lekérdezése
-        const { data: consent } = await supabaseAdmin
-          .from("aggreg8_consents")
-          .select("id, a8_user_id, company_id")
-          .eq("info_sharing_consent_id", infoSharingConsentId)
-          .maybeSingle();
+        const incomingAccountIds: string[] = Array.isArray(payload.transactions)
+          ? payload.transactions.map((t: any) => t.accountId).filter(Boolean)
+          : [];
 
-        if (consent && customerToken) {
-          const { data: accounts } = await supabaseAdmin
+        let accountsToSync: any[] = [];
+
+        if (incomingAccountIds.length > 0) {
+          const { data: accs } = await supabaseAdmin
             .from("aggreg8_accounts")
-            .select("*")
-            .eq("consent_id", consent.id);
-
-          if (accounts) {
-            for (const acc of accounts) {
-              await syncAccountTransactions(supabaseAdmin, customerToken, acc, consent.a8_user_id);
+            .select("*, consent:aggreg8_consents(a8_user_id)")
+            .in("a8_account_id", incomingAccountIds);
+          accountsToSync = accs || [];
+        } else if (infoSharingConsentId) {
+          const { data: consents } = await supabaseAdmin
+            .from("aggreg8_consents")
+            .select("id, a8_user_id")
+            .eq("info_sharing_consent_id", infoSharingConsentId);
+          if (consents && consents.length > 0) {
+            const consentMap = new Map(consents.map((c: any) => [c.id, c.a8_user_id]));
+            const { data: accs } = await supabaseAdmin
+              .from("aggreg8_accounts")
+              .select("*")
+              .in("consent_id", consents.map((c: any) => c.id));
+            if (accs) {
+              accountsToSync = accs.map((a: any) => ({
+                ...a,
+                consent: { a8_user_id: consentMap.get(a.consent_id) },
+              }));
             }
+          }
+        }
+
+        if (accountsToSync.length > 0 && customerToken) {
+          for (const acc of accountsToSync) {
+            const userId = acc.consent?.a8_user_id || a8UserId;
+            await syncAccountTransactions(supabaseAdmin, customerToken, acc, userId);
           }
         } else {
           console.log(`[aggreg8-callback] Consent not found in eaisybill-prod for ${notificationType}. Forwarding downstream...`);

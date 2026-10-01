@@ -1,7 +1,7 @@
 # eaisybill-prod — Adatbázis Séma Áttekintés
 
-> **Utoljára frissítve:** 2026-09-28  
-> **Összesen:** 189 aktív alkalmazás-tábla (190 sémában) | **RLS:** mind engedélyezve (100% InitPlan & Single-Permissive optimalizált) | **FK Indexek:** 100% lefedettség | **Supabase PostgreSQL**
+> **Utoljára frissítve:** 2026-10-01  
+> **Összesen:** 192 aktív alkalmazás-tábla (193 sémában) | **RLS:** mind engedélyezve (100% InitPlan & Single-Permissive optimalizált) | **FK Indexek:** 100% lefedettség | **Supabase PostgreSQL**
 
 Ez a dokumentáció az eaisybill-prod Supabase projekt teljes adatbázis sémáját tartalmazza. Célja, hogy bármely fejlesztő és AI agent azonnal megértse a táblastruktúrát, kapcsolatokat és felhasználási kontextust.
 A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [PostgreSQL RPC Katalógus](./rpc-catalog.md), a serverless függvényeket az [Edge Functions Katalógus](./edge-functions.md), a biztonsági és indexelési irányelveket pedig az [A-092: Teljes Adatbázis Biztonsági és Teljesítménybeli Audit & Optimalizáció](./decisions/A-092-database-security-and-performance-optimization.md) dokumentálja.
@@ -65,6 +65,9 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 | `accounty_data_contracts` | 📘 eaisyBooks — Adó & Jogi | 0 | Adatfeldolgozási és könyvelési szerződések. |
 | `accounty_deadlines` | 📘 eaisyBooks — Alap | 3728 | Könyvelési és adóügyi határidők cégenként. |
 | `accounty_declarations` | 📘 eaisyBooks — Bérszámfejtés | 0 | Adóelőleg-nyilatkozatok kedvezmény-típusonként. |
+| `aggreg8_accounts` | 💳 Tranzakciók & Bank | 4 | Aggreg8 PSD2 Open Banking csatlakoztatott bankszámlák és egyenlegek cégenként dinamikus FLOW_INITIATED szétválasztással |
+| `aggreg8_consents` | 💳 Tranzakciók & Bank | 2 | Aggreg8 PSD2 Open Banking felhasználói hozzájárulások (180 napos érvényesség, többcéges megosztás) |
+| `aggreg8_settings` | 💳 Tranzakciók & Bank | 1 | Rendszerszintű Aggreg8 AIS partner hitelesítő token gyorsítótár (sandbox/prod) |
 | `api_idempotency_keys` | 🛠️ Platform & Üzemeltetés | 0 | 24 órás M2M Customer API kérés-idempotencia tároló gyorsított válaszadással |
 | `api_keys` | 🛠️ Platform & Üzemeltetés | 2 | API kulcsok külső integrációkhoz (OpenClaw és ügyfél Customer REST API) SHA-256 hash hitelesítéssel |
 | `api_request_logs` | 🏢 Cégek & Tagság | 5 | Külső gép-gép (M2M) Customer REST API kérések és cégadat-módosítások strukturált audit naplója |

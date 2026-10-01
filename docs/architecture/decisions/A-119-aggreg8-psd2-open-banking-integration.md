@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-09-17  
-**Utoljára frissítve:** 2026-09-28  
+**Utoljára frissítve:** 2026-10-01 (Multi-company consent támogatás, EB-0226)  
 
 ## Context
 
@@ -84,6 +84,15 @@ Az **Aggreg8 (AISP API v5.3.1)** felhőalapú banki aggregátorát integráltuk 
 - **Probléma:** Amikor egy cég már hónapok óta manuálisan importált bankszámlakivonatokkal rendelkezik, és utólag csatlakoztatja az Aggreg8 PSD2-t, a banki API a történeti ablakban (90–180 nap) lekéri a korábbi tranzakciókat. A leírási mezők eltérése miatt a korábbi `UNIQUE(company_id, transaction_date, description, amount)` nem védte ki a duplikációt, ami egyenlegtorzulást és kettős számlapárosítást okozott (EB-0211).
 - **Megoldás:** Bevezetésre került a `deduplicate_aggreg8_candidates()` (Phase 2b) réteg a Python Workerben (`aggreg8_processor.py`) és kibővítettük a banki referencia felismerést (`db.py:extract_bank_reference`). Ha egy tétel már létezik fájlimportból, a rendszer nem szúr be új rekordot és nem futtat rá AI kategorizálást/párosítást, hanem a meglévő rekordot dúsítja fel (`UPDATE transactions SET a8_transaction_id = a8_id WHERE id = matched_file_tx_id`). Részletek: [A-179](./A-179-aggreg8-psd2-cross-import-deduplication.md).
 
+### 8. Multi-Company Consent Megosztás és Dinamikus Számlaleosztás (2026-10 Frissítés, EB-0226)
+- **Probléma:** Amikor egy vállalkozó több céget kezel azonos netbank felhasználóval (pl. K&H Netbank), az Aggreg8 AISP egyetlen `info_sharing_consent_id` alá csoportosítja az összes bankszámlát a hozzájárulás frissítésekor (`INFO_SHARING_CONSENT_UPDATED`). A Visibillben korábban globális `UNIQUE(info_sharing_consent_id)` megszorítás volt, ami megakadályozta, hogy ugyanazt a banki azonosítást egy második céghez is hozzárendeljük. Továbbá az `INFO_SHARING_CONSENT_UPDATED` webhook esemény csak lejárati időket frissített, így az újonnan bejelölt bankszámlák nem jöttek létre a `public.aggreg8_accounts` táblában.
+- **Megoldás:**
+  1. **Többcéges felhatalmazási séma:** A `public.aggreg8_consents` táblán a megszorítást feloldottuk és cégre szűkítettük: `UNIQUE(company_id, info_sharing_consent_id)`.
+  2. **Webhook eseménybővítés (`INFO_SHARING_CONSENT_UPDATED`):** A webhook feloldja a folyamatot indító céget (`FLOW_INITIATED` alapján), biztosítja a cégszintű consent rekordot, lekérdezi a friss számlalistát az Aggreg8 API-ból, és intelligensen szétválogatja a számlákat:
+     - Az aktuális folyamatban újonnan engedélyezett számlákat (`consentedAccountsWithPsd2Consent`) a folyamatot indító céghez csatolja.
+     - A korábbi folyamatokból származó számlákat (`consentedAccountsWithoutPsd2Consent`) a korábbi céghez rendeli hozzá, megőrizve a meglévő relációkat.
+  3. **Multi-tenant szinkronizáció:** A `TRANSACTIONS_CREATED` és `USER_FLOW_ENDED` feldolgozók az érintett számlák alapján közvetlenül azonosítják a céget és hajtják végre a tranzakció-letöltést.
+
 ## Consequences
 
 **Pozitív:**
@@ -92,6 +101,7 @@ Az **Aggreg8 (AISP API v5.3.1)** felhőalapú banki aggregátorát integráltuk 
 - 180 napos PSD2 engedélyezési ciklus, egyértelmű lejárati figyelmeztetéssel.
 - Azonnali számla-tranzakció párosítás manuális kivonatfeltöltés nélkül.
 - Zéró duplikáció meglévő fájlimportos cégeknél (A-179).
+- Teljes körű multi-company támogatás azonos netbank hozzáférés esetén (EB-0226).
 
 **Negatív / Kötöttségek:**
 - Függőség az Aggreg8 rendelkezésre állásától és az `A8_AIS_API_KEY` titkos környezeti változótól.

@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-09-17  
-**Utoljára frissítve:** 2026-09-28  
+**Utoljára frissítve:** 2026-10-01  
 
 **Category:** Integrációk & Jövő  
 
@@ -21,6 +21,7 @@ A Visibill / eaisybill-prod az **Aggreg8 (PSD2 AISP v5.3.1)** felhőalapú Open 
 - `bank_transactions.bank_statement_id` oszlop nullable lett, így az Open Banking tranzakciók közvetlenül és azonnal bekerülnek a könyvelési párosító motorba.
 - UI: Beállítások $\rightarrow$ Bankszámlák fülön dedikált `Aggreg8BankConnections` komponens 4 állapottal és élő Realtime szinkronizációval.
 - Éles élesítés (Production cutover 2026-09-28): Sikeres éles hitelesítés, DigitalOcean fix IP Caddy proxy relay és 200 éles banki tétel szinkronizációja ellenőrizve.
+- **Többcéges Hozzájárulás-megosztás & Számlaszétválasztás (2026-10-01):** Ha a felhasználó egyetlen netbanki bejelentkezéssel több általa felügyelt cég számláihoz is hozzáférést ad, a rendszer a consent rekordot automatikusan kiterjeszti a cégportfólió összes releváns cégére (`aggreg8_consents_company_consent_key`), elkerülve a duplikált netbanki azonosítást. A bankszámlák és tranzakciók dinamikusan az indító session kontextus (`FLOW_INITIATED`) alapján a megfelelő céghez kerülnek.
 
 **Rationale:**
 A manuális CSV/XLS kivonatok letöltése és feltöltése a könyvelők és vállalkozók legnagyobb időrabló folyamata volt. Az MNB által jóváhagyott PSD2 aggregáció 99%-kal csökkenti a manuális adminisztrációt, azonnali tranzakció-számla párosítást tesz lehetővé, és teljes jogi/adatvédelmi védelmet garantál.

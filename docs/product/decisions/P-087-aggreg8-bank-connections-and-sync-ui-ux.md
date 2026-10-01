@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-09-17  
-**Utoljára frissítve:** 2026-09-28  
+**Utoljára frissítve:** 2026-10-01 (Multi-company netbank megosztás, EB-0226)  
 
 **Category:** Beállítások & Bankkapcsolatok UX  
 
@@ -51,6 +51,11 @@ Az Open Banking kapcsolatok dedikált kezelőfelületét az **Integrációk (`/i
 - Ha egy újonnan csatlakoztatott számlán a kezdeti szinkronizáció eléri az 50 oldalas (10 000 tétel) Edge Function plafont:
   - A felület borostyánsárga információs Toast üzenettel nyugtatja meg a felhasználót: *„A kezdeti 10 000 tranzakció sikeresen megérkezett! A régebbi tételek letöltése a háttérben, megszakítás nélkül folytatódik...”*.
   - A számla kártyáján lévő badge kiírja a letöltött tételek számát (`10 000+ tétel szinkronizálva`), megelőzve az aggodalmat, hogy az adatok egy része hiányozna.
+
+### 7. Többvállalkozásos Bankkapcsolat (Multi-Company Netbank Megosztás, 2026-10 Frissítés, EB-0226)
+- Ha a vállalkozó több céget kezel azonos netbanki belépési adatokkal (pl. K&H Netbank), a Visibill intelligensen kezeli a közös banki hozzájárulást:
+  - Cégváltáskor az Integrációk (`/integrations?tab=banking`) és a Bankszámlák lapon kizárólag az adott céghez hozzárendelt számlák jelennek meg.
+  - A szinkronizáció, a tranzakcióletöltés és az automatikus számlapárosítás cégenként teljesen elszeparáltan működik, megakadályozva a számlák és tranzakciók cégek közötti keveredését.
 
 ## Rationale
 A bankkapcsolat beállítása bizalmi funkció. A felhasználónak minden pillanatban éreznie kell, hogy az adatai biztonságban vannak, tisztán látnia kell a PSD2 180 napos engedély állapotát, és azonnali, élő vizuális visszajelzést kell kapnia a háttérben zajló adatszinkronizációról.

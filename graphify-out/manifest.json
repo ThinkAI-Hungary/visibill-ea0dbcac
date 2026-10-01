@@ -3010,8 +3010,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-005-edge-functions.md": {
-    "mtime": 1790514518.2200108,
-    "ast_hash": "01a022724119cd8082db7b4e6d586bd8",
+    "mtime": 1790812509.1530418,
+    "ast_hash": "cf081e77a9a61e9a99590fcf946de5b8",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-006-python-worker.md": {
@@ -3090,8 +3090,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790806521.4569192,
-    "ast_hash": "d7c1a636c13df98b4486459404f264ea",
+    "mtime": 1790812460.708028,
+    "ast_hash": "09f2df5d57ded13cd2ade450c5370c80",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3250,8 +3250,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/026-banking-integration.md": {
-    "mtime": 1790586500.1687148,
-    "ast_hash": "2b1ffefbf4ff122176f2d1eb64fa01f9",
+    "mtime": 1790812534.2092757,
+    "ast_hash": "15d268943265ac4930e418242db19777",
     "semantic_hash": ""
   },
   "docs/business/decisions/027-llm-cost-management.md": {
@@ -3565,8 +3565,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1790806491.4495685,
-    "ast_hash": "6eb1de260f856fdc3719e2c4377348b8",
+    "mtime": 1790812465.807396,
+    "ast_hash": "a51e38679f2c80713f4328af8615d7fe",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -5015,8 +5015,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database-schema.md": {
-    "mtime": 1790635570.4225779,
-    "ast_hash": "f07f2803c5f2882b3447cc87aa49f552",
+    "mtime": 1790812490.5216792,
+    "ast_hash": "a5f669f744fdbb5636b0986d3754ba15",
     "semantic_hash": ""
   },
   "docs/architecture/database/01-auth-users.md": {
@@ -5045,8 +5045,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/06-transactions-bank.md": {
-    "mtime": 1790601422.2116282,
-    "ast_hash": "142888df6201d0b7de9c84b91851606b",
+    "mtime": 1790812476.946591,
+    "ast_hash": "e7ff29db4fabe81efb92a26bb6261214",
     "semantic_hash": ""
   },
   "docs/architecture/database/07-general-ledger.md": {
@@ -8840,8 +8840,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/edge-functions.md": {
-    "mtime": 1790514518.2210107,
-    "ast_hash": "9079f10e4098094f7c67a356133e5302",
+    "mtime": 1790812524.4913294,
+    "ast_hash": "dcdca652480debd723f0622df6c0a495",
     "semantic_hash": ""
   },
   "docs/architecture/rpc-catalog.md": {
@@ -10515,13 +10515,13 @@
     "semantic_hash": ""
   },
   "supabase/functions/aggreg8-api/index.ts": {
-    "mtime": 1790282033.7087233,
-    "ast_hash": "a124e70bb2c42a85f15309316a9c2c83",
+    "mtime": 1790808706.6702921,
+    "ast_hash": "081327b3be112207397381fbc3e1c1dc",
     "semantic_hash": ""
   },
   "supabase/functions/aggreg8-callback/index.ts": {
-    "mtime": 1790462263.6520412,
-    "ast_hash": "06bbccfbd499775dc5643ef07f4a0f5c",
+    "mtime": 1790809472.8850188,
+    "ast_hash": "e7f4bded9502cf0992a0becb519fa66b",
     "semantic_hash": ""
   },
   "supabase/migrations/20260917030000_aggreg8_integration.sql": {
@@ -10535,13 +10535,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-119-aggreg8-psd2-open-banking-integration.md": {
-    "mtime": 1790683093.299715,
-    "ast_hash": "a733b4cf84c67d45ef575ff94258dc82",
+    "mtime": 1790809653.0363598,
+    "ast_hash": "60a5db09f94352ae6c1e05c86a120b21",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-087-aggreg8-bank-connections-and-sync-ui-ux.md": {
-    "mtime": 1790586537.0638885,
-    "ast_hash": "299bdb4c87cfbd33557e5e713c78ba98",
+    "mtime": 1790809666.9299228,
+    "ast_hash": "0a907543c4cb5d7dbec5245e53b41305",
     "semantic_hash": ""
   },
   "supabase/migrations/20260917032000_transactions_a8_fields.sql": {
@@ -11560,8 +11560,8 @@
     "semantic_hash": ""
   },
   "src/test/banking/aggreg8Connections.test.tsx": {
-    "mtime": 1790257147.7330344,
-    "ast_hash": "1785a0656ac51faa276606dade1f3a53",
+    "mtime": 1790813321.869025,
+    "ast_hash": "8bcbcf0ac2a37c95bdd964d757ba09ba",
     "semantic_hash": ""
   },
   "src/components/general-ledger/__tests__/GeneralLedgerGranularityToggle.test.tsx": {
@@ -12680,8 +12680,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/aggreg8-transaction-data-spec.md": {
-    "mtime": 1790585875.6059027,
-    "ast_hash": "39ca2c316ef7dac17d181b88b515f124",
+    "mtime": 1790812544.04108,
+    "ast_hash": "82f772d00d6700c9b208a319611fecf1",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-169-b2c-nav-anonymization-and-submitted-invoice-sync.md": {
@@ -13605,8 +13605,23 @@
     "semantic_hash": ""
   },
   "session-summary/Jani/2026-10-01/summary-001211-eb-0223-payroll-extra-leave-entitlements-and-tests.md": {
-    "mtime": 1790806346.428789,
-    "ast_hash": "7b4d69522821e17ea2f8be39c5fe2d84",
+    "mtime": 1790807151.1618621,
+    "ast_hash": "5767f9ce757f643cbecf6f5b940ee1ac",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261001010000_fix_aggreg8_multi_company_consent_and_account_sync.sql": {
+    "mtime": 1790808448.5017335,
+    "ast_hash": "90264822e1c094ce1a94a02109aefe17",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-10-01/summary-013218-eb-0226-aggreg8-multi-company-consent-and-account-sync.md": {
+    "mtime": 1790811152.3690488,
+    "ast_hash": "380ac98a245257f344c45c53f9902982",
+    "semantic_hash": ""
+  },
+  "src/test/banking/useAggreg8.test.ts": {
+    "mtime": 1790813442.6686726,
+    "ast_hash": "13f39e47fe4449fd28b5e288ac3852c2",
     "semantic_hash": ""
   }
 }
