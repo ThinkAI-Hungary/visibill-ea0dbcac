@@ -282,7 +282,7 @@ export function useInvoiceData(
         .select('id, validation_status')
         .eq('company_id', selectedCompanyId!)
         .maybeSingle();
-      if (!navError && navData && navData.validation_status === 'valid') {
+      if (!navError && navData && (navData.validation_status === 'valid' || navData.validation_status === 'pending')) {
         return true;
       }
 

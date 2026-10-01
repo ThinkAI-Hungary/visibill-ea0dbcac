@@ -30,7 +30,7 @@ export default function ClientMissingInvoicesReportPage() {
   const id = companyId;
   
   const { data: clients } = useAccountyClients();
-  const { data: missingItems } = useAccountyMissingItems(id || '');
+  const { data: missingItems } = useAccountyMissingItems(id || '', 0, 5000);
 
   const clientName = useMemo(() => {
     const found = clients?.find(c => c.id === id);
@@ -120,16 +120,25 @@ export default function ClientMissingInvoicesReportPage() {
 
           <ExportButton
             filename={`ugyfel_hianyzok_${id}_${new Date().toISOString().split('T')[0]}`}
-            headers={['Dokumentum', 'Kategória', 'Állapot', 'Létrehozva']}
+            headers={['Bizonylatszám', 'Partner / Megnevezés', 'Kategória', 'Bizonylat kelte', 'Összeg (Ft)', 'Státusz', 'Forrás']}
             label="Riport Exportálása"
-            getRows={() => ((missingItems as any)?.items || []).map(r => {
+            getRows={() => ((missingItems as any)?.items || []).map((r: any) => {
               const typeMap: Record<string, string> = { bejovo: 'Bejövő', kimeno: 'Kimenő', bank: 'Bank', ber: 'Bér' };
-              const statusMap: Record<string, string> = { pending: 'Feldolgozandó', notified: 'Felszólítva', resolved: 'Rendben', ignored: 'Mellőzve' };
+              const statusMap: Record<string, string> = { open: 'Függőben', pending: 'Feldolgozandó', notified: 'Felszólítva', resolved: 'Rendben', ignored: 'Mellőzve' };
+              const sourceMap: Record<string, string> = {
+                nav_detektor: 'NAV (Számlakép hiányzik)',
+                bank_detektor: 'Banki tranzakció',
+                ber_cron: 'Bérszámfejtés',
+                manual: 'Kézi rögzítés',
+              };
               return [
-                r.description,
-                typeMap[r.category] || r.category,
-                statusMap[r.status] || r.status,
-                new Date(r.created_at).toLocaleDateString('hu-HU')
+                r.invoiceNumber || '—',
+                r.title || r.subtitle || '—',
+                typeMap[r.category] || r.category || '—',
+                r.itemDate ? new Date(r.itemDate).toLocaleDateString('hu-HU') : '—',
+                r.amount != null ? Number(r.amount).toLocaleString('hu-HU') : '—',
+                statusMap[r.status] || r.status || '—',
+                sourceMap[r.source] || r.source || '—',
               ];
             })}
           />

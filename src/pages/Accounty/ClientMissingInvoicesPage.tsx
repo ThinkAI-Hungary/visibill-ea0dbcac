@@ -24,6 +24,7 @@ import { AddMissingInvoiceModal } from './missing-invoices/AddMissingInvoiceModa
 import { MissingInvoicesKpiCards } from './missing-invoices/MissingInvoicesKpiCards';
 import { MissingInvoicesFilterBar } from './missing-invoices/MissingInvoicesFilterBar';
 import { MissingInvoicesTable } from './missing-invoices/MissingInvoicesTable';
+import { ExportButton } from '@/components/accounty/ExportButton';
 
 
 // InvoiceItem type is imported from ./missing-invoices/InvoiceDetailModal
@@ -439,6 +440,28 @@ export default function ClientMissingInvoicesPage() {
         </div>
         
         <div className="flex items-center gap-3">
+          <ExportButton
+            filename={`hianyzo_szamlak_${companyData?.name ? companyData.name.replace(/[^a-zA-Z0-9áéíóöőúüűÁÉÍÓÖŐÚÜŰ_-]/g, '_') : companyId}_${new Date().toISOString().split('T')[0]}`}
+            headers={['Bizonylatszám', 'Partner / Megnevezés', 'Részletek', 'Kategória', 'Időszak', 'Összeg', 'Forrás', 'Prioritás', 'Státusz']}
+            label={t('common.export', 'Exportálás')}
+            getRows={() => {
+              const exportList = selectedIds.length > 0
+                ? filteredInvoices.filter(inv => selectedIds.includes(inv.id))
+                : filteredInvoices;
+              return exportList.map(inv => [
+                inv.invoiceNumber || '—',
+                inv.vendor || '—',
+                inv.subtext || '—',
+                inv.category || '—',
+                inv.period || '—',
+                inv.amount || '—',
+                inv.source || '—',
+                inv.priority || '—',
+                inv.status || '—',
+              ]);
+            }}
+          />
+
           <button 
             onClick={() => setShowHistoryView(true)}
             className="flex items-center gap-2 px-4 py-2 bg-card border border-border text-foreground/90 rounded-lg hover:bg-muted/50 transition-colors text-sm font-medium shadow-soft"

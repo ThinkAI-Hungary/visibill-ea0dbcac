@@ -388,6 +388,7 @@ export function useInvoiceMutations({
   const handleExportSubmitted = async (exportFormat: 'csv' | 'xlsx') => {
     const getExportData = (invoice: SubmittedInvoice) => {
       return [
+        invoice.bizonylatsorszam || '',
         invoice.kibocsatas_datuma || '',
         invoice.teljesites_datuma || '',
         invoice.elado_nev || '',
@@ -402,7 +403,7 @@ export function useInvoiceMutations({
     };
 
     const headers = [
-      'Kibocsátás dátuma', 'Teljesítés dátuma', 'Eladó', 'Vevő',
+      'Bizonylatszám', 'Kibocsátás dátuma', 'Teljesítés dátuma', 'Eladó', 'Vevő',
       'Pénznem', 'Nettó összeg (deviza)', 'ÁFA összeg (deviza)', 'Bruttó összeg (deviza)',
       'Kategória', 'Projekt'
     ];
