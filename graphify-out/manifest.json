@@ -30,8 +30,8 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1790775655.263845,
-    "ast_hash": "4b0415b1b5027b3661c9933ccd093a6f",
+    "mtime": 1790823704.8128357,
+    "ast_hash": "4775625d03084115d668a16e146d9e3f",
     "semantic_hash": ""
   },
   "playwright.config.ts": {
@@ -11715,8 +11715,8 @@
     "semantic_hash": ""
   },
   "src/config/version.ts": {
-    "mtime": 1790716904.9327724,
-    "ast_hash": "d939684d3e08c8dd0ce37a7ba0d7d851",
+    "mtime": 1790823693.4146712,
+    "ast_hash": "b20211e69d25dfa39b7624fd6b2fc484",
     "semantic_hash": ""
   },
   ".agents/skills/visibill-patchnote/SKILL.md": {
@@ -13702,6 +13702,11 @@
   "session-summary/Jani/2026-10-01/summary-035600-invoice-item-accrual-and-ve-posting.md": {
     "mtime": 1790819766.0144205,
     "ast_hash": "609f936a2da5992e0cad9d9aac5891b6",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-10-01/summary-043500-dynamic-journals-management-and-bank-linking.md": {
+    "mtime": 1790822027.1222377,
+    "ast_hash": "c02e2bef262f8a2dbf1260102fd35bbd",
     "semantic_hash": ""
   }
 }
