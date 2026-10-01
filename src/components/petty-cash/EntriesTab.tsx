@@ -1594,11 +1594,17 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
     : null;
   const showRoundingHint = roundedPreview !== null && roundedPreview !== parsedAmount;
 
-  const selectTypeAndFocus = useCallback((isExpense: boolean) => {
+  const selectTypeAndFocus = useCallback((isExpense: boolean, e?: React.SyntheticEvent) => {
     setForm(f => ({ ...f, isExpense }));
+    if (e?.currentTarget && 'blur' in e.currentTarget) {
+      (e.currentTarget as HTMLElement).blur();
+    }
+    requestAnimationFrame(() => {
+      recordBtnRef.current?.focus();
+    });
     setTimeout(() => {
       recordBtnRef.current?.focus();
-    }, 40);
+    }, 60);
   }, []);
 
   const save = useMutation({
@@ -2145,7 +2151,13 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
             <div className="grid grid-cols-2 gap-2 p-1 bg-muted/60 rounded-lg border border-border/50">
               <button
                 type="button"
-                onClick={() => selectTypeAndFocus(false)}
+                onClick={(e) => selectTypeAndFocus(false, e)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    selectTypeAndFocus(false, e);
+                  }
+                }}
                 className={cn(
                   "flex items-center justify-center gap-2 py-2 px-3 rounded-md text-xs font-medium transition-all",
                   !form.isExpense
@@ -2161,7 +2173,13 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
               </button>
               <button
                 type="button"
-                onClick={() => selectTypeAndFocus(true)}
+                onClick={(e) => selectTypeAndFocus(true, e)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    selectTypeAndFocus(true, e);
+                  }
+                }}
                 className={cn(
                   "flex items-center justify-center gap-2 py-2 px-3 rounded-md text-xs font-medium transition-all",
                   form.isExpense
