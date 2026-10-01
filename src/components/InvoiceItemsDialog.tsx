@@ -2086,7 +2086,7 @@ export function InvoiceItemsDialog({
                                         ⇄
                                       </span>
                                     )}
-                                    <Pencil className="h-3 w-3 opacity-0 group-hover/gl:opacity-70 transition-opacity ml-0.5" />
+                                    <Pencil className="h-3 w-3 opacity-50 group-hover/gl:opacity-100 transition-opacity ml-0.5 shrink-0" />
                                   </button>
                                 </TooltipTrigger>
                                 <TooltipContent side="top" className="text-xs z-[120] max-w-xs text-center">

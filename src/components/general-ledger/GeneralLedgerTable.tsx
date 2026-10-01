@@ -2538,7 +2538,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                                 <Button
                                   variant="ghost" 
                                   size="icon" 
-                                  className="h-6 w-6 rounded-md opacity-0 group-hover:opacity-100 transition-opacity print:hidden shrink-0"
+                                  className="h-6 w-6 rounded-md opacity-40 hover:opacity-100 group-hover:opacity-100 transition-opacity print:hidden shrink-0 text-muted-foreground hover:text-primary hover:bg-muted/60"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setEditingItem(row);
@@ -2547,7 +2547,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                                     setIsEditOpen(true);
                                   }}
                                 >
-                                  <Edit2 className="w-3.5 h-3.5 text-muted-foreground" />
+                                  <Edit2 className="w-3.5 h-3.5" />
                                 </Button>
                               </CustomTooltip>
                             ) : (
@@ -2613,7 +2613,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                               <Button
                                 variant="ghost" 
                                 size="icon" 
-                                className="h-6 w-6 rounded-md opacity-0 group-hover:opacity-100 transition-opacity print:hidden shrink-0"
+                                className="h-6 w-6 rounded-md opacity-40 hover:opacity-100 group-hover:opacity-100 transition-opacity print:hidden shrink-0 text-muted-foreground hover:text-primary hover:bg-muted/60"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setEditingItem(row);
@@ -2623,7 +2623,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                                   setIsEditOpen(true);
                                 }}
                               >
-                                <Edit2 className="w-3.5 h-3.5 text-muted-foreground" />
+                                <Edit2 className="w-3.5 h-3.5" />
                               </Button>
                             </CustomTooltip>
                           ) : (
