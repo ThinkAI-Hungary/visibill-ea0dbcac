@@ -25,7 +25,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatCurrency, cn, formatVatRate, is27PercentVatRate, normalizeVatRatePercent } from '@/lib/utils';
 import { isValidUUID } from '@/lib/validationUtils';
-import { Package, Package2, CheckCircle2, Info, Loader2, Check, Pencil, FileSpreadsheet, X, ArrowUpDown, ArrowLeftRight, ChevronUp, ChevronDown, MessageSquare, Sparkles, Wallet, Lock, Landmark } from 'lucide-react';
+import { Package, Package2, CheckCircle2, Info, Loader2, Check, Pencil, FileSpreadsheet, X, ArrowUpDown, ArrowLeftRight, ChevronUp, ChevronDown, MessageSquare, Sparkles, Wallet, Lock, Landmark, CalendarClock } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActivePreset } from '@/hooks/useActivePreset';
@@ -56,6 +56,9 @@ import { NavInvoiceVatSummaryCard } from '@/components/nav/NavInvoiceVatSummaryC
 import { InvoiceRuleQuickSaveDialog, type InvoiceRuleQuickSaveItem } from '@/components/invoices/InvoiceRuleQuickSaveDialog';
 import { InvoiceGlAccountSelector } from '@/components/invoices/InvoiceGlAccountSelector';
 import { computeLineItemDebitCreditSides } from '@/lib/invoiceGlSides';
+import { InvoiceItemAccrualModal } from '@/components/invoices/InvoiceItemAccrualModal';
+import { extractDateRangeFromText } from '@/lib/accrualMath';
+import { getExistingAccrualForInvoice } from '@/features/journals/services/accrualPostingService';
 
 interface InvoiceLineItem {
   id: string;
@@ -191,6 +194,17 @@ export function InvoiceItemsDialog({
   const [sortField, setSortField] = useState<keyof InvoiceLineItem | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null);
 
+  // Accrual (Időbeli Elhatárolás) dialog state
+  const [accrualModalOpen, setAccrualModalOpen] = useState(false);
+  const [accrualTargetItem, setAccrualTargetItem] = useState<InvoiceLineItem | null>(null);
+
+  // Existing accrual for this invoice
+  const { data: existingAccrual, refetch: refetchAccruals } = useQuery({
+    queryKey: ['invoiceAccrual', invoiceId],
+    queryFn: () => getExistingAccrualForInvoice(invoiceId),
+    enabled: open && !!invoiceId,
+  });
+
   // Fetch projects list
   const { projects: projectList } = useProjectList();
 
@@ -201,7 +215,7 @@ export function InvoiceItemsDialog({
       const table = source === 'submitted' ? 'invoices' : 'nav_invoices';
       const selectFields = source === 'submitted'
         ? 'company_id, project_id, invoice_direction, kibocsatas_datuma, penznem, bizonylatsorszam, elado_vat_id, elado_nev, vevo_vat_id, vevo_nev, forditott_adozas, partner_gl_number, vat_gl_number'
-        : 'company_id, project_id, invoice_direction, invoice_issue_date, currency, vat_summary, is_reverse_charge, supplier_tax_number, supplier_name, customer_tax_number, customer_name, partner_gl_number, vat_gl_number';
+        : 'company_id, project_id, invoice_direction, invoice_issue_date, currency, vat_summary, is_reverse_charge, supplier_tax_number, supplier_name, customer_tax_number, customer_name, partner_gl_number, vat_gl_number, invoice_number';
 
       const { data, error } = await supabase
         .from(table as any)
@@ -257,6 +271,7 @@ export function InvoiceItemsDialog({
         is_reverse_charge: isRc,
         partner_gl_number: (data as any)?.partner_gl_number || null,
         vat_gl_number: (data as any)?.vat_gl_number || null,
+        invoice_number: (data as any)?.invoice_number || (data as any)?.bizonylatsorszam || null,
       } as {
         project_id?: string | null;
         invoice_direction?: string;
@@ -1711,11 +1726,70 @@ export function InvoiceItemsDialog({
                           <div className="flex items-center gap-2">
                             <div className="flex-1 min-w-0">
                               <p className="font-medium text-xs leading-snug line-clamp-2 break-words" title={item.line_description || ''}>{item.line_description || '-'}</p>
-                              <div className="flex items-center gap-2 mt-1">
+                              <div className="flex items-center gap-2 mt-1 flex-wrap">
                                 <ItemVtszWeightPopover
                                   item={item}
                                   onSave={handleUpdateItemProductCodeAndWeight}
                                 />
+                                {(() => {
+                                  const detectedRange = extractDateRangeFromText(item.line_description);
+                                  const isAccrued = existingAccrual && existingAccrual.status !== 'reversed';
+
+                                  if (isAccrued) {
+                                    return (
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                          setAccrualTargetItem(item);
+                                          setAccrualModalOpen(true);
+                                        }}
+                                        className="h-6 px-2 text-[11px] font-medium bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                                        title={`Időbeli elhatárolás bejegyezve (${existingAccrual.accrual_type}): ${formatCurrency(existingAccrual.amount, currency || 'HUF')}`}
+                                      >
+                                        <CalendarClock className="h-3 w-3 mr-1 text-emerald-600 dark:text-emerald-400" />
+                                        Elhatárolva: {formatCurrency(existingAccrual.amount, currency || 'HUF')}
+                                      </Button>
+                                    );
+                                  }
+
+                                  if (detectedRange) {
+                                    return (
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                          setAccrualTargetItem(item);
+                                          setAccrualModalOpen(true);
+                                        }}
+                                        className="h-6 px-2 text-[11px] font-medium bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
+                                        title="A tétel szövegében időszak szerepel. Kattintson az időbeli elhatárolás varázsló megnyitásához!"
+                                      >
+                                        <CalendarClock className="h-3 w-3 mr-1 text-amber-600 dark:text-amber-400" />
+                                        Elhatárolás ({detectedRange.startDate.slice(0, 7)} - {detectedRange.endDate.slice(0, 7)})
+                                      </Button>
+                                    );
+                                  }
+
+                                  return (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        setAccrualTargetItem(item);
+                                        setAccrualModalOpen(true);
+                                      }}
+                                      className="h-6 px-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted"
+                                      title="Időbeli elhatárolás (AIE / PIE) varázsló"
+                                    >
+                                      <CalendarClock className="h-3 w-3 mr-1" />
+                                      Elhatárolás
+                                    </Button>
+                                  );
+                                })()}
                               </div>
                             </div>
                             {alreadyActivated && (
@@ -2766,6 +2840,32 @@ export function InvoiceItemsDialog({
         glAccount={bookedGlForRule}
         vatCode={bookedVatForRule}
       />
+
+      {/* Invoice Item Accrual (Időbeli Elhatárolás) Modal */}
+      {selectedCompany?.id && activePresetId && (
+        <InvoiceItemAccrualModal
+          open={accrualModalOpen}
+          onOpenChange={(isOpen) => {
+            setAccrualModalOpen(isOpen);
+            if (!isOpen) {
+              setAccrualTargetItem(null);
+            }
+          }}
+          item={accrualTargetItem}
+          invoiceId={invoiceId}
+          invoiceNumber={invoiceNumber || parentInvoice?.invoice_number || parentInvoice?.bizonylatsorszam || 'Számla'}
+          currency={currency || parentInvoice?.currency || parentInvoice?.penznem || 'HUF'}
+          direction={(invoiceDirection || parentInvoice?.invoice_direction || 'INBOUND') as 'INBOUND' | 'OUTBOUND'}
+          partnerId={parentInvoice?.partner_adoszam || parentInvoice?.supplier_tax_number || null}
+          partnerName={supplierName || parentInvoice?.partner_nev || parentInvoice?.supplier_name || 'Partner'}
+          companyId={selectedCompany.id}
+          presetId={activePresetId}
+          onSuccess={() => {
+            refetchAccruals();
+            queryClient.invalidateQueries({ queryKey: ['acc_journal_headers'] });
+          }}
+        />
+      )}
     </>
   );
 }

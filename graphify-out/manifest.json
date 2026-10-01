@@ -170,8 +170,8 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceItemsDialog.tsx": {
-    "mtime": 1790775655.2643569,
-    "ast_hash": "3db8fa18ce3da1d91d311645d0e4fa06",
+    "mtime": 1790817442.1983793,
+    "ast_hash": "06a88fa80d47449d227e31c3b5ebb342",
     "semantic_hash": ""
   },
   "src/components/LiveNotificationProvider.tsx": {
@@ -3090,8 +3090,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790812460.708028,
-    "ast_hash": "09f2df5d57ded13cd2ade450c5370c80",
+    "mtime": 1790820758.3314548,
+    "ast_hash": "503ae24fef742a417277726e3dac5de1",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3565,8 +3565,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1790812465.807396,
-    "ast_hash": "a51e38679f2c80713f4328af8615d7fe",
+    "mtime": 1790820773.6720245,
+    "ast_hash": "3f801a9e0728a3ad2ff15d876f42c392",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -5025,8 +5025,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/02-companies.md": {
-    "mtime": 1790031217.1003337,
-    "ast_hash": "e67bc5cc4ff3c1e859ef9c3e5bf28526",
+    "mtime": 1790821479.6665528,
+    "ast_hash": "074945587ba4d55851f14c106638c1ff",
     "semantic_hash": ""
   },
   "docs/architecture/database/03-permissions.md": {
@@ -5960,8 +5960,8 @@
     "semantic_hash": ""
   },
   "src/components/settings/BankAccountsTab.tsx": {
-    "mtime": 1790257147.729033,
-    "ast_hash": "53397a1745d67eadb7ceb95ffc4e5054",
+    "mtime": 1790821293.3174849,
+    "ast_hash": "83fbb3e7bebb3fdd31a72bd34ac158b3",
     "semantic_hash": ""
   },
   "src/components/ui/FilePreviewModal.tsx": {
@@ -6780,8 +6780,8 @@
     "semantic_hash": ""
   },
   "src/pages/JournalsPage.tsx": {
-    "mtime": 1790647210.4586995,
-    "ast_hash": "48ad3957e8ae290ec4a53597144c1382",
+    "mtime": 1790820812.1829216,
+    "ast_hash": "e3be47fb6bf04b0eb2d54ebd98a15172",
     "semantic_hash": ""
   },
   "supabase/migrations/20260824120000_optimize_query_rpcs.sql": {
@@ -6935,8 +6935,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/22-accounting-journals.md": {
-    "mtime": 1790635570.4240828,
-    "ast_hash": "0ec5ec53d9d594486017195e6d087078",
+    "mtime": 1790821492.217903,
+    "ast_hash": "1c62bcee1c7088e709daaedf270576f8",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-057-accounting-journals-architecture.md": {
@@ -8220,8 +8220,8 @@
     "semantic_hash": ""
   },
   ".agents/skills/visibill-ticket-support/SKILL.md": {
-    "mtime": 1790680420.896738,
-    "ast_hash": "715b59fa4ec016c05b7cf70dd15c721f",
+    "mtime": 1790819638.8742566,
+    "ast_hash": "578e6dbdaabbf2e1c49c7bbc4149e1f9",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-081-nav-08-payroll-reconstruction-and-bulk-import.md": {
@@ -11390,8 +11390,8 @@
     "semantic_hash": ""
   },
   "src/components/settings/__tests__/BankAccountsTab.test.tsx": {
-    "mtime": 1790200694.0455117,
-    "ast_hash": "9132347c9f715f2aecadf1376ced1fab",
+    "mtime": 1790821311.426363,
+    "ast_hash": "db1a8985ebcd0d7d867c1881d9e78f3c",
     "semantic_hash": ""
   },
   "src/components/invoices/InvoiceGlAccountSelector.tsx": {
@@ -13622,6 +13622,86 @@
   "src/test/banking/useAggreg8.test.ts": {
     "mtime": 1790813442.6686726,
     "ast_hash": "13f39e47fe4449fd28b5e288ac3852c2",
+    "semantic_hash": ""
+  },
+  "src/components/invoices/InvoiceItemAccrualModal.tsx": {
+    "mtime": 1790818773.0687282,
+    "ast_hash": "e485c3c6be60516e339c8add91bb576d",
+    "semantic_hash": ""
+  },
+  "src/components/invoices/__tests__/InvoiceItemAccrualModal.test.tsx": {
+    "mtime": 1790818785.1020226,
+    "ast_hash": "d2dd8925684c7aae1bc1260aab090008",
+    "semantic_hash": ""
+  },
+  "src/features/journals/services/__tests__/accrualPostingService.test.ts": {
+    "mtime": 1790818519.3442998,
+    "ast_hash": "d6b622cc343f1e0196d899aa9c7c9edf",
+    "semantic_hash": ""
+  },
+  "src/features/journals/services/accrualPostingService.ts": {
+    "mtime": 1790817201.5148733,
+    "ast_hash": "874b4d34f84a3b67bc86791b19f82dea",
+    "semantic_hash": ""
+  },
+  "src/lib/__tests__/accrualMath.test.ts": {
+    "mtime": 1790816443.3968801,
+    "ast_hash": "7267a5bd278eddbaa30084231f1c5488",
+    "semantic_hash": ""
+  },
+  "src/lib/accrualMath.ts": {
+    "mtime": 1790816433.86279,
+    "ast_hash": "ff9ab0e0d7123dc04a9ccbf6fd039681",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-187-contextual-invoice-item-accruals-and-ve-journal-posting.md": {
+    "mtime": 1790819092.5541244,
+    "ast_hash": "ab78725167c3548005cdb27e48476e9d",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-150-contextual-invoice-item-accruals-and-ve-journal-posting-ux.md": {
+    "mtime": 1790819069.3410962,
+    "ast_hash": "c4ec98ccb3a4199304bd34c677464e1c",
+    "semantic_hash": ""
+  },
+  "src/components/journals/CreateJournalModal.tsx": {
+    "mtime": 1790820400.1990888,
+    "ast_hash": "baf87869482f616e884c8032194103bf",
+    "semantic_hash": ""
+  },
+  "src/components/journals/ManageJournalsModal.tsx": {
+    "mtime": 1790820533.6452446,
+    "ast_hash": "74de03dcdffa1f0161903feeeffbb13a",
+    "semantic_hash": ""
+  },
+  "src/components/journals/__tests__/CreateJournalModal.test.tsx": {
+    "mtime": 1790820414.7188287,
+    "ast_hash": "e1154b058998ea82e369259901ecd590",
+    "semantic_hash": ""
+  },
+  "src/components/journals/__tests__/ManageJournalsModal.test.tsx": {
+    "mtime": 1790820630.0254736,
+    "ast_hash": "791ccd1495e203ff6dee621e9810c024",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261001041000_add_is_active_to_company_bank_accounts.sql": {
+    "mtime": 1790820362.1161077,
+    "ast_hash": "b2986322945edf005f0baa759a8a98f9",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-188-dynamic-accounting-journals-management-and-bank-linking.md": {
+    "mtime": 1790821356.2247584,
+    "ast_hash": "c23482bcda56868fb683d754f5cefc8b",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-151-dynamic-accounting-journals-management-and-bank-linking-ux.md": {
+    "mtime": 1790821365.201961,
+    "ast_hash": "9297f6f2fbfcfb934e2a2a514a0a2420",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-10-01/summary-035600-invoice-item-accrual-and-ve-posting.md": {
+    "mtime": 1790819766.0144205,
+    "ast_hash": "609f936a2da5992e0cad9d9aac5891b6",
     "semantic_hash": ""
   }
 }

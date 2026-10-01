@@ -38,7 +38,8 @@ import {
   Undo2,
   Download,
   ExternalLink,
-  Copy
+  Copy,
+  Settings2
 } from 'lucide-react';
 import { extractStoragePath } from '@/lib/utils';
 import { formatCurrencyLocale, formatNumberLocale } from '@/lib/locale/formatters';
@@ -48,6 +49,7 @@ import OpeningJournalWizardModal from '@/components/journals/OpeningJournalWizar
 import { UploadChartOfAccountsModal } from '@/components/general-ledger/UploadChartOfAccountsModal';
 import PeriodClosingSettings from '@/components/journals/PeriodClosingSettings';
 import AuditTrailDialog from '@/components/journals/AuditTrailDialog';
+import { ManageJournalsModal } from '@/components/journals/ManageJournalsModal';
 import { getLocalizedJournalName, getNextDocumentId } from '@/lib/journalUtils';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { generatePettyCashDrafts, generateDraftsFallback } from '@/features/journals/services/draftFallbackGenerator';
@@ -261,6 +263,9 @@ export default function JournalsPage() {
   const [bulkGlSide, setBulkGlSide] = useState<'T' | 'K'>('T');
   const [selectedTargetGlId, setSelectedTargetGlId] = useState<string>('');
   const [bulkGlSearch, setBulkGlSearch] = useState<string>('');
+
+  // Manage Journals dialog state
+  const [manageJournalsOpen, setManageJournalsOpen] = useState(false);
 
   // Lookup GL accounts for preset
   const { data: glAccounts = [] } = useQuery({
@@ -1173,6 +1178,24 @@ export default function JournalsPage() {
             </Tooltip>
           ))
         )}
+
+        {/* Manage Journals Button */}
+        <Tooltip delayDuration={300}>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => setManageJournalsOpen(true)}
+              className="flex items-center gap-1.5 px-3 h-12 rounded-lg text-xs transition-all border border-dashed border-border hover:border-primary/50 hover:bg-muted/50 text-muted-foreground hover:text-foreground shrink-0"
+              title="Naplótörzs kezelése / Új napló"
+            >
+              <Settings2 className="w-3.5 h-3.5 text-primary" />
+              <span className="font-semibold text-[11px] whitespace-nowrap">Naplók kezelése</span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="p-2 text-xs shadow-md">
+            <p className="font-semibold text-popover-foreground">Könyvelési Naplótörzs Kezelése</p>
+            <p className="text-[10px] text-muted-foreground">Új napló felvétele, meglévő naplók átnevezése és testreszabása.</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       <div className="grid grid-cols-12 gap-4 items-start">
@@ -2595,6 +2618,15 @@ export default function JournalsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Manage Journals Modal */}
+      <ManageJournalsModal
+        open={manageJournalsOpen}
+        onOpenChange={setManageJournalsOpen}
+        companyId={selectedCompany?.id || ''}
+        journals={journals}
+        glAccounts={glAccounts}
+      />
       </div>
     </TooltipProvider>
   );

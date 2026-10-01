@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-10-01  
-> **Összesen:** 204 döntés (189 egyedi döntési fájl) | ✅ Decided: 202 | ⛔ Superseded: 2
+> **Összesen:** 205 döntés (190 egyedi döntési fájl) | ✅ Decided: 203 | ⛔ Superseded: 2
 
 
 ---
@@ -238,6 +238,8 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-184 | Real-time AI Tételbesorolási Telemetria, Query Invalidáció és Idempotens Párosítás | ✅ Decided | [A-184](./A-184-realtime-ai-progress-streaming-and-matching-idempotency.md) |
 | A-185 | Bérjegyzék Megjelenítés, FEOR-08 Munkakör Szótár és Költséghely Architektúra | ✅ Decided | [A-185](./A-185-payslip-redesign-feor-dictionary-and-cost-center.md) |
 | A-186 | Munkavállalói Pótszabadságok Dinamikus Feloldó Motorja (Mt. 116–122. §) | ✅ Decided | [A-186](./A-186-payroll-leave-entitlements-resolution-engine.md) |
+| A-187 | Számlatétel-szintű Kontextuális Időbeli Elhatárolások és Vegyes Napló Feladás | ✅ Decided | [A-187](./A-187-contextual-invoice-item-accruals-and-ve-journal-posting.md) |
+| A-188 | Dinamikus Könyvelési Naplók Létrehozása, Kezelése és Bankszámla-összerendelés | ✅ Decided | [A-188](./A-188-dynamic-accounting-journals-management-and-bank-linking.md) |
 
 
 ## 💳 Fizetés

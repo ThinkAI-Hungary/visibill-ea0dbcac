@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest';
 import {
   checkGlAccountCurrencyMatch,
   checkJournalCurrencyMatch,
+  filterBankJournalsForAdd,
+  filterBankJournalsForEdit,
 } from '../BankAccountsTab';
 
 describe('BankAccountsTab - Currency Match & Safeguards (Blind Spot 1)', () => {
@@ -87,6 +88,42 @@ describe('BankAccountsTab - Currency Match & Safeguards (Blind Spot 1)', () => {
       expect(resEurHuf.isMatch).toBe(false);
       expect(resEurHuf.warning).toContain('EUR');
       expect(resEurHuf.warning).toContain('HUF');
+    });
+  });
+
+  describe('filterBankJournalsForAdd and filterBankJournalsForEdit (Inactive Journal Handling)', () => {
+    const sampleJournals = [
+      { id: 'j1', code: 'B1', name: 'K&H HUF', currency: 'HUF', is_active: true },
+      { id: 'j2', code: 'B2', name: 'K&H EUR', currency: 'EUR', is_active: true },
+      { id: 'j3', code: 'B3', name: 'Régi OTP HUF', currency: 'HUF', is_active: false },
+      { id: 'j4', code: 'B4', name: 'Megszűnt VÚB EUR', currency: 'EUR', is_active: false },
+    ];
+
+    it('filterBankJournalsForAdd excludes all inactive journals', () => {
+      const result = filterBankJournalsForAdd(sampleJournals, 'HUF');
+      expect(result.map(j => j.code)).toEqual(['B1', 'B2']);
+      expect(result.some(j => j.is_active === false)).toBe(false);
+    });
+
+    it('filterBankJournalsForEdit includes the currently assigned inactive journal but excludes other inactive ones', () => {
+      // Editing an account currently linked to j3 (inactive B3)
+      const result = filterBankJournalsForEdit(sampleJournals, 'j3', 'HUF');
+      const codes = result.map(j => j.code);
+
+      // Should include B1, B2 (active) and B3 (current inactive), but NOT B4 (other inactive)
+      expect(codes).toContain('B1');
+      expect(codes).toContain('B2');
+      expect(codes).toContain('B3');
+      expect(codes).not.toContain('B4');
+
+      // Active journals should appear before inactive ones
+      const b3Index = codes.indexOf('B3');
+      expect(b3Index).toBe(codes.length - 1); // B3 is last because it is inactive
+    });
+
+    it('filterBankJournalsForEdit excludes all inactive journals when current account has no journal assigned', () => {
+      const result = filterBankJournalsForEdit(sampleJournals, null, 'HUF');
+      expect(result.map(j => j.code)).toEqual(['B1', 'B2']);
     });
   });
 });

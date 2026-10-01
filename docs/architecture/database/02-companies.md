@@ -174,12 +174,20 @@
 | `bank_name` | text | — | — | Bank megnevezése (pl. OTP, K&H, Erste) |
 | `account_number` | text | — | — | Bankszámlaszám / IBAN |
 | `currency` | text | — | `'HUF'` | Számla devizaneme |
+| `journal_id` | uuid | ✓ | — | FK → `acc_journals.id` (Kapcsolódó banknapló) |
+| `gl_account_id` | uuid | ✓ | — | FK → `gl_accounts.id` (Kapcsolódó 38* főkönyvi számla) |
+| `is_active` | boolean | — | `true` | Aktív-e a számla (false = megszűnt/érvénytelen) |
 | `created_at` | timestamp with time zone | — | `now()` | Létrehozás ideje |
 | `updated_at` | timestamp with time zone | — | `now()` | Módosítás ideje |
 
-**FK:** `company_id` → `companies.id (ON DELETE CASCADE)`
+**FK:** `company_id` → `companies.id (ON DELETE CASCADE)`, `journal_id` → `acc_journals.id (ON DELETE SET NULL)`, `gl_account_id` → `gl_accounts.id (ON DELETE SET NULL)`
 
-**Indexek:** `company_bank_accounts_pkey`
+**Indexek:**
+* `company_bank_accounts_pkey` on `(id)`
+* `idx_company_bank_accounts_company_id` on `(company_id)`
+* `idx_company_bank_accounts_journal_id` on `(journal_id)`
+* `idx_company_bank_accounts_gl_account_id` on `(gl_account_id)`
+* `idx_company_bank_accounts_company_active` on `(company_id, is_active)`
 
 ---
 

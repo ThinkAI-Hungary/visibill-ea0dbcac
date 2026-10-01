@@ -15,6 +15,8 @@ import { useTranslation } from 'react-i18next';
 import { useAggreg8 } from '@/hooks/useAggreg8';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
+import { CreateJournalModal } from '@/components/journals/CreateJournalModal';
 import {
   formatAccountOnType,
   validateAccountNumber,
@@ -33,6 +35,7 @@ interface BankAccount {
   journal_id?: string | null;
   gl_account_id?: string | null;
   created_at: string;
+  is_active?: boolean;
 }
 
 interface Props {
@@ -111,6 +114,52 @@ export function checkJournalCurrencyMatch(
   return { isMatch: true };
 }
 
+export interface BankJournalOption {
+  id: string;
+  code: string;
+  name: string;
+  currency: string;
+  connected_gl_account?: string | null;
+  is_active?: boolean;
+}
+
+export function filterBankJournalsForAdd(
+  journals: BankJournalOption[],
+  accountCurrency: string = 'HUF'
+): BankJournalOption[] {
+  return [...journals]
+    .filter(j => j.is_active !== false)
+    .sort((a, b) => {
+      const aMatch = checkJournalCurrencyMatch(a.currency, accountCurrency).isMatch;
+      const bMatch = checkJournalCurrencyMatch(b.currency, accountCurrency).isMatch;
+      if (aMatch && !bMatch) return -1;
+      if (!aMatch && bMatch) return 1;
+      return a.code.localeCompare(b.code);
+    });
+}
+
+export function filterBankJournalsForEdit(
+  journals: BankJournalOption[],
+  currentJournalId?: string | null,
+  accountCurrency: string = 'HUF'
+): BankJournalOption[] {
+  return [...journals]
+    .filter(j => j.is_active !== false || (Boolean(currentJournalId) && j.id === currentJournalId))
+    .sort((a, b) => {
+      // Active journals first, inactive journals last
+      const aInactive = a.is_active === false;
+      const bInactive = b.is_active === false;
+      if (!aInactive && bInactive) return -1;
+      if (aInactive && !bInactive) return 1;
+
+      const aMatch = checkJournalCurrencyMatch(a.currency, accountCurrency).isMatch;
+      const bMatch = checkJournalCurrencyMatch(b.currency, accountCurrency).isMatch;
+      if (aMatch && !bMatch) return -1;
+      if (!aMatch && bMatch) return 1;
+      return a.code.localeCompare(b.code);
+    });
+}
+
 const BANK_GRADIENTS: Record<string, string> = {
   'OTP Bank': 'from-emerald-600 to-teal-800 text-white',
   'Erste Bank': 'from-red-600 to-orange-700 text-white',
@@ -163,7 +212,12 @@ export function BankAccountsTab({ companyId }: Props) {
   const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null);
   const [editJournalId, setEditJournalId] = useState<string>('none');
   const [editGlAccountId, setEditGlAccountId] = useState<string>('none');
+  const [editIsActive, setEditIsActive] = useState<boolean>(true);
   const [editSaving, setEditSaving] = useState(false);
+
+  // CreateJournalModal state
+  const [createJournalOpen, setCreateJournalOpen] = useState(false);
+  const [createJournalContext, setCreateJournalContext] = useState<'add' | 'edit'>('add');
 
   const { data: accounts = [], isLoading } = useQuery<BankAccount[]>({
     queryKey: ['company-bank-accounts', companyId],
@@ -178,19 +232,18 @@ export function BankAccountsTab({ companyId }: Props) {
     }
   });
 
-  // Fetch active BANK journals for this company
-  const { data: bankJournals = [] } = useQuery({
+  // Fetch BANK journals for this company (active and inactive so current assignments remain visible)
+  const { data: bankJournals = [] } = useQuery<BankJournalOption[]>({
     queryKey: ['acc-bank-journals', companyId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('acc_journals')
-        .select('id, code, name, currency, connected_gl_account')
+        .select('id, code, name, currency, connected_gl_account, is_active')
         .eq('company_id', companyId)
         .eq('type', 'BANK')
-        .eq('is_active', true)
         .order('code');
       if (error) return [];
-      return data || [];
+      return (data || []) as BankJournalOption[];
     }
   });
 
@@ -225,15 +278,9 @@ export function BankAccountsTab({ companyId }: Props) {
     });
   }, [bankGlAccounts, currency]);
 
-  // Sorted bank journals for Add form (prioritizing currency matches)
+  // Sorted bank journals for Add form (active only, prioritizing currency matches)
   const sortedBankJournals = useMemo(() => {
-    return [...bankJournals].sort((a, b) => {
-      const aMatch = checkJournalCurrencyMatch(a.currency, currency).isMatch;
-      const bMatch = checkJournalCurrencyMatch(b.currency, currency).isMatch;
-      if (aMatch && !bMatch) return -1;
-      if (!aMatch && bMatch) return 1;
-      return a.code.localeCompare(b.code);
-    });
+    return filterBankJournalsForAdd(bankJournals, currency);
   }, [bankJournals, currency]);
 
   // Active mismatch warnings for Add form
@@ -255,14 +302,8 @@ export function BankAccountsTab({ companyId }: Props) {
   }, [bankGlAccounts, editAccCurrency]);
 
   const sortedEditBankJournals = useMemo(() => {
-    return [...bankJournals].sort((a, b) => {
-      const aMatch = checkJournalCurrencyMatch(a.currency, editAccCurrency).isMatch;
-      const bMatch = checkJournalCurrencyMatch(b.currency, editAccCurrency).isMatch;
-      if (aMatch && !bMatch) return -1;
-      if (!aMatch && bMatch) return 1;
-      return a.code.localeCompare(b.code);
-    });
-  }, [bankJournals, editAccCurrency]);
+    return filterBankJournalsForEdit(bankJournals, editingAccount?.journal_id, editAccCurrency);
+  }, [bankJournals, editAccCurrency, editingAccount?.journal_id]);
 
   const selectedEditGl = bankGlAccounts.find(g => g.id === editGlAccountId);
   const selectedEditJournal = bankJournals.find(j => j.id === editJournalId);
@@ -309,6 +350,7 @@ export function BankAccountsTab({ companyId }: Props) {
     setEditingAccount(acc);
     setEditJournalId(acc.journal_id || 'none');
     setEditGlAccountId(acc.gl_account_id || 'none');
+    setEditIsActive(acc.is_active !== false);
   };
 
   const handleEditJournalChange = (jId: string) => {
@@ -324,6 +366,32 @@ export function BankAccountsTab({ companyId }: Props) {
     }
   };
 
+  const openCreateJournalForAdd = () => {
+    setCreateJournalContext('add');
+    setCreateJournalOpen(true);
+  };
+
+  const openCreateJournalForEdit = () => {
+    setCreateJournalContext('edit');
+    setCreateJournalOpen(true);
+  };
+
+  const handleJournalCreated = (newJournal: { id: string; code: string; name: string; currency: string; connected_gl_account: string | null }) => {
+    if (createJournalContext === 'add') {
+      setSelectedJournalId(newJournal.id);
+      if (newJournal.connected_gl_account) {
+        const matchingGl = bankGlAccounts.find((ga: any) => ga.gl_number === newJournal.connected_gl_account);
+        if (matchingGl) setSelectedGlAccountId(matchingGl.id);
+      }
+    } else {
+      setEditJournalId(newJournal.id);
+      if (newJournal.connected_gl_account) {
+        const matchingGl = bankGlAccounts.find((ga: any) => ga.gl_number === newJournal.connected_gl_account);
+        if (matchingGl) setEditGlAccountId(matchingGl.id);
+      }
+    }
+  };
+
   const handleSaveEdit = async () => {
     if (!editingAccount) return;
     setEditSaving(true);
@@ -333,6 +401,7 @@ export function BankAccountsTab({ companyId }: Props) {
         .update({
           journal_id: editJournalId && editJournalId !== 'none' ? editJournalId : null,
           gl_account_id: editGlAccountId && editGlAccountId !== 'none' ? editGlAccountId : null,
+          is_active: editIsActive,
         })
         .eq('id', editingAccount.id);
 
@@ -614,7 +683,18 @@ export function BankAccountsTab({ companyId }: Props) {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <Label htmlFor="acc_journal" className="text-xs">Kapcsolódó Bank Napló</Label>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="acc_journal" className="text-xs">Kapcsolódó Bank Napló</Label>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 px-1.5 text-[11px] text-primary hover:text-primary hover:bg-primary/10 gap-1 font-medium"
+                          onClick={openCreateJournalForAdd}
+                        >
+                          <Plus className="h-3 w-3" /> Új banknapló
+                        </Button>
+                      </div>
                       <Select value={selectedJournalId} onValueChange={handleJournalChange}>
                         <SelectTrigger id="acc_journal" className="bg-background text-xs">
                           <SelectValue placeholder="— Nincs hozzárendelve —" />
@@ -695,11 +775,12 @@ export function BankAccountsTab({ companyId }: Props) {
               {accounts.map(acc => {
                 const gradient = BANK_GRADIENTS[acc.bank_name] || BANK_GRADIENTS['default'];
                 const fmt = detectAccountFormat(acc.account_number);
+                const isInactive = acc.is_active === false;
 
                 return (
                   <div
                     key={acc.id}
-                    className={`relative p-5 rounded-2xl bg-gradient-to-br ${gradient} shadow-md overflow-hidden min-h-[160px] flex flex-col justify-between group transition-all duration-300 hover:scale-[1.02] hover:shadow-lg`}
+                    className={`relative p-5 rounded-2xl bg-gradient-to-br ${gradient} shadow-md overflow-hidden min-h-[160px] flex flex-col justify-between group transition-all duration-300 hover:scale-[1.02] hover:shadow-lg ${isInactive ? 'opacity-70 saturate-50 ring-1 ring-amber-400/40' : ''}`}
                   >
                     {/* Background glassmorphic circle */}
                     <div className="absolute right-[-20px] top-[-20px] w-32 h-32 bg-white/10 rounded-full blur-xl pointer-events-none" />
@@ -711,6 +792,11 @@ export function BankAccountsTab({ companyId }: Props) {
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-white/30 text-white/90 bg-white/10">
                             {fmt === 'iban' ? 'IBAN' : 'GIRO'}
                           </Badge>
+                          {isInactive && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-300/80 text-amber-200 bg-amber-950/60 font-semibold">
+                              Érvénytelen / Megszűnt
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-lg font-bold mt-1 flex items-center gap-1.5">
                           <Landmark className="h-4 w-4" />
@@ -817,7 +903,18 @@ export function BankAccountsTab({ companyId }: Props) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit_journal" className="text-xs">Kapcsolódó Bank Napló</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="edit_journal" className="text-xs">Kapcsolódó Bank Napló</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-5 px-1.5 text-[11px] text-primary hover:text-primary hover:bg-primary/10 gap-1 font-medium"
+                  onClick={openCreateJournalForEdit}
+                >
+                  <Plus className="h-3 w-3" /> Új banknapló
+                </Button>
+              </div>
               <Select value={editJournalId} onValueChange={handleEditJournalChange}>
                 <SelectTrigger id="edit_journal">
                   <SelectValue placeholder="— Nincs hozzárendelve —" />
@@ -826,9 +923,16 @@ export function BankAccountsTab({ companyId }: Props) {
                   <SelectItem value="none">— Nincs hozzárendelve —</SelectItem>
                   {sortedEditBankJournals.map(j => {
                     const jMatch = checkJournalCurrencyMatch(j.currency, editAccCurrency);
+                    const isInactive = j.is_active === false;
                     return (
-                      <SelectItem key={j.id} value={j.id}>
-                        [{j.code}] {j.name} ({j.currency || 'HUF'}) {!jMatch.isMatch ? '⚠️ (Eltérő deviza)' : ''}
+                      <SelectItem
+                        key={j.id}
+                        value={j.id}
+                        className={isInactive ? 'text-muted-foreground opacity-80' : ''}
+                      >
+                        [{j.code}] {j.name} ({j.currency || 'HUF'})
+                        {isInactive ? ' — (Inaktív)' : ''}
+                        {!jMatch.isMatch ? ' ⚠️ (Eltérő deviza)' : ''}
                       </SelectItem>
                     );
                   })}
@@ -860,6 +964,20 @@ export function BankAccountsTab({ companyId }: Props) {
               <p className="text-[11px] text-muted-foreground">
                 Az analitikus számla, amelyre a bank mozgásai könyvelődnek (pl. 3841, 3842, 3861).
               </p>
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-xl border border-border/60 bg-muted/20">
+              <div className="space-y-0.5 pr-2">
+                <Label htmlFor="edit_is_active" className="text-xs font-semibold">Aktív bankszámla</Label>
+                <p className="text-[11px] text-muted-foreground">
+                  Megszűnt vagy érvénytelen számla esetén kapcsold ki. Az előzmények és analitika megmaradnak, de a számla „Érvénytelen” jelölést kap.
+                </p>
+              </div>
+              <Switch
+                id="edit_is_active"
+                checked={editIsActive}
+                onCheckedChange={setEditIsActive}
+              />
             </div>
 
             {((editGlAccountId !== 'none' && !editGlMatch.isMatch) || (editJournalId !== 'none' && !editJournalMatch.isMatch)) && (
@@ -895,6 +1013,28 @@ export function BankAccountsTab({ companyId }: Props) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Új Banknapló létrehozó modál */}
+      <CreateJournalModal
+        open={createJournalOpen}
+        onOpenChange={setCreateJournalOpen}
+        companyId={companyId}
+        initialType="BANK"
+        initialName={
+          createJournalContext === 'add'
+            ? `${bankName === 'other' ? (customBankName.trim() || 'Egyéb bank') : bankName} ${currency}`
+            : `${editingAccount?.bank_name || ''} ${editingAccount?.currency || 'HUF'}`
+        }
+        initialCurrency={createJournalContext === 'add' ? currency : (editingAccount?.currency || 'HUF')}
+        initialGlAccount={
+          createJournalContext === 'add'
+            ? (bankGlAccounts.find(g => g.id === selectedGlAccountId)?.gl_number || '')
+            : (bankGlAccounts.find(g => g.id === editGlAccountId)?.gl_number || '')
+        }
+        existingJournals={bankJournals}
+        glAccounts={bankGlAccounts}
+        onJournalCreated={handleJournalCreated}
+      />
     </div>
   );
 }

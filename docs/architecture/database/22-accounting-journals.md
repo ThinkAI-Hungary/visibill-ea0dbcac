@@ -8,7 +8,7 @@
 
 ### `acc_journals`
 
-**RLS:** ✅ | **Sorok:** Cégenként ~9 alapértelmezett napló
+**RLS:** ✅ | **Sorok:** Cégenként ~9 alapértelmezett napló + dinamikusan felvehető bank-, pénztár- és vegyes naplók (A-188 / P-151)
 
 | Oszlop | Típus | Null | Default | Leírás |
 |--------|-------|------|---------|--------|

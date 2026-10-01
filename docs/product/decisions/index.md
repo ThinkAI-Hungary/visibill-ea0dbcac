@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-10-01  
-> **Összesen:** 161 döntés | ✅ Decided: 157 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 162 döntés | ✅ Decided: 158 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 
 ---
@@ -263,4 +263,6 @@
 | P-147 | Főkönyvi AI Tételbesorolás Valós Idejű Folyamatjelző és Státusz-sáv UX | ✅ Decided | [P-147](./P-147-gl-ai-categorization-realtime-progress-banner-ux.md) |
 | P-148 | Bérjegyzék Redesign, Költséghely Kezelés és FEOR Munkakör UX | ✅ Decided | [P-148](./P-148-payslip-redesign-cost-center-and-feor-job-title-ux.md) |
 | P-149 | Munkavállalói Pótszabadságok Törzsadat-alapú Feloldása és Szabadság Tájékoztató Kártya UX | ✅ Decided | [P-149](./P-149-payroll-leave-entitlements-and-guidance-card-ux.md) |
+| P-150 | Számlatétel-szintű Kontextuális Időbeli Elhatárolások (AIE/PIE) Varázsló és Feladási UX | ✅ Decided | [P-150](./P-150-contextual-invoice-item-accruals-and-ve-journal-posting-ux.md) |
+| P-151 | Dinamikus Könyvelési Naplók Létrehozása és Bankszámla-összerendelés UX | ✅ Decided | [P-151](./P-151-dynamic-accounting-journals-management-and-bank-linking-ux.md) |
 
