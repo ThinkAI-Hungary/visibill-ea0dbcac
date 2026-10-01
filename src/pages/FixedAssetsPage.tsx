@@ -9,7 +9,7 @@ import { DevelopmentReservesTab } from '@/components/fixed-assets/DevelopmentRes
 import { ContentSkeleton } from '@/components/ui/content-skeleton';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
-import { Package2, ShieldCheck, PiggyBank, Calculator } from 'lucide-react';
+import { Package2, ShieldCheck, PiggyBank, Calculator, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 // Lazy-load heavy dialogs to keep initial chunk small
@@ -19,6 +19,9 @@ const InventoryCheckDialog = lazy(() =>
 const DepreciationRunDialog = lazy(() =>
   import('@/components/fixed-assets/DepreciationRunDialog').then(m => ({ default: m.DepreciationRunDialog }))
 );
+const CreateFixedAssetDialog = lazy(() =>
+  import('@/components/fixed-assets/CreateFixedAssetDialog').then(m => ({ default: m.CreateFixedAssetDialog }))
+);
 
 export default function FixedAssetsPage() {
   const { t } = useTranslation(['hr', 'common']);
@@ -26,6 +29,7 @@ export default function FixedAssetsPage() {
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [inventoryCheckOpen, setInventoryCheckOpen] = useState(false);
   const [depreciationDialogOpen, setDepreciationDialogOpen] = useState(false);
+  const [createAssetOpen, setCreateAssetOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const { canWrite: canWriteModule } = useEaisybillPermissions();
   const writable = canWriteModule('fixed_assets');
@@ -139,6 +143,16 @@ export default function FixedAssetsPage() {
             {currentTab === 'assets' && (
               <div className="flex items-center gap-2">
                 <Button
+                  size="sm"
+                  className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 font-medium shadow-xs"
+                  onClick={() => setCreateAssetOpen(true)}
+                  disabled={!writable}
+                >
+                  <Plus className="h-4 w-4" />
+                  {t('hr:fixed_assets.create_asset', 'Új eszköz felvétele')}
+                </Button>
+
+                <Button
                   variant="outline"
                   size="sm"
                   className="gap-2 text-primary hover:text-primary font-medium"
@@ -180,6 +194,7 @@ export default function FixedAssetsPage() {
               loading={isLoading}
               selectedAssetId={selectedAssetId}
               onSelectAsset={handleSelectAsset}
+              onCreateAsset={() => setCreateAssetOpen(true)}
             />
           </div>
 
@@ -211,6 +226,16 @@ export default function FixedAssetsPage() {
         </div>
       </div>
     )}
+
+      {/* Create Fixed Asset Dialog — lazy loaded */}
+      <Suspense fallback={null}>
+        {createAssetOpen && (
+          <CreateFixedAssetDialog
+            open={createAssetOpen}
+            onOpenChange={setCreateAssetOpen}
+          />
+        )}
+      </Suspense>
 
       {/* Depreciation Run Dialog — lazy loaded */}
       <Suspense fallback={null}>

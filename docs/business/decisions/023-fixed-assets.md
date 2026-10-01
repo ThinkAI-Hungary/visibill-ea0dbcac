@@ -11,6 +11,7 @@
 - Értékcsökkenés: lineáris módszer, TAO sablonok (11 sablon), rate override lehetőség
 - Aktiválási workflow: `asset_events` tábla (activation, transfer, project_transfer, disposal, inventory_check, value_change, reactivation)
 - Számla-alapú eszköz létrehozás (`source_invoice_id`, `source_invoice_type`: submitted/nav)
+- **Manuális és előzmény / nyitó eszköz rögzítés:** Közvetlen rögzítés számla nélkül a `CreateFixedAssetDialog`-on keresztül. Nyitó eszközöknél a `skipLedgerPosting` kapcsoló biztosítja, hogy ne keletkezzen felesleges T [Eszköz] - K 161 könyvelési tétel a nyitó mérleggel szemben.
 - Dokumentum csatolás (`documents` JSONB), telephelyhez rendelés (`location_id`), projekthez rendelés (`project_id`)
 - GL szám hozzárendelés (`gl_account_id`)
 - VTSZ/TESZOR kód rögzítés

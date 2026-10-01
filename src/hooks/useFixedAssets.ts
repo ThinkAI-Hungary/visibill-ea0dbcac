@@ -306,6 +306,7 @@ export function useCreateFixedAsset() {
       glAccountId: string | null;
       developmentReserveId?: string | null;
       developmentReserveAmount?: number;
+      skipLedgerPosting?: boolean;
     }) => {
       // 1. Insert fixed asset
       const { data: asset, error: assetError } = await supabase
@@ -354,11 +355,14 @@ export function useCreateFixedAsset() {
           user_id: params.userId,
           event_type: 'activation',
           event_date: params.activationDate,
-          description: `Eszköz aktiválva: ${params.name}`,
+          description: params.skipLedgerPosting
+            ? `Előzmény / nyitó eszköz rögzítve: ${params.name}`
+            : `Eszköz aktiválva: ${params.name}`,
           new_values: {
             acquisition_value: params.acquisitionValue,
             activation_date: params.activationDate,
             activated_by: params.activatedByName,
+            ...(params.skipLedgerPosting ? { is_opening_historical: true } : {}),
             ...(params.projectId ? { project_id: params.projectId } : {}),
             ...(params.developmentReserveAmount ? { development_reserve_amount: params.developmentReserveAmount } : {}),
           },
@@ -380,7 +384,8 @@ export function useCreateFixedAsset() {
       }
 
       // 4. Automatikusan lekönyveli az aktiválást (T [Eszköz számla] - K 161 Befejezetlen beruházás) a Vegyes naplóba
-      if (params.glAccountId && params.acquisitionValue > 0) {
+      // Ha ez egy előzmény / nyitó eszköz (skipLedgerPosting === true), a tétel már szerepel a nyitó mérlegben (T 1xx - K 491), így a duplikáció elkerülése végett átugorjuk!
+      if (!params.skipLedgerPosting && params.glAccountId && params.acquisitionValue > 0) {
         try {
           await postAssetActivationToLedger({
             companyId: params.companyId,
@@ -443,11 +448,11 @@ export function useCreateFixedAsset() {
 // ── Generate inventory number ──
 export async function generateInventoryNumber(
   companyId: string,
-  invoiceNumber: string
+  invoiceNumber?: string | null
 ): Promise<string> {
   const now = new Date();
   const yymm = `${String(now.getFullYear()).slice(2)}${String(now.getMonth() + 1).padStart(2, '0')}`;
-  const prefix = `${invoiceNumber} - ${yymm} - `;
+  const prefix = invoiceNumber?.trim() ? `${invoiceNumber.trim()} - ${yymm} - ` : `TE - ${yymm} - `;
 
   // Count existing assets with same prefix
   const { count, error } = await supabase

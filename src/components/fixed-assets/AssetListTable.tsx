@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Package2, FolderKanban } from 'lucide-react';
+import { Search, Package2, FolderKanban, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { FixedAsset } from '@/types/fixed-assets';
 import { ASSET_STATUS_LABELS, ASSET_STATUS_COLORS } from '@/types/fixed-assets';
@@ -13,9 +14,10 @@ interface AssetListTableProps {
   loading: boolean;
   selectedAssetId: string | null;
   onSelectAsset: (assetId: string) => void;
+  onCreateAsset?: () => void;
 }
 
-export function AssetListTable({ assets, loading, selectedAssetId, onSelectAsset }: AssetListTableProps) {
+export function AssetListTable({ assets, loading, selectedAssetId, onSelectAsset, onCreateAsset }: AssetListTableProps) {
   const { t } = useTranslation(['hr', 'common']);
   const [search, setSearch] = useState('');
 
@@ -62,8 +64,19 @@ export function AssetListTable({ assets, loading, selectedAssetId, onSelectAsset
             <p className="text-sm mt-1 opacity-75">
               {search
                 ? t('hr:fixed_assets.no_assets_search', 'Próbáld módosítani a keresést.')
-                : t('hr:fixed_assets.no_assets_empty', 'Aktiválj eszközöket a Számlatételek menüből.')}
+                : t('hr:fixed_assets.no_assets_empty', 'Vigyél fel új vagy nyitó eszközt, vagy aktiválj a számlatételekből.')}
             </p>
+            {!search && onCreateAsset && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onCreateAsset}
+                className="mt-4 gap-1.5 text-primary hover:text-primary"
+              >
+                <Plus className="h-4 w-4" />
+                {t('hr:fixed_assets.create_asset_btn', 'Új eszköz felvétele')}
+              </Button>
+            )}
           </div>
         ) : (
           <Table className="compact-table table-fixed w-full">
@@ -91,6 +104,9 @@ export function AssetListTable({ assets, loading, selectedAssetId, onSelectAsset
                   onClick={() => onSelectAsset(asset.id)}
                 >
                   <TableCell className="font-mono text-muted-foreground text-xs">{index + 1}.</TableCell>
+                  <TableCell className="font-mono text-xs font-semibold text-foreground truncate max-w-[130px]" title={asset.inventory_number}>
+                    {asset.inventory_number}
+                  </TableCell>
                   <TableCell className="font-medium max-w-[240px]" title={asset.name}>
                     <div className="flex items-center gap-1.5 truncate">
                       <span className="truncate">{asset.name}</span>
