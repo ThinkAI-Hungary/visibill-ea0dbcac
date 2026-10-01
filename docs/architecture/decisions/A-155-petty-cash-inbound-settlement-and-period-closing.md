@@ -36,8 +36,8 @@ WHERE id = ANY(p_invoice_ids) AND company_id = p_company_id;
 ```
 - **Kimenő (vevői) számla:** `+brutto_vegosszeg` → pénztári növekmény (bevétel).
 - **Bejövő (szállítói) számla:** `-brutto_vegosszeg` → pénztári csökkenés (kiadás).
-- **Partner reláció:** Mivel az `invoices` tábla nem tárol közvetlen `partner_id`-t, egyedi számla esetén a tárolt eljárás a `public.partners` táblából oldja fel a partnert adószám (törzsszám) vagy név alapján, és ezt rögzíti a `petty_cash_entries.partner_id` mezőbe.
-- **Atomi tranzakció:** A pénztári tétel rögzítésével egyidejűleg a számlák `fizetve = true` és `fizetes_napja = p_entry_date` értékei lefrissülnek.
+- **Partner reláció:** Mivel az `invoices` tábla nem tárol közvetlen `partner_id`-t, egyedi számla esetén a tárolt eljárás a `public.partners` táblából oldja fel a partnert adószám (törzsszám) vagy név alapján, és ezt rögzíti a `petty_cash_entries.partner_id` mezőbe (`20260930140000`).
+- **Atomi tranzakció:** A pénztári tétel rögzítésével egyidejűleg a számlák `fizetve = true`, `is_manual_payment = true`, `manual_payment_date = p_entry_date` és `manual_payment_type = 'petty_cash'` értékei frissülnek az ADR A-098 szerint (`20261001101500_fix_settle_invoices_petty_cash_payment_date.sql`), elkerülve a nem létező `fizetes_napja` oszlop hibát. Ha kapcsolódik hozzá `nav_invoices` rekord, az eljárás azt is szinkronizálja.
 
 ### 2. Időszaki Pénztárzárás és Egyenlegmodell (`CashClosingDialog`)
 A zárási dialógusban és a nyomtatási/PDF export sablonban bevezetésre került az 5-oszlopos pénzkezelési egyenleglevezetés minden aktív devizára:

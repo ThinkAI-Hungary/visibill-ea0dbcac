@@ -162,6 +162,10 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
     const nameLower = selectedFile.name.toLowerCase();
     if (validExensions.some(ext => nameLower.endsWith(ext))) {
       setFile(selectedFile);
+      if (!name.trim()) {
+        const cleanName = selectedFile.name.replace(/\.[^/.]+$/, "").trim();
+        setName(cleanName);
+      }
     } else {
       toast({
         title: t('accounting:dialogs.upload_coa.toasts.invalid_format_title'),
@@ -375,7 +379,7 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{t('accounting:dialogs.upload_coa.title')}</DialogTitle>
           <DialogDescription>
@@ -411,12 +415,12 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
                 </div>
               </div>
             ) : (
-              <div className="flex items-center justify-between p-3 border rounded-lg bg-primary/5 border-primary/20">
-                <div className="flex items-center space-x-3 overflow-hidden">
+              <div className="flex items-center justify-between p-3 border rounded-lg bg-primary/5 border-primary/20 min-w-0">
+                <div className="flex items-center space-x-3 overflow-hidden min-w-0">
                   <FileText className="h-5 w-5 text-primary flex-shrink-0" />
                   <span className="text-sm font-medium truncate">{file.name}</span>
                 </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8 !text-destructive flex-shrink-0" onClick={() => setFile(null)} disabled={loading}>
+                <Button variant="ghost" size="icon" className="h-8 w-8 !text-destructive flex-shrink-0 ml-2" onClick={() => setFile(null)} disabled={loading}>
                   <X className="h-4 w-4" />
                 </Button>
               </div>
