@@ -24,6 +24,17 @@ export interface PayslipData {
 }
 
 export function buildPayslipDescriptor(data: PayslipData): DocumentDescriptor {
+  const hasUnder25 = Boolean(
+    data.taxCredits && (
+      (data.taxCredits.under25_credit && Number(data.taxCredits.under25_credit) > 0) ||
+      (data.taxCredits.young_25 && Number(data.taxCredits.young_25) > 0) ||
+      (data.taxCredits.under25Credit && Number(data.taxCredits.under25Credit) > 0)
+    )
+  );
+  const szjaTitle = hasUnder25 
+    ? 'SZJA előleg (15%) 25 év alatti SZJA mentesség'
+    : 'SZJA előleg (15%)';
+
   const descriptor: DocumentDescriptor = {
     type: 'payslip',
     metadata: {
@@ -49,11 +60,10 @@ export function buildPayslipDescriptor(data: PayslipData): DocumentDescriptor {
         headers: ['Megnevezés', 'Típus', 'Összeg'],
         rows: [
           ['Bruttó bér / Alapbér', 'Járandóság', formatHungarianCurrency(data.grossSalary)],
-          ['SZJA előleg (15%)', 'Levonás', formatHungarianCurrency(data.szjaAmount)],
+          [szjaTitle, 'Levonás', formatHungarianCurrency(data.szjaAmount)],
           ['Társadalombiztosítási járulék (18.5%)', 'Levonás', formatHungarianCurrency(data.tbAmount)],
           ['Levonások összesen', 'Összesítő', formatHungarianCurrency(data.totalDeductions)],
           ['Nettó kifizetendő bér', 'Kifizetés', formatHungarianCurrency(data.netSalary)],
-          ['Munkáltatói SZOCHO (13%)', 'Munkáltatói teher', formatHungarianCurrency(data.szochoAmount)],
         ],
       },
       {

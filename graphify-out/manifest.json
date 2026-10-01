@@ -30,8 +30,8 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1790823704.8128357,
-    "ast_hash": "4775625d03084115d668a16e146d9e3f",
+    "mtime": 1790893214.1095362,
+    "ast_hash": "58ec701b53fa95808fd4b3bc22b52510",
     "semantic_hash": ""
   },
   "playwright.config.ts": {
@@ -1165,8 +1165,8 @@
     "semantic_hash": ""
   },
   "src/lib/payroll/__tests__/payslipGenerator.test.ts": {
-    "mtime": 1790804600.5268161,
-    "ast_hash": "934d0ad1b76fdbb861fd133a6d5be4a6",
+    "mtime": 1790892606.7282324,
+    "ast_hash": "4b9f59a5cc3740a447763c34e689e3e4",
     "semantic_hash": ""
   },
   "src/lib/payroll/__tests__/premiumCalculator.test.ts": {
@@ -1210,8 +1210,8 @@
     "semantic_hash": ""
   },
   "src/lib/payroll/payslipGenerator.ts": {
-    "mtime": 1790804233.0265262,
-    "ast_hash": "a073f2f169f177467e001bae2661bc9c",
+    "mtime": 1790892527.3915193,
+    "ast_hash": "2dd02725f0e51204c75da624a2465d44",
     "semantic_hash": ""
   },
   "src/lib/payroll/premiumCalculator.ts": {
@@ -7465,8 +7465,8 @@
     "semantic_hash": ""
   },
   "src/lib/documents/templates/payslipTemplate.ts": {
-    "mtime": 1789102845.0169222,
-    "ast_hash": "b9fa58fb056c12af98c9bbe65016d6a2",
+    "mtime": 1790892548.5987108,
+    "ast_hash": "bced770296ce77473d9007d636887deb",
     "semantic_hash": ""
   },
   "src/lib/documents/templates/tableExportTemplate.ts": {
@@ -11715,8 +11715,8 @@
     "semantic_hash": ""
   },
   "src/config/version.ts": {
-    "mtime": 1790823693.4146712,
-    "ast_hash": "b20211e69d25dfa39b7624fd6b2fc484",
+    "mtime": 1790893209.6926148,
+    "ast_hash": "a64cd89ead26b1f603a20ca160592c4a",
     "semantic_hash": ""
   },
   ".agents/skills/visibill-patchnote/SKILL.md": {
@@ -13847,6 +13847,16 @@
   "src/pages/Accounty/employee-details/__tests__/ChildLeaveIntegration.test.tsx": {
     "mtime": 1790890946.5732148,
     "ast_hash": "ef74bff0123e7cbe6ccf1834e52e33cb",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-10-01/summary-234500-eb-0223-child-leave-disabled-supplement-and-morfi-review.md": {
+    "mtime": 1790891165.4389355,
+    "ast_hash": "422d50206a7d36bfcf5fbe4412ea5b18",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-10-02/summary-001800-eb-0230-eb-0231-payroll-payslip-formatting-and-efo-audit.md": {
+    "mtime": 1790893033.0897934,
+    "ast_hash": "4fef76278353cb41f923b56a9b85fccd",
     "semantic_hash": ""
   }
 }

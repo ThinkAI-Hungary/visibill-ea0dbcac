@@ -74,7 +74,7 @@ describe('generatePayslipHtml', () => {
     const html = generatePayslipHtml(basePayslip);
     expect(html).toContain('SZJA');
     expect(html).toContain('TB');
-    expect(html).toContain('SZOCHO');
+    expect(html).not.toContain('SZOCHO');
   });
 
   it('should show garnishments when present', () => {
@@ -149,19 +149,24 @@ describe('generatePayslipHtml', () => {
       employerTaxAmount: 50000,
     };
     const html = generatePayslipHtml(withKiva);
-    expect(html).toContain('KIVA kötelezettség (10%)');
-    expect(html).toContain('kisvállalati adó (KIVA) alanya');
+    // Munkáltatói közterhek are omitted from employee payslips per EB-0230
+    expect(html).not.toContain('Munkáltatói közterhek');
+    expect(html).not.toContain('KIVA kötelezettség');
   });
 
-  it('should display YTD cumulative figures when provided', () => {
+  it('should display Hungarian cumulative figures when provided (without English YTD prefix) (EB-0230)', () => {
     const withYtd = {
       ...basePayslip,
       ytd: { gross: 3000000, szja: 450000, tb: 555000, net: 1995000 },
     };
     const html = generatePayslipHtml(withYtd);
-    expect(html).toContain('Éves göngyölt adatok (YTD tárgyév)');
-    expect(html).toContain('YTD Bruttó bér');
-    expect(html).toContain('YTD Levont SZJA');
+    expect(html).toContain('Éves göngyölt adatok (tárgyév)');
+    expect(html).toContain('Éves göngyölt bruttó bér');
+    expect(html).toContain('Éves göngyölt levont SZJA');
+    expect(html).toContain('Éves göngyölt levont TB járulék');
+    expect(html).toContain('Éves göngyölt kifizetett nettó');
+    expect(html).not.toContain('YTD Bruttó bér');
+    expect(html).not.toContain('YTD Levont SZJA');
   });
 
   it('should display pension fund deduction when provided', () => {
@@ -209,17 +214,34 @@ describe('generatePayslipHtml', () => {
     expect(html).toContain('Kiskunhalas Iroda');
   });
 
-  it('should NOT include "Teljes bérköltség" on payslip (EB-0230)', () => {
+  it('should NOT include "Teljes bérköltség" or employer taxes on payslip (EB-0230)', () => {
     const html = generatePayslipHtml(basePayslip);
     expect(html).not.toContain('Teljes bérköltség');
+    expect(html).not.toContain('Munkáltatói közterhek');
+    expect(html).not.toContain('SZOCHO (13%)');
   });
 
-  it('should NOT include "Teljes bérköltség (KIVA-val)" when KIVA is active (EB-0230)', () => {
+  it('should NOT include "Teljes bérköltség (KIVA-val)" or KIVA employer tax on payslip (EB-0230)', () => {
     const withKiva = {
       ...basePayslip,
       taxRegime: 'KIVA' as const,
     };
     const html = generatePayslipHtml(withKiva);
     expect(html).not.toContain('Teljes bérköltség');
+    expect(html).not.toContain('Munkáltatói közterhek');
+    expect(html).not.toContain('KIVA kötelezettség');
+  });
+
+  it('should render "SZJA (15%) 25 év alatti SZJA mentesség" and NOT separate "+373200" credit row (EB-0230)', () => {
+    const withUnder25 = {
+      ...basePayslip,
+      szjaAmount: 0,
+      under25Credit: 373200,
+    };
+    const html = generatePayslipHtml(withUnder25);
+    expect(html).toContain('SZJA (15%) 25 év alatti SZJA mentesség');
+    expect(html).toContain('<td class="right negative">0</td>');
+    expect(html).not.toContain('+373');
+    expect(html).not.toContain('25 év alattiak kedvezménye');
   });
 });

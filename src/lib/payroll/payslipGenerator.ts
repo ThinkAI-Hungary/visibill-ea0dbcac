@@ -113,17 +113,16 @@ function fmt(n: number): string {
  * Generate single payslip HTML block
  */
 export function generatePayslipBlockHtml(data: PayslipData, isMultiPage = false): string {
-  const totalCredits = data.familyCredit + data.under25Credit + data.newMotherCredit
+  const hasUnder25Exemption = (data.under25Credit || 0) > 0;
+  const szjaLabel = hasUnder25Exemption 
+    ? 'SZJA (15%) 25 év alatti SZJA mentesség' 
+    : 'SZJA (15%)';
+
+  const otherCredits = data.familyCredit + data.newMotherCredit
     + data.firstMarriageCredit + data.personalDisabilityCredit;
   const totalDeductions = data.garnishments + data.advances + (data.pensionFund || 0) + (data.healthFund || 0) + data.otherDeductions;
   const homeOfficeAmount = data.homeOffice || 0;
   const commuteAmount = data.commuteReimbursement || 0;
-
-  const isKiva = data.taxRegime === 'KIVA';
-  const employerTax = data.employerTaxAmount !== undefined 
-    ? data.employerTaxAmount 
-    : (isKiva ? Math.round(data.grossTotal * 0.10) : data.szochoAmount);
-  const totalCost = data.grossTotal + employerTax;
 
   return `
 <div class="payslip"${isMultiPage ? ' style="page-break-after: always; break-after: page;"' : ''}>
@@ -221,12 +220,11 @@ export function generatePayslipBlockHtml(data: PayslipData, isMultiPage = false)
         ${data.otherIncome > 0 ? `<tr><td>Egyéb jövedelem</td><td class="right">${fmt(data.otherIncome)}</td></tr>` : ''}
         <tr class="total"><td>Bruttó bér</td><td class="right">${fmt(data.grossTotal)}</td></tr>
         <tr><td></td><td></td></tr>
-        <tr><td>SZJA (15%)</td><td class="right negative">${fmt(data.szjaAmount)}</td></tr>
+        <tr><td>${escHtml(szjaLabel)}</td><td class="right negative">${fmt(data.szjaAmount)}</td></tr>
         <tr><td>TB járulék (18.5%)</td><td class="right negative">${fmt(data.tbAmount)}</td></tr>
-        ${totalCredits > 0 ? `
+        ${otherCredits > 0 ? `
         <tr><td></td><td></td></tr>
         ${data.familyCredit > 0 ? `<tr><td>Családi kedvezmény</td><td class="right positive">+${fmt(data.familyCredit)}</td></tr>` : ''}
-        ${data.under25Credit > 0 ? `<tr><td>25 év alattiak kedvezménye</td><td class="right positive">+${fmt(data.under25Credit)}</td></tr>` : ''}
         ${data.newMotherCredit > 0 ? `<tr><td>30 év alatti anyák kedvezménye</td><td class="right positive">+${fmt(data.newMotherCredit)}</td></tr>` : ''}
         ${data.firstMarriageCredit > 0 ? `<tr><td>Első házasok kedvezménye</td><td class="right positive">+${fmt(data.firstMarriageCredit)}</td></tr>` : ''}
         ${data.personalDisabilityCredit > 0 ? `<tr><td>Személyi kedvezmény</td><td class="right positive">+${fmt(data.personalDisabilityCredit)}</td></tr>` : ''}
@@ -265,31 +263,15 @@ export function generatePayslipBlockHtml(data: PayslipData, isMultiPage = false)
 
   ${data.ytd ? `
   <div class="section" style="margin-top: 18px;">
-    <div class="section-title">Éves göngyölt adatok (YTD tárgyév)</div>
+    <div class="section-title">Éves göngyölt adatok (tárgyév)</div>
     <div class="info-grid">
-      <div class="info-row"><span class="label">YTD Bruttó bér</span><span class="value">${fmt(data.ytd.gross)} Ft</span></div>
-      <div class="info-row"><span class="label">YTD Levont SZJA</span><span class="value">${fmt(data.ytd.szja)} Ft</span></div>
-      <div class="info-row"><span class="label">YTD Levont TB járulék</span><span class="value">${fmt(data.ytd.tb)} Ft</span></div>
-      <div class="info-row"><span class="label">YTD Kifizetett nettó</span><span class="value">${fmt(data.ytd.net)} Ft</span></div>
+      <div class="info-row"><span class="label">Éves göngyölt bruttó bér</span><span class="value">${fmt(data.ytd.gross)} Ft</span></div>
+      <div class="info-row"><span class="label">Éves göngyölt levont SZJA</span><span class="value">${fmt(data.ytd.szja)} Ft</span></div>
+      <div class="info-row"><span class="label">Éves göngyölt levont TB járulék</span><span class="value">${fmt(data.ytd.tb)} Ft</span></div>
+      <div class="info-row"><span class="label">Éves göngyölt kifizetett nettó</span><span class="value">${fmt(data.ytd.net)} Ft</span></div>
     </div>
   </div>
   ` : ''}
-
-  <div class="section" style="margin-top: 18px;">
-    <div class="section-title">Munkáltatói közterhek (tájékoztató)</div>
-    <div class="info-grid">
-      ${isKiva ? `
-        <div class="info-row"><span class="label">KIVA kötelezettség (10%)</span><span class="value">${fmt(employerTax)} Ft</span></div>
-      ` : `
-        <div class="info-row"><span class="label">SZOCHO (13%)</span><span class="value">${fmt(data.szochoAmount)} Ft</span></div>
-      `}
-    </div>
-    ${isKiva ? `
-      <div style="font-size: 9px; color: #64748b; margin-top: 5px; padding-left: 9px; font-style: italic;">
-        * A munkáltató a kisvállalati adó (KIVA) alanya. A személyi jellegű kifizetések után 10% KIVA fizetendő, SZOCHO mentes.
-      </div>
-    ` : ''}
-  </div>
 
   <div class="stamp-area">
     <div class="box">Munkáltató cégszerű aláírása / pecsétje</div>
