@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { NavInvoiceRow } from './NavInvoiceRow';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
+import { useSzamlazzStatus } from '@/hooks/useSzamlazzSync';
 import type { SubmittedInvoice, TransactionRecord } from '../../types';
 import type { SuggestedSubmittedInvoiceWithScore } from '../../utils/invoiceRelations';
 import type { InvoiceDeductibilitySummary } from '../../hooks/usePageDeductibilityMap';
@@ -36,6 +37,7 @@ export function NavInvoiceTable({
 }: NavInvoiceTableProps) {
   const { t } = useTranslation(['invoices', 'common']);
   const {
+    companyId,
     activeTab,
     activeSelection,
     loading,
@@ -57,6 +59,9 @@ export function NavInvoiceTable({
     expandAllRows,
     collapseAllRows,
   } = useInvoiceContext();
+
+  const { data: szamlazzStatus } = useSzamlazzStatus(companyId);
+  const hasSzamlazzKey = Boolean(szamlazzStatus?.hasAgentKey);
 
   const [tableContainerEl, setTableContainerEl] = React.useState<HTMLDivElement | null>(null);
   const tableContainerRef = useRef<HTMLDivElement | null>(null);
@@ -268,6 +273,7 @@ export function NavInvoiceTable({
                       navToSuggestedSubmittedMap={navToSuggestedSubmittedMap}
                       pageInvoiceIdToTransactionsMap={pageInvoiceIdToTransactionsMap}
                       nonDeductibleInfo={pageDeductibilityMap?.get(invoice.id)}
+                      hasSzamlazzKey={hasSzamlazzKey}
                       onRowClick={onRowClick}
                       onToggleExclude={onToggleExclude}
                     />

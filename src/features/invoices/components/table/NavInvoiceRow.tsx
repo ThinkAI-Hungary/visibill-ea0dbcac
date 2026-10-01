@@ -11,7 +11,7 @@ import { InvoiceImagePreview } from '@/components/InvoiceImagePreview';
 import ExpandedInvoiceRow from '@/components/ExpandedInvoiceRow';
 import { ChevronDown, Scale, FileText, Package, Sparkles, DownloadCloud, Loader2 } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
-import { useSyncSzamlazzOutbound } from '@/hooks/useSzamlazzSync';
+import { useSyncSzamlazzOutbound, useSzamlazzStatus } from '@/hooks/useSzamlazzSync';
 import { getInitials, getAvatarColor } from '@/lib/helpers';
 import { normalizeInvoiceNumber } from '@/lib/invoiceMatchingUtils';
 import { InvoiceVatCodeSelector } from '@/components/vat/InvoiceVatCodeSelector';
@@ -34,6 +34,7 @@ interface NavInvoiceRowProps {
     nonDeductibleVat: number;
     minPercentage: number;
   } | null;
+  hasSzamlazzKey?: boolean;
   onRowClick: (invoiceId: string, e: React.MouseEvent) => void;
   onToggleExclude: (invoiceId: string, currentValue: boolean) => Promise<void>;
 }
@@ -99,6 +100,7 @@ function NavInvoiceRowComponent({
   navToSuggestedSubmittedMap,
   pageInvoiceIdToTransactionsMap,
   nonDeductibleInfo,
+  hasSzamlazzKey: hasSzamlazzKeyProp,
   onRowClick,
   onToggleExclude,
 }: NavInvoiceRowProps) {
@@ -156,10 +158,13 @@ function NavInvoiceRowComponent({
   const isExpanded = expandedRowIds.has(invoice.id);
   const isSelected = selectedInvoiceIds.has(invoice.id);
   const [isOptimisticReviewed, setIsOptimisticReviewed] = useState<boolean | null>(null);
+  const { data: fallbackSzamlazzStatus } = useSzamlazzStatus(hasSzamlazzKeyProp === undefined ? companyId : null);
+  const hasSzamlazzKey = hasSzamlazzKeyProp ?? Boolean(fallbackSzamlazzStatus?.hasAgentKey);
   const syncSzamlazz = useSyncSzamlazzOutbound(companyId);
   const [isDownloadingSingle, setIsDownloadingSingle] = useState(false);
 
   const handleDownloadSingleSzamlazz = async (invoiceNumber: string) => {
+    if (!hasSzamlazzKey) return;
     try {
       setIsDownloadingSingle(true);
       await syncSzamlazz.mutateAsync({ invoiceNumbers: [invoiceNumber], limit: 1 });
@@ -717,26 +722,39 @@ function NavInvoiceRowComponent({
                 <TooltipProvider delayDuration={150}>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-500/10 opacity-70 hover:opacity-100 transition-all"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDownloadSingleSzamlazz(invoice.invoice_number);
-                        }}
-                        disabled={isDownloadingSingle}
-                        aria-label="Számlakép letöltése Számlázz.hu-ból"
-                      >
-                        {isDownloadingSingle ? (
-                          <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-                        ) : (
-                          <DownloadCloud className="h-4 w-4" />
-                        )}
-                      </Button>
+                      <span className="inline-block">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className={cn(
+                            "h-8 w-8 transition-all",
+                            hasSzamlazzKey
+                              ? "text-blue-500 hover:text-blue-600 hover:bg-blue-500/10 opacity-70 hover:opacity-100"
+                              : "text-muted-foreground/30 opacity-40 cursor-not-allowed hover:bg-transparent"
+                          )}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (hasSzamlazzKey) {
+                              handleDownloadSingleSzamlazz(invoice.invoice_number);
+                            }
+                          }}
+                          disabled={!hasSzamlazzKey || isDownloadingSingle}
+                          aria-label={hasSzamlazzKey ? "Számlakép letöltése Számlázz.hu-ból" : "A Számlázz.hu integráció nincs beállítva"}
+                        >
+                          {isDownloadingSingle ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                          ) : (
+                            <DownloadCloud className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </span>
                     </TooltipTrigger>
                     <TooltipContent side="left">
-                      <p className="text-xs">Számlakép letöltése (Számlázz.hu)</p>
+                      <p className="text-xs">
+                        {hasSzamlazzKey
+                          ? "Számlakép letöltése (Számlázz.hu)"
+                          : "A Számlázz.hu integráció nincs beállítva ennél a cégnél"}
+                      </p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>

@@ -589,19 +589,33 @@ export default function ClientInvoicesPage() {
           )}
 
           {hasNavIntegration && (
-            <Button
-              variant="outline"
-              className="gap-2 bg-card border-border text-foreground hover:bg-accent relative"
-              onClick={() => setIsSzamlazzSyncOpen(true)}
-            >
-              <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span>Számlázz.hu szinkron</span>
-              {(szamlazzStatus?.pendingCount ?? 0) > 0 && (
-                <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300">
-                  {szamlazzStatus?.pendingCount}
-                </span>
-              )}
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-block">
+                    <Button
+                      variant="outline"
+                      className="gap-2 bg-card border-border text-foreground hover:bg-accent relative disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => szamlazzStatus?.hasAgentKey && setIsSzamlazzSyncOpen(true)}
+                      disabled={!szamlazzStatus?.hasAgentKey}
+                    >
+                      <FileText className={`w-4 h-4 ${szamlazzStatus?.hasAgentKey ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground'}`} />
+                      <span>Számlázz.hu szinkron</span>
+                      {szamlazzStatus?.hasAgentKey && (szamlazzStatus?.pendingCount ?? 0) > 0 && (
+                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300">
+                          {szamlazzStatus?.pendingCount}
+                        </span>
+                      )}
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {!szamlazzStatus?.hasAgentKey && (
+                  <TooltipContent side="bottom">
+                    <p className="text-xs">A Számlázz.hu integráció nincs beállítva ennél a cégnél.</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           )}
 
           <DropdownMenu>
@@ -1101,7 +1115,7 @@ export default function ClientInvoicesPage() {
                           >
                             {t('invoices_page.action_view', 'Megtekintés')}
                           </DropdownMenuItem>
-                          {inv.type === 'kimeno' && !inv.imageUrl && !inv.mellekletUrl && (
+                          {szamlazzStatus?.hasAgentKey && inv.type === 'kimeno' && !inv.imageUrl && !inv.mellekletUrl && (
                             <DropdownMenuItem 
                               className="cursor-pointer gap-2 text-blue-600 dark:text-blue-400 font-medium"
                               onClick={() => handleDownloadSingleSzamlazz(inv.invoiceNumber)}

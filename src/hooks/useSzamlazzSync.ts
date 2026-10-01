@@ -49,6 +49,10 @@ export function useSzamlazzStatus(companyId?: string | null) {
       });
       const hasAgentKey = Boolean(keyData && (keyData as string).trim().length >= 10 && !keyErr);
 
+      if (!hasAgentKey) {
+        return { hasAgentKey: false, totalOutbound: 0, withImageCount: 0, pendingCount: 0 };
+      }
+
       // 2. Count outbound invoices in nav_invoices
       const { data: navOutbound, error: navErr } = await supabase
         .from('nav_invoices')

@@ -26,6 +26,7 @@ export function InvoiceHeader() {
   const [rulesDialogOpen, setRulesDialogOpen] = useState(false);
   const [szamlazzModalOpen, setSzamlazzModalOpen] = useState(false);
   const { data: szamlazzStatus } = useSzamlazzStatus(companyId);
+  const hasSzamlazzKey = Boolean(szamlazzStatus?.hasAgentKey);
 
   const handleOpenFiles = () => {
     setFilesDialogOpen(true);
@@ -57,24 +58,39 @@ export function InvoiceHeader() {
           <div className="flex gap-2 justify-end">
             {hasNavIntegration && <NavSyncButton />}
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSzamlazzModalOpen(true)}
-              className="relative"
-              title="Kimenő számlák számlaképének letöltése és párosítása Számlázz.hu-ból"
-            >
-              <DownloadCloud className="h-4 w-4 mr-2 text-blue-500" />
-              Számlázz.hu szinkron
-              {szamlazzStatus && szamlazzStatus.pendingCount > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="ml-2 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-none px-1.5 py-0 text-[10px]"
-                >
-                  {szamlazzStatus.pendingCount}
-                </Badge>
-              )}
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-block">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => hasSzamlazzKey && setSzamlazzModalOpen(true)}
+                      disabled={!hasSzamlazzKey}
+                      className="relative disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <DownloadCloud className={`h-4 w-4 mr-2 ${hasSzamlazzKey ? 'text-blue-500' : 'text-muted-foreground'}`} />
+                      Számlázz.hu szinkron
+                      {hasSzamlazzKey && szamlazzStatus && szamlazzStatus.pendingCount > 0 && (
+                        <Badge
+                          variant="secondary"
+                          className="ml-2 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-none px-1.5 py-0 text-[10px]"
+                        >
+                          {szamlazzStatus.pendingCount}
+                        </Badge>
+                      )}
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p className="text-xs">
+                    {hasSzamlazzKey
+                      ? 'Kimenő számlák számlaképének letöltése és párosítása Számlázz.hu-ból'
+                      : 'A Számlázz.hu integráció nincs beállítva ennél a cégnél.'}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
 
             <Button variant="outline" size="sm" onClick={() => setRulesDialogOpen(true)}>
               <Sliders className="h-4 w-4 mr-2" />

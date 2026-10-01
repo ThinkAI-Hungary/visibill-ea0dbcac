@@ -37,7 +37,8 @@ Hogy az összes létező komponens (Főkönyv, ÁFA, Számlák, `InvoiceImageDia
 
 ### 3.1. Fejléc Szinkronizációs Gomb és Értesítő Jelvény
 - Mind az eaisyBooks felületen (`ClientInvoicesPage.tsx`), mind a Visibill Számlák oldalon (`InvoiceHeader.tsx`) megjelenik a **„Számlázz.hu szinkron”** gomb felhő letöltés (`DownloadCloud`) ikonnal.
-- Ha a cégnek vannak letöltetlen számlaképei, a gombon kék számláló jelvény (`Badge`) mutatja a hiányzó darabszámot (pl. `86`).
+- **Inaktív állapot bekötés hiányában:** Amennyiben az adott céghez nincs beállítva Számlázz.hu Agent kulcs (`hasAgentKey: false`), a gomb inaktívvá (`disabled`) válik, kurzora `cursor-not-allowed`, a számláló jelvény (`Badge`) rejtett, és tooltip tájékoztatja a felhasználót: *„A Számlázz.hu integráció nincs beállítva ennél a cégnél.”*
+- Ha a céghez be van kötve a Számlázz.hu és vannak letöltetlen számlaképei, a gombon kék számláló jelvény (`Badge`) mutatja a hiányzó darabszámot (pl. `86`).
 
 ### 3.2. Részletes Kötegelt Letöltő Modális Ablak (`<SzamlazzSyncModal>`)
 A gombra kattintva megnyílik a szinkronizációs dialógus:
@@ -48,6 +49,7 @@ A gombra kattintva megnyílik a szinkronizációs dialógus:
 - **Hiányzó kulcs figyelmeztetés:** Ha nincs beállítva a céghez Agent kulcs, sárga figyelmeztetés jelenik meg közvetlen navigációs hivatkozással a Beállítások / Integrációk oldalra.
 
 ### 3.3. Tételes, Egykattintásos Letöltés a Táblázatból
-- A táblázatban (`NavInvoiceRow.tsx` és `ClientInvoicesPage.tsx`) minden olyan kimenő számlánál, amelyhez még nincs számlakép, a fájl ikon helyén egy kék letöltő gomb jelenik meg.
-- Egyetlen kattintással lehívható és másodpercek alatt megjeleníthető az adott bizonylat számlaképe anélkül, hogy a teljes köteget le kellene futtatni.
+- A táblázatban (`NavInvoiceRow.tsx` és `ClientInvoicesPage.tsx`) minden olyan kimenő számlánál, amelyhez még nincs számlakép, a fájl ikon helyén egy letöltő gomb jelenik meg.
+- **Inaktív állapot bekötés hiányában:** Ha a céghez nincs bekötve a Számlázz.hu, a gomb inaktív (`disabled`), halványított (`opacity-40`), nem kattintható, és tooltip jelzi: *„A Számlázz.hu integráció nincs beállítva ennél a cégnél”*.
+- Bekötött állapotban a kék gomb aktív, egyetlen kattintással lehívható és másodpercek alatt megjeleníthető az adott bizonylat számlaképe anélkül, hogy a teljes köteget le kellene futtatni.
 - A letöltést követően a sor azonnal átvált az előnézeti gombra (`FileText`), és a számla az `InvoiceImageDialog`-ban megtekinthető, nyomtatható vagy letölthető.
