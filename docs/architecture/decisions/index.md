@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-10-01  
-> **Összesen:** 205 döntés (190 egyedi döntési fájl) | ✅ Decided: 203 | ⛔ Superseded: 2
+> **Összesen:** 206 döntés (191 egyedi döntési fájl) | ✅ Decided: 204 | ⛔ Superseded: 2
 
 
 ---
@@ -240,6 +240,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-186 | Munkavállalói Pótszabadságok Dinamikus Feloldó Motorja (Mt. 116–122. §) | ✅ Decided | [A-186](./A-186-payroll-leave-entitlements-resolution-engine.md) |
 | A-187 | Számlatétel-szintű Kontextuális Időbeli Elhatárolások és Vegyes Napló Feladás | ✅ Decided | [A-187](./A-187-contextual-invoice-item-accruals-and-ve-journal-posting.md) |
 | A-188 | Dinamikus Könyvelési Naplók Létrehozása, Kezelése és Bankszámla-összerendelés | ✅ Decided | [A-188](./A-188-dynamic-accounting-journals-management-and-bank-linking.md) |
+| A-189 | Főkönyvi Kivonat és Naplófőkönyv RPC Teljesítmény-Optimalizálás (Statement Timeout 57014 Megszüntetése, CTE Materializáció és Hash Join) | ✅ Decided | [A-189](./A-189-gl-rpc-performance-optimization-and-timeout-elimination.md) |
 
 
 ## 💳 Fizetés

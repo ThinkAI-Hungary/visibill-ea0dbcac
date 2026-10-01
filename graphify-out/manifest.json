@@ -170,8 +170,8 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceItemsDialog.tsx": {
-    "mtime": 1790817442.1983793,
-    "ast_hash": "06a88fa80d47449d227e31c3b5ebb342",
+    "mtime": 1790854006.8939552,
+    "ast_hash": "c65279c2d7935c2f3420b8f9830aa7a2",
     "semantic_hash": ""
   },
   "src/components/LiveNotificationProvider.tsx": {
@@ -340,8 +340,8 @@
     "semantic_hash": ""
   },
   "src/components/fixed-assets/AssetListTable.tsx": {
-    "mtime": 1790514518.2250104,
-    "ast_hash": "bb7c48ff401ee52c03a423fb09570902",
+    "mtime": 1790854006.8939552,
+    "ast_hash": "f9a910db5a7a24223e4cba910d767a81",
     "semantic_hash": ""
   },
   "src/components/fixed-assets/DepreciationCards.tsx": {
@@ -375,8 +375,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/GeneralLedgerTable.tsx": {
-    "mtime": 1790775655.265364,
-    "ast_hash": "cc806ff65f9d70d3b7405d5133adbc78",
+    "mtime": 1790854006.895497,
+    "ast_hash": "7ff46e83aff384088f9be925ef3bcaa9",
     "semantic_hash": ""
   },
   "src/components/general-ledger/ManagePresetsModal.tsx": {
@@ -385,8 +385,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/UploadChartOfAccountsModal.tsx": {
-    "mtime": 1790341701.5341837,
-    "ast_hash": "25f60021c14cd8668a759095d8ad8bd6",
+    "mtime": 1790854006.895497,
+    "ast_hash": "70c0c3ffd9ec30a55a1ee2a996fa04f1",
     "semantic_hash": ""
   },
   "src/components/invoices/InvoiceFilesDialog.tsx": {
@@ -965,8 +965,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useFixedAssets.ts": {
-    "mtime": 1790692096.0323825,
-    "ast_hash": "c60ee482f2d8b61424e4c4862e7d496c",
+    "mtime": 1790854006.8970428,
+    "ast_hash": "ea9d6b59f7431bc1918ccea0ac4e654b",
     "semantic_hash": ""
   },
   "src/hooks/useIdleTimeout.ts": {
@@ -975,8 +975,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useInvoiceData.ts": {
-    "mtime": 1790596315.0024445,
-    "ast_hash": "22dc63c667e4f30ea51b4bef248eebac",
+    "mtime": 1790854006.8970428,
+    "ast_hash": "05c2e4f90b407d5499f2b316c0205a20",
     "semantic_hash": ""
   },
   "src/hooks/useInvoiceFilters.ts": {
@@ -985,8 +985,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useInvoiceMutations.ts": {
-    "mtime": 1790595899.0451663,
-    "ast_hash": "2beb999856aa1db06696de7d3d2212ab",
+    "mtime": 1790854006.8970428,
+    "ast_hash": "3ee5e1a23ceb8c2f915ce8407e5e5523",
     "semantic_hash": ""
   },
   "src/hooks/useKeyboardShortcuts.ts": {
@@ -1325,18 +1325,18 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/ClientInvoicesPage.tsx": {
-    "mtime": 1790775655.2675574,
-    "ast_hash": "96e297380a7f982a2c6fe1e59bef39bc",
+    "mtime": 1790854006.8985798,
+    "ast_hash": "a4dfb22ac89eeb9fc471daebdcc016be",
     "semantic_hash": ""
   },
   "src/pages/Accounty/ClientMissingInvoicesPage.tsx": {
-    "mtime": 1790195770.4242709,
-    "ast_hash": "356fc6f6f1281aad03728fb6d7bc9a76",
+    "mtime": 1790854006.8985798,
+    "ast_hash": "3f8a38a21478912df5bce530b292f148",
     "semantic_hash": ""
   },
   "src/pages/Accounty/ClientMissingInvoicesReportPage.tsx": {
-    "mtime": 1790775646.1962903,
-    "ast_hash": "76640baa5d82ff93d1586c2728066f03",
+    "mtime": 1790854006.8985798,
+    "ast_hash": "fd2133ab2dc41f0b3bdcd431af965928",
     "semantic_hash": ""
   },
   "src/pages/Accounty/ClientPortalPage.tsx": {
@@ -1475,8 +1475,8 @@
     "semantic_hash": ""
   },
   "src/pages/FixedAssetsPage.tsx": {
-    "mtime": 1790695761.473536,
-    "ast_hash": "01b2b043797e1d3df8fba0818cb2c6b3",
+    "mtime": 1790854006.900115,
+    "ast_hash": "3598311de693cfc09dce8913d4fe9212",
     "semantic_hash": ""
   },
   "src/pages/GeneralLedgerPage.tsx": {
@@ -3090,8 +3090,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790820758.3314548,
-    "ast_hash": "503ae24fef742a417277726e3dac5de1",
+    "mtime": 1790857493.4764853,
+    "ast_hash": "d6353dca13eb9f13d9f7634c0b41f9df",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3235,8 +3235,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/023-fixed-assets.md": {
-    "mtime": 1787840645.386866,
-    "ast_hash": "345e2f35f0836c60185044041440fd96",
+    "mtime": 1790854006.8908617,
+    "ast_hash": "276f9fcb144f0525e455c2ff04c0e9c2",
     "semantic_hash": ""
   },
   "docs/business/decisions/024-dunning.md": {
@@ -7315,8 +7315,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/components/header/InvoiceHeader.tsx": {
-    "mtime": 1790692096.029383,
-    "ast_hash": "e1b55593188c68d2a8a03f800805bd5d",
+    "mtime": 1790854006.895497,
+    "ast_hash": "9aa5cc90f405c3a683a86cf06fe8ff7d",
     "semantic_hash": ""
   },
   "src/features/invoices/components/header/InvoiceKpiCards.tsx": {
@@ -7335,13 +7335,13 @@
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/NavInvoiceRow.tsx": {
-    "mtime": 1790692096.0303838,
-    "ast_hash": "0c857edf04b354b75d7882c3f6c6e33d",
+    "mtime": 1790854006.8970428,
+    "ast_hash": "5b0695b919a0cd0388bbb7b6a0dbffe9",
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/NavInvoiceTable.tsx": {
-    "mtime": 1790466422.4982238,
-    "ast_hash": "43a316e036bcdba3da2e7acd48c6111a",
+    "mtime": 1790854006.8970428,
+    "ast_hash": "d737b37e6a9035c55875be00d67dcd8f",
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/SubmittedInvoiceRow.tsx": {
@@ -8845,8 +8845,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/rpc-catalog.md": {
-    "mtime": 1790635570.4250891,
-    "ast_hash": "bdef7a0bf185f2d8af78cf75805531df",
+    "mtime": 1790857505.7742088,
+    "ast_hash": "1a3fbf21e60545d64af72c4f73571088",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-073-ev-bookkeeping-and-cashbook-ux.md": {
@@ -11825,8 +11825,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-155-petty-cash-inbound-settlement-and-period-closing.md": {
-    "mtime": 1790775646.17435,
-    "ast_hash": "4f2b6dccbd4af706d1a9cfdec6dc2be7",
+    "mtime": 1790854006.8908617,
+    "ast_hash": "3688eaf6d1c55c822db8b2d5aa327c75",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-156-croatian-vat-return-obrazac-pdv-and-tax-codes.md": {
@@ -13150,8 +13150,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useSzamlazzSync.ts": {
-    "mtime": 1790692096.0323825,
-    "ast_hash": "1d6c9c06d8f3b623e616a67c6fc07857",
+    "mtime": 1790854006.8985798,
+    "ast_hash": "2757bd36676a813feb891284248086f2",
     "semantic_hash": ""
   },
   "src/lib/fixed-assets/assetActivationAutoPoster.ts": {
@@ -13175,8 +13175,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-140-szamlazz-hu-outbound-invoice-image-sync-and-pairing.md": {
-    "mtime": 1790692095.9615872,
-    "ast_hash": "e87f95a9d5be66599ea1f028ff153a1d",
+    "mtime": 1790854006.892409,
+    "ast_hash": "3fcc8101142bb036a33da461845864a0",
     "semantic_hash": ""
   },
   "src/test/accounty/developmentReserveAutoPoster.test.ts": {
@@ -13490,8 +13490,8 @@
     "semantic_hash": ""
   },
   "supabase/migrations/20260930160000_fix_partial_payment_match_status.sql": {
-    "mtime": 1790775646.2064755,
-    "ast_hash": "ea91996d69ceb7911e651797cfdc6499",
+    "mtime": 1790825709.8298461,
+    "ast_hash": "863d2e09053b53775a3a13576b6ae547",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-181-a60-community-vat-and-vies-crosscheck.md": {
@@ -13707,6 +13707,76 @@
   "session-summary/Jani/2026-10-01/summary-043500-dynamic-journals-management-and-bank-linking.md": {
     "mtime": 1790822027.1222377,
     "ast_hash": "c02e2bef262f8a2dbf1260102fd35bbd",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261001053500_fix_system_error_hunter_audit_issues.sql": {
+    "mtime": 1790825696.0080624,
+    "ast_hash": "265c37aea4dca727974fb50654fd0e0c",
+    "semantic_hash": ""
+  },
+  "src/components/fixed-assets/CreateFixedAssetDialog.tsx": {
+    "mtime": 1790854006.8939552,
+    "ast_hash": "03e2b248cc80ace67f30acca2f2e3508",
+    "semantic_hash": ""
+  },
+  "src/components/general-ledger/__tests__/UploadChartOfAccountsModal.test.tsx": {
+    "mtime": 1790854006.895497,
+    "ast_hash": "89b1890897ccc5944cd9f45e85372bf6",
+    "semantic_hash": ""
+  },
+  "src/features/invoices/__tests__/szamlazzIntegrationDisabledStates.test.tsx": {
+    "mtime": 1790854006.895497,
+    "ast_hash": "4c7a9aaad71c88c798b0a025495b3fa5",
+    "semantic_hash": ""
+  },
+  "src/test/fixed-assets/CreateFixedAssetDialog.test.tsx": {
+    "mtime": 1790854006.900115,
+    "ast_hash": "409f8fe5e398b4c8008bbe5b9e267851",
+    "semantic_hash": ""
+  },
+  "src/test/missingInvoicesExport.test.tsx": {
+    "mtime": 1790854006.900115,
+    "ast_hash": "c28e76828ad11a318a61e39fe90f7279",
+    "semantic_hash": ""
+  },
+  "src/test/navSyncButtonCredentials.test.ts": {
+    "mtime": 1790854006.900115,
+    "ast_hash": "399ce618c1a9e229e4d2c37cba5246e5",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261001101500_fix_settle_invoices_petty_cash_payment_date.sql": {
+    "mtime": 1790854006.900115,
+    "ast_hash": "3adaf954763fff5a26c97aef6ded5296",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261001113000_fix_submitted_invoices_vat_items_column_42703.sql": {
+    "mtime": 1790854006.9017005,
+    "ast_hash": "a85824796d4c125ad3a1a1cdf6e72858",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261001115500_fix_get_invoice_kpis_continuous_and_vat_columns.sql": {
+    "mtime": 1790854006.9017005,
+    "ast_hash": "984f0cf839ea18d658f44ebb95591d96",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261001143000_optimize_gl_balances_and_categorized_items_timeout.sql": {
+    "mtime": 1790856364.5250432,
+    "ast_hash": "ba97947cdd444317a6d41d0c6cf673a2",
+    "semantic_hash": ""
+  },
+  "session-summary/\u00c1ron/2026-10-01/summary-102500-eb-0228-petty-cash-settlement-payment-date-fix.md": {
+    "mtime": 1790854006.892409,
+    "ast_hash": "bd57a607780aa6126c41e72d5aefacca",
+    "semantic_hash": ""
+  },
+  "session-summary/\u00c1ron/2026-10-01/summary-105000-support-coa-upload-modal-overflow-and-autofill-fix.md": {
+    "mtime": 1790854006.892409,
+    "ast_hash": "d27903a51ed0ea177583a7d4ee1d0d8d",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-189-gl-rpc-performance-optimization-and-timeout-elimination.md": {
+    "mtime": 1790857461.46507,
+    "ast_hash": "7115cd9157b4fa11da0465228d546c95",
     "semantic_hash": ""
   }
 }
